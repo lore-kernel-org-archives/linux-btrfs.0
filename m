@@ -1,66 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:45904 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752255Ab2JPNM1 (ORCPT
+Received: from mail.profihost.ag ([85.158.179.208]:44052 "EHLO
+	mail.profihost.ag" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754376Ab2JPOQP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 09:12:27 -0400
-Message-ID: <507D5D34.8070209@jan-o-sch.net>
-Date: Tue, 16 Oct 2012 15:12:20 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	Tue, 16 Oct 2012 10:16:15 -0400
+Message-ID: <507D6C2A.6010401@profihost.ag>
+Date: Tue, 16 Oct 2012 16:16:10 +0200
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, Josef Bacik <josef@redhat.com>
-Subject: Free space cache writeback issue
-Content-Type: text/plain; charset=ISO-8859-1
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: miaox@cn.fujitsu.com,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Re: problems with btrfs send / restore
+References: <50771F22.3070501@profihost.ag> <20121011194335.GE4405@twin.jikos.cz> <50772408.9040303@profihost.ag> <507BE264.1060500@cn.fujitsu.com> <507C6239.1030208@profihost.ag> <CAOcd+r2sZYxxNRQS2h-LY9Fpd791JRKiVq2gT-xBpkPY8=FsQQ@mail.gmail.com> <507C6CC8.9060100@profihost.ag> <CAOcd+r226xqjvsF3H_B3=zxfQ3fkY3YP7FMeXP3b-fnO0Bqobw@mail.gmail.com>
+In-Reply-To: <CAOcd+r226xqjvsF3H_B3=zxfQ3fkY3YP7FMeXP3b-fnO0Bqobw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Am 15.10.2012 22:14, schrieb Alex Lyakas:
+> Stefan,
+> the second issue you're seeing was discussed here:
+> http://www.spinics.net/lists/linux-btrfs/msg19672.html
+>
+> You can apply the patch I sent there meanwhile, but as Miao pointed
+> out, I will need to make a better patch (hope will do it soon,
+> together with this one).
 
-I've hit an issue with the free space cache. It looks like we miss writing
-everything to disk on unmount under rough conditions.
+ah OK thanks. So i hope we'll see an updated btrfs-progs git repo soon ;-)
 
-Setup: git head cmason/master, /dev/sdv1 is a 55MB partition on an SSD. Run the
-following script:
+Thanks!
 
---
-DEV=/dev/sdv1
-MP=/mnt/scratch
-
-umount $MP
-mkfs.btrfs -M $DEV
-mount -o inode_cache $DEV $MP
-
-cat /dev/urandom | head -c 654321 > $MP/1
-mkdir $MP/2
-mv $MP/1 $MP/2/1
-
-btrfs subvol snap $MP $MP/@1
-rm $MP/2/1
-
-umount $MP
-mount -o inode_cache $DEV $MP
-
-cat /dev/urandom | head -c 654321 > $MP/tempname-1
-
-ls -li $MP/@1/2/1 $MP/tempname-1
---
-
-Actual result:
-> 257 -rw-r--r-- 1 root root 654321 Oct 16 15:04 /mnt/scratch/@1/2/1
-> 259 -rw-r--r-- 1 root root 654321 Oct 16 15:04 /mnt/scratch/tempname-1
-
-Expected result: Both files should have inode 257.
-
-If I make any of the following changes, I get the expected results:
-- omit umount/mount from the script
-- replace SSD partition by spinning disk's partition of the same size
-- use 266MB partition instead of a 55MB partition (still mixed mode)
-- dump 554321 bytes into file "1" instead of 654321
-- dump 7654321 bytes into file "1" instead of 654321
-
-Despite being that fragile, with the above script the results are 100%
-reproducible here. I wouldn't be surprised if on a different machine one would
-need different parameter fine-tuning to trigger the problem. I'm happy to test
-patches :-)
-
--Jan
+Stefan

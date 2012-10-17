@@ -1,59 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:46436 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751168Ab2JRHLd (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:41516 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756200Ab2JQNwt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Oct 2012 03:11:33 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9I7BVO7020298
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 07:11:32 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9I7BVR4029721
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 07:11:31 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9I7BUo7021951
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 02:11:30 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: cleanup for __merge_refs
-Date: Thu, 18 Oct 2012 15:10:42 +0800
-Message-Id: <1350544242-2271-1-git-send-email-bo.li.liu@oracle.com>
+	Wed, 17 Oct 2012 09:52:49 -0400
+Received: by mail-lb0-f174.google.com with SMTP id n3so5096232lbo.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2012 06:52:47 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 17 Oct 2012 15:52:47 +0200
+Message-ID: <CAOcd+r1ivnWAbG7BSpR2DZgZazsSf+jg1oGYCf9rKBb+Gt46xA@mail.gmail.com>
+Subject: [PATCH] Btrfs: Send: preserve ownership (uid and gid) also for symlinks.
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, chris.mason@fusionio.com,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Parents must be same after going through ref_for_same_block.
+This patch also requires a change in the user-space part of "receive".
+We need to use "lchown" instead of "chown". We will do this in the
+following patch.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/backref.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+Signed-off-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index f318793..9aaa38e6 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -469,11 +469,6 @@ static int __merge_refs(struct list_head *head, int mode)
- 			if (mode == 1) {
- 				if (!ref_for_same_block(ref1, ref2))
- 					continue;
--				if (!ref1->parent && ref2->parent) {
--					xchg = ref1;
--					ref1 = ref2;
--					ref2 = xchg;
--				}
- 				ref1->count += ref2->count;
- 			} else {
- 				if (ref1->parent != ref2->parent)
-@@ -483,7 +478,6 @@ static int __merge_refs(struct list_head *head, int mode)
- 			list_del(&ref2->list);
- 			kfree(ref2);
- 		}
--
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index c7beb54..7d1eed2 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4033,22 +4033,21 @@ static int finish_inode_if_needed(struct
+send_ctx *sctx, int at_end)
+ 	if (ret < 0)
+ 		goto out;
+
+-	if (!S_ISLNK(sctx->cur_inode_mode)) {
+-		if (!sctx->parent_root || sctx->cur_inode_new) {
++	if (!sctx->parent_root || sctx->cur_inode_new) {
++		need_chown = 1;
++		if (!S_ISLNK(sctx->cur_inode_mode))
+ 			need_chmod = 1;
+-			need_chown = 1;
+-		} else {
+-			ret = get_inode_info(sctx->parent_root, sctx->cur_ino,
+-					NULL, NULL, &right_mode, &right_uid,
+-					&right_gid, NULL);
+-			if (ret < 0)
+-				goto out;
++	} else {
++		ret = get_inode_info(sctx->parent_root, sctx->cur_ino,
++				NULL, NULL, &right_mode, &right_uid,
++				&right_gid, NULL);
++		if (ret < 0)
++			goto out;
+
+-			if (left_uid != right_uid || left_gid != right_gid)
+-				need_chown = 1;
+-			if (left_mode != right_mode)
+-				need_chmod = 1;
+-		}
++		if (left_uid != right_uid || left_gid != right_gid)
++			need_chown = 1;
++		if (!S_ISLNK(sctx->cur_inode_mode) && left_mode != right_mode)
++			need_chmod = 1;
  	}
- 	return 0;
- }
--- 
-1.7.7.6
 
+ 	if (S_ISREG(sctx->cur_inode_mode)) {

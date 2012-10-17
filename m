@@ -1,31 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:62412 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751467Ab2JQHC0 (ORCPT
+Received: from eu1sys200aog104.obsmtp.com ([207.126.144.117]:51764 "HELO
+	eu1sys200aog104.obsmtp.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1751908Ab2JQIJ7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Oct 2012 03:02:26 -0400
-Received: by mail-ob0-f174.google.com with SMTP id uo13so7055273obb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2012 00:02:26 -0700 (PDT)
-Message-ID: <507E57F6.6000805@gmail.com>
-Date: Wed, 17 Oct 2012 15:02:14 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+	Wed, 17 Oct 2012 04:09:59 -0400
+Received: by mail-ea0-f198.google.com with SMTP id c11so2832467eaa.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2012 01:09:57 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <CA+nK0aMXO31DZOz3q279wuswY4Sa6GqP7Ad6MG73E-AWP2+rNw@mail.gmail.com>
+References: <CA+nK0aMXO31DZOz3q279wuswY4Sa6GqP7Ad6MG73E-AWP2+rNw@mail.gmail.com>
+From: Sami Haahtinen <sami@haahtinen.name>
+Date: Wed, 17 Oct 2012 11:09:37 +0300
+Message-ID: <CA+nK0aNs+kJGos2e5T0tjLv-ZKWO41CdeHA2Zy6vG60LBMjvTw@mail.gmail.com>
+Subject: Re: filesystem in such a state that btrfsck crashes
 To: linux-btrfs@vger.kernel.org
-Subject: Questions about mkfs -A option
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Oct 16, 2012 at 11:25 PM, Sami Haahtinen <sami@haahtinen.name> wrote:
+> The kernel I started seeing the problems is 3.6.0 and I was on 3.6.2
+> during the few final moments. I have backups of the filesystem, but
+> I'm a bit curious what is causing this. I've seen mentions of other
+> segfault causing problems, so if there is anything I can do to help
+> debug the cause for the segfault, I'd be happy to help.
 
-I'm reading the mkfs code, and confused by its -A option.
->From its comments, the value specified by -A should be regarded as
-the start of the filesystem. But mkfs will always zero some area
-at the beginning of the first dev, regardless -r specified or not.
+After a bit of investigating I noticed that I was unable to delete
+some of the snapshots, so the problem is most likely related to
+snapshots.
 
-My question is:
-Why mkfs zeros the beginning of the first dev? Is that expected?
-And any use case for -A option?
+root@sysresccd /mnt/windows % btrfs sub del @apt-snap*
+Delete subvolume '/mnt/windows/@apt-snapshot-2012-09-25_17:01:15'
+ERROR: cannot delete '/mnt/windows/@apt-snapshot-2012-09-25_17:01:15'
+- Directory not empty
+Delete subvolume '/mnt/windows/@apt-snapshot-2012-09-25_17:01:16'
+ERROR: cannot delete '/mnt/windows/@apt-snapshot-2012-09-25_17:01:16'
+- Directory not empty
+[...]
 
+The unmount process after the deletion has now taken quite a while
+(over an hour) and I'm not really expecting it to complete.
 
-thanks,
+Regards,
+-- 
+Sami Haahtinen
+Bad Wolf Oy
++358443302775

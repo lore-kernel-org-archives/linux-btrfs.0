@@ -1,82 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:35199 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750798Ab2JVTtr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 15:49:47 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id cyW9xAoWpnr1yRU4 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 13:49:46 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: Use btrfs_update_inode_fallback when creating a snapshot
-Date: Mon, 22 Oct 2012 15:55:32 -0400
-Message-ID: <1350935732-3113-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from rcsinet15.oracle.com ([148.87.113.117]:51759 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751364Ab2JRHe0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Oct 2012 03:34:26 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9I7YPuF011981
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 07:34:26 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9I7YOhJ007052
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 07:34:25 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9I7YOEt024636
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 02:34:24 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: MOD_LOG_KEY_REMOVE_WHILE_MOVING never change node's nritems
+Date: Thu, 18 Oct 2012 15:32:53 +0800
+Message-Id: <1350545573-2544-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On a really full file system I was getting ENOSPC back from
-btrfs_update_inode when trying to update the parent inode when creating a
-snapshot.  Just use the fallback method so we can update the inode and not
-have to worry about having a delayed ref.  Thanks,
+Key MOD_LOG_KEY_REMOVE_WHILE_MOVING means that we're doing memmove inside
+an extent buffer node, and the node's number of items remains unchanged,
+so we don't need to increment node's number of items during rewinding,
+otherwise we may get an node larger than leafsize and cause general protection
+errors later.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h       |    2 ++
- fs/btrfs/inode.c       |    7 +++----
- fs/btrfs/transaction.c |    2 +-
- 3 files changed, 6 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 59141a4..b61d9b5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3344,6 +3344,8 @@ struct extent_map *btrfs_get_extent(struct inode *inode, struct page *page,
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
-+int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
-+				struct btrfs_root *root, struct inode *inode);
- int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode);
- int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode);
- int btrfs_orphan_cleanup(struct btrfs_root *root);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4919cc3..8e78c6d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -95,8 +95,6 @@ static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
- 				   u64 start, u64 end, int *page_started,
- 				   unsigned long *nr_written, int unlock);
--static noinline int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root, struct inode *inode);
- 
- static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
- 				     struct inode *inode,  struct inode *dir,
-@@ -3362,8 +3360,9 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 	return btrfs_update_inode_item(trans, root, inode);
- }
- 
--static noinline int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root, struct inode *inode)
-+noinline int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
-+					 struct btrfs_root *root,
-+					 struct inode *inode)
- {
- 	int ret;
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 83aa617..4e1def4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1198,7 +1198,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
- 					 dentry->d_name.len * 2);
- 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
--	ret = btrfs_update_inode(trans, parent_root, parent_inode);
-+	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
- 	if (ret)
- 		btrfs_abort_transaction(trans, root, ret);
- fail:
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index b334362..2858c2f 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1142,13 +1142,13 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 		switch (tm->op) {
+ 		case MOD_LOG_KEY_REMOVE_WHILE_FREEING:
+ 			BUG_ON(tm->slot < n);
+-		case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
+ 		case MOD_LOG_KEY_REMOVE:
++			n++;
++		case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
+ 			btrfs_set_node_key(eb, &tm->key, tm->slot);
+ 			btrfs_set_node_blockptr(eb, tm->slot, tm->blockptr);
+ 			btrfs_set_node_ptr_generation(eb, tm->slot,
+ 						      tm->generation);
+-			n++;
+ 			break;
+ 		case MOD_LOG_KEY_REPLACE:
+ 			BUG_ON(tm->slot >= n);
 -- 
 1.7.7.6
 

@@ -1,64 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:40375 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752030Ab2JRC0u (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:10249 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750803Ab2JRE3T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Oct 2012 22:26:50 -0400
-MIME-Version: 1.0
-In-Reply-To: <20121018022530.GB24939@gmail.com>
-References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
-	<1349863655-29320-10-git-send-email-zwu.kernel@gmail.com>
-	<20121016002744.GC2864@dastard>
-	<CAEH94LjoanfL3piP89qM6MP6zdN0AybfeqJe0kR_5-DJ0mLH_w@mail.gmail.com>
-	<20121018022530.GB24939@gmail.com>
-Date: Thu, 18 Oct 2012 10:26:48 +0800
-Message-ID: <CAEH94Lh9vmXaOw3-ezKLwfUw5ZwXcV7Wkumy6sYUTiFQ+NEzyA@mail.gmail.com>
-Subject: Re: [RFC v3 09/13] vfs: add one wq to update map info periodically
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: Zhi Yong Wu <zwu.kernel@gmail.com>, Dave Chinner <david@fromorbit.com>,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	Thu, 18 Oct 2012 00:29:19 -0400
+Date: Thu, 18 Oct 2012 15:29:16 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Zhi Yong Wu <zwu.kernel@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, dave@jikos.cz,
         tytso@mit.edu, cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: [RFC v3 00/13] vfs: hot data tracking
+Message-ID: <20121018042916.GP2739@dastard>
+References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
+ <20121015204217.GB2739@dastard>
+ <CAEH94Lgfev1qg2S+2-D5VMtVgSES3cFw0KmJSJr5HObyhA8sbg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAEH94Lgfev1qg2S+2-D5VMtVgSES3cFw0KmJSJr5HObyhA8sbg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 18, 2012 at 10:25 AM, Zheng Liu <gnehzuil.liu@gmail.com> wrote:
-> On Wed, Oct 17, 2012 at 02:34:15PM +0800, Zhi Yong Wu wrote:
->> >> diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
->> >> index d19e64a..7a79a6d 100644
->> >> --- a/fs/hot_tracking.h
->> >> +++ b/fs/hot_tracking.h
->> >> @@ -36,6 +36,9 @@
->> >>   */
->> >>  #define TIME_TO_KICK 400
->> >>
->> >> +/* set how often to update temperatures (seconds) */
->> >> +#define HEAT_UPDATE_DELAY 400
->> >
->> > FWIW, 400 seconds is an unusual time period. It's expected that
->> > periodic work might take place at intervals of 5 minutes, 10
->> > minutes, etc, not 6m40s. It's much easier to predict and understand
->> > behaviour if it's at a interval of whole units like minutes,
->> > especially when looking at timestamped event traces. Hence 300s (5
->> > minutes) makes a lot more sense as a period for updates...
->> got it. thanks.
->
-> Hi Zhi Yong,
->
-> IMHO we'd better to make this value parameterized, and then the user
-> can adjust this value dynamically.
-Yeah, this has been in my TODO list. But i want to make the core
-function can work at first.
+On Wed, Oct 17, 2012 at 04:57:14PM +0800, Zhi Yong Wu wrote:
+> On Tue, Oct 16, 2012 at 4:42 AM, Dave Chinner <david@fromorbit.com> wrote:
+> > On Wed, Oct 10, 2012 at 06:07:22PM +0800, zwu.kernel@gmail.com wrote:
+> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+....
+> > (*) Tested on an empty 17TB XFS filesystem with:
+> >
+> > $ sudo mkfs.xfs -f -l size=131072b,sunit=8 /dev/vdc
+> > meta-data=/dev/vdc               isize=256    agcount=17, agsize=268435455 blks
+> >          =                       sectsz=512   attr=2, projid32bit=0
+> > data     =                       bsize=4096   blocks=4563402735, imaxpct=5
+> >          =                       sunit=0      swidth=0 blks
+> > naming   =version 2              bsize=4096   ascii-ci=0
+> > log      =internal log           bsize=4096   blocks=131072, version=2
+> >          =                       sectsz=512   sunit=1 blks, lazy-count=1
+> > realtime =none                   extsz=4096   blocks=0, rtextents=0
+> > $ sudo mount -o logbsize=256k /dev/vdc /mnt/scratch
+> > $ sudo chmod 777 /mnt/scratch
+> > $ fs_mark  -D  10000  -S0  -n  100000  -s  1  -L  63  -d \
+> > /mnt/scratch/0  -d  /mnt/scratch/1  -d  /mnt/scratch/2  -d \
+> > /mnt/scratch/3  -d  /mnt/scratch/4  -d  /mnt/scratch/5  -d \
+> > /mnt/scratch/6  -d  /mnt/scratch/7
+> > .....
+> >      0     21600000            1      16679.3         12552262
+> >      0     22400000            1      15412.4         12588587
+> >      0     23200000            1      16367.6         14199322
+> >      0     24000000            1      15680.4         15741205
+> > <hangs here w/ OOM>
+> ^^^^In this test, i haven't see you enable hot_track function via
+> mount, why did it meet OOM?
 
->
-> Regards,
-> Zheng
+I copied the wrong mount command. It was definitely enabled.
 
+Cheers,
 
+Dave.
 
 -- 
-Regards,
-
-Zhi Yong Wu
+Dave Chinner
+david@fromorbit.com

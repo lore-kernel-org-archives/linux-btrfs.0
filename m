@@ -1,92 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:49013 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750785Ab2JRIRj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Oct 2012 04:17:39 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9I8HaQ1005670
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2012 16:17:36 +0800
-Message-ID: <507FBB39.5090603@cn.fujitsu.com>
-Date: Thu, 18 Oct 2012 16:18:01 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2] Btrfs: fix unnecessary while loop when search the free
- space, cache
-References: <507FB7A6.70805@cn.fujitsu.com>
-In-Reply-To: <507FB7A6.70805@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from acsinet15.oracle.com ([141.146.126.227]:51491 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757287Ab2JSJvy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Oct 2012 05:51:54 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: list.btrfs@jan-o-sch.net
+Subject: [PATCH 1/4] Btrfs: MOD_LOG_KEY_REMOVE_WHILE_MOVING never change node's nritems
+Date: Fri, 19 Oct 2012 17:50:52 +0800
+Message-Id: <1350640255-3760-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we find a bitmap free space entry, we may check the previous extent
-entry covers the offset or not. But if we find this entry is also a bitmap
-entry, we will continue to check the previous entry of the current one by
-a while loop. It is unnecessary because it is impossible that the extent
-entry which is in front of a bitmap entry can cover the offset of the entry
-after that bitmap entry.
+Key MOD_LOG_KEY_REMOVE_WHILE_MOVING means that we're doing memmove inside
+an extent buffer node, and the node's number of items remains unchanged
+(unless we are inserting a single pointer, but we have MOD_LOG_KEY_ADD for that).
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v2:
-- fix the same problem in the other place
----
- fs/btrfs/free-space-cache.c |   30 ++++++++++--------------------
- 1 files changed, 10 insertions(+), 20 deletions(-)
+So we don't need to increase node's number of items during rewinding,
+otherwise we may get an node larger than leafsize and cause general protection
+errors later.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 1027b85..557502c 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1250,18 +1250,13 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
- 			 * if previous extent entry covers the offset,
- 			 * we should return it instead of the bitmap entry
- 			 */
--			n = &entry->offset_index;
--			while (1) {
--				n = rb_prev(n);
--				if (!n)
--					break;
-+			n = rb_prev(&entry->offset_index);
-+			if (n) {
- 				prev = rb_entry(n, struct btrfs_free_space,
- 						offset_index);
--				if (!prev->bitmap) {
--					if (prev->offset + prev->bytes > offset)
--						entry = prev;
--					break;
--				}
-+				if (!prev->bitmap &&
-+				    prev->offset + prev->bytes > offset)
-+					entry = prev;
- 			}
- 		}
- 		return entry;
-@@ -1287,18 +1282,13 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
- 	}
- 
- 	if (entry->bitmap) {
--		n = &entry->offset_index;
--		while (1) {
--			n = rb_prev(n);
--			if (!n)
--				break;
-+		n = rb_prev(&entry->offset_index);
-+		if (n) {
- 			prev = rb_entry(n, struct btrfs_free_space,
- 					offset_index);
--			if (!prev->bitmap) {
--				if (prev->offset + prev->bytes > offset)
--					return prev;
--				break;
--			}
-+			if (!prev->bitmap &&
-+			    prev->offset + prev->bytes > offset)
-+				return prev;
- 		}
- 		if (entry->offset + BITS_PER_BITMAP * ctl->unit > offset)
- 			return entry;
+Here is the details,
+- If we do memory move for inserting a single pointer, we need to
+  add node's nritems by one, and we honor MOD_LOG_KEY_ADD for adding.
+
+- If we do memory move for deleting a single pointer, we need to
+  decrease node's nritems by one, and we honor MOD_LOG_KEY_REMOVE for
+  deleting.
+
+- If we do memory move for balance left/right, we need to decrease
+  node's nritems, and we honor MOD_LOG_KEY_REMOVE for balaning.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ctree.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index b334362..2858c2f 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1142,13 +1142,13 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 		switch (tm->op) {
+ 		case MOD_LOG_KEY_REMOVE_WHILE_FREEING:
+ 			BUG_ON(tm->slot < n);
+-		case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
+ 		case MOD_LOG_KEY_REMOVE:
++			n++;
++		case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
+ 			btrfs_set_node_key(eb, &tm->key, tm->slot);
+ 			btrfs_set_node_blockptr(eb, tm->slot, tm->blockptr);
+ 			btrfs_set_node_ptr_generation(eb, tm->slot,
+ 						      tm->generation);
+-			n++;
+ 			break;
+ 		case MOD_LOG_KEY_REPLACE:
+ 			BUG_ON(tm->slot >= n);
 -- 
-1.7.6.5
+1.7.7.6
 

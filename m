@@ -1,95 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:38562 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754624Ab2JRIrs (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:47007 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751128Ab2JSMPB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Oct 2012 04:47:48 -0400
-Message-ID: <507FC228.4050400@oracle.com>
-Date: Thu, 18 Oct 2012 16:47:36 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+	Fri, 19 Oct 2012 08:15:01 -0400
+Message-ID: <5081443B.5060706@jan-o-sch.net>
+Date: Fri, 19 Oct 2012 14:14:51 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2] Btrfs: fix unnecessary while loop when search the
- free space, cache
-References: <507FB7A6.70805@cn.fujitsu.com> <507FBB39.5090603@cn.fujitsu.com>
-In-Reply-To: <507FBB39.5090603@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/4] Btrfs: cleanup unused arguments
+References: <1350640255-3760-1-git-send-email-bo.li.liu@oracle.com> <1350640255-3760-4-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1350640255-3760-4-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/18/2012 04:18 PM, Miao Xie wrote:
-> When we find a bitmap free space entry, we may check the previous extent
-> entry covers the offset or not. But if we find this entry is also a bitmap
-> entry, we will continue to check the previous entry of the current one by
-> a while loop. It is unnecessary because it is impossible that the extent
-> entry which is in front of a bitmap entry can cover the offset of the entry
-> after that bitmap entry.
-> 
+Hi liubo,
 
-Looks good to me.
+Patches 3 and 4 are looking good. I'm still trying to sort out on the other two,
+as I cannot reproduce your bug with your script, unfortunately.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+After applying all 4 patches, the result doesn't compile, here:
 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
-> Changelog v1 -> v2:
-> - fix the same problem in the other place
-> ---
->  fs/btrfs/free-space-cache.c |   30 ++++++++++--------------------
->  1 files changed, 10 insertions(+), 20 deletions(-)
-> 
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 1027b85..557502c 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -1250,18 +1250,13 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
->  			 * if previous extent entry covers the offset,
->  			 * we should return it instead of the bitmap entry
->  			 */
-> -			n = &entry->offset_index;
-> -			while (1) {
-> -				n = rb_prev(n);
-> -				if (!n)
-> -					break;
-> +			n = rb_prev(&entry->offset_index);
-> +			if (n) {
->  				prev = rb_entry(n, struct btrfs_free_space,
->  						offset_index);
-> -				if (!prev->bitmap) {
-> -					if (prev->offset + prev->bytes > offset)
-> -						entry = prev;
-> -					break;
-> -				}
-> +				if (!prev->bitmap &&
-> +				    prev->offset + prev->bytes > offset)
-> +					entry = prev;
->  			}
->  		}
->  		return entry;
-> @@ -1287,18 +1282,13 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
->  	}
->  
->  	if (entry->bitmap) {
-> -		n = &entry->offset_index;
-> -		while (1) {
-> -			n = rb_prev(n);
-> -			if (!n)
-> -				break;
-> +		n = rb_prev(&entry->offset_index);
-> +		if (n) {
->  			prev = rb_entry(n, struct btrfs_free_space,
->  					offset_index);
-> -			if (!prev->bitmap) {
-> -				if (prev->offset + prev->bytes > offset)
-> -					return prev;
-> -				break;
-> -			}
-> +			if (!prev->bitmap &&
-> +			    prev->offset + prev->bytes > offset)
-> +				return prev;
->  		}
->  		if (entry->offset + BITS_PER_BITMAP * ctl->unit > offset)
->  			return entry;
-> 
+fs/btrfs/ctree.c: In function 'balance_level':
+fs/btrfs/ctree.c:1799: warning: passing argument 3 of
+'tree_mod_log_set_node_key' makes integer from pointer without a cast
+fs/btrfs/ctree.c:774: note: expected 'int' but argument is of type 'struct
+btrfs_disk_key *'
+fs/btrfs/ctree.c:1799: error: too many arguments to function
+'tree_mod_log_set_node_key'
+fs/btrfs/ctree.c:1844: warning: passing argument 3 of
+'tree_mod_log_set_node_key' makes integer from pointer without a cast
+fs/btrfs/ctree.c:774: note: expected 'int' but argument is of type 'struct
+btrfs_disk_key *'
+fs/btrfs/ctree.c:1844: error: too many arguments to function
+'tree_mod_log_set_node_key'
+fs/btrfs/ctree.c: In function 'push_nodes_for_insert':
+fs/btrfs/ctree.c:1943: warning: passing argument 3 of
+'tree_mod_log_set_node_key' makes integer from pointer without a cast
+fs/btrfs/ctree.c:774: note: expected 'int' but argument is of type 'struct
+btrfs_disk_key *'
+fs/btrfs/ctree.c:1943: error: too many arguments to function
+'tree_mod_log_set_node_key'
+fs/btrfs/ctree.c:1996: warning: passing argument 3 of
+'tree_mod_log_set_node_key' makes integer from pointer without a cast
+fs/btrfs/ctree.c:774: note: expected 'int' but argument is of type 'struct
+btrfs_disk_key *'
+fs/btrfs/ctree.c:1996: error: too many arguments to function
+'tree_mod_log_set_node_key'
+fs/btrfs/ctree.c: In function 'fixup_low_keys':
+fs/btrfs/ctree.c:2880: warning: passing argument 3 of
+'tree_mod_log_set_node_key' makes integer from pointer without a cast
+fs/btrfs/ctree.c:774: note: expected 'int' but argument is of type 'struct
+btrfs_disk_key *'
+fs/btrfs/ctree.c:2880: error: too many arguments to function
+'tree_mod_log_set_node_key'
+  CC [M]  fs/btrfs/sysfs.o
+make[2]: *** [fs/btrfs/ctree.o] Error 1
+make[2]: *** Waiting for unfinished jobs....
+make[1]: *** [fs/btrfs] Error 2
+make[1]: *** Waiting for unfinished jobs....
+make: *** [fs] Error 2
 
+-Jan

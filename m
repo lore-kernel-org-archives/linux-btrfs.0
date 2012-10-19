@@ -1,20 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:54417 "EHLO
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:57173 "EHLO
 	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753811Ab2JRFYN (ORCPT
+	with ESMTP id S1751701Ab2JSIV4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Oct 2012 01:24:13 -0400
+	Fri, 19 Oct 2012 04:21:56 -0400
 MIME-Version: 1.0
-In-Reply-To: <20121018051703.GR2739@dastard>
+In-Reply-To: <20121016031710.GD2864@dastard>
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
-	<20121015204217.GB2739@dastard>
-	<CAEH94Lgfev1qg2S+2-D5VMtVgSES3cFw0KmJSJr5HObyhA8sbg@mail.gmail.com>
-	<20121018042916.GP2739@dastard>
-	<CAEH94LhtzMkKTVD_yDvotDMwkfFZbXObYVCPAzpZOcNVqxDxpQ@mail.gmail.com>
-	<20121018051703.GR2739@dastard>
-Date: Thu, 18 Oct 2012 13:24:11 +0800
-Message-ID: <CAEH94Lj2pYVJmNpnsqgfKSXrx7KECSTcieQwv=V0NBZUrA1XYw@mail.gmail.com>
-Subject: Re: [RFC v3 00/13] vfs: hot data tracking
+	<1349863655-29320-12-git-send-email-zwu.kernel@gmail.com>
+	<20121016031710.GD2864@dastard>
+Date: Fri, 19 Oct 2012 16:21:54 +0800
+Message-ID: <CAEH94LjWqh3q29AnQpmedLjjxY66WxcNueiprXkzGkceBxHPkQ@mail.gmail.com>
+Subject: Re: [RFC v3 11/13] vfs: add 3 new ioctl interfaces
 From: Zhi Yong Wu <zwu.kernel@gmail.com>
 To: Dave Chinner <david@fromorbit.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -25,50 +22,65 @@ Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 18, 2012 at 1:17 PM, Dave Chinner <david@fromorbit.com> wrote:
-> On Thu, Oct 18, 2012 at 12:44:47PM +0800, Zhi Yong Wu wrote:
->> On Thu, Oct 18, 2012 at 12:29 PM, Dave Chinner <david@fromorbit.com> wrote:
->> > On Wed, Oct 17, 2012 at 04:57:14PM +0800, Zhi Yong Wu wrote:
->> >> On Tue, Oct 16, 2012 at 4:42 AM, Dave Chinner <david@fromorbit.com> wrote:
->> >> > On Wed, Oct 10, 2012 at 06:07:22PM +0800, zwu.kernel@gmail.com wrote:
->> >> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
->> > ....
->> >> > (*) Tested on an empty 17TB XFS filesystem with:
->> >> >
->> >> > $ sudo mkfs.xfs -f -l size=131072b,sunit=8 /dev/vdc
->> >> > meta-data=/dev/vdc               isize=256    agcount=17, agsize=268435455 blks
->> >> >          =                       sectsz=512   attr=2, projid32bit=0
->> >> > data     =                       bsize=4096   blocks=4563402735, imaxpct=5
->> >> >          =                       sunit=0      swidth=0 blks
->> >> > naming   =version 2              bsize=4096   ascii-ci=0
->> >> > log      =internal log           bsize=4096   blocks=131072, version=2
->> >> >          =                       sectsz=512   sunit=1 blks, lazy-count=1
->> >> > realtime =none                   extsz=4096   blocks=0, rtextents=0
->> >> > $ sudo mount -o logbsize=256k /dev/vdc /mnt/scratch
->> >> > $ sudo chmod 777 /mnt/scratch
->> >> > $ fs_mark  -D  10000  -S0  -n  100000  -s  1  -L  63  -d \
->> >> > /mnt/scratch/0  -d  /mnt/scratch/1  -d  /mnt/scratch/2  -d \
->> >> > /mnt/scratch/3  -d  /mnt/scratch/4  -d  /mnt/scratch/5  -d \
->> >> > /mnt/scratch/6  -d  /mnt/scratch/7
->> >> > .....
->> >> >      0     21600000            1      16679.3         12552262
->> >> >      0     22400000            1      15412.4         12588587
->> >> >      0     23200000            1      16367.6         14199322
->> >> >      0     24000000            1      15680.4         15741205
->> >> > <hangs here w/ OOM>
->> >> ^^^^In this test, i haven't see you enable hot_track function via
->> >> mount, why did it meet OOM?
->> >
->> > I copied the wrong mount command. It was definitely enabled.
->> OK, BTW: fs_mark is the script written by you? After xfsprogs is
->> installed, i haven't found this command.
+On Tue, Oct 16, 2012 at 11:17 AM, Dave Chinner <david@fromorbit.com> wrote:
+> On Wed, Oct 10, 2012 at 06:07:33PM +0800, zwu.kernel@gmail.com wrote:
+>> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>>
+>>   FS_IOC_GET_HEAT_INFO: return a struct containing the various
+>> metrics collected in btrfs_freq_data structs, and also return a
 >
-> # apt-get install fsmark
-thanks. let me try.
+> I think you mean hot_freq_data :P
 >
-> Or get the source here:
+>> calculated data temperature based on those metrics. Optionally, retrieve
+>> the temperature from the hot data hash list instead of recalculating it.
 >
-> http://sourceforge.net/projects/fsmark/
+> To get the heat info for a specific file you have to know what file
+> you want to get that info for, right?  I can see the usefulness of
+> asking for the heat data on a specific file, but how do you find the
+> hot files in the first place? i.e. the big question the user
+> interface needs to answer is "what files are hot?".
+>
+> Once userspace knows what the hottest files are, it can open them
+> and query the data via the above ioctl, but expecting userspace to
+> iterate millions of inodes in a filesystem to find hot files is very
+> inefficient.
+>
+> FWIW, if you were to return file handles to the hottest files, then
+Good idea. I am not very clear about how to implement it. file handles
+mean file_handle??  How to return them to the application? via
+debugfs? How many hottest files should be returned?? Top 100?
+
+> the application could open and query them without even needing to
+> know the path name to them. This woul dbe exceedingly useful for
+> defragmentation programs, especially as that is the way xfs_fsr
+> already operates on candidate files.(*)
+>
+> IOWs, sometimes the pathname is irrelevant to the operations that
+> applications want to perform - all they care about having an
+> efficient method of finding the inode they want and getting a file
+> descriptor that points to the file. Given the heat map info fits
+> right in to the sort of operations defrag and data mover tools
+> already do, it kind of makes sense to optimise the interface towards
+> those uses....
+>
+> (*) i.e. finds them via bulkstat which returns handle information
+> along with all the other inode data, then opens the file by handle
+> to do the defrag work....
+>
+>>   FS_IOC_GET_HEAT_OPTS: return an integer representing the current
+>> state of hot data tracking and migration:
+>>
+>> 0 = do nothing
+>> 1 = track frequency of access
+>>
+>>   FS_IOC_SET_HEAT_OPTS: change the state of hot data tracking and
+>> migration, as described above.
+>
+> I can't see how this is a manageable interface. It is not
+> persistent, so after every filesystem mount you'd have to set the
+> flag on all your inodes again. Hence, for the moment, I'd suggest
+> that dropping per-inode tracking control until all the core issues
+> are sorted out....
 >
 > Cheers,
 >
@@ -76,6 +88,10 @@ thanks. let me try.
 > --
 > Dave Chinner
 > david@fromorbit.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 

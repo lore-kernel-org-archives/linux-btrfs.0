@@ -1,110 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:43288 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755250Ab2JJBwk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 21:52:40 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so13979pad.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 18:52:39 -0700 (PDT)
-From: Robin Dong <robin.k.dong@gmail.com>
+Received: from rcsinet15.oracle.com ([148.87.113.117]:20871 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751917Ab2JSGUW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Oct 2012 02:20:22 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9J6KLfC006209
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2012 06:20:21 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9J6KKCX013284
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2012 06:20:20 GMT
+Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9J6KKH1012284
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2012 01:20:20 -0500
+From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Robin Dong <sanbai@taobao.com>
-Subject: [PATCH v3 1/2] btrfs-progs: limit the max value of leafsize and nodesize
-Date: Wed, 10 Oct 2012 09:52:27 +0800
-Message-Id: <1349833948-11465-1-git-send-email-robin.k.dong@gmail.com>
+Subject: [PATCH 0/4] filter snapshot(s) by its parent uuid
+Date: Fri, 19 Oct 2012 14:23:53 +0800
+Message-Id: <1350627837-27639-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robin Dong <sanbai@taobao.com>
+From: Anand Jain <anand.jain@oracle.com>
 
-Using mkfs.btrfs like:
+This set of patch will make
+btrfs su list -s <subvol>
+to list only snapshot(s) of the given subvol.
 
-	mkfs.btrfs -l 131072 /dev/sda
+before:
+btrfs su list -s /btrfs/sv1
+<nothing>
+btrfs su list -s /btrfs
+ID 258 gen 6 cgen 6 top level 5 otime 2012-10-18 17:01:56 uuid f648cdda-4efa-6f45-bd6b-041a8ae1538e path ss1
+ID 260 gen 8 cgen 8 top level 5 otime 2012-10-18 17:02:20 uuid ea8fdf85-8d3f-8946-b3af-ede510cdcf19 path ss2
+ID 261 gen 9 cgen 9 top level 5 otime 2012-10-19 13:37:42 uuid 44560e56-3879-2146-8b24-e9048871892f path ss3
 
-will return no error, but after mount it, the dmesg will report:
+with this patch:
+btrfs su list -s /btrfs/sv1
+ID 258 gen 6 cgen 6 top level 5 otime 2012-10-18 17:01:56 uuid f648cdda-4efa-6f45-bd6b-041a8ae1538e path ss1
+ID 261 gen 9 cgen 9 top level 5 otime 2012-10-19 13:37:42 uuid 44560e56-3879-2146-8b24-e9048871892f path ss3
 
-	BTRFS: couldn't mount because metadata blocksize (131072) was too large
+btrfs su list -s /btrfs
+ID 258 gen 6 cgen 6 top level 5 otime 2012-10-18 17:01:56 uuid f648cdda-4efa-6f45-bd6b-041a8ae1538e path ss1
+ID 260 gen 8 cgen 8 top level 5 otime 2012-10-18 17:02:20 uuid ea8fdf85-8d3f-8946-b3af-ede510cdcf19 path ss2
+ID 261 gen 9 cgen 9 top level 5 otime 2012-10-19 13:37:42 uuid 44560e56-3879-2146-8b24-e9048871892f path ss3
 
-The leafsize and nodesize are equal at present, so we just use one function
-"check_leaf_or_node_size" to limit leaf and node size below BTRFS_MAX_METADATA_BLOCKSIZE.
+Anand Jain (4):
+  Btrfs-progs: provide method to check if filter is set
+  Btrfs-progs: fix irrelevant string in the subvol path
+  Btrfs-progs: add method to filter snapshots by parent uuid
+  Btrfs-progs: list only snapshots of the given subvol
 
-Signed-off-by: Robin Dong <sanbai@taobao.com>
----
-v2 <- v1:
- - add function check_leaf_or_node_size to limit leafsize and nodesize.
-
-v3 <- v2:
- - add quota string "sectorsize".
-
- ctree.h |    6 ++++++
- mkfs.c  |   29 +++++++++++++++++++++++------
- 2 files changed, 29 insertions(+), 6 deletions(-)
-
-diff --git a/ctree.h b/ctree.h
-index 7f55229..75c1e0a 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -111,6 +111,12 @@ struct btrfs_trans_handle;
- #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
- 
- /*
-+ * the max metadata block size.  This limit is somewhat artificial,
-+ * but the memmove costs go through the roof for larger blocks.
-+ */
-+#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
-+
-+/*
-  * we can actually store much bigger names, but lets not confuse the rest
-  * of linux
-  */
-diff --git a/mkfs.c b/mkfs.c
-index dff5eb8..93672b9 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
- 	return ret;
- }
- 
-+static int check_leaf_or_node_size(u32 size, u32 sectorsize)
-+{
-+	if (size < sectorsize) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (smaller than sectorsize %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
-+			size, BTRFS_MAX_METADATA_BLOCKSIZE);
-+		return -1;
-+	} else if (size & (sectorsize - 1)) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (not aligned to %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	}
-+	return 0;
-+}
-+
- int main(int ac, char **av)
- {
- 	char *file;
-@@ -1291,14 +1312,10 @@ int main(int ac, char **av)
- 		}
- 	}
- 	sectorsize = max(sectorsize, (u32)getpagesize());
--	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
-+	if (check_leaf_or_node_size(leafsize, sectorsize))
- 		exit(1);
--	}
--	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
-+	if (check_leaf_or_node_size(nodesize, sectorsize))
- 		exit(1);
--	}
- 	ac = ac - optind;
- 	if (ac == 0)
- 		print_usage();
--- 
-1.7.3.2
+ btrfs-list.c     |   17 +++++++++++++++++
+ btrfs-list.h     |    3 +++
+ cmds-subvolume.c |   39 +++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 57 insertions(+), 2 deletions(-)
 

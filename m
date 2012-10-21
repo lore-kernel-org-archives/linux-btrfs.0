@@ -1,258 +1,255 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:30561 "EHLO xp-ob.rzone.de"
+Received: from mort.rzone.de ([81.169.144.234]:12720 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751548Ab2JSHSK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Oct 2012 03:18:10 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp4) (RZmta 30.20 OK)
-	with ESMTP id 6073d1o9IITt1d for <linux-btrfs@vger.kernel.org>;
-	Fri, 19 Oct 2012 09:18:07 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	id S1753665Ab2JUOee (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 21 Oct 2012 10:34:34 -0400
+Received: from gargravarr.store (gargravarr.store [192.168.42.236])
+	by mort.rzone.de (Postfix) with ESMTP id 3EAE45C4
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Oct 2012 16:34:33 +0200 (MEST)
+From: Arne Jansen <sensille@gmx.net>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: add btrfs-show-super tool
-Date: Fri, 19 Oct 2012 09:18:07 +0200
-Message-Id: <1350631087-1169-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH v2] Btrfs-progs: fix unaligned accesses
+Date: Sun, 21 Oct 2012 16:34:33 +0200
+Message-Id: <1350830073-20944-1-git-send-email-sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just a small program to print the fields of a super block.
+There are some unaligned accesses in progs that cause malfunction or
+crashes on ARM.
+This patch fixes the ones we stumbled upon.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- Makefile           |   5 +-
- btrfs-show-super.c | 201 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 205 insertions(+), 1 deletion(-)
 
-diff --git a/Makefile b/Makefile
-index fe2b432..25ac6d6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -20,7 +20,7 @@ RESTORE_LIBS=-lz
+Change v1->v2:
+Somehow sent the wrong patch without the patch to the setget functions.
+
+---
+ btrfs-list.c |   69 +++++++++++++++++++++++++++------------------------------
+ ctree.h      |    8 +++++-
+ volumes.c    |    8 ++++--
+ 3 files changed, 44 insertions(+), 41 deletions(-)
+
+diff --git a/btrfs-list.c b/btrfs-list.c
+index e5f0f96..cb42fbc 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -720,7 +720,7 @@ static u64 find_root_gen(int fd)
+ 	int ret;
+ 	struct btrfs_ioctl_search_args args;
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+-	struct btrfs_ioctl_search_header *sh;
++	struct btrfs_ioctl_search_header sh;
+ 	unsigned long off = 0;
+ 	u64 max_found = 0;
+ 	int i;
+@@ -771,22 +771,21 @@ static u64 find_root_gen(int fd)
+ 		off = 0;
+ 		for (i = 0; i < sk->nr_items; i++) {
+ 			struct btrfs_root_item *item;
+-			sh = (struct btrfs_ioctl_search_header *)(args.buf +
+-								  off);
  
- progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
- 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
--	btrfs-find-root btrfs-restore btrfstune
-+	btrfs-find-root btrfs-restore btrfstune btrfs-show-super
+-			off += sizeof(*sh);
++			memcpy(&sh, args.buf + off, sizeof(sh));
++			off += sizeof(sh);
+ 			item = (struct btrfs_root_item *)(args.buf + off);
+-			off += sh->len;
++			off += sh.len;
  
- # make C=1 to enable sparse
- ifdef C
-@@ -73,6 +73,9 @@ btrfs-debug-tree: $(objects) debug-tree.o
- btrfs-zero-log: $(objects) btrfs-zero-log.o
- 	$(CC) $(CFLAGS) -o btrfs-zero-log $(objects) btrfs-zero-log.o $(LDFLAGS) $(LIBS)
+-			sk->min_objectid = sh->objectid;
+-			sk->min_type = sh->type;
+-			sk->min_offset = sh->offset;
++			sk->min_objectid = sh.objectid;
++			sk->min_type = sh.type;
++			sk->min_offset = sh.offset;
  
-+btrfs-show-super: $(objects) btrfs-show-super.o
-+	$(CC) $(CFLAGS) -o btrfs-show-super $(objects) btrfs-show-super.o $(LDFLAGS) $(LIBS)
-+
- btrfs-select-super: $(objects) btrfs-select-super.o
- 	$(CC) $(CFLAGS) -o btrfs-select-super $(objects) btrfs-select-super.o $(LDFLAGS) $(LIBS)
+-			if (sh->objectid > ino_args.treeid)
++			if (sh.objectid > ino_args.treeid)
+ 				break;
  
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-new file mode 100644
-index 0000000..2e1a368
---- /dev/null
-+++ b/btrfs-show-super.c
-@@ -0,0 +1,201 @@
-+/*
-+ * Copyright (C) 2012 STRATO AG.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#define _XOPEN_SOURCE 500
-+#define _GNU_SOURCE 1
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <fcntl.h>
-+#include <sys/stat.h>
-+#include "kerncompat.h"
-+#include "ctree.h"
-+#include "disk-io.h"
-+#include "print-tree.h"
-+#include "transaction.h"
-+#include "list.h"
-+#include "version.h"
-+#include "utils.h"
-+
-+
-+static void print_usage(void);
-+static void dump_superblock(struct btrfs_super_block *sb);
-+int main(int argc, char **argv);
-+static void btrfs_print_id(char *prefix, u8 *id, size_t size);
-+
-+
-+static void print_usage(void)
-+{
-+	fprintf(stderr, "usage: btrfs-show-super [-i super_mirror] dev\n");
-+	fprintf(stderr, "\tThe super_mirror number is between 0 and %d.\n",
-+		BTRFS_SUPER_MIRROR_MAX - 1);
-+	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	int opt;
-+	int ret;
-+	const char *filename;
-+	struct btrfs_super_block sb;
-+	int fd = -1;
-+	u64 sb_bytenr = btrfs_sb_offset(0);
-+
-+	while ((opt = getopt(argc, argv, "i:")) != -1) {
-+		switch(opt) {
-+		case 'i': {
-+				int arg = atoi(optarg);
-+
-+				if (arg < 0 || arg >= BTRFS_SUPER_MIRROR_MAX) {
-+					fprintf(stderr,
-+						"Illegal super_mirror %d\n",
-+						arg);
-+					print_usage();
-+					exit(1);
-+				}
-+				sb_bytenr = btrfs_sb_offset(arg);
-+				break;
-+			}
-+		default:
-+			print_usage();
-+			exit(1);
-+		}
-+	}
-+
-+	if (argc != optind + 1) {
-+		print_usage();
-+		exit(1);
-+	}
-+
-+	filename = argv[optind];
-+	fd = open(filename, O_RDONLY, 0666);
-+	if (fd < 0) {
-+		fprintf(stderr, "Could not open %s\n", filename);
-+		goto error;
-+	}
-+
-+	ret = pread64(fd, &sb, sizeof(sb), sb_bytenr);
-+	if (ret < sizeof(sb)) {
-+		fprintf(stderr, "Failed to read the superblock on %s at %llu\n",
-+			filename, (unsigned long long)sb_bytenr);
-+		goto error;
-+	}
-+
-+	dump_superblock(&sb);
-+
-+error:
-+	if (fd != -1)
-+		close(fd);
-+
-+	exit(1);
-+}
-+
-+static void dump_superblock(struct btrfs_super_block *sb)
-+{
-+	printf("bytenr\t%llu\n", (unsigned long long)btrfs_super_bytenr(sb));
-+	printf("flags\t0x%llx\n", (unsigned long long)btrfs_super_flags(sb));
-+	printf("magic \t0x%llx (little endian)\n",
-+	       (unsigned long long)sb->magic);
-+	btrfs_print_id("fsid\t", sb->fsid, BTRFS_FSID_SIZE);
-+	btrfs_print_id("label\t", (u8 *)sb->label, BTRFS_LABEL_SIZE);
-+	printf("generation\t%llu\n",
-+	       (unsigned long long)btrfs_super_generation(sb));
-+	printf("root\t%llu\n", (unsigned long long)btrfs_super_root(sb));
-+	printf("sys_array_size\t%llu\n",
-+	       (unsigned long long)btrfs_super_sys_array_size(sb));
-+	printf("chunk_root_generation\t%llu\n",
-+	       (unsigned long long)btrfs_super_chunk_root_generation(sb));
-+	printf("root_level\t%llu\n",
-+	       (unsigned long long)btrfs_super_root_level(sb));
-+	printf("chunk_root\t%llu\n",
-+	       (unsigned long long)btrfs_super_chunk_root(sb));
-+	printf("chunk_root_level\t%llu\n",
-+	       (unsigned long long)btrfs_super_chunk_root_level(sb));
-+	printf("log_root\t%llu\n",
-+	       (unsigned long long)btrfs_super_log_root(sb));
-+	printf("log_root_transid\t%llu\n",
-+	       (unsigned long long)btrfs_super_log_root_transid(sb));
-+	printf("log_root_level\t%llu\n",
-+	       (unsigned long long)btrfs_super_log_root_level(sb));
-+	printf("total_bytes\t%llu\n",
-+	       (unsigned long long)btrfs_super_total_bytes(sb));
-+	printf("bytes_used\t%llu\n",
-+	       (unsigned long long)btrfs_super_bytes_used(sb));
-+	printf("sectorsize\t%llu\n",
-+	       (unsigned long long)btrfs_super_sectorsize(sb));
-+	printf("nodesize\t%llu\n",
-+	       (unsigned long long)btrfs_super_nodesize(sb));
-+	printf("leafsize\t%llu\n",
-+	       (unsigned long long)btrfs_super_leafsize(sb));
-+	printf("stripesize\t%llu\n",
-+	       (unsigned long long)btrfs_super_stripesize(sb));
-+	printf("root_dir\t%llu\n",
-+	       (unsigned long long)btrfs_super_root_dir(sb));
-+	printf("num_devices\t%llu\n",
-+	       (unsigned long long)btrfs_super_num_devices(sb));
-+	printf("compat_flags\t0x%llx\n",
-+	       (unsigned long long)btrfs_super_compat_flags(sb));
-+	printf("compat_ro_flags\t0x%llx\n",
-+	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
-+	printf("incompat_flags\t0x%llx\n",
-+	       (unsigned long long)btrfs_super_incompat_flags(sb));
-+	printf("csum_type\t%llu\n",
-+	       (unsigned long long)btrfs_super_csum_type(sb));
-+	printf("cache_generation\t%llu\n",
-+	       (unsigned long long)btrfs_super_cache_generation(sb));
-+
-+	printf("dev_item.type\t%llu\n", (unsigned long long)
-+	       btrfs_stack_device_type(&sb->dev_item));
-+	printf("dev_item.total_bytes\t%llu\n", (unsigned long long)
-+	       btrfs_stack_device_total_bytes(&sb->dev_item));
-+	printf("dev_item.bytes_used\t%llu\n", (unsigned long long)
-+	       btrfs_stack_device_bytes_used(&sb->dev_item));
-+	printf("dev_item.io_align\t%u\n", (unsigned int)
-+	       btrfs_stack_device_io_align(&sb->dev_item));
-+	printf("dev_item.io_width\t%u\n", (unsigned int)
-+	       btrfs_stack_device_io_width(&sb->dev_item));
-+	printf("dev_item.sector_size\t%u\n", (unsigned int)
-+	       btrfs_stack_device_sector_size(&sb->dev_item));
-+	printf("dev_item.devid\t%llu\n",
-+	       btrfs_stack_device_id(&sb->dev_item));
-+	printf("dev_item.dev_group\t%u\n", (unsigned int)
-+	       btrfs_stack_device_group(&sb->dev_item));
-+	printf("dev_item.seek_speed\t%u\n", (unsigned int)
-+	       btrfs_stack_device_seek_speed(&sb->dev_item));
-+	printf("dev_item.bandwidth\t%u\n", (unsigned int)
-+	       btrfs_stack_device_bandwidth(&sb->dev_item));
-+	printf("dev_item.generation\t%llu\n", (unsigned long long)
-+	       btrfs_stack_device_generation(&sb->dev_item));
-+}
-+
-+static void btrfs_print_id(char *prefix, u8 *id, size_t size)
-+{
-+	int i;
-+	char buf[3 * size];
-+
-+	for (i = 0; i < size; i++) {
-+		buf[3 * i] = ((id[i] >> 4) < 10) ?
-+			      (id[i] >> 4) + '0' :
-+			      (id[i] >> 4) + 'A' - 10;
-+		buf[3 * i + 1] = (id[i] & 0xf) < 10 ?
-+				  (id[i] & 0xf) + '0' :
-+				  (id[i] & 0xf) + 'A' - 10;
-+		buf[3 * i + 2] = (i == size - 1) ? '\0' : ':';
-+	}
-+	printf("%s%s\n", prefix, buf);
-+}
+-			if (sh->objectid == ino_args.treeid &&
+-			    sh->type == BTRFS_ROOT_ITEM_KEY) {
++			if (sh.objectid == ino_args.treeid &&
++			    sh.type == BTRFS_ROOT_ITEM_KEY) {
+ 				max_found = max(max_found,
+ 						btrfs_root_generation(item));
+ 			}
+@@ -1009,7 +1008,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 	int ret;
+ 	struct btrfs_ioctl_search_args args;
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+-	struct btrfs_ioctl_search_header *sh;
++	struct btrfs_ioctl_search_header sh;
+ 	struct btrfs_root_ref *ref;
+ 	struct btrfs_root_item *ri;
+ 	unsigned long off = 0;
+@@ -1064,23 +1063,22 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 		 * read the root_ref item it contains
+ 		 */
+ 		for (i = 0; i < sk->nr_items; i++) {
+-			sh = (struct btrfs_ioctl_search_header *)(args.buf +
+-								  off);
+-			off += sizeof(*sh);
+-			if (sh->type == BTRFS_ROOT_BACKREF_KEY) {
++			memcpy(&sh, args.buf + off, sizeof(sh));
++			off += sizeof(sh);
++			if (sh.type == BTRFS_ROOT_BACKREF_KEY) {
+ 				ref = (struct btrfs_root_ref *)(args.buf + off);
+ 				name_len = btrfs_stack_root_ref_name_len(ref);
+ 				name = (char *)(ref + 1);
+ 				dir_id = btrfs_stack_root_ref_dirid(ref);
+ 
+-				add_root(root_lookup, sh->objectid, sh->offset,
++				add_root(root_lookup, sh.objectid, sh.offset,
+ 					 0, 0, dir_id, name, name_len, 0, 0, 0,
+ 					 NULL);
+-			} else if (sh->type == BTRFS_ROOT_ITEM_KEY) {
++			} else if (sh.type == BTRFS_ROOT_ITEM_KEY) {
+ 				ri = (struct btrfs_root_item *)(args.buf + off);
+ 				gen = btrfs_root_generation(ri);
+ 				flags = btrfs_root_flags(ri);
+-				if(sh->len >
++				if(sh.len >
+ 				   sizeof(struct btrfs_root_item_v0)) {
+ 					t = ri->otime.sec;
+ 					ogen = btrfs_root_otransid(ri);
+@@ -1091,20 +1089,20 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 					memset(uuid, 0, BTRFS_UUID_SIZE);
+ 				}
+ 
+-				add_root(root_lookup, sh->objectid, 0,
+-					 sh->offset, flags, 0, NULL, 0, ogen,
++				add_root(root_lookup, sh.objectid, 0,
++					 sh.offset, flags, 0, NULL, 0, ogen,
+ 					 gen, t, uuid);
+ 			}
+ 
+-			off += sh->len;
++			off += sh.len;
+ 
+ 			/*
+ 			 * record the mins in sk so we can make sure the
+ 			 * next search doesn't repeat this root
+ 			 */
+-			sk->min_objectid = sh->objectid;
+-			sk->min_type = sh->type;
+-			sk->min_offset = sh->offset;
++			sk->min_objectid = sh.objectid;
++			sk->min_type = sh.type;
++			sk->min_offset = sh.offset;
+ 		}
+ 		sk->nr_items = 4096;
+ 		sk->min_offset++;
+@@ -1556,7 +1554,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
+ 	int ret;
+ 	struct btrfs_ioctl_search_args args;
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+-	struct btrfs_ioctl_search_header *sh;
++	struct btrfs_ioctl_search_header sh;
+ 	struct btrfs_file_extent_item *item;
+ 	unsigned long off = 0;
+ 	u64 found_gen;
+@@ -1606,35 +1604,34 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
+ 		 * read the root_ref item it contains
+ 		 */
+ 		for (i = 0; i < sk->nr_items; i++) {
+-			sh = (struct btrfs_ioctl_search_header *)(args.buf +
+-								  off);
+-			off += sizeof(*sh);
++			memcpy(&sh, args.buf + off, sizeof(sh));
++			off += sizeof(sh);
+ 
+ 			/*
+ 			 * just in case the item was too big, pass something other
+ 			 * than garbage
+ 			 */
+-			if (sh->len == 0)
++			if (sh.len == 0)
+ 				item = &backup;
+ 			else
+ 				item = (struct btrfs_file_extent_item *)(args.buf +
+ 								 off);
+ 			found_gen = btrfs_stack_file_extent_generation(item);
+-			if (sh->type == BTRFS_EXTENT_DATA_KEY &&
++			if (sh.type == BTRFS_EXTENT_DATA_KEY &&
+ 			    found_gen >= oldest_gen) {
+-				print_one_extent(fd, sh, item, found_gen,
++				print_one_extent(fd, &sh, item, found_gen,
+ 						 &cache_dirid, &cache_dir_name,
+ 						 &cache_ino, &cache_full_name);
+ 			}
+-			off += sh->len;
++			off += sh.len;
+ 
+ 			/*
+ 			 * record the mins in sk so we can make sure the
+ 			 * next search doesn't repeat this root
+ 			 */
+-			sk->min_objectid = sh->objectid;
+-			sk->min_offset = sh->offset;
+-			sk->min_type = sh->type;
++			sk->min_objectid = sh.objectid;
++			sk->min_offset = sh.offset;
++			sk->min_type = sh.type;
+ 		}
+ 		sk->nr_items = 4096;
+ 		if (sk->min_offset < (u64)-1)
+diff --git a/ctree.h b/ctree.h
+index 293b24f..0675989 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1086,15 +1086,19 @@ static inline u##bits btrfs_##name(struct extent_buffer *eb,		\
+ 				   type *s)				\
+ {									\
+ 	unsigned long offset = (unsigned long)s;			\
++	u##bits m;							\
+ 	type *p = (type *) (eb->data + offset);				\
+-	return le##bits##_to_cpu(p->member);				\
++	memcpy(&m, &p->member, sizeof(m));				\
++	return le##bits##_to_cpu(m);					\
+ }									\
+ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
+ 				    type *s, u##bits val)		\
+ {									\
+ 	unsigned long offset = (unsigned long)s;			\
++	u##bits m;							\
+ 	type *p = (type *) (eb->data + offset);				\
+-	p->member = cpu_to_le##bits(val);				\
++	m = cpu_to_le##bits(val);					\
++	memcpy(&p->member, &m, sizeof(m));				\
+ }
+ 
+ #define BTRFS_SETGET_STACK_FUNCS(name, type, member, bits)		\
+diff --git a/volumes.c b/volumes.c
+index 8dca5e1..581c298 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -652,6 +652,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int index;
+ 	int stripe_len = 64 * 1024;
+ 	struct btrfs_key key;
++	u64 offset;
+ 
+ 	if (list_empty(dev_list)) {
+ 		return -ENOSPC;
+@@ -757,12 +758,13 @@ again:
+ 		}
+ 		return -ENOSPC;
+ 	}
+-	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+-	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 	ret = find_next_chunk(chunk_root, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+-			      &key.offset);
++			      &offset);
+ 	if (ret)
+ 		return ret;
++	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
++	key.type = BTRFS_CHUNK_ITEM_KEY;
++	key.offset = offset;
+ 
+ 	chunk = kmalloc(btrfs_chunk_item_size(num_stripes), GFP_NOFS);
+ 	if (!chunk)
 -- 
-1.7.12.4
+1.7.3.4
 

@@ -1,65 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59585 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751245Ab2JVJHi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 05:07:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TQDz4-0004Lr-FL
-	for linux-btrfs@vger.kernel.org; Mon, 22 Oct 2012 11:07:42 +0200
-Received: from cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com ([81.97.59.215])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 11:07:42 +0200
-Received: from samtygier by cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 11:07:42 +0200
-To: linux-btrfs@vger.kernel.org
-From: sam tygier <samtygier@yahoo.co.uk>
-Subject: problem replacing failing drive
-Date: Mon, 22 Oct 2012 10:07:22 +0100
-Message-ID: <k632c9$3df$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from frost.carfax.org.uk ([85.119.82.111]:52389 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750815Ab2JVJTI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Oct 2012 05:19:08 -0400
+Date: Mon, 22 Oct 2012 10:19:04 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: device delete, error removing device
+Message-ID: <20121022091904.GY25498@carfax.org.uk>
+References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com>
+ <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="m9FEOsnejx470nED"
+In-Reply-To: <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
 
-I have a 2 drive btrfs raid set up. It was created first with a single drive, and then adding a second and doing
-btrfs fi balance start -dconvert=raid1 /data
+--m9FEOsnejx470nED
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-the original drive is showing smart errors so i want to replace it. i dont easily have space in my desktop for an extra disk, so i decided to proceed by shutting down. taking out the old failing drive and putting in the new drive. this is similar to the description at
-https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_Failed_Devices
-(the other reason to try this is to simulate what would happen if a drive did completely fail).
+On Mon, Oct 22, 2012 at 12:02:08AM -0600, Chris Murphy wrote:
+> 
+> On Oct 21, 2012, at 10:32 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> > This is stock Fedora 18 beta kernel, 3.6.1-1.fc18.x86_64 #1 SMP Mon Oct 8 17:19:09 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> Probably not a good idea to omit this is a beta *test candidate* not a beta. 
+> 
+> Two things that make this possibly not realistic:
+> 
+> 1. The virtual disks are obviously very small, 3GB each with the 4th one only 12GB.
+> 
+> 2. The original 3 device volume was ~97% full with a single large file prior to adding the 4th device. Approximately 313MB free space remained on the volume.
 
-so after swapping the drives and rebooting, i try to mount as degraded. i instantly get a kernel panic, http://www.hep.man.ac.uk/u/sam/pub/IMG_5397_crop.png
+   I'm not entirely sure what's going on here(*), but it looks like an
+awkward interaction between the unequal sizes of the devices, the fact
+that three of them are very small, and the RAID-0/RAID-1 on
+data/metadata respectively.
 
-so far all this has been with 3.5 kernel. so i upgraded to 3.6.2 and tried to mount degraded again.
+   You can't relocate any of the data chunks, because RAID-0 requires
+at least two chunks, and all your data chunks are more than 50% full,
+so it can't put one 0.55 GiB chunk on the big disk and one 0.55 GiB
+chunk on the remaining space on the small disk, which is the only way
+it could proceed.
 
-first with just sudo mount /dev/sdd2 /mnt, then with sudo mount -o degraded /dev/sdd2 /mnt
+   You _may_ be able to get some more success by changing the data to
+"single":
 
-[  582.535689] device label bdata devid 1 transid 25342 /dev/sdd2
-[  582.536196] btrfs: disk space caching is enabled
-[  582.536602] btrfs: failed to read the system array on sdd2
-[  582.536860] btrfs: open_ctree failed
-[  606.784176] device label bdata devid 1 transid 25342 /dev/sdd2
-[  606.784647] btrfs: allowing degraded mounts
-[  606.784650] btrfs: disk space caching is enabled
-[  606.785131] btrfs: failed to read chunk root on sdd2
-[  606.785331] btrfs warning page private not zero on page 3222292922368
-[  606.785408] btrfs: open_ctree failed
-[  782.422959] device label bdata devid 1 transid 25342 /dev/sdd2
+# btrfs balance start -dconvert=single /mountpoint
 
-no panic is good progress, but something is still not right.
+   You may also possibly be able to reclaim some metadata space with:
 
-my options would seem to be
-1) reconnect old drive (probably in a USB caddy), see if it mounts as if nothing ever happened. or possibly try and recover it back to a working raid1. then try again with adding the new drive first, then removing the old one.
-2) give up experimenting and create a new btrfs raid1, and restore from backup
+# btrfs balance start -m /mountpoint
 
-both leave me with a worry about what would happen if a disk in a raid 1 did die. (unless is was the panic that did some damage that borked the filesystem.)
+but I think that's unlikely.
 
-thanks.
+   Hugo.
 
-sam
+(*) It may be an as-yet-undiscovered reservation problem, in which
+case you get to see Josef scream loudly and hide under his desk,
+gibbering.
 
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                --- If it ain't broke,  hit it again. ---                
+
+--m9FEOsnejx470nED
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUIUPh79z9OVl50rAAQLFAg//duqMtQKg+XXsG3PogkJpNwyT0xxjVhEB
+o/qZFagZQqk6vx13ZRIpNhneQ+8oy+HTQ2wXtVDgkP0GsyyIivOYOqPPHFpPFRbw
+LkHekwX4oLHjsXvSWARwcZEdsU5+PnEFLjO55AvF5Hms+CehkswagNLUHhqq3QWF
+XLVioE5B/FSWQN8OGvRRXZrPvM3Em1+10P/oDs8FO5ErLMmKe0fyFXWixUepX+E2
+6cQCby6mqn64W9AeyWXkMrj63otPepAuOzmjayA/n+v1Wj+YqSw6cBTyRm5I2W3C
+OzB7Q4vWUneVYB5of5LccWhbyZzv9H9ZmDjCbnI2xdJYXJ0adNNI++KMXi8y97/q
+tPUWFi1Xyk4AG5ZJ3JIzNkhH0A9lZazYP91cM1XiWCDB4kZTZXGIFnvJLfHHDEj3
+1JEZ52//kMarpX+yyS+QJxAx0KxyHzo63M25YIkol5L9bbYIVXzszsuS6Ilr0Wds
+vo1j5Vd/AxmECg6RSqMCZLTjdj2stRRfsTY+KJIvuWlAqYYDpR0a/wh77rZbexwF
+IHxlxpfibNpOudvJxIggDbgxwbpJCsBWGCj1SnM5K1sgj8TfEidu0nTntru7ZEZo
+JE5l6UuZzocTfNbEAkedL0uQr/WJd5rJmnSAAWrwNWZzfYQgM1CMBH0fFEbSJcNR
+huoSojJ80v8=
+=PZBf
+-----END PGP SIGNATURE-----
+
+--m9FEOsnejx470nED--

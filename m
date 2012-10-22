@@ -1,37 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:56440 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753562Ab2JVL5N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 07:57:13 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so1877514pad.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 04:57:12 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:32345 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750991Ab2JVLiP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Oct 2012 07:38:15 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9MBcB7S007018
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 19:38:11 +0800
+Message-ID: <50853040.1030404@cn.fujitsu.com>
+Date: Mon, 22 Oct 2012 19:38:40 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <50853089.6010801@cn.fujitsu.com>
-References: <50853089.6010801@cn.fujitsu.com>
-Date: Mon, 22 Oct 2012 05:57:12 -0600
-Message-ID: <CAE5mzvhaQLZEMgyAPGZ7pFbNR9c17ke1FGRXUfY86vD31_3viQ@mail.gmail.com>
-Subject: Re: [PATCH 2/2] Btrfs: do not delete a subvolume which is in a R/O subvolume
-From: cwillu <cwillu@cwillu.com>
-To: miaox@cn.fujitsu.com
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] Btrfs: don't check the permission of the subvolume which
+ we want to delete
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 22, 2012 at 5:39 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
-> Step to reproduce:
->  # mkfs.btrfs <disk>
->  # mount <disk> <mnt>
->  # btrfs sub create <mnt>/subv0
->  # btrfs sub snap <mnt> <mnt>/subv0/snap0
->  # change <mnt>/subv0 from R/W to R/O
->  # btrfs sub del <mnt>/subv0/snap0
->
-> We deleted the snapshot successfully. I think we should not be able to delete
-> the snapshot since the parent subvolume is R/O.
+Step to reproduce:
+ # mkfs.btrfs <disk>
+ # mount -o user_subvol_rm_allowed <disk> <mnt>
+ # mkdir <mnt>/dir0
+ # chmod 777 <mnt>/dir0
+ # btrfs sub snap <mnt> <mnt>/dir0/snap0
+ # su -c "btrfs sub del <mnt>/dir0/snap0" -s /bin/bash nobody
+ ERROR: cannot delete '<mnt>/dir0/snap0' - Permission denied
 
-snap0 isn't read-only in that case, right?  From a user interaction
-standpoint, this seems like it just forces a user to rm -rf rather
-btrfs sub del, which strikes me as a bit ham-handed when all we really
-care about is leaving a (the?) directory entry where snap0 used to be.
+This is because we checked the permission of the subvolume that we want to
+delete, and found the user - nobody have no WRITE permission of this subvolume.
+
+I think we need not check the permission of the subvolume we want to delete,
+because we have the right to clean up the directory since we have WRITE and
+EXECUTE permission, just like rmdir command.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index f5a2e6c..29fb07c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2062,10 +2062,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 		if (root == dest)
+ 			goto out_dput;
+ 
+-		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
+-		if (err)
+-			goto out_dput;
+-
+ 		/* check if subvolume may be deleted by a non-root user */
+ 		err = btrfs_may_delete(dir, dentry, 1);
+ 		if (err)
+-- 
+1.7.6.5

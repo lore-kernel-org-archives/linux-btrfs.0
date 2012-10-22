@@ -1,45 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:35372 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755334Ab2JVRDp (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:25605 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755632Ab2JVRFc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 13:03:45 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so1169385bkc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 10:03:44 -0700 (PDT)
-Message-ID: <50857C8F.9030401@gmail.com>
-Date: Mon, 22 Oct 2012 19:04:15 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Mon, 22 Oct 2012 13:05:32 -0400
+Message-ID: <50857CD9.3040504@jan-o-sch.net>
+Date: Mon, 22 Oct 2012 19:05:29 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: device delete, error removing device
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com>
-In-Reply-To: <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix a tree mod bug while inserting a new root
+References: <1350914572-4205-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1350914572-4205-1-git-send-email-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-22 18:42, Chris Murphy wrote:
-> [root@f18v ~]# btrfs fi show
-> failed to read /dev/sr0
-> Label: none  uuid: 6e96a96e-3357-4f23-b064-0f0713366d45
-> 	Total devices 5 FS bytes used 7.52GB
-> 	devid    5 size 12.00GB used 4.17GB path /dev/sdf
-> 	devid    4 size 12.00GB used 4.62GB path /dev/sde
-> 	devid    3 size 3.00GB used 2.68GB path /dev/sdd
-> 	devid    2 size 3.00GB used 2.68GB path /dev/sdc
-> 	*** Some devices missing
+Hi liubo,
+
+On Mon, October 22, 2012 at 16:02 (+0200), Liu Bo wrote:
+> According to btree's balance algorithm, when we split a root into two parts,
+> we insert a new one to be their parent:
 > 
-> However, I think that last line is a bug. When I
+>                                                  new root
+>             node A                            /              \
+>       | x1 x2 x3 x4 x5 x6 |   =>          node A             node A'
+>                                     | x1 x2 x3 - - - |  | x4 x5 x6 - - - |
+>                              split
+> 
+> The original root won't be freed because it becomes a child of the new root,
+> and a move to keep balance is needed then.
+> 
+> So we should not add REMOVE_WHILE_FREEING keys for the old root, otherwise,
+> we will hit use-after-free since we first add REMOVE_WHILE_FREEING keys and
+> then add REMOVE keys, which is invalid.
 
+I don't like adding another parameter there, the function is already confusing
+without it. I've got a different fix for that problem here as well. I haven't
+been sending it since Friday because there's at least one additional problem in
+the tree mod log, and I'd like to see all of the issues fixed.
 
-Which version of "btrfs" tool are you using ? There was a bug on this.
-Try the latest.
+There's also a fix for double frees from push_node_left here. That one may be
+fixing the other issue you're seeing (which I still cannot reproduce). I'm still
+not convinced it's a good idea to change the semantics in del_ptr as done in
+your previous patch set.
 
-BR
-G.Baroncelli
+Probably we can try working together on irc in a more interactive fashion? Or
+tell me if you want my patches anywhere before I send them out.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+-Jan

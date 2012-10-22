@@ -1,34 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:54328 "EHLO
-	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754869Ab2JVGCK convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 02:02:10 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: device delete, error removing device
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com>
-Date: Mon, 22 Oct 2012 00:02:08 -0600
-Message-Id: <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com>
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com>
-To: linux-btrfs@vger.kernel.org
+Received: from mailout-de.gmx.net ([213.165.64.23]:56491 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1753494Ab2JVGlw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Oct 2012 02:41:52 -0400
+Message-ID: <5084EAAD.4090806@gmx.net>
+Date: Mon, 22 Oct 2012 08:41:49 +0200
+From: Arne Jansen <sensille@gmx.net>
+MIME-Version: 1.0
+To: Chris Mason <chris.mason@fusionio.com>, David Sterba <dave@jikos.cz>,
+        Rory Campbell-Lange <rory@campbell-lange.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Fits: tool to parse stream
+References: <1350048772-20658-1-git-send-email-sensille@gmx.net> <50791203.6060406@gmx.net> <20121013080857.GA1491@campbell-lange.net> <20121013154128.GA10679@twin.jikos.cz> <20121015143222.GA31310@shiny>
+In-Reply-To: <20121015143222.GA31310@shiny>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 15.10.2012 16:32, Chris Mason wrote:
+> On Sat, Oct 13, 2012 at 09:41:28AM -0600, David Sterba wrote:
+>> On Sat, Oct 13, 2012 at 09:08:57AM +0100, Rory Campbell-Lange wrote:
+>>> Perhaps "BTRFS Incremental Stream" or "Backup Incremental Stream" should
+>>> be considered, with the file extension ".bis".
+>>
+>> From the brainstorming we had about the name, the intention behind the
+>> stream is to be filesystem independent.
+>>
+>> So this might be named FIS with .fis extension, that is not far from the
+>> proposed name. However, this hasn't been approved by the Slang committee
+>> yet :)
+> 
+> urbandictionary has some entries for fis, although I'm not really sure
+> that matters.  .fs is still my favorite, or .fss if you want to have the
+> word stream in there.
 
-On Oct 21, 2012, at 10:32 PM, Chris Murphy <lists@colorremedies.com> wrote:
+We finally settled on 'far', Filesystem Agnostic Replication.
 
-> This is stock Fedora 18 beta kernel, 3.6.1-1.fc18.x86_64 #1 SMP Mon Oct 8 17:19:09 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+-Arne
 
-Probably not a good idea to omit this is a beta *test candidate* not a beta. 
-
-Two things that make this possibly not realistic:
-
-1. The virtual disks are obviously very small, 3GB each with the 4th one only 12GB.
-
-2. The original 3 device volume was ~97% full with a single large file prior to adding the 4th device. Approximately 313MB free space remained on the volume.
-
-
-Chris Murphy
-
+> 
+> The stream parser is really cool though, thanks Arne.
+> 
+> -chris
+> 

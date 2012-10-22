@@ -1,80 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:65267 "EHLO xp-ob.rzone.de"
+Received: from mx2.fusionio.com ([66.114.96.31]:35206 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933788Ab2J3RQU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 13:16:20 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp2) (RZmta 30.21 OK)
-	with ESMTP id g013a9o9UCjm5c for <linux-btrfs@vger.kernel.org>;
-	Tue, 30 Oct 2012 18:16:16 +0100 (CET)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: don't allow degraded mount if too many devices are missing
-Date: Tue, 30 Oct 2012 18:16:16 +0100
-Message-Id: <1351617376-5208-1-git-send-email-sbehrens@giantdisaster.de>
+	id S1752162Ab2JVTuG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Oct 2012 15:50:06 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id goeRa3poT7r0dBXx (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 13:50:05 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not bug when we fail to commit the transaction
+Date: Mon, 22 Oct 2012 15:55:51 -0400
+Message-ID: <1350935751-3155-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current behavior is to allow mounting or remounting a filesystem
-writeable in degraded mode if at least one writeable device is
-present.
-The next failed write access to a missing device which is above
-the tolerance of the configured level of redundancy results in an
-read-only enforcement. Even without this, the next time
-barrier_all_devices() is called and more devices are missing than
-tolerable, the switch to read-only mode takes place.
+We BUG if we fail to commit the transaction when creating a snapshot, which
+is just obnoxious.  Remove the BUG_ON().  Thanks,
 
-In order to behave predictably and to provide proper feedback to
-the user at mount time, this patch compares the number of missing
-devices with the number of devices that are tolerated to be missing
-according to the configured RAID level. If more devices are missing
-than tolerated, e.g. if two devices are missing in case of RAID1,
-only a read-only mount and remount is allowed.
-
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/disk-io.c | 7 +++++++
- fs/btrfs/super.c   | 9 +++++++++
- 2 files changed, 16 insertions(+)
+ fs/btrfs/ioctl.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7cda519..29de7c1 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2503,6 +2503,13 @@ retry_root_backup:
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3b8b509..8fcf9a5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -571,7 +571,8 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 		ret = btrfs_commit_transaction(trans,
+ 					       root->fs_info->extent_root);
  	}
- 	fs_info->num_tolerated_disk_barrier_failures =
- 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
-+	if (fs_info->fs_devices->missing_devices >
-+	     fs_info->num_tolerated_disk_barrier_failures &&
-+	    !(sb->s_flags & MS_RDONLY)) {
-+		printk(KERN_WARNING
-+		       "Btrfs: too many missing devices, writeable mount is not allowed\n");
-+		goto fail_block_groups;
-+	}
+-	BUG_ON(ret);
++	if (ret)
++		goto fail;
  
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 915ac14..acd2df8 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1226,6 +1226,15 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			goto restore;
- 		}
- 
-+		if (fs_info->fs_devices->missing_devices >
-+		     fs_info->num_tolerated_disk_barrier_failures &&
-+		    !(*flags & MS_RDONLY)) {
-+			printk(KERN_WARNING
-+			       "Btrfs: too many missing devices, writeable remount is not allowed\n");
-+			ret = -EACCES;
-+			goto restore;
-+		}
-+
- 		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
- 			ret = -EINVAL;
- 			goto restore;
+ 	ret = pending_snapshot->error;
+ 	if (ret)
 -- 
-1.8.0
+1.7.7.6
 

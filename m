@@ -1,53 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:49879 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756142Ab2JVUea (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 16:34:30 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so1151631eek.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 13:34:29 -0700 (PDT)
-Message-ID: <5085ADF6.6050603@gmail.com>
-Date: Mon, 22 Oct 2012 22:35:02 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>
-CC: Chris Murphy <lists@colorremedies.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from qmta05.emeryville.ca.mail.comcast.net ([76.96.30.48]:40972 "EHLO
+	qmta05.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754195Ab2JVUq7 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Oct 2012 16:46:59 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: device delete, error removing device
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <50857C8F.9030401@gmail.com> <E9CD3D97-968D-4475-A699-95D803210DF1@colorremedies.com> <20121022195002.GB25498@carfax.org.uk>
+From: Chris Murphy <lists@colorremedies.com>
 In-Reply-To: <20121022195002.GB25498@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Mon, 22 Oct 2012 14:46:57 -0600
+Message-Id: <20E50CC9-765A-443F-B797-0A52AC8C713F@colorremedies.com>
+References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <50857C8F.9030401@gmail.com> <E9CD3D97-968D-4475-A699-95D803210DF1@colorremedies.com> <20121022195002.GB25498@carfax.org.uk>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-22 21:50, Hugo Mills wrote:
->>>>> It's more like a balance which moves everything that has
->>>>> some (part of its) existence on a device. So when you have
->>>>> RAID-0 or RAID-1 data, all of the related chunks on other
->>>>> disks get moved too (so in RAID-1, it's the mirror chunk as
->>>>> well as the chunk on the removed disk that gets
->>>>> rewritten).
->>> 
->>> Does this mean "device delete" depends on an ability to make
->>> writes to the device being removed? I immediately think of SSD
->>> failures, which seem to fail writing, while still being able to
->>> reliably read. Would that behavior inhibit the ability to
->>> remove the device from the volume?
-> No, the device being removed isn't modified at all. (Which causes 
-> its own set of weird problemettes, but I think most of those have
-> gone away).
 
-IIRC, when a device is deleted, the 1st superblock is zeroed.
-Moreover btrfs needs to be able to read the device in order to delete
-it. Of course these rules aren't applied when a device is classified
-as "missing".
-
-See the function btrfs_rm_device() in fs/btrfs/volumes.c for the details.
-
+On Oct 22, 2012, at 1:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 > 
+>   Yes, the automatic single -> RAID-0 upgrade was fixed. If you
+> haven't run a balance on (at least) the metadata after adding the new
+> device, then you won't get the DUP -> RAID-1 upgrade on metadata. (I
+> can tell you haven't run the balance, because you still have the empty
+> single metadata chunk).
+
+I think it will be common for a balance of either type to not occur to most users. So if there's a way to automatically get a metadata only balance, such that metadata goes from dup to raid1, that would be nice.
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>> What is the likelihood of a mkfs.btrfs 2+ device change in the
+>> default data profile from raid0 to single?
+> 
+>   Non-zero. I think it mostly just wants someone to write the patch,
+> and then beat off any resulting bikeshedding. :)
+
+I'm curious of the negatives of -d single by default. Maybe this warrants a separate thread for discussion? As for the ensuing input for additional features once going down that path, the only one I'm coming up with is already mentioned above. Simple make options or additional steps go away for "most" people - whoever they are.
+
+Chris Murphy

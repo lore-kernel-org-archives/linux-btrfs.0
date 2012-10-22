@@ -1,114 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:26485 "EHLO
+Received: from rcsinet15.oracle.com ([148.87.113.117]:23247 "EHLO
 	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753279Ab2JVODt (ORCPT
+	with ESMTP id S1755057Ab2JVPQN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 10:03:49 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9ME3mas030952
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 14:03:49 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9ME3lit005448
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 14:03:48 GMT
-Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9ME3lHs027769
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 09:03:47 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix a tree mod bug while inserting a new root
-Date: Mon, 22 Oct 2012 22:02:52 +0800
-Message-Id: <1350914572-4205-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 22 Oct 2012 11:16:13 -0400
+From: Dave Kleikamp <dave.kleikamp@oracle.com>
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
+        "Maxim V. Patlasov" <mpatlasov@parallels.com>,
+        Dave Kleikamp <dave.kleikamp@oracle.com>,
+        Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 21/22] btrfs: add support for read_iter and write_iter
+Date: Mon, 22 Oct 2012 10:15:21 -0500
+Message-Id: <1350918922-6096-22-git-send-email-dave.kleikamp@oracle.com>
+In-Reply-To: <1350918922-6096-1-git-send-email-dave.kleikamp@oracle.com>
+References: <1350918922-6096-1-git-send-email-dave.kleikamp@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-According to btree's balance algorithm, when we split a root into two parts,
-we insert a new one to be their parent:
+btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
+on btrfs_file_aio_write(), then have the latter call the former.
 
-                                                 new root
-            node A                            /              \
-      | x1 x2 x3 x4 x5 x6 |   =>          node A             node A'
-                                    | x1 x2 x3 - - - |  | x4 x5 x6 - - - |
-                             split
-
-The original root won't be freed because it becomes a child of the new root,
-and a move to keep balance is needed then.
-
-So we should not add REMOVE_WHILE_FREEING keys for the old root, otherwise,
-we will hit use-after-free since we first add REMOVE_WHILE_FREEING keys and
-then add REMOVE keys, which is invalid.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
+Cc: Zach Brown <zab@zabbo.net>
+Cc: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
 ---
- fs/btrfs/ctree.c |   16 +++++++++-------
- 1 files changed, 9 insertions(+), 7 deletions(-)
+ fs/btrfs/file.c | 55 ++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 30 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b334362..26987ef 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -639,7 +639,8 @@ __tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
- static noinline int
- tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
- 			 struct extent_buffer *old_root,
--			 struct extent_buffer *new_root, gfp_t flags)
-+			 struct extent_buffer *new_root,
-+			 gfp_t flags, int free_old)
- {
- 	struct tree_mod_elem *tm;
- 	int ret;
-@@ -647,7 +648,8 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
- 	if (tree_mod_dont_log(fs_info, NULL))
- 		return 0;
- 
--	__tree_mod_log_free_eb(fs_info, old_root);
-+	if (free_old)
-+		__tree_mod_log_free_eb(fs_info, old_root);
- 
- 	ret = tree_mod_alloc(fs_info, flags, &tm);
- 	if (ret < 0)
-@@ -797,11 +799,11 @@ tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
- 
- static noinline void
- tree_mod_log_set_root_pointer(struct btrfs_root *root,
--			      struct extent_buffer *new_root_node)
-+			      struct extent_buffer *new_root_node, int free_old)
- {
- 	int ret;
- 	ret = tree_mod_log_insert_root(root->fs_info, root->node,
--				       new_root_node, GFP_NOFS);
-+				       new_root_node, GFP_NOFS, free_old);
- 	BUG_ON(ret < 0);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9ab1bed..576d2f0 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1361,27 +1361,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
  }
  
-@@ -1029,7 +1031,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 			parent_start = 0;
+ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos,
+-				    loff_t *ppos, size_t count, size_t ocount)
++				     struct iov_iter *iter, loff_t pos,
++				    loff_t *ppos, size_t count)
+ {
+ 	struct file *file = iocb->ki_filp;
+-	struct iov_iter i;
+ 	ssize_t written;
+ 	ssize_t written_buffered;
+ 	loff_t endbyte;
+ 	int err;
  
- 		extent_buffer_get(cow);
--		tree_mod_log_set_root_pointer(root, cow);
-+		tree_mod_log_set_root_pointer(root, cow, 1);
- 		rcu_assign_pointer(root->node, cow);
+-	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
+-					    count, ocount);
++	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
  
- 		btrfs_free_tree_block(trans, root, buf, parent_start,
-@@ -1725,7 +1727,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 			goto enospc;
- 		}
+ 	if (written < 0 || written == count)
+ 		return written;
  
--		tree_mod_log_set_root_pointer(root, child);
-+		tree_mod_log_set_root_pointer(root, child, 1);
- 		rcu_assign_pointer(root->node, child);
+ 	pos += written;
+ 	count -= written;
+-	iov_iter_init(&i, iov, nr_segs, count, written);
+-	written_buffered = __btrfs_buffered_write(file, &i, pos);
++	written_buffered = __btrfs_buffered_write(file, iter, pos);
+ 	if (written_buffered < 0) {
+ 		err = written_buffered;
+ 		goto out;
+@@ -1398,9 +1394,8 @@ out:
+ 	return written ? written : err;
+ }
  
- 		add_root_to_dirty_list(root);
-@@ -3107,7 +3109,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
- 	btrfs_mark_buffer_dirty(c);
+-static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos)
++static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
++				     struct iov_iter *iter, loff_t pos)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = fdentry(file)->d_inode;
+@@ -1409,18 +1404,13 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	u64 start_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+-	size_t count, ocount;
++	size_t count;
  
- 	old = root->node;
--	tree_mod_log_set_root_pointer(root, c);
-+	tree_mod_log_set_root_pointer(root, c, 0);
- 	rcu_assign_pointer(root->node, c);
+ 	sb_start_write(inode->i_sb);
  
- 	/* the super has an extra ref to root->node */
+ 	mutex_lock(&inode->i_mutex);
+ 
+-	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
+-	if (err) {
+-		mutex_unlock(&inode->i_mutex);
+-		goto out;
+-	}
+-	count = ocount;
++	count = iov_iter_count(iter);
+ 
+ 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
+ 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
+@@ -1468,14 +1458,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	}
+ 
+ 	if (unlikely(file->f_flags & O_DIRECT)) {
+-		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
+-						   pos, ppos, count, ocount);
++		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
++						   count);
+ 	} else {
+-		struct iov_iter i;
+-
+-		iov_iter_init(&i, iov, nr_segs, count, num_written);
+-
+-		num_written = __btrfs_buffered_write(file, &i, pos);
++		num_written = __btrfs_buffered_write(file, iter, pos);
+ 		if (num_written > 0)
+ 			*ppos = pos + num_written;
+ 	}
+@@ -1506,6 +1492,23 @@ out:
+ 	return num_written ? num_written : err;
+ }
+ 
++static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
++				    const struct iovec *iov,
++				    unsigned long nr_segs, loff_t pos)
++{
++	struct iov_iter i;
++	int ret;
++	size_t count;
++
++	ret = generic_segment_checks(iov, &nr_segs, &count, VERIFY_WRITE);
++	if (ret)
++		return ret;
++
++	iov_iter_init(&i, iov, nr_segs, count, 0);
++
++	return btrfs_file_write_iter(iocb, &i, pos);
++}
++
+ int btrfs_release_file(struct inode *inode, struct file *filp)
+ {
+ 	/*
+@@ -2282,7 +2285,9 @@ const struct file_operations btrfs_file_operations = {
+ 	.write		= do_sync_write,
+ 	.aio_read       = generic_file_aio_read,
+ 	.splice_read	= generic_file_splice_read,
++	.read_iter	= generic_file_read_iter,
+ 	.aio_write	= btrfs_file_aio_write,
++	.write_iter	= btrfs_file_write_iter,
+ 	.mmap		= btrfs_file_mmap,
+ 	.open		= generic_file_open,
+ 	.release	= btrfs_release_file,
 -- 
-1.7.7.6
+1.7.12.3
 

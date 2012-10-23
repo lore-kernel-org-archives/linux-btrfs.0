@@ -1,69 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f174.google.com ([209.85.217.174]:56607 "EHLO
-	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754951Ab2JWOC2 (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:29202 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755452Ab2JWPXg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 10:02:28 -0400
-Received: by mail-lb0-f174.google.com with SMTP id n3so367728lbo.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 07:02:26 -0700 (PDT)
+	Tue, 23 Oct 2012 11:23:36 -0400
+Message-ID: <5086B677.7050905@oracle.com>
+Date: Tue, 23 Oct 2012 23:23:35 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <508585ED.2010909@gmail.com>
-References: <CAGJTRch_o4SDnT+n0WnUfRysj-9T-6GmvsUrSd6XiU6C2JoEsA@mail.gmail.com>
-	<20121022160500.GZ25498@carfax.org.uk>
-	<508585ED.2010909@gmail.com>
-Date: Tue, 23 Oct 2012 09:02:26 -0500
-Message-ID: <CAGJTRcgEpL89mpf2a8Hk5wpW4sfLAjoLwuk8d_KyZ=V3=E1iEg@mail.gmail.com>
-Subject: Re: RAID 5/6
-From: Michael <mike@draftx.net>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/6] Btrfs: don't put removals from push_node_left into
+ tree mod log twice
+References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net> <1351000527-24952-2-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1351000527-24952-2-git-send-email-list.btrfs@jan-o-sch.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is one of those features that I have been waiting for since I
-signed up for the mailing list last year. What source tree is that
-code contained in? I would like to start testing it out and helping
-out with bug reports(I am only going to use it in a testing VM,
-nothing important to work at all). Maybe if I help get it tested and
-play around with it I will be familiar when it is really pushed out
-and also I can help speed up the development process.
-Starting with RAID 1 is an expensive choice for me, I have 8TB of
-data(backed up to a friend) that I would have in this array. I was
-hoping I could do a RAID 5 of 4 3TB disks and grow it to a RAID 6 of 6
-disks in a few months when I need more storage.
-Mike
+On 10/23/2012 09:55 PM, Jan Schmidt wrote:
+> Independant of the check (push_items < src_items) tree_mod_log_eb_copy did
+> log the removal of the old data entries from the source buffer. Therefore,
+> we must not call tree_mod_log_eb_move if the check evaluates to true, as
+> that would log the removal twice, finally resulting in (rewinded) buffers
+> with wrong values for header_nritems.
+> 
 
-On Mon, Oct 22, 2012 at 12:44 PM, Andreas Philipp
-<philipp.andreas@gmail.com> wrote:
->
-> On 10/22/2012 06:05 PM, Hugo Mills wrote:
->> On Mon, Oct 22, 2012 at 10:58:07AM -0500, Michael wrote:
->>> Does anyone know when RAID 5/6 are planned to be included in the
->>> Kernel?
->>
->> This is in the FAQ:
->>
->>
-> https://btrfs.wiki.kernel.org/index.php/FAQ#Can_I_use_RAID.5B56.5D_on_my_Btrfs_filesystem.3F
->>
->> Short answer: Not yet, probably soon.
->>
->>> I am starting to buy parts for my next computer and would very
->>> much like to use BTRFS because I want a FS that can grow and also
->>> recover from undetected read errors - it will be large enough that
->>> these are possible. I'm hoping that it will be available for use in
->>> the coming months.
->>
->> You can switch storage types on the fly, so you could at least
->> start with RAID-1, and then restripe to RAID-5 (or -6) when it's
->> stable enough for you. This assumes that you can manage to use RAID-1
->> in the first place and expand later.
-> If you can live without redundancy at the beginning, you could also
-> start with RAID-0, and then restripe to RAID-5.
->
-> Andreas
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Tested-by: Liu Bo <bo.li.liu@oracle.com>
+
+thanks,
+liubo
+
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+>  fs/btrfs/ctree.c |    9 +++++++--
+>  1 files changed, 7 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index b334362..44a7e25 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1225,6 +1225,8 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+>  	free_extent_buffer(eb);
+>  
+>  	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
+> +	WARN_ON(btrfs_header_nritems(eb_rewin) >
+> +		BTRFS_NODEPTRS_PER_BLOCK(fs_info->fs_root));
+>  
+>  	return eb_rewin;
+>  }
+> @@ -1280,6 +1282,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+>  	else
+>  		WARN_ON(btrfs_header_level(eb) != 0);
+>  	extent_buffer_get(eb);
+> +	WARN_ON(btrfs_header_nritems(eb) > BTRFS_NODEPTRS_PER_BLOCK(root));
+>  
+>  	return eb;
+>  }
+> @@ -2970,8 +2973,10 @@ static int push_node_left(struct btrfs_trans_handle *trans,
+>  			   push_items * sizeof(struct btrfs_key_ptr));
+>  
+>  	if (push_items < src_nritems) {
+> -		tree_mod_log_eb_move(root->fs_info, src, 0, push_items,
+> -				     src_nritems - push_items);
+> +		/*
+> +		 * don't call tree_mod_log_eb_move here, key removal was already
+> +		 * fully logged by tree_mod_log_eb_copy above.
+> +		 */
+>  		memmove_extent_buffer(src, btrfs_node_key_ptr_offset(0),
+>  				      btrfs_node_key_ptr_offset(push_items),
+>  				      (src_nritems - push_items) *
+> 
+

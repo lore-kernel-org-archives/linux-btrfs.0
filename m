@@ -1,49 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:19748 "EHLO
-	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756708Ab2JWStg convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 14:49:36 -0400
-Received: from 168.139.79.188.dynamic.jazztel.es ([188.79.139.168] helo=mail.viric.name)
-	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TQjXk-000MRM-0x
-	for linux-btrfs@vger.kernel.org; Tue, 23 Oct 2012 18:49:36 +0000
-Date: Tue, 23 Oct 2012 20:49:32 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Between single/dup and raid1/raid1
-Message-ID: <20121023184932.GK2052@vicerveza.homeunix.net>
+Received: from smtp208.alice.it ([82.57.200.104]:45085 "EHLO smtp208.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932144Ab2JWTCU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Oct 2012 15:02:20 -0400
+Message-ID: <5086E9D6.4070201@inwind.it>
+Date: Tue, 23 Oct 2012 21:02:46 +0200
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+To: Chris Murphy <lists@colorremedies.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: Re: device delete, error removing device
+References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <20121022171809.GA25498@carfax.org.uk> <20121023075721.GB391@yeono.kjorling.se> <5086DDAE.3050708@gmail.com> <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com>
+In-Reply-To: <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 2012-10-23 20:17, Chris Murphy wrote:
+> 
+> On Oct 23, 2012, at 12:10 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
+>>
+>> I think that what Chris [Murphy] was reported is a bug of the btrfs
+>> user space program (which is corrected in the latest git).
+>> Unfortunately we don't know which version Chris is using so we cannot
+>> reach a conclusion (if the bug was corrected, or it is a new bug).
+> 
+> btrfs-progs-0.20.rc1.20121017git91d9eec-1.fc18.x86_64
 
-today I wanted to remove one drive from raid1, and people at #btrfs advised me
-to use '-dconvert=single' before 'btrfs device delete'.
+Definitely this version contains my patch.
 
-I thought of adding '-mconvert=dup' too, but the kernel does not let me do that.
+Are you able to reproduce this bug (the missing device warning)? If so,
+please could you be so kindly to test the Stefan's tool [*] to dump the
+super-blocks of the involved disks ?
 
-It looks like 'dup' is disallowed for an array of multiple devices. So, to go
-back to a single-drive (single/dup) setup, should I go through having the
-metadata with 'single' profile?
+Thanks
+G.Baroncelli
 
-I can't use 'btrfs device delete' either, because that wouldn't respesct the
-raid1 profile.
 
-Maybe then the easiest I could do is to use the computer degraded, until I get
-some new disk in some days? That'd be equivalent to metadata=single, as I
-understand.
+[*] See
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg19572.html
 
-And having a totally new disk, having removed the broken one, I'd have to:
-1) mount degraded
-2) btrfs device delete the missing disk (will I be allowed? due to raid1 profile)
-3) btrfs device add another disk
+> 
+> 
+> 
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Should that work?
 
-Regards,
-Lluís.
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

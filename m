@@ -1,59 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56519 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756142Ab2JVUY6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 16:24:58 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TQOYa-0003N6-4w
-	for linux-btrfs@vger.kernel.org; Mon, 22 Oct 2012 22:25:04 +0200
-Received: from ip-178-203-145-21.unitymediagroup.de ([178.203.145.21])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 22:25:04 +0200
-Received: from andred by ip-178-203-145-21.unitymediagroup.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 22:25:04 +0200
+Received: from bhuna.collabora.co.uk ([93.93.135.160]:58282 "EHLO
+	bhuna.collabora.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753027Ab2JWJyH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Oct 2012 05:54:07 -0400
+From: Hector Oron <hector.oron@collabora.co.uk>
 To: linux-btrfs@vger.kernel.org
-From: Andre Diekwisch <andred@mail.upb.de>
-Subject: Re: [PATCH v2] Btrfs-progs: fix unaligned accesses
-Date: Mon, 22 Oct 2012 20:19:56 +0000 (UTC)
-Message-ID: <loom.20121022T201206-609@post.gmane.org>
-References: <1350830073-20944-1-git-send-email-sensille@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: nirbheek.chauhan@collabora.co.uk
+Subject: [PATCH] Btrfs-progs: fix resolving of loop devices
+Date: Tue, 23 Oct 2012 11:53:43 +0200
+Message-Id: <1350986023-8758-1-git-send-email-hector.oron@collabora.co.uk>
+In-Reply-To: <1350050134-12151-2-git-send-email-nirbheek.chauhan@collabora.co.uk>
+References: <1350050134-12151-2-git-send-email-nirbheek.chauhan@collabora.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne Jansen <sensille <at> gmx.net> writes:
+From: Nirbheek Chauhan <nirbheek.chauhan <at> collabora.co.uk>
 
-> 
-> There are some unaligned accesses in progs that cause malfunction or
-> crashes on ARM.
-> This patch fixes the ones we stumbled upon.
-> 
-> Signed-off-by: Arne Jansen <sensille <at> gmx.net>
-> ---
-> 
-> Change v1->v2:
-> Somehow sent the wrong patch without the patch to the setget functions.
+If the path to a given loopback file is longer than 64 characters, none of the
+Btrfs-progs tools can use it. This is because the size of loopinfo.lo_name
+returned by the LOOP_GET_STATUS ioctl is 64.
 
+The attached patch fixes this by fetching the backing file for a loopback device
+from /sys/block; which is how `losetup` from util-linux does it as well.
 
-Hello,
+Nirbheek Chauhan (1):
+  Btrfs-progs: fix resolving of loop devices
 
-I reported these unaligned accesses originally and tested this patch on an ARMv5
-kirkwood device using a 3.6.2 kernel.
-I set /proc/cpu/alignment to 5 (signal+warn), and got no signals anymore using
-this patch. I tested mkfs.btrfs, sub list and sub find-new (which all signalled
-before the patch) and additionally inspect-internal inode-resolve and btrfsck.
+ utils.c |   26 ++++++++++++++------------
+ 1 files changed, 14 insertions(+), 12 deletions(-)
 
-None of them signalled or showed any other issues.
-tested-by: Andre Diekwisch <andred <at> mail.upb.de>
+Tested-By: Hector Oron <hector.oron@collabora.co.uk>
 
+diff --git a/utils.c b/utils.c
+index 205e667..cdd6f7d 100644
+--- a/utils.c
++++ b/utils.c
+@@ -20,6 +20,7 @@
+ #define __USE_XOPEN2K
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #ifndef __CHECKER__
+ #include <sys/ioctl.h>
+ #include <sys/mount.h>
+@@ -651,21 +652,22 @@ int is_loop_device (const char* device) {
+  * the associated file (e.g. /images/my_btrfs.img) */
+ int resolve_loop_device(const char* loop_dev, char* loop_file, int max_len)
+ {
+-	int loop_fd;
+-	int ret_ioctl;
+-	struct loop_info loopinfo;
++	int ret;
++	FILE *f;
++	char fmt[20];
++	char p[PATH_MAX];
++	char real_loop_dev[PATH_MAX];
 
-Thanks a lot Arne, this patch finally renders btrfs-progs usable on an
-ARM-machine without enabling unaligned access trapping for userspace.
-I'll report back should I run into more issues regarding unaligned accesses.
+-	if ((loop_fd = open(loop_dev, O_RDONLY)) < 0)
++	if (!realpath(loop_dev, real_loop_dev))
++		return -errno;
++	snprintf(p, PATH_MAX, "/sys/block/%s/loop/backing_file", strrchr(real_loop_dev, '/'));
++	if (!(f = fopen(p, "r")))
+ 		return -errno;
 
-Hope this patch gets accepted.
+-	ret_ioctl = ioctl(loop_fd, LOOP_GET_STATUS, &loopinfo);
+-	close(loop_fd);
+-
+-	if (ret_ioctl == 0) {
+-		strncpy(loop_file, loopinfo.lo_name, max_len);
+-		if (max_len > 0)
+-			loop_file[max_len-1] = 0;
+-	} else
++	snprintf(fmt, 20, "%%%i[^\n]", max_len-1);
++	ret = fscanf(f, fmt, loop_file);
++	fclose(f);
++	if (ret == EOF)
+ 		return -errno;
 
+ 	return 0;
+-- 
+1.7.8.6

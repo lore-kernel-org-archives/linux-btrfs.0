@@ -1,58 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp208.alice.it ([82.57.200.104]:45085 "EHLO smtp208.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932144Ab2JWTCU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 15:02:20 -0400
-Message-ID: <5086E9D6.4070201@inwind.it>
-Date: Tue, 23 Oct 2012 21:02:46 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:50186 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934038Ab2JWUWz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Oct 2012 16:22:55 -0400
+Received: by mail-lb0-f174.google.com with SMTP id n3so626352lbo.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 13:22:54 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: device delete, error removing device
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <20121022171809.GA25498@carfax.org.uk> <20121023075721.GB391@yeono.kjorling.se> <5086DDAE.3050708@gmail.com> <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com>
-In-Reply-To: <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com>
+Date: Tue, 23 Oct 2012 22:22:54 +0200
+Message-ID: <CAOcd+r2wMdZcRTPPFLhbws8N=GBmg2kpFZ0ZcLujiCWPjATnyw@mail.gmail.com>
+Subject: Questions about btrfs-convert code
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-23 20:17, Chris Murphy wrote:
-> 
-> On Oct 23, 2012, at 12:10 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
->>
->> I think that what Chris [Murphy] was reported is a bug of the btrfs
->> user space program (which is corrected in the latest git).
->> Unfortunately we don't know which version Chris is using so we cannot
->> reach a conclusion (if the bug was corrected, or it is a new bug).
-> 
-> btrfs-progs-0.20.rc1.20121017git91d9eec-1.fc18.x86_64
+Greetings all,
+I am studying the conversion code, and maybe somebody can help me with
+these questions:
 
-Definitely this version contains my patch.
+# btrfs_make_block_groups()
+I see that this function uses some heuristics to create block groups
+for BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA. Later, ext2
+data blocks are mapped into EXTENT_ITEMs based on their original
+locations in ext2, as reported by ext2fs_block_iterate2 function.
+However, it is not ensured later that those EXTENT_ITEMs land into
+BTRFS_BLOCK_GROUP_DATA only. Later there are some data relocations
+happening, but still there are EXTENT_ITEMs that map file data and
+still they live in the BTRFS_BLOCK_GROUP_METADATA block groups.
+Is this a problem? Or perhaps I am wrong and somehow it is ensured
+later that these EXTENT_ITEMs are moved into DATA block groups?
 
-Are you able to reproduce this bug (the missing device warning)? If so,
-please could you be so kindly to test the Stefan's tool [*] to dump the
-super-blocks of the involved disks ?
+# create_ext2_image()
+I see this comment:
+/*
+ * copy blocks covered by extent #0 to new positions. extent #0 is
+ * special, we can't rely on relocate_extents_range to relocate it.
+ */
+Then relocation of blocks up to the end of the first superblock copy
+happens, and these blocks will be mapped by the ext2 image files that
+is created.
+However, it may happen that this area contained some ext2 data block,
+but relevant btrfs files are not updated at this step. Perhaps they
+will be updated later in relocate_extents_range() as part of cleaning
+the BTRFS_BLOCK_GROUP_SYSTEM group?
+What is special about this "extent#0"?
 
-Thanks
-G.Baroncelli
-
-
-[*] See
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg19572.html
-
-> 
-> 
-> 
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Thanks,
+Alex.

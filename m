@@ -1,64 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:24538 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.136]:62727 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757032Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756811Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 23 Oct 2012 09:55:29 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com
 Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
-Subject: [PATCH 1/6] Btrfs: don't put removals from push_node_left into tree mod log twice
-Date: Tue, 23 Oct 2012 15:55:22 +0200
-Message-Id: <1351000527-24952-2-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: [PATCH 4/6] Btrfs: determine level of old roots
+Date: Tue, 23 Oct 2012 15:55:25 +0200
+Message-Id: <1351000527-24952-5-git-send-email-list.btrfs@jan-o-sch.net>
 In-Reply-To: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Independant of the check (push_items < src_items) tree_mod_log_eb_copy did
-log the removal of the old data entries from the source buffer. Therefore,
-we must not call tree_mod_log_eb_move if the check evaluates to true, as
-that would log the removal twice, finally resulting in (rewinded) buffers
-with wrong values for header_nritems.
+In btrfs_find_all_roots' termination condition, we compare the level of the
+old buffer we got from btrfs_search_old_slot to the level of the current
+root node. We'd better compare it to the level of the rewinded root node.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/ctree.c |    9 +++++++--
- 1 files changed, 7 insertions(+), 2 deletions(-)
+ fs/btrfs/backref.c |    4 +---
+ fs/btrfs/ctree.c   |   17 +++++++++++++++++
+ fs/btrfs/ctree.h   |    1 +
+ 3 files changed, 19 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index f318793..65608fb 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -283,9 +283,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+ 		goto out;
+ 	}
+ 
+-	rcu_read_lock();
+-	root_level = btrfs_header_level(root->node);
+-	rcu_read_unlock();
++	root_level = btrfs_old_root_level(root, time_seq);
+ 
+ 	if (root_level + 1 == level)
+ 		goto out;
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b334362..44a7e25 100644
+index 1b60c56..7093ff5 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1225,6 +1225,8 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
- 	free_extent_buffer(eb);
- 
- 	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
-+	WARN_ON(btrfs_header_nritems(eb_rewin) >
-+		BTRFS_NODEPTRS_PER_BLOCK(fs_info->fs_root));
- 
- 	return eb_rewin;
- }
-@@ -1280,6 +1282,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	else
- 		WARN_ON(btrfs_header_level(eb) != 0);
- 	extent_buffer_get(eb);
-+	WARN_ON(btrfs_header_nritems(eb) > BTRFS_NODEPTRS_PER_BLOCK(root));
- 
+@@ -1292,6 +1292,23 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
  	return eb;
  }
-@@ -2970,8 +2973,10 @@ static int push_node_left(struct btrfs_trans_handle *trans,
- 			   push_items * sizeof(struct btrfs_key_ptr));
  
- 	if (push_items < src_nritems) {
--		tree_mod_log_eb_move(root->fs_info, src, 0, push_items,
--				     src_nritems - push_items);
-+		/*
-+		 * don't call tree_mod_log_eb_move here, key removal was already
-+		 * fully logged by tree_mod_log_eb_copy above.
-+		 */
- 		memmove_extent_buffer(src, btrfs_node_key_ptr_offset(0),
- 				      btrfs_node_key_ptr_offset(push_items),
- 				      (src_nritems - push_items) *
++int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq)
++{
++	struct tree_mod_elem *tm;
++	int level;
++
++	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
++	if (tm && tm->op == MOD_LOG_ROOT_REPLACE) {
++		level = tm->old_root.level;
++	} else {
++		rcu_read_lock();
++		level = btrfs_header_level(root->node);
++		rcu_read_unlock();
++	}
++
++	return level;
++}
++
+ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   struct extent_buffer *buf)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1630be8..34c5a44 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3120,6 +3120,7 @@ static inline u64 btrfs_inc_tree_mod_seq(struct btrfs_fs_info *fs_info)
+ {
+ 	return atomic_inc_return(&fs_info->tree_mod_seq);
+ }
++int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq);
+ 
+ /* root-item.c */
+ int btrfs_find_root_ref(struct btrfs_root *tree_root,
 -- 
 1.7.1
 

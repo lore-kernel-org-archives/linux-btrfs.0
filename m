@@ -1,100 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from loup.kjorling.se ([87.237.208.114]:43010 "EHLO loup.kjorling.se"
+Received: from xp-ob.rzone.de ([81.169.146.137]:27716 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751817Ab2JWIIE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 04:08:04 -0400
-Received: from yeono.kjorling.se (c-6d16e655.6036809--62697410.cust.bredbandsbolaget.se [85.230.22.109])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(Client CN "yeono", Issuer "yeono" (not verified))
-	by loup.kjorling.se (Postfix) with ESMTPS id 1712410A5C0F0
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 07:57:22 +0000 (UTC)
-Received: from yeono.kjorling.se (localhost [127.0.0.1])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(Client did not present a certificate)
-	by yeono (Postfix) with ESMTPS id 886E847E1C9
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 09:57:22 +0200 (CEST)
-Date: Tue, 23 Oct 2012 07:57:21 +0000
-From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: device delete, error removing device
-Message-ID: <20121023075721.GB391@yeono.kjorling.se>
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com>
- <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com>
- <20121022091904.GY25498@carfax.org.uk>
- <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com>
- <20121022171809.GA25498@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="+QahgC5+KEYLbs62"
-In-Reply-To: <20121022171809.GA25498@carfax.org.uk>
+	id S1756339Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Oct 2012 09:55:29 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
+Subject: [PATCH 2/6] Btrfs: fix a tree mod logging issue for root replacement operations
+Date: Tue, 23 Oct 2012 15:55:23 +0200
+Message-Id: <1351000527-24952-3-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Avoid the implicit free by tree_mod_log_set_root_pointer, which is wrong in
+two places. Where needed, we call tree_mod_log_free_eb explicitly now.
 
---+QahgC5+KEYLbs62
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/ctree.c |   10 ++--------
+ 1 files changed, 2 insertions(+), 8 deletions(-)
 
-On 22 Oct 2012 18:18 +0100, from hugo@carfax.org.uk (Hugo Mills):
->> [root@f18v ~]# btrfs device delete /dev/sdb /mnt
->> [root@f18v ~]# btrfs fi show
->> failed to read /dev/sr0
->> Label: none  uuid: 6e96a96e-3357-4f23-b064-0f0713366d45
->> 	Total devices 5 FS bytes used 7.52GB
->> 	devid    5 size 12.00GB used 4.17GB path /dev/sdf
->> 	devid    4 size 12.00GB used 4.62GB path /dev/sde
->> 	devid    3 size 3.00GB used 2.68GB path /dev/sdd
->> 	devid    2 size 3.00GB used 2.68GB path /dev/sdc
->> 	*** Some devices missing
->>=20
->> However, I think that last line is a bug. When I
->>=20
->> [root@f18v ~]# btrfs device delete missing /mnt
->>=20
->> I get
->>=20
->> [ 2152.257163] btrfs: no missing devices found to remove
->>=20
->> So they're missing but not missing?
->=20
->    If you run sync, or wait for 30 seconds, you'll find that fi show
-> shows the correct information again -- btrfs fi show reads the
-> superblocks directly, and if you run it immediately after the dev del,
-> they've not been flushed back to disk yet.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 44a7e25..e6b75cc 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -647,8 +647,6 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
+ 	if (tree_mod_dont_log(fs_info, NULL))
+ 		return 0;
+ 
+-	__tree_mod_log_free_eb(fs_info, old_root);
+-
+ 	ret = tree_mod_alloc(fs_info, flags, &tm);
+ 	if (ret < 0)
+ 		goto out;
+@@ -926,12 +924,7 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_dec_ref(trans, root, buf, 1, 1);
+ 			BUG_ON(ret); /* -ENOMEM */
+ 		}
+-		/*
+-		 * don't log freeing in case we're freeing the root node, this
+-		 * is done by tree_mod_log_set_root_pointer later
+-		 */
+-		if (buf != root->node && btrfs_header_level(buf) != 0)
+-			tree_mod_log_free_eb(root->fs_info, buf);
++		tree_mod_log_free_eb(root->fs_info, buf);
+ 		clean_tree_block(trans, root, buf);
+ 		*last_ref = 1;
+ 	}
+@@ -1728,6 +1721,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 			goto enospc;
+ 		}
+ 
++		tree_mod_log_free_eb(root->fs_info, root->node);
+ 		tree_mod_log_set_root_pointer(root, child);
+ 		rcu_assign_pointer(root->node, child);
+ 
+-- 
+1.7.1
 
-That sounds like it has the potential to bite a lot of people in the
-rear. Yes, 30 seconds or a sync is trivial, but only if you know about
-it.
-
-Considering that a device delete is a pretty rare but potentially
-important operation, would it not be better for a sync to be done
-automatically after a "device delete" command? And potentially others
-in a similar vein. With an option --no-sync or similar to disable the
-behavior (in the relatively unlikely situation that multiple devices
-are unavailable and need to be deleted, for example).
-
-I can definitely see the described behavior qualifying as a "WTF?"
-moment.
-
---=20
-Michael Kj=C3=B6rling =E2=80=A2 http://michael.kjorling.se =E2=80=A2 michae=
-l@kjorling.se
-                =E2=80=9CPeople who think they know everything really annoy
-                those of us who know we don=E2=80=99t.=E2=80=9D (Bjarne Str=
-oustrup)
-
---+QahgC5+KEYLbs62
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFQhk3hdY+HSb3praYRAl8NAKCubXsgWzCxYZ4E2ZK1fs28JGWWagCgk/Lk
-xcyi9J5D38+eVxWOjQgK7/g=
-=GxIv
------END PGP SIGNATURE-----
-
---+QahgC5+KEYLbs62--

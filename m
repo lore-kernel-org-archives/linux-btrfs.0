@@ -1,85 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:62727 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:43019 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756811Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1757046Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 23 Oct 2012 09:55:29 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com
 Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
-Subject: [PATCH 4/6] Btrfs: determine level of old roots
-Date: Tue, 23 Oct 2012 15:55:25 +0200
-Message-Id: <1351000527-24952-5-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: [PATCH 3/6] Btrfs: tree mod log's old roots could still be part of the tree
+Date: Tue, 23 Oct 2012 15:55:24 +0200
+Message-Id: <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
 In-Reply-To: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_find_all_roots' termination condition, we compare the level of the
-old buffer we got from btrfs_search_old_slot to the level of the current
-root node. We'd better compare it to the level of the rewinded root node.
+Tree mod log treated old root buffers as always empty buffers when starting
+the rewind operations. However, the old root may still be part of the
+current tree at a lower level, with still some valid entries.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/backref.c |    4 +---
- fs/btrfs/ctree.c   |   17 +++++++++++++++++
- fs/btrfs/ctree.h   |    1 +
- 3 files changed, 19 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index f318793..65608fb 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -283,9 +283,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 		goto out;
- 	}
- 
--	rcu_read_lock();
--	root_level = btrfs_header_level(root->node);
--	rcu_read_unlock();
-+	root_level = btrfs_old_root_level(root, time_seq);
- 
- 	if (root_level + 1 == level)
- 		goto out;
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 1b60c56..7093ff5 100644
+index e6b75cc..1b60c56 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1292,6 +1292,23 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	return eb;
- }
+@@ -1239,6 +1239,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 	struct tree_mod_root *old_root = NULL;
+ 	u64 old_generation = 0;
+ 	u64 logical;
++	u32 blocksize;
  
-+int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq)
-+{
-+	struct tree_mod_elem *tm;
-+	int level;
-+
-+	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-+	if (tm && tm->op == MOD_LOG_ROOT_REPLACE) {
-+		level = tm->old_root.level;
+ 	eb = btrfs_read_lock_root_node(root);
+ 	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
+@@ -1254,10 +1255,21 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 	}
+ 
+ 	tm = tree_mod_log_search(root->fs_info, logical, time_seq);
+-	if (old_root)
++	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
++		blocksize = btrfs_level_size(root, old_root->level);
++		eb = read_tree_block(root, logical, blocksize, 0);
++		if (!eb) {
++			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
++				logical);
++			WARN_ON(1);
++		} else {
++			eb = btrfs_clone_extent_buffer(eb);
++		}
++	} else if (old_root) {
+ 		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
+-	else
 +	} else {
-+		rcu_read_lock();
-+		level = btrfs_header_level(root->node);
-+		rcu_read_unlock();
+ 		eb = btrfs_clone_extent_buffer(root->node);
 +	}
-+
-+	return level;
-+}
-+
- static inline int should_cow_block(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct extent_buffer *buf)
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1630be8..34c5a44 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3120,6 +3120,7 @@ static inline u64 btrfs_inc_tree_mod_seq(struct btrfs_fs_info *fs_info)
- {
- 	return atomic_inc_return(&fs_info->tree_mod_seq);
- }
-+int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq);
- 
- /* root-item.c */
- int btrfs_find_root_ref(struct btrfs_root *tree_root,
+ 	btrfs_tree_read_unlock(root->node);
+ 	free_extent_buffer(root->node);
+ 	if (!eb)
 -- 
 1.7.1
 

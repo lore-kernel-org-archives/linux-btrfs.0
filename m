@@ -1,60 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m53-178.qiye.163.com ([123.58.178.53]:51503 "EHLO
-	m53-178.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759996Ab2JYQNK (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:54503 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757351Ab2JWRvk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 12:13:10 -0400
-Received: from mail-wi0-f172.google.com (mail-wi0-f172.google.com [209.85.212.172])
-	by m53-178.qiye.163.com (HMail) with ESMTPA id DF58312281FB
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 00:13:06 +0800 (CST)
-Received: by mail-wi0-f172.google.com with SMTP id hq12so6161352wib.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 09:13:04 -0700 (PDT)
-MIME-Version: 1.0
-From: Rock Lee <zimilo@code-trick.com>
-Date: Fri, 26 Oct 2012 00:12:24 +0800
-Message-ID: <CAMRmmpLUsC=L=4sUf09Gx97W1hvc2FoOMmqOydiZQ6XwumUoYQ@mail.gmail.com>
-Subject: [PATCH V2][BTRFS-PROGS] [BUG] Fix Bug to corrupt the img file
+	Tue, 23 Oct 2012 13:51:40 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so1518986eek.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 10:51:39 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
+        Wang Sheng-Hui <shhuiw@gmail.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/5] Move parse_size() to utils.[hc]
+Date: Tue, 23 Oct 2012 19:51:51 +0200
+Message-Id: <1351014715-5727-2-git-send-email-kreijack@inwind.com>
+In-Reply-To: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
+References: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix Bug to corrupt the img file
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Reproduce steps:
-  > dd if=/dev/zero of=btrfs-small.img bs=1M count=1
-  > ls -lh btrfs-small.img
-  -rw-rw-r--. 1 rock rock 1.0M Oct 24 09:51 btrfs-small.img
-                                      ^^^
-  > mkfs.btrfs btrfs-small.img
-  -rw-rw-r--. 1 rock rock 2.0M Oct 24 09:53 btrfs-small.img
-                                      ^^^
-
-Here you can see the original img file's size goes larger to 2Mb.
-
-Signed-off-by: Rock Lee <zimilo@code-trick.com>
+Move the function from cmds-filesystem.c and mkfs.c to utils.c
 ---
- utils.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+ cmds-filesystem.c |   26 --------------------------
+ mkfs.c            |   31 -------------------------------
+ utils.c           |   26 ++++++++++++++++++++++++++
+ utils.h           |    2 ++
+ 4 files changed, 28 insertions(+), 57 deletions(-)
 
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 9c43d35..507239a 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -311,32 +311,6 @@ static int cmd_sync(int argc, char **argv)
+ 	return 0;
+ }
+ 
+-static u64 parse_size(char *s)
+-{
+-	int len = strlen(s);
+-	char c;
+-	u64 mult = 1;
+-
+-	if (!isdigit(s[len - 1])) {
+-		c = tolower(s[len - 1]);
+-		switch (c) {
+-		case 'g':
+-			mult *= 1024;
+-		case 'm':
+-			mult *= 1024;
+-		case 'k':
+-			mult *= 1024;
+-		case 'b':
+-			break;
+-		default:
+-			fprintf(stderr, "Unknown size descriptor %c\n", c);
+-			exit(1);
+-		}
+-		s[len - 1] = '\0';
+-	}
+-	return atoll(s) * mult;
+-}
+-
+ static int parse_compress_type(char *s)
+ {
+ 	if (strcmp(optarg, "zlib") == 0)
+diff --git a/mkfs.c b/mkfs.c
+index 47f0c9c..ca850d9 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -54,37 +54,6 @@ struct directory_name_entry {
+ 	struct list_head list;
+ };
+ 
+-static u64 parse_size(char *s)
+-{
+-	int len = strlen(s);
+-	char c;
+-	u64 mult = 1;
+-	u64 ret;
+-
+-	s = strdup(s);
+-
+-	if (len && !isdigit(s[len - 1])) {
+-		c = tolower(s[len - 1]);
+-		switch (c) {
+-		case 'g':
+-			mult *= 1024;
+-		case 'm':
+-			mult *= 1024;
+-		case 'k':
+-			mult *= 1024;
+-		case 'b':
+-			break;
+-		default:
+-			fprintf(stderr, "Unknown size descriptor %c\n", c);
+-			exit(1);
+-		}
+-		s[len - 1] = '\0';
+-	}
+-	ret = atol(s) * mult;
+-	free(s);
+-	return ret;
+-}
+-
+ static int make_root_dir(struct btrfs_root *root, int mixed)
+ {
+ 	struct btrfs_trans_handle *trans;
 diff --git a/utils.c b/utils.c
-index 205e667..7ba746e 100644
+index 205e667..705be7b 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -557,6 +557,12 @@ int btrfs_prepare_device(int fd, char *file, int
-zero_end, u64 *block_count_ret,
-        }
-        if (max_block_count)
-                block_count = min(block_count, max_block_count);
+@@ -1220,3 +1220,29 @@ scan_again:
+ 	return 0;
+ }
+ 
++u64 parse_size(char *s)
++{
++	int len = strlen(s);
++	char c;
++	u64 mult = 1;
 +
-+       if (block_count < 2 * 1024 * 1024) {
-+               fprintf(stderr, "size of %s is too small(less than
-2Mb)\n", file);
-+               exit(1);
-+       }
++	if (!isdigit(s[len - 1])) {
++		c = tolower(s[len - 1]);
++		switch (c) {
++		case 'g':
++			mult *= 1024;
++		case 'm':
++			mult *= 1024;
++		case 'k':
++			mult *= 1024;
++		case 'b':
++			break;
++		default:
++			fprintf(stderr, "Unknown size descriptor %c\n", c);
++			exit(1);
++		}
++		s[len - 1] = '\0';
++	}
++	return atoll(s) * mult;
++}
 +
-        zero_end = 1;
-
-        if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
+diff --git a/utils.h b/utils.h
+index 3a0368b..714fd7a 100644
+--- a/utils.h
++++ b/utils.h
+@@ -46,4 +46,6 @@ int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ 
+ int btrfs_scan_block_devices(int run_ioctl);
++
++u64 parse_size(char *s);
+ #endif
 -- 
-1.7.9.5
+1.7.10.4
+

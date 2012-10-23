@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:43315 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754576Ab2JWPae (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:24588 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757095Ab2JWPba (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 11:30:34 -0400
-Message-ID: <5086B81C.5070901@oracle.com>
-Date: Tue, 23 Oct 2012 23:30:36 +0800
+	Tue, 23 Oct 2012 11:31:30 -0400
+Message-ID: <5086B851.6020109@oracle.com>
+Date: Tue, 23 Oct 2012 23:31:29 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
 To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/6] Btrfs: tree mod log's old roots could still be part
- of the tree
-References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net> <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH 4/6] Btrfs: determine level of old roots
+References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net> <1351000527-24952-5-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1351000527-24952-5-git-send-email-list.btrfs@jan-o-sch.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 10/23/2012 09:55 PM, Jan Schmidt wrote:
-> Tree mod log treated old root buffers as always empty buffers when starting
-> the rewind operations. However, the old root may still be part of the
-> current tree at a lower level, with still some valid entries.
+> In btrfs_find_all_roots' termination condition, we compare the level of the
+> old buffer we got from btrfs_search_old_slot to the level of the current
+> root node. We'd better compare it to the level of the rewinded root node.
 > 
 
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
@@ -32,44 +31,65 @@ liubo
 
 > Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 > ---
->  fs/btrfs/ctree.c |   16 ++++++++++++++--
->  1 files changed, 14 insertions(+), 2 deletions(-)
+>  fs/btrfs/backref.c |    4 +---
+>  fs/btrfs/ctree.c   |   17 +++++++++++++++++
+>  fs/btrfs/ctree.h   |    1 +
+>  3 files changed, 19 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index e6b75cc..1b60c56 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1239,6 +1239,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
->  	struct tree_mod_root *old_root = NULL;
->  	u64 old_generation = 0;
->  	u64 logical;
-> +	u32 blocksize;
->  
->  	eb = btrfs_read_lock_root_node(root);
->  	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-> @@ -1254,10 +1255,21 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index f318793..65608fb 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -283,9 +283,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+>  		goto out;
 >  	}
 >  
->  	tm = tree_mod_log_search(root->fs_info, logical, time_seq);
-> -	if (old_root)
-> +	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
-> +		blocksize = btrfs_level_size(root, old_root->level);
-> +		eb = read_tree_block(root, logical, blocksize, 0);
-> +		if (!eb) {
-> +			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
-> +				logical);
-> +			WARN_ON(1);
-> +		} else {
-> +			eb = btrfs_clone_extent_buffer(eb);
-> +		}
-> +	} else if (old_root) {
->  		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
-> -	else
+> -	rcu_read_lock();
+> -	root_level = btrfs_header_level(root->node);
+> -	rcu_read_unlock();
+> +	root_level = btrfs_old_root_level(root, time_seq);
+>  
+>  	if (root_level + 1 == level)
+>  		goto out;
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 1b60c56..7093ff5 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1292,6 +1292,23 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+>  	return eb;
+>  }
+>  
+> +int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq)
+> +{
+> +	struct tree_mod_elem *tm;
+> +	int level;
+> +
+> +	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
+> +	if (tm && tm->op == MOD_LOG_ROOT_REPLACE) {
+> +		level = tm->old_root.level;
 > +	} else {
->  		eb = btrfs_clone_extent_buffer(root->node);
+> +		rcu_read_lock();
+> +		level = btrfs_header_level(root->node);
+> +		rcu_read_unlock();
 > +	}
->  	btrfs_tree_read_unlock(root->node);
->  	free_extent_buffer(root->node);
->  	if (!eb)
+> +
+> +	return level;
+> +}
+> +
+>  static inline int should_cow_block(struct btrfs_trans_handle *trans,
+>  				   struct btrfs_root *root,
+>  				   struct extent_buffer *buf)
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 1630be8..34c5a44 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3120,6 +3120,7 @@ static inline u64 btrfs_inc_tree_mod_seq(struct btrfs_fs_info *fs_info)
+>  {
+>  	return atomic_inc_return(&fs_info->tree_mod_seq);
+>  }
+> +int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq);
+>  
+>  /* root-item.c */
+>  int btrfs_find_root_ref(struct btrfs_root *tree_root,
 > 
 

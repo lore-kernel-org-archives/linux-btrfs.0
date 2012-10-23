@@ -1,64 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.137]:43019 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:61607 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757046Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1757041Ab2JWNz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 23 Oct 2012 09:55:29 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com
 Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
-Subject: [PATCH 3/6] Btrfs: tree mod log's old roots could still be part of the tree
-Date: Tue, 23 Oct 2012 15:55:24 +0200
-Message-Id: <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: [PATCH 6/6] Btrfs: comment for loop in tree_mod_log_insert_move
+Date: Tue, 23 Oct 2012 15:55:27 +0200
+Message-Id: <1351000527-24952-7-git-send-email-list.btrfs@jan-o-sch.net>
 In-Reply-To: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tree mod log treated old root buffers as always empty buffers when starting
-the rewind operations. However, the old root may still be part of the
-current tree at a lower level, with still some valid entries.
+Emphasis the way tree_mod_log_insert_move avoids adding
+MOD_LOG_KEY_REMOVE_WHILE_MOVING operations, depending on the direction of
+the move operation.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/ctree.c |   16 ++++++++++++++--
- 1 files changed, 14 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e6b75cc..1b60c56 100644
+index bed06e8..c608b3c 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1239,6 +1239,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	struct tree_mod_root *old_root = NULL;
- 	u64 old_generation = 0;
- 	u64 logical;
-+	u32 blocksize;
+@@ -596,6 +596,11 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 	if (tree_mod_dont_log(fs_info, eb))
+ 		return 0;
  
- 	eb = btrfs_read_lock_root_node(root);
- 	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-@@ -1254,10 +1255,21 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	}
- 
- 	tm = tree_mod_log_search(root->fs_info, logical, time_seq);
--	if (old_root)
-+	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
-+		blocksize = btrfs_level_size(root, old_root->level);
-+		eb = read_tree_block(root, logical, blocksize, 0);
-+		if (!eb) {
-+			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
-+				logical);
-+			WARN_ON(1);
-+		} else {
-+			eb = btrfs_clone_extent_buffer(eb);
-+		}
-+	} else if (old_root) {
- 		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
--	else
-+	} else {
- 		eb = btrfs_clone_extent_buffer(root->node);
-+	}
- 	btrfs_tree_read_unlock(root->node);
- 	free_extent_buffer(root->node);
- 	if (!eb)
++	/*
++	 * When we override something during the move, we log these removals.
++	 * This can only happen when we move towards the beginning of the
++	 * buffer, i.e. dst_slot < src_slot.
++	 */
+ 	for (i = 0; i + dst_slot < src_slot && i < nr_items; i++) {
+ 		ret = tree_mod_log_insert_key_locked(fs_info, eb, i + dst_slot,
+ 					      MOD_LOG_KEY_REMOVE_WHILE_MOVING);
 -- 
 1.7.1
 

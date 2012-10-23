@@ -1,168 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:61144 "EHLO
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:45137 "EHLO
 	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750895Ab2JOVHK (ORCPT
+	with ESMTP id S1756708Ab2JWSsK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 17:07:10 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so3199079eek.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2012 14:07:09 -0700 (PDT)
-Message-ID: <507C7B12.8010708@gmail.com>
-Date: Mon, 15 Oct 2012 23:07:30 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
+	Tue, 23 Oct 2012 14:48:10 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so1542229eek.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 11:48:08 -0700 (PDT)
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Goffredo Baroncelli <kreijack@inwind.it>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Move parse_size() in utils.c
-References: <1350299942-23468-1-git-send-email-sbehrens@giantdisaster.de> <1350328523-7465-1-git-send-email-kreijack@gmail.com> <1350328523-7465-2-git-send-email-kreijack@gmail.com> <507C73D7.6010904@giantdisaster.de>
-In-Reply-To: <507C73D7.6010904@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
+References: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
+Date: Tue, 23 Oct 2012 20:48:08 +0200
+Message-ID: <CAJHuE_DAJNSMF5nXiMxUiG0X4KGj4vwuT6QJbWpRBppuHA9HjQ@mail.gmail.com>
+Subject: Re: [PATCH][BTRFS-PROGS][V2] Update to parse_size()
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
+        Wang Sheng-Hui <shhuiw@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Stefan,
+Sorry the version is V1 and not V2
 
-On 2012-10-15 22:36, Stefan Behrens wrote:
-> Hi Goffredo
+On Tue, Oct 23, 2012 at 7:51 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
+> Hi all,
 >
-> On 10/15/2012 21:15, Goffredo Baroncelli wrote:
->> From: Goffredo Baroncelli <kreijack@inwind.it>
->>
->> Move parse_size() in utils.c, because it is used both from
->> cmds-filesystem.c and mkfs.c.
+> the following patches attempt to address some issues to the function
+> parse_size():
+> - this function is defined both in mkfs.c and cmds-filesystem.c; I
+> moved it in utils.c (which is already used in both mkfs.btrfs and
+> btrfs) in order to avoid code duplication.
+> - it used the function atoll(); I replaceed atoll() with strtoull()
+> because we are dealing with u64
+> - no check on suffixes was performed. If the user put 'MB' as suffix he got
+> bytes instead megabytes. The patches check the suffix is valid
+> - add new suffixes (t,p,e for terabytes, petabytes, exabytes)
+> - update the man page of the command mkfs.btrfs and
+> "btrfs filesystem defragment", both use parse_size()
 >
-> Makes sense.
-> (Jan also sent such a patch on 1 Feb 2011 
-> <http://permalink.gmane.org/gmane.comp.file-systems.btrfs/9016>, as 
-> part of the patch for speed profiles and dedicated log devices. But 
-> the whole patch series was not integrated.)
+> Several peoples (see cc's) suggested these improvements with different
+> patches, I collected them togheter.
 >
->> Moreover added check about overflow, support to further units (
->> t=tera, e=exa, z=zetta, y=yotta).
+> Please reviewed them, test them. Comments are welcome.
 >
-> Don't make it too complicated, please. Btrfs cannot handle more than 
-> 2^64 bytes.
-
-yeaa I didn't resisted :-)
+> The patches are available also to
 >
->> Correct a bug which happens if a value like 123MB is passed: before
->> the function returned 123 instead of 123*1024*1024
->
-> Yes, that should be fixed. 'B' is taken as the size multiplier 'byte' 
-> (times one) and 'M' is silently ignored. 
-
-
-> [....]
->>
->> +/*
->> + *  see http://gurmeet.net/puzzles/fast-bit-counting-routines/ for
->> + *  further algorithms, I used the only one which I understood :-)
->> + */
->> +static int bitcount(u64 v)
->> +{
->> +    int    n;
->> +    for(n=0; v ; n++, v >>= 1) ;
->> +
->> +    return n;
->> +}
->
-> IMO, something like bitcount() is not needed, much too complicated for 
-> such a minor issue.
-
-I fear that if somebody pass something like 16E, it got un-predicible 
-results. Let me to wait a day to see if anyone has a different opinion 
-on it. If nobody tell otherwise I will remove this check.
-
->
->> +
->> +u64 parse_size(char *s)
->> +{
->> +    int shift = 0;
->> +    u64 ret;
->> +    int n, i;
->> +
->> +    s = strdup(s);
->
-> Either don't call strdup() or free() the memory at the end.
-
-This was a my BUG, I removed the needing of strdup(), but I don't remove 
-the strdup() itself :-)
-Thanks to catch it.
-
->
->> +
->> +    for( i = 0 ; s[i] && isdigit(s[i]) ; i++ ) ;
->> +    switch (tolower(s[i])) {
->> +        /* note: the yobibyte and the zebibyte don't fit
->> +           in a u64, they need an u128 !!! */
->
-> If the comment is correct, please remove yobi, zebi and the comment :)
-
-ok... (but zfs supports zettabyte filesystem.... )
-
->
->> +        case 'y':    /* yobibyte */
->> +            shift += 10;
->> +        case 'z':    /* zebibyte */
->> +            shift += 10;
->> +        case 'e':    /* exbibyte */
->> +            shift += 10;
->> +        case 'p':    /* pebibyte */
->> +            shift += 10;
->> +        case 't':    /* tetibyte */
->> +            shift += 10;
->> +        case 'g':    /* gibibyte */
->> +            shift += 10;
->> +        case 'm':    /* mebibyte */
->> +            shift += 10;
->> +        case 'k':    /* kibibyte */
->> +            shift += 10;
->> +        case 0:
->
-> This should be "case 'b'" at the end in order to maintain backward 
-> compatibility.
-Ok, this make sense
->
->> +            break;
->> +        default:
->> +            fprintf(stderr, "ERROR: Unknown size descriptor %c\n",
->> +                s[i]);
->> +            exit(1);
->> +    }
->> +    ret = strtoull(s, 0, 0);
->> +    n = bitcount(ret);
->> +
->> +    if( ( n + shift ) > ( sizeof(u64) * CHAR_BIT )) {
->> +        fprintf(stderr, "ERROR: Overflow, the value '%s' is too big\n",
->> +            s);
->> +        fprintf(stderr, "ERROR: Abort\n");
->> +        exit(1);
->> +    }
->
-> IMO, bitcount() and the check afterwards should be removed.
->
->> +
->> +    return ret << shift;
->> +}
->> +
->> +
->> diff --git a/utils.h b/utils.h
->> index 3a0368b..180b3f9 100644
->> --- a/utils.h
->> +++ b/utils.h
->> @@ -46,4 +46,5 @@ int check_label(char *input);
->>   int get_mountpt(char *dev, char *mntpt, size_t size);
->>
->>   int btrfs_scan_block_devices(int run_ioctl);
->> +u64 parse_size(char *s);
->>   #endif
->>
+> You can pull the patch from
+>         http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+> branch
+>         parse_size
 >
 >
-
-I updated the patch on my repo (see first email), if someone want to 
-make some tests. As explained above I will wait a day, then I will 
-re-issue the patch.
-
-BR
-G.Baroncelli
-
+> Signed-off-by: Goffredo Baroncelli <kreij...@inwind.it>
+>
+> Changelog:
+> V1: avoid to change the parse_size argument;
+>     better check of a wrong suffix;
+>     force strtoull to use a decimal base
+>

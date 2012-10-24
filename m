@@ -1,57 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m199-177.yeah.net ([123.58.177.199]:42850 "EHLO
-	m199-177.yeah.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756859Ab2JWJMM (ORCPT
+Received: from m53-178.qiye.163.com ([123.58.178.53]:40681 "EHLO
+	m53-178.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933529Ab2JXIYt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 05:12:12 -0400
-Received: from mail-la0-f46.google.com (mail-la0-f46.google.com [209.85.215.46])
-	by m199-177.yeah.net (HMail) with ESMTPA id 0D2DB10041F
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 17:12:09 +0800 (CST)
-Received: by mail-la0-f46.google.com with SMTP id h6so2184039lag.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 02:12:07 -0700 (PDT)
+	Wed, 24 Oct 2012 04:24:49 -0400
+Received: from mail-lb0-f174.google.com (mail-lb0-f174.google.com [209.85.217.174])
+	by m53-178.qiye.163.com (HMail) with ESMTPA id E4B6112284C5
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 16:24:45 +0800 (CST)
+Received: by mail-lb0-f174.google.com with SMTP id n3so897335lbo.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 01:24:42 -0700 (PDT)
 MIME-Version: 1.0
 From: Rock Lee <zimilo@code-trick.com>
-Date: Tue, 23 Oct 2012 17:11:27 +0800
-Message-ID: <CAMRmmpLkp58en6mikZ9MAYwoA_kkrZx+UNTifjXSw3=hELLZZw@mail.gmail.com>
-Subject: [PATCH] [btrfs-progs] Modify parse_size to remove the strdup/free
+Date: Wed, 24 Oct 2012 16:24:02 +0800
+Message-ID: <CAMRmmpLvLEC_SayRxBJHs=-sunrn_oA6Cy=-pRd+s1v4XDE24g@mail.gmail.com>
+Subject: [BUG][PATCH][BTRFS-PROGS] Bug overflow fix
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the function atoi(l) series stop at the first non numeric chars,
+If there's is a long name directory exists in the /dev, then an
+overflow will hit in function utils.c btrfs_scan_one_dir:1013!
 
-So there's no need to strdup the original s and modify s[len-1] = '\0'
+The minimal fix is to use snprintf instead of strcpy.
+
+The reason why not using strncpy is that, if there is no null byte
+among the first n bytes of src, the string  placed  in  dest
+will not be null - terminated.
 
 Signed-off-by: Rock Lee <zimilo@code-trick.com>
 ---
- mkfs.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
+ utils.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index 47f0c9c..663d73c 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -61,8 +61,6 @@ static u64 parse_size(char *s)
- 	u64 mult = 1;
- 	u64 ret;
+diff --git a/utils.c b/utils.c
+index 3c88d2e..7200aef 100644
+--- a/utils.c
++++ b/utils.c
+@@ -969,7 +969,7 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+ 	pending = malloc(sizeof(*pending));
+ 	if (!pending)
+ 		return -ENOMEM;
+-	strcpy(pending->name, dirname);
++	snprintf(pending->name, sizeof(pending->name), "%s", dirname);
 
--	s = strdup(s);
--
- 	if (len && !isdigit(s[len - 1])) {
- 		c = tolower(s[len - 1]);
- 		switch (c) {
-@@ -78,10 +76,9 @@ static u64 parse_size(char *s)
- 			fprintf(stderr, "Unknown size descriptor %c\n", c);
- 			exit(1);
+ again:
+ 	dirname_len = strlen(pending->name);
+@@ -1010,7 +1010,8 @@ again:
+ 				ret = -ENOMEM;
+ 				goto fail;
+ 			}
+-			strcpy(next->name, fullpath);
++			snprintf(next->name, sizeof(next->name),
++				 "%s", fullpath);
+ 			list_add_tail(&next->list, &pending_list);
  		}
--		s[len - 1] = '\0';
- 	}
-+
- 	ret = atol(s) * mult;
--	free(s);
- 	return ret;
- }
-
+ 		if (!S_ISBLK(st.st_mode)) {
 -- 
 1.7.7.6

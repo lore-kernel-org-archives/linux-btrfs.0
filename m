@@ -1,117 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:55818 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755618Ab2JXUog (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:62448 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755978Ab2JXV0i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 16:44:36 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rr4so1475156pbb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 13:44:36 -0700 (PDT)
-Date: Thu, 25 Oct 2012 02:14:07 +0530
-From: Raghavendra D Prabhu <raghu.prabhu13@gmail.com>
-To: KOSAKI Motohiro <kosaki.motohiro@gmail.com>
-Cc: Fengguang Wu <fengguang.wu@intel.com>, zheng.yan@oracle.com,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH] Change the check for PageReadahead into an else-if
-Message-ID: <20121024204407.GA3218@Archie>
-References: <08589dd39c78346ec2ed2fedfd6e3121ca38acda.1350413420.git.rprabhu@wnohang.net>
- <20121017020012.GA13769@localhost>
- <CAHGf_=qxMv20bNg2FZLCO2Ra0S+zTicxQEXu=nOTc-f3kiWj-Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="mYCpIKhGyMATD0i+"
-In-Reply-To: <CAHGf_=qxMv20bNg2FZLCO2Ra0S+zTicxQEXu=nOTc-f3kiWj-Q@mail.gmail.com>
+	Wed, 24 Oct 2012 17:26:38 -0400
+Received: by mail-pa0-f46.google.com with SMTP id hz1so646738pad.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 14:26:38 -0700 (PDT)
+From: raghu.prabhu13@gmail.com
+To: kosaki.motohiro@gmail.com, fengguang.wu@intel.com, zheng.z.yan@intel.com
+Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        Raghavendra D Prabhu <rprabhu@wnohang.net>
+Subject: [PATCH v2] Change the check for PageReadahead into an else-if
+Date: Thu, 25 Oct 2012 02:56:04 +0530
+Message-Id: <05ff4f71283e84be8ab1b312864168d89535239f.1351113536.git.rprabhu@wnohang.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Raghavendra D Prabhu <rprabhu@wnohang.net>
 
---mYCpIKhGyMATD0i+
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+>From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coalesces
+async readahead into its readahead window, so another checking for that again is
+not required.
 
-Hi,
+Version 2: Fixed the incorrect indentation.
 
+Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
+---
+ fs/btrfs/relocation.c | 4 +---
+ mm/filemap.c          | 3 +--
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
-* On Tue, Oct 16, 2012 at 10:02:44PM -0400, KOSAKI Motohiro <kosaki.motohir=
-o@gmail.com> wrote:
->On Tue, Oct 16, 2012 at 10:00 PM, Fengguang Wu <fengguang.wu@intel.com> wr=
-ote:
->> On Wed, Oct 17, 2012 at 12:28:05AM +0530, raghu.prabhu13@gmail.com wrote:
->>> From: Raghavendra D Prabhu <rprabhu@wnohang.net>
->>>
->>> >From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coa=
-lesces
->>> async readahead into its readahead window, so another checking for that=
- again is
->>> not required.
->>>
->>> Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
->>> ---
->>>  fs/btrfs/relocation.c | 10 ++++------
->>>  mm/filemap.c          |  3 +--
->>>  2 files changed, 5 insertions(+), 8 deletions(-)
->>>
->>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->>> index 4da0865..6362003 100644
->>
->>> --- a/fs/btrfs/relocation.c
->>> +++ b/fs/btrfs/relocation.c
->>> @@ -2996,12 +2996,10 @@ static int relocate_file_extent_cluster(struct =
-inode *inode,
->>>                               ret =3D -ENOMEM;
->>>                               goto out;
->>>                       }
->>> -             }
->>> -
->>> -             if (PageReadahead(page)) {
->>> -                     page_cache_async_readahead(inode->i_mapping,
->>> -                                                ra, NULL, page, index,
->>> -                                                last_index + 1 - index=
-);
->>> +             } else if (PageReadahead(page)) {
->>> +                             page_cache_async_readahead(inode->i_mappi=
-ng,
->>> +                                                     ra, NULL, page, i=
-ndex,
->>> +                                                     last_index + 1 - =
-index);
->>
->> That extra indent is not necessary.
->>
->> Otherwise looks good to me. Thanks!
->>
->> Reviewed-by: Fengguang Wu <fengguang.wu@intel.com>
->
->Hi Raghavendra,
->
->Indentation breakage is now welcome. Please respin it. Otherwise
->
->Acked-by: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 776f0aa..8cfa1ab 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2996,9 +2996,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 				ret = -ENOMEM;
+ 				goto out;
+ 			}
+-		}
+-
+-		if (PageReadahead(page)) {
++		} else if (PageReadahead(page)) {
+ 			page_cache_async_readahead(inode->i_mapping,
+ 						   ra, NULL, page, index,
+ 						   last_index + 1 - index);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 83efee7..aa440f16 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1113,8 +1113,7 @@ find_page:
+ 			page = find_get_page(mapping, index);
+ 			if (unlikely(page == NULL))
+ 				goto no_cached_page;
+-		}
+-		if (PageReadahead(page)) {
++		} else if (PageReadahead(page)) {
+ 			page_cache_async_readahead(mapping,
+ 					ra, filp, page,
+ 					index, last_index - index);
+--
+1.8.0
 
-Thanks, will do.
-
-
-Regards,
---=20
-Raghavendra Prabhu
-GPG Id : 0xD72BE977
-Fingerprint: B93F EBCB 8E05 7039 CD3C A4B8 A616 DCA1 D72B E977
-www: wnohang.net
-
---mYCpIKhGyMATD0i+
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
-
-iQEcBAEBAgAGBQJQiFMXAAoJEKYW3KHXK+l3UdEIAMgbpM2D4fp6BmjHQEgFyRdX
-W5tJ1pV3tvBiaiHUAqvh/fjuKE1vnVPXDCfjrF/UB3itfjCVaBMShNNSWQbMEYYX
-PZ7zCsxeUFjXTCQQIU4oxEGfzidsMUp80N+3/v0lpMd1E6aJsWCHNTyCrWdbfdBi
-cIy4sMszX6TAJRoEcCASDTEjISTgkh/wVvM4UfgHZdnMsIPSHLOD+SXjmXEgLn9w
-udrfZi436E1tOQOQFYiJpmpWGXTD374K1FwVTW6hJ7AJlxo7QsHq2cqp211DRnDo
-zGPxYmtcVse0q6Yk4fQV5IKaSQb6BfrPzwo0c7lFIBtCnuxugE3iRTKFIyosx7M=
-=Atud
------END PGP SIGNATURE-----
-
---mYCpIKhGyMATD0i+--

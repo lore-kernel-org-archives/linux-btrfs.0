@@ -1,76 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43809 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755024Ab2JXJzh (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:51320 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755420Ab2JXJ6r convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 05:55:37 -0400
-Message-ID: <5087BB1D.4020501@oracle.com>
-Date: Wed, 24 Oct 2012 17:55:41 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+	Wed, 24 Oct 2012 05:58:47 -0400
+Received: by mail-lb0-f174.google.com with SMTP id n3so941712lbo.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 02:58:45 -0700 (PDT)
 MIME-Version: 1.0
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/6] Btrfs: tree mod log's old roots could still be part
- of the tree
-References: <1351000527-24952-1-git-send-email-list.btrfs@jan-o-sch.net> <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1351000527-24952-4-git-send-email-list.btrfs@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <507AA0E7.30706@petaramesh.org>
+References: <507AA0E7.30706@petaramesh.org>
+Date: Wed, 24 Oct 2012 11:58:45 +0200
+Message-ID: <CAOcd+r1Gt5XoPuRB3vyDak21xNFufCLvfATbFvCyt3foq4RfJw@mail.gmail.com>
+Subject: Re: inode_cache
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Cc: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/23/2012 09:55 PM, Jan Schmidt wrote:
-> Tree mod log treated old root buffers as always empty buffers when starting
-> the rewind operations. However, the old root may still be part of the
-> current tree at a lower level, with still some valid entries.
-> 
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-> ---
->  fs/btrfs/ctree.c |   16 ++++++++++++++--
->  1 files changed, 14 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index e6b75cc..1b60c56 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1239,6 +1239,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
->  	struct tree_mod_root *old_root = NULL;
->  	u64 old_generation = 0;
->  	u64 logical;
-> +	u32 blocksize;
->  
->  	eb = btrfs_read_lock_root_node(root);
->  	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-> @@ -1254,10 +1255,21 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
->  	}
->  
->  	tm = tree_mod_log_search(root->fs_info, logical, time_seq);
-> -	if (old_root)
-> +	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
-> +		blocksize = btrfs_level_size(root, old_root->level);
-> +		eb = read_tree_block(root, logical, blocksize, 0);
+Swami,
+I believe the only thing that "inode_cache" mount option does is
+allowing to reuse inode numbers. Like if you had a file with inode
+number=X and you delete this file, then you will never have inode=X in
+the same file tree (subvolume) again. You can look at
+btrfs_find_free_ino() that allocates an inode number to understand
+this better. Since inode number is u64, it is perhaps unlikely that
+you ever run out of inode numbers. But still this mount option is
+present and implemented, so perhaps there is some reason for that.
+You can also look at "Free space cache writeback issue" note from Jan
+on the list; looks like he discovered some issue with that option.
 
-I found that read_tree_block() may use GFP_NOFS if we need to create an eb,
-and this may block read_lock().
-It's not always blocked but it did block, so we'd better give an atomic version of this.
+Alex.
 
-thanks,
-liubo
 
-> +		if (!eb) {
-> +			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
-> +				logical);
-> +			WARN_ON(1);
-> +		} else {
-> +			eb = btrfs_clone_extent_buffer(eb);
-> +		}
-> +	} else if (old_root) {
->  		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
-> -	else
-> +	} else {
->  		eb = btrfs_clone_extent_buffer(root->node);
-> +	}
->  	btrfs_tree_read_unlock(root->node);
->  	free_extent_buffer(root->node);
->  	if (!eb)
-> 
-
+On Sun, Oct 14, 2012 at 1:24 PM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+> Hi there,
+>
+> On a performance standpoint - and on Ubuntu Quantall kernel 3.5.0-17 -
+> is it advisable to mount BTRFS with "inode_cache" ?
+>
+> Is there any risk or counterpart doing so ?
+>
+> TIA, kind regards.
+>
+> --
+> Swāmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+> Ne cherchez pas : Je ne suis pas sur Facebook.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

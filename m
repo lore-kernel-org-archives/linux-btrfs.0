@@ -1,64 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:62448 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755978Ab2JXV0i (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:46937 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161047Ab2JXVaS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 17:26:38 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so646738pad.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 14:26:38 -0700 (PDT)
-From: raghu.prabhu13@gmail.com
-To: kosaki.motohiro@gmail.com, fengguang.wu@intel.com, zheng.z.yan@intel.com
-Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        Raghavendra D Prabhu <rprabhu@wnohang.net>
-Subject: [PATCH v2] Change the check for PageReadahead into an else-if
-Date: Thu, 25 Oct 2012 02:56:04 +0530
-Message-Id: <05ff4f71283e84be8ab1b312864168d89535239f.1351113536.git.rprabhu@wnohang.net>
+	Wed, 24 Oct 2012 17:30:18 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so380259eek.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 14:30:17 -0700 (PDT)
+Message-ID: <50885E0D.9040701@gmail.com>
+Date: Wed, 24 Oct 2012 23:30:53 +0200
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: Re: device delete, error removing device [SOLVED]
+References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <20121022171809.GA25498@carfax.org.uk> <20121023075721.GB391@yeono.kjorling.se> <5086DDAE.3050708@gmail.com> <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com> <5086E9D6.4070201@inwind.it> <3443D67F-6CCE-48BF-A1DB-12473BE95EE8@colorremedies.com> <5087174A.2060405@inwind.it> <1BE15E02-3DBE-42AB-8900-D82C11BCD1B7@colorremedies.com> <50882E38.4000408@gmail.com> <D0E7C142-9FAE-4233-BA2E-BB1EB341FD93@colorremedies.com>
+In-Reply-To: <D0E7C142-9FAE-4233-BA2E-BB1EB341FD93@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Raghavendra D Prabhu <rprabhu@wnohang.net>
+On 2012-10-24 21:13, Chris Murphy wrote:
+> 
+> On Oct 24, 2012, at 12:06 PM, Goffredo Baroncelli
+> <kreijack@gmail.com> wrote:
+>>> 
+>> 
+>> I was able to reproduce it:
+>> 
+>> - I filled the filesystem until I got "No space left on device".
+> 
+> I didn't even need to get that far.
+> 
+> 
+>> So it seems that I spread all the data to the other disk, filling
+>> up the smaller ones. So it stuck to "No space left on device".
+>> 
+>> Now I rebalanced with -dconvert=single, as suggested by Hugo, then
+>> I was able to remove the disk:
+>> 
+>> Label: 'test2'  uuid: 11d0f1a8-2770-4ff2-8df5-f772f1056edc Total
+>> devices 3 FS bytes used 7.63GB devid    4 size 12.00GB used 9.48GB
+>> path /dev/vdf devid    3 size 3.00GB used 492.94MB path /dev/vdd 
+>> devid    2 size 3.00GB used 64.00MB path /dev/vdc
+> 
+> It's an interesting solution, but difficult for a larger file system.
+> Or at least, could be very time consuming.
+It is not a solution but a workaround.
 
->From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coalesces
-async readahead into its readahead window, so another checking for that again is
-not required.
+> Aside from the "no space left" problem, the 'device delete' behavior
+> itself has kindof a high penalty: a successful 'device delete' on a
+> five disk raid10 (one was added in advance of the delete), all disks
+> are significantly written to, not merely a reconstruction of the
+> replaced disk. It means a lot of writing to do disk removals in the
+> face of an impending disk failure.
 
-Version 2: Fixed the incorrect indentation.
+I am not telling that this is the right solution, I am telling that this
+is the only solution available now :-(
 
-Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
----
- fs/btrfs/relocation.c | 4 +---
- mm/filemap.c          | 3 +--
- 2 files changed, 2 insertions(+), 5 deletions(-)
+However this page
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 776f0aa..8cfa1ab 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2996,9 +2996,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 				ret = -ENOMEM;
- 				goto out;
- 			}
--		}
--
--		if (PageReadahead(page)) {
-+		} else if (PageReadahead(page)) {
- 			page_cache_async_readahead(inode->i_mapping,
- 						   ra, NULL, page, index,
- 						   last_index + 1 - index);
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 83efee7..aa440f16 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1113,8 +1113,7 @@ find_page:
- 			page = find_get_page(mapping, index);
- 			if (unlikely(page == NULL))
- 				goto no_cached_page;
--		}
--		if (PageReadahead(page)) {
-+		} else if (PageReadahead(page)) {
- 			page_cache_async_readahead(mapping,
- 					ra, filp, page,
- 					index, last_index - index);
---
-1.8.0
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Drive_swapping
 
+states that someone is working on this kind of issue.
+
+G.Baroncelli
+> 
+> 
+> Chris Murphy
+> 
+> -- To unsubscribe from this list: send the line "unsubscribe
+> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

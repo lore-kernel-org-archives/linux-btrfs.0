@@ -1,41 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga02-in.huawei.com ([119.145.14.65]:56227 "EHLO
-	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755607Ab2JXIVF (ORCPT
+Received: from mail-la0-f46.google.com ([209.85.215.46]:37536 "EHLO
+	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934576Ab2JXJoX convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 04:21:05 -0400
-Message-ID: <5087A4B9.8050109@huawei.com>
-Date: Wed, 24 Oct 2012 16:20:09 +0800
-From: Li Zefan <lizefan@huawei.com>
+	Wed, 24 Oct 2012 05:44:23 -0400
+Received: by mail-la0-f46.google.com with SMTP id h6so177823lag.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 02:44:22 -0700 (PDT)
 MIME-Version: 1.0
-To: =?windows-1252?Q?Luk=E1=9A_Czerner?= <lczerner@redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <jbacik@fusionio.com>
-Subject: Re: [PATCH] btrfs: Return EINVAL when length to trim is less than
- FSB
-References: <1350380076-15997-1-git-send-email-lczerner@redhat.com> <alpine.LFD.2.00.1210241015080.25196@dhcp-1-104.brq.redhat.com>
-In-Reply-To: <alpine.LFD.2.00.1210241015080.25196@dhcp-1-104.brq.redhat.com>
-Content-Type: text/plain; charset="windows-1252"
+In-Reply-To: <50873AE3.4020700@gmail.com>
+References: <507E57F6.6000805@gmail.com>
+	<CAOcd+r1aPGGh4zHYzeMMuE01j4Nr+aiMmHBCAWqqCXvZZTb2XQ@mail.gmail.com>
+	<50873AE3.4020700@gmail.com>
+Date: Wed, 24 Oct 2012 11:44:22 +0200
+Message-ID: <CAOcd+r3wVZc+doKBzF4E=K+xC7FTP44da6==iEaqB=2jNNkWYg@mail.gmail.com>
+Subject: Re: Questions about mkfs -A option
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Wang Sheng-Hui <shhuiw@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012/10/24 16:15, Luk� Czerner wrote:
-> On Tue, 16 Oct 2012, Lukas Czerner wrote:
-> 
->> Date: Tue, 16 Oct 2012 11:34:36 +0200
->> From: Lukas Czerner <lczerner@redhat.com>
->> To: linux-btrfs@vger.kernel.org
->> Cc: jbacik@fusionio.com, Lukas Czerner <lczerner@redhat.com>
->> Subject: [PATCH] btrfs: Return EINVAL when length to trim is less than FSB
+Hi Wang,
+if you just look at the code in find_free_dev_extent():
+u64 search_start = 0;
+...
+search_start = max((u64)1024 * 1024, search_start);
+if (root->fs_info->alloc_start + num_bytes <= device->total_bytes)
+	search_start = max(root->fs_info->alloc_start, search_start);
+...
+key.objectid = device->devid;
+key.offset = search_start;
+key.type = BTRFS_DEV_EXTENT_KEY;
+
+You see that it will search for DEV_EXTENTs (when allocating chunks)
+that begin after the value you specified. So it will not use some
+space at the beginning of the device for allocations. Same behavior in
+the kernel can be caused by using "alloc_start=X" mount option.
+What is the purpose of this I don't know, but what it does looks pretty clear.
+The (first copy of the) superblock, though, is always written to
+BTRFS_SUPER_INFO_OFFSET, as you mentioned.
+
+Alex.
+
+
+
+
+On Wed, Oct 24, 2012 at 2:48 AM, Wang Sheng-Hui <shhuiw@gmail.com> wrote:
+> On 2012年10月23日 01:49, Alex Lyakas wrote:
+>
+>> Wang,
+>> I would say that zeroing is done to prevent from seeing some other superblock (besides btrfs) there.
+>
+>
+> That make sense.
+>
 >>
->> Currently if len argument in btrfs_ioctl_fitrim() is smaller than
->> one FSB we will continue and finally return 0 bytes discarded.
->> However if the length to discard is smaller then file system block
->> we should really return EINVAL.
-> 
-> ping
-> 
-
-This patch has already sit in Josef's btrfs-next tree:
-
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=cd50b6b30f09446eafdd715db6d59299fcc5b19a
-
+>> Alex.
+>>
+>>
+>
+>
+> But I still confused by the -A option?
+>
+> In mkfs, we always write the sb info into BTRFS_SUPER_INFO_OFFSET.
+> From the -A comment, I think btrfs would be places after the -A value.
+> What would happen if we specify a -A value larger than it?
+>
+>
+> Thanks,
+> Sheng-Hui

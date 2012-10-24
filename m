@@ -1,48 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:39340 "EHLO
-	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1030213Ab2JXTNB convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 15:13:01 -0400
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: device delete, error removing device [SOLVED]
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <50882E38.4000408@gmail.com>
-Date: Wed, 24 Oct 2012 13:13:01 -0600
-Message-Id: <D0E7C142-9FAE-4233-BA2E-BB1EB341FD93@colorremedies.com>
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <20121022171809.GA25498@carfax.org.uk> <20121023075721.GB391@yeono.kjorling.se> <5086DDAE.3050708@gmail.com> <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com> <5086E9D6.4070201@inwind.it> <3443D67F-6CCE-48BF-A1DB-12473BE95EE8@colorremedies.com> <5087174A.2060405@inwind.it> <1BE15E02-3DBE-42AB-8900-D82C11BCD1B7@colorremedies.com> <50882E38.4000408@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:55818 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755618Ab2JXUog (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Oct 2012 16:44:36 -0400
+Received: by mail-pb0-f46.google.com with SMTP id rr4so1475156pbb.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 13:44:36 -0700 (PDT)
+Date: Thu, 25 Oct 2012 02:14:07 +0530
+From: Raghavendra D Prabhu <raghu.prabhu13@gmail.com>
+To: KOSAKI Motohiro <kosaki.motohiro@gmail.com>
+Cc: Fengguang Wu <fengguang.wu@intel.com>, zheng.yan@oracle.com,
+        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH] Change the check for PageReadahead into an else-if
+Message-ID: <20121024204407.GA3218@Archie>
+References: <08589dd39c78346ec2ed2fedfd6e3121ca38acda.1350413420.git.rprabhu@wnohang.net>
+ <20121017020012.GA13769@localhost>
+ <CAHGf_=qxMv20bNg2FZLCO2Ra0S+zTicxQEXu=nOTc-f3kiWj-Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="mYCpIKhGyMATD0i+"
+In-Reply-To: <CAHGf_=qxMv20bNg2FZLCO2Ra0S+zTicxQEXu=nOTc-f3kiWj-Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Oct 24, 2012, at 12:06 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
->> 
-> 
-> I was able to reproduce it:
-> 
-> - I filled the filesystem until I got "No space left on device".
+--mYCpIKhGyMATD0i+
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I didn't even need to get that far.
+Hi,
 
 
-> So it seems that I spread all the data to the other disk, filling up the
-> smaller ones. So it stuck to "No space left on device".
-> 
-> Now I rebalanced with -dconvert=single, as suggested by Hugo, then I was
-> able to remove the disk:
-> 
-> Label: 'test2'  uuid: 11d0f1a8-2770-4ff2-8df5-f772f1056edc
-> 	Total devices 3 FS bytes used 7.63GB
-> 	devid    4 size 12.00GB used 9.48GB path /dev/vdf
-> 	devid    3 size 3.00GB used 492.94MB path /dev/vdd
-> 	devid    2 size 3.00GB used 64.00MB path /dev/vdc
+* On Tue, Oct 16, 2012 at 10:02:44PM -0400, KOSAKI Motohiro <kosaki.motohir=
+o@gmail.com> wrote:
+>On Tue, Oct 16, 2012 at 10:00 PM, Fengguang Wu <fengguang.wu@intel.com> wr=
+ote:
+>> On Wed, Oct 17, 2012 at 12:28:05AM +0530, raghu.prabhu13@gmail.com wrote:
+>>> From: Raghavendra D Prabhu <rprabhu@wnohang.net>
+>>>
+>>> >From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coa=
+lesces
+>>> async readahead into its readahead window, so another checking for that=
+ again is
+>>> not required.
+>>>
+>>> Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
+>>> ---
+>>>  fs/btrfs/relocation.c | 10 ++++------
+>>>  mm/filemap.c          |  3 +--
+>>>  2 files changed, 5 insertions(+), 8 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+>>> index 4da0865..6362003 100644
+>>
+>>> --- a/fs/btrfs/relocation.c
+>>> +++ b/fs/btrfs/relocation.c
+>>> @@ -2996,12 +2996,10 @@ static int relocate_file_extent_cluster(struct =
+inode *inode,
+>>>                               ret =3D -ENOMEM;
+>>>                               goto out;
+>>>                       }
+>>> -             }
+>>> -
+>>> -             if (PageReadahead(page)) {
+>>> -                     page_cache_async_readahead(inode->i_mapping,
+>>> -                                                ra, NULL, page, index,
+>>> -                                                last_index + 1 - index=
+);
+>>> +             } else if (PageReadahead(page)) {
+>>> +                             page_cache_async_readahead(inode->i_mappi=
+ng,
+>>> +                                                     ra, NULL, page, i=
+ndex,
+>>> +                                                     last_index + 1 - =
+index);
+>>
+>> That extra indent is not necessary.
+>>
+>> Otherwise looks good to me. Thanks!
+>>
+>> Reviewed-by: Fengguang Wu <fengguang.wu@intel.com>
+>
+>Hi Raghavendra,
+>
+>Indentation breakage is now welcome. Please respin it. Otherwise
+>
+>Acked-by: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
 
-It's an interesting solution, but difficult for a larger file system. Or at least, could be very time consuming.
-
-Aside from the "no space left" problem, the 'device delete' behavior itself has kindof a high penalty: a successful 'device delete' on a five disk raid10 (one was added in advance of the delete), all disks are significantly written to, not merely a reconstruction of the replaced disk. It means a lot of writing to do disk removals in the face of an impending disk failure.
+Thanks, will do.
 
 
-Chris Murphy
+Regards,
+--=20
+Raghavendra Prabhu
+GPG Id : 0xD72BE977
+Fingerprint: B93F EBCB 8E05 7039 CD3C A4B8 A616 DCA1 D72B E977
+www: wnohang.net
 
+--mYCpIKhGyMATD0i+
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iQEcBAEBAgAGBQJQiFMXAAoJEKYW3KHXK+l3UdEIAMgbpM2D4fp6BmjHQEgFyRdX
+W5tJ1pV3tvBiaiHUAqvh/fjuKE1vnVPXDCfjrF/UB3itfjCVaBMShNNSWQbMEYYX
+PZ7zCsxeUFjXTCQQIU4oxEGfzidsMUp80N+3/v0lpMd1E6aJsWCHNTyCrWdbfdBi
+cIy4sMszX6TAJRoEcCASDTEjISTgkh/wVvM4UfgHZdnMsIPSHLOD+SXjmXEgLn9w
+udrfZi436E1tOQOQFYiJpmpWGXTD374K1FwVTW6hJ7AJlxo7QsHq2cqp211DRnDo
+zGPxYmtcVse0q6Yk4fQV5IKaSQb6BfrPzwo0c7lFIBtCnuxugE3iRTKFIyosx7M=
+=Atud
+-----END PGP SIGNATURE-----
+
+--mYCpIKhGyMATD0i+--

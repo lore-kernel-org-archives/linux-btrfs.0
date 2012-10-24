@@ -1,57 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m199-177.yeah.net ([123.58.177.199]:42117 "EHLO
-	m199-177.yeah.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932678Ab2JYP7L (ORCPT
+Received: from m53-178.qiye.163.com ([123.58.178.53]:45153 "EHLO
+	m53-178.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755420Ab2JXCM5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:59:11 -0400
-Received: from mail-wi0-f178.google.com (mail-wi0-f178.google.com [209.85.212.178])
-	by m199-177.yeah.net (HMail) with ESMTPA id 54AF010027C
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 23:59:07 +0800 (CST)
-Received: by mail-wi0-f178.google.com with SMTP id hr7so1811579wib.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 08:59:04 -0700 (PDT)
+	Tue, 23 Oct 2012 22:12:57 -0400
+Received: from mail-la0-f46.google.com (mail-la0-f46.google.com [209.85.215.46])
+	by m53-178.qiye.163.com (HMail) with ESMTPA id C249A1228C4E
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 10:05:29 +0800 (CST)
+Received: by mail-la0-f46.google.com with SMTP id h6so12387lag.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 19:05:27 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20121025153731.GI10679@twin.jikos.cz>
-References: <CAMRmmpL01PqR1nZPGhyDv1ECdWaBDrhVbx-9FH83x-3ez+M_pQ@mail.gmail.com>
- <20121025153731.GI10679@twin.jikos.cz>
 From: Rock Lee <zimilo@code-trick.com>
-Date: Thu, 25 Oct 2012 23:58:24 +0800
-Message-ID: <CAMRmmpLfbzAcf7M5T0UYHv7-R6PeprwGpgb-YfLfWpvp9PA8Gw@mail.gmail.com>
-Subject: Re: [BUG][BTRFS-PROGS] Fix Bug to corrupt the img file
-To: dave@jikos.cz, Rock Lee <zimilo@code-trick.com>,
-        linux-btrfs@vger.kernel.org
+Date: Wed, 24 Oct 2012 10:04:47 +0800
+Message-ID: <CAMRmmpL01PqR1nZPGhyDv1ECdWaBDrhVbx-9FH83x-3ez+M_pQ@mail.gmail.com>
+Subject: [BUG][BTRFS-PROGS] Fix Bug to corrupt the img file
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Got it.
+Fix Bug to corrupt the img file
 
-2012/10/25 David Sterba <dave@jikos.cz>:
-> On Wed, Oct 24, 2012 at 10:04:47AM +0800, Rock Lee wrote:
->> @@ -572,7 +576,7 @@ int btrfs_prepare_device(int fd, char *file, int
->> zero_end, u64 *block_count_ret,
->>                 discard_blocks(fd, 0, block_count);
->>         }
->>
->> -       ret = zero_dev_start(fd);
->> +       ret = zero_dev_start(fd, block_count);
->>         if (ret) {
->>                 fprintf(stderr, "failed to zero device start %d\n", ret);
->>                 exit(1);
->
-> Please add a separate check for a minimal image size instead, right after
->
->  553         block_count = device_size(fd, &st);
->  554         if (block_count == 0) {
->  555                 fprintf(stderr, "unable to find %s size\n", file);
->  556                 exit(1);
->  557         }
->  558         if (max_block_count)
->  559                 block_count = min(block_count, max_block_count);
->
->              if (block_count < 2 MB ) {
->                      fprintf(stderr, "Image too small (less than 2MB)");
->                      exit
->              }
->
-> thanks,
-> david
+Reproduce steps:
+  > dd if=/dev/zero of=btrfs-small.img bs=1M count=1
+  > ls -lh btrfs-small.img
+  -rw-rw-r--. 1 rock rock 1.0M Oct 24 09:51 btrfs-small.img
+  > mkfs.btrfs btrfs-small.img
+  -rw-rw-r--. 1 rock rock 2.0M Oct 24 09:53 btrfs-small.img
+
+Here you can see the original img file's size goes larger to 2Mbytes.
+
+Signed-off-by: Rock Lee <zimilo@code-trick.com>
+---
+ utils.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/utils.c b/utils.c
+index 205e667..3c88d2e 100644
+--- a/utils.c
++++ b/utils.c
+@@ -441,7 +441,7 @@ static int zero_blocks(int fd, off_t start, size_t len)
+        return ret;
+ }
+
+-static int zero_dev_start(int fd)
++static int zero_dev_start(int fd, u64 dev_size)
+ {
+        off_t start = 0;
+        size_t len = 2 * 1024 * 1024;
+@@ -451,6 +451,10 @@ static int zero_dev_start(int fd)
+        start = 1024;
+        len -= 1024;
+ #endif
++
++       if (dev_size < len)
++               return -EIO;
++
+        return zero_blocks(fd, start, len);
+ }
+
+@@ -572,7 +576,7 @@ int btrfs_prepare_device(int fd, char *file, int
+zero_end, u64 *block_count_ret,
+                discard_blocks(fd, 0, block_count);
+        }
+
+-       ret = zero_dev_start(fd);
++       ret = zero_dev_start(fd, block_count);
+        if (ret) {
+                fprintf(stderr, "failed to zero device start %d\n", ret);
+                exit(1);
+-- 
+1.7.7.6

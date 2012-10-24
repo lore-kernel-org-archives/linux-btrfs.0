@@ -1,52 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f46.google.com ([209.85.215.46]:36050 "EHLO
-	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756369Ab2JXGkQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 02:40:16 -0400
-Received: by mail-la0-f46.google.com with SMTP id h6so98154lag.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 23:40:15 -0700 (PDT)
+Received: from mx1.redhat.com ([209.132.183.28]:14862 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755607Ab2JXIPT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Oct 2012 04:15:19 -0400
+Date: Wed, 24 Oct 2012 10:15:15 +0200 (CEST)
+From: =?ISO-8859-15?Q?Luk=E1=A8_Czerner?= <lczerner@redhat.com>
+To: Lukas Czerner <lczerner@redhat.com>
+cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
+Subject: Re: [PATCH] btrfs: Return EINVAL when length to trim is less than
+ FSB
+In-Reply-To: <1350380076-15997-1-git-send-email-lczerner@redhat.com>
+Message-ID: <alpine.LFD.2.00.1210241015080.25196@dhcp-1-104.brq.redhat.com>
+References: <1350380076-15997-1-git-send-email-lczerner@redhat.com>
 MIME-Version: 1.0
-From: Ins <insfocus@gmail.com>
-Date: Wed, 24 Oct 2012 14:39:34 +0800
-Message-ID: <CAMRmmpK8rYQDRWVM6nxsc2kouFNPyAnwAfB6Y19Ha40rLdeejA@mail.gmail.com>
-Subject: mkfs.btrfs allow to set the sectorsize by the -s option but the
- kernel doesnot
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Tue, 16 Oct 2012, Lukas Czerner wrote:
 
+> Date: Tue, 16 Oct 2012 11:34:36 +0200
+> From: Lukas Czerner <lczerner@redhat.com>
+> To: linux-btrfs@vger.kernel.org
+> Cc: jbacik@fusionio.com, Lukas Czerner <lczerner@redhat.com>
+> Subject: [PATCH] btrfs: Return EINVAL when length to trim is less than FSB
+> 
+> Currently if len argument in btrfs_ioctl_fitrim() is smaller than
+> one FSB we will continue and finally return 0 bytes discarded.
+> However if the length to discard is smaller then file system block
+> we should really return EINVAL.
 
-  mkfs.btrfs allows to set the sectorsize by the -s option.
+ping
 
-
-  mkfs.btrfs -s 8192 /dev/loop0
-
-  Then when I do mount, I got these messages:
-
-  [13912.224463] btrfs: Incompatible sector size(8192) found on loop0
-  [13912.224660] btrfs: open_ctree failed
-
-
-  The related codes in the kernel fs/btrfs/disk-io.c!2366
-
-
-2366        if (sectorsize != PAGE_SIZE) {
-2367                printk(KERN_WARNING "btrfs: Incompatible sector
-size(%lu) "
-2368                       "found on %s\n", (unsigned long)sectorsize,
-sb->s_id);
-2369                goto fail_sb_buffer;
-2370        }
-
-
-So the actually reason is?
-
-
-
-
-Thanks.
--Rock
+> 
+> Signed-off-by: Lukas Czerner <lczerner@redhat.com>
+> ---
+>  fs/btrfs/ioctl.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 6116880..3b8b509 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -343,7 +343,8 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+>  		return -EOPNOTSUPP;
+>  	if (copy_from_user(&range, arg, sizeof(range)))
+>  		return -EFAULT;
+> -	if (range.start > total_bytes)
+> +	if (range.start > total_bytes ||
+> +	    range.len < fs_info->sb->s_blocksize)
+>  		return -EINVAL;
+>  
+>  	range.len = min(range.len, total_bytes - range.start);
+> 

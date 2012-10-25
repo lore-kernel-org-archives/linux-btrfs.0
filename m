@@ -1,95 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:64612 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751694Ab2JYLid (ORCPT
+Received: from mail-we0-f174.google.com ([74.125.82.174]:51451 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753604Ab2JYM1b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 07:38:33 -0400
-Message-ID: <508924AB.4060902@gmail.com>
-Date: Thu, 25 Oct 2012 17:08:19 +0530
-From: Abhijit Pawar <abhi.c.pawar@gmail.com>
-MIME-Version: 1.0
-To: linux-fsdevel@vger.kernel.org
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-kernel@vger.kernel.org, gregkh@linuxfoundation.org
-Subject: [RESEND PATCH] fs/super.c set_anon_super calling optimization
-References: <CA+kxV1F5VxBGawhkV=02LcgHNWiKF-H_k6N-d1TEYNeFAScezg@mail.gmail.com>
-In-Reply-To: <CA+kxV1F5VxBGawhkV=02LcgHNWiKF-H_k6N-d1TEYNeFAScezg@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Thu, 25 Oct 2012 08:27:31 -0400
+Received: by mail-we0-f174.google.com with SMTP id t9so810127wey.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 05:27:30 -0700 (PDT)
+Message-ID: <1351168220.1923.6.camel@hughsie-work.lan>
+Subject: Naming of subvolumes
+From: Richard Hughes <hughsient@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 25 Oct 2012 13:30:20 +0100
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-set_anon_super is called by many filesystems. Some call directly and 
-some call through the wrapper. Many of them in the wrapper's call to 
-this function are passing the second argument to this function which is 
-not used anywhere.
+I'm planning to use "btrfs subvolume snapshot -r <name>" in the system
+upgrade functionality[1] if the user is using btrfs for their root file
+system. We've got most of the bits in place already for Fedora 18.
 
-This patch replaces the second variable with NULL.
+One think that confuses me is the convention for the naming of
+snapshots. Is there any conventions or prior art there? Can I add
+metadata to the snapshot so that I don't have encode everything in the
+snapshot name itself?
 
-Thanks,
-Abhijit Pawar
+Also, being able to do a snapshot using a libbtrfs (or whatever) would
+be much preferable to exec'ing the btrfs command and then trying to
+parse the exit code and any stderr. I don't know if this kind of thing
+is the norm for filesystem utilities, but a versioned shared library to
+use would be awesome.
 
-Signed-off-by: Abhijit Pawar <abhi.c.pawar@gmail.com>
-CC: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-CC: linux-kernel@vger.kernel.org
-CC: linux-btrfs@vger.kernel.org
+Any advice welcome, thanks.
 
----
+Richard
+(PackageKit author)
 
-diff --git a/fs/9p/vfs_super.c b/fs/9p/vfs_super.c
-index 137d503..132db90 100644
---- a/fs/9p/vfs_super.c
-+++ b/fs/9p/vfs_super.c
-@@ -61,7 +61,7 @@ static const struct super_operations v9fs_super_ops,
-v9fs_super_ops_dotl;
-static int v9fs_set_super(struct super_block *s, void *data)
-{
-         s->s_fs_info = data;
--       return set_anon_super(s, data);
-+       return set_anon_super(s, NULL);
-}
-
-/**
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 915ac14..c9994a3 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -954,7 +954,7 @@ static int btrfs_test_super(struct super_block *s, void
-*data)
-
-static int btrfs_set_super(struct super_block *s, void *data)
-{
--       int err = set_anon_super(s, data);
-+       int err = set_anon_super(s, NULL);
-         if (!err)
-                 s->s_fs_info = data;
-         return err;
-diff --git a/fs/nfs/super.c b/fs/nfs/super.c
-index e831bce..486bf7a 100644
---- a/fs/nfs/super.c
-+++ b/fs/nfs/super.c
-@@ -2260,7 +2260,7 @@ static int nfs_set_super(struct super_block *s, void
-*data)
-         s->s_flags = sb_mntdata->mntflags;
-         s->s_fs_info = server;
-         s->s_d_op = server->nfs_client->rpc_ops->dentry_ops;
--       ret = set_anon_super(s, server);
-+       ret = set_anon_super(s, NULL);
-         if (ret == 0)
-                 server->s_dev = s->s_dev;
-         return ret;
-diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-index 71eb7e2..56d0059 100644
---- a/fs/sysfs/mount.c
-+++ b/fs/sysfs/mount.c
-@@ -89,7 +89,7 @@ static int sysfs_test_super(struct super_block *sb, void
-*data)
-static int sysfs_set_super(struct super_block *sb, void *data)
-{
-         int error;
--       error = set_anon_super(sb, data);
-+       error = set_anon_super(sb, NULL);
-         if (!error)
-                 sb->s_fs_info = data;
-         return error;
+[1] https://fedoraproject.org/wiki/Features/OfflineSystemUpdates
 

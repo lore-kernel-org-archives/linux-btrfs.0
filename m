@@ -1,277 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24930 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:14413 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1759306Ab2JYJ1n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 05:27:43 -0400
+	id S935050Ab2JYJam (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 05:30:42 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9P9ReZQ030439
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 17:27:41 +0800
-Message-ID: <50890624.6080903@cn.fujitsu.com>
-Date: Thu, 25 Oct 2012 17:28:04 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9P9Ud3X030676
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 17:30:39 +0800
+Message-ID: <508906D7.2090402@cn.fujitsu.com>
+Date: Thu, 25 Oct 2012 17:31:03 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/3] Btrfs: make delalloc inodes be flushed by multi-task
+Subject: [PATCH 2/3] Btrfs: make ordered operations be handled by multi-task
 References: <5089045D.8050801@cn.fujitsu.com>
 In-Reply-To: <5089045D.8050801@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduce a new worker pool named "flush_workers", and if we
-want to force all the inode with pending delalloc to the disks, we can
-queue those inodes into the work queue of the worker pool, in this way,
-those inodes will be flushed by multi-task.
+The process of the ordered operations is similar to the delalloc inode flush, so
+we handle them by flush workers.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |   14 ++++++++
- fs/btrfs/disk-io.c     |    7 ++++
- fs/btrfs/inode.c       |   78 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/relocation.c  |    6 +++-
- fs/btrfs/transaction.c |    6 +++-
- 5 files changed, 103 insertions(+), 8 deletions(-)
+ fs/btrfs/ordered-data.c |   46 ++++++++++++++++++++++++++++++----------------
+ fs/btrfs/ordered-data.h |    2 +-
+ fs/btrfs/transaction.c  |   18 ++++++++++++++----
+ 3 files changed, 45 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 34c5a44..cd0c6d6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1333,6 +1333,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workers generic_worker;
- 	struct btrfs_workers workers;
- 	struct btrfs_workers delalloc_workers;
-+	struct btrfs_workers flush_workers;
- 	struct btrfs_workers endio_workers;
- 	struct btrfs_workers endio_meta_workers;
- 	struct btrfs_workers endio_meta_write_workers;
-@@ -3271,6 +3272,19 @@ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit);
- /* inode.c */
-+struct btrfs_delalloc_work {
-+	struct inode *inode;
-+	int wait;
-+	int delay_iput;
-+	struct completion completion;
-+	struct list_head list;
-+	struct btrfs_work work;
-+};
-+
-+struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
-+						    int wait, int delay_iput);
-+void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work);
-+
- struct extent_map *btrfs_get_extent_fiemap(struct inode *inode, struct page *page,
- 					   size_t pg_offset, u64 start, u64 len,
- 					   int create);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7cda519..bd70c28 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2279,6 +2279,10 @@ int open_ctree(struct super_block *sb,
- 			   fs_info->thread_pool_size,
- 			   &fs_info->generic_worker);
- 
-+	btrfs_init_workers(&fs_info->flush_workers, "flush_delalloc",
-+			   fs_info->thread_pool_size,
-+			   &fs_info->generic_worker);
-+
- 	btrfs_init_workers(&fs_info->submit_workers, "submit",
- 			   min_t(u64, fs_devices->num_devices,
- 			   fs_info->thread_pool_size),
-@@ -2350,6 +2354,7 @@ int open_ctree(struct super_block *sb,
- 	ret |= btrfs_start_workers(&fs_info->delayed_workers);
- 	ret |= btrfs_start_workers(&fs_info->caching_workers);
- 	ret |= btrfs_start_workers(&fs_info->readahead_workers);
-+	ret |= btrfs_start_workers(&fs_info->flush_workers);
- 	if (ret) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
-@@ -2667,6 +2672,7 @@ fail_sb_buffer:
- 	btrfs_stop_workers(&fs_info->submit_workers);
- 	btrfs_stop_workers(&fs_info->delayed_workers);
- 	btrfs_stop_workers(&fs_info->caching_workers);
-+	btrfs_stop_workers(&fs_info->flush_workers);
- fail_alloc:
- fail_iput:
- 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
-@@ -3339,6 +3345,7 @@ int close_ctree(struct btrfs_root *root)
- 	btrfs_stop_workers(&fs_info->delayed_workers);
- 	btrfs_stop_workers(&fs_info->caching_workers);
- 	btrfs_stop_workers(&fs_info->readahead_workers);
-+	btrfs_stop_workers(&fs_info->flush_workers);
- 
- #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
- 	if (btrfs_test_opt(root, CHECK_INTEGRITY))
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f92def2..290cd77 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -71,6 +71,7 @@ static const struct file_operations btrfs_dir_file_operations;
- static struct extent_io_ops btrfs_extent_io_ops;
- 
- static struct kmem_cache *btrfs_inode_cachep;
-+static struct kmem_cache *btrfs_delalloc_work_cachep;
- struct kmem_cache *btrfs_trans_handle_cachep;
- struct kmem_cache *btrfs_transaction_cachep;
- struct kmem_cache *btrfs_path_cachep;
-@@ -7199,6 +7200,8 @@ void btrfs_destroy_cachep(void)
- 		kmem_cache_destroy(btrfs_path_cachep);
- 	if (btrfs_free_space_cachep)
- 		kmem_cache_destroy(btrfs_free_space_cachep);
-+	if (btrfs_delalloc_work_cachep)
-+		kmem_cache_destroy(btrfs_delalloc_work_cachep);
- }
- 
- int btrfs_init_cachep(void)
-@@ -7233,6 +7236,13 @@ int btrfs_init_cachep(void)
- 	if (!btrfs_free_space_cachep)
- 		goto fail;
- 
-+	btrfs_delalloc_work_cachep = kmem_cache_create("btrfs_delalloc_work",
-+			sizeof(struct btrfs_delalloc_work), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+			NULL);
-+	if (!btrfs_delalloc_work_cachep)
-+		goto fail;
-+
- 	return 0;
- fail:
- 	btrfs_destroy_cachep();
-@@ -7443,6 +7453,49 @@ out_notrans:
- 	return ret;
- }
- 
-+static void btrfs_run_delalloc_work(struct btrfs_work *work)
-+{
-+	struct btrfs_delalloc_work *delalloc_work;
-+
-+	delalloc_work = container_of(work, struct btrfs_delalloc_work,
-+				     work);
-+	if (delalloc_work->wait)
-+		btrfs_wait_ordered_range(delalloc_work->inode, 0, (u64)-1);
-+	else
-+		filemap_flush(delalloc_work->inode->i_mapping);
-+
-+	if (delalloc_work->delay_iput)
-+		btrfs_add_delayed_iput(delalloc_work->inode);
-+	else
-+		iput(delalloc_work->inode);
-+	complete(&delalloc_work->completion);
-+}
-+
-+struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
-+						    int wait, int delay_iput)
-+{
-+	struct btrfs_delalloc_work *work;
-+
-+	work = kmem_cache_zalloc(btrfs_delalloc_work_cachep, GFP_NOFS);
-+	if (!work)
-+		return NULL;
-+
-+	init_completion(&work->completion);
-+	INIT_LIST_HEAD(&work->list);
-+	work->inode = inode;
-+	work->wait = wait;
-+	work->delay_iput = delay_iput;
-+	work->work.func = btrfs_run_delalloc_work;
-+
-+	return work;
-+}
-+
-+void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work)
-+{
-+	wait_for_completion(&work->completion);
-+	kmem_cache_free(btrfs_delalloc_work_cachep, work);
-+}
-+
- /*
-  * some fairly slow code that needs optimization. This walks the list
-  * of all the inodes with pending delalloc and forces them to disk.
-@@ -7452,10 +7505,15 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 	struct list_head *head = &root->fs_info->delalloc_inodes;
- 	struct btrfs_inode *binode;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 7772f02..ab2a3c0 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -519,13 +519,17 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
+  * extra check to make sure the ordered operation list really is empty
+  * before we return
+  */
+-void btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
++int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+ {
+ 	struct btrfs_inode *btrfs_inode;
  	struct inode *inode;
-+	struct btrfs_delalloc_work *work, *next;
+ 	struct list_head splice;
 +	struct list_head works;
++	struct btrfs_delalloc_work *work, *next;
 +	int ret = 0;
  
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
- 
+ 	INIT_LIST_HEAD(&splice);
 +	INIT_LIST_HEAD(&works);
+ 
+ 	mutex_lock(&root->fs_info->ordered_operations_mutex);
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+@@ -533,6 +537,7 @@ again:
+ 	list_splice_init(&root->fs_info->ordered_operations, &splice);
+ 
+ 	while (!list_empty(&splice)) {
 +
- 	spin_lock(&root->fs_info->delalloc_lock);
- 	while (!list_empty(head)) {
- 		binode = list_entry(head->next, struct btrfs_inode,
-@@ -7465,11 +7523,14 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 			list_del_init(&binode->delalloc_inodes);
- 		spin_unlock(&root->fs_info->delalloc_lock);
- 		if (inode) {
--			filemap_flush(inode->i_mapping);
--			if (delay_iput)
--				btrfs_add_delayed_iput(inode);
--			else
--				iput(inode);
-+			work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
-+			if (!work) {
-+				ret = -ENOMEM;
-+				goto out;
-+			}
-+			list_add_tail(&work->list, &works);
-+			btrfs_queue_worker(&root->fs_info->flush_workers,
-+					   &work->work);
+ 		btrfs_inode = list_entry(splice.next, struct btrfs_inode,
+ 				   ordered_operations);
+ 
+@@ -549,15 +554,26 @@ again:
+ 			list_add_tail(&BTRFS_I(inode)->ordered_operations,
+ 			      &root->fs_info->ordered_operations);
  		}
++
++		if (!inode)
++			continue;
+ 		spin_unlock(&root->fs_info->ordered_extent_lock);
+ 
+-		if (inode) {
+-			if (wait)
+-				btrfs_wait_ordered_range(inode, 0, (u64)-1);
+-			else
+-				filemap_flush(inode->i_mapping);
+-			btrfs_add_delayed_iput(inode);
++		work = btrfs_alloc_delalloc_work(inode, wait, 1);
++		if (!work) {
++			if (list_empty(&BTRFS_I(inode)->ordered_operations))
++				list_add_tail(&btrfs_inode->ordered_operations,
++					      &splice);
++			spin_lock(&root->fs_info->ordered_extent_lock);
++			list_splice_tail(&splice,
++					 &root->fs_info->ordered_operations);
++			spin_unlock(&root->fs_info->ordered_extent_lock);
++			ret = -ENOMEM;
++			goto out;
+ 		}
++		list_add_tail(&work->list, &works);
++		btrfs_queue_worker(&root->fs_info->flush_workers,
++				   &work->work);
+ 
  		cond_resched();
- 		spin_lock(&root->fs_info->delalloc_lock);
-@@ -7488,7 +7549,12 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 		    atomic_read(&root->fs_info->async_delalloc_pages) == 0));
- 	}
- 	atomic_dec(&root->fs_info->async_submit_draining);
--	return 0;
+ 		spin_lock(&root->fs_info->ordered_extent_lock);
+@@ -566,7 +582,13 @@ again:
+ 		goto again;
+ 
+ 	spin_unlock(&root->fs_info->ordered_extent_lock);
 +out:
 +	list_for_each_entry_safe(work, next, &works, list) {
 +		list_del_init(&work->list);
 +		btrfs_wait_and_free_delalloc_work(work);
 +	}
+ 	mutex_unlock(&root->fs_info->ordered_operations_mutex);
 +	return ret;
  }
  
- static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 776f0aa..5bef816 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4057,7 +4057,11 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
- 	       (unsigned long long)rc->block_group->key.objectid,
- 	       (unsigned long long)rc->block_group->flags);
+ /*
+@@ -934,15 +956,6 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 	if (last_mod < root->fs_info->last_trans_committed)
+ 		return;
  
--	btrfs_start_delalloc_inodes(fs_info->tree_root, 0);
-+	ret = btrfs_start_delalloc_inodes(fs_info->tree_root, 0);
-+	if (ret < 0) {
-+		err = ret;
-+		goto out;
-+	}
- 	btrfs_wait_ordered_extents(fs_info->tree_root, 0);
+-	/*
+-	 * the transaction is already committing.  Just start the IO and
+-	 * don't bother with all of this list nonsense
+-	 */
+-	if (trans && root->fs_info->running_transaction->blocked) {
+-		btrfs_wait_ordered_range(inode, 0, (u64)-1);
+-		return;
+-	}
+-
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+ 	if (list_empty(&BTRFS_I(inode)->ordered_operations)) {
+ 		list_add_tail(&BTRFS_I(inode)->ordered_operations,
+@@ -959,6 +972,7 @@ int __init ordered_data_init(void)
+ 				     NULL);
+ 	if (!btrfs_ordered_extent_cache)
+ 		return -ENOMEM;
++
+ 	return 0;
+ }
  
- 	while (1) {
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index dd27a0b..e8dcec6 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -186,7 +186,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
+ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered);
+ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
+-void btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
++int btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
+ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root,
+ 				 struct inode *inode);
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 77db875..4aed529 100644
+index 4aed529..621790e 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -1499,7 +1499,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		WARN_ON(cur_trans != trans->transaction);
+@@ -1414,15 +1414,21 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct btrfs_transaction *prev_trans = NULL;
+ 	DEFINE_WAIT(wait);
+-	int ret = -EIO;
++	int ret;
+ 	int should_grow = 0;
+ 	unsigned long now = get_seconds();
+ 	int flush_on_commit = btrfs_test_opt(root, FLUSHONCOMMIT);
  
- 		if (flush_on_commit || snap_pending) {
--			btrfs_start_delalloc_inodes(root, 1);
-+			ret = btrfs_start_delalloc_inodes(root, 1);
-+			if (ret) {
-+				btrfs_abort_transaction(trans, root, ret);
-+				goto cleanup_transaction;
-+			}
- 			btrfs_wait_ordered_extents(root, 1);
- 		}
+-	btrfs_run_ordered_operations(root, 0);
++	ret = btrfs_run_ordered_operations(root, 0);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto cleanup_transaction;
++	}
  
+-	if (cur_trans->aborted)
++	if (cur_trans->aborted) {
++		ret = cur_trans->aborted;
+ 		goto cleanup_transaction;
++	}
+ 
+ 	/* make a pass through all the delayed refs we have so far
+ 	 * any runnings procs may add more while we are here
+@@ -1525,7 +1531,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		 * it here and no for sure that nothing new will be added
+ 		 * to the list
+ 		 */
+-		btrfs_run_ordered_operations(root, 1);
++		ret = btrfs_run_ordered_operations(root, 1);
++		if (ret) {
++			btrfs_abort_transaction(trans, root, ret);
++			goto cleanup_transaction;
++		}
+ 
+ 		prepare_to_wait(&cur_trans->writer_wait, &wait,
+ 				TASK_UNINTERRUPTIBLE);
 -- 
 1.6.5.2
+

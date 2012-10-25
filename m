@@ -1,109 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e9.ny.us.ibm.com ([32.97.182.139]:38547 "EHLO e9.ny.us.ibm.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933700Ab2JYPJh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:09:37 -0400
+Received: from e33.co.us.ibm.com ([32.97.110.151]:45415 "EHLO
+	e33.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1946128Ab2JYPKY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:10:24 -0400
 Received: from /spool/local
-	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e33.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:09:35 -0400
+	Thu, 25 Oct 2012 09:10:23 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v4 00/15] vfs: hot data tracking
-Date: Thu, 25 Oct 2012 23:08:52 +0800
-Message-Id: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4 04/15] vfs,hot_track: add two map arrays
+Date: Thu, 25 Oct 2012 23:08:56 +0800
+Message-Id: <1351177747-19389-5-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-NOTE:
+  Adds two map arrays which contains
+a lot of list and is used to efficiently
+look up the data temperature of a file or its
+ranges.
+  In each list of map arrays, the array node
+will keep track of temperature info.
 
-  The patchset can be obtained via my kernel dev git on github:
-git@github.com:wuzhy/kernel.git hot_tracking
-  If you're interested, you can also can review them via
-https://github.com/wuzhy/kernel/commits/hot_tracking
+Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+---
+ fs/hot_tracking.c            |   55 ++++++++++++++++++++++++++++++++++++++++++
+ include/linux/hot_tracking.h |   16 ++++++++++++
+ 2 files changed, 71 insertions(+), 0 deletions(-)
 
-  For more infomation, please check hot_tracking.txt in Documentation
-
-TODO List:
-
- 1.) Need to do scalability or performance tests.
- 2.) How to save the file temperature among the umount to be able to
-     preserve the file tempreture after reboot
-
-Ben Chociej, Matt Lupfer and Conor Scott originally wrote this code to
- be very btrfs-specific.  I've taken their code and attempted to
-make it more generic and integrate it at the VFS level.
-
-Changelog from v3:
- 1.) Rewritten debugfs support based seq_file operation. [Dave Chinner]
- 2.) Refactored workqueue support. [Dave Chinner]
- 3.) Turn some Micro into be tunable        [Zhiyong, Liu Zheng]
-       TIME_TO_KICK, and HEAT_UPDATE_DELAY
- 4.) Cleanedup a lot of other issues [Dave Chinner]
-
-v2:
- 1.) Converted to Radix trees, not RB-tree [Zhiyong, Dave Chinner]
- 2.) Added memory shrinker [Dave Chinner]
- 3.) Converted to one workqueue to update map info periodically [Dave Chinner]
- 4.) Cleanedup a lot of other issues [Dave Chinner]
-
-v1:
- 1.) Reduce new files and put all in fs/hot_tracking.[ch] [Dave Chinner]
- 2.) The first three patches can probably just be flattened into one.
-                                        [Marco Stornelli , Dave Chinner]
-
-Dave Chinner (1):
-  xfs: add hot tracking support
-
-Zhi Yong Wu (14):
-  vfs,hot_track: introduce private radix tree structures
-  vfs,hot_track: initialize and free key data structures
-  vfs,hot_track: add the function for collecting I/O frequency
-  vfs,hot_track: add two map arrays
-  vfs,hot_track: add hooks to enable hot data tracking
-  vfs,hot_track: add the function for updating map arrays
-  vfs,hot_track: add the aging function
-  vfs,hot_track: add one work queue
-  vfs,hot_track: register one memory shrinker
-  vfs,hot_track: add one new ioctl interface
-  vfs,hot_track: add debugfs support
-  vfs,hot_track: turn some Micro into be tunable
-  btrfs: add hot tracking support
-  vfs,hot_track: add the documentation
-
- Documentation/filesystems/00-INDEX         |    2 +
- Documentation/filesystems/hot_tracking.txt |  164 ++++
- fs/Makefile                                |    2 +-
- fs/btrfs/ctree.h                           |    1 +
- fs/btrfs/super.c                           |   22 +-
- fs/compat_ioctl.c                          |    5 +
- fs/dcache.c                                |    2 +
- fs/debugfs/inode.c                         |   26 +
- fs/direct-io.c                             |    6 +
- fs/hot_tracking.c                          | 1308 ++++++++++++++++++++++++++++
- fs/hot_tracking.h                          |   91 ++
- fs/ioctl.c                                 |   76 ++
- fs/xfs/xfs_mount.h                         |    1 +
- fs/xfs/xfs_super.c                         |   16 +
- include/linux/debugfs.h                    |    9 +
- include/linux/fs.h                         |    4 +
- include/linux/hot_tracking.h               |  125 +++
- kernel/sysctl.c                            |   14 +
- mm/filemap.c                               |    6 +
- mm/page-writeback.c                        |   12 +
- mm/readahead.c                             |    6 +
- 21 files changed, 1896 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/filesystems/hot_tracking.txt
- create mode 100644 fs/hot_tracking.c
- create mode 100644 fs/hot_tracking.h
- create mode 100644 include/linux/hot_tracking.h
-
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+index 201598b..b5568bc 100644
+--- a/fs/hot_tracking.c
++++ b/fs/hot_tracking.c
+@@ -60,6 +60,7 @@ static void hot_range_item_init(struct hot_range_item *hr, u32 start,
+ 	hr->hot_inode = he;
+ 	kref_init(&hr->hot_range.refs);
+ 	spin_lock_init(&hr->hot_range.lock);
++	INIT_LIST_HEAD(&hr->hot_range.n_list);
+ 	hr->hot_range.hot_freq_data.avg_delta_reads = (u64) -1;
+ 	hr->hot_range.hot_freq_data.avg_delta_writes = (u64) -1;
+ 	hr->hot_range.hot_freq_data.flags = FREQ_DATA_TYPE_RANGE;
+@@ -91,6 +92,13 @@ static void hot_range_item_free(struct kref *kref)
+ 	struct hot_range_item *hr = container_of(comm_item,
+ 		struct hot_range_item, hot_range);
+ 
++	spin_lock(&hr->hot_range.lock);
++	if (!list_empty(&hr->hot_range.n_list)) {
++		list_del_init(&hr->hot_range.n_list);
++		hot_root->hot_map_nr--;
++	}
++	spin_unlock(&hr->hot_range.lock);
++
+ 	radix_tree_delete(&hr->hot_inode->hot_range_tree, hr->start);
+ 	kmem_cache_free(hot_range_item_cachep, hr);
+ }
+@@ -135,6 +143,13 @@ static void hot_inode_item_free(struct kref *kref)
+ 	struct hot_inode_item *he = container_of(comm_item,
+ 			struct hot_inode_item, hot_inode);
+ 
++	spin_lock(&he->hot_inode.lock);
++	if (!list_empty(&he->hot_inode.n_list)) {
++		list_del_init(&he->hot_inode.n_list);
++		hot_root->hot_map_nr--;
++	}
++	spin_unlock(&he->hot_inode.lock);
++
+ 	hot_range_tree_free(he);
+ 	radix_tree_delete(he->hot_inode_tree, he->i_ino);
+ 	kmem_cache_free(hot_inode_item_cachep, he);
+@@ -317,6 +332,44 @@ static void hot_freq_data_update(struct hot_freq_data *freq_data, bool write)
+ }
+ 
+ /*
++ * Initialize inode and range map arrays.
++ */
++static void hot_map_array_init(struct hot_info *root)
++{
++	int i;
++	for (i = 0; i < HEAT_MAP_SIZE; i++) {
++		INIT_LIST_HEAD(&root->heat_inode_map[i].node_list);
++		INIT_LIST_HEAD(&root->heat_range_map[i].node_list);
++		root->heat_inode_map[i].temp = i;
++		root->heat_range_map[i].temp = i;
++	}
++}
++
++static void hot_map_list_free(struct list_head *node_list,
++				struct hot_info *root)
++{
++	struct list_head *pos, *next;
++	struct hot_comm_item *node;
++
++	list_for_each_safe(pos, next, node_list) {
++		node = list_entry(pos, struct hot_comm_item, n_list);
++		list_del_init(&node->n_list);
++		root->hot_map_nr--;
++	}
++
++}
++
++/* Free inode and range map arrays */
++static void hot_map_array_exit(struct hot_info *root)
++{
++	int i;
++	for (i = 0; i < HEAT_MAP_SIZE; i++) {
++		hot_map_list_free(&root->heat_inode_map[i].node_list, root);
++		hot_map_list_free(&root->heat_range_map[i].node_list, root);
++	}
++}
++
++/*
+  * Initialize kmem cache for hot_inode_item and hot_range_item.
+  */
+ void __init hot_cache_init(void)
+@@ -406,6 +459,7 @@ int hot_track_init(struct super_block *sb)
+ 
+ 	sb->s_hot_root = hot_root = root;
+ 	hot_inode_tree_init(root);
++	hot_map_array_init(root);
+ 
+ 	printk(KERN_INFO "VFS: Turning on hot data tracking\n");
+ 
+@@ -417,6 +471,7 @@ void hot_track_exit(struct super_block *sb)
+ {
+ 	struct hot_info *root = sb->s_hot_root;
+ 
++	hot_map_array_exit(root);
+ 	hot_inode_tree_exit(root);
+ 	kfree(root);
+ }
+diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+index de68f66..0ce2ef8 100644
+--- a/include/linux/hot_tracking.h
++++ b/include/linux/hot_tracking.h
+@@ -20,6 +20,9 @@
+ #include <linux/kref.h>
+ #include <linux/fs.h>
+ 
++#define HEAT_MAP_BITS 8
++#define HEAT_MAP_SIZE (1 << HEAT_MAP_BITS)
++
+ /*
+  * A frequency data struct holds values that are used to
+  * determine temperature of files and file ranges. These structs
+@@ -36,11 +39,18 @@ struct hot_freq_data {
+ 	u32 last_temp;
+ };
+ 
++/* List heads in hot map array */
++struct hot_map_head {
++	struct list_head node_list;
++	u8 temp;
++};
++
+ /* The common info for both following structures */
+ struct hot_comm_item {
+ 	struct hot_freq_data hot_freq_data;  /* frequency data */
+ 	spinlock_t lock; /* protects object data */
+ 	struct kref refs;  /* prevents kfree */
++	struct list_head n_list; /* list node index */
+ };
+ 
+ /* An item representing an inode and its access frequency */
+@@ -66,6 +76,12 @@ struct hot_range_item {
+ struct hot_info {
+ 	struct radix_tree_root hot_inode_tree;
+ 	spinlock_t lock; /*protect inode tree */
++
++	/* map of inode temperature */
++	struct hot_map_head heat_inode_map[HEAT_MAP_SIZE];
++	/* map of range temperature */
++	struct hot_map_head heat_range_map[HEAT_MAP_SIZE];
++	unsigned int hot_map_nr;
+ };
+ 
+ void __init hot_cache_init(void);
 -- 
 1.7.6.5
 

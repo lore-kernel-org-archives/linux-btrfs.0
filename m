@@ -1,58 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:46080 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752808Ab2JLDTt (ORCPT
+Received: from m59-178.qiye.163.com ([123.58.178.59]:33638 "EHLO
+	m59-178.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750854Ab2JYXjc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 23:19:49 -0400
-Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id A927D3EE0AE
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:47 +0900 (JST)
-Received: from smail (m2 [127.0.0.1])
-	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id 91CE645DE4D
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:47 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id 7B4D045DD78
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:47 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 6F2221DB8038
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:47 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 29E911DB802C
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:47 +0900 (JST)
-Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id ED1319F79A0
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:46 +0900 (JST)
-Received: from [127.0.0.1] (unknown [10.124.101.110])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id 833349F7986
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 12:19:46 +0900 (JST)
-Message-ID: <50778C1D.4060807@jp.fujitsu.com>
-Date: Fri, 12 Oct 2012 12:18:53 +0900
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-MIME-Version: 1.0
+	Thu, 25 Oct 2012 19:39:32 -0400
+From: zimilo@code-trick.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/4] Btrfs: set mount options permanently
-Content-Type: text/plain; charset=ISO-2022-JP
+Cc: Rock <zimilo@code-trick.com>
+Subject: [RESEND PATCH V2][BTRFS-PROGS] [BUG] Fix Bug to corrupt the img file
+Date: Fri, 26 Oct 2012 07:38:57 +0800
+Message-Id: <1351208337-3455-1-git-send-email-zimilo@code-trick.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Following patches are going to implement one of unclaimed features
-listed in the btrfs wiki:
+From: Rock <zimilo@code-trick.com>
 
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Set_mount_options_permanently
+Reproduce steps:
+  > dd if=/dev/zero of=btrfs-small.img bs=1M count=1
+  > ls -lh btrfs-small.img
+  -rw-rw-r--. 1 rock rock 1.0M Oct 24 09:51 btrfs-small.img
+                          ^^^
+  > mkfs.btrfs btrfs-small.img
+  -rw-rw-r--. 1 rock rock 2.0M Oct 24 09:53 btrfs-small.img
+                          ^^^
 
-Previous v1 post and discussion can be referred from:
-http://lwn.net/Articles/516898/
+Here you can see the original img file's size goes larger to 2Mb.
 
-v2:
-- Allow operator [+-=] like chmod for setting options
-- Save options by words instead of internal bits.
-  (e.g. kernel code will translate a word "ssd_spread" to 2 internal
-   bits "SSD" and "SSD_SPREAD". However this behavior might be changed
-   if kernel updates.)
+Signed-off-by: Rock Lee <zimilo@code-trick.com>
+---
+ utils.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Special thanks to Kazuhiro Yamashita for his time and efforts.
-Again, your comments/reviews are welcomed.
-
-Thanks,
-H.Seto
+diff --git a/utils.c b/utils.c
+index 205e667..7ba746e 100644
+--- a/utils.c
++++ b/utils.c
+@@ -557,6 +557,12 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 	}
+ 	if (max_block_count)
+ 		block_count = min(block_count, max_block_count);
++
++	if (block_count < 2 * 1024 * 1024) {
++		fprintf(stderr, "size of %s is too small(less than 2Mb)\n", file);
++		exit(1);
++	}
++
+ 	zero_end = 1;
+ 
+ 	if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
+-- 
+1.7.9.5
 

@@ -1,138 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:51520 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932678Ab2JYP7y (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:45404 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935909Ab2JYRTi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:59:54 -0400
-Received: by mail-ie0-f174.google.com with SMTP id k13so2405659iea.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 08:59:53 -0700 (PDT)
-Message-ID: <1351180790.740.11.camel@ayu>
+	Thu, 25 Oct 2012 13:19:38 -0400
+Received: by mail-da0-f46.google.com with SMTP id n41so882825dak.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 10:19:37 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1351180790.740.11.camel@ayu>
+References: <1351168220.1923.6.camel@hughsie-work.lan>
+	<20121025132825.GD25498@carfax.org.uk>
+	<1351172653.1923.10.camel@hughsie-work.lan>
+	<CAAeznTr6AvqbJ+WOw6S5kyW2_qbSUQgJfAO88m9KdV+3PyGUcw@mail.gmail.com>
+	<1351178178.1923.12.camel@hughsie-work.lan>
+	<1351180790.740.11.camel@ayu>
+Date: Thu, 25 Oct 2012 18:19:37 +0100
+Message-ID: <CAD2FfiG9vBUGY5itOXU5QviiRR=cB_tD41VHca3pQW1euW7XJQ@mail.gmail.com>
 Subject: Re: Naming of subvolumes
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Richard Hughes <hughsient@gmail.com>
+From: Richard Hughes <hughsient@gmail.com>
+To: Calvin Walton <calvin.walton@kepstin.ca>
 Cc: Leonidas Spyropoulos <artafinde@gmail.com>,
         Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Date: Thu, 25 Oct 2012 11:59:50 -0400
-In-Reply-To: <1351178178.1923.12.camel@hughsie-work.lan>
-References: <1351168220.1923.6.camel@hughsie-work.lan>
-	 <20121025132825.GD25498@carfax.org.uk>
-	 <1351172653.1923.10.camel@hughsie-work.lan>
-	 <CAAeznTr6AvqbJ+WOw6S5kyW2_qbSUQgJfAO88m9KdV+3PyGUcw@mail.gmail.com>
-	 <1351178178.1923.12.camel@hughsie-work.lan>
-Content-Type: multipart/signed; micalg="sha1"; protocol="application/x-pkcs7-signature";
-	boundary="=-jwILWXqu5/PbIXt9eGO2"
-Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 25 October 2012 16:59, Calvin Walton <calvin.walton@kepstin.ca> wrote:
+> Rolling back to a previous snapshot would require either a reboot...
 
---=-jwILWXqu5/PbIXt9eGO2
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+I know, the very last thing the system upgrade does is reboot.
 
-On Thu, 2012-10-25 at 16:16 +0100, Richard Hughes wrote:
-> On Thu, 2012-10-25 at 16:09 +0100, Leonidas Spyropoulos wrote:
-> > On another note. How would you implement that logic (make a snapshot
-> > before upgrade) without the lib? Would you wrap package manager into a
-> > wrapper or patch package manager to call snapshot and the upgrade.
-> > In both cases you will need to parse stdout, stderr from the snapshot
-> > creation.
->=20
-> I'm intending to add the snapshot stuff in the logic described here:
-> https://gitorious.org/packagekit/packagekit/blobs/master/contrib/systemd-=
-updates/README.txt
->=20
-> > Also would you automatically roll back to before snapshot if something
-> > goes wrong or give option to user? Can you categorise errors on
-> > upgrades according ti fatality to the system?
->=20
-> If *anything* in the upgrade fails and we've already started the package
-> transaction then we'd roll back to the previous known-good snapshot.
-
-Rolling back to a previous snapshot would require either a reboot or
-using something like rsync to copy the old state back to the currently
-mounted subvolume, unfortunately. There's no provision in Linux to allow
-switching out the mounted filesystem from under running applications :)
---=20
-Calvin Walton <calvin.walton@kepstin.ca>
-
---=-jwILWXqu5/PbIXt9eGO2
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIINYjCCBjQw
-ggQcoAMCAQICAR4wDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0
-Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxKTAn
-BgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTA3MTAyNDIxMDE1NVoX
-DTE3MTAyNDIxMDE1NVowgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSsw
-KQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFy
-dENvbSBDbGFzcyAxIFByaW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQTCCASIwDQYJKoZIhvcN
-AQEBBQADggEPADCCAQoCggEBAMcJg8zOLdgasSmkLhOrlr6KMoOMpohBllVHrdRvEg/q6r8jR+EK
-75xCGhR8ToREoqe7zM9/UnC6TS2y9UKTpT1v7RSMzR0t6ndl0TWBuUr/UXBhPk+Kmy7bI4yW4urC
-+y7P3/1/X7U8ocb8VpH/Clt+4iq7nirMcNh6qJR+xjOhV+VHzQMALuGYn5KZmc1NbJQYclsGkDxD
-z2UbFqE2+6vIZoL+jb9x4Pa5gNf1TwSDkOkikZB1xtB4ZqtXThaABSONdfmv/Z1pua3FYxnCFmdr
-/+N2JLKutIxMYqQOJebr/f/h5t95m4JgrM3Y/w7YX9d7YAL9jvN4SydHsU6n65cCAwEAAaOCAa0w
-ggGpMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBRTcu2SnODaywFc
-fH6WNU7y1LhRgjAfBgNVHSMEGDAWgBROC+8apEBbpRdphzDKNGhD0EGu8jBmBggrBgEFBQcBAQRa
-MFgwJwYIKwYBBQUHMAGGG2h0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9jYTAtBggrBgEFBQcwAoYh
-aHR0cDovL3d3dy5zdGFydHNzbC5jb20vc2ZzY2EuY3J0MFsGA1UdHwRUMFIwJ6AloCOGIWh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tL3Nmc2NhLmNybDAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5j
-b20vc2ZzY2EuY3JsMIGABgNVHSAEeTB3MHUGCysGAQQBgbU3AQIBMGYwLgYIKwYBBQUHAgEWImh0
-dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUHAgEWKGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwDQYJKoZIhvcNAQEFBQADggIBAAqDCH14qywG
-XLhjjF6uHLkjd02hcdh9hrw+VUsv+q1eeQWB21jWj3kJ96AUlPCoEGZ/ynJNScWy6QMVQjbbMXlt
-UfO4n4bGGdKo3awPWp61tjAFgraLJgDk+DsSvUD6EowjMTNx25GQgyYJ5RPIzKKR9tQW8gGK+2+R
-HxkUCTbYFnL6kl8Ch507rUdPPipJ9CgJFws3kDS3gOS5WFMxcjO5DwKfKSETEPrHh7p5shuuNktv
-sv6hxHTLhiMKX893gxdT3XLS9OKmCv87vkINQcNEcIIoFWbP9HORz9v3vQwR4e3ksLc2JZOAFK+s
-sS5XMEoznzpihEP0PLc4dCBYjbvSD7kxgDwZ+Aj8Q9PkbvE9sIPP7ON0fz095HdThKjiVJe6vofq
-+n6b1NBc8XdrQvBmunwxD5nvtTW4vtN6VY7mUCmxsCieuoBJ9OlqmsVWQvifIYf40dJPZkk9YgGT
-zWLpXDSfLSplbY2LL9C9U0ptvjcDjefLTvqSFc7tw1sEhF0n/qpA2r0GpvkLRDmcSwVyPvmjFBGq
-Up/pNy8ZuPGQmHwFi2/14+xeSUDG2bwnsYJQG2EdJCB6luQ57GEnTA/yKZSTKI8dDQa8Sd3zfXb1
-9mOgSF0bBdXbuKhEpuP9wirslFe6fQ1t5j5R0xi72MZ8ikMu1RQZKCyDbMwazlHiMIIHJjCCBg6g
-AwIBAgIDBQIzMA0GCSqGSIb3DQEBBQUAMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
-b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYG
-A1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcN
-MTIwOTI4MTQyMDU5WhcNMTMwOTI5MDIzNTUxWjBnMRkwFwYDVQQNExA2eEJWMWhST2tBdk5ENFBy
-MSEwHwYDVQQDDBhjYWx2aW4ud2FsdG9uQGtlcHN0aW4uY2ExJzAlBgkqhkiG9w0BCQEWGGNhbHZp
-bi53YWx0b25Aa2Vwc3Rpbi5jYTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMTJC+ZQ
-ME3qUS/IW4RLaiR8YFulvIJ/VEuNwOWMuem/MJEWhwFYaFbfrGuSULThGZSR4bGQxbaRiYZTKvqT
-ctBviGJ8A/+vBAD0b61uVQi3/mUIN2ZX5SLxmE7K+xGFE5NpCeEoekMFRHcDt7vncfw2hPNYShfT
-SdajrQo5wTjroGACwnXPTu1TysMNbKFfb393vwFc+llzMBQvWhO2zczyxeca/AG2lPQvB6S+zRfQ
-W79IvOp/2x2EHy8WnXS9svgffrVrwdcu6IiUIDEP27lOoOkiE+2FX7O8OGqex9QfnOq5mX1HoUm0
-ovMop1jmlQF2v2QpFWY7dYmIzihWok0CAwEAAaOCA7MwggOvMAkGA1UdEwQCMAAwCwYDVR0PBAQD
-AgSwMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAdBgNVHQ4EFgQU91SUkj1PegqzagVX
-F7dCetgrLpwwHwYDVR0jBBgwFoAUU3Ltkpzg2ssBXHx+ljVO8tS4UYIwIwYDVR0RBBwwGoEYY2Fs
-dmluLndhbHRvbkBrZXBzdGluLmNhMIICIQYDVR0gBIICGDCCAhQwggIQBgsrBgEEAYG1NwECAjCC
-Af8wLgYIKwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYB
-BQUHAgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgfcGCCsGAQUF
-BwICMIHqMCcWIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MAMCAQEagb5UaGlzIGNl
-cnRpZmljYXRlIHdhcyBpc3N1ZWQgYWNjb3JkaW5nIHRvIHRoZSBDbGFzcyAxIFZhbGlkYXRpb24g
-cmVxdWlyZW1lbnRzIG9mIHRoZSBTdGFydENvbSBDQSBwb2xpY3ksIHJlbGlhbmNlIG9ubHkgZm9y
-IHRoZSBpbnRlbmRlZCBwdXJwb3NlIGluIGNvbXBsaWFuY2Ugb2YgdGhlIHJlbHlpbmcgcGFydHkg
-b2JsaWdhdGlvbnMuMIGcBggrBgEFBQcCAjCBjzAnFiBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1
-dGhvcml0eTADAgECGmRMaWFiaWxpdHkgYW5kIHdhcnJhbnRpZXMgYXJlIGxpbWl0ZWQhIFNlZSBz
-ZWN0aW9uICJMZWdhbCBhbmQgTGltaXRhdGlvbnMiIG9mIHRoZSBTdGFydENvbSBDQSBwb2xpY3ku
-MDYGA1UdHwQvMC0wK6ApoCeGJWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL2NydHUxLWNybC5jcmww
-gY4GCCsGAQUFBwEBBIGBMH8wOQYIKwYBBQUHMAGGLWh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9z
-dWIvY2xhc3MxL2NsaWVudC9jYTBCBggrBgEFBQcwAoY2aHR0cDovL2FpYS5zdGFydHNzbC5jb20v
-Y2VydHMvc3ViLmNsYXNzMS5jbGllbnQuY2EuY3J0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cuc3Rh
-cnRzc2wuY29tLzANBgkqhkiG9w0BAQUFAAOCAQEArES0JRo1fLc3xTkqyKHzgdmfey5QcLD6nOPN
-qcl3C2hb9ZLynAKKKfLUPZE0jGIeoosTCusniHDfqg9uw/LyFFBOTRODW4SlC4J+mHIumqSTsVDk
-WzT8lIOQflBSTtKpDQQo13Y7H2BaNd7AEvFafUFtE3w5aPHtiOQjr/O1HEcNGeJ0KCEjHlwUumNb
-l0PF/dTqms4OlHeTm6ymDwfpyGr44doaenQg92Styx5yY2xq7IR6D/CtHUe+FkzfubTRVTc6KPtk
-pK6C6mcN8fzki2ZVmPcXysfGc1rwLkEywIHYPlgvIAqdNFimGNzzLTLshBR9X6g0yy6y1klysuZ2
-gjGCAhswggIXAgEBMIGUMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEr
-MCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3Rh
-cnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0ECAwUCMzAJBgUrDgMC
-GgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTIxMDI1MTU1
-OTUwWjAjBgkqhkiG9w0BCQQxFgQUBM/KTsHKfh4x7rKxPb5WSlar9LswDQYJKoZIhvcNAQEBBQAE
-ggEAWE9ChFdq1gd8lYPgC3dwbDtnlGI+PmocFZMz0E5tMPgtHMN9hC4x42kPYDxEcwzgD5RGbNIN
-4Vwr5FWCyAqdTgBCCE1Zk275+WSL6pKPwS99rEoj0/3ZFCutIEJmJLmyTg0fn4Q0PkvsiGGTbvtb
-S/ZZUPrOql4lvhRErq3kYWMaQ5CCEaTHZP1lPp34GEUFWezApWP+Of+MRN3hBy5LR+XwVgJQyzrm
-vO580Tffsq1TYU+ckWQXVD5wy1TW/kDDCAQBVw43q46+NKbKpq8HHCcf2WaelaPPvtTp/4rkMZld
-DCnx8oZejXxfAMtBhUPkxU3vkn/6BT/KV/maJRreHQAAAAAAAA==
-
-
---=-jwILWXqu5/PbIXt9eGO2--
-
+Richard.

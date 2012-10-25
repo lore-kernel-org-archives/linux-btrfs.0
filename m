@@ -1,36 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:44926 "EHLO twin.jikos.cz"
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:38547 "EHLO e9.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756331Ab2JYO6o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 10:58:44 -0400
-Date: Thu, 25 Oct 2012 16:58:41 +0200
-From: David Sterba <dave@jikos.cz>
-To: Ins <insfocus@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: mkfs.btrfs allow to set the sectorsize by the -s option but the
- kernel doesnot
-Message-ID: <20121025145841.GF10679@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <CAMRmmpK8rYQDRWVM6nxsc2kouFNPyAnwAfB6Y19Ha40rLdeejA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAMRmmpK8rYQDRWVM6nxsc2kouFNPyAnwAfB6Y19Ha40rLdeejA@mail.gmail.com>
+	id S933700Ab2JYPJh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:09:37 -0400
+Received: from /spool/local
+	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
+	Thu, 25 Oct 2012 11:09:35 -0400
+From: zwu.kernel@gmail.com
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
+        cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: [RFC v4 00/15] vfs: hot data tracking
+Date: Thu, 25 Oct 2012 23:08:52 +0800
+Message-Id: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 24, 2012 at 02:39:34PM +0800, Ins wrote:
->   mkfs.btrfs allows to set the sectorsize by the -s option.
-...
-> 2366        if (sectorsize != PAGE_SIZE) {
-> 2367                printk(KERN_WARNING "btrfs: Incompatible sector size(%lu) "
-> 2368                       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
-> 2369                goto fail_sb_buffer;
-> 2370        }
-...
-> So the actually reason is?
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-The state is 'not implemented', the sectorsize == page size is a hard
-requirement in current impelementation, though this may change.
+NOTE:
 
+  The patchset can be obtained via my kernel dev git on github:
+git@github.com:wuzhy/kernel.git hot_tracking
+  If you're interested, you can also can review them via
+https://github.com/wuzhy/kernel/commits/hot_tracking
 
-david
+  For more infomation, please check hot_tracking.txt in Documentation
+
+TODO List:
+
+ 1.) Need to do scalability or performance tests.
+ 2.) How to save the file temperature among the umount to be able to
+     preserve the file tempreture after reboot
+
+Ben Chociej, Matt Lupfer and Conor Scott originally wrote this code to
+ be very btrfs-specific.  I've taken their code and attempted to
+make it more generic and integrate it at the VFS level.
+
+Changelog from v3:
+ 1.) Rewritten debugfs support based seq_file operation. [Dave Chinner]
+ 2.) Refactored workqueue support. [Dave Chinner]
+ 3.) Turn some Micro into be tunable        [Zhiyong, Liu Zheng]
+       TIME_TO_KICK, and HEAT_UPDATE_DELAY
+ 4.) Cleanedup a lot of other issues [Dave Chinner]
+
+v2:
+ 1.) Converted to Radix trees, not RB-tree [Zhiyong, Dave Chinner]
+ 2.) Added memory shrinker [Dave Chinner]
+ 3.) Converted to one workqueue to update map info periodically [Dave Chinner]
+ 4.) Cleanedup a lot of other issues [Dave Chinner]
+
+v1:
+ 1.) Reduce new files and put all in fs/hot_tracking.[ch] [Dave Chinner]
+ 2.) The first three patches can probably just be flattened into one.
+                                        [Marco Stornelli , Dave Chinner]
+
+Dave Chinner (1):
+  xfs: add hot tracking support
+
+Zhi Yong Wu (14):
+  vfs,hot_track: introduce private radix tree structures
+  vfs,hot_track: initialize and free key data structures
+  vfs,hot_track: add the function for collecting I/O frequency
+  vfs,hot_track: add two map arrays
+  vfs,hot_track: add hooks to enable hot data tracking
+  vfs,hot_track: add the function for updating map arrays
+  vfs,hot_track: add the aging function
+  vfs,hot_track: add one work queue
+  vfs,hot_track: register one memory shrinker
+  vfs,hot_track: add one new ioctl interface
+  vfs,hot_track: add debugfs support
+  vfs,hot_track: turn some Micro into be tunable
+  btrfs: add hot tracking support
+  vfs,hot_track: add the documentation
+
+ Documentation/filesystems/00-INDEX         |    2 +
+ Documentation/filesystems/hot_tracking.txt |  164 ++++
+ fs/Makefile                                |    2 +-
+ fs/btrfs/ctree.h                           |    1 +
+ fs/btrfs/super.c                           |   22 +-
+ fs/compat_ioctl.c                          |    5 +
+ fs/dcache.c                                |    2 +
+ fs/debugfs/inode.c                         |   26 +
+ fs/direct-io.c                             |    6 +
+ fs/hot_tracking.c                          | 1308 ++++++++++++++++++++++++++++
+ fs/hot_tracking.h                          |   91 ++
+ fs/ioctl.c                                 |   76 ++
+ fs/xfs/xfs_mount.h                         |    1 +
+ fs/xfs/xfs_super.c                         |   16 +
+ include/linux/debugfs.h                    |    9 +
+ include/linux/fs.h                         |    4 +
+ include/linux/hot_tracking.h               |  125 +++
+ kernel/sysctl.c                            |   14 +
+ mm/filemap.c                               |    6 +
+ mm/page-writeback.c                        |   12 +
+ mm/readahead.c                             |    6 +
+ 21 files changed, 1896 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/filesystems/hot_tracking.txt
+ create mode 100644 fs/hot_tracking.c
+ create mode 100644 fs/hot_tracking.h
+ create mode 100644 include/linux/hot_tracking.h
+
+-- 
+1.7.6.5
+

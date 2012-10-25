@@ -1,74 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:60111 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752803Ab2JYN22 (ORCPT
+Received: from acsinet15.oracle.com ([141.146.126.227]:34730 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1945970Ab2JYNbi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 09:28:28 -0400
-Date: Thu, 25 Oct 2012 14:28:25 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Richard Hughes <hughsient@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Naming of subvolumes
-Message-ID: <20121025132825.GD25498@carfax.org.uk>
-References: <1351168220.1923.6.camel@hughsie-work.lan>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="UhXv5VeBZ/Y8lRnC"
-In-Reply-To: <1351168220.1923.6.camel@hughsie-work.lan>
+	Thu, 25 Oct 2012 09:31:38 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: list.btrfs@jan-o-sch.net
+Subject: [PATCH v2] Btrfs: fix memory leak when cloning root's node
+Date: Thu, 25 Oct 2012 21:30:19 +0800
+Message-Id: <1351171819-2317-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+After cloning root's node, we forgot to dec the src's ref
+which can lead to a memory leak.
 
---UhXv5VeBZ/Y8lRnC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v1->v2: fix a typo.
 
-On Thu, Oct 25, 2012 at 01:30:20PM +0100, Richard Hughes wrote:
-> I'm planning to use "btrfs subvolume snapshot -r <name>" in the system
-> upgrade functionality[1] if the user is using btrfs for their root file
-> system. We've got most of the bits in place already for Fedora 18.
-> 
-> One think that confuses me is the convention for the naming of
-> snapshots. Is there any conventions or prior art there? Can I add
-> metadata to the snapshot so that I don't have encode everything in the
-> snapshot name itself?
+ fs/btrfs/ctree.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-   How about user xattrs? IIRC, that's the user.* namespace.
-
-   The only convention I'm aware of is Ubuntu's use of an @
-substitution, where the subvolume to be mounted at / is called @, and
-the subvolume to be mounted at /home becomes @home. Both of those
-subvolumes are stored in the (otherwise empty) top-level of the
-filesystem, which is not mounted in normal operation.
-
-   Hugo.
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index eba44b0..cdfb4c4 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1241,6 +1241,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ {
+ 	struct tree_mod_elem *tm;
+ 	struct extent_buffer *eb;
++	struct extent_buffer *old;
+ 	struct tree_mod_root *old_root = NULL;
+ 	u64 old_generation = 0;
+ 	u64 logical;
+@@ -1264,13 +1265,14 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 		btrfs_tree_read_unlock(root->node);
+ 		free_extent_buffer(root->node);
+ 		blocksize = btrfs_level_size(root, old_root->level);
+-		eb = read_tree_block(root, logical, blocksize, 0);
+-		if (!eb) {
++		old = read_tree_block(root, logical, blocksize, 0);
++		if (!old) {
+ 			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
+ 				logical);
+ 			WARN_ON(1);
+ 		} else {
+-			eb = btrfs_clone_extent_buffer(eb);
++			eb = btrfs_clone_extent_buffer(old);
++			free_extent_buffer(old);
+ 		}
+ 	} else if (old_root) {
+ 		btrfs_tree_read_unlock(root->node);
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- This chap Anon is writing some perfectly lovely stuff ---      
-                             at the moment.                              
+1.7.7.6
 
---UhXv5VeBZ/Y8lRnC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUIk+eb9z9OVl50rAAQLf0g//dTnGORTuZYGCalQaXlmJqtMR8+kD/3vo
-yUgfutLi+DMzMyxSjc3jacSJxKlrHyApiOQE6c20/+41TEK/s3kY6PafD7uNOhGu
-7ceHuO9/HZzKnRZQEIX1n/HZAT56z02/WRCuU2BQpRux4hNucXpMaQyxF+vUuu0o
-AcfRMS7wMEErhWVZnLctjab/sVg4lwVHl7MZHlZIP+rZA+0HF12wMfilneXCjiwD
-TaZOyk3ZDr+W1lp4KDedG0YXoRhj6kotdjz04Q6XMspfYr/c9oglYWtbM83nnWY7
-KQr53f3bE0fPA+HCEV/cIuPu/Ej4cV+Wtnh2UAQ9h/jqaes0mTX8SwWq3q8nTRLE
-z5IpzOeTpm0prYg14cILr5MKjdkKvrJY9MK1AQg6L3ZRBsjNeJ+VCG5I/Qb0S8F0
-Zv2f5DioDjMyNC9WiP3wVu8XaZRy134oCqLuIQrIHJcaZRqFRfdg5teGUft2y3Jt
-w+sH+CIuoPYSh5H1N+wKHOFjnh7M6bP7DMtNJwZjlDKULRvS+5i/Onbj+pTvWivf
-EH7FqDkfA0SpgB+VRBXBfFNAUH/Cpzy6DCmUr4eVBvo5k5jskCrtfdpyO1bmrlLN
-0b+A6lXfGWMpaBORZQa9m8GiWi9KRW6LJJhNy8gLm8uYy+SriihjEAJ2hxgDoGwY
-XrXqWn/wlQw=
-=DfFc
------END PGP SIGNATURE-----
-
---UhXv5VeBZ/Y8lRnC--

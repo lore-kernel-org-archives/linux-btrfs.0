@@ -1,43 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f174.google.com ([209.85.215.174]:55752 "EHLO
-	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755620Ab2JYTZ4 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:59112 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935352Ab2JYT6H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 15:25:56 -0400
-Received: by mail-ea0-f174.google.com with SMTP id c13so626076eaa.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 12:25:55 -0700 (PDT)
-Message-ID: <50899269.8080208@gmail.com>
-Date: Thu, 25 Oct 2012 21:26:33 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Thu, 25 Oct 2012 15:58:07 -0400
+Date: Thu, 25 Oct 2012 12:58:05 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707
+Message-ID: <20121025195805.GA24111@merlins.org>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: linux-btrfs@vger.kernel.org, kreijack@inwind.it,
-        Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: device delete, error removing device [SOLVED]
-References: <D297D796-B7E9-4A65-AD72-EC394AD32D4C@colorremedies.com> <4D1258FC-36CB-4C7B-AE7F-AFCC73E6AEC4@colorremedies.com> <20121022091904.GY25498@carfax.org.uk> <B2B2C037-F5C8-4A75-A0D8-6C0AACDFAF4E@colorremedies.com> <20121022171809.GA25498@carfax.org.uk> <20121023075721.GB391@yeono.kjorling.se> <5086DDAE.3050708@gmail.com> <442D159A-4A4E-4A50-B1DB-0E6E12FA6F5C@colorremedies.com> <5086E9D6.4070201@inwind.it> <3443D67F-6CCE-48BF-A1DB-12473BE95EE8@colorremedies.com> <5087174A.2060405@inwind.it> <1BE15E02-3DBE-42AB-8900-D82C11BCD1B7@colorremedies.com> <50882E38.4000408@gmail.com> <D0E7C142-9FAE-4233-BA2E-BB1EB341FD93@colorremedies.com> <50885E0D.9040701@gmail.com> <2E8E9E76-5B11-4DDF-A3E8-ECE4350384AA@colorremedies.com>
-In-Reply-To: <2E8E9E76-5B11-4DDF-A3E8-ECE4350384AA@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-24 23:43, Chris Murphy wrote:
->> However this page
->> > 
->> > https://btrfs.wiki.kernel.org/index.php/Project_ideas#Drive_swapping
->> > 
->> > states that someone is working on this kind of issue.
-> Yep, I see I'm merely stating what is already known, sorry about that.
+Howdy,
+
+I can wait a day or maybe 2 before I have to wipe and restore from backup.
+Please let me know if you have a patch against 3.6.3 you'd like me to try
+to mount/recover this filesystem, or whether you'd like me to try btrfsck.
 
 
-No, please; you are really raising the attention to an hot point of
-btrfs. Its capability of working when a disk is failed is not enough.
-For example it is impossible to remove a disk which disappeared (I have
-umount the filesystem, then mount it in degraded mode)...
+My laptop had a problem with its boot drive which prevented linux
+from writing to it, and in turn caused btrfs to have incomplete writes 
+to it.
+After reboot, the boot drive was fine, but the btrfs filesystem has
+a corruption that prevents it from being mounted.
 
-Btrfs is a filesystem in development, so it is OK that not everything is
-working. The "complaints" raise the attention level.
+Unfortunately the mount crash prevents writing of crash data to even another
+drive since linux stops before the crash data can be written to syslog.
 
+Picture #1 shows a dump when my laptop crashed (before reboot).
+btrfs no csum found for inode X start Y
+http://marc.merlins.org/tmp/crash.jpg
+
+Mounting with 3.5.0 and 3.6.3 gives the same error:
+
+gandalfthegreat:~# mount -o recovery,skip_balance,ro /dev/mapper/bootdsk                                  
+
+shows
+btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+(there are 2 lines, not sure why)
+
+kernel BUG at fs/btrfs/volumes.c:3707
+int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
+{
+	struct extent_map *em;
+	struct map_lookup *map;
+	struct extent_map_tree *em_tree = &map_tree->map_tree;
+	int ret;
+
+	read_lock(&em_tree->lock);
+	em = lookup_extent_mapping(em_tree, logical, len);
+	read_unlock(&em_tree->lock);
+	BUG_ON(!em);  <---
+
+If the snapshot helps (sorry, hard to read, but usable):
+http://marc.merlins.org/tmp/btrfs_bug.jpg
+
+Questions:
+1) Any better way to get a proper dump without serial console?
+(I hate to give you pictures)
+
+2) Should I try btrfsck now, or are there other mount options than
+mount -o recovery,skip_balance,ro /dev/mapper/bootdsk 
+I should try?
+
+3) Want me to try btrfsck although it may make it impossible for me to
+reproduce the bug and test a fix, as well as potentially break the filesystem
+more (last time I tried btrfsck, it outputted thousands of lines and never converged
+to a state it was happy with)
+
+Thanks,
+Marc
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

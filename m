@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e9.ny.us.ibm.com ([32.97.182.139]:41818 "EHLO e9.ny.us.ibm.com"
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:39191 "EHLO e9.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933480Ab2JYPLq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:11:46 -0400
+	id S935670Ab2JYPKA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:10:00 -0400
 Received: from /spool/local
 	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:11:45 -0400
+	Thu, 25 Oct 2012 11:09:59 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v4 09/15] vfs,hot_track: register one memory shrinker
-Date: Thu, 25 Oct 2012 23:09:01 +0800
-Message-Id: <1351177747-19389-10-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4 01/15] vfs,hot_track: introduce private radix tree structures
+Date: Thu, 25 Oct 2012 23:08:53 +0800
+Message-Id: <1351177747-19389-2-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,117 +23,293 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Register a shrinker to control the amount of
-memory that is used in tracking hot regions - if we are throwing
-inodes out of memory due to memory pressure, we most definitely are
-going to need to reduce the amount of memory the tracking code is
-using, even if it means losing useful information (i.e. the shrinker
-accelerates the aging process).
+  One root structure hot_info is defined, is hooked
+up in super_block, and will be used to hold radix tree
+root, hash list root and some other information, etc.
+  Adds hot_inode_tree struct to keep track of
+frequently accessed files, and be keyed by {inode, offset}.
+Trees contain hot_inode_items representing those files
+and ranges.
+  Having these trees means that vfs can quickly determine the
+temperature of some data by doing some calculations on the
+hot_freq_data struct that hangs off of the tree item.
+  Define two items hot_inode_item and hot_range_item,
+one of them represents one tracked file
+to keep track of its access frequency and the tree of
+ranges in this file, while the latter represents
+a file range of one inode.
+  Each of the two structures contains a hot_freq_data
+struct with its frequency of access metrics (number of
+{reads, writes}, last {read,write} time, frequency of
+{reads,writes}).
+  Also, each hot_inode_item contains one hot_range_tree
+struct which is keyed by {inode, offset, length}
+and used to keep track of all the ranges in this file.
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c            |   61 ++++++++++++++++++++++++++++++++++++++++++
- include/linux/hot_tracking.h |    1 +
- 2 files changed, 62 insertions(+), 0 deletions(-)
+ fs/Makefile                  |    2 +-
+ fs/dcache.c                  |    2 +
+ fs/hot_tracking.c            |  107 ++++++++++++++++++++++++++++++++++++++++++
+ fs/hot_tracking.h            |   23 +++++++++
+ include/linux/hot_tracking.h |   73 ++++++++++++++++++++++++++++
+ 5 files changed, 206 insertions(+), 1 deletions(-)
+ create mode 100644 fs/hot_tracking.c
+ create mode 100644 fs/hot_tracking.h
+ create mode 100644 include/linux/hot_tracking.h
 
-diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index d931083..7d2c53d 100644
---- a/fs/hot_tracking.c
-+++ b/fs/hot_tracking.c
-@@ -678,6 +678,61 @@ err:
- 	kmem_cache_destroy(hot_inode_item_cachep);
+diff --git a/fs/Makefile b/fs/Makefile
+index 1d7af79..f966dea 100644
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -11,7 +11,7 @@ obj-y :=	open.o read_write.o file_table.o super.o \
+ 		attr.o bad_inode.o file.o filesystems.o namespace.o \
+ 		seq_file.o xattr.o libfs.o fs-writeback.o \
+ 		pnode.o drop_caches.o splice.o sync.o utimes.o \
+-		stack.o fs_struct.o statfs.o
++		stack.o fs_struct.o statfs.o hot_tracking.o
+ 
+ ifeq ($(CONFIG_BLOCK),y)
+ obj-y +=	buffer.o bio.o block_dev.o direct-io.o mpage.o ioprio.o
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 3a463d0..7d5be16 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -37,6 +37,7 @@
+ #include <linux/rculist_bl.h>
+ #include <linux/prefetch.h>
+ #include <linux/ratelimit.h>
++#include <linux/hot_tracking.h>
+ #include "internal.h"
+ #include "mount.h"
+ 
+@@ -3172,4 +3173,5 @@ void __init vfs_caches_init(unsigned long mempages)
+ 	mnt_init();
+ 	bdev_cache_init();
+ 	chrdev_init();
++	hot_cache_init();
  }
- 
-+static int hot_track_prune_map(struct hot_map_head *map_head,
-+				bool type, int nr)
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+new file mode 100644
+index 0000000..6a0f2a3
+--- /dev/null
++++ b/fs/hot_tracking.c
+@@ -0,0 +1,107 @@
++/*
++ * fs/hot_tracking.c
++ *
++ * Copyright (C) 2012 IBM Corp. All rights reserved.
++ * Written by Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ */
++
++#include <linux/list.h>
++#include <linux/err.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/spinlock.h>
++#include <linux/hardirq.h>
++#include <linux/fs.h>
++#include <linux/blkdev.h>
++#include <linux/types.h>
++#include <linux/limits.h>
++#include "hot_tracking.h"
++
++/* kmem_cache pointers for slab caches */
++static struct kmem_cache *hot_inode_item_cachep __read_mostly;
++static struct kmem_cache *hot_range_item_cachep __read_mostly;
++
++/*
++ * Initialize the inode tree. Should be called for each new inode
++ * access or other user of the hot_inode interface.
++ */
++static void hot_inode_tree_init(struct hot_info *root)
 +{
-+	struct hot_comm_item *node;
-+	int i;
-+
-+	for (i = 0; i < HEAT_MAP_SIZE; i++) {
-+		while (!list_empty(&(map_head + i)->node_list)) {
-+			if (nr-- <= 0)
-+				break;
-+
-+			node = list_first_entry(&(map_head + i)->node_list,
-+					struct hot_comm_item, n_list);
-+			if (type) {
-+				struct hot_inode_item *hot_inode =
-+					container_of(node,
-+					struct hot_inode_item, hot_inode);
-+				hot_inode_item_put(hot_inode);
-+			} else {
-+				struct hot_range_item *hot_range =
-+					container_of(node,
-+					struct hot_range_item, hot_range);
-+				hot_range_item_put(hot_range);
-+			}
-+		}
-+	}
-+
-+	return nr;
++	INIT_RADIX_TREE(&root->hot_inode_tree, GFP_ATOMIC);
++	spin_lock_init(&root->lock);
 +}
 +
-+/* The shrinker callback function */
-+static int hot_track_prune(struct shrinker *shrink,
-+			struct shrink_control *sc)
++/*
++ * Initialize the hot range tree. Should be called for each new inode
++ * access or other user of the hot_range interface.
++ */
++void hot_range_tree_init(struct hot_inode_item *he)
 +{
-+	struct hot_info *root =
-+		container_of(shrink, struct hot_info, hot_shrink);
-+	int ret;
-+
-+	if (sc->nr_to_scan == 0)
-+		return root->hot_map_nr;
-+
-+	if (!(sc->gfp_mask & __GFP_FS))
-+		return -1;
-+
-+	ret = hot_track_prune_map(root->heat_range_map,
-+				false, sc->nr_to_scan);
-+	if (ret > 0)
-+		ret = hot_track_prune_map(root->heat_inode_map,
-+					true, ret);
-+	if (ret > 0)
-+		root->hot_map_nr -= (sc->nr_to_scan - ret);
-+
-+	return root->hot_map_nr;
++	INIT_RADIX_TREE(&he->hot_range_tree, GFP_ATOMIC);
++	spin_lock_init(&he->lock);
 +}
 +
- /*
-  * Main function to update access frequency from read/writepage(s) hooks
-  */
-@@ -758,6 +813,11 @@ int hot_track_init(struct super_block *sb)
- 	queue_delayed_work(root->update_wq, &root->update_work,
- 		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
- 
-+	/* Register a shrinker callback */
-+	root->hot_shrink.shrink = hot_track_prune;
-+	root->hot_shrink.seeks = DEFAULT_SEEKS;
-+	register_shrinker(&root->hot_shrink);
++/*
++ * Initialize a new hot_range_item structure. The new structure is
++ * returned with a reference count of one and needs to be
++ * freed using free_range_item()
++ */
++static void hot_range_item_init(struct hot_range_item *hr, u32 start,
++				struct hot_inode_item *he)
++{
++	hr->start = start;
++	hr->len = RANGE_SIZE;
++	hr->hot_inode = he;
++	kref_init(&hr->hot_range.refs);
++	spin_lock_init(&hr->hot_range.lock);
++	hr->hot_range.hot_freq_data.avg_delta_reads = (u64) -1;
++	hr->hot_range.hot_freq_data.avg_delta_writes = (u64) -1;
++	hr->hot_range.hot_freq_data.flags = FREQ_DATA_TYPE_RANGE;
++}
 +
- 	printk(KERN_INFO "VFS: Turning on hot data tracking\n");
- 
- 	return 0;
-@@ -774,6 +834,7 @@ void hot_track_exit(struct super_block *sb)
- {
- 	struct hot_info *root = sb->s_hot_root;
- 
-+	unregister_shrinker(&root->hot_shrink);
- 	cancel_delayed_work_sync(&root->update_work);
- 	destroy_workqueue(root->update_wq);
- 	hot_map_array_exit(root);
++/*
++ * Initialize a new hot_inode_item structure. The new structure is
++ * returned with a reference count of one and needs to be
++ * freed using hot_free_inode_item()
++ */
++static void hot_inode_item_init(struct hot_inode_item *he, u64 ino,
++				struct radix_tree_root *hot_inode_tree)
++{
++	he->i_ino = ino;
++	he->hot_inode_tree = hot_inode_tree;
++	kref_init(&he->hot_inode.refs);
++	spin_lock_init(&he->hot_inode.lock);
++	he->hot_inode.hot_freq_data.avg_delta_reads = (u64) -1;
++	he->hot_inode.hot_freq_data.avg_delta_writes = (u64) -1;
++	he->hot_inode.hot_freq_data.flags = FREQ_DATA_TYPE_INODE;
++	hot_range_tree_init(he);
++}
++
++/*
++ * Initialize kmem cache for hot_inode_item and hot_range_item.
++ */
++void __init hot_cache_init(void)
++{
++	hot_inode_item_cachep = kmem_cache_create("hot_inode_item",
++			sizeof(struct hot_inode_item), 0,
++			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++			NULL);
++	if (!hot_inode_item_cachep)
++		return;
++
++	hot_range_item_cachep = kmem_cache_create("hot_range_item",
++			sizeof(struct hot_range_item), 0,
++			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++			NULL);
++	if (!hot_range_item_cachep)
++		goto err;
++
++	return;
++
++err:
++	kmem_cache_destroy(hot_inode_item_cachep);
++}
+diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
+new file mode 100644
+index 0000000..febf699
+--- /dev/null
++++ b/fs/hot_tracking.h
+@@ -0,0 +1,23 @@
++/*
++ * fs/hot_tracking.h
++ *
++ * Copyright (C) 2012 IBM Corp. All rights reserved.
++ * Written by Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ */
++
++#ifndef __HOT_TRACKING__
++#define __HOT_TRACKING__
++
++#include <linux/radix-tree.h>
++#include <linux/workqueue.h>
++#include <linux/hot_tracking.h>
++
++/* values for hot_freq_data flags */
++#define FREQ_DATA_TYPE_INODE (1 << 0)
++#define FREQ_DATA_TYPE_RANGE (1 << 1)
++
++#endif /* __HOT_TRACKING__ */
 diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index 4c5f5f3..446c99e 100644
---- a/include/linux/hot_tracking.h
+new file mode 100644
+index 0000000..fcd4ad1
+--- /dev/null
 +++ b/include/linux/hot_tracking.h
-@@ -85,6 +85,7 @@ struct hot_info {
- 
- 	struct workqueue_struct *update_wq;
- 	struct delayed_work update_work;
-+	struct shrinker hot_shrink;
- };
- 
- void __init hot_cache_init(void);
+@@ -0,0 +1,73 @@
++/*
++ *  include/linux/hot_tracking.h
++ *
++ * This file has definitions for VFS hot data tracking
++ * structures etc.
++ *
++ * Copyright (C) 2012 IBM Corp. All rights reserved.
++ * Written by Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ */
++
++#ifndef _LINUX_HOTTRACK_H
++#define _LINUX_HOTTRACK_H
++
++#include <linux/types.h>
++#include <linux/rbtree.h>
++#include <linux/kref.h>
++#include <linux/fs.h>
++
++/*
++ * A frequency data struct holds values that are used to
++ * determine temperature of files and file ranges. These structs
++ * are members of hot_inode_item and hot_range_item
++ */
++struct hot_freq_data {
++	struct timespec last_read_time;
++	struct timespec last_write_time;
++	u32 nr_reads;
++	u32 nr_writes;
++	u64 avg_delta_reads;
++	u64 avg_delta_writes;
++	u32 flags;
++	u32 last_temp;
++};
++
++/* The common info for both following structures */
++struct hot_comm_item {
++	struct hot_freq_data hot_freq_data;  /* frequency data */
++	spinlock_t lock; /* protects object data */
++	struct kref refs;  /* prevents kfree */
++};
++
++/* An item representing an inode and its access frequency */
++struct hot_inode_item {
++	struct hot_comm_item hot_inode; /* node in hot_inode_tree */
++	struct radix_tree_root hot_range_tree; /* tree of ranges */
++	spinlock_t lock; /* protect range tree */
++	struct radix_tree_root *hot_inode_tree;
++	u64 i_ino; /* inode number from inode */
++};
++
++/*
++ * An item representing a range inside of
++ * an inode whose frequency is being tracked
++ */
++struct hot_range_item {
++	struct hot_comm_item hot_range;
++	struct hot_inode_item *hot_inode; /* associated hot_inode_item */
++	u32 start; /* item index in hot_range_tree */
++	u32 len; /* length in bytes */
++};
++
++struct hot_info {
++	struct radix_tree_root hot_inode_tree;
++	spinlock_t lock; /*protect inode tree */
++};
++
++void __init hot_cache_init(void);
++
++#endif  /* _LINUX_HOTTRACK_H */
 -- 
 1.7.6.5
 

@@ -1,112 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:34108 "EHLO smtp206.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760197Ab2JYT67 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 15:58:59 -0400
-Message-ID: <50899A28.1050907@inwind.it>
-Date: Thu, 25 Oct 2012 21:59:36 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: cwillu <cwillu@cwillu.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from qmta10.emeryville.ca.mail.comcast.net ([76.96.30.17]:35663 "EHLO
+	qmta10.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S965574Ab2JYUDE convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 16:03:04 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-References: <50899151.1070503@inwind.it> <CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
-In-Reply-To: <CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <50899151.1070503@inwind.it>
+Date: Thu, 25 Oct 2012 14:03:02 -0600
+Message-Id: <3BC0780A-C657-4195-BBAB-FFBDDBD989FB@colorremedies.com>
+References: <50899151.1070503@inwind.it>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-25 21:40, cwillu wrote:
->> I don't publish the patched because aren't in a good shape. However I
->> really like the output. The example is a filesystem based on three
->> disks of 3GB.
->>
->> It is clear that:
->> - - RAID0 uses all the disks
->> - - RAID1 uses two different disks
->>
->> Comments are welcome.
->>
->> Known bugs:
->> - - if a filesystem uses a disk but there is any chunk, the disk is not
->> shown (solvable)
->> - - this command need root capability (I use the BTRFS_IOC_TREE_SEARCH
->> to get the chunk info; so that is unavoidable)
->>
->>
->> ghigo@emulato:~$ sudo ./btrfs fi df /mnt/btrfs1/
->> [sudo] password for ghigo:
->> Path: /mnt/btrfs1
->> Summary:
->>   Disk_size:               9.00GB
->>   Disk_allocated:          1.83GB
->>   Disk_unallocated:        7.17GB
->>   Used:                  284.00KB
->>   Free_(Estimated):        6.76GB       (Max: 8.54GB, min: 4.96GB)
->>   Data_to_disk_ratio:        75 %
->>
->> Allocated_area:
->>   Data,RAID0: Size:921.75MB, Used:256.00KB
->>      /dev/vdc     307.25MB
->>      /dev/vdb     307.25MB
->>      /dev/vdd     307.25MB
->>
->>   Data,Single: Size:8.00MB, Used:0.00
->>      /dev/vdb       8.00MB
->>
->>   System,RAID1: Size:8.00MB, Used:4.00KB
->>      /dev/vdd       8.00MB
->>      /dev/vdc       8.00MB
->>
->>   System,Single: Size:4.00MB, Used:0.00
->>      /dev/vdb       4.00MB
->>
->>   Metadata,RAID1: Size:460.94MB, Used:24.00KB
->>      /dev/vdb     460.94MB
->>      /dev/vdd     460.94MB
->>
->>   Metadata,Single: Size:8.00MB, Used:0.00
->>      /dev/vdb       8.00MB
->>
->>   Unused:
->>      /dev/vdb       2.23GB
->>      /dev/vdc       2.69GB
->>      /dev/vdd       2.24GB
+
+On Oct 25, 2012, at 1:21 PM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
 > 
-> Couple minor things, in order of personal opinion of severity:
-> 
-> * Devices should be listed in a consistent order; device names are
-> just too consistently similar
-Could you elaborate ? I didn't understood well
+> Moreover I still didn't understand how btrfs was using the disks.
 
-> 
-> * System chunks shouldn't be listed between data and metadata; really,
-> they're just noise 99% of the time anyway
+This comment has less to do with the RFC, and more about user confusion in a specific case of the existing fi df behavior. But since I have the same misunderstanding of how btrfs is using the disks, I decided to reply to this thread.
 
-Frankly speaking I don't know what contains. We can discuss a sorting or
-an option to show/hide (depending by by the default)
+While working with Fedora 18's new System Storage Manager [1], I came across this problem. For reference the bug report [2] which seems less of a bug with ssm than a peculiarity with btrfs chunk allocation and how fi df report usage.
 
-> 
-> * I think it may be more useful to display each disk, with the
-> profiles in use underneath.  With a larger number of disks, that would
-> make it _much_ easier to tell at-a-glance what is currently on a disk
-> (that I may want to remove, or which I may suspect to be unreliable).
-> 
-> * I'd rename "Unused" to "Unallocated" for consistency with the section title
-Yes
+80GB VDI, Virtual Box VM, containing Fedora 18: installed and yum updated 2-3 times. That's it, yet for some reason, 76 GB of chunks have been allocated and they're all full? This doesn't make sense when there's just under 4GB  of data on this single device.
+
+[root@f18v ~]# btrfs fi show
+Label: 'fedora'  uuid: 780b8553-4097-4136-92a4-c6fd48779b0c
+	Total devices 1 FS bytes used 3.93GB
+	devid    1 size 76.06GB used 76.06GB path /dev/sda1
+
+[root@f18v ~]# btrfs fi df /
+Data: total=72.03GB, used=3.67GB
+System, DUP: total=8.00MB, used=16.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=2.00GB, used=257.54MB
+Metadata: total=8.00MB, used=0.00
+
+I decided to rebalance, and while things become a lot more sensible, I'm still confused:
+
+[chris@f18v ~]$ sudo btrfs fi show
+failed to read /dev/sr0
+Label: 'fedora'  uuid: 780b8553-4097-4136-92a4-c6fd48779b0c
+	Total devices 1 FS bytes used 3.91GB
+	devid    1 size 76.06GB used 9.13GB path /dev/sda1
+
+[chris@f18v ~]$ sudo btrfs fi df /
+Data: total=5.00GB, used=3.66GB
+System, DUP: total=64.00MB, used=4.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=2.00GB, used=256.84MB
+
+Points of confusion:
+
+1. Why is FS bytes used = 3.91GB, yet devid 1 used is 9.13 GB?
+
+2. Why before a rebalance does 'fi df' show extra lines, and then after rebalance there are fewer lines? Another case with raid10, 'fi df' shows six lines of data, but then after rebalance is shows three lines?
+
+3. How does Data: total=72GB before rebalance, but is 5GB after rebalance? This was a brand new file system, file system installed, with maybe 2-3 updates, and a dozen or two reboots. That's it. No VM's created on that volume (it's a VDI itself), and the VDI file itself never grew beyond 9GB.
 
 
-> * (and I still detest the_underscores_between_all_the_words; it
-> doesn't make parsing significantly easier, and it's an eyesore)
-:-) we can work on that.
-
-> 
-> * Three coats of blue paint plus a clear-coat is the One True Paint-Job.
-> .
-> 
+Chris Murphy
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+
+[1] https://fedoraproject.org/wiki/Features/SystemStorageManager
+[2] https://bugzilla.redhat.com/show_bug.cgi?id=869489

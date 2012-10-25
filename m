@@ -1,79 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:35874 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751125Ab2JVMfD (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:61532 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759716Ab2JYTkb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 08:35:03 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so1007990bkc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 05:35:01 -0700 (PDT)
-Message-ID: <50853D67.9050108@grimmer.com>
-Date: Mon, 22 Oct 2012 14:34:47 +0200
-From: Lenz Grimmer <lenz@grimmer.com>
+	Thu, 25 Oct 2012 15:40:31 -0400
+Received: by mail-pb0-f46.google.com with SMTP id rr4so2244964pbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 12:40:31 -0700 (PDT)
 MIME-Version: 1.0
-To: Rory Campbell-Lange <rory@campbell-lange.net>
-CC: Miao Xie <miaox@cn.fujitsu.com>, Anand jain <Anand.Jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/4] filter snapshot(s) by its parent uuid
-References: <1350627837-27639-1-git-send-email-Anand.Jain@oracle.com> <50810363.1090304@cn.fujitsu.com> <20121019083752.GA19887@campbell-lange.net>
-In-Reply-To: <20121019083752.GA19887@campbell-lange.net>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enig911340D42583902B424820DB"
+In-Reply-To: <50899151.1070503@inwind.it>
+References: <50899151.1070503@inwind.it>
+Date: Thu, 25 Oct 2012 13:40:30 -0600
+Message-ID: <CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
+Subject: Re: [RFC] New attempt to a better "btrfs fi df"
+From: cwillu <cwillu@cwillu.com>
+To: "kreijack@inwind.it" <kreijack@inwind.it>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig911340D42583902B424820DB
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+> I don't publish the patched because aren't in a good shape. However I
+> really like the output. The example is a filesystem based on three
+> disks of 3GB.
+>
+> It is clear that:
+> - - RAID0 uses all the disks
+> - - RAID1 uses two different disks
+>
+> Comments are welcome.
+>
+> Known bugs:
+> - - if a filesystem uses a disk but there is any chunk, the disk is not
+> shown (solvable)
+> - - this command need root capability (I use the BTRFS_IOC_TREE_SEARCH
+> to get the chunk info; so that is unavoidable)
+>
+>
+> ghigo@emulato:~$ sudo ./btrfs fi df /mnt/btrfs1/
+> [sudo] password for ghigo:
+> Path: /mnt/btrfs1
+> Summary:
+>   Disk_size:               9.00GB
+>   Disk_allocated:          1.83GB
+>   Disk_unallocated:        7.17GB
+>   Used:                  284.00KB
+>   Free_(Estimated):        6.76GB       (Max: 8.54GB, min: 4.96GB)
+>   Data_to_disk_ratio:        75 %
+>
+> Allocated_area:
+>   Data,RAID0: Size:921.75MB, Used:256.00KB
+>      /dev/vdc     307.25MB
+>      /dev/vdb     307.25MB
+>      /dev/vdd     307.25MB
+>
+>   Data,Single: Size:8.00MB, Used:0.00
+>      /dev/vdb       8.00MB
+>
+>   System,RAID1: Size:8.00MB, Used:4.00KB
+>      /dev/vdd       8.00MB
+>      /dev/vdc       8.00MB
+>
+>   System,Single: Size:4.00MB, Used:0.00
+>      /dev/vdb       4.00MB
+>
+>   Metadata,RAID1: Size:460.94MB, Used:24.00KB
+>      /dev/vdb     460.94MB
+>      /dev/vdd     460.94MB
+>
+>   Metadata,Single: Size:8.00MB, Used:0.00
+>      /dev/vdb       8.00MB
+>
+>   Unused:
+>      /dev/vdb       2.23GB
+>      /dev/vdc       2.69GB
+>      /dev/vdd       2.24GB
 
-On 10/19/2012 10:37 AM, Rory Campbell-Lange wrote:
+Couple minor things, in order of personal opinion of severity:
 
-> From my perspective as a user I would be grateful if the following chan=
-ges in
-> syntax for listing subvolumes could be considered:
->=20
-> In addition to=20
->=20
->     btrfs subvolume list [-apurts] [-g [+|-]value] [-c [+|-]value] [--s=
-ort=3Dgen,ogen,rootid,path] <path>
->     btrfs su list [-apurts] [-g [+|-]value] [-c [+|-]value] [--sort=3Dg=
-en,ogen,rootid,path] <path>
->         List subvolumes (and snapshots)
->     (and Anand's patch to allow <path>/<subpath>)
->=20
-> I believe the following shortcuts may be useful
->=20
->     btrfs subvolumes [-apurts] [-g [+|-]value] [-c [+|-]value] [--sort=3D=
-gen,ogen,rootid,path] <path>[</subpath>]
->     btrfs sl [-apurts] [-g [+|-]value] [-c [+|-]value] [--sort=3Dgen,og=
-en,rootid,path] <path>[</subpath>]
->=20
-> Although from a technical perspective 'subvolume list' may be logical, =
-listing
-> subvolumes (plural) seems like a different sort of operation to those r=
-elating
-> to a subvolume (singular) for create/alter/show/delete/snapshot operati=
-ons.
+* Devices should be listed in a consistent order; device names are
+just too consistently similar
 
-+1 to this proposal (FWIW) - thanks for making the user interface more
-intuitive :)
+* System chunks shouldn't be listed between data and metadata; really,
+they're just noise 99% of the time anyway
 
---=20
-  Lenz Grimmer <lenz@grimmer.com> - http://www.lenzg.net/
+* I think it may be more useful to display each disk, with the
+profiles in use underneath.  With a larger number of disks, that would
+make it _much_ easier to tell at-a-glance what is currently on a disk
+(that I may want to remove, or which I may suspect to be unreliable).
 
+* I'd rename "Unused" to "Unallocated" for consistency with the section title
 
---------------enig911340D42583902B424820DB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+* (and I still detest the_underscores_between_all_the_words; it
+doesn't make parsing significantly easier, and it's an eyesore)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAlCFPWcACgkQSVDhKrJykfIrvwCfYnfFr9vq7rK7S22sEQ1asYAJ
-/S0An0Ah3b0rwDjnL0gsywQPah5hWFEG
-=Oz2D
------END PGP SIGNATURE-----
-
---------------enig911340D42583902B424820DB--
+* Three coats of blue paint plus a clear-coat is the One True Paint-Job.

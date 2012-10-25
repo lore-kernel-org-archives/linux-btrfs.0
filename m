@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e9.ny.us.ibm.com ([32.97.182.139]:55531 "EHLO e9.ny.us.ibm.com"
+Received: from e2.ny.us.ibm.com ([32.97.182.142]:50163 "EHLO e2.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1946143Ab2JYPM3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:12:29 -0400
+	id S932177Ab2JYPNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:13:39 -0400
 Received: from /spool/local
-	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e2.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:12:28 -0400
+	Thu, 25 Oct 2012 11:13:35 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v4 15/15] vfs,hot_track: add the documentation
-Date: Thu, 25 Oct 2012 23:09:07 +0800
-Message-Id: <1351177747-19389-16-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4 12/15] vfs,hot_track: turn some Micro into be tunable
+Date: Thu, 25 Oct 2012 23:09:04 +0800
+Message-Id: <1351177747-19389-13-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,193 +23,125 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
+  Turn TIME_TO_KICK and HEAT_UPDATE_DELAY
+into be tunable via /proc/sys/fs/hot-kick-time and
+/proc/sys/fs/hot-update-delay.
+
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- Documentation/filesystems/00-INDEX         |    2 +
- Documentation/filesystems/hot_tracking.txt |  164 ++++++++++++++++++++++++++++
- 2 files changed, 166 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/filesystems/hot_tracking.txt
+ fs/hot_tracking.c            |   12 +++++++++---
+ fs/hot_tracking.h            |    9 ---------
+ include/linux/hot_tracking.h |    7 +++++++
+ kernel/sysctl.c              |   14 ++++++++++++++
+ 4 files changed, 30 insertions(+), 12 deletions(-)
 
-diff --git a/Documentation/filesystems/00-INDEX b/Documentation/filesystems/00-INDEX
-index 8c624a1..b68bdff 100644
---- a/Documentation/filesystems/00-INDEX
-+++ b/Documentation/filesystems/00-INDEX
-@@ -118,3 +118,5 @@ xfs.txt
- 	- info and mount options for the XFS filesystem.
- xip.txt
- 	- info on execute-in-place for file mappings.
-+hot_tracking.txt
-+	- info on hot data tracking in VFS layer
-diff --git a/Documentation/filesystems/hot_tracking.txt b/Documentation/filesystems/hot_tracking.txt
-new file mode 100644
-index 0000000..ccb367d
---- /dev/null
-+++ b/Documentation/filesystems/hot_tracking.txt
-@@ -0,0 +1,164 @@
-+Hot Data Tracking
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+index 18a64ee..15ed407 100644
+--- a/fs/hot_tracking.c
++++ b/fs/hot_tracking.c
+@@ -25,6 +25,12 @@
+ #include <linux/limits.h>
+ #include "hot_tracking.h"
+ 
++int sysctl_hot_kick_time __read_mostly = 300;
++EXPORT_SYMBOL_GPL(sysctl_hot_kick_time);
 +
-+September, 2012		Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
++int sysctl_hot_update_delay __read_mostly = 300;
++EXPORT_SYMBOL_GPL(sysctl_hot_update_delay);
 +
-+CONTENTS
+ static struct hot_info *hot_root;
+ 
+ /* kmem_cache pointers for slab caches */
+@@ -345,7 +351,7 @@ static bool hot_freq_data_is_obsolete(struct hot_freq_data *freq_data)
+ 		(cur_time - timespec_to_ns(&freq_data->last_read_time));
+ 	u64 last_write_ns =
+ 		(cur_time - timespec_to_ns(&freq_data->last_write_time));
+-	u64 kick_ns =  TIME_TO_KICK * NSEC_PER_SEC;
++	u64 kick_ns =  sysctl_hot_kick_time * NSEC_PER_SEC;
+ 
+ 	if ((last_read_ns > kick_ns) && (last_write_ns > kick_ns))
+ 		ret = 1;
+@@ -651,7 +657,7 @@ static void hot_update_worker(struct work_struct *work)
+ 
+ 	/* Instert next delayed work */
+ 	queue_delayed_work(root->update_wq, &root->update_work,
+-		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
++		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
+ }
+ 
+ /*
+@@ -1257,7 +1263,7 @@ int hot_track_init(struct super_block *sb)
+ 	/* Initialize hot tracking wq and arm one delayed work */
+ 	INIT_DELAYED_WORK(&root->update_work, hot_update_worker);
+ 	queue_delayed_work(root->update_wq, &root->update_work,
+-		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
++		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
+ 
+ 	/* Register a shrinker callback */
+ 	root->hot_shrink.shrink = hot_track_prune;
+diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
+index 6eb024f..d6d9161 100644
+--- a/fs/hot_tracking.h
++++ b/fs/hot_tracking.h
+@@ -26,15 +26,6 @@
+ #define FREQ_POWER 4
+ 
+ /*
+- * time to quit keeping track of
+- * tracking data (seconds)
+- */
+-#define TIME_TO_KICK 300
+-
+-/* set how often to update temperatures (seconds) */
+-#define HEAT_UPDATE_DELAY 300
+-
+-/*
+  * The following comments explain what exactly comprises a unit of heat.
+  *
+  * Each of six values of heat are calculated and combined in order to form an
+diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+index 7107cfa..ea59f33 100644
+--- a/include/linux/hot_tracking.h
++++ b/include/linux/hot_tracking.h
+@@ -101,6 +101,13 @@ struct hot_info {
+ };
+ 
+ /*
++ * Two variables have meanings as below:
++ * 1. time to quit keeping track of tracking data (seconds)
++ * 2. set how often to update temperatures (seconds)
++ */
++extern int sysctl_hot_kick_time, sysctl_hot_update_delay;
 +
-+1. Introduction
-+2. Motivation
-+3. The Design
-+4. Git Development Tree
-+5. Usage Example
-+
-+
-+1. Introduction
-+
-+  The feature adds experimental support for tracking data temperature
-+information in VFS layer.  Essentially, this means maintaining some key
-+stats(like number of reads/writes, last read/write time, frequency of
-+reads/writes), then distilling those numbers down to a single
-+"temperature" value that reflects what data is "hot," and using that
-+temperature to move data to SSDs.
-+
-+  The long-term goal of the feature is to allow some FSs,
-+e.g. Btrfs to intelligently utilize SSDs in a heterogenous volume.
-+Incidentally, this project has been motivated by
-+the Project Ideas page on the Btrfs wiki.
-+
-+  Of course, users are warned not to run this code outside of development
-+environments. These patches are EXPERIMENTAL, and as such they might eat
-+your data and/or memory. That said, the code should be relatively safe
-+when the hottrack mount option are disabled.
-+
-+2. Motivation
-+
-+  The overall goal of enabling hot data relocation to SSD has been
-+motivated by the Project Ideas page on the Btrfs wiki at
-+<https://btrfs.wiki.kernel.org/index.php/Project_ideas>.
-+It will divide into two steps. VFS provide hot data tracking function
-+while specific FS will provide hot data relocation function.
-+So as the first step of this goal, it is hoped that the patchset
-+for hot data tracking will eventually mature into VFS.
-+
-+  This is essentially the traditional cache argument: SSD is fast and
-+expensive; HDD is cheap but slow. ZFS, for example, can already take
-+advantage of SSD caching. Btrfs should also be able to take advantage of
-+hybrid storage without many broad, sweeping changes to existing code.
-+
-+
-+3. The Design
-+
-+These include the following parts:
-+
-+    * Hooks in existing vfs functions to track data access frequency
-+
-+    * New radix-trees for tracking access frequency of inodes and sub-file
-+ranges
-+    The relationship between super_block and radix-tree is as below:
-+hot_info.hot_inode_tree
-+    Each FS instance can find hot tracking info s_hotinfo.
-+In this hot_info, it store a lot of hot tracking info such as hot_inode_tree,
-+inode and range list, etc.
-+
-+    * A list for indexing data by its temperature
-+
-+    * A debugfs interface for dumping data from the radix-trees
-+
-+    * A background kthread for updating inode heat info
-+
-+    * Mount options for enabling temperature tracking(-o hot_track,
-+default mean disabled)
-+    * An ioctl to retrieve the frequency information collected for a certain
-+file
-+    * Ioctls to enable/disable frequency tracking per inode.
-+
-+Let us see their relationship as below:
-+
-+    * hot_info.hot_inode_tree indexes hot_inode_items, one per inode
-+
-+    * hot_inode_item contains access frequency data for that inode
-+
-+    * hot_inode_item holds a heat list node to index the access
-+frequency data for that inode
-+
-+    * hot_inode_item.hot_range_tree indexes hot_range_items for that inode
-+
-+    * hot_range_item contains access frequency data for that range
-+
-+    * hot_range_item holds a heat list node to index the access
-+frequency data for that range
-+
-+    * hot_info.heat_inode_map indexes per-inode heat list nodes
-+
-+    * hot_info.heat_range_map indexes per-range heat list nodes
-+
-+  How about some ascii art? :) Just looking at the hot inode item case
-+(the range item case is the same pattern, though), we have:
-+
-+heat_inode_map           hot_inode_tree
-+    |                         |
-+    |                         V
-+    |           +-------hot_comm_item--------+
-+    |           |       frequency data       |
-++---+           |        list_head           |
-+|               V            ^ |             V
-+| ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
-+|       frequency data       | |        frequency data
-++-------->list_head----------+ +--------->list_head--->.....
-+       hot_range_tree                  hot_range_tree
-+                                             |
-+             heat_range_map                  V
-+                   |           +-------hot_comm_item--------+
-+                   |           |       frequency data       |
-+               +---+           |        list_head           |
-+               |               V            ^ |             V
-+               | ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
-+               |       frequency data       | |        frequency data
-+               +-------->list_head----------+ +--------->list_head--->.....
-+
-+4. Git Development Tree
-+
-+  The feature is still on development and review, so if you're interested,
-+you can pull from the git repository at the following location:
-+  https://github.com/wuzhy/kernel.git hot_tracking
-+  git://github.com/wuzhy/kernel.git hot_tracking
-+
-+
-+5. Usage Example
-+
-+To use hot tracking, you should mount like this:
-+
-+$ mount -o hot_track /dev/sdb /mnt
-+[ 1505.894078] device label test devid 1 transid 29 /dev/sdb
-+[ 1505.952977] btrfs: disk space caching is enabled
-+[ 1506.069678] vfs: turning on hot data tracking
-+
-+Mount debugfs at first:
-+
-+$ mount -t debugfs none /sys/kernel/debug
-+$ ls -l /sys/kernel/debug/hot_track/
-+total 0
-+drwxr-xr-x 2 root root 0 Aug  8 04:40 sdb
-+$ ls -l /sys/kernel/debug/hot_track/sdb
-+total 0
-+-rw-r--r-- 1 root root 0 Aug  8 04:40 inode_data
-+-rw-r--r-- 1 root root 0 Aug  8 04:40 range_data
-+
-+View information about hot tracking from debugfs:
-+
-+$ echo "hot tracking test" > /mnt/file
-+$ cat /sys/kernel/debug/hot_track/sdb/inode_data
-+inode #279, reads 0, writes 1, avg read time 18446744073709551615,
-+avg write time 5251566408153596, temp 109
-+$ cat /sys/kernel/debug/hot_track/sdb/range_data
-+inode #279, range start 0 (range len 1048576) reads 0, writes 1,
-+avg read time 18446744073709551615, avg write time 1128690176623144209, temp 64
-+
-+$ echo "hot data tracking test" >> /mnt/file
-+$ cat /sys/kernel/debug/hot_track/sdb/inode_data
-+inode #279, reads 0, writes 2, avg read time 18446744073709551615,
-+avg write time 4923343766042451, temp 109
-+$ cat /sys/kernel/debug/hot_track/sdb/range_data
-+inode #279, range start 0 (range len 1048576) reads 0, writes 2,
-+avg read time 18446744073709551615, avg write time 1058147040842596150, temp 64
-+
++/*
+  * Hot data tracking ioctls:
+  *
+  * HOT_INFO - retrieve info on frequency of access
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index 26f65ea..37624fb 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -1545,6 +1545,20 @@ static struct ctl_table fs_table[] = {
+ 		.proc_handler	= &pipe_proc_fn,
+ 		.extra1		= &pipe_min_size,
+ 	},
++	{
++		.procname	= "hot-kick-time",
++		.data		= &sysctl_hot_kick_time,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec,
++	},
++	{
++		.procname	= "hot-update-delay",
++		.data		= &sysctl_hot_update_delay,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec,
++	},
+ 	{ }
+ };
+ 
 -- 
 1.7.6.5
 

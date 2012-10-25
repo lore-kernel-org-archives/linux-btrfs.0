@@ -1,21 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e2.ny.us.ibm.com ([32.97.182.142]:50163 "EHLO e2.ny.us.ibm.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932177Ab2JYPNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:13:39 -0400
+Received: from e36.co.us.ibm.com ([32.97.110.154]:53479 "EHLO
+	e36.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1946139Ab2JYPOB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:14:01 -0400
 Received: from /spool/local
-	by e2.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e36.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:13:35 -0400
+	Thu, 25 Oct 2012 09:13:58 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v4 12/15] vfs,hot_track: turn some Micro into be tunable
-Date: Thu, 25 Oct 2012 23:09:04 +0800
-Message-Id: <1351177747-19389-13-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4 05/15] vfs,hot_track: add hooks to enable hot data tracking
+Date: Thu, 25 Oct 2012 23:08:57 +0800
+Message-Id: <1351177747-19389-6-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,124 +24,125 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Turn TIME_TO_KICK and HEAT_UPDATE_DELAY
-into be tunable via /proc/sys/fs/hot-kick-time and
-/proc/sys/fs/hot-update-delay.
+  Miscellaneous features that implement hot data tracking
+and generally make the hot data functions a bit more friendly.
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c            |   12 +++++++++---
- fs/hot_tracking.h            |    9 ---------
- include/linux/hot_tracking.h |    7 +++++++
- kernel/sysctl.c              |   14 ++++++++++++++
- 4 files changed, 30 insertions(+), 12 deletions(-)
+ fs/direct-io.c      |    6 ++++++
+ mm/filemap.c        |    6 ++++++
+ mm/page-writeback.c |   12 ++++++++++++
+ mm/readahead.c      |    6 ++++++
+ 4 files changed, 30 insertions(+), 0 deletions(-)
 
-diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index 18a64ee..15ed407 100644
---- a/fs/hot_tracking.c
-+++ b/fs/hot_tracking.c
-@@ -25,6 +25,12 @@
- #include <linux/limits.h>
- #include "hot_tracking.h"
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index f86c720..1d23631 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -37,6 +37,7 @@
+ #include <linux/uio.h>
+ #include <linux/atomic.h>
+ #include <linux/prefetch.h>
++#include "hot_tracking.h"
  
-+int sysctl_hot_kick_time __read_mostly = 300;
-+EXPORT_SYMBOL_GPL(sysctl_hot_kick_time);
+ /*
+  * How many user pages to map in one call to get_user_pages().  This determines
+@@ -1297,6 +1298,11 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	prefetch(bdev->bd_queue);
+ 	prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
+ 
++	/* Hot data tracking */
++	hot_update_freqs(inode, (u64)offset,
++			(u64)iov_length(iov, nr_segs),
++			rw & WRITE);
 +
-+int sysctl_hot_update_delay __read_mostly = 300;
-+EXPORT_SYMBOL_GPL(sysctl_hot_update_delay);
+ 	return do_blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
+ 				     nr_segs, get_block, end_io,
+ 				     submit_io, flags);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 83efee7..51b2c48 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -33,6 +33,7 @@
+ #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
+ #include <linux/memcontrol.h>
+ #include <linux/cleancache.h>
++#include <linux/hot_tracking.h>
+ #include "internal.h"
+ 
+ /*
+@@ -1224,6 +1225,11 @@ readpage:
+ 		 * PG_error will be set again if readpage fails.
+ 		 */
+ 		ClearPageError(page);
 +
- static struct hot_info *hot_root;
++		/* Hot data tracking */
++		hot_update_freqs(inode, (u64)page->index << PAGE_CACHE_SHIFT,
++				PAGE_CACHE_SIZE, 0);
++
+ 		/* Start the actual read. The read will unlock the page. */
+ 		error = mapping->a_ops->readpage(filp, page);
  
- /* kmem_cache pointers for slab caches */
-@@ -345,7 +351,7 @@ static bool hot_freq_data_is_obsolete(struct hot_freq_data *freq_data)
- 		(cur_time - timespec_to_ns(&freq_data->last_read_time));
- 	u64 last_write_ns =
- 		(cur_time - timespec_to_ns(&freq_data->last_write_time));
--	u64 kick_ns =  TIME_TO_KICK * NSEC_PER_SEC;
-+	u64 kick_ns =  sysctl_hot_kick_time * NSEC_PER_SEC;
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 830893b..5220040 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -35,6 +35,7 @@
+ #include <linux/buffer_head.h> /* __set_page_dirty_buffers */
+ #include <linux/pagevec.h>
+ #include <linux/timer.h>
++#include <linux/hot_tracking.h>
+ #include <trace/events/writeback.h>
  
- 	if ((last_read_ns > kick_ns) && (last_write_ns > kick_ns))
- 		ret = 1;
-@@ -651,7 +657,7 @@ static void hot_update_worker(struct work_struct *work)
+ /*
+@@ -1903,13 +1904,24 @@ EXPORT_SYMBOL(generic_writepages);
+ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
+ {
+ 	int ret;
++	pgoff_t start = 0;
++	u64 count = 0;
  
- 	/* Instert next delayed work */
- 	queue_delayed_work(root->update_wq, &root->update_work,
--		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
-+		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
+ 	if (wbc->nr_to_write <= 0)
+ 		return 0;
++
++	start = mapping->writeback_index << PAGE_CACHE_SHIFT;
++	count = (u64)wbc->nr_to_write;
++
+ 	if (mapping->a_ops->writepages)
+ 		ret = mapping->a_ops->writepages(mapping, wbc);
+ 	else
+ 		ret = generic_writepages(mapping, wbc);
++
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host, (u64)start,
++			(count - (u64)wbc->nr_to_write) * PAGE_CACHE_SIZE, 1);
++
+ 	return ret;
  }
  
- /*
-@@ -1257,7 +1263,7 @@ int hot_track_init(struct super_block *sb)
- 	/* Initialize hot tracking wq and arm one delayed work */
- 	INIT_DELAYED_WORK(&root->update_work, hot_update_worker);
- 	queue_delayed_work(root->update_wq, &root->update_work,
--		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
-+		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
- 
- 	/* Register a shrinker callback */
- 	root->hot_shrink.shrink = hot_track_prune;
-diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index 6eb024f..d6d9161 100644
---- a/fs/hot_tracking.h
-+++ b/fs/hot_tracking.h
-@@ -26,15 +26,6 @@
- #define FREQ_POWER 4
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 7963f23..8a24f1e 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -19,6 +19,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/syscalls.h>
+ #include <linux/file.h>
++#include <linux/hot_tracking.h>
  
  /*
-- * time to quit keeping track of
-- * tracking data (seconds)
-- */
--#define TIME_TO_KICK 300
--
--/* set how often to update temperatures (seconds) */
--#define HEAT_UPDATE_DELAY 300
--
--/*
-  * The following comments explain what exactly comprises a unit of heat.
-  *
-  * Each of six values of heat are calculated and combined in order to form an
-diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index 7107cfa..ea59f33 100644
---- a/include/linux/hot_tracking.h
-+++ b/include/linux/hot_tracking.h
-@@ -101,6 +101,13 @@ struct hot_info {
- };
+  * Initialise a struct file's readahead state.  Assumes that the caller has
+@@ -138,6 +139,11 @@ static int read_pages(struct address_space *mapping, struct file *filp,
+ out:
+ 	blk_finish_plug(&plug);
  
- /*
-+ * Two variables have meanings as below:
-+ * 1. time to quit keeping track of tracking data (seconds)
-+ * 2. set how often to update temperatures (seconds)
-+ */
-+extern int sysctl_hot_kick_time, sysctl_hot_update_delay;
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host, (u64)(list_entry(pages->prev,\
++				struct page, lru)->index) << PAGE_CACHE_SHIFT,
++			(u64)nr_pages * PAGE_CACHE_SIZE, 0);
 +
-+/*
-  * Hot data tracking ioctls:
-  *
-  * HOT_INFO - retrieve info on frequency of access
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 26f65ea..37624fb 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -1545,6 +1545,20 @@ static struct ctl_table fs_table[] = {
- 		.proc_handler	= &pipe_proc_fn,
- 		.extra1		= &pipe_min_size,
- 	},
-+	{
-+		.procname	= "hot-kick-time",
-+		.data		= &sysctl_hot_kick_time,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
-+	{
-+		.procname	= "hot-update-delay",
-+		.data		= &sysctl_hot_update_delay,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
- 	{ }
- };
+ 	return ret;
+ }
  
 -- 
 1.7.6.5

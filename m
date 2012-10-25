@@ -1,29 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta11.emeryville.ca.mail.comcast.net ([76.96.27.211]:50568
-	"EHLO qmta11.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S935649Ab2JYUge convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 16:36:34 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:47883 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S2992662Ab2JYUkX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 16:40:23 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so647362eaa.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 13:40:22 -0700 (PDT)
+Message-ID: <5089A3DC.1080305@gmail.com>
+Date: Thu, 25 Oct 2012 22:41:00 +0200
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: cwillu <cwillu@cwillu.com>
+CC: Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
-Date: Thu, 25 Oct 2012 14:36:31 -0600
-Message-Id: <38F223BF-9890-4854-B622-62738235F022@colorremedies.com>
-References: <50899151.1070503@inwind.it> <CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <50899151.1070503@inwind.it> <3BC0780A-C657-4195-BBAB-FFBDDBD989FB@colorremedies.com> <CAE5mzvi=czHnRcBUkyTn7NxzCRiZ-5GcZtZt8KGEX0tUiUz73g@mail.gmail.com>
+In-Reply-To: <CAE5mzvi=czHnRcBUkyTn7NxzCRiZ-5GcZtZt8KGEX0tUiUz73g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My suggestion is that by default a summary similar to the existing df command be mimicked, where it makes sense, for btrfs fi df.
+On 2012-10-25 22:11, cwillu wrote:
+>>> 3. How does Data: total=72GB before rebalance, but is 5GB after
+>>> rebalance? This was a brand new file system, file system
+>>> installed, with maybe 2-3 updates, and a dozen or two reboots.
+>>> That's it. No VM's created on that volume (it's a VDI itself),
+>>> and the VDI file itself never grew beyond 9GB.
+> Combine the previous two answers: You had 72GB allocated to block 
+> groups which are mostly empty.  After the balance, the contents of 
+> those groups have been shuffled around such that most of them could
+> be freed.
 
- - I like the Capacity %. If there is a reliable equivalent, it need not be inode based, that would be great.
+Did btrfs rebalance when it needs spaces ? The example reported by Chris
+suggested that due to the filesystem history, btrfs allocate some chunk
+that became empty.
+If the user/admin don't make a (re)balance, is btrfs capable to move
+some chunk from the DATA pool to the METADATA pool when the space became
+low autonomously ?
+I don't think, but I want a confirmation.
 
--  I care far less about the actual physical device information, more about the btrfs volume(s) as a whole. How big is the volume, how much of that is used, and how much is available?
+BR
+G.Baroncelli
 
-I understand the challenges behind estimating the amount available. So if the value for available/free is precided by a ~ in each case, or as a heading "~Avail" or "~Free" I'd be OK with that disclaimer.
-
-I think the examples so far are reporting too much information and it's difficult to get just what I want.
-
-Chris Murphy
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

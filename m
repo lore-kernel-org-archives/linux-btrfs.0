@@ -1,84 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57688 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1304 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753070Ab2JKCH7 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Oct 2012 22:07:59 -0400
+	id S964801Ab2JYItc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 04:49:32 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9B27tYS028969
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2012 10:07:55 +0800
-Message-ID: <5076299D.2050605@cn.fujitsu.com>
-Date: Thu, 11 Oct 2012 10:06:21 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9P8nPIt026579
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 16:49:25 +0800
 From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: introduce '-p' option and <fullpath> into
- subvolume set-default command
-References: <1348468933-14839-1-git-send-email-chenyang.fnst@cn.fujitsu.com> <20121009144406.GR4405@twin.jikos.cz>
-In-Reply-To: <20121009144406.GR4405@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
+Cc: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs-progs: Improve the command help system of btrfs
+Date: Thu, 25 Oct 2012 16:49:08 +0800
+Message-Id: <1351154948-7237-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-10-9 22:44, David Sterba wrote:
-> On Mon, Sep 24, 2012 at 02:42:13PM +0800, Chen Yang wrote:
->> In command "btrfs subvolume set-default", we used subvolume <id> and <path>
->> to set the default subvolume of a filesystem. It's not easy for a common
->> user,
-> 
-> What is not easy? How often do you set-default subvolume that it's a
-> concern to do it in two steps (list and set-default)?
-> 
-This patch is mean to improve the UI
-If the description above if improper, I will fix it.
+Btrfs's command help system allow you to show only one line short usage.
+But in some case we need to use two or more lines to show
+the short usage of a complicated command.
 
->> so I improved it and the <fullpath> of a subvolume can be used to
->> set the default subvolume of a filesystem.
-> 
-> Setting the default directly from a given path would be a good UI
-> improvement.
-> 
->> @@ -601,23 +602,66 @@ static int cmd_subvol_get_default(int argc, char **argv)
->>  static const char * const cmd_subvol_set_default_usage[] = {
->> -	"btrfs subvolume set-default <subvolid> <path>",
->> +	"btrfs subvolume set-default [-p] [<subvolid>] <path>",
-> 
-> This new syntax allows these forms:
-> 
-> 	1. set-default /path
-The "path" must be a subvolume path
-> 	2. set-default -p /path
-The "path" can be any path under a mount point, if path is not a subvolume, 
-The parent tree (subvolume) of the path will be find out and set to be default
-> 	3. set-default id /path
-current behaviour
-> 	4. set-default -p id /path
-Error! The improper description of the usage causes this misuse, I will fix it.
-> 
-> 3 is the current behaviour, can you please explain the rest to me? I'm
-> afraid I'm not following the idea.
-> 
-I'm sorry to make you confused for giving an unclear usage about the new option of the command. 
-I'm writing a new version. I will send it later.
+This patch add a filed 'lines' in cmd_struct, which is the number of the
+extra short usage lines you want to append.
 
->>  	"Set the default subvolume of a filesystem",
->> +	"-p    Set the parent tree(subvolume) of the PATH",
->> +	"      as the default subvolume, if PATH is not a subvolume",
-> 
-> "if PATH is not a subvolume" -- so I don't specify the mountpoint for
-> PATH and I'm supposed to know if the path is or is not a subvolume --
-> this is another step I need to do (because I want to be sure that I'm
-> setting the right subvol), this does not save the commands compared to
-> the current status.
-The option “-p” is only used like this “set-default -p /path”, 
-if PATH is not a subvolume -p" will help to find the parent tree (subvolume) of the PATH, and set it default.
-> 
->>  	NULL
->>  };
-> 
-> thanks,
-> david
-> 
+For example you have N lines short usage; you should set the field 'lines'
+to N-1.
 
-thanks for your advise,
-chen yang
+Signed-off-by: Cheng Yang <chenyang.fnst@cn.fujitsu.com>
+---
+ commands.h |    4 ++++
+ help.c     |   31 ++++++++++++++++++++++---------
+ 2 files changed, 26 insertions(+), 9 deletions(-)
+
+diff --git a/commands.h b/commands.h
+index bb6d2dd..f535dc2 100644
+--- a/commands.h
++++ b/commands.h
+@@ -48,6 +48,9 @@ struct cmd_struct {
+ 
+ 	/* if true don't list this token in help listings */
+ 	int hidden;
++
++	/* number of the extra short usage lines  */
++	int lines;
+ };
+ 
+ struct cmd_group {
+@@ -70,6 +73,7 @@ int handle_command_group(const struct cmd_group *grp, int argc,
+ /* help.c */
+ extern const char * const generic_cmd_help_usage[];
+ 
++void usage_lines(const char * const *usagestr, int lines);
+ void usage(const char * const *usagestr);
+ void usage_command(const struct cmd_struct *cmd, int full, int err);
+ void usage_command_group(const struct cmd_group *grp, int all, int err);
+diff --git a/help.c b/help.c
+index 6d04293..5679933 100644
+--- a/help.c
++++ b/help.c
+@@ -28,15 +28,21 @@ extern char argv0_buf[ARGV0_BUF_SIZE];
+ #define USAGE_LISTING		8U
+ 
+ static int do_usage_one_command(const char * const *usagestr,
+-				unsigned int flags, FILE *outf)
++				unsigned int flags, FILE *outf, int lines)
+ {
+-	int pad = 4;
++	int pad = 4, i = 0;
+ 
+ 	if (!usagestr || !*usagestr)
+ 		return -1;
+ 
+ 	fprintf(outf, "%s%s\n", (flags & USAGE_LISTING) ? "    " : "usage: ",
+ 		*usagestr++);
++	for (i = 0; i < lines; i++) {
++		fprintf(outf, "%s%s\n",
++			(flags & USAGE_LISTING) ? "    " : "       ",
++			usagestr[i]);
++	}
++	usagestr += lines;
+ 
+ 	/* a short one-line description (mandatory) */
+ 	if ((flags & USAGE_SHORT) == 0)
+@@ -79,7 +85,7 @@ static int do_usage_one_command(const char * const *usagestr,
+ 
+ static int usage_command_internal(const char * const *usagestr,
+ 				  const char *token, int full, int lst,
+-				  FILE *outf)
++				  FILE *outf, int lines)
+ {
+ 	unsigned int flags = USAGE_SHORT;
+ 	int ret;
+@@ -89,7 +95,7 @@ static int usage_command_internal(const char * const *usagestr,
+ 	if (lst)
+ 		flags |= USAGE_LISTING;
+ 
+-	ret = do_usage_one_command(usagestr, flags, outf);
++	ret = do_usage_one_command(usagestr, flags, outf, lines);
+ 	switch (ret) {
+ 	case -1:
+ 		fprintf(outf, "No usage for '%s'\n", token);
+@@ -103,24 +109,31 @@ static int usage_command_internal(const char * const *usagestr,
+ }
+ 
+ static void usage_command_usagestr(const char * const *usagestr,
+-				   const char *token, int full, int err)
++			   const char *token, int full, int err, int lines)
+ {
+ 	FILE *outf = err ? stderr : stdout;
+ 	int ret;
+ 
+-	ret = usage_command_internal(usagestr, token, full, 0, outf);
++	ret = usage_command_internal(usagestr, token, full, 0, outf, lines);
+ 	if (!ret)
+ 		fputc('\n', outf);
+ }
+ 
+ void usage_command(const struct cmd_struct *cmd, int full, int err)
+ {
+-	usage_command_usagestr(cmd->usagestr, cmd->token, full, err);
++	usage_command_usagestr(
++		cmd->usagestr, cmd->token, full, err, cmd->lines);
+ }
+ 
+ void usage(const char * const *usagestr)
+ {
+-	usage_command_usagestr(usagestr, NULL, 1, 1);
++	usage_lines(usagestr, 0);
++	exit(129);
++}
++
++void usage_lines(const char * const *usagestr, int lines)
++{
++	usage_command_usagestr(usagestr, NULL, 1, 1, lines);
+ 	exit(129);
+ }
+ 
+@@ -144,7 +157,7 @@ static void usage_command_group_internal(const struct cmd_group *grp, int full,
+ 			}
+ 
+ 			usage_command_internal(cmd->usagestr, cmd->token, full,
+-					       1, outf);
++					       1, outf, cmd->lines);
+ 			continue;
+ 		}
+ 
+-- 
+1.7.7.6
+

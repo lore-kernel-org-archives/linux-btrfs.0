@@ -1,53 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:46804 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932178Ab2JaPQi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 11:16:38 -0400
-From: Masanari Iida <standby24x7@gmail.com>
-To: trivial@kernel.org, chris.mason@fusionio.com, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Cc: Masanari Iida <standby24x7@gmail.com>
-Subject: [PATCH] [trivial] Btrfs: Fix typo in fs/btrfs
-Date: Thu,  1 Nov 2012 00:16:32 +0900
-Message-Id: <1351696592-14721-1-git-send-email-standby24x7@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:8681 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751754Ab2JYJUK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 05:20:10 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q9P9K5MI029865
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 17:20:06 +0800
+Message-ID: <5089045D.8050801@cn.fujitsu.com>
+Date: Thu, 25 Oct 2012 17:20:29 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/3] flush delalloc by multi-task
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correct spelling typo in btrfs.
+This patchset introduce multi-task delalloc flush, it can make the delalloc
+flush more faster. And besides that, it also can fix the problem that we join
+the same transaction handler more than 2 times.
 
-Signed-off-by: Masanari Iida <standby24x7@gmail.com>
----
- fs/btrfs/ctree.h   | 2 +-
- fs/btrfs/volumes.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Implementation:
+- Create a new worker pool.
+- Queue the inode with pending delalloc into the work queue of the worker pool
+  when we want to force them into the disk, and then we will wait till all the
+  works we submit are done. 
+- The ordered extents also can be queued into this work queue. The process is
+  similar to the second one.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 926c9ff..9dda9a9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -413,7 +413,7 @@ struct btrfs_root_backup {
- 	__le64 bytes_used;
- 	__le64 num_devices;
- 	/* future */
--	__le64 unsed_64[4];
-+	__le64 unused_64[4];
- 
- 	u8 tree_root_level;
- 	u8 chunk_root_level;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 029b903..36b7f43 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4287,7 +4287,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 
- 			rcu_read_lock();
- 			name = rcu_dereference(dev->name);
--			pr_debug("btrfs_map_bio: rw %d, secor=%llu, dev=%lu "
-+			pr_debug("btrfs_map_bio: rw %d, sector=%llu, dev=%lu "
- 				 "(%s id %llu), size=%u\n", rw,
- 				 (u64)bio->bi_sector, (u_long)dev->bdev->bd_dev,
- 				 name->str, dev->devid, bio->bi_size);
--- 
-1.8.0.rc3.16.g8ead1bf
+Miao Xie (3):
+      Btrfs: make delalloc inodes be flushed by multi-task
+      Btrfs: make ordered operations be handled by multi-task
+      Btrfs: make ordered extent be flushed by multi-task
 
+ fs/btrfs/ctree.h        |   14 +++++++
+ fs/btrfs/disk-io.c      |    7 ++++
+ fs/btrfs/inode.c        |   78 ++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/ordered-data.c |   87 ++++++++++++++++++++++++++++++++++-------------
+ fs/btrfs/ordered-data.h |    7 +++-
+ fs/btrfs/relocation.c   |    6 +++-
+ fs/btrfs/transaction.c  |   24 ++++++++++---
+ 7 files changed, 185 insertions(+), 38 deletions(-)

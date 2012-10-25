@@ -1,80 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:19369 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751791Ab2JSFas (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Oct 2012 01:30:48 -0400
-Message-ID: <5080E577.3090109@oracle.com>
-Date: Fri, 19 Oct 2012 13:30:31 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from twin.jikos.cz ([89.185.236.188]:45856 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759924Ab2JYPhk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:37:40 -0400
+Date: Thu, 25 Oct 2012 17:37:31 +0200
+From: David Sterba <dave@jikos.cz>
+To: Rock Lee <zimilo@code-trick.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [BUG][BTRFS-PROGS] Fix Bug to corrupt the img file
+Message-ID: <20121025153731.GI10679@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <CAMRmmpL01PqR1nZPGhyDv1ECdWaBDrhVbx-9FH83x-3ez+M_pQ@mail.gmail.com>
 MIME-Version: 1.0
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: MOD_LOG_KEY_REMOVE_WHILE_MOVING never change node's
- nritems
-References: <1350545573-2544-1-git-send-email-bo.li.liu@oracle.com> <5080E18F.2080101@jan-o-sch.net>
-In-Reply-To: <5080E18F.2080101@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAMRmmpL01PqR1nZPGhyDv1ECdWaBDrhVbx-9FH83x-3ez+M_pQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/19/2012 01:13 PM, Jan Schmidt wrote:
-> On Thu, October 18, 2012 at 09:32 (+0200), Liu Bo wrote:
->> Key MOD_LOG_KEY_REMOVE_WHILE_MOVING means that we're doing memmove inside
->> an extent buffer node, and the node's number of items remains unchanged,
->> so we don't need to increment node's number of items during rewinding,
->> otherwise we may get an node larger than leafsize and cause general protection
->> errors later.
+On Wed, Oct 24, 2012 at 10:04:47AM +0800, Rock Lee wrote:
+> @@ -572,7 +576,7 @@ int btrfs_prepare_device(int fd, char *file, int
+> zero_end, u64 *block_count_ret,
+>                 discard_blocks(fd, 0, block_count);
+>         }
 > 
-> This patch triggers the following bug on when running fsmark on a quota enabled
-> file system:
-> 
-> 1153                 case MOD_LOG_KEY_REPLACE:
-> 1154                         BUG_ON(tm->slot >= n);
-> 
-> MOD_LOG_KEY_REMOVE_WHILE_MOVING elements are added by tree_mod_log_insert_move
-> when dst_slot < src_slot, thus we're reducing the number of elements in the
-> buffer, thus replaying adds those elements.
-> 
+> -       ret = zero_dev_start(fd);
+> +       ret = zero_dev_start(fd, block_count);
+>         if (ret) {
+>                 fprintf(stderr, "failed to zero device start %d\n", ret);
+>                 exit(1);
 
-Hi Jan,
+Please add a separate check for a minimal image size instead, right after
 
-I doubt it.
+ 553         block_count = device_size(fd, &st);
+ 554         if (block_count == 0) {
+ 555                 fprintf(stderr, "unable to find %s size\n", file);
+ 556                 exit(1);
+ 557         }
+ 558         if (max_block_count)
+ 559                 block_count = min(block_count, max_block_count);
 
-tree_mod_log_insert_move() has only one caller tree_mod_log_eb_move(), and
-tree_mod_log_eb_move() has 4 callers:
-- push_node_left()
-- balance_node_right()
-- insert_ptr()
-- del_ptr()
-
-Among the 4 callers, only del_ptr() modifies nritems without inserting other keys,
-like MOD_LOG_KEY_ADD, etc.
-
-So IMO memmove does not modify the nritems:
-
-| - - - 3 4 5 | => | 3 4 5 - - - |     (nritems remain unchanged)
-
-It is other operations (MOD_LOG_KEY_ADD, MOD_LOG_KEY_REMOVE, MOD_LOG_KEY_REMOVE_WHILE_FREEING)
-that modify the nritems.
-
-I think the following patch can help us:
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 6d183f6..cdd5995 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4722,7 +4722,8 @@ static void del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			      btrfs_node_key_ptr_offset(slot + 1),
- 			      sizeof(struct btrfs_key_ptr) *
- 			      (nritems - slot - 1));
--	} else if (tree_mod_log && level) {
-+	}
-+	if (tree_mod_log && level) {
- 		ret = tree_mod_log_insert_key(root->fs_info, parent, slot,
- 					      MOD_LOG_KEY_REMOVE);
- 		BUG_ON(ret < 0);
-
+	     if (block_count < 2 MB ) {
+		     fprintf(stderr, "Image too small (less than 2MB)");
+		     exit
+	     }
 
 thanks,
-liubo
+david

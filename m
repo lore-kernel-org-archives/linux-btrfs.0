@@ -1,60 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:45137 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756708Ab2JWSsK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Oct 2012 14:48:10 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so1542229eek.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2012 11:48:08 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:45525 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933480Ab2JYPSP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:18:15 -0400
+Date: Thu, 25 Oct 2012 17:18:01 +0200
+From: David Sterba <dave@jikos.cz>
+To: Rock Lee <zimilo@code-trick.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [BUG][PATCH][BTRFS-PROGS] Bug overflow fix
+Message-ID: <20121025151801.GG10679@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <CAMRmmpLvLEC_SayRxBJHs=-sunrn_oA6Cy=-pRd+s1v4XDE24g@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
-References: <1351014715-5727-1-git-send-email-kreijack@inwind.com>
-Date: Tue, 23 Oct 2012 20:48:08 +0200
-Message-ID: <CAJHuE_DAJNSMF5nXiMxUiG0X4KGj4vwuT6QJbWpRBppuHA9HjQ@mail.gmail.com>
-Subject: Re: [PATCH][BTRFS-PROGS][V2] Update to parse_size()
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
-        Wang Sheng-Hui <shhuiw@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAMRmmpLvLEC_SayRxBJHs=-sunrn_oA6Cy=-pRd+s1v4XDE24g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry the version is V1 and not V2
+On Wed, Oct 24, 2012 at 04:24:02PM +0800, Rock Lee wrote:
+> If there's is a long name directory exists in the /dev, then an
+> overflow will hit in function utils.c btrfs_scan_one_dir:1013!
+> 
+> The minimal fix is to use snprintf instead of strcpy.
+> 
+> The reason why not using strncpy is that, if there is no null byte
+> among the first n bytes of src, the string  placed  in  dest
+> will not be null - terminated.
+> 
+> ---
+> index 3c88d2e..7200aef 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -969,7 +969,7 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+>  	pending = malloc(sizeof(*pending));
+>  	if (!pending)
+>  		return -ENOMEM;
+> -	strcpy(pending->name, dirname);
+> +	snprintf(pending->name, sizeof(pending->name), "%s", dirname);
 
-On Tue, Oct 23, 2012 at 7:51 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
-> Hi all,
->
-> the following patches attempt to address some issues to the function
-> parse_size():
-> - this function is defined both in mkfs.c and cmds-filesystem.c; I
-> moved it in utils.c (which is already used in both mkfs.btrfs and
-> btrfs) in order to avoid code duplication.
-> - it used the function atoll(); I replaceed atoll() with strtoull()
-> because we are dealing with u64
-> - no check on suffixes was performed. If the user put 'MB' as suffix he got
-> bytes instead megabytes. The patches check the suffix is valid
-> - add new suffixes (t,p,e for terabytes, petabytes, exabytes)
-> - update the man page of the command mkfs.btrfs and
-> "btrfs filesystem defragment", both use parse_size()
->
-> Several peoples (see cc's) suggested these improvements with different
-> patches, I collected them togheter.
->
-> Please reviewed them, test them. Comments are welcome.
->
-> The patches are available also to
->
-> You can pull the patch from
->         http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-> branch
->         parse_size
->
->
-> Signed-off-by: Goffredo Baroncelli <kreij...@inwind.it>
->
-> Changelog:
-> V1: avoid to change the parse_size argument;
->     better check of a wrong suffix;
->     force strtoull to use a decimal base
->
+pending is defined as
+
+919 struct pending_dir {
+920         struct list_head list;
+921         char name[256];
+922 };
+
+and name is supposed to hold a full path, so it should be of PATH_MAX
+(4096) size, 256 is a limit for a single filename.
+
+There's another hardcoded value for a path
+
+971         dirname_len = strlen(pending->name);
+972         pathlen = 1024;
+^^^
+973         fullpath = malloc(pathlen);
+974         dirname = pending->name;
+
+that shuld be of PATH_MAX size.
+
+thanks,
+david

@@ -1,43 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:49271 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932177Ab2JYPNa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:13:30 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so664226eek.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 08:13:28 -0700 (PDT)
-Message-ID: <1351178178.1923.12.camel@hughsie-work.lan>
-Subject: Re: Naming of subvolumes
-From: Richard Hughes <hughsient@gmail.com>
-To: Leonidas Spyropoulos <artafinde@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Date: Thu, 25 Oct 2012 16:16:18 +0100
-In-Reply-To: <CAAeznTr6AvqbJ+WOw6S5kyW2_qbSUQgJfAO88m9KdV+3PyGUcw@mail.gmail.com>
-References: <1351168220.1923.6.camel@hughsie-work.lan>
-	 <20121025132825.GD25498@carfax.org.uk>
-	 <1351172653.1923.10.camel@hughsie-work.lan>
-	 <CAAeznTr6AvqbJ+WOw6S5kyW2_qbSUQgJfAO88m9KdV+3PyGUcw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:55531 "EHLO e9.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1946143Ab2JYPM3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:12:29 -0400
+Received: from /spool/local
+	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
+	Thu, 25 Oct 2012 11:12:28 -0400
+From: zwu.kernel@gmail.com
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
+        cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: [RFC v4 15/15] vfs,hot_track: add the documentation
+Date: Thu, 25 Oct 2012 23:09:07 +0800
+Message-Id: <1351177747-19389-16-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2012-10-25 at 16:09 +0100, Leonidas Spyropoulos wrote:
-> On another note. How would you implement that logic (make a snapshot
-> before upgrade) without the lib? Would you wrap package manager into a
-> wrapper or patch package manager to call snapshot and the upgrade.
-> In both cases you will need to parse stdout, stderr from the snapshot
-> creation.
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-I'm intending to add the snapshot stuff in the logic described here:
-https://gitorious.org/packagekit/packagekit/blobs/master/contrib/systemd-updates/README.txt
+Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+---
+ Documentation/filesystems/00-INDEX         |    2 +
+ Documentation/filesystems/hot_tracking.txt |  164 ++++++++++++++++++++++++++++
+ 2 files changed, 166 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/filesystems/hot_tracking.txt
 
-> Also would you automatically roll back to before snapshot if something
-> goes wrong or give option to user? Can you categorise errors on
-> upgrades according ti fatality to the system?
-
-If *anything* in the upgrade fails and we've already started the package
-transaction then we'd roll back to the previous known-good snapshot.
-
-Richard.
+diff --git a/Documentation/filesystems/00-INDEX b/Documentation/filesystems/00-INDEX
+index 8c624a1..b68bdff 100644
+--- a/Documentation/filesystems/00-INDEX
++++ b/Documentation/filesystems/00-INDEX
+@@ -118,3 +118,5 @@ xfs.txt
+ 	- info and mount options for the XFS filesystem.
+ xip.txt
+ 	- info on execute-in-place for file mappings.
++hot_tracking.txt
++	- info on hot data tracking in VFS layer
+diff --git a/Documentation/filesystems/hot_tracking.txt b/Documentation/filesystems/hot_tracking.txt
+new file mode 100644
+index 0000000..ccb367d
+--- /dev/null
++++ b/Documentation/filesystems/hot_tracking.txt
+@@ -0,0 +1,164 @@
++Hot Data Tracking
++
++September, 2012		Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
++
++CONTENTS
++
++1. Introduction
++2. Motivation
++3. The Design
++4. Git Development Tree
++5. Usage Example
++
++
++1. Introduction
++
++  The feature adds experimental support for tracking data temperature
++information in VFS layer.  Essentially, this means maintaining some key
++stats(like number of reads/writes, last read/write time, frequency of
++reads/writes), then distilling those numbers down to a single
++"temperature" value that reflects what data is "hot," and using that
++temperature to move data to SSDs.
++
++  The long-term goal of the feature is to allow some FSs,
++e.g. Btrfs to intelligently utilize SSDs in a heterogenous volume.
++Incidentally, this project has been motivated by
++the Project Ideas page on the Btrfs wiki.
++
++  Of course, users are warned not to run this code outside of development
++environments. These patches are EXPERIMENTAL, and as such they might eat
++your data and/or memory. That said, the code should be relatively safe
++when the hottrack mount option are disabled.
++
++2. Motivation
++
++  The overall goal of enabling hot data relocation to SSD has been
++motivated by the Project Ideas page on the Btrfs wiki at
++<https://btrfs.wiki.kernel.org/index.php/Project_ideas>.
++It will divide into two steps. VFS provide hot data tracking function
++while specific FS will provide hot data relocation function.
++So as the first step of this goal, it is hoped that the patchset
++for hot data tracking will eventually mature into VFS.
++
++  This is essentially the traditional cache argument: SSD is fast and
++expensive; HDD is cheap but slow. ZFS, for example, can already take
++advantage of SSD caching. Btrfs should also be able to take advantage of
++hybrid storage without many broad, sweeping changes to existing code.
++
++
++3. The Design
++
++These include the following parts:
++
++    * Hooks in existing vfs functions to track data access frequency
++
++    * New radix-trees for tracking access frequency of inodes and sub-file
++ranges
++    The relationship between super_block and radix-tree is as below:
++hot_info.hot_inode_tree
++    Each FS instance can find hot tracking info s_hotinfo.
++In this hot_info, it store a lot of hot tracking info such as hot_inode_tree,
++inode and range list, etc.
++
++    * A list for indexing data by its temperature
++
++    * A debugfs interface for dumping data from the radix-trees
++
++    * A background kthread for updating inode heat info
++
++    * Mount options for enabling temperature tracking(-o hot_track,
++default mean disabled)
++    * An ioctl to retrieve the frequency information collected for a certain
++file
++    * Ioctls to enable/disable frequency tracking per inode.
++
++Let us see their relationship as below:
++
++    * hot_info.hot_inode_tree indexes hot_inode_items, one per inode
++
++    * hot_inode_item contains access frequency data for that inode
++
++    * hot_inode_item holds a heat list node to index the access
++frequency data for that inode
++
++    * hot_inode_item.hot_range_tree indexes hot_range_items for that inode
++
++    * hot_range_item contains access frequency data for that range
++
++    * hot_range_item holds a heat list node to index the access
++frequency data for that range
++
++    * hot_info.heat_inode_map indexes per-inode heat list nodes
++
++    * hot_info.heat_range_map indexes per-range heat list nodes
++
++  How about some ascii art? :) Just looking at the hot inode item case
++(the range item case is the same pattern, though), we have:
++
++heat_inode_map           hot_inode_tree
++    |                         |
++    |                         V
++    |           +-------hot_comm_item--------+
++    |           |       frequency data       |
+++---+           |        list_head           |
++|               V            ^ |             V
++| ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
++|       frequency data       | |        frequency data
+++-------->list_head----------+ +--------->list_head--->.....
++       hot_range_tree                  hot_range_tree
++                                             |
++             heat_range_map                  V
++                   |           +-------hot_comm_item--------+
++                   |           |       frequency data       |
++               +---+           |        list_head           |
++               |               V            ^ |             V
++               | ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
++               |       frequency data       | |        frequency data
++               +-------->list_head----------+ +--------->list_head--->.....
++
++4. Git Development Tree
++
++  The feature is still on development and review, so if you're interested,
++you can pull from the git repository at the following location:
++  https://github.com/wuzhy/kernel.git hot_tracking
++  git://github.com/wuzhy/kernel.git hot_tracking
++
++
++5. Usage Example
++
++To use hot tracking, you should mount like this:
++
++$ mount -o hot_track /dev/sdb /mnt
++[ 1505.894078] device label test devid 1 transid 29 /dev/sdb
++[ 1505.952977] btrfs: disk space caching is enabled
++[ 1506.069678] vfs: turning on hot data tracking
++
++Mount debugfs at first:
++
++$ mount -t debugfs none /sys/kernel/debug
++$ ls -l /sys/kernel/debug/hot_track/
++total 0
++drwxr-xr-x 2 root root 0 Aug  8 04:40 sdb
++$ ls -l /sys/kernel/debug/hot_track/sdb
++total 0
++-rw-r--r-- 1 root root 0 Aug  8 04:40 inode_data
++-rw-r--r-- 1 root root 0 Aug  8 04:40 range_data
++
++View information about hot tracking from debugfs:
++
++$ echo "hot tracking test" > /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/inode_data
++inode #279, reads 0, writes 1, avg read time 18446744073709551615,
++avg write time 5251566408153596, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 1,
++avg read time 18446744073709551615, avg write time 1128690176623144209, temp 64
++
++$ echo "hot data tracking test" >> /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/inode_data
++inode #279, reads 0, writes 2, avg read time 18446744073709551615,
++avg write time 4923343766042451, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 2,
++avg read time 18446744073709551615, avg write time 1058147040842596150, temp 64
++
+-- 
+1.7.6.5
 

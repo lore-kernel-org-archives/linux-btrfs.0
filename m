@@ -1,69 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:62699 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965665Ab2JYUGn (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:35226 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755951Ab2JYULn convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 16:06:43 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rr4so2258977pbb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 13:06:42 -0700 (PDT)
+	Thu, 25 Oct 2012 16:11:43 -0400
+Received: by mail-da0-f46.google.com with SMTP id n41so946671dak.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 13:11:43 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <50899A28.1050907@inwind.it>
+In-Reply-To: <3BC0780A-C657-4195-BBAB-FFBDDBD989FB@colorremedies.com>
 References: <50899151.1070503@inwind.it>
-	<CAE5mzvgem05HN1QTFb6FkhHv0U=e1PTo7idPy06SR97cMbpFLg@mail.gmail.com>
-	<50899A28.1050907@inwind.it>
-Date: Thu, 25 Oct 2012 14:06:42 -0600
-Message-ID: <CAE5mzvhFNGaaLasFV7Vy6g7BAsTgXKpv7oo0ZVGGxCoHcmCcuA@mail.gmail.com>
+	<3BC0780A-C657-4195-BBAB-FFBDDBD989FB@colorremedies.com>
+Date: Thu, 25 Oct 2012 14:11:43 -0600
+Message-ID: <CAE5mzvi=czHnRcBUkyTn7NxzCRiZ-5GcZtZt8KGEX0tUiUz73g@mail.gmail.com>
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
 From: cwillu <cwillu@cwillu.com>
-To: kreijack@inwind.it
+To: Chris Murphy <lists@colorremedies.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>> Allocated_area:
->>>   Data,RAID0: Size:921.75MB, Used:256.00KB
->>>      /dev/vdc     307.25MB
->>>      /dev/vdb     307.25MB
->>>      /dev/vdd     307.25MB
->>>
->>>   Data,Single: Size:8.00MB, Used:0.00
->>>      /dev/vdb       8.00MB
->>>
->>>   System,RAID1: Size:8.00MB, Used:4.00KB
->>>      /dev/vdd       8.00MB
->>>      /dev/vdc       8.00MB
->>>
->>>   System,Single: Size:4.00MB, Used:0.00
->>>      /dev/vdb       4.00MB
->>>
->>>   Metadata,RAID1: Size:460.94MB, Used:24.00KB
->>>      /dev/vdb     460.94MB
->>>      /dev/vdd     460.94MB
->>>
->>>   Metadata,Single: Size:8.00MB, Used:0.00
->>>      /dev/vdb       8.00MB
->>>
->>>   Unused:
->>>      /dev/vdb       2.23GB
->>>      /dev/vdc       2.69GB
->>>      /dev/vdd       2.24GB
+On Thu, Oct 25, 2012 at 2:03 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Oct 25, 2012, at 1:21 PM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
 >>
->> Couple minor things, in order of personal opinion of severity:
->>
->> * Devices should be listed in a consistent order; device names are
->> just too consistently similar
-> Could you elaborate ? I didn't understood well
+>> Moreover I still didn't understand how btrfs was using the disks.
+>
+> This comment has less to do with the RFC, and more about user confusion in a specific case of the existing fi df behavior. But since I have the same misunderstanding of how btrfs is using the disks, I decided to reply to this thread.
+>
+> While working with Fedora 18's new System Storage Manager [1], I came across this problem. For reference the bug report [2] which seems less of a bug with ssm than a peculiarity with btrfs chunk allocation and how fi df report usage.
+>
+> 80GB VDI, Virtual Box VM, containing Fedora 18: installed and yum updated 2-3 times. That's it, yet for some reason, 76 GB of chunks have been allocated and they're all full? This doesn't make sense when there's just under 4GB  of data on this single device.
+>
+> [root@f18v ~]# btrfs fi show
+> Label: 'fedora'  uuid: 780b8553-4097-4136-92a4-c6fd48779b0c
+>         Total devices 1 FS bytes used 3.93GB
+>         devid    1 size 76.06GB used 76.06GB path /dev/sda1
+>
+> [root@f18v ~]# btrfs fi df /
+> Data: total=72.03GB, used=3.67GB
+> System, DUP: total=8.00MB, used=16.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=2.00GB, used=257.54MB
+> Metadata: total=8.00MB, used=0.00
+>
+> I decided to rebalance, and while things become a lot more sensible, I'm still confused:
+>
+> [chris@f18v ~]$ sudo btrfs fi show
+> failed to read /dev/sr0
+> Label: 'fedora'  uuid: 780b8553-4097-4136-92a4-c6fd48779b0c
+>         Total devices 1 FS bytes used 3.91GB
+>         devid    1 size 76.06GB used 9.13GB path /dev/sda1
+>
+> [chris@f18v ~]$ sudo btrfs fi df /
+> Data: total=5.00GB, used=3.66GB
+> System, DUP: total=64.00MB, used=4.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=2.00GB, used=256.84MB
+>
+> Points of confusion:
+>
+> 1. Why is FS bytes used = 3.91GB, yet devid 1 used is 9.13 GB?
 
-Thereby demonstrating the problem :)
+"FS bytes" is what du -sh would show.  "devid 1 used" is space
+allocated to some block group (without that block group itself being
+entirely used)
 
-Data,RAID0: Size:921.75MB, Used:256.00KB
-   /dev/vdc     307.25MB
-   /dev/vdb     307.25MB
-   /dev/vdd     307.25MB
-Unused:
-   /dev/vdb       2.23GB
-   /dev/vdc       2.69GB
-   /dev/vdd       2.24GB
+> 2. Why before a rebalance does 'fi df' show extra lines, and then after rebalance there are fewer lines? Another case with raid10, 'fi df' shows six lines of data, but then after rebalance is shows three lines?
 
-The first goes c, b, d; the second goes b, c, d.
+A bug in mkfs causes some tiny blockgroups with the wrong profile to
+be created; as they're unused, they get cleaned up by the balance.
+
+> 3. How does Data: total=72GB before rebalance, but is 5GB after rebalance? This was a brand new file system, file system installed, with maybe 2-3 updates, and a dozen or two reboots. That's it. No VM's created on that volume (it's a VDI itself), and the VDI file itself never grew beyond 9GB.
+
+Combine the previous two answers: You had 72GB allocated to block
+groups which are mostly empty.  After the balance, the contents of
+those groups have been shuffled around such that most of them could be
+freed.

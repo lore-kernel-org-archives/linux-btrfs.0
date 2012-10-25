@@ -1,78 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f174.google.com ([209.85.210.174]:52757 "EHLO
-	mail-ia0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755791Ab2JYDBb (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:64612 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751694Ab2JYLid (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 23:01:31 -0400
-Received: by mail-ia0-f174.google.com with SMTP id y32so959036iag.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2012 20:01:31 -0700 (PDT)
-Message-ID: <5088AB84.9020409@gmail.com>
-Date: Thu, 25 Oct 2012 11:01:24 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+	Thu, 25 Oct 2012 07:38:33 -0400
+Message-ID: <508924AB.4060902@gmail.com>
+Date: Thu, 25 Oct 2012 17:08:19 +0530
+From: Abhijit Pawar <abhi.c.pawar@gmail.com>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Questions about mkfs -A option
-References: <507E57F6.6000805@gmail.com> <CAOcd+r1aPGGh4zHYzeMMuE01j4Nr+aiMmHBCAWqqCXvZZTb2XQ@mail.gmail.com> <50873AE3.4020700@gmail.com> <CAOcd+r3wVZc+doKBzF4E=K+xC7FTP44da6==iEaqB=2jNNkWYg@mail.gmail.com>
-In-Reply-To: <CAOcd+r3wVZc+doKBzF4E=K+xC7FTP44da6==iEaqB=2jNNkWYg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-fsdevel@vger.kernel.org
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        linux-kernel@vger.kernel.org, gregkh@linuxfoundation.org
+Subject: [RESEND PATCH] fs/super.c set_anon_super calling optimization
+References: <CA+kxV1F5VxBGawhkV=02LcgHNWiKF-H_k6N-d1TEYNeFAScezg@mail.gmail.com>
+In-Reply-To: <CA+kxV1F5VxBGawhkV=02LcgHNWiKF-H_k6N-d1TEYNeFAScezg@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012年10月24日 17:44, Alex Lyakas wrote:
+Hi,
+set_anon_super is called by many filesystems. Some call directly and 
+some call through the wrapper. Many of them in the wrapper's call to 
+this function are passing the second argument to this function which is 
+not used anywhere.
 
-> Hi Wang,
-> if you just look at the code in find_free_dev_extent():
-> u64 search_start = 0;
-> ...
-> search_start = max((u64)1024 * 1024, search_start);
-> if (root->fs_info->alloc_start + num_bytes <= device->total_bytes)
-> 	search_start = max(root->fs_info->alloc_start, search_start);
-> ...
-> key.objectid = device->devid;
-> key.offset = search_start;
-> key.type = BTRFS_DEV_EXTENT_KEY;
-> 
-> You see that it will search for DEV_EXTENTs (when allocating chunks)
-> that begin after the value you specified. So it will not use some
-> space at the beginning of the device for allocations. Same behavior in
-> the kernel can be caused by using "alloc_start=X" mount option.
-> What is the purpose of this I don't know, but what it does looks pretty clear.
-> The (first copy of the) superblock, though, is always written to
-> BTRFS_SUPER_INFO_OFFSET, as you mentioned.
-> 
-> Alex.
-> 
-> 
+This patch replaces the second variable with NULL.
 
+Thanks,
+Abhijit Pawar
 
-Thanks, Alex.
+Signed-off-by: Abhijit Pawar <abhi.c.pawar@gmail.com>
+CC: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+CC: linux-kernel@vger.kernel.org
+CC: linux-btrfs@vger.kernel.org
 
-> 
-> 
-> On Wed, Oct 24, 2012 at 2:48 AM, Wang Sheng-Hui <shhuiw@gmail.com> wrote:
->> On 2012年10月23日 01:49, Alex Lyakas wrote:
->>
->>> Wang,
->>> I would say that zeroing is done to prevent from seeing some other superblock (besides btrfs) there.
->>
->>
->> That make sense.
->>
->>>
->>> Alex.
->>>
->>>
->>
->>
->> But I still confused by the -A option?
->>
->> In mkfs, we always write the sb info into BTRFS_SUPER_INFO_OFFSET.
->> From the -A comment, I think btrfs would be places after the -A value.
->> What would happen if we specify a -A value larger than it?
->>
->>
->> Thanks,
->> Sheng-Hui
+---
 
+diff --git a/fs/9p/vfs_super.c b/fs/9p/vfs_super.c
+index 137d503..132db90 100644
+--- a/fs/9p/vfs_super.c
++++ b/fs/9p/vfs_super.c
+@@ -61,7 +61,7 @@ static const struct super_operations v9fs_super_ops,
+v9fs_super_ops_dotl;
+static int v9fs_set_super(struct super_block *s, void *data)
+{
+         s->s_fs_info = data;
+-       return set_anon_super(s, data);
++       return set_anon_super(s, NULL);
+}
+
+/**
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 915ac14..c9994a3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -954,7 +954,7 @@ static int btrfs_test_super(struct super_block *s, void
+*data)
+
+static int btrfs_set_super(struct super_block *s, void *data)
+{
+-       int err = set_anon_super(s, data);
++       int err = set_anon_super(s, NULL);
+         if (!err)
+                 s->s_fs_info = data;
+         return err;
+diff --git a/fs/nfs/super.c b/fs/nfs/super.c
+index e831bce..486bf7a 100644
+--- a/fs/nfs/super.c
++++ b/fs/nfs/super.c
+@@ -2260,7 +2260,7 @@ static int nfs_set_super(struct super_block *s, void
+*data)
+         s->s_flags = sb_mntdata->mntflags;
+         s->s_fs_info = server;
+         s->s_d_op = server->nfs_client->rpc_ops->dentry_ops;
+-       ret = set_anon_super(s, server);
++       ret = set_anon_super(s, NULL);
+         if (ret == 0)
+                 server->s_dev = s->s_dev;
+         return ret;
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index 71eb7e2..56d0059 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -89,7 +89,7 @@ static int sysfs_test_super(struct super_block *sb, void
+*data)
+static int sysfs_set_super(struct super_block *sb, void *data)
+{
+         int error;
+-       error = set_anon_super(sb, data);
++       error = set_anon_super(sb, NULL);
+         if (!error)
+                 sb->s_fs_info = data;
+         return error;
 

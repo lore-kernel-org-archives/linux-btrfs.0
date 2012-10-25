@@ -1,105 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e9.ny.us.ibm.com ([32.97.182.139]:55524 "EHLO e9.ny.us.ibm.com"
+Received: from e7.ny.us.ibm.com ([32.97.182.137]:60520 "EHLO e7.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1946139Ab2JYPM3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:12:29 -0400
+	id S935790Ab2JYPMd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:12:33 -0400
 Received: from /spool/local
-	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e7.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:12:28 -0400
+	Thu, 25 Oct 2012 11:12:31 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
-        cmm@us.ibm.com, Dave Chinner <dchinner@redhat.com>
-Subject: [RFC v4 14/15] xfs: add hot tracking support
-Date: Thu, 25 Oct 2012 23:09:06 +0800
-Message-Id: <1351177747-19389-15-git-send-email-zwu.kernel@gmail.com>
+        cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: [RFC v4 13/15] btrfs: add hot tracking support
+Date: Thu, 25 Oct 2012 23:09:05 +0800
+Message-Id: <1351177747-19389-14-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Dave Chinner <dchinner@redhat.com>
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Connect up the VFS hot tracking support
-so XFS filesystems can make use of it.
+  Introduce one new mount option '-o hot_track',
+and add its parsing support.
+  Its usage looks like:
+   mount -o hot_track
+   mount -o nouser,hot_track
+   mount -o nouser,hot_track,loop
+   mount -o hot_track,nouser
 
-Signed-off-by: Dave Chinner <dchinner@redhat.com>
+Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/xfs/xfs_mount.h |    1 +
- fs/xfs/xfs_super.c |   16 ++++++++++++++++
- 2 files changed, 17 insertions(+), 0 deletions(-)
+ fs/btrfs/ctree.h |    1 +
+ fs/btrfs/super.c |   22 +++++++++++++++++++++-
+ 2 files changed, 22 insertions(+), 1 deletions(-)
 
-diff --git a/fs/xfs/xfs_mount.h b/fs/xfs/xfs_mount.h
-index deee09e..96d93c2 100644
---- a/fs/xfs/xfs_mount.h
-+++ b/fs/xfs/xfs_mount.h
-@@ -217,6 +217,7 @@ typedef struct xfs_mount {
- #define XFS_MOUNT_WSYNC		(1ULL << 0)	/* for nfs - all metadata ops
- 						   must be synchronous except
- 						   for space allocations */
-+#define XFS_MOUNT_HOTTRACK      (1ULL << 1)     /* hot inode tracking */
- #define XFS_MOUNT_WAS_CLEAN	(1ULL << 3)
- #define XFS_MOUNT_FS_SHUTDOWN	(1ULL << 4)	/* atomic stop of all filesystem
- 						   operations, typically for
-diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
-index 26a09bd..48b3bed 100644
---- a/fs/xfs/xfs_super.c
-+++ b/fs/xfs/xfs_super.c
-@@ -61,6 +61,7 @@
- #include <linux/kthread.h>
- #include <linux/freezer.h>
- #include <linux/parser.h>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 926c9ff..c3d28f0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1756,6 +1756,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_HOT_TRACK		(1 << 23)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 915ac14..0bcc62b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -41,6 +41,7 @@
+ #include <linux/slab.h>
+ #include <linux/cleancache.h>
+ #include <linux/ratelimit.h>
 +#include <linux/hot_tracking.h>
- 
- static const struct super_operations xfs_super_operations;
- static kmem_zone_t *xfs_ioend_zone;
-@@ -114,6 +115,7 @@ mempool_t *xfs_ioend_pool;
- #define MNTOPT_NODELAYLOG  "nodelaylog"	/* Delayed logging disabled */
- #define MNTOPT_DISCARD	   "discard"	/* Discard unused blocks */
- #define MNTOPT_NODISCARD   "nodiscard"	/* Do not discard unused blocks */
-+#define MNTOPT_HOTTRACK    "hot_track"  /* hot inode tracking */
- 
- /*
-  * Table driven mount option parser.
-@@ -371,6 +373,8 @@ xfs_parseargs(
- 			mp->m_flags |= XFS_MOUNT_DISCARD;
- 		} else if (!strcmp(this_char, MNTOPT_NODISCARD)) {
- 			mp->m_flags &= ~XFS_MOUNT_DISCARD;
-+		} else if (!strcmp(this_char, MNTOPT_HOTTRACK)) {
-+			mp->m_flags |= XFS_MOUNT_HOTTRACK;
- 		} else if (!strcmp(this_char, "ihashsize")) {
- 			xfs_warn(mp,
- 	"ihashsize no longer used, option is deprecated.");
-@@ -1005,6 +1009,9 @@ xfs_fs_put_super(
- {
- 	struct xfs_mount	*mp = XFS_M(sb);
- 
-+	if (mp->m_flags & XFS_MOUNT_HOTTRACK)
-+		hot_track_exit(sb);
+ #include "compat.h"
+ #include "delayed-inode.h"
+ #include "ctree.h"
+@@ -299,6 +300,10 @@ static void btrfs_put_super(struct super_block *sb)
+ 	 * last process that kept it busy.  Or segfault in the aforementioned
+ 	 * process...  Whom would you report that to?
+ 	 */
 +
- 	xfs_filestream_unmount(mp);
- 	cancel_delayed_work_sync(&mp->m_sync_work);
- 	xfs_unmountfs(mp);
-@@ -1407,7 +1414,16 @@ xfs_fs_fill_super(
- 		goto out_unmount;
++	/* Hot data tracking */
++	if (btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_TRACK))
++		hot_track_exit(sb);
+ }
+ 
+ enum {
+@@ -311,7 +316,7 @@ enum {
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+-	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_hot_track,
+ 	Opt_err,
+ };
+ 
+@@ -352,6 +357,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
++	{Opt_hot_track, "hot_track"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -614,6 +620,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				goto out;
+ 			}
+ 			break;
++		case Opt_hot_track:
++			btrfs_set_opt(info->mount_opt, HOT_TRACK);
++			break;
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
+@@ -841,11 +850,20 @@ static int btrfs_fill_super(struct super_block *sb,
+ 		goto fail_close;
  	}
  
-+	if (mp->m_flags & XFS_MOUNT_HOTTRACK) {
-+		error = hot_track_init(sb);
-+		if (error)
-+			goto out_free_root;
++	if (btrfs_test_opt(fs_info->tree_root, HOT_TRACK)) {
++		err = hot_track_init(sb);
++		if (err)
++			goto fail_hot;
 +	}
 +
+ 	save_mount_options(sb, data);
+ 	cleancache_init_fs(sb);
+ 	sb->s_flags |= MS_ACTIVE;
  	return 0;
-+ out_free_root:
+ 
++fail_hot:
 +	dput(sb->s_root);
 +	sb->s_root = NULL;
-  out_syncd_stop:
- 	xfs_syncd_stop(mp);
-  out_filestream_unmount:
+ fail_close:
+ 	close_ctree(fs_info->tree_root);
+ 	return err;
+@@ -941,6 +959,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",skip_balance");
+ 	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
+ 		seq_puts(seq, ",fatal_errors=panic");
++	if (btrfs_test_opt(root, HOT_TRACK))
++		seq_puts(seq, ",hot_track");
+ 	return 0;
+ }
+ 
 -- 
 1.7.6.5
 

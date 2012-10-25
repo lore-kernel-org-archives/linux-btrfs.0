@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e9.ny.us.ibm.com ([32.97.182.139]:42350 "EHLO e9.ny.us.ibm.com"
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:41818 "EHLO e9.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932177Ab2JYPML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 11:12:11 -0400
+	id S933480Ab2JYPLq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Oct 2012 11:11:46 -0400
 Received: from /spool/local
 	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 25 Oct 2012 11:12:09 -0400
+	Thu, 25 Oct 2012 11:11:45 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v4 11/15] vfs,hot_track: add debugfs support
-Date: Thu, 25 Oct 2012 23:09:03 +0800
-Message-Id: <1351177747-19389-12-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4 09/15] vfs,hot_track: register one memory shrinker
+Date: Thu, 25 Oct 2012 23:09:01 +0800
+Message-Id: <1351177747-19389-10-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,607 +23,117 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Add a /sys/kernel/debug/hot_track/<device_name>/ directory for each
-volume that contains two files. The first, `inode_stats', contains the
-heat information for inodes that have been brought into the hot data map
-structures. The second, `range_stats', contains similar information for
-subfile ranges.
+  Register a shrinker to control the amount of
+memory that is used in tracking hot regions - if we are throwing
+inodes out of memory due to memory pressure, we most definitely are
+going to need to reduce the amount of memory the tracking code is
+using, even if it means losing useful information (i.e. the shrinker
+accelerates the aging process).
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/debugfs/inode.c           |   26 +++
- fs/hot_tracking.c            |  458 ++++++++++++++++++++++++++++++++++++++++++
- fs/hot_tracking.h            |    5 +
- include/linux/debugfs.h      |    9 +
+ fs/hot_tracking.c            |   61 ++++++++++++++++++++++++++++++++++++++++++
  include/linux/hot_tracking.h |    1 +
- 5 files changed, 499 insertions(+), 0 deletions(-)
+ 2 files changed, 62 insertions(+), 0 deletions(-)
 
-diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
-index b607d92..c6291bc 100644
---- a/fs/debugfs/inode.c
-+++ b/fs/debugfs/inode.c
-@@ -354,6 +354,32 @@ exit:
- 	return dentry;
- }
- 
-+struct dentry *debugfs_get_dentry(const char *name,
-+			struct dentry *parent, int len)
-+{
-+	struct dentry *dentry = NULL;
-+	int error = 0;
-+
-+	error = simple_pin_fs(&debug_fs_type, &debugfs_mount,
-+				&debugfs_mount_count);
-+	if (error)
-+		return NULL;
-+
-+	if (!parent)
-+		parent = debugfs_mount->mnt_root;
-+
-+	mutex_lock(&parent->d_inode->i_mutex);
-+	dentry = lookup_one_len(name, parent, strlen(name));
-+	if (!IS_ERR(dentry)) {
-+		mutex_unlock(&parent->d_inode->i_mutex);
-+		return dentry;
-+	}
-+	mutex_unlock(&parent->d_inode->i_mutex);
-+
-+	return NULL;
-+}
-+EXPORT_SYMBOL_GPL(debugfs_get_dentry);
-+
- /**
-  * debugfs_create_file - create a file in the debugfs filesystem
-  * @name: a pointer to a string containing the name of the file to create.
 diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index 7d2c53d..18a64ee 100644
+index d931083..7d2c53d 100644
 --- a/fs/hot_tracking.c
 +++ b/fs/hot_tracking.c
-@@ -21,6 +21,7 @@
- #include <linux/blkdev.h>
- #include <linux/types.h>
- #include <linux/list_sort.h>
-+#include <linux/debugfs.h>
- #include <linux/limits.h>
- #include "hot_tracking.h"
- 
-@@ -654,6 +655,451 @@ static void hot_update_worker(struct work_struct *work)
+@@ -678,6 +678,61 @@ err:
+ 	kmem_cache_destroy(hot_inode_item_cachep);
  }
  
- /*
-+ * take the inode, find ranges associated with inode
-+ * and print each range data struct
-+ */
-+static struct hot_range_item
-+*hot_range_tree_walk(struct hot_inode_item *he,
-+			loff_t *pos, u32 start, bool flag)
++static int hot_track_prune_map(struct hot_map_head *map_head,
++				bool type, int nr)
 +{
-+	struct hot_range_item *hr_nodes[8];
-+	loff_t l = *pos;
-+	int i, n;
++	struct hot_comm_item *node;
++	int i;
 +
-+	/* Walk the hot_range_tree for inode */
-+	while (1) {
-+		spin_lock(&he->lock);
-+		n = radix_tree_gang_lookup(&he->hot_range_tree,
-+					   (void **)hr_nodes, start,
-+					   ARRAY_SIZE(hr_nodes));
-+		if (!n) {
-+			spin_unlock(&he->lock);
-+			break;
-+		}
-+		spin_unlock(&he->lock);
++	for (i = 0; i < HEAT_MAP_SIZE; i++) {
++		while (!list_empty(&(map_head + i)->node_list)) {
++			if (nr-- <= 0)
++				break;
 +
-+		start = hr_nodes[n - 1]->start + 1;
-+		for (i = 0; i < n; i++) {
-+			if ((!flag && !l--) || (flag)) {
-+				if (flag)
-+					(*pos)++;
-+				kref_get(&hr_nodes[i]->hot_range.refs);
-+				return hr_nodes[i];
-+			}
-+		}
-+	}
-+
-+	return NULL;
-+}
-+
-+static void
-+*hot_inode_tree_walk(u64 ino, loff_t *pos, bool type, bool flag)
-+{
-+	struct hot_inode_item *hi_nodes[8];
-+	struct hot_range_item *hr;
-+	loff_t l = *pos;
-+	int i, n;
-+
-+	while (1) {
-+		spin_lock(&hot_root->lock);
-+		n = radix_tree_gang_lookup(&hot_root->hot_inode_tree,
-+					(void **)hi_nodes, ino,
-+					ARRAY_SIZE(hi_nodes));
-+		if (!n) {
-+			spin_unlock(&hot_root->lock);
-+			break;
-+		}
-+		spin_unlock(&hot_root->lock);
-+
-+		ino = hi_nodes[n - 1]->i_ino + 1;
-+		for (i = 0; i < n; i++) {
-+			if (!type) {
-+				hr = hot_range_tree_walk(hi_nodes[i],
-+						pos, 0, flag);
-+				if (hr)
-+					return hr;
++			node = list_first_entry(&(map_head + i)->node_list,
++					struct hot_comm_item, n_list);
++			if (type) {
++				struct hot_inode_item *hot_inode =
++					container_of(node,
++					struct hot_inode_item, hot_inode);
++				hot_inode_item_put(hot_inode);
 +			} else {
-+				if ((!flag && !l--) || (flag)) {
-+					if (flag)
-+						(*pos)++;
-+					kref_get(&hi_nodes[i]->hot_inode.refs);
-+					return hi_nodes[i];
-+				}
++				struct hot_range_item *hot_range =
++					container_of(node,
++					struct hot_range_item, hot_range);
++				hot_range_item_put(hot_range);
 +			}
 +		}
 +	}
 +
-+	return NULL;
++	return nr;
 +}
 +
-+static void *hot_range_seq_start(struct seq_file *seq, loff_t *pos)
++/* The shrinker callback function */
++static int hot_track_prune(struct shrinker *shrink,
++			struct shrink_control *sc)
 +{
-+	return hot_inode_tree_walk(0, pos, false, false);
++	struct hot_info *root =
++		container_of(shrink, struct hot_info, hot_shrink);
++	int ret;
++
++	if (sc->nr_to_scan == 0)
++		return root->hot_map_nr;
++
++	if (!(sc->gfp_mask & __GFP_FS))
++		return -1;
++
++	ret = hot_track_prune_map(root->heat_range_map,
++				false, sc->nr_to_scan);
++	if (ret > 0)
++		ret = hot_track_prune_map(root->heat_inode_map,
++					true, ret);
++	if (ret > 0)
++		root->hot_map_nr -= (sc->nr_to_scan - ret);
++
++	return root->hot_map_nr;
 +}
 +
-+static void *hot_range_seq_next(struct seq_file *seq,
-+				void *v, loff_t *pos)
-+{
-+	struct hot_range_item *hr_next, *hr = v;
-+	u32 start = hr->start + 1;
-+
-+	/* Walk the hot_range_tree for inode */
-+	hr_next = hot_range_tree_walk(hr->hot_inode, pos, start, true);
-+	if (hr_next)
-+		return hr_next;
-+
-+	return hot_inode_tree_walk(hr->hot_inode->i_ino + 1,
-+				pos, false, true);
-+}
-+
-+static void hot_range_seq_stop(struct seq_file *seq, void *v)
-+{
-+	struct hot_range_item *hr = v;
-+
-+	if (hr)
-+		hot_range_item_put(hr);
-+}
-+
-+static int hot_range_seq_show(struct seq_file *seq, void *v)
-+{
-+	struct hot_range_item *hr = v;
-+	struct hot_inode_item *he = hr->hot_inode;
-+	struct hot_freq_data *freq_data = &hr->hot_range.hot_freq_data;
-+
-+	/* Always lock hot_inode_item first */
-+	spin_lock(&he->hot_inode.lock);
-+	spin_lock(&hr->hot_range.lock);
-+	seq_printf(seq, "inode #%llu, range start " \
-+			"%llu (range len %u) reads %u, writes %u, "
-+			"avg read time %llu, avg write time %llu, temp %u\n",
-+			he->i_ino,
-+			(u64)hr->start * RANGE_SIZE,
-+			hr->len,
-+			freq_data->nr_reads,
-+			freq_data->nr_writes,
-+			freq_data->avg_delta_reads / NSEC_PER_MSEC,
-+			freq_data->avg_delta_writes / NSEC_PER_MSEC,
-+			freq_data->last_temp >> (32 - HEAT_MAP_BITS));
-+	spin_unlock(&hr->hot_range.lock);
-+	spin_unlock(&he->hot_inode.lock);
-+
-+	return 0;
-+}
-+
-+static void *hot_inode_seq_start(struct seq_file *seq, loff_t *pos)
-+{
-+	return hot_inode_tree_walk(0, pos, true, false);
-+}
-+
-+static void *hot_inode_seq_next(struct seq_file *seq, void *v, loff_t *pos)
-+{
-+	struct hot_inode_item *he = v;
-+	u64 ino = he->i_ino + 1;
-+
-+	hot_inode_item_put(he);
-+
-+	return hot_inode_tree_walk(ino, pos, true, true);
-+}
-+
-+static void hot_inode_seq_stop(struct seq_file *seq, void *v)
-+{
-+	struct hot_inode_item *he = v;
-+
-+	if (he)
-+		hot_inode_item_put(he);
-+}
-+
-+static int hot_inode_seq_show(struct seq_file *seq, void *v)
-+{
-+	struct hot_inode_item *he = v;
-+	struct hot_freq_data *freq_data = &he->hot_inode.hot_freq_data;
-+
-+	spin_lock(&he->hot_inode.lock);
-+	seq_printf(seq, "inode #%llu, reads %u, writes %u, " \
-+		"avg read time %llu, avg write time %llu, temp %u\n",
-+		he->i_ino,
-+		freq_data->nr_reads,
-+		freq_data->nr_writes,
-+		freq_data->avg_delta_reads / NSEC_PER_MSEC,
-+		freq_data->avg_delta_writes / NSEC_PER_MSEC,
-+		freq_data->last_temp >> (32 - HEAT_MAP_BITS));
-+	spin_unlock(&he->hot_inode.lock);
-+
-+	return 0;
-+}
-+
-+static void *hot_spot_range_seq_start(struct seq_file *seq, loff_t *pos)
-+{
-+	struct hot_range_item *hr;
-+	struct hot_comm_item *comm_item;
-+	struct list_head *n_list;
-+	int i;
-+
-+	for (i = HEAT_MAP_SIZE - 1; i >= 0; i--) {
-+		n_list = seq_list_start(
-+			&hot_root->heat_range_map[i].node_list, *pos);
-+		if (n_list) {
-+			comm_item = container_of(n_list,
-+				struct hot_comm_item, n_list);
-+			hr = container_of(comm_item,
-+				struct hot_range_item, hot_range);
-+			kref_get(&hr->hot_range.refs);
-+			return hr;
-+		}
-+	}
-+
-+	return NULL;
-+}
-+
-+static void *hot_spot_range_seq_next(struct seq_file *seq, void *v, loff_t *pos)
-+{
-+	struct hot_range_item *hr_next, *hr = v;
-+	struct hot_comm_item *comm_item;
-+	struct list_head *n_list;
-+	int i =
-+	 hr->hot_range.hot_freq_data.last_temp >> (32 - HEAT_MAP_BITS);
-+
-+	n_list = seq_list_next(&hr->hot_range.n_list,
-+		&hot_root->heat_range_map[i].node_list, pos);
-+	hot_range_item_put(hr);
-+next:
-+	if (n_list) {
-+		comm_item = container_of(n_list,
-+			struct hot_comm_item, n_list);
-+		hr_next = container_of(comm_item,
-+			struct hot_range_item, hot_range);
-+		kref_get(&hr_next->hot_range.refs);
-+		return hr_next;
-+	} else if (--i >= 0) {
-+		n_list = seq_list_next(&hot_root->heat_range_map[i].node_list,
-+				&hot_root->heat_range_map[i].node_list, pos);
-+		goto next;
-+	}
-+
-+	return NULL;
-+}
-+
-+static void *hot_spot_inode_seq_start(struct seq_file *seq, loff_t *pos)
-+{
-+	struct hot_inode_item *he;
-+	struct hot_comm_item *comm_item;
-+	struct list_head *n_list;
-+	int i;
-+
-+	for (i = HEAT_MAP_SIZE - 1; i >= 0; i--) {
-+		n_list = seq_list_start(
-+			&hot_root->heat_inode_map[i].node_list, *pos);
-+		if (n_list) {
-+			comm_item = container_of(n_list,
-+				struct hot_comm_item, n_list);
-+			he = container_of(comm_item,
-+				struct hot_inode_item, hot_inode);
-+			kref_get(&he->hot_inode.refs);
-+			return he;
-+		}
-+	}
-+
-+	return NULL;
-+}
-+
-+static void *hot_spot_inode_seq_next(struct seq_file *seq, void *v, loff_t *pos)
-+{
-+	struct hot_inode_item *he_next, *he = v;
-+	struct hot_comm_item *comm_item;
-+	struct list_head *n_list;
-+	int i =
-+	 he->hot_inode.hot_freq_data.last_temp >> (32 - HEAT_MAP_BITS);
-+
-+	n_list = seq_list_next(&he->hot_inode.n_list,
-+			&hot_root->heat_inode_map[i].node_list, pos);
-+	hot_inode_item_put(he);
-+next:
-+	if (n_list) {
-+		comm_item = container_of(n_list,
-+			struct hot_comm_item, n_list);
-+		he_next = container_of(comm_item,
-+			struct hot_inode_item, hot_inode);
-+		kref_get(&he_next->hot_inode.refs);
-+		return he_next;
-+	} else if (--i >= 0) {
-+		n_list = seq_list_next(&hot_root->heat_inode_map[i].node_list,
-+				&hot_root->heat_inode_map[i].node_list, pos);
-+		goto next;
-+	}
-+
-+	return NULL;
-+}
-+
-+static const struct seq_operations hot_range_seq_ops = {
-+	.start = hot_range_seq_start,
-+	.next = hot_range_seq_next,
-+	.stop = hot_range_seq_stop,
-+	.show = hot_range_seq_show
-+};
-+
-+static const struct seq_operations hot_inode_seq_ops = {
-+	.start = hot_inode_seq_start,
-+	.next = hot_inode_seq_next,
-+	.stop = hot_inode_seq_stop,
-+	.show = hot_inode_seq_show
-+};
-+
-+static const struct seq_operations hot_spot_range_seq_ops = {
-+	.start = hot_spot_range_seq_start,
-+	.next = hot_spot_range_seq_next,
-+	.stop = hot_range_seq_stop,
-+	.show = hot_range_seq_show
-+};
-+
-+static const struct seq_operations hot_spot_inode_seq_ops = {
-+	.start = hot_spot_inode_seq_start,
-+	.next = hot_spot_inode_seq_next,
-+	.stop = hot_inode_seq_stop,
-+	.show = hot_inode_seq_show
-+};
-+
-+static int hot_range_seq_open(struct inode *inode, struct file *file)
-+{
-+	return seq_open(file, &hot_range_seq_ops);
-+}
-+
-+static int hot_inode_seq_open(struct inode *inode, struct file *file)
-+{
-+	return seq_open(file, &hot_inode_seq_ops);
-+}
-+
-+static int hot_spot_range_seq_open(struct inode *inode, struct file *file)
-+{
-+	return seq_open(file, &hot_spot_range_seq_ops);
-+}
-+
-+static int hot_spot_inode_seq_open(struct inode *inode, struct file *file)
-+{
-+	return seq_open(file, &hot_spot_inode_seq_ops);
-+}
-+
-+/* fops to override for printing range data */
-+static const struct file_operations hot_debugfs_range_fops = {
-+	.open = hot_range_seq_open,
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = seq_release,
-+};
-+
-+/* fops to override for printing inode data */
-+static const struct file_operations hot_debugfs_inode_fops = {
-+	.open = hot_inode_seq_open,
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = seq_release,
-+};
-+
-+/* fops to override for printing temperature data */
-+static const struct file_operations hot_debugfs_spot_range_fops = {
-+	.open = hot_spot_range_seq_open,
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = seq_release,
-+};
-+
-+static const struct file_operations hot_debugfs_spot_inode_fops = {
-+	.open = hot_spot_inode_seq_open,
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = seq_release,
-+};
-+
-+static const struct hot_debugfs hot_debugfs[] = {
-+	{
-+		.name = "rt_stats_range",
-+		.fops  = &hot_debugfs_range_fops,
-+	},
-+	{
-+		.name = "rt_stats_inode",
-+		.fops  = &hot_debugfs_inode_fops,
-+	},
-+	{
-+		.name = "hot_spots_range",
-+		.fops  = &hot_debugfs_spot_range_fops,
-+	},
-+	{
-+		.name = "hot_spots_inode",
-+		.fops  = &hot_debugfs_spot_inode_fops,
-+	},
-+};
-+
-+/* initialize debugfs */
-+static int hot_debugfs_init(struct super_block *sb)
-+{
-+	static const char hot_name[] = "hot_track";
-+	struct dentry *vol_dentry, *dentry;
-+	int i, ret = 0;
-+
-+	/* Determine if hot debufs root has existed */
-+	sb->s_hot_root->debugfs_root =
-+			debugfs_get_dentry(hot_name, NULL, strlen(hot_name));
-+	if (IS_ERR_OR_NULL(sb->s_hot_root->debugfs_root)
-+		|| !sb->s_hot_root->debugfs_root->d_inode) {
-+		sb->s_hot_root->debugfs_root =
-+			debugfs_create_dir(hot_name, NULL);
-+		if (IS_ERR(sb->s_hot_root->debugfs_root)) {
-+			ret = PTR_ERR(sb->s_hot_root->debugfs_root);
-+			return ret;
-+		}
-+	}
-+
-+	if (!S_ISDIR(sb->s_hot_root->debugfs_root->d_inode->i_mode))
-+		return -ENOTDIR;
-+
-+	/* create debugfs folder for this volume by mounted dev name */
-+	vol_dentry = debugfs_create_dir(sb->s_id, sb->s_hot_root->debugfs_root);
-+	if (IS_ERR(vol_dentry)) {
-+		ret = PTR_ERR(vol_dentry);
-+		goto err;
-+	}
-+
-+	/* create debugfs hot data files */
-+	for (i = 0; i < ARRAY_SIZE(hot_debugfs); i++) {
-+		dentry = debugfs_create_file(hot_debugfs[i].name,
-+					S_IFREG | S_IRUSR | S_IWUSR,
-+					vol_dentry,
-+					NULL,
-+					hot_debugfs[i].fops);
-+		if (IS_ERR(dentry)) {
-+			ret = PTR_ERR(dentry);
-+			goto err;
-+		}
-+	}
-+
-+	return 0;
-+
-+err:
-+	debugfs_remove_recursive(vol_dentry);
-+
-+	if (list_empty(&sb->s_hot_root->debugfs_root->d_subdirs))
-+		debugfs_remove(sb->s_hot_root->debugfs_root);
-+
-+	return ret;
-+}
-+
-+/* remove dentries for debugsfs */
-+static void hot_debugfs_exit(struct super_block *sb)
-+{
-+	struct dentry *vol_dentry;
-+
-+	vol_dentry = debugfs_get_dentry(sb->s_id,
-+				sb->s_hot_root->debugfs_root, strlen(sb->s_id));
-+	/* remove all debugfs entries recursively from the volume root */
-+	if (vol_dentry)
-+		debugfs_remove_recursive(vol_dentry);
-+	else
-+		BUG_ON(1);
-+
-+	if (list_empty(&sb->s_hot_root->debugfs_root->d_subdirs))
-+		debugfs_remove(sb->s_hot_root->debugfs_root);
-+}
-+
-+/*
-  * Initialize kmem cache for hot_inode_item and hot_range_item.
+ /*
+  * Main function to update access frequency from read/writepage(s) hooks
   */
- void __init hot_cache_init(void)
-@@ -818,10 +1264,21 @@ int hot_track_init(struct super_block *sb)
- 	root->hot_shrink.seeks = DEFAULT_SEEKS;
- 	register_shrinker(&root->hot_shrink);
+@@ -758,6 +813,11 @@ int hot_track_init(struct super_block *sb)
+ 	queue_delayed_work(root->update_wq, &root->update_work,
+ 		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
  
-+	ret = hot_debugfs_init(sb);
-+	if (ret) {
-+		printk(KERN_ERR "%s: hot_debugfs_init error: %d\n",
-+				__func__, ret);
-+		goto failed_debugfs;
-+	}
++	/* Register a shrinker callback */
++	root->hot_shrink.shrink = hot_track_prune;
++	root->hot_shrink.seeks = DEFAULT_SEEKS;
++	register_shrinker(&root->hot_shrink);
 +
  	printk(KERN_INFO "VFS: Turning on hot data tracking\n");
  
  	return 0;
+@@ -774,6 +834,7 @@ void hot_track_exit(struct super_block *sb)
+ {
+ 	struct hot_info *root = sb->s_hot_root;
  
-+failed_debugfs:
 +	unregister_shrinker(&root->hot_shrink);
-+	cancel_delayed_work_sync(&root->update_work);
-+	destroy_workqueue(root->update_wq);
- failed_wq:
- 	hot_map_array_exit(root);
- 	hot_inode_tree_exit(root);
-@@ -839,6 +1296,7 @@ void hot_track_exit(struct super_block *sb)
+ 	cancel_delayed_work_sync(&root->update_work);
  	destroy_workqueue(root->update_wq);
  	hot_map_array_exit(root);
- 	hot_inode_tree_exit(root);
-+	hot_debugfs_exit(sb);
- 	kfree(root);
- }
- EXPORT_SYMBOL_GPL(hot_track_exit);
-diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index b9d9717..6eb024f 100644
---- a/fs/hot_tracking.h
-+++ b/fs/hot_tracking.h
-@@ -87,6 +87,11 @@
- #define AVW_DIVIDER_POWER 40
- #define AVW_COEFF_POWER 0
- 
-+struct hot_debugfs {
-+	const char *name;
-+	const struct file_operations *fops;
-+};
-+
- struct hot_inode_item
- *hot_inode_item_find(struct hot_info *root, u64 ino);
- void hot_inode_item_put(struct hot_inode_item *he);
-diff --git a/include/linux/debugfs.h b/include/linux/debugfs.h
-index 66c434f..8913a4d 100644
---- a/include/linux/debugfs.h
-+++ b/include/linux/debugfs.h
-@@ -46,6 +46,9 @@ extern struct dentry *arch_debugfs_dir;
- extern const struct file_operations debugfs_file_operations;
- extern const struct inode_operations debugfs_link_operations;
- 
-+struct dentry *debugfs_get_dentry(const char *name,
-+				struct dentry *parent, int len);
-+
- struct dentry *debugfs_create_file(const char *name, umode_t mode,
- 				   struct dentry *parent, void *data,
- 				   const struct file_operations *fops);
-@@ -103,6 +106,12 @@ bool debugfs_initialized(void);
- 
- #include <linux/err.h>
- 
-+static inline struct dentry *debugfs_get_dentry(const char *name,
-+					struct dentry *parent, int len)
-+{
-+	return ERR_PTR(-ENODEV);
-+}
-+
- /* 
-  * We do not return NULL from these functions if CONFIG_DEBUG_FS is not enabled
-  * so users have a chance to detect if there was a real error or not.  We don't
 diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index c81c331..7107cfa 100644
+index 4c5f5f3..446c99e 100644
 --- a/include/linux/hot_tracking.h
 +++ b/include/linux/hot_tracking.h
-@@ -97,6 +97,7 @@ struct hot_info {
+@@ -85,6 +85,7 @@ struct hot_info {
+ 
  	struct workqueue_struct *update_wq;
  	struct delayed_work update_work;
- 	struct shrinker hot_shrink;
-+	struct dentry *debugfs_root;
++	struct shrinker hot_shrink;
  };
  
- /*
+ void __init hot_cache_init(void);
 -- 
 1.7.6.5
 

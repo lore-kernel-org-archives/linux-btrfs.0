@@ -1,69 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:48702 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757052Ab2JZI1D (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 04:27:03 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rr4so2621320pbb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 01:27:03 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <64967FA4-4DC1-478E-A920-1E5237905DAE@colorremedies.com>
-References: <1351168220.1923.6.camel@hughsie-work.lan>
-	<64967FA4-4DC1-478E-A920-1E5237905DAE@colorremedies.com>
-Date: Fri, 26 Oct 2012 09:27:03 +0100
-Message-ID: <CAD2FfiExmofSpVsLTpZaZo86gEnPn11Uzd=B7qu0SKv8Ybo7TA@mail.gmail.com>
-Subject: Re: Naming of subvolumes
-From: Richard Hughes <hughsient@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:52811 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757757Ab2JZJCm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Oct 2012 05:02:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TRfoX-0006uh-63
+	for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2012 11:02:49 +0200
+Received: from cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com ([81.97.59.215])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:02:49 +0200
+Received: from samtygier by cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:02:49 +0200
+To: linux-btrfs@vger.kernel.org
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: Re: problem replacing failing drive
+Date: Fri, 26 Oct 2012 10:02:31 +0100
+Message-ID: <508A51A7.30707@yahoo.co.uk>
+References: <k632c9$3df$1@ger.gmane.org>,<k6c9ct$tb5$1@ger.gmane.org> <COL002-W72E3D3908E97F64D9F1866B07F0@phx.gbl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <COL002-W72E3D3908E97F64D9F1866B07F0@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 26 October 2012 06:24, Chris Murphy <lists@colorremedies.com> wrote:
-> What's the read-only snapshot of and used for?
+On 25/10/12 22:37, Kyle Gates wrote:
+>> On 22/10/12 10:07, sam tygier wrote:
+>>> hi,
+>>>
+>>> I have a 2 drive btrfs raid set up. It was created first with a single drive, and then adding a second and doing
+>>> btrfs fi balance start -dconvert=raid1 /data
+>>>
+>>> the original drive is showing smart errors so i want to replace it. i dont easily have space in my desktop for an extra disk, so i decided to proceed by shutting down. taking out the old failing drive and putting in the new drive. this is similar to the description at
+>>> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_Failed_Devices
+>>> (the other reason to try this is to simulate what would happen if a drive did completely fail).
+>>
+>> If i reconnect the failing drive then I can mount the filesystem with no errors, a quick glance suggests that the data is all there.
+>>
+>> Label: 'bdata' uuid: 1f07081c-316b-48be-af73-49e6f76535cc
+>> Total devices 2 FS bytes used 2.50TB
+>> devid 2 size 2.73TB used 2.73TB path /dev/sde1 <-- this is the drive that i wish to remove
+>> devid 1 size 2.73TB used 2.73TB path /dev/sdd2
+>>
+>> sudo btrfs filesystem df /mnt
+>> Data, RAID1: total=2.62TB, used=2.50TB
+>> System, DUP: total=40.00MB, used=396.00KB
+>> System: total=4.00MB, used=0.00
+>> Metadata, DUP: total=112.00GB, used=3.84GB
+>> Metadata: total=8.00MB, used=0.00
+>>
+>> is the failure to mount when i remove sde due to it being dup, rather than raid1?
+> 
+> Yes, I would say so.
+> Try a
+> btrfs balance start -mconvert=raid1 /mnt
+> so all metadata is on each drive.
 
-/root and /boot
+Thanks
+btrfs balance start -mconvert=raid1 /mnt
+did the trick. It gave "btrfs: 9 enospc errors during balance" errors the first few times i ran it, but got there in the end (smaller number of errors each time). the volume is pretty full, so i'll forgive it, (though is "Metadata, RAID1: total=111.84GB, used=3.83GB" a reasonable ratio?).
 
-> And if you're going to apply the upgrade to the snapshot, or to the top level file system?
+i can now successfully remove the failed device and mount the filesystem in degraded mode.
 
-That's a very good question. I was going to apply the upgrade to the
-top level file system, and then roll-back to the old snapshot if the
-new upgrade state does not boot to a GUI. It would work equally well
-applying the update to the snapshot and then switching to that,
-although I don't know how well userspace is going to cope switching to
-a new subvolume at early-runtime given the fact we're running the
-upgrade itself from the filesystem and not in a special initrd or
-something. Also, we need to ready out lots of upgrade data (200Mb+?)
-from somewhere, so doing this on the snapshot would mean creating the
-snapshot and copying the data there *before* we reboot to install
-upgrades, and we really want to create the snapshot when we're sure
-the system will boot.
+It seems like the system blocks get convert automatically.
 
-> So I'm going to guess that you will actually create a subvolume named something like @system-upgrade-20121025, and then snapshot root, boot, and home into that subvol?
+i have added an example for how to do this at https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Adding_New_Devices
 
-Not /home. Packages shouldn't be installing stuff there anyway, and
-/home is going to typically much bigger than /root or /boot.
+Thanks,
+Sam
 
-> If the upgrade is not successful, you change the default subvolume ID to that of @system-upgrade-20121025.
-
-I was actually thinking of using btrfs send | btrfs receive to roll
-back the root manually. It would be better if btrfs could swap the
-subvolume ID's of @system-upgrade-20121025 and 0, as then we don't get
-a snapshot that's useless.
-
-> Well, if there are 52 snapshots of Fedora 18, there are effectively 53 copies of /etc/fedora-release to be found. So how is this going to show up?
-
-I figured we could have some kind of metadata in the snapshot to tell
-the installer "this is an upgrade snapshot" and to ignore it being
-offered to upgrade. Metadata is the key here to make things just work.
-
-> ...if there are 52 or 5000 subvolumes, what's this UI going to look like?
-
-Also a good question. An unanswered question :)
-
-> Maybe in the short term you do something just like with kernels and keep the most recent three and start deleting the older ones?
-
-Yes, this is a very good idea and probably what we need to do for our use case.
-
-Richard

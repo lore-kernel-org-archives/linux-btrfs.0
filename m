@@ -1,76 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m53-178.qiye.163.com ([123.58.178.53]:54605 "EHLO
-	m53-178.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752571Ab2JYXhp (ORCPT
+Received: from m199-177.yeah.net ([123.58.177.199]:52114 "EHLO
+	m199-177.yeah.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754456Ab2JZDWr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Oct 2012 19:37:45 -0400
+	Thu, 25 Oct 2012 23:22:47 -0400
 Received: from mail-la0-f46.google.com (mail-la0-f46.google.com [209.85.215.46])
-	by m53-178.qiye.163.com (HMail) with ESMTPA id EFCCC1228437
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 07:37:40 +0800 (CST)
-Received: by mail-la0-f46.google.com with SMTP id h6so2090254lag.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 16:37:38 -0700 (PDT)
+	by m199-177.yeah.net (HMail) with ESMTPA id 809461001A8
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:22:44 +0800 (CST)
+Received: by mail-la0-f46.google.com with SMTP id h6so2156043lag.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2012 20:22:41 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20121025164350.GL10679@twin.jikos.cz>
-References: <CAMRmmpLUsC=L=4sUf09Gx97W1hvc2FoOMmqOydiZQ6XwumUoYQ@mail.gmail.com>
- <20121025164350.GL10679@twin.jikos.cz>
+In-Reply-To: <20121025151801.GG10679@twin.jikos.cz>
+References: <CAMRmmpLvLEC_SayRxBJHs=-sunrn_oA6Cy=-pRd+s1v4XDE24g@mail.gmail.com>
+ <20121025151801.GG10679@twin.jikos.cz>
 From: Rock Lee <zimilo@code-trick.com>
-Date: Fri, 26 Oct 2012 07:36:58 +0800
-Message-ID: <CAMRmmpJ9R2xPE-ppoyD+9N53eWH0CO1DB8HLCZPdtsb=SaMLeg@mail.gmail.com>
-Subject: Re: [PATCH V2][BTRFS-PROGS] [BUG] Fix Bug to corrupt the img file
- Reply-To: dave@jikos.cz
-To: Rock Lee <zimilo@code-trick.com>, linux-btrfs@vger.kernel.org
+Date: Fri, 26 Oct 2012 11:22:01 +0800
+Message-ID: <CAMRmmp+HMgd6pgHk313qQgUK7atftBTGE7rcuN9q1Agx02a3Ng@mail.gmail.com>
+Subject: Re: [BUG][PATCH][BTRFS-PROGS] Bug overflow fix
+To: dave@jikos.cz, Rock Lee <zimilo@code-trick.com>,
+        linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your review.
+Yeah, I will improve the patch to get it better.
 
-Sorry for the problem line wrapped, I will resend the patch.
+Thanks,
+- Rock
 
-
-Thanks
--Rock
-
-2012/10/26 David Sterba <dave@jikos.cz>:
-> On Fri, Oct 26, 2012 at 12:12:24AM +0800, Rock Lee wrote:
->> Fix Bug to corrupt the img file
+2012/10/25 David Sterba <dave@jikos.cz>:
+> On Wed, Oct 24, 2012 at 04:24:02PM +0800, Rock Lee wrote:
+>> If there's is a long name directory exists in the /dev, then an
+>> overflow will hit in function utils.c btrfs_scan_one_dir:1013!
 >>
->> Reproduce steps:
->>   > dd if=/dev/zero of=btrfs-small.img bs=1M count=1
->>   > ls -lh btrfs-small.img
->>   -rw-rw-r--. 1 rock rock 1.0M Oct 24 09:51 btrfs-small.img
->>                                       ^^^
->>   > mkfs.btrfs btrfs-small.img
->>   -rw-rw-r--. 1 rock rock 2.0M Oct 24 09:53 btrfs-small.img
->>                                       ^^^
+>> The minimal fix is to use snprintf instead of strcpy.
 >>
->> Here you can see the original img file's size goes larger to 2Mb.
->
-> Thanks, fixes this particular bug; although it crashes later at
->
->   mkfs.btrfs: volumes.c:796: btrfs_alloc_chunk: Assertion `!(ret)' failed
->
-> but this is a separate issue and you've sent patches for that IIRC.
->
+>> The reason why not using strncpy is that, if there is no null byte
+>> among the first n bytes of src, the string  placed  in  dest
+>> will not be null - terminated.
+>>
+>> ---
+>> index 3c88d2e..7200aef 100644
 >> --- a/utils.c
 >> +++ b/utils.c
->> @@ -557,6 +557,12 @@ int btrfs_prepare_device(int fd, char *file, int
->> zero_end, u64 *block_count_ret,
->>         }
->>         if (max_block_count)
->>                 block_count = min(block_count, max_block_count);
->> +
->> +       if (block_count < 2 * 1024 * 1024) {
->> +               fprintf(stderr, "size of %s is too small(less than
->> 2Mb)\n", file);
+>> @@ -969,7 +969,7 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+>>       pending = malloc(sizeof(*pending));
+>>       if (!pending)
+>>               return -ENOMEM;
+>> -     strcpy(pending->name, dirname);
+>> +     snprintf(pending->name, sizeof(pending->name), "%s", dirname);
 >
-> line wrapped, please check your mailer (easy to fix but additional
-> unnecessary work)
+> pending is defined as
 >
->> +               exit(1);
->> +       }
->> +
+> 919 struct pending_dir {
+> 920         struct list_head list;
+> 921         char name[256];
+> 922 };
 >
-> Otherwise ack from me.
+> and name is supposed to hold a full path, so it should be of PATH_MAX
+> (4096) size, 256 is a limit for a single filename.
 >
+> There's another hardcoded value for a path
+>
+> 971         dirname_len = strlen(pending->name);
+> 972         pathlen = 1024;
+> ^^^
+> 973         fullpath = malloc(pathlen);
+> 974         dirname = pending->name;
+>
+> that shuld be of PATH_MAX size.
+>
+> thanks,
 > david

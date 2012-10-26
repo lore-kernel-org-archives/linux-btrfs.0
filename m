@@ -1,51 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49298 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965226Ab2JZQVn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 12:21:43 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TRmfM-0001W3-Ks
-	for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2012 18:21:48 +0200
-Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 18:21:48 +0200
-Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 18:21:48 +0200
+Received: from magic.merlins.org ([209.81.13.136]:40348 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965556Ab2JZS3z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Oct 2012 14:29:55 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
+	id 1TRofL-00089Z-84
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:29:55 -0700
+Date: Fri, 26 Oct 2012 11:29:55 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-From: Gabriel <g2p.code@gmail.com>
-Subject: Re: [RFC] Systemcall for offline deduplication
-Date: Fri, 26 Oct 2012 16:21:29 +0000 (UTC)
-Message-ID: <k6eda8$1ad$2@ger.gmane.org>
-References: <507C4343.6060305@shiftmail.org>
-	<20121015201516.GB10679@twin.jikos.cz> <k5m5du$keo$1@ger.gmane.org>
-	<20121026062614.GA19617@blackbox.djwong.org> <k6ec1a$1ad$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707
+Message-ID: <20121026182955.GN8019@merlins.org>
+References: <20121025195805.GA24111@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121025195805.GA24111@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> As for online dedupe (which seems useful for reducing writes), would it
->> be useful if one could, given a write request, compare each of the
->> dirty pages in that request against whatever else the fs has loaded in
->> the page cache, and try to dedupe against that?  We could probably
->> speed up the search by storing hashes of whatever we have in the page
->> cache and using that to find candidates for the memcmp() test.  This of
->> course is not a comprehensive solution, but (a)
->> we combine it with offline dedupe later and (b) we don't make a disk
->> write out data that we've recently read or written.  Obviously you'd
->> want to be able to opt-in to this sort of thing with an inode flag or
->> something.
+If any devs want info out of my drive, please ask today, I really need to
+fix it tomorrow.
+I'll try btrfs-zero-log otherwise and if not, wipe and start over.
+
+Marc
+
+On Thu, Oct 25, 2012 at 12:58:05PM -0700, Marc MERLIN wrote:
+> Howdy,
 > 
-> That's another kettle of fish, and will require an entirely different
-> approach. ZFS has some experience doing that. While their implementation
-> may reduce writes it is at the cost of storing hashes of every block in
-> RAM.
+> I can wait a day or maybe 2 before I have to wipe and restore from backup.
+> Please let me know if you have a patch against 3.6.3 you'd like me to try
+> to mount/recover this filesystem, or whether you'd like me to try btrfsck.
+> 
+> 
+> My laptop had a problem with its boot drive which prevented linux
+> from writing to it, and in turn caused btrfs to have incomplete writes 
+> to it.
+> After reboot, the boot drive was fine, but the btrfs filesystem has
+> a corruption that prevents it from being mounted.
+> 
+> Unfortunately the mount crash prevents writing of crash data to even another
+> drive since linux stops before the crash data can be written to syslog.
+> 
+> Picture #1 shows a dump when my laptop crashed (before reboot).
+> btrfs no csum found for inode X start Y
+> http://marc.merlins.org/tmp/crash.jpg
+> 
+> Mounting with 3.5.0 and 3.6.3 gives the same error:
+> 
+> gandalfthegreat:~# mount -o recovery,skip_balance,ro /dev/mapper/bootdsk                                  
+> 
+> shows
+> btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+> (there are 2 lines, not sure why)
+> 
+> kernel BUG at fs/btrfs/volumes.c:3707
+> int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
+> {
+> 	struct extent_map *em;
+> 	struct map_lookup *map;
+> 	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> 	int ret;
+> 
+> 	read_lock(&em_tree->lock);
+> 	em = lookup_extent_mapping(em_tree, logical, len);
+> 	read_unlock(&em_tree->lock);
+> 	BUG_ON(!em);  <---
+> 
+> If the snapshot helps (sorry, hard to read, but usable):
+> http://marc.merlins.org/tmp/btrfs_bug.jpg
+> 
+> Questions:
+> 1) Any better way to get a proper dump without serial console?
+> (I hate to give you pictures)
+> 
+> 2) Should I try btrfsck now, or are there other mount options than
+> mount -o recovery,skip_balance,ro /dev/mapper/bootdsk 
+> I should try?
+> 
+> 3) Want me to try btrfsck although it may make it impossible for me to
+> reproduce the bug and test a fix, as well as potentially break the filesystem
+> more (last time I tried btrfsck, it outputted thousands of lines and never converged
+> to a state it was happy with)
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/  
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Though your proposal is quite different from the ZFS thing, and might 
-actually be useful for a larger public, so forget I said anything about 
-it.
-
-
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

@@ -1,80 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:52661 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933147Ab2JZOTg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 10:19:36 -0400
-Date: Fri, 26 Oct 2012 10:19:32 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20121026141932.GD23729@shiny>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from qmta11.emeryville.ca.mail.comcast.net ([76.96.27.211]:50965
+	"EHLO qmta11.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S964824Ab2JZPyn convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Oct 2012 11:54:43 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: Naming of subvolumes
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAD2FfiExmofSpVsLTpZaZo86gEnPn11Uzd=B7qu0SKv8Ybo7TA@mail.gmail.com>
+Date: Fri, 26 Oct 2012 09:54:40 -0600
+Message-Id: <B7B1C115-D370-4B85-9119-E09152105BCB@colorremedies.com>
+References: <1351168220.1923.6.camel@hughsie-work.lan> <64967FA4-4DC1-478E-A920-1E5237905DAE@colorremedies.com> <CAD2FfiExmofSpVsLTpZaZo86gEnPn11Uzd=B7qu0SKv8Ybo7TA@mail.gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
 
-My for-linus branch:
+On Oct 26, 2012, at 2:27 AM, Richard Hughes <hughsient@gmail.com> wrote:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-Has our series of fixes for the next rc.  The biggest batch is from Jan
-Schmidt, fixing up some problems in our subvolume quota code and fixing
-btrfs send/receive to work with the new extended inode refs.
+>> And if you're going to apply the upgrade to the snapshot, or to the top level file system?
+> 
+> That's a very good question. I was going to apply the upgrade to the
+> top level file system, and then roll-back to the old snapshot if the
+> new upgrade state does not boot to a GUI. It would work equally well
+> applying the update to the snapshot and then switching to that,
+> although I don't know how well userspace is going to cope switching to
+> a new subvolume at early-runtime given the fact we're running the
+> upgrade itself from the filesystem and not in a special initrd or
+> something. Also, we need to ready out lots of upgrade data (200Mb+?)
+> from somewhere, so doing this on the snapshot would mean creating the
+> snapshot and copying the data there *before* we reboot to install
+> upgrades, and we really want to create the snapshot when we're sure
+> the system will boot.
 
-My git tree is against 3.6, but these were all retested against your
-current git.
+a. Upgrade top level:
+Maybe download upgrade data to /tmp, upon completion snapshot the current system state, then copy the upgrade data to persistent storage and reboot; upgrade of top level boot root begins. The snapshot is the regressive state in case of failure.
 
-Jan Schmidt (7) commits (+149/-76):
-    Btrfs: don't put removals from push_node_left into tree mod log twice (+7/-2)
-    Btrfs: fix a tree mod logging issue for root replacement operations (+2/-8)
-    Btrfs: tree mod log's old roots could still be part of the tree (+21/-4)
-    Btrfs: fix extent buffer reference for tree mod log roots (+1/-1)
-    Btrfs: extended inode refs support for send mechanism (+94/-58)
-    Btrfs: comment for loop in tree_mod_log_insert_move (+5/-0)
-    Btrfs: determine level of old roots (+19/-3)
+b. Upgrade snapshot:
+Create snapshot, mount it somewhere; download upgrade data to a location within the snapshot; reboot from the snapshot, it upgrades itself and cleans up. The top level is the regressive state in case of failure.
 
-Josef Bacik (2) commits (+8/-6):
-    Btrfs: Use btrfs_update_inode_fallback when creating a snapshot (+6/-5)
-    Btrfs: do not bug when we fail to commit the transaction (+2/-1)
+Either way, 200MB of downloaded (and undeleted) upgrade data isn't stuck in a snapshot after it's used. And either way the snapshot is bootable.
 
-Stefan Behrens (1) commits (+2/-2):
-    Btrfs: Fix wrong error handling code
+If you get sufficient metadata in the snapshot, then you can name/rename the snapshots whatever you want. I'd also point out it's valid for the user to prefer a different organization, i.e. instead of Fedora taking over the top level of a btrfs volume, to create subvolumes Fedora 17, Fedora 18, Ubuntu 12X, etc., at the top level, and insert boot and root and possibly home in those. In which case the upgrade mechanism should still work.
 
-Lukas Czerner (1) commits (+2/-1):
-    btrfs: Return EINVAL when length to trim is less than FSB
+> 
+>> So I'm going to guess that you will actually create a subvolume named something like @system-upgrade-20121025, and then snapshot root, boot, and home into that subvol?
+> 
+> Not /home. Packages shouldn't be installing stuff there anyway, and
+> /home is going to typically much bigger than /root or /boot.
 
-Arne Jansen (1) commits (+2/-1):
-    Btrfs: send correct rdev and mode in btrfs-send
+OK so small problem here is that today /etc/fstab is pointing to the home subvolume in a relative location to the default subvolume. The fstab mount option is subvol=home, not subvol=/home, not subvolid=xxx.
 
-Gabriel de Perthuis (1) commits (+1/-1):
-    Fix a sign bug causing invalid memory access in the ino_paths ioctl.
+So if you want to use changing default subvolumes to make the switch between the current updated state, and rollback states, (which is milliseconds fast), which also means no changes needed to grub's core.img or grub.cfg (since those use relative references for boot and root), a change is needed for home to use an absolute reference: either subvol=/home or use subvolid= in the fstab.
 
-Liu Bo (1) commits (+5/-3):
-    Btrfs: fix memory leak when cloning root's node
+While a bit more obscure in the /etc/fstab the subvolid= is more reliable. That home can be renamed or moved anywhere and it'll still work. I think it's legitimate for a user to create or want
 
-Alex Lyakas (1) commits (+13/-14):
-    Btrfs: Send: preserve ownership (uid and gid) also for symlinks.
 
-Miao Xie (1) commits (+7/-0):
-    Btrfs: fix deadlock caused by the nested chunk allocation
+>> If the upgrade is not successful, you change the default subvolume ID to that of @system-upgrade-20121025.
+> 
+> I was actually thinking of using btrfs send | btrfs receive to roll
+> back the root manually. It would be better if btrfs could swap the
+> subvolume ID's of @system-upgrade-20121025 and 0, as then we don't get
+> a snapshot that's useless.
 
-Tsutomu Itoh (1) commits (+13/-4):
-    Btrfs: fix memory leak in btrfs_quota_enable()
+I haven't tried btrfs send/receive for this purpose, so I can't compare. But btrfs subvolume set-default is faster than the release of my finger from the return key. And it's easy enough the user could do it themselves if they had reasons for regression to a snapshot that differ than the automagic determination of the upgrade pass/fail.
 
-Total: (17) commits (+202/-108)
- fs/btrfs/backref.c     |  28 ++++-----
- fs/btrfs/backref.h     |   4 ++
- fs/btrfs/ctree.c       |  70 +++++++++++++++++-----
- fs/btrfs/ctree.h       |   3 +
- fs/btrfs/extent_io.c   |   4 +-
- fs/btrfs/inode.c       |   7 +--
- fs/btrfs/ioctl.c       |   6 +-
- fs/btrfs/qgroup.c      |  17 ++++--
- fs/btrfs/send.c        | 156 ++++++++++++++++++++++++++++++-------------------
- fs/btrfs/transaction.c |   2 +-
- fs/btrfs/volumes.c     |   7 +++
- 11 files changed, 199 insertions(+), 105 deletions(-)
+The one needed change, however, is to get /etc/fstab to use an absolute reference for home.
+
+
+Chris Murphy
+

@@ -1,73 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52811 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757757Ab2JZJCm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 05:02:42 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TRfoX-0006uh-63
-	for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2012 11:02:49 +0200
-Received: from cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com ([81.97.59.215])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:02:49 +0200
-Received: from samtygier by cpc2-with5-2-0-cust470.1-4.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:02:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: sam tygier <samtygier@yahoo.co.uk>
-Subject: Re: problem replacing failing drive
-Date: Fri, 26 Oct 2012 10:02:31 +0100
-Message-ID: <508A51A7.30707@yahoo.co.uk>
-References: <k632c9$3df$1@ger.gmane.org>,<k6c9ct$tb5$1@ger.gmane.org> <COL002-W72E3D3908E97F64D9F1866B07F0@phx.gbl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <COL002-W72E3D3908E97F64D9F1866B07F0@phx.gbl>
+Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:50849 "EHLO
+	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751750Ab2JZK5b convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Oct 2012 06:57:31 -0400
+Received: from 168.139.79.188.dynamic.jazztel.es ([188.79.139.168] helo=mail.viric.name)
+	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <viric@viric.name>)
+	id 1TRhbS-000BrN-S2
+	for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2012 10:57:27 +0000
+Date: Fri, 26 Oct 2012 12:57:22 +0200
+From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Can't replace a faulty disk of raid1
+Message-ID: <20121026105721.GU2052@vicerveza.homeunix.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/10/12 22:37, Kyle Gates wrote:
->> On 22/10/12 10:07, sam tygier wrote:
->>> hi,
->>>
->>> I have a 2 drive btrfs raid set up. It was created first with a single drive, and then adding a second and doing
->>> btrfs fi balance start -dconvert=raid1 /data
->>>
->>> the original drive is showing smart errors so i want to replace it. i dont easily have space in my desktop for an extra disk, so i decided to proceed by shutting down. taking out the old failing drive and putting in the new drive. this is similar to the description at
->>> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_Failed_Devices
->>> (the other reason to try this is to simulate what would happen if a drive did completely fail).
->>
->> If i reconnect the failing drive then I can mount the filesystem with no errors, a quick glance suggests that the data is all there.
->>
->> Label: 'bdata' uuid: 1f07081c-316b-48be-af73-49e6f76535cc
->> Total devices 2 FS bytes used 2.50TB
->> devid 2 size 2.73TB used 2.73TB path /dev/sde1 <-- this is the drive that i wish to remove
->> devid 1 size 2.73TB used 2.73TB path /dev/sdd2
->>
->> sudo btrfs filesystem df /mnt
->> Data, RAID1: total=2.62TB, used=2.50TB
->> System, DUP: total=40.00MB, used=396.00KB
->> System: total=4.00MB, used=0.00
->> Metadata, DUP: total=112.00GB, used=3.84GB
->> Metadata: total=8.00MB, used=0.00
->>
->> is the failure to mount when i remove sde due to it being dup, rather than raid1?
-> 
-> Yes, I would say so.
-> Try a
-> btrfs balance start -mconvert=raid1 /mnt
-> so all metadata is on each drive.
+Hello,
 
-Thanks
-btrfs balance start -mconvert=raid1 /mnt
-did the trick. It gave "btrfs: 9 enospc errors during balance" errors the first few times i ran it, but got there in the end (smaller number of errors each time). the volume is pretty full, so i'll forgive it, (though is "Metadata, RAID1: total=111.84GB, used=3.83GB" a reasonable ratio?).
+I had a raid1 btrfs (540GB) on vanilla 3.6.3, a disk failed, and removed it at
+power off, plugged in a new one, partitioned it (to 110GB, by error), and added
+it to btrfs.
 
-i can now successfully remove the failed device and mount the filesystem in degraded mode.
+I tried to remove the missing device, and it said "Input/output error" after a
+while. Next attempts simply gave "Invalid argument".
 
-It seems like the system blocks get convert automatically.
+I repartitioned, rebooted the system, and made the partition grow: "btrfs fi
+resize 3:max /"
 
-i have added an example for how to do this at https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Adding_New_Devices
+# btrfs fi show
+Label: 'mainbtrfs'  uuid: 2ebf9e90-104c-47a4-adff-fada1ce3b682
+    Total devices 3 FS bytes used 445.06GB
+    devid    1 size 539.95GB used 539.95GB path /dev/sda5
+    devid    3 size 539.95GB used 96.90GB path /dev/sdb1   <= New disk
+    *** Some devices missing
 
-Thanks,
-Sam
+The size appeared fine (I checked it at byte-amount level, to ensure I have not
+set 4K smaller for example). But attempting the 'btrfs device delete missing /'
+again gave the same outcome.
 
+I tried "btrfs balance start /", and after a while, also ends with "Input/output
+error". In any of the cases above, I have an error message in dmesg. dmesg only
+shows usual 'relocating block...' and 'found 4 extents'.
+
+I see that the /dev/sdb1, in any operation above I do, never goes beyond those 'used
+96.90GB'. So, I'm stuck not being able to go back to raid1, with a degraded
+mount.
+
+Some data:
+
+# btrfs fi df /
+Data, RAID1: total=507.62GB, used=417.08GB
+Data: total=25.32GB, used=22.48GB
+System, RAID1: total=32.00MB, used=92.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=19.97GB, used=5.50GB
+
+Mount log:
+[   10.939163] device label mainbtrfs devid 1 transid 194548 /dev/sda5
+[   10.939856] btrfs: allowing degraded mounts
+[   10.939939] btrfs: disk space caching is enabled
+[   10.940652] warning devid 2 missing
+[   10.987500] btrfs: bdev (null) errs: wr 6702, rd 2632, flush 312, corrupt 1970, gen 573
+[   10.987636] btrfs: bdev /dev/sda5 errs: wr 52, rd 13, flush 0, corrupt 2, gen 8
+[   14.391309] btrfs: unlinked 1 orphans
+[   22.319849] btrfs: use lzo compression
+[   22.319937] btrfs: disk space caching is enabled
+[   27.481405] udevd[1451]: starting version 173
+[   28.493786] device label mainbtrfs devid 3 transid 194549 /dev/sdb1
+[   28.930870] device fsid 30781650-3053-4273-b640-ec86a442c945 devid 1 transid 2272 /dev/sda3
+[   28.947632] device label mainbtrfs devid 1 transid 194549 /dev/sda5
+
+
+Any help?
+
+Thank you,
+Lluís.

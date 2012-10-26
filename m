@@ -1,100 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:53316 "EHLO
-	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753593Ab2JZK76 convert rfc822-to-8bit (ORCPT
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:35402 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932294Ab2JZLl7 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 06:59:58 -0400
-Received: from 168.139.79.188.dynamic.jazztel.es ([188.79.139.168] helo=mail.viric.name)
-	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TRhdt-000Csu-BF
-	for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2012 10:59:57 +0000
-Date: Fri, 26 Oct 2012 12:59:55 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: Can't replace a faulty disk of raid1
-Message-ID: <20121026105954.GV2052@vicerveza.homeunix.net>
-References: <20121026105721.GU2052@vicerveza.homeunix.net>
+	Fri, 26 Oct 2012 07:41:59 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so805781eaa.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 04:41:58 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20121026105721.GU2052@vicerveza.homeunix.net>
+In-Reply-To: <20121026105954.GV2052@vicerveza.homeunix.net>
+References: <20121026105721.GU2052@vicerveza.homeunix.net>
+	<20121026105954.GV2052@vicerveza.homeunix.net>
+Date: Fri, 26 Oct 2012 13:41:58 +0200
+Message-ID: <CAJHuE_CDmQhKt0i18WsFxVj_-hPNiAL6_fhkdt1b+eQnCUoDhw@mail.gmail.com>
+Subject: Re: Can't replace a faulty disk of raid1
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: =?ISO-8859-1?Q?Llu=EDs_Batlle_i_Rossell?= <viric@viric.name>
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Another topposting detail:
+Hi Luis
 
-I've run "btrfs scrub start /", and it finished properly. So it seems my data is
-still there:
-scrub status for 2ebf9e90-104c-47a4-adff-fada1ce3b682
-        scrub started at Fri Oct 26 10:13:21 2012, running for 7719 seconds
-        total bytes scrubbed: 434.54GB with 0 errors
+On Fri, Oct 26, 2012 at 12:59 PM, Lluís Batlle i Rossell
+<viric@viric.name> wrote:
+[...]
+>>
+>> I tried to remove the missing device, and it said "Input/output error" after a
+>> while. Next attempts simply gave "Invalid argument".
 
-If someone asks what can be "Data: total=25.32GB, used=22.48GB", it may come
-from a "balance start -dconvert=single /" I had started *before* I unplugged the
-faulty disk, but at some point cancelled it.
+Todate BTRFS is not capable to remove (via btrfs device delete <path>)
+a missing disk. The user has to unmount the filesystem and remount-it
+in "degraded" mode.
+I.e.:
 
-Thank you in advance,
-Lluís.
+# umount /mnt/btrfs
+# mount -o degraded /dev/sdX /mnt/btrfs
 
-On Fri, Oct 26, 2012 at 12:57:21PM +0200, Lluís Batlle i Rossell wrote:
-> Hello,
-> 
-> I had a raid1 btrfs (540GB) on vanilla 3.6.3, a disk failed, and removed it at
-> power off, plugged in a new one, partitioned it (to 110GB, by error), and added
-> it to btrfs.
-> 
-> I tried to remove the missing device, and it said "Input/output error" after a
-> while. Next attempts simply gave "Invalid argument".
-> 
-> I repartitioned, rebooted the system, and made the partition grow: "btrfs fi
-> resize 3:max /"
-> 
-> # btrfs fi show
-> Label: 'mainbtrfs'  uuid: 2ebf9e90-104c-47a4-adff-fada1ce3b682
->     Total devices 3 FS bytes used 445.06GB
->     devid    1 size 539.95GB used 539.95GB path /dev/sda5
->     devid    3 size 539.95GB used 96.90GB path /dev/sdb1   <= New disk
->     *** Some devices missing
-> 
-> The size appeared fine (I checked it at byte-amount level, to ensure I have not
-> set 4K smaller for example). But attempting the 'btrfs device delete missing /'
-> again gave the same outcome.
-> 
-> I tried "btrfs balance start /", and after a while, also ends with "Input/output
-> error". In any of the cases above, I have an error message in dmesg. dmesg only
-> shows usual 'relocating block...' and 'found 4 extents'.
-> 
-> I see that the /dev/sdb1, in any operation above I do, never goes beyond those 'used
-> 96.90GB'. So, I'm stuck not being able to go back to raid1, with a degraded
-> mount.
-> 
-> Some data:
-> 
-> # btrfs fi df /
-> Data, RAID1: total=507.62GB, used=417.08GB
-> Data: total=25.32GB, used=22.48GB
-> System, RAID1: total=32.00MB, used=92.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=19.97GB, used=5.50GB
-> 
-> Mount log:
-> [   10.939163] device label mainbtrfs devid 1 transid 194548 /dev/sda5
-> [   10.939856] btrfs: allowing degraded mounts
-> [   10.939939] btrfs: disk space caching is enabled
-> [   10.940652] warning devid 2 missing
-> [   10.987500] btrfs: bdev (null) errs: wr 6702, rd 2632, flush 312, corrupt 1970, gen 573
-> [   10.987636] btrfs: bdev /dev/sda5 errs: wr 52, rd 13, flush 0, corrupt 2, gen 8
-> [   14.391309] btrfs: unlinked 1 orphans
-> [   22.319849] btrfs: use lzo compression
-> [   22.319937] btrfs: disk space caching is enabled
-> [   27.481405] udevd[1451]: starting version 173
-> [   28.493786] device label mainbtrfs devid 3 transid 194549 /dev/sdb1
-> [   28.930870] device fsid 30781650-3053-4273-b640-ec86a442c945 devid 1 transid 2272 /dev/sda3
-> [   28.947632] device label mainbtrfs devid 1 transid 194549 /dev/sda5
-> 
-> 
-> Any help?
-> 
-> Thank you,
-> Lluís.
+
+Now I am noticing that the filesystem is the root filesystem. This is
+a bit more difficult to handle. I think that you have to pass the
+right parameter to the boot loader to do that.
+
+For example on debian, you must pass the following option to grub
+(typically to the line of the kernel)
+
+rootflags=degraded
+
+I don't know i is valid to do something like:
+
+# mount -o remount,degraded /
+
+BR
+G.Baroncelli

@@ -1,221 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:46480 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753417Ab2J0Qn6 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Oct 2012 12:43:58 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org, "kreijack@inwind.it" <kreijack@inwind.it>
+Received: from loup.kjorling.se ([87.237.208.114]:52585 "EHLO loup.kjorling.se"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932960Ab2J0Tzg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 27 Oct 2012 15:55:36 -0400
+Received: from yeono.kjorling.se (c-1717e655.6036809--62697410.cust.bredbandsbolaget.se [85.230.23.23])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(Client CN "yeono", Issuer "yeono" (not verified))
+	by loup.kjorling.se (Postfix) with ESMTPS id E0842B914008
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 19:55:14 +0000 (UTC)
+Received: from yeono.kjorling.se (localhost [127.0.0.1])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(Client did not present a certificate)
+	by yeono (Postfix) with ESMTPS id 7A50B47E1BE
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 21:55:14 +0200 (CEST)
+Date: Sat, 27 Oct 2012 19:55:13 +0000
+From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-Date: Sat, 27 Oct 2012 18:43:40 +0200
-References: <50899151.1070503@inwind.it> (sfid-20121026_011035_692410_A53EF7F2)
-In-Reply-To: <50899151.1070503@inwind.it>
+Message-ID: <20121027195513.GS2381@yeono.kjorling.se>
+References: <50899151.1070503@inwind.it>
+ <201210271843.40540.Martin@lichtvoll.de>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201210271843.40540.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <201210271843.40540.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 25. Oktober 2012 schrieb Goffredo Baroncelli:
-> Hi all,
+On 27 Oct 2012 18:43 +0200, from Martin@lichtvoll.de (Martin Steigerwald):
+> Possibly this could be done tabular as well, like:
 > 
-> this is a new attempt to improve the output of the command "btrfs fi
-> df".
+>                         vdb		vdc		vdd
+> Data, RAID 0	307,25MB	307,25MB	307,25MB
+> …
+> System,RAID1	-		8MB		8MB
+> …
+> Unused		2,23GB	2,69GB	2,24GB
 > 
-> The previous attempt received a good reception. However there was no a
-> general consensus about the wording.
-> 
-> Moreover I still didn't understand how btrfs was using the disks.
-> A my first attempt was to develop a new command which shows how the
-> disks are divided in chunks. However it still was no clear. Then I
-> realised that I need to merge the two output.
-> 
-> Below the results. It shows how the disks is used by the different
-> chunks.
-> 
-> The code is pullable from
->         http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-> branch
->         info-cmd
-> 
-> I don't publish the patched because aren't in a good shape. However I
-> really like the output. The example is a filesystem based on three
-> disks of 3GB.
-> 
-> It is clear that:
-> - RAID0 uses all the disks
-> - RAID1 uses two different disks
-> 
-> Comments are welcome.
-> 
-> Known bugs:
-> - if a filesystem uses a disk but there is any chunk, the disk is not
-> shown (solvable)
-> - this command need root capability (I use the BTRFS_IOC_TREE_SEARCH
-> to get the chunk info; so that is unavoidable)
-> 
-> 
-> ghigo@emulato:~$ sudo ./btrfs fi df /mnt/btrfs1/
-> [sudo] password for ghigo:
-> Path: /mnt/btrfs1
-> Summary:
->   Disk_size:		   9.00GB
->   Disk_allocated:	   1.83GB
->   Disk_unallocated:	   7.17GB
->   Used:			 284.00KB
->   Free_(Estimated):	   6.76GB	(Max: 8.54GB, min: 4.96GB)
->   Data_to_disk_ratio:	     75 %
-> 
-> Allocated_area:
->   Data,RAID0: Size:921.75MB, Used:256.00KB
->      /dev/vdc	  307.25MB
->      /dev/vdb	  307.25MB
->      /dev/vdd	  307.25MB
-> 
->   Data,Single: Size:8.00MB, Used:0.00
->      /dev/vdb	    8.00MB
-> 
->   System,RAID1: Size:8.00MB, Used:4.00KB
->      /dev/vdd	    8.00MB
->      /dev/vdc	    8.00MB
-> 
->   System,Single: Size:4.00MB, Used:0.00
->      /dev/vdb	    4.00MB
-> 
->   Metadata,RAID1: Size:460.94MB, Used:24.00KB
->      /dev/vdb	  460.94MB
->      /dev/vdd	  460.94MB
-> 
->   Metadata,Single: Size:8.00MB, Used:0.00
->      /dev/vdb	    8.00MB
-> 
->   Unused:
->      /dev/vdb	    2.23GB
->      /dev/vdc	    2.69GB
->      /dev/vdd	    2.24GB
+> I like this. But what if the filesystem has 100 disks?
 
-Just a quick feedback:
+Maybe I'm just not familiar enough with btrfs yet to punch an
+immediate hole in the idea, but how about pivoting that table? Columns
+for data values ("data, raid 0", "system, raid 1", "unused", ...) and
+rows for the underlying devices? Something like this, copying the
+numbers from your example. And I'm using colon here rather than comma,
+because I _believe_ that it better captures the intent.
 
-I think this is rather long. And I find it more complicated than the older 
-output.
+           Data: RAID 0   System: RAID 1   Unused
+/dev/vdb     307.25 MB                -        2.23 GB
+/dev/vdc     307.25 MB             8 MB        2.69 GB
+/dev/vdd     307.25 MB             8 MB        2.24 GB
+           ============   ==============   ============
+TOTAL        921.75 MB            16 MB        7.16 GB
 
-But maybe its more the vertically oriented formatting.
+This feels like it should work quite well as long as only 3-5 columns
+plus the device specifier are needed (which would appear to be the
+case), and it gives a quick run-down of the numbers at a glance. If
+the filesystem consists of a large number of devices, the header could
+possibly be repeated just before the "total" row (then something like
+"btrfs fi df | tail -n2" will still work for getting the executive
+summary). The risk would be if extremely long device names are used,
+but that should be relatively trivial to solve. Maybe something like
+this if the terminal width does not allow the data for each device to
+fit on a single line?
 
-How about:
+           Data: RAID 0   System: RAID 1   Unused
+/dev/disk/by-uuid/f72d74f4-206d-11e2-aa11-cb4348b38f9e
+             307.25 MB                -      2.23 GB
+/dev/disk/by-uuid/044e48de-206e-11e2-8a63-8366c6174d47
+             307.25 MB             8 MB      2.69 GB
+/dev/disk/by-uuid/0b1309a2-206e-11e2-aa21-234780dc3782
+             307.25 MB             8 MB      2.24 GB
+           ============   ==============   ==========
+TOTAL        921.75 MB            16 MB      7.16 GB
 
+Both of the above, as you will note, are very similar to how GNU df
+solves the same problem. Line breaking could also be disabled if
+standard output is not a TTY, which means that for example passing the
+output to grep would still work like one would expect.
 
-ghigo@emulato:~$ sudo ./btrfs fi df /mnt/btrfs1/
-=== regular output ===
-[sudo] password for ghigo:
-Path: /mnt/btrfs1
-Summary:
-  Disk_size:		   9.00GB
-  Disk_allocated:	   1.83GB
-  Disk_unallocated:	   7.17GB
-  Used:			 284.00KB
-  Free_(Estimated):	   6.76GB	(Max: 8.54GB, min: 4.96GB)
-  Data_to_disk_ratio:	     75 %
+Any reason why such an output format wouldn't work for a summary view?
 
-Allocated_area:
-  Data,RAID0: 256.00KB of 921.75MB used
-  Data,Single: 0 of 8.00MB used
-  System,RAID1: 4 KB of 8.00MB used
-  System,Single: 0 of 4.00MB used
-  Metadata,RAID1: 24KB of 460.94MB used
-  Metadata,Single: 0 of 8.00MB used
-
-^^^ possibly tabular ^^^
-
-=== only with -d / --disks or -v? ===
-
-/dev/vdb:
-  Data, RAID 0		307.25MB
-  Data,Single		8MB
-  System,Single		4MB
-  Metadata,RAID1	460.94MB
-  Metadata,Single	8MB
-  Unused			2,23GB
-
-/dev/vdc:
-  Data,RAID 0		307,25MB
-  System,RAID1		8MB
-  Unused			2,69GB
-
-/dev/vdd:
-  Data,RAID 0		307.25MB
-  System,RAID1		8MB
-  Metadata,RAID1	460.94MB
-  Unused			2.24GB
-
-(one could include the usage in single disk view as well.)
-
-
-
-Hmmm... but that also looks quite heavy.
-
-
-Possibly this could be done tabular as well, like:
-
-                        vdb		vdc		vdd
-Data, RAID 0	307,25MB	307,25MB	307,25MB
-…
-System,RAID1	-		8MB		8MB
-…
-Unused		2,23GB	2,69GB	2,24GB
-
-I like this. But what if the filesystem has 100 disks?
-
-
-Hmmm, how about:
-
-                        vdb		vdc		vdd
-Data, RAID 0	307,25MB	307,25MB	307,25MB
-			vde		vdf		vdg
-			307,25MB	200MB	200MB
-…
-			vdb		vdc		vdd
-System,RAID1	-		8MB		8MB
-…
-			vdb		vdc		vdd
-Unused		2,23GB	2,69GB	2,24GB
-			vde		vdf		vdg
-			2,25GB	2,8GB	2,21GB
-
-in such a case? Then each line has to have headings with devices. As long 
-as one line is enough, it only needs to be printed once at the beginning 
-of the table.
-
-So in some form a tabular matrix of devices.
-
-
-Other idea might be:
-
-Allocated_area:
-  Data,RAID0: Size:921.75MB, Used:256.00KB
-      /dev/vdb: 307.25MB	/dev/vdc: 307.25MB	/dev/vdd: 307.25MB
-
-And if same possibly:
-
-Allocated_area:
-  Data,RAID0: Size:921.75MB, Used:256.00KB
-      /dev/vd[bcd]: 307.25MB
-
-
-Hmmm, this is all playing with the same presentation.
-
-
-Possibly one can at least hide empty trees. Or have them not created at 
-all at mkfs.btrfs time. There is no point in having / showing 
-Metadata,Single I think as long as it is not used.
-
-
-Will think about this a bit.
-
-Anyway I am fine with starting somewhere. Improvents can be made later on 
-also taking user feedback into account.
-
-Thanks,
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
+                “People who think they know everything really annoy
+                those of us who know we don’t.” (Bjarne Stroustrup)

@@ -1,148 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:32494 "EHLO
-	aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751125Ab2J0KgB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Oct 2012 06:36:01 -0400
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-	by aserp1050.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9RAV9FA031306
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 10:31:10 GMT
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9RATnNx006637
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 10:29:50 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9RATmBE029334
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 10:29:49 GMT
-Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9RATmpc032357
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 05:29:48 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: make snapshot-aware defrag as a mount option
-Date: Sat, 27 Oct 2012 18:28:41 +0800
-Message-Id: <1351333721-3220-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
-References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
+Received: from qmta15.emeryville.ca.mail.comcast.net ([76.96.27.228]:45031
+	"EHLO qmta15.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1759160Ab2J0QJA convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 27 Oct 2012 12:09:00 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: Naming of subvolumes
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAE5mzvhaM9Y-Dp1WSZSgseFYR=aFjcQqVWcxXOQ05YhXfXFUTA@mail.gmail.com>
+Date: Sat, 27 Oct 2012 10:08:57 -0600
+Message-Id: <A171EE43-7547-4C01-9159-C55B706E5E35@colorremedies.com>
+References: <1351168220.1923.6.camel@hughsie-work.lan> <64967FA4-4DC1-478E-A920-1E5237905DAE@colorremedies.com> <CAD2FfiExmofSpVsLTpZaZo86gEnPn11Uzd=B7qu0SKv8Ybo7TA@mail.gmail.com> <B7B1C115-D370-4B85-9119-E09152105BCB@colorremedies.com> <CAE5mzvhaM9Y-Dp1WSZSgseFYR=aFjcQqVWcxXOQ05YhXfXFUTA@mail.gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This feature works on our crucial write endio path, so if we've got
-lots of fragments to process, it will be kind of a disaster to the
-performance, so I make such a change.
 
-One can benifit from it while mounting with '-o snap_aware_defrag'.
+On Oct 26, 2012, at 7:58 PM, cwillu <cwillu@cwillu.com> wrote:
+> 
+> I'd argue that everything should be absolute references to subvolumes
+> (/@home, /@, etc), and neither set-default nor subvolume id's should
+> be touched.  
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ctree.h |    1 +
- fs/btrfs/inode.c |   16 ++++++++++------
- fs/btrfs/ioctl.c |    5 +++--
- fs/btrfs/super.c |   12 ++++++++++--
- 4 files changed, 24 insertions(+), 10 deletions(-)
+grub's core.img prefix is relative to the current default subvolume. I'm unaware of an absolute means of specifying the prefix.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 926c9ff..f9cd9c9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1756,6 +1756,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
-+#define BTRFS_MOUNT_SA_DEFRAG		(1 << 23)
- 
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 35e6993..069499e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2488,13 +2488,17 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 			 ordered_extent->file_offset + ordered_extent->len - 1,
- 			 0, &cached_state);
- 
--	ret = test_range_bit(io_tree, ordered_extent->file_offset,
--			ordered_extent->file_offset + ordered_extent->len - 1,
--			EXTENT_DEFRAG, 1, cached_state);
--	if (ret && btrfs_root_last_snapshot(&root->root_item) >=
-+	if (btrfs_test_opt(root, SA_DEFRAG)) {
-+		ret = test_range_bit(io_tree, ordered_extent->file_offset,
-+				     ordered_extent->file_offset +
-+				     ordered_extent->len - 1,
-+				     EXTENT_DEFRAG, 1, cached_state);
-+		if (ret &&
-+		    btrfs_root_last_snapshot(&root->root_item) >=
- 						BTRFS_I(inode)->generation) {
--		/* the inode is shared */
--		new = record_old_file_extents(inode, ordered_extent);
-+			/* the inode is shared */
-+			new = record_old_file_extents(inode, ordered_extent);
-+		}
- 	}
- 
- 	if (nolock)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6116880..1367165 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1058,8 +1058,9 @@ again:
- 	}
- 
- 
--	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
--			  &cached_state, GFP_NOFS);
-+	if (btrfs_test_opt(BTRFS_I(inode)->root, SA_DEFRAG))
-+		set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start,
-+				  page_end - 1, &cached_state, GFP_NOFS);
- 
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 			     page_start, page_end - 1, &cached_state,
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 915ac14..24eac5f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -308,8 +308,8 @@ enum {
- 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
- 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
- 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
--	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
--	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
-+	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_sa_defrag,
-+	Opt_inode_cache, Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors,
- 	Opt_err,
-@@ -344,6 +344,7 @@ static match_table_t tokens = {
- 	{Opt_enospc_debug, "enospc_debug"},
- 	{Opt_subvolrootid, "subvolrootid=%d"},
- 	{Opt_defrag, "autodefrag"},
-+	{Opt_sa_defrag, "snap_aware_defrag"},
- 	{Opt_inode_cache, "inode_cache"},
- 	{Opt_no_space_cache, "nospace_cache"},
- 	{Opt_recovery, "recovery"},
-@@ -564,6 +565,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			printk(KERN_INFO "btrfs: enabling auto defrag\n");
- 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
- 			break;
-+		case Opt_sa_defrag:
-+			printk(KERN_INFO "btrfs: enabling snapshot-aware"
-+			       " defrag\n");
-+			btrfs_set_opt(info->mount_opt, SA_DEFRAG);
-+			break;
- 		case Opt_recovery:
- 			printk(KERN_INFO "btrfs: enabling auto recovery\n");
- 			btrfs_set_opt(info->mount_opt, RECOVERY);
-@@ -935,6 +941,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",enospc_debug");
- 	if (btrfs_test_opt(root, AUTO_DEFRAG))
- 		seq_puts(seq, ",autodefrag");
-+	if (btrfs_test_opt(root, SA_DEFRAG))
-+		seq_puts(seq, ",snap_aware_defrag");
- 	if (btrfs_test_opt(root, INODE_MAP_CACHE))
- 		seq_puts(seq, ",inode_cache");
- 	if (btrfs_test_opt(root, SKIP_BALANCE))
--- 
-1.7.7.6
+In order to avoid using set-default, you end up with either the need to make a new core.img and install it, prior to every change in what subvolume to boot from (snapshot or other distribution), or do some fancy mv like you mention next.
 
+
+
+> There's no need, as you can simply mv those around (even
+> while mounted).
+
+What if Ubuntu wants to use root and boot on the top level, but finds boot and root already exist there from Fedora 18? Will Ubunuto package them up properly into a folder or subvol in such a way that Fedora 18 can ever be used again without significant user knowledge about what likely happened?
+
+I think this is untenable. Since set-default is valuable, and its use cannot correctly be proscribed for all time on boot volumes, it's better to figure out how to leverage it.
+
+I think that the top level subvolumes should be named after the distribution: Fedora 18, Fedora 19, Ubuntu 12.04, Suse 12.x, etc. and possibly home can also be in the top level. And inside, can be whatever organization that distro wants. But negotiating generically named boot and root at the top level I think is long term problematic.
+
+The small problem, presently, with Fedora is that grub is referred to as grub2. So the actual core.img prefix that's baked in is /boot/grub2, meaning that even if you change the set-default subvolume, that core.img is incompatible with finding another grub.cfg of the same version without baking a new core.img (or manually setting the prefix).
+
+
+>  More importantly, it doesn't result in a case where
+> the fstab in one snapshot points its mountpoint to a different
+> snapshot, with all the hilarity that would cause over time, and also
+> allows multiple distros to be installed on the same filesystem without
+> having them stomp on each others set-defaults: /@fedora, /@rawhide,
+> /@ubuntu, /@home, etc.
+
+You'd have to use absolute paths if you're going to depend on every distro potentially mv'ing every other distros folders and subvolumes around, yes. If a distribution starts moving and renaming my subvolumes, I will not be using that distribution.
+
+
+Chris Murphy

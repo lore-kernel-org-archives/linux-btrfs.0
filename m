@@ -1,103 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40348 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965556Ab2JZS3z (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:50795 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758292Ab2J0B6w convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 14:29:55 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
-	id 1TRofL-00089Z-84
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 11:29:55 -0700
-Date: Fri, 26 Oct 2012 11:29:55 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707
-Message-ID: <20121026182955.GN8019@merlins.org>
-References: <20121025195805.GA24111@merlins.org>
+	Fri, 26 Oct 2012 21:58:52 -0400
+Received: by mail-da0-f46.google.com with SMTP id n41so1552207dak.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2012 18:58:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121025195805.GA24111@merlins.org>
+In-Reply-To: <B7B1C115-D370-4B85-9119-E09152105BCB@colorremedies.com>
+References: <1351168220.1923.6.camel@hughsie-work.lan>
+	<64967FA4-4DC1-478E-A920-1E5237905DAE@colorremedies.com>
+	<CAD2FfiExmofSpVsLTpZaZo86gEnPn11Uzd=B7qu0SKv8Ybo7TA@mail.gmail.com>
+	<B7B1C115-D370-4B85-9119-E09152105BCB@colorremedies.com>
+Date: Fri, 26 Oct 2012 19:58:52 -0600
+Message-ID: <CAE5mzvhaM9Y-Dp1WSZSgseFYR=aFjcQqVWcxXOQ05YhXfXFUTA@mail.gmail.com>
+Subject: Re: Naming of subvolumes
+From: cwillu <cwillu@cwillu.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If any devs want info out of my drive, please ask today, I really need to
-fix it tomorrow.
-I'll try btrfs-zero-log otherwise and if not, wipe and start over.
-
-Marc
-
-On Thu, Oct 25, 2012 at 12:58:05PM -0700, Marc MERLIN wrote:
-> Howdy,
-> 
-> I can wait a day or maybe 2 before I have to wipe and restore from backup.
-> Please let me know if you have a patch against 3.6.3 you'd like me to try
-> to mount/recover this filesystem, or whether you'd like me to try btrfsck.
-> 
-> 
-> My laptop had a problem with its boot drive which prevented linux
-> from writing to it, and in turn caused btrfs to have incomplete writes 
-> to it.
-> After reboot, the boot drive was fine, but the btrfs filesystem has
-> a corruption that prevents it from being mounted.
-> 
-> Unfortunately the mount crash prevents writing of crash data to even another
-> drive since linux stops before the crash data can be written to syslog.
-> 
-> Picture #1 shows a dump when my laptop crashed (before reboot).
-> btrfs no csum found for inode X start Y
-> http://marc.merlins.org/tmp/crash.jpg
-> 
-> Mounting with 3.5.0 and 3.6.3 gives the same error:
-> 
-> gandalfthegreat:~# mount -o recovery,skip_balance,ro /dev/mapper/bootdsk                                  
-> 
-> shows
-> btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-> btrfs: bdev /dev/mapper/bootdsk errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-> (there are 2 lines, not sure why)
-> 
-> kernel BUG at fs/btrfs/volumes.c:3707
-> int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
-> {
-> 	struct extent_map *em;
-> 	struct map_lookup *map;
-> 	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> 	int ret;
-> 
-> 	read_lock(&em_tree->lock);
-> 	em = lookup_extent_mapping(em_tree, logical, len);
-> 	read_unlock(&em_tree->lock);
-> 	BUG_ON(!em);  <---
-> 
-> If the snapshot helps (sorry, hard to read, but usable):
-> http://marc.merlins.org/tmp/btrfs_bug.jpg
-> 
-> Questions:
-> 1) Any better way to get a proper dump without serial console?
-> (I hate to give you pictures)
-> 
-> 2) Should I try btrfsck now, or are there other mount options than
-> mount -o recovery,skip_balance,ro /dev/mapper/bootdsk 
-> I should try?
-> 
-> 3) Want me to try btrfsck although it may make it impossible for me to
-> reproduce the bug and test a fix, as well as potentially break the filesystem
-> more (last time I tried btrfsck, it outputted thousands of lines and never converged
-> to a state it was happy with)
-> 
-> Thanks,
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/  
+On Fri, Oct 26, 2012 at 9:54 AM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Oct 26, 2012, at 2:27 AM, Richard Hughes <hughsient@gmail.com> wrote:
+>
+>
+>>> And if you're going to apply the upgrade to the snapshot, or to the top level file system?
+>>
+>> That's a very good question. I was going to apply the upgrade to the
+>> top level file system, and then roll-back to the old snapshot if the
+>> new upgrade state does not boot to a GUI. It would work equally well
+>> applying the update to the snapshot and then switching to that,
+>> although I don't know how well userspace is going to cope switching to
+>> a new subvolume at early-runtime given the fact we're running the
+>> upgrade itself from the filesystem and not in a special initrd or
+>> something. Also, we need to ready out lots of upgrade data (200Mb+?)
+>> from somewhere, so doing this on the snapshot would mean creating the
+>> snapshot and copying the data there *before* we reboot to install
+>> upgrades, and we really want to create the snapshot when we're sure
+>> the system will boot.
+>
+> a. Upgrade top level:
+> Maybe download upgrade data to /tmp, upon completion snapshot the current system state, then copy the upgrade data to persistent storage and reboot; upgrade of top level boot root begins. The snapshot is the regressive state in case of failure.
+>
+> b. Upgrade snapshot:
+> Create snapshot, mount it somewhere; download upgrade data to a location within the snapshot; reboot from the snapshot, it upgrades itself and cleans up. The top level is the regressive state in case of failure.
+>
+> Either way, 200MB of downloaded (and undeleted) upgrade data isn't stuck in a snapshot after it's used. And either way the snapshot is bootable.
+>
+> If you get sufficient metadata in the snapshot, then you can name/rename the snapshots whatever you want. I'd also point out it's valid for the user to prefer a different organization, i.e. instead of Fedora taking over the top level of a btrfs volume, to create subvolumes Fedora 17, Fedora 18, Ubuntu 12X, etc., at the top level, and insert boot and root and possibly home in those. In which case the upgrade mechanism should still work.
+>
+>>
+>>> So I'm going to guess that you will actually create a subvolume named something like @system-upgrade-20121025, and then snapshot root, boot, and home into that subvol?
+>>
+>> Not /home. Packages shouldn't be installing stuff there anyway, and
+>> /home is going to typically much bigger than /root or /boot.
+>
+> OK so small problem here is that today /etc/fstab is pointing to the home subvolume in a relative location to the default subvolume. The fstab mount option is subvol=home, not subvol=/home, not subvolid=xxx.
+>
+> So if you want to use changing default subvolumes to make the switch between the current updated state, and rollback states, (which is milliseconds fast), which also means no changes needed to grub's core.img or grub.cfg (since those use relative references for boot and root), a change is needed for home to use an absolute reference: either subvol=/home or use subvolid= in the fstab.
+>
+> While a bit more obscure in the /etc/fstab the subvolid= is more reliable. That home can be renamed or moved anywhere and it'll still work. I think it's legitimate for a user to create or want
+>
+>
+>>> If the upgrade is not successful, you change the default subvolume ID to that of @system-upgrade-20121025.
+>>
+>> I was actually thinking of using btrfs send | btrfs receive to roll
+>> back the root manually. It would be better if btrfs could swap the
+>> subvolume ID's of @system-upgrade-20121025 and 0, as then we don't get
+>> a snapshot that's useless.
+>
+> I haven't tried btrfs send/receive for this purpose, so I can't compare. But btrfs subvolume set-default is faster than the release of my finger from the return key. And it's easy enough the user could do it themselves if they had reasons for regression to a snapshot that differ than the automagic determination of the upgrade pass/fail.
+>
+> The one needed change, however, is to get /etc/fstab to use an absolute reference for home.
+>
+>
+> Chris Murphy
+>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+I'd argue that everything should be absolute references to subvolumes
+(/@home, /@, etc), and neither set-default nor subvolume id's should
+be touched.  There's no need, as you can simply mv those around (even
+while mounted).  More importantly, it doesn't result in a case where
+the fstab in one snapshot points its mountpoint to a different
+snapshot, with all the hilarity that would cause over time, and also
+allows multiple distros to be installed on the same filesystem without
+having them stomp on each others set-defaults: /@fedora, /@rawhide,
+/@ubuntu, /@home, etc.

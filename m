@@ -1,92 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47050 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752094Ab2J1Njs (ORCPT
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:58989 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751016Ab2J1Nvu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 09:39:48 -0400
-Date: Sun, 28 Oct 2012 13:39:43 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org, Ronnie Collinson <notthinking@gmail.com>,
-        Michael =?iso-8859-1?Q?Kj=F6rling?= <michael@kjorling.se>
-Subject: Re: How does btrfs behave on checksum mismatch?
-Message-ID: <20121028133943.GD5042@carfax.org.uk>
-References: <20121027215645.GU2381@yeono.kjorling.se>
- <201210281423.51427.Martin@lichtvoll.de>
- <20121028132639.GC5042@carfax.org.uk>
- <201210281436.24540.Martin@lichtvoll.de>
+	Sun, 28 Oct 2012 09:51:50 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="osDK9TLjxFScVI/L"
-In-Reply-To: <201210281436.24540.Martin@lichtvoll.de>
+In-Reply-To: <20121028075520.GA14554@gmail.com>
+References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+	<1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
+	<20121028075520.GA14554@gmail.com>
+Date: Sun, 28 Oct 2012 21:51:48 +0800
+Message-ID: <CAEH94LidECTUHb0_Wujyg=zH18+dzxMPTUUpiYBeUSiG7MpSKQ@mail.gmail.com>
+Subject: Re: [RFC v4 03/15] vfs,hot_track: add the function for collecting I/O frequency
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: zwu.kernel@gmail.com, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
+        cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Oct 28, 2012 at 3:55 PM, Zheng Liu <gnehzuil.liu@gmail.com> wrote:
+> Hi Zhiyong,
+>
+> On Thu, Oct 25, 2012 at 11:08:55PM +0800, zwu.kernel@gmail.com wrote:
+> [snip]
+>> @@ -199,6 +342,54 @@ err:
+>>  }
+>>
+>>  /*
+>> + * Main function to update access frequency from read/writepage(s) hooks
+>> + */
+>> +inline void hot_update_freqs(struct inode *inode, u64 start,
+>> +                     u64 len, int rw)
+>
+> This function seems too big.  So we really need to inline this function?
+As Dave said in his comments, it will add a function call
+overhead even when tracking is not enabled. a static inline function
+will just result in no extra overhead other than the if
+statement....
 
---osDK9TLjxFScVI/L
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+>
+> Regards,
+> Zheng
+>
+>> +{
+>> +     struct hot_info *root = inode->i_sb->s_hot_root;
+>> +     struct hot_inode_item *he;
+>> +     struct hot_range_item *hr;
+>> +     u32 cur, end;
+>> +
+>> +     if (!root || (len == 0))
+>> +             return;
+>> +
+>> +     he = hot_inode_item_find(root, inode->i_ino);
+>> +     if (IS_ERR(he)) {
+>> +             WARN_ON(1);
+>> +             return;
+>> +     }
+>> +
+>> +     spin_lock(&he->hot_inode.lock);
+>> +     hot_freq_data_update(&he->hot_inode.hot_freq_data, rw);
+>> +     spin_unlock(&he->hot_inode.lock);
+>> +
+>> +     /*
+>> +      * Align ranges on RANGE_SIZE boundary
+>> +      * to prevent proliferation of range structs
+>> +      */
+>> +     end = (start + len + RANGE_SIZE - 1) >> RANGE_BITS;
+>> +     for (cur = (start >> RANGE_BITS); cur < end; cur++) {
+>> +             hr = hot_range_item_find(he, cur);
+>> +             if (IS_ERR(hr)) {
+>> +                     WARN_ON(1);
+>> +                     hot_inode_item_put(he);
+>> +                     return;
+>> +             }
+>> +
+>> +             spin_lock(&hr->hot_range.lock);
+>> +             hot_freq_data_update(&hr->hot_range.hot_freq_data, rw);
+>> +             spin_unlock(&hr->hot_range.lock);
+>> +
+>> +             hot_range_item_put(hr);
+>> +     }
+>> +
+>> +     hot_inode_item_put(he);
+>> +}
+>> +EXPORT_SYMBOL_GPL(hot_update_freqs);
 
-On Sun, Oct 28, 2012 at 02:36:24PM +0100, Martin Steigerwald wrote:
-> Am Sonntag, 28. Oktober 2012 schrieb Hugo Mills:
-> > On Sun, Oct 28, 2012 at 02:23:51PM +0100, Martin Steigerwald wrote:
-> > > Am Sonntag, 28. Oktober 2012 schrieb Ronnie Collinson:
-> > > > In a raid1 situation, it will also rewrite the effected data, on
-> > > > the drive that failed the checksum
-> > >=20
-> > > Will it do so without an explicit scrub?
-> >=20
-> >    If a failed checksum is detected, yes.
-> >=20
-> >    If there's a bad block, and the FS happens to read the good copy
-> > first, it won't fix it, because it hasn't tried reading the bad copy
-> > yet.
->=20
-> Ah, okay. I think I read some while ago in a case of bad checksum detecte=
-d=20
-> it won=B4t repair automatically. Has this been changed?
 
-   It was changed some time ago -- the kernel release after scrub went
-in, IIRC.
 
-> Anyway, a regular scrub still makes sense, as BTRFS only reads files that=
-=20
-> applications demand and BTRFS may read from a good copy as you pointed=20
-> out.
+-- 
+Regards,
 
-   Indeed. I have a cron job in /etc/cron.monthy for my main FS to do
-just that.
-
-   Hugo.
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- ...  one ping(1) to rule them all, and in the ---         =20
-                         darkness bind(2) them.                         =20
-
---osDK9TLjxFScVI/L
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUI01nr9z9OVl50rAAQLq7BAAjMDLDzZ21r0myZlv6mFMLdhYKWMdTxgP
-77i2vwEuYI9g8pTeAW32cenUQSXKJH3w1yfhkC4rwnobjDR51/oFuCbqG0c1KMf3
-PrVJaUm7wXdVh2fW+esXKAio0tAp6iUzelW7PeXhAj/STspfocXMTuVTi8q5yT2l
-hm9aXRt7xBmYNakPuYK9VC8PbsdFqJ6S7vMPB3fwC9IT3TtiwZAT8EHxTutorSkr
-lHub4kGqPMqtHjsfbPwZIGrXNG5A8jzKYNQsit6WXl8MYXGFtiks7jW/A1X22KSH
-l5S2rMUp/1btsFimFr5dKpPSFY3rZkAYrzq4z/HzssUbqVmMI27KBscWdFu8YAkU
-vbGvHCuioOIxgcHr2Ah2Yh4BmrKgSYXTrdFCBekByI5BmMEkh/92HppBm3LY8oPT
-Eqt8L35ABRvnZYVi34ENzQckrr6rB2CflLfoU/PCjNVdSvUXyZgZ02uIoVwMdk1r
-c9adalZASYf9L88YoR3KIt//Qe1GKE4jdR4HF1LasWbmSQyCc+K6LyHoNnGMOAqZ
-AwiSYafJezQXBcIEuYMYcbkAtYtl9iet365auFrK06tPCAA3UAxxVcyNYDWOw3rC
-C84H2PA8AXfWeA9+gFAAch7rv15l/5lu+Wy0JOlZa7LmPsE2pgpT86pJ0S+1ZR0r
-zZKAgWXQroI=
-=VJrd
------END PGP SIGNATURE-----
-
---osDK9TLjxFScVI/L--
+Zhi Yong Wu

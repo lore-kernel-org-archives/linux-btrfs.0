@@ -1,70 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:37330 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752464Ab2J1NWi convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 09:22:38 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: kreijack@inwind.it
+Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:54336
+	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751847Ab2J1S1b convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 28 Oct 2012 14:27:31 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-Date: Sun, 28 Oct 2012 14:22:36 +0100
-Cc: Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
-        Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-References: <50899151.1070503@inwind.it> <20121028111858.GC2381@yeono.kjorling.se> <508D2430.9020006@inwind.it> (sfid-20121028_141611_560384_7EFCC698)
-In-Reply-To: <508D2430.9020006@inwind.it>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201210281422.37024.Martin@lichtvoll.de>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <201210281216.43983.Martin@lichtvoll.de>
+Date: Sun, 28 Oct 2012 12:27:27 -0600
+Message-Id: <017607D1-1C4E-47A9-9308-FFEB5737B440@colorremedies.com>
+References: <50899151.1070503@inwind.it> <201210281133.10571.Martin@lichtvoll.de> <508D0FC5.1020404@inwind.it> (sfid-20121028_115841_603788_B8F3E1BA) <201210281216.43983.Martin@lichtvoll.de>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 28. Oktober 2012 schrieb Goffredo Baroncelli:
-> On 2012-10-28 12:18, Michael Kjörling wrote:
-> > On 28 Oct 2012 11:59 +0100, from kreijack@gmail.com (Goffredo 
-Baroncelli):
-> >> On 2012-10-28 11:38, Martin Steigerwald wrote:
-> >>> But still if if can be arbitrarily long due to that per object
-> >>> replication  config, a vertical output might and leaving graphical
-> >>> representation to a Qt Quick application or so might be better.
-> >> 
-> >> Yes, this is my same feel: For console I prefer a text
-> >> representation in rows, leaving to a graphical GUI to show the
-> >> information in columns..
-> >
-> > 
-> >
-> > So a sysadmin who logs on to a server (which uses btrfs) over plain
-> > SSH should need to install a good chunk of X11 plus a load of support
-> > libraries on the server, plus have a X11 server on the machine they
-> > are connecting from, simply to get a tabular view of the disk space?
-> 
-> As reported in another email, I like the tabular format. The point is
-> that it is not usable because the combination of Chunk-type (Data,
-> Metadata, System) and Profile (DUP, Single, RAID1, RAID10,
-> RAID0...RAID5/6) doesn't fit in 80 columns width.
-> Even tough the simple case (Only one profile, Data,Metadata,System
-> chunk type) could fit, this solution doesn't scale when will be
-> possible to select different profiles per subvolume basis.
-> 
-> [...]
 
-The vertical output makes it quite difficult to spot unbalanced drives 
-tough.
+On Oct 28, 2012, at 5:16 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
 
-A simplified output might help:
+> The question whether how these are all related to the question on how much 
+> space is free?
 
-Just show how much is used/unused on each drive. This helps the usecase to 
-spot unbalanced drives, I think. And it can fit in tabular output.
+This is my main confusion with 'filesystem df' is that it's very circumspect about this. For a way longer time than I think is OK, I'd use 'fi show' expecting to see single, raid0, raid1 information, but of course that's in df. Whereas I find I get more useful, though still circumspect, usage information from which to infer free space from fi show than fi df. Small problem.
 
-I think its good to go from the use cases. What questions may the user 
-have and how to answer them in a clear and concise way?
 
-Then for details the vertical output might be a good option.
+> IMHO it would then be good to also fix regular df to provide a free space 
+> like in the summary view. Maybe by being conservative and using the 
+> smallest estimation. But mabye its just me who never really understood why 
+> a 100 GB BTRFS RAID1 shows 200GB of free space and a 100 MB file on it 
+> occupies 200MB.
 
-Anyway, I think first go for the summary thing… since I think that is 
-clear.
+It's a perspective.
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+I think we're all trained to see file size as absolute, even when the file is in effect duplicated. I think it's possible we need to be retrained to look at this from a storage point of view. The storage "pool" is 200GB in size, and data allocation is 2x in raid1. I find new users intuit this, rather than thinking the file size is no different, there in a sense no second copy, but the file system is half the size. With conventional raid, this logic sorta works because the raid isn't a file system, so the filesystem really wasn't twice the size. But in btrfs it is. Same for ZFS for that matter.
+
+When considering how du will work down the road with per subvolume, and possibly per file (or folder) redundancy levels, I think everything should be treated literally. The volume/pool is the total size of storage. And then the "disk usage" hit is file size times a redundancy factor. For single and raid0, 1x. For raid1, 2x. If mixed raid5/6 is one day possible too, then it can have a variable factor depending on the stripe/parity ratio. In any case, the *allocation* required for each file is really its size in the file system. How many bytes are in the file is a different inquiry anyway due to metadata which is not part of the file contents anyway.
+
+
+Chris Murphy
+
+

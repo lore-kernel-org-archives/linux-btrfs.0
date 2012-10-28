@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta03.emeryville.ca.mail.comcast.net ([76.96.30.32]:51547 "EHLO
-	qmta03.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751058Ab2J1TmT convert rfc822-to-8bit
+Received: from qmta11.emeryville.ca.mail.comcast.net ([76.96.27.211]:60368
+	"EHLO qmta11.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751493Ab2J1Tmk convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 15:42:19 -0400
+	Sun, 28 Oct 2012 15:42:40 -0400
 Content-Type: text/plain; charset=iso-8859-1
 Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-From: Chris Murphy <chris@colorremedies.com>
+From: Chris Murphy <lists@colorremedies.com>
 In-Reply-To: <20121028190601.GJ2381@yeono.kjorling.se>
-Date: Sun, 28 Oct 2012 13:42:17 -0600
-Message-Id: <4B78F4E8-C65F-4436-A0BD-147CD776B7A7@colorremedies.com>
+Date: Sun, 28 Oct 2012 13:42:38 -0600
+Message-Id: <7FAD0A09-0289-4B8C-A9FA-4D3129A85603@colorremedies.com>
 References: <50899151.1070503@inwind.it> <201210281133.10571.Martin@lichtvoll.de> <508D0FC5.1020404@inwind.it> <201210281216.43983.Martin@lichtvoll.de> <017607D1-1C4E-47A9-9308-FFEB5737B440@colorremedies.com> <20121028190601.GJ2381@yeono.kjorling.se>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -62,7 +62,7 @@ Agreed. I wouldn't expose that to them. At least not in the summary. But underly
 
 
 > * How many ordinary users are going to use multi-device file systems
->  in the first place?
+> in the first place?
 
 It's a very interesting question. What's the role of mobile in all of this too, if Gartner is even remotely in the ballpark for latest estimates of (just) Android devices equalling (then surpassing) Windows devices in 2015?
 
@@ -70,8 +70,8 @@ However, sticking to desktop for now, with SSD users can form factor wise much m
 
 > 
 > * "btrfs" _is_ the file system administration tool. In a way, it makes
->  sense that the data provided by it will be geared more toward
->  technically minded people.
+> sense that the data provided by it will be geared more toward
+> technically minded people.
 
 It is a fair point. But this is not LVM or md raid. It's way easier to understand and manage already, even with some trouble spots. But in the area of storage pool/volume management it's perhaps potentially more complex due to subvolumes and actually usable snapshots.
 

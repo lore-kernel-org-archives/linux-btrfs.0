@@ -1,54 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from loup.kjorling.se ([87.237.208.114]:53886 "EHLO loup.kjorling.se"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753232Ab2J0WKE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Oct 2012 18:10:04 -0400
-Received: from yeono.kjorling.se (c-1717e655.6036809--62697410.cust.bredbandsbolaget.se [85.230.23.23])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(Client CN "yeono", Issuer "yeono" (not verified))
-	by loup.kjorling.se (Postfix) with ESMTPS id C4348B914008
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2012 22:09:41 +0000 (UTC)
-Received: from yeono.kjorling.se (localhost [127.0.0.1])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(Client did not present a certificate)
-	by yeono (Postfix) with ESMTPS id 48AAC47E2B6
-	for <linux-btrfs@vger.kernel.org>; Sun, 28 Oct 2012 00:09:41 +0200 (CEST)
-Date: Sat, 27 Oct 2012 22:09:40 +0000
-From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: How does btrfs behave on checksum mismatch?
-Message-ID: <20121027220940.GV2381@yeono.kjorling.se>
-References: <20121027215645.GU2381@yeono.kjorling.se>
- <20121027220215.GA5042@carfax.org.uk>
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:51971 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752231Ab2J1HoG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 28 Oct 2012 03:44:06 -0400
+Date: Sun, 28 Oct 2012 15:55:20 +0800
+From: Zheng Liu <gnehzuil.liu@gmail.com>
+To: zwu.kernel@gmail.com
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
+        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
+        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: Re: [RFC v4 03/15] vfs,hot_track: add the function for collecting
+ I/O frequency
+Message-ID: <20121028075520.GA14554@gmail.com>
+References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+ <1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20121027220215.GA5042@carfax.org.uk>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 27 Oct 2012 23:02 +0100, from hugo@carfax.org.uk (Hugo Mills):
->> I came across the tidbit that ZFS has a contract guarantee that the
->> data read back will either be correct (the checksum computed over the
->> data read from the disk matches the checksum stored on disk), or you
->> get an I/O error. Obviously, this greatly reduces the probability that
->> the data is invalid. (Particularly when taken in combination with the
->> disk firmware's own ECC and checksumming.)
->> 
->> With the default options, does btrfs make any similar guarantees? If
->> not, then are there any options to force it to make such guarantees?
-> 
->    It does indeed do the same thing: if the checksum doesn't match the
-> block, then the alternative block is read (if one exists, e.g. RAID-1,
-> RAID-10). If that does not exist, or also has a checksum failure, then
-> EIO is returned.
+Hi Zhiyong, 
 
-Great!
+On Thu, Oct 25, 2012 at 11:08:55PM +0800, zwu.kernel@gmail.com wrote:
+[snip]
+> @@ -199,6 +342,54 @@ err:
+>  }
+>  
+>  /*
+> + * Main function to update access frequency from read/writepage(s) hooks
+> + */
+> +inline void hot_update_freqs(struct inode *inode, u64 start,
+> +			u64 len, int rw)
 
-This should perhaps be mentioned more clearly in the Wiki.
+This function seems too big.  So we really need to inline this function?
 
-Also, thanks for the prompt reply.
+Regards,
+Zheng
 
--- 
-Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
-                “People who think they know everything really annoy
-                those of us who know we don’t.” (Bjarne Stroustrup)
+> +{
+> +	struct hot_info *root = inode->i_sb->s_hot_root;
+> +	struct hot_inode_item *he;
+> +	struct hot_range_item *hr;
+> +	u32 cur, end;
+> +
+> +	if (!root || (len == 0))
+> +		return;
+> +
+> +	he = hot_inode_item_find(root, inode->i_ino);
+> +	if (IS_ERR(he)) {
+> +		WARN_ON(1);
+> +		return;
+> +	}
+> +
+> +	spin_lock(&he->hot_inode.lock);
+> +	hot_freq_data_update(&he->hot_inode.hot_freq_data, rw);
+> +	spin_unlock(&he->hot_inode.lock);
+> +
+> +	/*
+> +	 * Align ranges on RANGE_SIZE boundary
+> +	 * to prevent proliferation of range structs
+> +	 */
+> +	end = (start + len + RANGE_SIZE - 1) >> RANGE_BITS;
+> +	for (cur = (start >> RANGE_BITS); cur < end; cur++) {
+> +		hr = hot_range_item_find(he, cur);
+> +		if (IS_ERR(hr)) {
+> +			WARN_ON(1);
+> +			hot_inode_item_put(he);
+> +			return;
+> +		}
+> +
+> +		spin_lock(&hr->hot_range.lock);
+> +		hot_freq_data_update(&hr->hot_range.hot_freq_data, rw);
+> +		spin_unlock(&hr->hot_range.lock);
+> +
+> +		hot_range_item_put(hr);
+> +	}
+> +
+> +	hot_inode_item_put(he);
+> +}
+> +EXPORT_SYMBOL_GPL(hot_update_freqs);

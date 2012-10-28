@@ -1,43 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:54336
-	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751847Ab2J1S1b convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 14:27:31 -0400
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from loup.kjorling.se ([87.237.208.114]:45200 "EHLO loup.kjorling.se"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754866Ab2J1TGZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 28 Oct 2012 15:06:25 -0400
+Date: Sun, 28 Oct 2012 19:06:01 +0000
+From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <201210281216.43983.Martin@lichtvoll.de>
-Date: Sun, 28 Oct 2012 12:27:27 -0600
-Message-Id: <017607D1-1C4E-47A9-9308-FFEB5737B440@colorremedies.com>
-References: <50899151.1070503@inwind.it> <201210281133.10571.Martin@lichtvoll.de> <508D0FC5.1020404@inwind.it> (sfid-20121028_115841_603788_B8F3E1BA) <201210281216.43983.Martin@lichtvoll.de>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <20121028190601.GJ2381@yeono.kjorling.se>
+References: <50899151.1070503@inwind.it>
+ <201210281133.10571.Martin@lichtvoll.de>
+ <508D0FC5.1020404@inwind.it>
+ <201210281216.43983.Martin@lichtvoll.de>
+ <017607D1-1C4E-47A9-9308-FFEB5737B440@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <017607D1-1C4E-47A9-9308-FFEB5737B440@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 28 Oct 2012 12:27 -0600, from lists@colorremedies.com (Chris Murphy):
+> I think we're all trained to see file size as absolute, even when
+> the file is in effect duplicated. I think it's possible we need to
+> be retrained to look at this from a storage point of view. The
+> storage "pool" is 200GB in size, and data allocation is 2x in raid1.
+> I find new users intuit this, rather than thinking the file size is
+> no different, there in a sense no second copy, but the file system
+> is half the size. With conventional raid, this logic sorta works
+> because the raid isn't a file system, so the filesystem really
+> wasn't twice the size. But in btrfs it is. Same for ZFS for that
+> matter.
 
-On Oct 28, 2012, at 5:16 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
+This makes a valid point. And there's another issue potentially at
+play: file system level compression, _which btrfs already supports_.
+Say you store a highly compressible file (a web server access log,
+perhaps) on a compressed volume that is set up with RAID 1 across a
+set of physical drives. You know the pool size, and you know the data
+allocation ratio. What you _don't_ know and can't predict is the
+_compression_ ratio for any new data, which means that you still can't
+calculate how much more payload data can be added to the file before
+you run out of storage space. You _can_ calculate a worst case
+scenario figure (no compression possible on the new payload data), but
+that's about it.
 
-> The question whether how these are all related to the question on how much 
-> space is free?
+_However_, while thinking in terms of storage pool sizes, allocation
+ratios and so forth might work for technically inclined people, I'm
+not so sure it'll work for ordinary users. But then again:
 
-This is my main confusion with 'filesystem df' is that it's very circumspect about this. For a way longer time than I think is OK, I'd use 'fi show' expecting to see single, raid0, raid1 information, but of course that's in df. Whereas I find I get more useful, though still circumspect, usage information from which to infer free space from fi show than fi df. Small problem.
+* How many ordinary users are going to use multi-device file systems
+  in the first place? Most ordinary users I know have only a single
+  internal disk for primary storage. Even the tiny subset of those who
+  use Linux aren't magically going to add several disks to their PCs
+  to create a storage pool encompassing multiple physical devices just
+  because the file system supports it.
 
+* "btrfs" _is_ the file system administration tool. In a way, it makes
+  sense that the data provided by it will be geared more toward
+  technically minded people.
 
-> IMHO it would then be good to also fix regular df to provide a free space 
-> like in the summary view. Maybe by being conservative and using the 
-> smallest estimation. But mabye its just me who never really understood why 
-> a 100 GB BTRFS RAID1 shows 200GB of free space and a 100 MB file on it 
-> occupies 200MB.
-
-It's a perspective.
-
-I think we're all trained to see file size as absolute, even when the file is in effect duplicated. I think it's possible we need to be retrained to look at this from a storage point of view. The storage "pool" is 200GB in size, and data allocation is 2x in raid1. I find new users intuit this, rather than thinking the file size is no different, there in a sense no second copy, but the file system is half the size. With conventional raid, this logic sorta works because the raid isn't a file system, so the filesystem really wasn't twice the size. But in btrfs it is. Same for ZFS for that matter.
-
-When considering how du will work down the road with per subvolume, and possibly per file (or folder) redundancy levels, I think everything should be treated literally. The volume/pool is the total size of storage. And then the "disk usage" hit is file size times a redundancy factor. For single and raid0, 1x. For raid1, 2x. If mixed raid5/6 is one day possible too, then it can have a variable factor depending on the stripe/parity ratio. In any case, the *allocation* required for each file is really its size in the file system. How many bytes are in the file is a different inquiry anyway due to metadata which is not part of the file contents anyway.
-
-
-Chris Murphy
-
-
+-- 
+Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
+                “People who think they know everything really annoy
+                those of us who know we don’t.” (Bjarne Stroustrup)

@@ -1,22 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e31.co.us.ibm.com ([32.97.110.149]:36842 "EHLO
-	e31.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757913Ab2J2Ec7 (ORCPT
+Received: from e34.co.us.ibm.com ([32.97.110.152]:47017 "EHLO
+	e34.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757493Ab2J2Edt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 00:32:59 -0400
+	Mon, 29 Oct 2012 00:33:49 -0400
 Received: from /spool/local
-	by e31.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 28 Oct 2012 22:32:58 -0600
+	Sun, 28 Oct 2012 22:33:47 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
-Subject: [RFC v4+ hot_track 16/19] btrfs: add hot tracking support
-Date: Mon, 29 Oct 2012 12:30:58 +0800
-Message-Id: <1351485061-12297-17-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4+ hot_track 19/19] vfs: add documentation
+Date: Mon, 29 Oct 2012 12:31:01 +0800
+Message-Id: <1351485061-12297-20-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,112 +24,293 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Introduce one new mount option '-o hot_track',
-and add its parsing support.
-  Its usage looks like:
-   mount -o hot_track
-   mount -o nouser,hot_track
-   mount -o nouser,hot_track,loop
-   mount -o hot_track,nouser
+  Add one doc for VFS hot tracking feature
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/btrfs/ctree.h |    1 +
- fs/btrfs/super.c |   22 +++++++++++++++++++++-
- 2 files changed, 22 insertions(+), 1 deletions(-)
+ Documentation/filesystems/00-INDEX         |    2 +
+ Documentation/filesystems/hot_tracking.txt |  262 ++++++++++++++++++++++++++++
+ 2 files changed, 264 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/filesystems/hot_tracking.txt
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c72ead8..4703178 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1756,6 +1756,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
-+#define BTRFS_MOUNT_HOT_TRACK		(1 << 23)
- 
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 915ac14..0bcc62b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -41,6 +41,7 @@
- #include <linux/slab.h>
- #include <linux/cleancache.h>
- #include <linux/ratelimit.h>
-+#include <linux/hot_tracking.h>
- #include "compat.h"
- #include "delayed-inode.h"
- #include "ctree.h"
-@@ -299,6 +300,10 @@ static void btrfs_put_super(struct super_block *sb)
- 	 * last process that kept it busy.  Or segfault in the aforementioned
- 	 * process...  Whom would you report that to?
- 	 */
+diff --git a/Documentation/filesystems/00-INDEX b/Documentation/filesystems/00-INDEX
+index 8c624a1..b68bdff 100644
+--- a/Documentation/filesystems/00-INDEX
++++ b/Documentation/filesystems/00-INDEX
+@@ -118,3 +118,5 @@ xfs.txt
+ 	- info and mount options for the XFS filesystem.
+ xip.txt
+ 	- info on execute-in-place for file mappings.
++hot_tracking.txt
++	- info on hot data tracking in VFS layer
+diff --git a/Documentation/filesystems/hot_tracking.txt b/Documentation/filesystems/hot_tracking.txt
+new file mode 100644
+index 0000000..a39a96d
+--- /dev/null
++++ b/Documentation/filesystems/hot_tracking.txt
+@@ -0,0 +1,262 @@
++Hot Data Tracking
 +
-+	/* Hot data tracking */
-+	if (btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_TRACK))
-+		hot_track_exit(sb);
- }
- 
- enum {
-@@ -311,7 +316,7 @@ enum {
- 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
--	Opt_check_integrity_print_mask, Opt_fatal_errors,
-+	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_hot_track,
- 	Opt_err,
- };
- 
-@@ -352,6 +357,7 @@ static match_table_t tokens = {
- 	{Opt_check_integrity_including_extent_data, "check_int_data"},
- 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
- 	{Opt_fatal_errors, "fatal_errors=%s"},
-+	{Opt_hot_track, "hot_track"},
- 	{Opt_err, NULL},
- };
- 
-@@ -614,6 +620,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				goto out;
- 			}
- 			break;
-+		case Opt_hot_track:
-+			btrfs_set_opt(info->mount_opt, HOT_TRACK);
-+			break;
- 		case Opt_err:
- 			printk(KERN_INFO "btrfs: unrecognized mount option "
- 			       "'%s'\n", p);
-@@ -841,11 +850,20 @@ static int btrfs_fill_super(struct super_block *sb,
- 		goto fail_close;
- 	}
- 
-+	if (btrfs_test_opt(fs_info->tree_root, HOT_TRACK)) {
-+		err = hot_track_init(sb);
-+		if (err)
-+			goto fail_hot;
-+	}
++September, 2012		Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 +
- 	save_mount_options(sb, data);
- 	cleancache_init_fs(sb);
- 	sb->s_flags |= MS_ACTIVE;
- 	return 0;
- 
-+fail_hot:
-+	dput(sb->s_root);
-+	sb->s_root = NULL;
- fail_close:
- 	close_ctree(fs_info->tree_root);
- 	return err;
-@@ -941,6 +959,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",skip_balance");
- 	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
- 		seq_puts(seq, ",fatal_errors=panic");
-+	if (btrfs_test_opt(root, HOT_TRACK))
-+		seq_puts(seq, ",hot_track");
- 	return 0;
- }
- 
++CONTENTS
++
++1. Introduction
++2. Motivation
++3. The Design
++4. How to Calc Frequency of Reads/Writes & Temperature
++5. Git Development Tree
++6. Usage Example
++
++
++1. Introduction
++
++  The feature adds experimental support for tracking data temperature
++information in VFS layer.  Essentially, this means maintaining some key
++stats(like number of reads/writes, last read/write time, frequency of
++reads/writes), then distilling those numbers down to a single
++"temperature" value that reflects what data is "hot," and using that
++temperature to move data to SSDs.
++
++  The long-term goal of the feature is to allow some FSs,
++e.g. Btrfs to intelligently utilize SSDs in a heterogenous volume.
++Incidentally, this project has been motivated by
++the Project Ideas page on the Btrfs wiki.
++
++  Of course, users are warned not to run this code outside of development
++environments. These patches are EXPERIMENTAL, and as such they might eat
++your data and/or memory. That said, the code should be relatively safe
++when the hottrack mount option are disabled.
++
++2. Motivation
++
++  The overall goal of enabling hot data relocation to SSD has been
++motivated by the Project Ideas page on the Btrfs wiki at
++<https://btrfs.wiki.kernel.org/index.php/Project_ideas>.
++It will divide into two steps. VFS provide hot data tracking function
++while specific FS will provide hot data relocation function.
++So as the first step of this goal, it is hoped that the patchset
++for hot data tracking will eventually mature into VFS.
++
++  This is essentially the traditional cache argument: SSD is fast and
++expensive; HDD is cheap but slow. ZFS, for example, can already take
++advantage of SSD caching. Btrfs should also be able to take advantage of
++hybrid storage without many broad, sweeping changes to existing code.
++
++
++3. The Design
++
++These include the following parts:
++
++    * Hooks in existing vfs functions to track data access frequency
++
++    * New radix-trees for tracking access frequency of inodes and sub-file
++ranges
++    The relationship between super_block and radix-tree is as below:
++hot_info.hot_inode_tree
++    Each FS instance can find hot tracking info s_hotinfo.
++In this hot_info, it store a lot of hot tracking info such as hot_inode_tree,
++inode and range list, etc.
++
++    * A list for indexing data by its temperature
++
++    * A debugfs interface for dumping data from the radix-trees
++
++    * A background kthread for updating inode heat info
++
++    * Mount options for enabling temperature tracking(-o hot_track,
++default mean disabled)
++    * An ioctl to retrieve the frequency information collected for a certain
++file
++    * Ioctls to enable/disable frequency tracking per inode.
++
++Let us see their relationship as below:
++
++    * hot_info.hot_inode_tree indexes hot_inode_items, one per inode
++
++    * hot_inode_item contains access frequency data for that inode
++
++    * hot_inode_item holds a heat list node to index the access
++frequency data for that inode
++
++    * hot_inode_item.hot_range_tree indexes hot_range_items for that inode
++
++    * hot_range_item contains access frequency data for that range
++
++    * hot_range_item holds a heat list node to index the access
++frequency data for that range
++
++    * hot_info.heat_inode_map indexes per-inode heat list nodes
++
++    * hot_info.heat_range_map indexes per-range heat list nodes
++
++  How about some ascii art? :) Just looking at the hot inode item case
++(the range item case is the same pattern, though), we have:
++
++heat_inode_map           hot_inode_tree
++    |                         |
++    |                         V
++    |           +-------hot_comm_item--------+
++    |           |       frequency data       |
+++---+           |        list_head           |
++|               V            ^ |             V
++| ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
++|       frequency data       | |        frequency data
+++-------->list_head----------+ +--------->list_head--->.....
++       hot_range_tree                  hot_range_tree
++                                             |
++             heat_range_map                  V
++                   |           +-------hot_comm_item--------+
++                   |           |       frequency data       |
++               +---+           |        list_head           |
++               |               V            ^ |             V
++               | ...<--hot_comm_item-->...  | |  ...<--hot_comm_item-->...
++               |       frequency data       | |        frequency data
++               +-------->list_head----------+ +--------->list_head--->.....
++
++
++4. How to Calc Frequency of Reads/Writes & Temperature
++
++1.) hot_average_update()
++
++  This function does the actual work of updating the frequency numbers,
++whatever they turn out to be. FREQ_POWER determines how many atime
++deltas we keep track of (as a power of 2). So, setting it to anything above
++16ish is probably overkill. Also, the higher the power, the more bits get
++right shifted out of the timestamp, reducing precision, so take note of that
++as well.
++
++  The caller should have already locked freq_data's parent's spinlock.
++
++  FREQ_POWER, defined immediately below, determines how heavily to weight
++the current frequency numbers against the newest access. For example, a value
++of 4 means that the new access information will be weighted 1/16th (ie 2^-4)
++as heavily as the existing frequency info. In essence, this is a kludged-
++together version of a weighted average, since we can't afford to keep all of
++the information that it would take to get a _real_ weighted average.
++
++2.) Some Micro explaination
++
++  The following comments explain what exactly comprises a unit of heat.
++Each of six values of heat are calculated and combined in order to form an
++overall temperature for the data:
++
++    * NRR - number of reads since mount
++    * NRW - number of writes since mount
++    * LTR - time elapsed since last read (ns)
++    * LTW - time elapsed since last write (ns)
++    * AVR - average delta between recent reads (ns)
++    * AVW - average delta between recent writes (ns)
++
++  These values are divided (right-shifted) according to the *_DIVIDER_POWER
++values defined below to bring the numbers into a reasonable range. You can
++modify these values to fit your needs. However, each heat unit is a u32 and
++thus maxes out at 2^32 - 1. Therefore, you must choose your dividers quite
++carefully or else they could max out or be stuck at zero quite easily.
++(E.g., if you chose AVR_DIVIDER_POWER = 0, nothing less than 4s of atime
++delta would bring the temperature above zero, ever.)
++
++  Finally, each value is added to the overall temperature between 0 and 8
++times, depending on its *_COEFF_POWER value. Note that the coefficients are
++also actually implemented with shifts, so take care to treat these values
++as powers of 2. (I.e., 0 means we'll add it to the temp once; 1 = 2x, etc.)
++
++    * AVR/AVW cold unit = 2^X ns of average delta
++    * AVR/AVW heat unit = HEAT_MAX_VALUE - cold unit
++
++  E.g., data with an average delta between 0 and 2^X ns will have a cold
++value of 0, which means a heat value equal to HEAT_MAX_VALUE.
++
++3.) hot_temp_calc()
++
++  This function is responsible for distilling the six heat
++criteria, which are described in detail in hot_tracking.h) down into a single
++temperature value for the data, which is an integer between 0
++and HEAT_MAX_VALUE.
++
++  To accomplish this, the raw values from the hot_freq_data structure
++are shifted various ways in order to make the temperature calculation more
++or less sensitive to each value.
++
++  Once this calibration has happened, we do some additional normalization and
++make sure that everything fits nicely in a u32. From there, we take a very
++rudimentary kind of "average" of each of the values, where the *_COEFF_POWER
++values act as weights for the average.
++
++  Finally, we use the HEAT_HASH_BITS value, which determines the size of the
++heat list array, to normalize the temperature to the proper granularity.
++
++
++5. Git Development Tree
++
++  This feature is still on development and review, so if you're interested,
++you can pull from the git repository at the following location:
++
++  https://github.com/wuzhy/kernel.git hot_tracking
++  git://github.com/wuzhy/kernel.git hot_tracking
++
++
++6. Usage Example
++
++1.) To use hot tracking, you should mount like this:
++
++$ mount -o hot_track /dev/sdb /mnt
++[ 1505.894078] device label test devid 1 transid 29 /dev/sdb
++[ 1505.952977] btrfs: disk space caching is enabled
++[ 1506.069678] vfs: turning on hot data tracking
++
++2.) Mount debugfs at first:
++
++$ mount -t debugfs none /sys/kernel/debug
++$ ls -l /sys/kernel/debug/hot_track/
++total 0
++drwxr-xr-x 2 root root 0 Aug  8 04:40 sdb
++$ ls -l /sys/kernel/debug/hot_track/sdb
++total 0
++-rw-r--r-- 1 root root 0 Aug  8 04:40 rt_stats_inode
++-rw-r--r-- 1 root root 0 Aug  8 04:40 rt_stats_range
++
++3.) View information about hot tracking from debugfs:
++
++$ echo "hot tracking test" > /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/rt_stats_inode
++inode #279, reads 0, writes 1, avg read time 18446744073709551615,
++avg write time 5251566408153596, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 1,
++avg read time 18446744073709551615, avg write time 1128690176623144209, temp 64
++
++$ echo "hot data tracking test" >> /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/rt_stats_inode
++inode #279, reads 0, writes 2, avg read time 18446744073709551615,
++avg write time 4923343766042451, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 2,
++avg read time 18446744073709551615, avg write time 1058147040842596150, temp 64
++
++4.) Check temp sorting result of some nodes:
++
++$ cat /sys/kernel/debug/hot_track/loop0/hot_spots_inode
++inode #5248773, reads 0, writes 244,
++avg read time 18446744073709, avg write time 822, temp 111
++inode #878523, reads 0, writes 1,
++avg read time 18446744073709, avg write time 5278036898, temp 109
++inode #878524, reads 0, writes 1,
++avg read time 18446744073709, avg write time 5278036898, temp 109
++
++5.) Tune some hot tracking parameters as below:
++
++$ cat /proc/sys/fs/hot-kick-time
++300
++$ echo 360 > /proc/sys/fs/hot-kick-time
++$ cat /proc/sys/fs/hot-kick-time
++360
++$ cat /proc/sys/fs/hot-update-delay
++300
++$ echo 360 > /proc/sys/fs/hot-update-delay
++$ cat /proc/sys/fs/hot-update-delay
++360
++
 -- 
 1.7.6.5
 

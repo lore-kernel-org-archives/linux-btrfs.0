@@ -1,107 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e32.co.us.ibm.com ([32.97.110.150]:34465 "EHLO
-	e32.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757951Ab2J2Ee0 (ORCPT
+Received: from e37.co.us.ibm.com ([32.97.110.158]:44917 "EHLO
+	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756695Ab2J2Edm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 00:34:26 -0400
+	Mon, 29 Oct 2012 00:33:42 -0400
 Received: from /spool/local
-	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 28 Oct 2012 22:34:25 -0600
+	Sun, 28 Oct 2012 22:33:41 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
-        cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com,
-        Dave Chinner <dchinner@redhat.com>
-Subject: [RFC v4+ hot_track 17/19] xfs: add hot tracking support
-Date: Mon, 29 Oct 2012 12:30:59 +0800
-Message-Id: <1351485061-12297-18-git-send-email-zwu.kernel@gmail.com>
+        cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
+Subject: [RFC v4+ hot_track 13/19] debugfs: introduce one function
+Date: Mon, 29 Oct 2012 12:30:55 +0800
+Message-Id: <1351485061-12297-14-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Dave Chinner <dchinner@redhat.com>
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Connect up the VFS hot tracking support
-so XFS filesystems can make use of it.
+  The debugfs function is used to get expected dentry.
 
-Signed-off-by: Dave Chinner <dchinner@redhat.com>
+Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/xfs/xfs_mount.h |    1 +
- fs/xfs/xfs_super.c |   16 ++++++++++++++++
- 2 files changed, 17 insertions(+), 0 deletions(-)
+ fs/debugfs/inode.c      |   26 ++++++++++++++++++++++++++
+ include/linux/debugfs.h |    9 +++++++++
+ 2 files changed, 35 insertions(+), 0 deletions(-)
 
-diff --git a/fs/xfs/xfs_mount.h b/fs/xfs/xfs_mount.h
-index deee09e..96d93c2 100644
---- a/fs/xfs/xfs_mount.h
-+++ b/fs/xfs/xfs_mount.h
-@@ -217,6 +217,7 @@ typedef struct xfs_mount {
- #define XFS_MOUNT_WSYNC		(1ULL << 0)	/* for nfs - all metadata ops
- 						   must be synchronous except
- 						   for space allocations */
-+#define XFS_MOUNT_HOTTRACK      (1ULL << 1)     /* hot inode tracking */
- #define XFS_MOUNT_WAS_CLEAN	(1ULL << 3)
- #define XFS_MOUNT_FS_SHUTDOWN	(1ULL << 4)	/* atomic stop of all filesystem
- 						   operations, typically for
-diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
-index 26a09bd..48b3bed 100644
---- a/fs/xfs/xfs_super.c
-+++ b/fs/xfs/xfs_super.c
-@@ -61,6 +61,7 @@
- #include <linux/kthread.h>
- #include <linux/freezer.h>
- #include <linux/parser.h>
-+#include <linux/hot_tracking.h>
+diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
+index b607d92..c6291bc 100644
+--- a/fs/debugfs/inode.c
++++ b/fs/debugfs/inode.c
+@@ -354,6 +354,32 @@ exit:
+ 	return dentry;
+ }
  
- static const struct super_operations xfs_super_operations;
- static kmem_zone_t *xfs_ioend_zone;
-@@ -114,6 +115,7 @@ mempool_t *xfs_ioend_pool;
- #define MNTOPT_NODELAYLOG  "nodelaylog"	/* Delayed logging disabled */
- #define MNTOPT_DISCARD	   "discard"	/* Discard unused blocks */
- #define MNTOPT_NODISCARD   "nodiscard"	/* Do not discard unused blocks */
-+#define MNTOPT_HOTTRACK    "hot_track"  /* hot inode tracking */
- 
- /*
-  * Table driven mount option parser.
-@@ -371,6 +373,8 @@ xfs_parseargs(
- 			mp->m_flags |= XFS_MOUNT_DISCARD;
- 		} else if (!strcmp(this_char, MNTOPT_NODISCARD)) {
- 			mp->m_flags &= ~XFS_MOUNT_DISCARD;
-+		} else if (!strcmp(this_char, MNTOPT_HOTTRACK)) {
-+			mp->m_flags |= XFS_MOUNT_HOTTRACK;
- 		} else if (!strcmp(this_char, "ihashsize")) {
- 			xfs_warn(mp,
- 	"ihashsize no longer used, option is deprecated.");
-@@ -1005,6 +1009,9 @@ xfs_fs_put_super(
- {
- 	struct xfs_mount	*mp = XFS_M(sb);
- 
-+	if (mp->m_flags & XFS_MOUNT_HOTTRACK)
-+		hot_track_exit(sb);
++struct dentry *debugfs_get_dentry(const char *name,
++			struct dentry *parent, int len)
++{
++	struct dentry *dentry = NULL;
++	int error = 0;
 +
- 	xfs_filestream_unmount(mp);
- 	cancel_delayed_work_sync(&mp->m_sync_work);
- 	xfs_unmountfs(mp);
-@@ -1407,7 +1414,16 @@ xfs_fs_fill_super(
- 		goto out_unmount;
- 	}
- 
-+	if (mp->m_flags & XFS_MOUNT_HOTTRACK) {
-+		error = hot_track_init(sb);
-+		if (error)
-+			goto out_free_root;
++	error = simple_pin_fs(&debug_fs_type, &debugfs_mount,
++				&debugfs_mount_count);
++	if (error)
++		return NULL;
++
++	if (!parent)
++		parent = debugfs_mount->mnt_root;
++
++	mutex_lock(&parent->d_inode->i_mutex);
++	dentry = lookup_one_len(name, parent, strlen(name));
++	if (!IS_ERR(dentry)) {
++		mutex_unlock(&parent->d_inode->i_mutex);
++		return dentry;
 +	}
++	mutex_unlock(&parent->d_inode->i_mutex);
 +
- 	return 0;
-+ out_free_root:
-+	dput(sb->s_root);
-+	sb->s_root = NULL;
-  out_syncd_stop:
- 	xfs_syncd_stop(mp);
-  out_filestream_unmount:
++	return NULL;
++}
++EXPORT_SYMBOL_GPL(debugfs_get_dentry);
++
+ /**
+  * debugfs_create_file - create a file in the debugfs filesystem
+  * @name: a pointer to a string containing the name of the file to create.
+diff --git a/include/linux/debugfs.h b/include/linux/debugfs.h
+index 66c434f..8913a4d 100644
+--- a/include/linux/debugfs.h
++++ b/include/linux/debugfs.h
+@@ -46,6 +46,9 @@ extern struct dentry *arch_debugfs_dir;
+ extern const struct file_operations debugfs_file_operations;
+ extern const struct inode_operations debugfs_link_operations;
+ 
++struct dentry *debugfs_get_dentry(const char *name,
++				struct dentry *parent, int len);
++
+ struct dentry *debugfs_create_file(const char *name, umode_t mode,
+ 				   struct dentry *parent, void *data,
+ 				   const struct file_operations *fops);
+@@ -103,6 +106,12 @@ bool debugfs_initialized(void);
+ 
+ #include <linux/err.h>
+ 
++static inline struct dentry *debugfs_get_dentry(const char *name,
++					struct dentry *parent, int len)
++{
++	return ERR_PTR(-ENODEV);
++}
++
+ /* 
+  * We do not return NULL from these functions if CONFIG_DEBUG_FS is not enabled
+  * so users have a chance to detect if there was a real error or not.  We don't
 -- 
 1.7.6.5
 

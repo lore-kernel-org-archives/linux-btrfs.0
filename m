@@ -1,67 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39180 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751063Ab2J2EaD (ORCPT
+Received: from e36.co.us.ibm.com ([32.97.110.154]:59776 "EHLO
+	e36.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756343Ab2J2EdL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 00:30:03 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
-	id 1TSgzC-0003Dj-8h
-	for <linux-btrfs@vger.kernel.org>; Sun, 28 Oct 2012 21:30:02 -0700
-Date: Sun, 28 Oct 2012 21:30:02 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707
-Message-ID: <20121029043002.GA8019@merlins.org>
-References: <20121025195805.GA24111@merlins.org> <CAE5mzvi=y6Auyr9cGMOm=tUSSj7sSQ78W0Bnzk+dJOqkW6z6jA@mail.gmail.com> <20121025201223.GB24111@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121025201223.GB24111@merlins.org>
+	Mon, 29 Oct 2012 00:33:11 -0400
+Received: from /spool/local
+	by e36.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
+	Sun, 28 Oct 2012 22:33:11 -0600
+From: zwu.kernel@gmail.com
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
+        cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com,
+        Zhi Yong Wu <zwu.kernel@gmail.com>
+Subject: [RFC v4+ hot_track 18/19] ext4: add hot tracking support
+Date: Mon, 29 Oct 2012 12:31:00 +0800
+Message-Id: <1351485061-12297-19-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
+References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 25, 2012 at 01:12:23PM -0700, Marc MERLIN wrote:
-> On Thu, Oct 25, 2012 at 02:03:49PM -0600, cwillu wrote:
-> > > 3) Want me to try btrfsck although it may make it impossible for me to
-> > > reproduce the bug and test a fix, as well as potentially break the filesystem
-> > > more (last time I tried btrfsck, it outputted thousands of lines and never converged
-> > > to a state it was happy with)
-> > 
-> > This looks like something btrfs-zero-log would work around (although
-> > -o recovery should do mostly the same things).  That would destroy the
-> > evidence though, and may just make things (slightly) worse, so I'd
-> > wait to see if anyone suggests something better before trying it.  If
-> > you're ultimately ending up restoring from backup though, it may save
-> > you that effort at least.
-> 
-> Thanks for pointing out btrfs-zero-log, I hadn't re-read the wiki page since
-> this got added.
-> But I'll hold off at least until tomorrow morning (GMT-7).
+From: Zheng Liu <wenqing.lz@taobao.com>
 
-I'm a bit surprised that no one seems to be replying on btrfs crashes,
-that's a bit worrisome. I'm willing to risk my data somewhat, but if finding
-a problem doesn't help fixing the code, I'm not sure if I'm helping anymore
-:-/
+  Define a new mount option to add VFS hot
+tracking support in order to use it in ext4.
 
-Since I ran out of time, I tried:
-gandalfthegreat:~# btrfs-zero-log 
-usage: btrfs-zero-log dev
-Btrfs Btrfs v0.19
-gandalfthegreat:~# btrfs-zero-log /dev/mapper/bootdsk 
-Check tree block failed, want=7533391872, have=17347973115472321934
-Check tree block failed, want=7533391872, have=17347973115472321934
-Check tree block failed, want=7533391872, have=8450612919225897562
-Check tree block failed, want=7533391872, have=17347973115472321934
-Check tree block failed, want=7533391872, have=17347973115472321934
-read block failed check_tree_block
-gandalfthegreat:~# 
+CC: Zhi Yong Wu <zwu.kernel@gmail.com>
+Signed-off-by: Zheng Liu <wenqing.lz@taobao.com>
+---
+ fs/ext4/ext4.h  |    3 +++
+ fs/ext4/super.c |   13 ++++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletions(-)
 
-So from here, unless someone chimes in tomorrow, I'm going to have to wipe
-my filesystem and start over. I suppose that means btrfs can likely still
-cause unknown and unfixable corruption.
-
-Marc
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index 3c20de1..f6cff1e 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -1298,6 +1298,9 @@ struct ext4_sb_info {
+ 
+ 	/* Precomputed FS UUID checksum for seeding other checksums */
+ 	__u32 s_csum_seed;
++
++	/* Enable hot tracking or not */
++	int s_hottrack_enable;
+ };
+ 
+ static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 80928f7..ba9f376 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -864,6 +864,8 @@ static void ext4_put_super(struct super_block *sb)
+ 	ext4_ext_release(sb);
+ 	ext4_xattr_put_super(sb);
+ 
++	if (sbi->s_hottrack_enable)
++		hot_track_exit(sb);
+ 	if (!(sb->s_flags & MS_RDONLY)) {
+ 		EXT4_CLEAR_INCOMPAT_FEATURE(sb, EXT4_FEATURE_INCOMPAT_RECOVER);
+ 		es->s_state = cpu_to_le16(sbi->s_mount_state);
+@@ -1222,7 +1224,7 @@ enum {
+ 	Opt_inode_readahead_blks, Opt_journal_ioprio,
+ 	Opt_dioread_nolock, Opt_dioread_lock,
+ 	Opt_discard, Opt_nodiscard, Opt_init_itable, Opt_noinit_itable,
+-	Opt_max_dir_size_kb,
++	Opt_max_dir_size_kb, Opt_hottrack,
+ };
+ 
+ static const match_table_t tokens = {
+@@ -1297,6 +1299,7 @@ static const match_table_t tokens = {
+ 	{Opt_init_itable, "init_itable"},
+ 	{Opt_noinit_itable, "noinit_itable"},
+ 	{Opt_max_dir_size_kb, "max_dir_size_kb=%u"},
++	{Opt_hottrack, "hot_track"},
+ 	{Opt_removed, "check=none"},	/* mount option from ext2/3 */
+ 	{Opt_removed, "nocheck"},	/* mount option from ext2/3 */
+ 	{Opt_removed, "reservation"},	/* mount option from ext2/3 */
+@@ -1595,6 +1598,14 @@ static int handle_mount_opt(struct super_block *sb, char *opt, int token,
+ 			sbi->s_li_wait_mult = arg;
+ 		} else if (token == Opt_max_dir_size_kb) {
+ 			sbi->s_max_dir_size_kb = arg;
++		} else if (token == Opt_hottrack) {
++			if (hot_track_init(sb)) {
++				ext4_msg(sb, KERN_ERR,
++					"EXT4-fs: hot tracking initialization"
++					" failed");
++				return -1;
++			}
++			sbi->s_hottrack_enable = 1;
+ 		} else if (token == Opt_stripe) {
+ 			sbi->s_stripe = arg;
+ 		} else if (m->flags & MOPT_DATAJ) {
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+1.7.6.5
+

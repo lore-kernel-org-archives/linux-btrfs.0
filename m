@@ -1,102 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:49612 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751644Ab2J1LQp convert rfc822-to-8bit (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:40911 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933172Ab2J2WUh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 07:16:45 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org, kreijack@inwind.it
-Subject: Re: [RFC] New attempt to a better "btrfs fi df"
-Date: Sun, 28 Oct 2012 12:16:43 +0100
-Cc: cwillu <cwillu@cwillu.com>, Chris Murphy <lists@colorremedies.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Michael =?iso-8859-1?q?Kj=F6rling?= <michael@kjorling.se>
-References: <50899151.1070503@inwind.it> <201210281133.10571.Martin@lichtvoll.de> <508D0FC5.1020404@inwind.it> (sfid-20121028_115841_603788_B8F3E1BA)
-In-Reply-To: <508D0FC5.1020404@inwind.it>
+	Mon, 29 Oct 2012 18:20:37 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so2356433eek.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2012 15:20:36 -0700 (PDT)
+Message-ID: <508F015F.5090507@gmail.com>
+Date: Mon, 29 Oct 2012 23:21:19 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201210281216.43983.Martin@lichtvoll.de>
+To: "kreijack@inwind.it" <kreijack@inwind.it>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, cwillu <cwillu@cwillu.com>,
+        Martin Steigerwald <Martin@lichtvoll.de>,
+        Chris Murphy <lists@colorremedies.com>,
+        =?ISO-8859-1?Q?Michael_Kj=F6rl?= =?ISO-8859-1?Q?ing?=
+	<michael@kjorling.se>,
+        Hugo Mills <hugo@carfax.org.uk>
+Subject: [RFC][V2] New attempt to a better "btrfs fi df"
+References: <50899151.1070503@inwind.it>
+In-Reply-To: <50899151.1070503@inwind.it>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 28. Oktober 2012 schrieb Goffredo Baroncelli:
-> > What was your reasoning for not using options to btrfs filesystem df?
-> > That  df doesn´t show more than "disk free" as well?
-> 
-> My feel is that a switch should change "a bit" a command. In this case
-> there are very different outputs, for different purposes (how is used a
-> disk ? where are the chunks ? how many free space I have ? ).
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Hmm.
+Hi all,
 
-The question whether how these are all related to the question on how much 
-space is free?
+this is a new attempt to improve the output of the command "btrfs fi df".
 
-Are they related? Then a single command makes sense. Are they completely 
-different outputs? Then separate commands make sense.
+The previous attempt received a good reception. However there was no a
+general consensus about the wording.
 
+Moreover I still didn't understand how btrfs was using the disks.
+A my first attempt was to develop a new command which shows how the
+disks are divided in chunks.
+Then after some thoughts I made three commands:
 
-I think, before continuing to argue over the details of the output and 
-options, it would be good to get the use cases clear.
+$ btrfs filesystem df <path>
+# btrfs device disk-usage <path>
+# btrfs filesystem disk-usage <path>
 
-My first and most important use case would be:
+The first one shows only the section that before I called "Summary":
 
-How much space is used and more importantly how much space is still free?
+$ ./btrfs filesystem df /mnt/btrfs1/
+Disk_size:		  21.00GB
+Disk_allocated:		   1.83GB
+Disk_unallocated:	  19.17GB
+Used:			 284.00KB
+Free_(Estimated):	  15.76GB	(Max: 20.54GB, min: 10.96GB)
+Data_to_disk_ratio:	     75 %
 
-A further use case would be:
+The second one show the chunk list grouped by devices:
 
-Is a some disk on my BTRFS RAID limiting the usable space by being too 
-small in compared to other disks?
+$ sudo ./btrfs device disk-usage /mnt/btrfs1/
+/dev/vdb	    3.00GB
+   Data,Single:              8.00MB
+   Data,RAID0:             307.25MB
+   Metadata,Single:          8.00MB
+   Metadata,RAID1:         460.94MB
+   System,Single:            4.00MB
+   Unallocated:              2.23GB
 
-And then:
+/dev/vdc	    3.00GB
+   Data,RAID0:             307.25MB
+   System,RAID1:             8.00MB
+   Unallocated:              2.69GB
 
-Is there a imbalance in disk allocation that prevents me from using all 
-space and that I can have fixed by doing a balance operation?
+/dev/vdd	    3.00GB
+   Data,RAID0:             307.25MB
+   Metadata,RAID1:         460.94MB
+   System,RAID1:             8.00MB
+   Unallocated:              2.24GB
 
-Maybe also:
-
-What would be a good way to extend the usable space in my BTRFS given the 
-current disks, their sizes and the current allocation strategies? Could 
-even be a simulation. btrfs filesystem df -a /dev/sdi1 and then it shows 
-how usable size would change if /dev/sdi1 was added to the fs.
-
-And then subvolume related questions like:
-
-Which subvolumes are using up all this disk space?
-
-
-Anything else?
-
-
-With the use cases in mind we can work out what a good output would be by 
-asking ourselves: Does the output(s) answer the questions from the use 
-cases?
-
-
-Given above use cases, I think its most important to get the summary view 
-into btrfs filesystem df and then go from there for additional details 
-provided by options or different commands.
-
-Given that the summary view IMHO was quite uncontroversial I think it can 
-go in already while we discuss the other stuff, can´t it?
+/dev/vdf	   12.00GB
+   Unallocated:             12.00GB
 
 
-IMHO it would then be good to also fix regular df to provide a free space 
-like in the summary view. Maybe by being conservative and using the 
-smallest estimation. But mabye its just me who never really understood why 
-a 100 GB BTRFS RAID1 shows 200GB of free space and a 100 MB file on it 
-occupies 200MB.
+The third one shows the devices grouped by chunk type; it has two kind
+of output the first kind of output is a linear one (as before); the
+second kind of output is in a tabular form. I don't like it because it
+is suitable only when the filesystem uses few profile; otherwise this
+output is larger than 80 columns.
 
-Currently the regular df output, while technically somewhat correct, IMHO 
-is just of no good use for anyone using a BTRFS raid. Especially with 
-applications that use df value to determine how much data to place on a 
-volume like fscache or other caches. Hmmm, however these will work if 
-using a percentage, cause that would still be correct, cause 180 GB of 200 
-GB is still 90% like 90 GB of 100GB. But they would over-allocate if being 
-told to leave 10 GB free or so.
+$ sudo ./btrfs filesystem disk-usage /mnt/btrfs1/
+Data,Single: Size:8.00MB, Used:0.00
+   /dev/vdb	    8.00MB
 
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Data,RAID0: Size:921.75MB, Used:256.00KB
+   /dev/vdb	  307.25MB
+   /dev/vdc	  307.25MB
+   /dev/vdd	  307.25MB
+
+Metadata,Single: Size:8.00MB, Used:0.00
+   /dev/vdb	    8.00MB
+
+Metadata,RAID1: Size:460.94MB, Used:24.00KB
+   /dev/vdb	  460.94MB
+   /dev/vdd	  460.94MB
+
+System,Single: Size:4.00MB, Used:0.00
+   /dev/vdb	    4.00MB
+
+System,RAID1: Size:8.00MB, Used:4.00KB
+   /dev/vdc	    8.00MB
+   /dev/vdd	    8.00MB
+
+Unallocated:
+   /dev/vdb	    2.23GB
+   /dev/vdc	    2.69GB
+   /dev/vdd	    2.24GB
+   /dev/vdf	   12.00GB
+
+
+
+$ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
+           Data      Data      Metadata  System    System
+           Single    RAID0     Single    Single    RAID1     Unused
+
+vdb          8.00MB  307.25MB    8.00MB    4.00MB         -    2.23GB
+vdc               -  307.25MB         -         -    8.00MB    2.69GB
+vdd               -  307.25MB         -         -    8.00MB    2.24GB
+vdf               -         -         -         -         -   12.00GB
+          ========= ========= ========= ========= ========= =========
+Total        8.00MB  921.75MB    8.00MB    4.00MB    8.00MB   19.17GB
+Used           0.00  256.00KB      0.00      0.00    4.00KB
+
+
+The latest output is a fake, because the original one requires 78-79
+columns, so the email reader would rewrap it. I had to remove a column
+(Metadata,RAID1) : this confirm me that this kind of output is
+unusable as general case.
+
+The code is pullable from
+        http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+        info-cmd
+
+I don't publish the patches because aren't in a good shape. The
+example is a filesystem based on three disks of 3GB and one disk of 12 GB.
+
+Comments are welcome.
+
+Known bugs:
+- - the commands btrfs fi disk-usage and btrfs device disk-usage need
+root capability (I use the BTRFS_IOC_TREE_SEARCH
+to get the chunk info; so that is unavoidable)
+
+
+
+- -- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJQjwFeAAoJEA7amzeLguC1jtEP/1tzU9s2mfLhz1AVotYW3oWd
+hnVNdBmz/E+uGJYTY99heB/Vmnu2dZUQyKlbUilAM7XtQw7GsEITGa+6peoPIPrI
+8v0mYL+e/Bd24caMS7DlRR1cJ9lqWlJg6lxwGryVYCyYcFIkkRhw5PcFAxOyF2xe
+Q0aESR8a4CA7NBMXH6QeTLD7oSZAnIFAK/EDYbExweJ1a+OSMzgJ+CMWmlaOf79v
+R90c9qg309dUctHO0mB/D5XjJlFwNaGJpNsxEvBJdkZl0VgHxm1unsaxYLFU5ybk
+/qJs7yqJIFk9BtV15zREtuC7n+CC5Mwo/gPOP24qyZazfLgMv72NaOTmDdiXuNpV
+vjVgAgNSRL5JSI6RTQEgJwy2xgPJA/k0z4R20xpXRn0+E2OHDSKk/+gqmCE3Iieb
+3LcJBuEPSQxpx6R5RubNhwauu3h6Dn4qBIUSagH6zYz+AUwkfcUTGdS3vgrXfEUf
+UNGn3wEcz8veIr66cOm3t6pTcRInFOIvOf/32Bei1SZyEiiX0pzxmSWAutaOiRNe
+m+sjWhFF3QW6wKX25QRXFgqnFJQwpx+9sP90dQvTh5oOio+xbi+eGZJ8WEMVY6b1
+L4iiqY8DtnfufQF2XUGGIa8b8Wxdp15gUoeqPKh2Oy8srEsUjV+g4vwXOMrRtYfR
+d4o8YssrtjlpSBQCYHpZ
+=TUa5
+-----END PGP SIGNATURE-----

@@ -1,22 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e37.co.us.ibm.com ([32.97.110.158]:44917 "EHLO
-	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756695Ab2J2Edm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 00:33:42 -0400
+Received: from e3.ny.us.ibm.com ([32.97.182.143]:46024 "EHLO e3.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757535Ab2J2Ecy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Oct 2012 00:32:54 -0400
 Received: from /spool/local
-	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e3.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 28 Oct 2012 22:33:41 -0600
+	Mon, 29 Oct 2012 00:32:53 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
-Subject: [RFC v4+ hot_track 13/19] debugfs: introduce one function
-Date: Mon, 29 Oct 2012 12:30:55 +0800
-Message-Id: <1351485061-12297-14-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4+ hot_track 15/19] sysfs: add two hot_track proc files
+Date: Mon, 29 Oct 2012 12:30:57 +0800
+Message-Id: <1351485061-12297-16-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,78 +23,125 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  The debugfs function is used to get expected dentry.
+  Add two proc files hot-kick-time and hot-update-delay
+under the dir /proc/sys/fs/ in order to turn
+TIME_TO_KICK and HEAT_UPDATE_DELAY into be tunable.
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/debugfs/inode.c      |   26 ++++++++++++++++++++++++++
- include/linux/debugfs.h |    9 +++++++++
- 2 files changed, 35 insertions(+), 0 deletions(-)
+ fs/hot_tracking.c            |   12 +++++++++---
+ fs/hot_tracking.h            |    9 ---------
+ include/linux/hot_tracking.h |    7 +++++++
+ kernel/sysctl.c              |   14 ++++++++++++++
+ 4 files changed, 30 insertions(+), 12 deletions(-)
 
-diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
-index b607d92..c6291bc 100644
---- a/fs/debugfs/inode.c
-+++ b/fs/debugfs/inode.c
-@@ -354,6 +354,32 @@ exit:
- 	return dentry;
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+index 376d7fb..02ac4a2 100644
+--- a/fs/hot_tracking.c
++++ b/fs/hot_tracking.c
+@@ -28,6 +28,12 @@
+ static DEFINE_SPINLOCK(hot_func_list_lock);
+ static LIST_HEAD(hot_func_list);
+ 
++int sysctl_hot_kick_time __read_mostly = 300;
++EXPORT_SYMBOL_GPL(sysctl_hot_kick_time);
++
++int sysctl_hot_update_delay __read_mostly = 300;
++EXPORT_SYMBOL_GPL(sysctl_hot_update_delay);
++
+ /* kmem_cache pointers for slab caches */
+ static struct kmem_cache *hot_inode_item_cachep __read_mostly;
+ static struct kmem_cache *hot_range_item_cachep __read_mostly;
+@@ -417,7 +423,7 @@ static bool hot_is_obsolete(struct hot_freq_data *freq_data)
+ 		(cur_time - timespec_to_ns(&freq_data->last_read_time));
+ 	u64 last_write_ns =
+ 		(cur_time - timespec_to_ns(&freq_data->last_write_time));
+-	u64 kick_ns =  TIME_TO_KICK * NSEC_PER_SEC;
++	u64 kick_ns =  sysctl_hot_kick_time * NSEC_PER_SEC;
+ 
+ 	if ((last_read_ns > kick_ns) && (last_write_ns > kick_ns))
+ 		ret = 1;
+@@ -625,7 +631,7 @@ static void hot_update_worker(struct work_struct *work)
+ 
+ 	/* Instert next delayed work */
+ 	queue_delayed_work(root->update_wq, &root->update_work,
+-		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
++		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
  }
  
-+struct dentry *debugfs_get_dentry(const char *name,
-+			struct dentry *parent, int len)
-+{
-+	struct dentry *dentry = NULL;
-+	int error = 0;
-+
-+	error = simple_pin_fs(&debug_fs_type, &debugfs_mount,
-+				&debugfs_mount_count);
-+	if (error)
-+		return NULL;
-+
-+	if (!parent)
-+		parent = debugfs_mount->mnt_root;
-+
-+	mutex_lock(&parent->d_inode->i_mutex);
-+	dentry = lookup_one_len(name, parent, strlen(name));
-+	if (!IS_ERR(dentry)) {
-+		mutex_unlock(&parent->d_inode->i_mutex);
-+		return dentry;
-+	}
-+	mutex_unlock(&parent->d_inode->i_mutex);
-+
-+	return NULL;
-+}
-+EXPORT_SYMBOL_GPL(debugfs_get_dentry);
-+
- /**
-  * debugfs_create_file - create a file in the debugfs filesystem
-  * @name: a pointer to a string containing the name of the file to create.
-diff --git a/include/linux/debugfs.h b/include/linux/debugfs.h
-index 66c434f..8913a4d 100644
---- a/include/linux/debugfs.h
-+++ b/include/linux/debugfs.h
-@@ -46,6 +46,9 @@ extern struct dentry *arch_debugfs_dir;
- extern const struct file_operations debugfs_file_operations;
- extern const struct inode_operations debugfs_link_operations;
+ /*
+@@ -1316,7 +1322,7 @@ int hot_track_init(struct super_block *sb)
+ 	/* Initialize hot tracking wq and arm one delayed work */
+ 	INIT_DELAYED_WORK(&root->update_work, hot_update_worker);
+ 	queue_delayed_work(root->update_wq, &root->update_work,
+-		msecs_to_jiffies(HEAT_UPDATE_DELAY * MSEC_PER_SEC));
++		msecs_to_jiffies(sysctl_hot_update_delay * MSEC_PER_SEC));
  
-+struct dentry *debugfs_get_dentry(const char *name,
-+				struct dentry *parent, int len);
-+
- struct dentry *debugfs_create_file(const char *name, umode_t mode,
- 				   struct dentry *parent, void *data,
- 				   const struct file_operations *fops);
-@@ -103,6 +106,12 @@ bool debugfs_initialized(void);
+ 	/* Register a shrinker callback */
+ 	root->hot_shrink.shrink = hot_track_prune;
+diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
+index f5ba2d6..095eab0 100644
+--- a/fs/hot_tracking.h
++++ b/fs/hot_tracking.h
+@@ -26,15 +26,6 @@
  
- #include <linux/err.h>
+ #define FREQ_POWER 4
  
-+static inline struct dentry *debugfs_get_dentry(const char *name,
-+					struct dentry *parent, int len)
-+{
-+	return ERR_PTR(-ENODEV);
-+}
+-/*
+- * time to quit keeping track of
+- * tracking data (seconds)
+- */
+-#define TIME_TO_KICK 300
+-
+-/* set how often to update temperatures (seconds) */
+-#define HEAT_UPDATE_DELAY 300
+-
+ /* NRR/NRW heat unit = 2^X accesses */
+ #define NRR_MULTIPLIER_POWER 20 /* NRR - number of reads since mount */
+ #define NRR_COEFF_POWER 0
+diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+index a16217f..416c988 100644
+--- a/include/linux/hot_tracking.h
++++ b/include/linux/hot_tracking.h
+@@ -123,6 +123,13 @@ struct hot_info {
+ };
+ 
+ /*
++ * Two variables have meanings as below:
++ * 1. time to quit keeping track of tracking data (seconds)
++ * 2. set how often to update temperatures (seconds)
++ */
++extern int sysctl_hot_kick_time, sysctl_hot_update_delay;
 +
- /* 
-  * We do not return NULL from these functions if CONFIG_DEBUG_FS is not enabled
-  * so users have a chance to detect if there was a real error or not.  We don't
++/*
+  * Hot data tracking ioctls:
+  *
+  * HOT_INFO - retrieve info on frequency of access
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index 26f65ea..37624fb 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -1545,6 +1545,20 @@ static struct ctl_table fs_table[] = {
+ 		.proc_handler	= &pipe_proc_fn,
+ 		.extra1		= &pipe_min_size,
+ 	},
++	{
++		.procname	= "hot-kick-time",
++		.data		= &sysctl_hot_kick_time,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec,
++	},
++	{
++		.procname	= "hot-update-delay",
++		.data		= &sysctl_hot_update_delay,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec,
++	},
+ 	{ }
+ };
+ 
 -- 
 1.7.6.5
 

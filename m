@@ -1,83 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:62211 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757484Ab2J2COl (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:39180 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751063Ab2J2EaD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 22:14:41 -0400
+	Mon, 29 Oct 2012 00:30:03 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
+	id 1TSgzC-0003Dj-8h
+	for <linux-btrfs@vger.kernel.org>; Sun, 28 Oct 2012 21:30:02 -0700
+Date: Sun, 28 Oct 2012 21:30:02 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707
+Message-ID: <20121029043002.GA8019@merlins.org>
+References: <20121025195805.GA24111@merlins.org> <CAE5mzvi=y6Auyr9cGMOm=tUSSj7sSQ78W0Bnzk+dJOqkW6z6jA@mail.gmail.com> <20121025201223.GB24111@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <20121029020124.GP29378@dastard>
-References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
-	<1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
-	<20121028075520.GA14554@gmail.com>
-	<CAEH94LidECTUHb0_Wujyg=zH18+dzxMPTUUpiYBeUSiG7MpSKQ@mail.gmail.com>
-	<20121029020124.GP29378@dastard>
-Date: Mon, 29 Oct 2012 10:14:39 +0800
-Message-ID: <CAEH94LhyW8THc1JNgaCeptiN9ErUHALrpsT0BK=bXa8gMq3iRQ@mail.gmail.com>
-Subject: Re: [RFC v4 03/15] vfs,hot_track: add the function for collecting I/O frequency
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, tytso@mit.edu,
-        cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121025201223.GB24111@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 29, 2012 at 10:01 AM, Dave Chinner <david@fromorbit.com> wrote:
-> On Sun, Oct 28, 2012 at 09:51:48PM +0800, Zhi Yong Wu wrote:
->> On Sun, Oct 28, 2012 at 3:55 PM, Zheng Liu <gnehzuil.liu@gmail.com> wrote:
->> > Hi Zhiyong,
->> >
->> > On Thu, Oct 25, 2012 at 11:08:55PM +0800, zwu.kernel@gmail.com wrote:
->> > [snip]
->> >> @@ -199,6 +342,54 @@ err:
->> >>  }
->> >>
->> >>  /*
->> >> + * Main function to update access frequency from read/writepage(s) hooks
->> >> + */
->> >> +inline void hot_update_freqs(struct inode *inode, u64 start,
->> >> +                     u64 len, int rw)
->> >
->> > This function seems too big.  So we really need to inline this function?
->> As Dave said in his comments, it will add a function call
->> overhead even when tracking is not enabled. a static inline function
->> will just result in no extra overhead other than the if
->> statement....
->
-> I don't think I said that with respect to this code. I think I said
-> it w.r.t. a define or a small wrapper that decides to call
-> hot_update_freqs().  A static inline fucntion should only be a
-> couple of lines of code at most.
->
-> A static function, OTOH, can be inlined by the compiler if the
-> compiler thinks that is a win. But....
-thanks for your explaination at first.
->
-> .....
->
->> >> +EXPORT_SYMBOL_GPL(hot_update_freqs);
->
-> ... it's an exported function, so it can't be inline or static, so
-> using "inline" is wrong whatever way you look at it. ;)
-ah, but i' m surprised by why the compiler find this error.
+On Thu, Oct 25, 2012 at 01:12:23PM -0700, Marc MERLIN wrote:
+> On Thu, Oct 25, 2012 at 02:03:49PM -0600, cwillu wrote:
+> > > 3) Want me to try btrfsck although it may make it impossible for me to
+> > > reproduce the bug and test a fix, as well as potentially break the filesystem
+> > > more (last time I tried btrfsck, it outputted thousands of lines and never converged
+> > > to a state it was happy with)
+> > 
+> > This looks like something btrfs-zero-log would work around (although
+> > -o recovery should do mostly the same things).  That would destroy the
+> > evidence though, and may just make things (slightly) worse, so I'd
+> > wait to see if anyone suggests something better before trying it.  If
+> > you're ultimately ending up restoring from backup though, it may save
+> > you that effort at least.
+> 
+> Thanks for pointing out btrfs-zero-log, I hadn't re-read the wiki page since
+> this got added.
+> But I'll hold off at least until tomorrow morning (GMT-7).
 
->
-> Cheers,
->
-> Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-ext4" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm a bit surprised that no one seems to be replying on btrfs crashes,
+that's a bit worrisome. I'm willing to risk my data somewhat, but if finding
+a problem doesn't help fixing the code, I'm not sure if I'm helping anymore
+:-/
 
+Since I ran out of time, I tried:
+gandalfthegreat:~# btrfs-zero-log 
+usage: btrfs-zero-log dev
+Btrfs Btrfs v0.19
+gandalfthegreat:~# btrfs-zero-log /dev/mapper/bootdsk 
+Check tree block failed, want=7533391872, have=17347973115472321934
+Check tree block failed, want=7533391872, have=17347973115472321934
+Check tree block failed, want=7533391872, have=8450612919225897562
+Check tree block failed, want=7533391872, have=17347973115472321934
+Check tree block failed, want=7533391872, have=17347973115472321934
+read block failed check_tree_block
+gandalfthegreat:~# 
 
+So from here, unless someone chimes in tomorrow, I'm going to have to wipe
+my filesystem and start over. I suppose that means btrfs can likely still
+cause unknown and unfixable corruption.
 
+Marc
 -- 
-Regards,
-
-Zhi Yong Wu
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

@@ -1,21 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e5.ny.us.ibm.com ([32.97.182.145]:58878 "EHLO e5.ny.us.ibm.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753978Ab2J2EcC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 00:32:02 -0400
+Received: from e31.co.us.ibm.com ([32.97.110.149]:36724 "EHLO
+	e31.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754536Ab2J2EcH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Oct 2012 00:32:07 -0400
 Received: from /spool/local
-	by e5.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e31.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Mon, 29 Oct 2012 00:32:02 -0400
+	Sun, 28 Oct 2012 22:32:06 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, tytso@mit.edu,
         cmm@us.ibm.com, wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
-Subject: [RFC v4+ hot_track 06/19] vfs: add temp calculation function
-Date: Mon, 29 Oct 2012 12:30:48 +0800
-Message-Id: <1351485061-12297-7-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v4+ hot_track 05/19] vfs: add hooks to enable hot tracking
+Date: Mon, 29 Oct 2012 12:30:47 +0800
+Message-Id: <1351485061-12297-6-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,96 +24,126 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
+  Miscellaneous features that implement hot data tracking
+and generally make the hot data functions a bit more friendly.
+
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 74 insertions(+), 0 deletions(-)
+ fs/direct-io.c      |    6 ++++++
+ mm/filemap.c        |    6 ++++++
+ mm/page-writeback.c |   12 ++++++++++++
+ mm/readahead.c      |    6 ++++++
+ 4 files changed, 30 insertions(+), 0 deletions(-)
 
-diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index 0a603a1..83e590c 100644
---- a/fs/hot_tracking.c
-+++ b/fs/hot_tracking.c
-@@ -323,6 +323,80 @@ static void hot_freq_data_update(struct hot_freq_data *freq_data, bool write)
- 	}
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index f86c720..1d23631 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -37,6 +37,7 @@
+ #include <linux/uio.h>
+ #include <linux/atomic.h>
+ #include <linux/prefetch.h>
++#include "hot_tracking.h"
+ 
+ /*
+  * How many user pages to map in one call to get_user_pages().  This determines
+@@ -1297,6 +1298,11 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	prefetch(bdev->bd_queue);
+ 	prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
+ 
++	/* Hot data tracking */
++	hot_update_freqs(inode, (u64)offset,
++			(u64)iov_length(iov, nr_segs),
++			rw & WRITE);
++
+ 	return do_blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
+ 				     nr_segs, get_block, end_io,
+ 				     submit_io, flags);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 83efee7..51b2c48 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -33,6 +33,7 @@
+ #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
+ #include <linux/memcontrol.h>
+ #include <linux/cleancache.h>
++#include <linux/hot_tracking.h>
+ #include "internal.h"
+ 
+ /*
+@@ -1224,6 +1225,11 @@ readpage:
+ 		 * PG_error will be set again if readpage fails.
+ 		 */
+ 		ClearPageError(page);
++
++		/* Hot data tracking */
++		hot_update_freqs(inode, (u64)page->index << PAGE_CACHE_SHIFT,
++				PAGE_CACHE_SIZE, 0);
++
+ 		/* Start the actual read. The read will unlock the page. */
+ 		error = mapping->a_ops->readpage(filp, page);
+ 
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 830893b..5220040 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -35,6 +35,7 @@
+ #include <linux/buffer_head.h> /* __set_page_dirty_buffers */
+ #include <linux/pagevec.h>
+ #include <linux/timer.h>
++#include <linux/hot_tracking.h>
+ #include <trace/events/writeback.h>
+ 
+ /*
+@@ -1903,13 +1904,24 @@ EXPORT_SYMBOL(generic_writepages);
+ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
+ {
+ 	int ret;
++	pgoff_t start = 0;
++	u64 count = 0;
+ 
+ 	if (wbc->nr_to_write <= 0)
+ 		return 0;
++
++	start = mapping->writeback_index << PAGE_CACHE_SHIFT;
++	count = (u64)wbc->nr_to_write;
++
+ 	if (mapping->a_ops->writepages)
+ 		ret = mapping->a_ops->writepages(mapping, wbc);
+ 	else
+ 		ret = generic_writepages(mapping, wbc);
++
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host, (u64)start,
++			(count - (u64)wbc->nr_to_write) * PAGE_CACHE_SIZE, 1);
++
+ 	return ret;
  }
  
-+static u64 hot_raw_shift(u64 counter, u32 bits, bool dir)
-+{
-+	if (dir)
-+		return counter << bits;
-+	else
-+		return counter >> bits;
-+}
-+
-+/*
-+ * hot_temp_calc() is responsible for distilling the six heat
-+ * criteria down into a single temperature value for the data,
-+ * which is an integer between 0 and HEAT_MAX_VALUE.
-+ */
-+static u32 hot_temp_calc(struct hot_freq_data *freq_data)
-+{
-+	u32 result = 0;
-+
-+	struct timespec ckt = current_kernel_time();
-+	u64 cur_time = timespec_to_ns(&ckt);
-+
-+	u32 nrr_heat = (u32)hot_raw_shift((u64)freq_data->nr_reads,
-+					NRR_MULTIPLIER_POWER, true);
-+	u32 nrw_heat = (u32)hot_raw_shift((u64)freq_data->nr_writes,
-+					NRW_MULTIPLIER_POWER, true);
-+
-+	u64 ltr_heat =
-+	hot_raw_shift((cur_time - timespec_to_ns(&freq_data->last_read_time)),
-+			LTR_DIVIDER_POWER, false);
-+	u64 ltw_heat =
-+	hot_raw_shift((cur_time - timespec_to_ns(&freq_data->last_write_time)),
-+			LTW_DIVIDER_POWER, false);
-+
-+	u64 avr_heat =
-+	hot_raw_shift((((u64) -1) - freq_data->avg_delta_reads),
-+			AVR_DIVIDER_POWER, false);
-+	u64 avw_heat =
-+	hot_raw_shift((((u64) -1) - freq_data->avg_delta_writes),
-+			AVW_DIVIDER_POWER, false);
-+
-+	/* ltr_heat is now guaranteed to be u32 safe */
-+	if (ltr_heat >= hot_raw_shift((u64) 1, 32, true))
-+		ltr_heat = 0;
-+	else
-+		ltr_heat = hot_raw_shift((u64) 1, 32, true) - ltr_heat;
-+
-+	/* ltw_heat is now guaranteed to be u32 safe */
-+	if (ltw_heat >= hot_raw_shift((u64) 1, 32, true))
-+		ltw_heat = 0;
-+	else
-+		ltw_heat = hot_raw_shift((u64) 1, 32, true) - ltw_heat;
-+
-+	/* avr_heat is now guaranteed to be u32 safe */
-+	if (avr_heat >= hot_raw_shift((u64) 1, 32, true))
-+		avr_heat = (u32) -1;
-+
-+	/* avw_heat is now guaranteed to be u32 safe */
-+	if (avw_heat >= hot_raw_shift((u64) 1, 32, true))
-+		avw_heat = (u32) -1;
-+
-+	nrr_heat = (u32)hot_raw_shift((u64)nrr_heat,
-+		(3 - NRR_COEFF_POWER), false);
-+	nrw_heat = (u32)hot_raw_shift((u64)nrw_heat,
-+		(3 - NRW_COEFF_POWER), false);
-+	ltr_heat = hot_raw_shift(ltr_heat, (3 - LTR_COEFF_POWER), false);
-+	ltw_heat = hot_raw_shift(ltw_heat, (3 - LTW_COEFF_POWER), false);
-+	avr_heat = hot_raw_shift(avr_heat, (3 - AVR_COEFF_POWER), false);
-+	avw_heat = hot_raw_shift(avw_heat, (3 - AVW_COEFF_POWER), false);
-+
-+	result = nrr_heat + nrw_heat + (u32) ltr_heat +
-+		(u32) ltw_heat + (u32) avr_heat + (u32) avw_heat;
-+
-+	return result;
-+}
-+
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 7963f23..8a24f1e 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -19,6 +19,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/syscalls.h>
+ #include <linux/file.h>
++#include <linux/hot_tracking.h>
+ 
  /*
-  * Initialize inode and range map arrays.
-  */
+  * Initialise a struct file's readahead state.  Assumes that the caller has
+@@ -138,6 +139,11 @@ static int read_pages(struct address_space *mapping, struct file *filp,
+ out:
+ 	blk_finish_plug(&plug);
+ 
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host, (u64)(list_entry(pages->prev,\
++				struct page, lru)->index) << PAGE_CACHE_SHIFT,
++			(u64)nr_pages * PAGE_CACHE_SIZE, 0);
++
+ 	return ret;
+ }
+ 
 -- 
 1.7.6.5
 

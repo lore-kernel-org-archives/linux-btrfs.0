@@ -1,56 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36879 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:34376 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753053Ab2J2NPF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 09:15:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TSpBI-0000ol-PO
-	for linux-btrfs@vger.kernel.org; Mon, 29 Oct 2012 14:15:04 +0100
-Received: from 81-233-183-238-no86.business.telia.com ([81.233.183.238])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2012 14:15:04 +0100
-Received: from quazzie by 81-233-183-238-no86.business.telia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2012 14:15:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Tommy Jonsson <quazzie@gmail.com>
-Subject: Re: Old (almost 2 years) btrfs failed fs. Parent transid failure. Can it be fixed ?
-Date: Mon, 29 Oct 2012 13:10:31 +0000 (UTC)
-Message-ID: <loom.20121029T140737-910@post.gmane.org>
-References: <CAM4M9rQZbsmiC_xmjAtt+syEmp5_ABMTmSVK0KAoVJwc2yqTwg@mail.gmail.com> <20121029123313.GA19012@mother.jarsat.pl>
-Mime-Version: 1.0
+	id S1753071Ab2J2Oww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Oct 2012 10:52:52 -0400
+Date: Mon, 29 Oct 2012 14:52:45 +0000
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Chris Mason <chris.mason@fusionio.com>, Chris Mason <clmason@fusionio.com>,
+        David Sterba <dave@jikos.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
+ with latest kernel?
+Message-ID: <20121029145245.GA3346@rhmail.home.annexia.org>
+References: <20121009000051.GA12735@shiny>
+ <20121009072002.GJ24071@rhmail.home.annexia.org>
+ <20121009073357.GB13692@rhmail.home.annexia.org>
+ <20121009090012.GJ4405@twin.jikos.cz>
+ <20121010123808.GA31317@shiny>
+ <20121010193853.GV24071@rhmail.home.annexia.org>
+ <20121010194113.GA687@shiny>
+ <20121010194641.GW24071@rhmail.home.annexia.org>
+ <20121011072821.GA4605@rhmail.home.annexia.org>
+ <20121011112628.GE687@shiny>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121011112628.GE687@shiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Torcz <tomek <at> pipebreaker.pl> writes:
-
->   I think you need to get branch "dangerdonoteveruse" to get real fsck code.
+On Thu, Oct 11, 2012 at 07:26:28AM -0400, Chris Mason wrote:
+> On Thu, Oct 11, 2012 at 01:28:21AM -0600, Richard W.M. Jones wrote:
+> > Well the bad news is that the bug happened again overnight, even
+> > though we were definitely using btrfs-progs with the 6eba90029 patch
+> > added, _and_ it was doing a sync + fsync between the mkfs and the
+> > mount.
 > 
-> > sudo mount -t btrfs /dev/sda /mnt/disk/
+> This is good just because it makes the most sense.  The only thing worse
+> than a bug is a bug that disappears for the wrong reasons ;)
 > 
->  Could you try with "-o recovery"?
+> > 
+> > Here is the log:
+> > [   17.943272] btrfs bad tree block start 0 135168
+> > [   17.955270] btrfs: open_ctree failed
 > 
+> This is also good because it really points to the invalidate.  You've
+> got zeros where we wrote 135168, and pretty much the only way to get
+> zeros on a disk block is if the kernel did a memset.  Sure some app
+> could have written the zeros there, but that block offset is unlikely to
+> get allocated as a data block by the other filesystems.
+> 
+> So, I'll go back to the invalidate code ;)
 
-As hugo said i think i got the correct source.
+Any luck on this?  It's still happening in the latest kernels.  If
+there's anything / patch you want me to try, let me know.
 
-Anyway mount with recovery does not work.
+Rich.
 
-sudo mount -t btrfs -o recovery /dev/sda /mnt/superdisk/
->mount: wrong fs type, bad option, bad superblock on /dev/sda,
->missing codepage or helper program, or other error
->In some cases useful info is found in syslog - try
->dmesg | tail  or so
-
-dmesg
->[2582520.375909] device fsid 7278c712-5d48-4a73-b40d-6708a45a0b9b devid 3 
->transid 39651 /dev/sda
->[2582520.377733] btrfs: enabling auto recoveryparent transid verify failed 
->on 2721514774528 wanted 39651 found 39649
->[2582520.394180] btrfs: failed to read tree root on sda
->[2582520.395848] btrfs: open_ctree failed
-
-Thanks for your intrest!
-
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+Read my programming blog: http://rwmj.wordpress.com
+Fedora now supports 80 OCaml packages (the OPEN alternative to F#)
+http://cocan.org/getting_started_with_ocaml_on_red_hat_and_fedora

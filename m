@@ -1,78 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39536 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932331Ab2J2MrR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 08:47:17 -0400
-Date: Mon, 29 Oct 2012 12:47:12 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
-Subject: Re: Old (almost 2 years) btrfs failed fs. Parent transid failure.
- Can it be fixed ?
-Message-ID: <20121029124712.GF5042@carfax.org.uk>
-References: <CAM4M9rQZbsmiC_xmjAtt+syEmp5_ABMTmSVK0KAoVJwc2yqTwg@mail.gmail.com>
- <20121029123313.GA19012@mother.jarsat.pl>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="aPdhxNJGSeOG9wFI"
-In-Reply-To: <20121029123313.GA19012@mother.jarsat.pl>
+Received: from plane.gmane.org ([80.91.229.3]:36879 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753053Ab2J2NPF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Oct 2012 09:15:05 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TSpBI-0000ol-PO
+	for linux-btrfs@vger.kernel.org; Mon, 29 Oct 2012 14:15:04 +0100
+Received: from 81-233-183-238-no86.business.telia.com ([81.233.183.238])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2012 14:15:04 +0100
+Received: from quazzie by 81-233-183-238-no86.business.telia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2012 14:15:04 +0100
+To: linux-btrfs@vger.kernel.org
+From: Tommy Jonsson <quazzie@gmail.com>
+Subject: Re: Old (almost 2 years) btrfs failed fs. Parent transid failure. Can it be fixed ?
+Date: Mon, 29 Oct 2012 13:10:31 +0000 (UTC)
+Message-ID: <loom.20121029T140737-910@post.gmane.org>
+References: <CAM4M9rQZbsmiC_xmjAtt+syEmp5_ABMTmSVK0KAoVJwc2yqTwg@mail.gmail.com> <20121029123313.GA19012@mother.jarsat.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Tomasz Torcz <tomek <at> pipebreaker.pl> writes:
 
---aPdhxNJGSeOG9wFI
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Oct 29, 2012 at 01:33:13PM +0100, Tomasz Torcz wrote:
-> On Mon, Oct 29, 2012 at 01:22:59PM +0100, Tommy Jonsson wrote:
-> > Hi, i have an old btrfs file-system that crashed on a power-failure
-> > for about 2 years ago.
-> > 
-> > i have clone the
-> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-> > (at 2012-10-29) and compiled the tools.
-> 
 >   I think you need to get branch "dangerdonoteveruse" to get real fsck code.
-
-   That's a very outdated piece of advice. That code is now in
-mainline btrfs-progs, and has been since March. Tommy has the correct
-and up-to-date version of the progs.
-
+> 
 > > sudo mount -t btrfs /dev/sda /mnt/disk/
 > 
 >  Could you try with "-o recovery"?
+> 
 
-   That's worth a try as a first step.
+As hugo said i think i got the correct source.
 
-   Hugo.
+Anyway mount with recovery does not work.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- The last man on Earth sat in a room.  Suddenly, there was a ---   
-                           knock at the door.                            
+sudo mount -t btrfs -o recovery /dev/sda /mnt/superdisk/
+>mount: wrong fs type, bad option, bad superblock on /dev/sda,
+>missing codepage or helper program, or other error
+>In some cases useful info is found in syslog - try
+>dmesg | tail  or so
 
---aPdhxNJGSeOG9wFI
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+dmesg
+>[2582520.375909] device fsid 7278c712-5d48-4a73-b40d-6708a45a0b9b devid 3 
+>transid 39651 /dev/sda
+>[2582520.377733] btrfs: enabling auto recoveryparent transid verify failed 
+>on 2721514774528 wanted 39651 found 39649
+>[2582520.394180] btrfs: failed to read tree root on sda
+>[2582520.395848] btrfs: open_ctree failed
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Thanks for your intrest!
 
-iQIVAwUBUI56z79z9OVl50rAAQLfVxAAmXz65X9GgpAD7yCO3+b3CqGrD9csfbLR
-AN276APyavu0dfb7BU33AHS7D7oOYwtITK4nRDVmsnydD3Cb3ulfdMYKsx6zzAQe
-w3EbC7eF2rxSMtDtS5S8IfE/I0sPW/xpAfcL6rHdwZYASo+0M7q3aydQZhxUb/xm
-8vlCDlnoRYXgdBIFMM5pq98AtQ6i0a2K+9aYcPnk8/jtzPnT2vjnHi7vaf1+EbeP
-rBj97eY5uvvsPkpRUplMgtTZovC935KveG1bPMZDsQzyJJ8CPYTNlCSnVbYfOtpH
-bLLQ5GrOfnJRwW7NRizboqWoSYLfyQR5MTO5CIdOracoJO7pwxSeN/OF6pif4ayC
-9EQrKwcEKMFFXJ5gBI6DJbey6Jso2cCBsyCxThTz1AGfB6sYGi7zzYh0GCob9vUX
-q5EdAdBmGetexBujkD6C9pbaQ0oBSkxGESluNCl8eNwfnqDH3fny7o7EsPDjG13R
-49VXa/vCVDwWVXKAHretv/IFMD44n+c3YG8YmtQlo8grESLgWmhxLjpBD1BXhlDb
-LntDxon/fZDHnDp31SHKxQSgtIyohP3HBlfovj8d1hICWMBQACPzIUCsQUx59BqC
-buj9VkIm6ZqCNZHrYNJ+aI5uqzvHQgnfCLBuHUxG4jjwbSXCER/TMZvqjSmY6ySe
-Wl5SjrFg76c=
-=tjLa
------END PGP SIGNATURE-----
-
---aPdhxNJGSeOG9wFI--

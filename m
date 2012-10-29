@@ -1,48 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:58511 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758759Ab2J2Mbr (ORCPT
+Received: from pipebreaker.pl ([109.107.25.67]:35105 "EHLO
+	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757095Ab2J2MmC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 08:31:47 -0400
+	Mon, 29 Oct 2012 08:42:02 -0400
+Date: Mon, 29 Oct 2012 13:33:13 +0100
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Old (almost 2 years) btrfs failed fs. Parent transid failure.
+ Can it be fixed ?
+Message-ID: <20121029123313.GA19012@mother.jarsat.pl>
+References: <CAM4M9rQZbsmiC_xmjAtt+syEmp5_ABMTmSVK0KAoVJwc2yqTwg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <m2boflr2o4.fsf@firstfloor.org>
-References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
-	<m2boflr2o4.fsf@firstfloor.org>
-Date: Mon, 29 Oct 2012 20:31:45 +0800
-Message-ID: <CAEH94LjASvpA_q4zTURR7A+EaDdVm3SSFOGgnwH6EXeH0pzz8g@mail.gmail.com>
-Subject: Re: [RFC v4+ hot_track 00/19] vfs: hot data tracking
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: Andi Kleen <andi@firstfloor.org>
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
-        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
-        wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAM4M9rQZbsmiC_xmjAtt+syEmp5_ABMTmSVK0KAoVJwc2yqTwg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 29, 2012 at 6:30 PM, Andi Kleen <andi@firstfloor.org> wrote:
-> zwu.kernel@gmail.com writes:
->>
->> TODO List:
->>
->>  1.) Need to do scalability or performance tests.
->
-> You're changing some of the most performance critical code in the
-> kernel. This step is absolutely not optional.
-ah, i know, but now i need to make sure all the codes are correct at
-first, then do these tests.
+On Mon, Oct 29, 2012 at 01:22:59PM +0100, Tommy Jonsson wrote:
+> Hi, i have an old btrfs file-system that crashed on a power-failure
+> for about 2 years ago.
+> 
+> i have clone the
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+> (at 2012-10-29) and compiled the tools.
 
->
-> -Andi
->
-> --
-> ak@linux.intel.com -- Speaking for myself only
+  I think you need to get branch "dangerdonoteveruse" to get real fsck code.
+ 
+> sudo mount -t btrfs /dev/sda /mnt/disk/
 
-
+ Could you try with "-o recovery"?
 
 -- 
-Regards,
+Tomasz Torcz                                                       72->|   80->|
+xmpp: zdzichubg@chrome.pl                                          72->|   80->|
 
-Zhi Yong Wu

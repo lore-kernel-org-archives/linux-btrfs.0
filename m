@@ -1,41 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.19.201]:52831 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754524Ab2J2WeH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Oct 2012 18:34:07 -0400
-Date: Mon, 29 Oct 2012 15:34:04 -0700
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Zhi Yong Wu <zwu.kernel@gmail.com>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:59067 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755669Ab2J2WpV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Oct 2012 18:45:21 -0400
+MIME-Version: 1.0
+In-Reply-To: <20121029223404.GA20486@kroah.com>
+References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
+	<1351485061-12297-14-git-send-email-zwu.kernel@gmail.com>
+	<20121029181135.GB3605@kroah.com>
+	<CAEH94Li_XUxUUJDskO28OSvZPmZB3u_SpLFcVtD-04PivQSS8w@mail.gmail.com>
+	<20121029223404.GA20486@kroah.com>
+Date: Tue, 30 Oct 2012 06:45:19 +0800
+Message-ID: <CAEH94Lj2baN-EzjTvxURc5ECyfjh9Z+w6NZbNUok3osOLF55ag@mail.gmail.com>
+Subject: Re: [RFC v4+ hot_track 13/19] debugfs: introduce one function
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: Greg KH <gregkh@linuxfoundation.org>
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
         david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
         wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
-Subject: Re: [RFC v4+ hot_track 13/19] debugfs: introduce one function
-Message-ID: <20121029223404.GA20486@kroah.com>
-References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
- <1351485061-12297-14-git-send-email-zwu.kernel@gmail.com>
- <20121029181135.GB3605@kroah.com>
- <CAEH94Li_XUxUUJDskO28OSvZPmZB3u_SpLFcVtD-04PivQSS8w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEH94Li_XUxUUJDskO28OSvZPmZB3u_SpLFcVtD-04PivQSS8w@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 30, 2012 at 06:25:50AM +0800, Zhi Yong Wu wrote:
-> On Tue, Oct 30, 2012 at 2:11 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
-> > On Mon, Oct 29, 2012 at 12:30:55PM +0800, zwu.kernel@gmail.com wrote:
-> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-> >>
-> >>   The debugfs function is used to get expected dentry.
-> >
-> > Huh?  Why do you need this?  Why haven't you added documentation for the
-> It is used to determine if one sysfs directory has been created. OK, i
-> will add some doc, thanks for your suggestion.
+On Tue, Oct 30, 2012 at 6:34 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
+> On Tue, Oct 30, 2012 at 06:25:50AM +0800, Zhi Yong Wu wrote:
+>> On Tue, Oct 30, 2012 at 2:11 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
+>> > On Mon, Oct 29, 2012 at 12:30:55PM +0800, zwu.kernel@gmail.com wrote:
+>> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>> >>
+>> >>   The debugfs function is used to get expected dentry.
+>> >
+>> > Huh?  Why do you need this?  Why haven't you added documentation for the
+>> It is used to determine if one sysfs directory has been created. OK, i
+>> will add some doc, thanks for your suggestion.
+>
+> You didn't answer the "why" part here.  How come you think you need
+ah, Let me say its scenario at first. If we do two mount ops as below:
+1.) mount -o loop,hot_track image1 /data1
+2.) mount -o loop,hot_track image2 /data2
 
-You didn't answer the "why" part here.  How come you think you need
-this?  Can't you just save off the dentry you created somewhere so you
-don't need to look it up again?
+The mount -o hot_track operation will automatically create one sysfs
+directory /sys/kernel/debug/hot_track. To prevent this dir being
+created again when 2.) is done, we need to know if it has existed at
+first. In my patch, i at first get its dentry by this new function,
+then determine if its d_inode field is NULL, if no, it means that this
+sysfs dir has existed.
+This is the reason that i want to add one new function.
 
-greg k-h
+> this?  Can't you just save off the dentry you created somewhere so you
+> don't need to look it up again?
+Because i can't find one appropriate place to save it.
+>
+> greg k-h
+
+
+
+-- 
+Regards,
+
+Zhi Yong Wu

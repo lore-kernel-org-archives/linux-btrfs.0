@@ -1,68 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:8006 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753504Ab2J2CBi (ORCPT
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:62211 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757484Ab2J2COl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Oct 2012 22:01:38 -0400
-Date: Mon, 29 Oct 2012 13:01:24 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Zhi Yong Wu <zwu.kernel@gmail.com>
+	Sun, 28 Oct 2012 22:14:41 -0400
+MIME-Version: 1.0
+In-Reply-To: <20121029020124.GP29378@dastard>
+References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
+	<1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
+	<20121028075520.GA14554@gmail.com>
+	<CAEH94LidECTUHb0_Wujyg=zH18+dzxMPTUUpiYBeUSiG7MpSKQ@mail.gmail.com>
+	<20121029020124.GP29378@dastard>
+Date: Mon, 29 Oct 2012 10:14:39 +0800
+Message-ID: <CAEH94LhyW8THc1JNgaCeptiN9ErUHALrpsT0BK=bXa8gMq3iRQ@mail.gmail.com>
+Subject: Re: [RFC v4 03/15] vfs,hot_track: add the function for collecting I/O frequency
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: Dave Chinner <david@fromorbit.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, tytso@mit.edu,
         cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v4 03/15] vfs,hot_track: add the function for collecting
- I/O frequency
-Message-ID: <20121029020124.GP29378@dastard>
-References: <1351177747-19389-1-git-send-email-zwu.kernel@gmail.com>
- <1351177747-19389-4-git-send-email-zwu.kernel@gmail.com>
- <20121028075520.GA14554@gmail.com>
- <CAEH94LidECTUHb0_Wujyg=zH18+dzxMPTUUpiYBeUSiG7MpSKQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEH94LidECTUHb0_Wujyg=zH18+dzxMPTUUpiYBeUSiG7MpSKQ@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 28, 2012 at 09:51:48PM +0800, Zhi Yong Wu wrote:
-> On Sun, Oct 28, 2012 at 3:55 PM, Zheng Liu <gnehzuil.liu@gmail.com> wrote:
-> > Hi Zhiyong,
-> >
-> > On Thu, Oct 25, 2012 at 11:08:55PM +0800, zwu.kernel@gmail.com wrote:
-> > [snip]
-> >> @@ -199,6 +342,54 @@ err:
-> >>  }
-> >>
-> >>  /*
-> >> + * Main function to update access frequency from read/writepage(s) hooks
-> >> + */
-> >> +inline void hot_update_freqs(struct inode *inode, u64 start,
-> >> +                     u64 len, int rw)
-> >
-> > This function seems too big.  So we really need to inline this function?
-> As Dave said in his comments, it will add a function call
-> overhead even when tracking is not enabled. a static inline function
-> will just result in no extra overhead other than the if
-> statement....
+On Mon, Oct 29, 2012 at 10:01 AM, Dave Chinner <david@fromorbit.com> wrote:
+> On Sun, Oct 28, 2012 at 09:51:48PM +0800, Zhi Yong Wu wrote:
+>> On Sun, Oct 28, 2012 at 3:55 PM, Zheng Liu <gnehzuil.liu@gmail.com> wrote:
+>> > Hi Zhiyong,
+>> >
+>> > On Thu, Oct 25, 2012 at 11:08:55PM +0800, zwu.kernel@gmail.com wrote:
+>> > [snip]
+>> >> @@ -199,6 +342,54 @@ err:
+>> >>  }
+>> >>
+>> >>  /*
+>> >> + * Main function to update access frequency from read/writepage(s) hooks
+>> >> + */
+>> >> +inline void hot_update_freqs(struct inode *inode, u64 start,
+>> >> +                     u64 len, int rw)
+>> >
+>> > This function seems too big.  So we really need to inline this function?
+>> As Dave said in his comments, it will add a function call
+>> overhead even when tracking is not enabled. a static inline function
+>> will just result in no extra overhead other than the if
+>> statement....
+>
+> I don't think I said that with respect to this code. I think I said
+> it w.r.t. a define or a small wrapper that decides to call
+> hot_update_freqs().  A static inline fucntion should only be a
+> couple of lines of code at most.
+>
+> A static function, OTOH, can be inlined by the compiler if the
+> compiler thinks that is a win. But....
+thanks for your explaination at first.
+>
+> .....
+>
+>> >> +EXPORT_SYMBOL_GPL(hot_update_freqs);
+>
+> ... it's an exported function, so it can't be inline or static, so
+> using "inline" is wrong whatever way you look at it. ;)
+ah, but i' m surprised by why the compiler find this error.
 
-I don't think I said that with respect to this code. I think I said
-it w.r.t. a define or a small wrapper that decides to call
-hot_update_freqs().  A static inline fucntion should only be a
-couple of lines of code at most.
+>
+> Cheers,
+>
+> Dave.
+> --
+> Dave Chinner
+> david@fromorbit.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-ext4" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-A static function, OTOH, can be inlined by the compiler if the
-compiler thinks that is a win. But....
 
-.....
 
-> >> +EXPORT_SYMBOL_GPL(hot_update_freqs);
-
-... it's an exported function, so it can't be inline or static, so
-using "inline" is wrong whatever way you look at it. ;)
-
-Cheers,
-
-Dave.
 -- 
-Dave Chinner
-david@fromorbit.com
+Regards,
+
+Zhi Yong Wu

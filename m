@@ -1,48 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from loup.kjorling.se ([87.237.208.114]:33185 "EHLO loup.kjorling.se"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965234Ab2J3SdO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 14:33:14 -0400
-Date: Tue, 30 Oct 2012 18:32:40 +0000
-From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
-To: kreijack@inwind.it
-Cc: linux-btrfs@vger.kernel.org, cwillu <cwillu@cwillu.com>,
-        Martin Steigerwald <Martin@lichtvoll.de>,
-        Chris Murphy <lists@colorremedies.com>,
-        Hugo Mills <hugo@carfax.org.uk>
+Received: from qmta14.emeryville.ca.mail.comcast.net ([76.96.27.212]:58761
+	"EHLO qmta14.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752034Ab2J3UNe convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 16:13:34 -0400
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [RFC][V2] New attempt to a better "btrfs fi df"
-Message-ID: <20121030183240.GU2381@yeono.kjorling.se>
-References: <50899151.1070503@inwind.it>
- <508F015F.5090507@gmail.com>
- <20121030094253.GA20662@yeono.kjorling.se>
- <50901937.80002@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <50901937.80002@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20121030183240.GU2381@yeono.kjorling.se>
+Date: Tue, 30 Oct 2012 14:13:32 -0600
+Message-Id: <9C6B5F87-DEA3-4A59-9218-A0A14D169D78@colorremedies.com>
+References: <50899151.1070503@inwind.it> <508F015F.5090507@gmail.com> <20121030094253.GA20662@yeono.kjorling.se> <50901937.80002@gmail.com> <20121030183240.GU2381@yeono.kjorling.se>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 30 Oct 2012 19:15 +0100, from kreijack@gmail.com (Goffredo Baroncelli):
-> On 2012-10-30 10:42, Michael Kjörling wrote:
->> what is the difference between "unused" and "unallocated"? If there
->> is no difference, I feel the same word should be used throughout.
+
+On Oct 30, 2012, at 12:32 PM, Michael Kj�rling <michael@kjorling.se> wrote:
 > 
-> I had to use "Unused" instead of "Unallocated" because the first one is
-> shorter. In the tabular output of the command "btrfs fi disk-usage" I
-> have 10 columns available for every fields. 1 columns is used by the
-> space character, so I have only 9 characters available for the
-> description. "Unused" is 6 chars, "Unallocated" is 11 chars....
-> The only options is to use "Unalloc." (8 chars)...
+> 
+> I'm not so much concerned about the exact word being used as I feel
+> the same word should be used throughout a UI to describe the same
+> concept. Whether it's called "free" space, "unused" space,
+> "unallocated" space or "fuzzbar'd" space is really beside the point.
 
-Or to simply use "unused" (or some other word like "free",
-"available", ...) throughout.
+Agreed. If there's some meaningful distinction, then different words should be used. There is the small vagueness of what exactly is "used". So if you say "50GB used" what exactly does this mean? Because btrfs fi show regularly shows me two completely different used values and they're significantly different (in value) so while the word "used" may be applicable, what's missing is the "what".
 
-I'm not so much concerned about the exact word being used as I feel
-the same word should be used throughout a UI to describe the same
-concept. Whether it's called "free" space, "unused" space,
-"unallocated" space or "fuzzbar'd" space is really beside the point.
-
--- 
-Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
-                “People who think they know everything really annoy
-                those of us who know we don’t.” (Bjarne Stroustrup)
+Chris Murphy

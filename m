@@ -1,36 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:48507 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933514Ab2J3MRM (ORCPT
+Received: from dd19832.kasserver.com ([85.13.140.27]:57156 "EHLO
+	dd19832.kasserver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932126Ab2J3MU2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 08:17:12 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so129164pad.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 05:17:12 -0700 (PDT)
+	Tue, 30 Oct 2012 08:20:28 -0400
+Received: from [192.168.51.51] (p54A39D98.dip.t-dialin.net [84.163.157.152])
+	by dd19832.kasserver.com (Postfix) with ESMTPA id 636CA49642E1
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 13:11:35 +0100 (CET)
+Message-ID: <508FC3F7.8040303@pepinghege.net>
+Date: Tue, 30 Oct 2012 13:11:35 +0100
+From: Felix Pepinghege <btrfs-list@pepinghege.net>
+Reply-To: btrfs-list@pepinghege.net
 MIME-Version: 1.0
-In-Reply-To: <508FC26A.1010206@pepinghege.net>
-References: <508FB45B.9040101@gmail.com>
-	<508FC26A.1010206@pepinghege.net>
-Date: Tue, 30 Oct 2012 06:17:12 -0600
-Message-ID: <CAE5mzvhkrV9XD3_X_w_eLk7R4jrf4PxhEBJYTU7Hr6YtFDDd6Q@mail.gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Why btrfs inline small file by default?
-From: cwillu <cwillu@cwillu.com>
-To: Felix Pepinghege <postfach@pepinghege.net>
-Cc: ching <lsching17@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+References: <508FB45B.9040101@gmail.com>
+In-Reply-To: <508FB45B.9040101@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> If there is a lot of small files, then the size of metadata will be
->> undesirable due to deduplication
->
->
-> Yes, that is a fact, but if that really matters depends on the use-case
-> (e.g., the small files to large files ratio, ...). But as btrfs is designed
-> explicitly as a general purpose file system, you usually want the good
-> performance instead of the better disk-usage (especially as disk space isn't
-> expensive anymore).
+Hi ching!
 
-As I understand it, in basically all cases the total storage used by
-inlining will be _smaller_, as the allocation doesn't need to be
-aligned to the sector size.
+Am 30.10.2012 12:04, schrieb ching:
+> Hi all,
+>
+> I am testing my btrfs root partition with "max_inline=0", and 64k leaf size for weeks and it seems that it is fine.
+>
+>
+> AFAIK btrfs inline small files into metadata by default, I am curious why?
+>
+> If there is only a few small files, then there will be neither effect nor benefit at all
+
+I disagree in this point. There will be a (probably huge) benefit in 
+terms of performance. If the file data is inlined, you have a good 
+chance (especially with large leaf sizes, although even then it is not 
+guaranteed) that the data is in the same leaf as the inode element. So 
+you already have the file data as you always access complete leafs. If 
+you would store the data in extents, you would need to read the 
+respective extent, which can be anywhere on the disk. That is, you most 
+likely need to move the head. This brings overhead (especially with 
+small files, as the reading process is relatively fast compared to the 
+time you need to position the head).
+
+> If there is a lot of small files, then the size of metadata will be undesirable due to deduplication
+
+Yes, that is a fact, but if that really matters depends on the use-case 
+(e.g., the small files to large files ratio, ...). But as btrfs is 
+designed explicitly as a general purpose file system, you usually want 
+the good performance instead of the better disk-usage (especially as 
+disk space isn't expensive anymore).
+
+
+>
+> there are also some email threads related to problem of metadata inline (i don't know whether they are fixed in recent kernel):
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg16295.html
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg05265.html
+>
+> How about turning off inline so that btrfs works better "out of the box"?
+>
+> ching
+>
+
+Regards,
+Felix

@@ -1,57 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:55293 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934532Ab2J3VRD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 17:17:03 -0400
-Date: Tue, 30 Oct 2012 21:17:01 +0000
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Jeff Moyer <jmoyer@redhat.com>
-Cc: linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Steve French <sfrench@samba.org>, Mark Fasheh <mfasheh@suse.com>,
-        Joel Becker <jlbec@evilplan.org>, Matthew Wilcox <matthew@wil.cx>,
-        linux-afs@lists.infradead.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org, ocfs2-devel@oss.oracle.com
-Subject: Re: [patch 05/10] vfs: pass data to alloc_inode super operation
-Message-ID: <20121030211701.GC2616@ZenIV.linux.org.uk>
-References: <1351628084-29358-1-git-send-email-jmoyer@redhat.com>
- <1351628084-29358-8-git-send-email-jmoyer@redhat.com>
- <20121030205142.GB2616@ZenIV.linux.org.uk>
+Received: from twin.jikos.cz ([89.185.236.188]:34205 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751190Ab2J3Xbv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 19:31:51 -0400
+Date: Wed, 31 Oct 2012 00:31:46 +0100
+From: David Sterba <dave@jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: make snapshot-aware defrag as a mount option
+Message-ID: <20121030233146.GB3102@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
+ <1351333721-3220-2-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121030205142.GB2616@ZenIV.linux.org.uk>
+In-Reply-To: <1351333721-3220-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 30, 2012 at 08:51:42PM +0000, Al Viro wrote:
-> On Tue, Oct 30, 2012 at 04:14:39PM -0400, Jeff Moyer wrote:
-> > This patch passes a data pointer along to the alloc_inode
-> > super_operations function.  The value will initially be used by
-> > bdev_alloc_inode to allocate the bdev_inode on the same numa
-> > node as the device to which it is tied.
+On Sat, Oct 27, 2012 at 06:28:41PM +0800, Liu Bo wrote:
+> This feature works on our crucial write endio path, so if we've got
+> lots of fragments to process, it will be kind of a disaster to the
+> performance, so I make such a change.
 > 
-> Yecchhh...
-> 
-> > -static struct inode *bdev_alloc_inode(struct super_block *sb)
-> > +static struct inode *bdev_alloc_inode(struct super_block *sb, void *data)
-> >  {
-> > -	struct bdev_inode *ei = kmem_cache_alloc(bdev_cachep, GFP_KERNEL);
-> > +	struct bdev_inode *ei;
-> > +	int partno;
-> > +	int node;
-> > +
-> > +	if (data) {
-> > +		struct gendisk *disk;
-> > +		dev_t dev = *(dev_t *)data;
-> > +		disk = get_gendisk(dev, &partno);
-> > +		node = disk->node_id;
+> One can benifit from it while mounting with '-o snap_aware_defrag'.
 
-BTW, speaking of other reasons this is FUBAR - mknod a block device node
-for something that doesn't exist and try to open it.  struct block_device
-lifetime is not limited to that of struct gendisk; it can be allocated
-before gendisk is there.  Moreover, with static /dev and demand-loaded
-modules this will be the normal scenario.
+I vote for a more fine grained control over this feature, ie.  via
+'btrfs fi defrag', off by default (current behaviour). The defrag ioctl
+is the only place that actually calls set_extent_defrag, so this will
+not affect normal operation and is fully in hands of the user who runs
+defrag.
 
-IOW, this is completely misguided.
+Do you have a usecase for setting it through the mount option?
+
+thanks,
+david

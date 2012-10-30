@@ -1,42 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from loup.kjorling.se ([87.237.208.114]:55800 "EHLO loup.kjorling.se"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757665Ab2J3Jn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 05:43:26 -0400
-Date: Tue, 30 Oct 2012 09:42:53 +0000
-From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: kreijack@inwind.it, linux-btrfs@vger.kernel.org,
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:61051 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934108Ab2J3SOh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 14:14:37 -0400
+Received: by mail-bk0-f46.google.com with SMTP id jk13so320798bkc.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 11:14:36 -0700 (PDT)
+Message-ID: <50901937.80002@gmail.com>
+Date: Tue, 30 Oct 2012 19:15:19 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: =?UTF-8?B?TWljaGFlbCBLasO2cmxpbmc=?= <michael@kjorling.se>
+CC: kreijack@inwind.it, linux-btrfs@vger.kernel.org,
         cwillu <cwillu@cwillu.com>, Martin Steigerwald <Martin@lichtvoll.de>,
         Chris Murphy <lists@colorremedies.com>,
         Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: [RFC][V2] New attempt to a better "btrfs fi df"
-Message-ID: <20121030094253.GA20662@yeono.kjorling.se>
-References: <50899151.1070503@inwind.it>
- <508F015F.5090507@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <508F015F.5090507@gmail.com>
+References: <50899151.1070503@inwind.it> <508F015F.5090507@gmail.com> <20121030094253.GA20662@yeono.kjorling.se>
+In-Reply-To: <20121030094253.GA20662@yeono.kjorling.se>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29 Oct 2012 23:21 +0100, from kreijack@gmail.com (Goffredo Baroncelli):
-> Hi all,
-> 
-> this is a new attempt to improve the output of the command "btrfs fi df".
-> 
-> The previous attempt received a good reception. However there was no a
-> general consensus about the wording.
+On 2012-10-30 10:42, Michael Kjörling wrote:
+> On 29 Oct 2012 23:21 +0100, from kreijack@gmail.com (Goffredo Baroncelli):
+>> Hi all,
 
-In general, I like it. And I think that especially with today's large
-terminals (with frame buffers and X11), one doesn't need to be too
-fixated at an 80 column terminal width.
+[...]
+> One thing, though; what is the difference between "unused" and
+> "unallocated"? If there is no difference, I feel the same word should
+> be used throughout.
 
-One thing, though; what is the difference between "unused" and
-"unallocated"? If there is no difference, I feel the same word should
-be used throughout.
+I had to use "Unused" instead of "Unallocated" because the first one is
+shorter. In the tabular output of the command "btrfs fi disk-usage" I
+have 10 columns available for every fields. 1 columns is used by the
+space character, so I have only 9 characters available for the
+description. "Unused" is 6 chars, "Unallocated" is 11 chars....
+The only options is to use "Unalloc." (8 chars)...
+
+
+
 
 -- 
-Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
-                “People who think they know everything really annoy
-                those of us who know we don’t.” (Bjarne Stroustrup)
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

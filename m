@@ -1,88 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40852 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752495Ab2J3WTu (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:47857 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756232Ab2J3Vjl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 18:19:50 -0400
-Date: Tue, 30 Oct 2012 22:19:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: ching <lsching17@gmail.com>, cwillu <cwillu@cwillu.com>,
-        Felix Pepinghege <postfach@pepinghege.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Why btrfs inline small file by default?
-Message-ID: <20121030221947.GC11422@carfax.org.uk>
-References: <508FB45B.9040101@gmail.com>
- <508FC26A.1010206@pepinghege.net>
- <CAE5mzvhkrV9XD3_X_w_eLk7R4jrf4PxhEBJYTU7Hr6YtFDDd6Q@mail.gmail.com>
- <50904949.8010603@gmail.com>
- <20121030221412.GB11422@carfax.org.uk>
+	Tue, 30 Oct 2012 17:39:41 -0400
+Received: by mail-pa0-f46.google.com with SMTP id hz1so457127pad.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 14:39:41 -0700 (PDT)
+Message-ID: <5090491A.4020306@gmail.com>
+Date: Wed, 31 Oct 2012 05:39:38 +0800
+From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="mvpLiMfbWzRoNl4x"
-In-Reply-To: <20121030221412.GB11422@carfax.org.uk>
+To: Felix Pepinghege <postfach@pepinghege.net>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Why btrfs inline small file by default?
+References: <508FB45B.9040101@gmail.com> <508FC26A.1010206@pepinghege.net>
+In-Reply-To: <508FC26A.1010206@pepinghege.net>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 10/30/2012 08:04 PM, Felix Pepinghege wrote:
+> Hi ching!
+>
+> Am 30.10.2012 12:04, schrieb ching:
+>> Hi all,
+>>
+>> I am testing my btrfs root partition with "max_inline=0", and 64k leaf size for weeks and it seems that it is fine.
+>>
+>>
+>> AFAIK btrfs inline small files into metadata by default, I am curious why?
+>>
+>> If there is only a few small files, then there will be neither effect nor benefit at all
+>
+> I disagree in this point. There will be a (probably huge) benefit in terms of performance. If the file data is inlined, you have a good chance (especially with large leaf sizes, although even then it is not guaranteed) that the data is in the same leaf as the inode element. So you already have the file data as you always access complete leafs. If you would store the data in extents, you would need to read the respective extent, which can be anywhere on the disk. That is, you most likely need to move the head. This brings overhead (especially with small files, as the reading process is relatively fast compared to the time you need to position the head).
 
---mvpLiMfbWzRoNl4x
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+You may be correct.
 
-On Tue, Oct 30, 2012 at 10:14:12PM +0000, Hugo Mills wrote:
-> On Wed, Oct 31, 2012 at 05:40:25AM +0800, ching wrote:
-> > On 10/30/2012 08:17 PM, cwillu wrote:
-> > >>> If there is a lot of small files, then the size of metadata will be
-> > >>> undesirable due to deduplication
-> > >>
-> > >> Yes, that is a fact, but if that really matters depends on the use-case
-> > >> (e.g., the small files to large files ratio, ...). But as btrfs is designed
-> > >> explicitly as a general purpose file system, you usually want the good
-> > >> performance instead of the better disk-usage (especially as disk space isn't
-> > >> expensive anymore).
-> > > As I understand it, in basically all cases the total storage used by
-> > > inlining will be _smaller_, as the allocation doesn't need to be
-> > > aligned to the sector size.
-> > >
-> > 
-> > if i have 10G small files in total, then it will consume 20G by default.
-> 
->    If those small files are each 128 bytes in size, then you have
-> approximately 80 million of them, and they'd take up 80 million pages,
-> or 320 GiB of total disk space.
+But I doubt inline data may bring possible performance benefit, bigger metadata always means more trouble for concurrency/performance and cache miss ratio
 
-   Sorry, to make that clear -- I meant if they were stored in Data.
-If they're inlined in metadata, then they'll take approximately 20 GiB
-as you claim, which is a lot less than the 320 GiB they'd be if
-they're not.
+>
+>> If there is a lot of small files, then the size of metadata will be undesirable due to deduplication
+>
+> Yes, that is a fact, but if that really matters depends on the use-case (e.g., the small files to large files ratio, ...). But as btrfs is designed explicitly as a general purpose file system, you usually want the good performance instead of the better disk-usage (especially as disk space isn't expensive anymore).
 
-   Hugo.
+Yes, but as a general purpose filesystem, i guess that the default behaviour should be "safe"?
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- I always felt that as a C programmer, I ---             
-                         was becoming typecast.                          
-
---mvpLiMfbWzRoNl4x
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUJBSg79z9OVl50rAAQLiTBAAgVBt6wDIHwQMgRkWUyGLLW2q+wJmBhx3
-Ah08QagzLOYghcEiflJy8tSPi8fwg+fSp42jBnFKDXJbpZBoHPL70/F4dVeWHvcE
-EbMQVnCjCkBlQZR/BVWqGjv65OiAIWgTlUjGxYXCOVYAO57fTmCc1yb/EnIl7wmy
-/ISeYR37QZzczrXDWSQNXGxifIV5FrrUBky1w0cETBLdkX4vyZmt0A/Lr1UFIpy0
-iXKextxujliulUIoSgz6uDTQOxBU1SS67qy+cVd0zQqjj17kIYGpar+zJ0PFK5ug
-zNveDky/vQEHA/V7ei1hKBftGSwJdKk6CJK6qLjxpCCmVkIWOXIUfeS2Z/vqCV1E
-KVtgwlAzfyVX12lEBlcLNm7pc9B73IfQvutIX76/3QlGDDog9OJzot87RFIgqRBm
-q5dtR2KDLsTiUUMU0WFK8VgcdZaYzTOhXs2oI0ZfsYZdrhHTTL2S0p1KmByvogk3
-tkeRAljCB6l5zlsftwy+kJXlPxhLxe6e2eKi+NtdygKm9Ur5v2El71awOqF6yw3t
-rri4oEBVhbYFBFx36GYiZyW1ASKGZry8G8RKOJXLyvPfqoJWjT8ETUczpMz7H3mt
-mo/XSUqOLcdCsGuXsPcScgdfPmcG4dtYQUA1PwirPoFDjqYji1YsldC9PVs/ByIe
-RzdWAsDPWBg=
-=7V5M
------END PGP SIGNATURE-----
-
---mvpLiMfbWzRoNl4x--
+Not many user is patient enough to troubleshoot metadata "explosion".

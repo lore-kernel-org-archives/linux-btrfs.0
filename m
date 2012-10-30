@@ -1,67 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from li9-11.members.linode.com ([67.18.176.11]:58384 "EHLO
-	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751205Ab2J3EsY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 00:48:24 -0400
-Date: Tue, 30 Oct 2012 00:48:18 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Huang Ying <ying.huang@intel.com>
-Cc: Akinobu Mita <akinobu.mita@gmail.com>, linux-kernel@vger.kernel.org,
-        akpm@linux-foundation.org, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/9] uuid: use random32_get_bytes()
-Message-ID: <20121030044818.GA5972@thunk.org>
-References: <1351408746-8623-1-git-send-email-akinobu.mita@gmail.com>
- <1351408746-8623-2-git-send-email-akinobu.mita@gmail.com>
- <20121029205200.GD7098@thunk.org>
- <1351561798.7817.352.camel@yhuang-dev>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:38397 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932537Ab2J3Lra (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 07:47:30 -0400
+Received: by mail-pb0-f46.google.com with SMTP id rr4so127902pbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 04:47:30 -0700 (PDT)
+Message-ID: <508FBE50.6070300@gmail.com>
+Date: Tue, 30 Oct 2012 19:47:28 +0800
+From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1351561798.7817.352.camel@yhuang-dev>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfs defrag problem
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 30, 2012 at 09:49:58AM +0800, Huang Ying wrote:
-> The uuid_le/be_gen() in lib/uuid.c has set UUID variants to be DCE,
-> that is done in __uuid_gen_common() with "b[8] = (b[8] & 0x3F) | 0x80".
+Hi all,
 
-Oh, I see, I missed that.
+I try to defrag my btrfs root partition (run by root privilege)
 
-> To deal with random number generation issue, how about use
-> get_random_bytes() in __uuid_gen_common()?
+find / -type f -o -type d -print0 | xargs --null --no-run-if-empty btrfs filesystem defragment -t $((32*1024*1024))
 
-We already have generate_random_uuid() in drivers/char/random.c, and
-no users for lib/uuid.c's equivalent uuid_be_gen().  So here's a
-counter-proposal, why don't we drop lib/uuid.c, and include in
-drivers/char/random.c:
 
-/*
- * Generate random GUID
- *
- * GUID's is like UUID's, but they uses the non-standard little-endian
- * layout, compared to what is defined in RFC-4112; it is primarily
- * used by the EFI specification.
- */
-void generate_random_guid(unsigned char uuid_out[16])
-{
-	get_random_bytes(uuid_out, 16);
-	/* Set UUID version to 4 --- truly random generation */
-	uuid_out[7] = (uuid_out[7] & 0x0F) | 0x40;
-	/* Set the UUID variant to DCE */
-	uuid_out[8] = (uuid_out[8] & 0x3F) | 0x80;
-}
-EXPORT_SYMBOL(generate_random_guid);
+1. This kind of error messages is prompted:
 
-I really don't think it's worth it to have a __uuid_gen_common once we
-are using get_random_bytes(), since there isn't much code to be
-factored out, and it's simpler just to have two functions in one place.
+    failed to open /bin/bash
+    open:: Text file busy
+    total 1 failures
+    failed to open /lib64/ld-2.15.so
+    open:: Text file busy
+    total 1 failures
+    failed to open /sbin/agetty
+    open:: Text file busy
+    failed to open /sbin/btrfs
+    open:: Text file busy
+    failed to open /sbin/dhclient
+    open:: Text file busy
+    failed to open /sbin/init
+    open:: Text file busy
+    failed to open /sbin/udevd
 
-Using UUID vs. GUID I think makes things much clearer, since the EFI
-specification talks about GUID's, not UUID's, and that way we don't
-have to worry about people getting confused about whether they should
-be using the little-endian versus big-endian variant.  (And I'd love
-to ask to whoever wrote the EFI specification what on *Earth* were
-they thinking when they decided to diverge from the rest of the
-world....)
+    It seems that locked files cannot be defragged, is it expected behaviour?
 
-	      	       	       	       	    - Ted
+2. Btrfs Wiki mentions that defrag directory will defrag metadata, is symlink/hardlink considered as metadata?
+
+    P.S. inline data is already disabled by "max_inline=0"
+
+3. Is any possible to online defrag a btrfs partition without hindered by mount point/polyinstantied directories?
+
+
+Thank you.
+
+ching
+
+

@@ -1,74 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47617 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932135Ab2J3Pj2 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:55531 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751164Ab2J3PqJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 11:39:28 -0400
-Date: Tue, 30 Oct 2012 15:39:22 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?iso-8859-1?Q?G=E1bor?= Nyers <gnyers@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: How to find (out if) files sharing content?
-Message-ID: <20121030153922.GA11422@carfax.org.uk>
-References: <20121030162005.0308d5a2@lupus.demo.lan>
+	Tue, 30 Oct 2012 11:46:09 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
+	id 1TTE12-0006U5-Iv
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2012 08:46:08 -0700
+Date: Tue, 30 Oct 2012 08:46:08 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707 - FIXED
+Message-ID: <20121030154608.GA19231@merlins.org>
+References: <E1TTCzR-0001nz-1p@gandalfthegreat.merlins.org> <20121030144914.GA18659@merlins.org> <20121029154713.GF8019@merlins.org> <B19885DE-6AED-4B8B-B1CA-891878B43C8C@colorremedies.com> <20121029174802.GB7796@merlins.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ZPt4rx8FFjLCG7dd"
-In-Reply-To: <20121030162005.0308d5a2@lupus.demo.lan>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121030144914.GA18659@merlins.org> <20121029174802.GB7796@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Oct 29, 2012 at 10:48:02AM -0700, Marc MERLIN wrote:
+> Then, I figured, I'd try mounting all the active snapshots one per one,
+> and they worked:
+>
+> After that, I was able to mount the root (volid 0) without a crash and
+> my filesystem looks fine again.
+ 
+Ok, I was wrong.
+What happened is that my SSD is craping out and failing to write after a
+certain number of uptime hours.
+I just had the same problem happen again yesterday.
 
---ZPt4rx8FFjLCG7dd
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Turns out btrfs-zero-log does fix the problem, but because it output
+the errors I saw, I thought it did nothing and forgot that I had run it.
 
-On Tue, Oct 30, 2012 at 04:20:05PM +0100, G=E1bor Nyers wrote:
-> Hi,
->=20
-> How could one find out if 2 files share any extents on a btrfs file syste=
-m?
->=20
-> A more generic variation of the above: How to list files on the same
-> file system/subvolume sharing content?
+So
+1) btrfs-zero-log does fix the problem
+2) my drive causes btrfs to reliably enter a state where the filesystem
+becomes unmountable and crashes the kernel on the next mount.
+It would be nice if the kernel wouldn't crash and refuse to mount instead
+or even automatically run the equivalent of btrfs-zero-log if necessary.
 
-   You have direct (read-only) access to the metadata trees through
-the TREE_SEARCH ioctl. It should be possible to walk through the
-extents of a given file, and (I think) follow back-refs from the
-extent back to the other files that share it.
 
-   There's no simple code to do that right now, though.
+Details below if that helps.
 
-   Hugo.
+gandalfthegreat:~# btrfs-calc-size /dev/mapper/bootdsk        
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=7949122546735189447
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=12301165138967429629
+read block failed check_tree_block
+Calculating size of root tree
+	216.00KB total size, 0.00 inline data, 1 nodes, 53 leaves, 2 levels
+Calculating size of extent tree
+	390.99MB total size, 0.00 inline data, 1443 nodes, 98651 leaves, 4 levels
+Calculating size of csum tree
+	458.78MB total size, 0.00 inline data, 1472 nodes, 115976 leaves, 4 levels
+Calculatin' size of fs tree
+	20.00KB total size, 0.00 inline data, 1 nodes, 4 leaves, 2 levels
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- And what rough beast,  its hour come round at last / slouches --- =20
-                     towards Bethlehem,  to be born?                    =20
+gandalfthegreat:~# btrfs-find-root /dev/mapper/bootdsk
+Super think's the tree root is at 147779584, chunk root 20979712
+Found tree root at 147779584
 
---ZPt4rx8FFjLCG7dd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+gandalfthegreat:~# btrfs filesystem show 
+Label: 'btrfs_pool1'  uuid: 92584fa9-85cd-4df6-b182-d32198b76a0b
+	Total devices 1 FS bytes used 344.85GB
+	devid    1 size 441.70GB used 441.70GB path /dev/dm-1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Label: 'btrfs_pool2'  uuid: 04071703-df6b-4022-9632-6c3aeabff206
+	Total devices 1 FS bytes used 654.12GB
+	devid    1 size 872.51GB used 872.51GB path /dev/dm-0
 
-iQIVAwUBUI/0qr9z9OVl50rAAQK+tg//W11Csc4H4v3FpEsr+oBhw3yUXCbjhgM8
-YigEkOQIJZFrLGVjdY9PMl3revdhjl6aPHwwCAPheBF/dX+OtpgTBEPeTAOlOQlf
-WxfosKJkotuHzTAnnqOKnBE1CSaIE4p270MjDWMG7WytSn1oxCFeJsFBz7Llkmwe
-w8Um+kX0LFNQb+iPrEBA7M2lHfzin5ad3tpyzghvTVdr+H3t29iwcpLgRznj81Hl
-mhmnYM7Lp7JzMImcaQlWTu3IjjYNpcv9/24D0gxQ8cvtpA3Ub8fzCrCxxRmijLa8
-m+CZwTkZTQcgNHm0bCGyIH3I8blesaSmvDgpPp47LFOq88EKbUe4xBxQqT+87Y+v
-+7oiYkmmNVrYQWMvhMz5VI/YfLr0jB9B7u/inceHrgfCorTHPJS2yAaMl8+mOVKy
-ztuZ5kiMzimxWeV8VkyF8aBFG/gC1KNB5DTlJS8YZjYOAwjZFw05X0WXwVRusKbj
-0EbcLJCezfwvSHRNSZimQOVsq5j7NeJBZuubWq+d89DHmEyUZIQK1u/kF1iIdGp4
-3Ox1Es/138BTn9Wa0EMrO1OHyvdMPIpCCsPqXsp3FgYGev4oDV20zlVhTPaOY/I2
-ZU4yPExX1DUXIZlmc0GS2FSG6nZhrEOHMAWf+jJc9YoHSFdX522S9cQeeX7zbKIc
-Lbp40ZW3udI=
-=GNmX
------END PGP SIGNATURE-----
+Btrfs Btrfs v0.19
 
---ZPt4rx8FFjLCG7dd--
+gandalfthegreat:~# btrfs-zero-log /dev/mapper/bootdsk 
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=7949122546735189447
+Check tree block failed, want=259264512, have=12301165138967429629
+Check tree block failed, want=259264512, have=12301165138967429629
+read block failed check_tree_block
+gandalfthegreat:~#  btrfs-calc-size /dev/mapper/bootdsk      
+Calculating size of root tree
+	216.00KB total size, 0.00 inline data, 1 nodes, 53 leaves, 2 levels
+Calculating size of extent tree
+	390.99MB total size, 0.00 inline data, 1443 nodes, 98651 leaves, 4 levels
+Calculating size of csum tree
+	458.78MB total size, 0.00 inline data, 1472 nodes, 115976 leaves, 4 levels
+Calculatin' size of fs tree
+	20.00KB total size, 0.00 inline data, 1 nodes, 4 leaves, 2 levels
+gandalfthegreat:~# btrfs-zero-log /dev/mapper/bootdsk 
+gandalfthegreat:~#
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

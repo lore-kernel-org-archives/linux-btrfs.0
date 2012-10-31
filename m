@@ -1,59 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:19180 "EHLO
-	userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932864Ab2JaNEB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 09:04:01 -0400
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-	by userp1050.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9VD40Be001155
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 13:04:00 GMT
-Message-ID: <50912157.7090708@oracle.com>
-Date: Wed, 31 Oct 2012 21:02:15 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:60387 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S935543Ab2JaNXL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Oct 2012 09:23:11 -0400
+From: Jeff Moyer <jmoyer@redhat.com>
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>,
+        Chris Mason <chris.mason@fusionio.com>,
+        Steve French <sfrench@samba.org>, Mark Fasheh <mfasheh@suse.com>,
+        Joel Becker <jlbec@evilplan.org>, Matthew Wilcox <matthew@wil.cx>,
+        linux-afs@lists.infradead.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org, ocfs2-devel@oss.oracle.com
+Subject: Re: [patch 05/10] vfs: pass data to alloc_inode super operation
+References: <1351628084-29358-1-git-send-email-jmoyer@redhat.com>
+	<1351628084-29358-8-git-send-email-jmoyer@redhat.com>
+	<20121030205142.GB2616@ZenIV.linux.org.uk>
+	<20121030211701.GC2616@ZenIV.linux.org.uk>
+Date: Wed, 31 Oct 2012 09:22:51 -0400
+In-Reply-To: <20121030211701.GC2616@ZenIV.linux.org.uk> (Al Viro's message of
+	"Tue, 30 Oct 2012 21:17:01 +0000")
+Message-ID: <x49liemixn8.fsf@segfault.boston.devel.redhat.com>
 MIME-Version: 1.0
-To: dave@jikos.cz
-CC: Liu Bo <liub.liubo@gmail.com>,
-        =?ISO-8859-1?Q?G=E1bor_Nyers?= <gnyers@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: How to find (out if) files sharing content?
-References: <20121030162005.0308d5a2@lupus.demo.lan> <5090736C.5040609@oracle.com> <50908D3E.3000609@oracle.com> <20121031113154.GG3102@twin.jikos.cz>
-In-Reply-To: <20121031113154.GG3102@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/31/2012 07:31 PM, David Sterba wrote:
-> On Wed, Oct 31, 2012 at 10:30:22AM +0800, Jeff Liu wrote:
->> One idea is to mark those cloned extents as FIEMAP_EXTENT_SHARED so that
->> we can go through a file to figure out how many extents are shared
->> through fiemap(2), and calculate the real storage(fs/subvolume) footprint
->> in the end.
-> 
-> This will cost at least one more seek per extent to find out that the
-> extent is shared, could be quite expensive.
-I propose this because OCFS2 report shared space in this way combine with du(1).
+Al Viro <viro@ZenIV.linux.org.uk> writes:
 
-An old patch set to teach du(1) aware of reflinked file:
-https://oss.oracle.com/pipermail/ocfs2-devel/2010-September/007293.html
+> On Tue, Oct 30, 2012 at 08:51:42PM +0000, Al Viro wrote:
+>> On Tue, Oct 30, 2012 at 04:14:39PM -0400, Jeff Moyer wrote:
+>> > This patch passes a data pointer along to the alloc_inode
+>> > super_operations function.  The value will initially be used by
+>> > bdev_alloc_inode to allocate the bdev_inode on the same numa
+>> > node as the device to which it is tied.
+>> 
+>> Yecchhh...
+>> 
+>> > -static struct inode *bdev_alloc_inode(struct super_block *sb)
+>> > +static struct inode *bdev_alloc_inode(struct super_block *sb, void *data)
+>> >  {
+>> > -	struct bdev_inode *ei = kmem_cache_alloc(bdev_cachep, GFP_KERNEL);
+>> > +	struct bdev_inode *ei;
+>> > +	int partno;
+>> > +	int node;
+>> > +
+>> > +	if (data) {
+>> > +		struct gendisk *disk;
+>> > +		dev_t dev = *(dev_t *)data;
+>> > +		disk = get_gendisk(dev, &partno);
+>> > +		node = disk->node_id;
+>
+> Oh, _lovely_.  Such a stunningly elegant idea.  And why not pass the
+> sodding node_id directly, if I may ask?
 
-Do you means that the costs is very expensive for userland extent status checkup per file?
-If yes, I have once tested an 50Gb OCFS2 partition filled with reflinked files on an old laptop,
-it spent around 4 minutes to show the totally results if I recalled correct, but this definitely
-depending on the real world scenarios.
+struct block_device *bdget(dev_t dev)
+{
+...
+        inode = iget5_locked(blockdev_superblock, hash(dev),
+                        bdev_test, bdev_set, &dev);
 
-> And without any possibility to turn this off,I'm afraid this will render FIEMAP unusable in practice.
-For OCFS2, the FIEMAP_EXTENT_SHARED flag will be set upon fiemap ioctl(2) if an extent
-is OCFS2_EXT_REFCOUNTED(i.e. reflinked or cloned), which means that FIEMAP_EXTENT_SHARED
-is not a persistent flag, but I have no idea how Btrfs would be in this point. :(
+The device is used by bdev_test and bdev_set.
 
-Thanks,
--Jeff
-> 
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Take that crap out and don't bring it back.  And consider this kludge NAKed
+> once and forever.  It's unspeakably ugly, even if it didn't break just about
+> every fs out there (you do realize that almost all of them have ->alloc_inode(),
+> pdon't you?  Use grep and see).
 
+Oof.  I was using cscope and it didn't show all callers.
+
+> BTW, speaking of other reasons this is FUBAR - mknod a block device node
+> for something that doesn't exist and try to open it.  struct block_device
+> lifetime is not limited to that of struct gendisk; it can be allocated
+> before gendisk is there.  Moreover, with static /dev and demand-loaded
+> modules this will be the normal scenario.
+>
+> IOW, this is completely misguided.
+
+OK, thanks for the review, Al, it's greatly appreciated.  Do you have a
+suggestion on how I might achieve this in a way that would be
+acceptable?  I'm not too fond of the idea of reallocating the inode when
+the device does appear.  I'll give it some more thought.
+
+Again, thanks for taking a look.
+
+Cheers,
+Jeff

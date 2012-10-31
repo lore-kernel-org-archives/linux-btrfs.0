@@ -1,32 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([82.95.169.224]:46194 "EHLO panda.humilis.net"
+Received: from twin.jikos.cz ([89.185.236.188]:41392 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751687Ab2JaJeR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 05:34:17 -0400
-Date: Wed, 31 Oct 2012 10:24:40 +0100
-From: Sander <sander@humilis.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at
- fs/btrfs/volumes.c:3707 - FIXED
-Message-ID: <20121031092440.GA31209@panda>
-Reply-To: sander@humilis.net
-References: <E1TTCzR-0001nz-1p@gandalfthegreat.merlins.org>
- <20121030144914.GA18659@merlins.org>
- <20121029154713.GF8019@merlins.org>
- <B19885DE-6AED-4B8B-B1CA-891878B43C8C@colorremedies.com>
- <20121029174802.GB7796@merlins.org>
- <20121030154608.GA19231@merlins.org>
+	id S1750857Ab2JaLcF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Oct 2012 07:32:05 -0400
+Date: Wed, 31 Oct 2012 12:31:54 +0100
+From: David Sterba <dave@jikos.cz>
+To: Jeff Liu <jeff.liu@oracle.com>
+Cc: =?iso-8859-1?Q?G=E1bor?= Nyers <gnyers@suse.com>,
+        Liu Bo <liub.liubo@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: How to find (out if) files sharing content?
+Message-ID: <20121031113154.GG3102@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <20121030162005.0308d5a2@lupus.demo.lan>
+ <5090736C.5040609@oracle.com>
+ <50908D3E.3000609@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121030154608.GA19231@merlins.org>
+In-Reply-To: <50908D3E.3000609@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN wrote (ao):
-> What happened is that my SSD is craping out and failing to write after
-> a certain number of uptime hours.
+On Wed, Oct 31, 2012 at 10:30:22AM +0800, Jeff Liu wrote:
+> One idea is to mark those cloned extents as FIEMAP_EXTENT_SHARED so that
+> we can go through a file to figure out how many extents are shared
+> through fiemap(2), and calculate the real storage(fs/subvolume) footprint
+> in the end.
 
-What model ssd is that if I may ask?
+This will cost at least one more seek per extent to find out that the
+extent is shared, could be quite expensive. And without any possibility
+to turn this off, I'm afraid this will render FIEMAP unusable in
+practice.
 
-	Sander
+david

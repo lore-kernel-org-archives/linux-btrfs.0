@@ -1,43 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:10911 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1422754Ab2JaLhM (ORCPT
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:44860 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935517Ab2JaMhP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 07:37:12 -0400
-Message-ID: <50910D68.4020406@giantdisaster.de>
-Date: Wed, 31 Oct 2012 12:37:12 +0100
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Wed, 31 Oct 2012 08:37:15 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so528286eaa.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 05:37:11 -0700 (PDT)
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5 1/3] Btrfs-progs: move open_file_or_dir() to utils.c
-References: <1337954838-10140-1-git-send-email-sbehrens@giantdisaster.de> <1337954838-10140-2-git-send-email-sbehrens@giantdisaster.de> <5090FE9D.6050907@oracle.com>
 In-Reply-To: <5090FE9D.6050907@oracle.com>
+References: <1337954838-10140-1-git-send-email-sbehrens@giantdisaster.de>
+	<1337954838-10140-2-git-send-email-sbehrens@giantdisaster.de>
+	<5090FE9D.6050907@oracle.com>
+Date: Wed, 31 Oct 2012 13:37:11 +0100
+Message-ID: <CAJHuE_ArfYFW3WrdQf29+vxNj-UfYfWNZGsfO4BvFaiCRc_T-A@mail.gmail.com>
+Subject: Re: [PATCH v5 1/3] Btrfs-progs: move open_file_or_dir() to utils.c
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 31 Oct 2012 18:34:05 +0800, Anand Jain wrote:
+On Wed, Oct 31, 2012 at 11:34 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
+>
+> Stefan,
+>
 >  This is useful. Do you have something which can apply on the latest.
 
-No. But your message is a good reminder to me to rebase and resend the
-btrfs-progs patchset for the device stats support. It's already 5 month
-old and was not integrated at that time. Now it's outdated and I need to
-rework and resend it. The patch you mention is a part of the device
-stats patchset.
+The patch below has one problem. The functions open_file_or_dir() in btrfsctl.c
+and in common.c are differents. The former has few perror() which are missing
+in the latter.
 
-If you need this "move open_file_or_dir() to utils.c" thing quickly (in
-the next two weeks), please send such a patch yourself (but not like I
-did it, Hugo was absolutely right to get upset when I was moving and
-changing a function in one go
-<http://www.spinics.net/lists/linux-btrfs/msg17067.html>).
+I am working in a change which moves both the open_file_or_dir() and the
+scrub_fs_info() / scrub_device_info() pairs in utils.c. It was necessary
+because I used both in a my application. I hope to issue the patch for
+the end of the next week.
 
-Stefan
+In order to address the issue of the perror, I renamed in btrfsctl.c the
+function open_file_or_dir() in btrfsctl_open_file_or_dir() in order to avoid
+name collision.
 
-> 
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>
+> Thanks, Anand
+>
 > On 25/05/12 22:07, Stefan Behrens wrote:
->> This is a preparation step to add support for device stats. The
->> definition
+>>
+>> This is a preparation step to add support for device stats. The definition
 >> of the function open_file_or_dir() is moved from common.c to utils.c in
 >> order to be able to share some common code between scrub and the device
 >> stats in the following step. That common code uses open_file_or_dir().
@@ -56,4 +69,232 @@ Stefan
 >>   utils.c          |   31 +++++++++++++++++++++++++++++--
 >>   utils.h          |    3 +++
 >>   9 files changed, 37 insertions(+), 81 deletions(-)
-
+>>
+>> diff --git a/Makefile b/Makefile
+>> index 79818e6..fe2b432 100644
+>> --- a/Makefile
+>> +++ b/Makefile
+>> @@ -39,8 +39,8 @@ all: version $(progs) manpages
+>>   version:
+>>         bash version.sh
+>>
+>> -btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
+>> -       $(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
+>> +btrfs: $(objects) btrfs.o help.o $(cmds_objects)
+>> +       $(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
+>>                 $(objects) $(LDFLAGS) $(LIBS) -lpthread
+>>
+>>   calc-size: $(objects) calc-size.o
+>> diff --git a/btrfsctl.c b/btrfsctl.c
+>> index d45e2a7..f0584f3 100644
+>> --- a/btrfsctl.c
+>> +++ b/btrfsctl.c
+>> @@ -63,34 +63,6 @@ static void print_usage(void)
+>>         exit(1);
+>>   }
+>>
+>> -static int open_file_or_dir(const char *fname)
+>> -{
+>> -       int ret;
+>> -       struct stat st;
+>> -       DIR *dirstream;
+>> -       int fd;
+>> -
+>> -       ret = stat(fname, &st);
+>> -       if (ret < 0) {
+>> -               perror("stat:");
+>> -               exit(1);
+>> -       }
+>> -       if (S_ISDIR(st.st_mode)) {
+>> -               dirstream = opendir(fname);
+>> -               if (!dirstream) {
+>> -                       perror("opendir");
+>> -                       exit(1);
+>> -               }
+>> -               fd = dirfd(dirstream);
+>> -       } else {
+>> -               fd = open(fname, O_RDWR);
+>> -       }
+>> -       if (fd < 0) {
+>> -               perror("open");
+>> -               exit(1);
+>> -       }
+>> -       return fd;
+>> -}
+>>   int main(int ac, char **av)
+>>   {
+>>         char *fname = NULL;
+>> diff --git a/cmds-balance.c b/cmds-balance.c
+>> index 38a7426..5793b5c 100644
+>> --- a/cmds-balance.c
+>> +++ b/cmds-balance.c
+>> @@ -26,6 +26,7 @@
+>>   #include "ctree.h"
+>>   #include "ioctl.h"
+>>   #include "volumes.h"
+>> +#include "utils.h"
+>>
+>>   #include "commands.h"
+>>
+>> diff --git a/cmds-inspect.c b/cmds-inspect.c
+>> index 2f0228f..7a8785b 100644
+>> --- a/cmds-inspect.c
+>> +++ b/cmds-inspect.c
+>> @@ -22,6 +22,7 @@
+>>
+>>   #include "kerncompat.h"
+>>   #include "ioctl.h"
+>> +#include "utils.h"
+>>
+>>   #include "commands.h"
+>>
+>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>> index 950fa8f..8ecd3f4 100644
+>> --- a/cmds-subvolume.c
+>> +++ b/cmds-subvolume.c
+>> @@ -26,6 +26,7 @@
+>>
+>>   #include "kerncompat.h"
+>>   #include "ioctl.h"
+>> +#include "utils.h"
+>>
+>>   #include "commands.h"
+>>
+>> diff --git a/commands.h b/commands.h
+>> index a303a50..aea4cb1 100644
+>> --- a/commands.h
+>> +++ b/commands.h
+>> @@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct
+>> cmd_group *grp);
+>>
+>>   void help_command_group(const struct cmd_group *grp, int argc, char
+>> **argv);
+>>
+>> -/* common.c */
+>> -int open_file_or_dir(const char *fname);
+>> -
+>>   extern const struct cmd_group subvolume_cmd_group;
+>>   extern const struct cmd_group filesystem_cmd_group;
+>>   extern const struct cmd_group balance_cmd_group;
+>> diff --git a/common.c b/common.c
+>> deleted file mode 100644
+>> index 03f6570..0000000
+>> --- a/common.c
+>> +++ /dev/null
+>> @@ -1,46 +0,0 @@
+>> -/*
+>> - * This program is free software; you can redistribute it and/or
+>> - * modify it under the terms of the GNU General Public
+>> - * License v2 as published by the Free Software Foundation.
+>> - *
+>> - * This program is distributed in the hope that it will be useful,
+>> - * but WITHOUT ANY WARRANTY; without even the implied warranty of
+>> - * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+>> - * General Public License for more details.
+>> - *
+>> - * You should have received a copy of the GNU General Public
+>> - * License along with this program; if not, write to the
+>> - * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+>> - * Boston, MA 021110-1307, USA.
+>> - */
+>> -
+>> -#include <sys/types.h>
+>> -#include <sys/stat.h>
+>> -#include <dirent.h>
+>> -#include <fcntl.h>
+>> -
+>> -int open_file_or_dir(const char *fname)
+>> -{
+>> -       int ret;
+>> -       struct stat st;
+>> -       DIR *dirstream;
+>> -       int fd;
+>> -
+>> -       ret = stat(fname, &st);
+>> -       if (ret < 0) {
+>> -               return -1;
+>> -       }
+>> -       if (S_ISDIR(st.st_mode)) {
+>> -               dirstream = opendir(fname);
+>> -               if (!dirstream) {
+>> -                       return -2;
+>> -               }
+>> -               fd = dirfd(dirstream);
+>> -       } else {
+>> -               fd = open(fname, O_RDWR);
+>> -       }
+>> -       if (fd < 0) {
+>> -               return -3;
+>> -       }
+>> -       return fd;
+>> -}
+>> diff --git a/utils.c b/utils.c
+>> index ee7fa1b..6157115 100644
+>> --- a/utils.c
+>> +++ b/utils.c
+>> @@ -16,8 +16,9 @@
+>>    * Boston, MA 021110-1307, USA.
+>>    */
+>>
+>> -#define _XOPEN_SOURCE 600
+>> -#define __USE_XOPEN2K
+>> +#define _XOPEN_SOURCE 700
+>> +#define __USE_XOPEN2K8
+>> +#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
+>>   #include <stdio.h>
+>>   #include <stdlib.h>
+>>   #ifndef __CHECKER__
+>> @@ -1206,3 +1207,29 @@ scan_again:
+>>         return 0;
+>>   }
+>>
+>> +int open_file_or_dir(const char *fname)
+>> +{
+>> +       int ret;
+>> +       struct stat st;
+>> +       DIR *dirstream;
+>> +       int fd;
+>> +
+>> +       ret = stat(fname, &st);
+>> +       if (ret < 0) {
+>> +               return -1;
+>> +       }
+>> +       if (S_ISDIR(st.st_mode)) {
+>> +               dirstream = opendir(fname);
+>> +               if (!dirstream) {
+>> +                       return -2;
+>> +               }
+>> +               fd = dirfd(dirstream);
+>> +       } else {
+>> +               fd = open(fname, O_RDWR);
+>> +       }
+>> +       if (fd < 0) {
+>> +               return -3;
+>> +       }
+>> +       return fd;
+>> +}
+>> +
+>> diff --git a/utils.h b/utils.h
+>> index c5f55e1..e281002 100644
+>> --- a/utils.h
+>> +++ b/utils.h
+>> @@ -19,6 +19,8 @@
+>>   #ifndef __UTILS__
+>>   #define __UTILS__
+>>
+>> +#include "ctree.h"
+>> +
+>>   #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+>>
+>>   int make_btrfs(int fd, const char *device, const char *label,
+>> @@ -46,4 +48,5 @@ int check_label(char *input);
+>>   int get_mountpt(char *dev, char *mntpt, size_t size);
+>>
+>>   int btrfs_scan_block_devices(int run_ioctl);
+>> +int open_file_or_dir(const char *fname);
+>>   #endif
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

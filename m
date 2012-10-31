@@ -1,53 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39615 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755969Ab2JaPk7 (ORCPT
+Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:17263 "EHLO
+	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754786Ab2JaSui convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 11:40:59 -0400
-Date: Wed, 31 Oct 2012 08:40:56 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Sander <sander@humilis.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at fs/btrfs/volumes.c:3707 - FIXED
-Message-ID: <20121031154056.GE3290@merlins.org>
-References: <E1TTCzR-0001nz-1p@gandalfthegreat.merlins.org> <20121030144914.GA18659@merlins.org> <20121029154713.GF8019@merlins.org> <B19885DE-6AED-4B8B-B1CA-891878B43C8C@colorremedies.com> <20121029174802.GB7796@merlins.org> <20121030154608.GA19231@merlins.org> <20121031092440.GA31209@panda>
+	Wed, 31 Oct 2012 14:50:38 -0400
+Received: from 210.34.21.95.dynamic.jazztel.es ([95.21.34.210] helo=mail.viric.name)
+	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <viric@viric.name>)
+	id 1TTdN7-000Jin-Af
+	for linux-btrfs@vger.kernel.org; Wed, 31 Oct 2012 18:50:37 +0000
+Date: Wed, 31 Oct 2012 19:50:33 +0100
+From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: Can't replace a faulty disk of raid1
+Message-ID: <20121031185033.GP2052@vicerveza.homeunix.net>
+References: <20121026105721.GU2052@vicerveza.homeunix.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121031092440.GA31209@panda>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <20121026105721.GU2052@vicerveza.homeunix.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 31, 2012 at 10:24:40AM +0100, Sander wrote:
-> Marc MERLIN wrote (ao):
-> > What happened is that my SSD is craping out and failing to write after
-> > a certain number of uptime hours.
+On Fri, Oct 26, 2012 at 12:57:21PM +0200, Lluís Batlle i Rossell wrote:
+> I had a raid1 btrfs (540GB) on vanilla 3.6.3, a disk failed, and removed it at
+> power off, plugged in a new one, partitioned it (to 110GB, by error), and added
+> it to btrfs.
 > 
-> What model ssd is that if I may ask?
+> I tried to remove the missing device, and it said "Input/output error" after a
+> while. Next attempts simply gave "Invalid argument".
+> 
+> Some data:
+> 
+> # btrfs fi df /
+> Data, RAID1: total=507.62GB, used=417.08GB
+> Data: total=25.32GB, used=22.48GB
+> System, RAID1: total=32.00MB, used=92.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, RAID1: total=19.97GB, used=5.50GB
 
-I had my first one, Crucial C300 just die with all my data about 3 months
-later.
-I spent 2-3 weeks trying to get acceptable performance (i.e. faster than a
-HD) off 2 samsung 830s (you might remember some spam from me here about them
-when I thought it might be an issue with btrfs initially).
-Now, I have an OCZ Vertex 4.
+For the sake of mail archiving and future searches, problem solved; there is
+some 'single' data there (22.48GB). Removing the files containing that data
+allowed "btrfs device delete missing /" to work.
 
-That said, it's working fine again for now after I went back to kernel 3.5.3 
-(down from 3.6.3). It hasn't been long enough to say for sure, but there is
-a remote possibility that changes in 3.6 actually caused my drive to freeze
-after several hours of use.
-When that happened (3 times), 2 of those times, btrfs did not manage to
-write all its data before access was cutoff, and I got the bug I reported
-here, which in turn crashes any kernel you try to mount the FS with.
-Cleaning the log manually fixed it both times so far.
+For what I know, at 3.6 there were no error messages indicating about that.
+Then, scrub does not check anything related to missing disks, so it reports that
+all works. And I think that btrfsck also does not report anything related to
+missing disks.
 
-For now, I'll stick with 3.5.3 for a while to make sure my drive is actually
-ok (it seems to be afterall), and once I'm happy that it's the case, I'll go
-back to 3.6.3 with serial console remote logging and try to capture the full
-sata failure I got with 3.6.3.
+The way to get what files had the missing data was to run "tar c /", and wait
+for the errors report on EIO. Then I removed those files.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Thanks a lot to Josef, who sent me patches adding error reports, to get closer
+to the source the errors, and the rest of the helpful people at the #btrfs @
+freenode
+
+Regards,
+Lluís.

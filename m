@@ -1,90 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:35214 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755681Ab2JVTuW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 15:50:22 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id FayZW1xmtMrbGEEv (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 13:50:21 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fill the global reserve when unpinning space
-Date: Mon, 22 Oct 2012 15:56:07 -0400
-Message-ID: <1350935767-3191-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:46804 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932178Ab2JaPQi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Oct 2012 11:16:38 -0400
+From: Masanari Iida <standby24x7@gmail.com>
+To: trivial@kernel.org, chris.mason@fusionio.com, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Cc: Masanari Iida <standby24x7@gmail.com>
+Subject: [PATCH] [trivial] Btrfs: Fix typo in fs/btrfs
+Date: Thu,  1 Nov 2012 00:16:32 +0900
+Message-Id: <1351696592-14721-1-git-send-email-standby24x7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave gave me an image of a very full file system that would abort the
-transaction because it ran out of space while committing the transaction.
-This is because we would think there was plenty of room to create a snapshot
-even though the global reserve was not full.  This happens because we
-calculate the global reserve size before we unpin any space, so after we
-unpin the space we allow reservations to occur even though we haven't
-reserved all of the space for our global reserve.  Fix this by adding to the
-global reserve while unpinning in order to make sure we always have enough
-space to do our work.  With this patch we no longer end up with an aborted
-transaction, we return ENOSPC properly to the person trying to create the
-snapshot.  Thanks,
+Correct spelling typo in btrfs.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Masanari Iida <standby24x7@gmail.com>
 ---
- fs/btrfs/extent-tree.c |   29 ++++++++++++++++++++++++-----
- 1 files changed, 24 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h   | 2 +-
+ fs/btrfs/volumes.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2136add..b765025 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4949,9 +4949,13 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_group_cache *cache = NULL;
-+	struct btrfs_space_info *space_info;
-+	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
- 	u64 len;
-+	bool readonly;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 926c9ff..9dda9a9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -413,7 +413,7 @@ struct btrfs_root_backup {
+ 	__le64 bytes_used;
+ 	__le64 num_devices;
+ 	/* future */
+-	__le64 unsed_64[4];
++	__le64 unused_64[4];
  
- 	while (start <= end) {
-+		readonly = false;
- 		if (!cache ||
- 		    start >= cache->key.objectid + cache->key.offset) {
- 			if (cache)
-@@ -4969,15 +4973,30 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- 		}
+ 	u8 tree_root_level;
+ 	u8 chunk_root_level;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 029b903..36b7f43 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4287,7 +4287,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
  
- 		start += len;
-+		space_info = cache->space_info;
- 
--		spin_lock(&cache->space_info->lock);
-+		spin_lock(&space_info->lock);
- 		spin_lock(&cache->lock);
- 		cache->pinned -= len;
--		cache->space_info->bytes_pinned -= len;
--		if (cache->ro)
--			cache->space_info->bytes_readonly += len;
-+		space_info->bytes_pinned -= len;
-+		if (cache->ro) {
-+			space_info->bytes_readonly += len;
-+			readonly = true;
-+		}
- 		spin_unlock(&cache->lock);
--		spin_unlock(&cache->space_info->lock);
-+		if (!readonly) {
-+			spin_lock(&global_rsv->lock);
-+			if (!global_rsv->full) {
-+				len = min(len, global_rsv->size -
-+					  global_rsv->reserved);
-+				global_rsv->reserved += len;
-+				space_info->bytes_may_use += len;
-+				if (global_rsv->reserved >= global_rsv->size)
-+					global_rsv->full = 1;
-+			}
-+			spin_unlock(&global_rsv->lock);
-+		}
-+		spin_unlock(&space_info->lock);
- 	}
- 
- 	if (cache)
+ 			rcu_read_lock();
+ 			name = rcu_dereference(dev->name);
+-			pr_debug("btrfs_map_bio: rw %d, secor=%llu, dev=%lu "
++			pr_debug("btrfs_map_bio: rw %d, sector=%llu, dev=%lu "
+ 				 "(%s id %llu), size=%u\n", rw,
+ 				 (u64)bio->bi_sector, (u_long)dev->bdev->bd_dev,
+ 				 name->str, dev->devid, bio->bi_size);
 -- 
-1.7.7.6
+1.8.0.rc3.16.g8ead1bf
 

@@ -1,71 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:35336 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756600Ab2JZHCH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Oct 2012 03:02:07 -0400
-Message-ID: <508A3562.9040006@oracle.com>
-Date: Fri, 26 Oct 2012 15:01:54 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from twin.jikos.cz ([89.185.236.188]:34465 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753291Ab2JaAHW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 20:07:22 -0400
+Date: Wed, 31 Oct 2012 01:07:17 +0100
+From: David Sterba <dave@jikos.cz>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: don't allow degraded mount if too many devices
+ are missing
+Message-ID: <20121031000717.GC3102@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1351617376-5208-1-git-send-email-sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/3] flush delalloc by multi-task
-References: <5089045D.8050801@cn.fujitsu.com> <50892821.5010808@oracle.com> <5089EDB7.8030306@cn.fujitsu.com> <5089F003.8080400@oracle.com> <508A02BF.10502@cn.fujitsu.com>
-In-Reply-To: <508A02BF.10502@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1351617376-5208-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/26/2012 11:25 AM, Miao Xie wrote:
-> On Fri, 26 Oct 2012 10:05:55 +0800, Liu Bo wrote:
->> On 10/26/2012 09:56 AM, Miao Xie wrote:
->>>> I can see the potential improvements brought by flushing inodes this way.
->>>>>
->>>>> But I don't think it makes much sense by making waiting process multi-task,
->>>>> since even we spread wait order extents into different cpus, they just occpied
->>>>> the cpu and went on waiting and scheduled then, I mean, the bottleneck is on
->>>>> what we're waiting for.
->>> Thanks for your comment, I think only btrfs_run_ordered_operations(root, 0) needn't
->>> wait for the works, the others must wait.
->>>
->>> The first reason is to avoid changing the semantic of those tree function. The second
->>> reason is we have to wait for the completion of all works, if not, the file data in
->>> snapshots may be different with the source suvolumes because the flush may not end
->>> before the snapshot creation.
->>>
->>
->> Yes, it's right that they must wait for all workers to finish.
->>
->> But I don't mean that(sorry for my confusing words).
->>
->> IMO we don't need to let *btrfs_wait_ordered_extents()* run as multi-task.
-> 
-> It also need to be done by multi-task because btrfs_wait_ordered_extents() doesn't imply
-> that all the dirty pages in the ordered extent have been written into the disk, that is
-> it also need do lots of things before waiting for the event - BTRFS_ORDERED_COMPLETE, so
-> the multi-task process is useful, I think.
-> 
+Patch looks ok, juste one thing that caught my attention (and does not block
+the patch)
 
-Well, I missed the flushing part.
+a bit of context:
 
-> Anyway, we need test to validate it.
-> 
-> Thanks
-> Miao
-> 
->>
->> thanks,
->> liubo
->>
->>
->>
->>
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+1224                 if (fs_info->fs_devices->rw_devices == 0) {
+1225                         ret = -EACCES;
+1226                         goto restore;
+1227                 }
 
+> +		if (fs_info->fs_devices->missing_devices >
+> +		     fs_info->num_tolerated_disk_barrier_failures &&
+> +		    !(*flags & MS_RDONLY)) {
+> +			printk(KERN_WARNING
+> +			       "Btrfs: too many missing devices, writeable remount is not allowed\n");
+> +			ret = -EACCES;
+
+the error code is strange, but it also appears above and has been there for
+ages. We're not checking any sort of permissions so this looks confusing,
+probably EINVAL or EPERM ?
+
+> +			goto restore;
+> +		}
+> +
+>  		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
+>  			ret = -EINVAL;
+>  			goto restore;

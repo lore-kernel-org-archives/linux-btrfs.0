@@ -1,97 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21500 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932400Ab2JaAuh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 20:50:37 -0400
-Message-ID: <509075CD.6000208@oracle.com>
-Date: Wed, 31 Oct 2012 08:50:21 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-MIME-Version: 1.0
-To: Franke <ttfranke@googlemail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: Crashes in extent_io.c after "btrfs bad mapping eb" notice
-References: <20121031005736.306fd86b@googlemail.com> <50907514.3060400@oracle.com>
-In-Reply-To: <50907514.3060400@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mga14.intel.com ([143.182.124.37]:12208 "EHLO mga14.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753757Ab2JaBfk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 21:35:40 -0400
+Message-ID: <1351647337.31033.13.camel@yhuang-dev>
+Subject: Re: [PATCH 2/9] uuid: use random32_get_bytes()
+From: Huang Ying <ying.huang@intel.com>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Cc: Akinobu Mita <akinobu.mita@gmail.com>, linux-kernel@vger.kernel.org,
+        akpm@linux-foundation.org, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Date: Wed, 31 Oct 2012 09:35:37 +0800
+In-Reply-To: <20121030044818.GA5972@thunk.org>
+References: <1351408746-8623-1-git-send-email-akinobu.mita@gmail.com>
+	 <1351408746-8623-2-git-send-email-akinobu.mita@gmail.com>
+	 <20121029205200.GD7098@thunk.org> <1351561798.7817.352.camel@yhuang-dev>
+	 <20121030044818.GA5972@thunk.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/31/2012 08:47 AM, Liu Bo wrote:
-> On 10/31/2012 07:57 AM, Franke wrote:
->> Hello,
->>
->> I have been having some crashes like this. Since I upgraded to 3.6.4 they have become common. The crashes happen pretty randomly during normal system usage. After the syslog messages the system stays semi usable for a minute, but when I run any new program it hangs. I had to downgrade to 3.6.2 to get my system usable again.
->>
->> Is there any way I can help find the cause of those crashes? 
->>
+On Tue, 2012-10-30 at 00:48 -0400, Theodore Ts'o wrote:
+> On Tue, Oct 30, 2012 at 09:49:58AM +0800, Huang Ying wrote:
+> > The uuid_le/be_gen() in lib/uuid.c has set UUID variants to be DCE,
+> > that is done in __uuid_gen_common() with "b[8] = (b[8] & 0x3F) | 0x80".
 > 
-> Hi Franke,
+> Oh, I see, I missed that.
 > 
-> Jan and me have worked together to fix the mentioned bugs days before, and you can try
-> Jan's git repo and see if it works in your situation:
+> > To deal with random number generation issue, how about use
+> > get_random_bytes() in __uuid_gen_common()?
 > 
->           git.jan-o-sch.net for-chris
+> We already have generate_random_uuid() in drivers/char/random.c, and
+> no users for lib/uuid.c's equivalent uuid_be_gen().  So here's a
+> counter-proposal, why don't we drop lib/uuid.c, and include in
+> drivers/char/random.c:
+> 
+> /*
+>  * Generate random GUID
+>  *
+>  * GUID's is like UUID's, but they uses the non-standard little-endian
+>  * layout, compared to what is defined in RFC-4112; it is primarily
+>  * used by the EFI specification.
+>  */
+> void generate_random_guid(unsigned char uuid_out[16])
+> {
+> 	get_random_bytes(uuid_out, 16);
+> 	/* Set UUID version to 4 --- truly random generation */
+> 	uuid_out[7] = (uuid_out[7] & 0x0F) | 0x40;
+> 	/* Set the UUID variant to DCE */
+> 	uuid_out[8] = (uuid_out[8] & 0x3F) | 0x80;
+> }
+> EXPORT_SYMBOL(generate_random_guid);
+> 
+> I really don't think it's worth it to have a __uuid_gen_common once we
+> are using get_random_bytes(), since there isn't much code to be
+> factored out, and it's simpler just to have two functions in one place.
 
-it should be
-           git.jan-o-sch.net/btrfs-unstable for-chris
+The intention of lib/uuid.c is to unify various UUID related code, and
+put them in same place.  In addition to UUID generation, it provide some
+other utility and may provide/collect more in the future.  So do you
+think it is a good idea to put generate_rand_uuid/guid into lib/uuid.c
+and maybe change the name/prototype to make it consistent with other
+uuid definitions?
 
-> 
-> (It contains most of patches related to backref walking.)
-> 
-> thanks,
-> liubo
-> 
->> thanks,
->> Tobias Franke
->>
->> logs here:
->> https://www.dropbox.com/s/1f6gh4k0zl2t5zq/btrfs_hangs_3-4-6.log
->>
->> It starts like this:
->> Oct 30 22:42:36 localhost kernel: btrfs bad mapping eb start 982689189888 len 4096, wanted 4424 17
->> Oct 30 22:42:36 localhost kernel: ------------[ cut here ]------------
->> Oct 30 22:42:36 localhost kernel: WARNING: at fs/btrfs/extent_io.c:4661 map_private_extent_buffer+0x83/0xc9()
->> Oct 30 22:42:36 localhost kernel: Hardware name: A780L3L
->> Oct 30 22:42:36 localhost kernel: Modules linked in: hwmon_vid snd_hda_codec_hdmi nvidia(PO) snd_hda_codec_realtek snd_hda_intel snd_hda_codec i2c_piix4 k10temp
->> Oct 30 22:42:36 localhost kernel: Pid: 7143, comm: btrfs-endio-wri Tainted: P           O 3.6.4-gentoo #1
->> Oct 30 22:42:36 localhost kernel: Call Trace:
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81030181>] ? warn_slowpath_common+0x78/0x8c
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8127dc2e>] ? map_private_extent_buffer+0x83/0xc9
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81249353>] ? generic_bin_search.clone.50+0xaa/0x130
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8124c11a>] ? btrfs_search_old_slot+0x333/0x6ad
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812a737d>] ? __resolve_indirect_refs+0x147/0x4b1
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812a70bf>] ? __add_keyed_refs.clone.6+0x9e/0x215
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812a6ba6>] ? __add_prelim_ref+0x3a/0xb9
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812a7d54>] ? find_parent_nodes+0x553/0x7ca
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812458b8>] ? leaf_space_used+0xaf/0xd7
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812a8044>] ? btrfs_find_all_roots+0x79/0xd4
->> Oct 30 22:42:36 localhost kernel: [<ffffffff812aa1d0>] ? btrfs_qgroup_account_ref+0xd2/0x4a8
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81278482>] ? alloc_extent_state+0x58/0x9d
->> Oct 30 22:42:36 localhost kernel: [<ffffffff810e8245>] ? kmem_cache_free+0x12/0xbd
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81253c93>] ? btrfs_delayed_refs_qgroup_accounting+0x9e/0xca
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81266723>] ? __btrfs_end_transaction+0x4e/0x293
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8126bb26>] ? btrfs_finish_ordered_io+0x2e1/0x332
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8103cfae>] ? run_timer_softirq+0x2c2/0x2c2
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81286398>] ? worker_loop+0x174/0x4c0
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81286224>] ? btrfs_queue_worker+0x261/0x261
->> Oct 30 22:42:36 localhost kernel: [<ffffffff81286224>] ? btrfs_queue_worker+0x261/0x261
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8104b293>] ? kthread+0x81/0x89
->> Oct 30 22:42:36 localhost kernel: [<ffffffff815de774>] ? kernel_thread_helper+0x4/0x10
->> Oct 30 22:42:36 localhost kernel: [<ffffffff8104b212>] ? kthread_freezable_should_stop+0x52/0x52
->> Oct 30 22:42:36 localhost kernel: [<ffffffff815de770>] ? gs_change+0xb/0xb
->> Oct 30 22:42:36 localhost kernel: ---[ end trace cb2d15ce8c2d83ec ]---
->> Oct 30 22:42:36 localhost kernel: ------------[ cut here ]------------
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Using UUID vs. GUID I think makes things much clearer, since the EFI
+> specification talks about GUID's, not UUID's, and that way we don't
+> have to worry about people getting confused about whether they should
+> be using the little-endian versus big-endian variant.  (And I'd love
+> to ask to whoever wrote the EFI specification what on *Earth* were
+> they thinking when they decided to diverge from the rest of the
+> world....)
+
+I think that is a good idea.  From Wikipedia, GUID is in native byte
+order, while UUID is in internet byte order.
+
+Best Regards,
+Huang Ying
+
 

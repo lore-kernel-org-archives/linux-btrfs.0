@@ -1,55 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:22950 "EHLO
-	aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752875Ab2JaCbv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 22:31:51 -0400
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-	by aserp1050.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9V2Vonx013730
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 02:31:50 GMT
-Message-ID: <50908D3E.3000609@oracle.com>
-Date: Wed, 31 Oct 2012 10:30:22 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+Received: from li9-11.members.linode.com ([67.18.176.11]:58557 "EHLO
+	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757735Ab2JaCiO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 22:38:14 -0400
+Date: Tue, 30 Oct 2012 22:38:08 -0400
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Huang Ying <ying.huang@intel.com>
+Cc: Akinobu Mita <akinobu.mita@gmail.com>, linux-kernel@vger.kernel.org,
+        akpm@linux-foundation.org, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/9] uuid: use random32_get_bytes()
+Message-ID: <20121031023808.GB9475@thunk.org>
+References: <1351408746-8623-1-git-send-email-akinobu.mita@gmail.com>
+ <1351408746-8623-2-git-send-email-akinobu.mita@gmail.com>
+ <20121029205200.GD7098@thunk.org>
+ <1351561798.7817.352.camel@yhuang-dev>
+ <20121030044818.GA5972@thunk.org>
+ <1351647337.31033.13.camel@yhuang-dev>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?G=E1bor_Nyers?= <gnyers@suse.com>
-CC: Liu Bo <liub.liubo@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: How to find (out if) files sharing content?
-References: <20121030162005.0308d5a2@lupus.demo.lan> <5090736C.5040609@oracle.com>
-In-Reply-To: <5090736C.5040609@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1351647337.31033.13.camel@yhuang-dev>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/31/2012 08:40 AM, Liu Bo wrote:
-> On 10/30/2012 11:20 PM, Gábor Nyers wrote:
->> Hi,
->>
->> How could one find out if 2 files share any extents on a btrfs file system?
->>
->> A more generic variation of the above: How to list files on the same
->> file system/subvolume sharing content?
-One idea is to mark those cloned extents as FIEMAP_EXTENT_SHARED so that
-we can go through a file to figure out how many extents are shared
-through fiemap(2), and calculate the real storage(fs/subvolume) footprint
-in the end.
+On Wed, Oct 31, 2012 at 09:35:37AM +0800, Huang Ying wrote:
+> 
+> The intention of lib/uuid.c is to unify various UUID related code, and
+> put them in same place.  In addition to UUID generation, it provide some
+> other utility and may provide/collect more in the future.  So do you
+> think it is a good idea to put generate_rand_uuid/guid into lib/uuid.c
+> and maybe change the name/prototype to make it consistent with other
+> uuid definitions?
 
-Thanks,
--Jeff
->>
-> 
-> Indeed ocfs2 already has the feature where you can get shared parts via 'du',
-> we're planning to support this in btrfs, too.
-> 
-> thanks,
-> liubo
-> 
->> Thanks,
->> Gábor
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
+I had trouble understanding why lib/uuid.c existed, since the only
+thing I saw was the uuid generation function.  After some more
+looking, I see you also created inline functions which wrapped
+memcmp().
 
+The problem I have with your abstractions is that it just makes life
+more complicated for the callers.  All of the current places which use
+generate_random_uuid() merely want to fill in a unsigned char array.
+This includes btrfs, by the way, which is already using
+generate_random_uuid in some places, and I'm not sure why they are
+using uuid_le_gen(), since there doesn't seem to be any need for a
+little-endian uuid/guid here (it's just used as unique bag of bits
+which is 16 bytes long), and using uuid_le_gen() means extra memory
+has to be allocated on the stack, and then an extra memory copy is
+required.  Contrast (in fs/btrfs/root-tree.c):
+
+	   uuid_le uuid;
+	   ...
+		uuid_le_gen(&uuid);
+		memcpy(item->uuid, uuid.b, BTRFS_UUID_SIZE);
+
+versus, simply doing (fs/btrfs/volumes.c):
+
+	generate_random_uuid(fs_devices->fsid);
+
+see which one is easier?  And after the uuid is generated, none of the
+current callers ever do any manipulation of the uuid, so there's no
+real point to play fancy typedef games; it just adds more work for no
+real gain.
+
+> > Using UUID vs. GUID I think makes things much clearer, since the EFI
+> > specification talks about GUID's, not UUID's, and that way we don't
+> > have to worry about people getting confused about whether they should
+> > be using the little-endian versus big-endian variant.  (And I'd love
+> > to ask to whoever wrote the EFI specification what on *Earth* were
+> > they thinking when they decided to diverge from the rest of the
+> > world....)
+> 
+> I think that is a good idea.  From Wikipedia, GUID is in native byte
+> order, while UUID is in internet byte order.
+
+Well, technially GUID is "intel/little-endian byte order".  If someone
+tried to implement the GPT on a big-endian system, such as PowerPC,
+they would still have to use the little-endian byte order, even though
+it's not the native byte order for that architecture.  Otherwise
+devices wouldn't be portable between those systems.  (This is why I
+think the GUID was such a bad idea; everyone basically treats them as
+16 byte octet strings, so this whole idea of "native byte order" just
+to save a few byte swaps at UUID generation time was really, IMHO, a
+very bad idea.)
+
+Regards,
+
+					- Ted

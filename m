@@ -1,50 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:35059 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:35222 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932305Ab2JaAka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 20:40:30 -0400
-Date: Wed, 31 Oct 2012 01:40:27 +0100
+	id S932069Ab2JaAoc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 20:44:32 -0400
+Date: Wed, 31 Oct 2012 01:44:26 +0100
 From: David Sterba <dave@jikos.cz>
-To: ching <lsching17@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs defrag problem
-Message-ID: <20121031004027.GE3102@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: David Sterba <dave@jikos.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: make snapshot-aware defrag as a mount option
+Message-ID: <20121031004426.GF3102@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <508FBE50.6070300@gmail.com>
+References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
+ <1351333721-3220-2-git-send-email-bo.li.liu@oracle.com>
+ <20121030233146.GB3102@twin.jikos.cz>
+ <5090721E.2090806@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <508FBE50.6070300@gmail.com>
+In-Reply-To: <5090721E.2090806@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 30, 2012 at 07:47:28PM +0800, ching wrote:
->     failed to open /bin/bash
->     open:: Text file busy
+On Wed, Oct 31, 2012 at 08:34:38AM +0800, Liu Bo wrote:
+> Besides 'btrfs fi defrag', mounting with autodefrag may also do the same thing.
 
-That's not a btrfs problem, you can't directly modify an executable that
-is being used.
+Ok, autodefrag, good point. Then I suggest to make the snapshot-aware a
+mode of autodefrag, not a separate option (because it would make no
+sense other than an alias for "autodefrag=snapshotaware")
 
->     failed to open /lib64/ld-2.15.so
->     failed to open /sbin/agetty
->     failed to open /sbin/btrfs
->     failed to open /sbin/dhclient
->     failed to open /sbin/init
->     failed to open /sbin/udevd
-
-libraries, currently executed progs or daemons
-
->     It seems that locked files cannot be defragged, is it expected behaviour?
-
-Yes.
-
-> 2. Btrfs Wiki mentions that defrag directory will defrag metadata, is symlink/hardlink considered as metadata?
->     P.S. inline data is already disabled by "max_inline=0"
-
-Both -links are metadata and also stored inside metadata blocks without
-any chance to move to data blocks, so max_inline does not affect this.
-
-> 3. Is any possible to online defrag a btrfs partition without hindered by mount point/polyinstantied directories?
-
-Sorry, I do not understand the question.
 
 david

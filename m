@@ -1,42 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36755 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933206Ab2JaAkX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Oct 2012 20:40:23 -0400
-Message-ID: <5090736C.5040609@oracle.com>
-Date: Wed, 31 Oct 2012 08:40:12 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from twin.jikos.cz ([89.185.236.188]:35059 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932305Ab2JaAka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Oct 2012 20:40:30 -0400
+Date: Wed, 31 Oct 2012 01:40:27 +0100
+From: David Sterba <dave@jikos.cz>
+To: ching <lsching17@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs defrag problem
+Message-ID: <20121031004027.GE3102@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <508FBE50.6070300@gmail.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?G=E1bor_Nyers?= <gnyers@suse.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>, Jie Liu <jeff.liu@oracle.com>
-Subject: Re: How to find (out if) files sharing content?
-References: <20121030162005.0308d5a2@lupus.demo.lan>
-In-Reply-To: <20121030162005.0308d5a2@lupus.demo.lan>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <508FBE50.6070300@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/30/2012 11:20 PM, Gábor Nyers wrote:
-> Hi,
-> 
-> How could one find out if 2 files share any extents on a btrfs file system?
-> 
-> A more generic variation of the above: How to list files on the same
-> file system/subvolume sharing content?
-> 
+On Tue, Oct 30, 2012 at 07:47:28PM +0800, ching wrote:
+>     failed to open /bin/bash
+>     open:: Text file busy
 
-Indeed ocfs2 already has the feature where you can get shared parts via 'du',
-we're planning to support this in btrfs, too.
+That's not a btrfs problem, you can't directly modify an executable that
+is being used.
 
-thanks,
-liubo
+>     failed to open /lib64/ld-2.15.so
+>     failed to open /sbin/agetty
+>     failed to open /sbin/btrfs
+>     failed to open /sbin/dhclient
+>     failed to open /sbin/init
+>     failed to open /sbin/udevd
 
-> Thanks,
-> Gábor
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+libraries, currently executed progs or daemons
 
+>     It seems that locked files cannot be defragged, is it expected behaviour?
+
+Yes.
+
+> 2. Btrfs Wiki mentions that defrag directory will defrag metadata, is symlink/hardlink considered as metadata?
+>     P.S. inline data is already disabled by "max_inline=0"
+
+Both -links are metadata and also stored inside metadata blocks without
+any chance to move to data blocks, so max_inline does not affect this.
+
+> 3. Is any possible to online defrag a btrfs partition without hindered by mount point/polyinstantied directories?
+
+Sorry, I do not understand the question.
+
+david

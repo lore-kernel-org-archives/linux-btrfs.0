@@ -1,184 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47403 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:10379 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753752Ab2KAHb5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 03:31:57 -0400
-Message-ID: <50922582.2040206@cn.fujitsu.com>
-Date: Thu, 01 Nov 2012 15:32:18 +0800
+	id S1753654Ab2KAHcx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Nov 2012 03:32:53 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qA17WpRU031160
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Nov 2012 15:32:51 +0800
+Message-ID: <509225BA.4080105@cn.fujitsu.com>
+Date: Thu, 01 Nov 2012 15:33:14 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Liu Bo <bo.li.liu@oracle.com>
-Subject: [PATCH 1/5] Btrfs: fix joining the same transaction handler more
- than 2 times
+Subject: [PATCH 2/5] Btrfs: fix missing flush when committing a transaction
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we flush inodes with pending delalloc in a transaction, we may join
-the same transaction handler more than 2 times.
+Consider the following case:
+	Task1				Task2
+	start_transaction
+					commit_transaction
+					  check pending snapshots list and the
+					  list is empty.
+	add pending snapshot into list
+					  skip the delalloc flush
+	end_transaction
+					  ...
 
-The reason is:
-  Task						use_count of trans handle
-  commit_transaction				1
-    |-> btrfs_start_delalloc_inodes		1
-	  |-> run_delalloc_nocow		1
-		|-> join_transaction		2
-		|-> cow_file_range		2
-			|-> join_transaction	3
+And then the problem that the snapshot is different with the source subvolume
+happen.
 
-In fact, cow_file_range needn't join the transaction again because the caller
-have joined the transaction, so we fix this problem by this way.
+This patch fixes the above problem by flush all pending stuffs when all the
+other tasks end the transaction.
 
-Reported-by: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c       |   77 +++++++++++++++++++++++++++++------------------
- fs/btrfs/transaction.c |    1 +
- 2 files changed, 48 insertions(+), 30 deletions(-)
+ fs/btrfs/transaction.c |   74 ++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 47 insertions(+), 27 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5fc0990..aadcdd6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -803,14 +803,14 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
-  * required to start IO on it.  It may be clean and already done with
-  * IO when we return.
-  */
--static noinline int cow_file_range(struct inode *inode,
--				   struct page *locked_page,
--				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written,
--				   int unlock)
-+static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
-+				     struct inode *inode,
-+				     struct btrfs_root *root,
-+				     struct page *locked_page,
-+				     u64 start, u64 end, int *page_started,
-+				     unsigned long *nr_written,
-+				     int unlock)
- {
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_trans_handle *trans;
- 	u64 alloc_hint = 0;
- 	u64 num_bytes;
- 	unsigned long ram_size;
-@@ -823,25 +823,10 @@ static noinline int cow_file_range(struct inode *inode,
- 	int ret = 0;
- 
- 	BUG_ON(btrfs_is_free_space_inode(inode));
--	trans = btrfs_join_transaction(root);
--	if (IS_ERR(trans)) {
--		extent_clear_unlock_delalloc(inode,
--			     &BTRFS_I(inode)->io_tree,
--			     start, end, locked_page,
--			     EXTENT_CLEAR_UNLOCK_PAGE |
--			     EXTENT_CLEAR_UNLOCK |
--			     EXTENT_CLEAR_DELALLOC |
--			     EXTENT_CLEAR_DIRTY |
--			     EXTENT_SET_WRITEBACK |
--			     EXTENT_END_WRITEBACK);
--		return PTR_ERR(trans);
--	}
--	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
- 
- 	num_bytes = (end - start + blocksize) & ~(blocksize - 1);
- 	num_bytes = max(blocksize,  num_bytes);
- 	disk_num_bytes = num_bytes;
--	ret = 0;
- 
- 	/* if this is a small write inside eof, kick off defrag */
- 	if (num_bytes < 64 * 1024 &&
-@@ -952,11 +937,9 @@ static noinline int cow_file_range(struct inode *inode,
- 		alloc_hint = ins.objectid + ins.offset;
- 		start += cur_alloc_size;
- 	}
--	ret = 0;
- out:
--	btrfs_end_transaction(trans, root);
--
- 	return ret;
-+
- out_unlock:
- 	extent_clear_unlock_delalloc(inode,
- 		     &BTRFS_I(inode)->io_tree,
-@@ -971,6 +954,39 @@ out_unlock:
- 	goto out;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 6d0d5a0..d9a9a70 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1401,6 +1401,48 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
  }
  
-+static noinline int cow_file_range(struct inode *inode,
-+				   struct page *locked_page,
-+				   u64 start, u64 end, int *page_started,
-+				   unsigned long *nr_written,
-+				   int unlock)
++static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
++					  struct btrfs_root *root)
 +{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int flush_on_commit = btrfs_test_opt(root, FLUSHONCOMMIT);
++	int snap_pending = 0;
 +	int ret;
 +
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		extent_clear_unlock_delalloc(inode,
-+			     &BTRFS_I(inode)->io_tree,
-+			     start, end, locked_page,
-+			     EXTENT_CLEAR_UNLOCK_PAGE |
-+			     EXTENT_CLEAR_UNLOCK |
-+			     EXTENT_CLEAR_DELALLOC |
-+			     EXTENT_CLEAR_DIRTY |
-+			     EXTENT_SET_WRITEBACK |
-+			     EXTENT_END_WRITEBACK);
-+		return PTR_ERR(trans);
++	if (!flush_on_commit) {
++		spin_lock(&root->fs_info->trans_lock);
++		if (!list_empty(&trans->transaction->pending_snapshots))
++			snap_pending = 1;
++		spin_unlock(&root->fs_info->trans_lock);
 +	}
-+	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
 +
-+	ret = __cow_file_range(trans, inode, root, locked_page, start, end,
-+			       page_started, nr_written, unlock);
++	if (flush_on_commit || snap_pending) {
++		btrfs_start_delalloc_inodes(root, 1);
++		btrfs_wait_ordered_extents(root, 1);
++	}
 +
-+	btrfs_end_transaction(trans, root);
++	ret = btrfs_run_delayed_items(trans, root);
++	if (ret)
++		return ret;
 +
-+	return ret;
++	/*
++	 * running the delayed items may have added new refs. account
++	 * them now so that they hinder processing of more delayed refs
++	 * as little as possible.
++	 */
++	btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
++
++	/*
++	 * rename don't use btrfs_join_transaction, so, once we
++	 * set the transaction to blocked above, we aren't going
++	 * to get any new ordered operations.  We can safely run
++	 * it here and no for sure that nothing new will be added
++	 * to the list
++	 */
++	btrfs_run_ordered_operations(root, 1);
++
++	return 0;
 +}
 +
  /*
-  * work queue call back to started compression on a file and pages
-  */
-@@ -1281,9 +1297,9 @@ out_check:
+  * btrfs_transaction state sequence:
+  *    in_commit = 0, blocked = 0  (initial)
+@@ -1418,7 +1460,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	int ret = -EIO;
+ 	int should_grow = 0;
+ 	unsigned long now = get_seconds();
+-	int flush_on_commit = btrfs_test_opt(root, FLUSHONCOMMIT);
  
- 		btrfs_release_path(path);
- 		if (cow_start != (u64)-1) {
--			ret = cow_file_range(inode, locked_page, cow_start,
--					found_key.offset - 1, page_started,
--					nr_written, 1);
-+			ret = __cow_file_range(trans, inode, root, locked_page,
-+					       cow_start, found_key.offset - 1,
-+					       page_started, nr_written, 1);
- 			if (ret) {
- 				btrfs_abort_transaction(trans, root, ret);
- 				goto error;
-@@ -1352,8 +1368,9 @@ out_check:
- 	}
+ 	btrfs_run_ordered_operations(root, 0);
  
- 	if (cow_start != (u64)-1) {
--		ret = cow_file_range(inode, locked_page, cow_start, end,
--				     page_started, nr_written, 1);
-+		ret = __cow_file_range(trans, inode, root, locked_page,
-+				       cow_start, end,
-+				       page_started, nr_written, 1);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, root, ret);
- 			goto error;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 04bbfb1..6d0d5a0 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -312,6 +312,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK);
- 		h = current->journal_info;
- 		h->use_count++;
-+		WARN_ON(h->use_count > 2);
- 		h->orig_rsv = h->block_rsv;
- 		h->block_rsv = NULL;
- 		goto got_it;
+@@ -1491,39 +1532,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		should_grow = 1;
+ 
+ 	do {
+-		int snap_pending = 0;
+-
+ 		joined = cur_trans->num_joined;
+-		if (!list_empty(&trans->transaction->pending_snapshots))
+-			snap_pending = 1;
+ 
+ 		WARN_ON(cur_trans != trans->transaction);
+ 
+-		if (flush_on_commit || snap_pending) {
+-			btrfs_start_delalloc_inodes(root, 1);
+-			btrfs_wait_ordered_extents(root, 1);
+-		}
+-
+-		ret = btrfs_run_delayed_items(trans, root);
++		ret = btrfs_flush_all_pending_stuffs(trans, root);
+ 		if (ret)
+ 			goto cleanup_transaction;
+ 
+-		/*
+-		 * running the delayed items may have added new refs. account
+-		 * them now so that they hinder processing of more delayed refs
+-		 * as little as possible.
+-		 */
+-		btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
+-
+-		/*
+-		 * rename don't use btrfs_join_transaction, so, once we
+-		 * set the transaction to blocked above, we aren't going
+-		 * to get any new ordered operations.  We can safely run
+-		 * it here and no for sure that nothing new will be added
+-		 * to the list
+-		 */
+-		btrfs_run_ordered_operations(root, 1);
+-
+ 		prepare_to_wait(&cur_trans->writer_wait, &wait,
+ 				TASK_UNINTERRUPTIBLE);
+ 
+@@ -1536,6 +1552,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	} while (atomic_read(&cur_trans->num_writers) > 1 ||
+ 		 (should_grow && cur_trans->num_joined != joined));
+ 
++	ret = btrfs_flush_all_pending_stuffs(trans, root);
++	if (ret)
++		goto cleanup_transaction;
++
+ 	/*
+ 	 * Ok now we need to make sure to block out any other joins while we
+ 	 * commit the transaction.  We could have started a join before setting
 -- 
 1.7.6.5

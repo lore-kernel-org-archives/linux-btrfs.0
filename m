@@ -1,49 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([82.95.169.224]:46458 "EHLO panda.humilis.net"
+Received: from plane.gmane.org ([80.91.229.3]:40211 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756816Ab2KAK4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 06:56:20 -0400
-Date: Thu, 1 Nov 2012 11:56:18 +0100
-From: Sander <sander@humilis.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Need help mounting laptop corrupted root btrfs. Kernel BUG at
- fs/btrfs/volumes.c:3707 - FIXED
-Message-ID: <20121101105618.GA19415@panda>
-Reply-To: sander@humilis.net
-References: <E1TTCzR-0001nz-1p@gandalfthegreat.merlins.org>
- <20121030144914.GA18659@merlins.org>
- <20121029154713.GF8019@merlins.org>
- <B19885DE-6AED-4B8B-B1CA-891878B43C8C@colorremedies.com>
- <20121029174802.GB7796@merlins.org>
- <20121030154608.GA19231@merlins.org>
- <20121031092440.GA31209@panda>
- <20121031154056.GE3290@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121031154056.GE3290@merlins.org>
+	id S1753748Ab2KALBM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Nov 2012 07:01:12 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TTsWT-0002Os-1p
+	for linux-btrfs@vger.kernel.org; Thu, 01 Nov 2012 12:01:17 +0100
+Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 12:01:17 +0100
+Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 12:01:17 +0100
+To: linux-btrfs@vger.kernel.org
+From: Gabriel <g2p.code@gmail.com>
+Subject: Re: find-new possibility of showing modified and deleted
+ files/directories
+Date: Thu, 1 Nov 2012 11:00:54 +0000 (UTC)
+Message-ID: <k6tkp5$oa5$1@ger.gmane.org>
+References: <CANmUDYsPqS9ZUVWhzxQv4G6fkQaRbGa2M3TTECp+tujJtyN4EA@mail.gmail.com>
+	<CAE5mzvi0jLAm_pp0YzD=o2W86jrPSnNw3Z+3UFq9ZY1joynCew@mail.gmail.com>
+	<CANmUDYuTLu5M7PAG1_w2bPORMs73yRmfSc0-2Wx7+UU+FPbs-w@mail.gmail.com>
+	<50920371.7090601@gmx.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN wrote (ao):
-> That said, it's working fine again for now after I went back to kernel 3.5.3 
-> (down from 3.6.3). It hasn't been long enough to say for sure, but there is
-> a remote possibility that changes in 3.6 actually caused my drive to freeze
-> after several hours of use.
-> When that happened (3 times), 2 of those times, btrfs did not manage to
-> write all its data before access was cutoff, and I got the bug I reported
-> here, which in turn crashes any kernel you try to mount the FS with.
-> Cleaning the log manually fixed it both times so far.
-> 
-> For now, I'll stick with 3.5.3 for a while to make sure my drive is actually
-> ok (it seems to be afterall), and once I'm happy that it's the case, I'll go
-> back to 3.6.3 with serial console remote logging and try to capture the full
-> sata failure I got with 3.6.3.
+On Thu, 01 Nov 2012 06:06:57 +0100, Arne Jansen wrote:
+> On 11/01/2012 02:28 AM, Shane Spencer wrote:
+>> That's Plan B.  I'll be making a btrfs stream decoder and doing in
+>> place edits.  I need to move stuff around to other filesystem types
+>> otherwise I'd just store the stream or apply the stream to a remote
+>> snapshot.
 
-Thanks for the info. You could put some load on the ssd to see if you
-can trigger an issue under 3.6.3(+) with btrfs filesystem scrub or
-badblocks (in the default non-destructive mode).
+> That's the whole point of the btrfs-send design: It's very easy to
+> receive on different filesystems. A generic receiver is in preparation.
+> And to make it even more generic: A sender using the same stream format
+> is also in preparation for zfs.
 
-Can you collect SMART data (with smartctl) from the ssd?
+Consider the rsync bundle format as well.
+That should provide interoperability with any filesystem.
 
-	Sander

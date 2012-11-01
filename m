@@ -1,26 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:64073 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752411Ab2KRVEd convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 Nov 2012 16:04:33 -0500
-Received: by mail-ee0-f46.google.com with SMTP id e53so765710eek.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 18 Nov 2012 13:04:32 -0800 (PST)
-From: Remco Hosman - Yerf IT <remco@yerf-it.nl>
-Content-Type: text/plain; charset=us-ascii
-Subject: Sparsify / hole punching tool
-Message-Id: <97B8CC50-0F4A-42BE-959F-26C86A2C3FAD@yerf-it.nl>
-Date: Sun, 18 Nov 2012 22:04:29 +0100
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:54064 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752361Ab2KAJa5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2012 05:30:57 -0400
+Received: by mail-vc0-f174.google.com with SMTP id fk26so2436633vcb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 02:30:56 -0700 (PDT)
+MIME-Version: 1.0
+Date: Thu, 1 Nov 2012 17:30:56 +0800
+Message-ID: <CAFc7E1k2gg9uVAmZE_J07=Fyx4MojLihWc2_4thEduLnePVDxw@mail.gmail.com>
+Subject: [PATCH] shared compression workspaces limits doesnot match
+From: Rock Lee <geekerrocklee@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Cc: Rock Lee <GeekerRockLee@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wrote a little tool you can use to scan a file and punch holes, so make it sparse.
+In function find_workspace, it's allowed to alloc cpus + 1 workspaces at most,
+but in function free_workspace, it will freed the workspace if there
+exists more then cpus' workspaces.
 
-Confirmed to work on 3.7.0-rc6
-Feel free to use it in any way you like, and of course improve it. 
+The two limits doesn't match. I thought the original itention is
+allowed to alloc
+cpus compression workspaces at most.
 
-http://pastebin.com/8SjEsBLD
+Signed-off-by: Rock Lee <GeekerRockLee@gmail.com>
+---
+ fs/btrfs/compression.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Remco Hosman
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c6467aa..eef1811 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -779,7 +779,7 @@ again:
+  return workspace;
+
+  }
+- if (atomic_read(alloc_workspace) > cpus) {
++ if (atomic_read(alloc_workspace) >= cpus) {
+  DEFINE_WAIT(wait);
+
+  spin_unlock(workspace_lock);
+--
+1.7.7.6

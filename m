@@ -1,52 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:50079 "EHLO xp-ob.rzone.de"
+Received: from mx2.fusionio.com ([66.114.96.31]:53367 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1761791Ab2KAPBa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 11:01:30 -0400
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Cc: ablock84@googlemail.com, sensille@gmx.net
-Subject: [PATCH 2/2] Btrfs-progs: bugfix for subvolume parent determination in btrfs send
-Date: Thu,  1 Nov 2012 16:01:26 +0100
-Message-Id: <1351782086-23435-3-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1351782086-23435-1-git-send-email-list.btrfs@jan-o-sch.net>
+	id S1761923Ab2KAPHQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Nov 2012 11:07:16 -0400
+Date: Thu, 1 Nov 2012 11:07:10 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ablock84@googlemail.com" <ablock84@googlemail.com>,
+        "sensille@gmx.net" <sensille@gmx.net>
+Subject: Re: [PATCH 0/2] Btrfs-progs: urgent fixes for btrfs send
+Message-ID: <20121101150710.GA21281@shiny>
 References: <1351782086-23435-1-git-send-email-list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1351782086-23435-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We missed to add the default subvolume, because it has no ROOT_BACKREF_ITEM.
-This made get_parent always fail for direct decendants of the default
-subvolume, resulting in lots of full streams where incremental streams were
-requested.
+On Thu, Nov 01, 2012 at 09:01:24AM -0600, Jan Schmidt wrote:
+> Hi everybody,
+> 
+> We made a bad mistake with "btrfs send" command line arguments and we'd
+> better fix it before it's being widely used (read: *now*).
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Reviewed-by: Alexander Block <ablock84@googlemail.com>
----
- send-utils.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+Ok, I do agree that -i was confusing.  I didn't end up using it in my
+backup scripts here.
 
-diff --git a/send-utils.c b/send-utils.c
-index fcde5c2..d8d3972 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -240,7 +240,8 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 				memcpy(&root_item, root_item_ptr,
- 						sizeof(root_item));
- 				root_item_valid = 1;
--			} else if (sh->type == BTRFS_ROOT_BACKREF_KEY) {
-+			} else if (sh->type == BTRFS_ROOT_BACKREF_KEY ||
-+				   root_item_valid) {
- 				if (!root_item_valid)
- 					goto skip;
- 
-@@ -274,7 +275,6 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 				subvol_uuid_search_add(s, si);
- 				root_item_valid = 0;
- 			} else {
--				root_item_valid = 0;
- 				goto skip;
- 			}
- 
--- 
-1.7.1
+How about:
 
+Make -p and -i mean the same thing.  Add -r for what -i should have
+done.  
+
+This has the advantage of not breaking the people that did get working
+btrfs send setups ;)
+
+-chris

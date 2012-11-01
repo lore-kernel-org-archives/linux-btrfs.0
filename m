@@ -1,34 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:49724 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750854Ab2JaXZT (ORCPT
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:64810 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757002Ab2KAB2G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 19:25:19 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so1017449eek.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 16:25:18 -0700 (PDT)
+	Wed, 31 Oct 2012 21:28:06 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so792610eaa.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 18:28:05 -0700 (PDT)
 MIME-Version: 1.0
-Date: Wed, 31 Oct 2012 15:25:18 -0800
-Message-ID: <CANmUDYsPqS9ZUVWhzxQv4G6fkQaRbGa2M3TTECp+tujJtyN4EA@mail.gmail.com>
-Subject: find-new possibility of showing modified and deleted files/directories
+In-Reply-To: <CAE5mzvi0jLAm_pp0YzD=o2W86jrPSnNw3Z+3UFq9ZY1joynCew@mail.gmail.com>
+References: <CANmUDYsPqS9ZUVWhzxQv4G6fkQaRbGa2M3TTECp+tujJtyN4EA@mail.gmail.com>
+	<CAE5mzvi0jLAm_pp0YzD=o2W86jrPSnNw3Z+3UFq9ZY1joynCew@mail.gmail.com>
+Date: Wed, 31 Oct 2012 17:28:05 -0800
+Message-ID: <CANmUDYuTLu5M7PAG1_w2bPORMs73yRmfSc0-2Wx7+UU+FPbs-w@mail.gmail.com>
+Subject: Re: find-new possibility of showing modified and deleted files/directories
 From: Shane Spencer <shane@bogomip.com>
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently find-new only shows certain operations and probably for a great
-reason.
+That's Plan B.  I'll be making a btrfs stream decoder and doing in
+place edits.  I need to move stuff around to other filesystem types
+otherwise I'd just store the stream or apply the stream to a remote
+snapshot.
 
-I'm trying to use find-new to preseed a file list to rsync so that I don't
-have to traverse incredibly large directory trees.
-
-Unfortunately find-new doesn't show deletion and a few other modifications.
-
-I'm very tempted to use snapshots and decode a transfer log to get at this
-information since that seems the most supportable way of doing this at the
-moment.
-
-Is it possible to enable all file modification types into the results of
-find-new including unlink?
-
-- Shane
+On Wed, Oct 31, 2012 at 4:13 PM, cwillu <cwillu@gmail.com> wrote:
+> Probably easier to decode the btrfs-send stream, or even just use btrfs-send
+> itself instead.

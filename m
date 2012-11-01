@@ -1,72 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24359 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:47962 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751259Ab2K3GSt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 01:18:49 -0500
-Date: Fri, 30 Nov 2012 14:17:14 +0800
+	with ESMTP id S1752739Ab2KAGjw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2012 02:39:52 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qA16dpEG004258
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Nov 2012 06:39:51 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qA16doBP014644
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Nov 2012 06:39:51 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qA16do8j012119
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Nov 2012 01:39:50 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Brandenburger <filbranden@google.com>
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: fix permissions of empty files not affected
- by umask
-Message-ID: <20121130061714.GA2613@liubo.cn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1354246809-32339-1-git-send-email-filbranden@google.com>
- <1354246809-32339-2-git-send-email-filbranden@google.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1354246809-32339-2-git-send-email-filbranden@google.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] Btrfs: do not log extents when we only log new names
+Date: Thu,  1 Nov 2012 14:38:47 +0800
+Message-Id: <1351751929-1715-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 29, 2012 at 07:40:08PM -0800, Filipe Brandenburger wrote:
-> When a new file is created with btrfs_create(), the inode will initially be
-> created with permissions 0666 and later on in btrfs_init_acl() it will be
-> adapted to mask out the umask bits. The problem is that this change won't make
-> it into the btrfs_inode unless there's another change to the inode (e.g. writing
-> content changing the size or touching the file changing the mtime.)
-> 
-> This fix adds a call to btrfs_update_inode() to btrfs_create() to make sure that
-> the change will not get lost if the in-memory inode is flushed before other
-> changes are made to the file.
-> 
+When we log new names, we need to log just enough to recreate the inode
+during log replay, and there is no need to log extents along with it.
 
-Looks good to me.
+This actually fixes a bug revealed by xfstests 241, where it shows
+that we're logging some extents that have not updated metadata,
+so we don't get proper EXTENT_DATA items to be copied to log tree.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/tree-log.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-thanks,
-liubo
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 81e407d..4ec41ec 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3435,7 +3435,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_truncate_inode_items(trans, log,
+ 							 inode, 0, 0);
+ 		} else {
+-			fast_search = true;
++			if (inode_only == LOG_INODE_ALL)
++				fast_search = true;
+ 			max_key.type = BTRFS_XATTR_ITEM_KEY;
+ 			ret = drop_objectid_items(trans, log, path, ino,
+ 						  BTRFS_XATTR_ITEM_KEY);
+-- 
+1.7.7.6
 
-> Signed-off-by: Filipe Brandenburger <filbranden@google.com>
-> ---
->  fs/btrfs/inode.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 95542a1..caf9d76 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4996,6 +4996,12 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
->  		goto out_unlock;
->  	}
->  
-> +	err = btrfs_update_inode(trans, root, inode);
-> +	if (err) {
-> +		drop_inode = 1;
-> +		goto out_unlock;
-> +	}
-> +
->  	/*
->  	* If the active LSM wants to access the inode during
->  	* d_instantiate it needs these. Smack checks to see
-> -- 
-> 1.7.11.7
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/

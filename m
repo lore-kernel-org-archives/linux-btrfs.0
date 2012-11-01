@@ -1,36 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [37.247.8.11] ([37.247.8.11]:50223 "EHLO mail.southpole.se"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755379Ab2KANf2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 09:35:28 -0400
-Received: from [128.224.92.193] (assp.southpole.se [37.247.8.10])
-	by mail.southpole.se (Postfix) with ESMTPSA id E7C2248019B
-	for <linux-btrfs@vger.kernel.org>; Thu,  1 Nov 2012 14:35:26 +0100 (CET)
-Message-ID: <50927A9E.70106@southpole.se>
-Date: Thu, 01 Nov 2012 14:35:26 +0100
-From: Kenneth Johansson <kenneth@southpole.se>
+Received: from mail-la0-f46.google.com ([209.85.215.46]:41352 "EHLO
+	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756011Ab2KAOFG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2012 10:05:06 -0400
+Received: by mail-la0-f46.google.com with SMTP id h6so1862154lag.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 07:05:04 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: no space left on device.
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <20121101112114.GA4328@liubo.cn.oracle.com>
+References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
+	<CANW9uyu0NyFj57AVp2X-Hc=AjXdwyP=wieOcteEbj2_Mx_F95w@mail.gmail.com>
+	<50911FC0.4080104@oracle.com>
+	<CANW9uyse7bw1+=GkV-aRQbDPh1E-t3G4VwkAGc5-76KMfYMjog@mail.gmail.com>
+	<20121101112114.GA4328@liubo.cn.oracle.com>
+Date: Thu, 1 Nov 2012 23:05:04 +0900
+Message-ID: <CANW9uysHg6qk4zSh_yFgP5e545kJZVoma36Hpd1Zzg-hoSVAhQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2 v4] Btrfs: snapshot-aware defrag
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So I have ended up in a state where I can't delete files with rm.
+Hi Liubo:
 
-the error I get is no space on device. however I'm not even close to empty.
-/dev/sdb1 38G 27G 9.5G 75%
-there is about 800k files/dirs in this filesystem
+The V4 leaves only warnings from btrfs_destroy_inode(). So, you think
+it's normal
+an "old" extent recorded can be removed from the extent tree by the time
+relink_file_extents() invoked?
 
-extra strange is that I can in another directory create and delete files.
+Itaru
 
-So I tried pretty much all I could google my way to but problem 
-persisted. So I decided to do a backup and a format. But when the backup 
-was done I tried one more time and now it was possible to delete the 
-directory and all content?
+On Thu, Nov 1, 2012 at 8:21 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
 
-using the 3.5 kernel in ubuntu 12.10. Is this a known issue ? is it 
-fixed in later kernels?
-
-fsck /btrfs scrub and kernel log. nothing indicate any problem of any kind.
-
+> The current btrfs-next HEAD actually have included this v4 patch, so
+> just pull btrfs-next and give it a shot :)
+>
+> thanks,
+> liubo

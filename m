@@ -1,87 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:33146 "EHLO
+Received: from acsinet15.oracle.com ([141.146.126.227]:18502 "EHLO
 	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758040Ab2KAJBE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2012 05:01:04 -0400
-Date: Thu, 1 Nov 2012 17:00:00 +0800
+	with ESMTP id S1757952Ab2KAJWS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2012 05:22:18 -0400
+Date: Thu, 1 Nov 2012 17:21:12 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/5] Btrfs: fix missing flush when committing a
- transaction
-Message-ID: <20121101085959.GD2554@liubo.cn.oracle.com>
-References: <509225BA.4080105@cn.fujitsu.com>
- <20121101074443.GC1591@liubo.cn.oracle.com>
- <50922A0D.80103@cn.fujitsu.com>
- <20121101080420.GA2554@liubo.cn.oracle.com>
- <50922FEB.8030900@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 5/5] Btrfs: fix missing log when
+ BTRFS_INODE_NEEDS_FULL_SYNC is set
+Message-ID: <20121101092111.GE2554@liubo.cn.oracle.com>
+References: <5092263B.7070500@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50922FEB.8030900@cn.fujitsu.com>
+In-Reply-To: <5092263B.7070500@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 01, 2012 at 04:16:43PM +0800, Miao Xie wrote:
-> On thu, 1 Nov 2012 16:04:27 +0800, Liu Bo wrote:
-> > (sorry, forgot to cc linux-btrfs.)
-> > On Thu, Nov 01, 2012 at 03:51:41PM +0800, Miao Xie wrote:
-> >> On Thu, 1 Nov 2012 15:44:43 +0800, Liu Bo wrote:
-> >>> On Thu, Nov 01, 2012 at 03:33:14PM +0800, Miao Xie wrote:
-> >>>> Consider the following case:
-> >>>> 	Task1				Task2
-> >>>> 	start_transaction
-> >>>> 					commit_transaction
-> >>>> 					  check pending snapshots list and the
-> >>>> 					  list is empty.
-> >>>> 	add pending snapshot into list
-> >>>> 					  skip the delalloc flush
-> >>>> 	end_transaction
-> >>>> 					  ...
-> >>>>
-> >>>> And then the problem that the snapshot is different with the source subvolume
-> >>>> happen.
-> >>>>
-> >>>
-> >>> This is weird, create_snapshot() will first add pending snapshot into
-> >>> list and then commit the transaction itself, regardless of if the
-> >>> snapshot is different with others or not.
-> >>
-> >> But the transaction may be committed by the other task, and the snapshot
-> >> creation task just wait until it ends.
-> >>
-> > 
-> > It's possible that a commit tranaction becomes a end transaction when it
-> > finds itself is already in commit.
-> > 
-> > So if snapshot creation starts the transaction, it will increment the
-> > transaction's num_writers, why does not the other task wait for its
-> > end_transacion?
-> > 
-> > I doubt if this can really happen anyway...
-> > 
-> > Can you elaborate the situation more?
-> 
-> Task1					Task2
-> start_transaction
-> 					start_transaction
-> 					commit_transaction
-> 					  set in_commit to 1
-> 					  check pending snapshots list and the list is empty.
-> add pending snapshot into list
-> 					  skip the delalloc flush
-> commit_transaction
->   find in_commit is 1
->   end_transaction (num_writer--)
->   wait_for_commit
-> 					  num_writer is 1
-> 				  	  continue committing the transaction
-> 					  ...
+On Thu, Nov 01, 2012 at 03:35:23PM +0800, Miao Xie wrote:
+> If we set BTRFS_INODE_NEEDS_FULL_SYNC, we should log all the extent,
+> but now we forget to take it into account, and set a wrong max key,
+> if so, we will skip the file extent metadata when doing logging. Fix it.
 > 
 
-Make sense.
+But it's along with LOG_INODE_EXISTS, which is set by rename and link
+and means we need to log just enough to rebuild the inode during log replay.
 
-Then I think we'd better put the flush part right after setting 'trans_no_join = 1'
-since snapshot creation may also join an existing transaction.
+On the other side, if we do log all the extents because of having set
+BTRFS_INODE_NEEDS_FULL_SYNC, we don't know if we actually get what we
+want because rename and link do not wait for dirty pages as fsync does.
 
 thanks,
 liubo
+
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/tree-log.c |    5 ++++-
+>  1 files changed, 4 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index f7e9387..c495b47 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -3394,7 +3394,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+>  
+>  
+>  	/* today the code can only do partial logging of directories */
+> -	if (inode_only == LOG_INODE_EXISTS || S_ISDIR(inode->i_mode))
+> +	if (S_ISDIR(inode->i_mode) ||
+> +	    (!test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+> +		       &BTRFS_I(inode)->runtime_flags) &&
+> +	     inode_only == LOG_INODE_EXISTS))
+>  		max_key.type = BTRFS_XATTR_ITEM_KEY;
+>  	else
+>  		max_key.type = (u8)-1;
+> -- 
+> 1.7.6.5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

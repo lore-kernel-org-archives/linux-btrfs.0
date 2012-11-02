@@ -1,534 +1,647 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:56519 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751609Ab2KATYx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 15:24:53 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id iicjiddEBy8HNotY (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 13:24:52 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: use radix tree tagging to keep track of dirty ebs
-Date: Thu, 1 Nov 2012 15:30:41 -0400
-Message-ID: <1351798241-5004-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:44956 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933236Ab2KBKO7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 06:14:59 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so1719891eek.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 03:14:57 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+        Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
+        Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/8] Enhance the command btrfs filesystem df.
+Date: Fri,  2 Nov 2012 11:15:32 +0100
+Message-Id: <1351851339-19150-2-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1351851339-19150-1-git-send-email-kreijack@inwind.it>
+References: <1351851339-19150-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently we set dirty bits in the transactions dirty eb's in order to know
-what we have to write out on transaction commit.  This means for every eb we
-allocate we have to allocate the corresponding extent state in the dirty
-pages tree.  We also only change this tree on commit, so we could end up
-looking at ranges that we've already written.  By using the radix tagging we
-can avoid the memory allocation altogether, which is a step we need in order
-to non-blocking COW's.  This also clears the radix tag when we write dirty
-eb's, so if we write buffers because of memory pressure we won't come back
-and do all the checking at transaction commit.  This ran with my fs_mark
-billion files test and didn't regress in performance, and it passed xfstests
-without issues.  Thanks,
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Enhance the command "btrfs filesystem df" to show space usage information
+for a mount point(s). It shows also an estimation of the space available,
+on the basis of the current one used.
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- fs/btrfs/disk-io.c     |   87 ++++++++------------------
- fs/btrfs/extent-tree.c |    9 ++-
- fs/btrfs/extent_io.c   |  160 +++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/extent_io.h   |    7 ++
- fs/btrfs/transaction.c |   19 +-----
- fs/btrfs/transaction.h |    1 -
- 6 files changed, 197 insertions(+), 86 deletions(-)
+ Makefile             |    2 +-
+ cmds-fi-disk_usage.c |  334 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-fi-disk_usage.h |   25 ++++
+ cmds-filesystem.c    |  125 +------------------
+ ctree.h              |   11 ++
+ utils.c              |   13 ++
+ utils.h              |    4 +
+ 7 files changed, 390 insertions(+), 124 deletions(-)
+ create mode 100644 cmds-fi-disk_usage.c
+ create mode 100644 cmds-fi-disk_usage.h
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0643159..305bf35 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -61,9 +61,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_root *root);
- static void btrfs_destroy_pending_snapshots(struct btrfs_transaction *t);
- static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
--static int btrfs_destroy_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages,
--					int mark);
-+static int btrfs_destroy_marked_extents(struct btrfs_root *root);
- static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
- 				       struct extent_io_tree *pinned_extents);
+diff --git a/Makefile b/Makefile
+index 4894903..4a9b6e0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -8,7 +8,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  send-stream.o send-utils.o qgroup.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+-	       cmds-quota.o cmds-qgroup.o
++	       cmds-quota.o cmds-qgroup.o cmds-fi-disk_usage.o
  
-@@ -3263,7 +3261,7 @@ int btrfs_commit_super(struct btrfs_root *root)
- 	ret = btrfs_commit_transaction(trans, root);
- 	if (ret)
- 		return ret;
--	ret = btrfs_write_and_wait_transaction(NULL, root);
-+	ret = filemap_write_and_wait(root->fs_info->btree_inode->i_mapping);
- 	if (ret) {
- 		btrfs_error(root->fs_info, ret,
- 			    "Failed to sync btree inode to disk.");
-@@ -3650,61 +3648,34 @@ static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
- 	spin_unlock(&root->fs_info->delalloc_lock);
- }
- 
--static int btrfs_destroy_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages,
--					int mark)
-+static int btrfs_destroy_marked_extents(struct btrfs_root *root)
- {
--	int ret;
--	struct page *page;
- 	struct inode *btree_inode = root->fs_info->btree_inode;
--	struct extent_buffer *eb;
--	u64 start = 0;
--	u64 end;
--	u64 offset;
--	unsigned long index;
-+	struct extent_io_tree *tree = &BTRFS_I(btree_inode)->io_tree;
-+	struct radix_tree_iter iter;
-+	void **slot;
-+	int mark = PAGECACHE_TAG_DIRTY;
- 
--	while (1) {
--		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
--					    mark, NULL);
--		if (ret)
--			break;
-+again:
-+	spin_lock_irq(&tree->buffer_lock);
-+	radix_tree_for_each_tagged(slot, &tree->buffer, &iter, 0, mark) {
-+		struct extent_buffer *eb;
- 
--		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
--		while (start <= end) {
--			index = start >> PAGE_CACHE_SHIFT;
--			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
--			page = find_get_page(btree_inode->i_mapping, index);
--			if (!page)
--				continue;
--			offset = page_offset(page);
--
--			spin_lock(&dirty_pages->buffer_lock);
--			eb = radix_tree_lookup(
--			     &(&BTRFS_I(page->mapping->host)->io_tree)->buffer,
--					       offset >> PAGE_CACHE_SHIFT);
--			spin_unlock(&dirty_pages->buffer_lock);
--			if (eb)
--				ret = test_and_clear_bit(EXTENT_BUFFER_DIRTY,
--							 &eb->bflags);
--			if (PageWriteback(page))
--				end_page_writeback(page);
--
--			lock_page(page);
--			if (PageDirty(page)) {
--				clear_page_dirty_for_io(page);
--				spin_lock_irq(&page->mapping->tree_lock);
--				radix_tree_tag_clear(&page->mapping->page_tree,
--							page_index(page),
--							PAGECACHE_TAG_DIRTY);
--				spin_unlock_irq(&page->mapping->tree_lock);
--			}
-+		eb = radix_tree_deref_slot(slot);
- 
--			unlock_page(page);
--			page_cache_release(page);
--		}
-+		clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags);
-+		clear_extent_buffer_dirty(eb);
-+		radix_tree_tag_clear(&tree->buffer,
-+				     eb->start >> PAGE_CACHE_SHIFT, mark);
- 	}
-+	spin_unlock_irq(&tree->buffer_lock);
- 
--	return ret;
-+	if (mark == PAGECACHE_TAG_DIRTY) {
-+		mark = PAGECACHE_TAG_TOWRITE;
-+		goto again;
+ CHECKFLAGS= -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ -Wbitwise \
+ 	    -Wuninitialized -Wshadow -Wundef
+diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
+new file mode 100644
+index 0000000..9131c47
+--- /dev/null
++++ b/cmds-fi-disk_usage.c
+@@ -0,0 +1,334 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <errno.h>
++
++#include "utils.h"
++#include "kerncompat.h"
++#include "ctree.h"
++
++#include "commands.h"
++
++#include "version.h"
++
++#define DF_HUMAN_UNIT		(1<<0)
++
++/* to store the information about the chunk */
++struct chunk_info {
++	u64	type;
++	u64	size;
++	u64	devid;
++	int	processed:1;
++};
++
++struct disk_info {
++	u64	devid;
++	char	path[BTRFS_DEVICE_PATH_NAME_MAX];
++	u64	size;
++};
++
++/* to store the tmp strings */
++static void **strings_to_free;
++static int count_string_to_free;
++
++static void add_strings_to_free(char *s)
++{
++	int  size;
++
++	size = sizeof(void *) * ++count_string_to_free;
++	strings_to_free = realloc(strings_to_free, size);
++
++	/* if we don't have enough memory, we have more serius
++	   problem than that a wrong handling of not enough memory */
++	if (!strings_to_free) {
++		fprintf(stderr, "add_string_to_free(): Not enough memory\n");
++		strings_to_free = 0;
++		count_string_to_free = 0;
 +	}
 +
-+	return 0;
- }
- 
- static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
-@@ -3751,8 +3722,7 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 				   struct btrfs_root *root)
- {
- 	btrfs_destroy_delayed_refs(cur_trans, root);
--	btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
--				cur_trans->dirty_pages.dirty_bytes);
-+	btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv, -1);
- 
- 	/* FIXME: cleanup wait for commit */
- 	cur_trans->in_commit = 1;
-@@ -3770,8 +3740,7 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 
- 	btrfs_destroy_pending_snapshots(cur_trans);
- 
--	btrfs_destroy_marked_extents(root, &cur_trans->dirty_pages,
--				     EXTENT_DIRTY);
-+	btrfs_destroy_marked_extents(root);
- 	btrfs_destroy_pinned_extent(root,
- 				    root->fs_info->pinned_extents);
- 
-@@ -3805,8 +3774,7 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
- 		btrfs_destroy_delayed_refs(t, root);
- 
- 		btrfs_block_rsv_release(root,
--					&root->fs_info->trans_block_rsv,
--					t->dirty_pages.dirty_bytes);
-+					&root->fs_info->trans_block_rsv, -1);
- 
- 		/* FIXME: cleanup wait for commit */
- 		t->in_commit = 1;
-@@ -3836,8 +3804,7 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
- 		root->fs_info->running_transaction = NULL;
- 		spin_unlock(&root->fs_info->trans_lock);
- 
--		btrfs_destroy_marked_extents(root, &t->dirty_pages,
--					     EXTENT_DIRTY);
-+		btrfs_destroy_marked_extents(root);
- 
- 		btrfs_destroy_pinned_extent(root,
- 					    root->fs_info->pinned_extents);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b495cb4..1092867 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6223,6 +6223,8 @@ struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
- 					    u64 bytenr, u32 blocksize,
- 					    int level)
- {
-+	struct extent_io_tree *tree =
-+		&BTRFS_I(root->fs_info->btree_inode)->io_tree;
- 	struct extent_buffer *buf;
- 
- 	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
-@@ -6249,8 +6251,11 @@ struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
- 			set_extent_new(&root->dirty_log_pages, buf->start,
- 					buf->start + buf->len - 1, GFP_NOFS);
- 	} else {
--		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
--			 buf->start + buf->len - 1, GFP_NOFS);
-+		spin_lock_irq(&tree->buffer_lock);
-+		radix_tree_tag_set(&tree->buffer,
-+				   buf->start >> PAGE_CACHE_SHIFT,
-+				   PAGECACHE_TAG_DIRTY);
-+		spin_unlock_irq(&tree->buffer_lock);
- 	}
- 	trans->blocks_used++;
- 	/* this returns a buffer locked for blocking */
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 472873a..74a387c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3095,6 +3095,7 @@ static int lock_extent_buffer_for_io(struct extent_buffer *eb,
- 				     struct btrfs_fs_info *fs_info,
- 				     struct extent_page_data *epd)
- {
-+	struct extent_io_tree *tree = eb->tree;
- 	unsigned long i, num_pages;
- 	int flush = 0;
- 	int ret = 0;
-@@ -3143,6 +3144,17 @@ static int lock_extent_buffer_for_io(struct extent_buffer *eb,
- 		spin_unlock(&eb->refs_lock);
- 	}
- 
-+	spin_lock_irq(&tree->buffer_lock);
-+	if (ret)
-+		radix_tree_tag_set(&tree->buffer,
-+				   eb->start >> PAGE_CACHE_SHIFT,
-+				   PAGECACHE_TAG_WRITEBACK);
-+	radix_tree_tag_clear(&tree->buffer, eb->start >> PAGE_CACHE_SHIFT,
-+			     PAGECACHE_TAG_DIRTY);
-+	radix_tree_tag_clear(&tree->buffer, eb->start >> PAGE_CACHE_SHIFT,
-+			     PAGECACHE_TAG_TOWRITE);
-+	spin_unlock_irq(&tree->buffer_lock);
-+
- 	btrfs_tree_unlock(eb);
- 
- 	if (!ret)
-@@ -3166,9 +3178,17 @@ static int lock_extent_buffer_for_io(struct extent_buffer *eb,
- 
- static void end_extent_buffer_writeback(struct extent_buffer *eb)
- {
-+	struct extent_io_tree *tree = eb->tree;
-+	unsigned long flags;
-+
- 	clear_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags);
- 	smp_mb__after_clear_bit();
- 	wake_up_bit(&eb->bflags, EXTENT_BUFFER_WRITEBACK);
-+
-+	spin_lock_irqsave(&tree->buffer_lock, flags);
-+	radix_tree_tag_clear(&tree->buffer, eb->start >> PAGE_CACHE_SHIFT,
-+			     PAGECACHE_TAG_WRITEBACK);
-+	spin_unlock_irqrestore(&tree->buffer_lock, flags);
- }
- 
- static void end_bio_extent_buffer_writepage(struct bio *bio, int err)
-@@ -3241,7 +3261,8 @@ static int write_one_eb(struct extent_buffer *eb,
- 			break;
- 		}
- 		offset += PAGE_CACHE_SIZE;
--		update_nr_written(p, wbc, 1);
-+		if (wbc)
-+			update_nr_written(p, wbc, 1);
- 		unlock_page(p);
- 	}
- 
-@@ -3255,6 +3276,131 @@ static int write_one_eb(struct extent_buffer *eb,
- 	return ret;
- }
- 
-+int btree_tag_dirty_ebs(struct extent_io_tree *tree)
-+{
-+#define TAG_BATCH 4096
-+	pgoff_t start = 0, end = -1;
-+	unsigned long tagged;
-+
-+	do {
-+		spin_lock_irq(&tree->buffer_lock);
-+		tagged = radix_tree_range_tag_if_tagged(&tree->buffer,
-+							&start, end, TAG_BATCH,
-+							PAGECACHE_TAG_DIRTY,
-+							PAGECACHE_TAG_TOWRITE);
-+		spin_unlock_irq(&tree->buffer_lock);
-+		cond_resched();
-+	} while (tagged >= TAG_BATCH && start);
-+
-+	return 0;
++	strings_to_free[count_string_to_free-1] = s;
 +}
 +
-+/* Shamelessly ripped off from find_get_pages_tag */
-+unsigned btree_lookup_tag(struct extent_io_tree *tree, pgoff_t *index,
-+			  unsigned int nr_ebs, struct extent_buffer **ebs,
-+			  int mark)
++static void free_strings_to_free()
 +{
-+	struct radix_tree_iter iter;
-+	struct extent_buffer *eb;
-+	void **slot;
-+	int ret = 0;
++	int	i;
++	for (i = 0 ; i < count_string_to_free ; i++)
++		free(strings_to_free[i]);
 +
-+	rcu_read_lock();
-+restart:
-+	radix_tree_for_each_tagged(slot, &tree->buffer, &iter, *index, mark) {
-+repeat:
-+		eb = radix_tree_deref_slot(slot);
-+		if (unlikely(!eb))
-+			continue;
++	free(strings_to_free);
 +
-+		if (radix_tree_exception(eb)) {
-+			if (radix_tree_deref_retry(eb))
-+				goto restart;
-+			BUG();
-+		}
++	strings_to_free = 0;
++	count_string_to_free = 0;
++}
 +
-+		if (!atomic_inc_not_zero(&eb->refs))
-+			goto repeat;
++static char *df_pretty_sizes(u64 size, int mode)
++{
++	char *s;
 +
-+		if (unlikely(eb != *slot)) {
-+			free_extent_buffer(eb);
-+			goto repeat;
-+		}
-+
-+		ebs[ret] = eb;
-+		if (++ret == nr_ebs)
-+			break;
++	if (mode & DF_HUMAN_UNIT) {
++		s = pretty_sizes(size);
++		if (!s)
++			return NULL;
++	} else {
++		s = malloc(20);
++		if (!s)
++			return NULL;
++		sprintf(s, "%llu", size);
 +	}
-+	rcu_read_unlock();
++
++	add_strings_to_free(s);
++	return s;
++}
++
++static int cmp_chunk_block_group(u64 f1, u64 f2)
++{
++
++	u64 mask;
++
++	if ((f1 & BTRFS_BLOCK_GROUP_TYPE_MASK) ==
++		(f2 & BTRFS_BLOCK_GROUP_TYPE_MASK))
++			mask = BTRFS_BLOCK_GROUP_PROFILE_MASK;
++	else if (f2 & BTRFS_BLOCK_GROUP_SYSTEM)
++		return -1;
++	else if (f1 & BTRFS_BLOCK_GROUP_SYSTEM)
++		return +1;
++	else
++			mask = BTRFS_BLOCK_GROUP_TYPE_MASK;
++
++	if ((f1 & mask) > (f2 & mask))
++		return +1;
++	else if ((f1 & mask) < (f2 & mask))
++		return -1;
++	else
++		return 0;
++}
++
++static int cmp_btrfs_ioctl_space_info(const void *a, const void *b)
++{
++	return cmp_chunk_block_group(
++		((struct btrfs_ioctl_space_info *)a)->flags,
++		((struct btrfs_ioctl_space_info *)b)->flags);
++}
++
++static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
++{
++	struct btrfs_ioctl_space_args *sargs = 0, *sargs_orig = 0;
++	int e, ret, count;
++
++	sargs_orig = sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
++	if (!sargs) {
++		fprintf(stderr, "ERROR: not enough memory\n");
++		return NULL;
++	}
++
++	sargs->space_slots = 0;
++	sargs->total_spaces = 0;
++
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
++	e = errno;
++	if (ret) {
++		fprintf(stderr,
++			"ERROR: couldn't get space info on '%s' - %s\n",
++			path, strerror(e));
++		free(sargs);
++		return NULL;
++	}
++	if (!sargs->total_spaces) {
++		free(sargs);
++		printf("No chunks found\n");
++		return NULL;
++	}
++
++	count = sargs->total_spaces;
++
++	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
++			(count * sizeof(struct btrfs_ioctl_space_info)));
++	if (!sargs) {
++		free(sargs_orig);
++		fprintf(stderr, "ERROR: not enough memory\n");
++		return NULL;
++	}
++
++	sargs->space_slots = count;
++	sargs->total_spaces = 0;
++
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
++	e = errno;
 +
 +	if (ret) {
-+		eb = ebs[ret - 1];
-+		*index = (eb->start + eb->len) >> PAGE_CACHE_SHIFT;
++		fprintf(stderr,
++			"ERROR: couldn't get space info on '%s' - %s\n",
++			path, strerror(e));
++		free(sargs);
++		return NULL;
 +	}
++
++	qsort(&(sargs->spaces), count, sizeof(struct btrfs_ioctl_space_info),
++		cmp_btrfs_ioctl_space_info);
++
++	return sargs;
++}
++
++static int _cmd_disk_free(int fd, char *path, int mode)
++{
++	struct btrfs_ioctl_space_args *sargs = 0;
++	int i;
++	int ret = 0;
++	int e, width;
++	u64 total_disk;		/* filesystem size == sum of
++				   disks sizes */
++	u64 total_chunks;	/* sum of chunks sizes on disk(s) */
++	u64 total_used;		/* logical space used */
++	u64 total_free;		/* logical space un-used */
++	double K;
++
++	if ((sargs = load_space_info(fd, path)) == NULL) {
++		ret = -1;
++		goto exit;
++	}
++
++	total_disk = disk_size(path);
++	e = errno;
++	if (total_disk == 0) {
++		fprintf(stderr,
++			"ERROR: couldn't get space info on '%s' - %s\n",
++			path, strerror(e));
++
++		ret = 19;
++		goto exit;
++	}
++
++	total_chunks = total_used = total_free = 0;
++
++	for (i = 0; i < sargs->total_spaces; i++) {
++		int  ratio = 1;
++		u64  allocated;
++
++		u64 flags = sargs->spaces[i].flags;
++
++		if (flags & BTRFS_BLOCK_GROUP_RAID0)
++			ratio = 1;
++		else if (flags & BTRFS_BLOCK_GROUP_RAID1)
++			ratio = 2;
++		else if (flags & BTRFS_BLOCK_GROUP_DUP)
++			ratio = 2;
++		else if (flags & BTRFS_BLOCK_GROUP_RAID10)
++			ratio = 2;
++		else
++			ratio = 1;
++
++		allocated = sargs->spaces[i].total_bytes * ratio;
++
++		total_chunks += allocated;
++		total_used += sargs->spaces[i].used_bytes;
++		total_free += (sargs->spaces[i].total_bytes -
++					sargs->spaces[i].used_bytes);
++
++	}
++	K = ((double)total_used + (double)total_free) /	(double)total_chunks;
++
++	if (mode & DF_HUMAN_UNIT)
++		width = 9;
++	else
++		width = 18;
++
++	printf("Disk size:\t\t%*s\n", width,
++		df_pretty_sizes(total_disk, mode));
++	printf("Disk allocated:\t\t%*s\n", width,
++		df_pretty_sizes(total_chunks, mode));
++	printf("Disk unallocated:\t%*s\n", width,
++		df_pretty_sizes(total_disk-total_chunks, mode));
++	printf("Used:\t\t\t%*s\n", width,
++		df_pretty_sizes(total_used, mode));
++	printf("Free (Estimated):\t%*s\t(Max: %s, min: %s)\n",
++		width,
++		df_pretty_sizes((u64)(K*total_disk-total_used), mode),
++		df_pretty_sizes(total_disk-total_chunks+total_free, mode),
++		df_pretty_sizes((total_disk-total_chunks)/2+total_free, mode));
++	printf("Data to disk ratio:\t%*.0f %%\n",
++		width-2, K*100);
++
++exit:
++
++	free_strings_to_free();
++	if (sargs)
++		free(sargs);
 +
 +	return ret;
 +}
 +
-+void btree_wait_writeback(struct extent_io_tree *tree)
-+{
-+	struct extent_buffer *ebs[16];
-+	pgoff_t index = 0;
-+	unsigned nr_ebs;
++const char * const cmd_filesystem_df_usage[] = {
++	"btrfs filesystem df [-k] <path> [<path>..]",
++	"Show space usage information for a mount point(s).",
++	"",
++	"-b\tSet byte as unit",
++	NULL
++};
 +
-+	while ((nr_ebs = btree_lookup_tag(tree, &index, 16, ebs,
-+					  PAGECACHE_TAG_WRITEBACK))) {
-+		unsigned i;
-+		for (i = 0; i < nr_ebs; i++) {
-+			struct extent_buffer *eb = ebs[i];
-+			wait_on_extent_buffer_writeback(eb);
-+			free_extent_buffer(eb);
++int cmd_filesystem_df(int argc, char **argv)
++{
++
++	int	flags = DF_HUMAN_UNIT;
++	int	i, more_than_one = 0;
++
++	optind = 1;
++	while (1) {
++		char	c = getopt(argc, argv, "b");
++		if (c < 0)
++			break;
++
++		switch (c) {
++		case 'b':
++			flags &= ~DF_HUMAN_UNIT;
++			break;
++		default:
++			usage(cmd_filesystem_df_usage);
 +		}
-+		cond_resched();
 +	}
++
++	if (check_argc_min(argc - optind, 1)) {
++		usage(cmd_filesystem_df_usage);
++		return 21;
++	}
++
++	for (i = optind; i < argc ; i++) {
++		int r, fd;
++		if (more_than_one)
++			printf("\n");
++
++		fd = open_file_or_dir(argv[i]);
++		if (fd < 0) {
++			fprintf(stderr, "ERROR: can't access to '%s'\n",
++				argv[1]);
++			return 12;
++		}
++		r = _cmd_disk_free(fd, argv[i], flags);
++		close(fd);
++
++		if (r)
++			return r;
++		more_than_one = 1;
++
++	}
++
++	return 0;
 +}
 +
-+int btree_write_tagged_ebs(struct btrfs_fs_info *fs_info)
-+{
-+	struct extent_io_tree *tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
-+	struct extent_buffer *ebs[16];
-+	struct extent_page_data epd = {
-+		.bio = NULL,
-+		.tree = tree,
-+		.extent_locked = 0,
-+		.sync_io = 1,
-+		.bio_flags = 0,
-+	};
-+	pgoff_t index = 0;
-+	unsigned nr_ebs;
-+	int done = 0;
-+	int ret;
+diff --git a/cmds-fi-disk_usage.h b/cmds-fi-disk_usage.h
+new file mode 100644
+index 0000000..9f68bb3
+--- /dev/null
++++ b/cmds-fi-disk_usage.h
+@@ -0,0 +1,25 @@
++/*
++ * Copyright (C) 2007 Oracle.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
-+	while (!done &&
-+	       (nr_ebs = btree_lookup_tag(tree, &index, 16, ebs,
-+					  PAGECACHE_TAG_TOWRITE))) {
-+		unsigned i;
-+		for (i = 0; i < nr_ebs; i++) {
-+			struct extent_buffer *eb = ebs[i];
++#ifndef __CMDS_FI_DISK_USAGE__
++#define __CMDS_FI_DISK_USAGE__
 +
-+			if (!lock_extent_buffer_for_io(eb, fs_info, &epd)) {
-+				free_extent_buffer(eb);
-+				continue;
-+			}
++extern const char * const cmd_filesystem_df_usage[];
++int cmd_filesystem_df(int argc, char **argv);
 +
-+			ret = write_one_eb(eb, fs_info, NULL, &epd);
-+			if (ret) {
-+				done = 1;
-+				free_extent_buffer(eb);
-+				break;
-+			}
-+			free_extent_buffer(eb);
-+		}
-+		cond_resched();
-+	}
-+	flush_write_bio(&epd);
-+	return ret;
-+}
-+
- int btree_write_cache_pages(struct address_space *mapping,
- 				   struct writeback_control *wbc)
++#endif
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 9c43d35..1b915e4 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -33,134 +33,13 @@
+ 
+ #include "commands.h"
+ #include "btrfslabel.h"
++#include "cmds-fi-disk_usage.h"
+ 
+ static const char * const filesystem_cmd_group_usage[] = {
+ 	"btrfs filesystem [<group>] <command> [<args>]",
+ 	NULL
+ };
+ 
+-static const char * const cmd_df_usage[] = {
+-	"btrfs filesystem df <path>",
+-	"Show space usage information for a mount point",
+-	NULL
+-};
+-
+-static int cmd_df(int argc, char **argv)
+-{
+-	struct btrfs_ioctl_space_args *sargs, *sargs_orig;
+-	u64 count = 0, i;
+-	int ret;
+-	int fd;
+-	int e;
+-	char *path;
+-
+-	if (check_argc_exact(argc, 2))
+-		usage(cmd_df_usage);
+-
+-	path = argv[1];
+-
+-	fd = open_file_or_dir(path);
+-	if (fd < 0) {
+-		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 12;
+-	}
+-
+-	sargs_orig = sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
+-	if (!sargs)
+-		return -ENOMEM;
+-
+-	sargs->space_slots = 0;
+-	sargs->total_spaces = 0;
+-
+-	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
+-	e = errno;
+-	if (ret) {
+-		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
+-			path, strerror(e));
+-		close(fd);
+-		free(sargs);
+-		return ret;
+-	}
+-	if (!sargs->total_spaces) {
+-		close(fd);
+-		free(sargs);
+-		return 0;
+-	}
+-
+-	count = sargs->total_spaces;
+-
+-	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
+-			(count * sizeof(struct btrfs_ioctl_space_info)));
+-	if (!sargs) {
+-		close(fd);
+-		free(sargs_orig);
+-		return -ENOMEM;
+-	}
+-
+-	sargs->space_slots = count;
+-	sargs->total_spaces = 0;
+-
+-	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
+-	e = errno;
+-	if (ret) {
+-		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
+-			path, strerror(e));
+-		close(fd);
+-		free(sargs);
+-		return ret;
+-	}
+-
+-	for (i = 0; i < sargs->total_spaces; i++) {
+-		char description[80];
+-		char *total_bytes;
+-		char *used_bytes;
+-		int written = 0;
+-		u64 flags = sargs->spaces[i].flags;
+-
+-		memset(description, 0, 80);
+-
+-		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+-			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-				snprintf(description, 14, "%s",
+-					 "Data+Metadata");
+-				written += 13;
+-			} else {
+-				snprintf(description, 5, "%s", "Data");
+-				written += 4;
+-			}
+-		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+-			snprintf(description, 7, "%s", "System");
+-			written += 6;
+-		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-			snprintf(description, 9, "%s", "Metadata");
+-			written += 8;
+-		}
+-
+-		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
+-			snprintf(description+written, 8, "%s", ", RAID0");
+-			written += 7;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
+-			snprintf(description+written, 8, "%s", ", RAID1");
+-			written += 7;
+-		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
+-			snprintf(description+written, 6, "%s", ", DUP");
+-			written += 5;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
+-			snprintf(description+written, 9, "%s", ", RAID10");
+-			written += 8;
+-		}
+-
+-		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+-		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
+-		printf("%s: total=%s, used=%s\n", description, total_bytes,
+-		       used_bytes);
+-	}
+-	close(fd);
+-	free(sargs);
+-
+-	return 0;
+-}
+-
+ static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
  {
-@@ -4304,25 +4450,25 @@ again:
- 	if (ret)
- 		goto free_eb;
+ 	char uuidbuf[37];
+@@ -537,7 +416,7 @@ static int cmd_label(int argc, char **argv)
  
--	spin_lock(&tree->buffer_lock);
-+	spin_lock_irq(&tree->buffer_lock);
- 	ret = radix_tree_insert(&tree->buffer, start >> PAGE_CACHE_SHIFT, eb);
- 	if (ret == -EEXIST) {
- 		exists = radix_tree_lookup(&tree->buffer,
- 						start >> PAGE_CACHE_SHIFT);
- 		if (!atomic_inc_not_zero(&exists->refs)) {
--			spin_unlock(&tree->buffer_lock);
-+			spin_unlock_irq(&tree->buffer_lock);
- 			radix_tree_preload_end();
- 			exists = NULL;
- 			goto again;
- 		}
--		spin_unlock(&tree->buffer_lock);
-+		spin_unlock_irq(&tree->buffer_lock);
- 		radix_tree_preload_end();
- 		mark_extent_buffer_accessed(exists);
- 		goto free_eb;
- 	}
- 	/* add one reference for the tree */
- 	check_buffer_tree_ref(eb);
--	spin_unlock(&tree->buffer_lock);
-+	spin_unlock_irq(&tree->buffer_lock);
- 	radix_tree_preload_end();
+ const struct cmd_group filesystem_cmd_group = {
+ 	filesystem_cmd_group_usage, NULL, {
+-		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
++		{ "df", cmd_filesystem_df, cmd_filesystem_df_usage, NULL, 0 },
+ 		{ "show", cmd_show, cmd_show_usage, NULL, 0 },
+ 		{ "sync", cmd_sync, cmd_sync_usage, NULL, 0 },
+ 		{ "defragment", cmd_defrag, cmd_defrag_usage, NULL, 0 },
+diff --git a/ctree.h b/ctree.h
+index 293b24f..7c7d077 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -780,6 +780,17 @@ struct btrfs_csum_item {
+ #define BTRFS_BLOCK_GROUP_DUP		(1ULL << 5)
+ #define BTRFS_BLOCK_GROUP_RAID10	(1ULL << 6)
+ #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
++#define BTRFS_NR_RAID_TYPES             5
++
++#define BTRFS_BLOCK_GROUP_TYPE_MASK     (BTRFS_BLOCK_GROUP_DATA |    \
++					 BTRFS_BLOCK_GROUP_SYSTEM |  \
++					 BTRFS_BLOCK_GROUP_METADATA)
++
++#define BTRFS_BLOCK_GROUP_PROFILE_MASK  (BTRFS_BLOCK_GROUP_RAID0 |   \
++					 BTRFS_BLOCK_GROUP_RAID1 |   \
++					 BTRFS_BLOCK_GROUP_DUP |     \
++					 BTRFS_BLOCK_GROUP_RAID10)
++
  
- 	/*
-@@ -4391,10 +4537,10 @@ static int release_extent_buffer(struct extent_buffer *eb, gfp_t mask)
- 
- 			spin_unlock(&eb->refs_lock);
- 
--			spin_lock(&tree->buffer_lock);
-+			spin_lock_irq(&tree->buffer_lock);
- 			radix_tree_delete(&tree->buffer,
- 					  eb->start >> PAGE_CACHE_SHIFT);
--			spin_unlock(&tree->buffer_lock);
-+			spin_unlock_irq(&tree->buffer_lock);
- 		}
- 
- 		/* Should be safe to release our pages at this point */
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 711d12b..8f38601 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -61,6 +61,7 @@
- 
- struct extent_state;
- struct btrfs_root;
-+struct btrfs_fs_info;
- 
- typedef	int (extent_submit_bio_hook_t)(struct inode *inode, int rw,
- 				       struct bio *bio, int mirror_num,
-@@ -345,4 +346,10 @@ int repair_io_failure(struct btrfs_mapping_tree *map_tree, u64 start,
- int end_extent_writepage(struct page *page, int err, u64 start, u64 end);
- int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
- 			 int mirror_num);
-+int btree_write_tagged_ebs(struct btrfs_fs_info *fs_info);
-+void btree_wait_writeback(struct extent_io_tree *tree);
-+unsigned btree_lookup_tag(struct extent_io_tree *tree, pgoff_t *index,
-+			  unsigned int nr_ebs, struct extent_buffer **ebs,
-+			  int mark);
-+int btree_tag_dirty_ebs(struct extent_io_tree *tree);
- #endif
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 259f74e..b52a3fe 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -162,8 +162,6 @@ loop:
- 
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
--	extent_io_tree_init(&cur_trans->dirty_pages,
--			     fs_info->btree_inode->i_mapping);
- 	fs_info->generation++;
- 	cur_trans->transid = fs_info->generation;
- 	fs_info->running_transaction = cur_trans;
-@@ -756,19 +754,6 @@ int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
+ /* used in struct btrfs_balance_args fields */
+ #define BTRFS_AVAIL_ALLOC_BIT_SINGLE	(1ULL << 48)
+diff --git a/utils.c b/utils.c
+index 205e667..fba11e0 100644
+--- a/utils.c
++++ b/utils.c
+@@ -35,6 +35,8 @@
+ #include <linux/major.h>
+ #include <linux/kdev_t.h>
+ #include <limits.h>
++#include <sys/vfs.h>
++
+ #include "kerncompat.h"
+ #include "radix-tree.h"
+ #include "ctree.h"
+@@ -1220,3 +1222,14 @@ scan_again:
  	return 0;
  }
  
--int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
--				     struct btrfs_root *root)
--{
--	if (!trans || !trans->transaction) {
--		struct inode *btree_inode;
--		btree_inode = root->fs_info->btree_inode;
--		return filemap_write_and_wait(btree_inode->i_mapping);
--	}
--	return btrfs_write_and_wait_marked_extents(root,
--					   &trans->transaction->dirty_pages,
--					   EXTENT_DIRTY);
--}
--
- /*
-  * this is used to update the root pointer in the tree of tree roots.
-  *
-@@ -1664,6 +1649,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	memcpy(root->fs_info->super_for_commit, root->fs_info->super_copy,
- 	       sizeof(*root->fs_info->super_copy));
++u64 disk_size(char *path)
++{
++	struct statfs	sfs;
++
++	if (statfs(path, &sfs) < 0)
++		return 0;
++	else
++		return sfs.f_bsize * sfs.f_blocks;
++
++}
++
+diff --git a/utils.h b/utils.h
+index 3a0368b..a82b81c 100644
+--- a/utils.h
++++ b/utils.h
+@@ -19,6 +19,9 @@
+ #ifndef __UTILS__
+ #define __UTILS__
  
-+	btree_tag_dirty_ebs(&BTRFS_I(root->fs_info->btree_inode)->io_tree);
- 	trans->transaction->blocked = 0;
- 	spin_lock(&root->fs_info->trans_lock);
- 	root->fs_info->running_transaction = NULL;
-@@ -1673,7 +1659,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
++#include "kerncompat.h"
++#include "ctree.h"
++
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
  
- 	wake_up(&root->fs_info->transaction_wait);
+ int make_btrfs(int fd, const char *device, const char *label,
+@@ -46,4 +49,5 @@ int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
  
--	ret = btrfs_write_and_wait_transaction(trans, root);
-+	ret = btree_write_tagged_ebs(root->fs_info);
-+	btree_wait_writeback(&BTRFS_I(root->fs_info->btree_inode)->io_tree);
- 	if (ret) {
- 		btrfs_error(root->fs_info, ret,
- 			    "Error while writing out transaction.");
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 0e8aa1e..68fcd9a 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -38,7 +38,6 @@ struct btrfs_transaction {
- 	int commit_done;
- 	int blocked;
- 	struct list_head list;
--	struct extent_io_tree dirty_pages;
- 	unsigned long start_time;
- 	wait_queue_head_t writer_wait;
- 	wait_queue_head_t commit_wait;
+ int btrfs_scan_block_devices(int run_ioctl);
++u64 disk_size(char *path);
+ #endif
 -- 
-1.7.7.6
+1.7.10.4
 

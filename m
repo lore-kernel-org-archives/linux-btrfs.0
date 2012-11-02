@@ -1,59 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37965 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030746Ab2K3Pmx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 10:42:53 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAUFgq37010414
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 15:42:53 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAUFgpmI022335
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 15:42:52 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAUFgpn2029964
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 09:42:51 -0600
-From: Anand jain <Anand.Jain@oracle.com>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:58195 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755403Ab2KBOQq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 10:16:46 -0400
+Received: by mail-bk0-f46.google.com with SMTP id jk13so1401191bkc.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 07:16:46 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] Add subvol and snapshot attribute label
-Date: Fri, 30 Nov 2012 23:47:59 +0800
-Message-Id: <1354290482-5324-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
-References: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
+Cc: Goffredo Baroncelli <kreijack@inwind.it>,
+        Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH][BTRFS-PROGS][V1] btrfs-show-super: a tool to dump superblock
+Date: Fri,  2 Nov 2012 15:17:29 +0100
+Message-Id: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+Hi all,
 
-This patch set creates the attribute user.label in the root
-space, for the subvol and snapshots. Command to use will be
-	btrfs subvol label <subvol> [label]
-This patch is only for your kind review. And to evaluate both
-the approaches, as found during the survey.
-Thanks
+I updated the Stefan's program btrfs-show-super. Now it prints the results of
+some sanity checks (about checksum and superblock magic string), allow
+more than one dovice as argument and a '-a' switch which dumps all the
+device superblocks.
 
-Anand Jain (3):
-  Btrfs-progs: move open_file_or_dir() to utils.c
-  Btrfs-progs: add attribute label for subvol and snapshot
-  Btrfs-progs: cmd option to show or set the subvol label
+# btrfs-show-super  /dev/sdh1 
+superblock: bytenr=65536, device=../sysfs/disks/disk-02.img
+---------------------------------------------------------
+csum			0x64d9fdb9 [match]
+bytenr			65536
+flags			0x1
+magic			_BHRfS_M [match]
+fsid			6d6141a6-5440-4f75-9c85-6d0ec7450187
+label			test2
+generation		15
+root			29396992
+sys_array_size		355
+chunk_root_generation	15
+root_level		0
+chunk_root		20975616
+chunk_root_level	0
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		117041005568
+bytes_used		290816
+sectorsize		4096
+nodesize		4096
+leafsize		4096
+stripesize		4096
+root_dir		6
+num_devices		4
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1
+csum_type		0
+csum_size		4
+cache_generation	15
+dev_item.uuid		421d2bdb-c9d9-41f8-a966-57248605f18c
+dev_item.fsid		6d6141a6-5440-4f75-9c85-6d0ec7450187 [match]
+dev_item.type		0
+dev_item.total_bytes	3222274048
+dev_item.bytes_used	1900216320
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
- Makefile         |    4 ++--
- btrfsctl.c       |    7 ++++---
- btrfslabel.c     |   38 ++++++++++++++++++++++++++++++++++++++
- btrfslabel.h     |    4 +++-
- cmds-balance.c   |    1 +
- cmds-inspect.c   |    1 +
- cmds-qgroup.c    |    1 +
- cmds-quota.c     |    1 +
- cmds-subvolume.c |   38 ++++++++++++++++++++++++++++++++++++++
- commands.h       |    3 ---
- common.c         |   46 ----------------------------------------------
- ctree.h          |    1 +
- man/btrfs.8.in   |    6 ++++++
- utils.c          |   30 ++++++++++++++++++++++++++++--
- utils.h          |    3 +++
- 15 files changed, 127 insertions(+), 57 deletions(-)
- delete mode 100644 common.c
+
+You can pull the source from:
+	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+	super-block-dump
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 

@@ -1,92 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:17804 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751742Ab2KBUmw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 16:42:52 -0400
-Message-ID: <509430B6.7040901@giantdisaster.de>
-Date: Fri, 02 Nov 2012 21:44:38 +0100
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: Goffredo Baroncelli <kreijack@gmail.com>
-CC: linux-btrfs@vger.kernel.org, Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH] Add btrfs-show-super
-References: <1351865850-21688-1-git-send-email-kreijack@inwind.it> <1351865850-21688-2-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1351865850-21688-2-git-send-email-kreijack@inwind.it>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:60072 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754685Ab2KBVpa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 17:45:30 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so2030880eek.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 14:45:28 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: kreijack@gmail.com, linux-btrfs@vger.kernel.org
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH][BTRFS-PROGS][V2] btrfs-show-super: a tool to dump superblock
+Date: Fri,  2 Nov 2012 22:46:13 +0100
+Message-Id: <1351892774-20614-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/02/2012 15:17, Goffredo Baroncelli wrote:
-> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-> ---
->   Makefile           |    5 +-
->   btrfs-show-super.c |  284 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->   2 files changed, 288 insertions(+), 1 deletion(-)
->   create mode 100644 btrfs-show-super.c
->
+Hi all,
 
-Good enhancement! Thank you! I like and recommend this enhanced version 
-of the btrfs-show-super tool.
+I updated the Stefan's program btrfs-show-super. Now it prints the results of
+some sanity checks (about checksum and superblock magic string), allow
+more than one dovice as argument and a '-a' switch which dumps all the
+device superblocks.
 
-Goffredo, you are doing a very good and valuable job on improving the 
-Btrfs tools. And you are one of the main contributors to btrfs-progs. 
-Especially because of the huge amount of code that you are contributing, 
-I would like to ask you to make your C source code formatting rules 
-consistent with the rest of the Btrfs source code. In particular, I am 
-talking about the way you use spaces. It is always the first thing that 
-I notice, and quite often I just stop reading patches after noticing 
-that the C source formatting is violating the rules. Just imagine that 
-the Linux kernel would be written in hundreds of different C formatting 
-styles. What a pain for the eyes this would be. Patches would contain 
-99% formatting changes. Source code would be almost unreadable. 
-Therefore strict rules have been established how to format C code 
-(including how to use spaces in the C code). The same rules should be 
-applied to the btrfs-progs code. Please, please, please reconsider the 
-way you place spaces when you submit Btrfs patches! See below. Don't 
-feel offended, just place the spaces correctly, please! Your work is 
-good, just the way you place spaces is not good :)
-
-
-[...]
-> +	for ( i = optind ; i < argc ; i++ ) {
-+	for (i = optind; i < argc ; i++) {
-
-[...]
-> +		if (all){
-> +			int idx;
-> +			for (idx = 0 ; idx < BTRFS_SUPER_MIRROR_MAX ; idx++) {
-+		if (all) {
-+			int idx;
-+			for (idx = 0; idx < BTRFS_SUPER_MIRROR_MAX; idx++) {
-
-[...]
-> +	if (ret != BTRFS_SUPER_INFO_SIZE ) {
-> +		int e = errno;
-> +
-> +		/* check if the disk if too short for further superblock */
-> +		if( ret == 0 && e == 0 )
-+	if (ret != BTRFS_SUPER_INFO_SIZE) {
-+		int e = errno;
-+
-+		/* check if the disk if too short for further superblock */
-+		if (ret == 0 && e == 0)
-
-[...]
-> +	for (i = 0, p = sb->csum ; i < btrfs_super_csum_size(sb) ; i++ )
-+	for (i = 0, p = sb->csum; i < btrfs_super_csum_size(sb); i++)
-
-[...]
-> +	for (i = 0 ; i < 8 ; i++ )
-+	for (i = 0; i < 8; i++)
-
-[...]
-> +	for (i = 0 ; i < BTRFS_LABEL_SIZE && s[i] ; i++)
-+	for (i = 0; i < BTRFS_LABEL_SIZE && s[i]; i++)
+# btrfs-show-super  /dev/sdh1 
+superblock: bytenr=65536, device=../sysfs/disks/disk-02.img
+---------------------------------------------------------
+csum                    0x64d9fdb9 [match]
+bytenr                  65536
+flags                   0x1
+magic                   _BHRfS_M [match]
+fsid                    6d6141a6-5440-4f75-9c85-6d0ec7450187
+label                   test2
+generation              15
+root                    29396992
+sys_array_size          355
+chunk_root_generation   15
+root_level              0
+chunk_root              20975616
+chunk_root_level        0
+log_root                0
+log_root_transid        0
+log_root_level          0
+total_bytes             117041005568
+bytes_used              290816
+sectorsize              4096
+nodesize                4096
+leafsize                4096
+stripesize              4096
+root_dir                6
+num_devices             4
+compat_flags            0x0
+compat_ro_flags         0x0
+incompat_flags          0x1
+csum_type               0
+csum_size               4
+cache_generation        15
+dev_item.uuid           421d2bdb-c9d9-41f8-a966-57248605f18c
+dev_item.fsid           6d6141a6-5440-4f75-9c85-6d0ec7450187 [match]
+dev_item.type           0
+dev_item.total_bytes    3222274048
+dev_item.bytes_used     1900216320
+dev_item.io_align       4096
+dev_item.io_width       4096
+dev_item.sector_size    4096
+dev_item.devid          1
+dev_item.dev_group      0
+dev_item.seek_speed     0
+dev_item.bandwidth      0
+dev_item.generation     0
 
 
-The Linux kernel sources contain docs and tools for the formatting issue:
-- Documentation/CodingStyle describes the C source code formatting rules 
-that are expected in the Linux world.
-- scripts/checkpatch.pl can detect lots of violations to these 
-formatting rules.
+You can pull the source from:
+        http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+        super-block-dump
+
+
+Changelog:
+v1->v2  Patch cleanup (removed unnecessary spaces to be compliant to the
+        kernel coding style)
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 

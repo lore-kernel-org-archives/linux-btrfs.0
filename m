@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:58195 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1762887Ab2KBOQs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 10:16:48 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so1401191bkc.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 07:16:47 -0700 (PDT)
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:36655 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754685Ab2KBVpb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 17:45:31 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so2030887eek.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 14:45:30 -0700 (PDT)
 From: Goffredo Baroncelli <kreijack@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Goffredo Baroncelli <kreijack@inwind.it>,
-        Stefan Behrens <sbehrens@giantdisaster.de>
+To: kreijack@gmail.com, linux-btrfs@vger.kernel.org
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
+        Goffredo Baroncelli <kreijack@inwind.it>
 Subject: [PATCH] Add btrfs-show-super
-Date: Fri,  2 Nov 2012 15:17:30 +0100
-Message-Id: <1351865850-21688-2-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
-References: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
+Date: Fri,  2 Nov 2012 22:46:14 +0100
+Message-Id: <1351892774-20614-2-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1351892774-20614-1-git-send-email-kreijack@inwind.it>
+References: <1351892774-20614-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -49,7 +49,7 @@ index 4894903..0630b5d 100644
  
 diff --git a/btrfs-show-super.c b/btrfs-show-super.c
 new file mode 100644
-index 0000000..89d265c
+index 0000000..a9e2524
 --- /dev/null
 +++ b/btrfs-show-super.c
 @@ -0,0 +1,284 @@
@@ -100,7 +100,7 @@ index 0000000..89d265c
 +
 +static void print_usage(void)
 +{
-+	fprintf(stderr, 
++	fprintf(stderr,
 +		"usage: btrfs-show-super [-i super_mirror|-a] dev [dev..]\n");
 +	fprintf(stderr, "\tThe super_mirror number is between 0 and %d.\n",
 +		BTRFS_SUPER_MIRROR_MAX - 1);
@@ -120,7 +120,7 @@ index 0000000..89d265c
 +
 +	while ((opt = getopt(argc, argv, "ai:")) != -1) {
 +		switch (opt) {
-+		case 'i': 
++		case 'i':
 +			arg = atoi(optarg);
 +
 +			if (arg < 0 || arg >= BTRFS_SUPER_MIRROR_MAX) {
@@ -132,11 +132,11 @@ index 0000000..89d265c
 +			}
 +			sb_bytenr = btrfs_sb_offset(arg);
 +			break;
-+		
-+		case 'a': 
++
++		case 'a':
 +			all = 1;
 +			break;
-+		
++
 +		default:
 +			print_usage();
 +			exit(1);
@@ -148,7 +148,7 @@ index 0000000..89d265c
 +		exit(1);
 +	}
 +
-+	for ( i = optind ; i < argc ; i++ ) {
++	for (i = optind ; i < argc ; i++) {
 +		filename = argv[i];
 +		fd = open(filename, O_RDONLY, 0666);
 +		if (fd < 0) {
@@ -157,11 +157,11 @@ index 0000000..89d265c
 +			exit(1);
 +		}
 +
-+		if (all){
++		if (all) {
 +			int idx;
 +			for (idx = 0 ; idx < BTRFS_SUPER_MIRROR_MAX ; idx++) {
 +				sb_bytenr = btrfs_sb_offset(idx);
-+				if (load_and_dump_sb(filename, fd, sb_bytenr)){
++				if (load_and_dump_sb(filename, fd, sb_bytenr)) {
 +					close(fd);
 +					exit(1);
 +				}
@@ -187,17 +187,17 @@ index 0000000..89d265c
 +	sb = (struct btrfs_super_block *)super_block_data;
 +
 +	ret = pread64(fd, super_block_data, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
-+	if (ret != BTRFS_SUPER_INFO_SIZE ) {
++	if (ret != BTRFS_SUPER_INFO_SIZE) {
 +		int e = errno;
 +
 +		/* check if the disk if too short for further superblock */
-+		if( ret == 0 && e == 0 )
-+			return 0;	
++		if (ret == 0 && e == 0)
++			return 0;
 +
-+		fprintf(stderr, 
++		fprintf(stderr,
 +		   "ERROR: Failed to read the superblock on %s at %llu\n",
 +		   filename, (unsigned long long)sb_bytenr);
-+		fprintf(stderr, 
++		fprintf(stderr,
 +		   "ERROR: error = '%s', errno = %d\n", strerror(e), e);
 +		return 1;
 +	}
@@ -215,7 +215,7 @@ index 0000000..89d265c
 +	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
 +				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
 +	btrfs_csum_final(crc, result);
-+	
++
 +	return !memcmp(sb, &result, csum_size);
 +}
 +
@@ -226,7 +226,7 @@ index 0000000..89d265c
 +	u8	*p;
 +
 +	printf("csum\t\t\t0x");
-+	for (i = 0, p = sb->csum ; i < btrfs_super_csum_size(sb) ; i++ )
++	for (i = 0, p = sb->csum ; i < btrfs_super_csum_size(sb) ; i++)
 +		printf("%02x", p[i]);
 +	if (check_csum_sblock(sb, btrfs_super_csum_size(sb)))
 +		printf(" [match]");
@@ -234,14 +234,14 @@ index 0000000..89d265c
 +		printf(" [DON'T MATCH]");
 +	putchar('\n');
 +
-+	printf("bytenr\t\t\t%llu\n", 
++	printf("bytenr\t\t\t%llu\n",
 +		(unsigned long long)btrfs_super_bytenr(sb));
-+	printf("flags\t\t\t0x%llx\n", 
++	printf("flags\t\t\t0x%llx\n",
 +		(unsigned long long)btrfs_super_flags(sb));
 +
 +	printf("magic\t\t\t");
 +	s = (char *) &sb->magic;
-+	for (i = 0 ; i < 8 ; i++ )
++	for (i = 0 ; i < 8 ; i++)
 +		putchar(isprint(s[i]) ? s[i] : '.');
 +	if (!memcmp(BTRFS_MAGIC, &sb->magic, 8))
 +		printf(" [match]\n");
@@ -309,8 +309,8 @@ index 0000000..89d265c
 +	printf("dev_item.uuid\t\t%s\n", buf);
 +
 +	uuid_unparse(sb->dev_item.fsid, buf);
-+	printf("dev_item.fsid\t\t%s %s\n", buf, 
-+		!memcmp(sb->dev_item.fsid, sb->fsid, BTRFS_FSID_SIZE) ? 
++	printf("dev_item.fsid\t\t%s %s\n", buf,
++		!memcmp(sb->dev_item.fsid, sb->fsid, BTRFS_FSID_SIZE) ?
 +			"[match]" : "[DON'T MATCH]");
 +
 +	printf("dev_item.type\t\t%llu\n", (unsigned long long)

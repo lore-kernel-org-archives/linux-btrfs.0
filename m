@@ -1,81 +1,342 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail-bk0-f46.google.com ([209.85.214.46]:58195 "EHLO
 	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755403Ab2KBOQq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 10:16:46 -0400
+	with ESMTP id S1762887Ab2KBOQs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 10:16:48 -0400
 Received: by mail-bk0-f46.google.com with SMTP id jk13so1401191bkc.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 07:16:46 -0700 (PDT)
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 07:16:47 -0700 (PDT)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>,
         Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH][BTRFS-PROGS][V1] btrfs-show-super: a tool to dump superblock
-Date: Fri,  2 Nov 2012 15:17:29 +0100
-Message-Id: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
+Subject: [PATCH] Add btrfs-show-super
+Date: Fri,  2 Nov 2012 15:17:30 +0100
+Message-Id: <1351865850-21688-2-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
+References: <1351865850-21688-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ Makefile           |    5 +-
+ btrfs-show-super.c |  284 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 288 insertions(+), 1 deletion(-)
+ create mode 100644 btrfs-show-super.c
 
-I updated the Stefan's program btrfs-show-super. Now it prints the results of
-some sanity checks (about checksum and superblock magic string), allow
-more than one dovice as argument and a '-a' switch which dumps all the
-device superblocks.
-
-# btrfs-show-super  /dev/sdh1 
-superblock: bytenr=65536, device=../sysfs/disks/disk-02.img
----------------------------------------------------------
-csum			0x64d9fdb9 [match]
-bytenr			65536
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			6d6141a6-5440-4f75-9c85-6d0ec7450187
-label			test2
-generation		15
-root			29396992
-sys_array_size		355
-chunk_root_generation	15
-root_level		0
-chunk_root		20975616
-chunk_root_level	0
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		117041005568
-bytes_used		290816
-sectorsize		4096
-nodesize		4096
-leafsize		4096
-stripesize		4096
-root_dir		6
-num_devices		4
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0x1
-csum_type		0
-csum_size		4
-cache_generation	15
-dev_item.uuid		421d2bdb-c9d9-41f8-a966-57248605f18c
-dev_item.fsid		6d6141a6-5440-4f75-9c85-6d0ec7450187 [match]
-dev_item.type		0
-dev_item.total_bytes	3222274048
-dev_item.bytes_used	1900216320
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		1
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-
-
-You can pull the source from:
-	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-branch
-	super-block-dump
-
+diff --git a/Makefile b/Makefile
+index 4894903..0630b5d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -22,7 +22,7 @@ RESTORE_LIBS=-lz
+ 
+ progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
+ 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
+-	btrfs-find-root btrfs-restore btrfstune
++	btrfs-find-root btrfs-restore btrfstune btrfs-show-super
+ 
+ # make C=1 to enable sparse
+ ifdef C
+@@ -75,6 +75,9 @@ btrfs-debug-tree: $(objects) debug-tree.o
+ btrfs-zero-log: $(objects) btrfs-zero-log.o
+ 	$(CC) $(CFLAGS) -o btrfs-zero-log $(objects) btrfs-zero-log.o $(LDFLAGS) $(LIBS)
+ 
++btrfs-show-super: $(objects) btrfs-show-super.o
++	$(CC) $(CFLAGS) -o btrfs-show-super $(objects) btrfs-show-super.o $(LDFLAGS) $(LIBS)
++
+ btrfs-select-super: $(objects) btrfs-select-super.o
+ 	$(CC) $(CFLAGS) -o btrfs-select-super $(objects) btrfs-select-super.o $(LDFLAGS) $(LIBS)
+ 
+diff --git a/btrfs-show-super.c b/btrfs-show-super.c
+new file mode 100644
+index 0000000..89d265c
+--- /dev/null
++++ b/btrfs-show-super.c
+@@ -0,0 +1,284 @@
++/*
++ * Copyright (C) 2012 STRATO AG.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#define _XOPEN_SOURCE 500
++#define _GNU_SOURCE 1
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <ctype.h>
++#include <uuid/uuid.h>
++#include <errno.h>
++
++#include "kerncompat.h"
++#include "ctree.h"
++#include "disk-io.h"
++#include "print-tree.h"
++#include "transaction.h"
++#include "list.h"
++#include "version.h"
++#include "utils.h"
++#include "crc32c.h"
++
++static void print_usage(void);
++static void dump_superblock(struct btrfs_super_block *sb);
++int main(int argc, char **argv);
++static int load_and_dump_sb(char *, int fd, u64 sb_bytenr);
++
++
++static void print_usage(void)
++{
++	fprintf(stderr, 
++		"usage: btrfs-show-super [-i super_mirror|-a] dev [dev..]\n");
++	fprintf(stderr, "\tThe super_mirror number is between 0 and %d.\n",
++		BTRFS_SUPER_MIRROR_MAX - 1);
++	fprintf(stderr, "\tIf -a is passed all the superblocks are showed.\n",
++		BTRFS_SUPER_MIRROR_MAX - 1);
++	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
++}
++
++int main(int argc, char **argv)
++{
++	int opt;
++	int all = 0;
++	char *filename;
++	int fd = -1;
++	int arg, i;
++	u64 sb_bytenr = btrfs_sb_offset(0);
++
++	while ((opt = getopt(argc, argv, "ai:")) != -1) {
++		switch (opt) {
++		case 'i': 
++			arg = atoi(optarg);
++
++			if (arg < 0 || arg >= BTRFS_SUPER_MIRROR_MAX) {
++				fprintf(stderr,
++					"Illegal super_mirror %d\n",
++					arg);
++				print_usage();
++				exit(1);
++			}
++			sb_bytenr = btrfs_sb_offset(arg);
++			break;
++		
++		case 'a': 
++			all = 1;
++			break;
++		
++		default:
++			print_usage();
++			exit(1);
++		}
++	}
++
++	if (argc < optind + 1) {
++		print_usage();
++		exit(1);
++	}
++
++	for ( i = optind ; i < argc ; i++ ) {
++		filename = argv[i];
++		fd = open(filename, O_RDONLY, 0666);
++		if (fd < 0) {
++			fprintf(stderr, "Could not open %s\n", filename);
++			close(fd);
++			exit(1);
++		}
++
++		if (all){
++			int idx;
++			for (idx = 0 ; idx < BTRFS_SUPER_MIRROR_MAX ; idx++) {
++				sb_bytenr = btrfs_sb_offset(idx);
++				if (load_and_dump_sb(filename, fd, sb_bytenr)){
++					close(fd);
++					exit(1);
++				}
++
++				putchar('\n');
++			}
++		} else {
++			load_and_dump_sb(filename, fd, sb_bytenr);
++			putchar('\n');
++		}
++		close(fd);
++	}
++
++	exit(0);
++}
++
++static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr)
++{
++	u8	super_block_data[BTRFS_SUPER_INFO_SIZE];
++	struct btrfs_super_block *sb;
++	u64 ret;
++
++	sb = (struct btrfs_super_block *)super_block_data;
++
++	ret = pread64(fd, super_block_data, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
++	if (ret != BTRFS_SUPER_INFO_SIZE ) {
++		int e = errno;
++
++		/* check if the disk if too short for further superblock */
++		if( ret == 0 && e == 0 )
++			return 0;	
++
++		fprintf(stderr, 
++		   "ERROR: Failed to read the superblock on %s at %llu\n",
++		   filename, (unsigned long long)sb_bytenr);
++		fprintf(stderr, 
++		   "ERROR: error = '%s', errno = %d\n", strerror(e), e);
++		return 1;
++	}
++	printf("superblock: bytenr=%llu, device=%s\n", sb_bytenr, filename);
++	printf("---------------------------------------------------------\n");
++	dump_superblock(sb);
++	return 0;
++}
++
++static int check_csum_sblock(void *sb, int csum_size)
++{
++	char result[csum_size];
++	u32 crc = ~(u32)0;
++
++	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
++				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
++	btrfs_csum_final(crc, result);
++	
++	return !memcmp(sb, &result, csum_size);
++}
++
++static void dump_superblock(struct btrfs_super_block *sb)
++{
++	int	i;
++	char	*s, buf[36+1];
++	u8	*p;
++
++	printf("csum\t\t\t0x");
++	for (i = 0, p = sb->csum ; i < btrfs_super_csum_size(sb) ; i++ )
++		printf("%02x", p[i]);
++	if (check_csum_sblock(sb, btrfs_super_csum_size(sb)))
++		printf(" [match]");
++	else
++		printf(" [DON'T MATCH]");
++	putchar('\n');
++
++	printf("bytenr\t\t\t%llu\n", 
++		(unsigned long long)btrfs_super_bytenr(sb));
++	printf("flags\t\t\t0x%llx\n", 
++		(unsigned long long)btrfs_super_flags(sb));
++
++	printf("magic\t\t\t");
++	s = (char *) &sb->magic;
++	for (i = 0 ; i < 8 ; i++ )
++		putchar(isprint(s[i]) ? s[i] : '.');
++	if (!memcmp(BTRFS_MAGIC, &sb->magic, 8))
++		printf(" [match]\n");
++	else
++		printf(" [DON'T MATCH]\n");
++
++	uuid_unparse(sb->fsid, buf);
++	printf("fsid\t\t\t%s\n", buf);
++
++	printf("label\t\t\t");
++	s = sb->label;
++	for (i = 0 ; i < BTRFS_LABEL_SIZE && s[i] ; i++)
++		putchar(isprint(s[i]) ? s[i] : '.');
++	putchar('\n');
++
++	printf("generation\t\t%llu\n",
++	       (unsigned long long)btrfs_super_generation(sb));
++	printf("root\t\t\t%llu\n", (unsigned long long)btrfs_super_root(sb));
++	printf("sys_array_size\t\t%llu\n",
++	       (unsigned long long)btrfs_super_sys_array_size(sb));
++	printf("chunk_root_generation\t%llu\n",
++	       (unsigned long long)btrfs_super_chunk_root_generation(sb));
++	printf("root_level\t\t%llu\n",
++	       (unsigned long long)btrfs_super_root_level(sb));
++	printf("chunk_root\t\t%llu\n",
++	       (unsigned long long)btrfs_super_chunk_root(sb));
++	printf("chunk_root_level\t%llu\n",
++	       (unsigned long long)btrfs_super_chunk_root_level(sb));
++	printf("log_root\t\t%llu\n",
++	       (unsigned long long)btrfs_super_log_root(sb));
++	printf("log_root_transid\t%llu\n",
++	       (unsigned long long)btrfs_super_log_root_transid(sb));
++	printf("log_root_level\t\t%llu\n",
++	       (unsigned long long)btrfs_super_log_root_level(sb));
++	printf("total_bytes\t\t%llu\n",
++	       (unsigned long long)btrfs_super_total_bytes(sb));
++	printf("bytes_used\t\t%llu\n",
++	       (unsigned long long)btrfs_super_bytes_used(sb));
++	printf("sectorsize\t\t%llu\n",
++	       (unsigned long long)btrfs_super_sectorsize(sb));
++	printf("nodesize\t\t%llu\n",
++	       (unsigned long long)btrfs_super_nodesize(sb));
++	printf("leafsize\t\t%llu\n",
++	       (unsigned long long)btrfs_super_leafsize(sb));
++	printf("stripesize\t\t%llu\n",
++	       (unsigned long long)btrfs_super_stripesize(sb));
++	printf("root_dir\t\t%llu\n",
++	       (unsigned long long)btrfs_super_root_dir(sb));
++	printf("num_devices\t\t%llu\n",
++	       (unsigned long long)btrfs_super_num_devices(sb));
++	printf("compat_flags\t\t0x%llx\n",
++	       (unsigned long long)btrfs_super_compat_flags(sb));
++	printf("compat_ro_flags\t\t0x%llx\n",
++	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
++	printf("incompat_flags\t\t0x%llx\n",
++	       (unsigned long long)btrfs_super_incompat_flags(sb));
++	printf("csum_type\t\t%llu\n",
++	       (unsigned long long)btrfs_super_csum_type(sb));
++	printf("csum_size\t\t%llu\n",
++	       (unsigned long long)btrfs_super_csum_size(sb));
++	printf("cache_generation\t%llu\n",
++	       (unsigned long long)btrfs_super_cache_generation(sb));
++
++	uuid_unparse(sb->dev_item.uuid, buf);
++	printf("dev_item.uuid\t\t%s\n", buf);
++
++	uuid_unparse(sb->dev_item.fsid, buf);
++	printf("dev_item.fsid\t\t%s %s\n", buf, 
++		!memcmp(sb->dev_item.fsid, sb->fsid, BTRFS_FSID_SIZE) ? 
++			"[match]" : "[DON'T MATCH]");
++
++	printf("dev_item.type\t\t%llu\n", (unsigned long long)
++	       btrfs_stack_device_type(&sb->dev_item));
++	printf("dev_item.total_bytes\t%llu\n", (unsigned long long)
++	       btrfs_stack_device_total_bytes(&sb->dev_item));
++	printf("dev_item.bytes_used\t%llu\n", (unsigned long long)
++	       btrfs_stack_device_bytes_used(&sb->dev_item));
++	printf("dev_item.io_align\t%u\n", (unsigned int)
++	       btrfs_stack_device_io_align(&sb->dev_item));
++	printf("dev_item.io_width\t%u\n", (unsigned int)
++	       btrfs_stack_device_io_width(&sb->dev_item));
++	printf("dev_item.sector_size\t%u\n", (unsigned int)
++	       btrfs_stack_device_sector_size(&sb->dev_item));
++	printf("dev_item.devid\t\t%llu\n",
++	       btrfs_stack_device_id(&sb->dev_item));
++	printf("dev_item.dev_group\t%u\n", (unsigned int)
++	       btrfs_stack_device_group(&sb->dev_item));
++	printf("dev_item.seek_speed\t%u\n", (unsigned int)
++	       btrfs_stack_device_seek_speed(&sb->dev_item));
++	printf("dev_item.bandwidth\t%u\n", (unsigned int)
++	       btrfs_stack_device_bandwidth(&sb->dev_item));
++	printf("dev_item.generation\t%llu\n", (unsigned long long)
++	       btrfs_stack_device_generation(&sb->dev_item));
++}
++
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+1.7.10.4
 

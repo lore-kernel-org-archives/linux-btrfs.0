@@ -1,88 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39249 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751190Ab2KBP7p (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2012 11:59:45 -0400
-Date: Fri, 2 Nov 2012 15:59:41 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Kyle Gates <kylegates@hotmail.com>
-Cc: Kenneth Johansson <kenneth@southpole.se>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: no space left on device.
-Message-ID: <20121102155941.GB28864@carfax.org.uk>
-References: <50927A9E.70106@southpole.se>
- <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:60105 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750823Ab2KCEJH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2012 00:09:07 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so1588169eaa.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2012 21:09:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="A6N2fC+uXW/VQSAv"
-In-Reply-To: <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
+Date: Sat, 3 Nov 2012 14:39:06 +1030
+Message-ID: <CACCfv7pVYHCb_rO-ZefogCrvvvO0C3PN2BOArk4O2sRScWWTxg@mail.gmail.com>
+Subject: What's the minimum size I can shrink my FS to?
+From: Jordan Windsor <jordanw2@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+I'm trying to shrink my Btrfs filesystem to the smallest size it can
+go, here's the information:
 
---A6N2fC+uXW/VQSAv
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+failed to read /dev/sr0
+Label: 'Storage'  uuid: 717d4a43-38b3-495f-841b-d223068584de
+Total devices 1 FS bytes used 491.86GB
+devid    1 size 612.04GB used 605.98GB path /dev/sda6
 
-On Fri, Nov 02, 2012 at 10:54:47AM -0500, Kyle Gates wrote:
-> > So I have ended up in a state where I can't delete files with rm.
-> >
-> > the error I get is no space on device. however I'm not even close to empty.
-> > /dev/sdb1 38G 27G 9.5G 75%
-> > there is about 800k files/dirs in this filesystem
-> >
-> > extra strange is that I can in another directory create and delete files.
-> >
-> > So I tried pretty much all I could google my way to but problem
-> > persisted. So I decided to do a backup and a format. But when the backup
-> > was done I tried one more time and now it was possible to delete the
-> > directory and all content?
-> >
-> > using the 3.5 kernel in ubuntu 12.10. Is this a known issue ? is it
-> > fixed in later kernels?
-> >
-> > fsck /btrfs scrub and kernel log. nothing indicate any problem of any kind.
-> >
-> 
-> First let's see the output of:
-> btrfs fi df /mountpoint
-> 
-> You're probably way over allocated in metadata so a balance should help:
-> btrfs bal start -m /mountpoint
-> or omit the -m option to run a full balance.
+Btrfs Btrfs v0.19
 
-   Or, better, -musage=5 (or 1), which will do even less work.
+Data: total=580.90GB, used=490.88GB
+System, DUP: total=32.00MB, used=76.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=12.51GB, used=1001.61MB
 
-... but let's see the btrfs fi df output first. Could you also add the
-output of "btrfs fi show" (no parameters), please?
+Here's the command I use to resize:
 
-   Hugo.
+[root@archpc ~]# btrfs file res 500g /home/jordan/Storage/
+Resize '/home/jordan/Storage/' of '500g'
+ERROR: unable to resize '/home/jordan/Storage/' - No space left on device
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-            --- You're never alone with a rubber duck... ---             
+I was wondering if that size doesn't work then what's the minimum I
+can shrink to?
 
---A6N2fC+uXW/VQSAv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUJPt7b9z9OVl50rAAQIhaxAAg8C0h2+Eim+PdflHUwdWsyuhVJBJBl6N
-XYPdiQXP6h8kykOO+oOyyU5MXoJDpBImEn3GFJ+DXVD4UsAmFAkRNGjU1yP6JmH2
-YC+T2Kd0MKcEBjg4BlJekrc5GI3vUkyNzXJ2nRnohkg7UiCQ0KoDmWBxqcTpC/iY
-f3EZQa0gKfbz2hRcueh+zCgl9TjW2oAB+ZhZaOydAoE+wB76gVaLQq9m76r3iVTo
-pSaM4XWWaL9kHOgfxL4yrBLJyVArD+ZcLf9hsXe61/jRbLaze9MRJBshWtQJrjzR
-wlJBRoZtPGfEyFRetqqyhFmKq+eaox9PrCrnrzbGVrDGG+Tgdum8WRz2KJ4cM146
-AfPLka4fKPdjTaDYqeMcMM8fZMmRb8fWDJKAdf7QNJftk4ro0HRQ23LDPzfi91sa
-b8dMJoJxKAcEPEQG9FgpdrGlYlPg5jioNjKu6cYUa3mErTlWYcMDZNXiL2O7PWhd
-4MaMNG564BX5axgJyMPrRvawOzFDN9kbTq9fKHFQpa834C6WZlxfwJ9OSmYqiNPz
-MGrZ2jB92Eyn1e0JbiMtFWoMXm2tTNnlQqIgfEXcW2lqGAUumztk6HUvhDFfec/p
-UTe6baHd7AYZvN5LgyfJySAm8HdF6ejK+nY1iV5qA153M286nI+B2rTY1pH1muuG
-k9VEgupWhVc=
-=zqCH
------END PGP SIGNATURE-----
-
---A6N2fC+uXW/VQSAv--
+Thanks.

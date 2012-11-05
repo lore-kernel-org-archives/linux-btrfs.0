@@ -1,40 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:54509 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:54762 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750785Ab2KEPrk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Nov 2012 10:47:40 -0500
-Date: Mon, 5 Nov 2012 16:42:32 +0100
+	id S1751505Ab2KEQGx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Nov 2012 11:06:53 -0500
+Date: Mon, 5 Nov 2012 17:06:49 +0100
 From: David Sterba <dave@jikos.cz>
-To: Julia Lawall <julia.lawall@lip6.fr>
-Cc: linux-kernel@vger.kernel.org, airlied@linux.ie, netdev@vger.kernel.org,
-        arnd@arndb.de, joern@logfs.org, chris.mason@fusionio.com, m@bues.ch,
-        jejb@parisc-linux.org, faisal.latif@intel.com, neilb@suse.de,
-        gregkh@linuxfoundation.org, JBottomley@parallels.com,
-        swise@chelsio.com, achim_leubner@adaptec.com, tytso@mit.edu,
-        dri-devel@lists.freedesktop.org, jason.wessel@windriver.com,
-        kgdb-bugreport@lists.sourceforge.net,
-        Prasad Joshi <prasadjoshi.linux@gmail.com>, logfs@logfs.org,
-        linux-btrfs@vger.kernel.org, Helge Deller <deller@gmx.de>,
-        linux-parisc@vger.kernel.org, Roland Dreier <roland@kernel.org>,
-        Sean Hefty <sean.hefty@intel.com>, hal.rosenstock@gmail.com,
-        linux-rdma@vger.kernel.org, linux-raid@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-scsi@vger.kernel.org,
-        Andreas Dilger <adilger.kernel@dilger.ca>, linux-ext4@vger.kernel.org
-Subject: Re: merging printk and WARN
-Message-ID: <20121105154232.GL3102@twin.jikos.cz>
+To: Alex <alex@bpmit.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: (late) REQUEST: Default mkfs.btrfs block size
+Message-ID: <20121105160649.GM3102@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <alpine.DEB.2.02.1211042120200.1960@localhost6.localdomain6>
+References: <loom.20121031T131532-168@post.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <alpine.DEB.2.02.1211042120200.1960@localhost6.localdomain6>
+In-Reply-To: <loom.20121031T131532-168@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 04, 2012 at 09:25:53PM +0100, Julia Lawall wrote:
-> It looks like these patches were not a good idea, because in each case the
-> printk provides an error level, and WARN then provides another one.
+On Wed, Oct 31, 2012 at 12:20:39PM +0000, Alex wrote:
+> As one 'stuck' with 4k leaves on my main machine for the moment, can I request
+> the btrfs-progs v0.20 defaults to more efficient decent block sizes before
+> release. Most distro install programs for the moment don't give access to the
+> options at install time and there seems to be is a significant advantage to 16k
+> or 32k
 
-I think this is not a problem within btrfs at the place where this has
-changed.
+IMHO this should be fixed inside the installer, changing defaults for a
+core utility will affect everybody. 4k is the most tested option and
+thus can be considered "safe for everybody".
+
+The installer may let you to enter a shell and create the filesystem by
+hand, then point it to use it for installation.
 
 david

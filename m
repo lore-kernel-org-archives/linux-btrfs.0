@@ -1,34 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:54762 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:59944 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751505Ab2KEQGx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Nov 2012 11:06:53 -0500
-Date: Mon, 5 Nov 2012 17:06:49 +0100
+	id S1750706Ab2KEWpT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Nov 2012 17:45:19 -0500
+Date: Mon, 5 Nov 2012 23:45:04 +0100
 From: David Sterba <dave@jikos.cz>
-To: Alex <alex@bpmit.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: (late) REQUEST: Default mkfs.btrfs block size
-Message-ID: <20121105160649.GM3102@twin.jikos.cz>
+To: Jeff Liu <jeff.liu@oracle.com>
+Cc: dave@jikos.cz, Liu Bo <liub.liubo@gmail.com>,
+        =?iso-8859-1?Q?G=E1bor?= Nyers <gnyers@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: How to find (out if) files sharing content?
+Message-ID: <20121105224504.GN3102@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <loom.20121031T131532-168@post.gmane.org>
+References: <20121030162005.0308d5a2@lupus.demo.lan>
+ <5090736C.5040609@oracle.com>
+ <50908D3E.3000609@oracle.com>
+ <20121031113154.GG3102@twin.jikos.cz>
+ <50912157.7090708@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <loom.20121031T131532-168@post.gmane.org>
+In-Reply-To: <50912157.7090708@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 31, 2012 at 12:20:39PM +0000, Alex wrote:
-> As one 'stuck' with 4k leaves on my main machine for the moment, can I request
-> the btrfs-progs v0.20 defaults to more efficient decent block sizes before
-> release. Most distro install programs for the moment don't give access to the
-> options at install time and there seems to be is a significant advantage to 16k
-> or 32k
+On Wed, Oct 31, 2012 at 09:02:15PM +0800, Jeff Liu wrote:
+> I propose this because OCFS2 report shared space in this way combine with du(1).
+> 
+> An old patch set to teach du(1) aware of reflinked file:
+> https://oss.oracle.com/pipermail/ocfs2-devel/2010-September/007293.html
 
-IMHO this should be fixed inside the installer, changing defaults for a
-core utility will affect everybody. 4k is the most tested option and
-thus can be considered "safe for everybody".
+Patch looks ok, the shared size is requested by an option.
 
-The installer may let you to enter a shell and create the filesystem by
-hand, then point it to use it for installation.
+> Do you means that the costs is very expensive for userland extent status checkup per file?
+
+The most expensive part is IMO not in userspace, it does in-memory lookups.
+
+> > And without any possibility to turn this off,I'm afraid this will render FIEMAP unusable in practice.
+> For OCFS2, the FIEMAP_EXTENT_SHARED flag will be set upon fiemap ioctl(2) if an extent
+> is OCFS2_EXT_REFCOUNTED(i.e. reflinked or cloned), which means that FIEMAP_EXTENT_SHARED
+> is not a persistent flag, but I have no idea how Btrfs would be in this point. :(
+
+After some research, I think this could work for btrfs without
+unwanted performance penalties.
+
+There's the fiemap::fm_flags field that can be extended to request the
+shared extent info from fiemap, so the information is not computed
+unconditionally (that was my concern before). The rest is only
+implementation details how to speed up the file extent -> refcount info
+lookups.
 
 david

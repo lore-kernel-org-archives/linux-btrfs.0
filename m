@@ -1,36 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail4-relais-sop.national.inria.fr ([192.134.164.105]:37232
-	"EHLO mail4-relais-sop.national.inria.fr" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751543Ab2KDU0B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 4 Nov 2012 15:26:01 -0500
-Date: Sun, 4 Nov 2012 21:25:53 +0100 (CET)
-From: Julia Lawall <julia.lawall@lip6.fr>
-To: linux-kernel@vger.kernel.org, airlied@linux.ie, netdev@vger.kernel.org,
-        arnd@arndb.de, joern@logfs.org, chris.mason@fusionio.com, m@bues.ch,
-        jejb@parisc-linux.org, faisal.latif@intel.com, neilb@suse.de,
-        gregkh@linuxfoundation.org, JBottomley@parallels.com,
-        swise@chelsio.com, achim_leubner@adaptec.com, swise@chelsio.com,
-        tytso@mit.edu
-cc: dri-devel@lists.freedesktop.org, jason.wessel@windriver.com,
-        kgdb-bugreport@lists.sourceforge.net,
-        Prasad Joshi <prasadjoshi.linux@gmail.com>, logfs@logfs.org,
-        linux-btrfs@vger.kernel.org, Helge Deller <deller@gmx.de>,
-        linux-parisc@vger.kernel.org, Roland Dreier <roland@kernel.org>,
-        Sean Hefty <sean.hefty@intel.com>, hal.rosenstock@gmail.com,
-        linux-rdma@vger.kernel.org, linux-raid@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-scsi@vger.kernel.org,
-        Andreas Dilger <adilger.kernel@dilger.ca>, linux-ext4@vger.kernel.org
-Subject: merging printk and WARN
-Message-ID: <alpine.DEB.2.02.1211042120200.1960@localhost6.localdomain6>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
+Received: from mx1.redhat.com ([209.132.183.28]:19831 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751721Ab2KELHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Nov 2012 06:07:53 -0500
+Subject: Re: [RFC v4+ hot_track 03/19] vfs: add I/O frequency update
+ function
+From: Steven Whitehouse <swhiteho@redhat.com>
+To: zwu.kernel@gmail.com
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
+        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
+        wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
+In-Reply-To: <1351485061-12297-4-git-send-email-zwu.kernel@gmail.com>
+References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
+	 <1351485061-12297-4-git-send-email-zwu.kernel@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Date: Mon, 05 Nov 2012 11:07:05 +0000
+Message-ID: <1352113625.2705.10.camel@menhir>
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks like these patches were not a good idea, because in each case the 
-printk provides an error level, and WARN then provides another one.
+Hi,
 
-Sorry for the noise.
+On Mon, 2012-10-29 at 12:30 +0800, zwu.kernel@gmail.com wrote:
+> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+> 
+>   Add some util helpers to update access frequencies
+> for one file or its range.
+> 
+> Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+> ---
+>  fs/hot_tracking.c            |  179 ++++++++++++++++++++++++++++++++++++++++++
+>  fs/hot_tracking.h            |    7 ++
+>  include/linux/hot_tracking.h |    2 +
+>  3 files changed, 188 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+> index 68591f0..0a7d9a3 100644
+> --- a/fs/hot_tracking.c
+> +++ b/fs/hot_tracking.c
+> @@ -172,6 +172,137 @@ static void hot_inode_tree_exit(struct hot_info *root)
+>  	}
+>  }
+>  
+> +struct hot_inode_item
+> +*hot_inode_item_find(struct hot_info *root, u64 ino)
+> +{
+> +	struct hot_inode_item *he;
+> +	int ret;
+> +
+> +again:
+> +	spin_lock(&root->lock);
+> +	he = radix_tree_lookup(&root->hot_inode_tree, ino);
+> +	if (he) {
+> +		kref_get(&he->hot_inode.refs);
+> +		spin_unlock(&root->lock);
+> +		return he;
+> +	}
+> +	spin_unlock(&root->lock);
+> +
+> +	he = kmem_cache_zalloc(hot_inode_item_cachep,
+> +				GFP_KERNEL | GFP_NOFS);
+This doesn't look quite right... which of these two did you mean? I
+assume probably just GFP_NOFS
 
-julia
+> +	if (!he)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	hot_inode_item_init(he, ino, &root->hot_inode_tree);
+> +
+> +	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
+> +	if (ret) {
+> +		kmem_cache_free(hot_inode_item_cachep, he);
+> +		return ERR_PTR(ret);
+> +	}
+> +
+> +	spin_lock(&root->lock);
+> +	ret = radix_tree_insert(&root->hot_inode_tree, ino, he);
+> +	if (ret == -EEXIST) {
+> +		kmem_cache_free(hot_inode_item_cachep, he);
+> +		spin_unlock(&root->lock);
+> +		radix_tree_preload_end();
+> +		goto again;
+> +	}
+> +	spin_unlock(&root->lock);
+> +	radix_tree_preload_end();
+> +
+> +	kref_get(&he->hot_inode.refs);
+> +	return he;
+> +}
+> +EXPORT_SYMBOL_GPL(hot_inode_item_find);
+> +
+> +static struct hot_range_item
+> +*hot_range_item_find(struct hot_inode_item *he,
+> +			u32 start)
+> +{
+> +	struct hot_range_item *hr;
+> +	int ret;
+> +
+> +again:
+> +	spin_lock(&he->lock);
+> +	hr = radix_tree_lookup(&he->hot_range_tree, start);
+> +	if (hr) {
+> +		kref_get(&hr->hot_range.refs);
+> +		spin_unlock(&he->lock);
+> +		return hr;
+> +	}
+> +	spin_unlock(&he->lock);
+> +
+> +	hr = kmem_cache_zalloc(hot_range_item_cachep,
+> +				GFP_KERNEL | GFP_NOFS);
+Likewise, here too.
+
+Steve.
+
+
+

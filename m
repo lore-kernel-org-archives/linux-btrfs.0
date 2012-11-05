@@ -1,126 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23967 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754092Ab2KZJ1v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Nov 2012 04:27:51 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAQ9Ro5i010129
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2012 17:27:50 +0800
-Message-ID: <50B3362D.1030409@cn.fujitsu.com>
-Date: Mon, 26 Nov 2012 17:28:13 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/5] Btrfs: fix remount vs autodefrag
-References: <50B32FE7.5080908@cn.fujitsu.com>
-In-Reply-To: <50B32FE7.5080908@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from xp-ob.rzone.de ([81.169.146.141]:58386 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751141Ab2KENKw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Nov 2012 08:10:52 -0500
+Received: from pizpot.store ([192.168.43.236])
+	by jorabe.store (jorabe xp2) (RZmta 30.22 OK)
+	with ESMTP id g002a3oA5D6ZaZ for <linux-btrfs@vger.kernel.org>;
+	Mon, 5 Nov 2012 14:10:49 +0100 (CET)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: Don't trust the superblock label and simply printk("%s") it
+Date: Mon,  5 Nov 2012 14:10:49 +0100
+Message-Id: <1352121049-4140-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we remount the fs to close the auto defragment or make the fs R/O, we should
-stop the auto defragment.
+Someone who is root or capable(CAP_SYS_ADMIN) could corrupt the
+superblock and make Btrfs printk("%s") crash while holding the
+uuid_mutex since nobody forces a limit on the string. Since the
+uuid_mutex is significant, the system would be unusable
+afterwards.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h |  1 +
- fs/btrfs/file.c  | 13 +++++++++++++
- fs/btrfs/super.c | 29 +++++++++++++++++++++++++++++
- 3 files changed, 43 insertions(+)
+ fs/btrfs/volumes.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4ce24ce..01d671c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1759,6 +1759,7 @@ struct btrfs_ioctl_defrag_range_args {
- 
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
-+#define btrfs_raw_test_opt(o, opt)	((o) & BTRFS_MOUNT_##opt)
- #define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
- 					 BTRFS_MOUNT_##opt)
- /*
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 40b17d0..7aaae56 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -320,8 +320,21 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 	range.start = defrag->last_offset;
- 
- 	sb_start_write(fs_info->sb);
-+
-+	/* Avoid defraging files on R/O fs */
-+	if (!down_write_trylock(&fs_info->sb->s_umount)) {
-+		sb_end_write(fs_info->sb);
-+		btrfs_requeue_inode_defrag(inode, defrag);
-+		iput(inode);
-+		return -EBUSY;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index eeed97d..a429cc6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -764,10 +764,13 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 	transid = btrfs_super_generation(disk_super);
+ 	total_devices = btrfs_super_num_devices(disk_super);
+-	if (disk_super->label[0])
++	if (disk_super->label[0]) {
++		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
++			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
+ 		printk(KERN_INFO "device label %s ", disk_super->label);
+-	else
++	} else {
+ 		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
 +	}
-+
-+	BUG_ON(fs_info->sb->s_flags & MS_RDONLY);
-+
- 	num_defrag = btrfs_defrag_file(inode, NULL, &range, defrag->transid,
- 				       BTRFS_DEFRAG_BATCH);
-+
-+	up_write(&fs_info->sb->s_umount);
- 	sb_end_write(fs_info->sb);
- 	/*
- 	 * if we filled the whole defrag batch, there
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b3b041a..2e7beee 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1189,6 +1189,32 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 	btrfs_set_max_workers(&fs_info->scrub_workers, new_pool_size);
- }
- 
-+static inline void btrfs_remount_prepare(struct btrfs_fs_info *fs_info,
-+					 unsigned long old_opts, int flags)
-+{
-+	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
-+	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
-+	     (flags & MS_RDONLY))) {
-+		/* wait for any defraggers to finish */
-+		wait_event(fs_info->transaction_wait,
-+			   (atomic_read(&fs_info->defrag_running) == 0));
-+	}
-+}
-+
-+static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
-+					 unsigned long old_opts, int flags)
-+{
-+	/*
-+	 * We remount the fs successfully, then we need cleanup all defragable
-+	 * inodes if the autodefragment is close or the fs is R/O.
-+	 */
-+	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
-+	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
-+	     (flags & MS_RDONLY)))
-+		btrfs_cleanup_defrag_inodes(fs_info);
-+
-+}
-+
- static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-@@ -1214,6 +1240,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 	if ((*flags & MS_RDONLY) == (sb->s_flags & MS_RDONLY))
- 		return 0;
- 
-+	btrfs_remount_prepare(fs_info, old_opts, *flags);
-+
- 	if (*flags & MS_RDONLY) {
- 		sb->s_flags |= MS_RDONLY;
- 
-@@ -1247,6 +1275,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		sb->s_flags &= ~MS_RDONLY;
- 	}
- 
-+	btrfs_remount_cleanup(fs_info, old_opts, *flags);
- 	return 0;
- 
- restore:
+ 	printk(KERN_CONT "devid %llu transid %llu %s\n",
+ 	       (unsigned long long)devid, (unsigned long long)transid, path);
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
 -- 
-1.7.11.7
+1.8.0
 

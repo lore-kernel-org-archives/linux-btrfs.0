@@ -1,38 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:53973 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:54357 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932754Ab2KEP2N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Nov 2012 10:28:13 -0500
-Date: Mon, 5 Nov 2012 16:28:10 +0100
+	id S932722Ab2KEPi4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Nov 2012 10:38:56 -0500
+Date: Mon, 5 Nov 2012 16:38:35 +0100
 From: David Sterba <dave@jikos.cz>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: Don't trust the superblock label and simply
- printk("%s") it
-Message-ID: <20121105152810.GI3102@twin.jikos.cz>
+To: Julia Lawall <Julia.Lawall@lip6.fr>
+Cc: Chris Mason <chris.mason@fusionio.com>, kernel-janitors@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 13/16] fs/btrfs: use WARN
+Message-ID: <20121105153835.GJ3102@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <1352121049-4140-1-git-send-email-sbehrens@giantdisaster.de>
+References: <1351940317-14812-1-git-send-email-Julia.Lawall@lip6.fr>
+ <1351940317-14812-14-git-send-email-Julia.Lawall@lip6.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1352121049-4140-1-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1351940317-14812-14-git-send-email-Julia.Lawall@lip6.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 05, 2012 at 02:10:49PM +0100, Stefan Behrens wrote:
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -764,10 +764,13 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->  	devid = btrfs_stack_device_id(&disk_super->dev_item);
->  	transid = btrfs_super_generation(disk_super);
->  	total_devices = btrfs_super_num_devices(disk_super);
-> -	if (disk_super->label[0])
-> +	if (disk_super->label[0]) {
-> +		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
-> +			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
-
-The label set via 'btrfs fi label' will also set the last-1 byte to 0,
-so this keeps it as expected, although it is silent.
-
-thanks,
+On Sat, Nov 03, 2012 at 11:58:34AM +0100, Julia Lawall wrote:
+> From: Julia Lawall <Julia.Lawall@lip6.fr>
+> 
+> Use WARN rather than printk followed by WARN_ON(1), for conciseness.
+> 
+> A simplified version of the semantic patch that makes this transformation
+> is as follows: (http://coccinelle.lip6.fr/)
+> 
+> // <smpl>
+> @@
+> expression list es;
+> @@
+> 
+> -printk(
+> +WARN(1,
+>   es);
+> -WARN_ON(1);
+> // </smpl>
+> 
+> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
 Reviewed-by: David Sterba <dsterba@suse.cz>
-

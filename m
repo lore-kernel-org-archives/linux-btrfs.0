@@ -1,97 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail4-relais-sop.national.inria.fr ([192.134.164.105]:36725
-	"EHLO mail4-relais-sop.national.inria.fr" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753643Ab2KCUad (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Nov 2012 16:30:33 -0400
-From: Julia Lawall <Julia.Lawall@lip6.fr>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH 1/8] fs/btrfs: drop if around WARN_ON
-Date: Sat,  3 Nov 2012 21:30:18 +0100
-Message-Id: <1351974625-10282-2-git-send-email-Julia.Lawall@lip6.fr>
-In-Reply-To: <1351974625-10282-1-git-send-email-Julia.Lawall@lip6.fr>
-References: <1351974625-10282-1-git-send-email-Julia.Lawall@lip6.fr>
+Received: from aserp1040.oracle.com ([141.146.126.69]:47425 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750919Ab2KEMni (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2012 07:43:38 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qA5ChbMr006905
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Nov 2012 12:43:38 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qA5Chbot019651
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Nov 2012 12:43:37 GMT
+Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qA5ChbRL021623
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Nov 2012 06:43:37 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: fix a deadlock in aborting transaction due to ENOSPC
+Date: Mon,  5 Nov 2012 20:42:08 +0800
+Message-Id: <1352119329-18716-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <Julia.Lawall@lip6.fr>
+When committing a transaction, we may bail out of running delayed refs
+due to ENOSPC, and then abort the current transaction to flip into readonly.
 
-Just use WARN_ON rather than an if containing only WARN_ON(1).
+But we'll hit a deadlock on ref head's lock since we forget to release
+its lock and other cleanup stuff.
 
-A simplified version of the semantic patch that makes this transformation
-is as follows: (http://coccinelle.lip6.fr/)
-
-// <smpl>
-@@
-expression e;
-@@
-- if (e) WARN_ON(1);
-+ WARN_ON(e);
-// </smpl>
-
-Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/backref.c |    3 +--
- fs/btrfs/ctree.c   |    9 +++------
- fs/btrfs/inode.c   |    3 +--
- 3 files changed, 5 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-tree.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 208d8aa..a321952 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -890,8 +890,7 @@ again:
- 	while (!list_empty(&prefs)) {
- 		ref = list_first_entry(&prefs, struct __prelim_ref, list);
- 		list_del(&ref->list);
--		if (ref->count < 0)
--			WARN_ON(1);
-+		WARN_ON(ref->count < 0);
- 		if (ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
- 			ret = ulist_add(roots, ref->root_id, 0, GFP_NOFS);
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index cdfb4c4..8ecb995 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1469,10 +1469,8 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	if (cache_only && parent_level != 1)
- 		return 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d3e2c1..e0c4809 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2314,6 +2314,9 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 				kfree(extent_op);
  
--	if (trans->transaction != root->fs_info->running_transaction)
--		WARN_ON(1);
--	if (trans->transid != root->fs_info->generation)
--		WARN_ON(1);
-+	WARN_ON(trans->transaction != root->fs_info->running_transaction);
-+	WARN_ON(trans->transid != root->fs_info->generation);
+ 				if (ret) {
++					list_del_init(&locked_ref->cluster);
++					mutex_unlock(&locked_ref->mutex);
++
+ 					printk(KERN_DEBUG "btrfs: run_delayed_extent_op returned %d\n", ret);
+ 					spin_lock(&delayed_refs->lock);
+ 					return ret;
+@@ -2356,6 +2359,10 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 		count++;
  
- 	parent_nritems = btrfs_header_nritems(parent);
- 	blocksize = btrfs_level_size(root, parent_level - 1);
-@@ -3403,8 +3401,7 @@ static noinline int __push_leaf_right(struct btrfs_trans_handle *trans,
- 	if (push_items == 0)
- 		goto out_unlock;
- 
--	if (!empty && push_items == left_nritems)
--		WARN_ON(1);
-+	WARN_ON(!empty && push_items == left_nritems);
- 
- 	/* push left to right */
- 	right_nritems = btrfs_header_nritems(right);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 95542a1..0d169ab 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1657,8 +1657,7 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state)
- {
--	if ((end & (PAGE_CACHE_SIZE - 1)) == 0)
--		WARN_ON(1);
-+	WARN_ON((end & (PAGE_CACHE_SIZE - 1)) == 0);
- 	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
- 				   cached_state, GFP_NOFS);
- }
+ 		if (ret) {
++			if (locked_ref) {
++				list_del_init(&locked_ref->cluster);
++				mutex_unlock(&locked_ref->mutex);
++			}
+ 			printk(KERN_DEBUG "btrfs: run_one_delayed_ref returned %d\n", ret);
+ 			spin_lock(&delayed_refs->lock);
+ 			return ret;
+-- 
+1.7.7.6
 

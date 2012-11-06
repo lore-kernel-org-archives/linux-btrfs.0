@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:54387 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751138Ab2KEPjc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Nov 2012 10:39:32 -0500
-Date: Mon, 5 Nov 2012 16:39:02 +0100
-From: David Sterba <dave@jikos.cz>
-To: Julia Lawall <Julia.Lawall@lip6.fr>
-Cc: Chris Mason <chris.mason@fusionio.com>, kernel-janitors@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/8] fs/btrfs: drop if around WARN_ON
-Message-ID: <20121105153902.GK3102@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1351974625-10282-1-git-send-email-Julia.Lawall@lip6.fr>
- <1351974625-10282-2-git-send-email-Julia.Lawall@lip6.fr>
+Received: from mo-p00-ob.rzone.de ([81.169.146.161]:40562 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751300Ab2KFSyG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2012 13:54:06 -0500
+Message-ID: <50995DAB.6070103@giantdisaster.de>
+Date: Tue, 06 Nov 2012 19:57:47 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1351974625-10282-2-git-send-email-Julia.Lawall@lip6.fr>
+To: Bart Noordervliet <bart@noordervliet.net>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 00/26] Btrfs: Add device replace code
+References: <cover.1352214751.git.sbehrens@giantdisaster.de> <CAGy7UtjR+kZoBYWaeg=-jHbJHQh4pe3Jt5cwX-rTQEBHFkQ-YQ@mail.gmail.com>
+In-Reply-To: <CAGy7UtjR+kZoBYWaeg=-jHbJHQh4pe3Jt5cwX-rTQEBHFkQ-YQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 03, 2012 at 09:30:18PM +0100, Julia Lawall wrote:
-> From: Julia Lawall <Julia.Lawall@lip6.fr>
-> 
-> Just use WARN_ON rather than an if containing only WARN_ON(1).
-> 
-> A simplified version of the semantic patch that makes this transformation
-> is as follows: (http://coccinelle.lip6.fr/)
-> 
-> // <smpl>
-> @@
-> expression e;
-> @@
-> - if (e) WARN_ON(1);
-> + WARN_ON(e);
-> // </smpl>
-> 
-> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+On 11/06/2012 19:17, Bart Noordervliet wrote:
+> Great new feature Stefan, thanks a lot! Going to give it a spin right
+> away. While compiling I got this (probably superfluous) error that you
+> might want to prevent:
+>
+> fs/btrfs/dev-replace.c: In function ‘btrfs_dev_replace_start’:
+> fs/btrfs/dev-replace.c:344:5: warning: ‘ret’ may be used uninitialized
+> in this function [-Wmaybe-uninitialized]
+>
+> Regards,
+>
+> Bart
+>
+
+Yes, this happens on 32 bit builds, not on 64 bit builds. If you look at 
+the source code, the compiler is obviously wrong (or I am blind).
+
+         ret = btrfs_dev_replace_find_srcdev(root, args->start.srcdevid,
+                                             args->start.srcdev_name,
+                                             &src_device);
+         mutex_unlock(&fs_info->volume_mutex);
+         if (ret) {  <-- this is line 344
+
+But thanks for the feedback anyway!

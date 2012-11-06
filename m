@@ -1,158 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:42279 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.136]:28303 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751394Ab2KFQit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751702Ab2KFQit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 6 Nov 2012 11:38:49 -0500
 Received: from pizpot.store ([192.168.43.236])
-	by jorabe.store (jorabe xp1) (RZmta 31.1 OK)
-	with ESMTP id X02b46oA6CtA5q for <linux-btrfs@vger.kernel.org>;
-	Tue, 6 Nov 2012 17:38:44 +0100 (CET)
+	by jored.store (jored xp2) (RZmta 31.1 OK) with ESMTP id g01bccoA6DKvk4
+	for <linux-btrfs@vger.kernel.org>; Tue, 6 Nov 2012 17:38:44 +0100 (CET)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/26] Btrfs: in scrub repair code, simplify alloc error handling
-Date: Tue,  6 Nov 2012 17:38:23 +0100
-Message-Id: <d01894ea56da98ccd313cf9fae7f9000affe1dca.1352217243.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 06/26] Btrfs: cleanup scrub bio and worker wait code
+Date: Tue,  6 Nov 2012 17:38:24 +0100
+Message-Id: <c535bc872c3ace3a7e050a86adbf20edfd70172f.1352217243.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <cover.1352214751.git.sbehrens@giantdisaster.de>
 
-In the scrub repair code, the code is changed to handle memory
-allocation errors a little bit smarter. The change is to handle
-it just like a read error. This simplifies the code and removes
-a couple of lines of code, since the code to handle read errors
-is there anyway.
+Just move some code into functions to make everything more readable.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/scrub.c | 61 ++++++++++++++++++++++++--------------------------------
- 1 file changed, 26 insertions(+), 35 deletions(-)
+ fs/btrfs/scrub.c | 106 +++++++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 71 insertions(+), 35 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 7d38f40..fcd5bcc 100644
+index fcd5bcc..a67b1a1 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -151,10 +151,10 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011 STRATO.  All rights reserved.
++ * Copyright (C) 2011, 2012 STRATO.  All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public
+@@ -104,8 +104,8 @@ struct scrub_ctx {
+ 	struct btrfs_root	*dev_root;
+ 	int			first_free;
+ 	int			curr;
+-	atomic_t		in_flight;
+-	atomic_t		fixup_cnt;
++	atomic_t		bios_in_flight;
++	atomic_t		workers_pending;
+ 	spinlock_t		list_lock;
+ 	wait_queue_head_t	list_wait;
+ 	u16			csum_size;
+@@ -146,6 +146,10 @@ struct scrub_warning {
+ };
+ 
+ 
++static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
++static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
++static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
++static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx);
+ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
+ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
  				     struct btrfs_mapping_tree *map_tree,
- 				     u64 length, u64 logical,
- 				     struct scrub_block *sblock);
--static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
--			       struct scrub_block *sblock, int is_metadata,
--			       int have_csum, u8 *csum, u64 generation,
--			       u16 csum_size);
-+static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
-+				struct scrub_block *sblock, int is_metadata,
-+				int have_csum, u8 *csum, u64 generation,
-+				u16 csum_size);
- static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
- 					 struct scrub_block *sblock,
- 					 int is_metadata, int have_csum,
-@@ -718,16 +718,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	sblock_bad = sblocks_for_recheck + failed_mirror_index;
+@@ -184,6 +188,59 @@ static void scrub_bio_end_io_worker(struct btrfs_work *work);
+ static void scrub_block_complete(struct scrub_block *sblock);
  
- 	/* build and submit the bios for the failed mirror, check checksums */
--	ret = scrub_recheck_block(fs_info, sblock_bad, is_metadata, have_csum,
--				  csum, generation, sctx->csum_size);
--	if (ret) {
--		spin_lock(&sctx->stat_lock);
--		sctx->stat.read_errors++;
--		sctx->stat.uncorrectable_errors++;
--		spin_unlock(&sctx->stat_lock);
--		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_READ_ERRS);
--		goto out;
--	}
-+	scrub_recheck_block(fs_info, sblock_bad, is_metadata, have_csum,
-+			    csum, generation, sctx->csum_size);
  
- 	if (!sblock_bad->header_error && !sblock_bad->checksum_error &&
- 	    sblock_bad->no_io_error_seen) {
-@@ -843,10 +835,11 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 		sblock_other = sblocks_for_recheck + mirror_index;
- 
- 		/* build and submit the bios, check checksums */
--		ret = scrub_recheck_block(fs_info, sblock_other, is_metadata,
--					  have_csum, csum, generation,
--					  sctx->csum_size);
--		if (!ret && !sblock_other->header_error &&
-+		scrub_recheck_block(fs_info, sblock_other, is_metadata,
-+				    have_csum, csum, generation,
-+				    sctx->csum_size);
++static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
++{
++	atomic_inc(&sctx->bios_in_flight);
++}
 +
-+		if (!sblock_other->header_error &&
- 		    !sblock_other->checksum_error &&
- 		    sblock_other->no_io_error_seen) {
- 			int force_write = is_metadata || have_csum;
-@@ -931,10 +924,10 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 			 * is verified, but most likely the data comes out
- 			 * of the page cache.
- 			 */
--			ret = scrub_recheck_block(fs_info, sblock_bad,
--						  is_metadata, have_csum, csum,
--						  generation, sctx->csum_size);
--			if (!ret && !sblock_bad->header_error &&
-+			scrub_recheck_block(fs_info, sblock_bad,
-+					    is_metadata, have_csum, csum,
-+					    generation, sctx->csum_size);
-+			if (!sblock_bad->header_error &&
- 			    !sblock_bad->checksum_error &&
- 			    sblock_bad->no_io_error_seen)
- 				goto corrected_error;
-@@ -1061,10 +1054,10 @@ leave_nomem:
-  * to take those pages that are not errored from all the mirrors so that
-  * the pages that are errored in the just handled mirror can be repaired.
-  */
--static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
--			       struct scrub_block *sblock, int is_metadata,
--			       int have_csum, u8 *csum, u64 generation,
--			       u16 csum_size)
-+static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
-+				struct scrub_block *sblock, int is_metadata,
-+				int have_csum, u8 *csum, u64 generation,
-+				u16 csum_size)
++static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
++{
++	atomic_dec(&sctx->bios_in_flight);
++	wake_up(&sctx->list_wait);
++}
++
++/*
++ * used for workers that require transaction commits (i.e., for the
++ * NOCOW case)
++ */
++static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx)
++{
++	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
++
++	/*
++	 * increment scrubs_running to prevent cancel requests from
++	 * completing as long as a worker is running. we must also
++	 * increment scrubs_paused to prevent deadlocking on pause
++	 * requests used for transactions commits (as the worker uses a
++	 * transaction context). it is safe to regard the worker
++	 * as paused for all matters practical. effectively, we only
++	 * avoid cancellation requests from completing.
++	 */
++	mutex_lock(&fs_info->scrub_lock);
++	atomic_inc(&fs_info->scrubs_running);
++	atomic_inc(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	atomic_inc(&sctx->workers_pending);
++}
++
++/* used for workers that require transaction commits */
++static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx)
++{
++	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
++
++	/*
++	 * see scrub_pending_trans_workers_inc() why we're pretending
++	 * to be paused in the scrub counters
++	 */
++	mutex_lock(&fs_info->scrub_lock);
++	atomic_dec(&fs_info->scrubs_running);
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	atomic_dec(&sctx->workers_pending);
++	wake_up(&fs_info->scrub_pause_wait);
++	wake_up(&sctx->list_wait);
++}
++
+ static void scrub_free_csums(struct scrub_ctx *sctx)
  {
- 	int page_num;
+ 	while (!list_empty(&sctx->csum_list)) {
+@@ -264,8 +321,8 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev)
+ 	sctx->nodesize = dev->dev_root->nodesize;
+ 	sctx->leafsize = dev->dev_root->leafsize;
+ 	sctx->sectorsize = dev->dev_root->sectorsize;
+-	atomic_set(&sctx->in_flight, 0);
+-	atomic_set(&sctx->fixup_cnt, 0);
++	atomic_set(&sctx->bios_in_flight, 0);
++	atomic_set(&sctx->workers_pending, 0);
+ 	atomic_set(&sctx->cancel_req, 0);
+ 	sctx->csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 	INIT_LIST_HEAD(&sctx->csum_list);
+@@ -609,14 +666,7 @@ out:
+ 	btrfs_free_path(path);
+ 	kfree(fixup);
  
-@@ -1074,7 +1067,6 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 
- 	for (page_num = 0; page_num < sblock->page_count; page_num++) {
- 		struct bio *bio;
--		int ret;
- 		struct scrub_page *page = sblock->pagev[page_num];
- 		DECLARE_COMPLETION_ONSTACK(complete);
- 
-@@ -1086,18 +1078,17 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 
- 		WARN_ON(!page->page);
- 		bio = bio_alloc(GFP_NOFS, 1);
--		if (!bio)
--			return -EIO;
-+		if (!bio) {
-+			page->io_error = 1;
-+			sblock->no_io_error_seen = 0;
-+			continue;
-+		}
- 		bio->bi_bdev = page->dev->bdev;
- 		bio->bi_sector = page->physical >> 9;
- 		bio->bi_end_io = scrub_complete_bio_end_io;
- 		bio->bi_private = &complete;
- 
--		ret = bio_add_page(bio, page->page, PAGE_SIZE, 0);
--		if (PAGE_SIZE != ret) {
--			bio_put(bio);
--			return -EIO;
--		}
-+		bio_add_page(bio, page->page, PAGE_SIZE, 0);
- 		btrfsic_submit_bio(READ, bio);
- 
- 		/* this will also unplug the queue */
-@@ -1114,7 +1105,7 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 					     have_csum, csum, generation,
- 					     csum_size);
- 
--	return 0;
-+	return;
+-	/* see caller why we're pretending to be paused in the scrub counters */
+-	mutex_lock(&fs_info->scrub_lock);
+-	atomic_dec(&fs_info->scrubs_running);
+-	atomic_dec(&fs_info->scrubs_paused);
+-	mutex_unlock(&fs_info->scrub_lock);
+-	atomic_dec(&sctx->fixup_cnt);
+-	wake_up(&fs_info->scrub_pause_wait);
+-	wake_up(&sctx->list_wait);
++	scrub_pending_trans_workers_dec(sctx);
  }
  
- static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
+ /*
+@@ -789,20 +839,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		fixup_nodatasum->logical = logical;
+ 		fixup_nodatasum->root = fs_info->extent_root;
+ 		fixup_nodatasum->mirror_num = failed_mirror_index + 1;
+-		/*
+-		 * increment scrubs_running to prevent cancel requests from
+-		 * completing as long as a fixup worker is running. we must also
+-		 * increment scrubs_paused to prevent deadlocking on pause
+-		 * requests used for transactions commits (as the worker uses a
+-		 * transaction context). it is safe to regard the fixup worker
+-		 * as paused for all matters practical. effectively, we only
+-		 * avoid cancellation requests from completing.
+-		 */
+-		mutex_lock(&fs_info->scrub_lock);
+-		atomic_inc(&fs_info->scrubs_running);
+-		atomic_inc(&fs_info->scrubs_paused);
+-		mutex_unlock(&fs_info->scrub_lock);
+-		atomic_inc(&sctx->fixup_cnt);
++		scrub_pending_trans_workers_inc(sctx);
+ 		fixup_nodatasum->work.func = scrub_fixup_nodatasum;
+ 		btrfs_queue_worker(&fs_info->scrub_workers,
+ 				   &fixup_nodatasum->work);
+@@ -1491,7 +1528,7 @@ static void scrub_submit(struct scrub_ctx *sctx)
+ 
+ 	sbio = sctx->bios[sctx->curr];
+ 	sctx->curr = -1;
+-	atomic_inc(&sctx->in_flight);
++	scrub_pending_bio_inc(sctx);
+ 
+ 	btrfsic_submit_bio(READ, sbio->bio);
+ }
+@@ -1692,8 +1729,7 @@ static void scrub_bio_end_io_worker(struct btrfs_work *work)
+ 	sbio->next_free = sctx->first_free;
+ 	sctx->first_free = sbio->index;
+ 	spin_unlock(&sctx->list_lock);
+-	atomic_dec(&sctx->in_flight);
+-	wake_up(&sctx->list_wait);
++	scrub_pending_bio_dec(sctx);
+ }
+ 
+ static void scrub_block_complete(struct scrub_block *sblock)
+@@ -1863,7 +1899,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	logical = base + offset;
+ 
+ 	wait_event(sctx->list_wait,
+-		   atomic_read(&sctx->in_flight) == 0);
++		   atomic_read(&sctx->bios_in_flight) == 0);
+ 	atomic_inc(&fs_info->scrubs_paused);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
+@@ -1928,7 +1964,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			/* push queued extents */
+ 			scrub_submit(sctx);
+ 			wait_event(sctx->list_wait,
+-				   atomic_read(&sctx->in_flight) == 0);
++				   atomic_read(&sctx->bios_in_flight) == 0);
+ 			atomic_inc(&fs_info->scrubs_paused);
+ 			wake_up(&fs_info->scrub_pause_wait);
+ 			mutex_lock(&fs_info->scrub_lock);
+@@ -2218,7 +2254,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		if (ret)
+ 			return ret;
+ 	}
+-	wait_event(sctx->list_wait, atomic_read(&sctx->in_flight) == 0);
++	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+ 
+ 	return 0;
+ }
+@@ -2363,11 +2399,11 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 	if (!ret)
+ 		ret = scrub_enumerate_chunks(sctx, dev, start, end);
+ 
+-	wait_event(sctx->list_wait, atomic_read(&sctx->in_flight) == 0);
++	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+ 	atomic_dec(&fs_info->scrubs_running);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
+-	wait_event(sctx->list_wait, atomic_read(&sctx->fixup_cnt) == 0);
++	wait_event(sctx->list_wait, atomic_read(&sctx->workers_pending) == 0);
+ 
+ 	if (progress)
+ 		memcpy(progress, &sctx->stat, sizeof(*progress));
 -- 
 1.8.0
 

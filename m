@@ -1,31 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bay0-omc1-s8.bay0.hotmail.com ([65.54.190.19]:30564 "EHLO
-	bay0-omc1-s8.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753240Ab2KFEMo convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Nov 2012 23:12:44 -0500
-Message-ID: <BAY158-W653F2100594317287CCAECC06B0@phx.gbl>
-From: "william L'Heureux" <wil_c_will@hotmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: slow after btrfs balance
-Date: Mon, 5 Nov 2012 23:06:35 -0500
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:44361 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753256Ab2KFEZi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2012 23:25:38 -0500
+Received: by mail-ob0-f174.google.com with SMTP id uo13so20172obb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Nov 2012 20:25:37 -0800 (PST)
 MIME-Version: 1.0
+In-Reply-To: <5097ABF6.6010605@profihost.ag>
+References: <5097ABF6.6010605@profihost.ag>
+Date: Tue, 6 Nov 2012 11:25:36 +0700
+Message-ID: <CAG1y0sdZy=4H1M0OPMvdNEBJwPOKT_vR1UA+LoPY__dpR0RZOg@mail.gmail.com>
+Subject: Re: Production use with vanilla 3.6.6
+From: "Fajar A. Nugraha" <list@fajar.net>
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Nov 5, 2012 at 7:07 PM, Stefan Priebe - Profihost AG
+<s.priebe@profihost.ag> wrote:
+> Hello list,
+>
+> is btrfs ready for production use in 3.6.6? Or should i backport fixes from
+> 3.7-rc?
+>
+> Is it planned to have a stable kernel which will get all btrfs fixes
+> backported?
 
-Hello,
- 
-Here is a little background of my setup. mdadm->lvm->dmcrypt->btrfs.
- 
-I had the btrfs in ext4 but I converted it.
-When I first did the convert, everything was fine. After a moment, I did a btrfs balance and since that day,
-the writing speed is very slow. When I do things like unzip/unrar, the load average flies to 15+.
-That makes the system to be almost unusable. During the whole process I went from 3.2 wheezy to 3.5.
-I went to back to 3.2 to check the stability, the results are the same.
-I was asking myself if simply changing the chunk would solve my problem?
- 
-Thanks
- 
-William 		 	   		  
+I would say "no" to both, but you should check with distros that
+supports btrfs (Oracle Linux and SLES). In particular, whether they
+backport fixes, and what exactly does "supported" status gives you
+when you buy support for that distro.
+
+-- 
+Fajar

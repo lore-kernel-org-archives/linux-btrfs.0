@@ -1,38 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:57890 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752164Ab2KEXsE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2012 18:48:04 -0500
-Received: by mail-pa0-f46.google.com with SMTP id hz1so4298408pad.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Nov 2012 15:48:03 -0800 (PST)
-Message-ID: <50985030.6020804@gmail.com>
-Date: Tue, 06 Nov 2012 07:48:00 +0800
-From: ching <lsching17@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:33713 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751558Ab2KFDyO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2012 22:54:14 -0500
+Message-ID: <509889CF.30302@oracle.com>
+Date: Tue, 06 Nov 2012 11:53:51 +0800
+From: Jeff Liu <jeff.liu@oracle.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs defrag problem
-References: <508FBE50.6070300@gmail.com> <20121031004027.GE3102@twin.jikos.cz> <50919550.3090800@gmail.com> <20121105225716.GO3102@twin.jikos.cz>
-In-Reply-To: <20121105225716.GO3102@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
+To: dave@jikos.cz, Liu Bo <liub.liubo@gmail.com>,
+        =?ISO-8859-1?Q?G=E1bor_?= =?ISO-8859-1?Q?Nyers?=
+	<gnyers@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: How to find (out if) files sharing content?
+References: <20121030162005.0308d5a2@lupus.demo.lan> <5090736C.5040609@oracle.com> <50908D3E.3000609@oracle.com> <20121031113154.GG3102@twin.jikos.cz> <50912157.7090708@oracle.com> <20121105224504.GN3102@twin.jikos.cz>
+In-Reply-To: <20121105224504.GN3102@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/06/2012 06:57 AM, David Sterba wrote:
-> On Thu, Nov 01, 2012 at 05:17:04AM +0800, ching wrote:
->>>> 3. Is any possible to online defrag a btrfs partition without hindered by mount point/polyinstantied directories?
->>> Sorry, I do not understand the question.
->> when a device is mounted under a directory, files in the directory is "hidden", and files in the device is "available", right?
->> when a directory is polyinstantied, files in the original directory is "hidden", and files in the polyinstantied directory is "available",
+On 11/06/2012 06:45 AM, David Sterba wrote:
+> On Wed, Oct 31, 2012 at 09:02:15PM +0800, Jeff Liu wrote:
+>> I propose this because OCFS2 report shared space in this way combine with du(1).
 >>
->> How to get past them and pass those "hidden" files to defrag command?
-> I hope I get it right, so unless you have a reference to the directory
-> with hidden files (using your term), there's no way to access them. And
-> this is a more generic question, not related to btrfs itself. The hidden
-> files may also belong to a different filesystem.
->
+>> An old patch set to teach du(1) aware of reflinked file:
+>> https://oss.oracle.com/pipermail/ocfs2-devel/2010-September/007293.html
+> 
+> Patch looks ok, the shared size is requested by an option.
+> 
+>> Do you means that the costs is very expensive for userland extent status checkup per file?
+> 
+> The most expensive part is IMO not in userspace, it does in-memory lookups.
+> 
+>>> And without any possibility to turn this off,I'm afraid this will render FIEMAP unusable in practice.
+>> For OCFS2, the FIEMAP_EXTENT_SHARED flag will be set upon fiemap ioctl(2) if an extent
+>> is OCFS2_EXT_REFCOUNTED(i.e. reflinked or cloned), which means that FIEMAP_EXTENT_SHARED
+>> is not a persistent flag, but I have no idea how Btrfs would be in this point. :(
+> 
+> After some research, I think this could work for btrfs without
+> unwanted performance penalties.
+> 
+> There's the fiemap::fm_flags field that can be extended to request the
+> shared extent info from fiemap, so the information is not computed
+> unconditionally (that was my concern before). The rest is only
+> implementation details how to speed up the file extent -> refcount info
+> lookups.
+Thanks for your confirmation.
+
+-Jeff
+> 
 > david
->
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-thank for your explanation
-
-ching

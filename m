@@ -1,56 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [37.247.8.11] ([37.247.8.11]:57712 "EHLO mail.southpole.se"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751410Ab2KFNYA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Nov 2012 08:24:00 -0500
-Message-ID: <50990F6E.2090309@southpole.se>
-Date: Tue, 06 Nov 2012 14:23:58 +0100
-From: Kenneth Johansson <kenneth@southpole.se>
+Received: from loup.kjorling.se ([87.237.208.114]:47997 "EHLO loup.kjorling.se"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750846Ab2KFNra (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Nov 2012 08:47:30 -0500
+Date: Tue, 6 Nov 2012 13:47:02 +0000
+From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: How does btrfs handle sudden shutdowns?
+Message-ID: <20121106134702.GA3900@yeono.kjorling.se>
+References: <20121106123308.GA2676@yeono.kjorling.se>
+ <20121106124802.GA29581@carfax.org.uk>
 MIME-Version: 1.0
-To: Kyle Gates <kylegates@hotmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: no space left on device.
-References: <50927A9E.70106@southpole.se> <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
-In-Reply-To: <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20121106124802.GA29581@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/02/2012 04:54 PM, Kyle Gates wrote:
->> So I have ended up in a state where I can't delete files with rm.
->>
->> the error I get is no space on device. however I'm not even close to empty.
->> /dev/sdb1 38G 27G 9.5G 75%
->> there is about 800k files/dirs in this filesystem
->>
->> extra strange is that I can in another directory create and delete files.
->>
->> So I tried pretty much all I could google my way to but problem
->> persisted. So I decided to do a backup and a format. But when the backup
->> was done I tried one more time and now it was possible to delete the
->> directory and all content?
->>
->> using the 3.5 kernel in ubuntu 12.10. Is this a known issue ? is it
->> fixed in later kernels?
->>
->> fsck /btrfs scrub and kernel log. nothing indicate any problem of any kind.
->>
-> First let's see the output of:
-> btrfs fi df /mountpoint
->
-> You're probably way over allocated in metadata so a balance should help:
-> btrfs bal start -m /mountpoint
-> or omit the -m option to run a full balance. 		
-I had to use the disk for work so I could not be stuck in that situation 
-and thus had to nuke the disk.
-maybe I can recreate the state I put back mostly the same data again 
-minus some stuff I did not really need.
+On 6 Nov 2012 12:48 +0000, from hugo@carfax.org.uk (Hugo Mills):
+>    There are also some caveats: while the FS should always be
+> consistent, the latest transaction write may not have been completed,
+> so you could potentially lose up to 30 seconds of writes to the FS
+> from immediately before the crash.
 
-So under what circumstance can this actually happen ? why could I 
-remove/add files in one directory and not another? its the same 
-partition. And also the filesystem was just a few days old and no 
-snapshots or anything, well I do use lzo compression but other than that 
-default values was used to create it.
+I'd rather lose the most recent 30 seconds of writes but have a
+consistent file system with as-consistent-as-can-be-expected data,
+than end up with a corrupted file system.
+
+On that note; can this value be tuned currently, is it hardcoded, or
+is it stored in metadata somewhere but the tooling to tune it is not
+yet available?
 
 
+>    If the FS does corrupt over a power failure, and the hardware can
+> be demonstrated to be good, then we have a bug that needs to be
+> tracked down. (There have been a number of these over the development
+> of the FS so far, but they do get fixed).
 
+Is there a simple way to tell ahead of time whether the hardware meets
+the assumptions made by the file system with regards to write barriers
+etc.?
+
+
+>    I guess the question for you is: are you after the _expected_
+> behaviour of the FS (should always be consistent on good hardware, but
+> you may lose up to 30 seconds of writes), or are you after mitigation
+> strategies in the face of FS bugs (keep off-site backups and be
+> prepared to use them)?
+
+I already have full, daily on-site backups on an external drive that
+is logically unmounted except for when backups are running, as well as
+partial off-site backups to cloud storage - and of course, taking
+advantage of btrfs's snapshotting support there is no real reason why
+I couldn't increase the backup frequency while retaining data
+consistency. Losing half a minute of writes is fairly inconsequential
+for personal use as long as the file system remains consistent, and in
+the face of disastrous corruption it is at least possible to do a full
+restore to bare metal from rescue media and backup without losing too
+much. Not trivial time-wise (that's currently 1.4 TB over USB 2.0),
+but possible.
+
+-- 
+Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
+                “People who think they know everything really annoy
+                those of us who know we don’t.” (Bjarne Stroustrup)

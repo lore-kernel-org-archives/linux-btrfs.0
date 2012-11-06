@@ -1,76 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:42185 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751257Ab2KFU5r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2012 15:57:47 -0500
-Received: by mail-ie0-f174.google.com with SMTP id k13so1303960iea.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Nov 2012 12:57:47 -0800 (PST)
+Received: from twin.jikos.cz ([89.185.236.188]:49312 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751561Ab2KFWZS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Nov 2012 17:25:18 -0500
+Date: Tue, 6 Nov 2012 23:24:42 +0100
+From: David Sterba <dave@jikos.cz>
+To: zwu.kernel@gmail.com
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
+        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
+        wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
+Subject: Re: [RFC v4+ hot_track 02/19] vfs: initialize and free data
+ structures
+Message-ID: <20121106222442.GS3102@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
+ <1351485061-12297-3-git-send-email-zwu.kernel@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <50997863.DxtbfvNUpe1vD8o/%fengguang.wu@intel.com>
-References: <50997863.DxtbfvNUpe1vD8o/%fengguang.wu@intel.com>
-Date: Tue, 6 Nov 2012 21:57:47 +0100
-Message-ID: <CAB9VWqBg-WFg=G1ogfGWCDW0rJaGce09X=ceTGeoSKY5mMvKuQ@mail.gmail.com>
-Subject: Re: [ablock84-btrfs:btrfs-far 20/20] fs/btrfs/send.c:1683:51: sparse:
- incorrect type in argument 5 (different base types)
-From: Alexander Block <ablock84@googlemail.com>
-To: kbuild test robot <fengguang.wu@intel.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1351485061-12297-3-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 6, 2012 at 9:51 PM, kbuild test robot
-<fengguang.wu@intel.com> wrote:
-> tree:   git://github.com/ablock84/linux-btrfs.git btrfs-far
-> head:   f9a5bb450a8cc7aa5fd4f11d0306b3f48cf2771d
-> commit: f9a5bb450a8cc7aa5fd4f11d0306b3f48cf2771d [20/20] Btrfs: use libfarstream for btrfs send
->
->
-> sparse warnings:
->
-> + fs/btrfs/send.c:1683:51: sparse: incorrect type in argument 5 (different base types)
-> fs/btrfs/send.c:1683:51:    expected unsigned long long [unsigned] [usertype] vol_gen
-> fs/btrfs/send.c:1683:51:    got restricted __le64 [usertype] ctransid
-> fs/btrfs/send.c:1693:61: sparse: incorrect type in argument 5 (different base types)
-> fs/btrfs/send.c:1693:61:    expected unsigned long long [unsigned] [usertype] vol_gen
-> fs/btrfs/send.c:1693:61:    got restricted __le64 [usertype] ctransid
-> + fs/btrfs/send.c:3102:50: sparse: incorrect type in argument 2 (different address spaces)
-> fs/btrfs/send.c:3102:50:    expected char [noderef] <asn:1>*<noident>
-> fs/btrfs/send.c:3102:50:    got char *read_buf
-> fs/btrfs/send.c:4101:62: sparse: incorrect type in argument 5 (different base types)
-> fs/btrfs/send.c:4101:62:    expected unsigned long long [unsigned] [usertype] vol_gen
-> fs/btrfs/send.c:4101:62:    got restricted __le64 [usertype] ctransid
-> fs/btrfs/send.c:4132:51: sparse: incorrect type in argument 5 (different base types)
-> fs/btrfs/send.c:4132:51:    expected unsigned long long [unsigned] [usertype] vol_gen
-> fs/btrfs/send.c:4132:51:    got restricted __le64 [usertype] ctransid
->
-> vim +1683 fs/btrfs/send.c
->
-> 31db9f7c Alexander Block 2012-07-25  1677       read_extent_buffer(leaf, name, (unsigned long)(ref + 1), namelen);
-> 31db9f7c Alexander Block 2012-07-25  1678       btrfs_release_path(path);
-> 31db9f7c Alexander Block 2012-07-25  1679
-> f9a5bb45 Alexander Block 2012-11-06  1680       vid = far_volume_identifier_create("btrfs", -1,
-> f9a5bb45 Alexander Block 2012-11-06  1681                       sctx->send_root->root_item.uuid,
-> f9a5bb45 Alexander Block 2012-11-06  1682                       BTRFS_UUID_SIZE,
-> f9a5bb45 Alexander Block 2012-11-06 @1683                       sctx->send_root->root_item.ctransid,
-> f9a5bb45 Alexander Block 2012-11-06  1684                       name, namelen);
-> f9a5bb45 Alexander Block 2012-11-06  1685       if (!vid) {
-> f9a5bb45 Alexander Block 2012-11-06  1686               ret = -ENOMEM;
-> f9a5bb45 Alexander Block 2012-11-06  1687               goto out;
-> 31db9f7c Alexander Block 2012-07-25  1688       }
-> 31db9f7c Alexander Block 2012-07-25  1689       if (parent_root) {
-> f9a5bb45 Alexander Block 2012-11-06  1690               parent_vid = far_volume_identifier_create("btrfs", -1,
-> f9a5bb45 Alexander Block 2012-11-06  1691                               sctx->parent_root->root_item.uuid,
-> f9a5bb45 Alexander Block 2012-11-06  1692                               BTRFS_UUID_SIZE,
-> f9a5bb45 Alexander Block 2012-11-06 @1693                               sctx->parent_root->root_item.ctransid,
-> f9a5bb45 Alexander Block 2012-11-06  1694                               "", -1);
-> f9a5bb45 Alexander Block 2012-11-06  1695               if (!parent_vid) {
-> f9a5bb45 Alexander Block 2012-11-06  1696                       ret = -ENOMEM;
->
-> ---
-> 0-DAY kernel build testing backend         Open Source Technology Center
-> Fengguang Wu, Yuanhan Liu                              Intel Corporation
+On Mon, Oct 29, 2012 at 12:30:44PM +0800, zwu.kernel@gmail.com wrote:
+> +/* Frees the entire hot_range_tree. */
+> +static void hot_inode_item_free(struct kref *kref)
+> +{
+> +	struct hot_comm_item *comm_item = container_of(kref,
+> +			struct hot_comm_item, refs);
+> +	struct hot_inode_item *he = container_of(comm_item,
+> +			struct hot_inode_item, hot_inode);
+> +
+> +	hot_range_tree_free(he);
+> +	radix_tree_delete(he->hot_inode_tree, he->i_ino);
 
-Sorry for the noise. For some reason that I currently don't understand
-there is a build robot subscribed to my github account which thinks
-that posting to the mailing list is a good idea...
+void *radix_tree_delete(struct radix_tree_root *root, unsigned long index)
+
+and he::i_ino is u64, this will not work when
+sizeof(unsigned long) != sizeof(u64) (iirc this is a known limitation of
+radix tree implementation). This will work on 64bit only, not sure if
+this is intentional.
+
+> +	kmem_cache_free(hot_inode_item_cachep, he);
+> +}
+> +
+> +/* Frees the entire hot_inode_tree. */
+> +static void hot_inode_tree_exit(struct hot_info *root)
+> +{
+> +	struct hot_inode_item *hi_nodes[8];
+> +	u64 ino = 0;
+> +	int i, n;
+
+nitpick, put the declarations on separate lines
+
+> +
+> +	while (1) {
+> +		spin_lock(&root->lock);
+> +		n = radix_tree_gang_lookup(&root->hot_inode_tree,
+> +					   (void **)hi_nodes, ino,
+> +					   ARRAY_SIZE(hi_nodes));
+> +		if (!n) {
+> +			spin_unlock(&root->lock);
+> +			break;
+> +		}
+> +
+> +		ino = hi_nodes[n - 1]->i_ino + 1;
+> +		for (i = 0; i < n; i++)
+> +			hot_inode_item_put(hi_nodes[i]);
+> +		spin_unlock(&root->lock);
+> +	}
+> +}
+> +
+>  /*
+>   * Initialize kmem cache for hot_inode_item and hot_range_item.
+>   */
+> @@ -106,3 +197,36 @@ err:
+>  	kmem_cache_destroy(hot_inode_item_cachep);
+>  }
+>  EXPORT_SYMBOL_GPL(hot_cache_init);
+> +
+> +/*
+> + * Initialize the data structures for hot data tracking.
+> + */
+> +int hot_track_init(struct super_block *sb)
+> +{
+> +	struct hot_info *root;
+> +	int ret = -ENOMEM;
+> +
+> +	root = kzalloc(sizeof(struct hot_info), GFP_NOFS);
+> +	if (!root) {
+> +		printk(KERN_ERR "%s: Failed to malloc memory for "
+> +				"hot_info\n", __func__);
+> +		return ret;
+
+minor: you can drop the variable ret and just reurn ENOMEM here
+
+> +	}
+> +
+> +	sb->s_hot_root = root;
+> +	hot_inode_tree_init(root);
+> +
+> +	printk(KERN_INFO "VFS: Turning on hot data tracking\n");
+> +
+> +	return 0;
+> +}
+> +EXPORT_SYMBOL_GPL(hot_track_init);
+
+david

@@ -1,134 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:12797 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.140]:29443 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752488Ab2KFQis (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Nov 2012 11:38:48 -0500
+	id S1752645Ab2KFQit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Nov 2012 11:38:49 -0500
 Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (josoe xp2) (RZmta 30.22 OK)
-	with ESMTP id g03dbeoA6AsjWt for <linux-btrfs@vger.kernel.org>;
+	by joses.store (joses xp1) (RZmta 30.22 OK)
+	with ESMTP id X022c8oA6As7hF for <linux-btrfs@vger.kernel.org>;
 	Tue, 6 Nov 2012 17:38:45 +0100 (CET)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 21/26] Btrfs: introduce GET_READ_MIRRORS functionality for btrfs_map_block()
-Date: Tue,  6 Nov 2012 17:38:39 +0100
-Message-Id: <bdb465c374538cd56e3fd0f9ac24cdceb8e8311f.1352217244.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 22/26] Btrfs: changes to live filesystem are also written to replacement disk
+Date: Tue,  6 Nov 2012 17:38:40 +0100
+Message-Id: <f27babf0a20246ff745dad5bb3d1fa884e946990.1352217244.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <cover.1352214751.git.sbehrens@giantdisaster.de>
 
-Before this commit, btrfs_map_block() was called with REQ_WRITE
-in order to retrieve the list of mirrors for a disk block.
-This needs to be changed for the device replace procedure since
-it makes a difference whether you are asking for read mirrors
-or for locations to write to.
-GET_READ_MIRRORS is introduced as a new interface to call
-btrfs_map_block().
-In the current commit, the functionality is not yet changed,
-only the interface for GET_READ_MIRRORS is introduced and all
-the places that should use this new interface are adapted.
-
-The reason that REQ_WRITE cannot be abused anymore to retrieve
-a list of read mirrors is that during a running dev replace
-operation all write requests to the live filesystem are
-duplicated to also write to the target drive.
-Keep in mind that the target disk is only partially a valid
-copy of the source disk while the operation is ongoing. All
-writes go to the target disk, but not all reads would return
-valid data on the target disk. Therefore it is not possible
-anymore to abuse a REQ_WRITE interface to find valid mirrors
-for a REQ_READ.
+During a running dev replace operation, all write requests to
+the live filesystem are duplicated to also write to the target
+drive. Therefore btrfs_map_block() is changed to duplicate
+stripes that are written to the source disk of a device replace
+procedure to be written to the target disk as well.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h   | 3 +++
- fs/btrfs/reada.c   | 3 ++-
- fs/btrfs/scrub.c   | 4 ++--
- fs/btrfs/volumes.c | 8 ++++----
- 4 files changed, 11 insertions(+), 7 deletions(-)
+ fs/btrfs/volumes.c | 50 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7c9e4f7..01fcfcb 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -174,6 +174,9 @@ static int btrfs_csum_sizes[] = { 4, 0 };
- /* four bytes for CRC32 */
- #define BTRFS_EMPTY_DIR_SIZE 0
- 
-+/* spefic to btrfs_map_block(), therefore not in include/linux/blk_types.h */
-+#define REQ_GET_READ_MIRRORS	(1 << 30)
-+
- #define BTRFS_FT_UNKNOWN	0
- #define BTRFS_FT_REG_FILE	1
- #define BTRFS_FT_DIR		2
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index c705a48..96b93da 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -359,7 +359,8 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 	 * map block
- 	 */
- 	length = blocksize;
--	ret = btrfs_map_block(fs_info, REQ_WRITE, logical, &length, &bbio, 0);
-+	ret = btrfs_map_block(fs_info, REQ_GET_READ_MIRRORS, logical, &length,
-+			      &bbio, 0);
- 	if (ret || !bbio || length < blocksize)
- 		goto error;
- 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 8bfe782..ba46eb0 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1193,8 +1193,8 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 		 * with a length of PAGE_SIZE, each returned stripe
- 		 * represents one mirror
- 		 */
--		ret = btrfs_map_block(fs_info, WRITE, logical, &mapped_length,
--				      &bbio, 0);
-+		ret = btrfs_map_block(fs_info, REQ_GET_READ_MIRRORS, logical,
-+				      &mapped_length, &bbio, 0);
- 		if (ret || !bbio || mapped_length < sublen) {
- 			kfree(bbio);
- 			return -EIO;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3ef0df2..208cc13 100644
+index 208cc13..164f9b1 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4108,7 +4108,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 					    stripe_nr_end - stripe_nr_orig);
- 		stripe_index = do_div(stripe_nr, map->num_stripes);
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
--		if (rw & (REQ_WRITE | REQ_DISCARD))
-+		if (rw & (REQ_WRITE | REQ_DISCARD | REQ_GET_READ_MIRRORS))
- 			num_stripes = map->num_stripes;
- 		else if (mirror_num)
- 			stripe_index = mirror_num - 1;
-@@ -4120,7 +4120,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		}
+@@ -4049,6 +4049,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	int num_stripes;
+ 	int max_errors = 0;
+ 	struct btrfs_bio *bbio = NULL;
++	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
++	int dev_replace_is_ongoing = 0;
++	int num_alloc_stripes;
  
- 	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
--		if (rw & (REQ_WRITE | REQ_DISCARD)) {
-+		if (rw & (REQ_WRITE | REQ_DISCARD | REQ_GET_READ_MIRRORS)) {
- 			num_stripes = map->num_stripes;
- 		} else if (mirror_num) {
- 			stripe_index = mirror_num - 1;
-@@ -4134,7 +4134,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		stripe_index = do_div(stripe_nr, factor);
- 		stripe_index *= map->sub_stripes;
+ 	read_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, logical, *length);
+@@ -4094,6 +4097,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	if (!bbio_ret)
+ 		goto out;
  
--		if (rw & REQ_WRITE)
-+		if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS))
- 			num_stripes = map->sub_stripes;
- 		else if (rw & REQ_DISCARD)
- 			num_stripes = min_t(u64, map->sub_stripes *
-@@ -4247,7 +4247,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
++	btrfs_dev_replace_lock(dev_replace);
++	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(dev_replace);
++	if (!dev_replace_is_ongoing)
++		btrfs_dev_replace_unlock(dev_replace);
++
+ 	num_stripes = 1;
+ 	stripe_index = 0;
+ 	stripe_nr_orig = stripe_nr;
+@@ -4160,7 +4168,10 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	}
+ 	BUG_ON(stripe_index >= map->num_stripes);
+ 
+-	bbio = kzalloc(btrfs_bio_size(num_stripes), GFP_NOFS);
++	num_alloc_stripes = num_stripes;
++	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)))
++		num_alloc_stripes <<= 1;
++	bbio = kzalloc(btrfs_bio_size(num_alloc_stripes), GFP_NOFS);
+ 	if (!bbio) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -4255,11 +4266,48 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
  		}
  	}
  
--	if (rw & REQ_WRITE) {
-+	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) {
- 		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
- 				 BTRFS_BLOCK_GROUP_RAID10 |
- 				 BTRFS_BLOCK_GROUP_DUP)) {
++	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)) &&
++	    dev_replace->tgtdev != NULL) {
++		int index_where_to_add;
++		u64 srcdev_devid = dev_replace->srcdev->devid;
++
++		/*
++		 * duplicate the write operations while the dev replace
++		 * procedure is running. Since the copying of the old disk
++		 * to the new disk takes place at run time while the
++		 * filesystem is mounted writable, the regular write
++		 * operations to the old disk have to be duplicated to go
++		 * to the new disk as well.
++		 * Note that device->missing is handled by the caller, and
++		 * that the write to the old disk is already set up in the
++		 * stripes array.
++		 */
++		index_where_to_add = num_stripes;
++		for (i = 0; i < num_stripes; i++) {
++			if (bbio->stripes[i].dev->devid == srcdev_devid) {
++				/* write to new disk, too */
++				struct btrfs_bio_stripe *new =
++					bbio->stripes + index_where_to_add;
++				struct btrfs_bio_stripe *old =
++					bbio->stripes + i;
++
++				new->physical = old->physical;
++				new->length = old->length;
++				new->dev = dev_replace->tgtdev;
++				index_where_to_add++;
++				max_errors++;
++			}
++		}
++		num_stripes = index_where_to_add;
++	}
++
+ 	*bbio_ret = bbio;
+ 	bbio->num_stripes = num_stripes;
+ 	bbio->max_errors = max_errors;
+ 	bbio->mirror_num = mirror_num;
+ out:
++	if (dev_replace_is_ongoing)
++		btrfs_dev_replace_unlock(dev_replace);
+ 	free_extent_map(em);
+ 	return ret;
+ }
 -- 
 1.8.0
 

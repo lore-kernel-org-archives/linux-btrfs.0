@@ -1,65 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26521 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751960Ab2KFMy0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2012 07:54:26 -0500
-Date: Tue, 6 Nov 2012 20:54:14 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Michael =?iso-8859-1?Q?Kj=F6rling?= <michael@kjorling.se>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How does btrfs handle sudden shutdowns?
-Message-ID: <20121106125412.GA32336@gmail.com>
-References: <20121106123308.GA2676@yeono.kjorling.se>
+Received: from [37.247.8.11] ([37.247.8.11]:57712 "EHLO mail.southpole.se"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751410Ab2KFNYA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Nov 2012 08:24:00 -0500
+Message-ID: <50990F6E.2090309@southpole.se>
+Date: Tue, 06 Nov 2012 14:23:58 +0100
+From: Kenneth Johansson <kenneth@southpole.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20121106123308.GA2676@yeono.kjorling.se>
+To: Kyle Gates <kylegates@hotmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: no space left on device.
+References: <50927A9E.70106@southpole.se> <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
+In-Reply-To: <COL002-W179CC749A18F35284E4D01B0670@phx.gbl>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 06, 2012 at 12:33:08PM +0000, Michael Kjörling wrote:
-> Can btrfs deal reasonably gracefully with sudden shutdowns? (I'm
-> mainly thinking of power outages which lead to logical structure
-> damage but not physical media damage.)
-> 
+On 11/02/2012 04:54 PM, Kyle Gates wrote:
+>> So I have ended up in a state where I can't delete files with rm.
+>>
+>> the error I get is no space on device. however I'm not even close to empty.
+>> /dev/sdb1 38G 27G 9.5G 75%
+>> there is about 800k files/dirs in this filesystem
+>>
+>> extra strange is that I can in another directory create and delete files.
+>>
+>> So I tried pretty much all I could google my way to but problem
+>> persisted. So I decided to do a backup and a format. But when the backup
+>> was done I tried one more time and now it was possible to delete the
+>> directory and all content?
+>>
+>> using the 3.5 kernel in ubuntu 12.10. Is this a known issue ? is it
+>> fixed in later kernels?
+>>
+>> fsck /btrfs scrub and kernel log. nothing indicate any problem of any kind.
+>>
+> First let's see the output of:
+> btrfs fi df /mountpoint
+>
+> You're probably way over allocated in metadata so a balance should help:
+> btrfs bal start -m /mountpoint
+> or omit the -m option to run a full balance. 		
+I had to use the disk for work so I could not be stuck in that situation 
+and thus had to nuke the disk.
+maybe I can recreate the state I put back mostly the same data again 
+minus some stuff I did not really need.
 
-AFAIK, yes, because btrfs is naturally COW supported, which means
-you can roll back to the latest stable situation at least.
+So under what circumstance can this actually happen ? why could I 
+remove/add files in one directory and not another? its the same 
+partition. And also the filesystem was just a few days old and no 
+snapshots or anything, well I do use lzo compression but other than that 
+default values was used to create it.
 
-> What would be the risk points, file-system-wise?
-> 
 
-Data loss is possible if you're not writing with O_SYNC or doing fsync
-after a write.
 
-> Can for example a rotating snapshot schedule mitigate some or all
-> issues relating to sudden shutdowns, if any? (_For example_, take a
-> snapshot every minute, keeping the last five; if the main file system
-> fails to mount, then could the most recent usable snapshot be used as
-> a fallback, or is it likely to be equally damaged or inconsistent?)
-> 
-
-In your case, when we finish creating a snapshot, the whole FS is at a
-stable status(both metadata and data is safely written into the disk).
-
-So yes, you can use the latest snapshot as a fallback or backup or something.
-
-I'd note here, btrfs somewhat suffers from ENOSPC cases, where it may
-recover itself or get you into readonly state, but you data is safe at least.
-
-thanks,
-liubo
-
-> Obviously a UPS or other form of fallback power is preferable to no
-> UPS if power outages are a concern, so as to allow a controlled system
-> shutdown (or fail-over to a more long-term backup power supply) in the
-> event of a prolonged power outage, but I'm wondering about situations
-> where such don't exist or even fail.
-> 
-> -- 
-> Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
->                 “People who think they know everything really annoy
->                 those of us who know we don’t.” (Bjarne Stroustrup)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

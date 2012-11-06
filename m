@@ -1,181 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:53373 "EHLO mx1.fusionio.com"
+Received: from xp-ob.rzone.de ([81.169.146.140]:24120 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1761305Ab2KANp6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Nov 2012 09:45:58 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id cH3dbEXhwJ6PYcYn (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2012 07:45:57 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: detect if the disk we are formatting is a ssd V2
-Date: Thu, 1 Nov 2012 09:51:48 -0400
-Message-ID: <1351777908-6958-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	id S1752254Ab2KFUrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Nov 2012 15:47:10 -0500
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Cc: ablock84@googlemail.com, sensille@gmx.net
+Subject: [PATCH v2 0/2] Btrfs-progs: urgent fixes for btrfs send
+Date: Tue,  6 Nov 2012 21:47:06 +0100
+Message-Id: <1352234828-9446-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SSD's do not gain anything by having metadata DUP turned on.  The underlying
-file system that is a part of all SSD's could easily map duplicate metadat
-blocks into the same erase block which effectively eliminates the benefit of
-duplicating the metadata on disk.  So detect if we are formatting a single
-SSD drive and if we are do not use DUP.  Thanks,
+After sending v1 some days ago, some onlist and offlist discussion has
+brought us to the following conclusions:
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-V1->V2: fix the case where we are formatting a file and blkid doesn't find the
-disk.
+	- we should fix it as soon as possible
+	- we should stick to the -p option (parent)
+	- we should rename the -i option (because it actually means
+	  "clone source")
 
- Makefile            |    2 +-
- man/mkfs.btrfs.8.in |    5 +++-
- mkfs.c              |   63 ++++++++++++++++++++++++++++++++++++++++++++++++--
- 3 files changed, 65 insertions(+), 5 deletions(-)
+This is what v2 of this patch set is doing, besides fixing one and a
+half bugs along the way: We turn -i into -c, emitting a fatal warning
+should anybody use -i. As argued in the v1 cover letter, we should
+really do this change now in order to avoid a lot of confused users that
+"btrfs send -i" is doing things differently in a subtle way from what
+"zfs send -i" is doing. We're better off coming up with our own
+terminology, thus offering -p and -c options (both can be used to ask
+for an incremental send stream, see the usage changes in patch 1),
+without providing a "send -i" option at all.
 
-diff --git a/Makefile b/Makefile
-index 4894903..c7fd97d 100644
---- a/Makefile
-+++ b/Makefile
-@@ -67,7 +67,7 @@ btrfsck: $(objects) btrfsck.o
- 	$(CC) $(CFLAGS) -o btrfsck btrfsck.o $(objects) $(LDFLAGS) $(LIBS)
- 
- mkfs.btrfs: $(objects) mkfs.o
--	$(CC) $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
-+	$(CC) $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS) -lblkid
- 
- btrfs-debug-tree: $(objects) debug-tree.o
- 	$(CC) $(CFLAGS) -o btrfs-debug-tree $(objects) debug-tree.o $(LDFLAGS) $(LIBS)
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 72025ed..b7bcc1b 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -47,7 +47,10 @@ Specify a label for the filesystem.
- .TP
- \fB\-m\fR, \fB\-\-metadata \fIprofile\fR
- Specify how metadata must be spanned across the devices specified. Valid
--values are raid0, raid1, raid10 or single.
-+values are raid0, raid1, raid10, single or dup.  Single device will have dup
-+set by default except in the case of SSDs which will default to single.  This is
-+because SSDs can remap blocks internally so duplicate blocks could end up in the
-+same erase block which negates the benefits of doing metadata duplication.
- .TP
- \fB\-M\fR, \fB\-\-mixed\fR
- Mix data and metadata chunks together for more efficient space 
-diff --git a/mkfs.c b/mkfs.c
-index 47f0c9c..72f10fa 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -37,6 +37,7 @@
- #include <linux/fs.h>
- #include <ctype.h>
- #include <attr/xattr.h>
-+#include <blkid/blkid.h>
- #include "kerncompat.h"
- #include "ctree.h"
- #include "disk-io.h"
-@@ -234,7 +235,7 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
- static int create_raid_groups(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root, u64 data_profile,
- 			      int data_profile_opt, u64 metadata_profile,
--			      int metadata_profile_opt, int mixed)
-+			      int metadata_profile_opt, int mixed, int ssd)
- {
- 	u64 num_devices = btrfs_super_num_devices(&root->fs_info->super_copy);
- 	u64 allowed;
-@@ -245,8 +246,12 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
- 	 * For mixed groups defaults are single/single.
- 	 */
- 	if (!metadata_profile_opt && !mixed) {
-+		if (num_devices == 1 && ssd)
-+			printf("Detected a SSD, turning off metadata "
-+			       "duplication.  Mkfs with -m dup if you want to "
-+			       "force metadata duplication.\n");
- 		metadata_profile = (num_devices > 1) ?
--			BTRFS_BLOCK_GROUP_RAID1 : BTRFS_BLOCK_GROUP_DUP;
-+			BTRFS_BLOCK_GROUP_RAID1 : (ssd) ? 0: BTRFS_BLOCK_GROUP_DUP;
- 	}
- 	if (!data_profile_opt && !mixed) {
- 		data_profile = (num_devices > 1) ?
-@@ -1222,6 +1227,54 @@ static int check_leaf_or_node_size(u32 size, u32 sectorsize)
- 	return 0;
- }
- 
-+static int is_ssd(const char *file)
-+{
-+	char *devname;
-+	blkid_probe probe;
-+	char *dev;
-+	char path[PATH_MAX];
-+	dev_t disk;
-+	int fd;
-+	char rotational;
-+
-+	probe = blkid_new_probe_from_filename(file);
-+	if (!probe)
-+		return 0;
-+
-+	/*
-+	 * We want to use blkid_devno_to_wholedisk() but it's broken for some
-+	 * reason on F17 at least so we'll do this trickery
-+	 */
-+	disk = blkid_probe_get_wholedisk_devno(probe);
-+	if (!disk)
-+		return 0;
-+
-+	devname = blkid_devno_to_devname(disk);
-+	if (!devname)
-+		return 0;
-+
-+	dev = strrchr(devname, '/');
-+	dev++;
-+
-+	snprintf(path, PATH_MAX, "/sys/block/%s/queue/rotational", dev);
-+
-+	free(devname);
-+	blkid_free_probe(probe);
-+
-+	fd = open(path, O_RDONLY);
-+	if (fd < 0) {
-+		return 0;
-+	}
-+
-+	if (read(fd, &rotational, sizeof(char)) < sizeof(char)) {
-+		close(fd);
-+		return 0;
-+	}
-+	close(fd);
-+
-+	return !atoi((const char *)&rotational);
-+}
-+
- int main(int ac, char **av)
- {
- 	char *file;
-@@ -1248,6 +1301,7 @@ int main(int ac, char **av)
- 	int data_profile_opt = 0;
- 	int metadata_profile_opt = 0;
- 	int nodiscard = 0;
-+	int ssd = 0;
- 
- 	char *source_dir = NULL;
- 	int source_dir_set = 0;
-@@ -1367,6 +1421,9 @@ int main(int ac, char **av)
- 			exit(1);
- 		}
- 	}
-+
-+	ssd = is_ssd(file);
-+
- 	if (mixed) {
- 		if (metadata_profile != data_profile) {
- 			fprintf(stderr, "With mixed block groups data and metadata "
-@@ -1452,7 +1509,7 @@ raid_groups:
- 	if (!source_dir_set) {
- 		ret = create_raid_groups(trans, root, data_profile,
- 				 data_profile_opt, metadata_profile,
--				 metadata_profile_opt, mixed);
-+				 metadata_profile_opt, mixed, ssd);
- 		BUG_ON(ret);
- 	}
- 
--- 
-1.7.7.6
+Jan Schmidt (2):
+  Btrfs-progs: correcting misnamed parameter options for btrfs send
+  Btrfs-progs: bugfix for subvolume parent determination in btrfs send
+
+ cmds-send.c  |   74 +++++++++++++++++++++++++++++++++-------------------------
+ send-utils.c |    4 +-
+ 2 files changed, 44 insertions(+), 34 deletions(-)
 

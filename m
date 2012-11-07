@@ -1,46 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:56003 "EHLO
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:46951 "EHLO
 	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752450Ab2KGK3q (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Nov 2012 05:29:46 -0500
-Message-ID: <509A3817.2030709@giantdisaster.de>
-Date: Wed, 07 Nov 2012 11:29:43 +0100
+	with ESMTP id S1753835Ab2KGKaH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Nov 2012 05:30:07 -0500
+Message-ID: <509A382E.2040904@giantdisaster.de>
+Date: Wed, 07 Nov 2012 11:30:06 +0100
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: Zach Brown <zab@zabbo.net>
-CC: Hugo Mills <hugo@carfax.org.uk>, Bart Noordervliet <bart@noordervliet.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 00/26] Btrfs: Add device replace code
-References: <cover.1352214751.git.sbehrens@giantdisaster.de> <CAGy7UtjR+kZoBYWaeg=-jHbJHQh4pe3Jt5cwX-rTQEBHFkQ-YQ@mail.gmail.com> <50995DAB.6070103@giantdisaster.de> <20121106192054.GC29581@carfax.org.uk> <20121106224836.GQ31248@lenny.home.zabbo.net>
-In-Reply-To: <20121106224836.GQ31248@lenny.home.zabbo.net>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 19/26] Btrfs: add code to scrub to copy read data to another
+ disk
+References: <cover.1352214751.git.sbehrens@giantdisaster.de> <cef5c0f66f73ef151157fa524dede94eb29ae882.1352217244.git.sbehrens@giantdisaster.de> <5099ABC3.6050806@jp.fujitsu.com>
+In-Reply-To: <5099ABC3.6050806@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 6 Nov 2012 14:48:36 -0800, Zach Brown wrote:
->>> Yes, this happens on 32 bit builds, not on 64 bit builds. If you
->>> look at the source code, the compiler is obviously wrong (or I am
->>> blind).
->>>
->>>         ret = btrfs_dev_replace_find_srcdev(root, args->start.srcdevid,
->>>                                             args->start.srcdev_name,
->>>                                             &src_device);
->>>         mutex_unlock(&fs_info->volume_mutex);
->>>         if (ret) {  <-- this is line 344
->>>
->>> But thanks for the feedback anyway!
->>
->>    This usually means that somewhere in the call tree under
->> btrfs_dev_replace_find_srcdev(), there's a way that the function can
->> return without returning a value
+On Wed, 07 Nov 2012 09:30:59 +0900, Tsutomu Itoh wrote:
+> (2012/11/07 1:38), Stefan Behrens wrote:
+>> +static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+>> +				    struct scrub_page *spage)
+>> +{
+>> +	struct scrub_wr_ctx *wr_ctx = &sctx->wr_ctx;
+>> +	struct scrub_bio *sbio;
+>> +	int ret;
+>> +
+>> +	mutex_lock(&wr_ctx->wr_lock);
+>> +again:
+>> +	if (!wr_ctx->wr_curr_bio) {
+>> +		wr_ctx->wr_curr_bio = kzalloc(sizeof(*wr_ctx->wr_curr_bio),
+>> +					      GFP_NOFS);
+>> +		if (!wr_ctx->wr_curr_bio)
 > 
-> Indeed, and that's obviously the case in 15/26 with
-> btrfs_dev_replace_find_srcdev() when btrfs_find_device() returns a
-> device.
+> I think mutex_unlock(&wr_ctx->wr_lock) is necessary before it returns.
 > 
-> *mumbles something about the reason for ERR_PTR semantics*
+>> +			return -ENOMEM;
 
-Thanks Bart, Hugo and Zach!
+Thanks Tsutomu!
 I'll fix it in
 git://btrfs.giantdisaster.de/git/btrfs device-replace
 

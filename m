@@ -1,57 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:43405 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753467Ab2KHEr7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Nov 2012 23:47:59 -0500
-Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id F2C283EE0AE
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Nov 2012 13:47:58 +0900 (JST)
-Received: from smail (m2 [127.0.0.1])
-	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id DB2C845DE4D
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Nov 2012 13:47:58 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id C4B6D45DD74
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Nov 2012 13:47:58 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id B846A1DB803A
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Nov 2012 13:47:58 +0900 (JST)
-Received: from m1001.s.css.fujitsu.com (m1001.s.css.fujitsu.com [10.240.81.139])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 709B91DB8043
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Nov 2012 13:47:58 +0900 (JST)
-Message-Id: <201211080447.AA00016@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Thu, 08 Nov 2012 13:47:33 +0900
-To: chris.mason@fusionio.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: set hole punching time properly
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:43178 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752787Ab2KHV2y (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Nov 2012 16:28:54 -0500
+Received: by mail-bk0-f46.google.com with SMTP id jk13so1398570bkc.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Nov 2012 13:28:53 -0800 (PST)
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: stable@kernel.org, Alexander Block <ablock84@googlemail.com>
+Subject: [PATCH] Btrfs: merge inode_list in __merge_refs
+Date: Thu,  8 Nov 2012 22:27:24 +0100
+Message-Id: <1352410044-10547-1-git-send-email-ablock84@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even if the hole punching is executed, the modification time of the
-file is not updated.
-So, current time is set to inode.
+When __merge_refs merges two refs, it is also needed to merge the
+inode_list of both refs. Otherwise we have missed backrefs and memory
+leaks. This happens for example if two inodes share an extent and
+both lie in the same leaf and thus also have the same parent.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Alexander Block <ablock84@googlemail.com>
+Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/file.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/backref.c |   13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 110d3cb..15fecc1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1964,6 +1964,9 @@ out_trans:
- 	if (!trans)
- 		goto out_free;
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 208d8aa..aea6d2d 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -461,6 +461,7 @@ static int __merge_refs(struct list_head *head, int mode)
+ 		     pos2 = n2, n2 = pos2->next) {
+ 			struct __prelim_ref *ref2;
+ 			struct __prelim_ref *xchg;
++			struct extent_inode_elem *eie;
  
-+	inode_inc_iversion(inode);
-+	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+ 			ref2 = list_entry(pos2, struct __prelim_ref, list);
+ 
+@@ -472,12 +473,20 @@ static int __merge_refs(struct list_head *head, int mode)
+ 					ref1 = ref2;
+ 					ref2 = xchg;
+ 				}
+-				ref1->count += ref2->count;
+ 			} else {
+ 				if (ref1->parent != ref2->parent)
+ 					continue;
+-				ref1->count += ref2->count;
+ 			}
 +
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	ret = btrfs_update_inode(trans, root, inode);
- 	nr = trans->blocks_used;
++			eie = ref1->inode_list;
++			while (eie && eie->next)
++				eie = eie->next;
++			if (eie)
++				eie->next = ref2->inode_list;
++			else
++				ref1->inode_list = ref2->inode_list;
++			ref1->count += ref2->count;
++
+ 			list_del(&ref2->list);
+ 			kfree(ref2);
+ 		}
 -- 
-1.7.12.2
+1.7.10.4
 

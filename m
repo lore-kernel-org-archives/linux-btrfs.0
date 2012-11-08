@@ -1,57 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga11.intel.com ([192.55.52.93]:28725 "EHLO mga11.intel.com"
+Received: from mx1.redhat.com ([209.132.183.28]:7422 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751714Ab2KHLzk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Nov 2012 06:55:40 -0500
-Date: Thu, 8 Nov 2012 19:55:35 +0800
-From: Fengguang Wu <fengguang.wu@intel.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: fs/btrfs/dev-replace.c:486:17: sparse: incompatible types in
- comparison expression (different address spaces)
-Message-ID: <20121108115535.GB7277@localhost>
-References: <20121108073541.GA30285@localhost>
- <509B98B9.1020509@giantdisaster.de>
+	id S1751486Ab2KHRGM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Nov 2012 12:06:12 -0500
+Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id qA8H6CMT016983
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Nov 2012 12:06:12 -0500
+Message-ID: <509BE682.6010008@redhat.com>
+Date: Thu, 08 Nov 2012 18:06:10 +0100
+From: Ondrej Kozina <okozina@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <509B98B9.1020509@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+CC: lczerner@redhat.com
+Subject: question about btrfsck/mount behavior on corrupted fs
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Hi Fengguang,
- 
-Hi Stefan!
+Hi all,
 
-> Assuming that your script performs a periodic git fetch and git reset,
-> and then starts compile runs on different architectures, the only
-> explanation that I have is that something went wrong with the git
-> operation in your script. It looks like some C source files have been
-> updated, but the header files are old. Some kind of inconsistency that
-> either a git reset --hard should fix, or rm -rf . and git clone to start
-> from the beginning.
-> 
-> Could you check it please?
+I've been playing with btrfs resize recently and run into strange 
+looking behavior to me. One of my simple test scenario was following:
 
-That's definitely good suggestion! I've added the check before each make
-to make sure the tree is in a clean state:
+- partition some block device (lets say sda sectors 2-2000 are sda1)
+- try to create btrfs on top of it (just mkfs.btrfs /dev/sda1)
+- fill the fs with data
+- unmount the device
+- let's simulate usual mistake here: downsize the partition with btrfs 
+filesystem w/o proper btrfs resize command. In fact I moved the 
+beginning of the sda2 partition into middle of former sda1. so now it 
+looks like: 2-1000 sda1, 1001-2000 sda2.
+- remount the fs
 
-git_check_reset()
-{       
-        [[ $(git --no-pager diff) ]] && {
-                notice "unexpected modified work tree"
-                dump_stack
-                git --no-pager diff
-                git reset --hard
-        }
-}       
+I was surprised both commands btrfsck and mount were successful w/o any 
+error report even in syslog. Does it work as intended? Do you plan to 
+support some sort of checks during mount/btrfsck? Possibly a new feature 
+in btrfsck utility to warn the user something ugly happened to his fs? 
+Is there any way to fix broken fs like this (supposing the cut off area 
+didn't contain allocated blocks)?
 
-> And could you please point me to some documentation, how this (very
-> useful !) service from Intel is working?
-
-Sure (and thanks!). Here is a nice article:
-
-KS2012: Kernel build/boot testing
-https://lwn.net/Articles/514278/
-
-Thanks,
-Fengguang
+Kind regards
+Ondrej

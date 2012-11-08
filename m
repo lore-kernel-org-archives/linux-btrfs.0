@@ -1,39 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:33325 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754689Ab2KHA7s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Nov 2012 19:59:48 -0500
-Date: Wed, 7 Nov 2012 19:59:46 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 00/26] Btrfs: Add device replace code
-Message-ID: <20121108005946.GD16468@shiny>
-References: <cover.1352214751.git.sbehrens@giantdisaster.de>
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:57361 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752286Ab2KHMuU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Nov 2012 07:50:20 -0500
+Received: by mail-ee0-f46.google.com with SMTP id b15so1518243eek.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Nov 2012 04:50:19 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <cover.1352214751.git.sbehrens@giantdisaster.de>
+In-Reply-To: <509A5E4F.7090408@giantdisaster.de>
+References: <cover.1352214751.git.sbehrens@giantdisaster.de>
+	<5099C40C.6030003@jp.fujitsu.com>
+	<509A5E4F.7090408@giantdisaster.de>
+Date: Thu, 8 Nov 2012 13:50:19 +0100
+Message-ID: <CAJHuE_AD+EkAwKdMbLQwkRNzc+6qc9=xNziQfREV--GLUcz7Sw@mail.gmail.com>
+Subject: Re: [PATCH 00/26] Btrfs: Add device replace code
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 06, 2012 at 09:38:18AM -0700, Stefan Behrens wrote:
-> This patch series adds support for replacing disks at runtime.
-> 
-> It replaces the following steps in case a disk was lost:
->     mount ... -o degraded
->     btrfs device add new_disk
->     btrfs device delete missing
-> 
-> Or in case a disk just needs to be replaced because the error rate
-> is increasing:
->     btrfs device add new_disk
->     btrfs device delete old_disk
-> 
-> Instead just run:
->     btrfs replace mountpoint old_disk new_disk
-> 
+Hi Stefan,
 
-This is just fantastic.  I'm pulling it down and doing a test
-integration with RAID56.  More comments as I hash through things.
+great work. However I have a suggestion: what about putting all the
+command under 'device' sub commands: something like:
 
--chris
+- btrfs device replace <old> <new> </path>
+
+- btrfs device status </path>
+
+Where "btrfs device status" would show only the status of the
+"replacing" operation; but in the future it could show also the status
+of the "delete" command (which it is the only other "device
+sub-command" which needs time to complete).
+
+Of course I am not asking to complete the "btrfs device status" part
+for the "btrfs device delete" command. This could be implemented in a
+second time.
+
+I think that so "replace" would be the natral extension to the "add"
+and "delete" subcommands.
+
+BR
+G.Baroncelli
+
+
+On Wed, Nov 7, 2012 at 2:12 PM, Stefan Behrens
+<sbehrens@giantdisaster.de> wrote:
+> On Wed, 07 Nov 2012 11:14:36 +0900, Tsutomu Itoh wrote:
+>> (2012/11/07 1:38), Stefan Behrens wrote:
+>>> replace start [-Bfr] <path> <srcdev>|<devid> <targetdev>
+>>
+>> I think that
+>>  "btrfs replace start [-Bfr] <srcdev>|<devid> <targetdev> <path>"
+>> of the same synopsis as other subcommands is better.
+>
+> You are right. 'btrfs device add' and 'btrfs device delete' have the
+> path at the end and the device in front, and there is no good reason to
+> not make it look equally. I will change it accordingly and post a V2 of
+> the Btrfs-progs patch within the next few days.
+>
+> Thanks!
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

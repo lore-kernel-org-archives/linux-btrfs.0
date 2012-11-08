@@ -1,60 +1,350 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:41997 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752935Ab2KHCMb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Nov 2012 21:12:31 -0500
-Date: Thu, 8 Nov 2012 13:12:10 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: cwillu <cwillu@cwillu.com>
-Cc: dave@jikos.cz, Alex <alex@bpmit.com>, linux-btrfs@vger.kernel.org
-Subject: Re: (late) REQUEST: Default mkfs.btrfs block size
-Message-ID: <20121108021210.GK6434@dastard>
-References: <loom.20121031T131532-168@post.gmane.org>
- <20121105160649.GM3102@twin.jikos.cz>
- <CAE5mzvjKaXki3fPXOMVGt_h6XO+a--J_ADU2AYwz3eCWUgp6XA@mail.gmail.com>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:47915 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752549Ab2KHCwx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Nov 2012 21:52:53 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAE5mzvjKaXki3fPXOMVGt_h6XO+a--J_ADU2AYwz3eCWUgp6XA@mail.gmail.com>
+In-Reply-To: <20121107184952.GA4143@blackbox.djwong.org>
+References: <1351485061-12297-1-git-send-email-zwu.kernel@gmail.com>
+	<1351485061-12297-4-git-send-email-zwu.kernel@gmail.com>
+	<20121106224539.GB4255@blackbox.djwong.org>
+	<CAEH94LgDuTqV2sddxs9mvp-2bKjwcSPag7iXa4UFYCTixwJFFA@mail.gmail.com>
+	<20121107184952.GA4143@blackbox.djwong.org>
+Date: Thu, 8 Nov 2012 10:52:51 +0800
+Message-ID: <CAEH94LiOsb_yOkuwUUFv0-w=CYTmrJUHQ053dtekF8Sw00A+_A@mail.gmail.com>
+Subject: Re: [RFC v4+ hot_track 03/19] vfs: add I/O frequency update function
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
+        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
+        wuzhy@linux.vnet.ibm.com, wenqing.lz@taobao.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 05, 2012 at 10:25:38AM -0600, cwillu wrote:
-> On Mon, Nov 5, 2012 at 10:06 AM, David Sterba <dave@jikos.cz> wrote:
-> > On Wed, Oct 31, 2012 at 12:20:39PM +0000, Alex wrote:
-> >> As one 'stuck' with 4k leaves on my main machine for the moment, can I request
-> >> the btrfs-progs v0.20 defaults to more efficient decent block sizes before
-> >> release. Most distro install programs for the moment don't give access to the
-> >> options at install time and there seems to be is a significant advantage to 16k
-> >> or 32k
-> >
-> > IMHO this should be fixed inside the installer, changing defaults for a
-> > core utility will affect everybody. 4k is the most tested option and
-> > thus can be considered "safe for everybody".
-> >
-> > The installer may let you to enter a shell and create the filesystem by
-> > hand, then point it to use it for installation.
-> 
-> If we know a better setting, we should default to it.  Punting the
-> decision to the distro just means I'll spend the next 3 years telling
-> people "yeah, distro X doesn't set it to the recommended setting
-> (which isn't the mkfs default), and there's no way to change it
-> without wiping and reinstalling using manual partitioning blah blah
-> blah."
+On Thu, Nov 8, 2012 at 2:49 AM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
+> On Wed, Nov 07, 2012 at 04:27:05PM +0800, Zhi Yong Wu wrote:
+>> On Wed, Nov 7, 2012 at 6:45 AM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
+>> > On Mon, Oct 29, 2012 at 12:30:45PM +0800, zwu.kernel@gmail.com wrote:
+>> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>> >>
+>> >>   Add some util helpers to update access frequencies
+>> >> for one file or its range.
+>> >>
+>> >> Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>> >> ---
+>> >>  fs/hot_tracking.c            |  179 ++++++++++++++++++++++++++++++++++++++++++
+>> >>  fs/hot_tracking.h            |    7 ++
+>> >>  include/linux/hot_tracking.h |    2 +
+>> >>  3 files changed, 188 insertions(+), 0 deletions(-)
+>> >>
+>> >> diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+>> >> index 68591f0..0a7d9a3 100644
+>> >> --- a/fs/hot_tracking.c
+>> >> +++ b/fs/hot_tracking.c
+>> >> @@ -172,6 +172,137 @@ static void hot_inode_tree_exit(struct hot_info *root)
+>> >>       }
+>> >>  }
+>> >>
+>> >> +struct hot_inode_item
+>> >> +*hot_inode_item_find(struct hot_info *root, u64 ino)
+>> >> +{
+>> >> +     struct hot_inode_item *he;
+>> >> +     int ret;
+>> >> +
+>> >> +again:
+>> >> +     spin_lock(&root->lock);
+>> >> +     he = radix_tree_lookup(&root->hot_inode_tree, ino);
+>> >> +     if (he) {
+>> >> +             kref_get(&he->hot_inode.refs);
+>> >> +             spin_unlock(&root->lock);
+>> >> +             return he;
+>> >> +     }
+>> >> +     spin_unlock(&root->lock);
+>> >> +
+>> >> +     he = kmem_cache_zalloc(hot_inode_item_cachep,
+>> >> +                             GFP_KERNEL | GFP_NOFS);
+>> >> +     if (!he)
+>> >> +             return ERR_PTR(-ENOMEM);
+>> >> +
+>> >> +     hot_inode_item_init(he, ino, &root->hot_inode_tree);
+>> >> +
+>> >> +     ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
+>> >> +     if (ret) {
+>> >> +             kmem_cache_free(hot_inode_item_cachep, he);
+>> >> +             return ERR_PTR(ret);
+>> >> +     }
+>> >> +
+>> >> +     spin_lock(&root->lock);
+>> >> +     ret = radix_tree_insert(&root->hot_inode_tree, ino, he);
+>> >> +     if (ret == -EEXIST) {
+>> >> +             kmem_cache_free(hot_inode_item_cachep, he);
+>> >> +             spin_unlock(&root->lock);
+>> >> +             radix_tree_preload_end();
+>> >> +             goto again;
+>> >> +     }
+>> >> +     spin_unlock(&root->lock);
+>> >> +     radix_tree_preload_end();
+>> >> +
+>> >> +     kref_get(&he->hot_inode.refs);
+>> >> +     return he;
+>> >> +}
+>> >> +EXPORT_SYMBOL_GPL(hot_inode_item_find);
+>> >> +
+>> >> +static struct hot_range_item
+>> >> +*hot_range_item_find(struct hot_inode_item *he,
+>> >> +                     u32 start)
+>> >> +{
+>> >> +     struct hot_range_item *hr;
+>> >> +     int ret;
+>> >> +
+>> >> +again:
+>> >> +     spin_lock(&he->lock);
+>> >> +     hr = radix_tree_lookup(&he->hot_range_tree, start);
+>> >> +     if (hr) {
+>> >> +             kref_get(&hr->hot_range.refs);
+>> >> +             spin_unlock(&he->lock);
+>> >> +             return hr;
+>> >> +     }
+>> >> +     spin_unlock(&he->lock);
+>> >> +
+>> >> +     hr = kmem_cache_zalloc(hot_range_item_cachep,
+>> >> +                             GFP_KERNEL | GFP_NOFS);
+>> >> +     if (!hr)
+>> >> +             return ERR_PTR(-ENOMEM);
+>> >> +
+>> >> +     hot_range_item_init(hr, start, he);
+>> >> +
+>> >> +     ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
+>> >> +     if (ret) {
+>> >> +             kmem_cache_free(hot_range_item_cachep, hr);
+>> >> +             return ERR_PTR(ret);
+>> >> +     }
+>> >> +
+>> >> +     spin_lock(&he->lock);
+>> >> +     ret = radix_tree_insert(&he->hot_range_tree, start, hr);
+>> >> +     if (ret == -EEXIST) {
+>> >> +             kmem_cache_free(hot_range_item_cachep, hr);
+>> >> +             spin_unlock(&he->lock);
+>> >> +             radix_tree_preload_end();
+>> >> +             goto again;
+>> >> +     }
+>> >> +     spin_unlock(&he->lock);
+>> >> +     radix_tree_preload_end();
+>> >> +
+>> >> +     kref_get(&hr->hot_range.refs);
+>> >> +     return hr;
+>> >> +}
+>> >> +
+>> >> +/*
+>> >> + * This function does the actual work of updating
+>> >> + * the frequency numbers, whatever they turn out to be.
+>> >> + */
+>> >> +static u64 hot_average_update(struct timespec old_atime,
+>> >> +             struct timespec cur_time, u64 old_avg)
+>> >> +{
+>> >> +     struct timespec delta_ts;
+>> >> +     u64 new_avg;
+>> >> +     u64 new_delta;
+>> >> +
+>> >> +     delta_ts = timespec_sub(cur_time, old_atime);
+>> >> +     new_delta = timespec_to_ns(&delta_ts) >> FREQ_POWER;
+>> >> +
+>> >> +     new_avg = (old_avg << FREQ_POWER) - old_avg + new_delta;
+>> >> +     new_avg = new_avg >> FREQ_POWER;
+>> >> +
+>> >> +     return new_avg;
+>> >> +}
+>> >> +
+>> >> +static void hot_freq_data_update(struct hot_freq_data *freq_data, bool write)
+>> >> +{
+>> >> +     struct timespec cur_time = current_kernel_time();
+>> >> +
+>> >> +     if (write) {
+>> >> +             freq_data->nr_writes += 1;
+>> >> +             freq_data->avg_delta_writes = hot_average_update(
+>> >> +                             freq_data->last_write_time,
+>> >> +                             cur_time,
+>> >> +                             freq_data->avg_delta_writes);
+>> >> +             freq_data->last_write_time = cur_time;
+>> >> +     } else {
+>> >> +             freq_data->nr_reads += 1;
+>> >> +             freq_data->avg_delta_reads = hot_average_update(
+>> >> +                             freq_data->last_read_time,
+>> >> +                             cur_time,
+>> >> +                             freq_data->avg_delta_reads);
+>> >
+>> > I think you could just pass in a pointer to
+>> > freq_data->avg_delta_{writes,reads} here...
+>> why?
+>
+> freq_data->avg_delta_{reads,writes} seems to be an in/out parameter, but by
+> specifying it once as an in parameter and again as an lvalue, you're increasing
+> the chances that someone will screw it up some time later -- you're not
+> preventing me from accidentally writing this:
+>
+> freq_data->avg_delta_writes = hot_average_update(..., freq_data->avg_delta_reads);
+>
+> ...which (at least in my head) becomes an easier mistake to make once you start
+> mixing in the function pointers a few patches later, and (my) brain has to wrap
+> itself around all the punctuation.
+>
+>> >> +             freq_data->last_read_time = cur_time;
+>> >> +     }
+>> >> +}
+>> >> +
+>> >>  /*
+>> >>   * Initialize kmem cache for hot_inode_item and hot_range_item.
+>> >>   */
+>> >> @@ -199,6 +330,54 @@ err:
+>> >>  EXPORT_SYMBOL_GPL(hot_cache_init);
+>> >>
+>> >>  /*
+>> >> + * Main function to update access frequency from read/writepage(s) hooks
+>> >> + */
+>> >> +void hot_update_freqs(struct inode *inode, u64 start,
+>> >> +                     u64 len, int rw)
+>> >> +{
+>> >> +     struct hot_info *root = inode->i_sb->s_hot_root;
+>> >> +     struct hot_inode_item *he;
+>> >> +     struct hot_range_item *hr;
+>> >> +     u32 cur, end;
+>> >> +
+>> >> +     if (!root || (len == 0))
+>> >> +             return;
+>> >> +
+>> >> +     he = hot_inode_item_find(root, inode->i_ino);
+>> >> +     if (IS_ERR(he)) {
+>> >> +             WARN_ON(1);
+>> >> +             return;
+>> >> +     }
+>> >> +
+>> >> +     spin_lock(&he->hot_inode.lock);
+>> >> +     hot_freq_data_update(&he->hot_inode.hot_freq_data, rw);
+>> >> +     spin_unlock(&he->hot_inode.lock);
+>> >> +
+>> >> +     /*
+>> >> +      * Align ranges on RANGE_SIZE boundary
+>> >> +      * to prevent proliferation of range structs
+>> >> +      */
+>> >> +     end = (start + len + RANGE_SIZE - 1) >> RANGE_BITS;
+>> >> +     for (cur = (start >> RANGE_BITS); cur < end; cur++) {
+>> >
+>> > Hm... start is u64, cur is u32, RANGE_BITS is 20.  Doesn't this overflow if,
+>> > say, I have a sparse file with blocks way out at 2^53 bytes?
+>> ah, good catch, thanks.
+>
+> Actually, I should go further -- why not use loff_t?  The rest of the fs/ code
+> does.
+done, thanks.
+>
+>> > Also, RANGE_SIZE means that the hot tracking range granularity is 1MiB?  How
+>> yes.
+>> > did you decide on that?  Will we ever want to change that?
+>> It is one assumption, do you think 1 MB is not appropriate? Do you
+>> mean to add one proc file interface for it?
+>
+> I don't know about a procfs interface -- debugfs, perhaps?
+>
+> But actually, I was thinking that the fs might have a better idea of the range
+> granularity that it wants to handle.  Possibly it might be useful to try to
+> align with raid stripes or other topology, too... though that's difficult.
+>
+> Also, for the fses that use allocation units (clusters), it might be useful
+> to collect heat data per-cluster.
+>
+> On the other hand, it might not make much of a difference since most files tend
+> to fit in ~4K anyway, and the extra granularity will increase memory
+> consumption for large files.  I don't mind having a 1MB default, but having a
+> knob would certainly make it easier to tune, or in the future, to test if that
+> 1MB default still makes sense.
+thanks.
+>
+> --D
+>
+>> >
+>> >> +             hr = hot_range_item_find(he, cur);
+>> >> +             if (IS_ERR(hr)) {
+>> >> +                     WARN_ON(1);
+>> >
+>> > WARN(1, "hot_range_item_find returns %d\n", PTR_ERR(hr)); ?
+>> OK, done.
+>> >
+>> > --D
+>> >
+>> >> +                     hot_inode_item_put(he);
+>> >> +                     return;
+>> >> +             }
+>> >> +
+>> >> +             spin_lock(&hr->hot_range.lock);
+>> >> +             hot_freq_data_update(&hr->hot_range.hot_freq_data, rw);
+>> >> +             spin_unlock(&hr->hot_range.lock);
+>> >> +
+>> >> +             hot_range_item_put(hr);
+>> >> +     }
+>> >> +
+>> >> +     hot_inode_item_put(he);
+>> >> +}
+>> >> +EXPORT_SYMBOL_GPL(hot_update_freqs);
+>> >> +
+>> >> +/*
+>> >>   * Initialize the data structures for hot data tracking.
+>> >>   */
+>> >>  int hot_track_init(struct super_block *sb)
+>> >> diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
+>> >> index e7ba121..cc4666e 100644
+>> >> --- a/fs/hot_tracking.h
+>> >> +++ b/fs/hot_tracking.h
+>> >> @@ -20,6 +20,13 @@
+>> >>  #define FREQ_DATA_TYPE_INODE (1 << 0)
+>> >>  #define FREQ_DATA_TYPE_RANGE (1 << 1)
+>> >>
+>> >> +/* size of sub-file ranges */
+>> >> +#define RANGE_BITS 20
+>> >> +#define RANGE_SIZE (1 << RANGE_BITS)
+>> >> +
+>> >> +#define FREQ_POWER 4
+>> >> +
+>> >>  void hot_inode_item_put(struct hot_inode_item *he);
+>> >> +struct hot_inode_item *hot_inode_item_find(struct hot_info *root, u64 ino);
+>> >>
+>> >>  #endif /* __HOT_TRACKING__ */
+>> >> diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+>> >> index 4233207..e2d6028 100644
+>> >> --- a/include/linux/hot_tracking.h
+>> >> +++ b/include/linux/hot_tracking.h
+>> >> @@ -71,5 +71,7 @@ struct hot_info {
+>> >>  extern void __init hot_cache_init(void);
+>> >>  extern int hot_track_init(struct super_block *sb);
+>> >>  extern void hot_track_exit(struct super_block *sb);
+>> >> +extern void hot_update_freqs(struct inode *inode, u64 start,
+>> >> +                             u64 len, int rw);
+>> >>
+>> >>  #endif  /* _LINUX_HOTTRACK_H */
+>> >> --
+>> >> 1.7.6.5
+>> >>
+>> >> --
+>> >> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+>> >> the body of a message to majordomo@vger.kernel.org
+>> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>> --
+>> Regards,
+>>
+>> Zhi Yong Wu
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-ext4" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Totally agree - this is the policy that we follow for mkfs.xfs
-defaults. i.e. If we know it is better for the majority of
-workloads, and we have confidence it's not going to cause lots of
-new problems or regressions, then it should be the default setting.
 
-This is also the reason that we can say "use the defaults" to most
-questions about "what is optimal?". i.e:
 
-http://xfs.org/index.php/XFS_FAQ#Q:_I_want_to_tune_my_XFS_filesystems_for_.3Csomething.3E
-
-Cheers,
-
-Dave.
 -- 
-Dave Chinner
-david@fromorbit.com
+Regards,
+
+Zhi Yong Wu

@@ -1,33 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:63898 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751321Ab2KIHBS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Nov 2012 02:01:18 -0500
-Received: by mail-gh0-f174.google.com with SMTP id g15so759691ghb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Nov 2012 23:01:17 -0800 (PST)
-Date: Fri, 9 Nov 2012 08:01:29 +0100
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Alexander Block <ablock84@googlemail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        stable@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: merge inode_list in __merge_refs
-Message-ID: <20121109070129.GA1199@kroah.com>
-References: <1352410044-10547-1-git-send-email-ablock84@googlemail.com>
- <CAB9VWqAJZCr5HiHwpisiuKNq0Rarba9YL9SfxudssR9YcQ75sA@mail.gmail.com>
+Received: from loup.kjorling.se ([87.237.208.114]:57414 "EHLO loup.kjorling.se"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750976Ab2KIKC4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Nov 2012 05:02:56 -0500
+Date: Fri, 9 Nov 2012 10:02:27 +0000
+From: Michael =?utf-8?B?S2rDtnJsaW5n?= <michael@kjorling.se>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: Goffredo Baroncelli <kreijack@gmail.com>,
+        Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/26] Btrfs: Add device replace code
+Message-ID: <20121109100227.GF9133@yeono.kjorling.se>
+References: <cover.1352214751.git.sbehrens@giantdisaster.de>
+ <5099C40C.6030003@jp.fujitsu.com>
+ <509A5E4F.7090408@giantdisaster.de>
+ <CAJHuE_AD+EkAwKdMbLQwkRNzc+6qc9=xNziQfREV--GLUcz7Sw@mail.gmail.com>
+ <509BEC60.9080200@giantdisaster.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAB9VWqAJZCr5HiHwpisiuKNq0Rarba9YL9SfxudssR9YcQ75sA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <509BEC60.9080200@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 08, 2012 at 10:35:19PM +0100, Alexander Block wrote:
-> 
-> Used wrong CC for stable list. Corrected now.
+On 8 Nov 2012 18:31 +0100, from sbehrens@giantdisaster.de (Stefan Behrens):
+> "btrfs device replace cancel <path>"
+> was the point when I gave up putting it below the "device" commands. IMO
+> that's just too long, too much to type.
 
-<formletter>
+How often is one going to type that? I like the idea of consistency
+with add/delete, here, since it really amounts to largely the same
+thing.
 
-This is not the correct way to submit patches for inclusion in the
-stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
-for how to do this properly.
-
-</formletter>
+-- 
+Michael Kjörling • http://michael.kjorling.se • michael@kjorling.se
+                “People who think they know everything really annoy
+                those of us who know we don’t.” (Bjarne Stroustrup)

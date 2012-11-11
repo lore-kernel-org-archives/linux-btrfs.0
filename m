@@ -1,38 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:60217 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751346Ab2KKO05 convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:43540 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751839Ab2KKPN1 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Nov 2012 09:26:57 -0500
-Message-ID: <509FB5AE.3030504@petaramesh.org>
-Date: Sun, 11 Nov 2012 15:26:54 +0100
-From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
+	Sun, 11 Nov 2012 10:13:27 -0500
+Received: by mail-wi0-f172.google.com with SMTP id hm6so1790424wib.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2012 07:13:25 -0800 (PST)
 MIME-Version: 1.0
-To: Bart Noordervliet <bart@noordervliet.net>
-CC: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <509FB5AE.3030504@petaramesh.org>
+References: <509ED1D6.8010903@petaramesh.org> <CAGy7Utg5eMfHy+6OghTTDeHznnSvv2Ze11jCecLSLsVEufugeA@mail.gmail.com>
+ <509FB2A0.4030504@petaramesh.org> <CAGy7UtgrdGpC5uav0m0yX1oJ47OR6WsX0vOtKu4p5umS4hZUtw@mail.gmail.com>
+ <509FB5AE.3030504@petaramesh.org>
+From: Bart Noordervliet <bart@noordervliet.net>
+Date: Sun, 11 Nov 2012 16:13:05 +0100
+Message-ID: <CAGy7Utg1QPk73AxmYSMFc97BN+9yYU0P-wNexvDOhKD6YOR--Q@mail.gmail.com>
 Subject: Re: BTRFS cache problem
-References: <509ED1D6.8010903@petaramesh.org> <CAGy7Utg5eMfHy+6OghTTDeHznnSvv2Ze11jCecLSLsVEufugeA@mail.gmail.com> <509FB2A0.4030504@petaramesh.org> <CAGy7UtgrdGpC5uav0m0yX1oJ47OR6WsX0vOtKu4p5umS4hZUtw@mail.gmail.com>
-In-Reply-To: <CAGy7UtgrdGpC5uav0m0yX1oJ47OR6WsX0vOtKu4p5umS4hZUtw@mail.gmail.com>
+To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
+Cc: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 11/11/2012 15:21, Bart Noordervliet a écrit :
->> # uname -srv Linux 3.5.0-18-generic #29-Ubuntu SMP Fri Oct 19
->> 10:26:51 UTC 2012 
-> Could you first try with either 3.6 or a recent 3.7-rc build please?
-> You can easily add them to Ubuntu by using their kernel ppa:
-> http://kernel.ubuntu.com/~kernel-ppa/mainline/
+On Sun, Nov 11, 2012 at 3:26 PM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+> I'm not going to take risks with this machine, which is my main laptop
+> which I badly need to be in working order tomorrow morning (and #me
+> having slept at night... ;-)
 
-I previously had bad times running "future" mainline kernels when
-returning to previous "usual" kernels, as BTRFS didn't seem to like this
-back-and-forth kernel play...
+Without running different kernels, I don't think we can work with you
+to figure out the cause of the problem, unless this is a known problem
+(it isn't to me). You didn't mention whether the filesystem actually
+mounts properly or not, but if it does then I don't think you'll have
+problems other than perhaps diminished performance.
 
-I'm not going to take risks with this machine, which is my main laptop
-which I badly need to be in working order tomorrow morning (and #me
-having slept at night... ;-)
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
-
+May I also suggest that you maybe shouldn't be running an experimental
+filesystem on a laptop that you can't go without?

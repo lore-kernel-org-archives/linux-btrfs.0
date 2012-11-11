@@ -1,44 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:32975 "EHLO
-	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751921Ab2KKEPQ (ORCPT
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:53600 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750846Ab2KKOFc convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Nov 2012 23:15:16 -0500
-Received: by mail-da0-f46.google.com with SMTP id n41so2244380dak.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Nov 2012 20:15:16 -0800 (PST)
+	Sun, 11 Nov 2012 09:05:32 -0500
+Received: by mail-wi0-f172.google.com with SMTP id hm6so1761959wib.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2012 06:05:31 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <509ED5EF.6090506@shiftmail.org>
-References: <509EC4B2.6090706@shiftmail.org>
-	<20121110212317.GE29581@carfax.org.uk>
-	<509ED5EF.6090506@shiftmail.org>
-Date: Sat, 10 Nov 2012 22:15:16 -0600
-Message-ID: <CAE5mzvjtN3_xMd3PdMFchef508a6H-3z0wOV9XoFAXQeHdPy+g@mail.gmail.com>
-Subject: Re: High-sensitivity fs checker (not repairer) for btrfs
-From: cwillu <cwillu@cwillu.com>
-To: Bob Marley <bobmarley@shiftmail.org>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <509ED1D6.8010903@petaramesh.org>
+References: <509ED1D6.8010903@petaramesh.org>
+From: Bart Noordervliet <bart@noordervliet.net>
+Date: Sun, 11 Nov 2012 15:05:11 +0100
+Message-ID: <CAGy7Utg5eMfHy+6OghTTDeHznnSvv2Ze11jCecLSLsVEufugeA@mail.gmail.com>
+Subject: Re: BTRFS cache problem
+To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 10, 2012 at 4:32 PM, Bob Marley <bobmarley@shiftmail.org> wrote:
-> On 11/10/12 22:23, Hugo Mills wrote:
->>
->>     The closest thing is btrfsck. That's about as picky as we've got to
->> date.
->>
->>     What exactly is your use-case for this requirement?
+Hi Swami,
+
+which kernel version are you running?
+
+Regards,
+
+Bart
+
+On Sat, Nov 10, 2012 at 11:14 PM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+> Hi,
 >
+> My BTRFS is mounted with space_cache,inode_cache , and I now get at boot
+> time the following message :
 >
-> We need a decently-available system. We can rollback filesystem to
-> last-known-good if the "test" detects an inconsistency on current btrfs
-> filesystem, but we need a very good test for that (i.e. if last-known-good
-> is actually bad we get into serious troubles).
-
-Scrub is probably more useful as a check, combined with "does the
-filesystem actually mount".
-
-> So do you think btrfsck can return a false "OK" result? can it "not-see" an
-> inconsistency?
-
-No set of checks will ever be perfect, so yes.
+> “btrfs: free space inode generation (0) did not match free space cache
+> generation (189086)”
+>
+> Starting once with "clear_cache" doesn't seem to be able to fix the
+> issue... Any clue ?
+>
+> TIA.
+>
+> --
+> Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+> Ne cherchez pas : Je ne suis pas sur Facebook.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

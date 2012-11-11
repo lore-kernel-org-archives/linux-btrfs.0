@@ -1,41 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:55750 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753160Ab2KKQCR convert rfc822-to-8bit (ORCPT
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:55743 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753442Ab2KKQVb convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Nov 2012 11:02:17 -0500
-Message-ID: <509FCC05.9050108@petaramesh.org>
-Date: Sun, 11 Nov 2012 17:02:13 +0100
+	Sun, 11 Nov 2012 11:21:31 -0500
+Received: from mfilter17-d.gandi.net (mfilter17-d.gandi.net [217.70.178.145])
+	by relay3-d.mail.gandi.net (Postfix) with ESMTP id E5533A807A
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2012 17:21:30 +0100 (CET)
+Received: from relay3-d.mail.gandi.net ([217.70.183.195])
+	by mfilter17-d.gandi.net (mfilter17-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id 5R5ZMbZ-919B for <linux-btrfs@vger.kernel.org>;
+	Sun, 11 Nov 2012 17:21:29 +0100 (CET)
+Received: from [192.168.1.66] (AMontpellier-156-1-30-101.w90-0.abo.wanadoo.fr [90.0.61.101])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 21E96A8097
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2012 17:21:29 +0100 (CET)
+Message-ID: <509FD088.402@petaramesh.org>
+Date: Sun, 11 Nov 2012 17:21:28 +0100
 From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
 MIME-Version: 1.0
-To: Bart Noordervliet <bart@noordervliet.net>
-CC: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS cache problem
-References: <509ED1D6.8010903@petaramesh.org> <CAGy7Utg5eMfHy+6OghTTDeHznnSvv2Ze11jCecLSLsVEufugeA@mail.gmail.com> <509FB2A0.4030504@petaramesh.org> <CAGy7UtgrdGpC5uav0m0yX1oJ47OR6WsX0vOtKu4p5umS4hZUtw@mail.gmail.com> <509FB5AE.3030504@petaramesh.org> <CAGy7Utg1QPk73AxmYSMFc97BN+9yYU0P-wNexvDOhKD6YOR--Q@mail.gmail.com>
-In-Reply-To: <CAGy7Utg1QPk73AxmYSMFc97BN+9yYU0P-wNexvDOhKD6YOR--Q@mail.gmail.com>
+References: <509ED1D6.8010903@petaramesh.org> <20121111152006.GA5604@carfax.org.uk>
+In-Reply-To: <20121111152006.GA5604@carfax.org.uk>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 11/11/2012 16:13, Bart Noordervliet a écrit :
-> May I also suggest that you maybe shouldn't be running an experimental
-> filesystem on a laptop that you can't go without?
+Le 11/11/2012 16:20, Hugo Mills a écrit :
+> Try mounting with clear_cache *once*, then remounting with
+> space_cache,inode_cache *once*, and waiting for it to finish
+> rebuilding the cache. Finally, remove all mention of the caches from
+> your fstab and kernel command line before you next mount the FS.
+Unfortunately, same issue after applying your suggestions...
 
-I might well be retired before BTRFS is no more "experimental", but I
-need its features now...
+[  752.943532] btrfs: free space inode generation (0) did not match free
+space cache generation (203710)
 
-Otherwise I could go with “ZFS on Linux” that has proven fairly
-excellent and much faster and more stable than BTRFS on the machine on
-which I've been using it for ~2 years...
-
-I chosed to go for BTRFS on this machine because it's officially part of
-the Linux kernel and I would expect it to improve (quickly) over time...
-
-But for now I have to admit that I regret my choice performance wise
-(which is terrible...) and stability wise (Already 2 reinstalls with
-complete format, if there's a next one, the next one will be ZFS...)
-
-Kind regards.
 
 -- 
 Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E

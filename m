@@ -1,56 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57824 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751556Ab2KLNj4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Nov 2012 08:39:56 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TXuFA-0008Ge-9f
-	for linux-btrfs@vger.kernel.org; Mon, 12 Nov 2012 14:40:04 +0100
-Received: from 83.244.169.150 ([83.244.169.150])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2012 14:40:04 +0100
-Received: from smith_it2000 by 83.244.169.150 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2012 14:40:04 +0100
+Received: from mail-qa0-f46.google.com ([209.85.216.46]:50774 "EHLO
+	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752254Ab2KLOh6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Nov 2012 09:37:58 -0500
+Received: by mail-qa0-f46.google.com with SMTP id c11so500197qad.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2012 06:37:58 -0800 (PST)
+MIME-Version: 1.0
+Date: Mon, 12 Nov 2012 22:37:58 +0800
+Message-ID: <CAJDbZnThjTHNON46Sb5QWyaJ9VuaKkza=Z6+OE_dh_YqavtDJQ@mail.gmail.com>
+Subject: BTRFS Bug
+From: Ross Moore <ross@rossmoore.net>
 To: linux-btrfs@vger.kernel.org
-From: Sem <smith_it2000@yahoo.com>
-Subject: Btrfsck repair, strange df numbers and cannot write
-Date: Mon, 12 Nov 2012 13:34:09 +0000 (UTC)
-Message-ID: <loom.20121112T142903-705@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-After doing a btrfsck --repair on my file system, it now has very strange
-numbers in df:
+I have a BTRFS filesystem that seems to be suffering from a few
+problems. I'll post the first one, which looks most bizarre to me.
 
-[root ~]# df -h | grep sdc
-/dev/sdc         15T  -64Z   16E 101% /usr/data
+The filesystem is mounted at /media/Media. It consists of 4 devices in
+RAID1 (both metadata and data), of sizes 3*2TB and 1*1TB. The result
+of sudo btrfs fi df /media/Media/ is as follows:
+Data, RAID1: total=3.06TB, used=8.74TB
+System, RAID1: total=32.00MB, used=1.81MB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=130.29GB, used=9.41GB
 
-Prior to this it was 81% used.
+I'm running Ubuntu Quantal, on the stock 3.5 kernel (with stock
+btrfs-tools), but the filesystem has been around for a over a year
+now, since Oneiric or maybe Natty. It has been causing a few problems
+recently with the odd kernel crash, but this line in bold seems the
+most odd. It reports Total as smaller than Used. That just seems very
+wrong to me. I'd also like to rescue my filesystem rather than kill it
+and restore from backup if possible (since it's pretty big and
+restoring would take a while / be error-prone).
 
-I can read the files, but i cannot write a file.
+I'm no kernel developer, but I am able  to compile and and willing to
+help debug issues given instructions.
 
-Does anyone have a clue as to what is going on?
+I also have the following mentions of btrfs in the syslog following boot:
+Nov 12 22:10:43 HomeServer kernel: [    6.756770] btrfs: bdev
+/dev/disk/by-uuid/f2178b12-fa9c-4fa0-9efb-11ad188156c0 errs: wr 0, rd
+0, flush 0, corrupt 0, gen 0
+Nov 12 22:10:43 HomeServer kernel: [   14.613574] btrfs: bdev /dev/sdd
+errs: wr 72, rd 0, flush 0, corrupt 0, gen 0
+Nov 12 22:10:43 HomeServer kernel: [   14.613578] btrfs: bdev /dev/sdc
+errs: wr 542570, rd 559160, flush 0, corrupt 891, gen 0
+Nov 12 22:10:43 HomeServer kernel: [   14.613582] btrfs: bdev /dev/sdb
+errs: wr 156, rd 1166758, flush 0, corrupt 0, gen 0
+Nov 12 22:10:43 HomeServer kernel: [   14.613584] btrfs: bdev /dev/sda
+errs: wr 44273, rd 2378244, flush 0, corrupt 429, gen 0
 
-Any idea how to fix?
+If I attempt to rebalance, the kernel crashes after a while, well
+before it has had a chance to complete.
 
-Thanks.
+Any assistance greatly appreciated, and I hope I can also help
+identify a bug with help.
 
----
-
-Details:
-
-[root ~]# uname -a
-Linux t1.localdomain 3.6.6-1.fc16.x86_64 #1 SMP Mon Nov 5 16:56:43 UTC 2012
-x86_64 x86_64 x86_64 GNU/Linux
-
-[root ~]# btrfs --version
-Btrfs v0.20-rc1-37-g91d9eec
-
-
+Thanks,
+Ross

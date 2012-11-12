@@ -1,44 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ares07.inai.de ([5.9.24.206]:53173 "EHLO ares07.inai.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751578Ab2KLSQH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Nov 2012 13:16:07 -0500
-Date: Mon, 12 Nov 2012 19:16:05 +0100 (CET)
-From: Jan Engelhardt <jengelh@inai.de>
-To: Hugo Mills <hugo@carfax.org.uk>
-cc: Roman Mamedov <rm@romanrm.ru>, kreijack@inwind.it, kreijack@libero.it,
-        =?UTF-8?Q?S=C3=A9bastien_Maury?= <sebastien.maury@inserm.fr>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC] btrfs fi df output [Was Re: BTRF - Storage Usage]
-In-Reply-To: <20120928085840.GE6136@carfax.org.uk>
-Message-ID: <alpine.LNX.2.01.1211121913370.1611@nerf07.vanv.qr>
-References: <20120927124427.6014ddq7wg88cc0o@imp.inserm.fr> <5064B96B.7060502@libero.it> <5064BEEB.1090707@libero.it> <20120928091759.6d096016@natsu> <20120928085840.GE6136@carfax.org.uk>
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:47452 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750988Ab2KLSYd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Nov 2012 13:24:33 -0500
+Received: by mail-ie0-f174.google.com with SMTP id k13so9464002iea.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2012 10:24:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+In-Reply-To: <20121110083111.25d3fcef@aspire.ty-penguin.org.uk>
+References: <20121110083111.25d3fcef@aspire.ty-penguin.org.uk>
+Date: Mon, 12 Nov 2012 19:24:32 +0100
+Message-ID: <CAB9VWqC=vO9ATucv6hEYgcAeYCdzam0ty4jovCtSoknfbkj+jQ@mail.gmail.com>
+Subject: Re: Bug in a couple of btrfs-progs components
+From: Alexander Block <ablock84@googlemail.com>
+To: Alun <alun.btrfs@ty-penguin.org.uk>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Friday 2012-09-28 10:58, Hugo Mills wrote:
+On Sat, Nov 10, 2012 at 9:31 AM, Alun <alun.btrfs@ty-penguin.org.uk> wrote:
+> Hi,
 >
->   Data_to_disk_ratio, maybe?
+> (I'm not a list member and may not see any responses to this)
 >
->> Why use underscores instead of spaces?
+> I've been using btrfs on my Raspberry Pi. Yesterday I tried to use the
+> "btrfs scrub" function and, while the scrub started OK, I couldn't run
+> "btrfs scrub status" to see what was happening. Whenever I ran it, I
+> just got the command help.
 >
->   So that you can use, say, "read" in the shell to extract data from
->each line. To that end, there should be a space between the value and
->the unit throughout.
+> The same command on my x86 box worked OK. Checking out the git sources,
+> I found that, in a couple of places, "char c" is used to store the
+> return value from getopt. On the Pi, char is unsigned, so the
+> subsequent test for getopt returning -1 never succeeds.
+>
+> I'm attaching a patch to fix this.
+>
+> Cheers,
+> Alun.
 
-Eww. Having a special single-line output mode would be much better
-for these kinds of integration.
-
-Is it too far fetched to make the info available through sysfs?
-
- space_used=$(cat /sys/.../space_used)
-
-is so much preferable than an awkful
-
- space_used=$(btrfs fi df | awk ...)
-
-and hope for that the line is actually in the df output.
-
+We should probably also use -fsigned-char for CFLAGS in the Makefile.
+Who knows if there will ever be other places where the signess of char
+matters.

@@ -1,45 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:56909 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756212Ab2KNCBe (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:37367 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756527Ab2KNHqc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Nov 2012 21:01:34 -0500
-Received: by mail-ee0-f46.google.com with SMTP id b15so4352783eek.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2012 18:01:33 -0800 (PST)
+	Wed, 14 Nov 2012 02:46:32 -0500
+Received: by mail-ie0-f174.google.com with SMTP id k13so176011iea.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2012 23:46:32 -0800 (PST)
+Message-ID: <50A34C4D.8060403@gmail.com>
+Date: Wed, 14 Nov 2012 15:46:21 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20121113112002.GA23574@carfax.org.uk>
-References: <CAGnBOw-58=g4pZcKC9GYBBJtpaOC_sj2mmQpNS+J6JR9+AY9YQ@mail.gmail.com>
-	<CAGnBOw-qpoydiEpgX0dBSh5xdkpZb3HGTMnMO0uYKFL596dM+A@mail.gmail.com>
-	<20121113112002.GA23574@carfax.org.uk>
-Date: Wed, 14 Nov 2012 10:01:32 +0800
-Message-ID: <CAGnBOw-jLCT5r_BLWw4Epd8S5pk2+jDghj9M874cdJah2p9FsA@mail.gmail.com>
-Subject: Re: Mixed RAID 1 and 0 in different subvolumes (cont.)
-From: Fred Chang <fredchang@qnap.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Fred Chang <fredchang@qnap.com>,
-        linux-btrfs@vger.kernel.org
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: update usage description for debug-tree.c
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear Hugo,
-  Thanks so much for your reply.
-Sincerely,
-Fred
+There are more options than "-e" only.
+Update the description for the usage.
 
-On Tue, Nov 13, 2012 at 7:20 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Nov 13, 2012 at 06:52:42PM +0800, Fred Chang wrote:
->> Assume I have two disks, said disk1 and disk2, and two subvolumes,
->> said sv1 and sv2. With BTRFS, may I assign sv1 working with raid0 and
->> sv2 working with raid1?
->
->    Not yet. It's planned, but nobody's done it yet.
->
->    Hugo.
->
->> One year ago, this function was not aviliable. If there were test
->> version, I am willing to test it.
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->         --- emacs:  Eighty Megabytes And Constantly Swapping. ---
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+ debug-tree.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/debug-tree.c b/debug-tree.c
+index 94ffd8e..f6bd5d8 100644
+--- a/debug-tree.c
++++ b/debug-tree.c
+@@ -30,7 +30,15 @@
+
+ static int print_usage(void)
+ {
+-	fprintf(stderr, "usage: debug-tree [ -e ] device\n");
++	fprintf(stderr, "usage: btrfs-debug-tree [ -e ] [ -d ] [ -r ] [ -R ]\n");
++	fprintf(stderr, "                        [-b block_num ] device\n");
++	fprintf(stderr, "\t-e : print detailed extents info\n");
++	fprintf(stderr, "\t-d : print info of btrfs device and root tree dirs"
++                    " only\n");
++	fprintf(stderr, "\t-r : print info of roots only\n");
++	fprintf(stderr, "\t-R : print info of roots and root backups\n");
++	fprintf(stderr, "\t-b block_num : print info of the specified block"
++                    " only\n");
+ 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
+ }
+-- 
+1.7.5.4

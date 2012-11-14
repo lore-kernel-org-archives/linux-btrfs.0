@@ -1,28 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:61621 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1422887Ab2KNS0O (ORCPT
+Received: from extserver1.prnet.org ([195.46.254.69]:62759 "EHLO
+	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933178Ab2KNWkD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Nov 2012 13:26:14 -0500
-Received: by mail-oa0-f46.google.com with SMTP id h16so769750oag.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2012 10:26:13 -0800 (PST)
+	Wed, 14 Nov 2012 17:40:03 -0500
+Received: from extserver.intern.prnet.org (ip-213-135-240-128.static.luxdsl.pt.lu [213.135.240.128])
+	by extserver1.prnet.org (8.14.5/8.14.5) with ESMTP id qAEMYPEG006215
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2012 23:34:26 +0100 (CET)
+	(envelope-from admin@prnet.org)
+Received: from [192.168.1.1] (server.intern.prnet.org [192.168.1.1])
+	(authenticated bits=0)
+	by extserver.intern.prnet.org (8.14.4/8.14.4) with ESMTP id qAEMYPhC011199
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2012 23:34:25 +0100
+Message-ID: <50A41C71.1060504@prnet.org>
+Date: Wed, 14 Nov 2012 23:34:25 +0100
+From: David Arendt <admin@prnet.org>
 MIME-Version: 1.0
-Date: Wed, 14 Nov 2012 13:26:13 -0500
-Message-ID: <CALJXSJosaiU+pGHaUhh9OokdgOpPgDf385x2Q9BH7qhVKnZowg@mail.gmail.com>
-Subject: Cannot list subvolumes with latest git
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs send/receive symlink bug
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using Debian experimental kernel, 3.6.4-1~experimental.1, and latest
-btrfs tools from git master, I am not able to execute btrfs subvolume
-list.
+Hi,
 
-# ./btrfs sub li /mnt/data0/
-ERROR: Failed to lookup path for root 0 - No such file or directory
+I am using kernel 3.7.0-rc5 and latest btrfs-progs git.
 
-After bisecting with git, I was able to confirm that commit
-162df1e30c7c0492ae9fb551d74452e643f5fea2 breaks btrfs subvolume list
-on my current kernel.
+I am trying btrfs send/receive. When I have a filesystem containing a
+symlink pointing to a nonexistent destination or a destination created
+after the symlink was created, btrfs receive aborts with: ERROR: chown
+link1.txt failed. No such file or directory.
+
+Steps to reproduce (/dev/loop0 and /dev/loop1 are test images):
+
+mkfs.btrfs /dev/loop0
+mount /dev/loop0 /u00
+btrfs subvolume create /u00/test
+cd /u00/test
+ln -s test1.txt link1.txt
+btrfs subvolume snapshot -r /u00/test /u00/test.snapshot
+mkfs.btrfs /dev/loop1
+mount /dev/loop1 /u01
+btrfs send /u00/test.snapshot | btrfs receive /u01
+ERROR: chown link1.txt failed. No such file or directory
+
+Bye,
+David Arendt
+

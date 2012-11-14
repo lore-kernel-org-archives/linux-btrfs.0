@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:37367 "EHLO
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:33883 "EHLO
 	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756461Ab2KNHql (ORCPT
+	with ESMTP id S1756528Ab2KNHsI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Nov 2012 02:46:41 -0500
-Received: by mail-ie0-f174.google.com with SMTP id k13so176011iea.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2012 23:46:41 -0800 (PST)
-Message-ID: <50A34C5C.9030504@gmail.com>
-Date: Wed, 14 Nov 2012 15:46:36 +0800
+	Wed, 14 Nov 2012 02:48:08 -0500
+Received: by mail-ie0-f174.google.com with SMTP id k13so177032iea.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2012 23:48:07 -0800 (PST)
+Message-ID: <50A34CAA.5090208@gmail.com>
+Date: Wed, 14 Nov 2012 15:47:54 +0800
 From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: btrfs-progs: rename debug-tree.c to btrfs-debug-tree.c
+Subject: [PATCH 2/2] btrfs-progs: rename debug-tree.c to btrfs-debug-tree.c
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -819,4 +819,3 @@ index f6bd5d8..0000000
 -}
 -- 
 1.7.5.4
-

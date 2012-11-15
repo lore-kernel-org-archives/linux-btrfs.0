@@ -1,57 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserver1.prnet.org ([195.46.254.69]:59450 "EHLO
-	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751105Ab2KOF7S (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Nov 2012 00:59:18 -0500
-Message-ID: <50A484AB.5050600@prnet.org>
-Date: Thu, 15 Nov 2012 06:59:07 +0100
-From: David Arendt <admin@prnet.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:48784 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750760Ab2KOINz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Nov 2012 03:13:55 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAF8Dqh2018274
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2012 16:13:52 +0800
+Message-ID: <50A4A453.3050901@cn.fujitsu.com>
+Date: Thu, 15 Nov 2012 16:14:11 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Marios Titas <redneb8888@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send/receive symlink bug
-References: <50A41C71.1060504@prnet.org> <CAAdM644U3k=0N4RsxTont7rObi9zD2FqZZk6X4+M5AtupdtoFA@mail.gmail.com>
-In-Reply-To: <CAAdM644U3k=0N4RsxTont7rObi9zD2FqZZk6X4+M5AtupdtoFA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] Btrfs: cleanup unnecessary clear when freeing a transaction
+ or a trans handle
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+We clear the transaction object and the trans handle when they are about to be
+freed, it is unnecessary, cleanup it.
 
-thanks,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-this patch fixes the problem
-
-Bye,
-David Arendt
-
-On 11/15/12 05:21, Marios Titas wrote:
-> On Wed, Nov 14, 2012 at 5:34 PM, David Arendt <admin@prnet.org> wrote:
->> Hi,
->>
->> I am using kernel 3.7.0-rc5 and latest btrfs-progs git.
->>
->> I am trying btrfs send/receive. When I have a filesystem containing a
->> symlink pointing to a nonexistent destination or a destination created
->> after the symlink was created, btrfs receive aborts with: ERROR: chown
->> link1.txt failed. No such file or directory.
->>
->> Steps to reproduce (/dev/loop0 and /dev/loop1 are test images):
->>
->> mkfs.btrfs /dev/loop0
->> mount /dev/loop0 /u00
->> btrfs subvolume create /u00/test
->> cd /u00/test
->> ln -s test1.txt link1.txt
->> btrfs subvolume snapshot -r /u00/test /u00/test.snapshot
->> mkfs.btrfs /dev/loop1
->> mount /dev/loop1 /u01
->> btrfs send /u00/test.snapshot | btrfs receive /u01
->> ERROR: chown link1.txt failed. No such file or directory
->
-> A patch [1] for btrfs-progs that solves this issue was posted a month
-> ago but has landed yet on the btrfs-progs git repository.
->
-> [1] http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg19539.html
-
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index d9a9a70..9930888 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -39,7 +39,6 @@ void put_transaction(struct btrfs_transaction *transaction)
+ 	if (atomic_dec_and_test(&transaction->use_count)) {
+ 		BUG_ON(!list_empty(&transaction->list));
+ 		WARN_ON(transaction->delayed_refs.root.rb_node);
+-		memset(transaction, 0, sizeof(*transaction));
+ 		kmem_cache_free(btrfs_transaction_cachep, transaction);
+ 	}
+ }
+@@ -644,7 +643,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	}
+ 	assert_qgroups_uptodate(trans);
+ 
+-	memset(trans, 0, sizeof(*trans));
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ 	return err;
+ }
+-- 
+1.7.11.7

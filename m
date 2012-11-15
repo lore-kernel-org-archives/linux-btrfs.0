@@ -1,67 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:15129 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751695Ab2KOIOa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Nov 2012 03:14:30 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAF8ES1m018322
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2012 16:14:28 +0800
-Message-ID: <50A4A477.8010404@cn.fujitsu.com>
-Date: Thu, 15 Nov 2012 16:14:47 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail.profihost.ag ([85.158.179.208]:42705 "EHLO
+	mail.profihost.ag" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S2992899Ab2KOIui (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Nov 2012 03:50:38 -0500
+Message-ID: <50A4ACD5.9050809@profihost.ag>
+Date: Thu, 15 Nov 2012 09:50:29 +0100
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] Btrfs: use common work instead of delayed work
-Content-Type: text/plain; charset=UTF-8
+To: miaox@cn.fujitsu.com
+CC: Sage Weil <sage@inktank.com>,
+        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Re: problem with ceph and btrfs patch: set journal_info in async
+ trans commit worker
+References: <50A39FAF.50602@profihost.ag> <50A47B16.6040308@cn.fujitsu.com>
+In-Reply-To: <50A47B16.6040308@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we do not want to delay the async transaction commit, we should
-use common work, not delayed work.
+Hi Miao,
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/transaction.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+Am 15.11.2012 06:18, schrieb Miao Xie:
+> Hi, Stefan
+>
+> On wed, 14 Nov 2012 14:42:07 +0100, Stefan Priebe - Profihost AG wrote:
+>> Hello list,
+>>
+>> i wanted to try out ceph with latest vanilla kernel 3.7-rc5. I was seeing a massive performance degration. I see around 22x btrfs-endio-write processes every 10-20 seconds and they run a long time while consuming a massive amount of CPU.
+>>
+>> So my performance of 23.000 iops drops to an up and down of 23.000 iops to 0 - avg is now 2500 iops instead of 23.000.
+>>
+>> Git bisect shows me commit: e209db7ace281ca347b1ac699bf1fb222eac03fe "Btrfs: set journal_info in async trans commit worker" as the problematic patch.
+>>
+>> When i revert this one everything is fine again.
+>>
+>> Is this known?
+>
+> Could you try the following patch?
+>
+> http://marc.info/?l=linux-btrfs&m=135175512030453&w=2
+>
+> I think the patch
+>
+>    Btrfs: set journal_info in async trans commit worker
+>
+> is not the real reason that caused the regression.
+>
+> I guess it is caused by the bug of the reservation. When we join the
+> same transaction handle more than 2 times, the pointer of the reservation
+> in the transaction handle would be lost, and the statistical data in the
+> reservation would be corrupted. And then we would trigger the space flush,
+> which may block your tasks.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9930888..a367df6 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1296,13 +1296,13 @@ static void wait_current_trans_commit_start_and_unblock(struct btrfs_root *root,
- struct btrfs_async_commit {
- 	struct btrfs_trans_handle *newtrans;
- 	struct btrfs_root *root;
--	struct delayed_work work;
-+	struct work_struct work;
- };
- 
- static void do_async_commit(struct work_struct *work)
- {
- 	struct btrfs_async_commit *ac =
--		container_of(work, struct btrfs_async_commit, work.work);
-+		container_of(work, struct btrfs_async_commit, work);
- 
- 	/*
- 	 * We've got freeze protection passed with the transaction.
-@@ -1329,7 +1329,7 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 	if (!ac)
- 		return -ENOMEM;
- 
--	INIT_DELAYED_WORK(&ac->work, do_async_commit);
-+	INIT_WORK(&ac->work, do_async_commit);
- 	ac->root = root;
- 	ac->newtrans = btrfs_join_transaction(root);
- 	if (IS_ERR(ac->newtrans)) {
-@@ -1351,7 +1351,7 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 	rwsem_release(&root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
- 		      1, _THIS_IP_);
- 
--	schedule_delayed_work(&ac->work, 0);
-+	schedule_work(&ac->work);
- 
- 	/* wait for transaction to start and unblock */
- 	if (wait_for_unblock)
--- 
-1.7.11.7
+i applied your whole patchset. It looks a lot better now but avg iops is 
+now 5000 iops and not 23.000 like when removing the mentioned commit 
+(e209db7ace281ca347b1ac699bf1fb222eac03fe).
+
+Stefan

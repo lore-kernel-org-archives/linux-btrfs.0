@@ -1,49 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f174.google.com ([209.85.217.174]:51995 "EHLO
-	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933443Ab2KOEV5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Nov 2012 23:21:57 -0500
-Received: by mail-lb0-f174.google.com with SMTP id gp3so1016828lbb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2012 20:21:55 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:37821 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750784Ab2KOFSC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Nov 2012 00:18:02 -0500
+Message-ID: <50A47B16.6040308@cn.fujitsu.com>
+Date: Thu, 15 Nov 2012 13:18:14 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <50A41C71.1060504@prnet.org>
-References: <50A41C71.1060504@prnet.org>
-Date: Wed, 14 Nov 2012 23:21:55 -0500
-Message-ID: <CAAdM644U3k=0N4RsxTont7rObi9zD2FqZZk6X4+M5AtupdtoFA@mail.gmail.com>
-Subject: Re: btrfs send/receive symlink bug
-From: Marios Titas <redneb8888@gmail.com>
-To: David Arendt <admin@prnet.org>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+CC: Sage Weil <sage@inktank.com>,
+        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Re: problem with ceph and btrfs patch: set journal_info in async
+ trans commit worker
+References: <50A39FAF.50602@profihost.ag>
+In-Reply-To: <50A39FAF.50602@profihost.ag>
+Content-Type: text/plain; charset=ISO-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 14, 2012 at 5:34 PM, David Arendt <admin@prnet.org> wrote:
-> Hi,
->
-> I am using kernel 3.7.0-rc5 and latest btrfs-progs git.
->
-> I am trying btrfs send/receive. When I have a filesystem containing a
-> symlink pointing to a nonexistent destination or a destination created
-> after the symlink was created, btrfs receive aborts with: ERROR: chown
-> link1.txt failed. No such file or directory.
->
-> Steps to reproduce (/dev/loop0 and /dev/loop1 are test images):
->
-> mkfs.btrfs /dev/loop0
-> mount /dev/loop0 /u00
-> btrfs subvolume create /u00/test
-> cd /u00/test
-> ln -s test1.txt link1.txt
-> btrfs subvolume snapshot -r /u00/test /u00/test.snapshot
-> mkfs.btrfs /dev/loop1
-> mount /dev/loop1 /u01
-> btrfs send /u00/test.snapshot | btrfs receive /u01
-> ERROR: chown link1.txt failed. No such file or directory
+Hi, Stefan
 
+On wed, 14 Nov 2012 14:42:07 +0100, Stefan Priebe - Profihost AG wrote:
+> Hello list,
+> 
+> i wanted to try out ceph with latest vanilla kernel 3.7-rc5. I was seeing a massive performance degration. I see around 22x btrfs-endio-write processes every 10-20 seconds and they run a long time while consuming a massive amount of CPU.
+> 
+> So my performance of 23.000 iops drops to an up and down of 23.000 iops to 0 - avg is now 2500 iops instead of 23.000.
+> 
+> Git bisect shows me commit: e209db7ace281ca347b1ac699bf1fb222eac03fe "Btrfs: set journal_info in async trans commit worker" as the problematic patch.
+> 
+> When i revert this one everything is fine again.
+> 
+> Is this known?
 
-A patch [1] for btrfs-progs that solves this issue was posted a month
-ago but has landed yet on the btrfs-progs git repository.
+Could you try the following patch?
 
-[1] http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg19539.html
+http://marc.info/?l=linux-btrfs&m=135175512030453&w=2
+
+I think the patch
+
+  Btrfs: set journal_info in async trans commit worker
+
+is not the real reason that caused the regression.
+
+I guess it is caused by the bug of the reservation. When we join the
+same transaction handle more than 2 times, the pointer of the reservation
+in the transaction handle would be lost, and the statistical data in the
+reservation would be corrupted. And then we would trigger the space flush,
+which may block your tasks.
+
+Thanks
+Miao
+
+> 
+> Greets,
+> Stefan
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

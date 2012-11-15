@@ -1,63 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from licorne.daevel.fr ([178.32.94.222]:41022 "EHLO
-	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756739Ab2KOJof (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:61880 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1768293Ab2KOQFu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Nov 2012 04:44:35 -0500
-Received: from local.plusdinfo.com ([82.232.160.30] helo=[192.168.0.10])
-	by licorne.daevel.fr with esmtpsa (SSL3.0:RSA_AES_256_CBC_SHA1:32)
-	(Exim 4.72)
-	(envelope-from <btrfs.list@daevel.fr>)
-	id 1TYvtn-00052C-EH
-	for linux-btrfs@vger.kernel.org; Thu, 15 Nov 2012 10:38:15 +0100
-Message-ID: <1352972275.22539.7.camel@localhost>
-Subject: btrfs: corrupt leaf, bad key order
-From: Olivier Bonvalet <btrfs.list@daevel.fr>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Date: Thu, 15 Nov 2012 10:37:55 +0100
-Mime-Version: 1.0
+	Thu, 15 Nov 2012 11:05:50 -0500
+Message-ID: <50A512D5.6070706@jan-o-sch.net>
+Date: Thu, 15 Nov 2012 17:05:41 +0100
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: Cannot list subvolumes with latest git
+References: <CALJXSJosaiU+pGHaUhh9OokdgOpPgDf385x2Q9BH7qhVKnZowg@mail.gmail.com>
+In-Reply-To: <CALJXSJosaiU+pGHaUhh9OokdgOpPgDf385x2Q9BH7qhVKnZowg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, November 14, 2012 at 19:26 (+0100), Jérôme Poulin wrote:
+> Using Debian experimental kernel, 3.6.4-1~experimental.1, and latest
+> btrfs tools from git master, I am not able to execute btrfs subvolume
+> list.
+> 
+> # ./btrfs sub li /mnt/data0/
+> ERROR: Failed to lookup path for root 0 - No such file or directory
+> 
+> After bisecting with git, I was able to confirm that commit
+> 162df1e30c7c0492ae9fb551d74452e643f5fea2 breaks btrfs subvolume list
+> on my current kernel.
 
-in my logs I have :
-[482886.171753] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482890.537049] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482940.827007] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482940.827048] BTRFS warning (device dm-1): Aborting unused transaction.
-[482943.482879] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482943.482918] BTRFS warning (device dm-1): Aborting unused transaction.
-[482943.889685] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.006944] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.118946] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.118977] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.118980] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.118991] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.191122] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.267567] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.267598] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.267601] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.465267] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.465301] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.537176] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.537226] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.645056] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.645091] BTRFS warning (device dm-1): Aborting unused transaction.
-[482944.703298] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.774537] btrfs: corrupt leaf, bad key order: block=5484560384,root=1, slot=39
-[482944.774565] BTRFS error (device dm-1) in btrfs_finish_ordered_io:1938: IO failure
-[482944.774572] btrfs is forced readonly
-[482944.774580] BTRFS warning (device dm-1): Aborting unused transaction.
+I can confirm this. Steps to reproduce:
 
+- create subvolume
+- put some data in
+- delete subvolume
+- call "btrfs subvol list" immediately
 
-How can I fix that ? (seen from a 3.6.6 kernel, but don't know when the
-error occurred)
+If you give it some time, listing of subvolumes eventually works. Calling "sync"
+doesn't help, surprisingly, while umount/mount does.
+
+Some add_root get's called with ref_tree = 0, which in turn makes
+lookup_ino_path call BTRFS_IOC_INO_LOOKUP with a treeid of 0, which looks wrong
+to me. I haven't looked any closer.
+
+Miao, as that was your patch, can you probably check if you can reproduce the
+problem?
 
 Thanks,
-Olivier
-
-
-
-
+-Jan

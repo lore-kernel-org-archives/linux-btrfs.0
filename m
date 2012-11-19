@@ -1,58 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:59101 "EHLO
-	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753184Ab2K3KIr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 05:08:47 -0500
-Received: from 3.109.77.188.dynamic.jazztel.es ([188.77.109.3] helo=mail.viric.name)
-	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TeNWV-000MpF-Jr
-	for linux-btrfs@vger.kernel.org; Fri, 30 Nov 2012 10:08:43 +0000
-Date: Fri, 30 Nov 2012 11:08:39 +0100
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Fix getopt on arm platforms
-Message-ID: <20121130100839.GA25766@vicerveza.homeunix.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cn.fujitsu.com ([222.73.24.84]:4453 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752829Ab2KSIZB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Nov 2012 03:25:01 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAJ8P0Pp003200
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2012 16:25:00 +0800
+From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: Fix a segmentation fault in btrfstune when <device> is invalid.
+Date: Mon, 19 Nov 2012 16:24:30 +0800
+Message-Id: <1353313470-25087-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There, 'char' is unsigned, so once assigned '-1' from getopt, it gets
-the value 255. Then, it compared to '-1' gives false.
----
- cmds-scrub.c | 2 +-
- cmds-send.c  | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+When open_ctree(device, ...) failed, the return value should be checked.
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 24be20f..c972e3b 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1604,7 +1604,7 @@ static int cmd_scrub_status(int argc, char **argv)
- 	int i;
- 	int print_raw = 0;
- 	int do_stats_per_dev = 0;
--	char c;
-+	int c;
- 	char fsid[37];
- 	int fdres = -1;
- 	int err = 0;
-diff --git a/cmds-send.c b/cmds-send.c
-index 9b47e70..2e44114 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -414,7 +414,7 @@ out:
- int cmd_send_start(int argc, char **argv)
- {
- 	char *subvol = NULL;
--	char c;
-+	int c;
- 	int ret;
- 	char *outname = NULL;
- 	struct btrfs_send send;
+Signed-off-by: Cheng Yang <chenyang.fnst@cn.fujitsu.com>
+---
+ btrfstune.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/btrfstune.c b/btrfstune.c
+index 47830c5..07648d5 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -107,6 +107,8 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	root = open_ctree(device, 0, 1);
++	if (!root)
++		return 1;
+ 
+ 	if (seeding_flag) {
+ 		ret = update_seeding_flag(root, seeding_value);
 -- 
-1.8.0
+1.7.7.6
 

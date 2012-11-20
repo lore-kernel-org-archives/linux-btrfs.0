@@ -1,181 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32517 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753467Ab2KTDS2 (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:40222 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752773Ab2KTJRO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Nov 2012 22:18:28 -0500
-Date: Tue, 20 Nov 2012 11:17:56 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Daniel J Blueman <daniel@quora.org>, David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V2] Btrfs: fix deadlock when the process of delayed refs
- fails
-Message-ID: <20121120031755.GA2544@gmail.com>
-Reply-To: bo.li.liu@oracle.com
-References: <50A9F9C6.6090901@cn.fujitsu.com>
- <20121119101847.GA8692@gmail.com>
- <50AAF074.2000003@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50AAF074.2000003@cn.fujitsu.com>
+	Tue, 20 Nov 2012 04:17:14 -0500
+From: Zheng Liu <gnehzuil.liu@gmail.com>
+To: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, ocfs2-devel@oss.oracle.com
+Cc: yan@linux.vnet.ibm.com, Zheng Liu <wenqing.lz@taobao.com>
+Subject: [PATCH 0/4][RFC] remove duplicated check from ext4, xfs, btrfs, and ocfs2
+Date: Tue, 20 Nov 2012 17:29:41 +0800
+Message-Id: <1353403785-3489-1-git-send-email-wenqing.lz@taobao.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 20, 2012 at 10:52:36AM +0800, Miao Xie wrote:
-> Delayed ref mutexes are taken inside btrfs_commit_transaction. A later call
-> fails and jumps to the cleanup_transaction label with these mutexes still held
-> causing deadlock when they are reacquired.
-> 
-> Fix this problem by unlocking those mutexes at the suitable place.
-> 
-> Reported-by: Daniel J Blueman <daniel@quora.org>
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
-> Changelog from v1 -> v2:
-> - split the code of the run_one_delayed_ref()'s error path from the normal path
-> ---
->  fs/btrfs/delayed-ref.c |  8 ++++++++
->  fs/btrfs/delayed-ref.h |  6 ++++++
->  fs/btrfs/extent-tree.c | 36 ++++++++++++++++++++++++------------
->  3 files changed, 38 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index ae94117..364cb90 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -422,6 +422,14 @@ again:
->  	return 1;
->  }
->  
-> +void btrfs_release_ref_cluster(struct list_head *cluster)
-> +{
-> +	struct list_head *pos, *q;
-> +
-> +	list_for_each_safe(pos, q, cluster)
-> +		list_del_init(pos);
-> +}
-> +
->  /*
->   * helper function to update an extent delayed ref in the
->   * rbtree.  existing and update must both have the same
-> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> index ab53005..fcc5a29 100644
-> --- a/fs/btrfs/delayed-ref.h
-> +++ b/fs/btrfs/delayed-ref.h
-> @@ -176,8 +176,14 @@ struct btrfs_delayed_ref_head *
->  btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr);
->  int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
->  			   struct btrfs_delayed_ref_head *head);
-> +static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
-> +{
-> +	mutex_unlock(&head->mutex);
-> +}
-> +
->  int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
->  			   struct list_head *cluster, u64 search_start);
-> +void btrfs_release_ref_cluster(struct list_head *cluster);
->  
->  int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
->  			    struct btrfs_delayed_ref_root *delayed_refs,
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 3d3e2c1..93faf5e 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2160,7 +2160,6 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
->  						      node->num_bytes);
->  			}
->  		}
-> -		mutex_unlock(&head->mutex);
->  		return ret;
->  	}
->  
-> @@ -2275,7 +2274,7 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
->  			 * process of being added. Don't run this ref yet.
->  			 */
->  			list_del_init(&locked_ref->cluster);
-> -			mutex_unlock(&locked_ref->mutex);
-> +			btrfs_delayed_ref_unlock(locked_ref);
->  			locked_ref = NULL;
->  			delayed_refs->num_heads_ready++;
->  			spin_unlock(&delayed_refs->lock);
-> @@ -2314,16 +2313,17 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
->  				kfree(extent_op);
->  
->  				if (ret) {
-> -					printk(KERN_DEBUG "btrfs: run_delayed_extent_op returned %d\n", ret);
-> +					printk(KERN_DEBUG
-> +					       "btrfs: run_delayed_extent_op "
-> +					       "returned %d\n",
-> +					       ret);
->  					spin_lock(&delayed_refs->lock);
-> +					btrfs_delayed_ref_unlock(locked_ref);
->  					return ret;
->  				}
->  
->  				goto next;
->  			}
-> -
-> -			list_del_init(&locked_ref->cluster);
-> -			locked_ref = NULL;
->  		}
->  
->  		ref->in_tree = 0;
-> @@ -2350,17 +2350,28 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
->  
->  		ret = run_one_delayed_ref(trans, root, ref, extent_op,
->  					  must_insert_reserved);
-> -
-> -		btrfs_put_delayed_ref(ref);
->  		kfree(extent_op);
-> -		count++;
-> -
->  		if (ret) {
-> -			printk(KERN_DEBUG "btrfs: run_one_delayed_ref returned %d\n", ret);
-> +			btrfs_delayed_ref_unlock(locked_ref);
-> +			btrfs_put_delayed_ref(ref);
-> +			printk(KERN_DEBUG
-> +			       "btrfs: run_one_delayed_ref returned %d\n", ret);
->  			spin_lock(&delayed_refs->lock);
->  			return ret;
->  		}
-> -
-> +		/*
-> +		 * If this node is a head, that means all the refs in this head
-> +		 * have been dealt with, and we will pick the next head to deal
-> +		 * with, so we must unlock the head and drop it from the cluster
-> +		 * list before we release it.
-> +		 */
+Hi all,
 
-Well...I don't think these comments are necessary here though.
+This patch series tries to remove a sanity check in fallocate from specific
+filesystems because vfs has already checked it.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+I am not very familiar with why we need to do this duplicated check.  Please let
+me know if I miss something.
 
-thanks,
-liubo
+Regards,
+						- Zheng
 
-> +		if (btrfs_delayed_ref_is_head(ref)) {
-> +			list_del_init(&locked_ref->cluster);
-> +			btrfs_delayed_ref_unlock(locked_ref);
-> +			locked_ref = NULL;
-> +		}
-> +		btrfs_put_delayed_ref(ref);
-> +		count++;
->  next:
->  		cond_resched();
->  		spin_lock(&delayed_refs->lock);
-> @@ -2510,6 +2521,7 @@ again:
->  
->  		ret = run_clustered_refs(trans, root, &cluster);
->  		if (ret < 0) {
-> +			btrfs_release_ref_cluster(&cluster);
->  			spin_unlock(&delayed_refs->lock);
->  			btrfs_abort_transaction(trans, root, ret);
->  			return ret;
-> -- 
-> 1.7.11.7
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+---
+Zheng Liu(4):
+      ext4: remove dupoicated check from ext4_fallocate
+      xfs: remove duplicated check from xfs_file_fallocate
+      btrfs: remove duplicated check from btrfs_fallocate
+      ocfs2: remove duplicated check from ocfs2_fallocate
+
+ fs/btrfs/file.c   | 4 ----
+ fs/ext4/extents.c | 4 ----
+ fs/ocfs2/file.c   | 2 --
+ fs/xfs/xfs_file.c | 3 ---
+ 4 files changed, 13 deletions(-)

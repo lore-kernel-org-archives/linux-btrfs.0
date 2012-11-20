@@ -1,55 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.clear-code.com ([219.94.234.64]:45974 "EHLO
-	mail.clear-code.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S2992568Ab2KOE6R (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:47731 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751798Ab2KTG1C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Nov 2012 23:58:17 -0500
-From: Kenji Okimoto <okimoto@clear-code.com>
+	Tue, 20 Nov 2012 01:27:02 -0500
+Received: by mail-ob0-f174.google.com with SMTP id wc20so5628658obb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2012 22:27:00 -0800 (PST)
+Message-ID: <50AB22A6.6070203@gmail.com>
+Date: Tue, 20 Nov 2012 14:26:46 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Kenji Okimoto <okimoto@clear-code.com>
-Subject: [PATCH 3/3] btrfs-progs: plug memory leaks in btrfs_scan_one_dir() reported by cppcheck.
-Date: Thu, 15 Nov 2012 13:47:52 +0900
-Message-Id: <1352954872-13770-4-git-send-email-okimoto@clear-code.com>
-In-Reply-To: <1352954872-13770-1-git-send-email-okimoto@clear-code.com>
-References: <1352954872-13770-1-git-send-email-okimoto@clear-code.com>
+Subject: [PATCH] btrfs-progs: print the right mount checking info in restore.c
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[utils.c:983]: (error) Memory leak: fullpath
+The mount status is checked against the arg <device> (argv[optind]),
+not the <directory>. Correct the info printed on <device> mounted.
 
-Signed-off-by: Kenji Okimoto <okimoto@clear-code.com>
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- utils.c |    3 +++
- 1 file changed, 3 insertions(+)
+ restore.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 205e667..3efb3af 100644
---- a/utils.c
-+++ b/utils.c
-@@ -980,6 +980,7 @@ again:
- 	dirp = opendir(dirname);
- 	if (!dirp) {
- 		fprintf(stderr, "Unable to open %s for scanning\n", dirname);
-+		free(fullpath);
- 		return -ENOENT;
+diff --git a/restore.c b/restore.c
+index b9e5381..a7580f8 100644
+--- a/restore.c
++++ b/restore.c
+@@ -827,7 +827,7 @@ int main(int argc, char **argv)
+ 			strerror(ret));
+ 		return ret;
+ 	} else if (ret) {
+-		fprintf(stderr, "%s is currently mounted.  Aborting.\n", argv[optind + 1]);
++		fprintf(stderr, "%s is currently mounted.  Aborting.\n", argv[optind]);
+ 		return -EBUSY;
  	}
- 	while(1) {
-@@ -1030,6 +1031,7 @@ again:
- 		free(pending);
- 		pending = list_entry(pending_list.next, struct pending_dir,
- 				     list);
-+		free(fullpath);
- 		list_del(&pending->list);
- 		closedir(dirp);
- 		dirp = NULL;
-@@ -1038,6 +1040,7 @@ again:
- 	ret = 0;
- fail:
- 	free(pending);
-+	free(fullpath);
- 	if (dirp)
- 		closedir(dirp);
- 	return ret;
--- 
-1.7.10.4
 
+-- 
+1.7.5.4

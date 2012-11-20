@@ -1,46 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:40222 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752773Ab2KTJRQ (ORCPT
+Received: from 173-166-109-252-newengland.hfc.comcastbusiness.net ([173.166.109.252]:50216
+	"EHLO bombadil.infradead.org" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752434Ab2KTKO5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Nov 2012 04:17:16 -0500
-From: Zheng Liu <gnehzuil.liu@gmail.com>
-To: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
-        linux-btrfs@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Cc: yan@linux.vnet.ibm.com, Zheng Liu <wenqing.lz@taobao.com>
-Subject: [PATCH 1/4][RFC] ext4: remove duplicated check from ext4_fallocate
-Date: Tue, 20 Nov 2012 17:29:42 +0800
-Message-Id: <1353403785-3489-2-git-send-email-wenqing.lz@taobao.com>
-In-Reply-To: <1353403785-3489-1-git-send-email-wenqing.lz@taobao.com>
+	Tue, 20 Nov 2012 05:14:57 -0500
+Date: Tue, 20 Nov 2012 05:14:53 -0500
+From: Christoph Hellwig <hch@infradead.org>
+To: Zheng Liu <gnehzuil.liu@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        yan@linux.vnet.ibm.com, Zheng Liu <wenqing.lz@taobao.com>
+Subject: Re: [PATCH 0/4][RFC] remove duplicated check from ext4, xfs, btrfs,
+ and ocfs2
+Message-ID: <20121120101452.GA692@infradead.org>
 References: <1353403785-3489-1-git-send-email-wenqing.lz@taobao.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1353403785-3489-1-git-send-email-wenqing.lz@taobao.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zheng Liu <wenqing.lz@taobao.com>
+On Tue, Nov 20, 2012 at 05:29:41PM +0800, Zheng Liu wrote:
+> Hi all,
+> 
+> This patch series tries to remove a sanity check in fallocate from specific
+> filesystems because vfs has already checked it.
+> 
+> I am not very familiar with why we need to do this duplicated check.  Please let
+> me know if I miss something.
 
-Remove a sanity check from ext4_fallocate because vfs has already checked it.
-
-Reported-by: Guo Chao <yan@linux.vnet.ibm.com>
-Signed-off-by: Zheng Liu <wenqing.lz@taobao.com>
----
- fs/ext4/extents.c | 4 ----
- 1 file changed, 4 deletions(-)
-
-diff --git a/fs/ext4/extents.c b/fs/ext4/extents.c
-index 7011ac9..c2eb409 100644
---- a/fs/ext4/extents.c
-+++ b/fs/ext4/extents.c
-@@ -4427,10 +4427,6 @@ long ext4_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
- 	if (!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
- 		return -EOPNOTSUPP;
- 
--	/* Return error if mode is not supported */
--	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
--		return -EOPNOTSUPP;
--
- 	if (mode & FALLOC_FL_PUNCH_HOLE)
- 		return ext4_punch_hole(file, offset, len);
- 
--- 
-1.7.12.rc2.18.g61b472e
-
+Each filesystem driver checks to see if a flag that it doesn't support
+gets passed down.  This was done with the intention that we can add new
+flags to the VFS without having to update every filesystem.

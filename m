@@ -1,78 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ye0-f174.google.com ([209.85.213.174]:34224 "EHLO
-	mail-ye0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753750Ab2KSQ7e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Nov 2012 11:59:34 -0500
-Received: by mail-ye0-f174.google.com with SMTP id m12so904582yen.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2012 08:59:33 -0800 (PST)
-Date: Mon, 19 Nov 2012 14:59:20 -0200
-From: Gustavo Padovan <gustavo@padovan.org>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs crash - Null dereference - 3.7.0-rc5-00068-gc5e35d6
-Message-ID: <20121119165920.GA12996@joana>
-References: <20121119025540.GA3858@joana>
- <20121119103221.GA8810@gmail.com>
- <20121119130752.GA3457@joana>
- <20121119152751.GB8810@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:43028 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752439Ab2KTDEk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Nov 2012 22:04:40 -0500
+Message-ID: <50AAF074.2000003@cn.fujitsu.com>
+Date: Tue, 20 Nov 2012 10:52:36 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121119152751.GB8810@gmail.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: bo.li.liu@oracle.com, Daniel J Blueman <daniel@quora.org>,
+        David Sterba <dave@jikos.cz>
+Subject: [PATCH V2] Btrfs: fix deadlock when the process of delayed refs fails
+References: <50A9F9C6.6090901@cn.fujitsu.com> <20121119101847.GA8692@gmail.com>
+In-Reply-To: <20121119101847.GA8692@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Liu Bo <bo.li.liu@oracle.com> [2012-11-19 23:27:53 +0800]:
+Delayed ref mutexes are taken inside btrfs_commit_transaction. A later call
+fails and jumps to the cleanup_transaction label with these mutexes still held
+causing deadlock when they are reacquired.
 
-> On Mon, Nov 19, 2012 at 11:07:52AM -0200, Gustavo Padovan wrote:
-> > > can you please run
-> > > 'gdb fs/btrfs/btrfs.ko' and 'list *block_rsv_release_bytes+0x21' to
-> > > check which one is NULL pointer?
-> > 
-> > 
-> > (gdb) list *block_rsv_release_bytes+0x21
-> > 0xffffffff811a83c1 is in block_rsv_release_bytes
-> > (fs/btrfs/extent-tree.c:4065).
-> > 4060	
-> > 4061	static void block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
-> > 4062					    struct btrfs_block_rsv *block_rsv,
-> > 4063					    struct btrfs_block_rsv *dest, u64
-> > num_bytes)
-> > 4064	{
-> > 4065		struct btrfs_space_info *space_info = block_rsv->space_info;
-> > 4066	
-> > 4067		spin_lock(&block_rsv->lock);
-> > 4068		if (num_bytes == (u64)-1)
-> > 4069			num_bytes = block_rsv->size;
-> > (gdb) 
-> > 
-> > Seems block_rsv is NULL here and looking to btrfs_block_rsv_release() it can
-> > only be NULL at this point if global_rsv->full is true otherwise the crash
-> > would happen there. I didn't go any further than this.
-> > 
-> > 	Gustavo
-> 
-> Can you check if the following commit is in your tree?
-> 
-> commit 321f0e70225abc792d74902a2bc4a60164265fd4
-> Author: Miao Xie <miaox@cn.fujitsu.com>
-> 
->     Btrfs: fix wrong orphan count of the fs/file tree
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 878116d..a6824bd 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2228,7 +2228,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
->                         insert = 1;
->  #endif
->                 insert = 1;
-> -               atomic_dec(&root->orphan_inodes);
-> +               atomic_inc(&root->orphan_inodes);
->         }
->  
->         if (!test_and_set_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
+Fix this problem by unlocking those mutexes at the suitable place.
 
-Yes, it is. I'm using linus tree from last week, head at c5e35d6.
+Reported-by: Daniel J Blueman <daniel@quora.org>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog from v1 -> v2:
+- split the code of the run_one_delayed_ref()'s error path from the normal path
+---
+ fs/btrfs/delayed-ref.c |  8 ++++++++
+ fs/btrfs/delayed-ref.h |  6 ++++++
+ fs/btrfs/extent-tree.c | 36 ++++++++++++++++++++++++------------
+ 3 files changed, 38 insertions(+), 12 deletions(-)
 
-	Gustavo
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index ae94117..364cb90 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -422,6 +422,14 @@ again:
+ 	return 1;
+ }
+ 
++void btrfs_release_ref_cluster(struct list_head *cluster)
++{
++	struct list_head *pos, *q;
++
++	list_for_each_safe(pos, q, cluster)
++		list_del_init(pos);
++}
++
+ /*
+  * helper function to update an extent delayed ref in the
+  * rbtree.  existing and update must both have the same
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index ab53005..fcc5a29 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -176,8 +176,14 @@ struct btrfs_delayed_ref_head *
+ btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr);
+ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_delayed_ref_head *head);
++static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
++{
++	mutex_unlock(&head->mutex);
++}
++
+ int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
+ 			   struct list_head *cluster, u64 search_start);
++void btrfs_release_ref_cluster(struct list_head *cluster);
+ 
+ int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_delayed_ref_root *delayed_refs,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d3e2c1..93faf5e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2160,7 +2160,6 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 						      node->num_bytes);
+ 			}
+ 		}
+-		mutex_unlock(&head->mutex);
+ 		return ret;
+ 	}
+ 
+@@ -2275,7 +2274,7 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 			 * process of being added. Don't run this ref yet.
+ 			 */
+ 			list_del_init(&locked_ref->cluster);
+-			mutex_unlock(&locked_ref->mutex);
++			btrfs_delayed_ref_unlock(locked_ref);
+ 			locked_ref = NULL;
+ 			delayed_refs->num_heads_ready++;
+ 			spin_unlock(&delayed_refs->lock);
+@@ -2314,16 +2313,17 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 				kfree(extent_op);
+ 
+ 				if (ret) {
+-					printk(KERN_DEBUG "btrfs: run_delayed_extent_op returned %d\n", ret);
++					printk(KERN_DEBUG
++					       "btrfs: run_delayed_extent_op "
++					       "returned %d\n",
++					       ret);
+ 					spin_lock(&delayed_refs->lock);
++					btrfs_delayed_ref_unlock(locked_ref);
+ 					return ret;
+ 				}
+ 
+ 				goto next;
+ 			}
+-
+-			list_del_init(&locked_ref->cluster);
+-			locked_ref = NULL;
+ 		}
+ 
+ 		ref->in_tree = 0;
+@@ -2350,17 +2350,28 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 
+ 		ret = run_one_delayed_ref(trans, root, ref, extent_op,
+ 					  must_insert_reserved);
+-
+-		btrfs_put_delayed_ref(ref);
+ 		kfree(extent_op);
+-		count++;
+-
+ 		if (ret) {
+-			printk(KERN_DEBUG "btrfs: run_one_delayed_ref returned %d\n", ret);
++			btrfs_delayed_ref_unlock(locked_ref);
++			btrfs_put_delayed_ref(ref);
++			printk(KERN_DEBUG
++			       "btrfs: run_one_delayed_ref returned %d\n", ret);
+ 			spin_lock(&delayed_refs->lock);
+ 			return ret;
+ 		}
+-
++		/*
++		 * If this node is a head, that means all the refs in this head
++		 * have been dealt with, and we will pick the next head to deal
++		 * with, so we must unlock the head and drop it from the cluster
++		 * list before we release it.
++		 */
++		if (btrfs_delayed_ref_is_head(ref)) {
++			list_del_init(&locked_ref->cluster);
++			btrfs_delayed_ref_unlock(locked_ref);
++			locked_ref = NULL;
++		}
++		btrfs_put_delayed_ref(ref);
++		count++;
+ next:
+ 		cond_resched();
+ 		spin_lock(&delayed_refs->lock);
+@@ -2510,6 +2521,7 @@ again:
+ 
+ 		ret = run_clustered_refs(trans, root, &cluster);
+ 		if (ret < 0) {
++			btrfs_release_ref_cluster(&cluster);
+ 			spin_unlock(&delayed_refs->lock);
+ 			btrfs_abort_transaction(trans, root, ret);
+ 			return ret;
+-- 
+1.7.11.7
+

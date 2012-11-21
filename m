@@ -1,81 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atrey.karlin.mff.cuni.cz ([195.113.26.193]:46902 "EHLO
-	atrey.karlin.mff.cuni.cz" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756570Ab2KVTOa (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:24000 "EHLO
+	aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753875Ab2KVTXI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Nov 2012 14:14:30 -0500
-Date: Thu, 22 Nov 2012 20:14:28 +0100
-From: Petr Janecek <janecek@ucw.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: raid10 data fs full after degraded mount
-Message-ID: <20121122191428.GA3389@atrey.karlin.mff.cuni.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
+	Thu, 22 Nov 2012 14:23:08 -0500
+From: Dave Kleikamp <dave.kleikamp@oracle.com>
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
+        "Maxim V. Patlasov" <mpatlasov@parallels.com>,
+        Dave Kleikamp <dave.kleikamp@oracle.com>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 24/31] btrfs: add support for read_iter and write_iter
+Date: Wed, 21 Nov 2012 16:41:04 -0600
+Message-Id: <1353537671-26284-25-git-send-email-dave.kleikamp@oracle.com>
+In-Reply-To: <1353537671-26284-1-git-send-email-dave.kleikamp@oracle.com>
+References: <1353537671-26284-1-git-send-email-dave.kleikamp@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
+on btrfs_file_aio_write(), then have the latter call the former.
 
-  on a fs with 4 disks, raid 10 for data, one drive was failing and has
-been removed. After reboot and 'mount -o degraded...', the fs looks
-full, even though before removal of the failed device it was almost
-80% free.
+Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
+Cc: Zach Brown <zab@zabbo.net>
+Cc: Chris Mason <chris.mason@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/file.c | 42 ++++++++++++++----------------------------
+ 1 file changed, 14 insertions(+), 28 deletions(-)
 
-root@fs0:~# df -h /mnt/b
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sde         11T  2.5T   41M 100% /mnt/b
-root@fs0:~# btrfs fi df /mnt/b
-Data, RAID10: total=1.20TB, used=1.20TB
-Data: total=8.00MB, used=0.00
-System, RAID1: total=8.00MB, used=168.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=224.00GB, used=6.43GB
-Metadata: total=8.00MB, used=0.00
-root@fs0:~# btrfs fi show BTR0
-Label: 'BTR0'  uuid: a319a7c8-cdef-407d-a215-140920d5af60
-        Total devices 4 FS bytes used 1.21TB
-        devid    3 size 2.73TB used 727.01GB path /dev/sdf
-        devid    4 size 2.73TB used 727.01GB path /dev/sdg
-        devid    2 size 2.73TB used 727.00GB path /dev/sde
-        *** Some devices missing
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9ab1bed..b691dd5 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -375,7 +375,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
+ 		write_bytes -= copied;
+ 		total_copied += copied;
+ 
+-		/* Return to btrfs_file_aio_write to fault page */
++		/* Return to btrfs_file_write_iter to fault page */
+ 		if (unlikely(copied == 0))
+ 			break;
+ 
+@@ -1361,27 +1361,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ }
+ 
+ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos,
+-				    loff_t *ppos, size_t count, size_t ocount)
++				     struct iov_iter *iter, loff_t pos,
++				    loff_t *ppos, size_t count)
+ {
+ 	struct file *file = iocb->ki_filp;
+-	struct iov_iter i;
+ 	ssize_t written;
+ 	ssize_t written_buffered;
+ 	loff_t endbyte;
+ 	int err;
+ 
+-	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
+-					    count, ocount);
++	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
+ 
+ 	if (written < 0 || written == count)
+ 		return written;
+ 
+ 	pos += written;
+ 	count -= written;
+-	iov_iter_init(&i, iov, nr_segs, count, written);
+-	written_buffered = __btrfs_buffered_write(file, &i, pos);
++	written_buffered = __btrfs_buffered_write(file, iter, pos);
+ 	if (written_buffered < 0) {
+ 		err = written_buffered;
+ 		goto out;
+@@ -1398,9 +1394,8 @@ out:
+ 	return written ? written : err;
+ }
+ 
+-static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos)
++static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
++				     struct iov_iter *iter, loff_t pos)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = fdentry(file)->d_inode;
+@@ -1409,18 +1404,13 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	u64 start_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+-	size_t count, ocount;
++	size_t count;
+ 
+ 	sb_start_write(inode->i_sb);
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 
+-	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
+-	if (err) {
+-		mutex_unlock(&inode->i_mutex);
+-		goto out;
+-	}
+-	count = ocount;
++	count = iov_iter_count(iter);
+ 
+ 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
+ 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
+@@ -1468,14 +1458,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	}
+ 
+ 	if (unlikely(file->f_flags & O_DIRECT)) {
+-		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
+-						   pos, ppos, count, ocount);
++		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
++						   count);
+ 	} else {
+-		struct iov_iter i;
+-
+-		iov_iter_init(&i, iov, nr_segs, count, num_written);
+-
+-		num_written = __btrfs_buffered_write(file, &i, pos);
++		num_written = __btrfs_buffered_write(file, iter, pos);
+ 		if (num_written > 0)
+ 			*ppos = pos + num_written;
+ 	}
+@@ -2280,9 +2266,9 @@ const struct file_operations btrfs_file_operations = {
+ 	.llseek		= btrfs_file_llseek,
+ 	.read		= do_sync_read,
+ 	.write		= do_sync_write,
+-	.aio_read       = generic_file_aio_read,
+ 	.splice_read	= generic_file_splice_read,
+-	.aio_write	= btrfs_file_aio_write,
++	.read_iter	= generic_file_read_iter,
++	.write_iter	= btrfs_file_write_iter,
+ 	.mmap		= btrfs_file_mmap,
+ 	.open		= generic_file_open,
+ 	.release	= btrfs_release_file,
+-- 
+1.8.0
 
-Btrfs v0.20-rc1-37-g91d9eec
-
-
-  Trying to write resulted in the following oops:
-
-
-[ 2756.911339] btrfs: allowing degraded mounts
-[ 2756.911342] btrfs: disk space caching is enabled
-[ 2756.953571] btrfs: bdev (null) errs: wr 53951563, rd 602, flush 2694, corrupt 0, gen 0
-[ 2898.699564] btrfs: block rsv returned -28
-[ 2898.699568] ------------[ cut here ]------------
-[ 2898.699594] WARNING: at fs/btrfs/extent-tree.c:6297 btrfs_alloc_free_block+0xeb/0x2a0 [btrfs]()
-[ 2898.699596] Hardware name: X9SCL/X9SCM
-[ 2898.699597] Modules linked in: nfsd auth_rpcgss nfs_acl nfs lockd fscache sunrpc xfs loop raid10 md_mod coretemp kvm_intel kvm crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64 xts snd_pcm snd_page_alloc lrw i2c_i801 psmouse serio_raw gf128mul ablk_helper cryptd snd_timer snd soundcore iTCO_wdt microcode iTCO_vendor_support i2c_core joydev pcspkr evdev lpc_ich mfd_core video acpi_cpufreq mperf button processor btrfs crc32c libcrc32c zlib_deflate usb_storage uas hid_generic usbhid hid sg sd_mod crc_t10dif mpt2sas raid_class scsi_transport_sas e1000e ahci libahci fan thermal thermal_sys ehci_hcd libata scsi_mod usbcore usb_common
-[ 2898.699644] Pid: 3021, comm: btrfs-endio-wri Not tainted 3.7.0-rc4 #2
-[ 2898.699646] Call Trace:
-[ 2898.699654]  [<ffffffff8103cd4c>] ? warn_slowpath_common+0x76/0x8a
-[ 2898.699668]  [<ffffffffa0192181>] ? btrfs_alloc_free_block+0xeb/0x2a0 [btrfs]
-[ 2898.699687]  [<ffffffffa01b76fc>] ? read_extent_buffer_pages+0x1fb/0x247 [btrfs]
-[ 2898.699703]  [<ffffffffa019ab85>] ? btree_readpage_end_io_hook+0x1d9/0x1d9 [btrfs]
-[ 2898.699715]  [<ffffffffa0184461>] ? __btrfs_cow_block+0xf2/0x372 [btrfs]
-[ 2898.699726]  [<ffffffffa018480d>] ? btrfs_cow_block+0xf1/0x141 [btrfs]
-[ 2898.699738]  [<ffffffffa01873e5>] ? btrfs_search_slot+0x234/0x660 [btrfs]
-[ 2898.699752]  [<ffffffffa0196aa6>] ? btrfs_lookup_csum+0x64/0x104 [btrfs]
-[ 2898.699766]  [<ffffffffa0197879>] ? btrfs_csum_file_blocks+0x9d/0x4c4 [btrfs]
-[ 2898.699783]  [<ffffffffa01a25c4>] ? add_pending_csums.isra.40+0x33/0x4e [btrfs]
-[ 2898.699799]  [<ffffffffa01a74ae>] ? btrfs_finish_ordered_io+0x1e8/0x303 [btrfs]
-[ 2898.699816]  [<ffffffffa01bfc70>] ? worker_loop+0x175/0x4ad [btrfs]
-[ 2898.699832]  [<ffffffffa01bfafb>] ? btrfs_queue_worker+0x27a/0x27a [btrfs]
-[ 2898.699846]  [<ffffffffa01bfafb>] ? btrfs_queue_worker+0x27a/0x27a [btrfs]
-[ 2898.699850]  [<ffffffff81056d28>] ? kthread+0x81/0x89
-[ 2898.699854]  [<ffffffff81056ca7>] ? __kthread_parkme+0x5c/0x5c
-[ 2898.699859]  [<ffffffff81373f7c>] ? ret_from_fork+0x7c/0xb0
-[ 2898.699862]  [<ffffffff81056ca7>] ? __kthread_parkme+0x5c/0x5c
-[ 2898.699864] ---[ end trace 330239e32cfc6b00 ]---
-
-
-Thanks,
-
-Petr

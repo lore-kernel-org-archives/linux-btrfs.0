@@ -1,26 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f46.google.com ([209.85.215.46]:46292 "EHLO
-	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755169Ab2KUPsK (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:52185 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755328Ab2KUQuQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Nov 2012 10:48:10 -0500
-Received: by mail-la0-f46.google.com with SMTP id p5so2938601lag.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Nov 2012 07:48:08 -0800 (PST)
+	Wed, 21 Nov 2012 11:50:16 -0500
+Date: Wed, 21 Nov 2012 08:50:14 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: "frantz.hacquard" <frantz.hacquard@ensi-bourges.fr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: unable to mount a btrfs partition
+Message-ID: <20121121165014.GB32385@merlins.org>
+References: <fa93207c7d636e263d8c2d6ebc2a3bed@ensi-bourges.fr>
 MIME-Version: 1.0
-Date: Wed, 21 Nov 2012 10:48:08 -0500
-Message-ID: <CAAdM647=qHnkfk=3c2hhGk61_-Jge02yxbj6nNVAqmEf+BJA-g@mail.gmail.com>
-Subject: per-file NOCOW in 3.7
-From: Marios Titas <redneb8888@gmail.com>
-To: btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <fa93207c7d636e263d8c2d6ebc2a3bed@ensi-bourges.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-According to the tentative changelog in the wiki, 3.7 will properly
-support per-file NOCOW. I think this is misleading. In particular, it
-still does not work correctly in the case when the NOCOW flag of a new
-flag is being inherited from the directory. I think it would be better
-to remove that item from the changelog until the the fix [1] is
-merged.
+On Wed, Nov 21, 2012 at 04:17:57PM +0100, frantz.hacquard wrote:
+> Hello,
+> 
+> i don't know if it's the right place to post my problem.
+> 
+> yesterday my btrfs partition (/dev/sda4) worked very well but now i 
+> can't mount my btrfs partition anymore.
+> it says : wrong fs type, bad option, bad superblock on /dev/sda4, 
+> missing codepage ...
+> 
+> i know btrfs is still in developement, but i would try to recover a 
+> file on this partition.
+> i tried many options of mount (-t btrfs -o recovery -o degraded...) but 
+> it's always the same issue.
 
-[1] https://patchwork.kernel.org/patch/1438431/
+kernel version? 
+If you haven't tried 3.6.x, try that yet.
+
+I'm not saying it'll fix your problem, but half the bugs I filed were
+already fixed in the latest kernel.
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

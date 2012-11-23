@@ -1,142 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:24000 "EHLO
-	aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753875Ab2KVTXI (ORCPT
+Received: from extserver1.prnet.org ([195.46.254.69]:60485 "EHLO
+	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753458Ab2KWRpI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Nov 2012 14:23:08 -0500
-From: Dave Kleikamp <dave.kleikamp@oracle.com>
-To: linux-fsdevel@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
-        "Maxim V. Patlasov" <mpatlasov@parallels.com>,
-        Dave Kleikamp <dave.kleikamp@oracle.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 24/31] btrfs: add support for read_iter and write_iter
-Date: Wed, 21 Nov 2012 16:41:04 -0600
-Message-Id: <1353537671-26284-25-git-send-email-dave.kleikamp@oracle.com>
-In-Reply-To: <1353537671-26284-1-git-send-email-dave.kleikamp@oracle.com>
-References: <1353537671-26284-1-git-send-email-dave.kleikamp@oracle.com>
+	Fri, 23 Nov 2012 12:45:08 -0500
+Received: from extserver.intern.prnet.org (ip-213-135-240-128.static.luxdsl.pt.lu [213.135.240.128])
+	by extserver1.prnet.org (8.14.5/8.14.5) with ESMTP id qANHj5wT072452
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Nov 2012 18:45:05 +0100 (CET)
+	(envelope-from admin@prnet.org)
+Received: from [192.168.1.1] (server.intern.prnet.org [192.168.1.1])
+	(authenticated bits=0)
+	by extserver.intern.prnet.org (8.14.4/8.14.4) with ESMTP id qANHj4kW023290
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Nov 2012 18:45:05 +0100
+Message-ID: <50AFB620.6040707@prnet.org>
+Date: Fri, 23 Nov 2012 18:45:04 +0100
+From: David Arendt <admin@prnet.org>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: extended attributes wiredness
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
-on btrfs_file_aio_write(), then have the latter call the former.
+Hi,
 
-Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
-Cc: Zach Brown <zab@zabbo.net>
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/file.c | 42 ++++++++++++++----------------------------
- 1 file changed, 14 insertions(+), 28 deletions(-)
+I am using kernel 3.7-rc6.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9ab1bed..b691dd5 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -375,7 +375,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
- 		write_bytes -= copied;
- 		total_copied += copied;
- 
--		/* Return to btrfs_file_aio_write to fault page */
-+		/* Return to btrfs_file_write_iter to fault page */
- 		if (unlikely(copied == 0))
- 			break;
- 
-@@ -1361,27 +1361,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- }
- 
- static ssize_t __btrfs_direct_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos,
--				    loff_t *ppos, size_t count, size_t ocount)
-+				     struct iov_iter *iter, loff_t pos,
-+				    loff_t *ppos, size_t count)
- {
- 	struct file *file = iocb->ki_filp;
--	struct iov_iter i;
- 	ssize_t written;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
- 	int err;
- 
--	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
--					    count, ocount);
-+	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
- 
- 	if (written < 0 || written == count)
- 		return written;
- 
- 	pos += written;
- 	count -= written;
--	iov_iter_init(&i, iov, nr_segs, count, written);
--	written_buffered = __btrfs_buffered_write(file, &i, pos);
-+	written_buffered = __btrfs_buffered_write(file, iter, pos);
- 	if (written_buffered < 0) {
- 		err = written_buffered;
- 		goto out;
-@@ -1398,9 +1394,8 @@ out:
- 	return written ? written : err;
- }
- 
--static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos)
-+static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
-+				     struct iov_iter *iter, loff_t pos)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = fdentry(file)->d_inode;
-@@ -1409,18 +1404,13 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	u64 start_pos;
- 	ssize_t num_written = 0;
- 	ssize_t err = 0;
--	size_t count, ocount;
-+	size_t count;
- 
- 	sb_start_write(inode->i_sb);
- 
- 	mutex_lock(&inode->i_mutex);
- 
--	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
--	if (err) {
--		mutex_unlock(&inode->i_mutex);
--		goto out;
--	}
--	count = ocount;
-+	count = iov_iter_count(iter);
- 
- 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
- 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
-@@ -1468,14 +1458,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	}
- 
- 	if (unlikely(file->f_flags & O_DIRECT)) {
--		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
--						   pos, ppos, count, ocount);
-+		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
-+						   count);
- 	} else {
--		struct iov_iter i;
--
--		iov_iter_init(&i, iov, nr_segs, count, num_written);
--
--		num_written = __btrfs_buffered_write(file, &i, pos);
-+		num_written = __btrfs_buffered_write(file, iter, pos);
- 		if (num_written > 0)
- 			*ppos = pos + num_written;
- 	}
-@@ -2280,9 +2266,9 @@ const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
--	.aio_read       = generic_file_aio_read,
- 	.splice_read	= generic_file_splice_read,
--	.aio_write	= btrfs_file_aio_write,
-+	.read_iter	= generic_file_read_iter,
-+	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
- 	.open		= generic_file_open,
- 	.release	= btrfs_release_file,
--- 
-1.8.0
+I have written a test application for extended attributes and have for
+some folders a wired behaviour:
 
+#include <stdio.h>
+#include <string.h>
+#include <attr/xattr.h>
+
+char attrs[1024];
+ssize_t attrslen;
+int i;
+char value[1024];
+ssize_t valuelen;
+
+int main(int argc, char *argv[])
+{
+  if (argc != 2)
+  {
+    fprintf(stderr, "Syntax: testxattr <filename>\n");
+
+    return 1;
+  }
+
+  printf("processing file %s\n", argv[1]);
+
+  attrslen = llistxattr(argv[1], attrs, 1024);
+
+  if (attrslen < 0)
+  {
+    perror("listxattr failed");
+
+    return 1;
+  }
+
+  for (i = 0; i < attrslen; i+= strlen(&attrs[i]) + 1)
+  {
+    printf("processing attribute %s\n", &attrs[i]);
+
+    valuelen = lgetxattr(argv[1], &attrs[i], value, 1024);
+
+    if (valuelen < 0);
+    {
+      perror("lgetxattr failed");
+
+      return 1;
+    }
+
+    printf("value %.*s", (int) valuelen, value);
+  }
+
+  return 0;
+}
+
+is returning:
+
+processing file /u00/root.20121121.210102.full/var/lib/nfs/sm
+processing attribute system.posix_acl_default
+lgetxattr failed: No data available
+
+output of stat:
+
+File: '/u00/root.20121121.210102.full/var/lib/nfs/sm'
+Size: 94            Blocks: 0          IO Block: 4096   directory
+Device: 3ah/58d    Inode: 1331353     Links: 1
+Access: (0755/drwxr-xr-x)  Uid: (65534/  nobody)   Gid: (    0/    root)
+Access: 2012-10-18 21:25:11.350000993 +0200
+Modify: 2012-11-21 06:32:24.050210417 +0100
+Change: 2012-11-21 06:32:24.050210417 +0100
+Birth: -
+
+Is this a bug in btrfs or do I miss something here ?
+
+Thanks in advance,
+David Arendt

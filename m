@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserver1.prnet.org ([195.46.254.69]:45852 "EHLO
-	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751160Ab2KXHRU (ORCPT
+Received: from licorne.daevel.fr ([178.32.94.222]:36547 "EHLO
+	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753229Ab2KYRRQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Nov 2012 02:17:20 -0500
-Message-ID: <50B07477.30105@prnet.org>
-Date: Sat, 24 Nov 2012 08:17:11 +0100
-From: David Arendt <admin@prnet.org>
-MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: extended attributes wiredness
-References: <50AFB620.6040707@prnet.org> <2925363.jTFvA7mLni@vfr> <50AFE5FC.7040304@prnet.org> <20121124033910.GA5680@gmail.com>
-In-Reply-To: <20121124033910.GA5680@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	Sun, 25 Nov 2012 12:17:16 -0500
+Received: from luuna.daevel.fr ([82.67.37.138] helo=[192.168.1.50])
+	by licorne.daevel.fr with esmtpsa (SSL3.0:RSA_AES_256_CBC_SHA1:32)
+	(Exim 4.72)
+	(envelope-from <btrfs.list@daevel.fr>)
+	id 1TcfpQ-0005V7-0a
+	for linux-btrfs@vger.kernel.org; Sun, 25 Nov 2012 18:17:12 +0100
+Message-ID: <1353863796.26883.10.camel@boolette.noo>
+Subject: FS mountable only in RO / incomplete FAQ ?
+From: Olivier Bonvalet <btrfs.list@daevel.fr>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Date: Sun, 25 Nov 2012 18:16:36 +0100
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello,
 
-There is no dmesg output.
+I had an umountable FS, no kernel oops, just "mount /backup" which still
+running after hours, without throwing any IO to disk.
 
-Thanks in advance,
-David Arendt
+>From the FAQ https://btrfs.wiki.kernel.org/index.php/Problem_FAQ I saw
+to try with (-o recovery) then (-o ro). The recovery didn't help, but
+the "ro" option works fine, thanks !
 
-On 11/24/12 04:39, Liu Bo wrote:
-> On Fri, Nov 23, 2012 at 10:09:16PM +0100, David Arendt wrote:
->> Well, this is only code to demonstrate the problem, the ; is normally a
->> silly mistake, but for my test case valuelen is < 0 so, the ; doesn't
->> change anything. With this corrected, the problem stays the same.
->>
->> On 11/23/12 21:43, Garry T. Williams wrote:
->>> On Friday, November 23, 2012 18:45:04 David Arendt wrote:
->>>>   for (i = 0; i < attrslen; i+= strlen(&attrs[i]) + 1)
->>>>   {
->>>>     printf("processing attribute %s\n", &attrs[i]);
->>>>
->>>>     valuelen = lgetxattr(argv[1], &attrs[i], value, 1024);
->>>>
->>>>     if (valuelen < 0);
->>>   Hmmm ----------------^
-> Hi David,
->
-> Any dmesg output for this?
->
-> thanks,
-> liubo
->
->>>
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+So now ? I have a FS in read-only, is there something I can do to fix
+it ? "btrfsck --repair" is killed by OOM (it use 14GB of RAM !)
+
+If it can help :
+# btrfs fi df /backup/
+Data: total=1.72TB, used=1.65TB
+System, DUP: total=64.00MB, used=208.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=39.20GB, used=35.38GB
+
+
+Thanks for any help,
+Olivier
 

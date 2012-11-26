@@ -1,116 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserver1.prnet.org ([195.46.254.69]:19457 "EHLO
-	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753402Ab2KZFiP (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50388 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754209Ab2KZKbp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Nov 2012 00:38:15 -0500
-Message-ID: <50B3003E.2010104@prnet.org>
-Date: Mon, 26 Nov 2012 06:38:06 +0100
-From: David Arendt <admin@prnet.org>
+	Mon, 26 Nov 2012 05:31:45 -0500
+Date: Mon, 26 Nov 2012 18:30:13 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2 v4] Btrfs: snapshot-aware defrag
+Message-ID: <20121126103012.GA18538@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
+ <CANW9uyu0NyFj57AVp2X-Hc=AjXdwyP=wieOcteEbj2_Mx_F95w@mail.gmail.com>
+ <50911FC0.4080104@oracle.com>
+ <CANW9uyse7bw1+=GkV-aRQbDPh1E-t3G4VwkAGc5-76KMfYMjog@mail.gmail.com>
+ <20121101112114.GA4328@liubo.cn.oracle.com>
+ <CANW9uysHg6qk4zSh_yFgP5e545kJZVoma36Hpd1Zzg-hoSVAhQ@mail.gmail.com>
+ <50929CF4.9060206@oracle.com>
+ <CANW9uyt9qE9384WnQq5ggZ2hb-DbahZe8KY5-WXRFSKTiedekg@mail.gmail.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: extended attributes wiredness
-References: <50AFB620.6040707@prnet.org> <2925363.jTFvA7mLni@vfr> <50AFE5FC.7040304@prnet.org> <20121124033910.GA5680@gmail.com> <50B27C4A.7040702@prnet.org> <20121126025439.GA5923@liubo>
-In-Reply-To: <20121126025439.GA5923@liubo>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CANW9uyt9qE9384WnQq5ggZ2hb-DbahZe8KY5-WXRFSKTiedekg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Nov 25, 2012 at 12:48:33PM +0900, Itaru Kitayama wrote:
+> Hi Liubo:
+> 
+> At the relinking stage, in some situations, looking up the extent tree with
+> the extent logical start objectid key from one of the old extents fails,
+> but the found previous item's objectid + offset is exactly the original
+> search objectid. As you say, usually old extents are retrieved from the
+> extent tree without a problem, but if the Delayed or some other mechanisms
+> change extents layout in the finish ordered IO function, we need to take
+> care of those rejected extents, not simply returning ENOENT. What do you
+> think?
 
-I don't know if your xattr patch was meant to fix this issue, but I have
-just tested kernel 3.7-rc7 with your patch applied on another directory
-having the problem and I still have the weird behaviour.
+Hi Itaru san,
 
-Thanks in advance,
-David Arendt
+Thanks for the suggestion.
 
-On 11/26/12 03:54, Liu Bo wrote:
-> On Sun, Nov 25, 2012 at 09:15:06PM +0100, David Arendt wrote:
->> Hi,
->>
->> I have made some more tests:
->>
->> ./testxattr /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing file /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing attribute system.posix_acl_default
->> lgetxattr failed: No data available
->>
->> getfattr /u00/root.20121121.210102.full/var/lib/nfs/sm
->> (no result)
->>
->> setfattr -x system.posix_acl_default
->> /u00/root.20121121.210102.full/var/lib/nfs/sm
->>
->> testxattr /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing file /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing attribute system.posix_acl_access
->>
->> setfattr -x system.posix_acl_access
->> /u00/root.20121121.210102.full/var/lib/nfs/sm
->>
->> ./testxattr /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing file /u00/root.20121121.210102.full/var/lib/nfs/sm
->>
->> Now a test with a manually set attribute:
->>
->> setfattr -n user.testattribute -v testvalue
->> /u00/root.20121121.210102.full/var/lib/nfs/sm
->>
->> getfattr /u00/root.20121121.210102.full/var/lib/nfs/sm
->> getfattr: Removing leading '/' from absolute path names
->> # file: u00/root.20121121.210102.full/var/lib/nfs/sm
->> user.testattribute
->>
->> ./testxattr /u00/root.20121121.210102.full/var/lib/nfs/smprocessing file
->> /u00/root.20121121.210102.full/var/lib/nfs/sm
->> processing attribute user.testattribute
->> value testvalue
-> So another manually set attribute proves the code is right, that means
-> the previous weird case is likely due to xattr metadata corruption somehow,
-> it maybe name hash mismatch, or the xattr name len mismatch.
->
-> thanks,
-> liubo
->
->> Thanks in advance,
->> David Arendt
->>
->> On 11/24/12 04:39, Liu Bo wrote:
->>> On Fri, Nov 23, 2012 at 10:09:16PM +0100, David Arendt wrote:
->>>> Well, this is only code to demonstrate the problem, the ; is normally a
->>>> silly mistake, but for my test case valuelen is < 0 so, the ; doesn't
->>>> change anything. With this corrected, the problem stays the same.
->>>>
->>>> On 11/23/12 21:43, Garry T. Williams wrote:
->>>>> On Friday, November 23, 2012 18:45:04 David Arendt wrote:
->>>>>>   for (i = 0; i < attrslen; i+= strlen(&attrs[i]) + 1)
->>>>>>   {
->>>>>>     printf("processing attribute %s\n", &attrs[i]);
->>>>>>
->>>>>>     valuelen = lgetxattr(argv[1], &attrs[i], value, 1024);
->>>>>>
->>>>>>     if (valuelen < 0);
->>>>>   Hmmm ----------------^
->>> Hi David,
->>>
->>> Any dmesg output for this?
->>>
->>> thanks,
->>> liubo
->>>
->>>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It's all right to ignore ENOENT.
 
+An extent stands for a range of space, which owns an item in extent tree.
+
+If old extents' item is not found in the extent tree, i.e. rejected extents,
+it means that this range of space is not shared by any snapshots(the extent refs is now 0),
+and so it's safe.
+
+So the worst case is that due to COW, a file and its snapshots share nothing
+after some time, the defrag on the file won't change its snapshots, but this
+can be solved when we always with autodefrag and snapshot-aware defrag.
+
+thanks,
+liubo

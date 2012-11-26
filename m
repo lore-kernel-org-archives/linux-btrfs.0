@@ -1,48 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51677 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753393Ab2KZDAK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Nov 2012 22:00:10 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAQ30950017746
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2012 03:00:10 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAQ3091B016117
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2012 03:00:09 GMT
-Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAQ309vl003179
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Nov 2012 21:00:09 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix an while-loop of listxattr
-Date: Mon, 26 Nov 2012 10:58:36 +0800
-Message-Id: <1353898716-6527-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:28671 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753182Ab2KZItt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Nov 2012 03:49:49 -0500
+Message-ID: <50B32D43.4060703@cn.fujitsu.com>
+Date: Mon, 26 Nov 2012 16:50:11 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH 8/9] Btrfs: get write access for qgroup operations
+References: <50B32ABF.7040803@cn.fujitsu.com>
+In-Reply-To: <50B32ABF.7040803@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we found an invalid xattr dir item, we'd better try the next one instead.
+We need get write access for qgroup operations, or we will modify the R/O fs.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/xattr.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c | 73 +++++++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 48 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 3f4e2d6..e9d3840 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -265,7 +265,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a7afafa..e6525d1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3481,8 +3481,9 @@ out:
+ 	return ret;
+ }
  
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
- 		if (verify_dir_item(root, leaf, di))
--			continue;
-+			goto next;
+-static long btrfs_ioctl_quota_ctl(struct btrfs_root *root, void __user *arg)
++static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ {
++	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	struct btrfs_ioctl_quota_ctl_args *sa;
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	int ret;
+@@ -3491,12 +3492,15 @@ static long btrfs_ioctl_quota_ctl(struct btrfs_root *root, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
  
- 		name_len = btrfs_dir_name_len(leaf, di);
- 		total_size += name_len + 1;
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
+ 
+ 	sa = memdup_user(arg, sizeof(*sa));
+-	if (IS_ERR(sa))
+-		return PTR_ERR(sa);
++	if (IS_ERR(sa)) {
++		ret = PTR_ERR(sa);
++		goto drop_write;
++	}
+ 
+ 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
+ 		trans = btrfs_start_transaction(root, 2);
+@@ -3529,14 +3533,16 @@ static long btrfs_ioctl_quota_ctl(struct btrfs_root *root, void __user *arg)
+ 		if (err && !ret)
+ 			ret = err;
+ 	}
+-
+ out:
+ 	kfree(sa);
++drop_write:
++	mnt_drop_write_file(file);
+ 	return ret;
+ }
+ 
+-static long btrfs_ioctl_qgroup_assign(struct btrfs_root *root, void __user *arg)
++static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+ {
++	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	struct btrfs_ioctl_qgroup_assign_args *sa;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+@@ -3545,12 +3551,15 @@ static long btrfs_ioctl_qgroup_assign(struct btrfs_root *root, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
+ 
+ 	sa = memdup_user(arg, sizeof(*sa));
+-	if (IS_ERR(sa))
+-		return PTR_ERR(sa);
++	if (IS_ERR(sa)) {
++		ret = PTR_ERR(sa);
++		goto drop_write;
++	}
+ 
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+@@ -3573,11 +3582,14 @@ static long btrfs_ioctl_qgroup_assign(struct btrfs_root *root, void __user *arg)
+ 
+ out:
+ 	kfree(sa);
++drop_write:
++	mnt_drop_write_file(file);
+ 	return ret;
+ }
+ 
+-static long btrfs_ioctl_qgroup_create(struct btrfs_root *root, void __user *arg)
++static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+ {
++	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	struct btrfs_ioctl_qgroup_create_args *sa;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+@@ -3586,12 +3598,15 @@ static long btrfs_ioctl_qgroup_create(struct btrfs_root *root, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
+ 
+ 	sa = memdup_user(arg, sizeof(*sa));
+-	if (IS_ERR(sa))
+-		return PTR_ERR(sa);
++	if (IS_ERR(sa)) {
++		ret = PTR_ERR(sa);
++		goto drop_write;
++	}
+ 
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+@@ -3613,11 +3628,14 @@ static long btrfs_ioctl_qgroup_create(struct btrfs_root *root, void __user *arg)
+ 
+ out:
+ 	kfree(sa);
++drop_write:
++	mnt_drop_write_file(file);
+ 	return ret;
+ }
+ 
+-static long btrfs_ioctl_qgroup_limit(struct btrfs_root *root, void __user *arg)
++static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ {
++	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	struct btrfs_ioctl_qgroup_limit_args *sa;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+@@ -3627,12 +3645,15 @@ static long btrfs_ioctl_qgroup_limit(struct btrfs_root *root, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
+ 
+ 	sa = memdup_user(arg, sizeof(*sa));
+-	if (IS_ERR(sa))
+-		return PTR_ERR(sa);
++	if (IS_ERR(sa)) {
++		ret = PTR_ERR(sa);
++		goto drop_write;
++	}
+ 
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+@@ -3655,6 +3676,8 @@ static long btrfs_ioctl_qgroup_limit(struct btrfs_root *root, void __user *arg)
+ 
+ out:
+ 	kfree(sa);
++drop_write:
++	mnt_drop_write_file(file);
+ 	return ret;
+ }
+ 
+@@ -3830,13 +3853,13 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	case BTRFS_IOC_GET_DEV_STATS:
+ 		return btrfs_ioctl_get_dev_stats(root, argp);
+ 	case BTRFS_IOC_QUOTA_CTL:
+-		return btrfs_ioctl_quota_ctl(root, argp);
++		return btrfs_ioctl_quota_ctl(file, argp);
+ 	case BTRFS_IOC_QGROUP_ASSIGN:
+-		return btrfs_ioctl_qgroup_assign(root, argp);
++		return btrfs_ioctl_qgroup_assign(file, argp);
+ 	case BTRFS_IOC_QGROUP_CREATE:
+-		return btrfs_ioctl_qgroup_create(root, argp);
++		return btrfs_ioctl_qgroup_create(file, argp);
+ 	case BTRFS_IOC_QGROUP_LIMIT:
+-		return btrfs_ioctl_qgroup_limit(root, argp);
++		return btrfs_ioctl_qgroup_limit(file, argp);
+ 	}
+ 
+ 	return -ENOTTY;
 -- 
-1.7.7.6
+1.7.11.7
 

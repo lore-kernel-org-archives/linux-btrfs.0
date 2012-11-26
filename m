@@ -1,163 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26439 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754288Ab2KUOTw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Nov 2012 09:19:52 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jansen@webgods.de
-Subject: [PATCH] Btrfs: put raid properties into global table
-Date: Wed, 21 Nov 2012 22:18:10 +0800
-Message-Id: <1353507490-7604-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:23967 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754092Ab2KZJ1v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Nov 2012 04:27:51 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAQ9Ro5i010129
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2012 17:27:50 +0800
+Message-ID: <50B3362D.1030409@cn.fujitsu.com>
+Date: Mon, 26 Nov 2012 17:28:13 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 5/5] Btrfs: fix remount vs autodefrag
+References: <50B32FE7.5080908@cn.fujitsu.com>
+In-Reply-To: <50B32FE7.5080908@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Raid properties can be shared among raid calculation code, we can put
-them into a global table to keep it simple.
+If we remount the fs to close the auto defragment or make the fs R/O, we should
+stop the auto defragment.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |    1 +
- fs/btrfs/extent-tree.c |    6 +++---
- fs/btrfs/volumes.c     |   46 ++++++++++++++++------------------------------
- fs/btrfs/volumes.h     |    9 +++++++++
- 4 files changed, 29 insertions(+), 33 deletions(-)
+ fs/btrfs/ctree.h |  1 +
+ fs/btrfs/file.c  | 13 +++++++++++++
+ fs/btrfs/super.c | 29 +++++++++++++++++++++++++++++
+ 3 files changed, 43 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c72ead8..52af255 100644
+index 4ce24ce..01d671c 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2955,6 +2955,7 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range);
- int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
- int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
- 					 struct btrfs_fs_info *fs_info);
-+int __get_raid_index(u64 flags);
- /* ctree.c */
- int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
- 		     int level, int *slot);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d3e2c1..bb0f0b1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5466,7 +5466,7 @@ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
- 	return 0;
- }
+@@ -1759,6 +1759,7 @@ struct btrfs_ioctl_defrag_range_args {
  
--static int __get_block_group_index(u64 flags)
-+int __get_raid_index(u64 flags)
- {
- 	int index;
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
++#define btrfs_raw_test_opt(o, opt)	((o) & BTRFS_MOUNT_##opt)
+ #define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
+ 					 BTRFS_MOUNT_##opt)
+ /*
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 40b17d0..7aaae56 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -320,8 +320,21 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 	range.start = defrag->last_offset;
  
-@@ -5486,7 +5486,7 @@ static int __get_block_group_index(u64 flags)
- 
- static int get_block_group_index(struct btrfs_block_group_cache *cache)
- {
--	return __get_block_group_index(cache->flags);
-+	return __get_raid_index(cache->flags);
- }
- 
- enum btrfs_loop_type {
-@@ -7427,7 +7427,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	 */
- 	target = get_restripe_target(root->fs_info, block_group->flags);
- 	if (target) {
--		index = __get_block_group_index(extended_to_chunk(target));
-+		index = __get_raid_index(extended_to_chunk(target));
- 	} else {
- 		/*
- 		 * this is just a balance, so if we were marked as full
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0f5ebb7..b701fa4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3235,6 +3235,14 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- 	return 0;
- }
- 
-+struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
-+	{ 2, 1, 0, 4, 2, 2 /* raid10 */ },
-+	{ 1, 1, 2, 2, 2, 2 /* raid1 */ },
-+	{ 1, 2, 1, 1, 1, 2 /* dup */ },
-+	{ 1, 1, 0, 2, 1, 1 /* raid0 */ },
-+	{ 1, 1, 0, 1, 1, 1 /* single */ },
-+};
+ 	sb_start_write(fs_info->sb);
 +
- static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *extent_root,
- 			       struct map_lookup **map_ret,
-@@ -3264,43 +3272,21 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	int ndevs;
- 	int i;
- 	int j;
-+	int index;
- 
- 	BUG_ON(!alloc_profile_is_valid(type, 0));
- 
- 	if (list_empty(&fs_devices->alloc_list))
- 		return -ENOSPC;
- 
--	sub_stripes = 1;
--	dev_stripes = 1;
--	devs_increment = 1;
--	ncopies = 1;
--	devs_max = 0;	/* 0 == as many as possible */
--	devs_min = 1;
-+	index = __get_raid_index(type);
- 
--	/*
--	 * define the properties of each RAID type.
--	 * FIXME: move this to a global table and use it in all RAID
--	 * calculation code
--	 */
--	if (type & (BTRFS_BLOCK_GROUP_DUP)) {
--		dev_stripes = 2;
--		ncopies = 2;
--		devs_max = 1;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID0)) {
--		devs_min = 2;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID1)) {
--		devs_increment = 2;
--		ncopies = 2;
--		devs_max = 2;
--		devs_min = 2;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID10)) {
--		sub_stripes = 2;
--		devs_increment = 2;
--		ncopies = 2;
--		devs_min = 4;
--	} else {
--		devs_max = 1;
--	}
-+	sub_stripes = btrfs_raid_array[index].sub_stripes;
-+	dev_stripes = btrfs_raid_array[index].dev_stripes;
-+	devs_max = btrfs_raid_array[index].devs_max;
-+	devs_min = btrfs_raid_array[index].devs_min;
-+	devs_increment = btrfs_raid_array[index].devs_increment;
-+	ncopies = btrfs_raid_array[index].ncopies;
- 
- 	if (type & BTRFS_BLOCK_GROUP_DATA) {
- 		max_stripe_size = 1024 * 1024 * 1024;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 53c06af..4a06901 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -179,6 +179,15 @@ struct btrfs_device_info {
- 	u64 total_avail;
- };
- 
-+struct btrfs_raid_attr {
-+	int sub_stripes;	/* sub_stripes info for map */
-+	int dev_stripes;	/* stripes per dev */
-+	int devs_max;		/* max devs to use */
-+	int devs_min;		/* min devs needed */
-+	int devs_increment;	/* ndevs has to be a multiple of this */
-+	int ncopies;		/* how many copies to data has */
-+};
++	/* Avoid defraging files on R/O fs */
++	if (!down_write_trylock(&fs_info->sb->s_umount)) {
++		sb_end_write(fs_info->sb);
++		btrfs_requeue_inode_defrag(inode, defrag);
++		iput(inode);
++		return -EBUSY;
++	}
 +
- struct map_lookup {
- 	u64 type;
- 	int io_align;
++	BUG_ON(fs_info->sb->s_flags & MS_RDONLY);
++
+ 	num_defrag = btrfs_defrag_file(inode, NULL, &range, defrag->transid,
+ 				       BTRFS_DEFRAG_BATCH);
++
++	up_write(&fs_info->sb->s_umount);
+ 	sb_end_write(fs_info->sb);
+ 	/*
+ 	 * if we filled the whole defrag batch, there
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b3b041a..2e7beee 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1189,6 +1189,32 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 	btrfs_set_max_workers(&fs_info->scrub_workers, new_pool_size);
+ }
+ 
++static inline void btrfs_remount_prepare(struct btrfs_fs_info *fs_info,
++					 unsigned long old_opts, int flags)
++{
++	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
++	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
++	     (flags & MS_RDONLY))) {
++		/* wait for any defraggers to finish */
++		wait_event(fs_info->transaction_wait,
++			   (atomic_read(&fs_info->defrag_running) == 0));
++	}
++}
++
++static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
++					 unsigned long old_opts, int flags)
++{
++	/*
++	 * We remount the fs successfully, then we need cleanup all defragable
++	 * inodes if the autodefragment is close or the fs is R/O.
++	 */
++	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
++	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
++	     (flags & MS_RDONLY)))
++		btrfs_cleanup_defrag_inodes(fs_info);
++
++}
++
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+@@ -1214,6 +1240,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	if ((*flags & MS_RDONLY) == (sb->s_flags & MS_RDONLY))
+ 		return 0;
+ 
++	btrfs_remount_prepare(fs_info, old_opts, *flags);
++
+ 	if (*flags & MS_RDONLY) {
+ 		sb->s_flags |= MS_RDONLY;
+ 
+@@ -1247,6 +1275,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		sb->s_flags &= ~MS_RDONLY;
+ 	}
+ 
++	btrfs_remount_cleanup(fs_info, old_opts, *flags);
+ 	return 0;
+ 
+ restore:
 -- 
-1.7.7.6
+1.7.11.7
 

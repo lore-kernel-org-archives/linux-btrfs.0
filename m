@@ -1,57 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50388 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754209Ab2KZKbp (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18340 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751789Ab2K0HsD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Nov 2012 05:31:45 -0500
-Date: Mon, 26 Nov 2012 18:30:13 +0800
+	Tue, 27 Nov 2012 02:48:03 -0500
+Date: Tue, 27 Nov 2012 15:46:25 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+To: David Arendt <admin@prnet.org>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2 v4] Btrfs: snapshot-aware defrag
-Message-ID: <20121126103012.GA18538@liubo.jp.oracle.com>
+Subject: Re: extended attributes wiredness
+Message-ID: <20121127074625.GA31592@liubo.cn.oracle.com>
 Reply-To: bo.li.liu@oracle.com
-References: <1351333721-3220-1-git-send-email-bo.li.liu@oracle.com>
- <CANW9uyu0NyFj57AVp2X-Hc=AjXdwyP=wieOcteEbj2_Mx_F95w@mail.gmail.com>
- <50911FC0.4080104@oracle.com>
- <CANW9uyse7bw1+=GkV-aRQbDPh1E-t3G4VwkAGc5-76KMfYMjog@mail.gmail.com>
- <20121101112114.GA4328@liubo.cn.oracle.com>
- <CANW9uysHg6qk4zSh_yFgP5e545kJZVoma36Hpd1Zzg-hoSVAhQ@mail.gmail.com>
- <50929CF4.9060206@oracle.com>
- <CANW9uyt9qE9384WnQq5ggZ2hb-DbahZe8KY5-WXRFSKTiedekg@mail.gmail.com>
+References: <50AFB620.6040707@prnet.org>
+ <2925363.jTFvA7mLni@vfr>
+ <50AFE5FC.7040304@prnet.org>
+ <20121124033910.GA5680@gmail.com>
+ <50B27C4A.7040702@prnet.org>
+ <20121126025439.GA5923@liubo>
+ <50B3003E.2010104@prnet.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANW9uyt9qE9384WnQq5ggZ2hb-DbahZe8KY5-WXRFSKTiedekg@mail.gmail.com>
+In-Reply-To: <50B3003E.2010104@prnet.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 25, 2012 at 12:48:33PM +0900, Itaru Kitayama wrote:
-> Hi Liubo:
-> 
-> At the relinking stage, in some situations, looking up the extent tree with
-> the extent logical start objectid key from one of the old extents fails,
-> but the found previous item's objectid + offset is exactly the original
-> search objectid. As you say, usually old extents are retrieved from the
-> extent tree without a problem, but if the Delayed or some other mechanisms
-> change extents layout in the finish ordered IO function, we need to take
-> care of those rejected extents, not simply returning ENOENT. What do you
-> think?
+Hi,  
+ 
+(cc btrfs Mailing list to notify others.)
 
-Hi Itaru san,
+Thanks for the helpful test.img.
 
-Thanks for the suggestion.
+Well...after deeper debug, I'm sure that it's not a btrfs bug,
+at least not a btrfs acl/xattr bug. 
+ 
+The debug tree shows 
+ 
+item 10 key (257 INODE_ITEM 0) itemoff 3387 itemsize 160 
+        inode generation 6 transid 6 size 102 block group 0 mode 40755 links 1 
+item 11 key (257 INODE_REF 256) itemoff 3372 itemsize 15 
+        inode ref index 2 namelen 5 name: test1 
+item 12 key (257 XATTR_ITEM 367492571) itemoff 3318 itemsize 54 
+        location key (0 UNKNOWN.0 0) type 8 
+        namelen 24 datalen 0 name: system.posix_acl_default 
+                  ^^^^^^^^^^^ 
+item 13 key (257 XATTR_ITEM 2038346239) itemoff 3237 itemsize 81 
+        location key (0 UNKNOWN.0 0) type 8 
+        namelen 23 datalen 28 name: system.posix_acl_access 
+        data ^B 
+ 
+========== 
 
-It's all right to ignore ENOENT.
-
-An extent stands for a range of space, which owns an item in extent tree.
-
-If old extents' item is not found in the extent tree, i.e. rejected extents,
-it means that this range of space is not shared by any snapshots(the extent refs is now 0),
-and so it's safe.
-
-So the worst case is that due to COW, a file and its snapshots share nothing
-after some time, the defrag on the file won't change its snapshots, but this
-can be solved when we always with autodefrag and snapshot-aware defrag.
-
-thanks,
+so extended attribute "system.posix_acl_default" here has not data, which'll
+make filesystems(not just btrfs) return -ENODATA. 
+ 
+I guess some userspace applications may make it like that. 
+ 
+thanks, 
 liubo
+
+On Mon, Nov 26, 2012 at 06:38:06AM +0100, David Arendt wrote:
+> Hi,
+> 
+> I don't know if your xattr patch was meant to fix this issue, but I have
+> just tested kernel 3.7-rc7 with your patch applied on another directory
+> having the problem and I still have the weird behaviour.
+> 
+> Thanks in advance,
+> David Arendt

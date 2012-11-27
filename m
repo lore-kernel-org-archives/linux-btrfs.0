@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserver1.prnet.org ([195.46.254.69]:63422 "EHLO
+Received: from extserver1.prnet.org ([195.46.254.69]:63340 "EHLO
 	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755851Ab2K0Qxh (ORCPT
+	with ESMTP id S1753742Ab2K0TVJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Nov 2012 11:53:37 -0500
-Message-ID: <50B4F009.40201@prnet.org>
-Date: Tue, 27 Nov 2012 17:53:29 +0100
+	Tue, 27 Nov 2012 14:21:09 -0500
+Message-ID: <50B51296.3010103@prnet.org>
+Date: Tue, 27 Nov 2012 20:20:54 +0100
 From: David Arendt <admin@prnet.org>
 MIME-Version: 1.0
 To: bo.li.liu@oracle.com
@@ -19,13 +19,46 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I tried to create an ext4 filesystem on a loop device and do a cp -a of
-/var/lib/nfs/sm to the ext4 filesystem. Here the problem does not exist.
-Perhaps ext4 has another behaviour in the sense that it doesn't store
-empty attributes or doesn't return empty attributes.
+I have now tested a gentoo reinstall with a recompile of nfs-utils. By
+observing how the directory /var/lib/nfs is created, I found a rather
+simple way to reproduce the problem:
 
-I am using Gentoo and will try to do a new install on a loop device to
-figure out which userspace program creates files this way.
+dd if=/dev/zero of=test.img bs=8192 count=81920
+81920+0 records in
+81920+0 records out
+671088640 bytes (671 MB) copied, 1.52943 s, 439 MB/s
+
+losetup /dev/loop0 test.img
+
+mkfs.btrfs /dev/loop0
+
+WARNING! - Btrfs v0.20-rc1-37-g91d9eec IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+SMALL VOLUME: forcing mixed metadata/data groups
+Created a data/metadata chunk of size 8388608
+fs created label (null) on /dev/loop0
+    nodesize 4096 leafsize 4096 sectorsize 4096 size 640.00MB
+Btrfs v0.20-rc1-37-g91d9eec
+
+mount /dev/loop0 /mnt
+
+btrfs subvolume create /mnt/test
+Create subvolume '/mnt/test'
+
+mkdir /mnt/test/test1
+
+/root/x/testxattr /mnt/test/test1 
+processing file /mnt/test/test1
+
+cp -a /mnt/test/test1 /mnt/test/test2
+
+/root/x/testxattr /mnt/test/test2
+processing file /mnt/test/test2
+processing attribute system.posix_acl_default
+lgetxattr failed: No data available
+
+Might it be a bug in coreutils ?
 
 Thanks in advance,
 David Arendt

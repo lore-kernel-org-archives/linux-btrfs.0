@@ -1,46 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:22084 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756185Ab2K0Rjx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Nov 2012 12:39:53 -0500
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp4) (RZmta 31.5 OK) with ESMTP id 603d0coARCEh0i
-	for <linux-btrfs@vger.kernel.org>;
-	Tue, 27 Nov 2012 18:39:52 +0100 (CET)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix a scrub regression in case of write errors
-Date: Tue, 27 Nov 2012 18:39:51 +0100
-Message-Id: <1354037991-24564-2-git-send-email-sbehrens@giantdisaster.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:16158 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753572Ab2K1K1o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Nov 2012 05:27:44 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qASARhFg030403
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2012 18:27:43 +0800
+Message-ID: <50B5E737.1010204@cn.fujitsu.com>
+Date: Wed, 28 Nov 2012 18:28:07 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] Btrfs: use existing align macros in btrfs_allocate()
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This regression was introduced by the device-replace patches.
-Scrub immediately stops checking those disks that have write errors.
-This is nothing that happens in the real world, but it is wrong
-since scrub is the tool to detect and repair defects. Fix it.
+The kernel developers have implemented some often-used align macros, we should
+use them instead of the complex code.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-This patch is only for btrfs-next.
+ fs/btrfs/file.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- fs/btrfs/scrub.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 30ba997..8db6a64 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2657,7 +2657,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		btrfs_put_block_group(cache);
- 		if (ret)
- 			break;
--		if (atomic64_read(&dev_replace->num_write_errors) > 0) {
-+		if (is_dev_replace &&
-+		    atomic64_read(&dev_replace->num_write_errors) > 0) {
- 			ret = -EIO;
- 			break;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 7aaae56..641bbaa 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2067,12 +2067,12 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	u64 alloc_end;
+ 	u64 alloc_hint = 0;
+ 	u64 locked_end;
+-	u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
+ 	struct extent_map *em;
++	int blocksize = BTRFS_I(inode)->root->sectorsize;
+ 	int ret;
+ 
+-	alloc_start = offset & ~mask;
+-	alloc_end =  (offset + len + mask) & ~mask;
++	alloc_start = round_down(offset, blocksize);
++	alloc_end = round_up(offset + len, blocksize);
+ 
+ 	/* Make sure we aren't being give some crap mode */
+ 	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
+@@ -2153,7 +2153,7 @@ static long btrfs_fallocate(struct file *file, int mode,
  		}
+ 		last_byte = min(extent_map_end(em), alloc_end);
+ 		actual_end = min_t(u64, extent_map_end(em), offset + len);
+-		last_byte = (last_byte + mask) & ~mask;
++		last_byte = ALIGN(last_byte, blocksize);
+ 
+ 		if (em->block_start == EXTENT_MAP_HOLE ||
+ 		    (cur_offset >= inode->i_size &&
 -- 
-1.8.0.1
-
+1.7.11.7

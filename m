@@ -1,42 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserver1.prnet.org ([195.46.254.69]:38411 "EHLO
-	extserver1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751062Ab2K1RMJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Nov 2012 12:12:09 -0500
-Message-ID: <50B645DF.7020801@prnet.org>
-Date: Wed, 28 Nov 2012 18:11:59 +0100
-From: David Arendt <admin@prnet.org>
-MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: extended attributes wiredness
-References: <50AFB620.6040707@prnet.org> <2925363.jTFvA7mLni@vfr> <50AFE5FC.7040304@prnet.org> <20121124033910.GA5680@gmail.com> <50B27C4A.7040702@prnet.org> <20121126025439.GA5923@liubo> <50B3003E.2010104@prnet.org> <20121127074625.GA31592@liubo.cn.oracle.com> <50B51296.3010103@prnet.org> <20121128105422.GB2791@liubo>
-In-Reply-To: <20121128105422.GB2791@liubo>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cn.fujitsu.com ([222.73.24.84]:20552 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S932465Ab2K2Dt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Nov 2012 22:49:58 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAT3CZct020428
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 11:12:36 +0800
+From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: send - sparse file support for btrfs-send mechanism
+Date: Thu, 29 Nov 2012 11:11:59 +0800
+Message-Id: <1354158719-15615-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+when send/receive a sparse file, the holes of the original file
+will be filled with zero. The holes will be sent as ZERO streams,
+and it's unnecessary.
 
-your patches seem to fix the problem
+So, I improved this by skipping the hole of file while sending.
 
-Thanks,
-David Arendt
+Signed-off-by: Cheng Yang <chenyang.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/send.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-On 11/28/12 11:54, Liu Bo wrote:
-> On Tue, Nov 27, 2012 at 08:20:54PM +0100, David Arendt wrote:
->> Hi,
->>
->> I have now tested a gentoo reinstall with a recompile of nfs-utils. By
->> observing how the directory /var/lib/nfs is created, I found a rather
->> simple way to reproduce the problem:
-> Thanks for the reproduce steps, it helps quite a lot.
->
-> It turns out to be something wrong in btrfs's setting xattr code, I've
-> just sent you two patches for it, maybe you can check to see if it works
-> on your box :)
->
-> thanks,
-> liubo
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index e78b297..1e1d59a 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3718,6 +3718,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 	u64 pos = 0;
+ 	u64 len;
+ 	u32 l;
++	u64 bytenr;
+ 	u8 type;
+ 
+ 	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
+@@ -3732,6 +3733,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 		 */
+ 		len = PAGE_CACHE_ALIGN(len);
+ 	} else {
++		bytenr = btrfs_file_extent_disk_bytenr(path->nodes[0], ei);
++		if (bytenr == 0) {
++			ret = 0;
++			goto out;
++		}
+ 		len = btrfs_file_extent_num_bytes(path->nodes[0], ei);
+ 	}
+ 
+-- 
+1.7.7.6
 

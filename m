@@ -1,55 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20552 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:53023 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932465Ab2K2Dt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Nov 2012 22:49:58 -0500
+	id S1751039Ab2K2GGd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Nov 2012 01:06:33 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAT3CZct020428
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 11:12:36 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qAT66VDJ031766
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:06:31 +0800
+Message-ID: <50B6FB48.9060300@cn.fujitsu.com>
+Date: Thu, 29 Nov 2012 14:06:00 +0800
 From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Chen Yang <chenyang.fnst@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: send - sparse file support for btrfs-send mechanism
-Date: Thu, 29 Nov 2012 11:11:59 +0800
-Message-Id: <1354158719-15615-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: send - pre-allocated file support for btrfs-send mechanism
+References: <1354158719-15615-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
+In-Reply-To: <1354158719-15615-1-git-send-email-chenyang.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-when send/receive a sparse file, the holes of the original file
-will be filled with zero. The holes will be sent as ZERO streams,
+>From 4222aa3a32cf4db161fcbbb87ad29b714f1bfaf2 Mon Sep 17 00:00:00 2001
+From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+Date: Thu, 29 Nov 2012 13:22:09 +0800
+Subject: [PATCH] Btrfs: send - pre-allocated file  support for btrfs-send
+ mechanism
+
+when send or receive a file which has pre-allocated part,
+the pre-allocated parts of the file will be sent as ZERO streams,
 and it's unnecessary.
 
-So, I improved this by skipping the hole of file while sending.
+So we can improve this by skip these EMPTY parts.
 
 Signed-off-by: Cheng Yang <chenyang.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/send.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+this patch is based on
+"Btrfs: send - sparse file support for btrfs-send mechanism"
+---
+ fs/btrfs/send.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e78b297..1e1d59a 100644
+index 1e1d59a..2d23184 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3718,6 +3718,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 	u64 pos = 0;
- 	u64 len;
- 	u32 l;
-+	u64 bytenr;
- 	u8 type;
- 
- 	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
-@@ -3732,6 +3733,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
+@@ -3732,13 +3732,18 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 		 * sure to send the whole thing
  		 */
  		len = PAGE_CACHE_ALIGN(len);
- 	} else {
-+		bytenr = btrfs_file_extent_disk_bytenr(path->nodes[0], ei);
-+		if (bytenr == 0) {
-+			ret = 0;
-+			goto out;
-+		}
+-	} else {
++	} else if (type == BTRFS_FILE_EXTENT_REG) {
+ 		bytenr = btrfs_file_extent_disk_bytenr(path->nodes[0], ei);
+ 		if (bytenr == 0) {
+ 			ret = 0;
+ 			goto out;
+ 		}
  		len = btrfs_file_extent_num_bytes(path->nodes[0], ei);
++	} else if (type == BTRFS_FILE_EXTENT_PREALLOC) {
++		ret = 0;
++		goto out;
++	} else {
++		BUG();
  	}
  
+ 	if (offset + len > sctx->cur_inode_size)
 -- 
 1.7.7.6
 

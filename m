@@ -1,127 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29449 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751233Ab2K3L0P (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:62017 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752356Ab2K3GCl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 06:26:15 -0500
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAUBQEv5032045
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:26:14 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAUBQDrM013460
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:26:14 GMT
-Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAUBQDAa029663
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 05:26:13 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: put delayed iput tracking list inside in-memory inode
-Date: Fri, 30 Nov 2012 19:24:43 +0800
-Message-Id: <1354274683-17762-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 30 Nov 2012 01:02:41 -0500
+Received: by mail-pa0-f46.google.com with SMTP id bh2so109595pad.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 22:02:40 -0800 (PST)
+From: shhuiw@gmail.com
+To: chris.mason@fusionio.com, jbacik@fusionio.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: use ctl->unit for free space calculation instead of block_group->sectorsize
+Date: Fri, 30 Nov 2012 14:02:25 +0800
+Message-Id: <50b84bff.e756420a.16c1.ffffc35a@mx.google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This can save us a dynamic memory allocation/free.
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+We should use ctl->unit for free space calculation instead of block_group->sectorsize
+even though for free space use_bitmap or free space cluster we only have sectorsize assigned to ctl->unit currently. Also, we can keep it consisten in code style.
+
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- fs/btrfs/btrfs_inode.h |    3 +++
- fs/btrfs/inode.c       |   36 +++++++++++++-----------------------
- 2 files changed, 16 insertions(+), 23 deletions(-)
+ fs/btrfs/free-space-cache.c |   20 +++++++++-----------
+ 1 files changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index ed8ca7c..446ce73 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -79,6 +79,9 @@ struct btrfs_inode {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 1027b85..c3318cb 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1364,7 +1364,7 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	u64 bitmap_bytes;
+ 	u64 extent_bytes;
+ 	u64 size = block_group->key.offset;
+-	u64 bytes_per_bg = BITS_PER_BITMAP * block_group->sectorsize;
++	u64 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
+ 	int max_bitmaps = div64_u64(size + bytes_per_bg - 1, bytes_per_bg);
+ 
+ 	BUG_ON(ctl->total_bitmaps > max_bitmaps);
+@@ -1650,8 +1650,7 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
+ 	 * some block groups are so tiny they can't be enveloped by a bitmap, so
+ 	 * don't even bother to create a bitmap for this
  	 */
- 	struct list_head delalloc_inodes;
+-	if (BITS_PER_BITMAP * block_group->sectorsize >
+-	    block_group->key.offset)
++	if (BITS_PER_BITMAP * ctl->unit > block_group->key.offset)
+ 		return false;
  
-+	/* for delayed iput */
-+	struct list_head iput_list;
-+
- 	/*
- 	 * list for tracking inodes that must be sent to disk before a
- 	 * rename or truncate commit
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 95542a1..0c7161d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2070,34 +2070,23 @@ zeroit:
- 	return -EIO;
- }
+ 	return true;
+@@ -2298,10 +2297,10 @@ static int btrfs_bitmap_cluster(struct btrfs_block_group_cache *block_group,
+ 	unsigned long total_found = 0;
+ 	int ret;
  
--struct delayed_iput {
--	struct list_head list;
--	struct inode *inode;
--};
--
--/* JDM: If this is fs-wide, why can't we add a pointer to
-- * btrfs_inode instead and avoid the allocation? */
- void btrfs_add_delayed_iput(struct inode *inode)
- {
--	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
--	struct delayed_iput *delayed;
--
--	if (atomic_add_unless(&inode->i_count, -1, 1))
--		return;
--
--	delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
--	delayed->inode = inode;
-+	if (atomic_add_unless(&inode->i_count, -1, 1) == 0) {
-+		struct btrfs_inode *bi = BTRFS_I(inode);
-+		struct btrfs_fs_info *fs_info = bi->root->fs_info;
+-	i = offset_to_bit(entry->offset, block_group->sectorsize,
++	i = offset_to_bit(entry->offset, ctl->unit, 
+ 			  max_t(u64, offset, entry->offset));
+-	want_bits = bytes_to_bits(bytes, block_group->sectorsize);
+-	min_bits = bytes_to_bits(min_bytes, block_group->sectorsize);
++	want_bits = bytes_to_bits(bytes, ctl->unit);
++	min_bits = bytes_to_bits(min_bytes, ctl->unit);
  
--	spin_lock(&fs_info->delayed_iput_lock);
--	list_add_tail(&delayed->list, &fs_info->delayed_iputs);
--	spin_unlock(&fs_info->delayed_iput_lock);
-+		spin_lock(&fs_info->delayed_iput_lock);
-+		list_add_tail(&bi->iput_list, &fs_info->delayed_iputs);
-+		spin_unlock(&fs_info->delayed_iput_lock);
-+	}
- }
+ again:
+ 	found_bits = 0;
+@@ -2325,23 +2324,22 @@ again:
  
- void btrfs_run_delayed_iputs(struct btrfs_root *root)
- {
- 	LIST_HEAD(list);
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct delayed_iput *delayed;
-+	struct btrfs_inode *bi = NULL;
- 	int empty;
+ 	total_found += found_bits;
  
- 	spin_lock(&fs_info->delayed_iput_lock);
-@@ -2111,10 +2100,9 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
- 	spin_unlock(&fs_info->delayed_iput_lock);
+-	if (cluster->max_size < found_bits * block_group->sectorsize)
+-		cluster->max_size = found_bits * block_group->sectorsize;
++	if (cluster->max_size < found_bits * ctl->unit)
++		cluster->max_size = found_bits * ctl->unit;
  
- 	while (!list_empty(&list)) {
--		delayed = list_entry(list.next, struct delayed_iput, list);
--		list_del(&delayed->list);
--		iput(delayed->inode);
--		kfree(delayed);
-+		bi = list_entry(list.next, struct btrfs_inode, iput_list);
-+		list_del_init(&bi->iput_list);
-+		iput(&bi->vfs_inode);
+ 	if (total_found < want_bits || cluster->max_size < cont1_bytes) {
+ 		i = next_zero + 1;
+ 		goto again;
  	}
+ 
+-	cluster->window_start = start * block_group->sectorsize +
+-		entry->offset;
++	cluster->window_start = start * ctl->unit + entry->offset;
+ 	rb_erase(&entry->offset_index, &ctl->free_space_offset);
+ 	ret = tree_insert_offset(&cluster->root, entry->offset,
+ 				 &entry->offset_index, 1);
+ 	BUG_ON(ret); /* -EEXIST; Logic error */
+ 
+ 	trace_btrfs_setup_cluster(block_group, cluster,
+-				  total_found * block_group->sectorsize, 1);
++				  total_found * ctl->unit, 1);
+ 	return 0;
  }
  
-@@ -7097,6 +7085,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	mutex_init(&ei->delalloc_mutex);
- 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
-+	INIT_LIST_HEAD(&ei->iput_list);
- 	INIT_LIST_HEAD(&ei->ordered_operations);
- 	RB_CLEAR_NODE(&ei->rb_node);
- 
-@@ -7120,6 +7109,7 @@ void btrfs_destroy_inode(struct inode *inode)
- 	WARN_ON(BTRFS_I(inode)->reserved_extents);
- 	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
- 	WARN_ON(BTRFS_I(inode)->csum_bytes);
-+	WARN_ON(!list_empty(&BTRFS_I(inode)->iput_list));
- 
- 	/*
- 	 * This can happen where we create an inode, but somebody else also
 -- 
-1.7.7.6
+1.6.0.2
 

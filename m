@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:57431 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753565Ab2K3GEO (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:30212 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932799Ab2K3LZz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 01:04:14 -0500
-Date: Fri, 30 Nov 2012 06:04:12 +0000
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Abhijit Pawar <abhi.c.pawar@gmail.com>
-Cc: linux-fsdevel@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-kernel@vger.kernel.org, gregkh@linuxfoundation.org
-Subject: Re: [RESEND PATCH] fs/super.c set_anon_super calling optimization
-Message-ID: <20121130060412.GG4939@ZenIV.linux.org.uk>
-References: <CA+kxV1F5VxBGawhkV=02LcgHNWiKF-H_k6N-d1TEYNeFAScezg@mail.gmail.com>
- <508924AB.4060902@gmail.com>
- <20121026131441.GA22256@andromeda.usersys.redhat.com>
- <20121130040556.GD4939@ZenIV.linux.org.uk>
- <50B846B2.9040700@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50B846B2.9040700@gmail.com>
+	Fri, 30 Nov 2012 06:25:55 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAUBPrSV015995
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:25:54 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAUBPrKs008035
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:25:53 GMT
+Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAUBPre3013634
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 05:25:53 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: parse parent 0 into correct value in tracepoint
+Date: Fri, 30 Nov 2012 19:24:22 +0800
+Message-Id: <1354274662-17726-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 30, 2012 at 11:10:02AM +0530, Abhijit Pawar wrote:
+Value 0 is not a tree id, so besides an upper limit, a lower limit is
+necessary as well while parsing root types of tracepoint.
 
-> > 	Because we want it to be a valid sget() callback.  I doubt that this
-> > optimization is worth doing, though - might even micro-pessimize the things
-> > on architectures where all arguments are passed in registers.
-> > 
-> Al,
-> Yes. it will be helpful in registers case.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ include/trace/events/btrfs.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-How so?  Consider something like
-static int btrfs_set_super(struct super_block *s, void *data)
-{
-        int err = set_anon_super(s, data);
-        if (!err)
-                s->s_fs_info = data;
-        return err;
-}
-Compile it e.g. for alpha.  Or powerpc.  Or amd64, for that matter.
-With and without your change.  And compare the resulting assembler.
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index bed9f15..91c6433 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -45,7 +45,8 @@ struct extent_buffer;
+ 
+ #define show_root_type(obj)						\
+ 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
+-	      (obj <= BTRFS_CSUM_TREE_OBJECTID )) ? __show_root_type(obj) : "-"
++	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
++	       obj <= BTRFS_CSUM_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
+ 
+ #define BTRFS_GROUP_FLAGS	\
+ 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"}, \
+-- 
+1.7.7.6
 
-Hell, if the arguments are passed in register, without your patch
-we have the args for set_anon_super() all set just as we enter
-btrfs_set_super().  With your patch the second one needs to be zeroed
-out...
-
-In any case, that's microoptimization in the best case and on quite a few
-architectures it's a pessimization (granted, an equally minor one).

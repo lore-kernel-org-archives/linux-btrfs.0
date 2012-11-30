@@ -1,50 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30212 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932799Ab2K3LZz (ORCPT
+Received: from smtprelay01.ispgateway.de ([80.67.18.13]:33961 "EHLO
+	smtprelay01.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757036Ab2K3OEA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Nov 2012 06:25:55 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAUBPrSV015995
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:25:54 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAUBPrKs008035
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 11:25:53 GMT
-Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAUBPre3013634
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 05:25:53 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
+	Fri, 30 Nov 2012 09:04:00 -0500
+Received: from [84.145.132.19] (helo=hermione.invalid)
+	by smtprelay01.ispgateway.de with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.68)
+	(envelope-from <berberic@fmi.uni-passau.de>)
+	id 1TeR5V-0006a0-CM
+	for linux-btrfs@vger.kernel.org; Fri, 30 Nov 2012 14:57:05 +0100
+Received: from berberic by hermione.invalid with local (Exim 4.80)
+	(envelope-from <berberic@fmi.uni-passau.de>)
+	id 1TeR5U-0004S3-AZ
+	for linux-btrfs@vger.kernel.org; Fri, 30 Nov 2012 14:57:04 +0100
+Date: Fri, 30 Nov 2012 14:57:04 +0100
+From: M G Berberich <btrfs@oss.m-berberich.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: parse parent 0 into correct value in tracepoint
-Date: Fri, 30 Nov 2012 19:24:22 +0800
-Message-Id: <1354274662-17726-1-git-send-email-bo.li.liu@oracle.com>
+Subject: Performance with lots of small files
+Message-ID: <20121130135704.GF19186@invalid>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Value 0 is not a tree id, so besides an upper limit, a lower limit is
-necessary as well while parsing root types of tracepoint.
+Hello,
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- include/trace/events/btrfs.h |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+how would btrfs perform with 200M files on a 3TByte-disk with up to
+18K files in a directory? Ext4 performs very, very poor, would btrfs
+do better?
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index bed9f15..91c6433 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -45,7 +45,8 @@ struct extent_buffer;
- 
- #define show_root_type(obj)						\
- 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
--	      (obj <= BTRFS_CSUM_TREE_OBJECTID )) ? __show_root_type(obj) : "-"
-+	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
-+	       obj <= BTRFS_CSUM_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
- 
- #define BTRFS_GROUP_FLAGS	\
- 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"}, \
+	MfG
+	bmg
+
 -- 
-1.7.7.6
-
+„Des is völlig wurscht, was heut beschlos- | M G Berberich
+ sen wird: I bin sowieso dagegn!“          | berberic@fmi.uni-passau.de
+(SPD-Stadtrat Kurt Schindler; Regensburg)  | www.fmi.uni-passau.de/~berberic

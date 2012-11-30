@@ -1,58 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f74.google.com ([209.85.214.74]:43392 "EHLO
-	mail-bk0-f74.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751500Ab2K3DkY (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:24359 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751259Ab2K3GSt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Nov 2012 22:40:24 -0500
-Received: by mail-bk0-f74.google.com with SMTP id je9so2249bkc.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 19:40:22 -0800 (PST)
-From: Filipe Brandenburger <filbranden@google.com>
-To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Filipe Brandenburger <filbranden@google.com>
-Subject: [PATCH 0/2] Btrfs: fix mode umasking on empty files
-Date: Thu, 29 Nov 2012 19:40:07 -0800
-Message-Id: <1354246809-32339-1-git-send-email-filbranden@google.com>
+	Fri, 30 Nov 2012 01:18:49 -0500
+Date: Fri, 30 Nov 2012 14:17:14 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe Brandenburger <filbranden@google.com>
+Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: fix permissions of empty files not affected
+ by umask
+Message-ID: <20121130061714.GA2613@liubo.cn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1354246809-32339-1-git-send-email-filbranden@google.com>
+ <1354246809-32339-2-git-send-email-filbranden@google.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1354246809-32339-2-git-send-email-filbranden@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Nov 29, 2012 at 07:40:08PM -0800, Filipe Brandenburger wrote:
+> When a new file is created with btrfs_create(), the inode will initially be
+> created with permissions 0666 and later on in btrfs_init_acl() it will be
+> adapted to mask out the umask bits. The problem is that this change won't make
+> it into the btrfs_inode unless there's another change to the inode (e.g. writing
+> content changing the size or touching the file changing the mtime.)
+> 
+> This fix adds a call to btrfs_update_inode() to btrfs_create() to make sure that
+> the change will not get lost if the in-memory inode is flushed before other
+> changes are made to the file.
+> 
 
-This set of patches fix bug #50861:
-"Btrfs sometimes ignore umask and create world writable files"
-https://bugzilla.kernel.org/show_bug.cgi?id=50861
+Looks good to me.
 
-It turns out that btrfs_create() will create an inode with permissions 0666 and
-these will be changed to match the umask inside btrfs_init_acl() (and only in
-cases where the ACL doesn't mandate which permissions the file should have.) The
-changes are made to the "struct inode" but it's not marked as dirty, so these
-changes will only propagate to the "struct btrfs_inode" if other changes are
-made to the inode (e.g. by writing content and changing the size or by using
-"touch" and changing the mtime, both of which will mark the inode as dirty.)
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-I fixed this issue by adding a call to btrfs_update_inode() in btrfs_create().
-I believe this might be an acceptable solution since the same is already done on
-most other system calls such as "mkdir" or "symlink".
+thanks,
+liubo
 
-An alternative might be applying the umask earlier, before the call to
-btrfs_new_inode(), that way the inode would be created with the right permission
-bits from the beginning, but that might either involve checking the ACLs before
-creating the inode (which might need a rework of btrfs_init_acl()) or umasking
-the bits unconditionally, but I guess there's a reason to apply that logic...
-
-The first patch fixes the issue, the second patch refactors the code to avoid
-the repetition of setting the flag variable on every error handling block.
-
-Cheers,
-Filipe
-
-
-Filipe Brandenburger (2):
-  Btrfs: fix permissions of empty files not affected by umask
-  Btrfs: refactor error handling to drop inode in btrfs_create()
-
- fs/btrfs/inode.c | 27 +++++++++++++++------------
- 1 file changed, 15 insertions(+), 12 deletions(-)
-
--- 
-1.7.11.7
-
+> Signed-off-by: Filipe Brandenburger <filbranden@google.com>
+> ---
+>  fs/btrfs/inode.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 95542a1..caf9d76 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4996,6 +4996,12 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
+>  		goto out_unlock;
+>  	}
+>  
+> +	err = btrfs_update_inode(trans, root, inode);
+> +	if (err) {
+> +		drop_inode = 1;
+> +		goto out_unlock;
+> +	}
+> +
+>  	/*
+>  	* If the active LSM wants to access the inode during
+>  	* d_instantiate it needs these. Smack checks to see
+> -- 
+> 1.7.11.7
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/

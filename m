@@ -1,64 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:59757 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750785Ab2K2FJD (ORCPT
+Received: from mail-oa0-f74.google.com ([209.85.219.74]:40945 "EHLO
+	mail-oa0-f74.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754337Ab2K3Dkc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Nov 2012 00:09:03 -0500
-Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 02C103EE0BC
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:09:01 +0900 (JST)
-Received: from smail (m4 [127.0.0.1])
-	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 8477345DE4D
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:09:00 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 6D4A145DE4F
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:09:00 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 5E8711DB803F
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:09:00 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 0171A1DB802F
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 14:09:00 +0900 (JST)
-Message-Id: <201211290508.AA00017@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Thu, 29 Nov 2012 14:08:26 +0900
-To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com
-Subject: [PATCH] Btrfs: add fiemap's flag check
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	Thu, 29 Nov 2012 22:40:32 -0500
+Received: by mail-oa0-f74.google.com with SMTP id k14so10657oag.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2012 19:40:32 -0800 (PST)
+From: Filipe Brandenburger <filbranden@google.com>
+To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Filipe Brandenburger <filbranden@google.com>
+Subject: [PATCH 1/2] Btrfs: fix permissions of empty files not affected by umask
+Date: Thu, 29 Nov 2012 19:40:08 -0800
+Message-Id: <1354246809-32339-2-git-send-email-filbranden@google.com>
+In-Reply-To: <1354246809-32339-1-git-send-email-filbranden@google.com>
+References: <1354246809-32339-1-git-send-email-filbranden@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the flag not supported is specified, it is necessary to return the error
-to the caller.
-So, we add the validity check of the fiemap's flag.
+When a new file is created with btrfs_create(), the inode will initially be
+created with permissions 0666 and later on in btrfs_init_acl() it will be
+adapted to mask out the umask bits. The problem is that this change won't make
+it into the btrfs_inode unless there's another change to the inode (e.g. writing
+content changing the size or touching the file changing the mtime.)
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+This fix adds a call to btrfs_update_inode() to btrfs_create() to make sure that
+the change will not get lost if the in-memory inode is flushed before other
+changes are made to the file.
+
+Signed-off-by: Filipe Brandenburger <filbranden@google.com>
 ---
- fs/btrfs/inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/inode.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5fc0990..1e09991 100644
+index 95542a1..caf9d76 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6582,9 +6582,17 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
- 		   btrfs_submit_direct, 0);
- }
+@@ -4996,6 +4996,12 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
+ 		goto out_unlock;
+ 	}
  
-+#define BTRFS_FIEMAP_FLAGS	(FIEMAP_FLAG_SYNC)
++	err = btrfs_update_inode(trans, root, inode);
++	if (err) {
++		drop_inode = 1;
++		goto out_unlock;
++	}
 +
- static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len)
- {
-+	int	ret;
-+
-+	ret = fiemap_check_flags(fieinfo, BTRFS_FIEMAP_FLAGS);
-+	if (ret)
-+		return ret;
-+
- 	return extent_fiemap(inode, fieinfo, start, len, btrfs_get_extent_fiemap);
- }
- 
+ 	/*
+ 	* If the active LSM wants to access the inode during
+ 	* d_instantiate it needs these. Smack checks to see
+-- 
+1.7.11.7
 

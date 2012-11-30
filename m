@@ -1,126 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38014 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:37965 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754510Ab2K1MRW (ORCPT
+	with ESMTP id S1030746Ab2K3Pmx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Nov 2012 07:17:22 -0500
-Message-ID: <50B600BF.9000400@oracle.com>
-Date: Wed, 28 Nov 2012 20:17:03 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: add label to snapshot and subvol
-References: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com> <1354040960-31522-1-git-send-email-Anand.Jain@oracle.com> <1354040960-31522-2-git-send-email-Anand.Jain@oracle.com> <50B57F63.4050205@cn.fujitsu.com> <50B5E150.4050402@oracle.com> <50B5E6AA.9020502@cn.fujitsu.com>
-In-Reply-To: <50B5E6AA.9020502@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+	Fri, 30 Nov 2012 10:42:53 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qAUFgq37010414
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 15:42:53 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qAUFgpmI022335
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 15:42:52 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qAUFgpn2029964
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2012 09:42:51 -0600
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] Add subvol and snapshot attribute label
+Date: Fri, 30 Nov 2012 23:47:59 +0800
+Message-Id: <1354290482-5324-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
+References: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <anand.jain@oracle.com>
 
-Miao,
-  Thanks for the review.
-  A new patch was sent.
+This patch set creates the attribute user.label in the root
+space, for the subvol and snapshots. Command to use will be
+	btrfs subvol label <subvol> [label]
+This patch is only for your kind review. And to evaluate both
+the approaches, as found during the survey.
+Thanks
 
-Anand
+Anand Jain (3):
+  Btrfs-progs: move open_file_or_dir() to utils.c
+  Btrfs-progs: add attribute label for subvol and snapshot
+  Btrfs-progs: cmd option to show or set the subvol label
 
-On 11/28/2012 06:25 PM, Miao Xie wrote:
-> On 	wed, 28 Nov 2012 18:02:56 +0800, Anand Jain wrote:
->>
->>
->> On 11/28/2012 11:05 AM, Miao Xie wrote:
->>> On wed, 28 Nov 2012 02:29:17 +0800, Anand jain wrote:
->>>>    /*
->>>> @@ -2441,6 +2443,14 @@ static inline bool btrfs_root_readonly(struct btrfs_root *root)
->>>>    {
->>>>        return (root->root_item.flags & cpu_to_le64(BTRFS_ROOT_SUBVOL_RDONLY)) != 0;
->>>>    }
->>>> +static inline char * btrfs_root_label(struct btrfs_root_item *root_item)
->>>> +{
->>>> +    return (root_item->label);
->>>> +}
->>>> +static inline void btrfs_root_set_label(struct btrfs_root_item *root_item, char *val)
->>>> +{
->>>> +    memcpy(root_item->label, val, BTRFS_SUBVOL_LABEL_SIZE);
->>>> +}
->>>>
->>>>    /* struct btrfs_root_backup */
->>>>    BTRFS_SETGET_STACK_FUNCS(backup_tree_root, struct btrfs_root_backup,
->>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>>> index e58bd9d..f0b3d9d 100644
->>>> --- a/fs/btrfs/ioctl.c
->>>> +++ b/fs/btrfs/ioctl.c
->>>> @@ -3725,6 +3725,57 @@ static int btrfs_ioctl_set_label(struct btrfs_root *root, void __user *arg)
->>>>        return 0;
->>>>    }
->>>>
->>>> +static int btrfs_ioctl_subvol_getlabel(struct btrfs_root *root,
->>>> +                        void __user *arg)
->>>> +{
->>>> +    char *label;
->>>> +
->>>> +    label = btrfs_root_label(&root->root_item);
->>>> +    if (copy_to_user(arg, label, BTRFS_SUBVOL_LABEL_SIZE))
->>>> +        return -EFAULT;
->>>
->>> we also need lock here.
->>
->>   yes. wish memcpy is atomic.
->>
->>>> +    return 0;
->>>> +}
->>>> +
->>>> +static int btrfs_ioctl_subvol_setlabel(struct file *file,
->>>> +                        void __user *arg)
->>>> +{
->>>> +    char label[BTRFS_SUBVOL_LABEL_SIZE+1];
->>>> +    struct btrfs_trans_handle *trans;
->>>> +    struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
->>>> +    struct inode *inode = file->f_path.dentry->d_inode;
->>>> +    int ret;
->>>> +
->>>> +    if (btrfs_root_readonly(root))
->>>> +        return -EROFS;
->>>> +
->>>> +    if (!inode_owner_or_capable(inode))
->>>> +        return -EACCES;
->>>> +
->>>> +    ret = mnt_want_write_file(file);
->>>> +    if (ret)
->>>> +        return ret;
->>>> +
->>>> +    if (copy_from_user(label, arg, BTRFS_SUBVOL_LABEL_SIZE)) {
->>>> +        ret = -EFAULT;
->>>> +        goto out;
->>>> +    }
->>>> +
->>>> +    mutex_lock(&inode->i_mutex);
->>>
->>> we should use a lock which belongs to the root not inode.
->>
->>
->>   I couldn't find an already defined lock which would exactly
->>   fit the purpose here. Do you have any idea ?
->
-> I thinks we may use ->root_times_lock, but we need change the name
-> to make it suitable for its role.
->
-> Thanks
-> Miao
->
->>
->>
->> Thanks, Anand
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+ Makefile         |    4 ++--
+ btrfsctl.c       |    7 ++++---
+ btrfslabel.c     |   38 ++++++++++++++++++++++++++++++++++++++
+ btrfslabel.h     |    4 +++-
+ cmds-balance.c   |    1 +
+ cmds-inspect.c   |    1 +
+ cmds-qgroup.c    |    1 +
+ cmds-quota.c     |    1 +
+ cmds-subvolume.c |   38 ++++++++++++++++++++++++++++++++++++++
+ commands.h       |    3 ---
+ common.c         |   46 ----------------------------------------------
+ ctree.h          |    1 +
+ man/btrfs.8.in   |    6 ++++++
+ utils.c          |   30 ++++++++++++++++++++++++++++--
+ utils.h          |    3 +++
+ 15 files changed, 127 insertions(+), 57 deletions(-)
+ delete mode 100644 common.c
+

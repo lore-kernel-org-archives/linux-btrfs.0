@@ -1,44 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:43729 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752297Ab2LATAs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Dec 2012 14:00:48 -0500
-Received: by mail-ie0-f174.google.com with SMTP id c11so2343337ieb.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Dec 2012 11:00:48 -0800 (PST)
+Received: from eagle.jhcloos.com ([207.210.242.212]:50954 "EHLO
+	eagle.jhcloos.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752873Ab2LAXDf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Dec 2012 18:03:35 -0500
+From: James Cloos <cloos@jhcloos.com>
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>
+Subject: Re: Likely mem leak in 3.7
+In-Reply-To: <m31ufrg3d4.fsf@carbon.jhcloos.org> (James Cloos's message of
+	"Sat, 17 Nov 2012 19:29:18 -0500")
+References: <m3r4nuwipl.fsf@carbon.jhcloos.org>
+	<alpine.DEB.2.00.1211161115001.2788@chino.kir.corp.google.com>
+	<m31ufrg3d4.fsf@carbon.jhcloos.org>
+Date: Sat, 01 Dec 2012 17:48:28 -0500
+Message-ID: <m38v9he6cq.fsf@carbon.jhcloos.org>
 MIME-Version: 1.0
-In-Reply-To: <CAFhuFEdxHxdiAutfxxsQ9i0OJj_CfRwWD-0LuhvoJYGHkTsG4A@mail.gmail.com>
-References: <CAFhuFEdxHxdiAutfxxsQ9i0OJj_CfRwWD-0LuhvoJYGHkTsG4A@mail.gmail.com>
-Date: Sat, 1 Dec 2012 21:00:48 +0200
-Message-ID: <CAOcd+r1LnMP=CU37mUSxZGuksTY4kYo+Y5vg9n3BV-E=ye=-Yg@mail.gmail.com>
-Subject: Re: Snapper snapshot comparison algorithm
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: nafisa mandliwala <nafisa.mandliwala@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi nafisa,
-in order to understand how btrfs send code compares two btrfs file
-trees, you may read this:
-http://www.spinics.net/lists/linux-btrfs/msg17731.html (where I am
-trying to understand it) and further down the thread. It's a very nice
-algorithm, actually.
+I've extensively tested 2844a48706e5 (tip at the time I compiled) for
+the last few days and have been unable to reproduce.
 
-Thanks,
-Alex.
+This bug appears to be fixed.
 
+Thanks.
 
-
-On Sat, Dec 1, 2012 at 9:54 AM, nafisa mandliwala
-<nafisa.mandliwala@gmail.com> wrote:
-> I needed help with understanding the snapshot comparison algorithm
-> that snapper uses and its shortcomings. From reading the code, what I
-> understood is that it does a block by block compare. I'm not very sure
-> if that's the best way to go about it. Also, since the send receive
-> code is still in development stages, is there a scope to add more
-> functionality to it?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-JimC
+-- 
+James Cloos <cloos@jhcloos.com>         OpenPGP: 1024D/ED7DAEA6

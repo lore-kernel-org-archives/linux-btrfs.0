@@ -1,31 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eagle.jhcloos.com ([207.210.242.212]:50954 "EHLO
-	eagle.jhcloos.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752873Ab2LAXDf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Dec 2012 18:03:35 -0500
-From: James Cloos <cloos@jhcloos.com>
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>
-Subject: Re: Likely mem leak in 3.7
-In-Reply-To: <m31ufrg3d4.fsf@carbon.jhcloos.org> (James Cloos's message of
-	"Sat, 17 Nov 2012 19:29:18 -0500")
-References: <m3r4nuwipl.fsf@carbon.jhcloos.org>
-	<alpine.DEB.2.00.1211161115001.2788@chino.kir.corp.google.com>
-	<m31ufrg3d4.fsf@carbon.jhcloos.org>
-Date: Sat, 01 Dec 2012 17:48:28 -0500
-Message-ID: <m38v9he6cq.fsf@carbon.jhcloos.org>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:50910 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752046Ab2LBIt7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2012 03:49:59 -0500
+Received: by mail-ob0-f174.google.com with SMTP id ta14so1613627obb.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Dec 2012 00:49:58 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+Date: Sun, 2 Dec 2012 09:49:57 +0100
+Message-ID: <CAHt5hBH6drsjdzudgwgd8hdyRFOXsZqptu3J5y32z=MGxTmhCg@mail.gmail.com>
+Subject: [RESEND] btrfs corruption / cannot mount
+From: Riccardo Berto <riccardobrt@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've extensively tested 2844a48706e5 (tip at the time I compiled) for
-the last few days and have been unable to reproduce.
+Hi
+I'm a btrfs user since I encountered the ext4 3.6.2 bug and then I
+decided to switch.
 
-This bug appears to be fixed.
+Today I was using my system when the /home btrfs filesystem get
+corrupted. I rebooted almost instantly but it couldn't mount /home
+(/dev/sda4). So I disabled the /home automount in fstab in order to
+have gnome working again and I logged in to freenode on #btrfs channel
+for having support.
+I met "darksatanic" who gave me suggestions to have /home mounted again.
+I tried with him to mount /home manually with -o recovery (it didn't
+worked). Then I did btrfs-zero-log /dev/sda4 and then it mounted, but
+only a time. There were no files in there: only the dirs mountpoints
+to my external HD. So I launched btrfs-restore /dev/sda4 /mnt/ and it
+restored only some dotfiles (not all).
+He then took me to write to mailing list attaching my logs, hoping for
+someone with more clue who can help me.
 
-Thanks.
+Now it seems to work fine, I will stick with this fs until your needs
+in order to give you logs to better understand what happened.
 
--JimC
--- 
-James Cloos <cloos@jhcloos.com>         OpenPGP: 1024D/ED7DAEA6
+
+dmesg containing my try with "recovery" mountflag -->
+http://pastebin.com/x1rDsfHu
+
+btrfs-find-root /dev/sda4 log -->http://pastebin.com/WHbDC2xq
+
+
+--
+Linux Registered User (http://linuxcounter.net) #550720

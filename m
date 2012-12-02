@@ -1,47 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:50910 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752046Ab2LBIt7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2012 03:49:59 -0500
-Received: by mail-ob0-f174.google.com with SMTP id ta14so1613627obb.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Dec 2012 00:49:58 -0800 (PST)
-MIME-Version: 1.0
-Date: Sun, 2 Dec 2012 09:49:57 +0100
-Message-ID: <CAHt5hBH6drsjdzudgwgd8hdyRFOXsZqptu3J5y32z=MGxTmhCg@mail.gmail.com>
-Subject: [RESEND] btrfs corruption / cannot mount
-From: Riccardo Berto <riccardobrt@gmail.com>
+Received: from smtprelay03.ispgateway.de ([80.67.31.26]:44536 "EHLO
+	smtprelay03.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751748Ab2LBJtU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2012 04:49:20 -0500
+Received: from [91.65.33.110] (helo=server.fritz.box)
+	by smtprelay03.ispgateway.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.68)
+	(envelope-from <btrfs@nentwig.biz>)
+	id 1Tf62Q-0005I3-Ro
+	for linux-btrfs@vger.kernel.org; Sun, 02 Dec 2012 10:40:38 +0100
+Date: Sun, 2 Dec 2012 10:40:38 +0100 (CET)
+From: Timo Nentwig <btrfs@nentwig.biz>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: 3 root nodes, -o recovery/btrfs has no effect
+Message-ID: <alpine.LNX.2.00.1212021127110.1570@localhost>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
-I'm a btrfs user since I encountered the ext4 3.6.2 bug and then I
-decided to switch.
+Hi there,
 
-Today I was using my system when the /home btrfs filesystem get
-corrupted. I rebooted almost instantly but it couldn't mount /home
-(/dev/sda4). So I disabled the /home automount in fstab in order to
-have gnome working again and I logged in to freenode on #btrfs channel
-for having support.
-I met "darksatanic" who gave me suggestions to have /home mounted again.
-I tried with him to mount /home manually with -o recovery (it didn't
-worked). Then I did btrfs-zero-log /dev/sda4 and then it mounted, but
-only a time. There were no files in there: only the dirs mountpoints
-to my external HD. So I launched btrfs-restore /dev/sda4 /mnt/ and it
-restored only some dotfiles (not all).
-He then took me to write to mailing list attaching my logs, hoping for
-someone with more clue who can help me.
+I had remote filesystem not unmounting during shutdown so I hit the reboot 
+button. Did so a couple of times in the past. 3.6.8-1-ARCH, btrfs-progs 
+0.19.20121005-4, don't remember the exact version I used when creating the 
+filesystem (0.19 something).
 
-Now it seems to work fine, I will stick with this fs until your needs
-in order to give you logs to better understand what happened.
+btrfsck looks like this:
 
+checking extents
+checking fs roots
+parent transid verify failed on 167047168 wanted 713090 found 713088
+parent transid verify failed on 167047168 wanted 713090 found 713088
+parent transid verify failed on 167047168 wanted 713090 found 713088
+parent transid verify failed on 167047168 wanted 713090 found 713088
+Ignoring transid failure
+parent transid verify failed on 167047168 wanted 713090 found 713088
+Ignoring transid failure
 
-dmesg containing my try with "recovery" mountflag -->
-http://pastebin.com/x1rDsfHu
+(repeating ~1800 times, always with the same IDs)
 
-btrfs-find-root /dev/sda4 log -->http://pastebin.com/WHbDC2xq
+root 5 inode 8156558 errors 400
+root 5 inode 9930070 errors 800
+root 5 inode 9930168 errors 800
 
+Tried -o recovery, mounts instantly and apparently doesn't change anything; 
+tried btrfs --repair, doesn't appear to change anything as well.
 
---
-Linux Registered User (http://linuxcounter.net) #550720
+Did mkfs.btrfs in order to restore from backup but mounting failed (broken 
+superblock something). How can a freshly mkfs'ed fs not mount?! I restored a dd 
+dump I took beforehand, mounts, boots but is broken.
+
+Any suggestions?
+
+thx
+tcn
+
+BTW what do multiple root nodes mean actually? That I do have 3 different
+trees with individual nodes pointing to different versions of data?

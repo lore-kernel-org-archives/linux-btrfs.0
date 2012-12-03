@@ -1,60 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.180]:53742 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752876Ab2LCPzv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 10:55:51 -0500
-Message-ID: <50BCCB85.9010905@jan-o-sch.net>
-Date: Mon, 03 Dec 2012 16:55:49 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mx1.fusionio.com ([66.114.96.30]:53876 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751412Ab2LCQI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Dec 2012 11:08:56 -0500
+Date: Mon, 3 Dec 2012 11:08:53 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Chris Murphy <lists@colorremedies.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 64KB "boot sector" gap
+Message-ID: <20121203160853.GI30633@shiny>
+References: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Example of BTRFS uglyssima performance : Bitcoin
-References: <50BC92F6.6050404@petaramesh.org>
-In-Reply-To: <50BC92F6.6050404@petaramesh.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Swâmi,
+On Mon, Dec 03, 2012 at 12:34:06AM -0700, Chris Murphy wrote:
+> When creating a btrfs volume with mkfs.btrfs, I'm noticing that the
+> first 64KB are completely blank. Is this gap expressly intended for
+> installing a boot manager/loader? e.g. GRUB 2 allows installation of
+> boot.img + core.img into a btrfs formatted partition, without using
+> block lists (the --force flag). It appears to produce a bootable
+> system.
+> 
 
-On Mon, December 03, 2012 at 12:54 (+0100), Swâmi Petaramesh wrote:
-> Hi folks,
-> 
-> My laptop is a Core i3-2310M with 4 GB RAM, running BTRFS on a 1 TB HD.
-> 
-> I run Ubuntu 12.10 Quantal, kernel 3.5.0-19-generic 64-bit.
-> 
-> I wanted to give a shot at bitcoin so I installed it from the Ubuntu
-> PPA, and started getting the database from the Internet. (it's now 4.5
-> GB big on disk). I assume it an SQL DB (SQlite or so ?)
-> 
-> My system currently has been crushing its data for more that 5 days now
-> (5x24 hours) with the HD busy to the point that the system is completely
-> unusable and I had to take another laptop to be able to surf the web and
-> process my email. Disk LED is steadily lit, trying to switch between 2
-> open windows takes 5 minutes or so...
-> 
-> Entering new blocks into the DB has now slowed down to the point that I
-> assume that the last 6% that I miss (I'm now at 94.something %) may well
-> take another couple weeks or so...
-> 
-> Friends running ext4 told me that the initial loading of the DB took
-> them a couple hours... With BTRFS it's been 5x24 hours and counting... :-(
+Right, I wanted to leave room for bootloaders.  I actually would have
+used a larger offset, but the other filesystem mkfs commands don't zero
+very far into the drive.  I had to make sure that mkfs.foo would
+overwrite the btrfs super, otherwise you might have a stale btrfs
+filesystem recognized inside the new filesystem.
 
-I've experienced exactly the same as you have with btrfs, only with ext4 instead
-of btrfs: Use ubuntu (which in the default setup means you're using ecryptfs for
-your /home), install the bitcoin package (which puts its files in ~/.bitcoin)
-and the computer becomes very much unresponsive once bitcoin is fetching data
-blocks.
+> However, the man page says -A, --alloc-start specifies the offset to
+> the start of the file system, and that the default is zero. If the
+> default is zero, the file system starts immediately, which implies
+> those 64KB of zero aren't actually intended for a boot loader.
 
-Unresponsive here means that even the desktop clock misses to count a second
-here and then, the mouse pointer stops reacting. Haven't looked further into
-this, but I suspect ecryptfs isn't completely innocent in that stack. That said,
-I suggest trying to make an ext4 partition on the very same hardware, setup
-ecryptfs, mount it as ~/.bitcoin and share your findings :-)
+The alloc start doesn't change the location of the super, just the
+preferred location for any blocks we allocate.  The idea was to test
+huge drives without having to fill them with data.
 
-Besides that, as Hugo told you, you can disable btrfs cow on the database files,
-but given my experiences I wouldn't put too much hope into that part.
-
--Jan
+-chris

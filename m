@@ -1,43 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:53876 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751412Ab2LCQI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Dec 2012 11:08:56 -0500
-Date: Mon, 3 Dec 2012 11:08:53 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Chris Murphy <lists@colorremedies.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: 64KB "boot sector" gap
-Message-ID: <20121203160853.GI30633@shiny>
-References: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:56356 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754000Ab2LCQ6e convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 11:58:34 -0500
+Message-ID: <50BCDA36.1050900@petaramesh.org>
+Date: Mon, 03 Dec 2012 17:58:30 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Example of BTRFS uglyssima performance : Bitcoin
+References: <50BC92F6.6050404@petaramesh.org> <50BCCB85.9010905@jan-o-sch.net>
+In-Reply-To: <50BCCB85.9010905@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 03, 2012 at 12:34:06AM -0700, Chris Murphy wrote:
-> When creating a btrfs volume with mkfs.btrfs, I'm noticing that the
-> first 64KB are completely blank. Is this gap expressly intended for
-> installing a boot manager/loader? e.g. GRUB 2 allows installation of
-> boot.img + core.img into a btrfs formatted partition, without using
-> block lists (the --force flag). It appears to produce a bootable
-> system.
-> 
+Le 03/12/2012 16:55, Jan Schmidt a écrit :
+> Use ubuntu (which in the default setup means you're using ecryptfs for
+> your /home),
+I actually do not use ecryptfs here, but OTOH I have BTRFS over LUKS/LVM.
 
-Right, I wanted to leave room for bootloaders.  I actually would have
-used a larger offset, but the other filesystem mkfs commands don't zero
-very far into the drive.  I had to make sure that mkfs.foo would
-overwrite the btrfs super, otherwise you might have a stale btrfs
-filesystem recognized inside the new filesystem.
+But I've been using pretty *anything over LUKS/LVM for years, and I've
+never notice it cause any (noticeable to the point of becoming annoying)
+system slowdown, whatever tasks I may have processed in such setups
+(including servers, big databases, compilations, NAS, etc...)
 
-> However, the man page says -A, --alloc-start specifies the offset to
-> the start of the file system, and that the default is zero. If the
-> default is zero, the file system starts immediately, which implies
-> those 64KB of zero aren't actually intended for a boot loader.
+So I doubt that the encryption is involved here... At least not very
+heavily involved. But I may ask my son if he volunteers to test the same
+on his unencrypted BTRFS netbook...
 
-The alloc start doesn't change the location of the super, just the
-preferred location for any blocks we allocate.  The idea was to test
-huge drives without having to fill them with data.
+> Besides that, as Hugo told you, you can disable btrfs cow on the database files,
+> but given my experiences I wouldn't put too much hope into that part.
 
--chris
+As far as I understood, this option won't work unless I have a 3.7+
+kernel...
+
+BTW, what is the effect of "nocow" with respect to snapshots ? I would
+assume that then, snapshots contain the current data ?
+
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

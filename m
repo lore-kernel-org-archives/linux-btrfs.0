@@ -1,74 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53465 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751291Ab2LCLfs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Dec 2012 06:35:48 -0500
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mx2.suse.de (Postfix) with ESMTP id 8EFE6A4FFA
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2012 12:35:47 +0100 (CET)
-Date: Mon, 3 Dec 2012 12:35:47 +0100
-From: Arvin Schnell <aschnell@suse.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Snapper snapshot comparison algorithm - send/receive questions
-Message-ID: <20121203113547.GA19321@suse.de>
-References: <CAFhuFEdxHxdiAutfxxsQ9i0OJj_CfRwWD-0LuhvoJYGHkTsG4A@mail.gmail.com>
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:34564 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752176Ab2LCLyg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 06:54:36 -0500
+Received: from mfilter23-d.gandi.net (mfilter23-d.gandi.net [217.70.178.151])
+	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 01F99A809D
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2012 12:54:35 +0100 (CET)
+Received: from relay3-d.mail.gandi.net ([217.70.183.195])
+	by mfilter23-d.gandi.net (mfilter23-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id don50ukROgVB for <linux-btrfs@vger.kernel.org>;
+	Mon,  3 Dec 2012 12:54:33 +0100 (CET)
+Received: from [192.168.1.66] (AMontpellier-256-1-87-249.w90-28.abo.wanadoo.fr [90.28.142.249])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 7CBFAA807F
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2012 12:54:33 +0100 (CET)
+Message-ID: <50BC92F6.6050404@petaramesh.org>
+Date: Mon, 03 Dec 2012 12:54:30 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-In-Reply-To: <CAFhuFEdxHxdiAutfxxsQ9i0OJj_CfRwWD-0LuhvoJYGHkTsG4A@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Example of BTRFS uglyssima performance : Bitcoin
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 01, 2012 at 01:24:20PM +0530, nafisa mandliwala wrote:
+Hi folks,
 
-> I needed help with understanding the snapshot comparison algorithm
-> that snapper uses and its shortcomings. From reading the code, what I
-> understood is that it does a block by block compare. I'm not very sure
-> if that's the best way to go about it. Also, since the send receive
-> code is still in development stages, is there a scope to add more
-> functionality to it?
+My laptop is a Core i3-2310M with 4 GB RAM, running BTRFS on a 1 TB HD.
 
-Mainly snapper does a directory traversal and a block-by-block
-comparison of files which is indeed a inefficient comparison
-algorithm.
+I run Ubuntu 12.10 Quantal, kernel 3.5.0-19-generic 64-bit.
 
-I already had a look at using the new send/receive ioctl to
-improve the comparison and have a few question:
+I wanted to give a shot at bitcoin so I installed it from the Ubuntu
+PPA, and started getting the database from the Internet. (it's now 4.5
+GB big on disk). I assume it an SQL DB (SQlite or so ?)
 
-1. snapper only needs to know that a file has changed but the
-   send stream also contains the new content which might has to
-   be read from disk.
+My system currently has been crushing its data for more that 5 days now
+(5x24 hours) with the HD busy to the point that the system is completely
+unusable and I had to take another laptop to be able to surf the web and
+process my email. Disk LED is steadily lit, trying to switch between 2
+open windows takes 5 minutes or so...
 
-   Mark Fasheh has made a patch for a flag for the send ioctl to
-   not include the content (don't know if he posted it here since
-   I was kicked of the list twice). With no write commands in the
-   stream how can I detect a file content change? Currently there
-   seems to be a truncate after the write but is that guaranteed?
+Entering new blocks into the DB has now slowed down to the point that I
+assume that the last 6% that I miss (I'm now at 94.something %) may well
+take another couple weeks or so...
 
-   Btw: There are many apparently useless truncates, e.g. after a
-   chmod. What are these good for?
+Friends running ext4 told me that the initial loading of the DB took
+them a couple hours... With BTRFS it's been 5x24 hours and counting... :-(
 
-2. Is it possible to add a ioctl for send that takes open
-   file-descriptors for parent_root and clone_sources? Otherwise
-   it's insecure to use from snapper (which has root privileges
-   and sometimes operates in directories users can modify). Such
-   a ioctl would also reduce the number of btrfs related
-   functions needed.
+This filesystem is pure crap as soon as it comes to database processing :-(
 
-3. Overall lots of functions are needed to use the
-   send/receive. Are there any plans to create a btrfs-library
-   that contains the required functions
-   e.g. btrfs_read_and_process_send_stream, subvol_uuid_search
-   and tree_search?
-
-Regards,
-  Arvin
+Kind regards.
 
 -- 
-Arvin Schnell, <aschnell@suse.de>
-Senior Software Engineer, Research & Development
-SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imendörffer, HRB 16746 (AG Nürnberg)
-Maxfeldstraße 5
-90409 Nürnberg
-Germany
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

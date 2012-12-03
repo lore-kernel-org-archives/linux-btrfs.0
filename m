@@ -1,71 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40518 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751500Ab2LCJLP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 04:11:15 -0500
-Date: Mon, 3 Dec 2012 09:11:11 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: basic questions regarding some btrfs features
-Message-ID: <20121203091111.GB7289@carfax.org.uk>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:55377 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751322Ab2LCJxB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 04:53:01 -0500
+Received: by mail-ob0-f174.google.com with SMTP id ta14so2249432obb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2012 01:53:01 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20121202224635.GA7289@carfax.org.uk>
 References: <CAEx9m478rbpHCSSNsSv4yyOk3-yrAuSk0DQQ23X+iFWMocAhzg@mail.gmail.com>
  <20121202224635.GA7289@carfax.org.uk>
- <8B5B2183-4049-46F5-9116-2FD15FCE4023@colorremedies.com>
- <CAGJTRchOD0_jX-h5=kN-K2cG3cc0jCshfAjP489iA5FY8jS5rg@mail.gmail.com>
- <C09BF2D1-D193-4915-8C57-A712A88F963C@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="0eh6TmSyL6TZE2Uz"
-In-Reply-To: <C09BF2D1-D193-4915-8C57-A712A88F963C@colorremedies.com>
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Mon, 3 Dec 2012 10:52:41 +0100
+Message-ID: <CAEx9m46ua1pQSUTeon6R0kBXoBq3iPxLtsrKjcXeafjT0Bor3Q@mail.gmail.com>
+Subject: Re: basic questions regarding some btrfs features
+To: Hugo Mills <hugo@carfax.org.uk>, Aastha Mehta <aasthakm@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
---0eh6TmSyL6TZE2Uz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thank you so much for your prompt response. Few more questions inline.
 
-On Sun, Dec 02, 2012 at 07:49:17PM -0700, Chris Murphy wrote:
-> 
-> On Dec 2, 2012, at 6:59 PM, Michael <mike@draftx.net> wrote:
-> 
-> > Subvolid=0 is always the root subvolume. 
-> 
-> OK so then what is subvolid=5?
+On 2 December 2012 23:46, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Sun, Dec 02, 2012 at 11:17:26PM +0100, Aastha Mehta wrote:
+>> I am looking at btrfs to understand some of its features. One of them
+>> is the snapshot feature. Please tell me if my following understanding
+>> about snapshots in btrfs is correct or not.
+>>
+>> Btrfs supports both readonly and writeable snapshots. Writeable
+>> snapshots are like clone volumes (or subvolumes as in btrfs). We get a
+>> point in time copy of the subvolume in both case.
+>>
+>> I looked through the kernel code and it seems that creating a
+>> subvolume and taking a snapshot (readonly and writeable) all have a
+>> common ioctl interface.
+>>
+>> What I am not completely clear about is whether snapshots get same
+>> fsid as the source subvolume fsid or different.
+>
+>    Yes, it's the same UUID, because they're all part of the same
+> filesystem.
+>
+Just to clarify, apart from UUID, is the FSID in the fs_info of the
+root also same for all snapshots of a subvolume?
 
-   subvolid=5 is the actual ID used internally for the top-level
-subvolume. subvolid=0 won't ever turn up as a "real" subvolume ID
-internally, and is mapped to the same subvolume as subvolid=5 with a
-piece of special-case code that liubo showed.
+>> Also, I do not understand what does it mean to be able to take
+>> snapshot of a snapshot.
+>
+>    Snapshots are completely equal partners with their original
+> subvolumes. This is not the case in, say, LVM.
+>
+>> What are benefits compared to say, being able to take snapshots only
+>> of the active subvolume and not of the snapshots?
+>
+>    Let's say you take a snapshot (B) of your root filesystem (A). Then
+> you decide to "roll back" to using the old version, so you mount B as
+> root instead of A. Later that night, your backup process starts up and
+> tries to take a temporary read-only snapshot (C) of your root
+> filesystem (which is now B) so that it can make a stable backup.
+> That's a snapshot of a snapshot.
+>
+Okay, but still the snapshot can be taken only for a subvolume in use.
+Is that correct? In your example, C is taken on B after file system
+was rolled back to version B. What happens when the file system
+version mounted is A (which contains snapshot B) and we take another
+snapshot D on this mounted version. Does the snapshot D contain B or
+only the active contents of A?
 
-   Hugo.
+>> Probably before that, I need to get some clarity on why does a
+>> subvolume always belong in the directory of some parent subvolume. Is
+>> it possible to have more than one root subvolumes or more than one
+>> subvolumes in the same parent subvolume directory?
+>
+>    No, there's precisely one top-level subvolume (subvolid=5).
+> Everything else in the filesystem lives within that. However, you can
+> have as many subvolumes as you like below that, and in whatever
+> directories or subvolumes you want.
+>
+>    Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>            --- Quidquid latine dictum sit,  altum videtur. ---
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- I'm on a 30-day diet. So far I've lost 18 days. ---         
 
---0eh6TmSyL6TZE2Uz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBULxsrr9z9OVl50rAAQLX+g/+LmVMkxKwSydzK/asi2z/B7o1DGWCNvue
-G1lhLj9iuMTTS66pu5SG46+fF0ssgZUbtRoXIru2dfPjz7MO61rCItReMtnKR18S
-dRc0COQQRBlx7nvvfFWbnEl1aPtSW78Yn56BGezBHqisLEHskCBSXPmBWPkFVP6/
-War195rGq6fF9btNasVnpR+SqgdgAg8lqmAFSDL/yub3uwNJX5YYTN2UndpDO5Oj
-uk8pcH53quoFQRMZWLvwF7Hi0JoFZtUw8RNLJNVtFUBsNzDsoWKdbnVEL6sJ6gNQ
-0Egg+MPgPTYs9XKudyObItMG0LcjPnfbqBPavGo8Fc3aZK26HcHOXCg3bJinkv3L
-WnZ27vTMbQF93n77pUIDspcpRwFZJpk6Jqm2jRl64aDbQNIJQa5YqiaCH/muaOdx
-868j5Zb+bQng4/F717PrQ2lZYSKlkKNlw+3FAOO1yu/BOGxJFM00H7rsKHgCISbq
-FbSW+Tt/Z77S5jkYzDWpoyqLvQvbxu0SiUbTffudD0elL8UAz80BVkekRxzBAIh1
-HWGY8Odf5AnheviFdIHqPDJlPbYDLdcVE0cTyXSXvBHh4n6lzPZYFocGCVNZfZOu
-SnXDQJFrmV7M/BuvwV2PR8PTLkP7axdf/ivANWWafyen+xE1WUgyTVklOIqBPbPL
-xyPUqWiJMXg=
-=8E0W
------END PGP SIGNATURE-----
-
---0eh6TmSyL6TZE2Uz--
+Thanks again,
+Aastha.

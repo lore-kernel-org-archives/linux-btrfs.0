@@ -1,30 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f174.google.com ([209.85.210.174]:36403 "EHLO
-	mail-ia0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751033Ab2LCTdA convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2012 14:33:00 -0500
-Received: by mail-ia0-f174.google.com with SMTP id y25so2455370iay.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2012 11:33:00 -0800 (PST)
+Received: from tetsuo.zabbo.net ([50.193.208.193]:59626 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751111Ab2LCUBg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Dec 2012 15:01:36 -0500
+Date: Mon, 3 Dec 2012 12:01:36 -0800
+From: Zach Brown <zab@zabbo.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 64KB "boot sector" gap
+Message-ID: <20121203200136.GC1377@lenny.home.zabbo.net>
+References: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
 MIME-Version: 1.0
-In-Reply-To: <50BC92F6.6050404@petaramesh.org>
-References: <50BC92F6.6050404@petaramesh.org>
-Date: Mon, 3 Dec 2012 14:32:59 -0500
-Message-ID: <CAAS2fgRF0gxjwDebc8Ezjv2gwbaCkoE8Ke7m+Ko0dN74m_FCqw@mail.gmail.com>
-Subject: Re: Example of BTRFS uglyssima performance : Bitcoin
-From: Gregory Maxwell <gmaxwell@gmail.com>
-To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <B41E960E-A16B-4856-AFFE-FC5C99DDC7D5@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 3, 2012 at 6:54 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
-> I assume it an SQL DB (SQlite or so ?)
+On Mon, Dec 03, 2012 at 12:34:06AM -0700, Chris Murphy wrote:
+> When creating a btrfs volume with mkfs.btrfs, I'm noticing that the
+> first 64KB are completely blank. Is this gap expressly intended for
+> installing a boot manager/loader?
 
-It's BDB with a very pessimal random write workload updating
-transaction indexes with stuffed full of sync writes, interspersed
-with an equal amount of random reads.
+If you want some historical reading check out the 'BTRFS partition
+usage...' messages in:
 
-(The next version of the software will change the backend in several
-ways, including replacing BDB with leveldb and its orders of magnitude
-faster;  but for now it's probably a fine FS abusive test case)
+https://oss.oracle.com/pipermail/btrfs-devel/2008-February/
+
+- z

@@ -1,43 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:10578 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751712Ab2LEKwY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Dec 2012 05:52:24 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5AqRQe019281
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:52:27 +0800
-Message-ID: <50BF2780.4080701@cn.fujitsu.com>
-Date: Wed, 05 Dec 2012 18:52:48 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from va3ehsobe006.messaging.microsoft.com ([216.32.180.16]:13595
+	"EHLO va3outboundpool.messaging.microsoft.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750803Ab2LERV0 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Dec 2012 12:21:26 -0500
+From: Thorn Roby <Thorn.Roby@harlandfs.com>
+To: "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Mounted compress-force=zlib, compresses when files copied in,
+ but not when written directly by application
+Date: Wed, 5 Dec 2012 17:21:17 +0000
+Message-ID: <6726B0D4C83B3047A636A714BAB0B92306C574@DSM-SRV-MBX2.harlandfs.com>
+References: <loom.20121204T201625-335@post.gmane.org>
+ <20121205020131.GA5204@liubo>
+In-Reply-To: <20121205020131.GA5204@liubo>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/6] Btrfs: don't auto defrag a file when doing directIO
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we runt the direct IO, we should not run auto defrag, because it may
-introduce buffered IO vs direcIO problem, and make direct IO slow down.
+Thanks for your response. Yes, the rsync copies a number of the 2GB files written by the same database software on another system on XFS, and compression is successful. These files consist mostly of plain text log output and are highly compressible (4:1 via zlib). When the database is running locally on btrfs, the I/O pattern is that the database allocates a new 2GB datafile (perhaps using a sparse allocation call, I know it does on XFS) and then says it fills the file with zeroes (but I'm not certain this actually happens). At that point database inserts are appended initially to a transaction log (a separate non-sparse 2GB file), and shortly thereafter there is a batch copy operation (I'm not sure of the size) of a set of new rows which are copied from the transaction log and appended to the main datafiles (which are sparse). Up until now I have included both the transaction log and the datafiles within the btrfs filesystem - next I'm going to try putting the transaction log on a separate filesystem . The btrfs fi df output was taken after the database load process was stopped, so it reflects a static set of the 2GB datafiles (plus the transaction log and a few other database system files).
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 3 ---
- 1 file changed, 3 deletions(-)
+-----Original Message-----
+From: Liu Bo [mailto:bo.li.liu@oracle.com] 
+Sent: Tuesday, December 04, 2012 7:02 PM
+To: Thorn Roby
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Mounted compress-force=zlib, compresses when files copied in, but not when written directly by application
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5fc0990..b08e4b1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5674,9 +5674,6 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
- 	if (IS_ERR(trans))
- 		return ERR_CAST(trans);
- 
--	if (start <= BTRFS_I(inode)->disk_i_size && len < 64 * 1024)
--		btrfs_add_inode_defrag(trans, inode);
--
- 	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
- 
- 	alloc_hint = get_extent_allocation_hint(inode, start, len);
--- 
-1.7.11.7
+
+Well, it shouldn't be that since we have compress-force, as the name shows, with compress-force it'll always try to compress the data via zlib/lzo.
+
+So the previous rsync one is just 'write numbers of 2G files', while the current application one is 'write numbers of 2G files' plus 'overwritten by others later', is it right?
+
+And is the above 'btrfs fi df' output captured after 'overwritten', or not?
+
+thanks,
+
+

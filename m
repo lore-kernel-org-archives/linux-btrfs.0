@@ -1,45 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:65051 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:58483 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751880Ab2LEKxY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Dec 2012 05:53:24 -0500
+	id S1751971Ab2LEKxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Dec 2012 05:53:48 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5ArP03019306
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:53:25 +0800
-Message-ID: <50BF27B9.7030501@cn.fujitsu.com>
-Date: Wed, 05 Dec 2012 18:53:45 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5ArqnQ019325
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:53:52 +0800
+Message-ID: <50BF27D4.3000504@cn.fujitsu.com>
+Date: Wed, 05 Dec 2012 18:54:12 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/6] Btrfs: fix off-by-one error of the same page check in
- btrfs_punch_hole()
+Subject: [PATCH 4/6] Btrfs: fix the page that is beyond EOF
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(start + len) is the start of the adjacent extent, not the end of the current
-extent, so we should not use it to check the hole is on the same page or not.
+Steps to reproduce:
+ # mkfs.btrfs <disk>
+ # mount <disk> <mnt>
+ # dd if=/dev/zero of=<mnt>/<file> bs=512 seek=5 count=8
+ # fallocate -p -o 2048 -l 16384 <mnt>/<file>
+ # dd if=/dev/zero of=<mnt>/<file> bs=4096 seek=3 count=8 conv=notrunc,nocreat
+ # umount <mnt>
+ # dmesg
+ WARNING: at fs/btrfs/inode.c:7140 btrfs_destroy_inode+0x2eb/0x330
+
+The reason is that we inputed a range which is beyond the end of the file. And
+because the end of this range was not page-aligned, we had to truncate the last
+page in this range, this operation is similar to a buffered file write. In other
+words, we reserved enough space and clear the data which was in the hole range
+on that page. But when we expanded that test file, write the data into the same
+page, we forgot that we have reserved enough space for the buffered write of
+that page because in most cases there is no page that is beyond the end of
+the file. As a result, we reserved the space twice.
+
+In fact, we needn't truncate the page if it is beyond the end of the file, just
+release the allocated space in that range. Fix the above problem by this way.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/file.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/file.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index bd5afcc..b477da2 100644
+index b477da2..e91c99b 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1881,8 +1881,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	unsigned long nr;
- 	int ret = 0;
- 	int err = 0;
--	bool same_page = (offset >> PAGE_CACHE_SHIFT) ==
--		((offset + len) >> PAGE_CACHE_SHIFT);
-+	bool same_page = ((offset >> PAGE_CACHE_SHIFT) ==
-+			  ((offset + len - 1) >> PAGE_CACHE_SHIFT));
+@@ -1872,9 +1872,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	struct btrfs_path *path;
+ 	struct btrfs_block_rsv *rsv;
+ 	struct btrfs_trans_handle *trans;
+-	u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
+-	u64 lockstart = (offset + mask) & ~mask;
+-	u64 lockend = ((offset + len) & ~mask) - 1;
++	u64 lockstart = round_up(offset, BTRFS_I(inode)->root->sectorsize);
++	u64 lockend = round_down(offset + len,
++				 BTRFS_I(inode)->root->sectorsize) - 1;
+ 	u64 cur_offset = lockstart;
+ 	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
+ 	u64 drop_end;
+@@ -1910,10 +1910,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	}
  
- 	btrfs_wait_ordered_range(inode, offset, len);
+ 	/* zero the front end of the last page */
+-	ret = btrfs_truncate_page(inode, offset + len, 0, 1);
+-	if (ret) {
+-		mutex_unlock(&inode->i_mutex);
+-		return ret;
++	if (offset + len < round_up(inode->i_size, PAGE_CACHE_SIZE)) {
++		ret = btrfs_truncate_page(inode, offset + len, 0, 1);
++		if (ret) {
++			mutex_unlock(&inode->i_mutex);
++			return ret;
++		}
+ 	}
  
+ 	if (lockend < lockstart) {
 -- 
 1.7.11.7

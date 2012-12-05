@@ -1,82 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58483 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:18444 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751971Ab2LEKxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Dec 2012 05:53:48 -0500
+	id S1753571Ab2LEKyc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Dec 2012 05:54:32 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5ArqnQ019325
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:53:52 +0800
-Message-ID: <50BF27D4.3000504@cn.fujitsu.com>
-Date: Wed, 05 Dec 2012 18:54:12 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5AsVdm019344
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:54:31 +0800
+Message-ID: <50BF27FC.4080108@cn.fujitsu.com>
+Date: Wed, 05 Dec 2012 18:54:52 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 4/6] Btrfs: fix the page that is beyond EOF
+Subject: [PATCH 5/6] Btrfs: punch hole past the end of the file
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs <disk>
- # mount <disk> <mnt>
- # dd if=/dev/zero of=<mnt>/<file> bs=512 seek=5 count=8
- # fallocate -p -o 2048 -l 16384 <mnt>/<file>
- # dd if=/dev/zero of=<mnt>/<file> bs=4096 seek=3 count=8 conv=notrunc,nocreat
- # umount <mnt>
- # dmesg
- WARNING: at fs/btrfs/inode.c:7140 btrfs_destroy_inode+0x2eb/0x330
+Since we can pre-allocate the space past EOF, we should be able to reclaim
+that space if we need. This patch implements it by removing the EOF check.
 
-The reason is that we inputed a range which is beyond the end of the file. And
-because the end of this range was not page-aligned, we had to truncate the last
-page in this range, this operation is similar to a buffered file write. In other
-words, we reserved enough space and clear the data which was in the hole range
-on that page. But when we expanded that test file, write the data into the same
-page, we forgot that we have reserved enough space for the buffered write of
-that page because in most cases there is no page that is beyond the end of
-the file. As a result, we reserved the space twice.
-
-In fact, we needn't truncate the page if it is beyond the end of the file, just
-release the allocated space in that range. Fix the above problem by this way.
+Though the manual of fallocate command says we can use truncate command to
+reclaim the pre-allocated space which past EOF, but because truncate command
+changes the file size, we must run several commands to reclaim the space if we
+don't want to change the file size, so it is not a good choice.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/file.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+ fs/btrfs/file.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b477da2..e91c99b 100644
+index e91c99b..321edc8 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1872,9 +1872,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *rsv;
- 	struct btrfs_trans_handle *trans;
--	u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
--	u64 lockstart = (offset + mask) & ~mask;
--	u64 lockend = ((offset + len) & ~mask) - 1;
-+	u64 lockstart = round_up(offset, BTRFS_I(inode)->root->sectorsize);
-+	u64 lockend = round_down(offset + len,
-+				 BTRFS_I(inode)->root->sectorsize) - 1;
- 	u64 cur_offset = lockstart;
- 	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
- 	u64 drop_end;
-@@ -1910,10 +1910,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+@@ -1887,26 +1887,28 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	btrfs_wait_ordered_range(inode, offset, len);
+ 
+ 	mutex_lock(&inode->i_mutex);
+-	if (offset >= inode->i_size) {
+-		mutex_unlock(&inode->i_mutex);
+-		return 0;
+-	}
+-
++	/*
++	 * We needn't truncate any page which is beyond the end of the file
++	 * because we are sure there is no data there.
++	 */
+ 	/*
+ 	 * Only do this if we are in the same page and we aren't doing the
+ 	 * entire page.
+ 	 */
+ 	if (same_page && len < PAGE_CACHE_SIZE) {
+-		ret = btrfs_truncate_page(inode, offset, len, 0);
++		if (offset < round_up(inode->i_size, PAGE_CACHE_SIZE))
++			ret = btrfs_truncate_page(inode, offset, len, 0);
+ 		mutex_unlock(&inode->i_mutex);
+ 		return ret;
  	}
  
- 	/* zero the front end of the last page */
--	ret = btrfs_truncate_page(inode, offset + len, 0, 1);
+ 	/* zero back part of the first page */
+-	ret = btrfs_truncate_page(inode, offset, 0, 0);
 -	if (ret) {
 -		mutex_unlock(&inode->i_mutex);
 -		return ret;
-+	if (offset + len < round_up(inode->i_size, PAGE_CACHE_SIZE)) {
-+		ret = btrfs_truncate_page(inode, offset + len, 0, 1);
++	if (offset < round_up(inode->i_size, PAGE_CACHE_SIZE)) {
++		ret = btrfs_truncate_page(inode, offset, 0, 0);
 +		if (ret) {
 +			mutex_unlock(&inode->i_mutex);
 +			return ret;
 +		}
  	}
  
- 	if (lockend < lockstart) {
+ 	/* zero the front end of the last page */
 -- 
 1.7.11.7

@@ -1,77 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18444 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:24904 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753571Ab2LEKyc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Dec 2012 05:54:32 -0500
+	id S1751243Ab2LEKzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Dec 2012 05:55:48 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5AsVdm019344
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:54:31 +0800
-Message-ID: <50BF27FC.4080108@cn.fujitsu.com>
-Date: Wed, 05 Dec 2012 18:54:52 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5Atq63019387
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:55:52 +0800
+Message-ID: <50BF284D.5090706@cn.fujitsu.com>
+Date: Wed, 05 Dec 2012 18:56:13 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/6] Btrfs: punch hole past the end of the file
+Subject: [PATCH 6/6] Btrfs: fix wrong return value of btrfs_truncate_page()
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we can pre-allocate the space past EOF, we should be able to reclaim
-that space if we need. This patch implements it by removing the EOF check.
-
-Though the manual of fallocate command says we can use truncate command to
-reclaim the pre-allocated space which past EOF, but because truncate command
-changes the file size, we must run several commands to reclaim the space if we
-don't want to change the file size, so it is not a good choice.
+ret variant may be set to 0 if we read page successfully, but it might be
+released before we lock it again. On this case, if we fail to allocate a
+new page, we will return 0, it is wrong, fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/file.c | 22 ++++++++++++----------
- 1 file changed, 12 insertions(+), 10 deletions(-)
+ fs/btrfs/inode.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e91c99b..321edc8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1887,26 +1887,28 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	btrfs_wait_ordered_range(inode, offset, len);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b08e4b1..bf17b4e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3497,11 +3497,11 @@ int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
+ 	if (ret)
+ 		goto out;
  
- 	mutex_lock(&inode->i_mutex);
--	if (offset >= inode->i_size) {
--		mutex_unlock(&inode->i_mutex);
--		return 0;
--	}
--
-+	/*
-+	 * We needn't truncate any page which is beyond the end of the file
-+	 * because we are sure there is no data there.
-+	 */
- 	/*
- 	 * Only do this if we are in the same page and we aren't doing the
- 	 * entire page.
- 	 */
- 	if (same_page && len < PAGE_CACHE_SIZE) {
--		ret = btrfs_truncate_page(inode, offset, len, 0);
-+		if (offset < round_up(inode->i_size, PAGE_CACHE_SIZE))
-+			ret = btrfs_truncate_page(inode, offset, len, 0);
- 		mutex_unlock(&inode->i_mutex);
- 		return ret;
+-	ret = -ENOMEM;
+ again:
+ 	page = find_or_create_page(mapping, index, mask);
+ 	if (!page) {
+ 		btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
++		ret = -ENOMEM;
+ 		goto out;
  	}
  
- 	/* zero back part of the first page */
--	ret = btrfs_truncate_page(inode, offset, 0, 0);
--	if (ret) {
--		mutex_unlock(&inode->i_mutex);
--		return ret;
-+	if (offset < round_up(inode->i_size, PAGE_CACHE_SIZE)) {
-+		ret = btrfs_truncate_page(inode, offset, 0, 0);
-+		if (ret) {
-+			mutex_unlock(&inode->i_mutex);
-+			return ret;
-+		}
+@@ -3550,7 +3550,6 @@ again:
+ 		goto out_unlock;
  	}
  
- 	/* zero the front end of the last page */
+-	ret = 0;
+ 	if (offset != PAGE_CACHE_SIZE) {
+ 		if (!len)
+ 			len = PAGE_CACHE_SIZE - offset;
 -- 
 1.7.11.7

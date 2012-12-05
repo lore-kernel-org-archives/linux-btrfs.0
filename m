@@ -1,46 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f46.google.com ([209.85.215.46]:34225 "EHLO
-	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750741Ab2LEF3r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Dec 2012 00:29:47 -0500
-Received: by mail-la0-f46.google.com with SMTP id p5so3958261lag.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Dec 2012 21:29:46 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:10578 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751712Ab2LEKwY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Dec 2012 05:52:24 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qB5AqRQe019281
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Dec 2012 18:52:27 +0800
+Message-ID: <50BF2780.4080701@cn.fujitsu.com>
+Date: Wed, 05 Dec 2012 18:52:48 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-From: Ins <insfocus@gmail.com>
-Date: Wed, 5 Dec 2012 13:29:05 +0800
-Message-ID: <CAMRmmp+qQZg2_vkZ9bfLFg-AC20SGkmEo4cdCOQEs+4i1JUeDQ@mail.gmail.com>
-Subject: send/receive questions
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/6] Btrfs: don't auto defrag a file when doing directIO
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all,
+If we runt the direct IO, we should not run auto defrag, because it may
+introduce buffered IO vs direcIO problem, and make direct IO slow down.
 
-    The implementation of send/receive is very cool.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-    But I wonder whether there are any plans to support these features
-below or not,
-
-    1. support writable subvolume
-
-    2. can skip something to receive, for example,
-         (1) only receive those commands in range [1000, ..), skip the
-before 1000
-         (2) only receive changes after some time, like recent 3 days.
-
-    3. can revert one receive
-        Just like the patch command does
-
-    4. support this scene,
-        When doing the receive process, if it suddently be stopped,
-how to continue the receive process.
-
-    If 2 and 3 can be supported, 4 may be easy.
-
-    It's true there may be many errors if we skip something to receive.
-
-
---
-Thanks.
--Rock
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5fc0990..b08e4b1 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5674,9 +5674,6 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	if (IS_ERR(trans))
+ 		return ERR_CAST(trans);
+ 
+-	if (start <= BTRFS_I(inode)->disk_i_size && len < 64 * 1024)
+-		btrfs_add_inode_defrag(trans, inode);
+-
+ 	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
+ 
+ 	alloc_hint = get_extent_allocation_hint(inode, start, len);
+-- 
+1.7.11.7

@@ -1,56 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28363 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752295Ab2LQLff (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 06:35:35 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBHBZYVr019564
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 11:35:35 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBHBZXaa026913
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 11:35:34 GMT
-Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBHBZXRj009128
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 05:35:33 -0600
-Message-ID: <50CF0381.6060301@oracle.com>
-Date: Mon, 17 Dec 2012 19:35:29 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:34047 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S932232Ab2LFJn1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Dec 2012 04:43:27 -0500
+Message-ID: <50C068D4.6020105@cn.fujitsu.com>
+Date: Thu, 06 Dec 2012 17:43:48 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: anand.jain@oracle.com
-Subject: [PATCH v5 4/4] Btrfs-progs: fix cmd_label_usage to reflect this change.
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH 0/9] enhance btrfs qgroup show command
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <50CF0053.4050906@oracle.com>
 
-Fix the command usage of "btrfs filesystem label" to reflect this change. i.e. so that
-we can get/set the label of a mounted filesystem against the mountpoint.
+The patchset enhanced btrfs qgroup show command.
 
-Signed-off-by: Jie Liu <jeff.liu@oracle.com>
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Firstly, we restructure show_qgroups, make it easy to add new features.
 
+And then we add '-p' '-c', '-l',and '-e' options to print the parent
+qgroup id, child qgroup id, max referenced size and max exclusive size
+of qgroup respectively, add '-F' and '-f' option to list qgroups that
+impact the given path.
+
+Besides that, the users may want to sort qgroups according to some items.
+For this case, we introduce '--sort' option. With this option, we can sort
+the qgroup by qgroupid, rfer, excl, max_rfer and max_excl.
+
+And finally, Since there are so many columns can be output, the users may
+be confused about the output result, so i add '-t' option to print the result
+as a table.
+
+We can pull this patchset from the URL
+
+	git://github.com/miaoxie/btrfs-progs.git qgroup
+
+Thanks
+Miao
 ---
- cmds-filesystem.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Wang Shilong (9):
+      Btrfs-progs: restructure show_qgroups
+      Btrfs-progs: introduces '-p' option to print the ID of the parent qgroups
+      Btrfs-progs: introduces '-c' option to print the ID of the child qgroups
+      Btrfs-progs: introduce '-l' option to print max referenced size of qgroups
+      Btrfs-progs: introduce '-e' option to print max exclusive size of qgroups
+      Btrfs-progs: list all qgroups impact given path(include ancestral qgroups)
+      Btrfs-progs: list all qgroups impact given path(exclude ancestral qgroups)
+      Btrfs-progs: enhance btrfs qgroup show to sort qgroups
+      Btrfs-progs: enhance btrfs qgroup to print the result as a table
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 9c43d35..5770d8b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -517,8 +517,8 @@ static int cmd_resize(int argc, char **argv)
- }
- 
- static const char * const cmd_label_usage[] = {
--	"btrfs filesystem label <device> [<newlabel>]",
--	"Get or change the label of an unmounted filesystem",
-+	"btrfs filesystem label [<device>|<mountpoint>] [<newlabel>]",
-+	"Get or change the label of a filesystem",
- 	"With one argument, get the label of filesystem on <device>.",
- 	"If <newlabel> is passed, set the filesystem label to <newlabel>.",
- 	NULL
--- 
-1.7.9.5
+ cmds-qgroup.c |  198 +++++-----
+ ctree.h       |   11 +
+ qgroup.c      | 1216 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qgroup.h      |   71 ++++
+ 4 files changed, 1396 insertions(+), 100 deletions(-)

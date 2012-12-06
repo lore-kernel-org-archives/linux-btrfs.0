@@ -1,48 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:48378 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:58623 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1946789Ab2LFSyG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Dec 2012 13:54:06 -0500
+	with ESMTP id S1946816Ab2LFSzN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Dec 2012 13:55:13 -0500
 From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
 Subject: Re: Question about btrfs snapshot delay and rm -rf delay
-Date: Thu, 6 Dec 2012 19:54:04 +0100
-Cc: Marc MERLIN <marc@merlins.org>, Sylvain Alain <d2racing911@gmail.com>
-References: <CACR_K2s2NXFJfNknzJLLnQGK6=Sz+6Abs8y7kJfxxynUUaF+cA@mail.gmail.com> <20121206063151.GC20550@merlins.org> (sfid-20121206_101851_658481_E78E335D)
-In-Reply-To: <20121206063151.GC20550@merlins.org>
+Date: Thu, 6 Dec 2012 19:55:11 +0100
+Cc: sander@humilis.net, Sylvain Alain <d2racing911@gmail.com>
+References: <CACR_K2s2NXFJfNknzJLLnQGK6=Sz+6Abs8y7kJfxxynUUaF+cA@mail.gmail.com> <20121206125908.GA31070@panda> <201212061952.46519.Martin@lichtvoll.de> (sfid-20121206_195408_174122_0A12B8B8)
+In-Reply-To: <201212061952.46519.Martin@lichtvoll.de>
 MIME-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Message-Id: <201212061954.04424.Martin@lichtvoll.de>
+Message-Id: <201212061955.11919.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 6. Dezember 2012 schrieb Marc MERLIN:
-> On Wed, Dec 05, 2012 at 11:56:27PM -0500, Sylvain Alain wrote:
-> > Hi everyone, I'm running btrfs since octobre 2012 and I would like to
-> > understand 2 behavior that I noticed.
+Am Donnerstag, 6. Dezember 2012 schrieb Martin Steigerwald:
+> Am Donnerstag, 6. Dezember 2012 schrieb Sander:
+> > Sylvain Alain wrote (ao):
+> > > Hi, right now I own this SSD :
+> > > 
+> > > Intel SSD 520 Series MLC 120 Gigs
 > > 
-> > 1. When I delete a big directory, sometimes it can hang my box for 1
-> > minutes or so, it seems that's the btrfs lock my SSD.
+> > > Also, this is my /etc/fstab
+> > > /dev/sda3      /boot            ext2       noauto,noatime,defaults
+> > > /dev/sda1      /boot/efi        vfat        noauto,defaults
+> > > /dev/sda4      /                  btrfs
+> > 
+> > SSDs are sensitive to partitioning. Easiest is not to partition at all.
 > 
-> Doesn't directly answer your question, but if you don't have discard as a
-> mount option, you should try that.
+> Huh? How so?
 > 
-> Which SSD do you have? Do normal big file writes succeed or hang too?
-> 
-> My guess right now is that you don't have discard, and your drive is doing
-> very slow garbage collection. I had a Crucial C300 that did just that before
-> it ate itself and my data a month later.
-> Also check that your drive does not have a firmware update to remove those
-> hangs.
+> My Intel SSD 320 is partitioned and uses LVM in the biggest partition
+> and is still just fine after 19 month. Media wearout indicator still at 100
+> (of 100).
 
-Maybe also the drive does slow trims, but I doubt an Intel SSD 520 would
-fall into that category.
+Or did you indirectly refer to partition alignment?
 
-In case you want to try out Sylvain, mount *without* discard option, and
-run fstrim manually or by cron job from time to time.
-
-Ciao,
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

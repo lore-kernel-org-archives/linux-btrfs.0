@@ -1,68 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:37911 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751308Ab2LDHFt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2012 02:05:49 -0500
-Received: by mail-pb0-f46.google.com with SMTP id wy7so2623595pbc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2012 23:05:49 -0800 (PST)
+Received: from aserp1040.oracle.com ([141.146.126.69]:43081 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756625Ab2LGRHX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Dec 2012 12:07:23 -0500
+Message-ID: <50C2238F.7000004@oracle.com>
+Date: Sat, 08 Dec 2012 01:12:47 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <1354246809-32339-2-git-send-email-filbranden@google.com>
-References: <1354246809-32339-1-git-send-email-filbranden@google.com>
-	<1354246809-32339-2-git-send-email-filbranden@google.com>
-Date: Mon, 3 Dec 2012 23:05:49 -0800
-Message-ID: <CADU+-uDHx13a1CUJzFEH46OXxyPS4wo74JgxEZbUAQVFt0w=nA@mail.gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs: fix permissions of empty files not affected by umask
-From: Filipe Brandenburger <filbranden@google.com>
-To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: Lukas Czerner <lczerner@redhat.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Notify udev when removing device
+References: <1354821948-18855-1-git-send-email-lczerner@redhat.com>
+In-Reply-To: <1354821948-18855-1-git-send-email-lczerner@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-Any concerns on this patchset? Any chance it can be integrated in time
-for 3.8 or too risky for it? The Bugzilla entry contains some test
-cases that reproduce the issue fairly easily by unmounting the
-filesystem right after creating an empty file... Let me know if there
-are any extra fixes or tests you'd like me to provide.
+It works. Nice fix.
 
-Thanks,
-Filipe
+Thanks
+Anand
 
-On Thu, Nov 29, 2012 at 7:40 PM, Filipe Brandenburger
-<filbranden@google.com> wrote:
-> When a new file is created with btrfs_create(), the inode will initially be
-> created with permissions 0666 and later on in btrfs_init_acl() it will be
-> adapted to mask out the umask bits. The problem is that this change won't make
-> it into the btrfs_inode unless there's another change to the inode (e.g. writing
-> content changing the size or touching the file changing the mtime.)
+
+On 12/07/2012 03:25 AM, Lukas Czerner wrote:
+> Currently udev does not know about the device being removed from the
+> file system. This may result in the situation where we're unable to
+> mount the file system by UUID or by LABEL because the by-uuid and
+> by-label links may still point to the device which is no longer part of
+> the btrfs file system and hence does not have any btrfs super block.
 >
-> This fix adds a call to btrfs_update_inode() to btrfs_create() to make sure that
-> the change will not get lost if the in-memory inode is flushed before other
-> changes are made to the file.
+> It can be easily reproduced by the following:
 >
-> Signed-off-by: Filipe Brandenburger <filbranden@google.com>
+> mkfs.btrfs -L bugfs /dev/loop[0-6]
+> mount /dev/loop0 /mnt/test
+> btrfs device delete /dev/loop0 /mnt/test
+> umount /mnt/test
+>
+> mount LABEL=bugfs /mnt/test <---- this fails
+>
+> then see:
+>
+> ls -l /dev/disk/by-label/bugfs
+>
+> which will still point to the /dev/loop0
+>
+> We did not noticed this before because libblkid would send the udev
+> event for us when it notice that the link does not fit the reality,
+> however it does not do that anymore and completely relies on udev
+> information.
+>
+> Fix this by sending the KOBJ_CHANGE event to the bdev kobject after
+> successful device removal.
+>
+> Note that this does not affect device addition, because we will open the
+> device prior the addition from userspace and udev will notice that and
+> reread the device afterwards.
+>
+> Signed-off-by: Lukas Czerner <lczerner@redhat.com>
 > ---
->  fs/btrfs/inode.c | 6 ++++++
->  1 file changed, 6 insertions(+)
+>   fs/btrfs/volumes.c |   16 ++++++++++++++++
+>   1 files changed, 16 insertions(+), 0 deletions(-)
 >
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 95542a1..caf9d76 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4996,6 +4996,12 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
->                 goto out_unlock;
->         }
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 0f5ebb7..95c6f7d 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -71,6 +71,19 @@ static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
+>   	kfree(fs_devices);
+>   }
 >
-> +       err = btrfs_update_inode(trans, root, inode);
-> +       if (err) {
-> +               drop_inode = 1;
-> +               goto out_unlock;
-> +       }
+> +static void btrfs_kobject_uevent(struct block_device *bdev,
+> +				 enum kobject_action action)
+> +{
+> +	int ret;
 > +
->         /*
->         * If the active LSM wants to access the inode during
->         * d_instantiate it needs these. Smack checks to see
-> --
-> 1.7.11.7
+> +	ret = kobject_uevent(&disk_to_dev(bdev->bd_disk)->kobj, action);
+> +	if (ret)
+> +		pr_warn("Sending event '%d' to kobject: '%s' (%p): failed\n",
+> +			action,
+> +			kobject_name(&disk_to_dev(bdev->bd_disk)->kobj),
+> +			&disk_to_dev(bdev->bd_disk)->kobj);
+> +}
+> +
+>   void btrfs_cleanup_fs_uuids(void)
+>   {
+>   	struct btrfs_fs_devices *fs_devices;
+> @@ -1493,6 +1506,9 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>
+>   	ret = 0;
+>
+> +	/* Notify udev that device has changed */
+> +	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+> +
+>   error_brelse:
+>   	brelse(bh);
+>   error_close:
 >

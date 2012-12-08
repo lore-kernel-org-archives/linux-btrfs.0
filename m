@@ -1,35 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ares07.inai.de ([5.9.24.206]:40595 "EHLO ares07.inai.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750743Ab2LIFRm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Dec 2012 00:17:42 -0500
-Date: Sun, 9 Dec 2012 06:17:39 +0100 (CET)
-From: Jan Engelhardt <jengelh@inai.de>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-cc: linux-btrfs@vger.kernel.org,
-        =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
-Subject: Re: BTRFS, getting darn slower everyday
-In-Reply-To: <201210071648.54027.Martin@lichtvoll.de>
-Message-ID: <alpine.LNX.2.01.1212090614400.31120@nerf07.vanv.qr>
-References: <50714AC8.4010100@petaramesh.org> <201210071259.05801.Martin@lichtvoll.de> <50718C44.2080701@petaramesh.org> (sfid-20121007_163444_636745_E6F75E74) <201210071648.54027.Martin@lichtvoll.de>
+Received: from moutng.kundenserver.de ([212.227.17.10]:60187 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754436Ab2LIIrD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Dec 2012 03:47:03 -0500
+Message-ID: <50C33AEB.6080701@friedels.name>
+Date: Sat, 08 Dec 2012 14:04:43 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: segmentation-fault in btrfsck (git-version)
+References: <50BFB3B2.8040405@friedels.name> <CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com>
+In-Reply-To: <CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
-On Sunday 2012-10-07 16:48, Martin Steigerwald wrote:
->> 
->> # btrfs su li /
->> ID 256 top level 5 path UBUNTU
->> ID 259 top level 5 path UBUNTU/@
->> ID 261 top level 5 path UBUNTU/@tmp
->> ID 262 top level 5 path UBUNTU/@home
->>[...]
->
->This could be 100 or more subvolumes / snapshots.
->Maybe slowness could be related to this one.
+thanks for letting me know.
+Indeed it would be good to replace the segmentation Fault by " btrfs 
+does not yet know how to handle this condition.
+Future refinements of btrfsck will probably include proper error
+messages for issues that can't be handled, or perhaps even fix the
+error."
 
-Absolutely. COW snapshots cause severe fragmentation (it's
-in their nature). "Easily" reproducible by snapshotting an fs
-every day. Been there, had that.
+
+> It might be interesting for you to try a newer kernel, and use scrub
+> on this volume if you have the two disks RAIDed.
+I will try that.
+
+Greetings,
+Hendrik
+
+
+
+-- 
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Mobil 0178 1874363

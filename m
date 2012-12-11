@@ -1,26 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:58184 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752771Ab2LKPtO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Dec 2012 10:49:14 -0500
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id tcpYyeuucD2VRpQn (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 08:49:13 -0700 (MST)
-Date: Tue, 11 Dec 2012 10:49:11 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: New btrfs-next
-Message-ID: <20121211154911.GE3126@localhost.localdomain>
+Received: from aserp1040.oracle.com ([141.146.126.69]:28863 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753420Ab2LKUbY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Dec 2012 15:31:24 -0500
+Date: Tue, 11 Dec 2012 23:31:16 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs: add support for multiple csum algorithms
+Message-ID: <20121211203116.GW22569@mwanda>
+References: <20120615194922.GA2278@elgon.mountain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120615194922.GA2278@elgon.mountain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+This is a memory corruption bug, could someone take a look at it?
 
-Just finished what I was working on so I've caught btrfs-next all up.  I had to
-rebase across the merge with Stefans stuff and I think I may have messed stuff
-up so please check your patches and make sure they make sense.  Also any
-outstanding patches that I missed please email me directly to let me know (if
-you cc the list I'll miss it since it will get filtered to the list folder).
-Thanks!
+regards,
+dan carpetner
 
-Josef
+On Fri, Jun 15, 2012 at 10:49:22PM +0300, Dan Carpenter wrote:
+> Hello Josef Bacik,
+> 
+> The patch 607d432da054: "Btrfs: add support for multiple csum 
+> algorithms" from Dec 2, 2008, leads to the following warning:
+> fs/btrfs/disk-io.c:298 csum_tree_block()
+> 	 error: memcpy() '&found' too small (4 vs 9)
+> 
+> fs/btrfs/disk-io.c
+>    284          if (csum_size > sizeof(inline_result)) {
+>    285                  result = kzalloc(csum_size * sizeof(char), GFP_NOFS);
+>    286                  if (!result)
+>    287                          return 1;
+>    288          } else {
+>    289                  result = (char *)&inline_result;
+>    290          }
+>    291  
+>    292          btrfs_csum_final(crc, result);
+>    293  
+>    294          if (verify) {
+>    295                  if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+>    296                          u32 val;
+>    297                          u32 found = 0;
+>    298                          memcpy(&found, result, csum_size);
+>                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 
+> Before that commit we used to memcpy() 4 bytes and it was fine, but now
+> csum_size can be larger than 4 bytes and there is a potential for
+> memory corruption.
+> 
+>    299  
+>    300                          read_extent_buffer(buf, &val, 0, csum_size);
+>                                                         ^^^^
+> Smatch complains that "val" is too small as well.
+> 
+>    301                          printk_ratelimited(KERN_INFO "btrfs: %s checksum verify "
+>    302                                         "failed on %llu wanted %X found %X "
+>    303                                         "level %d\n",
+>    304                                         root->fs_info->sb->s_id,
+>    305                                         (unsigned long long)buf->start, val, found,
+>    306                                         btrfs_header_level(buf));
+>    307                          if (result != (char *)&inline_result)
+>    308                                  kfree(result);
+>    309                          return 1;
+> 
+> regards,
+> dan carpenter

@@ -1,122 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24166 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750768Ab2LQH1q (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:56279 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751223Ab2LKLRE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 02:27:46 -0500
-Message-ID: <50CEC95C.1000709@oracle.com>
-Date: Mon, 17 Dec 2012 15:27:24 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+	Tue, 11 Dec 2012 06:17:04 -0500
+Received: by mail-pa0-f46.google.com with SMTP id bh2so2810129pad.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 03:17:04 -0800 (PST)
+Message-ID: <50C71625.1010003@codesrc.com>
+Date: Tue, 11 Dec 2012 21:16:53 +1000
+From: Michael McMaster <michael@codesrc.com>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: linux-btrfs@vger.kernel.org, anand.jain@oracle.com
-Subject: Re: [RESEND PATCH V4 2/2] Btrfs: Add a new ioctl to change the label
- of a mounted filesystem
-In-Reply-To: <50C804D9.5060700@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Patch for resolving loop devices
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------enig9AD61485B42339BD31588560"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <50C7F894.9000709@oracle.com>
- <50C804D9.5060700@cn.fujitsu.com>
 
-Sorry for my late response, I missed your feedback somehow.
-On 12/12/2012 12:15 PM, Miao Xie wrote:
-> On wed, 12 Dec 2012 11:23:00 +0800, Jeff Liu wrote:
->> Add a new ioctl BTRFS_FS_SETLABEL to change the label of a mounted filesystem.
->>
->>
->> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>
->> ---
->>  fs/btrfs/ioctl.c |   34 ++++++++++++++++++++++++++++++++++
->>  fs/btrfs/ioctl.h |    2 ++
->>  2 files changed, 36 insertions(+)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index b0a5e17..ebbf634 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -3711,6 +3711,38 @@ static int btrfs_ioctl_get_fslabel(struct btrfs_root *root, void __user *arg)
->>  	return ret ? -EFAULT : 0;
->>  }
->>  
->> +static int btrfs_ioctl_set_fslabel(struct btrfs_root *root, void __user *arg)
->> +{
->> +	struct btrfs_super_block *super_block = root->fs_info->super_copy;
->> +	struct btrfs_trans_handle *trans;
->> +	char label[BTRFS_LABEL_SIZE];
->> +	int ret = 0;
->> +
->> +	if (!capable(CAP_SYS_ADMIN))
->> +		return -EPERM;
->> +
->> +	if (btrfs_root_readonly(root))
->> +		return -EROFS;
-> 
-> Since this label is a global parameter, we needn't check the root
-> is R/O or not.
-> 
-> The check we need is the write access of the fs, so we need call
-> 	mnt_want_write_file()
-Yes, you are right.
-> 
->> +
->> +	if (copy_from_user(label, arg, sizeof(label)))
->> +		return -EFAULT;
->> +
->> +	label[BTRFS_LABEL_SIZE - 1] = '\0';
-> 
-> I don't think setting the last byte to '\0' is a good way, because the user would be
-> very strange that the new label is truncated, but the program told him that it was done
-> successfully.
-Good point, will revise it later.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig9AD61485B42339BD31588560
+Content-Type: multipart/mixed;
+ boundary="------------040002000606040303010508"
 
-Thanks,
--Jeff
-> 
->> +
->> +	mutex_lock(&root->fs_info->volume_mutex);
->> +	trans = btrfs_start_transaction(root, 1);
->> +	if (IS_ERR(trans)) {
->> +		ret = PTR_ERR(trans);
->> +		goto out_unlock;
->> +	}
->> +	strcpy(super_block->label, label);
->> +	btrfs_end_transaction(trans, root);
->> +
->> +out_unlock:
->> +	mutex_unlock(&root->fs_info->volume_mutex);
->> +	return ret;
->> +}
->> +
->>  long btrfs_ioctl(struct file *file, unsigned int
->>  		cmd, unsigned long arg)
->>  {
->> @@ -3811,6 +3843,8 @@ long btrfs_ioctl(struct file *file, unsigned int
->>  		return btrfs_ioctl_qgroup_limit(root, argp);
->>  	case BTRFS_IOC_GET_FSLABEL:
->>  		return btrfs_ioctl_get_fslabel(root, argp);
->> +	case BTRFS_IOC_SET_FSLABEL:
->> +		return btrfs_ioctl_set_fslabel(root, argp);
->>  	}
->>  
->>  	return -ENOTTY;
->> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
->> index 98f896f..cc4e657 100644
->> --- a/fs/btrfs/ioctl.h
->> +++ b/fs/btrfs/ioctl.h
->> @@ -455,4 +455,6 @@ struct btrfs_ioctl_send_args {
->>  				      struct btrfs_ioctl_get_dev_stats)
->>  #define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 53, \
->>  				   char[BTRFS_LABEL_SIZE])
->> +#define BTRFS_IOC_SET_FSLABEL _IOW(BTRFS_IOCTL_MAGIC, 54, \
->> +				   char[BTRFS_LABEL_SIZE])
->>  #endif
-> 
-> number 50 has been reserved for this feature.
-> 
-> Thanks
-> Miao
-> 
+This is a multi-part message in MIME format.
+--------------040002000606040303010508
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
+I experienced an error where mkfs.btrfs failed when an unrelated
+cryptoloop device was mounted.
+
+$ sudo /tmp/btrfs-progs/mkfs.btrfs  /dev/mapper/mydisk
+
+WARNING! - Btrfs v0.20-rc1-37-g91d9eec-dirty IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+error checking /dev/mapper/mydisk mount status
+
+$ sudo losetup -a
+/dev/loop0: [0014]:71314 (/home/michael/loopfile), encryption aes (type 1=
+8)
+
+I found that resolve_loop_device() method in utils.c was returning "aes"
+as the associated file, instead of /home/michael/loopfile.  This
+eventually causes the realpath() call in is_same_blk_file() to fail. The
+attached patch fixes this problem.
+
+Regards,
+Michael McMaster
+
+
+
+--------------040002000606040303010508
+Content-Type: text/x-patch;
+ name="utils.c.patch"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="utils.c.patch"
+
+--- utils.c.orig	2012-12-11 21:00:07.000000000 +1000
++++ utils.c	2012-12-11 21:00:26.000000000 +1000
+@@ -653,16 +653,16 @@
+ {
+ 	int loop_fd;
+ 	int ret_ioctl;
+-	struct loop_info loopinfo;
++	struct loop_info64 loopinfo;
+=20
+ 	if ((loop_fd =3D open(loop_dev, O_RDONLY)) < 0)
+ 		return -errno;
+=20
+-	ret_ioctl =3D ioctl(loop_fd, LOOP_GET_STATUS, &loopinfo);
++	ret_ioctl =3D ioctl(loop_fd, LOOP_GET_STATUS64, &loopinfo);
+ 	close(loop_fd);
+=20
+ 	if (ret_ioctl =3D=3D 0) {
+-		strncpy(loop_file, loopinfo.lo_name, max_len);
++		strncpy(loop_file, loopinfo.lo_file_name, max_len);
+ 		if (max_len > 0)
+ 			loop_file[max_len-1] =3D 0;
+ 	} else
+
+--------------040002000606040303010508--
+
+--------------enig9AD61485B42339BD31588560
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBCAAGBQJQxxYqAAoJEGR9aq/UZ4isbocP/2JmWxvRWB8hRyoh0OqD93Yo
+Fzlx6YhgyMhS1XRlzdnsDvhtr8RX3DgBxk6g0E6sGEwGWVyFzpli1UYsAugA1AuQ
+PNYRFHhX8LZmk12VwqE/Z/q1T8r4lTDcHSpJkOgVd8bd4B0UtQAqAAv9+Ub1P17t
+Xepr1QNiH2f+KolTfU/b7qLLRSfJ50tFC7gBiN2ndDcNhCzCUf5bi163QUFmNybz
+H+R4H7WHt4j7O/TMEO0H17i8P+axRUPi9QhoKtVD+71mpBbTAK5Xn0EPoYRi6QLM
+5b9qaFzGJVOUozwUVgrpkzEP7E7WICV1AMuOQEDhrvj1eCECg/0prBvdjVbwxMFP
+qGZ+hqyAKinFKVcU3VtDY+BXIrEEEDZELAPG5t9UccZu5aho3iJBsqqfgIc/E2VI
+S6fJxKy9nry0iCMInTgvsFWEJuUMomuaakxLr4tlqYzVJfwOp23hNnqLmZ1uQjzH
+q7DkCecA7tKoyenGblumJwoilkZSklpYIIQvlbJZCuesee1qc9cH++7+xeIJ2M8d
+f73zyzlKqzGts1g35A3ipLeiLYFqwGIVfNuoRKml/w0cmkkYbbtdHk3b56IsJASh
+FBf/svWrMTwnJ7GF/CTMIds7s5yhH2Gvk5o/BTUlznCuoDDOTl3NLWNxN+M6N6aN
+daLvntghYC07bhkwNEJa
+=Gkcn
+-----END PGP SIGNATURE-----
+
+--------------enig9AD61485B42339BD31588560--

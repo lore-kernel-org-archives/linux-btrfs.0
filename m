@@ -1,71 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28863 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:45163 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753420Ab2LKUbY (ORCPT
+	with ESMTP id S1754155Ab2LKWSC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Dec 2012 15:31:24 -0500
-Date: Tue, 11 Dec 2012 23:31:16 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs: add support for multiple csum algorithms
-Message-ID: <20121211203116.GW22569@mwanda>
-References: <20120615194922.GA2278@elgon.mountain>
+	Tue, 11 Dec 2012 17:18:02 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBBMI0ha004595
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 22:18:01 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBBMHxUd010772
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 22:18:00 GMT
+Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBBMHxRl031811
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 16:17:59 -0600
+Message-ID: <50C7B0A3.7040408@oracle.com>
+Date: Tue, 11 Dec 2012 23:16:03 +0100
+From: Koen De Wit <koen.de.wit@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120615194922.GA2278@elgon.mountain>
+To: linux-btrfs@vger.kernel.org
+Subject: Bug: trying to create reflink on different device results in empty
+ file
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a memory corruption bug, could someone take a look at it?
+When trying to create a clone (reflink) of a file on a different device, 
+you'll get this error:
+     Invalid cross-device link
 
-regards,
-dan carpetner
+However, an empty file is created on the target location. An invalid 
+clone operation should not result in the creation of a file.
 
-On Fri, Jun 15, 2012 at 10:49:22PM +0300, Dan Carpenter wrote:
-> Hello Josef Bacik,
-> 
-> The patch 607d432da054: "Btrfs: add support for multiple csum 
-> algorithms" from Dec 2, 2008, leads to the following warning:
-> fs/btrfs/disk-io.c:298 csum_tree_block()
-> 	 error: memcpy() '&found' too small (4 vs 9)
-> 
-> fs/btrfs/disk-io.c
->    284          if (csum_size > sizeof(inline_result)) {
->    285                  result = kzalloc(csum_size * sizeof(char), GFP_NOFS);
->    286                  if (!result)
->    287                          return 1;
->    288          } else {
->    289                  result = (char *)&inline_result;
->    290          }
->    291  
->    292          btrfs_csum_final(crc, result);
->    293  
->    294          if (verify) {
->    295                  if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
->    296                          u32 val;
->    297                          u32 found = 0;
->    298                          memcpy(&found, result, csum_size);
->                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> 
-> Before that commit we used to memcpy() 4 bytes and it was fine, but now
-> csum_size can be larger than 4 bytes and there is a potential for
-> memory corruption.
-> 
->    299  
->    300                          read_extent_buffer(buf, &val, 0, csum_size);
->                                                         ^^^^
-> Smatch complains that "val" is too small as well.
-> 
->    301                          printk_ratelimited(KERN_INFO "btrfs: %s checksum verify "
->    302                                         "failed on %llu wanted %X found %X "
->    303                                         "level %d\n",
->    304                                         root->fs_info->sb->s_id,
->    305                                         (unsigned long long)buf->start, val, found,
->    306                                         btrfs_header_level(buf));
->    307                          if (result != (char *)&inline_result)
->    308                                  kfree(result);
->    309                          return 1;
-> 
-> regards,
-> dan carpenter
+
+Example:
+
+# mount
+(...)
+/dev/sdb1 on /mnt/diskb type btrfs (rw)
+/dev/sdf1 on /mnt/diskf type btrfs (rw)
+
+# ls -l diskb
+total 4
+-rw-r--r-- 1 root root 11 Dec 11 22:45 testfile.txt
+
+# ls -l diskf
+total 0
+
+# cp --reflink diskb/testfile.txt diskf/testcopy.txt
+cp: failed to clone `diskf/testcopy.txt' from `diskb/testfile.txt': 
+Invalid cross-device link
+
+# ls -l diskf
+total 0
+-rw-r--r-- 1 root root 0 Dec 11 22:56 testcopy.txt
+

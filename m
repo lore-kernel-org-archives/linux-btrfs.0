@@ -1,146 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:24063 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:8321 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753773Ab2LKOZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753771Ab2LKOZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 11 Dec 2012 09:25:19 -0500
 From: Lukas Czerner <lczerner@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: chris.mason@fusionio.com, cwillu@cwillu.com,
         Lukas Czerner <lczerner@redhat.com>
-Subject: [PATCH 1/3] Btrfs-progs: move path modification to filters
-Date: Tue, 11 Dec 2012 15:24:58 +0100
-Message-Id: <1355235900-10252-1-git-send-email-lczerner@redhat.com>
+Subject: [PATCH 2/3] Btrfs-progs: add '-o' option into subvolume list command
+Date: Tue, 11 Dec 2012 15:24:59 +0100
+Message-Id: <1355235900-10252-2-git-send-email-lczerner@redhat.com>
+In-Reply-To: <1355235900-10252-1-git-send-email-lczerner@redhat.com>
+References: <1355235900-10252-1-git-send-email-lczerner@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 8e8e019e910f20947fea7eff5da40753639d8870 introduces -a option
-which will list all subvolumes with distinguishing between relative and
-absolute by prepending absolute patch with "<FS_TREE>".
-
-This commit moves the path modification to a filter code rather than
-doing so in path construction in resolve_root(). This gives us more
-flexibility in formatting path output.
+This commit introduces new option '-o' to list only subvolumes under the
+specified path. This does not change subvolume list  behaviour. It has
+been default in the past and it is even with this commit.
 
 Signed-off-by: Lukas Czerner <lczerner@redhat.com>
 ---
- btrfs-list.c     |   32 +++++++++++++++++++++++---------
- btrfs-list.h     |    1 +
- cmds-subvolume.c |   11 +++++++++--
- man/btrfs.8.in   |    3 ++-
- 4 files changed, 35 insertions(+), 12 deletions(-)
+ cmds-subvolume.c |   11 ++++++++---
+ man/btrfs.8.in   |    6 ++++--
+ 2 files changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index e5f0f96..77d99f8 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -628,15 +628,6 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
- 		}
- 
- 		if (next == BTRFS_FS_TREE_OBJECTID) {
--			char p[] = "<FS_TREE>";
--			add_len = strlen(p);
--			len = strlen(full_path);
--			tmp = malloc(len + add_len + 2);
--			memcpy(tmp + add_len + 1, full_path, len);
--			tmp[add_len] = '/';
--			memcpy(tmp, p, add_len);
--			free(full_path);
--			full_path = tmp;
- 			ri->top_id = next;
- 			break;
- 		}
-@@ -1176,6 +1167,28 @@ static int filter_topid_equal(struct root_info *ri, u64 data)
- 	return ri->top_id == data;
- }
- 
-+static int filter_full_path(struct root_info *ri, u64 data)
-+{
-+	if (ri->full_path && ri->top_id != data) {
-+		char *tmp;
-+		char p[] = "<FS_TREE>";
-+		int add_len = strlen(p);
-+		int len = strlen(ri->full_path);
-+
-+		tmp = malloc(len + add_len + 2);
-+		if (!tmp) {
-+			fprintf(stderr, "memory allocation failed\n");
-+			exit(1);
-+		}
-+		memcpy(tmp + add_len + 1, ri->full_path, len);
-+		tmp[add_len] = '/';
-+		memcpy(tmp, p, add_len);
-+		free(ri->full_path);
-+		ri->full_path = tmp;
-+	}
-+	return 1;
-+}
-+
- static btrfs_list_filter_func all_filter_funcs[] = {
- 	[BTRFS_LIST_FILTER_ROOTID]		= filter_by_rootid,
- 	[BTRFS_LIST_FILTER_SNAPSHOT_ONLY]	= filter_snapshot,
-@@ -1187,6 +1200,7 @@ static btrfs_list_filter_func all_filter_funcs[] = {
- 	[BTRFS_LIST_FILTER_CGEN_LESS]		= filter_cgen_less,
- 	[BTRFS_LIST_FILTER_CGEN_EQUAL]          = filter_cgen_equal,
- 	[BTRFS_LIST_FILTER_TOPID_EQUAL]		= filter_topid_equal,
-+	[BTRFS_LIST_FILTER_FULL_PATH]		= filter_full_path,
- };
- 
- struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
-diff --git a/btrfs-list.h b/btrfs-list.h
-index cde4b3c..f7fbea6 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -71,6 +71,7 @@ enum btrfs_list_filter_enum {
- 	BTRFS_LIST_FILTER_CGEN_LESS,
- 	BTRFS_LIST_FILTER_CGEN_MORE,
- 	BTRFS_LIST_FILTER_TOPID_EQUAL,
-+	BTRFS_LIST_FILTER_FULL_PATH,
- 	BTRFS_LIST_FILTER_MAX,
- };
- 
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ac39f7b..37cb8cc 100644
+index 37cb8cc..0aa7467 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -277,7 +277,9 @@ static const char * const cmd_subvol_list_usage[] = {
+@@ -272,7 +272,7 @@ out:
+ }
+ 
+ static const char * const cmd_subvol_list_usage[] = {
+-	"btrfs subvolume list [-apurts] [-g [+|-]value] [-c [+|-]value] "
++	"btrfs subvolume list [-aopurts] [-g [+|-]value] [-c [+|-]value] "
+ 	"[--sort=gen,ogen,rootid,path] <path>",
  	"List subvolumes (and snapshots)",
  	"",
- 	"-p           print parent ID",
--	"-a           print all the subvolumes in the filesystem.",
-+	"-a           print all the subvolumes in the filesystem and",
-+	"             distinguish absolute and relative path with respect",
-+	"             to the given <path>",
+@@ -280,6 +280,7 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"-a           print all the subvolumes in the filesystem and",
+ 	"             distinguish absolute and relative path with respect",
+ 	"             to the given <path>",
++	"-o           print only subvolumes bellow specified path",
  	"-u           print the uuid of subvolumes (and snapshots)",
  	"-t           print the result as a table",
  	"-s           list snapshots only in the filesystem",
-@@ -400,7 +402,12 @@ static int cmd_subvol_list(int argc, char **argv)
- 	}
+@@ -309,6 +310,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	char *subvol;
+ 	int is_tab_result = 0;
+ 	int is_list_all = 0;
++	int is_only_in_path = 1;
+ 	struct option long_options[] = {
+ 		{"sort", 1, NULL, 'S'},
+ 		{0, 0, 0, 0}
+@@ -320,7 +322,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	optind = 1;
+ 	while(1) {
+ 		c = getopt_long(argc, argv,
+-				    "apsurg:c:t", long_options, NULL);
++				    "aopsurg:c:t", long_options, NULL);
+ 		if (c < 0)
+ 			break;
  
- 	top_id = btrfs_list_get_path_rootid(fd);
--	if (!is_list_all)
-+
-+	if (is_list_all)
-+		btrfs_list_setup_filter(&filter_set,
-+					BTRFS_LIST_FILTER_FULL_PATH,
-+					top_id);
-+	else
+@@ -331,6 +333,9 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		case 'a':
+ 			is_list_all = 1;
+ 			break;
++		case 'o':
++			is_only_in_path = 1;
++			break;
+ 		case 't':
+ 			is_tab_result = 1;
+ 			break;
+@@ -407,7 +412,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		btrfs_list_setup_filter(&filter_set,
+ 					BTRFS_LIST_FILTER_FULL_PATH,
+ 					top_id);
+-	else
++	else if (is_only_in_path)
  		btrfs_list_setup_filter(&filter_set,
  					BTRFS_LIST_FILTER_TOPID_EQUAL,
  					top_id);
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 9222580..d6d8e94 100644
+index d6d8e94..1e314eb 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -124,7 +124,8 @@ and top level. The parent's ID may be used at mount time via the
+@@ -11,7 +11,7 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
+ .PP
+-\fBbtrfs\fP \fBsubvolume list\fP\fI [-aprts] [-g [+|-]value] [-c [+|-]value] [--rootid=rootid,gen,ogen,path] <path>\fP
++\fBbtrfs\fP \fBsubvolume list\fP\fI [-aoprts] [-g [+|-]value] [-c [+|-]value] [--rootid=rootid,gen,ogen,path] <path>\fP
+ .PP
+ \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
+ .PP
+@@ -108,7 +108,7 @@ Create a subvolume in \fI<dest>\fR (or in the current directory if
+ \fI<dest>\fR is omitted).
+ .TP
  
- \fB-t\fP print the result as a table.
+-\fBsubvolume list\fR\fI [-aprts][-g [+|-]value] [-c [+|-]value] [--sort=gen,ogen,rootid,path] <path>\fR
++\fBsubvolume list\fR\fI [-aoprts][-g [+|-]value] [-c [+|-]value] [--sort=gen,ogen,rootid,path] <path>\fR
+ .RS
+ List the subvolumes present in the filesystem \fI<path>\fR. For every
+ subvolume the following information is shown by default.
+@@ -127,6 +127,8 @@ and top level. The parent's ID may be used at mount time via the
+ \fB-a\fP print all the subvolumes in the filesystem and distinguish between
+ absolute and relative path with respect to the given <path>.
  
--\fB-a\fP print all the subvolumes in the filesystem.
-+\fB-a\fP print all the subvolumes in the filesystem and distinguish between
-+absolute and relative path with respect to the given <path>.
- 
++\fB-o\fP print only subvolumes bellow specified <path>.
++
  \fB-r\fP only readonly subvolumes in the filesystem wille be listed.
  
+ \fB-s\fP only snapshot subvolumes in the filesystem will  be listed.
 -- 
 1.7.7.6
 

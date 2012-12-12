@@ -1,152 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33834 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751517Ab2LLNRR (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:38777 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752041Ab2LLPBD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Dec 2012 08:17:17 -0500
-Date: Wed, 12 Dec 2012 21:15:30 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Joeri Vanthienen <mail@joerivanthienen.be>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:4052 (kernel 3.5.3)
-Message-ID: <20121212131528.GB13944@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <CAPsrAuA0EdBGMd_dXX4RAKTp5eA156iaXAhOK8mUnncRDC228A@mail.gmail.com>
+	Wed, 12 Dec 2012 10:01:03 -0500
+Received: from [172.24.1.80] (yian-ho01.nir.cronon.net [192.166.201.94])
+	by smtp.strato.de (jorabe mo20) (RZmta 31.9 AUTH)
+	with ESMTPA id z006ddoBCDrpTu for <linux-btrfs@vger.kernel.org>;
+	Wed, 12 Dec 2012 16:01:00 +0100 (CET)
+Message-ID: <50C89C2C.70606@giantdisaster.de>
+Date: Wed, 12 Dec 2012 16:01:00 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPsrAuA0EdBGMd_dXX4RAKTp5eA156iaXAhOK8mUnncRDC228A@mail.gmail.com>
+To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
+Subject: [BUG] issue with btrfs-next and xfstest 241
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 12, 2012 at 11:24:18AM +0100, Joeri Vanthienen wrote:
-> Hi all,
-> 
-> Last week we had 2 times an "uncorrectable ecc memory error" crash on
-> our server on the same memory module.
-> After removing the faulty module and restarting the server, everything
-> was working again.
-> 
-> However, yesterday we had a soft lockup and had to restart the server
-> again. No warning or ecc error this time. Everything is working now,
-> but we want to avoid this in the future ofcourse.
-> 
->  Dec 11 17:49:04 SANOS1 kernel: kernel BUG at fs/btrfs/extent_io.c:4052!
-> Dec 11 17:49:04 SANOS1 kernel: invalid opcode: 0000 [#1] SMP
-> Dec 11 17:49:04 SANOS1 kernel: CPU 4
-> Dec 11 17:49:04 SANOS1 kernel: Modules linked in: iscsi_scst(O)
-> scst_vdisk(O) scst(O) btrfs zlib_deflate libcrc32c
-> cpufreq_conservative cpufreq_userspace cpufreq_powersave acpi_cpufreq
-> mperf sg(O) ses(O) ixg
-> be mdio igb lpc_ich mfd_core enclosure mptctl(O) coretemp kvm_intel
-> kvm crc32c_intel serio_raw pcspkr i2c_i801 i7core_edac ioatdma
-> edac_core dca button edd microcode autofs4 processor thermal_sys
-> scsi_dh_emc
-> (O) scsi_dh_rdac(O) scsi_dh_alua(O) scsi_dh_hp_sw(O) scsi_dh(O)
-> mptsas(O) mptscsih(O) mptbase(O) scsi_transport_sas(O) ata_generic
-> ata_piix [last unloaded: scst]
-> Dec 11 17:49:04 SANOS1 kernel:
-> Dec 11 17:49:04 SANOS1 kernel: Pid: 10716, comm: btrfs-endio-wri
-> Tainted: G           O 3.5.3-2.10-desktop #3 Supermicro
-> X8DTN+-F/X8DTN+-F
-> Dec 11 17:49:04 SANOS1 kernel: RIP: 0010:[<ffffffffa025c3de>]
-> [<ffffffffa025c3de>]
-> btrfs_release_extent_buffer_page.constprop.47+0x11e/0x130 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel: RSP: 0018:ffff8804d7cbf900  EFLAGS: 00010202
-> Dec 11 17:49:04 SANOS1 kernel: RAX: 0000000000000001 RBX:
-> ffff88080e3e80e0 RCX: ffff880497cb74b0
-> Dec 11 17:49:04 SANOS1 kernel: RDX: 0000000000000000 RSI:
-> 0000000015644868 RDI: ffff88080e3e80e0
-> Dec 11 17:49:04 SANOS1 kernel: RBP: ffff8804d7cbf930 R08:
-> 0000000000000028 R09: ffff8804d7cbf808
-> Dec 11 17:49:04 SANOS1 kernel: R10: 0000000000000000 R11:
-> 0000000000000000 R12: ffff880497cb4c10
-> Dec 11 17:49:04 SANOS1 kernel: R13: ffff8804cca63eb0 R14:
-> ffff88080e3e80e0 R15: 0000000000000005
-> Dec 11 17:49:04 SANOS1 kernel: FS:  0000000000000000(0000)
-> GS:ffff88083fc00000(0000) knlGS:0000000000000000
-> Dec 11 17:49:04 SANOS1 kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> Dec 11 17:49:04 SANOS1 kernel: CR2: 00007f5519e56600 CR3:
-> 0000000001a0c000 CR4: 00000000000007e0
-> Dec 11 17:49:04 SANOS1 kernel: DR0: 0000000000000000 DR1:
-> 0000000000000000 DR2: 0000000000000000
-> Dec 11 17:49:04 SANOS1 kernel: DR3: 0000000000000000 DR6:
-> 00000000ffff0ff0 DR7: 0000000000000400
-> Dec 11 17:49:04 SANOS1 kernel: Process btrfs-endio-wri (pid: 10716,
-> threadinfo ffff8804d7cbe000, task ffff8807be802280)
-> Dec 11 17:49:04 SANOS1 kernel: Stack:
-> Dec 11 17:49:04 SANOS1 kernel:  ffff8804d7cbf950 ffff88080e3e80e0
-> ffff880497cb4c10 ffff8804cca63eb0
-> Dec 11 17:49:04 SANOS1 kernel:  000002ce2aa53000 ffff8804a65ab000
-> ffff8804d7cbf950 ffffffffa025c60f
-> Dec 11 17:49:04 SANOS1 kernel:  ffff88080e3e80e0 ffff8804cca63eb0
-> ffff8804d7cbf970 ffffffffa02616b2
-> Dec 11 17:49:04 SANOS1 kernel: Call Trace:
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa025c60f>]
-> release_extent_buffer.isra.38+0x3f/0xc0 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa02616b2>]
-> free_extent_buffer+0x32/0x90 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa02197aa>]
-> btrfs_release_path+0x2a/0xb0 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa0219aa6>]
-> btrfs_free_path+0x16/0x30 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa0232df0>]
-> btrfs_del_csums+0x2b0/0x300 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa0227149>]
-> __btrfs_free_extent+0x639/0x7b0 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa022b34e>]
-> run_clustered_refs+0x2be/0xa50 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa022bc76>]
-> btrfs_run_delayed_refs+0x196/0x4c0 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa025cac8>] ?
-> merge_state+0xd8/0x150 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa025c949>] ?
-> free_extent_state+0x19/0x20 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa025d476>] ?
-> clear_extent_bit+0x216/0x380 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa023d56a>]
-> __btrfs_end_transaction+0x9a/0x350 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa023d880>]
-> btrfs_end_transaction+0x10/0x20 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa02433c5>]
-> btrfs_finish_ordered_io+0x175/0x400 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffff8104ebd0>] ? usleep_range+0x40/0x40
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa0243660>]
-> finish_ordered_fn+0x10/0x20 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa026cd97>]
-> worker_loop+0x157/0x550 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffffa026cc40>] ?
-> btrfs_queue_worker+0x310/0x310 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffff81061bde>] kthread+0x8e/0xa0
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffff81590594>]
-> kernel_thread_helper+0x4/0x10
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffff81061b50>] ?
-> flush_kthread_worker+0x70/0x70
-> Dec 11 17:49:04 SANOS1 kernel:  [<ffffffff81590590>] ? gs_change+0x13/0x13
-> Dec 11 17:49:04 SANOS1 kernel: Code: 20 a8 04 75 2c 48 8b 03 a8 10 75
-> 23 48 8b 03 f6 c4 20 75 19 f0 80 63 01 f7 48 c7 43 30 00 00 00 00 48
-> 89 df e8 24 c6 ea e0 eb c0 <0f> 0b 0f 0b 0f 0b 0f 0b 66 2e 0f 1f 84
-> 00 00 00 00 00 55 48 c1
-> Dec 11 17:49:04 SANOS1 kernel: RIP  [<ffffffffa025c3de>]
-> btrfs_release_extent_buffer_page.constprop.47+0x11e/0x130 [btrfs]
-> Dec 11 17:49:04 SANOS1 kernel:  RSP <ffff8804d7cbf900>
-> Dec 11 17:49:04 SANOS1 kernel: ---[ end trace ea1d29e10378231c ]---
-> Dec 11 17:49:29 SANOS1 kernel: BUG: soft lockup - CPU#1 stuck for 22s!
-> [btrfs-endio-wri:2846]
-> 
-> 
-> Today I've finished a scrub on the btrfs filesystem. No errors.
-> SANOS1:~ # btrfs scrub status -d /dev/sde
-> scrub status for 517e8cfa-4275-4589-8da4-6a46ad613daa
-> scrub device /dev/sde (id 1) history
->         scrub started at Wed Dec 12 09:28:44 2012 and finished after
-> 4149 seconds
->         total bytes scrubbed: 338.19GB with 0 errors
-> 
-> What could be the cause of the soft lockup ? Thanks in advance.
+The problem is that a new superblock is written which references a block in the log tree although this block is written _after_ the superblock is written and never before.
 
-Just FYI, I once hit similar soft lockup on extent buffer
-while tracking bugs about tree modify log code, but we've
-fixed them in the latest btrfs.
+The referenced block in the following log is the one with the logical byte number 35770368 which physically is located on (mirror=2, device=/dev/sdg, phys_byte_nr 1117900800) and (mirror=1, device=/dev/sdg, phys_byte_nr=44158976).
+The submit_bio() of both mirrors and (of course) the completion takes place after the FLUSH request and after the submit_bio() and completion of the superblock.
 
-thanks,
-liubo
+export TEST_DEV=/dev/sdg
+export TEST_DIR=/mnt3
+export SCRATCH_DEV=/dev/sdi
+export SCRATCH_MNT=/mnt2
+cd xfs/cmds/xfstests
+grep check_int common.rc
+  gives this result:        export MOUNT_OPTIONS="-o check_int,check_int_print_mask=51,compress=lzo,autodefrag,space_cache"
+
+./check 241
+
+
+...
+submit_bio(rw=0x1411 FLUSH, bdev=ffff88022e9aa400)
+bio_end_io(err=0) for D @0 (sdg/0/0) -> for the FLUSH
+submit_bh(rw=0xc11, blocknr=16 (bytenr 65536), size=4096, data=ffff880228d40000, bdev=ffff88022e9aa400)
+btrfsic: superblock @65536 (sdg/65536/1) with old gen 45 <= 45
+root@30392320
+chunk@20975616
+log@35766272
+btrfs: attempt to write superblock which references block M @35770368 (sdg/1117900800/2) which is never written!
+btrfs: attempt to write superblock which references block M @35770368 (sdg/44158976/1) which is never written!
+------------[ cut here ]------------
+WARNING: at fs/btrfs/check-integrity.c:2533 btrfsic_process_written_superblock+0x256/0x3e0 [btrfs]()
+Hardware name: X8SIL
+Modules linked in: btrfs raid10 raid456 async_pq async_xor xor async_memcpy async_raid6_recov raid6_pq async_tx raid1 raid0 mpt2sas scsi_transport_sas raid_class
+Pid: 4992, comm: dbench Tainted: G        W    3.7.0+ #106
+Call Trace:
+ [<ffffffff8108657a>] warn_slowpath_common+0x7a/0xb0
+ [<ffffffff810865c5>] warn_slowpath_null+0x15/0x20
+ [<ffffffffa01468d6>] btrfsic_process_written_superblock+0x256/0x3e0 [btrfs]
+ [<ffffffffa0147ce4>] btrfsic_process_written_block+0x634/0xf90 [btrfs]
+ [<ffffffff810884b4>] ? console_unlock+0x274/0x440
+ [<ffffffffa014866d>] ? btrfsic_submit_bh+0x2d/0x1d0 [btrfs]
+ [<ffffffffa014876d>] btrfsic_submit_bh+0x12d/0x1d0 [btrfs]
+ [<ffffffffa00d778e>] write_dev_supers.isra.113+0x1ee/0x280 [btrfs]
+ [<ffffffffa00d9530>] write_all_supers+0x650/0x910 [btrfs]
+ [<ffffffffa01348e7>] ? btrfs_scrub_pause_super+0x17/0x20 [btrfs]
+ [<ffffffffa00d97fe>] write_ctree_super+0xe/0x10 [btrfs]
+ [<ffffffffa011a344>] btrfs_sync_log+0x654/0x6c0 [btrfs]
+ [<ffffffffa00efb36>] btrfs_sync_file+0x226/0x2c0 [btrfs]
+ [<ffffffff811c75f8>] do_fsync+0x58/0x80
+ [<ffffffff814427ce>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+ [<ffffffff811c799b>] sys_fsync+0xb/0x10
+ [<ffffffff819666d2>] system_call_fastpath+0x16/0x1b
+---[ end trace 757707b80c8cafa9 ]---
+S-65536(sdg/65536/1) --> M-35766272(sdg/1117896704/0) --> M-35745792(sdg/1117876224/2) [...]
+                                                      --> M-35745792(sdg/44134400/1) --> M-35753984(sdg/1117884416/0)
+                                                                                     --> M-35753984(sdg/44142592/1)
+                                                                                     --> M-35749888(sdg/1117880320/0)
+                                                                                     --> M-35749888(sdg/44138496/1)
+                                                                                     --> M-35770368(sdg/1117900800/2)   XXX
+                                                                                     --> M-35770368(sdg/44158976/1)   XXX
+...
+                     --> M-35766272(sdg/44154880/0) --> M-35745792(sdg/1117876224/2) [...]
+                                                    --> M-35745792(sdg/44134400/1) --> M-35753984(sdg/1117884416/0)
+                                                                                   --> M-35753984(sdg/44142592/1)
+...
+...
+                     --> M-20975616(sdg/29364224/2)
+                     --> M-20975616(sdg/20975616/1)
+                     --> M-30392320(sdg/1112522752/2) [...]
+                     --> M-30392320(sdg/38780928/1) --> M-29380608(sdg/1111511040/2)
+                                                    --> M-29380608(sdg/37769216/1)
+...
+bh_end_io(error=0) for S @65536 (sdg/65536/1)
+submit_bio(rw=0x411, bi_vcnt=3, bi_sector=86248 (bytenr 44158976), bi_bdev=ffff88022e9aa400)   XXX
+btrfs: attempt to overwrite M-block @35770368 (sdg/44158976/1), old(gen=18446744073709551615, objectid=1768, type=108, offset=0), new(gen=46), which is referenced by most recent superblock (superblockgen=45)!
+S-65536(sdg/65536/1) --> M-35766272(sdg/1117896704/0) --> M-35745792(sdg/1117876224/2) [...]
+                                                      --> M-35745792(sdg/44134400/1) --> M-35753984(sdg/1117884416/0)
+                                                                                     --> M-35753984(sdg/44142592/1)
+                                                                                     --> M-35749888(sdg/1117880320/0)
+                                                                                     --> M-35749888(sdg/44138496/1)
+                                                                                     --> M-35770368(sdg/1117900800/2)
+                                                                                     --> M-35770368(sdg/44158976/1)   XXX
+...
+submit_bio(rw=0x411, bi_vcnt=1, bi_sector=29528 (bytenr 15118336), bi_bdev=ffff88022e9aa400)
+submit_bio(rw=0x411, bi_vcnt=3, bi_sector=2183400 (bytenr 1117900800), bi_bdev=ffff88022e9aa400)   XXX
+btrfs: attempt to overwrite M-block @35770368 (sdg/1117900800/2), old(gen=18446744073709551615, objectid=1768, type=108, offset=0), new(gen=46), which is referenced by most recent superblock (superblockgen=45)!
+S-65536(sdg/65536/1) --> M-35766272(sdg/1117896704/0) --> M-35745792(sdg/1117876224/2) [...]
+                                                      --> M-35745792(sdg/44134400/1) --> M-35753984(sdg/1117884416/0)
+                                                                                     --> M-35753984(sdg/44142592/1)
+                                                                                     --> M-35749888(sdg/1117880320/0)
+                                                                                     --> M-35749888(sdg/44138496/1)
+                                                                                     --> M-35770368(sdg/1117900800/2)   XXX
+                                                                                     --> M-35770368(sdg/44158976/1)
+...
+bio_end_io(err=0) for M @35770368 (sdg/44158976/1)   XXX
+...
+submit_bio(rw=0x411, bi_vcnt=1, bi_sector=29536 (bytenr 15122432), bi_bdev=ffff88022e9aa400)
+submit_bio(rw=0x411, bi_vcnt=4, bi_sector=86272 (bytenr 44171264), bi_bdev=ffff88022e9aa400)
+submit_bio(rw=0x411, bi_vcnt=1, bi_sector=29544 (bytenr 15126528), bi_bdev=ffff88022e9aa400)
+submit_bio(rw=0x411, bi_vcnt=4, bi_sector=2183424 (bytenr 1117913088), bi_bdev=ffff88022e9aa400)
+bio_end_io(err=0) for M @35778560 (sdg/1117908992/0)
+bio_end_io(err=0) for M @35774464 (sdg/1117904896/2)
+bio_end_io(err=0) for M @35770368 (sdg/1117900800/2)   XXX
+bio_end_io(err=0) for M @35794944 (sdg/44183552/0)
+bio_end_io(err=0) for M @35790848 (sdg/44179456/0)
+bio_end_io(err=0) for M @35786752 (sdg/44175360/0)
+bio_end_io(err=0) for M @35782656 (sdg/44171264/0)
+bio_end_io(err=0) for M @35794944 (sdg/1117925376/0)
+bio_end_io(err=0) for M @35790848 (sdg/1117921280/0)
+bio_end_io(err=0) for M @35786752 (sdg/1117917184/0)
+bio_end_io(err=0) for M @35782656 (sdg/1117913088/0)
+submit_bio(rw=0x1411 FLUSH, bdev=ffff88022e9aa400)
+bio_end_io(err=0) for D @0 (sdg/0/0)
+bio_end_io() new sdg flush_gen=241
+submit_bh(rw=0xc11, blocknr=16 (bytenr 65536), size=4096, data=ffff880228d40000, bdev=ffff88022e9aa400)
+btrfsic: superblock @65536 (sdg/65536/1) with old gen 45 <= 45
+...
+

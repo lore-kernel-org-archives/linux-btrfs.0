@@ -1,51 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16525 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:19554 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753125Ab2L1DnV (ORCPT
+	with ESMTP id S1753139Ab2LLDXR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 22:43:21 -0500
-Message-ID: <50DD1524.2080003@oracle.com>
-Date: Fri, 28 Dec 2012 11:42:28 +0800
+	Tue, 11 Dec 2012 22:23:17 -0500
+Message-ID: <50C7F889.5040103@oracle.com>
+Date: Wed, 12 Dec 2012 11:22:49 +0800
 From: Jeff Liu <jeff.liu@oracle.com>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-CC: anand.jain@oracle.com, miaox@cn.fujitsu.com,
-        Goffredo Baroncelli <kreijack@gmail.com>, dsterba@suse.cz
-Subject: [RFC PATCH v8 0/2] Btrfs: get/set label of a mounted file system
+CC: anand.jain@oracle.com, miaox@cn.fujitsu.com
+Subject: [RESEND PATCH V4 1/2] Btrfs: Add a new ioctl to get the label of
+ a mounted filesystem
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <50C7CE36.3060603@oracle.com>
 
-Hello,
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Here is the updated version of introduce get/set_or_change label upon a mounted filesystem.
+---
+ fs/btrfs/ioctl.c |   14 ++++++++++++++
+ fs/btrfs/ioctl.h |    2 ++
+ 2 files changed, 16 insertions(+)
 
-v8->v7:
-btrfs_ioc_fs_getlabel():
-- Examine the label length with strnlen().
-- Tweak up warn() info if the label is not NUL terminated according to Goffredo's suggestions.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8fcf9a5..b0a5e17 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3699,6 +3699,18 @@ out:
+ 	return ret;
+ }
+ 
++static int btrfs_ioctl_get_fslabel(struct btrfs_root *root, void __user *arg)
++{
++	const char *label = root->fs_info->super_copy->label;
++	int ret;
++
++	mutex_lock(&root->fs_info->volume_mutex);
++	ret = copy_to_user(arg, label, strlen(label));
++	mutex_unlock(&root->fs_info->volume_mutex);
++
++	return ret ? -EFAULT : 0;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -3797,6 +3809,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_qgroup_create(root, argp);
+ 	case BTRFS_IOC_QGROUP_LIMIT:
+ 		return btrfs_ioctl_qgroup_limit(root, argp);
++	case BTRFS_IOC_GET_FSLABEL:
++		return btrfs_ioctl_get_fslabel(root, argp);
+ 	}
+ 
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 731e287..98f896f 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -453,4 +453,6 @@ struct btrfs_ioctl_send_args {
+ 			       struct btrfs_ioctl_qgroup_limit_args)
+ #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+ 				      struct btrfs_ioctl_get_dev_stats)
++#define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 53, \
++				   char[BTRFS_LABEL_SIZE])
+ #endif
+-- 
+1.7.9.5
 
-The old versions can be found at:
-v7:
-http://www.spinics.net/lists/linux-btrfs/msg20994.html
-
-v6:
-http://www.spinics.net/lists/linux-btrfs/msg20922.html
-
-v5:
-http://www.spinics.net/lists/linux-btrfs/msg20888.html
-
-v4:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21618
-
-v3:
-https://patchwork.kernel.org/patch/1124642/
-
-v2:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/12877
-
-v1:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/12872
-
-Thanks,
--Jeff

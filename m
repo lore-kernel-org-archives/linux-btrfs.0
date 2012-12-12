@@ -1,49 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:60070 "EHLO mx1.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:60396 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754502Ab2LLOrO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Dec 2012 09:47:14 -0500
-Date: Wed, 12 Dec 2012 09:47:11 -0500
+	id S1754513Ab2LLOuH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Dec 2012 09:50:07 -0500
+Date: Wed, 12 Dec 2012 09:50:04 -0500
 From: Josef Bacik <jbacik@fusionio.com>
 To: Liu Bo <bo.li.liu@oracle.com>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: put delayed iput tracking list inside in-memory
- inode
-Message-ID: <20121212144711.GA3152@localhost.localdomain>
-References: <1354274683-17762-1-git-send-email-bo.li.liu@oracle.com>
- <20121211145750.GC3126@localhost.localdomain>
- <20121212015038.GD12318@liubo>
+Subject: Re: [PATCH] Btrfs: no full sync flag on new inode when we do not
+ reuse inode id
+Message-ID: <20121212145004.GC3152@localhost.localdomain>
+References: <1354849914-14123-1-git-send-email-bo.li.liu@oracle.com>
+ <20121211150117.GD3126@localhost.localdomain>
+ <20121212014259.GB12318@liubo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20121212015038.GD12318@liubo>
+In-Reply-To: <20121212014259.GB12318@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 11, 2012 at 06:50:40PM -0700, Liu Bo wrote:
-> On Tue, Dec 11, 2012 at 09:57:50AM -0500, Josef Bacik wrote:
-> > On Fri, Nov 30, 2012 at 04:24:43AM -0700, Liu Bo wrote:
-> > > This can save us a dynamic memory allocation/free.
+On Tue, Dec 11, 2012 at 06:43:04PM -0700, Liu Bo wrote:
+> On Tue, Dec 11, 2012 at 10:01:17AM -0500, Josef Bacik wrote:
+> > On Thu, Dec 06, 2012 at 08:11:54PM -0700, Liu Bo wrote:
+> > > When we are not with inode_cache option, we won't reuse inode id, which
+> > > means all of inodes will own different inode id, thus we don't worry
+> > > about "reuse of inode id leads to log tree's corruption" thing.
 > > > 
+> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > > 
-> > You can have multiple outstanding delayed iputs per inode, so this will result
-> > in inodes still being in use on unmount, so this isn't going to work.
+> > With the new fsync stuff I have I still need to make sure all new xattrs and
+> > such are on disk so this needs to stay the way it is.  Thanks,
 > 
-> Yeah, you're right, but what if we add a check
-> 
-> if (list_empty(&bi->iput_list))
-> 	list_add(&bi->iput_list, &fs_info->iput_list));
-> 
-> Am I missing something?
+> So with new fsync we cannot bare any old items even if their keys's
+> objectid(actually inode id) are different, is it right?
 > 
 
-Yes, we have the delayed iput stuff to keep us from running the actual iput
-stuff where we are for locking reasons.  If we do the if (list_empty) check then
-we have to do something for the case wehre the list isn't empty so we don't leak
-references to the inode, which would basically mean doing an iput which is what
-we don't want to do.  We could do a hybrid approach where we do your list and
-then allocate if we're already on the list, or add a counter so we know how many
-references to drop.  But this as it is won't work.  (Keep in mind I've been
-buried in tree logging for 3 months so if I'm wrong bear with me).  Thanks,
+No its more that I need to know that I should log everything related to the
+inode, xattrs and all.  Otherwise I'll just log the inode item and make selinux
+very sad.  Thanks,
 
 Josef

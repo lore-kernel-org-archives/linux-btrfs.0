@@ -1,38 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:58443 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754261Ab2LMDdQ (ORCPT
+Received: from mail-oa0-f46.google.com ([209.85.219.46]:37464 "EHLO
+	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750819Ab2LME0F convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Dec 2012 22:33:16 -0500
-Date: Thu, 13 Dec 2012 14:33:11 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Abhijit Pawar <abhi.c.pawar@gmail.com>
-Cc: Eric Van Hensbergen <ericvh@gmail.com>, Ron Minnich <rminnich@sandia.gov>,
-        Latchesar Ionkov <lucho@ionkov.net>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Steve French <sfrench@samba.org>,
-        Christine Caulfield <ccaulfie@redhat.com>,
-        David Teigland <teigland@redhat.com>, Ben Myers <bpm@sgi.com>,
-        Alex Elder <elder@kernel.org>, xfs@oss.sgi.com,
-        v9fs-developer@lists.sourceforge.net, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org, cluster-devel@redhat.com
-Subject: Re: [PATCH 4/4] fs: remove obsolete simple_strto<foo>
-Message-ID: <20121213033311.GG16353@dastard>
-References: <1354881319-23585-1-git-send-email-abhi.c.pawar@gmail.com>
+	Wed, 12 Dec 2012 23:26:05 -0500
+Received: by mail-oa0-f46.google.com with SMTP id h16so1646838oag.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2012 20:26:04 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1354881319-23585-1-git-send-email-abhi.c.pawar@gmail.com>
+Date: Wed, 12 Dec 2012 23:26:02 -0500
+Message-ID: <CACR_K2tqKJQMSG-h3RaH4nSbrQLdJqxr-JVXfU5pbwfRHeqRZg@mail.gmail.com>
+Subject: Kernel 3.7 + slower snapshot then usual
+From: Sylvain Alain <d2racing911@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 07, 2012 at 05:25:19PM +0530, Abhijit Pawar wrote:
-> This patch replace the obsolete simple_strto<foo> with kstrto<foo>
+Hi guys, I noticed that now my snapshot take a long time to process :
 
-The XFS changes look fine. Consider those:
+sylvain@gentootux ~ $ df -h
+Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
+rootfs             112G    4,0G  103G   4% /
+/dev/sda4          112G    4,0G  103G   4% /
+tmpfs              7,9G    596K  7,9G   1% /run
+udev                10M       0   10M   0% /dev
+none               7,9G       0  7,9G   0% /dev/shm
+cgroup_root         10M       0   10M   0% /sys/fs/cgroup
+tmpfs               12G       0   12G   0% /var/tmp/portage
+/dev/sdb2          224G     52G  173G  23% /mnt/win_c
+/dev/sdc2          912G    412G  500G  46% /mnt/win_d
 
-Acked-by: Dave Chinner <dchinner@redhat.com>
+sylvain@gentootux ~ $ su -
+Mot de passe :
 
--- 
-Dave Chinner
-david@fromorbit.com
+gentootux ~ # mount /dev/sda4 -o
+noatime,ssd,discard,compress=lzo,noacl,space_cache,subvolid=0
+/mnt/disklayout/
+
+gentootux ~ # cd /mnt/disklayout/
+
+gentootux disklayout # ls
+@backup  @racine
+
+gentootux disklayout # time btrfs subvolume delete @backup
+Delete subvolume '/mnt/disklayout/@backup'
+
+real 0m0.020s
+user 0m0.001s
+sys 0m0.002s
+gentootux disklayout # ls
+@racine
+
+gentootux disklayout # time btrfs subvolume snapshot @racine @backup
+Create a snapshot of '@racine' in './@backup'
+
+real 6m9.122s
+user 0m0.000s
+sys 0m0.523s
+
+more then 6 minutes to snapshot 4 gigs of data, that's twice slower
+then kernel 3.6.
+
+Is there any log or something that I look after ?
+
+sylvain@gentootux ~ $ sudo dmesg | grep -i btrfs
+[    0.371528] Btrfs loaded
+[    0.784593] btrfs: disk space caching is enabled
+[    0.788680] Btrfs detected SSD devices, enabling SSD mode
+[    0.789757] VFS: Mounted root (btrfs filesystem) readonly on device 0:12.
+[    4.881241] btrfs: use ssd allocation scheme
+[    4.881244] btrfs: use lzo compression
+[    4.881245] btrfs: disk space caching is enabled
+[  496.982616] btrfs: unlinked 14 orphans
+
+Thanks !
+
+
+--
+Salut
+alp
+Sylvain

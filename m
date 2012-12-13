@@ -1,207 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37914 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751750Ab2LaVdJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Dec 2012 16:33:09 -0500
-Date: Mon, 31 Dec 2012 13:33:07 -0800
-From: Mark Fasheh <mfasheh@suse.de>
-To: chris.mason@fusionio.com, ablock84@googlemail.com
-Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [RFC] btrfs send without data updates?
-Message-ID: <20121231213307.GC12558@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from aserp1040.oracle.com ([141.146.126.69]:27038 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755020Ab2LMByh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Dec 2012 20:54:37 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Jim Schutt <jaschut@sandia.gov>
+Subject: [PATCH] Btrfs: fix a deadlock on chunk mutex
+Date: Thu, 13 Dec 2012 09:52:37 +0800
+Message-Id: <1355363557-2962-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris! Hi Alexander!
+An user reported that he has hit an annoying deadlock while playing with
+ceph based on btrfs.
 
-I'm working on the kernel side of a feature request we have from the snapper
-developers. Snapper can be used (in conjunction) with btrfs on openSUSE to
-roll back system changes made via YaST and zypper.
+Current updating device tree requires space from METADATA chunk,
+so we -may- need to do a recursive chunk allocation when adding/updating
+dev extent, that is where the deadlock comes from.
 
-If you want to know more, you can see the following page:
+If we use SYSTEM metadata to update device tree, we can avoid the recursive
+stuff.
 
-http://doc.opensuse.org/documentation/html/openSUSE/opensuse-reference/cha.snapper.html
-
-Right now snapper does this by running 'find' and 'diff' against snapshots
-it has taken. This is obviously expensive and we're looking at something
-like the btrfs send ioctl to reduce the overhead during this operation.
-
-In fact, send works quite nicely except that it always reads changed file
-data from disk and puts it in the stream - snapper doesn't want this
-overhead and would prefer to produce the changed data itself. Knowing that
-there *was* a data update however is still critical.
-
-So I have a conceptually simple patch which passes a flag to modify this
-behavior. The patch is included below however I will quote the description
-here: 
-
- "This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
-  ioctl code. When this flag is set, the btrfs send code will never write file
-  data into the stream (thus also avoiding expensive reads of that data in the
-  first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
-  BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
-  question.
-
-  This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
-  they will continue to be sent when a search finds an appropriate extent to
-  clone from."
-
-
-What do you all think of this approach? Is it too ugly to put a conditional
-command in the stream? Do we want to just add another ioctl? I'm loathe to
-go in *that* direction because I fear I'd be replicating most of the send
-code _anyway_ (well, it could just be a wrapper ioctl()).
-
-Thanks in advance for looking at this.
-	--Mark
-
---
-Mark Fasheh
-
-
-From: Mark Fasheh <mfasheh@suse.de>
-
-btrfs: add "no file data" flag to btrfs send ioctl
-
-This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
-ioctl code. When this flag is set, the btrfs send code will never write file
-data into the stream (thus also avoiding expensive reads of that data in the
-first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
-BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
-question.
-
-This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
-they will continue to be sent when a search finds an appropriate extent to
-clone from.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Reported-by: Jim Schutt <jaschut@sandia.gov>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ioctl.h |    7 +++++++
- fs/btrfs/send.c  |   48 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/send.h  |    1 +
- 3 files changed, 52 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 731e287..1f6cfdd 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -363,6 +363,13 @@ struct btrfs_ioctl_received_subvol_args {
- 	__u64	reserved[16];		/* in */
- };
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d3e2c1..561dad5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3346,7 +3346,8 @@ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
  
-+/*
-+ * Caller doesn't want file data in the send stream, even if the
-+ * search of clone sources doesn't find an extent. UPDATE_EXTENT
-+ * commands will be sent instead of WRITE commands.
-+ */
-+#define BTRFS_SEND_FLAG_NO_FILE_DATA     0x1
-+
- struct btrfs_ioctl_send_args {
- 	__s64 send_fd;			/* in */
- 	__u64 clone_sources_count;	/* in */
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e78b297..f97b5e6 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -85,6 +85,7 @@ struct send_ctx {
- 	u32 send_max_size;
- 	u64 total_send_size;
- 	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
-+	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
+ 	if (data)
+ 		flags = BTRFS_BLOCK_GROUP_DATA;
+-	else if (root == root->fs_info->chunk_root)
++	else if (root == root->fs_info->chunk_root ||
++		 root == root->fs_info->dev_root)
+ 		flags = BTRFS_BLOCK_GROUP_SYSTEM;
+ 	else
+ 		flags = BTRFS_BLOCK_GROUP_METADATA;
+@@ -3534,7 +3535,8 @@ static u64 get_system_chunk_thresh(struct btrfs_root *root, u64 type)
+ 	else
+ 		num_dev = 1;	/* DUP or single */
  
- 	struct vfsmount *mnt;
- 
-@@ -3707,6 +3708,42 @@ out:
- 	return ret;
+-	/* metadata for updaing devices and chunk tree */
++	/* metadata for adding/updating devices and chunk tree */
++	num_dev = num_dev << 1
+ 	return btrfs_calc_trans_metadata_size(root, num_dev + 1);
  }
  
-+/*
-+ * Send an update extent command to user space.
-+ */
-+static int send_update_extent(struct send_ctx *sctx,
-+			      u64 offset, u32 len)
-+{
-+	int ret = 0;
-+	struct fs_path *p;
-+
-+verbose_printk("btrfs: send_update_extent offset=%llu, len=%d\n", offset, len);
-+
-+	p = fs_path_alloc(sctx);
-+	if (!p)
-+		return -ENOMEM;
-+
-+	ret = begin_cmd(sctx, BTRFS_SEND_C_UPDATE_EXTENT);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
-+	if (ret < 0)
-+		goto out;
-+
-+	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
-+	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_LEN, len);
-+	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
-+	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
-+
-+	ret = send_cmd(sctx);
-+
-+tlv_put_failure:
-+out:
-+	fs_path_free(sctx, p);
-+	return ret;
-+}
-+
- static int send_write_or_clone(struct send_ctx *sctx,
- 			       struct btrfs_path *path,
- 			       struct btrfs_key *key,
-@@ -3742,7 +3779,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 		goto out;
- 	}
+@@ -4351,7 +4353,7 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
  
--	if (!clone_root) {
-+	if (clone_root) {
-+		ret = send_clone(sctx, offset, len, clone_root);
-+	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
-+		ret = send_update_extent(sctx, offset, len);
-+	} else {
- 		while (pos < len) {
- 			l = len - pos;
- 			if (l > BTRFS_SEND_READ_SIZE)
-@@ -3755,10 +3796,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 			pos += ret;
- 		}
- 		ret = 0;
--	} else {
--		ret = send_clone(sctx, offset, len, clone_root);
- 	}
--
- out:
- 	return ret;
- }
-@@ -4570,6 +4608,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
- 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 	fs_info->extent_root->block_rsv = &fs_info->global_block_rsv;
+ 	fs_info->csum_root->block_rsv = &fs_info->global_block_rsv;
+-	fs_info->dev_root->block_rsv = &fs_info->global_block_rsv;
++	fs_info->dev_root->block_rsv = &fs_info->chunk_block_rsv;
+ 	fs_info->tree_root->block_rsv = &fs_info->global_block_rsv;
+ 	fs_info->chunk_root->block_rsv = &fs_info->chunk_block_rsv;
  
-+	sctx->flags = arg->flags;
-+
- 	sctx->send_filp = fget(arg->send_fd);
- 	if (IS_ERR(sctx->send_filp)) {
- 		ret = PTR_ERR(sctx->send_filp);
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 1bf4f32..8bb18f7 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -86,6 +86,7 @@ enum btrfs_send_cmd {
- 	BTRFS_SEND_C_UTIMES,
- 
- 	BTRFS_SEND_C_END,
-+	BTRFS_SEND_C_UPDATE_EXTENT,
- 	__BTRFS_SEND_C_MAX,
- };
- #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
 -- 
-1.7.7
+1.7.7.6
 

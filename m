@@ -1,49 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:56222 "EHLO mx2.fusionio.com"
+Received: from twin.jikos.cz ([89.185.236.188]:43863 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755610Ab2LMVGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Dec 2012 16:06:30 -0500
-Date: Thu, 13 Dec 2012 16:06:28 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Zach Brown <zab@zabbo.net>
-CC: Chris Mason <clmason@fusionio.com>,
-        Nirbheek Chauhan <nirbheek.chauhan@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
+	id S1752978Ab2LMVef (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Dec 2012 16:34:35 -0500
+Date: Thu, 13 Dec 2012 22:34:30 +0100
+From: David Sterba <dave@jikos.cz>
+To: Chris Mason <chris.mason@fusionio.com>, Pascal Junod <pascal@junod.info>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: no activity in kernel.org btrfs-progs git repo?
-Message-ID: <20121213210628.GB27308@shiny>
-References: <20121212224214.GA9195@lenny.home.zabbo.net>
- <20121212225157.GD19051@carfax.org.uk>
- <CADqQcK7OGPbj2CYwSwrk+1-GLfTJ1YYxh8eaDH3_1y+k_u1=2A@mail.gmail.com>
- <20121212234150.GB9195@lenny.home.zabbo.net>
- <20121213145610.GA12369@shiny>
- <20121213195040.GE9195@lenny.home.zabbo.net>
+Subject: Re: [btrfs] is vulnerable to a hash-DoS attack
+Message-ID: <20121213213430.GB22426@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <50C9D085.3020305@junod.info>
+ <20121213205208.GA27308@shiny>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20121213195040.GE9195@lenny.home.zabbo.net>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121213205208.GA27308@shiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 13, 2012 at 12:50:40PM -0700, Zach Brown wrote:
-> On Thu, Dec 13, 2012 at 09:56:10AM -0500, Chris Mason wrote:
-> > 
-> > Yes, I've got the big raid56 push ready to go out, and I've just been
-> > trying to test it all.  I'll put that in a raid branch and get the fixes
-> > onto master.
-> 
-> Thanks.
-> 
-> I was asking because it's pretty annoying to go through patchwork to see
-> if someone else has already fixed bugs in the git tree.  This happened
-> to me when our distro package infrastructure freaked out at btrfs-progs
-> (-fno-strict-aliasing, int/ptr differences, static code analysis
-> lighting up a like a christmas tree).
-> 
-> Would it be fair to say that the project is accepting applications for
-> an active btrfs-progs maintainer? :)
+On Thu, Dec 13, 2012 at 03:52:08PM -0500, Chris Mason wrote:
+> Thanks for taking the time to write this up.  As far as I can tell, the
+> looping was actually fixed in an older kernel and I just misread our
+> version string in your original email.
 
-Well, the problem is the active maintainer is busy piling in other
-features.  But yeah, I need to pull in the fixes, sorry.
+Yeah, the blogpost says 3.3.7. I did a quick test with 3.7 and was not
+able to reproduce it.
 
--chris
-
+david

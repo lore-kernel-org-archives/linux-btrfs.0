@@ -1,60 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49532 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754472Ab2LLQH2 (ORCPT
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:43295 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754461Ab2LNSMM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Dec 2012 11:07:28 -0500
-Date: Thu, 13 Dec 2012 00:05:37 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: put delayed iput tracking list inside in-memory
- inode
-Message-ID: <20121212160536.GB2379@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1354274683-17762-1-git-send-email-bo.li.liu@oracle.com>
- <20121211145750.GC3126@localhost.localdomain>
- <20121212015038.GD12318@liubo>
- <20121212144711.GA3152@localhost.localdomain>
+	Fri, 14 Dec 2012 13:12:12 -0500
+Date: Fri, 14 Dec 2012 19:11:49 +0100
+From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
+To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        sami.liedes@iki.fi, chris.mason@fusionio.com, sensille@gmx.net,
+        list.btrfs@jan-o-sch.net
+Subject: Re: GPF in read_extent_buffer while scrubbing on
+ 3.7.0-rc8-00014-g27d7c2a
+Message-ID: <20121214181149.GA15378@kashmir>
+References: <20121206143458.GA24396@kashmir>
+ <20121210222125.GA20072@kashmir>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121212144711.GA3152@localhost.localdomain>
+In-Reply-To: <20121210222125.GA20072@kashmir>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 12, 2012 at 09:47:11AM -0500, Josef Bacik wrote:
-> On Tue, Dec 11, 2012 at 06:50:40PM -0700, Liu Bo wrote:
-> > On Tue, Dec 11, 2012 at 09:57:50AM -0500, Josef Bacik wrote:
-> > > On Fri, Nov 30, 2012 at 04:24:43AM -0700, Liu Bo wrote:
-> > > > This can save us a dynamic memory allocation/free.
-> > > > 
-> > > 
-> > > You can have multiple outstanding delayed iputs per inode, so this will result
-> > > in inodes still being in use on unmount, so this isn't going to work.
-> > 
-> > Yeah, you're right, but what if we add a check
-> > 
-> > if (list_empty(&bi->iput_list))
-> > 	list_add(&bi->iput_list, &fs_info->iput_list));
-> > 
-> > Am I missing something?
-> > 
+	Hi,
+
+Anyone has any idea about what I should try next regarding this bug?
+
+On Mon, Dec 10, 2012 at 11:21:25PM +0100, Mathieu Chouquet-Stringer wrote:
+> after enabling page alloc and slub debug, I was able to capture an error
+> followed by the "usual" GPF.  More below.
 > 
-> Yes, we have the delayed iput stuff to keep us from running the actual iput
-> stuff where we are for locking reasons.  If we do the if (list_empty) check then
-> we have to do something for the case wehre the list isn't empty so we don't leak
-> references to the inode, which would basically mean doing an iput which is what
-> we don't want to do.  We could do a hybrid approach where we do your list and
-> then allocate if we're already on the list, or add a counter so we know how many
-> references to drop.  But this as it is won't work.  (Keep in mind I've been
-> buried in tree logging for 3 months so if I'm wrong bear with me).  Thanks,
+> On Thu, Dec 06, 2012 at 03:34:58PM +0100, Mathieu Chouquet-Stringer wrote:
+> > Using the last couple of kernels (3.6 or 3.7), scrubbing my btrfs fs (which is
+> > on a luks based lvm device) will always end up crashing my pc.
+> > [...]
+> 
+> The warning:
+> WARNING: at fs/btrfs/extent_io.c:4680 read_extent_buffer+0xee/0x120()
+> Hardware name: 2392CTO
+> Modules linked in: nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_mangle ip6t_REJECT lockd sunrpc nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack rfcomm bnep arc4 iwldvm mac80211 iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek coretemp kvm_intel kvm microcode uvcvideo videobuf2_vmalloc videobuf2_memops pcspkr videobuf2_core videodev btusb media i2c_i801 bluetooth snd_hda_intel snd_hda_codec cdc_ncm usbnet mii cdc_wdm cdc_acm snd_hwdep snd_seq snd_seq_device snd_pcm lpc_ich mfd_core iwlwifi cfg80211 e1000e snd_page_alloc mei snd_timer thinkpad_acpi snd soundcore rfkill uinput dm_crypt crc32c_intel nouveau ghash_clmulni_intel mxm_wmi ttm i915 i2c_algo_bit drm_kms_helper firewire_ohci drm sdhci_pci firewire_core sdhci mmc_core crc_itu_t i2c_core wmi video
+> Pid: 536, comm: btrfs-endio-met Not tainted 3.7.0-rc8-00039-ged23ec4 #4
+> Call Trace:
+>  [<ffffffff8104bebf>] warn_slowpath_common+0x7f/0xc0
+>  [<ffffffff8104bf1a>] warn_slowpath_null+0x1a/0x20
+>  [<ffffffff812aae9e>] read_extent_buffer+0xee/0x120
+>  [<ffffffff812a1bb2>] btrfs_node_key+0x22/0x30
+>  [<ffffffff812dd720>] __readahead_hook.isra.5+0x3a0/0x3f0
+>  [<ffffffff812ddb14>] btree_readahead_hook+0x24/0x40
+>  [<ffffffff81286069>] btree_readpage_end_io_hook+0x139/0x290
+>  [<ffffffff812a6ff3>] end_bio_extent_readpage+0xd3/0xa40
+>  [<ffffffff812853a6>] ? end_workqueue_fn+0x36/0x50
+>  [<ffffffff811b27ed>] bio_endio+0x1d/0x30
+>  [<ffffffff812853b1>] end_workqueue_fn+0x41/0x50
+>  [<ffffffff812b5916>] worker_loop+0x136/0x580
+>  [<ffffffff812b57e0>] ? btrfs_queue_worker+0x300/0x300
+>  [<ffffffff8106f480>] kthread+0xc0/0xd0
+>  [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
+>  [<ffffffff8168e8ec>] ret_from_fork+0x7c/0xb0
+>  [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
+> 
+> gdb says it's this WARN ON:
+> (gdb) l *(read_extent_buffer + 0xee)
+> 0x726e is in read_extent_buffer (fs/btrfs/extent_io.c:4680).
+> 4675            char *kaddr;
+> 4676            char *dst = (char *)dstv;
+> 4677            size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+> 4678            unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
+> 4679
+> 
+> 4680            WARN_ON(start > eb->len);
+> 
+> 4681            WARN_ON(start + len > eb->start + eb->len);
+> 4682
+> 4683            offset = (start_offset + start) & ((unsigned long)PAGE_CACHE_SIZE - 1);
+> 4684
+> 
+> The GPF which follows right after is:
+> general protection fault: 0000 [#1] SMP DEBUG_PAGEALLOC
+> Modules linked in: nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_mangle ip6t_REJECT lockd sunrpc nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack rfcomm bnep arc4 iwldvm mac80211 iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek coretemp kvm_intel kvm microcode uvcvideo videobuf2_vmalloc videobuf2_memops pcspkr videobuf2_core videodev btusb media i2c_i801 bluetooth snd_hda_intel snd_hda_codec cdc_ncm usbnet mii cdc_wdm cdc_acm snd_hwdep snd_seq snd_seq_device snd_pcm lpc_ich mfd_core iwlwifi cfg80211 e1000e snd_page_alloc mei snd_timer thinkpad_acpi snd soundcore rfkill uinput dm_crypt crc32c_intel nouveau ghash_clmulni_intel mxm_wmi ttm i915 i2c_algo_bit drm_kms_helper firewire_ohci drm sdhci_pci firewire_core sdhci mmc_core crc_itu_t i2c_core wmi video
+> CPU 1 
+> Pid: 536, comm: btrfs-endio-met Tainted: G        W    3.7.0-rc8-00039-ged23ec4 #4 LENOVO 2392CTO/2392CTO
+> RIP: 0010:[<ffffffff8136c756>]  [<ffffffff8136c756>] memcpy+0x6/0x110
+> RSP: 0018:ffff8804215a9b70  EFLAGS: 00010207
+> RAX: ffff8804215a9c57 RBX: 0000000000000011 RCX: 0000000000000011
+> RDX: 0000000000000011 RSI: 0005080000000003 RDI: ffff8804215a9c57
+> RBP: ffff8804215a9bb8 R08: 0000000000000000 R09: 0000000000000486
+> R10: 0000000000000001 R11: 0000000000aaaaaa R12: ffff8804215a9c68
+> R13: ffff8803f4c5cfc0 R14: 0000000000000048 R15: 0000000000000011
+> FS:  0000000000000000(0000) GS:ffff88043e240000(0000) knlGS:0000000000000000
+> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> CR2: 00007fe992197000 CR3: 0000000001c0b000 CR4: 00000000001407e0
+> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+> Process btrfs-endio-met (pid: 536, threadinfo ffff8804215a8000, task ffff8804224eb0e0)
+> Stack:
+>  ffffffff812aae73 ffff8804105ea000 0000000000008003 0000000000001000
+>  ffff8804215a9c20 00000000000003dd ffff88041232a7c0 ffff8804215a9c20
+>  aeb3f3fe4e814d8e ffff8804215a9bc8 ffffffff812a1bb2 ffff8804215a9c98
+> Call Trace:
+>  [<ffffffff812aae73>] ? read_extent_buffer+0xc3/0x120
+>  [<ffffffff812a1bb2>] btrfs_node_key+0x22/0x30
+>  [<ffffffff812dd720>] __readahead_hook.isra.5+0x3a0/0x3f0
+>  [<ffffffff812ddb14>] btree_readahead_hook+0x24/0x40
+>  [<ffffffff81286069>] btree_readpage_end_io_hook+0x139/0x290
+>  [<ffffffff812a6ff3>] end_bio_extent_readpage+0xd3/0xa40
+>  [<ffffffff812853a6>] ? end_workqueue_fn+0x36/0x50
+>  [<ffffffff811b27ed>] bio_endio+0x1d/0x30
+>  [<ffffffff812853b1>] end_workqueue_fn+0x41/0x50
+>  [<ffffffff812b5916>] worker_loop+0x136/0x580
+>  [<ffffffff812b57e0>] ? btrfs_queue_worker+0x300/0x300
+>  [<ffffffff8106f480>] kthread+0xc0/0xd0
+>  [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
+>  [<ffffffff8168e8ec>] ret_from_fork+0x7c/0xb0
+>  [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
+> Code: 74 13 48 8b 43 58 48 2b 43 50 88 43 4e 48 83 c4 08 5b 5d c3 90 e8 eb fb ff ff eb e6 90 90 90 90 90 90 90 90 90 48 89 f8 48 89 d1 <f3> a4 c3 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 20 4c 8b 06 4c 8b 
+> RIP  [<ffffffff8136c756>] memcpy+0x6/0x110
+>  RSP <ffff8804215a9b70>
+> 
+> memcpy is called from here:
+> (gdb) l *(read_extent_buffer + 0xc3)
+> 0x7243 is in read_extent_buffer (fs/btrfs/extent_io.c:4694).
+> 4689                    kaddr = page_address(page);
+> 4690                    memcpy(dst, kaddr + offset, cur);
+> 4691
+> 4692                    dst += cur;
+> 4693                    len -= cur;
+> 4694                    offset = 0;
+> 4695                    i++;
+> 4696            }
+> 4697    }
+> 4698
+> 
+> Any idea what to do next?  If you think I should be adding debug printk
+> statements, feel free to send them my way.
 
-I got your point, I'll add a counter here to tracking the dropped reference per
-inode.
-
-Mainly I was thinking memory allocation/free is just way too expensive. 
-
-Thanks for reviewing it.
-
-thanks,
-liubo
+-- 
+Mathieu Chouquet-Stringer                         mathieu@csetco.com
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

@@ -1,82 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:37626 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752338Ab2LOWYU (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:47030 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751837Ab2LOXbZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Dec 2012 17:24:20 -0500
-Received: by mail-oa0-f46.google.com with SMTP id h16so4758691oag.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Dec 2012 14:24:19 -0800 (PST)
+	Sat, 15 Dec 2012 18:31:25 -0500
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 8D290EC8BF
+	for <linux-btrfs@vger.kernel.org>; Sun, 16 Dec 2012 10:24:37 +1100 (EST)
+From: Russell Coker <russell+btrfs@coker.com.au>
+Reply-To: russell+btrfs@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: Intel 120G SSD write performance with 3.2.0-4-amd64
+Date: Sun, 16 Dec 2012 10:23:59 +1100
 MIME-Version: 1.0
-In-Reply-To: <50CCD247.3090701@friedels.name>
-References: <50BFB3B2.8040405@friedels.name>
-	<CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com>
-	<50C4E152.2000102@friedels.name>
-	<CAKcLGm8wm1Gfe0ESCubGusqe_zojJp=7JORLXuq_EUdY22JOWA@mail.gmail.com>
-	<50CCD247.3090701@friedels.name>
-Date: Sat, 15 Dec 2012 16:24:18 -0600
-Message-ID: <CAKcLGm-bwUriSBzoM2FTV9Rv1=dYp=5H_me8VZX6vygtXEhADg@mail.gmail.com>
-Subject: Re: segmentation-fault in btrfsck (git-version)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201212161023.59380.russell+btrfs@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 15, 2012 at 1:40 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
-> Hello Mitch, hello all,
->
->
->> Since btrfs has significant improvements and fixes in each kernel
->>
->> release, and since very few of these changes are backported, it is
->> recommended to use the latest kernels available.
->
->
-> Ok, it's 3.7 now.
->
->
->> The "root ### inode ##### errors 400" are an indication that there is
->> an inconsistency in the inode size.  There was a patch included in the
->> 3.1 or 3.2 kernel to address this issue
->>
->> (http://git.kernel.org/?p=linux/kernel/git/stable/linux-stable.git;a=commit;h=f70a9a6b94af86fca069a7552ab672c31b457786).
->>   But I don't believe this patch fixed existing occurrences of this
->> error.
->
->
-> Apparently not. It's still there.
->
->
->> At this point, the quickest solution for you may be to rebuild and
->> reformat this RAID assembly, and restore this data from backups.
->
->
-> Yepp, I did that. But in fact, some data is missing. It is not essential,
-> but nice to have.
->
->
->> If you don't have a backup of this data, and since your array seems to
->> be working pretty well in a degraded state, this would be a really
->> good time to look at a strategy of getting a backup of this data
->> before doing many more attempts at rescue.
->
->
-> Done. It's all save on another ext4 drive.
->
-> So, let's play ;-)
-> Could you please help me trying to restore the missing Data?
->
-> What I tried sofar was:
-> ./btrfs-restore /dev/sdc1 /mnt/restore/
->
-> It worked, in a way that it restored what I already had.
-> What's odd aswell is, that btrfs scrub did run through without errors.
-> So, the missing data could have been (accidentally) deleted by me. But I
-> don't think... nevertheless I cannot exclude.
->
-> What I know is the (original) Path of the Data.
->
+I've got a system running Debian kernel 3.2.0-4-amd64 with root on a SSD that 
+identifies itself as "INTEL SSDSC2CT12 300i" (it's an Intel 120G device).
 
-You could try btrfs-debug-tree, and search for any traces of your
-file.  However, be ready to sift through a massive amount of output.
+Here is the /proc/mounts entry which shows that ssd and discard options are 
+enabled.
+
+/dev/disk/by-uuid/7939c405-c656-4e85-a6a0-29f17be09585 / btrfs 
+rw,seclabel,nodev,noatime,ssd,discard,space_cache 0 0
+
+Here is the "expert mode" output of fdisk which shows that /dev/sda3 (the root 
+filesystem) is aligned to a multiple of 4096 sectors (surely 2MB is larger than 
+the erase block size although a quick Google search didn't turn up the number 
+for that device).
+
+Disk /dev/sda: 255 heads, 63 sectors, 14593 cylinders
+
+Nr AF  Hd Sec  Cyl  Hd Sec  Cyl     Start      Size ID
+ 1 80  32  33    0  53  55   62       2048     997376 83
+ 2 00  53  56   62 211  28  183     999424    1953792 82
+ 3 00 211  29  183 254  63 1023    2953216  231487488 83
+ 4 00   0   0    0   0   0    0          0          0 00
+
+But I'm seeing very poor write performance, the system will block on disk IO 
+when iostat is reporting a few hundred KB/s in writes.  Below is some output 
+of "iostat -x 10":
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz 
+avgqu-sz   await r_await w_await  svctm  %util
+sda               0.00     0.00    0.00  100.00     0.00    50.00     1.00     
+1.00   10.00    0.00   10.00  10.00 100.00
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+          27.04    0.00    3.10    0.00    0.00   69.86
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz 
+avgqu-sz   await r_await w_await  svctm  %util
+sda               0.00     0.80    0.00  107.70     0.00   116.75     2.17     
+1.04    9.66    0.00    9.66   9.28  99.96
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+          18.31    0.00    1.82    0.00    0.00   79.87
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz 
+avgqu-sz   await r_await w_await  svctm  %util
+sda               0.00     0.00    0.00  100.80     0.00    55.60     1.10     
+1.00    9.95    0.00    9.95   9.92 100.00
+
+
+Any suggestions for how to debug or improve things?
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

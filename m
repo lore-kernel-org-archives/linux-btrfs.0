@@ -1,71 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47350 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:21830 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752829Ab2L2PJ1 (ORCPT
+	with ESMTP id S1755539Ab2LOLqa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Dec 2012 10:09:27 -0500
-Date: Sat, 29 Dec 2012 23:06:33 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: linux-btrfs@vger.kernel.org, Slava Barinov <rayslava@gmail.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: reset path lock state to zero
-Message-ID: <20121229150632.GA7874@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1356687199-7198-1-git-send-email-bo.li.liu@oracle.com>
- <CAKcLGm_jZuzHwA=MBxakLPz+hwoDeFd0TXjg_TtbEvWB+jkfwA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAKcLGm_jZuzHwA=MBxakLPz+hwoDeFd0TXjg_TtbEvWB+jkfwA@mail.gmail.com>
+	Sat, 15 Dec 2012 06:46:30 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBFBkTwk020472
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Dec 2012 11:46:30 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBFBkSsw016543
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Dec 2012 11:46:29 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBFBkSeE012314
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Dec 2012 05:46:28 -0600
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/5] Btrfs-progs: add parent uuid for snapshots
+Date: Sat, 15 Dec 2012 19:52:04 +0800
+Message-Id: <1355572328-32281-2-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1355572328-32281-1-git-send-email-Anand.Jain@oracle.com>
+References: <1355572328-32281-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 28, 2012 at 12:32:25PM -0600, Mitch Harder wrote:
-> On Fri, Dec 28, 2012 at 3:33 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > We forgot to reset the path lock state to zero after we unlock the path block,
-> > and this can lead to the ASSERT checker in tree unlock API.
-> >
-> > Reported-by: Slava Barinov <rayslava@gmail.com>
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> >  fs/btrfs/extent-tree.c |    2 ++
-> >  1 files changed, 2 insertions(+), 0 deletions(-)
-> >
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 521e9d4..a71d457 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -6788,11 +6788,13 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
-> >                                                        &wc->flags[level]);
-> >                         if (ret < 0) {
-> >                                 btrfs_tree_unlock_rw(eb, path->locks[level]);
-> > +                               path->locks[level] = 0;
-> >                                 return ret;
-> >                         }
-> >                         BUG_ON(wc->refs[level] == 0);
-> >                         if (wc->refs[level] == 1) {
-> >                                 btrfs_tree_unlock_rw(eb, path->locks[level]);
-> > +                               path->locks[level] = 0;
-> >                                 return 1;
-> >                         }
-> >                 }
-> > --
-> > 1.7.7.6
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> This patch seems to clear a lock WARNING I've been seeing recently.
-> 
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21692
-> 
-> I'm unable to generate the WARNING after applying this patch.
+From: Anand Jain <anand.jain@oracle.com>
 
-Good, they are related judging from your stack info :)
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfs-list.c     |   32 +++++++++++++++++++++++++++-----
+ btrfs-list.h     |    1 +
+ cmds-subvolume.c |    6 +++++-
+ 3 files changed, 33 insertions(+), 6 deletions(-)
 
-thanks,
-liubo
-> 
-> Thanks.
+diff --git a/btrfs-list.c b/btrfs-list.c
+index e5f0f96..5314ced 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -80,6 +80,7 @@ struct root_info {
+ 	time_t otime;
+ 
+ 	u8 uuid[BTRFS_UUID_SIZE];
++	u8 puuid[BTRFS_UUID_SIZE];
+ 
+ 	/* path from the subvol we live in to this root, including the
+ 	 * root's name.  This is null until we do the extra lookup ioctl.
+@@ -128,6 +129,11 @@ struct {
+ 		.need_print	= 0,
+ 	},
+ 	{
++		.name		= "parent UUID",
++		.column_name	= "Parent UUID",
++		.need_print	= 0,
++	},
++	{
+ 		.name		= "uuid",
+ 		.column_name	= "UUID",
+ 		.need_print	= 0,
+@@ -435,7 +441,7 @@ static struct root_info *root_tree_search(struct root_lookup *root_tree,
+ static int update_root(struct root_lookup *root_lookup,
+ 		       u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
+ 		       u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
+-		       time_t ot, void *uuid)
++		       time_t ot, void *uuid, void *puuid)
+ {
+ 	struct root_info *ri;
+ 
+@@ -472,6 +478,8 @@ static int update_root(struct root_lookup *root_lookup,
+ 		ri->otime = ot;
+ 	if (uuid)
+ 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
++	if (puuid)
++		memcpy(&ri->puuid, puuid, BTRFS_UUID_SIZE);
+ 
+ 	return 0;
+ }
+@@ -489,17 +497,18 @@ static int update_root(struct root_lookup *root_lookup,
+  * gen: the current generation of the root
+  * ot: the original time(create time) of the root
+  * uuid: uuid of the root
++ * puuid: uuid of the root parent if any
+  */
+ static int add_root(struct root_lookup *root_lookup,
+ 		    u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
+ 		    u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
+-		    time_t ot, void *uuid)
++		    time_t ot, void *uuid, void *puuid)
+ {
+ 	struct root_info *ri;
+ 	int ret;
+ 
+ 	ret = update_root(root_lookup, root_id, ref_tree, root_offset, flags,
+-			  dir_id, name, name_len, ogen, gen, ot, uuid);
++			  dir_id, name, name_len, ogen, gen, ot, uuid, puuid);
+ 	if (!ret)
+ 		return 0;
+ 
+@@ -540,6 +549,9 @@ static int add_root(struct root_lookup *root_lookup,
+ 	if (uuid) 
+ 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
+ 
++	if (puuid)
++		memcpy(&ri->puuid, puuid, BTRFS_UUID_SIZE);
++
+ 	ret = root_tree_insert(root_lookup, ri);
+ 	if (ret) {
+ 		printf("failed to insert tree %llu\n", (unsigned long long)root_id);
+@@ -1022,6 +1034,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 	int i;
+ 	time_t t;
+ 	u8 uuid[BTRFS_UUID_SIZE];
++	u8 puuid[BTRFS_UUID_SIZE];
+ 
+ 	root_lookup_init(root_lookup);
+ 	memset(&args, 0, sizeof(args));
+@@ -1075,7 +1088,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 
+ 				add_root(root_lookup, sh->objectid, sh->offset,
+ 					 0, 0, dir_id, name, name_len, 0, 0, 0,
+-					 NULL);
++					 NULL, NULL);
+ 			} else if (sh->type == BTRFS_ROOT_ITEM_KEY) {
+ 				ri = (struct btrfs_root_item *)(args.buf + off);
+ 				gen = btrfs_root_generation(ri);
+@@ -1085,15 +1098,17 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 					t = ri->otime.sec;
+ 					ogen = btrfs_root_otransid(ri);
+ 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
++					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
+ 				} else {
+ 					t = 0;
+ 					ogen = 0;
+ 					memset(uuid, 0, BTRFS_UUID_SIZE);
++					memset(puuid, 0, BTRFS_UUID_SIZE);
+ 				}
+ 
+ 				add_root(root_lookup, sh->objectid, 0,
+ 					 sh->offset, flags, 0, NULL, 0, ogen,
+-					 gen, t, uuid);
++					 gen, t, uuid, puuid);
+ 			}
+ 
+ 			off += sh->len;
+@@ -1347,6 +1362,13 @@ static void print_subvolume_column(struct root_info *subv,
+ 			uuid_unparse(subv->uuid, uuidparse);
+ 		printf("%s", uuidparse);
+ 		break;
++	case BTRFS_LIST_PUUID:
++		if (uuid_is_null(subv->puuid))
++			strcpy(uuidparse, "-");
++		else
++			uuid_unparse(subv->puuid, uuidparse);
++		printf("%s", uuidparse);
++		break;
+ 	case BTRFS_LIST_PATH:
+ 		BUG_ON(!subv->full_path);
+ 		printf("%s", subv->full_path);
+diff --git a/btrfs-list.h b/btrfs-list.h
+index cde4b3c..a32545f 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -53,6 +53,7 @@ enum btrfs_list_column_enum {
+ 	BTRFS_LIST_PARENT,
+ 	BTRFS_LIST_TOP_LEVEL,
+ 	BTRFS_LIST_OTIME,
++	BTRFS_LIST_PUUID,
+ 	BTRFS_LIST_UUID,
+ 	BTRFS_LIST_PATH,
+ 	BTRFS_LIST_ALL,
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index ac39f7b..427263a 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -279,6 +279,7 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"-p           print parent ID",
+ 	"-a           print all the subvolumes in the filesystem.",
+ 	"-u           print the uuid of subvolumes (and snapshots)",
++	"-q           print the parent uuid of snapshots",
+ 	"-t           print the result as a table",
+ 	"-s           list snapshots only in the filesystem",
+ 	"-r           list readonly subvolumes (including snapshots)",
+@@ -318,7 +319,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	optind = 1;
+ 	while(1) {
+ 		c = getopt_long(argc, argv,
+-				    "apsurg:c:t", long_options, NULL);
++				    "apsuqrg:c:t", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+@@ -342,6 +343,9 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		case 'u':
+ 			btrfs_list_setup_print_column(BTRFS_LIST_UUID);
+ 			break;
++		case 'q':
++			btrfs_list_setup_print_column(BTRFS_LIST_PUUID);
++			break;
+ 		case 'r':
+ 			flags |= BTRFS_ROOT_SUBVOL_RDONLY;
+ 			break;
+-- 
+1.7.1
+

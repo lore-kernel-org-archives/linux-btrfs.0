@@ -1,105 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:49073 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756159Ab2LNWEJ (ORCPT
+Received: from mail-oa0-f46.google.com ([209.85.219.46]:55218 "EHLO
+	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751430Ab2LORJJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Dec 2012 17:04:09 -0500
-Received: by mail-pa0-f46.google.com with SMTP id bh2so2732364pad.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Dec 2012 14:04:08 -0800 (PST)
+	Sat, 15 Dec 2012 12:09:09 -0500
+Received: by mail-oa0-f46.google.com with SMTP id h16so4624652oag.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Dec 2012 09:09:08 -0800 (PST)
 MIME-Version: 1.0
-Date: Fri, 14 Dec 2012 23:04:08 +0100
-Message-ID: <CAMQ-g0fNocHwEvbeDAf-HK+Nh4XcQDDD7Mi_ZxDSqv-moFKn5g@mail.gmail.com>
-Subject: BUG during log recovery
-From: Jan Steffens <jan.steffens@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Sat, 15 Dec 2012 11:09:08 -0600
+Message-ID: <CAKcLGm9Dui+WiChx72ft2O4RQhq0vNibuMz8uHPBjsw9QK2ZQA@mail.gmail.com>
+Subject: Kernel lockdep WARNING on btrfs-next
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After a lockup requiring a hard reset, the btrfs could not be mounted,
-throwing the following error:
+I've been testing Josef's btrfs-next master branch using a test that
+loops through creation, manipulation and destruction of snapshots of
+kernel git sources.
 
-[   75.969198] device label shine-root devid 1 transid 1204626 /dev/sdb3
-[   75.972211] btrfs: disk space caching is enabled
-[   80.118478] ------------[ cut here ]------------
-[   80.118611] kernel BUG at fs/btrfs/extent-tree.c:6185!
-[   80.118737] invalid opcode: 0000 [#1] PREEMPT SMP
-[   80.118884] Modules linked in: btrfs crc32c libcrc32c zlib_deflate
-act_police sch_ingress cls_u32 cls_fw sch_sfb sch_htb sit tunnel4
-pppoe pppox xt_mark iptable_mangle ipt_REJECT iptable_filter
-ipt_MASQUERADE ip6table_raw iptable_nat nf_nat_ipv4 xt_sctp
-nf_conntrack_pptp nf_conntrack_proto_gre ip6t_REJECT nf_conntrack_ipv4
-nf_defrag_ipv4 xt_LOG ppp_generic slhc xt_tcpudp nf_conntrack_ipv6
-nf_defrag_ipv6 xt_CT ip6t_rt iptable_raw xt_conntrack ip_tables
-ip6table_filter ip6_tables x_tables arc4 rt2800pci rt2800lib
-snd_hda_codec_realtek rt2x00pci rt2x00lib eeprom_93cx6 eeepc_laptop
-mac80211 sparse_keymap cfg80211 i915 snd_hda_intel rfkill
-snd_hda_codec snd_hwdep snd_pcm drm_kms_helper snd_page_alloc drm
-crc_ccitt snd_timer snd iTCO_wdt iTCO_vendor_support ums_realtek
-intel_agp intel_gtt agpgart r8169
-[   80.121214]  pci_hotplug uas lpc_ich i2c_i801 joydev coretemp
-soundcore evdev i2c_algo_bit microcode psmouse serio_raw pcspkr
-i2c_core mii hid_microsoft button video bridge stp llc tun nf_nat_irc
-nf_conntrack_irc nf_nat_ftp nf_conntrack_ftp nf_nat nf_conntrack
-acpi_cpufreq mperf processor ext4 crc16 jbd2 mbcache usbhid hid
-usb_storage sd_mod ata_generic pata_acpi uhci_hcd ata_piix libata
-scsi_mod ehci_hcd usbcore usb_common
-[   80.121437] Pid: 694, comm: mount Not tainted 3.7.0-0.1-zen #1
-ASUSTeK Computer INC. B202/P5LD2EB-DHS
-[   80.121437] EIP: 0060:[<f89d4c72>] EFLAGS: 00010286 CPU: 0
-[   80.121437] EIP is at btrfs_alloc_logged_file_extent+0x252/0x260 [btrfs]
-[   80.121437] EAX: fffffff5 EBX: 000a9000 ECX: 00000000 EDX: 00000000
-[   80.121437] ESI: 00000000 EDI: 00000000 EBP: f403bacc ESP: f403ba68
-[   80.121437]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
-[   80.121437] CR0: 8005003b CR2: b7769000 CR3: 32924000 CR4: 000007c0
-[   80.121437] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
-[   80.121437] DR6: ffff0ff0 DR7: 00000400
-[   80.121437] Process mount (pid: 694, ti=f403a000 task=f3361fe0
-task.ti=f403a000)
-[   80.121437] Stack:
-[   80.121437]  00000000 00000000 f8a063ae f89c0bb0 f89c0bb0 f482a2a0
-00000001 f568e800
-[   80.121437]  f403ba94 f89c0bb0 f482a2a0 f403bacc f54c4a80 f482a2a0
-00000000 f4b42000
-[   80.121437]  000a9000 00000000 00000000 f568e800 ff84f000 0000002b
-f403bc02 f4b8cb9c
-[   80.121437] Call Trace:
-[   80.121437]  [<f8a063ae>] ? free_extent_buffer+0x2e/0x80 [btrfs]
-[   80.121437]  [<f89c0bb0>] ? btrfs_free_path+0x20/0x30 [btrfs]
-[   80.121437]  [<f89c0bb0>] ? btrfs_free_path+0x20/0x30 [btrfs]
-[   80.121437]  [<f89c0bb0>] ? btrfs_free_path+0x20/0x30 [btrfs]
-[   80.121437]  [<f8a1d37b>] replay_one_extent+0x75b/0x810 [btrfs]
-[   80.121437]  [<c02547a1>] ? destroy_inode+0x31/0x50
-[   80.121437]  [<c02548ac>] ? evict+0xec/0x170
-[   80.121437]  [<f8a1e3a7>] replay_one_buffer+0x2c7/0x3a0 [btrfs]
-[   80.121437]  [<f8a1aef9>] walk_down_log_tree+0x209/0x390 [btrfs]
-[   80.121437]  [<f8a1b0f4>] walk_log_tree+0x74/0x1c0 [btrfs]
-[   80.121437]  [<f8a21405>] btrfs_recover_log_trees+0x1e5/0x370 [btrfs]
-[   80.121437]  [<f8a1e0e0>] ? replay_one_dir_item+0xd0/0xd0 [btrfs]
-[   80.121437]  [<f89e4897>] open_ctree+0x1407/0x19c0 [btrfs]
-[   80.121437]  [<c03010f9>] ? strlcpy+0x39/0x50
-[   80.121437]  [<f89bda45>] btrfs_mount+0x775/0x8b0 [btrfs]
-[   80.121437]  [<c04e4f7d>] ? mutex_unlock+0xd/0x10
-[   80.121437]  [<c020cef4>] ? pcpu_alloc+0x754/0x830
-[   80.121437]  [<c02fcaa6>] ? ida_get_new_above+0x196/0x1e0
-[   80.121437]  [<c022f6a3>] ? __kmalloc_track_caller+0x73/0x150
-[   80.121437]  [<c02415b6>] mount_fs+0x36/0x180
-[   80.121437]  [<c020cfdf>] ? __alloc_percpu+0xf/0x20
-[   80.121437]  [<c02582ce>] vfs_kern_mount+0x4e/0xe0
-[   80.121437]  [<c02586fc>] do_kern_mount+0x3c/0xf0
-[   80.121437]  [<c0259f68>] do_mount+0x308/0x730
-[   80.121437]  [<c0208429>] ? strndup_user+0x49/0x70
-[   80.121437]  [<c025a3fb>] sys_mount+0x6b/0xa0
-[   80.121437]  [<c04ed84d>] sysenter_do_call+0x12/0x28
-[   80.121437] Code: a5 5d ff ff 85 c0 74 29 8b 5d dc 8b 75 e0 8b 55
-ec 8b 4d f0 8b 45 cc 89 1c 24 89 74 24 04 e8 36 fc 04 00 85 c0 0f 84
-c2 fe ff ff <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 8d 74 26 00 55 89 e5 57 56
-53 83
-[   80.121437] EIP: [<f89d4c72>]
-btrfs_alloc_logged_file_extent+0x252/0x260 [btrfs] SS:ESP
-0068:f403ba68
-[   80.331077] ---[ end trace 79ea8a12340fc4c5 ]---
+The version of btrfs-next I'm using was built as of Friday, December
+14th, and the top commit is:
+Btrfs: don't take inode delalloc mutex if we're a free space inode
+committer	Josef Bacik <jbacik@fusionio.com>	
+	Fri, 14 Dec 2012 21:57:39 +0000 (16:57 -0500)
+commit	bd2dd0060cf0ae2a81a7b22e9cc23063796fe09c
 
-Bug affected at least 3.6.10, 3.7.0, i686 and x86_64.
+I've hit a WARN_ON at kernel/lockdep.c:702, which is in the
+look_up_lock_class(...) function
 
-btrfs-zero-log made the FS mountable again.
+	/*
+	 * We can walk the hash lockfree, because the hash only
+	 * grows, and we are careful when adding entries to the end:
+	 */
+	list_for_each_entry(class, hash_head, hash_entry) {
+		if (class->key == key) {
+			/*
+			 * Huh! same key, different name? Did someone trample
+			 * on some memory? We're most confused.
+			 */
+Line 702>	WARN_ON_ONCE(class->name != lock->name);
+			return class;
+		}
+	}
+
+It looks like this occurred during the delayed deletion of one of the
+subvolumes.
+
+As far as I can tell, no corruption occurred, the file system passes
+btrfsck checks, and seems to be otherwise behaving normally.
+
+I was not on the system at the time this occurred, so I can't say if
+it noticeably delayed the system.
+
+[ 5260.068074] ------------[ cut here ]------------
+[ 5260.068092] WARNING: at kernel/lockdep.c:702
+__lock_acquire.isra.29+0xa44/0xab9()
+[ 5260.068096] Hardware name: OptiPlex 745
+[ 5260.068099] Modules linked in: iTCO_wdt iTCO_vendor_support lpc_ich
+mfd_core lrw xts gf128mul ablk_helper cryptd aes_x86_64 sha256_generic
+btrfs libcrc32c
+[ 5260.068124] Pid: 3801, comm: btrfs-cleaner Not tainted 3.7.0-btrfs-next+ #2
+[ 5260.068128] Call Trace:
+[ 5260.068139]  [<ffffffff8103663a>] warn_slowpath_common+0x74/0xa2
+[ 5260.068172]  [<ffffffffa0062805>] ? btrfs_tree_read_unlock+0x7d/0xa9 [btrfs]
+[ 5260.068179]  [<ffffffff81036682>] warn_slowpath_null+0x1a/0x1c
+[ 5260.068185]  [<ffffffff81084813>] __lock_acquire.isra.29+0xa44/0xab9
+[ 5260.068210]  [<ffffffffa0062483>] ? btrfs_tree_lock+0xf7/0x24c [btrfs]
+[ 5260.068217]  [<ffffffff81084d8e>] lock_acquire+0x81/0xff
+[ 5260.068241]  [<ffffffffa0062483>] ? btrfs_tree_lock+0xf7/0x24c [btrfs]
+[ 5260.068248]  [<ffffffff8183d7b5>] _raw_write_lock+0x31/0x40
+[ 5260.068271]  [<ffffffffa0062483>] ? btrfs_tree_lock+0xf7/0x24c [btrfs]
+[ 5260.068295]  [<ffffffffa0062483>] btrfs_tree_lock+0xf7/0x24c [btrfs]
+[ 5260.068319]  [<ffffffffa004eb1d>] ? find_extent_buffer+0x8f/0xd6 [btrfs]
+[ 5260.068343]  [<ffffffffa004eaa4>] ? find_extent_buffer+0x16/0xd6 [btrfs]
+[ 5260.068360]  [<ffffffffa001ef79>] do_walk_down+0xd2/0x4b6 [btrfs]
+[ 5260.068378]  [<ffffffffa001e1ae>] ? btrfs_block_rsv_check+0x29/0x7d [btrfs]
+[ 5260.068394]  [<ffffffffa001e1ae>] ? btrfs_block_rsv_check+0x29/0x7d [btrfs]
+[ 5260.068411]  [<ffffffffa001f420>] walk_down_tree+0xc3/0xef [btrfs]
+[ 5260.068430]  [<ffffffffa0021f4f>] btrfs_drop_snapshot+0x372/0x5c7 [btrfs]
+[ 5260.068451]  [<ffffffffa0033ccc>]
+btrfs_clean_old_snapshots+0xa6/0x13a [btrfs]
+[ 5260.068471]  [<ffffffffa002b1c0>] ? cleaner_kthread+0x8d/0x102 [btrfs]
+[ 5260.068490]  [<ffffffffa002b1d4>] cleaner_kthread+0xa1/0x102 [btrfs]
+[ 5260.068509]  [<ffffffffa002b133>] ? btree_invalidatepage+0x73/0x73 [btrfs]
+[ 5260.068515]  [<ffffffff81058333>] kthread+0xea/0xef
+[ 5260.068522]  [<ffffffff81058249>] ? flush_kthread_work+0x19c/0x19c
+[ 5260.068528]  [<ffffffff8184549c>] ret_from_fork+0x7c/0xb0
+[ 5260.068534]  [<ffffffff81058249>] ? flush_kthread_work+0x19c/0x19c
+[ 5260.068538] ---[ end trace 0caa5c9123c1e741 ]---

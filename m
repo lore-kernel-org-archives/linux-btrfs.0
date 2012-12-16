@@ -1,53 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-server.com ([216.13.78.11]:59612 "EHLO smtp-server.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750734Ab2LPQQw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Dec 2012 11:16:52 -0500
-Received: from [192.168.1.104] (dynamic-adsl-78-13-211-5.clienti.tiscali.it [78.13.211.5])
-	(using TLSv1 with cipher DHE-RSA-CAMELLIA256-SHA (256/256 bits))
-	(Client did not present a certificate)
-	by smtp-server.com (Postfix) with ESMTP id 331D617BA05
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Dec 2012 16:16:48 +0000 (UTC)
-Message-ID: <50CDF3ED.8060601@libero.it>
-Date: Sun, 16 Dec 2012 17:16:45 +0100
-From: Claudio Carbone <erupter@libero.it>
+Received: from mail-da0-f46.google.com ([209.85.210.46]:52182 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751031Ab2LPUki (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Dec 2012 15:40:38 -0500
+Received: by mail-da0-f46.google.com with SMTP id p5so2436677dak.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Dec 2012 12:40:38 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: unmountable partition and live distro (no space left)
+In-Reply-To: <50CDF3ED.8060601@libero.it>
 References: <50CDCFD1.5000304@libero.it>
-In-Reply-To: <50CDCFD1.5000304@libero.it>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	<50CDF3ED.8060601@libero.it>
+Date: Sun, 16 Dec 2012 14:40:38 -0600
+Message-ID: <CAE5mzviNM9w_q7WSZJ_S7J9rTXUgW=qbPLuYgVAHBP5zUNybog@mail.gmail.com>
+Subject: Re: unmountable partition and live distro (no space left)
+From: cwillu <cwillu@cwillu.com>
+To: Claudio Carbone <erupter@libero.it>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'v been told this is missing relevant details.
-The original kernel version was 3.2.0-something (standard Ubuntu 12.04 LTS).
-I've since upgraded to 3.7 but this has made no difference.
-Right now I don't have the dmesg, I'll post it later.
+Try booting with bootflags=ro,recovery in grub (with the latest
+possible kernel), or mounting with -o recovery from the livecd
+(likewise).  If it works, then you're done, you should be able to boot
+normally after a clean umount and shutdown.  If it doesn't, post dmesg
+from the attempt.
 
-Currently I've been able to mount the partition with btrfs-restore and 
-am trying to rsync it on another ext4 volume.
-
-Claudio
-
-
-
-On 16/12/12 14:42, Claudio Carbone wrote:
-> Hello all.
+> I'v been told this is missing relevant details.
+> The original kernel version was 3.2.0-something (standard Ubuntu 12.04 LTS).
+> I've since upgraded to 3.7 but this has made no difference.
+> Right now I don't have the dmesg, I'll post it later.
 >
-> My system failed and I thought of trying btrfs.
-> After repartitioning and installing, nothing booted and my (btrfs 
-> formatted) home partition is unmountable (parent transid).
-> I discovered I can mount the partition with btrfs-restore but, since 
-> I'm running off of a live usb Ubuntu, mounting fails at some point due 
-> to lack of space.
-> So is there a way I can mount the partition on a live distro to 
-> recover what is recoverable?
->
-> Thank you
-> Claudio
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Currently I've been able to mount the partition with btrfs-restore and am
+> trying to rsync it on another ext4 volume.
 
+Terminology note: btrfs-restore doesn't "mount" anything, it just
+copies files directly from a device.

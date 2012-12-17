@@ -1,244 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f174.google.com ([209.85.210.174]:47533 "EHLO
-	mail-ia0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752125Ab2LQNdZ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 08:33:25 -0500
-Received: by mail-ia0-f174.google.com with SMTP id y25so5457278iay.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 05:33:25 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
-References: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
-Date: Mon, 17 Dec 2012 14:33:24 +0100
-Message-ID: <CAB9VWqCjoFGdZVx0Uup2zmvuqS2PHiQO=h2EKawH-dZiGqvfDQ@mail.gmail.com>
-Subject: Re: Online Deduplication for Btrfs (Master's thesis)
-From: Alexander Block <ablock84@gmail.com>
-To: =?UTF-8?B?TWFydGluIEvFmcOtxb5law==?= <martin.krizek@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        lczerner@redhat.com
+Received: from plane.gmane.org ([80.91.229.3]:34219 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752716Ab2LQQEx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 11:04:53 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TkdBg-0002pn-J7
+	for linux-btrfs@vger.kernel.org; Mon, 17 Dec 2012 17:05:04 +0100
+Received: from fw.fr.smartjog.net ([95.81.144.25])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 17:05:04 +0100
+Received: from sebastien.luttringer by fw.fr.smartjog.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 17:05:04 +0100
+To: linux-btrfs@vger.kernel.org
+From: Sebastien Luttringer <sebastien.luttringer@smartjog.com>
+Subject: Feeback on RAID1 feature of Btrfs
+Date: Mon, 17 Dec 2012 16:51:33 +0100
+Message-ID: <kanf24$o8e$1@news.dmz-ext.fr.lan>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I did some research on deduplication in the past and there are some
-problems that you will face. I'll try to list some of them (for sure
-not all).
+Hello,
 
-On Mon, Dec 17, 2012 at 1:05 PM, Martin Křížek <martin.krizek@gmail.com> wrote:
-> Hello everyone,
->
-> my name is Martin Krizek. I am a student at Faculty of Information, Brno
-> University of Technology, Czech Republic. As my master's thesis I chose to work
-> on Online Deduplication for Btrfs.
->
-> My goal is to study Btrfs design, the offline deduplication patch [1] and to
-> come up with a design for the online dedup, this semester. I will be
-> implementing
-> the feature next semester (spring, that is).
-The offline dedup patch is quite old and won't apply/compile anymore.
-You should probably look into the clone ioctl which basically does the
-same as the extent_same ioctl from the patch. Based on the clone ioctl
-you can at least learn how to "inject" existing extents into other
-inodes.
->
-> I would like to shortly introduce my ideas on what I think the feature
-> should look
-> like.
->
-> * Use cases
-> The two main use cases for the dedup are:
-> 1. virtual machine images
-> 2. backup servers
->
-> * When to dedup
-> The choice of 'when to dedup' is not up to me as the master's thesis
-> specification
-> states "online". :)
->
-> * What to dedup
-> I'd say the most reasonable is block-level deduplication as it seems the most
-> general approach to me.
-Here you have two options:
-1. Based on the per volume tree where you'll find btrfs_file_extent
-items which point to the global extent tree.
-2. Based on the global extent tree. By using the backref resolving
-code, you can find which volumes refer to these extents.
->
-> * Controlling dedup
-> - turn on/off deduplication - specify subvolumes on which
-> deduplication is turned on
->  (mount, ioctl - inherited),
-> - turn on/off byte-by-byte comparison of blocks that have same hashes
-> (mount, ioctl),
-> - deduplication statistics (ioctl)
-You'll get trouble when online dedup is turned on and off again. While
-it is offline, extents still get written, but you won't have your hash
-tree up-to-date. You'll need to find a way to update when dedup is
-online again, without too much performance loos while updating.
->
-> * Limitations
-> Not really limitations, but this is a list of situations when dedup will not
-> be triggered:
-> - encryption,
-I've already heard somewhere else that encryption+dedup is not
-possible but I don't understand why. Can someone explain this
-limitation?
-> - compression - basically, dedup is kind of compression, might be worth to into
->   it in the future though
-> - inline/prealloc extents,
-Should be possible to dedup inline extents, but must be configurable
-(e.g. minimum block size). People should also be able to completely
-disable it when performance is important.
-> - data across subvolumes
-Should be possible. See my comment on the key in the hash tree.
->
-> * How to store hashes
-> The obvious choice would be to use the checksum tree that holds block checksums
-> of each extent. The problem with the checksum tree is that the
-> checksums are looked up by logical address for the start of the extent data.
-> This is undesirable since it needs to be done the other way around. Logical
-> addresses need to be looked up by a hash.
-> To solve this, another key type would be created inside the checksum tree (or
-> maybe better, a new tree would be introduced) that
-> would have a hash as item's right-hand key value. This way, items could be
-> looked up on a hash:
-> (root, HASH_ITEM, hash)
-> The root value says which root (subvolume) is hashed block stored on. The hash
-> value is hash itself.
-With the root inside the key you make it impossible to allow
-cross-subvolume deduplication. Also, the offset field in the key that
-you plan to use for the hash is only 64bit, so you can at best store a
-part of the hash in the key. You should probably split the hash into 3
-parts: 64bit to put into the objectid field, 64bit to put into the
-offset field and the remainder into the item data. A lookup would then
-do the necessary splitting and in case a match is found also compare
-the remainder found in the items data.
-> The item data would be of the following structure:
-> struct btrfs_hash_item {
-> __le64 disk_bytenr;
-> __le64 disk_num_bytes;
-> __le64 offset;
-> }
-You could omit the offset here and and store the sum of disk_bytenr
-and offset in one field. You could also omit the disk_num_bytes field
-if you have a fixed dedup block length. The reason: No matter what you
-store here, you never know if the referred extent is still existent
-and still contains the same data. So when you found a possible
-duplicate, a lookup into the extent tree is required to make sure it
-is still valid. Probably the extents generation can help here.
-> Fields disk_bytenr and disk_num_bytes would point to a
-> extent item of the extent allocation tree. The offset is a offset of a hashed
-> block in the extent.
->
-> * When to trigger dedup exactly
-> So It might be appropriate to delay the process just before data are
-> written out to disk to give data the chance to be changed. I looked a bit into
-> the compression code and it seems like dedup could use the similar aproach -
-> to have threads that would do dedup on sync or general writeback.
-It's important that you avoid unnecessary writes of duplicated blocks
-in case you do delayed deduplication. See my final comment for
-details.
->
-> * Hash algorithm
-> sha256 seems like a safe choice.
-Doesn't fit into the dedup tree's key. See my above comments.
->
-> * Future improvements
-> There are some features that might be considered if time permits or as something
-> that could be implemented in the future:
-> - dedup across subvolumes
-> - specify a hash algorithm
-> - specify number of deduplication blocks
->
->
-> I would appreciate any comments you might have, thanks!
->
-> Best regards,
-> Martin Krizek
->
->
-> [1] http://lwn.net/Articles/422331/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm testing Btrfs RAID1 feature on 3 disks of ~10GB. Last one is not
+exactly 10GB (would be too easy).
 
-After my research I came to the conclusion that a real online
-deduplication feature is not worth the trouble. The only advantage of
-online deduplication compared to offline deduplication is that you can
-avoid unnecessary writes for duplicate data and thus increase
-performance in theory. In practice, I don't know if you really gain
-much performance, because for small writes of duplicated data you
-still have to write out meta data. In all cases, at least the inodes
-extent items need to written, no matter if they point to new data or
-duplicate data. The performance gain will only be measurable for large
-duplicated blocks, in all other cases you'll loose performance due to
-the overhead of deduplication.
+About the test machine, it's a kvm vm running an up-to-date archlinux
+with linux 3.7 and btrfs-progs 0.19.20121005.
 
-Storing the hashes inside a btrfs tree is also a bad idea. The hashes
-are randomly distributed and thus have completely randomly ordered
-keys. Lookup and insertion will be very slow when there is not enough
-ram to hold the whole hash tree in memory...which is very likely to
-happen. You should think about an alternative, e.g. storing the hash
-table inside a dedicated inode (in a format that is more appropriate
-for hash tables). But even with this solution, you'll get out of ram
-very fast. You can use bloom filters or some comparable probabilistic
-data structure to avoid most of the lookups, but then you still have a
-lot of insertions because no matter if a duplicate is written or not,
-you need to update the hash table for later lookups.
+#uname -a
+Linux seblu-btrfs-1 3.7.0-1-ARCH #1 SMP PREEMPT Tue Dec 11 15:05:50 CET
+2012 x86_64 GNU/Linux
 
-Even if you find a good and fast solution for storing the hashes,
-you'll get in trouble when data gets overwritten or deleted. Then you
-have old hash values in the hash tree/table. This means, for each
-lookup you'll also need to check if the found extent is still there
-and unchanged. As an alternative, you could update the hash table
-on-the-fly when data gets overwritten or deleted...but this again
-means some additional lookups and writes and finally performance loss.
-Also, when dedup is enabled for the first time (or after it was
-disabled for some time), you have no hash table at all (or only a
-partial out-of-date hash table)...what to do in this case?
+Filesystem was created with :
 
-Next problem is...the backref resolving code gets very slow when there
-are too many references to the same block. This will slow down
-everything that depends on backref resolving, e.g. scrubbing (in case
-of errors), send and deduplication itself. So you'll need to limit the
-number of allowed references to each block, which may give poor
-deduplication results. Probably the backref resolving code can be
-optimized...I tried it but with limited results.
+# mkfs.btrfs -L test -d raid1 -m raid1 /dev/vd[bcd]
 
-Then you have fragmentation...which maybe can be ignored in some cases
-(e.g. for SSD's).
+I downloaded a lot of linux kernel tarball and untared in into this
+filesystem until it tell me enough:
 
-In my opinion, the only acceptable deduplication solution would be
-either an offline or semi online solution which basically does
-periodic offline deduplication. I'm a big fan of doing this in-kernel,
-because then it can use a lot of information already present. For
-example, the checksums that are already present in the checksum tree
-can be used as a first phase hint. Some time ago I had a in-kernel
-prototype running that used this approach:
+drwxr-xr-x 1 root root  330 2007-10-09 20:31 linux-2.6.23
+-rw-r--r-- 1 root root  44M 2007-10-09 20:48 linux-2.6.23.tar.bz2
+drwxr-xr-x 1 root root  344 2008-01-24 22:58 linux-2.6.24
+-rw-r--r-- 1 root root  45M 2008-01-24 23:16 linux-2.6.24.tar.bz2
+drwxr-xr-x 1 root root  352 2008-04-17 02:49 linux-2.6.25
 
-1. Run through the checksum tree and do the following for each checksum:
-    a. Check if we (probably) have the checksum in bloom_filter1.
-    b. If yes, add the checksum to bloom_filter2
-    c. In any case, add the checksum to bloom_filter1
-2. Run through the checksum tree a seconds time and do the following
-for each checksum:
-    a. Check if we (probably) have the checksum in bloom_filter2.
-    b. If yes, put the extent info (sha256, disk_bytenr, ...) into a
-list with a defined maximum size. If the list gets full, sort by hash
-and write out the previously collected extents to a dedicated inode.
-Then start with a fresh empty list.
-3. We now have a dedicated file with multiple sorted blocks. Each
-sorted block contains a list of extents. We can now do a very fast
-merge sort like read and thus get a large stream of hash sorted
-extents. While reading in the sorted extents, we can check if the
-previous extent has the same hash as the current. If yes, we have a
-duplicate.
+Some output of btrfs tools
 
-I stopped working on that due to missing time. There are still a lot
-of problems to solve with this solution which I won't go into detail
-now. The main advantages of this solution are low memory consumption
-and time mostly being dependent on the number of duplicates instead of
-the whole filesystem size as there is no need to hash the whole
-filesystem. Also, you don't have a permanent large table on-disk, as
-you can delete the dedicated inodes after you're finished.
+# btrfs fi sh
+Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
+	Total devices 3 FS bytes used 11.57GB
+	devid    3 size 10.00GB used 9.76GB path /dev/vdd
+	devid    2 size 10.00GB used 10.00GB path /dev/vdc
+	devid    1 size 9.77GB used 9.77GB path /dev/vdb
+
+# btrfs fi df .
+Data, RAID1: total=13.50GB, used=10.56GB
+Data: total=8.00MB, used=0.00
+System, RAID1: total=8.00MB, used=4.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=1.25GB, used=1.01GB
+Metadata: total=8.00MB, used=0.00
+
+I have choosen a _raid1_ filesystem, so I expect every disk be able to
+die and fs still usuable without data lost.
+
+I used chksfv[1] to make checksum of tarball on disk and check my data
+are safe.
+
+I killed the first disk via libvirt.
+# virsh detach-disk  seblu-btrfs-1 vdb
+
+Btrfs detect missing disk \o/
+
+# btrfs fi sh
+Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
+	Total devices 3 FS bytes used 11.57GB
+	devid    3 size 10.00GB used 8.01GB path /dev/vdd
+	devid    2 size 10.00GB used 9.26GB path /dev/vdc
+	*** Some devices missing
+
+Listing all files and cksum on tarballs are good.
+
+# cksfv -f ~/checksum
+Everything OK
+
+We have raid1, so we can expect kill one disk (the smaller). Let's go.
+
+# virsh detach-disk  seblu-btrfs-1 vdd
+
+# btrfs fi sh
+Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
+	Total devices 3 FS bytes used 11.57GB
+	devid    3 size 10.00GB used 8.01GB path /dev/vdd
+	devid    2 size 10.00GB used 9.26GB path /dev/vdc
+	*** Some devices missing
+
+It doesn't see the drive go away... Listing doesn't works.
+
+# find /mnt/test
+.
+./pkg
+^C
+# cksfv -f ~/checksum
+linux-2.6.30.tar.bz2                              OK
+linux-2.6.31.tar.bz2                              Input/output error
+linux-2.6.32.tar.bz2                              Input/output error
+linux-2.6.33.tar.bz2                              Input/output error
+
+So data and metada seems broken. Filesystem is become read only
+# touch séb
+touch: cannot touch ‘séb’: Read-only file system
+
+and finally I got a traceback in dmesg
+
+[  804.910405] ------------[ cut here ]------------
+[  804.910491] WARNING: at fs/btrfs/super.c:246
+__btrfs_abort_transaction+0xdf/0x100 [btrfs]()
+[  804.910499] Hardware name: Bochs
+[  804.910501] btrfs: Transaction aborted
+[  804.910502] Modules linked in: cirrus ttm i2c_piix4 drm_kms_helper
+psmouse intel_agp drm evdev intel_gtt serio_raw syscopyarea sysfillrect
+sysimgblt i2c_core processor button pcspkr microcode btrfs crc32c
+libcrc32c zlib_deflate ata_generic pata_acpi virtio_balloon virtio_blk
+virtio_net ata_piix libata uhci_hcd virtio_pci virtio_ring virtio
+usbcore usb_common scsi_mod floppy
+[  804.910575] Pid: 2077, comm: touch Not tainted 3.7.0-1-ARCH #1
+[  804.910577] Call Trace:
+[  804.910606]  [<ffffffff8105742f>] warn_slowpath_common+0x7f/0xc0
+[  804.910610]  [<ffffffff81057526>] warn_slowpath_fmt+0x46/0x50
+[  804.910619]  [<ffffffffa015ff6f>]
+__btrfs_abort_transaction+0xdf/0x100 [btrfs]
+[  804.910635]  [<ffffffffa01802c0>] ? verify_parent_transid+0x170/0x170
+[btrfs]
+[  804.910648]  [<ffffffffa016402a>] __btrfs_cow_block+0x48a/0x510 [btrfs]
+[  804.910661]  [<ffffffffa0164227>] btrfs_cow_block+0xf7/0x230 [btrfs]
+[  804.910672]  [<ffffffffa016752b>] push_leaf_right+0x11b/0x190 [btrfs]
+[  804.910681]  [<ffffffffa0167cb1>] split_leaf+0x621/0x740 [btrfs]
+[  804.910690]  [<ffffffffa0160d52>] ? leaf_space_used+0xd2/0x110 [btrfs]
+[  804.910710]  [<ffffffffa01b9455>] ?
+btrfs_set_lock_blocking_rw+0xb5/0x120 [btrfs]
+[  804.910720]  [<ffffffffa016894c>] btrfs_search_slot+0x89c/0x900 [btrfs]
+[  804.910730]  [<ffffffffa0169fcc>] btrfs_insert_empty_items+0x7c/0xe0
+[btrfs]
+[  804.910742]  [<ffffffffa017c313>] insert_with_overflow+0x43/0x120 [btrfs]
+[  804.910753]  [<ffffffffa017c4ac>] btrfs_insert_dir_item+0xbc/0x200
+[btrfs]
+[  804.910767]  [<ffffffffa0195c6b>] btrfs_add_link+0xeb/0x300 [btrfs]
+[  804.910781]  [<ffffffffa0196f64>] btrfs_create+0x1a4/0x210 [btrfs]
+[  804.910799]  [<ffffffff81217a0c>] ? security_inode_permission+0x1c/0x30
+[  804.910813]  [<ffffffff8118fd56>] vfs_create+0xb6/0x120
+[  804.910833]  [<ffffffff8119281d>] do_last+0xd5d/0xeb0
+[  804.910838]  [<ffffffff8118ed68>] ? link_path_walk+0x78/0x950
+[  804.910841]  [<ffffffff81192a2c>] path_openat+0xbc/0x530
+[  804.910855]  [<ffffffff8114b551>] ? handle_mm_fault+0x261/0x330
+[  804.910871]  [<ffffffff814a6314>] ? __do_page_fault+0x2d4/0x590
+[  804.910875]  [<ffffffff81193211>] do_filp_open+0x41/0xa0
+[  804.910878]  [<ffffffff811a0119>] ? __alloc_fd+0xe9/0x140
+[  804.910887]  [<ffffffff81182fc4>] do_sys_open+0xf4/0x1e0
+[  804.910890]  [<ffffffff814a65de>] ? do_page_fault+0xe/0x10
+[  804.910895]  [<ffffffff811830d1>] sys_open+0x21/0x30
+[  804.910899]  [<ffffffff814aa51d>] system_call_fastpath+0x1a/0x1f
+[  804.910904] ---[ end trace b713d23404f7cc1c ]---
+[  804.910911] BTRFS error (device vdc) in __btrfs_cow_block:1014: IO
+failure
+[  804.912156] btrfs is forced readonly
+
+I get the feeling that RAID1 only allow one disk removing. Which is more
+a RAID5 feature.
+I'm afraid Btrfs raid1 will not be working before the end of the world.
+Sad day.
+
+Cheers,
+
+[1] https://www.archlinux.org/packages/community/i686/cksfv/
+
+-- 
+Sebastien "Seblu" Luttringer
+Research & Engineering Manager - Smartjog - TDF
+27 bd Hippolyte Marques, 94200 Ivry sur Seine, France
+Phone: +33.1.58.68.62.32 / Fax: +33.1.58.68.62.05
+

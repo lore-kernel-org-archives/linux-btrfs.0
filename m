@@ -1,46 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from v002983.home.net.pl ([212.85.107.189]:52480 "HELO
-	v002983.home.net.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752125Ab2LQNTa convert rfc822-to-8bit (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:48507 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752125Ab2LQNWV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 08:19:30 -0500
-From: Hubert Kario <hka@qbs.com.pl>
-To: Martin =?utf-8?B?S8WZw63FvmVr?= <martin.krizek@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, lczerner@redhat.com
-Subject: Re: Online Deduplication for Btrfs (Master's thesis)
-Date: Mon, 17 Dec 2012 14:12:38 +0100
-Message-ID: <5848153.J4MMzXfUGd@bursa22>
-In-Reply-To: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
-References: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
+	Mon, 17 Dec 2012 08:22:21 -0500
+Received: by mail-ob0-f174.google.com with SMTP id ta14so5670923obb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 05:22:21 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <CAOeZVieJnsOb2t3xXRquAgRYEHQ8wzqfjfvBEBB9qpL5se4Kkg@mail.gmail.com>
+References: <CAOeZVic4=4tZK3c6jit-K_NYp=PCJFOL3RNJmEXFscKAANjFQQ@mail.gmail.com>
+	<CAOeZViccr19yumXMOkdpNrGO1fGghbyVjSErW0F2eF65Sj0rsw@mail.gmail.com>
+	<20121217123800.GI19051@carfax.org.uk>
+	<CAOeZVifL=6+3ojkxv4u1ZJTZi3dWdLb4M6jR7fGacEjbD+WfCw@mail.gmail.com>
+	<CAOeZVieJnsOb2t3xXRquAgRYEHQ8wzqfjfvBEBB9qpL5se4Kkg@mail.gmail.com>
+Date: Mon, 17 Dec 2012 18:52:21 +0530
+Message-ID: <CAOeZVidnw7m-0fuFque_Ejdo=uNZSVJ_wafOVBfbNiQ_=Tpj8Q@mail.gmail.com>
+Subject: Re: Regarding contribution to BTRFS
+From: Atri Sharma <atri.jiit@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 17 of December 2012 13:05:01 Martin Křížek wrote:
-> * Limitations
-> Not really limitations, but this is a list of situations when dedup will
-> not be triggered:
-> - compression - basically, dedup is kind of compression, might be worth to
-> into it in the future though
+On Mon, Dec 17, 2012 at 6:34 PM, Atri Sharma <atri.jiit@gmail.com> wrote:
+> On Mon, Dec 17, 2012 at 6:23 PM, Atri Sharma <atri.jiit@gmail.com> wrote:
+>> On Mon, Dec 17, 2012 at 6:08 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>>> On Mon, Dec 17, 2012 at 05:39:45PM +0530, Atri Sharma wrote:
+>>>> Sorry,the email is incomplete.
+>>>>
+>>>> As mentioned above, I am a C developer and really interested in file
+>>>> systems, and the Fedora community redirected me to BTRFS. I would
+>>>> really love to contribute to btrfs.
+>>>>
+>>>> Please let me know how I can proceed further, and what are the
+>>>> potential areas I can work in.
+>>>
+>>>    Well, there's this page on the wiki:
+>>>
+>>>    https://btrfs.wiki.kernel.org/index.php/Project_ideas
+>>>
+>>>    As for how to proceed -- decide on a project you like the look of,
+>>> mark it as in progress on the wiki, and submit patches to here as an
+>>> RFC when you think you've got something worth looking at.
+>>>
+>>>    If you come up with something else that's not on the list, I'd
+>>> suggest putting a brief description of it in this mailing list, just
+>>> to check whether there's someone else working on it, or if it's an
+>>> unexpectedly difficult or controversial idea.
+>>
+>> Hi Hugo,
+>>
+>> Thanks for your reply.
+>>
+>> I have been studying concurrency lately, so I would love to work in that area.
+>>
+>> Specifically, I would love to work on 'Btree lock contention'.
+>>
+>> I have some ideas for it, specifically I would like to see if we can
+>> reduce the lock granularity or spread the threads blocking over time,
+>> or maybe use something like combining trees.
+>>
+>> Please let me know if that is ok.
+>>
+>> Atri
+>>
+>>
+>> --
+>> Regards,
+>>
+>> Atri
+>> l'apprenant
+>
+> Hi All,
+>
+> Sorry for causing a ruckus.Actually, due to some stupidity, I seem to
+> have changed a lot of names in the wiki whereas I wanted to change
+> only one. Is there any way to revert this?
+>
+> I am really sorry for having caused this. My lack of experience with wikis.
+>
+Whew! Fixed.
 
-I don't see why it would be incompatible, compressed blocks are data like 
-any other. COW and subvolume snapshots work with compressed nodes just as 
-well as with regular ones...
-
-> - data across subvolumes
-
-Wasn't the "cp --reflink" across subvolumes merged to mainline quite a bit 
-ago? Under 3.6.9 it works fine for me... Also, the blocks are shared between 
-subvolumes if the other subvolume is a snapshot of the first one.
-
-Besides, I think that doing a rsync from remote server and snapshotting the 
-subvolume dedicated for server will be the standard approach.
+The latest comment on the wiki about the lock contention confuses me.
+It is still an open project, right? Or do I find something else to
+work on?
 
 Regards,
--- 
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawerów 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+
+Atri
+
+
+
+--
+Regards,
+
+Atri
+l'apprenant

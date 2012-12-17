@@ -1,56 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47213 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932813Ab2LLAak (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:43182 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752206Ab2LQLWU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Dec 2012 19:30:40 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBC0Uc4o009695
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2012 00:30:39 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBC0Ubkp024506
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2012 00:30:38 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBC0Ubin013023
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2012 18:30:37 -0600
-Message-ID: <50C7D029.9080802@oracle.com>
-Date: Wed, 12 Dec 2012 08:30:33 +0800
+	Mon, 17 Dec 2012 06:22:20 -0500
+Message-ID: <50CF005A.7030206@oracle.com>
+Date: Mon, 17 Dec 2012 19:22:02 +0800
 From: Jeff Liu <jeff.liu@oracle.com>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-CC: anand.jain@oracle.com
-Subject: [PATCH v4 3/3] Btrfs-progs: fix cmd_label_usage to reflect this change.
+CC: anand.jain@oracle.com, miaox@cn.fujitsu.com
+Subject: [RFC PATCH V5 1/2] Btrfs: Add a new ioctl to get the label of a mounted
+ filesystem
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <50C7CE36.3060603@oracle.com>
+In-Reply-To: <50CF0053.4050906@oracle.com>
 
-Fix the command usage of "btrfs filesystem label" to reflect this change. i.e. so that
-we can get/set the label of a mounted filesystem against the mountpoint.
+Introduce a new ioctl BTRFS_IOC_GET_FSLABEL to fetch the label of a mounted file system.
 
 Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Cc: Miao Xie <miaox@cn.fujitsu.com>
 
 ---
- cmds-filesystem.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c |   15 +++++++++++++++
+ fs/btrfs/ioctl.h |    2 ++
+ 2 files changed, 17 insertions(+)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 9c43d35..5770d8b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -517,8 +517,8 @@ static int cmd_resize(int argc, char **argv)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8fcf9a5..6a2488a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3699,6 +3699,19 @@ out:
+ 	return ret;
  }
  
- static const char * const cmd_label_usage[] = {
--	"btrfs filesystem label <device> [<newlabel>]",
--	"Get or change the label of an unmounted filesystem",
-+	"btrfs filesystem label [<device>|<mountpoint>] [<newlabel>]",
-+	"Get or change the label of a filesystem",
- 	"With one argument, get the label of filesystem on <device>.",
- 	"If <newlabel> is passed, set the filesystem label to <newlabel>.",
- 	NULL
++static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
++{
++	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
++	const char *label = root->fs_info->super_copy->label;
++	int ret;
++
++	mutex_lock(&root->fs_info->volume_mutex);
++	ret = copy_to_user(arg, label, strlen(label));
++	mutex_unlock(&root->fs_info->volume_mutex);
++
++	return ret ? -EFAULT : 0;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -3797,6 +3810,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_qgroup_create(root, argp);
+ 	case BTRFS_IOC_QGROUP_LIMIT:
+ 		return btrfs_ioctl_qgroup_limit(root, argp);
++	case BTRFS_IOC_GET_FSLABEL:
++		return btrfs_ioctl_get_fslabel(file, argp);
+ 	}
+ 
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 731e287..5b2cbef 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -451,6 +451,8 @@ struct btrfs_ioctl_send_args {
+ 			       struct btrfs_ioctl_qgroup_create_args)
+ #define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
+ 			       struct btrfs_ioctl_qgroup_limit_args)
++#define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
++				   char[BTRFS_LABEL_SIZE])
+ #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+ 				      struct btrfs_ioctl_get_dev_stats)
+ #endif
 -- 
 1.7.9.5

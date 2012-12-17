@@ -1,162 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36814 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751533Ab2LQQXx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 11:23:53 -0500
-Date: Mon, 17 Dec 2012 16:23:50 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Sebastien Luttringer <sebastien.luttringer@smartjog.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Feeback on RAID1 feature of Btrfs
-Message-ID: <20121217162350.GJ19051@carfax.org.uk>
-References: <kanf24$o8e$1@news.dmz-ext.fr.lan>
+Received: from smtp207.alice.it ([82.57.200.103]:60919 "EHLO smtp207.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752988Ab2LQR7R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 12:59:17 -0500
+Message-ID: <50CF5C97.9030805@inwind.it>
+Date: Mon, 17 Dec 2012 18:55:35 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="cDtQGJ/EJIRf/Cpq"
-In-Reply-To: <kanf24$o8e$1@news.dmz-ext.fr.lan>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Alexander Block <ablock84@gmail.com>,
+        Chris Mason <chris.mason@fusionio.com>
+Subject: [PATCH][TRIVIAL] Unvalid access check
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
---cDtQGJ/EJIRf/Cpq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Dear All,
 
-On Mon, Dec 17, 2012 at 04:51:33PM +0100, Sebastien Luttringer wrote:
-> Hello,
-> 
-> I'm testing Btrfs RAID1 feature on 3 disks of ~10GB. Last one is not
-> exactly 10GB (would be too easy).
-> 
-> About the test machine, it's a kvm vm running an up-to-date archlinux
-> with linux 3.7 and btrfs-progs 0.19.20121005.
-> 
-> #uname -a
-> Linux seblu-btrfs-1 3.7.0-1-ARCH #1 SMP PREEMPT Tue Dec 11 15:05:50 CET
-> 2012 x86_64 GNU/Linux
-> 
-> Filesystem was created with :
-> 
-> # mkfs.btrfs -L test -d raid1 -m raid1 /dev/vd[bcd]
-> 
-> I downloaded a lot of linux kernel tarball and untared in into this
-> filesystem until it tell me enough:
-> 
-> drwxr-xr-x 1 root root  330 2007-10-09 20:31 linux-2.6.23
-> -rw-r--r-- 1 root root  44M 2007-10-09 20:48 linux-2.6.23.tar.bz2
-> drwxr-xr-x 1 root root  344 2008-01-24 22:58 linux-2.6.24
-> -rw-r--r-- 1 root root  45M 2008-01-24 23:16 linux-2.6.24.tar.bz2
-> drwxr-xr-x 1 root root  352 2008-04-17 02:49 linux-2.6.25
-> 
-> Some output of btrfs tools
-> 
-> # btrfs fi sh
-> Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
-> 	Total devices 3 FS bytes used 11.57GB
-> 	devid    3 size 10.00GB used 9.76GB path /dev/vdd
-> 	devid    2 size 10.00GB used 10.00GB path /dev/vdc
-> 	devid    1 size 9.77GB used 9.77GB path /dev/vdb
-> 
-> # btrfs fi df .
-> Data, RAID1: total=13.50GB, used=10.56GB
-> Data: total=8.00MB, used=0.00
-> System, RAID1: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=1.25GB, used=1.01GB
-> Metadata: total=8.00MB, used=0.00
-> 
-> I have choosen a _raid1_ filesystem, so I expect every disk be able to
-> die and fs still usuable without data lost.
+I found an incorrect check in the file fs/btrfs/send.c . It was wrote
+	sizeof(*arg->clone_sources * arg->clone_sources_count)
+instead of
+	sizeof(*arg->clone_sources) * arg->clone_sources_count
 
-   This is where your expectations and reality have their differences.
+Unfortunately arg->clone_sources is a u64 pointer, so
+"*arg->clone_sources * arg->clone_sources_count" is a legally product
+between two u64 integer, and the compiler cannot generate any
+warning/error.
 
-> I used chksfv[1] to make checksum of tarball on disk and check my data
-> are safe.
-> 
-> I killed the first disk via libvirt.
-> # virsh detach-disk  seblu-btrfs-1 vdb
-> 
-> Btrfs detect missing disk \o/
-> 
-> # btrfs fi sh
-> Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
-> 	Total devices 3 FS bytes used 11.57GB
-> 	devid    3 size 10.00GB used 8.01GB path /dev/vdd
-> 	devid    2 size 10.00GB used 9.26GB path /dev/vdc
-> 	*** Some devices missing
-> 
-> Listing all files and cksum on tarballs are good.
-> 
-> # cksfv -f ~/checksum
-> Everything OK
-> 
-> We have raid1, so we can expect kill one disk (the smaller). Let's go.
-> 
-> # virsh detach-disk  seblu-btrfs-1 vdd
-> 
-> # btrfs fi sh
-> Label: 'test'  uuid: 7d72c625-4dd7-4db0-b4a2-075e26572b99
-> 	Total devices 3 FS bytes used 11.57GB
-> 	devid    3 size 10.00GB used 8.01GB path /dev/vdd
-> 	devid    2 size 10.00GB used 9.26GB path /dev/vdc
-> 	*** Some devices missing
+Please apply
 
-[snip]
 
-   Yes, this is the expected behaviour.
+BR
+G.Baroncelli
 
-> I get the feeling that RAID1 only allow one disk removing. Which is more
-> a RAID5 feature.
+- --- old/fs/btrfs/send.c	2012-12-11 19:03:46.000000000 +0100
++++ new/fs/btrfs/send.c	2012-12-17 18:42:14.997707719 +0100
+@@ -4553,8 +4553,8 @@
+ 	}
 
-   The RAID-1 support in btrfs makes exactly two copies of each item
-of data, so you can lose at most one disk from the array safely. Lose
-any more, and you're likely to have lost data, as you've found out.
+ 	if (!access_ok(VERIFY_READ, arg->clone_sources,
+- -			sizeof(*arg->clone_sources *
+- -			arg->clone_sources_count))) {
++			sizeof(*arg->clone_sources) *
++			arg->clone_sources_count)) {
+ 		ret = -EFAULT;
+ 		goto out;
+ 	}
 
-> I'm afraid Btrfs raid1 will not be working before the end of the world.
-
-   It does work (as you demonstrated with the first disk being
-removed) -- but just not as you thought it should. Now, you can argue
-that "RAID-1" isn't a good name to use here, but there's no good name
-in RAID terminology to describe what we actually have here.
-
-   I believe that Chris has done some work on allowing (tunable)
-multiple copies of data in RAID-1 mode, but that's not been published
-yet. It was part of the extended RAID work that he was working on. I
-think we're hoping for RAID-5 and RAID-6 to arrive in this merge
-window, but that's been said before (and it hasn't been stable enough
-for release before). I think Chris was going to leave the n-copies
-RAID-1 feature for a later release, and just get RAID-5/6 out first.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- "Le Corbusier's plan for improving Paris involved the ---      
-                assassination of the city, and its rebirth                
-                            as tower blocks."                            
-
---cDtQGJ/EJIRf/Cpq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
+- -- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Version: GnuPG v2.0.19 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iQIVAwUBUM9HFr9z9OVl50rAAQIZ5A/9FD8vpNWbiXHWIfPyJ28k4qidTasaw9KH
-LTB7gDb9F6EoVQq6A8hGAF3/h/8LUvgG0JGeixBmckhMIf/1+N0VcgirykkAFAgM
-nVOW9S+oibkUnymoxwYspLvNCK5PWsz9D1LKbMtsBRGC8WVUN4V0RokhHrKooqTC
-LA2ANzOndC8tqf0fv8Hi0/xgnfbXtwL1mi6GbYf3gVQhD3LwSpfX6hgCfjZm3LjM
-wfpzUqUiyYUKytRWWDi69hkfNIuLznGBcAi+AtSEC0nsdHZ6umSsfug15/FlIRXq
-JBh8K5F6BXS0NdISREH4jh8DZHAg5EU1/UFryYC5z/0SQQUE/eeVdrXdyooNX/HK
-I+uW++brIlfcuNdRkLDvbiJVFeBoZOS3KdLeut7b4ZIPd9QdeRSC2NQziNgDKw0M
-i3lN0Sk4j7/OTx8vKj7W8GE63VhAYkvEMC0eGMicWS34xnXk6D3nvBr5w9f2tkHl
-Wz/68x0iDtvBeA5wCfjLwm9PLa0FS+IyUS4wQ6YeYlTZ50W7nt9c4XAZoqmstv9Z
-SzN6u73D2udBbNVPtjFiTVWOc+HMFztzB99lAjgjXvu+epi/a31RKRm5mL72np7x
-VH9n+ebc6PQkSVd2F3dO7ZHISG7JkoiLCFQ1r8uHPNjFuB/m3rX9Q1YzrTfSensx
-FvdaDQgnHWU=
-=0Rck
+iQIcBAEBAgAGBQJQz1yXAAoJEA7amzeLguC1UH8QAJozuS6LTzk94CSr0qqM70xa
+QC9UgY3MjalIlFPBHqRKTcbId2uvtM0yqwk2YCHRAnKrMUAMvP1KmUlk5Fjg3ahC
+odPbfX1eF3zf9ySEOky7ZmzjJEpyxsCikvf2CNaUiQSibjLn6bNYmhjjXKrIqmOR
+KZAFGrEOzeK87YUREcqqaAz+oVZHCZuxHrA0OpWJ3L0ub9kC35o2zdEYJejwDUPk
+zGwWmMhMr9ANvUMC/E8wNzusoZRnCya/dEt6KrN1Xzolj82orhQRHWy3TTUEtwu9
+1zZjq89vVhUKNh4/CG7u0N5zl61ZhzGiXATpIEC2M/PznMf0YXmITi2Dy62fTwnT
+ZvLjUmUnujmSGBMi1/zEoyYFXPmFgHfa82s0zVQCKC6V2JZcapwSbDSJaLYKjhjs
+rjd6SFsjjEWkE779bFW1WHu0CV3BvXJI7yXN6PweR9rumhvU1pZ4UwonQ3Wv1tPp
+d50N9jeFq2+N282yP12bdGzD7DLC7YPFRFxy8sHSbOsiM3vFIdOK0rX5BQeboIbE
+NPBHPqUsxw/MsvXQdUqgW7TuFIU0Q30Mx0+jLyyhmGSvCUq9NA9ye0YmRCmqdGGY
+R5X4KdL7HJxlm9tX2FxLPf6yh3hD/FyX1CQtrfahbvS0h2em5BLPQ7WrGN2iCpAd
+cEcSAGaARv6qKnw+YneW
+=kdsU
 -----END PGP SIGNATURE-----
-
---cDtQGJ/EJIRf/Cpq--

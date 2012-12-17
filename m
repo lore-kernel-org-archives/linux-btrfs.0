@@ -1,38 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([82.95.169.224]:34549 "EHLO panda.humilis.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751132Ab2LQKg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 05:36:27 -0500
-Date: Mon, 17 Dec 2012 11:36:24 +0100
-From: Sander <sander@humilis.net>
-To: Sylvain Alain <d2racing911@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:58023 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751536Ab2LQLUu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 06:20:50 -0500
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: sander@humilis.net
 Subject: Re: btrfs subvolume snapshot performance problem
-Message-ID: <20121217103624.GA15304@panda>
-Reply-To: sander@humilis.net
-References: <CACR_K2uer3bniWAenoKe=-2BxT4vt4opXywCBbwGuaX7C8EgLA@mail.gmail.com>
+Date: Mon, 17 Dec 2012 22:20:42 +1100
+Cc: Sylvain Alain <d2racing911@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CACR_K2uer3bniWAenoKe=-2BxT4vt4opXywCBbwGuaX7C8EgLA@mail.gmail.com> <20121217103624.GA15304@panda>
+In-Reply-To: <20121217103624.GA15304@panda>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CACR_K2uer3bniWAenoKe=-2BxT4vt4opXywCBbwGuaX7C8EgLA@mail.gmail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201212172220.42946.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sylvain Alain wrote (ao):
-> gentootux ~ # mount /dev/sda4 -o
-> noatime,ssd,discard,compress=lzo,noacl,space_cache,subvolid=0
-              ^^^^^^^
+On Mon, 17 Dec 2012, Sander <sander@humilis.net> wrote:
+> Let me repeat the answer cwillu gave to Russell on this, and Russell's
+> response:
 
-> Instead of 3 secondes to run the snapshot, it took almost 4 minutes.
+Also tests did indicate a performance benefit on snapshots when I stopped using 
+discard.  It was as much as 15 seconds to create a snapshot and now it's 
+consistently less than 1 second.
 
-Let me repeat the answer cwillu gave to Russell on this, and Russell's
-response:
-
-Russell Coker wrote (ao):
-> On Sun, 16 Dec 2012, cwillu <cwillu@cwillu.com> wrote:
-> > Don't use discard; it's a non-queuing command, which means your
-> > performance will suck unless your device is really terrible at
-> > garbage collection (in which case, it's just the lesser of two evils).
-> 
-> Thanks for the advice. On one of my systems a reinstall of the linux-
-> image-3.6-trunk-amd64 package went from almost 4 minutes to only 29
-> seconds when I removed the discard option.
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

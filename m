@@ -1,31 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-server.com ([216.13.78.11]:65272 "EHLO smtp-server.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752453Ab2LPXYk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Dec 2012 18:24:40 -0500
-Received: from [192.168.1.104] (dynamic-adsl-78-13-211-5.clienti.tiscali.it [78.13.211.5])
-	(using TLSv1 with cipher DHE-RSA-CAMELLIA256-SHA (256/256 bits))
-	(Client did not present a certificate)
-	by smtp-server.com (Postfix) with ESMTP id 6AD7617BA27
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Dec 2012 23:24:39 +0000 (UTC)
-Message-ID: <50CE5835.5000607@libero.it>
-Date: Mon, 17 Dec 2012 00:24:37 +0100
-From: Claudio Carbone <erupter@libero.it>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:43413 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750711Ab2LQFTS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 00:19:18 -0500
+Received: by mail-ob0-f174.google.com with SMTP id ta14so5296575obb.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Dec 2012 21:19:18 -0800 (PST)
 MIME-Version: 1.0
+Date: Mon, 17 Dec 2012 10:49:17 +0530
+Message-ID: <CAOeZVic4=4tZK3c6jit-K_NYp=PCJFOL3RNJmEXFscKAANjFQQ@mail.gmail.com>
+Subject: Regarding contribution to BTRFS
+From: Atri Sharma <atri.jiit@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: unmountable partition and live distro (no space left)
-References: <50CDCFD1.5000304@libero.it> <50CDF3ED.8060601@libero.it> <CAE5mzviNM9w_q7WSZJ_S7J9rTXUgW=qbPLuYgVAHBP5zUNybog@mail.gmail.com> <50CE578D.9080701@libero.it>
-In-Reply-To: <50CE578D.9080701@libero.it>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17/12/12 00:21, Claudio Carbone wrote:
->
-> Here is the btrfsck log
-> https://www.dropbox.com/s/pwmj2t9kvy6sqpc/btrfs_log.txt
+Hi all,
 
-And here is the mount error dmesg tail
-https://www.dropbox.com/s/x7w552g6vkalrn7/btrfs_mount_log.txt
+I am Atri Sharma,a C and C++ developer with knowledge of database and
+file systems. I am a Google Summer Of Code 2012 student for
+PostgreSQL.
 
-Claudio
+Please let me know how I can help.
+
+Regards,
+
+Atri
+
+--
+Regards,
+
+Atri
+l'apprenant

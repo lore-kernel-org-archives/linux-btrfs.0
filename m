@@ -1,19 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:34271 "EHLO mx2.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:35400 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750942Ab2LQV20 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 16:28:26 -0500
-Date: Mon, 17 Dec 2012 16:28:22 -0500
+	id S1751019Ab2LQVpB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 16:45:01 -0500
+Date: Mon, 17 Dec 2012 16:44:57 -0500
 From: Chris Mason <chris.mason@fusionio.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kerrnel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
         Btrfs <linux-btrfs@vger.kernel.org>
 Subject: [GIT PULL] Btrfs updates
-Message-ID: <20121217212822.GB15235@shiny>
+Message-ID: <20121217214457.GC15235@shiny>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+[ sorry, resend.  My lbdb autocompleted with an extra r in kernel.org ]
 
 Hi everyone,
 
@@ -234,3 +236,7 @@ Total: (115) commits (+5423/-1912)
  fs/btrfs/xattr.c             |   13 +-
  include/trace/events/btrfs.h |    3 +-
  43 files changed, 5258 insertions(+), 1747 deletions(-)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

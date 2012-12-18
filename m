@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45985 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754037Ab2LRCUh (ORCPT
+Received: from cn.fujitsu.com ([222.73.24.84]:38722 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754037Ab2LRCVD convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 21:20:37 -0500
-Message-ID: <50CFD2DB.1010106@oracle.com>
-Date: Tue, 18 Dec 2012 10:20:11 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+	Mon, 17 Dec 2012 21:21:03 -0500
+Message-ID: <50CFD32A.6070501@cn.fujitsu.com>
+Date: Tue, 18 Dec 2012 10:21:30 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@gmail.com>, miaox@cn.fujitsu.com,
+CC: Goffredo Baroncelli <kreijack@gmail.com>, Jeff Liu <jeff.liu@oracle.com>,
         linux-btrfs@vger.kernel.org, anand.jain@oracle.com
 Subject: Re: [RFC PATCH V5 2/2] Btrfs: Add a new ioctl to change the label
  of a mounted file system
@@ -22,7 +23,7 @@ References: <50CF0063.3060503@oracle.com>
  <50CF1E5A.8030407@oracle.com>
  <50CF57B1.1000106@gmail.com>
 
-On 12/18/2012 01:34 AM, Goffredo Baroncelli wrote:
+On 	mon, 17 Dec 2012 18:34:41 +0100, Goffredo Baroncelli wrote:
 > On 12/17/2012 02:30 PM, Jeff Liu wrote:
 >> On 12/17/2012 07:57 PM, Miao Xie wrote:
 >>> On 	mon, 17 Dec 2012 19:22:11 +0800, Jeff Liu wrote:
@@ -51,17 +52,22 @@ On 12/18/2012 01:34 AM, Goffredo Baroncelli wrote:
 > 
 > I think that Miao fears strlen() searching a zero could go beyond the
 > page limit touching an un-mapped page and raising an segmentation fault....
-> 
+
+Yes, so I think the following check is better.
+
+if (strnlen(buf, BTRFS_LABEL_SIZE) == BTRFS_LABEL_SIZE)
+	return -EINVAL;
+
+Thanks
+Miao
+
 > I think that we should change the code as
 > 
 > +	label[BTRFS_LABEL_SIZE - 1] = 0;
-Ah, I moved above line for strcpy()...
 > +
 > +	if (strlen(label) > BTRFS_LABEL_SIZE - 1)
 > +		return -EINVAL;
-That's right, thank you!
-
--Jeff
+> 
 > My 2¢
 > 
 > Ciao

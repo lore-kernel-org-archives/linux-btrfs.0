@@ -1,74 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43142 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751536Ab2LQLWO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 06:22:14 -0500
-Message-ID: <50CF0053.4050906@oracle.com>
-Date: Mon, 17 Dec 2012 19:21:55 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:40537 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752571Ab2LRDb1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 22:31:27 -0500
+Message-ID: <50CFE3AC.9000705@cn.fujitsu.com>
+Date: Tue, 18 Dec 2012 11:31:56 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: anand.jain@oracle.com, miaox@cn.fujitsu.com
-Subject: [RFC PATCH V5 0/2] Btrfs: get/set label of mounted file system
+To: Jeff Liu <jeff.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org, anand.jain@oracle.com,
+        Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: [RFC PATCH V6 2/2] Btrfs: Add a new ioctl to change the label
+ of a mounted file system
+In-Reply-To: <50CFDD9F.2080706@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <50CFDD9F.2080706@oracle.com>
 
-Hello,
-
-This patch set is trying to make Btrfs support get/set label for a mounted file sytem via ioctl(2).
-There are a couple of changes according to Miao's comments which were shown as following.
-
-Changes of V5->V4 in kernel:
-- Revise the ioctl number of BTRFS_IOC_GET_FSLABEL/BTRFS_IOC_SET_FSLABEL to 49/50 separately.
-- Replace btrfs_root_readonly() check up with mnt_want_write_file().
-- Validate the input label length, return -EINVAL if the specified length is exceeding
-  "BTRFS_LABEL_SIZE -1".
-
-Changes of V5->V4 in user space:
-- Revise the ioctl number accordingly.
-- Don't proceed to get/set the label upon a mounted file system if the dev patch is specified, i.e.
-btrfs filesystem label /dev/sdaX [new label]
-  Instead, alert the user to execute this command against the mount point, i.e.
-btrfs filesystem label /btrfs_mount_path [new label]
-- Validate the input label length for changing the label upon an unmounted file system as well.
-  We does not check it up currently, the command just keeping silent and truncate the label
-  characters which are beyond "BTRFS_LABEL_SIZE - 1".
+On Tue, 18 Dec 2012 11:06:07 +0800, Jeff Liu wrote:
+> Introduce a new ioctl BTRFS_IOC_SET_FSLABEL to change the label of a mounted file system.
+> 
+> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Cc: Miao Xie <miaox@cn.fujitsu.com>
+> Cc: Goffredo Baroncelli <kreijack@inwind.it>
 
 
-Tests:
-======
-/dev/sda6 on /btrfs type btrfs (rw)
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
-jeff@koala:~/oss/btrfs-progs$ sudo ./btrfs filesystem label /btrfs 
-btrfs_label
+> 
+> ---
+>  fs/btrfs/ioctl.c |   39 +++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.h |    2 ++
+>  2 files changed, 41 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 6a2488a..2bb037e 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3712,6 +3712,43 @@ static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
+>  	return ret ? -EFAULT : 0;
+>  }
+>  
+> +static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
+> +{
+> +	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+> +	struct btrfs_super_block *super_block = root->fs_info->super_copy;
+> +	struct btrfs_trans_handle *trans;
+> +	char label[BTRFS_LABEL_SIZE];
+> +	int ret;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	if (copy_from_user(label, arg, sizeof(label)))
+> +		return -EFAULT;
+> +
+> +	if (strnlen(label, BTRFS_LABEL_SIZE) == BTRFS_LABEL_SIZE)
+> +		return -EINVAL;
+> +
+> +	ret = mnt_want_write_file(file);
+> +	if (ret)
+> +		return ret;
+> +
+> +	mutex_lock(&root->fs_info->volume_mutex);
+> +	trans = btrfs_start_transaction(root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		goto out_unlock;
+> +	}
+> +
+> +	strcpy(super_block->label, label);
+> +	btrfs_end_transaction(trans, root);
+> +
+> +out_unlock:
+> +	mutex_unlock(&root->fs_info->volume_mutex);
+> +	mnt_drop_write_file(file);
+> +	return ret;
+> +}
+> +
+>  long btrfs_ioctl(struct file *file, unsigned int
+>  		cmd, unsigned long arg)
+>  {
+> @@ -3812,6 +3849,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_qgroup_limit(root, argp);
+>  	case BTRFS_IOC_GET_FSLABEL:
+>  		return btrfs_ioctl_get_fslabel(file, argp);
+> +	case BTRFS_IOC_SET_FSLABEL:
+> +		return btrfs_ioctl_set_fslabel(file, argp);
+>  	}
+>  
+>  	return -ENOTTY;
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 5b2cbef..2abe239 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -453,6 +453,8 @@ struct btrfs_ioctl_send_args {
+>  			       struct btrfs_ioctl_qgroup_limit_args)
+>  #define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
+>  				   char[BTRFS_LABEL_SIZE])
+> +#define BTRFS_IOC_SET_FSLABEL _IOW(BTRFS_IOCTL_MAGIC, 50, \
+> +				   char[BTRFS_LABEL_SIZE])
+>  #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+>  				      struct btrfs_ioctl_get_dev_stats)
+>  #endif
+> 
 
-Failure if the length is exceeding 255.
-jeff@koala:~/oss/btrfs-progs$ sudo ./btrfs filesystem label /btrfs `perl -e 'print "A"x256'`
-ERROR: unable to set label Invalid argument
-
-Otherwise, that's ok.
-jeff@koala:~/oss/btrfs-progs$ sudo ./btrfs filesystem label /btrfs `perl -e 'print "A"x255'`
-
-jeff@koala:~/oss/btrfs-progs$ sudo ./btrfs filesystem label /btrfs
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-
-
-The old versions can be found at:
-v4:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21618
-
-v3:
-https://patchwork.kernel.org/patch/1124642/
-
-v2:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/12877
-
-v1:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/12872
-
-Thanks,
--Jeff

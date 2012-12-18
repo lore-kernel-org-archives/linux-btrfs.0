@@ -1,40 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:60909 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753959Ab2LRUqV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Dec 2012 15:46:21 -0500
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id MwiGA9S9l7xqdcLJ (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2012 13:46:20 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: set flushing if we're limited flushing
-Date: Tue, 18 Dec 2012 15:52:37 -0500
-Message-ID: <1355863957-16971-1-git-send-email-jbacik@fusionio.com>
+Received: from moutng.kundenserver.de ([212.227.17.10]:58541 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754071Ab2LRWRe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Dec 2012 17:17:34 -0500
+Message-ID: <50D0EB73.4090304@friedels.name>
+Date: Tue, 18 Dec 2012 23:17:23 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: segmentation-fault in btrfsck (git-version)
+References: <50BFB3B2.8040405@friedels.name> <CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com> <50C4E152.2000102@friedels.name> <CAKcLGm8wm1Gfe0ESCubGusqe_zojJp=7JORLXuq_EUdY22JOWA@mail.gmail.com> <50CCD247.3090701@friedels.name> <CAKcLGm-bwUriSBzoM2FTV9Rv1=dYp=5H_me8VZX6vygtXEhADg@mail.gmail.com>
+In-Reply-To: <CAKcLGm-bwUriSBzoM2FTV9Rv1=dYp=5H_me8VZX6vygtXEhADg@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We still need to say we're flushing if we're limit flushing to keep somebody
-from coming in and stealing our reservation.  Thanks,
+Hi Mitch, hi all,
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+thanks for your hint.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ad8786b..721efb8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4004,7 +4004,7 @@ again:
- 	 * We make the other tasks wait for the flush only when we can flush
- 	 * all things.
- 	 */
--	if (ret && flush == BTRFS_RESERVE_FLUSH_ALL) {
-+	if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
- 		flushing = true;
- 		space_info->flush = 1;
- 	}
+I used btrfs-debug-tree now.
+With -e, the output is empty. But without -e I do get a bit output file.
+When I search for Filenames that I am missing, I get:
+
+grep Sting big_output_file  |grep Berlin
+                 namelen 20 datalen 0 name: Sting_Live_in_Berlin
+                 namelen 20 datalen 0 name: Sting_Live_in_Berlin
+                 inode ref index 29 namelen 20 name: Sting_Live_in_Berlin
+
+That looks good.
+That raises two questions now: Can I restore the file?
+And: Can I do that for a whole Path (e.g. ./Video/)
+
+Greetings&Thanks!
+Hendrik
+
+
+Am 15.12.2012 23:24, schrieb Mitch Harder:
+> On Sat, Dec 15, 2012 at 1:40 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
+>> Hello Mitch, hello all,
+>>
+>>
+>>> Since btrfs has significant improvements and fixes in each kernel
+>>>
+>>> release, and since very few of these changes are backported, it is
+>>> recommended to use the latest kernels available.
+>>
+>>
+>> Ok, it's 3.7 now.
+>>
+>>
+>>> The "root ### inode ##### errors 400" are an indication that there is
+>>> an inconsistency in the inode size.  There was a patch included in the
+>>> 3.1 or 3.2 kernel to address this issue
+>>>
+>>> (http://git.kernel.org/?p=linux/kernel/git/stable/linux-stable.git;a=commit;h=f70a9a6b94af86fca069a7552ab672c31b457786).
+>>>    But I don't believe this patch fixed existing occurrences of this
+>>> error.
+>>
+>>
+>> Apparently not. It's still there.
+>>
+>>
+>>> At this point, the quickest solution for you may be to rebuild and
+>>> reformat this RAID assembly, and restore this data from backups.
+>>
+>>
+>> Yepp, I did that. But in fact, some data is missing. It is not essential,
+>> but nice to have.
+>>
+>>
+>>> If you don't have a backup of this data, and since your array seems to
+>>> be working pretty well in a degraded state, this would be a really
+>>> good time to look at a strategy of getting a backup of this data
+>>> before doing many more attempts at rescue.
+>>
+>>
+>> Done. It's all save on another ext4 drive.
+>>
+>> So, let's play ;-)
+>> Could you please help me trying to restore the missing Data?
+>>
+>> What I tried sofar was:
+>> ./btrfs-restore /dev/sdc1 /mnt/restore/
+>>
+>> It worked, in a way that it restored what I already had.
+>> What's odd aswell is, that btrfs scrub did run through without errors.
+>> So, the missing data could have been (accidentally) deleted by me. But I
+>> don't think... nevertheless I cannot exclude.
+>>
+>> What I know is the (original) Path of the Data.
+>>
+>
+> You could try btrfs-debug-tree, and search for any traces of your
+> file.  However, be ready to sift through a massive amount of output.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
+
 -- 
-1.7.7.6
-
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Mobil 0178 1874363

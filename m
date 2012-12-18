@@ -1,51 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44572 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753878Ab2LRBbP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 20:31:15 -0500
-Date: Mon, 17 Dec 2012 20:31:11 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Alexander Block <ablock84@gmail.com>
-CC: Martin =?utf-8?B?S8WZw63FvmVr?= <martin.krizek@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "lczerner@redhat.com" <lczerner@redhat.com>
-Subject: Re: Online Deduplication for Btrfs (Master's thesis)
-Message-ID: <20121218013111.GB22912@shiny>
-References: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
- <CAB9VWqCjoFGdZVx0Uup2zmvuqS2PHiQO=h2EKawH-dZiGqvfDQ@mail.gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:36867 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752253Ab2LRDQq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Dec 2012 22:16:46 -0500
+Message-ID: <50CFE17A.40502@oracle.com>
+Date: Tue, 18 Dec 2012 11:22:34 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAB9VWqCjoFGdZVx0Uup2zmvuqS2PHiQO=h2EKawH-dZiGqvfDQ@mail.gmail.com>
+To: Gene Czarcinski <gene@czarc.net>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: subvolume show
+References: <50C8CB70.4060901@czarc.net>
+In-Reply-To: <50C8CB70.4060901@czarc.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 17, 2012 at 06:33:24AM -0700, Alexander Block wrote:
-> I did some research on deduplication in the past and there are some
-> problems that you will face. I'll try to list some of them (for sure
-> not all).
 
-Thanks Alexander for writing all of this up.  There are a lot of great
-points here, but I'll summarize with:
+> This looks like a useful capability. I was trying to find out
+> what the UUID was for a newly created subvolume and have not
+> found out how to do that.
 
-[ many challenges to online dedup ]
+  btrfs subvol list -u /mnt
 
-[ offline dedup is the best way ]
+  should help ?
 
-So, the big problem with offline dedup is you're suddenly read bound.  I
-don't disagree that offline makes a lot of the dedup problems easier,
-and Alexander describes a very interesting system here.
+  btrfs subvol show <subvol> is quite useful indeed we should
+  consider to have it in git.
 
-I've tried to avoid features that rely on scanning though, just because
-idle disk time may not really exist.  But with scrub, we have the scan
-as a feature, and it may make a lot of sense to leverage that.
+-Anand
 
-online dedup has a different set of tradeoffs, but as Alexander says the
-hard part really is the data structure to index the hashes.  I think
-there are a few different options here, including changing the file
-extent pointers to point to a sha instead of a logical disk offset.
 
-So, part of my answer really depends on where you want to go with your
-thesis.  I expect the data structure work for efficient hash lookup is
-going to be closer to what your course work requires?
-
--chris
+On 13/12/2012 02:22, Gene Czarcinski wrote:
+> I was looking through some of the archives and notice a patch submitted
+> to implement:
+> btrfs subvolume show <path-to-subvolume>
+> command.
+>
+> I also noticed that is does not appear to be in the git.
+>
+> This looks like a useful capability. I was trying to find out what the
+> UUID was for a newly created subvolume and have not found out how to do
+> that.
+>
+> Gene
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html

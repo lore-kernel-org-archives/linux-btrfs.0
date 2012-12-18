@@ -1,51 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36867 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752253Ab2LRDQq (ORCPT
+Received: from mail-oa0-f44.google.com ([209.85.219.44]:53366 "EHLO
+	mail-oa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752839Ab2LREw3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Dec 2012 22:16:46 -0500
-Message-ID: <50CFE17A.40502@oracle.com>
-Date: Tue, 18 Dec 2012 11:22:34 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 17 Dec 2012 23:52:29 -0500
+Received: by mail-oa0-f44.google.com with SMTP id n5so182775oag.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2012 20:52:28 -0800 (PST)
 MIME-Version: 1.0
-To: Gene Czarcinski <gene@czarc.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: subvolume show
-References: <50C8CB70.4060901@czarc.net>
-In-Reply-To: <50C8CB70.4060901@czarc.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Date: Tue, 18 Dec 2012 09:54:23 +0530
+Message-ID: <CAOeZVifRT=63Md+03bu9Fj8a9+p+c32_J-FRH5uZdiv6n=zNXw@mail.gmail.com>
+Subject: BTree lock contention
+From: Atri Sharma <atri.jiit@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi All,
 
-> This looks like a useful capability. I was trying to find out
-> what the UUID was for a newly created subvolume and have not
-> found out how to do that.
+I was looking through the project ideas page for picking up a project
+do start working with BTRFS. I am really interested in Btree lock
+contention project, but it seems to be marked that it has already been
+done in v3.1
 
-  btrfs subvol list -u /mnt
+Is the project still open? Can I work on it?
 
-  should help ?
+Regards,
 
-  btrfs subvol show <subvol> is quite useful indeed we should
-  consider to have it in git.
+Atri
 
--Anand
+--
+Regards,
 
-
-On 13/12/2012 02:22, Gene Czarcinski wrote:
-> I was looking through some of the archives and notice a patch submitted
-> to implement:
-> btrfs subvolume show <path-to-subvolume>
-> command.
->
-> I also noticed that is does not appear to be in the git.
->
-> This looks like a useful capability. I was trying to find out what the
-> UUID was for a newly created subvolume and have not found out how to do
-> that.
->
-> Gene
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+Atri
+l'apprenant

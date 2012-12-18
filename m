@@ -1,61 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f53.google.com ([209.85.219.53]:64175 "EHLO
-	mail-oa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754842Ab2LRONw (ORCPT
+Received: from cahost.average.org ([72.55.133.117]:35339 "EHLO
+	cahost.average.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754906Ab2LROZS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Dec 2012 09:13:52 -0500
-Received: by mail-oa0-f53.google.com with SMTP id j6so648369oag.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2012 06:13:51 -0800 (PST)
+	Tue, 18 Dec 2012 09:25:18 -0500
+Received: from [IPv6:2001:470:1f09:520:28c6:f500:82a3:b8b5] ([IPv6:2001:470:1f09:520:28c6:f500:82a3:b8b5])
+	(authenticated bits=0)
+	by cahost.average.org (8.14.3/8.14.3/Debian-9.4) with ESMTP id qBIEC7ge024988
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2012 18:12:10 +0400
+Message-ID: <50D079AB.2030805@average.org>
+Date: Tue, 18 Dec 2012 18:11:55 +0400
+From: Eugene Crosser <crosser@average.org>
 MIME-Version: 1.0
-In-Reply-To: <20121218140409.GD2403@localhost.localdomain>
-References: <CAOeZVifRT=63Md+03bu9Fj8a9+p+c32_J-FRH5uZdiv6n=zNXw@mail.gmail.com>
-	<20121218140409.GD2403@localhost.localdomain>
-Date: Tue, 18 Dec 2012 19:43:51 +0530
-Message-ID: <CAOeZVidsxcR16t3v6OKU6fAJbB_S64sbQM1CyL2D_t_CtE1ajg@mail.gmail.com>
-Subject: Re: BTree lock contention
-From: Atri Sharma <atri.jiit@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs in the kernel 2.6.31
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigBE02E677CF288E17BBE95A78"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigBE02E677CF288E17BBE95A78
+Content-Type: text/plain; charset=KOI8-R
+Content-Transfer-Encoding: quoted-printable
 
-I shall mark it as in progress then.
+Hello all,
 
-For writer's contention, I was thinking of decreasing the lock
-granularity. I have not really thought about it deeply yet, but my
-initial plans are to identify areas where we can distribute the locks,
-and maybe use techniques such as combining trees.
+sorry for a user-level question,
 
-Thanks a ton,
+I have a board based on PLX7821 aka OX820 ARM SoC. It is not supported in=
+ the
+mainline kernel; the vendor supplied the source of the kernel 2.6.31 with=
 
-Atri
+necessary updates for this platform, and it works. I understand that ther=
+e have
+been no successful attempts to bring support of this platform to newer ke=
+rnels.
 
-On Tue, Dec 18, 2012 at 7:34 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Mon, Dec 17, 2012 at 09:24:23PM -0700, Atri Sharma wrote:
->> Hi All,
->>
->> I was looking through the project ideas page for picking up a project
->> do start working with BTRFS. I am really interested in Btree lock
->> contention project, but it seems to be marked that it has already been
->> done in v3.1
->>
->> Is the project still open? Can I work on it?
->>
->
-> Go for it, we still have plenty of lock contention, it's just in 3.1 we switched
-> to a read/write lock which helped a bunch.  Still if you have all writers you
-> are going to hit quite a bit of lock contention, especially on the root nodes.
-> If you have ideas go for it.  Thanks,
->
-> Josef
+I would like to use btrfs on this system, but it is labelled "experimenta=
+l" in
+the kernel. My question is: is it "safe" to use btrfs as it is in 2.6.31?=
+ In
+other words, where there "data destroying" bugs found and fixed since the=
+n? If
+the answer is yes, then is it possible (and how difficult) to compile new=
+er
+btrfs code against this kernel, or backport the fixes?
+
+Thanks,
+
+Eugene
 
 
+--------------enigBE02E677CF288E17BBE95A78
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Regards,
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with undefined - http://www.enigmail.net/
 
-Atri
-l'apprenant
+iD8DBQFQ0Hmyfrw/cIw6UWkRAsAIAKCw7B6SMQqV962sW6dxfPOOXMlR4gCfazvl
+wD5tOe+kqhfrcaYReXKJyOQ=
+=5bws
+-----END PGP SIGNATURE-----
+
+--------------enigBE02E677CF288E17BBE95A78--

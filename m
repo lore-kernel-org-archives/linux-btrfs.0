@@ -1,86 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1393 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:34192 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753278Ab2LSB6H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Dec 2012 20:58:07 -0500
-Message-ID: <50D11F49.4070005@cn.fujitsu.com>
-Date: Wed, 19 Dec 2012 09:58:33 +0800
+	id S1751110Ab2LSG6g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Dec 2012 01:58:36 -0500
+Message-ID: <50D165B7.9060300@cn.fujitsu.com>
+Date: Wed, 19 Dec 2012 14:59:03 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fusionio.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: don't bother updating the inode when evicting
+Subject: [PATCH 1/2] Btrfs: cleanup similar code in delayed inode
 References: <1355863917-16932-1-git-send-email-jbacik@fusionio.com>
 In-Reply-To: <1355863917-16932-1-git-send-email-jbacik@fusionio.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tue, 18 Dec 2012 15:51:57 -0500, Josef Bacik wrote:
-> We're deleting the stupid thing, no sense in updating the inode for the new
-> size.  We're running into having 50-100 orphans left over with xfstests 83
-> because of ENOSPC when trying to start the transaction for the inode update.
-> This patch fixes this problem.  Thanks,
+The delayed item commit code in several functions is similar, so
+cleanup it.
 
-This patch is wrong, it will introduce the inconsonant metadata in the snapshot
-tree. The reason is folloing:
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/delayed-inode.c | 83 +++++++++++++++++++++---------------------------
+ 1 file changed, 37 insertions(+), 46 deletions(-)
 
-commit 8407aa464331556e4f6784f974030b83fc7585ed
-Author: Miao Xie <miaox@cn.fujitsu.com>
-Date:   Fri Sep 7 01:43:32 2012 -0600
-
-    Btrfs: fix corrupted metadata in the snapshot
-    
-    When we delete a inode, we will remove all the delayed items including delayed
-    inode update, and then truncate all the relative metadata. If there is lots of
-    metadata, we will end the current transaction, and start a new transaction to
-    truncate the left metadata. In this way, we will leave a inode item that its
-    link counter is > 0, and also may leave some directory index items in fs/file tree
-    after the current transaction ends. In other words, the metadata in this fs/file tree
-    is inconsistent. If we create a snapshot for this tree now, we will find a inode with
-    corrupted metadata in the new snapshot, and we won't continue to drop the left metadata,
-    because its link counter is not 0.
-    
-    We fix this problem by updating the inode item before the current transaction ends.
-    
-    Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-
-
-I will write a new patch to fix the problem you said above.
-
-Thanks
-Miao
-
-> 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/inode.c |    6 +-----
->  1 files changed, 1 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index f33269a..ac7f471 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -3898,7 +3898,7 @@ void btrfs_evict_inode(struct inode *inode)
->  			goto no_delete;
->  		}
->  
-> -		trans = btrfs_start_transaction_lflush(root, 1);
-> +		trans = btrfs_join_transaction(root);
->  		if (IS_ERR(trans)) {
->  			btrfs_orphan_del(NULL, inode);
->  			btrfs_free_block_rsv(root, rsv);
-> @@ -3911,10 +3911,6 @@ void btrfs_evict_inode(struct inode *inode)
->  		if (ret != -ENOSPC)
->  			break;
->  
-> -		trans->block_rsv = &root->fs_info->trans_block_rsv;
-> -		ret = btrfs_update_inode(trans, root, inode);
-> -		BUG_ON(ret);
-> -
->  		btrfs_end_transaction(trans, root);
->  		trans = NULL;
->  		btrfs_btree_balance_dirty(root);
-> 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 3483603..4e204bb 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1110,6 +1110,25 @@ static int btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
+ 
++static inline int
++__btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
++				   struct btrfs_path *path,
++				   struct btrfs_delayed_node *node)
++{
++	int ret;
++
++	ret = btrfs_insert_delayed_items(trans, path, node->root, node);
++	if (ret)
++		return ret;
++
++	ret = btrfs_delete_delayed_items(trans, path, node->root, node);
++	if (ret)
++		return ret;
++
++	ret = btrfs_update_delayed_inode(trans, node->root, path, node);
++	return ret;
++}
++
+ /*
+  * Called when committing the transaction.
+  * Returns 0 on success.
+@@ -1119,7 +1138,6 @@ static int btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root, int nr)
+ {
+-	struct btrfs_root *curr_root = root;
+ 	struct btrfs_delayed_root *delayed_root;
+ 	struct btrfs_delayed_node *curr_node, *prev_node;
+ 	struct btrfs_path *path;
+@@ -1142,15 +1160,8 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 
+ 	curr_node = btrfs_first_delayed_node(delayed_root);
+ 	while (curr_node && (!count || (count && nr--))) {
+-		curr_root = curr_node->root;
+-		ret = btrfs_insert_delayed_items(trans, path, curr_root,
+-						 curr_node);
+-		if (!ret)
+-			ret = btrfs_delete_delayed_items(trans, path,
+-						curr_root, curr_node);
+-		if (!ret)
+-			ret = btrfs_update_delayed_inode(trans, curr_root,
+-						path, curr_node);
++		ret = __btrfs_commit_inode_delayed_items(trans, path,
++							 curr_node);
+ 		if (ret) {
+ 			btrfs_release_delayed_node(curr_node);
+ 			curr_node = NULL;
+@@ -1183,36 +1194,12 @@ int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans,
+ 	return __btrfs_run_delayed_items(trans, root, nr);
+ }
+ 
+-static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+-					      struct btrfs_delayed_node *node)
+-{
+-	struct btrfs_path *path;
+-	struct btrfs_block_rsv *block_rsv;
+-	int ret;
+-
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-	path->leave_spinning = 1;
+-
+-	block_rsv = trans->block_rsv;
+-	trans->block_rsv = &node->root->fs_info->delayed_block_rsv;
+-
+-	ret = btrfs_insert_delayed_items(trans, path, node->root, node);
+-	if (!ret)
+-		ret = btrfs_delete_delayed_items(trans, path, node->root, node);
+-	if (!ret)
+-		ret = btrfs_update_delayed_inode(trans, node->root, path, node);
+-	btrfs_free_path(path);
+-
+-	trans->block_rsv = block_rsv;
+-	return ret;
+-}
+-
+ int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode)
+ {
+ 	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
++	struct btrfs_path *path;
++	struct btrfs_block_rsv *block_rsv;
+ 	int ret;
+ 
+ 	if (!delayed_node)
+@@ -1226,8 +1213,20 @@ int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+ 	}
+ 	mutex_unlock(&delayed_node->mutex);
+ 
+-	ret = __btrfs_commit_inode_delayed_items(trans, delayed_node);
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->leave_spinning = 1;
++
++	block_rsv = trans->block_rsv;
++	trans->block_rsv = &delayed_node->root->fs_info->delayed_block_rsv;
++
++	ret = __btrfs_commit_inode_delayed_items(trans, path, delayed_node);
++
+ 	btrfs_release_delayed_node(delayed_node);
++	btrfs_free_path(path);
++	trans->block_rsv = block_rsv;
++
+ 	return ret;
+ }
+ 
+@@ -1258,7 +1257,6 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
+ 	struct btrfs_root *root;
+ 	struct btrfs_block_rsv *block_rsv;
+ 	int need_requeue = 0;
+-	int ret;
+ 
+ 	async_node = container_of(work, struct btrfs_async_delayed_node, work);
+ 
+@@ -1277,14 +1275,7 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
+ 	block_rsv = trans->block_rsv;
+ 	trans->block_rsv = &root->fs_info->delayed_block_rsv;
+ 
+-	ret = btrfs_insert_delayed_items(trans, path, root, delayed_node);
+-	if (!ret)
+-		ret = btrfs_delete_delayed_items(trans, path, root,
+-						 delayed_node);
+-
+-	if (!ret)
+-		btrfs_update_delayed_inode(trans, root, path, delayed_node);
+-
++	__btrfs_commit_inode_delayed_items(trans, path, delayed_node);
+ 	/*
+ 	 * Maybe new delayed items have been inserted, so we need requeue
+ 	 * the work. Besides that, we must dequeue the empty delayed nodes
+-- 
+1.7.11.7
 

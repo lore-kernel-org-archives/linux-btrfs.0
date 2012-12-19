@@ -1,81 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f45.google.com ([209.85.214.45]:49467 "EHLO
-	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751296Ab2LSLIm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Dec 2012 06:08:42 -0500
-Received: by mail-bk0-f45.google.com with SMTP id jk13so868044bkc.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Dec 2012 03:08:41 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:36408 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750987Ab2LSLZK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Dec 2012 06:25:10 -0500
+Message-ID: <50D1A430.607@cn.fujitsu.com>
+Date: Wed, 19 Dec 2012 19:25:36 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <20121218121311.GL19051@carfax.org.uk>
-References: <kanf24$o8e$1@news.dmz-ext.fr.lan> <20121217162350.GJ19051@carfax.org.uk>
- <50D05174.4060109@swiftspirit.co.za> <20121218121311.GL19051@carfax.org.uk>
-From: C Anthony Risinger <anthony@xtfx.me>
-Date: Wed, 19 Dec 2012 05:01:22 -0600
-Message-ID: <CAGAVQTHrzavOaQfgb_P6_BPdJo28SBPtmDrWKT3To2dJwcRV7A@mail.gmail.com>
-Subject: Re: Feeback on RAID1 feature of Btrfs
-To: Hugo Mills <hugo@carfax.org.uk>, Brendan Hide <brendan@swiftspirit.co.za>,
-        Sebastien Luttringer <sebastien.luttringer@smartjog.com>,
-        linux-btrfs@vger.kernel.org
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Arne Jansen <sensille@gmx.net>, wangshilong <wangsl-fnst@cn.fujitsu.com>
+Subject: About btrfs qgroup import/export command
+References: <50D1632E.6010801@cn.fujitsu.com>
+In-Reply-To: <50D1632E.6010801@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 18, 2012 at 6:13 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Dec 18, 2012 at 01:20:20PM +0200, Brendan Hide wrote:
->> On 2012/12/17 06:23 PM, Hugo Mills wrote:
->> >On Mon, Dec 17, 2012 at 04:51:33PM +0100, Sebastien Luttringer wrote:
->> >>Hello,
->> snip
->> >>I get the feeling that RAID1 only allow one disk removing. Which is more
->> >>a RAID5 feature.
->> >    The RAID-1 support in btrfs makes exactly two copies of each item
->> >of data, so you can lose at most one disk from the array safely. Lose
->> >any more, and you're likely to have lost data, as you've found out.
->> >>I'm afraid Btrfs raid1 will not be working before the end of the world.
->> >    It does work (as you demonstrated with the first disk being
->> >removed) -- but just not as you thought it should. Now, you can argue
->> >that "RAID-1" isn't a good name to use here, but there's no good name
->> >in RAID terminology to describe what we actually have here.
->> Technically, btrfs's "RAID1" implementation is much closer to RAID1E
->> than traditional RAID1. See
->> http://en.wikipedia.org/wiki/Non-standard_RAID_levels#RAID_1E or http://pic.dhe.ibm.com/infocenter/director/v5r2/index.jsp?topic=/serveraid_9.00/fqy0_craid1e.html
->>
->> Perhaps a new name, as with ZFS, might be appropriate. RAID-Z and
->> RAID-Z2, for example, could not adequately be described by any
->> existing RAID terminology and, technically, RAID-Z still isn't a
->> RAID in the classical sense.
->
->    Yeah, we did have a naming scheme proposed, with combinations of
-> nCmSpP, where n is the number of copies held, m the number of stripes,
-> and p the number of parity stripes. So btrfs RAID-1 is 2C, RAID-5 on 5
-> disks would be 4S1P, and RAID-10 on 4 disks would be 2C2S.
+Hi, everyone.
 
-...yes.  something like this is not only reflects reality better,, and
-actually transfers information in consistent way (vs RAID-XYZ...
-meaningless ENUM!) you could maybe do something like:
+As we know, there is no backup function for qgroup. when the problem
+occurs, the users must recover qgroup configuration manually, it is not
+convenient. And besides that, some users might want to import an existed
+qgroup configuration into a new filesystem. Btrfs does not have such a
+function,it can only be done manually.
 
-2C2S : -1S : 0
+So we want to implement btrfs qgroup import/export commands.
+1)'btrfs qgroup export' commands will export qgroup tree
+  into a user's specified file.(stdout by default)
 
-...or similar, showing:
+2)user may modify the configuration file firstly and then
+  import it into the filesystem.(by 'btrfs qgroup import' command)
 
-{normal}
-{OFFSET max degraded [rel boundary]}
-{OFFSET current}
+The file may be formated as the following:
 
-... which instantly makes the useful boundaries known, along with the
-active "panic level" i should be experiencing :)
+Qgroupid     is_compressed     is_exclusive   limited_size    parent
+----------------------------------------------------------------------
+ 0/1            0                 0              10G            1/0
+ 1/0            1                 1              20G            ---
+  
+ If 'is_exclusive' is set, 'limited_size' corresponds to max exlusive size,
+ else max referenced size. Here 'parent' exclude ancestral qgroups. 
 
-> I'd prefer
-> to see that than some non-"standard" RAID-18KTHXBYE formulation.
+Is there any comment about this idea? 
 
-^^^ this. the term "RAID" conjures expectations that run afoul of
-btrfs's reality and should thus simply be avoided altogether
+Thanks
+Miao
 
-IMO, unless you wish/must explicitly correlate some similarity X,
-there is no need to even mention the work RAID, because it carries no
-information.
 
--- 
 
-C Anthony
+
+
+
+
+

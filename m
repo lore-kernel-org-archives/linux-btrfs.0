@@ -1,56 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:46563 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751456Ab2LSPRk (ORCPT
+Received: from m199-177.yeah.net ([123.58.177.199]:46398 "EHLO
+	m199-177.yeah.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751456Ab2LSPWO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Dec 2012 10:17:40 -0500
-Received: by mail-ob0-f181.google.com with SMTP id oi10so2105229obb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Dec 2012 07:17:39 -0800 (PST)
+	Wed, 19 Dec 2012 10:22:14 -0500
+Received: from mail-la0-f48.google.com (mail-la0-f48.google.com [209.85.215.48])
+	by m199-177.yeah.net (HMail) with ESMTPA id 0D09510023A
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Dec 2012 23:12:44 +0800 (CST)
+Received: by mail-la0-f48.google.com with SMTP id m13so1546684lah.35
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Dec 2012 07:12:42 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20121219150900.GN14116@twin.jikos.cz>
-References: <CAOeZVifRT=63Md+03bu9Fj8a9+p+c32_J-FRH5uZdiv6n=zNXw@mail.gmail.com>
-	<20121218140409.GD2403@localhost.localdomain>
-	<CAOeZVidsxcR16t3v6OKU6fAJbB_S64sbQM1CyL2D_t_CtE1ajg@mail.gmail.com>
-	<CAOeZVie7_K-cc1bdgOjvKjOwC8et4=Vr2=GyKMmAHaL3mcRxXA@mail.gmail.com>
-	<20121219131706.GJ14116@twin.jikos.cz>
-	<CAOeZVieMzxy-mompe1qb185o7MAftUYu0+3WWd-aNEhG_io=iQ@mail.gmail.com>
-	<CAOeZVie9_TNEt-oExMwjqf0dqchZLyirMvO7c5u8d1X3FF7oYA@mail.gmail.com>
-	<20121219150900.GN14116@twin.jikos.cz>
-Date: Wed, 19 Dec 2012 20:47:38 +0530
-Message-ID: <CAOeZVidtZGOFZpivC_qs6ww=+WccLOf1DLBt7j8C3MUx-udGUA@mail.gmail.com>
-Subject: Re: BTree lock contention
-From: Atri Sharma <atri.jiit@gmail.com>
-To: dsterba@suse.cz
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Rock Lee <zimilo@code-trick.com>
+Date: Wed, 19 Dec 2012 23:12:01 +0800
+Message-ID: <CAMRmmp+=YT_-KdGHRWo5GrofiSnkZB_xVpN1Z8Jp4xgo0fVS3A@mail.gmail.com>
+Subject: HIT WARN_ON WARNING: at fs/btrfs/extent-tree.c:6339
+ btrfs_alloc_free_block+0x126/0x330 [btrfs]()
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks a ton David. Now it is there.
+Hi all,
 
-Regards,
+    Did someone have met this problem before. When doing the tests, I hit
 
-Atri
+the WARN_ON. Is this log make sense or someone had fixed the problem.
 
-On Wed, Dec 19, 2012 at 8:39 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Dec 19, 2012 at 08:34:08PM +0530, Atri Sharma wrote:
->> Sorry for bothering again, but I cant see Btree Lock contention marked
->> as in progress or my name anywhere on
->> https://btrfs.wiki.kernel.org/index.php/Project_ideas
->>
->> Could you please check?
->
-> I don't know what happened to the edit, but I'm sure I moved the 'lock
-> contention' under 'claimed projects' with your name added. Now it's
-> there.
->
-> david
+ If needed, I can supply the detail log and the testcase source file.
+
+ Version: the latest codes at linus git tree.
 
 
+[ 2140.981293] use_block_rsv: 336 callbacks suppressed
+[ 2140.981295] ------------[ cut here ]------------
+[ 2140.981308] WARNING: at fs/btrfs/extent-tree.c:6339
+btrfs_alloc_free_block+0x126/0x330 [btrfs]()
+[ 2140.981309] Hardware name: 2356BG6
+...
 
--- 
-Regards,
+[ 2140.981568] ------------[ cut here ]------------
+[ 2140.981574] WARNING: at fs/btrfs/extent-tree.c:6339
+btrfs_alloc_free_block+0x126/0x330 [btrfs]()
+[ 2140.981574] Hardware name: 2356BG6
+[ 2140.981575] btrfs: block rsv returned -28
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+                                     Always this value.
 
-Atri
-l'apprenant

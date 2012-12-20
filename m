@@ -1,32 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:44954 "EHLO mx1.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:57454 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751281Ab2LTPA7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Dec 2012 10:00:59 -0500
-Date: Thu, 20 Dec 2012 10:00:56 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Steve Leung <sjleung@shaw.ca>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs warning in 3.7.0 with nfsd
-Message-ID: <20121220150056.GB15740@shiny>
-References: <alpine.DEB.2.02.1212192204390.6456@cubia>
+	id S1750956Ab2LTQeM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Dec 2012 11:34:12 -0500
+Date: Thu, 20 Dec 2012 11:34:08 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Rock Lee <zimilo@code-trick.com>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: HIT WARN_ON WARNING: at fs/btrfs/extent-tree.c:6339
+ btrfs_alloc_free_block+0x126/0x330 [btrfs]()
+Message-ID: <20121220163408.GE4033@localhost.localdomain>
+References: <CAMRmmp+=YT_-KdGHRWo5GrofiSnkZB_xVpN1Z8Jp4xgo0fVS3A@mail.gmail.com>
+ <20121219152925.GC4033@localhost.localdomain>
+ <CAMRmmp+gqw11a32GV=X1VGKvJWGRO0PXk-13fMyEmWyKgCkngg@mail.gmail.com>
+ <CAMRmmpKMxjjRShPY=VTJ+29eVY_hu-PTVAFsmhKpx1wRBi0akQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <alpine.DEB.2.02.1212192204390.6456@cubia>
+In-Reply-To: <CAMRmmpKMxjjRShPY=VTJ+29eVY_hu-PTVAFsmhKpx1wRBi0akQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 19, 2012 at 10:43:28PM -0700, Steve Leung wrote:
+On Thu, Dec 20, 2012 at 07:46:12AM -0700, Rock Lee wrote:
+> Is there anyone who are tracking this issue?
 > 
-> I'm getting some kernel warnings from a btrfs raid1 filesystem that's 
-> serving up nfs4 to a couple of other computers on a small home network. 
-> I ran 3.6.x for several weeks before upgrading and didn't see any warnings 
-> like this.
-> 
-> [ 1712.223791] WARNING: at fs/btrfs/tree-log.c:3716 btrfs_log_inode_parent+0x291/0x2fd [btrfs]()
 
-I think this one is an EEXIST while we're logging a directory.  It
-should be ok, but I've only been able to trigger it once or twice.  I'll
-try with NFS.
+Yeah I'm working on it now.  It's a problem I've known about for a while but
+haven't had a good reproducer or a good idea of how to fix it, but now it has my
+full attention, hopefully I'll have something today or tomorrow.  Thanks,
 
--chris
+Josef

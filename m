@@ -1,41 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f54.google.com ([74.125.83.54]:42539 "EHLO
-	mail-ee0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751136Ab2LUSto convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Dec 2012 13:49:44 -0500
-Received: by mail-ee0-f54.google.com with SMTP id c13so2542658eek.27
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Dec 2012 10:49:43 -0800 (PST)
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: add, remove; how about merge?
-From: Remco Hosman - Yerf IT <remco@yerf-it.nl>
-In-Reply-To: <50D4A79B.6010008@czarc.net>
-Date: Fri, 21 Dec 2012 19:18:04 +0100
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <08354545-7E01-4EB2-AF90-D1CF900C69E2@yerf-it.nl>
-References: <50D4A79B.6010008@czarc.net>
-To: Gene Czarcinski <gene@czarc.net>
+Received: from mx1.fusionio.com ([66.114.96.30]:39117 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751738Ab2LUUzv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Dec 2012 15:55:51 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id AjFpPgL1TueFc2GC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 21 Dec 2012 13:55:49 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: overwrite existing csums when logging
+Date: Fri, 21 Dec 2012 16:02:10 -0500
+Message-ID: <1356123730-19510-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think thats possible with btrfs-send/receive
+Users were complaining about the warning in btrfs_log_parent_inode() because
+we're returning -EEXIST.  This warning is gone in another patch but it's
+still making us commit a transaction when we don't have to.  Basically
+because we will log all csums in an ordered extent for an em we have the
+chance of logging the same csums multiple times.  Since it's not that big of
+a deal just allow csums to be over written in logs and that way we are safe.
+This gets rid of the EEXIST and we log like we normally would.  Thanks,
 
-Remco
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/file-item.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-On Dec 21, 2012, at 7:16 PM, Gene Czarcinski <gene@czarc.net> wrote:
-
-> I am new at this btrfs stuff!
-> 
-> As I understand it, you can add a physical disk or partition and have data spread into the new space.  You can also move data off a disk or partition and then remove it.
-> 
-> Has any though  been given to being able merge to existing (separate) btrfs "volumes" into a single volume?
-> 
-> Alternatively, how about at tool for transfering a subvolume from one pool to another?  I tried using fsarchiver but that did not work out too well.
-> 
-> Gene
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index bd38cef..93ddc2e 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -835,6 +835,13 @@ insert:
+ 	ret = btrfs_insert_empty_item(trans, root, path, &file_key,
+ 				      ins_size);
+ 	path->leave_spinning = 0;
++
++	/*
++	 * We can sometimes already have copied a csum into the log, that's ok
++	 * just overwrite it.
++	 */
++	if (root->objectid == BTRFS_TREE_LOG_OBJECTID && ret == -EEXIST)
++		ret = 0;
+ 	if (ret < 0)
+ 		goto fail_unlock;
+ 	if (ret != 0) {
+-- 
+1.7.7.6
 

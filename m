@@ -1,104 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6365 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:30491 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751386Ab2LTL65 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Dec 2012 06:58:57 -0500
+	id S1751511Ab2LUJRR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Dec 2012 04:17:17 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qBKBJhvh016350
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2012 19:19:44 +0800
-Message-ID: <50D2F42D.7070600@cn.fujitsu.com>
-Date: Thu, 20 Dec 2012 19:19:09 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qBL9IvYT026252
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Dec 2012 17:18:57 +0800
+Message-ID: <50D42939.7010306@cn.fujitsu.com>
+Date: Fri, 21 Dec 2012 17:17:45 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RESEND 1/3] Btrfs: flush all dirty inodes if writeback can
- not start
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH v2 2/3] Btrfs: use wrapper page_offset
+References: <50D2F45E.2060305@cn.fujitsu.com> <20121220193319.GB9195@lenny.home.zabbo.net>
+In-Reply-To: <20121220193319.GB9195@lenny.home.zabbo.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Miao Xie <miaox@cn.fujitsu.com>
+Use wrapper page_offset to get byte-offset into filesystem object for page.
 
-We may try to flush some dirty pages when there is no enough space to reserve.
-But it is possible that this operation fails, in order to get enough space to
-reserve successfully, we will sync all the delalloc file. This operation is
-safe, we needn't worry about the case that the filesystem goes from r/w to r/o.
-because the filesystem should guarantee all the dirty pages have been written
-into the disk after it becomes readonly, so the sync operation will do nothing
-if the filesystem is already readonly. Though it may waste lots of time,
-as a corner case, we needn't care.
-
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 40 +++++++++++++++++++++++++++++++---------
- 1 file changed, 31 insertions(+), 9 deletions(-)
+ fs/btrfs/disk-io.c    |  2 +-
+ fs/btrfs/extent_io.c  | 24 +++++++++++-------------
+ fs/btrfs/inode.c      |  5 ++---
+ fs/btrfs/relocation.c |  2 +-
+ 4 files changed, 15 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d133edf..44a0b58 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3689,12 +3689,15 @@ static int can_overcommit(struct btrfs_root *root,
- 	return 0;
- }
- 
--static int writeback_inodes_sb_nr_if_idle_safe(struct super_block *sb,
--					       unsigned long nr_pages,
--					       enum wb_reason reason)
-+static inline int writeback_inodes_sb_nr_if_idle_safe(struct super_block *sb,
-+						      unsigned long nr_pages,
-+						      enum wb_reason reason)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65f0367..e045203 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -420,7 +420,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+ static int csum_dirty_buffer(struct btrfs_root *root, struct page *page)
  {
--	if (!writeback_in_progress(sb->s_bdi) &&
--	    down_read_trylock(&sb->s_umount)) {
-+	/* the flusher is dealing with the dirty inodes now. */
-+	if (writeback_in_progress(sb->s_bdi))
-+		return 1;
-+
-+	if (down_read_trylock(&sb->s_umount)) {
- 		writeback_inodes_sb_nr(sb, nr_pages, reason);
- 		up_read(&sb->s_umount);
- 		return 1;
-@@ -3703,6 +3706,28 @@ static int writeback_inodes_sb_nr_if_idle_safe(struct super_block *sb,
- 	return 0;
- }
+ 	struct extent_io_tree *tree;
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 found_start;
+ 	struct extent_buffer *eb;
  
-+void btrfs_writeback_inodes_sb_nr(struct btrfs_root *root,
-+				  unsigned long nr_pages)
-+{
-+	struct super_block *sb = root->fs_info->sb;
-+	int started;
-+
-+	/* If we can not start writeback, just sync all the delalloc file. */
-+	started = writeback_inodes_sb_nr_if_idle_safe(sb, nr_pages,
-+						      WB_REASON_FS_FREE_SPACE);
-+	if (!started) {
-+		/*
-+		 * We needn't worry the filesystem going from r/w to r/o though
-+		 * we don't acquire ->s_umount mutex, because the filesystem
-+		 * should guarantee the delalloc inodes list be empty after
-+		 * the filesystem is readonly(all dirty pages are written to
-+		 * the disk).
-+		 */
-+		btrfs_start_delalloc_inodes(root, 0);
-+		btrfs_wait_ordered_extents(root, 0);
-+	}
-+}
-+
- /*
-  * shrink metadata reservation for delalloc
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1b319df..bda36fe 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1834,7 +1834,7 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
   */
-@@ -3735,10 +3760,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 	while (delalloc_bytes && loops < 3) {
- 		max_reclaim = min(delalloc_bytes, to_reclaim);
- 		nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
--		writeback_inodes_sb_nr_if_idle_safe(root->fs_info->sb,
--						    nr_pages,
--						    WB_REASON_FS_FREE_SPACE);
--
-+		btrfs_writeback_inodes_sb_nr(root, nr_pages);
+ static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
+ {
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, NULL))
+ 		SetPageUptodate(page);
+@@ -1846,7 +1846,7 @@ static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
+  */
+ static void check_page_locked(struct extent_io_tree *tree, struct page *page)
+ {
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL))
+ 		unlock_page(page);
+@@ -1960,7 +1960,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
+ 		return -EIO;
+ 	}
+ 	bio->bi_bdev = dev->bdev;
+-	bio_add_page(bio, page, length, start-page_offset(page));
++	bio_add_page(bio, page, length, start - page_offset(page));
+ 	btrfsic_submit_bio(WRITE_SYNC, bio);
+ 	wait_for_completion(&compl);
+ 
+@@ -2293,8 +2293,7 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 		struct page *page = bvec->bv_page;
+ 		tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+-		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
+-			 bvec->bv_offset;
++		start = page_offset(page) + bvec->bv_offset;
+ 		end = start + bvec->bv_len - 1;
+ 
+ 		if (bvec->bv_offset == 0 && bvec->bv_len == PAGE_CACHE_SIZE)
+@@ -2353,8 +2352,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			 (long int)bio->bi_bdev);
+ 		tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+-		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
+-			bvec->bv_offset;
++		start = page_offset(page) + bvec->bv_offset;
+ 		end = start + bvec->bv_len - 1;
+ 
+ 		if (bvec->bv_offset == 0 && bvec->bv_len == PAGE_CACHE_SIZE)
+@@ -2471,7 +2469,7 @@ static int __must_check submit_one_bio(int rw, struct bio *bio,
+ 	struct extent_io_tree *tree = bio->bi_private;
+ 	u64 start;
+ 
+-	start = ((u64)page->index << PAGE_CACHE_SHIFT) + bvec->bv_offset;
++	start = page_offset(page) + bvec->bv_offset;
+ 
+ 	bio->bi_private = NULL;
+ 
+@@ -2595,7 +2593,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
+ 				   unsigned long *bio_flags)
+ {
+ 	struct inode *inode = page->mapping->host;
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
+ 	u64 end;
+ 	u64 cur = start;
+@@ -2806,7 +2804,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 	struct inode *inode = page->mapping->host;
+ 	struct extent_page_data *epd = data;
+ 	struct extent_io_tree *tree = epd->tree;
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 delalloc_start;
+ 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
+ 	u64 end;
+@@ -3674,7 +3672,7 @@ int extent_invalidatepage(struct extent_io_tree *tree,
+ 			  struct page *page, unsigned long offset)
+ {
+ 	struct extent_state *cached_state = NULL;
+-	u64 start = ((u64)page->index << PAGE_CACHE_SHIFT);
++	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 	size_t blocksize = page->mapping->host->i_sb->s_blocksize;
+ 
+@@ -3700,7 +3698,7 @@ int try_release_extent_state(struct extent_map_tree *map,
+ 			     struct extent_io_tree *tree, struct page *page,
+ 			     gfp_t mask)
+ {
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 	int ret = 1;
+ 
+@@ -3739,7 +3737,7 @@ int try_release_extent_mapping(struct extent_map_tree *map,
+ 			       gfp_t mask)
+ {
+ 	struct extent_map *em;
+-	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
++	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 
+ 	if ((mask & __GFP_WAIT) &&
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 67ed24a..0eea4f8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2062,7 +2062,7 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
+ static int btrfs_readpage_end_io_hook(struct page *page, u64 start, u64 end,
+ 			       struct extent_state *state, int mirror)
+ {
+-	size_t offset = start - ((u64)page->index << PAGE_CACHE_SHIFT);
++	size_t offset = start - page_offset(page);
+ 	struct inode *inode = page->mapping->host;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	char *kaddr;
+@@ -6695,8 +6695,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned long offset)
+ 		return;
+ 	}
+ 	lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
+-	ordered = btrfs_lookup_ordered_extent(inode,
+-					   page_offset(page));
++	ordered = btrfs_lookup_ordered_extent(inode, page_offset(page));
+ 	if (ordered) {
  		/*
- 		 * We need to wait for the async pages to actually start before
- 		 * we do anything.
+ 		 * IO on this page will never be started, so we need
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 300e09a..ba5a321 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3017,7 +3017,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 			}
+ 		}
+ 
+-		page_start = (u64)page->index << PAGE_CACHE_SHIFT;
++		page_start = page_offset(page);
+ 		page_end = page_start + PAGE_CACHE_SIZE - 1;
+ 
+ 		lock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
 -- 
 1.7.11.7
+

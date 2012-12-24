@@ -1,25 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta08.emeryville.ca.mail.comcast.net ([76.96.30.80]:42905 "EHLO
-	qmta08.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751511Ab2LWVLN convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Dec 2012 16:11:13 -0500
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: incomplete erase of btrfs with wipefs
-Message-Id: <8C039D41-002B-440C-9888-9CAB1BC17190@colorremedies.com>
-Date: Sun, 23 Dec 2012 14:11:11 -0700
+Received: from mail-oa0-f45.google.com ([209.85.219.45]:63372 "EHLO
+	mail-oa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750891Ab2LXFKs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Dec 2012 00:10:48 -0500
+Received: by mail-oa0-f45.google.com with SMTP id i18so6539250oag.18
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Dec 2012 21:10:48 -0800 (PST)
+MIME-Version: 1.0
+Date: Mon, 24 Dec 2012 10:40:47 +0530
+Message-ID: <CAOeZVicGa3Em4Ki7MkX5=YsHgWKqnKCeojLZNJLdVYxc1LYLfg@mail.gmail.com>
+Subject: Locking in BTRFS
+From: Atri Sharma <atri.jiit@gmail.com>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi all,
 
-I'm not completely sure if this is a wipefs bug, or a btrfs(-progs) bug. The gist is that after using wipefs on a btrfs formatted partition, then reformatted as ext4, mount sees it as ext4, parted sees it as ext4, but I btrfs fi show sees it as a member device of a btrfs volume. I have filed a bug against util-linux, but perhaps this is a btrfs-progs over confidence in what it thinks is a valid volume. I have included in the bug report the first 5MB of the device.
+I am working on reducing the lock contention in BTRFS, especially in
+the cases when all writers request locks simultaneously.
 
-https://bugzilla.redhat.com/show_bug.cgi?id=889888
+I am reading the code and referencing the code documentation. Can
+somebody please explain a bit about the current locking scheme that we
+have? I have some confusion there.
 
+Thanks,
 
-Chris Murphy
+Atri
 
+--
+Regards,
+
+Atri
+l'apprenant

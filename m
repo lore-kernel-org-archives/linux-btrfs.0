@@ -1,43 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:53771 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750759Ab2LZF2k (ORCPT
+Received: from eastrmfepo101.cox.net ([68.230.241.213]:49018 "EHLO
+	eastrmfepo101.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752627Ab2LZNi4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Dec 2012 00:28:40 -0500
-Received: by mail-ob0-f181.google.com with SMTP id oi10so7647316obb.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Dec 2012 21:28:39 -0800 (PST)
+	Wed, 26 Dec 2012 08:38:56 -0500
+Received: from eastrmimpo110 ([68.230.241.223]) by eastrmfepo101.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20121226133855.FQPP2891.eastrmfepo101.cox.net@eastrmimpo110>
+          for <linux-btrfs@vger.kernel.org>;
+          Wed, 26 Dec 2012 08:38:55 -0500
+Message-ID: <50DAFDEE.3030204@czarc.net>
+Date: Wed, 26 Dec 2012 08:38:54 -0500
+From: Gene Czarcinski <gene@czarc.net>
 MIME-Version: 1.0
-From: Slava Barinov <rayslava@gmail.com>
-Date: Wed, 26 Dec 2012 09:28:18 +0400
-Message-ID: <CADef55oohdCgsAeQGd5LTb94D689fmXPOzPxAV8Ka-dj7EW8sw@mail.gmail.com>
-Subject: FS Error
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Determining subvolumes
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+I know that I can find out what btrfs "volumes" are on a system with the 
+command:
+      btrfs  fi  show
 
-  I've just caught an error with btrfs, you can see a fragment of
-dmesg on http://paste.org.ru/?kz4x31
+I can also check if a partition of disk is a btrfs volume with the command:
+      blkid  -o value -s TYPE /dev/<disk|partition>
 
-  It's a buildserver with jenkins that several times an hour starts a
-test script. The only problem I could suppose is using "subvolume
-snapshot" feature in script. So, I have about two dozen of snapshots
-that refresh periodically.
+And, if I mount that btrfs volume with something like:
+      mount -t btrfs /dev/<btrfs>  /mnt/btrfs
 
-  The good fact: btrfsck worked fine, I lost no data :)
+The, I can get a list of btrfs subvolumes on that volume with the command:
+      btrfs  subvolume  list  /mnt/btrfs
 
-  Also, I'd like to add small feature request: it'll be good for
-mount.btrfs  to show more or less valuable error messages. For
-example, if you try to mount btrfs volume with wrong default
-subvolume-id, mount.btrfs says:
+My question:  Is there a way of finding out what subvolumes are defined 
+on a btrfs volume without mounting the volume?
 
- > mount: mount(2) failed: No such file or directory
-
-  And there's nothing in dmesg that could help user to understand what
-happened. I've lost about ten minutes trying to understand what does
-it want from me.
-
-Best regards,
-Slava Barinov.
+Gene

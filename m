@@ -1,50 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20120 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49584 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751098Ab2L0IJo (ORCPT
+	with ESMTP id S1750980Ab2L0JDe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 03:09:44 -0500
-Date: Thu, 27 Dec 2012 16:07:31 +0800
+	Thu, 27 Dec 2012 04:03:34 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBR93X0a008303
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:34 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBR93XN3000994
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:33 GMT
+Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBR93WJd007024
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 03:03:32 -0600
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Slava Barinov <rayslava@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BUG at fs/btrfs/locking.c:265
-Message-ID: <20121227080728.GB20325@liubo.au.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <CADef55rak5VxVePgXtBz8fVpnqaWh2gRAfnGgZQT2QATJ4AS+Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CADef55rak5VxVePgXtBz8fVpnqaWh2gRAfnGgZQT2QATJ4AS+Q@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/8] Btrfs: remove deprecated comments
+Date: Thu, 27 Dec 2012 17:01:17 +0800
+Message-Id: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 27, 2012 at 08:27:11AM +0400, Slava Barinov wrote:
-> Hello,
-> 
->   Twice for past two days I caught an error with btrfs, you can see a
-> fragment of dmesg on http://paste.org.ru/?kz4x31 and
-> http://paste.org.ru/?lwdeu3
-> 
->   It's a buildserver with jenkins that several times an hour starts a
-> test script. The only problem I could suppose is using "subvolume
-> snapshot" feature in script. So, I have about two dozen of snapshots
-> that refresh periodically.
-> 
->   Also, I'd like to add small feature request: it'll be good for
-> mount.btrfs  to show more valuable error messages. For example, if you
-> try to mount btrfs volume with wrong default subvolume-id, mount.btrfs
-> says:
-> 
->  > mount: mount(2) failed: No such file or directory
-> 
->   And there's nothing in dmesg that could help user to understand what
-> happened. I've lost about ten minutes trying to understand what does
-> it want from me.
+commit d53ba47484ed6245e640ee4bfe9d21e9bfc15765
+(Btrfs: use commit root when loading free space cache) has remove
+the deadlock check, and the related comments can be removed as well.
 
-Hi Slava,
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
 
-Could you please show me what line does 'walk_down_proc+0x2b0/0x2e0 [btrfs]'
-refer to?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 521e9d4..8540f94 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -527,12 +527,6 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	cache->cached = BTRFS_CACHE_FAST;
+ 	spin_unlock(&cache->lock);
+ 
+-	/*
+-	 * We can't do the read from on-disk cache during a commit since we need
+-	 * to have the normal tree locking.  Also if we are currently trying to
+-	 * allocate blocks for the tree root we can't do the fast caching since
+-	 * we likely hold important locks.
+-	 */
+ 	if (fs_info->mount_opt & BTRFS_MOUNT_SPACE_CACHE) {
+ 		ret = load_free_space_cache(fs_info, cache);
+ 
+-- 
+1.7.7.6
 
-thanks,
-liubo

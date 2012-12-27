@@ -1,58 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46681 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752089Ab2L0JEG (ORCPT
+Received: from mail-oa0-f54.google.com ([209.85.219.54]:39639 "EHLO
+	mail-oa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751912Ab2L0E1c (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 04:04:06 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBR945fh013266
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:04:06 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBR944HD001737
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:04:05 GMT
-Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBR9442b026420
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 03:04:04 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
+	Wed, 26 Dec 2012 23:27:32 -0500
+Received: by mail-oa0-f54.google.com with SMTP id n9so8554350oag.27
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Dec 2012 20:27:32 -0800 (PST)
+MIME-Version: 1.0
+From: Slava Barinov <rayslava@gmail.com>
+Date: Thu, 27 Dec 2012 08:27:11 +0400
+Message-ID: <CADef55rak5VxVePgXtBz8fVpnqaWh2gRAfnGgZQT2QATJ4AS+Q@mail.gmail.com>
+Subject: BUG at fs/btrfs/locking.c:265
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8] Btrfs: let allocation start from the right raid type
-Date: Thu, 27 Dec 2012 17:01:24 +0800
-Message-Id: <1356598884-22952-8-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
-References: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This'd avoid us empty looping.
+Hello,
 
-Say we have only one disk and the metadata raid type will be defaultly DUP,
-and we do not need to start from index=0(RAID10) and get over two empty
-loops to index=2(DUP).
+  Twice for past two days I caught an error with btrfs, you can see a
+fragment of dmesg on http://paste.org.ru/?kz4x31 and
+http://paste.org.ru/?lwdeu3
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+  It's a buildserver with jenkins that several times an hour starts a
+test script. The only problem I could suppose is using "subvolume
+snapshot" feature in script. So, I have about two dozen of snapshots
+that refresh periodically.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 60d5081..f4e2002 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5563,7 +5563,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	int empty_cluster = 2 * 1024 * 1024;
- 	struct btrfs_space_info *space_info;
- 	int loop = 0;
--	int index = 0;
-+	int index = __get_raid_index(data);
- 	int alloc_type = (data & BTRFS_BLOCK_GROUP_DATA) ?
- 		RESERVE_ALLOC_NO_ACCOUNT : RESERVE_ALLOC;
- 	bool found_uncached_bg = false;
--- 
-1.7.7.6
+  Also, I'd like to add small feature request: it'll be good for
+mount.btrfs  to show more valuable error messages. For example, if you
+try to mount btrfs volume with wrong default subvolume-id, mount.btrfs
+says:
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-in
+ > mount: mount(2) failed: No such file or directory
+
+  And there's nothing in dmesg that could help user to understand what
+happened. I've lost about ten minutes trying to understand what does
+it want from me.
+
+Best regards,
+Slava Barinov.

@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f46.google.com ([209.85.216.46]:46932 "EHLO
-	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753719Ab2LNHQ4 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Dec 2012 02:16:56 -0500
-Received: by mail-qa0-f46.google.com with SMTP id r4so410223qaq.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Dec 2012 23:16:55 -0800 (PST)
+Received: from fw10a.glodns.net ([196.220.48.58]:49538 "EHLO fw10a.glodns.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752046Ab2L0MKI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Dec 2012 07:10:08 -0500
+Received: from localhost (unknown [127.0.0.1])
+	by fw10a.glodns.net (Postfix) with ESMTP id 3F7BC250017
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 11:59:13 +0000 (UTC)
+Received: from fw10a.glodns.net ([196.220.48.58])
+	by localhost (fw10a.glodns.net [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id 1A+DFzoVOfkS for <linux-btrfs@vger.kernel.org>;
+	Thu, 27 Dec 2012 13:59:07 +0200 (SAST)
+Received: from control.glodns.net (unknown [196.220.42.40])
+	by fw10a.glodns.net (Postfix) with ESMTP id 8930725000A
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 13:59:07 +0200 (SAST)
+Message-ID: <50DC3807.9080605@swiftspirit.co.za>
+Date: Thu, 27 Dec 2012 13:59:03 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Date: Fri, 14 Dec 2012 15:16:55 +0800
-Message-ID: <CAKXJSOHetjwz2efvRPJnOT2M7g9eQg3rMQER0r+MshfFayifJQ@mail.gmail.com>
-Subject: Can we make btrfs_defrag_file more progressive?
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=windows-1252
+To: linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
+Subject: btrfs df confusion
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear all,
+Hi
 
-I'm reading btrfs_defrag_file to find what would "btrfs fi defrag" do
-on one file.
-In btrfs_defrag_file, I image one case:
+I've made some updates on the wiki and I'd like a technical review for 
+correctness. This particular topic is already confusing - some 
+unnecessary sarcasm made it even more so:
+https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
 
-      One file A, which has lots of small fragmentation, e.g < 8K (em
-covers <8K mapping), and each fragmentation
-is far from the other fragmentation by PAGE_CACHE_SIZE at least on the disk.
+Due to the terms "used" and "allocated" in the wiki, viric in #btrfs 
+made the good suggestion that we could adjust the show and df output 
+with more intuitive language:
 
-By walking the code, my conclusion is that "btrfs fi defrag" won't
-gather the small fragments
-together to room out big continus disk space in this case.
+Before I git a patch together, please let me know if there are any good 
+reasons why we wouldn't want to make such a change.
 
-I wonder can we make btrfs_defrag_file more aggessive, e.g modify
-            “next = defrag_lookup_extent(inode, em->start + em->len);”
-to “next = defrag_lookup_extent(inode, em->start + 64 * 1024);” in
-defrag_check_next_extent,
-or add some param to tune the behavior?
+(13:31:29) viric: zatricky: "devid ... used" are allocated data, while 
+"FS bytes used" is the sum of used bytes, isn't it?
+(13:33:28) zatricky: viric: correct
+(13:33:52) viric: zatricky: maybe the devid lines could be changed 
+s/used/allocated/
+(13:34:37) zatricky: viric: that's a good idea - would make it more 
+intuitive
+(13:35:29) viric: the same way, 'btrfs fi df' could change s/total/allocated
+^ GMT+2 ;)
 
-Please advise.
+Thanks
 
-Thanks,
-Wang Sheng-Hui
+-- 
+__________
+Brendan Hide
+Mobile: +27 83 448 3867
+Web Africa - Internet Business Solutions
+http://www.webafrica.co.za/?AFF1E97
+

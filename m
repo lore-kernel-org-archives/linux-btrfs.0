@@ -1,56 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58400 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752121Ab2L0NYk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 08:24:40 -0500
-Date: Thu, 27 Dec 2012 14:24:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Slava Barinov <rayslava@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: BUG at fs/btrfs/locking.c:265
-Message-ID: <20121227132437.GS14116@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CADef55rak5VxVePgXtBz8fVpnqaWh2gRAfnGgZQT2QATJ4AS+Q@mail.gmail.com>
- <20121227080728.GB20325@liubo.au.oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121227080728.GB20325@liubo.au.oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:49711 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752004Ab2L0JDz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Dec 2012 04:03:55 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBR93rur008507
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:54 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBR93rWI009268
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:53 GMT
+Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBR93rEE019842
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 03:03:53 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 6/8] Btrfs: save us a read_lock
+Date: Thu, 27 Dec 2012 17:01:22 +0800
+Message-Id: <1356598884-22952-6-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
+References: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 27, 2012 at 04:07:31PM +0800, Liu Bo wrote:
-> On Thu, Dec 27, 2012 at 08:27:11AM +0400, Slava Barinov wrote:
-> >   And there's nothing in dmesg that could help user to understand what
-> > happened. I've lost about ten minutes trying to understand what does
-> > it want from me.
->Could you please show me what line does 'walk_down_proc+0x2b0/0x2e0 [btrfs]'
-> refer to?
+This does not change the logic of code, but can save us a read_lock.
 
-It's
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/locking.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-6578         if (path->locks[level] && level > 0) {
-6579                 btrfs_tree_unlock_rw(eb, path->locks[level]);
-^^^^
-6580                 path->locks[level] = 0;
-6581         }
-6582         return 0;
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 2a1762c..e95df43 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -113,11 +113,10 @@ again:
+ 		read_unlock(&eb->lock);
+ 		return;
+ 	}
+-	read_unlock(&eb->lock);
+-	wait_event(eb->write_lock_wq, atomic_read(&eb->blocking_writers) == 0);
+-	read_lock(&eb->lock);
+ 	if (atomic_read(&eb->blocking_writers)) {
+ 		read_unlock(&eb->lock);
++		wait_event(eb->write_lock_wq,
++			   atomic_read(&eb->blocking_writers) == 0);
+ 		goto again;
+ 	}
+ 	atomic_inc(&eb->read_locks);
+-- 
+1.7.7.6
 
-which calls btrfs_tree_unlock() and hits the
-
-241 void btrfs_tree_unlock(struct extent_buffer *eb)
-242 {
-243         int blockers = atomic_read(&eb->blocking_writers);
-244
-245         BUG_ON(blockers > 1);
-246
-247         btrfs_assert_tree_locked(eb);
-
-->
-
-263 void btrfs_assert_tree_locked(struct extent_buffer *eb)
-264 {
-265         BUG_ON(!atomic_read(&eb->write_locks));
-266 }
-
-
-david

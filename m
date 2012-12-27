@@ -1,68 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46326 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46599 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751455Ab2L1Jv6 (ORCPT
+	with ESMTP id S1751860Ab2L0JDu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Dec 2012 04:51:58 -0500
-Date: Fri, 28 Dec 2012 17:49:07 +0800
+	Thu, 27 Dec 2012 04:03:50 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBR93nww012958
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:50 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBR93n0e003768
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 09:03:49 GMT
+Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBR93nMh026288
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 03:03:49 -0600
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Slava Barinov <rayslava@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: BUG at fs/btrfs/locking.c:265
-Message-ID: <20121228094906.GA7283@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <CADef55rak5VxVePgXtBz8fVpnqaWh2gRAfnGgZQT2QATJ4AS+Q@mail.gmail.com>
- <20121227080728.GB20325@liubo.au.oracle.com>
- <20121227132437.GS14116@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121227132437.GS14116@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 5/8] Btrfs: use token to avoid times mapping extent buffer
+Date: Thu, 27 Dec 2012 17:01:21 +0800
+Message-Id: <1356598884-22952-5-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
+References: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Slava, David,
+The API in tree log code has done sort of changes, and it proves that
+we can benifit from using token, so do the same thing here.
 
-I've sent a patch to fix the bug(Cced you), could you please check if it
-works? :)
+function_graph tracer's timer shows that it costs nearly half time
+of before(39.788us -> 22.391us).
 
-thanks,
-liubo
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c |   63 ++++++++++++++++++++++++++++++------------------------
+ 1 files changed, 35 insertions(+), 28 deletions(-)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 67ed24a..c032f24 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2697,34 +2697,41 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_inode_item *item,
+ 			    struct inode *inode)
+ {
+-	btrfs_set_inode_uid(leaf, item, i_uid_read(inode));
+-	btrfs_set_inode_gid(leaf, item, i_gid_read(inode));
+-	btrfs_set_inode_size(leaf, item, BTRFS_I(inode)->disk_i_size);
+-	btrfs_set_inode_mode(leaf, item, inode->i_mode);
+-	btrfs_set_inode_nlink(leaf, item, inode->i_nlink);
+-
+-	btrfs_set_timespec_sec(leaf, btrfs_inode_atime(item),
+-			       inode->i_atime.tv_sec);
+-	btrfs_set_timespec_nsec(leaf, btrfs_inode_atime(item),
+-				inode->i_atime.tv_nsec);
+-
+-	btrfs_set_timespec_sec(leaf, btrfs_inode_mtime(item),
+-			       inode->i_mtime.tv_sec);
+-	btrfs_set_timespec_nsec(leaf, btrfs_inode_mtime(item),
+-				inode->i_mtime.tv_nsec);
+-
+-	btrfs_set_timespec_sec(leaf, btrfs_inode_ctime(item),
+-			       inode->i_ctime.tv_sec);
+-	btrfs_set_timespec_nsec(leaf, btrfs_inode_ctime(item),
+-				inode->i_ctime.tv_nsec);
+-
+-	btrfs_set_inode_nbytes(leaf, item, inode_get_bytes(inode));
+-	btrfs_set_inode_generation(leaf, item, BTRFS_I(inode)->generation);
+-	btrfs_set_inode_sequence(leaf, item, inode->i_version);
+-	btrfs_set_inode_transid(leaf, item, trans->transid);
+-	btrfs_set_inode_rdev(leaf, item, inode->i_rdev);
+-	btrfs_set_inode_flags(leaf, item, BTRFS_I(inode)->flags);
+-	btrfs_set_inode_block_group(leaf, item, 0);
++	struct btrfs_map_token token;
++
++	btrfs_init_map_token(&token);
++
++	btrfs_set_token_inode_uid(leaf, item, i_uid_read(inode), &token);
++	btrfs_set_token_inode_gid(leaf, item, i_gid_read(inode), &token);
++	btrfs_set_token_inode_size(leaf, item, BTRFS_I(inode)->disk_i_size,
++				   &token);
++	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
++	btrfs_set_token_inode_nlink(leaf, item, inode->i_nlink, &token);
++
++	btrfs_set_token_timespec_sec(leaf, btrfs_inode_atime(item),
++				     inode->i_atime.tv_sec, &token);
++	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_atime(item),
++				      inode->i_atime.tv_nsec, &token);
++
++	btrfs_set_token_timespec_sec(leaf, btrfs_inode_mtime(item),
++				     inode->i_mtime.tv_sec, &token);
++	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_mtime(item),
++				      inode->i_mtime.tv_nsec, &token);
++
++	btrfs_set_token_timespec_sec(leaf, btrfs_inode_ctime(item),
++				     inode->i_ctime.tv_sec, &token);
++	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_ctime(item),
++				      inode->i_ctime.tv_nsec, &token);
++
++	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
++				     &token);
++	btrfs_set_token_inode_generation(leaf, item, BTRFS_I(inode)->generation,
++					 &token);
++	btrfs_set_token_inode_sequence(leaf, item, inode->i_version, &token);
++	btrfs_set_token_inode_transid(leaf, item, trans->transid, &token);
++	btrfs_set_token_inode_rdev(leaf, item, inode->i_rdev, &token);
++	btrfs_set_token_inode_flags(leaf, item, BTRFS_I(inode)->flags, &token);
++	btrfs_set_token_inode_block_group(leaf, item, 0, &token);
+ }
+ 
+ /*
+-- 
+1.7.7.6
 
-On Thu, Dec 27, 2012 at 02:24:37PM +0100, David Sterba wrote:
-> On Thu, Dec 27, 2012 at 04:07:31PM +0800, Liu Bo wrote:
-> > On Thu, Dec 27, 2012 at 08:27:11AM +0400, Slava Barinov wrote:
-> > >   And there's nothing in dmesg that could help user to understand what
-> > > happened. I've lost about ten minutes trying to understand what does
-> > > it want from me.
-> >Could you please show me what line does 'walk_down_proc+0x2b0/0x2e0 [btrfs]'
-> > refer to?
-> 
-> It's
-> 
-> 6578         if (path->locks[level] && level > 0) {
-> 6579                 btrfs_tree_unlock_rw(eb, path->locks[level]);
-> ^^^^
-> 6580                 path->locks[level] = 0;
-> 6581         }
-> 6582         return 0;
-> 
-> which calls btrfs_tree_unlock() and hits the
-> 
-> 241 void btrfs_tree_unlock(struct extent_buffer *eb)
-> 242 {
-> 243         int blockers = atomic_read(&eb->blocking_writers);
-> 244
-> 245         BUG_ON(blockers > 1);
-> 246
-> 247         btrfs_assert_tree_locked(eb);
-> 
-> ->
-> 
-> 263 void btrfs_assert_tree_locked(struct extent_buffer *eb)
-> 264 {
-> 265         BUG_ON(!atomic_read(&eb->write_locks));
-> 266 }
-> 
-> 
-> david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-in

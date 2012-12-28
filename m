@@ -1,167 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59486 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751386Ab2LTL7A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Dec 2012 06:59:00 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id qBKBKWad016364
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2012 19:20:33 +0800
-Message-ID: <50D2F45E.2060305@cn.fujitsu.com>
-Date: Thu, 20 Dec 2012 19:19:58 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/3] Btrfs: use wrapper page_offset
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:32440 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751419Ab2L1JgL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Dec 2012 04:36:11 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Slava Barinov <rayslava@gmail.com>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: reset path lock state to zero
+Date: Fri, 28 Dec 2012 17:33:19 +0800
+Message-Id: <1356687199-7198-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+We forgot to reset the path lock state to zero after we unlock the path block,
+and this can lead to the ASSERT checker in tree unlock API.
 
-Use wrapper page_offset to get byte-offset into filesystem object for page.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Reported-by: Slava Barinov <rayslava@gmail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/disk-io.c    |  2 +-
- fs/btrfs/extent_io.c  | 20 ++++++++++----------
- fs/btrfs/inode.c      |  2 +-
- fs/btrfs/relocation.c |  2 +-
- 4 files changed, 13 insertions(+), 13 deletions(-)
+ fs/btrfs/extent-tree.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 65f0367..862f6fe 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -420,7 +420,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
- static int csum_dirty_buffer(struct btrfs_root *root, struct page *page)
- {
- 	struct extent_io_tree *tree;
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 found_start;
- 	struct extent_buffer *eb;
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1b319df..ddce0b5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1834,7 +1834,7 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
-  */
- static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
- {
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, NULL))
- 		SetPageUptodate(page);
-@@ -1846,7 +1846,7 @@ static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
-  */
- static void check_page_locked(struct extent_io_tree *tree, struct page *page)
- {
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL))
- 		unlock_page(page);
-@@ -2293,7 +2293,7 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
- 		struct page *page = bvec->bv_page;
- 		tree = &BTRFS_I(page->mapping->host)->io_tree;
- 
--		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
-+		start = ((u64)page_offset(page)) +
- 			 bvec->bv_offset;
- 		end = start + bvec->bv_len - 1;
- 
-@@ -2353,7 +2353,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
- 			 (long int)bio->bi_bdev);
- 		tree = &BTRFS_I(page->mapping->host)->io_tree;
- 
--		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
-+		start = ((u64)page_offset(page)) +
- 			bvec->bv_offset;
- 		end = start + bvec->bv_len - 1;
- 
-@@ -2471,7 +2471,7 @@ static int __must_check submit_one_bio(int rw, struct bio *bio,
- 	struct extent_io_tree *tree = bio->bi_private;
- 	u64 start;
- 
--	start = ((u64)page->index << PAGE_CACHE_SHIFT) + bvec->bv_offset;
-+	start = ((u64)page_offset(page)) + bvec->bv_offset;
- 
- 	bio->bi_private = NULL;
- 
-@@ -2595,7 +2595,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 				   unsigned long *bio_flags)
- {
- 	struct inode *inode = page->mapping->host;
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	u64 end;
- 	u64 cur = start;
-@@ -2806,7 +2806,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	struct inode *inode = page->mapping->host;
- 	struct extent_page_data *epd = data;
- 	struct extent_io_tree *tree = epd->tree;
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 delalloc_start;
- 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	u64 end;
-@@ -3674,7 +3674,7 @@ int extent_invalidatepage(struct extent_io_tree *tree,
- 			  struct page *page, unsigned long offset)
- {
- 	struct extent_state *cached_state = NULL;
--	u64 start = ((u64)page->index << PAGE_CACHE_SHIFT);
-+	u64 start = (u64)page_offset(page);
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	size_t blocksize = page->mapping->host->i_sb->s_blocksize;
- 
-@@ -3700,7 +3700,7 @@ int try_release_extent_state(struct extent_map_tree *map,
- 			     struct extent_io_tree *tree, struct page *page,
- 			     gfp_t mask)
- {
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	int ret = 1;
- 
-@@ -3739,7 +3739,7 @@ int try_release_extent_mapping(struct extent_map_tree *map,
- 			       gfp_t mask)
- {
- 	struct extent_map *em;
--	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
-+	u64 start = (u64)page_offset(page);
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 
- 	if ((mask & __GFP_WAIT) &&
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 67ed24a..d81d583 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2062,7 +2062,7 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
- static int btrfs_readpage_end_io_hook(struct page *page, u64 start, u64 end,
- 			       struct extent_state *state, int mirror)
- {
--	size_t offset = start - ((u64)page->index << PAGE_CACHE_SHIFT);
-+	size_t offset = start - ((u64)page_offset(page));
- 	struct inode *inode = page->mapping->host;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	char *kaddr;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 300e09a..b29662b 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3017,7 +3017,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 521e9d4..a71d457 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6788,11 +6788,13 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 						       &wc->flags[level]);
+ 			if (ret < 0) {
+ 				btrfs_tree_unlock_rw(eb, path->locks[level]);
++				path->locks[level] = 0;
+ 				return ret;
+ 			}
+ 			BUG_ON(wc->refs[level] == 0);
+ 			if (wc->refs[level] == 1) {
+ 				btrfs_tree_unlock_rw(eb, path->locks[level]);
++				path->locks[level] = 0;
+ 				return 1;
  			}
  		}
- 
--		page_start = (u64)page->index << PAGE_CACHE_SHIFT;
-+		page_start = (u64)page_offset(page);
- 		page_end = page_start + PAGE_CACHE_SIZE - 1;
- 
- 		lock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
 -- 
-1.7.11.7
+1.7.7.6
+

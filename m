@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37543 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:37549 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753125Ab2L1DGy (ORCPT
+	with ESMTP id S1753230Ab2L1DG4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 22:06:54 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBS36r2F010063
+	Thu, 27 Dec 2012 22:06:56 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id qBS36tBa010128
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2012 03:06:53 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBS36qWr002914
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2012 03:06:55 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id qBS36sjK017764
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2012 03:06:52 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2012 03:06:55 GMT
 Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBS36qdd023080
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 21:06:52 -0600
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id qBS36s2q007479
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2012 21:06:54 -0600
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/8] Btrfs-progs: Move printing outside of btrfs_list_subvols
-Date: Fri, 28 Dec 2012 11:12:56 +0800
-Message-Id: <1356664382-24423-3-git-send-email-Anand.Jain@oracle.com>
+Subject: [PATCH 4/8] Btrfs-progs: move struct root_info to btrfs-list.h
+Date: Fri, 28 Dec 2012 11:12:58 +0800
+Message-Id: <1356664382-24423-5-git-send-email-Anand.Jain@oracle.com>
 In-Reply-To: <1356664382-24423-1-git-send-email-Anand.Jain@oracle.com>
 References: <1356664382-24423-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -27,106 +27,128 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <anand.jain@oracle.com>
 
-its better to have btrfs_list_subvols just return witout printing
-so that btrfs_list_subvols can be reused.
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c     |   28 ++++++++++++++++++----------
- btrfs-list.h     |    2 +-
- cmds-subvolume.c |    4 ++--
- 3 files changed, 21 insertions(+), 13 deletions(-)
+ btrfs-list.c |   47 -----------------------------------------------
+ btrfs-list.h |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 46 insertions(+), 48 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index e5f0f96..b656286 100644
+index cc065e9..1851f3e 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -1441,15 +1441,11 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
- 	}
- }
+@@ -46,53 +46,6 @@ struct root_lookup {
+ 	struct rb_root root;
+ };
  
--int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
--		       struct btrfs_list_comparer_set *comp_set,
--		       int is_tab_result)
-+int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
- {
--	struct root_lookup root_lookup;
--	struct root_lookup root_sort;
- 	int ret;
- 
--	ret = __list_subvol_search(fd, &root_lookup);
-+	ret = __list_subvol_search(fd, root_lookup);
- 	if (ret) {
- 		fprintf(stderr, "ERROR: can't perform the search - %s\n",
- 				strerror(errno));
-@@ -1460,16 +1456,28 @@ int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
- 	 * now we have an rbtree full of root_info objects, but we need to fill
- 	 * in their path names within the subvol that is referencing each one.
- 	 */
--	ret = __list_subvol_fill_paths(fd, &root_lookup);
--	if (ret < 0)
--		return ret;
-+	ret = __list_subvol_fill_paths(fd, root_lookup);
-+	return ret;
-+}
- 
-+int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
-+		       struct btrfs_list_comparer_set *comp_set,
-+		       int is_tab_result)
-+{
-+	struct root_lookup root_lookup;
-+	struct root_lookup root_sort;
-+	int ret;
-+
-+	ret = btrfs_list_subvols(fd, &root_lookup);
-+	if (ret)
-+		return ret;
- 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
- 				 comp_set, fd);
- 
- 	print_all_volume_info(&root_sort, is_tab_result);
- 	__free_all_subvolumn(&root_lookup);
--	return ret;
-+
-+	return 0;
- }
- 
- static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+-/*
+- * one of these for each root we find.
+- */
+-struct root_info {
+-	struct rb_node rb_node;
+-	struct rb_node sort_node;
+-
+-	/* this root's id */
+-	u64 root_id;
+-
+-	/* equal the offset of the root's key */
+-	u64 root_offset;
+-
+-	/* flags of the root */
+-	u64 flags;
+-
+-	/* the id of the root that references this one */
+-	u64 ref_tree;
+-
+-	/* the dir id we're in from ref_tree */
+-	u64 dir_id;
+-
+-	u64 top_id;
+-
+-	/* generation when the root is created or last updated */
+-	u64 gen;
+-
+-	/* creation generation of this root in sec*/
+-	u64 ogen;
+-
+-	/* creation time of this root in sec*/
+-	time_t otime;
+-
+-	u8 uuid[BTRFS_UUID_SIZE];
+-	u8 puuid[BTRFS_UUID_SIZE];
+-
+-	/* path from the subvol we live in to this root, including the
+-	 * root's name.  This is null until we do the extra lookup ioctl.
+-	 */
+-	char *path;
+-
+-	/* the name of this root in the directory it lives in */
+-	char *name;
+-
+-	char *full_path;
+-};
+-
+ struct {
+ 	char	*name;
+ 	char	*column_name;
 diff --git a/btrfs-list.h b/btrfs-list.h
-index cde4b3c..71fe0f3 100644
+index 855e73d..3b7b680 100644
 --- a/btrfs-list.h
 +++ b/btrfs-list.h
-@@ -98,7 +98,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
- 			      enum btrfs_list_comp_enum comparer,
- 			      int is_descending);
+@@ -18,7 +18,52 @@
  
--int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
-+int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 		       struct btrfs_list_comparer_set *comp_set,
- 			int is_tab_result);
- int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index e3cdb1e..c35dff7 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -406,7 +406,7 @@ static int cmd_subvol_list(int argc, char **argv)
- 					BTRFS_LIST_FILTER_TOPID_EQUAL,
- 					top_id);
+ #include "kerncompat.h"
  
--	ret = btrfs_list_subvols(fd, filter_set, comparer_set,
-+	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
- 				is_tab_result);
- 	if (ret)
- 		return 19;
-@@ -613,7 +613,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
- 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_ROOTID,
- 				default_id);
+-struct root_info;
++/*
++ * one of these for each root we find.
++ */
++struct root_info {
++	struct rb_node rb_node;
++	struct rb_node sort_node;
++
++	/* this root's id */
++	u64 root_id;
++
++	/* equal the offset of the root's key */
++	u64 root_offset;
++
++	/* flags of the root */
++	u64 flags;
++
++	/* the id of the root that references this one */
++	u64 ref_tree;
++
++	/* the dir id we're in from ref_tree */
++	u64 dir_id;
++
++	u64 top_id;
++
++	/* generation when the root is created or last updated */
++	u64 gen;
++
++	/* creation generation of this root in sec*/
++	u64 ogen;
++
++	/* creation time of this root in sec*/
++	time_t otime;
++
++	u8 uuid[BTRFS_UUID_SIZE];
++	u8 puuid[BTRFS_UUID_SIZE];
++
++	/* path from the subvol we live in to this root, including the
++	 * root's name.  This is null until we do the extra lookup ioctl.
++	 */
++	char *path;
++
++	/* the name of this root in the directory it lives in */
++	char *name;
++
++	char *full_path;
++};
  
--	ret = btrfs_list_subvols(fd, filter_set, NULL, 0);
-+	ret = btrfs_list_subvols_print(fd, filter_set, NULL, 0);
- 	if (ret)
- 		return 19;
- 	return 0;
+ typedef int (*btrfs_list_filter_func)(struct root_info *, u64);
+ typedef int (*btrfs_list_comp_func)(struct root_info *, struct root_info *,
 -- 
 1.7.1
 

@@ -1,54 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:39398 "EHLO
-	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751444Ab2L1Bo3 convert rfc822-to-8bit
+Received: from qmta15.emeryville.ca.mail.comcast.net ([76.96.27.228]:56842
+	"EHLO qmta15.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750739Ab2L1FDS convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Dec 2012 20:44:29 -0500
-Content-Type: text/plain; charset=us-ascii
+	Fri, 28 Dec 2012 00:03:18 -0500
+Content-Type: text/plain; charset=US-ASCII
 Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: problems with dracut mounting subvols
+Subject: Re: Another novice question & comment
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <50DCF245.20705@parallels.com>
-Date: Thu, 27 Dec 2012 18:44:29 -0700
-Message-Id: <5EE8E8F7-4147-4DD3-A928-AEFA27CE683C@colorremedies.com>
-References: <5FA2C0D0-740D-4425-A099-46382311E2A3@colorremedies.com> <50DCF245.20705@parallels.com>
-To: linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
+In-Reply-To: <201212281134.10604.russell@coker.com.au>
+Date: Thu, 27 Dec 2012 22:03:13 -0700
+Cc: "linux-btrfs Mailing list" <linux-btrfs@vger.kernel.org>
+Message-Id: <89B2AE69-E8D1-46FA-ABE9-8A6BDA352B6E@colorremedies.com>
+References: <50DC5B51.9060506@czarc.net> <50DCA11C.2050501@czarc.net> <5BAA2347-6336-4C05-B075-BEF93427EF07@colorremedies.com> <201212281134.10604.russell@coker.com.au>
+To: russell@coker.com.au
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Dec 27, 2012, at 6:13 PM, dima <dolenin@parallels.com> wrote:
+On Dec 27, 2012, at 5:34 PM, Russell Coker <russell@coker.com.au> wrote:
+
+> On Fri, 28 Dec 2012, Chris Murphy <lists@colorremedies.com> wrote:
+>> On Dec 27, 2012, at 12:27 PM, Gene Czarcinski <gene@czarc.net> wrote:
+>>> Oh thanks for that little reminder that you can put btrfs on an LV.
+>> 
+>> I find it's more trouble than it's worth. It doesn't bring much to the
+>> table.
 > 
+> I've tried using LVM and BTRFS together.  While they work the combination 
+> doesn't seem to offer much benefit.  LVM is good for snapshots (which BTRFS does 
+> better) and also for dividing a device that is larger than your filesystem can 
+> properly support (also not a problem for BTRFS).
 > 
->> /dev/disk/by-uuid/64383cfe-c31d-4d25-97c4-4e6b7e788b26 /sysroot/usr btrfs subvol=usr,subvol=root,ro 1 2
+> http://etbe.coker.com.au/2012/12/17/using-btrfs/
 > 
-> I'd say that the problem is definitely with this line having two subvolumes listed.
-> Maybe you should boot from a live CD, mount your subvolid=1 and check out what subvolumes you really have in there. And then re-write fstab manually.
+> At the above URL I've documented some of the things I'm currently doing with 
+> BTRFS in production.  I'm still considering what's the best way of managing 
+> virtual machines. My current method is to run a server with two disks that 
+> have separate LVM VGs and give each VM a pair of block devices to run BTRFS 
+> RAID-1.
+> 
+> The other option I'm considering is a single BTRFS RAID-1 taking all disk 
+> space and giving each VM a single block device that's a file on the BTRFS 
+> filesystem.  Presumably that will give a significant performance hit because of 
+> double filesystem overhead but will make management a little easier and 
+> possibly reduce seeks when multiple VMs are writing to disk.
 
-When I mount subvolid=5 there are subvols root, boot, usr, var, home. And the /etc/fstab in root is:
+What the VMs are doing makes a big difference. But in any case you'd need to benchmark the various configurations that are possible.
 
-#
-# /etc/fstab
-# Created by anaconda on Thu Dec 27 15:21:03 2012
-#
-# Accessible filesystems, by reference, are maintained under '/dev/disk'
-# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
-#
-UUID=64383cfe-c31d-4d25-97c4-4e6b7e788b26 /                       btrfs   subvol=root     1 1
-UUID=64383cfe-c31d-4d25-97c4-4e6b7e788b26 /boot                   btrfs   subvol=boot     1 2
-UUID=64383cfe-c31d-4d25-97c4-4e6b7e788b26 /home                   btrfs   subvol=home     1 2
-UUID=64383cfe-c31d-4d25-97c4-4e6b7e788b26 /usr                    btrfs   subvol=usr      1 2
-UUID=64383cfe-c31d-4d25-97c4-4e6b7e788b26 /var                    btrfs   subvol=var      1 2
+Off hand it seems to be better to have the host running the more complex/capable file system, in this case btrfs on whole drives. And then the guests write to a file, with a simpler file system like ext4, and optionally disable journaling.
 
+For a handful of VMs that aren't doing heavy writes, then either dedicated partitions or LVs (in effect the same thing), is probably OK. But I suspect as you get busier VMs, or add more VMs, this will not scale. You'll quickly get too much disk contention, VM's demanding their own disk region is being written to NOW and will simply slow down while they wait for the disk to handle the request. Whereas if you have the VM guests use ext4 (optionally disable journaling) to a file, either XFS or Btrfs will aggregate those requests much more efficiently than individual VMs can.
 
-It's correct.
-
-Seems dracut is creating the wrong fstab for itself, but then also can't mount it correctly manually from a shell command. When booted in rescue mode to a full system, not just a dracut shell, I can mount -o subvol=root to one mount point, and also mount -o subvol=usr to another mountpoint (within or outside the former mount point) without error.
-
-
-> If you have /sysroot subvolume, you can create /sysroot/usr as a child subvolume and you won't even need then to specify /sysroot/usr in your fstab because it will be mounted automatically when the parent subvolume gets mounted.
-
-It's a useful work around. I'd like to narrow down if the real problem is dracut and if it should eventually be fixed. Seems both need fixing.
-
+But still needs to be tested.
 
 Chris Murphy

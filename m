@@ -1,57 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta15.emeryville.ca.mail.comcast.net ([76.96.27.228]:56842
-	"EHLO qmta15.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750739Ab2L1FDS convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Dec 2012 00:03:18 -0500
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: Another novice question & comment
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <201212281134.10604.russell@coker.com.au>
-Date: Thu, 27 Dec 2012 22:03:13 -0700
-Cc: "linux-btrfs Mailing list" <linux-btrfs@vger.kernel.org>
-Message-Id: <89B2AE69-E8D1-46FA-ABE9-8A6BDA352B6E@colorremedies.com>
-References: <50DC5B51.9060506@czarc.net> <50DCA11C.2050501@czarc.net> <5BAA2347-6336-4C05-B075-BEF93427EF07@colorremedies.com> <201212281134.10604.russell@coker.com.au>
-To: russell@coker.com.au
+Received: from cantor2.suse.de ([195.135.220.15]:34918 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753651Ab2L1Odl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Dec 2012 09:33:41 -0500
+Date: Fri, 28 Dec 2012 15:33:38 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Ext4 <linux-ext4@vger.kernel.org>,
+        Christoph Hellwig <hch@infradead.org>,
+        Kamal Mostafa <kamal@canonical.com>, Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH RESEND] vfs: re-implement
+ writeback_inodes_sb(_nr)_if_idle() and rename them
+Message-ID: <20121228143338.GW14116@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <50D2E3DF.4010105@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50D2E3DF.4010105@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Dec 20, 2012 at 06:09:35PM +0800, Miao Xie wrote:
+> --- a/fs/fs-writeback.c
+> +++ b/fs/fs-writeback.c
+> @@ -1314,7 +1314,6 @@ void writeback_inodes_sb_nr(struct super_block *sb,
+>  	bdi_queue_work(sb->s_bdi, &work);
+>  	wait_for_completion(&done);
+>  }
+> -EXPORT_SYMBOL(writeback_inodes_sb_nr);
 
-On Dec 27, 2012, at 5:34 PM, Russell Coker <russell@coker.com.au> wrote:
+Why do you remove the export? writeback_inodes_sb is exported as well.
 
-> On Fri, 28 Dec 2012, Chris Murphy <lists@colorremedies.com> wrote:
->> On Dec 27, 2012, at 12:27 PM, Gene Czarcinski <gene@czarc.net> wrote:
->>> Oh thanks for that little reminder that you can put btrfs on an LV.
->> 
->> I find it's more trouble than it's worth. It doesn't bring much to the
->> table.
-> 
-> I've tried using LVM and BTRFS together.  While they work the combination 
-> doesn't seem to offer much benefit.  LVM is good for snapshots (which BTRFS does 
-> better) and also for dividing a device that is larger than your filesystem can 
-> properly support (also not a problem for BTRFS).
-> 
-> http://etbe.coker.com.au/2012/12/17/using-btrfs/
-> 
-> At the above URL I've documented some of the things I'm currently doing with 
-> BTRFS in production.  I'm still considering what's the best way of managing 
-> virtual machines. My current method is to run a server with two disks that 
-> have separate LVM VGs and give each VM a pair of block devices to run BTRFS 
-> RAID-1.
-> 
-> The other option I'm considering is a single BTRFS RAID-1 taking all disk 
-> space and giving each VM a single block device that's a file on the BTRFS 
-> filesystem.  Presumably that will give a significant performance hit because of 
-> double filesystem overhead but will make management a little easier and 
-> possibly reduce seeks when multiple VMs are writing to disk.
+Originally the _nr variant has been introduced for btrfs
+(3259f8bed2f0f57c2fdcdac1b510c3fa319ef97e) and there are no other users
+now, so from that point it would make sense. From the other side, the
+change is not strictly necessary for this patch and keeps the writeback
+API a bit more flexible. I vote for keeping it.
 
-What the VMs are doing makes a big difference. But in any case you'd need to benchmark the various configurations that are possible.
+Otherwise (for the btrfs part),
+Tested-by: David Sterba <dsterba@suse.cz>
 
-Off hand it seems to be better to have the host running the more complex/capable file system, in this case btrfs on whole drives. And then the guests write to a file, with a simpler file system like ext4, and optionally disable journaling.
 
-For a handful of VMs that aren't doing heavy writes, then either dedicated partitions or LVs (in effect the same thing), is probably OK. But I suspect as you get busier VMs, or add more VMs, this will not scale. You'll quickly get too much disk contention, VM's demanding their own disk region is being written to NOW and will simply slow down while they wait for the disk to handle the request. Whereas if you have the VM guests use ext4 (optionally disable journaling) to a file, either XFS or Btrfs will aggregate those requests much more efficiently than individual VMs can.
-
-But still needs to be tested.
-
-Chris Murphy
+thanks,
+david

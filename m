@@ -1,37 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta04.emeryville.ca.mail.comcast.net ([76.96.30.40]:55650 "EHLO
-	qmta04.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755118Ab2L2BlO convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Dec 2012 20:41:14 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:59278 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750891Ab2L2DOq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Dec 2012 22:14:46 -0500
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: Chris Murphy <lists@colorremedies.com>
 Subject: Re: corrupt filesystem after snapshots on 3.2
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <201212291031.44745.russell+btrfs@coker.com.au>
-Date: Fri, 28 Dec 2012 18:41:12 -0700
-Message-Id: <E14A2E56-6517-4634-ACDD-099C4D2AE315@colorremedies.com>
-References: <201212291031.44745.russell+btrfs@coker.com.au>
-To: linux-btrfs@vger.kernel.org
+Date: Sat, 29 Dec 2012 14:14:35 +1100
+Cc: linux-btrfs@vger.kernel.org
+References: <201212291031.44745.russell+btrfs@coker.com.au> <E14A2E56-6517-4634-ACDD-099C4D2AE315@colorremedies.com>
+In-Reply-To: <E14A2E56-6517-4634-ACDD-099C4D2AE315@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201212291414.37552.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, 29 Dec 2012, Chris Murphy <lists@colorremedies.com> wrote:
+> Add another disk, or disk partition, to the Btrfs volume. That'll give it
+> more space and hopefully you can back out at that point.
 
-On Dec 28, 2012, at 4:31 PM, Russell Coker <russell+btrfs@coker.com.au> wrote:
+# df -h /mnt/tmp
+Filesystem              Size  Used Avail Use% Mounted on
+/dev/mapper/rjca-crypt   12G   12G  637M  95% /mnt/tmp
 
-> http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=695886
-> 
-> The above bug concerns a RAID-1 filesystem that got corrupt when it ran out of 
-> disk space due to too many snapshots while running a 3.2.x kernel.  Running it 
-> with a 3.7.1-1~experimental.1 kernel from Debian still doesn't work (I've 
-> attached dmesg output after a du on the filesystem caused a kernel panic).  
-> This particular test run was done with the filesystem mounted -o recovery.
-> 
-> Also btrfsck doesn't seem to help things.
-> 
-> Any suggestions?
+I didn't expect that to work because the filesystem already reported free 
+space.  I removed the snapshots and had problems during/after the removal so 
+it seemed that there was space.
 
-Add another disk, or disk partition, to the Btrfs volume. That'll give it more space and hopefully you can back out at that point.
+# btrfs filesystem show --all-devices
+Label: none  uuid: 0f0b48e9-d2f7-4280-b417-4d1f5a933975
+        Total devices 3 FS bytes used 5.63GB
+        devid    1 size 6.00GB used 6.00GB path /dev/dm-16
+        devid    2 size 6.00GB used 6.00GB path /dev/dm-17
+        devid    3 size 6.00GB used 19.00MB path /dev/dm-18
 
+However I've added another device and now "du -h" completes without any kernel 
+panic (a major improvement).  Now I'm seeing the above, apparently 19MB used 
+on the new dm-18 device seems to be making all the difference.
 
-Chris Murphy
+# btrfs subvol list /mnt/tmp
+ERROR: Failed to lookup path for root 0 - No such file or directory
+
+Strangely I was getting the above error while the btrfs scrub was in progress, 
+but it went away when the scrub finished.  That seems like a bug to me.
+
+Now the filesystem is now OK and I've copied all the data off it.  The data 
+appears to be all intact (much of it could be verified against another system).
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

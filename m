@@ -1,75 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f182.google.com ([209.85.223.182]:38362 "EHLO
-	mail-ie0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752748Ab2L2NAt (ORCPT
+Received: from mail-ea0-f170.google.com ([209.85.215.170]:61487 "EHLO
+	mail-ea0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752829Ab2L2NUd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Dec 2012 08:00:49 -0500
-Received: by mail-ie0-f182.google.com with SMTP id s9so13848706iec.27
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Dec 2012 05:00:48 -0800 (PST)
+	Sat, 29 Dec 2012 08:20:33 -0500
+Received: by mail-ea0-f170.google.com with SMTP id d11so4537846eaa.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Dec 2012 05:20:32 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1ToibV-0001fD-SN@internal.tormail.org>
-References: <1ToibV-0001fD-SN@internal.tormail.org>
-Date: Sat, 29 Dec 2012 15:00:48 +0200
-Message-ID: <CAOcd+r3OjBAGbRN-cSbL7tQP=tTRYakZO3fm9gA_oqSz6KXuYw@mail.gmail.com>
-Subject: Re: Incremental btrfs receive in opposite direction fails
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: junlion@tormail.org
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <CACCfv7oFanOd1Yg=UgqEVhfHbD=JGkGT3CZy9KpQMgrsWixX=w@mail.gmail.com>
+References: <CACCfv7ot+WTV1eiBCujcyPkSt7SGqVvVCKpFo4rn8Y=FEZu_7w@mail.gmail.com>
+	<CAE5mzvhOMZopeVqb4A7PihLuyM2zo_ETN1G3wE_OJi27NfSzVg@mail.gmail.com>
+	<CACCfv7oFanOd1Yg=UgqEVhfHbD=JGkGT3CZy9KpQMgrsWixX=w@mail.gmail.com>
+Date: Sat, 29 Dec 2012 23:44:40 +1030
+Message-ID: <CACCfv7r5zVx7UGWNLyeHT9t6VT8rWW8WgQwAb+ffjiUOyi6C2g@mail.gmail.com>
+Subject: Re: parent transid verify failed on -- After moving btrfs closer to
+ the beginning of drive with dd
+From: Jordan Windsor <jordanw2@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Also here's the output of btrfs-find-root:
 
-On Sat, Dec 29, 2012 at 12:42 AM,  <junlion@tormail.org> wrote:
-> Hi everyone!
->
-> (I use kernel 3.7.1 and mason/btrfs-progs.git head + the receive
-> lchown patch [1]. Is there a more up to date btrfs-progs repo for
-> send/receive enthusiasts?)
-There is no special repo, but you may want, in addition to the patch
-you mentioned, apply this one as well:
-https://patchwork.kernel.org/patch/1604391/
-Whether you need it or not depends on how your subvolumes are
-organized in a file tree.
+./btrfs-find-root /dev/sdb1
+Super think's the tree root is at 1229060866048, chunk root 1259695439872
+Went past the fs size, exiting
 
+Not sure where to go from here.
 
+On Sat, Dec 29, 2012 at 6:04 AM, Jordan Windsor <jordanw2@gmail.com> wrote:
+> Hello,
+> thanks for the response!
+> Here's the output of "-o recovery"
 >
-> What I'm trying is basically:
+> [ 5473.725751] device label Storage devid 1 transid 116023 /dev/sdb1
+> [ 5473.726612] btrfs: enabling auto recovery
+> [ 5473.726615] btrfs: disk space caching is enabled
+> [ 5473.734581] parent transid verify failed on 1229060423680 wanted
+> 116023 found 116027
+> [ 5473.734797] parent transid verify failed on 1229060423680 wanted
+> 116023 found 116027
+> [ 5473.734801] btrfs: failed to read tree root on sdb1
+> [ 5473.735010] parent transid verify failed on 1229060423680 wanted
+> 116023 found 116027
+> [ 5473.735259] parent transid verify failed on 1229060423680 wanted
+> 116023 found 116027
+> [ 5473.735262] btrfs: failed to read tree root on sdb1
+> [ 5473.756367] parent transid verify failed on 1229060243456 wanted
+> 116022 found 116028
+> [ 5473.761968] parent transid verify failed on 1229060243456 wanted
+> 116022 found 116028
+> [ 5473.761975] btrfs: failed to read tree root on sdb1
+> [ 5475.561208] btrfs bad tree block start 7479324919942847850 1241518882816
+> [ 5475.567008] btrfs bad tree block start 13410158725948676859 1241518882816
+> [ 5475.567056] Failed to read block groups: -5
+> [ 5475.570200] btrfs: open_ctree failed
 >
-> # Transfer a snapshot of my old system from a backup to the new system
-> btrfs send /mnt/bak/.snap | btrfs receive /                 # OK
+> I'm on kernel 3.6.10 and have been before this problem.
 >
-> # Merge the old system's files with the new system's files
-> btrfs subvolume snapshot /.snap /.snap-merge                # OK
-> mkdir /.snap-merge/.old                                     # OK
-> mv /.snap-merge/* /.snap-merge/.old                         # OK
-> cp -a --reflink /* /.snap-merge                             # OK
-> btrfs subvolume snapshot -r /.snap-merge /.snap-merge-done  # OK
+> Thanks.
 >
-> # Incrementally transfer the merged files back to the backup drive
-> btrfs send -p /.snap /.snap-merge-done | btrfs receive -p /mnt/bak
->
-> The last step fails due to the changed direction of the transfer.
-> "ERROR: could not find parent subvolume". It seems like btrfs receive
-> cannot find the parent/clone source because it is searching for its UUID
-> only by looking through the /mnt/bak snapshots' received_uuid fields.
->
-> Is there a way for me to directly change the received_uuid of
-> /mnt/bak/.snap to make it identical to the UUID of /.snap? This looks
-> like the easiest way if I only need to do it once.
-There is no implemented way, but since you debugged this far, you can
-put up some code that sends BTRFS_IOC_SET_RECEIVED_SUBVOL, which is
-the one setting the received_uuid (and some other small stuff, please
-check the kernel code for it).
-
-Thanks,
-Alex.
-
-
->
-> [1] https://patchwork.kernel.org/patch/1606091/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> On Sat, Dec 29, 2012 at 5:29 AM, cwillu <cwillu@cwillu.com> wrote:
+>> On Fri, Dec 28, 2012 at 12:09 PM, Jordan Windsor <jordanw2@gmail.com> wrote:
+>>> Hello,
+>>> I moved my btrfs to the beginning of my drive & updated the partition
+>>> table & also restarted, I'm currently unable to mount it, here's the
+>>> output in dmesg.
+>>>
+>>> [  481.513432] device label Storage devid 1 transid 116023 /dev/sdb1
+>>> [  481.514277] btrfs: disk space caching is enabled
+>>> [  481.522611] parent transid verify failed on 1229060423680 wanted
+>>> 116023 found 116027
+>>> [  481.522789] parent transid verify failed on 1229060423680 wanted
+>>> 116023 found 116027
+>>> [  481.522790] btrfs: failed to read tree root on sdb1
+>>> [  481.523656] btrfs: open_ctree failed
+>>>
+>>> What command should I run from here?
+>>
+>> The filesystem wasn't uncleanly unmounted, likely on an older kernel.
+>>
+>> Try mounting with -o recovery

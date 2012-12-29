@@ -1,123 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.9]:57372 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752083Ab2L2L23 (ORCPT
+Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:18343 "EHLO
+	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752083Ab2L2Lai convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Dec 2012 06:28:29 -0500
-Message-ID: <50DED3D2.7010502@friedels.name>
-Date: Sat, 29 Dec 2012 12:28:18 +0100
-From: Hendrik Friedel <hendrik@friedels.name>
+	Sat, 29 Dec 2012 06:30:38 -0500
+Received: from 165.105.77.188.dynamic.jazztel.es ([188.77.105.165] helo=mail.viric.name)
+	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <viric@viric.name>)
+	id 1Toucd-000L42-BS
+	for linux-btrfs@vger.kernel.org; Sat, 29 Dec 2012 11:30:35 +0000
+Date: Sat, 29 Dec 2012 12:30:30 +0100
+From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: ENOSPC, while 18GB are unallocated
+Message-ID: <20121229113030.GA12338@vicerveza.homeunix.net>
 MIME-Version: 1.0
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: segmentation-fault in btrfsck (git-version)
-References: <50BFB3B2.8040405@friedels.name> <CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com> <50C4E152.2000102@friedels.name> <CAKcLGm8wm1Gfe0ESCubGusqe_zojJp=7JORLXuq_EUdY22JOWA@mail.gmail.com> <50CCD247.3090701@friedels.name> <CAKcLGm-bwUriSBzoM2FTV9Rv1=dYp=5H_me8VZX6vygtXEhADg@mail.gmail.com> <50D0EB73.4090304@friedels.name>
-In-Reply-To: <50D0EB73.4090304@friedels.name>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-I re-send this message, hoping that someone can give me a hint?
+I have a fs with those free space parameters in a 3.6.6 arm system:
+from 'btrfs fi show':
+Total devices 1 FS bytes used 70.38GB
+devid    1 size 111.29GB used 93.14GB path /dev/sda1
+
+from 'btrfs fi df /':
+Data: total=87.01GB, used=68.29GB
+Metadata, DUP: total=3.00GB, used=2.09GB
+
+And I get ENOSPC on unlink, ENOSPC on balance (-dusage=5 -musage=5 even), ENOSPC
+truncating files to size 0, ...
+
+The numbers show that there are ~18GB *unallocated*, isn't it? Why do I have any
+ENOSPC?
+
+In fact, although 'truncate' reports "couldn't truncate: ENOSPC", further 'ls
+-l' show the file became 0-bytes long.
+
+I could exit this deadlock situation thanks to 'btrfs fi defrag a_directory'.
+But I reach ENOSPC soon again.
+
+It would be very nice, if ENOSPC wrote a line in the kernel log stating the
+cause of ENOSPC. The kernel log, in this case, didn't report much other than
+"btrfs: 19 enospc during balance".
 
 Regards,
-Hendrik
-
-Am 18.12.2012 23:17, schrieb Hendrik Friedel:
-> Hi Mitch, hi all,
->
-> thanks for your hint.
->
-> I used btrfs-debug-tree now.
-> With -e, the output is empty. But without -e I do get a bit output file.
-> When I search for Filenames that I am missing, I get:
->
-> grep Sting big_output_file  |grep Berlin
->                  namelen 20 datalen 0 name: Sting_Live_in_Berlin
->                  namelen 20 datalen 0 name: Sting_Live_in_Berlin
->                  inode ref index 29 namelen 20 name: Sting_Live_in_Berlin
->
-> That looks good.
-> That raises two questions now: Can I restore the file?
-> And: Can I do that for a whole Path (e.g. ./Video/)
->
-> Greetings&Thanks!
-> Hendrik
->
->
-> Am 15.12.2012 23:24, schrieb Mitch Harder:
->> On Sat, Dec 15, 2012 at 1:40 PM, Hendrik Friedel
->> <hendrik@friedels.name> wrote:
->>> Hello Mitch, hello all,
->>>
->>>
->>>> Since btrfs has significant improvements and fixes in each kernel
->>>>
->>>> release, and since very few of these changes are backported, it is
->>>> recommended to use the latest kernels available.
->>>
->>>
->>> Ok, it's 3.7 now.
->>>
->>>
->>>> The "root ### inode ##### errors 400" are an indication that there is
->>>> an inconsistency in the inode size.  There was a patch included in the
->>>> 3.1 or 3.2 kernel to address this issue
->>>>
->>>> (http://git.kernel.org/?p=linux/kernel/git/stable/linux-stable.git;a=commit;h=f70a9a6b94af86fca069a7552ab672c31b457786).
->>>>
->>>>    But I don't believe this patch fixed existing occurrences of this
->>>> error.
->>>
->>>
->>> Apparently not. It's still there.
->>>
->>>
->>>> At this point, the quickest solution for you may be to rebuild and
->>>> reformat this RAID assembly, and restore this data from backups.
->>>
->>>
->>> Yepp, I did that. But in fact, some data is missing. It is not
->>> essential,
->>> but nice to have.
->>>
->>>
->>>> If you don't have a backup of this data, and since your array seems to
->>>> be working pretty well in a degraded state, this would be a really
->>>> good time to look at a strategy of getting a backup of this data
->>>> before doing many more attempts at rescue.
->>>
->>>
->>> Done. It's all save on another ext4 drive.
->>>
->>> So, let's play ;-)
->>> Could you please help me trying to restore the missing Data?
->>>
->>> What I tried sofar was:
->>> ./btrfs-restore /dev/sdc1 /mnt/restore/
->>>
->>> It worked, in a way that it restored what I already had.
->>> What's odd aswell is, that btrfs scrub did run through without errors.
->>> So, the missing data could have been (accidentally) deleted by me. But I
->>> don't think... nevertheless I cannot exclude.
->>>
->>> What I know is the (original) Path of the Data.
->>>
->>
->> You could try btrfs-debug-tree, and search for any traces of your
->> file.  However, be ready to sift through a massive amount of output.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
->
-
-
--- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Mobil 0178 1874363
+Lluís.

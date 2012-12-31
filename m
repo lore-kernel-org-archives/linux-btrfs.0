@@ -1,64 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f179.google.com ([209.85.210.179]:62868 "EHLO
-	mail-ia0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751621Ab2LaTCH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Dec 2012 14:02:07 -0500
-Received: by mail-ia0-f179.google.com with SMTP id o25so10830024iad.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Dec 2012 11:02:06 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:37914 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751750Ab2LaVdJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Dec 2012 16:33:09 -0500
+Date: Mon, 31 Dec 2012 13:33:07 -0800
+From: Mark Fasheh <mfasheh@suse.de>
+To: chris.mason@fusionio.com, ablock84@googlemail.com
+Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [RFC] btrfs send without data updates?
+Message-ID: <20121231213307.GC12558@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
-In-Reply-To: <CAOcd+r3c7ct3qS396=nXdhyN_7Ku5cpbog4zLZEdXK=TjfHn0w@mail.gmail.com>
-References: <CAFhuFEdxHxdiAutfxxsQ9i0OJj_CfRwWD-0LuhvoJYGHkTsG4A@mail.gmail.com>
-	<CAOcd+r1LnMP=CU37mUSxZGuksTY4kYo+Y5vg9n3BV-E=ye=-Yg@mail.gmail.com>
-	<CANTVtNqzGmK2fb3EEXtjAanNBGxBCN2T44wnMw9xLTYSyPV3vA@mail.gmail.com>
-	<CAOcd+r2fS-=dCU-v8ZLUNGrS3ojfhLXYAtBek-JGvvOJLOar3Q@mail.gmail.com>
-	<CANTVtNqB_C+srL9DsL2b7QC1rUT4m5-6RHR6CqQbajQm2NCy0w@mail.gmail.com>
-	<CAOcd+r05VgvOrW-_X89OyVd-AgJuyXt0O4ZhJ=ZisaZDJkxuhg@mail.gmail.com>
-	<CAFhuFEeV-NpkGTdV+yh0K3vWj-1ntQNSkwtg1r=SyZ04dSkHaA@mail.gmail.com>
-	<CAFhuFEc9YRhP1aN_1-JG7VRfC0_pNA2nwK7-nzR6kj7bbNoX4g@mail.gmail.com>
-	<CAFhuFEc==AeTi8cjHHCZDiP-xN6XLJDJmW4pVtnhr2rcWVEoag@mail.gmail.com>
-	<CAOcd+r3c7ct3qS396=nXdhyN_7Ku5cpbog4zLZEdXK=TjfHn0w@mail.gmail.com>
-Date: Mon, 31 Dec 2012 21:02:06 +0200
-Message-ID: <CAOcd+r2YoqWbPFSi+kt4indZvaP_XkRzqkTOL8FwiXEYzzmSmg@mail.gmail.com>
-Subject: Re: Snapper snapshot comparison algorithm
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: nafisa mandliwala <nafisa.mandliwala@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Alexander Block <ablock84@googlemail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Small correction,I was just hit by this:
+Hi Chris! Hi Alexander!
 
-> # The tuple (inode_number, inode generation) is unique within a
-> particular btrfs subvolume. Inode numbers can be reused via
-> "inode_cache" mount option if it is set, however, same inode number
-> (after deletion of previous one) will have another inode generation if
-> it is reused. The changed_inode function determines this case by
-> setting cur_inode_new_gen flag. In that case it knows, that this is
-> not the same inode that was just changed, so it needs to delete the
-> old inode and create a new one. If you ignore this case at first (say
-> you don't use inode_cache), then this function becomes pretty simple.
+I'm working on the kernel side of a feature request we have from the snapper
+developers. Snapper can be used (in conjunction) with btrfs on openSUSE to
+roll back system changes made via YaST and zypper.
 
-Even if "inode_cache" mount option is not used, inode number still can
-be reused!
-Looking at btrfs_find_free_objectid():
-	if (unlikely(root->highest_objectid < BTRFS_FIRST_FREE_OBJECTID)) {
-		ret = btrfs_find_highest_objectid(root,
-						  &root->highest_objectid);
-		if (ret)
-			goto out;
-	}
+If you want to know more, you can see the following page:
 
-So after mount root->highest_objectid is set to 0, and later
-initialized on-demand. So the scenario to reuse the inode number is as
-follows:
-# mount the filesystem
-# delete the file that has the highest inode number
-# create a new file
+http://doc.opensuse.org/documentation/html/openSUSE/opensuse-reference/cha.snapper.html
 
-At this point the new file will get the same inode number. Amazing!
+Right now snapper does this by running 'find' and 'diff' against snapshots
+it has taken. This is obviously expensive and we're looking at something
+like the btrfs send ioctl to reduce the overhead during this operation.
+
+In fact, send works quite nicely except that it always reads changed file
+data from disk and puts it in the stream - snapper doesn't want this
+overhead and would prefer to produce the changed data itself. Knowing that
+there *was* a data update however is still critical.
+
+So I have a conceptually simple patch which passes a flag to modify this
+behavior. The patch is included below however I will quote the description
+here: 
+
+ "This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
+  ioctl code. When this flag is set, the btrfs send code will never write file
+  data into the stream (thus also avoiding expensive reads of that data in the
+  first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
+  BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
+  question.
+
+  This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
+  they will continue to be sent when a search finds an appropriate extent to
+  clone from."
 
 
-Alex.
+What do you all think of this approach? Is it too ugly to put a conditional
+command in the stream? Do we want to just add another ioctl? I'm loathe to
+go in *that* direction because I fear I'd be replicating most of the send
+code _anyway_ (well, it could just be a wrapper ioctl()).
+
+Thanks in advance for looking at this.
+	--Mark
+
+--
+Mark Fasheh
+
+
+From: Mark Fasheh <mfasheh@suse.de>
+
+btrfs: add "no file data" flag to btrfs send ioctl
+
+This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
+ioctl code. When this flag is set, the btrfs send code will never write file
+data into the stream (thus also avoiding expensive reads of that data in the
+first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
+BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
+question.
+
+This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
+they will continue to be sent when a search finds an appropriate extent to
+clone from.
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/ioctl.h |    7 +++++++
+ fs/btrfs/send.c  |   48 ++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/send.h  |    1 +
+ 3 files changed, 52 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 731e287..1f6cfdd 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -363,6 +363,13 @@ struct btrfs_ioctl_received_subvol_args {
+ 	__u64	reserved[16];		/* in */
+ };
+ 
++/*
++ * Caller doesn't want file data in the send stream, even if the
++ * search of clone sources doesn't find an extent. UPDATE_EXTENT
++ * commands will be sent instead of WRITE commands.
++ */
++#define BTRFS_SEND_FLAG_NO_FILE_DATA     0x1
++
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
+ 	__u64 clone_sources_count;	/* in */
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index e78b297..f97b5e6 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -85,6 +85,7 @@ struct send_ctx {
+ 	u32 send_max_size;
+ 	u64 total_send_size;
+ 	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
++	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
+ 
+ 	struct vfsmount *mnt;
+ 
+@@ -3707,6 +3708,42 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Send an update extent command to user space.
++ */
++static int send_update_extent(struct send_ctx *sctx,
++			      u64 offset, u32 len)
++{
++	int ret = 0;
++	struct fs_path *p;
++
++verbose_printk("btrfs: send_update_extent offset=%llu, len=%d\n", offset, len);
++
++	p = fs_path_alloc(sctx);
++	if (!p)
++		return -ENOMEM;
++
++	ret = begin_cmd(sctx, BTRFS_SEND_C_UPDATE_EXTENT);
++	if (ret < 0)
++		goto out;
++
++	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
++	if (ret < 0)
++		goto out;
++
++	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
++	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_LEN, len);
++	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
++	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
++
++	ret = send_cmd(sctx);
++
++tlv_put_failure:
++out:
++	fs_path_free(sctx, p);
++	return ret;
++}
++
+ static int send_write_or_clone(struct send_ctx *sctx,
+ 			       struct btrfs_path *path,
+ 			       struct btrfs_key *key,
+@@ -3742,7 +3779,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 		goto out;
+ 	}
+ 
+-	if (!clone_root) {
++	if (clone_root) {
++		ret = send_clone(sctx, offset, len, clone_root);
++	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
++		ret = send_update_extent(sctx, offset, len);
++	} else {
+ 		while (pos < len) {
+ 			l = len - pos;
+ 			if (l > BTRFS_SEND_READ_SIZE)
+@@ -3755,10 +3796,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 			pos += ret;
+ 		}
+ 		ret = 0;
+-	} else {
+-		ret = send_clone(sctx, offset, len, clone_root);
+ 	}
+-
+ out:
+ 	return ret;
+ }
+@@ -4570,6 +4608,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
+ 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 
++	sctx->flags = arg->flags;
++
+ 	sctx->send_filp = fget(arg->send_fd);
+ 	if (IS_ERR(sctx->send_filp)) {
+ 		ret = PTR_ERR(sctx->send_filp);
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 1bf4f32..8bb18f7 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -86,6 +86,7 @@ enum btrfs_send_cmd {
+ 	BTRFS_SEND_C_UTIMES,
+ 
+ 	BTRFS_SEND_C_END,
++	BTRFS_SEND_C_UPDATE_EXTENT,
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+-- 
+1.7.7
+

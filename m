@@ -1,61 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:42788 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754970Ab2L3Tka (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25335 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750750Ab2LaDYT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Dec 2012 14:40:30 -0500
-Received: by mail-ob0-f174.google.com with SMTP id ta14so11132447obb.33
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Dec 2012 11:40:28 -0800 (PST)
+	Sun, 30 Dec 2012 22:24:19 -0500
+Message-ID: <50E106D2.9010003@oracle.com>
+Date: Mon, 31 Dec 2012 11:30:26 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <50DED3D2.7010502@friedels.name>
-References: <50BFB3B2.8040405@friedels.name>
-	<CAKcLGm_44rjGwyKox0xO1SqWP1SkY-z8vpST6n99Q4g6eN9Lrw@mail.gmail.com>
-	<50C4E152.2000102@friedels.name>
-	<CAKcLGm8wm1Gfe0ESCubGusqe_zojJp=7JORLXuq_EUdY22JOWA@mail.gmail.com>
-	<50CCD247.3090701@friedels.name>
-	<CAKcLGm-bwUriSBzoM2FTV9Rv1=dYp=5H_me8VZX6vygtXEhADg@mail.gmail.com>
-	<50D0EB73.4090304@friedels.name>
-	<50DED3D2.7010502@friedels.name>
-Date: Sun, 30 Dec 2012 13:34:35 -0600
-Message-ID: <CAKcLGm-Te1nTCieN+AOnxhLyB_5EaHHYZ+R6gV7yaFqzJN7nqA@mail.gmail.com>
-Subject: Re: segmentation-fault in btrfsck (git-version)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: russell+btrfs@coker.com.au
+CC: Bart Noordervliet <bart@noordervliet.net>,
+        "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
+Subject: Re: determining filesystem mount points
+References: <201212291604.52597.russell+btrfs@coker.com.au> <CAGy7Utj=HpO-EetPJQzAkiXKWg8XvWE2mB6s8kRGJ9nBR34OKw@mail.gmail.com> <201212301223.16325.russell+btrfs@coker.com.au>
+In-Reply-To: <201212301223.16325.russell+btrfs@coker.com.au>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 29, 2012 at 5:28 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
-> Hello,
->
-> I re-send this message, hoping that someone can give me a hint?
->
-> Regards,
-> Hendrik
->
 
-Two possibilities come to mind (although there may be others).
 
-(1)  The file still exists, but it is somewhere you did not expect.
+> Perhaps the best solution would be to have an option to "btrfs subvol list" to
+> give output with fully qualified paths.
 
-(2)  Your filesystem tree has some sort of corruption.
+  This patch does that.
 
-For item (1), have you thoroughly searched the entire volume for this
-file with something like:
+    http://comments.gmane.org/gmane.comp.file-systems.btrfs/20040
 
-find <path/to/volume/top/level/mount>  -iname 'Sting_Live_in_Berlin'
 
-It is possible that the file exists in a snapshot or different
-directory then you were expecting.
+-Anand
 
-If the filesystem tree is corrupted, the task becomes tricky.
-
-Perhaps you can look at the Wiki entry for how the filesystem tree is
-constructed:
-
-https://btrfs.wiki.kernel.org/index.php/Trees
-
-Then examine the btrfs-debug-tree output around these entries, and try
-to determine why the tree still has entries for these files, but does
-not show these files nor report the problem with btrfsck.

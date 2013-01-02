@@ -1,42 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:46756 "EHLO mx2.fusionio.com"
+Received: from cantor2.suse.de ([195.135.220.15]:32845 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752946Ab3ABSJC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jan 2013 13:09:02 -0500
-Date: Wed, 2 Jan 2013 13:09:00 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Jan Steffens <jan.steffens@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: BUG during log recovery
-Message-ID: <20130102180900.GB2389@localhost.localdomain>
-References: <CAMQ-g0fNocHwEvbeDAf-HK+Nh4XcQDDD7Mi_ZxDSqv-moFKn5g@mail.gmail.com>
- <20121218134007.GB2403@localhost.localdomain>
- <CAMQ-g0cywb_kDoV4Dj4fbSYj3JujvbouUvuXPWJyffskcKafBA@mail.gmail.com>
- <20130102173229.GA2389@localhost.localdomain>
- <CAMQ-g0fdd9jB2nBSViCEdUWNeJuAUO=nMy0oBG7ZLhwOdvAUQw@mail.gmail.com>
+	id S1752461Ab3ABTBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jan 2013 14:01:35 -0500
+Date: Wed, 2 Jan 2013 11:01:33 -0800
+From: Mark Fasheh <mfasheh@suse.de>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: chris.mason@fusionio.com, ablock84@googlemail.com,
+        Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] btrfs send without data updates?
+Message-ID: <20130102190133.GE12558@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <20121231213307.GC12558@wotan.suse.de> <50E41D80.6020005@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAMQ-g0fdd9jB2nBSViCEdUWNeJuAUO=nMy0oBG7ZLhwOdvAUQw@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50E41D80.6020005@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 02, 2013 at 10:36:36AM -0700, Jan Steffens wrote:
-> On Wed, Jan 2, 2013 at 6:32 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> > I posted a patch for this before I left for Christmas vacation, it is here
-> >
-> > http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=ee2399d8a7dd1d49b0996beaaaada5b728b35bf1
-> >
-> > in btrfs-next.  Can you give it a whirl and let me know if it fixes your
-> > problem?  Thanks,
-> >
-> > Josef
+On Wed, Jan 02, 2013 at 12:44:00PM +0100, Jan Schmidt wrote:
+> Hi Mark,
 > 
-> I'll try it when I encounter the problem again (remember I used
-> btrfs-zero-log). I think I already told you that: We talked on
-> Freenode, if I recall correctly.
+> I like your approach in general. Two comments on the patch below.
+
+Oh great! Thanks for looking at this Jan!
+
+
+> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> > index e78b297..f97b5e6 100644
+> > --- a/fs/btrfs/send.c
+> > +++ b/fs/btrfs/send.c
+> > @@ -85,6 +85,7 @@ struct send_ctx {
+> >  	u32 send_max_size;
+> >  	u64 total_send_size;
+> >  	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
+> > +	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
+> >  
+> >  	struct vfsmount *mnt;
+> >  
+> > @@ -3707,6 +3708,42 @@ out:
+> >  	return ret;
+> >  }
+> >  
+> > +/*
+> > + * Send an update extent command to user space.
+> > + */
+> > +static int send_update_extent(struct send_ctx *sctx,
+> > +			      u64 offset, u32 len)
+> > +{
+> > +	int ret = 0;
+> > +	struct fs_path *p;
+> > +
+> > +verbose_printk("btrfs: send_update_extent offset=%llu, len=%d\n", offset, len);
 > 
+> I know the send code has some of those, too, but it really shouldn't. Please
+> don't add any new ones. If you think that's useful, please use proper
+> indentation or even better, pr_debug with proper indentation.
 
-Yes thanks, vacation brain :).
+Ugh yeah I see that now. Definitely I was "going with the flow" so to speak.
+I'll kill that line completely most likely. It's not really telling us a
+whole lot I couldn't get from other means.
 
-Josef
+
+> > +
+> > +	p = fs_path_alloc(sctx);
+> > +	if (!p)
+> > +		return -ENOMEM;
+> > +
+> > +	ret = begin_cmd(sctx, BTRFS_SEND_C_UPDATE_EXTENT);
+> > +	if (ret < 0)
+> > +		goto out;
+> > +
+> > +	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
+> > +	if (ret < 0)
+> > +		goto out;
+> > +
+> > +	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+> > +	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_LEN, len);
+> > +	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+> > +	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
+> 
+> Having both CLONE_LEN and SIZE doesn't seem right. The sequence seems a bit odd
+> here, too, but it's in good company with the rest of send.c.
+
+You're right though that CLONE_LEN doesn't have any reason to be there. I'm
+partial to changing the sequence then:
+
+	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
+
+Seems more sane from a readability standpoint. "Oh, this <path> had an
+extent change in the range (<offset>, <len>).
+
+Thanks again!
+	--Mark
+
+--
+Mark Fasheh

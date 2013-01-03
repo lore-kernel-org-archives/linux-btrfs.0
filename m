@@ -1,112 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f47.google.com ([209.85.215.47]:44123 "EHLO
-	mail-la0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756231Ab3AHR6W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 12:58:22 -0500
-Received: by mail-la0-f47.google.com with SMTP id fh20so787601lab.20
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jan 2013 09:58:21 -0800 (PST)
-Message-ID: <50EC5E2D.8000308@gmail.com>
-Date: Tue, 08 Jan 2013 21:58:05 +0400
-From: Alexander Meshcheryakov <alexander.s.m@gmail.com>
+Received: from brockman.in8.de ([85.214.220.56]:42143 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753430Ab3ACR0H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Jan 2013 12:26:07 -0500
+Message-ID: <50E5BF2D.20909@jan-o-sch.net>
+Date: Thu, 03 Jan 2013 18:26:05 +0100
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Buffer I/O error with mirrored lvm on top of files on Btrfs
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Mathieu Chouquet-Stringer <mathieu@csetco.com>
+CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        sami.liedes@iki.fi, chris.mason@fusionio.com, sensille@gmx.net
+Subject: Re: GPF in read_extent_buffer while scrubbing on 3.7.0-rc8-00014-g27d7c2a
+References: <20121206143458.GA24396@kashmir> <20121210222125.GA20072@kashmir> <20121214181149.GA15378@kashmir>
+In-Reply-To: <20121214181149.GA15378@kashmir>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi Mathieu,
 
-I tried to test LVM Raid1 robustness with following setup:
+Sorry for the late reply. I had quite a good reproducer once for what I suspect
+may be your problem here - but it suddenly stopped reproducing the problem and I
+still haven't figured out why. (see https://patchwork.kernel.org/patch/1773611/
+if you're interested)
 
-fallocate -l 128M file1
-fallocate -l 128M file2
-losetup /dev/loop0 file1
-losetup /dev/loop1 file2
-pvcreate /dev/loop{0,1}
-vgcreate testvg /dev/loop{0,1}
-lvcreate -L 100M --mirrorlog core -m 1 -n testlv testvg
+Can you please give the following patch a try and report back if it helps you
+(apply on top of cmason/for-linus, 57ba86c)? If it doesn't, you've got three
+choices:
 
-So far so good. But suddenly on attempt to use this volume:
+a) forget about the problem
+b) send me a dump of your whole file system (space can be provided)
+c) receive debug patches, apply them and send me the output
 
-mkfs.ext4 /dev/testvg/testlv
-<uninteresting messages>
-Superblock backups stored on blocks:
-         8193, 24577, 40961, 57345, 73729
+Thanks,
+-Jan
 
-Allocating group tables: done
-Warning: could not read block 0: Attempt to read block from filesystem 
-resulted in short read
-Warning: could not erase sector 0: Attempt to write block to filesystem 
-resulted in short write
-Writing inode tables: done
-ext2fs_update_bb_inode: Attempt to read block from filesystem resulted 
-in short read while setting bad block inode
+------>8---------
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65f0367..d51185e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3324,8 +3324,6 @@ int close_ctree(struct btrfs_root *root)
 
-And following error messages in dmesg appears:
+ 	btrfs_dev_replace_suspend_for_unmount(fs_info);
 
-[211114.749967] device-mapper: raid1: All sides of mirror have failed.
-[211114.754559] Buffer I/O error on device dm-4, logical block 0
-[211114.755097] Buffer I/O error on device dm-4, logical block 72
-[211114.758176] Buffer I/O error on device dm-4, logical block 25584
-[211114.758184] Buffer I/O error on device dm-4, logical block 25584
-[211114.758192] Buffer I/O error on device dm-4, logical block 25598
-[211114.758195] Buffer I/O error on device dm-4, logical block 25598
-[211114.758201] Buffer I/O error on device dm-4, logical block 0
-[211114.758204] Buffer I/O error on device dm-4, logical block 0
-[211114.758209] Buffer I/O error on device dm-4, logical block 1
+-	btrfs_scrub_cancel(fs_info);
+-
+ 	/* wait for any defraggers to finish */
+ 	wait_event(fs_info->transaction_wait,
+ 		   (atomic_read(&fs_info->defrag_running) == 0));
+@@ -3392,6 +3390,7 @@ int close_ctree(struct btrfs_root *root)
+ 	btrfs_stop_workers(&fs_info->caching_workers);
+ 	btrfs_stop_workers(&fs_info->readahead_workers);
+ 	btrfs_stop_workers(&fs_info->flush_workers);
++	btrfs_scrub_cancel(fs_info);
 
-With a couple of more experiments I found that:
-1) This setup works well if underlying filesystem is ext4 or FAT32, but 
-fails if underlying FS is Btrfs or ntfs-3g;
-2) It works well everywhere, if LV is not mirrored.
-
-It seems to me that there is obscure problem somewhere.
-
-I concocted a script to help with reproducing this problem. It 
-constructs volume group from two test files in current directory:
-----------------------
-#!/bin/sh
-
-#PV size has to specified in megabytes, or loopback files creation with 
-dd will break
-PVSIZE=128M
-LVSIZE=100M
-FILES='loopback1 loopback2'
-LBDEVICES=''
-VGNAME='lvmlbtest'
-LVNAME='mirror'
-
-#####################
-#  Test
-#####################
-
-for f in $FILES; do
-     fallocate -l $PVSIZE $f || dd if=/dev/zero of=$f bs=$((1024*1024)) 
-count=${PVSIZE%M} || exit 1
-     losetup -v -f $f
-     LBDEVICES="$LBDEVICES $(losetup -a|grep $f|cut -d: -f1|tail -n 1)"
-done
-pvcreate $LBDEVICES
-vgcreate $VGNAME $LBDEVICES
-lvcreate -L $LVSIZE --mirrorlog core -m 1 -n $LVNAME $VGNAME
-
-LVPATH=$(lvs --noheadings -o lv_path|grep $VGNAME|grep $LVNAME)
-
-
-read -p 'LV created. Press enter to proceed with mkfs ' sleepvar
-mkfs.ext4 $LVPATH
-
-#####################
-#  Cleanup
-#####################
-read -p 'Press enter to delete test VG ' sleepvar
-
-vgremove -f $VGNAME
-sync
-for LB in $LBDEVICES; do
-     losetup -v -d $LB
-done
-for f in $FILES; do
-     rm -v $f
-done
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	if (btrfs_test_opt(root, CHECK_INTEGRITY))

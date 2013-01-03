@@ -1,71 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout01.t-online.de ([194.25.134.80]:32831 "EHLO
-	mailout01.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753436Ab3ACQjE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jan 2013 11:39:04 -0500
-Date: 03 Jan 2013 17:29:00 +0100
-From: Hullen@t-online.de (Helmut Hullen)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <CO8i$PzPCXB@helmut.hullen.de>
-In-Reply-To: <20130103160853.GA19051@carfax.org.uk>
-Subject: Re: Option LABEL
+Received: from cantor2.suse.de ([195.135.220.15]:35980 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753539Ab3ACQmK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Jan 2013 11:42:10 -0500
+Date: Thu, 3 Jan 2013 17:42:07 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Georgios Tsalikis <anaphaxeton@hol.gr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Libified btrfs utils?
+Message-ID: <20130103164207.GD20089@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <BLU0-SMTP213444C7DD70FB0E7A8EB63D5210@phx.gbl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <BLU0-SMTP213444C7DD70FB0E7A8EB63D5210@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+On Thu, Jan 03, 2013 at 05:25:20PM +0200, Georgios Tsalikis wrote:
+> Is it possible that you deliver btrfs management utilities come in a C
+> library form? It is always good to have a C API and CLI utility separation.
+> Take libparted as an example. How much more functionality is in gparted than
+> the (standard) cli parted? Writting tools by direct access to an API is much
+> more elegant for a programmer. Please, consider my suggestion. Many would
+> appreciate it, i am sure... Especially people like me that want to write GUI
+> frontends.
 
-Du meintest am 03.01.13:
+Thanks for the suggestion, this has been asked for in the past and is
+listed under projects:
 
->> please delete the option "-L" (for labelling) in "mkfs.btrfs", in
->> some configurations it doesn't work as expected.
->>
->> My usual way:
->>
->>         mkfs.btrfs -d raid0 -m raid1 /dev/sdb /dev/sdc /dev/sdd ...
->>
->> One call for some devices.
->> Wenn I add the option "-L mylabel" then each device gets the same
->> label, and therefore some other programs can't find the (one) device
->> with the defined label.
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Provide_a_library_covering_.27btrfs.27_functionality
 
->    I'm sure we've been over this territory before. Devices are not
-> labelled; filesystems are labelled. You are labelling the whole
-> filesystem, which exists over several devices, so the same label will
-> be attached to every device in the filesystem.
-
-But for what purpose offers "mkfs.btrfs" this option?
-
-
->> Especially
->>
->>      blkid
->>      findfs LABEL=mylabel
->>
->> don't work.
-
->    How do you mean, "don't work"? What are they showing, and what do
-> you think should they be showing?
-
-Without this double-labelled (?) devices "blkid" shows all devices with  
-(if defined) their labels. When I define the same label for more than 1  
-device (btrfs or ext2fs or ...) then "blkid" shows nothing. No output  
-for any of the devices.
-
-"findfs": with double-labelled devices "findfs" doesn't find any label.
-
-
-> It looks like both of them print an
-> arbitrary device node of the devices that the FS lives on. Given that
-> both of these tools probably expect a one-to-one relationship between
-> a block device and a filesystem, this is not unreasonable.
-
-May be that "this is not unreasonable". But when "mkfs.btrfs" offers the  
-"label" option I don't expect this behaviour.
-
-I had mentioned this problem more than a year ago, it still exists.
-
-Viele Gruesse!
-Helmut
+david

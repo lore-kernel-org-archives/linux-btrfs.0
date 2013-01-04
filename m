@@ -1,62 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout03.t-online.de ([194.25.134.81]:49202 "EHLO
-	mailout03.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754733Ab3ADVGV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jan 2013 16:06:21 -0500
-Date: 04 Jan 2013 21:59:00 +0100
-From: Hullen@t-online.de (Helmut Hullen)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <COCn3oPuCXB@helmut.hullen.de>
-In-Reply-To: <20130103212342.GE19051@carfax.org.uk>
+Received: from qmta02.emeryville.ca.mail.comcast.net ([76.96.30.24]:59218 "EHLO
+	qmta02.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754618Ab3ADVlx convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Jan 2013 16:41:53 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: Option LABEL
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <COCn3oPuCXB@helmut.hullen.de>
+Date: Fri, 4 Jan 2013 14:41:51 -0700
+Message-Id: <C4D4D740-FF4F-410F-94CD-151F07184D20@colorremedies.com>
+References: <COCn3oPuCXB@helmut.hullen.de>
+To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
 
-Du meintest am 03.01.13:
+On Jan 4, 2013, at 1:59 PM, Helmut Hullen <Hullen@t-online.de> wrote:
+> 
+> Additional:
+> 
+> Working as "root":
+> 
+>        blkid
+> 
+> hangs (at least sometimes).
 
-[...]
+Maybe use the latest debug kernel for your distro and see if you can reproduce the hang, and what you get in dmesg with the debug kernel.
 
->>> And then for blkid:
->>
->>> # blkid
->>> /dev/sdb: LABEL="test2" UUID="3d5390d0-a41b-4f70-a4e5-b47295d3c717"
->>> UUID_SUB="a5bbaa83-6d6f-45dc-9804-9442350c3bc9" TYPE="btrfs"
->>> /dev/sdc: LABEL="test2" UUID="3d5390d0-a41b-4f70-a4e5-b47295d3c717"
->>> UUID_SUB="01e0bc77-cfdf-4bd7-bfd3-05e14affa66a" TYPE="btrfs"
->>
->> Strange - in another way.
->>
->> Here "blkid" (without any device) hangs. See the attachment ("strace
->> blkid").
+What version of util-linux-ng?
 
-Additional:
 
-Working as "root":
+Chris Murphy
 
-        blkid
-
-hangs (at least sometimes).
-
-Working as underprivileged user:
-
-        /sbin/blkid
-
-shows many informations (and doesn't hang). But it doesn't show the  
-btrfs devices/partitions.
-
-        /sbin/blkid /dev/sdb
-
-shows the btrfs label.
-
-Maybe it's mostly or only a blkid problem - I'll subscribe the "util- 
-linux" mailinglist.
-
---------------------------------
-
-Viele Gruesse!
-Helmut

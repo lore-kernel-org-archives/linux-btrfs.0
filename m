@@ -1,40 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40510 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754745Ab3ADNVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Jan 2013 08:21:00 -0500
-Date: Fri, 4 Jan 2013 14:20:57 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>, Gene Czarcinski <gene@czarc.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: fsck.btrfs
-Message-ID: <20130104132057.GF20089@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <50D5B92D.105@czarc.net>
- <20121222142733.GR19051@carfax.org.uk>
+Received: from mailout03.t-online.de ([194.25.134.81]:49202 "EHLO
+	mailout03.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754733Ab3ADVGV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jan 2013 16:06:21 -0500
+Date: 04 Jan 2013 21:59:00 +0100
+From: Hullen@t-online.de (Helmut Hullen)
+To: linux-btrfs@vger.kernel.org
+Message-ID: <COCn3oPuCXB@helmut.hullen.de>
+In-Reply-To: <20130103212342.GE19051@carfax.org.uk>
+Subject: Re: Option LABEL
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121222142733.GR19051@carfax.org.uk>
+Content-Type: text/plain; charset=US-ASCII
+Reply-To: helmut@hullen.de
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 22, 2012 at 02:27:33PM +0000, Hugo Mills wrote:
-> On Sat, Dec 22, 2012 at 08:44:13AM -0500, Gene Czarcinski wrote:
-> > I am new to btrfs and have begun exploring and testing it.  One of
-> > these tests is to install Fedora 18 into a btrfs volume only leaving
-> > /boot and swap on regular partitions.  BTW, this is on
-> > qemu/kvm/libvirt virtuals.
-> > 
-> > I discovered an error was occurring during bootup because systemd
-> > was attempting to start fsck.btrfs and it was missing.
-> > 
-> > 1. Would btrfsck be the appropriate program to run at bootup?  If it
-> > is, with what parameters?
-> 
->    No, it's not necessary to run an fs checker on every boot. You can
-> either turn off the checks in fstab, or symlink /sbin/fsck.btrfs to
-> /bin/true.
+Hallo, Hugo,
 
-Wiki updated to describe the difference and best practices.
+Du meintest am 03.01.13:
 
-david
+[...]
+
+>>> And then for blkid:
+>>
+>>> # blkid
+>>> /dev/sdb: LABEL="test2" UUID="3d5390d0-a41b-4f70-a4e5-b47295d3c717"
+>>> UUID_SUB="a5bbaa83-6d6f-45dc-9804-9442350c3bc9" TYPE="btrfs"
+>>> /dev/sdc: LABEL="test2" UUID="3d5390d0-a41b-4f70-a4e5-b47295d3c717"
+>>> UUID_SUB="01e0bc77-cfdf-4bd7-bfd3-05e14affa66a" TYPE="btrfs"
+>>
+>> Strange - in another way.
+>>
+>> Here "blkid" (without any device) hangs. See the attachment ("strace
+>> blkid").
+
+Additional:
+
+Working as "root":
+
+        blkid
+
+hangs (at least sometimes).
+
+Working as underprivileged user:
+
+        /sbin/blkid
+
+shows many informations (and doesn't hang). But it doesn't show the  
+btrfs devices/partitions.
+
+        /sbin/blkid /dev/sdb
+
+shows the btrfs label.
+
+Maybe it's mostly or only a blkid problem - I'll subscribe the "util- 
+linux" mailinglist.
+
+--------------------------------
+
+Viele Gruesse!
+Helmut

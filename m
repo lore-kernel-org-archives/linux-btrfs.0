@@ -1,133 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:59254 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751156Ab2LJWVs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Dec 2012 17:21:48 -0500
-Date: Mon, 10 Dec 2012 23:21:25 +0100
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: sami.liedes@iki.fi, chris.mason@fusionio.com, sensille@gmx.net
-Subject: Re: GPF in read_extent_buffer while scrubbing on
- 3.7.0-rc8-00014-g27d7c2a
-Message-ID: <20121210222125.GA20072@kashmir>
-References: <20121206143458.GA24396@kashmir>
+Received: from cantor2.suse.de ([195.135.220.15]:39491 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753469Ab3ADMvB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Jan 2013 07:51:01 -0500
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mx2.suse.de (Postfix) with ESMTP id EC222A398E
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jan 2013 13:51:00 +0100 (CET)
+Date: Fri, 4 Jan 2013 13:50:59 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: [bug] csum mismatches and failed xfstests with 3.8-rc1
+Message-ID: <20130104125059.GE20089@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121206143458.GA24396@kashmir>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-	Hi again,
+Hi,
 
-after enabling page alloc and slub debug, I was able to capture an error
-followed by the "usual" GPF.  More below.
+I've noticed a few csum mismatch messages, and a few failed xfstests:
 
-On Thu, Dec 06, 2012 at 03:34:58PM +0100, Mathieu Chouquet-Stringer wrote:
-> Using the last couple of kernels (3.6 or 3.7), scrubbing my btrfs fs (which is
-> on a luks based lvm device) will always end up crashing my pc.
-> [...]
+- 3.8.0-rc1
+- defautl mkfs options
+- MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache
+- test device:    40G
+- scratch device: 10G
 
-The warning:
-WARNING: at fs/btrfs/extent_io.c:4680 read_extent_buffer+0xee/0x120()
-Hardware name: 2392CTO
-Modules linked in: nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_mangle ip6t_REJECT lockd sunrpc nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack rfcomm bnep arc4 iwldvm mac80211 iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek coretemp kvm_intel kvm microcode uvcvideo videobuf2_vmalloc videobuf2_memops pcspkr videobuf2_core videodev btusb media i2c_i801 bluetooth snd_hda_intel snd_hda_codec cdc_ncm usbnet mii cdc_wdm cdc_acm snd_hwdep snd_seq snd_seq_device snd_pcm lpc_ich mfd_core iwlwifi cfg80211 e1000e snd_page_alloc mei snd_timer thinkpad_acpi snd soundcore rfkill uinput dm_crypt crc32c_intel nouveau ghash_clmulni_intel mxm_wmi ttm i915 i2c_algo_bit drm_kms_helper firewire_ohci drm sdhci_pci firewire_core sdhci mmc_core crc_itu_t i2c_core wmi video
-Pid: 536, comm: btrfs-endio-met Not tainted 3.7.0-rc8-00039-ged23ec4 #4
-Call Trace:
- [<ffffffff8104bebf>] warn_slowpath_common+0x7f/0xc0
- [<ffffffff8104bf1a>] warn_slowpath_null+0x1a/0x20
- [<ffffffff812aae9e>] read_extent_buffer+0xee/0x120
- [<ffffffff812a1bb2>] btrfs_node_key+0x22/0x30
- [<ffffffff812dd720>] __readahead_hook.isra.5+0x3a0/0x3f0
- [<ffffffff812ddb14>] btree_readahead_hook+0x24/0x40
- [<ffffffff81286069>] btree_readpage_end_io_hook+0x139/0x290
- [<ffffffff812a6ff3>] end_bio_extent_readpage+0xd3/0xa40
- [<ffffffff812853a6>] ? end_workqueue_fn+0x36/0x50
- [<ffffffff811b27ed>] bio_endio+0x1d/0x30
- [<ffffffff812853b1>] end_workqueue_fn+0x41/0x50
- [<ffffffff812b5916>] worker_loop+0x136/0x580
- [<ffffffff812b57e0>] ? btrfs_queue_worker+0x300/0x300
- [<ffffffff8106f480>] kthread+0xc0/0xd0
- [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
- [<ffffffff8168e8ec>] ret_from_fork+0x7c/0xb0
- [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
+091:
+--- 091.out     2011-11-01 10:31:12.000000000 +0100
++++ 091.out.bad 2013-01-03 21:07:29.000000000 +0100
+@@ -1,7 +1,45 @@
+ QA output created by 091
+ fsx -N 10000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+-fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+-fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+-fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+-fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+-fsx -N 10000 -o 128000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -W
++fsx -N 10000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
++mapped writes DISABLED
++truncating to largest ever: 0x12a00
++truncating to largest ever: 0x75400
++doread: read: Input/output error
++LOG DUMP (35 total operations):
++1(  1 mod 256): SKIPPED (no operation)
++2(  2 mod 256): WRITE    0x62600 thru 0x6bdff  (0x9800 bytes) HOLE
++3(  3 mod 256): FALLOC   0x2e0f2 thru 0x3134a  (0x3258 bytes) INTERIOR
++4(  4 mod 256): TRUNCATE DOWN  from 0x6be00 to 0x12a00
++5(  5 mod 256): READ     0x0 thru 0xdfff       (0xe000 bytes)
++6(  6 mod 256): FALLOC   0x7048 thru 0x9f54    (0x2f0c bytes) INTERIOR
++7(  7 mod 256): WRITE    0x5ea00 thru 0x6e7ff  (0xfe00 bytes) HOLE
++8(  8 mod 256): READ     0x16000 thru 0x17fff  (0x2000 bytes)
++9(  9 mod 256): FALLOC   0x4957f thru 0x5298e  (0x940f bytes) INTERIOR
++10( 10 mod 256): SKIPPED (no operation)
++11( 11 mod 256): WRITE    0x10a00 thru 0x173ff (0x6a00 bytes)
++12( 12 mod 256): WRITE    0x53800 thru 0x5a7ff (0x7000 bytes)
++13( 13 mod 256): WRITE    0x5ae00 thru 0x5afff (0x200 bytes)
++14( 14 mod 256): READ     0x5d000 thru 0x66fff (0xa000 bytes)
++15( 15 mod 256): SKIPPED (no operation)
++16( 16 mod 256): READ     0x21000 thru 0x2bfff (0xb000 bytes)
++17( 17 mod 256): SKIPPED (no operation)
++18( 18 mod 256): READ     0x47000 thru 0x4ffff (0x9000 bytes)
++19( 19 mod 256): WRITE    0x17600 thru 0x25bff (0xe600 bytes)
++20( 20 mod 256): READ     0x3f000 thru 0x48fff (0xa000 bytes)
++21( 21 mod 256): FALLOC   0xea89 thru 0x19800  (0xad77 bytes) INTERIOR
++22( 22 mod 256): FALLOC   0x569aa thru 0x586ea (0x1d40 bytes) INTERIOR
++23( 23 mod 256): WRITE    0x35c00 thru 0x453ff (0xf800 bytes)
++24( 24 mod 256): SKIPPED (no operation)
++25( 25 mod 256): SKIPPED (no operation)
++26( 26 mod 256): READ     0x21000 thru 0x26fff (0x6000 bytes)
++27( 27 mod 256): READ     0x5e000 thru 0x61fff (0x4000 bytes)
++28( 28 mod 256): WRITE    0x6f600 thru 0x6f7ff (0x200 bytes) HOLE
++29( 29 mod 256): READ     0x13000 thru 0x19fff (0x7000 bytes)
++30( 30 mod 256): TRUNCATE UP   from 0x6f800 to 0x75400
++31( 31 mod 256): READ     0x4000 thru 0xafff   (0x7000 bytes)
++32( 32 mod 256): SKIPPED (no operation)
++33( 33 mod 256): FALLOC   0x31d49 thru 0x3c520 (0xa7d7 bytes) INTERIOR
++34( 34 mod 256): FALLOC   0x2bbb3 thru 0x37ad8 (0xbf25 bytes) INTERIOR
++35( 35 mod 256): READ     0x68000 thru 0x73fff (0xc000 bytes)
++Correct content saved for comparison
++(maybe hexdump "/mnt/a1/junk" vs "/mnt/a1/junk.fsxgood")
 
-gdb says it's this WARN ON:
-(gdb) l *(read_extent_buffer + 0xee)
-0x726e is in read_extent_buffer (fs/btrfs/extent_io.c:4680).
-4675            char *kaddr;
-4676            char *dst = (char *)dstv;
-4677            size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
-4678            unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
-4679
+I'm not quite sure if the messages match the test (best guess, neighbouring
+tests were fine):
 
-4680            WARN_ON(start > eb->len);
+[102885.667444] btrfs csum failed ino 638 off 425984 csum 1842675109 private 2279232751
+[102885.676804] btrfs csum failed ino 638 off 430080 csum 1842675109 private 1192041375
+[102885.686094] btrfs csum failed ino 638 off 434176 csum 2297282744 private 1619428542
+[102885.686103] btrfs csum failed ino 638 off 438272 csum 3709984297 private 2868627320
+[102885.686112] btrfs csum failed ino 638 off 442368 csum 1504116677 private 1239355148
+[102885.686121] btrfs csum failed ino 638 off 446464 csum 1957839041 private 3848200057
+[102885.686129] btrfs csum failed ino 638 off 450560 csum 3836729483 private 2867416946
 
-4681            WARN_ON(start + len > eb->start + eb->len);
-4682
-4683            offset = (start_offset + start) & ((unsigned long)PAGE_CACHE_SIZE - 1);
-4684
 
-The GPF which follows right after is:
-general protection fault: 0000 [#1] SMP DEBUG_PAGEALLOC
-Modules linked in: nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_mangle ip6t_REJECT lockd sunrpc nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack rfcomm bnep arc4 iwldvm mac80211 iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek coretemp kvm_intel kvm microcode uvcvideo videobuf2_vmalloc videobuf2_memops pcspkr videobuf2_core videodev btusb media i2c_i801 bluetooth snd_hda_intel snd_hda_codec cdc_ncm usbnet mii cdc_wdm cdc_acm snd_hwdep snd_seq snd_seq_device snd_pcm lpc_ich mfd_core iwlwifi cfg80211 e1000e snd_page_alloc mei snd_timer thinkpad_acpi snd soundcore rfkill uinput dm_crypt crc32c_intel nouveau ghash_clmulni_intel mxm_wmi ttm i915 i2c_algo_bit drm_kms_helper firewire_ohci drm sdhci_pci firewire_core sdhci mmc_core crc_itu_t i2c_core wmi video
-CPU 1 
-Pid: 536, comm: btrfs-endio-met Tainted: G        W    3.7.0-rc8-00039-ged23ec4 #4 LENOVO 2392CTO/2392CTO
-RIP: 0010:[<ffffffff8136c756>]  [<ffffffff8136c756>] memcpy+0x6/0x110
-RSP: 0018:ffff8804215a9b70  EFLAGS: 00010207
-RAX: ffff8804215a9c57 RBX: 0000000000000011 RCX: 0000000000000011
-RDX: 0000000000000011 RSI: 0005080000000003 RDI: ffff8804215a9c57
-RBP: ffff8804215a9bb8 R08: 0000000000000000 R09: 0000000000000486
-R10: 0000000000000001 R11: 0000000000aaaaaa R12: ffff8804215a9c68
-R13: ffff8803f4c5cfc0 R14: 0000000000000048 R15: 0000000000000011
-FS:  0000000000000000(0000) GS:ffff88043e240000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007fe992197000 CR3: 0000000001c0b000 CR4: 00000000001407e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs-endio-met (pid: 536, threadinfo ffff8804215a8000, task ffff8804224eb0e0)
-Stack:
- ffffffff812aae73 ffff8804105ea000 0000000000008003 0000000000001000
- ffff8804215a9c20 00000000000003dd ffff88041232a7c0 ffff8804215a9c20
- aeb3f3fe4e814d8e ffff8804215a9bc8 ffffffff812a1bb2 ffff8804215a9c98
-Call Trace:
- [<ffffffff812aae73>] ? read_extent_buffer+0xc3/0x120
- [<ffffffff812a1bb2>] btrfs_node_key+0x22/0x30
- [<ffffffff812dd720>] __readahead_hook.isra.5+0x3a0/0x3f0
- [<ffffffff812ddb14>] btree_readahead_hook+0x24/0x40
- [<ffffffff81286069>] btree_readpage_end_io_hook+0x139/0x290
- [<ffffffff812a6ff3>] end_bio_extent_readpage+0xd3/0xa40
- [<ffffffff812853a6>] ? end_workqueue_fn+0x36/0x50
- [<ffffffff811b27ed>] bio_endio+0x1d/0x30
- [<ffffffff812853b1>] end_workqueue_fn+0x41/0x50
- [<ffffffff812b5916>] worker_loop+0x136/0x580
- [<ffffffff812b57e0>] ? btrfs_queue_worker+0x300/0x300
- [<ffffffff8106f480>] kthread+0xc0/0xd0
- [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
- [<ffffffff8168e8ec>] ret_from_fork+0x7c/0xb0
- [<ffffffff8106f3c0>] ? kthread_create_on_node+0x120/0x120
-Code: 74 13 48 8b 43 58 48 2b 43 50 88 43 4e 48 83 c4 08 5b 5d c3 90 e8 eb fb ff ff eb e6 90 90 90 90 90 90 90 90 90 48 89 f8 48 89 d1 <f3> a4 c3 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 20 4c 8b 06 4c 8b 
-RIP  [<ffffffff8136c756>] memcpy+0x6/0x110
- RSP <ffff8804215a9b70>
+113:
+- it hung last evening and is still in that state, no disk or cpu activity,
+  there were only the tests running
+- no process is in D state, no btrfs kernel thread is active
+- the only interesting process is
 
-memcpy is called from here:
-(gdb) l *(read_extent_buffer + 0xc3)
-0x7243 is in read_extent_buffer (fs/btrfs/extent_io.c:4694).
-4689                    kaddr = page_address(page);
-4690                    memcpy(dst, kaddr + offset, cur);
-4691
-4692                    dst += cur;
-4693                    len -= cur;
-4694                    offset = 0;
-4695                    i++;
-4696            }
-4697    }
-4698
+  PID TTY      STAT   TIME COMMAND
+15585 pts/0    Sl+    0:01 /root/xfstests/ltp/aio-stress -t 20 -s 10  -O -S -I	\
+	1000 /mnt/a1/aiostress.15188.4 /mnt/a1/aiostress.15188.4.20		\
+	/mnt/a1/aiostress.15188.4.19 /mnt/a1/aiostress.15188.4.18		\
+[<ffffffff810af447>] futex_wait_queue_me+0xc7/0x100
+[<ffffffff810affa1>] futex_wait+0x191/0x280
+[<ffffffff810b1cb6>] do_futex+0xd6/0xbd0
+[<ffffffff810b282b>] sys_futex+0x7b/0x180
+[<ffffffff8195fe99>] system_call_fastpath+0x16/0x1b
 
-Any idea what to do next?  If you think I should be adding debug printk
-statements, feel free to send them my way.
+there are also csum mismatch messages:
 
--- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+[103208.085544] btrfs csum failed ino 2998 off 2883584 csum 3942040493 private 2566472073
+[103208.366484] btrfs csum failed ino 2990 off 2949120 csum 2166904896 private 2566472073
+
+# btrfs inspect ino 2998 /mnt/a1
+/mnt/a1/aiostress.15188.4.6
+
+# btrfs inspect ino 2990 /mnt/a1
+/mnt/a1/aiostress.15188.4.14
+
+# lsof|grep aiostress|wc -l
+342
+
+but neither aiostress.<pid>.4.6 nor 4.14 are open
+
+--
+
+Previously, the same machine went through the tests with following options:
+
+MKFS_OPTIONS  -- /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m single -d single /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m single -d single --mixed /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m dup -d dup --mixed /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m single -d single /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m single -d single --mixed /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- -m dup -d dup --mixed /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache /dev/sda9 /mnt/a2
+
+MKFS_OPTIONS  -- /dev/sda9
+MOUNT_OPTIONS -- -o space_cache,noatime,inode_cache /dev/sda9 /mnt/a2
+
+The failed one has previously passed once, and it does not seem that it's
+caused only by the inode_cache option.
+
+--
+
+Other information:
+# btrfs fi df /mnt/a1
+Data: total=4.01GiB, used=247.80MiB
+System, RAID1: total=8.00MiB, used=4.00KiB
+System: total=4.00MiB, used=0.00
+Metadata, RAID1: total=1.00GiB, used=3.61MiB
+Metadata: total=8.00MiB, used=0.00
+
+# btrfs fi df /mnt/a2
+Data: total=8.00MiB, used=292.00KiB
+System, DUP: total=8.00MiB, used=4.00KiB
+System: total=4.00MiB, used=0.00
+Metadata, DUP: total=1.00GiB, used=24.00KiB
+Metadata: total=8.00MiB, used=0.00
+
+
+david

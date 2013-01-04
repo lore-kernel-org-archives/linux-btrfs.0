@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout01.t-online.de ([194.25.134.80]:54353 "EHLO
-	mailout01.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754285Ab3ACWHm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jan 2013 17:07:42 -0500
-Date: 03 Jan 2013 23:07:00 +0100
+Received: from mailout06.t-online.de ([194.25.134.19]:35976 "EHLO
+	mailout06.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753729Ab3ADM44 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jan 2013 07:56:56 -0500
+Date: 04 Jan 2013 13:56:00 +0100
 From: Hullen@t-online.de (Helmut Hullen)
 To: linux-btrfs@vger.kernel.org
-Message-ID: <CO8jfs0uCXB@helmut.hullen.de>
-In-Reply-To: <125D7A41-DBE8-40C0-B8EE-B64DD2D95A93@colorremedies.com>
+Message-ID: <COClHr99CXB@helmut.hullen.de>
+In-Reply-To: <14FFD425-4B7D-4523-AEAF-527A6B72DCB4@colorremedies.com>
 Subject: Re: Option LABEL
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -19,32 +19,53 @@ Hallo, Chris,
 
 Du meintest am 03.01.13:
 
->>> On my system (a bundle of /dev/sdb, /dev/sdc, /dev/sdd)
->>>
->>>        btrfs fi label /dev/sdb mylabel
->>>
->>> only sets the label on the (unmounted) device /dev/sdb. "/dev/sdc"
->>> and "/dev/sdd" remain without label.
+>>> MBR has no mechanism for labeling the disk itself or the
+>>> partitions. So /dev/sda cannot have a label or a name.
 
->>   This is a bug.
+>> Sure?
 
-> It's a bug that appears to be fixed. I inadvertently tested it first
-> on CentOS 6.0 which has quite an older kernel and btrfsprogs. And
-> Fedora 18 of course has a much newer kernel and btrfs-progs so I have
-> no idea when in between those two this was fixed.
+> Yes. MBR itself has no place holder to encode a disk name or
+> partition name. http://en.wikipedia.org/wiki/Master_boot_record
 
-> Helmut what kernel and btrfs-progs or distribution are you using? I
-> think newer progs fixes this.
+I've just played a bit ...
 
-Kernel 3.4.6 (self made), btrfs-progs downloaded and compiled 2 days ago  
-(Mason version, not Mills version).
+   btrfs-show
 
-I've just brewed Kernel 3.6.11 but I have to wait some days (backing up  
-some Tbytes of data) before I can test btrfs with this newer kernel.
+tells
 
-But looking for btrfs in the ChangeLog files for kernels 3.4 to 3.6  
-doesn't show any entry which might be related to the above error.
-(Kernels 3.4.3, 3.4.5, 3.4.8, 3.5.1, 3.5.4)
+**
+** WARNING: this program is considered deprecated
+** Please consider to switch to the btrfs utility
+**
+Label: USBmm  uuid: 43ad1782-5d1c-4211-9333-506bcfdbc3a5
+	Total devices 1 FS bytes used 28.00KB
+	devid    1 size 3.78GB used 423.50MB path /dev/sdb
+
+Label: mylabel  uuid: e9716633-49f1-44a0-a3b4-90ba9736a540
+	Total devices 3 FS bytes used 28.00KB
+	devid    2 size 1.00GB used 110.38MB path /dev/sdb2
+	devid    1 size 1.00GB used 275.94MB path /dev/sdb1
+	devid    3 size 1.00GB used 263.94MB path /dev/sdb3
+
+Btrfs Btrfs v0.19
+
+# ----------------------------------------
+
+The "USBmm" entry remains from
+
+   mkfs.btrfs -d raid0 -m raid1 -L USBmm /dev/sdb
+
+Then I run "fdisk /dev/sdb" and created 4 partitions on "/dev/sdb"  
+without previous overwriting it with zeros.
+
+And then
+
+   mkfs.btrfs -d raid0 -m raid1 -L mylabel /dev/sdb1 /dev/sdb2 /dev/sdb3
+
+Inspecting the first sectors of "/dev/sdb" shows the string "USBmm" at  
+the beginning of the second 64-kByte block (0x10120 ... 0x1012f).
+
+The "mylabel" entries are somewhere after the first 128 kByte.
 
 Viele Gruesse!
 Helmut

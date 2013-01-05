@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout09.t-online.de ([194.25.134.84]:37673 "EHLO
-	mailout09.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755264Ab3AEMpZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2013 07:45:25 -0500
-Date: 05 Jan 2013 13:44:00 +0100
+Received: from mailout05.t-online.de ([194.25.134.82]:43061 "EHLO
+	mailout05.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755435Ab3AENTr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2013 08:19:47 -0500
+Date: 05 Jan 2013 14:15:00 +0100
 From: Hullen@t-online.de (Helmut Hullen)
 To: linux-btrfs@vger.kernel.org
-Message-ID: <COGoZAXPCXB@helmut.hullen.de>
-In-Reply-To: <201301051236.37875.Martin@lichtvoll.de>
+Message-ID: <COGohh5PCXB@helmut.hullen.de>
+In-Reply-To: <20130103160853.GA19051@carfax.org.uk>
 Subject: Re: Option LABEL
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -15,56 +15,51 @@ Reply-To: helmut@hullen.de
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Martin,
+Hallo, Hugo,
 
-Du meintest am 05.01.13:
+Du meintest am 03.01.13:
 
->> No - I don't rely on such an assumption.
->> In the special case I'm just working with I want to use the whole
->> disk only for btrfs.
+>> My usual way:
 >>
->> In other cases I work with partitions, and there is just the same
->> problem: at least "blkid" and "findfs" don't work when more than 1
->> device has the same label (p.e. /dev/sda3 and /dev/sdc5).
+>>         mkfs.btrfs -d raid0 -m raid1 /dev/sdb /dev/sdc /dev/sdd ...
+>>
+>> One call for some devices.
+>> Wenn I add the option "-L mylabel" then each device gets the same
+>> label, and therefore some other programs can't find the (one) device
+>> with the defined label.
 
-It seems to be a problem which is related to "blkid".
+[...]
 
-> Helmut, it has been shown here in the thread, that they *do* work in
-> newer versions.
+>> Especially
+>>
+>>      blkid
+>>      findfs LABEL=mylabel
+>>
+>> don't work.
 
-> If they don?t work for you please compare your version with the ones
-> that do work and file a bug report for your Linux distribution.
+>    How do you mean, "don't work"?
 
-   blkid from util-linux 2.21.2 (libblkid 2.21.0, 25-May-2012
-   findfs from the same "util-linux" packet
-   kernel 3.6.11
+Seems to be a problem which is invoked by "btrfs-show".
 
-Is that new enough?
+Working with an USB stick (3 btrfs partitions, labelled), working as  
+"root", kernel 3.6.11
 
--------------------------------------------
+cold start
+inserting the stick
 
-Reproducable:
-USB stick with 3 btrfs partitions
+        btrfs device scan       ok
+        btrfs fi show           ok
+        blkid                   ok
 
-cold start without stick, logged in as "root"
-        blkid           works
+cold start
+inserting the stick
 
-Stick inserted:
-        blkid           works
-        fdisk -l        works
+        btrfs device scan       ok
+        blkid                   ok
+        btrfs-show              ok (?)
+        blkid                   hangs
 
-   btrfs device scan    works
-        blkid           works
-
-   btrfs-show           works
-        blkid           hangs
-
-        blkid /dev/sdb1 works
-
-I don't know who may be responsible for this problem - btrfs or blkid or  
-both.
-
-
+Maybe the simpliest way is to delete "btrfs-show".
 
 Viele Gruesse!
 Helmut

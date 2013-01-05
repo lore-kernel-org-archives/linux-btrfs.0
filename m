@@ -1,33 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout07.t-online.de ([194.25.134.83]:35620 "EHLO
-	mailout07.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755812Ab3AEQHQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2013 11:07:16 -0500
-Date: 05 Jan 2013 16:52:00 +0100
-From: Hullen@t-online.de (Helmut Hullen)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <COGpJewPCXB@helmut.hullen.de>
-In-Reply-To: <CAMQ-g0c32nrFGDm5qP3u8iGC9FrdTyZ0Apm2N+F0BJyS+RYpgg@mail.gmail.com>
-Subject: Re: cleaning old entries
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+Received: from qmta07.emeryville.ca.mail.comcast.net ([76.96.30.64]:57081 "EHLO
+	qmta07.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755821Ab3AETIS convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 5 Jan 2013 14:08:18 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: Option LABEL
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <COGoZAXPCXB@helmut.hullen.de>
+Date: Sat, 5 Jan 2013 12:08:20 -0700
+Message-Id: <D8C30239-D4A3-4DBF-97A9-840CC1C068A2@colorremedies.com>
+References: <COGoZAXPCXB@helmut.hullen.de>
+To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Jan,
 
-Du meintest am 05.01.13:
+On Jan 5, 2013, at 5:44 AM, Helmut Hullen <Hullen@t-online.de> wrote:
 
->> Has "mkfs.btrfs" to delete the "/dev/sdb" data when it overwrites
->> the configuration with data for partitions? Or has the user to run
->> something like "dd if=/dev/zero ..."?
+> 
+>   blkid from util-linux 2.21.2 (libblkid 2.21.0, 25-May-2012
+>   findfs from the same "util-linux" packet
+>   kernel 3.6.11
+> 
+> Is that new enough?
 
-> Take a look at:
-> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_to_clean_up_o
-> ld_superblock_.3F
+I don't know. I'm running 3.6.11 and util-linux 2.22.1. The changelog for 2.22.x's have many blkid entries, but only one btrfs entry. It may be a general bug with blkid that isn't directly attributable to btrfs though.
 
-Thank you - "wipefs" may help.
 
-Viele Gruesse!
-Helmut
+Chris Murphy

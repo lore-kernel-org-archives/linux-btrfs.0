@@ -1,28 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:35302
-	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755889Ab3AEVcU convert rfc822-to-8bit
+Received: from qmta13.emeryville.ca.mail.comcast.net ([76.96.27.243]:38254
+	"EHLO qmta13.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755898Ab3AEXVD convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 5 Jan 2013 16:32:20 -0500
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: /boot as a btrfs subvolume
+	Sat, 5 Jan 2013 18:21:03 -0500
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <50E8986A.2050002@czarc.net>
-Date: Sat, 5 Jan 2013 14:32:18 -0700
-Message-Id: <C4D7AC34-9841-4E58-BE5D-FF30C85FBD34@colorremedies.com>
-References: <50E8986A.2050002@czarc.net>
+Content-Type: text/plain; charset=us-ascii
+Subject: BUG btrfs fi show displays stale btrfs volume
+Message-Id: <96FA5245-87A9-43C4-9B56-C0F4ADB9D975@colorremedies.com>
+Date: Sat, 5 Jan 2013 16:21:00 -0700
 To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I've filed this bug under util-linux, because I think wipefs isn't deleting all btrfs metadata it could. But ultimately it appears to be a btrfs bug because nothing else sees the stale volume.
 
-On Jan 5, 2013, at 2:17 PM, Gene Czarcinski <gene@czarc.net> wrote:
+https://bugzilla.redhat.com/show_bug.cgi?id=889888#c15
 
-> As of the latest updates to anaconda and grub2 for Fedora 18, it is now possible to install with /boot as a btrfs subvolume.  The way that grub2 is handling this is the "reach down" to the files it needs as if the subvolume was a directory.
+btrfs-progs-0.20.rc1.20121017git92d9eec-1.fc18.x86_64
+e2fs-progs-1.42.5-1.fc18.x86_64
+kernel 3.7.1-2
 
-Also for what it's worth, it also works for multiple device Btrfs volumes, all profiles supported by GRUB2. For me GRUB fails to navigate Btrfs for RAID0 if there are 5+ devices. Single still works, oddly RAID10 still works. So some regression is needed to figure out what's going on there. May be a bug, but honestly it's still pretty cool.
+Brand new 80GB virtual disk, so it's completely zero'd.
 
-Also to test is if installing grub to each device, in a multiple device raid1 or raid10 volume, still allows it to be bootable with any one device removed from the volume. I think it'll work.
+1. fdisk to create one partition, all defaults.
+2. Format that sda1 with mkfs.btrfs -L first.
+3. btrfs fi show displays "first" labeled volume.
+4. wipefs -a /dev/sda1 and it finds btrfs metadata, ostensibly removes it.
+5. btrfs fi show does NOT show "first" anymore.
+6. fdisk /dev/sda again, delete the one partition; create a new partition 500MB and a second one for remaining space.
+7. btrfs fi show still does not show "first".
+8. mkfs.ext4 /dev/sda1
+9. btrfs fi show NOW SHOWS "first" on sda1!
+10. Reboot
+11. btrfs fi show still shows "first" on sda1, size 80GB.
+
+Tentative conclusions:
+
+A. wipefs isn't deleting all btrfs metadata it could. 
+
+B. mkfs.ext4 is refreshing stale btrfs metadata in a way that causes btrfs fi show to see.
+
+C. btrfs fi show seems to blatantly disregard the partition map, because it shows a volume the partition map cannot possibly validly support.
+
+D. Nothing else sees this phantom btrfs volume. btrfs fi show seems confused.
+
 
 Chris Murphy

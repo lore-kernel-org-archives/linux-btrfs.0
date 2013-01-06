@@ -1,89 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58085 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752129Ab3AFNCZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 6 Jan 2013 08:02:25 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Trps6-0007rU-JN
-	for linux-btrfs@vger.kernel.org; Sun, 06 Jan 2013 14:02:38 +0100
-Received: from host385.static.otenet.gr ([62.103.130.130])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jan 2013 14:02:38 +0100
-Received: from tmjuju by host385.static.otenet.gr with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jan 2013 14:02:38 +0100
-To: linux-btrfs@vger.kernel.org
-From: TM <tmjuju@yahoo.com>
-Subject: Re: block rsv returned -28
-Date: Sun, 6 Jan 2013 13:02:10 +0000 (UTC)
-Message-ID: <loom.20130106T140036-764@post.gmane.org>
-References: <loom.20130106T102511-102@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from eastrmfepo202.cox.net ([68.230.241.217]:56406 "EHLO
+	eastrmfepo202.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756003Ab3AFOhW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jan 2013 09:37:22 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo202.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130106143721.LQTU6475.eastrmfepo202.cox.net@eastrmimpo209>
+          for <linux-btrfs@vger.kernel.org>; Sun, 6 Jan 2013 09:37:21 -0500
+Message-ID: <50E98C20.3040504@czarc.net>
+Date: Sun, 06 Jan 2013 09:37:20 -0500
+From: Gene Czarcinski <gene@czarc.net>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
+Subject: Re: /boot as a btrfs subvolume
+References: <50E8986A.2050002@czarc.net> <C4D7AC34-9841-4E58-BE5D-FF30C85FBD34@colorremedies.com>
+In-Reply-To: <C4D7AC34-9841-4E58-BE5D-FF30C85FBD34@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-TM <tmjuju <at> yahoo.com> writes:
+On 01/05/2013 04:32 PM, Chris Murphy wrote:
+> On Jan 5, 2013, at 2:17 PM, Gene Czarcinski <gene@czarc.net> wrote:
+>
+>> As of the latest updates to anaconda and grub2 for Fedora 18, it is now possible to install with /boot as a btrfs subvolume.  The way that grub2 is handling this is the "reach down" to the files it needs as if the subvolume was a directory.
+> Also for what it's worth, it also works for multiple device Btrfs volumes, all profiles supported by GRUB2. For me GRUB fails to navigate Btrfs for RAID0 if there are 5+ devices. Single still works, oddly RAID10 still works. So some regression is needed to figure out what's going on there. May be a bug, but honestly it's still pretty cool.
+>
+> Also to test is if installing grub to each device, in a multiple device raid1 or raid10 volume, still allows it to be bootable with any one device removed from the volume. I think it'll work.
+>
+There is also issues with btrfs and os-prober for multiboot ... it does 
+not currently work.  I hacked up a patch to get it to work but have 
+since had second thoughts about how multiboot should be handled.  I now 
+prefer a separate grub partition, os-prober disabled, and a grub.cfg 
+file which points to the grub.cfg for each individual system.
 
-# btrfs fi df /mnt/dls
-Data: total=712.01GB, used=711.24GB
-System, DUP: total=8.00MB, used=80.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=998.53MB
-Metadata: total=8.00MB, used=0.00
+BTW, although you can install and boot boot installed in a logical 
+volume, that system is not supported in os-prober multiboot.
 
-btrfs fi show
-Label: 'tm_0'  uuid: f2866a33-fe53-4fc0-98bf-52d347b43824
-        Total devices 1 FS bytes used 712.21GB
-        devid    1 size 1.82TB used 714.04GB path /dev/sdb1
-
-...
-
-[root@microserver mnt]# btrfs balance start -dusage=5 /mnt/dls/
-Done, had to relocate 0 out of 716 chunks
-[root@microserver mnt]# btrfs balance start -dusage=10 /mnt/dls/
-Done, had to relocate 0 out of 716 chunks
-[root@microserver mnt]# btrfs balance start -dusage=15 /mnt/dls/
-Done, had to relocate 0 out of 716 chunks
-[root@microserver mnt]# btrfs balance start -dusage=25 /mnt/dls/
-Done, had to relocate 0 out of 716 chunks
-[root@microserver mnt]# btrfs balance start -dusage=35 /mnt/dls/
-Done, had to relocate 1 out of 716 chunks
-
-...
-Meanwhile situation got worst
-..
-
-
-[root@microserver ~]# btrfs fi df /mnt/dls/
-Data: total=713.01GB, used=712.23GB
-System, DUP: total=8.00MB, used=80.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=999.31MB
-Metadata: total=8.00MB, used=0.00
-
-
-and I kept getting more messages
-dmesg |grep "block rsv returned -28" |wc -l
-60
-
-(I had stared with only 9 messages just a few hours ago)
-
-So I decided to remove files
-I started to remove (rm -rfv) thousands of files and directories
-At first the rate was about 1 filedelete per second... 
-Always monitoring usage while deleteing
-Utilll I got down to: 
-
-# btrfs fi df /mnt/dls/
-Data: total=712.01GB, used=638.04GB
-System, DUP: total=8.00MB, used=80.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=895.24MB
-Metadata: total=8.00MB, used=0.00
-
-And then the filesystem became responsive again
-Back to 100MBps range from ~1MBps
-
+Gene

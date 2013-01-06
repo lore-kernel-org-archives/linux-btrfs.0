@@ -1,50 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta13.emeryville.ca.mail.comcast.net ([76.96.27.243]:38254
-	"EHLO qmta13.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755898Ab3AEXVD convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 5 Jan 2013 18:21:03 -0500
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: BUG btrfs fi show displays stale btrfs volume
-Message-Id: <96FA5245-87A9-43C4-9B56-C0F4ADB9D975@colorremedies.com>
-Date: Sat, 5 Jan 2013 16:21:00 -0700
-To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from userp1040.oracle.com ([156.151.31.81]:24795 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755292Ab3AFDxr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2013 22:53:47 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r063rkqb005803
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 6 Jan 2013 03:53:47 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r063rjgI025456
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sun, 6 Jan 2013 03:53:46 GMT
+Received: from abhmt107.oracle.com (abhmt107.oracle.com [141.146.116.59])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r063rjIJ032239
+	for <linux-btrfs@vger.kernel.org>; Sat, 5 Jan 2013 21:53:45 -0600
+Message-ID: <50E8F545.5030706@oracle.com>
+Date: Sun, 06 Jan 2013 11:53:41 +0800
+From: Jeff Liu <jeff.liu@oracle.com>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: replace simple_strtoull() with kstrtoull() in btrfs_ioctl_resize()
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've filed this bug under util-linux, because I think wipefs isn't deleting all btrfs metadata it could. But ultimately it appears to be a btrfs bug because nothing else sees the stale volume.
+simple_strtoull() is obsolete, use kstrtoull() instead.
 
-https://bugzilla.redhat.com/show_bug.cgi?id=889888#c15
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+---
+ fs/btrfs/ioctl.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-btrfs-progs-0.20.rc1.20121017git92d9eec-1.fc18.x86_64
-e2fs-progs-1.42.5-1.fc18.x86_64
-kernel 3.7.1-2
-
-Brand new 80GB virtual disk, so it's completely zero'd.
-
-1. fdisk to create one partition, all defaults.
-2. Format that sda1 with mkfs.btrfs -L first.
-3. btrfs fi show displays "first" labeled volume.
-4. wipefs -a /dev/sda1 and it finds btrfs metadata, ostensibly removes it.
-5. btrfs fi show does NOT show "first" anymore.
-6. fdisk /dev/sda again, delete the one partition; create a new partition 500MB and a second one for remaining space.
-7. btrfs fi show still does not show "first".
-8. mkfs.ext4 /dev/sda1
-9. btrfs fi show NOW SHOWS "first" on sda1!
-10. Reboot
-11. btrfs fi show still shows "first" on sda1, size 80GB.
-
-Tentative conclusions:
-
-A. wipefs isn't deleting all btrfs metadata it could. 
-
-B. mkfs.ext4 is refreshing stale btrfs metadata in a way that causes btrfs fi show to see.
-
-C. btrfs fi show seems to blatantly disregard the partition map, because it shows a volume the partition map cannot possibly validly support.
-
-D. Nothing else sees this phantom btrfs volume. btrfs fi show seems confused.
-
-
-Chris Murphy
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8fcf9a5..b147424 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1331,11 +1331,16 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 	sizestr = vol_args->name;
+ 	devstr = strchr(sizestr, ':');
+ 	if (devstr) {
+-		char *end;
+ 		sizestr = devstr + 1;
+ 		*devstr = '\0';
+ 		devstr = vol_args->name;
+-		devid = simple_strtoull(devstr, &end, 10);
++		ret = kstrtoull(devstr, 10, &devid);
++		if (ret) {
++			pr_err("btrfs: resizer unable to parse device %s\n",
++				devstr);
++			ret = -EINVAL;
++			goto out_free;
++		}
+ 		printk(KERN_INFO "btrfs: resizing devid %llu\n",
+ 		       (unsigned long long)devid);
+ 	}
+-- 
+1.7.9.5

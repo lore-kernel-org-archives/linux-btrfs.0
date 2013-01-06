@@ -1,55 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:42962 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751769Ab3AaNDI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 08:03:08 -0500
-Received: by mail-wi0-f180.google.com with SMTP id hj13so2754748wib.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 05:03:07 -0800 (PST)
-MIME-Version: 1.0
-Date: Thu, 31 Jan 2013 15:03:06 +0200
-Message-ID: <CAOcd+r3wBX5cYctFOetPm9=Hwx1z87rEkoR=2yHhXf+DmZP7bQ@mail.gmail.com>
-Subject: Deleted subvolume reappears and other cleaner issues
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-bk0-f45.google.com ([209.85.214.45]:56846 "EHLO
+	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756042Ab3AFPcq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jan 2013 10:32:46 -0500
+Received: by mail-bk0-f45.google.com with SMTP id jk13so7872096bkc.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jan 2013 07:32:45 -0800 (PST)
+From: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
+Subject: [PATCH] Btrfs-progs: add UUID switches to mkfs and convert
+Date: Sun,  6 Jan 2013 16:32:10 +0100
+Message-Id: <1357486331-4615-1-git-send-email-falbrechtskirchinger@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
-I want to check if any of the below issues are worth/should be  fixed:
 
-# btrfs_ioctl_snap_destroy() does not commit a transaction. As a
-result, user can ask to delete a subvol, he receives "ok" back. Even
-if user does "btrfs sub list",
-he will not see the deleted subvol (even though the transaction was
-not committed yet). But if a crash happens, ORPHAN_ITEM will not
-re-appear after crash.
-So after crash, the subvolume still exists perfectly fine (happened
-couple of times here).
+this patch adds UUID switches to mkfs.btrfs and btrfs-convert to specify a UUID during filesystem creation or conversion.
+The mkfs.btrfs ones are self-explanatory. btrfs-convert gets two additional convenience variants: -U new and -U copy. The former generates a random UUID which is the default behavior, the latter copies the UUID from the ext2fs to be converted.
 
-# btrfs_drop_snapshot() does not commit a transaction after
-btrfs_del_orphan_item(). So if the subvol deletion completed in one go
-(did not have to detach and re-attach to transaction, thus committing
-the ORPHAN_ITEM and drop_progress/level), then after crash ORPHAN_ITEM
-will not be in the tree, and subvolume still exists.
+Cheers,
+Flo
 
-# btrfs_drop_snapshot() checks btrfs_should_end_transaction(), and
-then does btrfs_end_transaction_throttle() and
-btrfs_start_transaction(). However, it looks like it can rejoin the
-same transaction if transaction was not not blocked yet. Minor issue,
-perhaps?
+Florian Albrechtskirchinger (1):
+  Btrfs-progs: add UUID switches to mkfs and convert
 
-# umount may get delayed because of pending-for-deletion subvolumes:
-btrfs_commit_super() locks the cleaner_mutex, so it will wait for the
-cleaner to complete.
-On the other hand, cleaner will not give up until it completes
-processing all its splice. If currently cleaner is not running, then
-btrfs_commit_super()
-calls btrfs_clean_old_snapshots() directly. So does it make sense:
-- btrfs_commit_super() will not call btrfs_clean_old_snapshots()
-- close_ctree() calls kthread_stop(cleaner_kthread) early, and cleaner
-thread periodically checks if it needs to exit
+ convert.c           | 48 ++++++++++++++++++++++++++++++++++++++++--------
+ man/mkfs.btrfs.8.in |  4 ++++
+ mkfs.c              | 20 ++++++++++++++++++--
+ utils.c             |  6 +++---
+ utils.h             |  4 ++--
+ 5 files changed, 67 insertions(+), 15 deletions(-)
 
-Thanks,
-Alex.
+-- 
+1.8.0.3
+

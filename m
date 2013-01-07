@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35848 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42335 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753549Ab3ACQhi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Jan 2013 11:37:38 -0500
-Date: Thu, 3 Jan 2013 17:37:36 +0100
+	id S1753727Ab3AGQUw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jan 2013 11:20:52 -0500
+Date: Mon, 7 Jan 2013 17:20:50 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/8] Btrfs: remove deprecated comments
-Message-ID: <20130103163736.GC20089@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
+Message-ID: <20130107162050.GJ20089@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
+References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1356598884-22952-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 27, 2012 at 05:01:17PM +0800, Liu Bo wrote:
-> commit d53ba47484ed6245e640ee4bfe9d21e9bfc15765
-> (Btrfs: use commit root when loading free space cache) has remove
-> the deadlock check, and the related comments can be removed as well.
+On Mon, Jan 07, 2013 at 11:53:08AM +0800, Liu Bo wrote:
+> Lock end is inclusive.
 > 
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/file.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 77061bf..1e16b6d 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2241,6 +2241,7 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
+>  	if (lockend <= lockstart)
+>  		lockend = lockstart + root->sectorsize;
+>  
+> +	lockend--;
+>  	len = lockend - lockstart + 1;
+>  
+>  	len = max_t(u64, len, root->sectorsize);
 
-1-8
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Fix looks ok. I think this should be caught at runtime as well, the
+number of ways how the lock start and end are passed is not small and it
+need not be always possible to catch it from reading sources. The range
+is inclusive, so it's 'lock end % 2 == 1' right? (in the bit
+manipulating primitives).
 
-I'd prefer some cover letter next time as you mix cleanups and speed
-optimizations (a short description stating that would suffice regarding
-this patch series) or send them in separate series.
-
-thanks,
 david

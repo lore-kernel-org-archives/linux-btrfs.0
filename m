@@ -1,67 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f51.google.com ([209.85.215.51]:64296 "EHLO
-	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751469Ab3AGR1P (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2013 12:27:15 -0500
-Received: by mail-la0-f51.google.com with SMTP id fj20so16668898lab.38
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 09:27:13 -0800 (PST)
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:53971 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753905Ab3AGRsZ convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2013 12:48:25 -0500
+Message-ID: <50EB0A65.4090009@petaramesh.org>
+Date: Mon, 07 Jan 2013 18:48:21 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-In-Reply-To: <20121218013111.GB22912@shiny>
-References: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
-	<CAB9VWqCjoFGdZVx0Uup2zmvuqS2PHiQO=h2EKawH-dZiGqvfDQ@mail.gmail.com>
-	<20121218013111.GB22912@shiny>
-Date: Mon, 7 Jan 2013 18:27:13 +0100
-Message-ID: <CAMiUzp9m5kFZmNdc793VhSodAM73NupCE8Ggyg2VZ63p-GTgaA@mail.gmail.com>
-Subject: Re: Online Deduplication for Btrfs (Master's thesis)
-From: =?UTF-8?B?TWFydGluIEvFmcOtxb5law==?= <martin.krizek@gmail.com>
-To: Chris Mason <chris.mason@fusionio.com>,
-        Alexander Block <ablock84@gmail.com>,
-        =?UTF-8?B?TWFydGluIEvFmcOtxb5law==?= <martin.krizek@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "lczerner@redhat.com" <lczerner@redhat.com>
+To: Gene Czarcinski <gene@czarc.net>
+CC: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Subject: Re: /boot as a btrfs subvolume
+References: <50E8986A.2050002@czarc.net> <EEB5FCDE-687D-4EEF-9A85-68703266704C@colorremedies.com> <50E98DC6.3030304@czarc.net> <06B00D7F-F963-4A55-AAA2-7F209DF0AD35@colorremedies.com> <50E9CDB3.3010401@petaramesh.org> <50E9D909.1020207@czarc.net>
+In-Reply-To: <50E9D909.1020207@czarc.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 18, 2012 at 2:31 AM, Chris Mason <chris.mason@fusionio.com> wrote:
-> On Mon, Dec 17, 2012 at 06:33:24AM -0700, Alexander Block wrote:
->> I did some research on deduplication in the past and there are some
->> problems that you will face. I'll try to list some of them (for sure
->> not all).
->
-> Thanks Alexander for writing all of this up.  There are a lot of great
-> points here, but I'll summarize with:
->
-> [ many challenges to online dedup ]
->
-> [ offline dedup is the best way ]
->
-> So, the big problem with offline dedup is you're suddenly read bound.  I
-> don't disagree that offline makes a lot of the dedup problems easier,
-> and Alexander describes a very interesting system here.
->
-> I've tried to avoid features that rely on scanning though, just because
-> idle disk time may not really exist.  But with scrub, we have the scan
-> as a feature, and it may make a lot of sense to leverage that.
->
-> online dedup has a different set of tradeoffs, but as Alexander says the
-> hard part really is the data structure to index the hashes.  I think
-> there are a few different options here, including changing the file
-> extent pointers to point to a sha instead of a logical disk offset.
->
+Le 06/01/2013 21:05, Gene Czarcinski a écrit :
+> I assume you have a "grub partition" (or its equivalent) with a
+> grub.cfg file having menuentry definitions [pointing to the different
+> grub.cfg file for each system ... that seems to work well (at least
+> for me).  Currently, os-prober does not support btrfs. 
 
-I am not sure if I am following the approach with replacing the
-pointers, could you please explain?
+I don't have any specific "grub" partition, every Linux install has its
+own grub install in its own /boot BTRFS subvolume.
 
-I agree that the data structure is the key part in designing the feature.
+But I of course have only one grub actually installed in the disk MBR,
+the one that corresponds to the distro I use most (and for which I redid
+« grub-install /dev/sda » last).
 
-> So, part of my answer really depends on where you want to go with your
-> thesis.  I expect the data structure work for efficient hash lookup is
-> going to be closer to what your course work requires?
+As this grub doesn't auto-detect the other distros, I simply chain from
+there the other distro's grub.cfg, by having crafted once for all a :
 
-No, I don't think it is really necessary that the data structure
-should be close to my course work. What is your opinion on the most
-suitable data structure to index the hashes?
 
-Thanks!
-Martin
+"/etc/grub.d/40_custom" that contains, i.e. :
+
+
+#!/bin/sh
+exec tail -n +3 $0
+# This file provides an easy way to add custom menu entries.  Simply
+type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above.
+
+menuentry "DebMint Loader (Chained)" {
+    configfile (hd0,2)/LMDE/@boot/grub/grub.cfg
+}
+
+menuentry "Mint 13 Loader (Chained)" {
+    configfile (hd0,2)/MINT/@boot/grub/grub.cfg
+}
+
+menuentry "Bodhi Loader (Chained)" {
+    configfile (hd0,2)/BODHI/@boot/grub/grub.cfg
+}
+
+
+That's all folks ;-))
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

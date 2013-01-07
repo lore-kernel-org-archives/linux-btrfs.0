@@ -1,38 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f42.google.com ([209.85.210.42]:61770 "EHLO
-	mail-da0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755996Ab3AFOc5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jan 2013 09:32:57 -0500
-Received: by mail-da0-f42.google.com with SMTP id z17so8258871dal.15
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jan 2013 06:32:57 -0800 (PST)
-From: Liu Bo <liub.liubo@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] xfstests: fix 284 ENOENT error
-Date: Sun,  6 Jan 2013 22:30:38 +0800
-Message-Id: <1357482638-27129-1-git-send-email-liub.liubo@gmail.com>
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:42887 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750991Ab3AGKSp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2013 05:18:45 -0500
+Received: by mail-wg0-f45.google.com with SMTP id dq12so9279815wgb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 02:18:44 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CANT588vv8xYNWGBSZUDu0vui2ZH4QqL7tvQX8zOGof7nucC6_Q@mail.gmail.com>
+References: <CANT588vv8xYNWGBSZUDu0vui2ZH4QqL7tvQX8zOGof7nucC6_Q@mail.gmail.com>
+Date: Mon, 7 Jan 2013 15:48:43 +0530
+Message-ID: <CANT588tZd8y3G0jZD3Ti-nHexk1jwmD-fJP1f1bttFP8kyEgqg@mail.gmail.com>
+Subject: Open for contribution towards xfstests for btrfs
+From: Kiran Patil <kirantpatil@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-284 misses a 'mkdir' operation.
+Hello,
 
-Signed-off-by: Liu Bo <liub.liubo@gmail.com>
----
- 284 |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+We have a team of 5 students who would like to contribute to btrfs
+filesystem testing using xfstests.
 
-diff --git a/284 b/284
-index c00e6f1..7f4a630 100644
---- a/284
-+++ b/284
-@@ -44,6 +44,7 @@ _create_file()
- 	if [ $1 -ne 2 ]; then
- 		tmpfile="$SCRATCH_MNT/tmp_file"
- 	else
-+		mkdir -p $SCRATCH_MNT/tmp_dir
- 		tmpfile="$SCRATCH_MNT/tmp_dir/tmp_file"
- 	fi
- 		
--- 
-1.7.7.6
+Is there space for them to contribute?
 
+If yes, to whom do they need to keep in touch for guidance.
+
+Thank you,
+Kiran Patil (Director)
+Green Turtles Technologies, INDIA.

@@ -1,45 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:56512 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755629Ab3AYPtw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 10:49:52 -0500
-Message-ID: <5102A9A7.2000407@giantdisaster.de>
-Date: Fri, 25 Jan 2013 16:49:59 +0100
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mx2.fusionio.com ([66.114.96.31]:38367 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755790Ab3AGWEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jan 2013 17:04:21 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id HgnjKXOvj9egQcHL (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 15:04:20 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: make btrfsck aware of free space inodes
+Date: Mon, 7 Jan 2013 17:10:56 -0500
+Message-ID: <1357596656-11658-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: Gene Czarcinski <gene@czarc.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: remove btrfsctl, btrfs-show and btrfs-vol
- from default build
-References: <1339178417-26051-1-git-send-email-sbehrens@giantdisaster.de> <51027339.9030604@czarc.net> <5102A571.8030608@redhat.com>
-In-Reply-To: <5102A571.8030608@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 25 Jan 2013 09:32:01 -0600, Eric Sandeen wrote:
-> On 1/25/13 5:57 AM, Gene Czarcinski wrote:
->> On 06/08/2012 02:00 PM, Stefan Behrens wrote:
->>> Remove btrfsctl, btrfs-show and btrfs-vol from "all" target of Makefile.
-> 
-> TBH, unless there are objections, I'd rather remove the source files as well.
-> 
-> Having unbuilt source code lying around is potentially even more confusing.
-> 
-> I'd at least move it to a deprecated/ subdir or something, but it'll only
-> fester and die there as well.  I'd just remove it, if it's time to do so.
+From: Josef Bacik <josef@redhat.com>
 
-Yes, right. Half a year ago, this was a first attempt from me to start a
-discussion on this topic. But I agree that the removal of the sources
-and the removal in the Makefile should be made in one commit.
+The new xfstests will run fsck against the volume to make sure we didn't
+introduce any inconsistencies, which is nice except we will error out
+immediately if we mount with inode_cache.  We need to make btrfsck skip the
+special free space cache items and then just assume that we have a link for
+the free space cache inode item.  This makes btrfsck pass with success on a
+fs with inode cache items.  Thanks,
 
-Unfortunately Suse is still needing these old files as David wrote.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ btrfsck.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-
-> Are they fully deprecated?  Is there anything these tools do that btrfs
-> does not?
-
-Yes (fully deprecated for 2 years). No (the unified btrfs tool is a full
-replacement).
+diff --git a/btrfsck.c b/btrfsck.c
+index 7aac736..572dde0 100644
+--- a/btrfsck.c
++++ b/btrfsck.c
+@@ -274,6 +274,9 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 		node->cache.size = 1;
+ 		node->data = rec;
+ 
++		if (ino == BTRFS_FREE_INO_OBJECTID)
++			rec->found_link = 1;
++
+ 		ret = insert_existing_cache_extent(inode_cache, &node->cache);
+ 		BUG_ON(ret);
+ 	}
+@@ -1015,6 +1018,10 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
+ 	nritems = btrfs_header_nritems(eb);
+ 	for (i = 0; i < nritems; i++) {
+ 		btrfs_item_key_to_cpu(eb, &key, i);
++
++		if (key.objectid == BTRFS_FREE_SPACE_OBJECTID)
++			continue;
++
+ 		if (active_node->current == NULL ||
+ 		    active_node->current->ino < key.objectid) {
+ 			if (active_node->current) {
+-- 
+1.7.7.6
 

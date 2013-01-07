@@ -1,70 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:49014 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750976Ab3AGRJV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2013 12:09:21 -0500
-Received: by mail-wg0-f47.google.com with SMTP id dq11so9643244wgb.26
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 09:09:20 -0800 (PST)
+Received: from mx1.redhat.com ([209.132.183.28]:28319 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753005Ab3AGSD5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jan 2013 13:03:57 -0500
+Message-ID: <50EB0DE0.9040500@redhat.com>
+Date: Mon, 07 Jan 2013 12:03:12 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <CANT588t+jcOZNv4w1azXkuywEbSh_+F_AtrUo=3=1P4j+Aesjw@mail.gmail.com>
-References: <CANT588vv8xYNWGBSZUDu0vui2ZH4QqL7tvQX8zOGof7nucC6_Q@mail.gmail.com>
-	<CANT588tZd8y3G0jZD3Ti-nHexk1jwmD-fJP1f1bttFP8kyEgqg@mail.gmail.com>
-	<50EAF092.20907@redhat.com>
-	<CANT588t+jcOZNv4w1azXkuywEbSh_+F_AtrUo=3=1P4j+Aesjw@mail.gmail.com>
-Date: Mon, 7 Jan 2013 22:39:20 +0530
-Message-ID: <CANT588tRL+DoFvyfkaFHsEFPke-C9-mn-0nyooWY04gOYfErtA@mail.gmail.com>
+To: dsterba@suse.cz
+CC: Kiran Patil <kirantpatil@gmail.com>, linux-btrfs@vger.kernel.org,
+        bo.li.liu@oracle.com
 Subject: Re: Open for contribution towards xfstests for btrfs
-From: Kiran Patil <kirantpatil@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com,
-        xfs-oss <xfs@oss.sgi.com>
+References: <CANT588vv8xYNWGBSZUDu0vui2ZH4QqL7tvQX8zOGof7nucC6_Q@mail.gmail.com> <CANT588tZd8y3G0jZD3Ti-nHexk1jwmD-fJP1f1bttFP8kyEgqg@mail.gmail.com> <20130107153132.GH20089@twin.jikos.cz>
+In-Reply-To: <20130107153132.GH20089@twin.jikos.cz>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 7, 2013 at 10:31 PM, Kiran Patil <kirantpatil@gmail.com> wrote:
-> On Mon, Jan 7, 2013 at 9:28 PM, Eric Sandeen <sandeen@redhat.com> wrote:
->> On 1/7/13 4:18 AM, Kiran Patil wrote:
->>> Hello,
->>>
->>> We have a team of 5 students who would like to contribute to btrfs
->>> filesystem testing using xfstests.
->>>
->>> Is there space for them to contribute?
->>>
->>> If yes, to whom do they need to keep in touch for guidance.
->>
->> (cc: xfs list)
->>
->> Are you thinking of writing new tests, or doing more formal testing
->> with the existing testsuite?  Both would be useful.
->>
->> In particular, any time there's a bugfix, a regression test is helpful.
->> Generic new tests of btrfs functionality would be good, too.
->>
->> I would suggest starting with a couple new tests, and cc: the xfs list
->> for review.  In the course of the review you'll get a sense of the various
->> conventions used in xfstests, etc.
->>
->> Simply running xfstests over various btrfs configurations would also
->> be useful, to be sure any regressions caught by existing tests don't go
->> unnoticed.
->>
->> thanks,
->> -Eric
->>
-> Dear Eric and David,
->
-> Thanks a lot for your inputs.
->
-> We will work on them and soon we will start our work.
->
-> Thank you,
->
-> -Kiran
+On 1/7/13 9:31 AM, David Sterba wrote:
+> On Mon, Jan 07, 2013 at 03:48:43PM +0530, Kiran Patil wrote:
+>> We have a team of 5 students who would like to contribute to btrfs
+>> filesystem testing using xfstests.
+> 
+> By any chance, are these the same people behind
+> http://sourceforge.net/projects/btrfstest/ ?
 
-Sorry, I forgot to say thanks to Liu and Arne.
+If so, you might want to consider that
 
-Thank you Liu and Arne for your suggestions.
+http://www.tuxera.com/community/posix-test-suite/
 
--Kiran
+probably already covers some of the tests that "btrfstest" is
+(re)writing.  i.e.:
+
++/* Creating Link on non-existing prefix path should return ENOTDIR
+
+and
+
++/* Creating link on ENAMETOOLONG if either file name exceeds maximum characters
+
+are almost certainly covered in the above posix test suite.
+
+FWIW, that testsuite has a few failures on btrfs (not all unique to btrfs, IIRC):
+
+Test Summary Report
+-------------------
+/root/pjd-fstest/pjd-fstest-20090130-RC/tests/chown/00.t   (Wstat: 0 Tests: 171 Failed: 6)
+  Failed tests:  84, 88, 141, 145, 149, 153
+/root/pjd-fstest/pjd-fstest-20090130-RC/tests/truncate/00.t (Wstat: 0 Tests: 21 Failed: 1)
+  Failed test:  15
+/root/pjd-fstest/pjd-fstest-20090130-RC/tests/xacl/00.t    (Wstat: 0 Tests: 45 Failed: 1)
+  Failed test:  45
+
+-Eric
+
+
+

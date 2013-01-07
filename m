@@ -1,165 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25145 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750923Ab3AHH7f (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 02:59:35 -0500
-Message-ID: <50EBD189.1050706@oracle.com>
-Date: Tue, 08 Jan 2013 15:58:01 +0800
-From: Jeff Liu <jeff.liu@oracle.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:46076 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753212Ab3AGWAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jan 2013 17:00:08 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id fye1cDLhYNMfFn3C (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 15:00:07 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: add orphan before truncating pagecache
+Date: Mon, 7 Jan 2013 17:06:42 -0500
+Message-ID: <1357596402-11499-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@tiscalinet.it>, linux-btrfs@vger.kernel.org,
-        anand.jain@oracle.com, miaox@cn.fujitsu.com, dsterba@suse.cz
-Subject: Re: [RFC PATCH v9 1/2] Btrfs: Add a new ioctl to get the label of
- a mounted file system
-References: <50E79461.3090802@oracle.com> <50E9C617.7010303@gmail.com> <50EA6A03.4090900@oracle.com> <50EB0694.7070401@tiscalinet.it>
-In-Reply-To: <50EB0694.7070401@tiscalinet.it>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Goffredo,
+Running xfstests 83 in a loop would sometimes fail the fsck.  This happens
+because if we invalidate a page that already has an ordered extent setup for
+it we will complete the ordered extent ourselves, assuming that the truncate
+will clean everything up.  The problem with this is there is plenty of time
+for the truncate to fail after we've done this work.  So to fix this we need
+to add the orphan item first to make sure the cleanup gets done properly,
+and then we can truncate the pagecache and all that stuff and be safe.  This
+fixes the btrfsck failures I was seeing while running 83 in a loop.  Thanks,
 
-On 01/08/2013 01:32 AM, Goffredo Baroncelli wrote:
-> Hi Jeff,
-> 
-> On 01/07/2013 07:24 AM, Jeff Liu wrote:
->> Hi,
->> On 01/07/2013 02:44 AM, Goffredo Baroncelli wrote:
->>> Hi Jeff,
->>>
->>> On 01/05/2013 03:48 AM, Jeff Liu wrote:
->>>> Add a new ioctl(2) BTRFS_IOC_GET_FSLABLE, so that we can get the label upon a mounted filesystem.
->>>>
->>>> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
->>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>>> Cc: Miao Xie <miaox@cn.fujitsu.com>
->>>> Cc: Goffredo Baroncelli <kreijack@inwind.it>
->>>> Cc: David Sterba <dsterba@suse.cz>
->>>>
->>>> ---
->>>>  fs/btrfs/ioctl.c |   21 +++++++++++++++++++++
->>>>  fs/btrfs/ioctl.h |    2 ++
->>>>  2 files changed, 23 insertions(+)
->>>>
->>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>>> index 8fcf9a5..ef2f55a 100644
->>>> --- a/fs/btrfs/ioctl.c
->>>> +++ b/fs/btrfs/ioctl.c
->>>> @@ -3699,6 +3699,25 @@ out:
->>>>  	return ret;
->>>>  }
->>>>  
->>>
->>> May be that it was already discussed, and I am missing something, but if
->>> we check the label length we should terminate the string with a zero in
->>> case this is too long...
->>>
->>> However this is a minor bug, please push this patch forward..
->> I don't think so.
->> Why we need to terminate the string with a zero?
->> We have already truncated the label string up to maximum 255 bytes if it
->> was too long.
->>
->> Consider the normal conditions, i.e. the label string is less than 256,
->> we just copy it back to the user without a terminated NUL.
-> 
-> Sorry I don't understand the reason to terminate the string up to 255
-> chars without adding a zero. Or we copy all the buffer (BTRFS_LABEL_SIZE
-> characters without furthers checks) or we copy BTRFS_LABEL_SIZE-1
-> characters, adding a zero at the end.
-For normal cases, there should already has a NUL at the end of the input
-label string when performing btrfs_ioc_set_fslabel(), and we have also
-added a NUL for unmounted label set in btrfs-progs.  In both cases, put
-it again on btrfs_ioc_get_fslabel() is redundant IMO.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |   45 ++++++++++++++++++++++++++++++++++++---------
+ 1 files changed, 36 insertions(+), 9 deletions(-)
 
-If we ran into a too long label, return the first 255 bytes is fine for
-both mounted and unmounted get_label() routines in btrfs-progs since I
-did memset(label, 0, sizeof(label)) at first for fetching mounted fs label.
-
-Also, I have not found any existing kernel code does similar things by
-adding a NUL to end up a char array, could you show me an example?
-
-
-"""Or we copy all the buffer(BTRFS_LABEL_SIZE) characters without
-furthers checks"""
-
-If an array is capable of N chars, we can only full it with N - 1 chars.
-
-Thanks,
--Jeff
->>>
->>>
->>>> +static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
->>>> +{
->>>> +	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
->>>> +	const char *label = root->fs_info->super_copy->label;
->>>> +	size_t len = strnlen(label, BTRFS_LABEL_SIZE);
->>>> +	int ret;
->>> +       int label_is_too_long = 0;
->> 	  bool label_is_too_long = false;
->>>> +
->>>> +	if (len == BTRFS_LABEL_SIZE) {
->>>> +		pr_warn("btrfs: label is too long, return the first %zu bytes\n",
->>>> +			--len);
->>>
->>> +               label_is_too_long = 1;
->> 		  label_is_too_long = true;
->>>> +	}
->>>> +
->>>> +	mutex_lock(&root->fs_info->volume_mutex);
->>>> +	ret = copy_to_user(arg, label, len);
->>> +	if (!ret && label_is_too_long)
->>> +     		ret = copy_to_user(arg+BTRFS_LABEL_SIZE, "", 1);
->> Hmm? 			ret = copy_to_user(arg + len, "", 1);
->>
-> My idea was to put a zero at the end of the string, but I did a mistake
-> with the cut&paste.. sorry :-)
-> 
->>>> +	mutex_unlock(&root->fs_info->volume_mutex);
->> If you or anyone has objection to this patch, please just post yours, I
->> won't follow it up again.
-> 
-> Sorry I don't want to bother anybody, I know that reviewing a patch nine
-> times is a very havvy work. I (and I think more other peoples) really
-> appreciate your efforts.
-> 
-> BR
-> G.Baroncelli
-> 
->>>> +
->>>> +	return ret ? -EFAULT : 0;
->>>> +}
->>>> +
->>>>  long btrfs_ioctl(struct file *file, unsigned int
->>>>  		cmd, unsigned long arg)
->>>>  {
->>>> @@ -3797,6 +3816,8 @@ long btrfs_ioctl(struct file *file, unsigned int
->>>>  		return btrfs_ioctl_qgroup_create(root, argp);
->>>>  	case BTRFS_IOC_QGROUP_LIMIT:
->>>>  		return btrfs_ioctl_qgroup_limit(root, argp);
->>>> +	case BTRFS_IOC_GET_FSLABEL:
->>>> +		return btrfs_ioctl_get_fslabel(file, argp);
->>>>  	}
->>>>  
->>>>  	return -ENOTTY;
->>>> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
->>>> index 731e287..5b2cbef 100644
->>>> --- a/fs/btrfs/ioctl.h
->>>> +++ b/fs/btrfs/ioctl.h
->>>> @@ -451,6 +451,8 @@ struct btrfs_ioctl_send_args {
->>>>  			       struct btrfs_ioctl_qgroup_create_args)
->>>>  #define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
->>>>  			       struct btrfs_ioctl_qgroup_limit_args)
->>>> +#define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
->>>> +				   char[BTRFS_LABEL_SIZE])
->>>>  #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
->>>>  				      struct btrfs_ioctl_get_dev_stats)
->>>>  #endif
->>>
->>>
->>
->>
-> 
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d3ce93e..20138b6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2484,6 +2484,18 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				continue;
+ 			}
+ 			nr_truncate++;
++
++			/* 1 for the orphan item deletion. */
++			trans = btrfs_start_transaction(root, 1);
++			if (IS_ERR(trans)) {
++				ret = PTR_ERR(trans);
++				goto out;
++			}
++			ret = btrfs_orphan_add(trans, inode);
++			btrfs_end_transaction(trans, root);
++			if (ret)
++				goto out;
++
+ 			ret = btrfs_truncate(inode);
+ 		} else {
+ 			nr_unlink++;
+@@ -3789,6 +3801,29 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ 			set_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
+ 				&BTRFS_I(inode)->runtime_flags);
+ 
++		/*
++		 * 1 for the orphan item we're going to add
++		 * 1 for the orphan item deletion.
++		 */
++		trans = btrfs_start_transaction(root, 2);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++
++		/*
++		 * We need to do this in case we fail at _any_ point during the
++		 * actual truncate.  Once we do the truncate_setsize we could
++		 * invalidate pages which forces any outstanding ordered io to
++		 * be instantly completed which will give us extents that need
++		 * to be truncated.  If we fail to get an orphan inode down we
++		 * could have left over extents that were never meant to live,
++		 * so we need to garuntee from this point on that everything
++		 * will be consistent.
++		 */
++		ret = btrfs_orphan_add(trans, inode);
++		btrfs_end_transaction(trans, root);
++		if (ret)
++			return ret;
++
+ 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
+ 		truncate_setsize(inode, newsize);
+ 		ret = btrfs_truncate(inode);
+@@ -6939,11 +6974,9 @@ static int btrfs_truncate(struct inode *inode)
+ 
+ 	/*
+ 	 * 1 for the truncate slack space
+-	 * 1 for the orphan item we're going to add
+-	 * 1 for the orphan item deletion
+ 	 * 1 for updating the inode.
+ 	 */
+-	trans = btrfs_start_transaction(root, 4);
++	trans = btrfs_start_transaction(root, 2);
+ 	if (IS_ERR(trans)) {
+ 		err = PTR_ERR(trans);
+ 		goto out;
+@@ -6954,12 +6987,6 @@ static int btrfs_truncate(struct inode *inode)
+ 				      min_size);
+ 	BUG_ON(ret);
+ 
+-	ret = btrfs_orphan_add(trans, inode);
+-	if (ret) {
+-		btrfs_end_transaction(trans, root);
+-		goto out;
+-	}
+-
+ 	/*
+ 	 * setattr is responsible for setting the ordered_data_close flag,
+ 	 * but that is only tested during the last file release.  That
+-- 
+1.7.7.6
 

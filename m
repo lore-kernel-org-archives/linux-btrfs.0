@@ -1,146 +1,280 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37395 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47566 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756346Ab3AHR0a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Jan 2013 12:26:30 -0500
-Date: Tue, 8 Jan 2013 18:26:27 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
-Message-ID: <20130108172627.GP20089@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
- <20130107162050.GJ20089@twin.jikos.cz>
- <20130108024637.GA1916@liubo>
- <20130108083053.GD3763@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130108083053.GD3763@twin.jikos.cz>
+	id S1753702Ab3AHVsN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Jan 2013 16:48:13 -0500
+From: Mark Fasheh <mfasheh@suse.de>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Cc: ablock84@googlemail.com, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 2/3] btrfs-progs: libify some parts of btrfs-progs
+Date: Tue,  8 Jan 2013 13:41:43 -0800
+Message-Id: <1357681304-2978-3-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
+References: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 08, 2013 at 09:30:54AM +0100, David Sterba wrote:
-> On Tue, Jan 08, 2013 at 10:46:38AM +0800, Liu Bo wrote:
-> > Hmm, not always here, lockend = inode->i_size - 1, so lockend % 2 == 1 may not
-> > be true.
-> 
-> Yeah, that's the case that must be handled,
-> 
-> > But this check can worked in those places where we've rounded the range up to
-> > PAGE_SIZE :)
-> 
-> context:
-> 2233         u64 lockend = i_size_read(inode);
-> ...
-> 2236         u64 len = i_size_read(inode);
-> ...
-> 2240         lockend = max_t(u64, root->sectorsize, lockend);
-> ^^^^
-> 
-> lockend will be always at least root->sectorsize == PAGE_SIZE, so the simple
-> % 2 == 1 test should work generally. Am I missing something? Do we really lock
-> sub-PAGE_SIZE ranges?
+External software wanting to use the functionality provided by the btrfs
+send ioctl has a hard time doing so without replicating tons of work. Of
+particular interest are functions like btrfs_read_and_process_send_stream()
+and subvol_uuid_search(). As that functionality requires a bit more than
+just send-stream.c and send-utils.c we have to pull in some other parts of
+the progs package.
 
-Of course this only works for files smaller than PAGE_SIZE, a larger
-file is locked up to it's i_size. In that case the value of lockend that
-arrives at eg. __set_extent_bit can be of any value.
-We can access the inode->i_size via extent_io_tree::mapping->host, so
-it's possible to do the exact check.
+This patch adds code to the Makefile and headers to create a library,
+libbtrfs which the btrfs command now links to.
 
-with this simple check:
-
-void check_range(const char *caller, struct inode *inode, u64 start, u64 end)
-{
-       u64 isize = i_size_read(inode);
-
-       if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
-               printk_ratelimited(KERN_DEBUG
-                       "D: %s isize = %llu odd range [%llu,%llu)\n",
-                               caller,
-                               (unsigned long long)isize,
-                               (unsigned long long)start,
-                               (unsigned long long)end);
-       }
-
-}
-
-called as:
-
-	check_range(__func__, tree->mapping->host, start, end);
-
-from clear_extent_bit, wait_extent_bit, __set_extent_bit,
-convert_extent_bit and your "lockend--" fix I can't reproduce the
-off-by-one error.
-
-$ cat seektest.c
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/fcntl.h>
-
-#ifndef SEEK_DATA
-#define SEEK_DATA 3
-#endif
-
-static char buf[16*1024];
-
-void do_test(const char *fname, loff_t data_start, loff_t len) {
-        int fd;
-        loff_t lret;
-
-        fd = open(fname, O_RDWR|O_CREAT, 0644);
-        if (fd == -1) {
-                perror("open()");
-                exit(1);
-        }
-        printf("[0,%llu] hole\n", data_start - 1);
-        llseek(fd, data_start, SEEK_SET);
-        write(fd, buf, len);
-        printf("[%llu,%llu] data\n", data_start, len - 1);
-        fsync(fd);
-        llseek(fd, 0, SEEK_SET);
-        lret = llseek(fd, 0, SEEK_DATA);
-        printf("seek to data returned: %llu\n",
-                        (unsigned long long)lret);
-        close(fd);
-}
-
-int main() {
-        do_test("seektest-small-even", 3072, 512);
-        do_test("seektest-small-odd", 3072, 511);
-        do_test("seektest-big-even", 8192, 512);
-        do_test("seektest-big-odd", 8192, 511);
-        do_test("seektest-big-aligned", 8192, 4096);
-        do_test("seektest-big-aligned-1", 8192, 4095);
-        do_test("seektest-big-aligned+1", 8192, 4097);
-
-        return 0;
-}
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
+ Makefile       |   38 ++++++++++++++++++++++++++++----------
+ btrfs-list.h   |    4 ++++
+ crc32c.h       |    4 ++++
+ ctree.h        |    9 +++++++++
+ extent-cache.h |    6 ++++++
+ extent_io.h    |    7 +++++++
+ radix-tree.h   |    4 ++++
+ rbtree.h       |    4 ++++
+ send-utils.h   |    5 +++++
+ 9 files changed, 71 insertions(+), 10 deletions(-)
 
-However, I'm running xfstests with this debugging patch and I cant'
-explain such messages:
+diff --git a/Makefile b/Makefile
+index 4894903..29c63b1 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,14 +1,17 @@
+ CC = gcc
+-AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2
+-CFLAGS = -g -O1
++AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -DBTRFS_FLAT_INCLUDES
++CFLAGS = -g -O1 -fPIC
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+-	  root-tree.o dir-item.o file-item.o inode-item.o \
+-	  inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o \
+-	  volumes.o utils.o btrfs-list.o btrfslabel.o repair.o \
+-	  send-stream.o send-utils.o qgroup.o
++	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
++	  extent-cache.o extent_io.o volumes.o utils.o btrfslabel.o repair.o \
++	  qgroup.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o
++libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o
++libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
++	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
++	       extent_io.h ioctl.h ctree.h
+ 
+ CHECKFLAGS= -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ -Wbitwise \
+ 	    -Wuninitialized -Wshadow -Wundef
+@@ -17,13 +20,18 @@ DEPFLAGS = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
+ INSTALL = install
+ prefix ?= /usr/local
+ bindir = $(prefix)/bin
+-LIBS=-luuid -lm
++libdir = $(prefix)/lib
++incdir = $(prefix)/include/btrfs
++LIBS=-luuid -lm -L. -lbtrfs
+ RESTORE_LIBS=-lz
+ 
+ progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
+ 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
+ 	btrfs-find-root btrfs-restore btrfstune
+ 
++libs = libbtrfs.so.1.0 libbtrfs.so.1 libbtrfs.so
++headers = $(libbtrfs_headers)
++
+ # make C=1 to enable sparse
+ ifdef C
+ 	check = sparse $(CHECKFLAGS)
+@@ -36,11 +44,16 @@ endif
+ 	$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
+ 
+ 
+-all: version $(progs) manpages
++all: version $(libs) $(progs) manpages
+ 
+ version:
+ 	bash version.sh
+ 
++$(libs): $(libbtrfs_objects) send.h
++	$(CC) $(CFLAGS) $(libbtrfs_objects) -shared -Wl,-soname,libbtrfs.so.1 -o libbtrfs.so.1.0
++	ln -sf libbtrfs.so.1.0 libbtrfs.so.1
++	ln -sf libbtrfs.so.1.0 libbtrfs.so
++
+ btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
+ 	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
+ 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+@@ -109,12 +122,17 @@ install-man:
+ 	cd man; $(MAKE) install
+ 
+ clean :
+-	rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
+-	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test version.h
++	rm -f $(progs) $(libs) cscope.out *.o .*.d btrfs-convert btrfs-image \
++	      btrfs-select-super btrfs-zero-log btrfstune dir-test ioctl-test \
++	      quick-test version.h
+ 	cd man; $(MAKE) clean
+ 
+ install: $(progs) install-man
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+ 	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
++	$(INSTALL) -m755 -d $(DESTDIR)$(libdir)
++	$(INSTALL) $(libs) $(DESTDIR)$(libdir)
++	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
++	$(INSTALL) $(headers) $(DESTDIR)$(incdir)
+ 
+ -include .*.d
+diff --git a/btrfs-list.h b/btrfs-list.h
+index cde4b3c..da6bf1c 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -16,7 +16,11 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
++#else
++#include <btrfs/kerncompat.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ struct root_info;
+ 
+diff --git a/crc32c.h b/crc32c.h
+index 7f12e77..c552ef6 100644
+--- a/crc32c.h
++++ b/crc32c.h
+@@ -19,7 +19,11 @@
+ #ifndef __CRC32C__
+ #define __CRC32C__
+ 
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
++#else
++#include <btrfs/kerncompat.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ u32 crc32c_le(u32 seed, unsigned char const *data, size_t length);
+ void crc32c_optimization_init(void);
+diff --git a/ctree.h b/ctree.h
+index 293b24f..7a1ffce 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -19,12 +19,21 @@
+ #ifndef __BTRFS__
+ #define __BTRFS__
+ 
++#if BTRFS_FLAT_INCLUDES
+ #include "list.h"
+ #include "kerncompat.h"
+ #include "radix-tree.h"
+ #include "extent-cache.h"
+ #include "extent_io.h"
+ #include "ioctl.h"
++#else
++#include <btrfs/list.h>
++#include <btrfs/kerncompat.h>
++#include <btrfs/radix-tree.h>
++#include <btrfs/extent-cache.h>
++#include <btrfs/extent_io.h>
++#include <btrfs/ioctl.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ struct btrfs_root;
+ struct btrfs_trans_handle;
+diff --git a/extent-cache.h b/extent-cache.h
+index 7f2f2a6..4cd0f79 100644
+--- a/extent-cache.h
++++ b/extent-cache.h
+@@ -18,8 +18,14 @@
+ 
+ #ifndef __PENDING_EXTENT__
+ #define __PENDING_EXTENT__
++
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
+ #include "rbtree.h"
++#else
++#include <btrfs/kerncompat.h>
++#include <btrfs/rbtree.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ struct cache_tree {
+ 	struct rb_root root;
+diff --git a/extent_io.h b/extent_io.h
+index a5d6bf0..4553859 100644
+--- a/extent_io.h
++++ b/extent_io.h
+@@ -18,9 +18,16 @@
+ 
+ #ifndef __EXTENTMAP__
+ #define __EXTENTMAP__
++
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
+ #include "extent-cache.h"
+ #include "list.h"
++#else
++#include <btrfs/kerncompat.h>
++#include <btrfs/extent-cache.h>
++#include <btrfs/list.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ #define EXTENT_DIRTY 1
+ #define EXTENT_WRITEBACK (1 << 1)
+diff --git a/radix-tree.h b/radix-tree.h
+index d99ea7e..bf96d83 100644
+--- a/radix-tree.h
++++ b/radix-tree.h
+@@ -37,7 +37,11 @@
+ #ifndef _LINUX_RADIX_TREE_H
+ #define _LINUX_RADIX_TREE_H
+ 
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
++#else
++#include <btrfs/kerncompat.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ #define RADIX_TREE_MAX_TAGS 2
+ 
+diff --git a/rbtree.h b/rbtree.h
+index bed054d..b636ddd 100644
+--- a/rbtree.h
++++ b/rbtree.h
+@@ -93,7 +93,11 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
+ 
+ #ifndef	_LINUX_RBTREE_H
+ #define	_LINUX_RBTREE_H
++#if BTRFS_FLAT_INCLUDES
+ #include "kerncompat.h"
++#else
++#include <btrfs/kerncompat.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ struct rb_node
+ {
+ 	unsigned long  rb_parent_color;
+diff --git a/send-utils.h b/send-utils.h
+index da407eb..8040c50 100644
+--- a/send-utils.h
++++ b/send-utils.h
+@@ -18,8 +18,13 @@
+ #ifndef SEND_UTILS_H_
+ #define SEND_UTILS_H_
+ 
++#if BTRFS_FLAT_INCLUDES
+ #include "ctree.h"
+ #include "rbtree.h"
++#else
++#include <btrfs/ctree.h>
++#include <btrfs/rbtree.h>
++#endif /* BTRFS_FLAT_INCLUDES */
+ 
+ enum subvol_search_type {
+ 	subvol_search_by_root_id,
+-- 
+1.7.7
 
-[20177.655732] D: __set_extent_bit isize = 0 odd range [352256,8740681790172090368)
-[20177.664485] D: clear_extent_bit isize = 0 odd range [352256,8740681790172090368)
-[20182.399257] D: __set_extent_bit isize = 944560 odd range [229376,7504638559450173440)
-[20182.408465] D: clear_extent_bit isize = 944560 odd range [229376,7504638559450173440)
-[20183.543186] D: __set_extent_bit isize = 396355 odd range [692224,2301956497953013760)
-[20183.552170] D: clear_extent_bit isize = 396355 odd range [692224,2301956497953013760)
-[20187.018092] D: __set_extent_bit isize = 0 odd range [401408,306555945915797504)
-[20187.026532] D: clear_extent_bit isize = 0 odd range [401408,306555945915797504)
-[20189.941615] D: __set_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
-[20189.950751] D: clear_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
-[20190.642796] D: __set_extent_bit isize = 0 odd range [274432,8022548162794254336)
-[20190.651380] D: clear_extent_bit isize = 0 odd range [274432,8022548162794254336)
-[20191.244458] D: __set_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
-[20191.253508] D: clear_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
-[20191.948060] D: __set_extent_bit isize = 0 odd range [774144,7384799041917984768)
-[20191.956581] D: clear_extent_bit isize = 0 odd range [774144,7384799041917984768)
-
-so I'm not sending it as a separate patch yet until the check covers all cases.
-
-
-david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo

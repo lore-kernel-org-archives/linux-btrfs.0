@@ -1,279 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f42.google.com ([209.85.214.42]:64701 "EHLO
-	mail-bk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756039Ab3AFPcs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jan 2013 10:32:48 -0500
-Received: by mail-bk0-f42.google.com with SMTP id ji2so7983433bkc.15
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jan 2013 07:32:47 -0800 (PST)
-From: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
-Subject: [PATCH] Btrfs-progs: add UUID switches to mkfs and convert
-Date: Sun,  6 Jan 2013 16:32:11 +0100
-Message-Id: <1357486331-4615-2-git-send-email-falbrechtskirchinger@gmail.com>
-In-Reply-To: <1357486331-4615-1-git-send-email-falbrechtskirchinger@gmail.com>
-References: <1357486331-4615-1-git-send-email-falbrechtskirchinger@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:37395 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756346Ab3AHR0a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Jan 2013 12:26:30 -0500
+Date: Tue, 8 Jan 2013 18:26:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
+Message-ID: <20130108172627.GP20089@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
+ <20130107162050.GJ20089@twin.jikos.cz>
+ <20130108024637.GA1916@liubo>
+ <20130108083053.GD3763@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130108083053.GD3763@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the following switches to mkfs.btrfs and update man page:
-* -U UUID, --uuid UUID
+On Tue, Jan 08, 2013 at 09:30:54AM +0100, David Sterba wrote:
+> On Tue, Jan 08, 2013 at 10:46:38AM +0800, Liu Bo wrote:
+> > Hmm, not always here, lockend = inode->i_size - 1, so lockend % 2 == 1 may not
+> > be true.
+> 
+> Yeah, that's the case that must be handled,
+> 
+> > But this check can worked in those places where we've rounded the range up to
+> > PAGE_SIZE :)
+> 
+> context:
+> 2233         u64 lockend = i_size_read(inode);
+> ...
+> 2236         u64 len = i_size_read(inode);
+> ...
+> 2240         lockend = max_t(u64, root->sectorsize, lockend);
+> ^^^^
+> 
+> lockend will be always at least root->sectorsize == PAGE_SIZE, so the simple
+> % 2 == 1 test should work generally. Am I missing something? Do we really lock
+> sub-PAGE_SIZE ranges?
 
-Add the following switches to btrfs-convert:
-* -U UUID
-* -U new
-  Generates a random UUID (default behavior).
-* -U copy
-  Copies the UUID from the ext2fs.
+Of course this only works for files smaller than PAGE_SIZE, a larger
+file is locked up to it's i_size. In that case the value of lockend that
+arrives at eg. __set_extent_bit can be of any value.
+We can access the inode->i_size via extent_io_tree::mapping->host, so
+it's possible to do the exact check.
 
-Signed-off-by: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
+with this simple check:
+
+void check_range(const char *caller, struct inode *inode, u64 start, u64 end)
+{
+       u64 isize = i_size_read(inode);
+
+       if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
+               printk_ratelimited(KERN_DEBUG
+                       "D: %s isize = %llu odd range [%llu,%llu)\n",
+                               caller,
+                               (unsigned long long)isize,
+                               (unsigned long long)start,
+                               (unsigned long long)end);
+       }
+
+}
+
+called as:
+
+	check_range(__func__, tree->mapping->host, start, end);
+
+from clear_extent_bit, wait_extent_bit, __set_extent_bit,
+convert_extent_bit and your "lockend--" fix I can't reproduce the
+off-by-one error.
+
+$ cat seektest.c
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/fcntl.h>
+
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#endif
+
+static char buf[16*1024];
+
+void do_test(const char *fname, loff_t data_start, loff_t len) {
+        int fd;
+        loff_t lret;
+
+        fd = open(fname, O_RDWR|O_CREAT, 0644);
+        if (fd == -1) {
+                perror("open()");
+                exit(1);
+        }
+        printf("[0,%llu] hole\n", data_start - 1);
+        llseek(fd, data_start, SEEK_SET);
+        write(fd, buf, len);
+        printf("[%llu,%llu] data\n", data_start, len - 1);
+        fsync(fd);
+        llseek(fd, 0, SEEK_SET);
+        lret = llseek(fd, 0, SEEK_DATA);
+        printf("seek to data returned: %llu\n",
+                        (unsigned long long)lret);
+        close(fd);
+}
+
+int main() {
+        do_test("seektest-small-even", 3072, 512);
+        do_test("seektest-small-odd", 3072, 511);
+        do_test("seektest-big-even", 8192, 512);
+        do_test("seektest-big-odd", 8192, 511);
+        do_test("seektest-big-aligned", 8192, 4096);
+        do_test("seektest-big-aligned-1", 8192, 4095);
+        do_test("seektest-big-aligned+1", 8192, 4097);
+
+        return 0;
+}
 ---
- convert.c           | 48 ++++++++++++++++++++++++++++++++++++++++--------
- man/mkfs.btrfs.8.in |  4 ++++
- mkfs.c              | 20 ++++++++++++++++++--
- utils.c             |  6 +++---
- utils.h             |  4 ++--
- 5 files changed, 67 insertions(+), 15 deletions(-)
 
-diff --git a/convert.c b/convert.c
-index fa7bf8c..67c8a87 100644
---- a/convert.c
-+++ b/convert.c
-@@ -2272,9 +2272,11 @@ err:
- 	return ret;
- }
- 
--int do_convert(const char *devname, int datacsum, int packing, int noxattr)
-+int do_convert(const char *devname, int copy_fsid, u8 fsid[BTRFS_UUID_SIZE],
-+	       int datacsum, int packing, int noxattr)
- {
- 	int i, fd, ret;
-+	u8 *fsid_ptr;
- 	u32 blocksize;
- 	u64 blocks[7];
- 	u64 total_bytes;
-@@ -2313,9 +2315,14 @@ int do_convert(const char *devname, int datacsum, int packing, int noxattr)
- 		fprintf(stderr, "unable to open %s\n", devname);
- 		goto fail;
- 	}
-+	if (copy_fsid) {
-+		fsid_ptr = ext2_fs->super->s_uuid;
-+	} else {
-+		fsid_ptr = fsid;
-+	}
- 	ret = make_btrfs(fd, devname, ext2_fs->super->s_volume_name,
--			 blocks, total_bytes, blocksize, blocksize,
--			 blocksize, blocksize);
-+			 fsid_ptr, blocks, total_bytes,
-+			 blocksize, blocksize, blocksize, blocksize);
- 	if (ret) {
- 		fprintf(stderr, "unable to create initial ctree\n");
- 		goto fail;
-@@ -2752,23 +2759,28 @@ fail:
- 
- static void print_usage(void)
- {
--	printf("usage: btrfs-convert [-d] [-i] [-n] [-r] device\n");
-+	printf("usage: btrfs-convert [-d] [-i] [-n] [-r]"
-+	       " [-U UUID | new | copy] device\n");
- 	printf("\t-d disable data checksum\n");
- 	printf("\t-i ignore xattrs and ACLs\n");
- 	printf("\t-n disable packing of small files\n");
- 	printf("\t-r roll back to ext2fs\n");
-+	printf("\t-U UUID specify FS UUID\n");
-+	printf("\t-U new generate random FS UUID (default)\n");
-+	printf("\t-U copy copy FS UUID from ext2fs\n");
- }
- 
- int main(int argc, char *argv[])
- {
--	int ret;
-+	int ret, copy_fsid = 0;
- 	int packing = 1;
- 	int noxattr = 0;
- 	int datacsum = 1;
- 	int rollback = 0;
--	char *file;
-+	char *file, *fsid_str = NULL;
-+	u8 fsid[BTRFS_UUID_SIZE];
- 	while(1) {
--		int c = getopt(argc, argv, "dinr");
-+		int c = getopt(argc, argv, "dinrU:");
- 		if (c < 0)
- 			break;
- 		switch(c) {
-@@ -2784,6 +2796,9 @@ int main(int argc, char *argv[])
- 			case 'r':
- 				rollback = 1;
- 				break;
-+			case 'U':
-+				fsid_str = optarg;
-+				break;
- 			default:
- 				print_usage();
- 				return 1;
-@@ -2801,10 +2816,27 @@ int main(int argc, char *argv[])
- 		return 1;
- 	}
- 
-+	if (fsid_str) {
-+		if (strcmp(fsid_str, "new") == 0) {
-+			uuid_generate(fsid);
-+		} else if (strcmp(fsid_str, "copy") == 0) {
-+			copy_fsid = 1;
-+		} else {
-+			if (uuid_parse(fsid_str, fsid) == -1) {
-+				fprintf(stderr, "failed to parse UUID: %s\n",
-+					fsid_str);
-+				return 1;
-+			}
-+		}
-+	} else {
-+		uuid_generate(fsid);
-+	}
-+
- 	if (rollback) {
- 		ret = do_rollback(file, 0);
- 	} else {
--		ret = do_convert(file, datacsum, packing, noxattr);
-+		ret = do_convert(file, copy_fsid, fsid, datacsum, packing,
-+				 noxattr);
- 	}
- 	if (ret)
- 		return 1;
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 72025ed..73abcc0 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -12,6 +12,7 @@ mkfs.btrfs \- create a btrfs filesystem
- [ \fB\-M\fP\fI mixed data+metadata\fP ]
- [ \fB\-n\fP\fI nodesize\fP ]
- [ \fB\-s\fP\fI sectorsize\fP ]
-+[ \fB\-U\fP\fI UUID\fP ]
- [ \fB\-r\fP\fI rootdir\fP ]
- [ \fB\-K\fP ]
- [ \fB\-h\fP ]
-@@ -61,6 +62,9 @@ Specify the nodesize. By default the value is set to the pagesize.
- \fB\-s\fR, \fB\-\-sectorsize \fIsize\fR
- Specify the sectorsize, the minimum block allocation.
- .TP
-+\fB\-U\fR, \fB\-\-uuid \fIUUID\fR
-+Specify the UUID for the filesystem.
-+.TP
- \fB\-r\fR, \fB\-\-rootdir \fIrootdir\fR
- Specify a directory to copy into the newly created fs.
- .TP
-diff --git a/mkfs.c b/mkfs.c
-index 47f0c9c..1bdb0d3 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -347,6 +347,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t -M --mixed mix metadata and data together\n");
- 	fprintf(stderr, "\t -n --nodesize size of btree nodes\n");
- 	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
-+	fprintf(stderr, "\t -U --uuid FS UUID\n");
- 	fprintf(stderr, "\t -r --rootdir the source directory\n");
- 	fprintf(stderr, "\t -K --nodiscard do not perform whole device TRIM\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-@@ -407,6 +408,7 @@ static struct option long_options[] = {
- 	{ "mixed", 0, NULL, 'M' },
- 	{ "nodesize", 1, NULL, 'n' },
- 	{ "sectorsize", 1, NULL, 's' },
-+	{ "uuid", 1, NULL, 'U' },
- 	{ "data", 1, NULL, 'd' },
- 	{ "version", 0, NULL, 'V' },
- 	{ "rootdir", 1, NULL, 'r' },
-@@ -1229,6 +1231,8 @@ int main(int ac, char **av)
- 	struct btrfs_trans_handle *trans;
- 	char *label = NULL;
- 	char *first_file;
-+	char *fsid_str = NULL;
-+	u8 fsid[BTRFS_FSID_SIZE];
- 	u64 block_count = 0;
- 	u64 dev_block_count = 0;
- 	u64 blocks[7];
-@@ -1258,7 +1262,7 @@ int main(int ac, char **av)
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VMK", long_options,
-+		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:U:r:VMK", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
-@@ -1288,6 +1292,9 @@ int main(int ac, char **av)
- 			case 's':
- 				sectorsize = parse_size(optarg);
- 				break;
-+			case 'U':
-+				fsid_str = optarg;
-+				break;
- 			case 'b':
- 				block_count = parse_size(optarg);
- 				if (block_count <= 1024*1024*1024) {
-@@ -1375,13 +1382,22 @@ int main(int ac, char **av)
- 		}
- 	}
- 
-+	if(fsid_str) {
-+		if(uuid_parse(fsid_str, fsid) == -1) {
-+			fprintf(stderr, "failed to parse UUID: %s\n", fsid_str);
-+			exit(1);
-+		}
-+	}
-+	else
-+		uuid_generate(fsid);
-+
- 	blocks[0] = BTRFS_SUPER_INFO_OFFSET;
- 	for (i = 1; i < 7; i++) {
- 		blocks[i] = BTRFS_SUPER_INFO_OFFSET + 1024 * 1024 +
- 			leafsize * i;
- 	}
- 
--	ret = make_btrfs(fd, file, label, blocks, dev_block_count,
-+	ret = make_btrfs(fd, file, label, fsid, blocks, dev_block_count,
- 			 nodesize, leafsize,
- 			 sectorsize, stripesize);
- 	if (ret) {
-diff --git a/utils.c b/utils.c
-index 205e667..1ef6174 100644
---- a/utils.c
-+++ b/utils.c
-@@ -74,8 +74,8 @@ static u64 reference_root_table[] = {
- };
- 
- int make_btrfs(int fd, const char *device, const char *label,
--	       u64 blocks[7], u64 num_bytes, u32 nodesize,
--	       u32 leafsize, u32 sectorsize, u32 stripesize)
-+	       u8 fsid[BTRFS_FSID_SIZE], u64 blocks[7], u64 num_bytes,
-+	       u32 nodesize, u32 leafsize, u32 sectorsize, u32 stripesize)
- {
- 	struct btrfs_super_block super;
- 	struct extent_buffer *buf;
-@@ -103,7 +103,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	memset(&super, 0, sizeof(super));
- 
- 	num_bytes = (num_bytes / sectorsize) * sectorsize;
--	uuid_generate(super.fsid);
-+	memcpy(super.fsid, fsid, BTRFS_FSID_SIZE);
- 	uuid_generate(super.dev_item.uuid);
- 	uuid_generate(chunk_tree_uuid);
- 
-diff --git a/utils.h b/utils.h
-index 3a0368b..c201a14 100644
---- a/utils.h
-+++ b/utils.h
-@@ -22,8 +22,8 @@
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
- 
- int make_btrfs(int fd, const char *device, const char *label,
--	       u64 blocks[6], u64 num_bytes, u32 nodesize,
--	       u32 leafsize, u32 sectorsize, u32 stripesize);
-+	       u8 fsid[BTRFS_FSID_SIZE], u64 blocks[6], u64 num_bytes,
-+	       u32 nodesize, u32 leafsize, u32 sectorsize, u32 stripesize);
- int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, u64 objectid);
- int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
--- 
-1.8.0.3
+However, I'm running xfstests with this debugging patch and I cant'
+explain such messages:
 
+[20177.655732] D: __set_extent_bit isize = 0 odd range [352256,8740681790172090368)
+[20177.664485] D: clear_extent_bit isize = 0 odd range [352256,8740681790172090368)
+[20182.399257] D: __set_extent_bit isize = 944560 odd range [229376,7504638559450173440)
+[20182.408465] D: clear_extent_bit isize = 944560 odd range [229376,7504638559450173440)
+[20183.543186] D: __set_extent_bit isize = 396355 odd range [692224,2301956497953013760)
+[20183.552170] D: clear_extent_bit isize = 396355 odd range [692224,2301956497953013760)
+[20187.018092] D: __set_extent_bit isize = 0 odd range [401408,306555945915797504)
+[20187.026532] D: clear_extent_bit isize = 0 odd range [401408,306555945915797504)
+[20189.941615] D: __set_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
+[20189.950751] D: clear_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
+[20190.642796] D: __set_extent_bit isize = 0 odd range [274432,8022548162794254336)
+[20190.651380] D: clear_extent_bit isize = 0 odd range [274432,8022548162794254336)
+[20191.244458] D: __set_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
+[20191.253508] D: clear_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
+[20191.948060] D: __set_extent_bit isize = 0 odd range [774144,7384799041917984768)
+[20191.956581] D: clear_extent_bit isize = 0 odd range [774144,7384799041917984768)
+
+so I'm not sending it as a separate patch yet until the check covers all cases.
+
+
+david

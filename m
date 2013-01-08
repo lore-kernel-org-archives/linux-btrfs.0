@@ -1,112 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:46076 "EHLO mx2.fusionio.com"
+Received: from mx1.redhat.com ([209.132.183.28]:55472 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753212Ab3AGWAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Jan 2013 17:00:08 -0500
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id fye1cDLhYNMfFn3C (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 15:00:07 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: add orphan before truncating pagecache
-Date: Mon, 7 Jan 2013 17:06:42 -0500
-Message-ID: <1357596402-11499-1-git-send-email-jbacik@fusionio.com>
+	id S1756568Ab3AHTq5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Jan 2013 14:46:57 -0500
+Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r08Jkvk7016664
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jan 2013 14:46:57 -0500
+Message-ID: <50EC77B0.3050400@redhat.com>
+Date: Tue, 08 Jan 2013 13:46:56 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Zach Brown <zab@redhat.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix btrfs_cont_expand() freeing IS_ERR em
+References: <1357673878-25591-1-git-send-email-zab@redhat.com>
+In-Reply-To: <1357673878-25591-1-git-send-email-zab@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Running xfstests 83 in a loop would sometimes fail the fsck.  This happens
-because if we invalidate a page that already has an ordered extent setup for
-it we will complete the ordered extent ourselves, assuming that the truncate
-will clean everything up.  The problem with this is there is plenty of time
-for the truncate to fail after we've done this work.  So to fix this we need
-to add the orphan item first to make sure the cleanup gets done properly,
-and then we can truncate the pagecache and all that stuff and be safe.  This
-fixes the btrfsck failures I was seeing while running 83 in a loop.  Thanks,
+On 1/8/13 1:37 PM, Zach Brown wrote:
+> btrfs_cont_expand() tries to free an IS_ERR em as it gets an error from
+> btrfs_get_extent() and breaks out of its loop.
+> 
+> An instance of -EEXIST was reported in the wild:
+> 
+>   https://bugzilla.redhat.com/show_bug.cgi?id=874407
+> 
+> I have no idea if that -EEXIST is surprising, or not.  Regardless, this
+> error handling should be cleaned up to handle other reasonable errors
+> (ENOMEM, EIO; whatever).
+> 
+> This seemed to be the only buggy freeing of the relatively rare IS_ERR
+> em so I opted to fix the caller rather than teach free_extent_map() to
+> use IS_ERR_OR_NULL().
+> 
+> Signed-off-by: Zach Brown <zab@redhat.com>
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |   45 ++++++++++++++++++++++++++++++++++++---------
- 1 files changed, 36 insertions(+), 9 deletions(-)
+Looks good (maybe IS_ERR_OR_NULL would be more future-proof, but *shrug*)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d3ce93e..20138b6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2484,6 +2484,18 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 				continue;
- 			}
- 			nr_truncate++;
-+
-+			/* 1 for the orphan item deletion. */
-+			trans = btrfs_start_transaction(root, 1);
-+			if (IS_ERR(trans)) {
-+				ret = PTR_ERR(trans);
-+				goto out;
-+			}
-+			ret = btrfs_orphan_add(trans, inode);
-+			btrfs_end_transaction(trans, root);
-+			if (ret)
-+				goto out;
-+
- 			ret = btrfs_truncate(inode);
- 		} else {
- 			nr_unlink++;
-@@ -3789,6 +3801,29 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
- 			set_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
- 				&BTRFS_I(inode)->runtime_flags);
- 
-+		/*
-+		 * 1 for the orphan item we're going to add
-+		 * 1 for the orphan item deletion.
-+		 */
-+		trans = btrfs_start_transaction(root, 2);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+
-+		/*
-+		 * We need to do this in case we fail at _any_ point during the
-+		 * actual truncate.  Once we do the truncate_setsize we could
-+		 * invalidate pages which forces any outstanding ordered io to
-+		 * be instantly completed which will give us extents that need
-+		 * to be truncated.  If we fail to get an orphan inode down we
-+		 * could have left over extents that were never meant to live,
-+		 * so we need to garuntee from this point on that everything
-+		 * will be consistent.
-+		 */
-+		ret = btrfs_orphan_add(trans, inode);
-+		btrfs_end_transaction(trans, root);
-+		if (ret)
-+			return ret;
-+
- 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
- 		truncate_setsize(inode, newsize);
- 		ret = btrfs_truncate(inode);
-@@ -6939,11 +6974,9 @@ static int btrfs_truncate(struct inode *inode)
- 
- 	/*
- 	 * 1 for the truncate slack space
--	 * 1 for the orphan item we're going to add
--	 * 1 for the orphan item deletion
- 	 * 1 for updating the inode.
- 	 */
--	trans = btrfs_start_transaction(root, 4);
-+	trans = btrfs_start_transaction(root, 2);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		goto out;
-@@ -6954,12 +6987,6 @@ static int btrfs_truncate(struct inode *inode)
- 				      min_size);
- 	BUG_ON(ret);
- 
--	ret = btrfs_orphan_add(trans, inode);
--	if (ret) {
--		btrfs_end_transaction(trans, root);
--		goto out;
--	}
--
- 	/*
- 	 * setattr is responsible for setting the ordered_data_close flag,
- 	 * but that is only tested during the last file release.  That
--- 
-1.7.7.6
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+
+> ---
+>  fs/btrfs/inode.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index edd30ae..0bc7bb3 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3690,6 +3690,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+>  				block_end - cur_offset, 0);
+>  		if (IS_ERR(em)) {
+>  			err = PTR_ERR(em);
+> +			em = NULL;
+>  			break;
+>  		}
+>  		last_byte = min(extent_map_end(em), block_end);
+> 
 

@@ -1,52 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36742 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756869Ab3AHSqD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 13:46:03 -0500
-Date: Tue, 8 Jan 2013 10:46:03 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1 (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
-Message-ID: <20130108184603.GG2044@merlins.org>
-References: <20130108164958.GA2044@merlins.org> <20130108182541.GE2389@localhost.localdomain>
+Received: from tetsuo.zabbo.net ([50.193.208.193]:35732 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751030Ab3AHUHe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Jan 2013 15:07:34 -0500
+Date: Tue, 8 Jan 2013 12:07:34 -0800
+From: Zach Brown <zab@zabbo.net>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: add leak debug for extent map
+Message-ID: <20130108200734.GD12288@lenny.home.zabbo.net>
+References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130108182541.GE2389@localhost.localdomain>
+In-Reply-To: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 08, 2013 at 01:25:41PM -0500, Josef Bacik wrote:
-> On Tue, Jan 08, 2013 at 09:49:58AM -0700, Marc MERLIN wrote:
-> > Unfortunately my laptop deadlocks from time to time, and too often
-> > it triggers this bug in btrfs which is quite hard to recover from.
-> > 
-> 
-> You are getting bad tree blocks which really isn't the tree logs fault.  Can you
-> scrub your file system and make sure there's not some sort of latent issue going
-> on?  And if you have problems again please try btrfs-next as I've fixed a few
-> log replay bugs recently.  Thanks,
+> This is for detecting extent map leak.
 
-Thanks for your answer.
+Hmm, I guess it's cool to get the allocation-specific decoding which you
+don't get from the generic kernel leak tracking?
 
-I've only read about scrub in a mirorr situation, as per
-https://blogs.oracle.com/wim/entry/btrfs_scrub_go_fix_corruptions
+> +static LIST_HEAD(emaps);
 
-It's a single device here, so if there are problems, I'm not sure how scrub
-will be able to fix them.
-Would you like me to go ahead and do it anyway?
+> +	while (!list_empty(&emaps)) {
+> +		em = list_entry(emaps.next, struct extent_map, leak_list);
+> +		printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu flags %llu refs %d in tree %d compress %d\n",
+> +			em->start, em->len, em->block_start, em->flags, atomic_read(&em->refs), em->in_tree, em->compress_type);
+> +		list_del(&em->leak_list);
+> +		kmem_cache_free(extent_map_cache, em);
 
-And before I further remove potential debug state
-1) what about this problem?
-btrfs-image: btrfs-image.c:518: create_metadump: Assertion `!(ret < 0)'
-failed.
-Aborted
+> +	struct list_head leak_list;
 
-2) anything else you want me to get off my filesystem before I scrub it?
+Might as well protect all that with ifdefs, too, if you're going to do
+it that way?
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+- z

@@ -1,138 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32077 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756550Ab3AHOvj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 09:51:39 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r08Epcws000463
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jan 2013 14:51:39 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r08Epctv014790
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jan 2013 14:51:38 GMT
-Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r08EpbXV005324
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jan 2013 08:51:37 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix memory leak on extent map after fsync
-Date: Tue,  8 Jan 2013 22:49:21 +0800
-Message-Id: <1357656561-24604-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
-References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:47871 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753428Ab3AHRKP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 12:10:15 -0500
+Date: Tue, 8 Jan 2013 17:10:12 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1
+ (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
+Message-ID: <20130108171012.GP19051@carfax.org.uk>
+References: <20130108164958.GA2044@merlins.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="YzDq+9le76OY47R0"
+In-Reply-To: <20130108164958.GA2044@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-During fsync, we put the changed parts(i.e. extent map) into the log tree,
-and we ship these parts from a list of modified_extents to a local list
-to process, of course, we must increment the refs of the extent maps to
-avoid it from getting evicted from cache.
 
-The problem is
-we don't hold the tree writer lock all the time of iterating the local list,
-and it is possible that other threads hack in and delete the extent map from
-the local list silently.  So we'll end up with memory leak here.
+--YzDq+9le76OY47R0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I hit this when testing xfstest 274 with mount options 'autodefrag,compress=zlib'.
+On Tue, Jan 08, 2013 at 08:49:58AM -0800, Marc MERLIN wrote:
+> Unfortunately my laptop deadlocks from time to time, and too often
+> it triggers this bug in btrfs which is quite hard to recover from.
+> 
+> The bigger problem is that all the user sees (if anything) is seemingly 
+> unrelated info, namely, "RIP: btrfs_num_copies+0x42/0x0b" or somesuch
+> http://marc.merlins.org/tmp/btrfs_num_copies.jpg
+> 
+> It's only if you have serial console, or netconsole, which we can't really
+> assume the average users to have, that you can get the correct oops and bug
+> info.
+> I lost another 3 hours with many reboots and a recovery drive to recover my
+> root drive.
+> 
+> Question #1:
+> I have hourly snapshots of my root filesystem, and I wasn't able to mount
+> any of them. I got the BUG at fs/btrfs/volumes.c:3707 each time.
+> gandalfthegreat:~# mount -o ro,recovery /dev/mapper/root -o 'subvol=root_daily_20130108_00:01:02,defaults,compress=lzo,discard,nossd,space_cache,noatime'
+> 
+> If my log is damaged, why are all other snapshots also broken?
 
-With this fix, the memory leak has gone away.
+   Snapshots are not independent of each other. The filesystem as a
+whole is damaged -- if you can't mount it, it won't make a difference
+which subvolume you try to mount. A snapshot is not a backup; it won't
+save you from a broken filesystem or dead hardware. At best, it'll
+save you from accidental deletion of files.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_map.c |    5 +++--
- fs/btrfs/extent_map.h |    4 ++--
- fs/btrfs/tree-log.c   |   12 +++++-------
- 3 files changed, 10 insertions(+), 11 deletions(-)
+> Question #2:
+> This btrfs-zero-log business, which in the end fixed my problem, should 
+> not be a routine recovery method, especially because the ooops you get on
+> your screen doesn't have the proper info that tells you that it's actually
+> the right bug as described on
+> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mount_my_filesystem.2C_and_I_get_a_kernel_oops.21
+> 
+> Could mainline kernels be fixed not to oops so badly and in a hard to debug 
+> way when this problem which happens too often (at least for me), is hit?
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index c025a7a..4c6d271 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -78,6 +78,7 @@ struct extent_map *alloc_extent_map(void)
- 	em->generation = 0;
- 	atomic_set(&em->refs, 1);
- 	INIT_LIST_HEAD(&em->list);
-+	INIT_LIST_HEAD(&em->log_list);
- #if LEAK_DEBUG
- 	spin_lock_irqsave(&map_leak_lock, flags);
- 	list_add(&em->leak_list, &emaps);
-@@ -107,6 +108,7 @@ void free_extent_map(struct extent_map *em)
- #endif
- 		WARN_ON(em->in_tree);
- 		WARN_ON(!list_empty(&em->list));
-+		WARN_ON(!list_empty(&em->log_list));
- 		kmem_cache_free(extent_map_cache, em);
- 	}
- }
-@@ -433,8 +435,7 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 
- 	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
- 	rb_erase(&em->rb_node, &tree->map);
--	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
--		list_del_init(&em->list);
-+	list_del_init(&em->list);
- 	em->in_tree = 0;
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index d07a841..ac12389 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -13,8 +13,7 @@
- #define EXTENT_FLAG_COMPRESSED 1
- #define EXTENT_FLAG_VACANCY 2 /* no file extent item found */
- #define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
--#define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
--#define EXTENT_FLAG_FILLING 5 /* Filling in a preallocated extent */
-+#define EXTENT_FLAG_FILLING 4 /* Filling in a preallocated extent */
- 
- struct extent_map {
- 	struct rb_node rb_node;
-@@ -35,6 +34,7 @@ struct extent_map {
- 	unsigned int in_tree;
- 	unsigned int compress_type;
- 	struct list_head list;
-+	struct list_head log_list;
- 	struct list_head leak_list;
- };
- 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 83186c7..c3ea5bd 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3145,8 +3145,8 @@ static int extent_cmp(void *priv, struct list_head *a, struct list_head *b)
- {
- 	struct extent_map *em1, *em2;
- 
--	em1 = list_entry(a, struct extent_map, list);
--	em2 = list_entry(b, struct extent_map, list);
-+	em1 = list_entry(a, struct extent_map, log_list);
-+	em2 = list_entry(b, struct extent_map, log_list);
- 
- 	if (em1->start < em2->start)
- 		return -1;
-@@ -3400,17 +3400,15 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 			continue;
- 		/* Need a ref to keep it from getting evicted from cache */
- 		atomic_inc(&em->refs);
--		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
--		list_add_tail(&em->list, &extents);
-+		list_add_tail(&em->log_list, &extents);
- 	}
- 
- 	list_sort(NULL, &extents, extent_cmp);
- 
- 	while (!list_empty(&extents)) {
--		em = list_entry(extents.next, struct extent_map, list);
-+		em = list_entry(extents.next, struct extent_map, log_list);
- 
--		list_del_init(&em->list);
--		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
-+		list_del_init(&em->log_list);
- 
- 		/*
- 		 * If we had an error we just need to delete everybody from our
+   Oopses in log playback are a bug. The last time we had such a bug
+which was identifiable and traceable (back in the 3.1-3.2 era, IIRC),
+it got fixed, eventually. So yes, this is a bug, it should be fixed,
+and you're not the only person to have seen log tree replys fail in
+3.6 and 3.7 kernels.
+
+   Since you seem to be hitting the problem frequently and repeatably,
+could you help? Josef has said he'd like a copy of the filesystem
+image that btrfs-image produces when run against the broken FS (i.e.
+while the FS can't mount) -- that would help track down the corruption
+problem, and make the kernel more robust in this area. Just as a
+warning, the output may be quite large: it contains all of your FS's
+metadata.
+
+> If that helps, here's what I got after the fact when trying to mount the
+> broken filesystem before zero'ing logs
+[snip]
+
+   That information may also be helpful in conjunction with the
+btrfs-image dump of a broken FS. I'm not sure how much help it is on
+its own (but thanks for providing it anyway).
+
+   Hugo.
+
 -- 
-1.7.7.6
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+       --- Great oxymorons of the world, no. 4: Future Perfect ---       
 
+--YzDq+9le76OY47R0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUOxS9L9z9OVl50rAAQJqnA/9Fw60sm3IEtmocnKSdLgGyDsry9pY8APe
+uSIp6/gsaQdP29W+4rVAebjWgzJW+Xpltp2BTgKEVJ9Df7RYAYCyhDDuX2WEPV7i
+Ls8dUYtUAZub3pRPxabVw6Y/6ZeUcv/ZseCpOpDYUnIC1A6sLfErdVMSmoRUF30I
+N67c1GANBZXRqN9rihiunch26efzvkJXyzXR7/2Z46L2RKs5UEsv4cRuqWRCcb03
+Q9Q63HLsQyUkj6Yc1vC0fmrKGdtz3OQAIH4k+iGD9LtLjcCBNtMe0tY9xLx4v2kk
+GQup6i7NyMJEqFJ42oPQY9kly8v+3KNgJtYby7wAdjkiMkZrCZ8h/CS7qIsKf1CK
+QcsZOXAS2aHJDPy/RUQcNPo1KhyK4GjqQ2A/7gUCBejtnhvGg7jVFjQqxMzmLhec
+rcg6GQir6bRsU3oIN2tITomzgNuiBy9QmYirav43mSm7NV7nBz1ssM004Js9XqbY
+VZbUCfHzfblG+GiCWU2scM4S9Ag5J6y38t2g0AzrB1DqWUOMVckUGCRmC8wLm8Kh
+tZn5w2UgYCqqO80AIJ9JcnQ2LJTWaF0bU/JfzUAO1Cl9mh+2n8mR4wzazU3vg3M+
+PaSHfYvqHcgIvr+kiM6tTAP3IV7rbi/04dGmuf5buRxSZwf1UTjwyvC8mhWPb4AD
+Ap2JZXmhk0U=
+=Gwji
+-----END PGP SIGNATURE-----
+
+--YzDq+9le76OY47R0--

@@ -1,76 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47559 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47561 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752551Ab3AHVsL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Jan 2013 16:48:11 -0500
+	id S1753656Ab3AHVsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Jan 2013 16:48:12 -0500
 From: Mark Fasheh <mfasheh@suse.de>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Cc: ablock84@googlemail.com, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 0/3] btrfs-progs: better support for external users of send
-Date: Tue,  8 Jan 2013 13:41:41 -0800
-Message-Id: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 1/3] btrfs-progs: Add support for BTRFS_SEND_FLAG_NO_FILE_DATA
+Date: Tue,  8 Jan 2013 13:41:42 -0800
+Message-Id: <1357681304-2978-2-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
+References: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-	The following 3 patches make changes to btrfs-progs in order to
-provide support for external software that wants to make use of the
-excellent btrfs send ioctl.
-
-The first patch introduces support for the BTRFS_SEND_FLAG_NO_FILE_DATA flag
-which is introduced in my kernel patch titled:
-
-	btrfs: add "no file data" flag to btrfs send ioctl
-
-which can be found on the btrfs list, and for convenience is also attached
-at the end of this e-mail.
-
-The 2nd patch creates a libbtrfs and links the rest of the build to it. The
-functionality I chose to export as of right now centers on send support.
-With this library, an external program has a much easier time processing the
-stream which a send ioctl provides. It's worth nothing btw that this patch
-can stand alone if need be.
-
-The last patch introduces send-test, a small piece of software (not built by
-default) to allow for testing of the send ioctl (including our new flag). As
-send-test is a client of libbtrfs it might also serve as example code for
-developers looking to make use of send.
-
-Testing has been pretty straight-forward - I build the software, verify that
-things work by making a file system or using send-test.
-
-Please review. Thanks,
-	--Mark
-
-
-From: Mark Fasheh <mfasheh@suse.de>
-
-[PATCH] btrfs: add "no file data" flag to btrfs send ioctl
-
-This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
-ioctl code. When this flag is set, the btrfs send code will never write file
-data into the stream (thus also avoiding expensive reads of that data in the
-first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
-BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
-question.
-
-This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
-they will continue to be sent when a search finds an appropriate extent to
-clone from.
+The flag and command are synced from kernel to user. Also, this patch adds a
+callback for the BTRFS_SEND_C_UPDATE_EXTENT in struct btrfs_send_ops.
+read_and_process_cmd() is updated to decode BTRFS_SEND_C_UPDATE_EXTENT and
+send the values through the right callback. I did not add a callback
+definition to cmds-receive.c as that code never uses
+BTRFS_SEND_FLAG_NO_FILE_DATA.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/ioctl.h |    7 +++++++
- fs/btrfs/send.c  |   48 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/send.h  |    1 +
- 3 files changed, 52 insertions(+), 4 deletions(-)
+ ioctl.h       |    7 +++++++
+ send-stream.c |    6 ++++++
+ send-stream.h |    1 +
+ send.h        |    1 +
+ 4 files changed, 15 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 731e287..1f6cfdd 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -363,6 +363,13 @@ struct btrfs_ioctl_received_subvol_args {
+diff --git a/ioctl.h b/ioctl.h
+index 6fda3a1..b7f1ce3 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -321,6 +321,13 @@ struct btrfs_ioctl_received_subvol_args {
  	__u64	reserved[16];		/* in */
  };
  
@@ -79,103 +42,44 @@ index 731e287..1f6cfdd 100644
 + * search of clone sources doesn't find an extent. UPDATE_EXTENT
 + * commands will be sent instead of WRITE commands.
 + */
-+#define BTRFS_SEND_FLAG_NO_FILE_DATA     0x1
++#define	BTRFS_SEND_FLAG_NO_FILE_DATA	0x1
 +
  struct btrfs_ioctl_send_args {
  	__s64 send_fd;			/* in */
  	__u64 clone_sources_count;	/* in */
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e78b297..8d0c6b4 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -85,6 +85,7 @@ struct send_ctx {
- 	u32 send_max_size;
- 	u64 total_send_size;
- 	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
-+	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
+diff --git a/send-stream.c b/send-stream.c
+index 55fa728..a3628e4 100644
+--- a/send-stream.c
++++ b/send-stream.c
+@@ -418,6 +418,12 @@ static int read_and_process_cmd(struct btrfs_send_stream *s)
+ 		TLV_GET_TIMESPEC(s, BTRFS_SEND_A_CTIME, &ct);
+ 		ret = s->ops->utimes(path, &at, &mt, &ct, s->user);
+ 		break;
++	case BTRFS_SEND_C_UPDATE_EXTENT:
++		TLV_GET_STRING(s, BTRFS_SEND_A_PATH, &path);
++		TLV_GET_U64(s, BTRFS_SEND_A_FILE_OFFSET, &offset);
++		TLV_GET_U64(s, BTRFS_SEND_A_SIZE, &tmp);
++		ret = s->ops->update_extent(path, offset, tmp, s->user);
++		break;
+ 	case BTRFS_SEND_C_END:
+ 		ret = 1;
+ 		break;
+diff --git a/send-stream.h b/send-stream.h
+index b69b7f1..9a17e32 100644
+--- a/send-stream.h
++++ b/send-stream.h
+@@ -49,6 +49,7 @@ struct btrfs_send_ops {
+ 	int (*utimes)(const char *path, struct timespec *at,
+ 		      struct timespec *mt, struct timespec *ct,
+ 		      void *user);
++	int (*update_extent)(const char *path, u64 offset, u64 len, void *user);
+ };
  
- 	struct vfsmount *mnt;
- 
-@@ -3707,6 +3708,39 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * Send an update extent command to user space.
-+ */
-+static int send_update_extent(struct send_ctx *sctx,
-+			      u64 offset, u32 len)
-+{
-+	int ret = 0;
-+	struct fs_path *p;
-+
-+	p = fs_path_alloc(sctx);
-+	if (!p)
-+		return -ENOMEM;
-+
-+	ret = begin_cmd(sctx, BTRFS_SEND_C_UPDATE_EXTENT);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
-+	if (ret < 0)
-+		goto out;
-+
-+	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
-+	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
-+	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
-+
-+	ret = send_cmd(sctx);
-+
-+tlv_put_failure:
-+out:
-+	fs_path_free(sctx, p);
-+	return ret;
-+}
-+
- static int send_write_or_clone(struct send_ctx *sctx,
- 			       struct btrfs_path *path,
- 			       struct btrfs_key *key,
-@@ -3742,7 +3776,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 		goto out;
- 	}
- 
--	if (!clone_root) {
-+	if (clone_root) {
-+		ret = send_clone(sctx, offset, len, clone_root);
-+	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
-+		ret = send_update_extent(sctx, offset, len);
-+	} else {
- 		while (pos < len) {
- 			l = len - pos;
- 			if (l > BTRFS_SEND_READ_SIZE)
-@@ -3755,10 +3793,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 			pos += ret;
- 		}
- 		ret = 0;
--	} else {
--		ret = send_clone(sctx, offset, len, clone_root);
- 	}
--
- out:
- 	return ret;
- }
-@@ -4570,6 +4605,11 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
- 	INIT_LIST_HEAD(&sctx->name_cache_list);
- 
-+	if (arg->flags & ~BTRFS_SEND_FLAG_NO_FILE_DATA)
-+		return -EINVAL;
-+
-+	sctx->flags = arg->flags;
-+
- 	sctx->send_filp = fget(arg->send_fd);
- 	if (IS_ERR(sctx->send_filp)) {
- 		ret = PTR_ERR(sctx->send_filp);
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 1bf4f32..8bb18f7 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
+ int btrfs_read_and_process_send_stream(int fd,
+diff --git a/send.h b/send.h
+index 9934e94..48d425a 100644
+--- a/send.h
++++ b/send.h
 @@ -86,6 +86,7 @@ enum btrfs_send_cmd {
  	BTRFS_SEND_C_UTIMES,
  
@@ -190,4 +94,4 @@ index 1bf4f32..8bb18f7 100644
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,48 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f42.google.com ([209.85.214.42]:63412 "EHLO
-	mail-bk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751031Ab3AHUbW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 15:31:22 -0500
-Message-ID: <50EC822B.1070102@gmail.com>
-Date: Tue, 08 Jan 2013 21:31:39 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+Received: from cdptpa-omtalb.mail.rr.com ([75.180.132.120]:57014 "EHLO
+	cdptpa-omtalb.mail.rr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751481Ab3AHXbm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 18:31:42 -0500
+Received: from [IPv6:2001:470:8:97a::1] (scurvy.electronsweatshop.com [IPv6:2001:470:8:97a::1])
+	by skull.electronsweatshop.com (Postfix) with ESMTP id 2244448862
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2013 18:31:39 -0500 (EST)
+Message-ID: <50ECAC5C.9080902@electronsweatshop.com>
+Date: Tue, 08 Jan 2013 18:31:40 -0500
+From: Randy Barlow <randy@electronsweatshop.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?G=FCnter_Gersdorf?= <G.Gersdorf@tu-bs.de>
-CC: linux-btrfs@vger.kernel.org, util-linux@vger.kernel.org
-Subject: Re: Btrfs: wipe all the superblock [redhat bugzilla 889888]
-References: <50E9C267.3050302@inwind.it> <kchf4t$scf$1@ger.gmane.org>
-In-Reply-To: <kchf4t$scf$1@ger.gmane.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs fs not mounting or being identified after power loss.
+References: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
+In-Reply-To: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Günter,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-On 01/08/2013 04:48 PM, Günter Gersdorf wrote:
-> Am 06.01.2013 19:28, schrieb Goffredo Baroncelli:
->>
->> You can pull the change from:
->>     http://cassiopea.homelinux.net/git/util-linux.git
->> from the branch
->>     btrfs-wipefs
->>
-> After applying this patch, findfs and blkid didn't find filesystems
-> smaller than 256GB, probably because there is no third superblock.
+On 01/08/2013 12:40 AM, Jordan Windsor wrote:
+> If you need anymore information please ask.
 
-In my system also the stock "findfs" and "blkid" have the same problem:
-ie without my patch these utilities were unable to detect a btrfs
-filesystem.
+Kernel and btrfs-tools versions?
 
-Could you confirm that ?
+- -- 
+R
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-> 
-> Günter
-
-
-
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+iEYEARECAAYFAlDsrFwACgkQw3vjPfF7QfWLUgCdFiJE4zTHeG3rxqlojSZ+Qid3
++CEAoInZeeawLa9Blh7/bYhXx0LK++sa
+=oJtF
+-----END PGP SIGNATURE-----

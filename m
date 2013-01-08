@@ -1,35 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44689 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751739Ab3AHBRL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Jan 2013 20:17:11 -0500
-Date: Mon, 7 Jan 2013 20:17:09 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: David Sterba <dsterba@suse.cz>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] csum mismatches and failed xfstests with 3.8-rc1 and rc2
-Message-ID: <20130108011709.GA5535@shiny>
-References: <20130104125059.GE20089@twin.jikos.cz>
- <20130107170351.GM20089@twin.jikos.cz>
- <20130107170640.GN20089@twin.jikos.cz>
+Received: from mail-we0-f179.google.com ([74.125.82.179]:55643 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753750Ab3AHCDd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2013 21:03:33 -0500
+Received: by mail-we0-f179.google.com with SMTP id r6so10477080wey.38
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2013 18:03:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130107170640.GN20089@twin.jikos.cz>
+In-Reply-To: <50EB0DE0.9040500@redhat.com>
+References: <CANT588vv8xYNWGBSZUDu0vui2ZH4QqL7tvQX8zOGof7nucC6_Q@mail.gmail.com>
+	<CANT588tZd8y3G0jZD3Ti-nHexk1jwmD-fJP1f1bttFP8kyEgqg@mail.gmail.com>
+	<20130107153132.GH20089@twin.jikos.cz>
+	<50EB0DE0.9040500@redhat.com>
+Date: Tue, 8 Jan 2013 07:33:32 +0530
+Message-ID: <CANT588uuWs4d_uRnpfVXdp96AwVgE1qhY984UpikgR-Sv9+31w@mail.gmail.com>
+Subject: Re: Open for contribution towards xfstests for btrfs
+From: Kiran Patil <kirantpatil@gmail.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 07, 2013 at 10:06:40AM -0700, David Sterba wrote:
-> On Mon, Jan 07, 2013 at 06:03:51PM +0100, David Sterba wrote:
-> > with top commit 5f243b9b46a22e5790dbbc36f574c2417af49a41 (something post
-> > -rc2) I see more checksum errors
-> >
-> > $ dmesg|grep csum|wc -l
-> > 100
-> 
-> more of dmesg:
+Hi,
 
-I think Josef tracked this down to some enospc problems during truncate.
-Looks like it isn't a regression, just harder to hit now.  We'll try and
-confirm tomorrow.
+>>
+>> By any chance, are these the same people behind
+>> http://sourceforge.net/projects/btrfstest/ ?
 
--chris
+No, they are not the same people.
+
+>
+> If so, you might want to consider that
+>
+> http://www.tuxera.com/community/posix-test-suite/
+>
+> probably already covers some of the tests that "btrfstest" is
+> (re)writing.  i.e.:
+>
+> +/* Creating Link on non-existing prefix path should return ENOTDIR
+>
+> and
+>
+> +/* Creating link on ENAMETOOLONG if either file name exceeds maximum characters
+>
+> are almost certainly covered in the above posix test suite.
+>
+> FWIW, that testsuite has a few failures on btrfs (not all unique to btrfs, IIRC):
+
+Sure, we will look at them.
+
+> Test Summary Report
+> -------------------
+> /root/pjd-fstest/pjd-fstest-20090130-RC/tests/chown/00.t   (Wstat: 0 Tests: 171 Failed: 6)
+>   Failed tests:  84, 88, 141, 145, 149, 153
+> /root/pjd-fstest/pjd-fstest-20090130-RC/tests/truncate/00.t (Wstat: 0 Tests: 21 Failed: 1)
+>   Failed test:  15
+> /root/pjd-fstest/pjd-fstest-20090130-RC/tests/xacl/00.t    (Wstat: 0 Tests: 45 Failed: 1)
+>   Failed test:  45
+>
+> -Eric
+>
+Thanks,
+Kiran.

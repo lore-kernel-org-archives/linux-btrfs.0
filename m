@@ -1,97 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47561 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753656Ab3AHVsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Jan 2013 16:48:12 -0500
-From: Mark Fasheh <mfasheh@suse.de>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Cc: ablock84@googlemail.com, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 1/3] btrfs-progs: Add support for BTRFS_SEND_FLAG_NO_FILE_DATA
-Date: Tue,  8 Jan 2013 13:41:42 -0800
-Message-Id: <1357681304-2978-2-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
-References: <1357681304-2978-1-git-send-email-mfasheh@suse.de>
+Received: from aserp1040.oracle.com ([141.146.126.69]:34215 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753589Ab3AIEhs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 23:37:48 -0500
+Date: Wed, 9 Jan 2013 12:34:45 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
+Message-ID: <20130109043443.GA4527@liubo>
+Reply-To: bo.li.liu@oracle.com
+References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
+ <20130107162050.GJ20089@twin.jikos.cz>
+ <20130108024637.GA1916@liubo>
+ <20130108083053.GD3763@twin.jikos.cz>
+ <20130108172627.GP20089@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130108172627.GP20089@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The flag and command are synced from kernel to user. Also, this patch adds a
-callback for the BTRFS_SEND_C_UPDATE_EXTENT in struct btrfs_send_ops.
-read_and_process_cmd() is updated to decode BTRFS_SEND_C_UPDATE_EXTENT and
-send the values through the right callback. I did not add a callback
-definition to cmds-receive.c as that code never uses
-BTRFS_SEND_FLAG_NO_FILE_DATA.
+On Tue, Jan 08, 2013 at 06:26:27PM +0100, David Sterba wrote:
+> On Tue, Jan 08, 2013 at 09:30:54AM +0100, David Sterba wrote:
+> > On Tue, Jan 08, 2013 at 10:46:38AM +0800, Liu Bo wrote:
+> > > Hmm, not always here, lockend = inode->i_size - 1, so lockend % 2 == 1 may not
+> > > be true.
+> > 
+> > Yeah, that's the case that must be handled,
+> > 
+> > > But this check can worked in those places where we've rounded the range up to
+> > > PAGE_SIZE :)
+> > 
+> > context:
+> > 2233         u64 lockend = i_size_read(inode);
+> > ...
+> > 2236         u64 len = i_size_read(inode);
+> > ...
+> > 2240         lockend = max_t(u64, root->sectorsize, lockend);
+> > ^^^^
+> > 
+> > lockend will be always at least root->sectorsize == PAGE_SIZE, so the simple
+> > % 2 == 1 test should work generally. Am I missing something? Do we really lock
+> > sub-PAGE_SIZE ranges?
+> 
+> Of course this only works for files smaller than PAGE_SIZE, a larger
+> file is locked up to it's i_size. In that case the value of lockend that
+> arrives at eg. __set_extent_bit can be of any value.
+> We can access the inode->i_size via extent_io_tree::mapping->host, so
+> it's possible to do the exact check.
+> 
+> with this simple check:
+> 
+> void check_range(const char *caller, struct inode *inode, u64 start, u64 end)
+> {
+>        u64 isize = i_size_read(inode);
+> 
+>        if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
+>                printk_ratelimited(KERN_DEBUG
+>                        "D: %s isize = %llu odd range [%llu,%llu)\n",
+>                                caller,
+>                                (unsigned long long)isize,
+>                                (unsigned long long)start,
+>                                (unsigned long long)end);
+>        }
+> 
+> }
+> 
+> called as:
+> 
+> 	check_range(__func__, tree->mapping->host, start, end);
+> 
+> from clear_extent_bit, wait_extent_bit, __set_extent_bit,
+> convert_extent_bit and your "lockend--" fix I can't reproduce the
+> off-by-one error.
+> 
+> $ cat seektest.c
+> #include <stdlib.h>
+> #include <stdio.h>
+> #include <unistd.h>
+> #include <string.h>
+> #include <sys/fcntl.h>
+> 
+> #ifndef SEEK_DATA
+> #define SEEK_DATA 3
+> #endif
+> 
+> static char buf[16*1024];
+> 
+> void do_test(const char *fname, loff_t data_start, loff_t len) {
+>         int fd;
+>         loff_t lret;
+> 
+>         fd = open(fname, O_RDWR|O_CREAT, 0644);
+>         if (fd == -1) {
+>                 perror("open()");
+>                 exit(1);
+>         }
+>         printf("[0,%llu] hole\n", data_start - 1);
+>         llseek(fd, data_start, SEEK_SET);
+>         write(fd, buf, len);
+>         printf("[%llu,%llu] data\n", data_start, len - 1);
+>         fsync(fd);
+>         llseek(fd, 0, SEEK_SET);
+>         lret = llseek(fd, 0, SEEK_DATA);
+>         printf("seek to data returned: %llu\n",
+>                         (unsigned long long)lret);
+>         close(fd);
+> }
+> 
+> int main() {
+>         do_test("seektest-small-even", 3072, 512);
+>         do_test("seektest-small-odd", 3072, 511);
+>         do_test("seektest-big-even", 8192, 512);
+>         do_test("seektest-big-odd", 8192, 511);
+>         do_test("seektest-big-aligned", 8192, 4096);
+>         do_test("seektest-big-aligned-1", 8192, 4095);
+>         do_test("seektest-big-aligned+1", 8192, 4097);
+> 
+>         return 0;
+> }
+> ---
+> 
+> However, I'm running xfstests with this debugging patch and I cant'
+> explain such messages:
+> 
+> [20177.655732] D: __set_extent_bit isize = 0 odd range [352256,8740681790172090368)
+> [20177.664485] D: clear_extent_bit isize = 0 odd range [352256,8740681790172090368)
+> [20182.399257] D: __set_extent_bit isize = 944560 odd range [229376,7504638559450173440)
+> [20182.408465] D: clear_extent_bit isize = 944560 odd range [229376,7504638559450173440)
+> [20183.543186] D: __set_extent_bit isize = 396355 odd range [692224,2301956497953013760)
+> [20183.552170] D: clear_extent_bit isize = 396355 odd range [692224,2301956497953013760)
+> [20187.018092] D: __set_extent_bit isize = 0 odd range [401408,306555945915797504)
+> [20187.026532] D: clear_extent_bit isize = 0 odd range [401408,306555945915797504)
+> [20189.941615] D: __set_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
+> [20189.950751] D: clear_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
+> [20190.642796] D: __set_extent_bit isize = 0 odd range [274432,8022548162794254336)
+> [20190.651380] D: clear_extent_bit isize = 0 odd range [274432,8022548162794254336)
+> [20191.244458] D: __set_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
+> [20191.253508] D: clear_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
+> [20191.948060] D: __set_extent_bit isize = 0 odd range [774144,7384799041917984768)
+> [20191.956581] D: clear_extent_bit isize = 0 odd range [774144,7384799041917984768)
+> 
+> so I'm not sending it as a separate patch yet until the check covers all cases.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- ioctl.h       |    7 +++++++
- send-stream.c |    6 ++++++
- send-stream.h |    1 +
- send.h        |    1 +
- 4 files changed, 15 insertions(+), 0 deletions(-)
+Thanks for coding this up, I've checked the code, these messages can
+be fixed by the following, please check if it works on your side :)
 
-diff --git a/ioctl.h b/ioctl.h
-index 6fda3a1..b7f1ce3 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -321,6 +321,13 @@ struct btrfs_ioctl_received_subvol_args {
- 	__u64	reserved[16];		/* in */
- };
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1b319df..1688669 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3895,7 +3913,7 @@ int extent_fiemap(struct inode *inode, struct
+fiemap_extent_info *fieinfo,
+ 		last_for_get_extent = isize;
+ 	}
  
-+/*
-+ * Caller doesn't want file data in the send stream, even if the
-+ * search of clone sources doesn't find an extent. UPDATE_EXTENT
-+ * commands will be sent instead of WRITE commands.
-+ */
-+#define	BTRFS_SEND_FLAG_NO_FILE_DATA	0x1
-+
- struct btrfs_ioctl_send_args {
- 	__s64 send_fd;			/* in */
- 	__u64 clone_sources_count;	/* in */
-diff --git a/send-stream.c b/send-stream.c
-index 55fa728..a3628e4 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -418,6 +418,12 @@ static int read_and_process_cmd(struct btrfs_send_stream *s)
- 		TLV_GET_TIMESPEC(s, BTRFS_SEND_A_CTIME, &ct);
- 		ret = s->ops->utimes(path, &at, &mt, &ct, s->user);
- 		break;
-+	case BTRFS_SEND_C_UPDATE_EXTENT:
-+		TLV_GET_STRING(s, BTRFS_SEND_A_PATH, &path);
-+		TLV_GET_U64(s, BTRFS_SEND_A_FILE_OFFSET, &offset);
-+		TLV_GET_U64(s, BTRFS_SEND_A_SIZE, &tmp);
-+		ret = s->ops->update_extent(path, offset, tmp, s->user);
-+		break;
- 	case BTRFS_SEND_C_END:
- 		ret = 1;
- 		break;
-diff --git a/send-stream.h b/send-stream.h
-index b69b7f1..9a17e32 100644
---- a/send-stream.h
-+++ b/send-stream.h
-@@ -49,6 +49,7 @@ struct btrfs_send_ops {
- 	int (*utimes)(const char *path, struct timespec *at,
- 		      struct timespec *mt, struct timespec *ct,
- 		      void *user);
-+	int (*update_extent)(const char *path, u64 offset, u64 len, void *user);
- };
+-	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len, 0,
++	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len - 1, 0,
+ 			 &cached_state);
  
- int btrfs_read_and_process_send_stream(int fd,
-diff --git a/send.h b/send.h
-index 9934e94..48d425a 100644
---- a/send.h
-+++ b/send.h
-@@ -86,6 +86,7 @@ enum btrfs_send_cmd {
- 	BTRFS_SEND_C_UTIMES,
- 
- 	BTRFS_SEND_C_END,
-+	BTRFS_SEND_C_UPDATE_EXTENT,
- 	__BTRFS_SEND_C_MAX,
- };
- #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
--- 
-1.7.7
+ 	em = get_extent_skip_holes(inode, start, last_for_get_extent,
+@@ -3982,7 +4000,7 @@ int extent_fiemap(struct inode *inode, struct
+fiemap_extent_info *fieinfo,
+ out_free:
+ 	free_extent_map(em);
+ out:
+-	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len,
++	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+ 			     &cached_state, GFP_NOFS);
+ 	return ret;
+ }
 
+thanks,
+liubo
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+More majordomo info at  http://vger.kernel.org/majordomo

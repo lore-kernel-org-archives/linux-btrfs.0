@@ -1,43 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail6.webfaction.com ([74.55.86.74]:51206 "EHLO
-	smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752199Ab3AIKgm convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2013 05:36:42 -0500
-Received: from [192.168.2.123] (unknown [149.241.151.248])
-	by smtp.webfaction.com (Postfix) with ESMTP id 347D966EDD54
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Jan 2013 04:36:40 -0600 (CST)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Apple Message framework v1085)
-Subject: Re: btrfsck: extent-tree.c:2549: btrfs_reserve_extent: Assertion `!(ret)' failed.
-From: Richard Cooper <richard@richardcooper.net>
-In-Reply-To: <042190A6-9365-4ACB-AB89-B277F687E09D@richardcooper.net>
-Date: Wed, 9 Jan 2013 10:36:39 +0000
-Message-Id: <5FB61159-1696-455C-AEE6-E9F64FDFA034@richardcooper.net>
-References: <0400867D-6E5E-4D0F-8A06-B5AD3E58DEE6@richardcooper.net> <20130103150606.GC2389@localhost.localdomain> <042190A6-9365-4ACB-AB89-B277F687E09D@richardcooper.net>
-To: linux-btrfs@vger.kernel.org
+Received: from cantor2.suse.de ([195.135.220.15]:39819 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752199Ab3AIKsb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Jan 2013 05:48:31 -0500
+Date: Wed, 9 Jan 2013 11:48:27 +0100 (CET)
+From: Jiri Kosina <jkosina@suse.cz>
+To: Wang Sheng-Hui <shhuiw@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/4] Btrfs: remove unnecessary cur_trans set before goto
+ loop in join_transaction
+In-Reply-To: <505FAD9B.7010006@gmail.com>
+Message-ID: <alpine.LNX.2.00.1301091147540.12134@pobox.suse.cz>
+References: <505FAD9B.7010006@gmail.com>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 24 Sep 2012, Wang Sheng-Hui wrote:
 
-On 3 Jan 2013, at 16:43, Richard Cooper wrote:
-
-> On 3 Jan 2013, at 15:06, Josef Bacik wrote:
+> In the big loop, cur_trans will be set fs_info->running_transaction
+> before it's used. And after kmem_cache_free it and goto loop, it will
+> be setup again. No need to setup it immediately after freed.
 > 
->> On Thu, Jan 03, 2013 at 05:26:38AM -0700, Richard Cooper wrote:
->>> Hi All,
->>> 
->>> I'm trying to repair a broken fs using btrfsck and am hitting a failed assertion. I'd appreciate any suggestions for what to do next. Is there anything I can do to help fix this bug? Any other information from my FS which would help? If the FS could be salvaged that would be a bonus, but I'm more interested in providing a useful bug report before wiping the disk.
->>> 
->> 
->> Well good news is that its the allocator failing to find space for a new block,
->> and the allocator in btrfs-progs is under-tested, so it's likely just an
->> internal bug and something we can fix.  Can you do btrfs fi show /dev/md4 (not
->> mounted) and post that so we can be sure there's actually enough space. 
+> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+> ---
+>  fs/btrfs/transaction.c |    1 -
+>  1 files changed, 0 insertions(+), 1 deletions(-)
 > 
-> # ./btrfs fi show /dev/md4 
-> Label: none  uuid: 5be10dea-64c1-474e-b640-987b25af3c27
-> 	Total devices 1 FS bytes used 606.79GB
-> 	devid    1 size 16.36TB used 627.04GB path /dev/md4
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 469a8b6..675d813 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -98,7 +98,6 @@ loop:
+>  		 * to redo the trans_no_join checks above
+>  		 */
+>  		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
+> -		cur_trans = fs_info->running_transaction;
+>  		goto loop;
+>  	} else if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
+>  		spin_unlock(&fs_info->trans_lock);
 
-Is this all the information you need? Is there a bug tracker I should report this to, to stop it getting lost in the mailing list archives?
+This is Obviously Correct(TM) :-) and doesn't seem to have been picked up 
+by btrfs maintainers. I am picking it up now.
 
+-- 
+Jiri Kosina
+SUSE Labs

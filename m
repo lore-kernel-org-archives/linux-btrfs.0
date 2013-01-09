@@ -1,38 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-omtalb.mail.rr.com ([75.180.132.120]:57014 "EHLO
-	cdptpa-omtalb.mail.rr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751481Ab3AHXbm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 18:31:42 -0500
-Received: from [IPv6:2001:470:8:97a::1] (scurvy.electronsweatshop.com [IPv6:2001:470:8:97a::1])
-	by skull.electronsweatshop.com (Postfix) with ESMTP id 2244448862
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2013 18:31:39 -0500 (EST)
-Message-ID: <50ECAC5C.9080902@electronsweatshop.com>
-Date: Tue, 08 Jan 2013 18:31:40 -0500
-From: Randy Barlow <randy@electronsweatshop.com>
-MIME-Version: 1.0
+Received: from outgoing.tormail.org ([82.221.96.22]:33020 "EHLO
+	outgoing.tormail.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756903Ab3AIDfr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 22:35:47 -0500
+Date: Wed, 9 Jan 2013 03:35:56 +0000
+From: junlion@tormail.org
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs fs not mounting or being identified after power loss.
-References: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
-In-Reply-To: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: Liu Bo <bo.li.liu@oracle.com>
+Subject: Re: chattr +C  vs.  btrfs subvolume snapshot
+References: <1TsN9p-000FDf-SX@internal.tormail.org>
+ <20130108032808.GB1916@liubo>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130108032808.GB1916@liubo>
+Message-Id: <1TsmQI-000Ivt-Dx@internal.tormail.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 2013-01-08 11:28 +0800, Liu Bo wrote:
+> And for the fragmentation, do you mean 'filefrag'?
 
-On 01/08/2013 12:40 AM, Jordan Windsor wrote:
-> If you need anymore information please ask.
+I was for something that would show how the data branches off across
+different snapshots, --reflink copies etc.
 
-Kernel and btrfs-tools versions?
-
-- -- 
-R
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAlDsrFwACgkQw3vjPfF7QfWLUgCdFiJE4zTHeG3rxqlojSZ+Qid3
-+CEAoInZeeawLa9Blh7/bYhXx0LK++sa
-=oJtF
------END PGP SIGNATURE-----
+filefrag looks interesting, thanks.

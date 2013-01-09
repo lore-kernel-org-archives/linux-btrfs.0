@@ -1,142 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33533 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932511Ab3AIT75 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2013 14:59:57 -0500
-From: Dave Kleikamp <dave.kleikamp@oracle.com>
-To: linux-fsdevel@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
-        "Maxim V. Patlasov" <mpatlasov@parallels.com>,
-        Dave Kleikamp <dave.kleikamp@oracle.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V5 23/30] btrfs: add support for read_iter and write_iter
-Date: Wed,  9 Jan 2013 13:58:38 -0600
-Message-Id: <1357761525-22718-24-git-send-email-dave.kleikamp@oracle.com>
-In-Reply-To: <1357761525-22718-1-git-send-email-dave.kleikamp@oracle.com>
-References: <1357761525-22718-1-git-send-email-dave.kleikamp@oracle.com>
+Received: from smtp205.alice.it ([82.57.200.101]:50839 "EHLO smtp205.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933663Ab3AIVO1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Jan 2013 16:14:27 -0500
+Message-ID: <50EDDDC3.10407@inwind.it>
+Date: Wed, 09 Jan 2013 22:14:43 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: util-linux@vger.kernel.org
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Chris Mason <chris.mason@fusionio.com>,
+        Chris Murphy <lists@colorremedies.com>
+Subject: [PATCH][v2] Btrfs: wipe all the superblock [redhat bugzilla 889888]
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
-on btrfs_file_aio_write(), then have the latter call the former.
+Hi all,
 
-Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
-Cc: Zach Brown <zab@zabbo.net>
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
+Currently wipefs doesn't clear all the superblock of btrfs. Only the first 
+one is cleared.
+
+Btrfs has three superblocks. The first one is placed at 64KB, the second 
+one at 64MB, the third one at 256GB.
+
+If the first superblock is valid except that the "magic field" is zeroed,
+btrfs skips the check of the other superblocks.
+If the first superblock is fully invalid, btrfs checks for the other
+superblock.
+
+So zeroing the first superblock "magic field" at the beginning seems
+that the filesystem is wiped. But when the first superblock is overwritten
+(e.g. by another filesystem), then the other two superblocks may be considered
+valid, and the filesystem may resurrect.
+
+
+# make a filesystem, wipe it and check if it disappears
+
+$ sudo mkfs.btrfs -L "Btrfs-test" /dev/loop0
+$ sudo btrfs filesystem  show /dev/loop0
+Label: 'Btrfs-test'  uuid: 3156cef7-8522-411f-876a-ba8ec32cc781
+	Total devices 1 FS bytes used 28.00KB
+	devid    1 size 4.00TB used 2.04GB path /dev/loop0
+
+Btrfs Btrfs v0.19
+$ sudo wipefs /dev/loop0
+offset               type
+----------------------------------------------------------------
+0x10040              btrfs   [filesystem]
+                     LABEL: Btrfs-test
+                     UUID:  3156cef7-8522-411f-876a-ba8ec32cc781
+
+$ sudo wipefs /dev/loop0 -a
+8 bytes were erased at offset 0x10040 (btrfs)
+they were: 5f 42 48 52 66 53 5f 4d
+$ sudo btrfs filesystem  show /dev/loop0
+Btrfs Btrfs v0.19
+
+# it seems that the filesystem is disappeared # now zero all the 1st superblock
+
+$ sudo dd if=/dev/zero of=/dev/loop0 bs=1 count=4k seek=64k
+4096+0 records in
+4096+0 records out
+4096 bytes (4.1 kB) copied, 0.00659795 s, 621 kB/s
+
+# check if the filesystem is resurrected
+$ sudo btrfs filesystem  show /dev/loop0
+failed to read /dev/sr0
+Label: 'Btrfs-test'  uuid: 3156cef7-8522-411f-876a-ba8ec32cc781
+	Total devices 1 FS bytes used 28.00KB
+	devid    1 size 4.00TB used 2.04GB path /dev/loop0
+
+Btrfs Btrfs v0.19
+
+# it is !!!
+
+
+# With this patch, wipefs is able to wipe all the superblock:
+
+$ sudo mkfs.btrfs -L "Btrfs-test" /dev/loop0
+$ sudo ~/btrfs/util-linux/wipefs /dev/loop0 offset               type
+----------------------------------------------------------------
+0x10040              btrfs   [filesystem]
+                     LABEL: Btrfs-test
+                     UUID:  5ca3239c-363c-4c28-b831-eac03cc5ca62
+
+$ sudo ~/btrfs/util-linux/wipefs -a /dev/loop0 
+/dev/loop0: 8 bytes were erased at offset 0x00010040 (btrfs): 	5f 42 48 52 66 53 5f 4d
+/dev/loop0: 8 bytes were erased at offset 0x04000040 (btrfs):	5f 42 48 52 66 53 5f 4d
+/dev/loop0: 8 bytes were erased at offset 0x4000000040 (btrfs): 5f 42 48 52 66 53 5f 4d
+
+# Now even if we zero the 1st superblock, the filesystem doesn't resurrect
+
+$ sudo dd if=/dev/zero of=/dev/loop0 bs=1 count=4k seek=64k4096+0 records in
+4096+0 records out
+4096 bytes (4.1 kB) copied, 0.00643427 s, 637 kB/s
+$ sudo btrfs filesystem  show /dev/loop0
+Btrfs Btrfs v0.19
+$
+
+Br 
+G.Baroncelli
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+
+ChangeLog
+
+V1 -> V2	Removed the three different superblock and put
+		all the info in the same array (Thanks to Karel Zak
+		for the suggestion)
+		
+
+------
+
+Btrfs has three superblock. The first one is placed at 64KB, the
+second one at 64MB, the third one at 256GB.
+
+If the first superblock is valid except that the "magic field" is zeroed,
+btrfs skips the check of the other superblocks.
+If the first superblock is fully invalid, btrfs checks for the other
+superblock.
+
+So zeroing the first superblock "magic field" at the beginning seems
+that the filesystem is wiped. But when the first superblock is overwritten
+(eg by another filesystem), then the other two superblock may be considered
+valid, and the filesystem may resurrect.
+
+This patch allow to find and wipe the other btrfs superblocks signature.
 ---
- fs/btrfs/file.c | 42 ++++++++++++++----------------------------
- 1 file changed, 14 insertions(+), 28 deletions(-)
+ libblkid/src/superblocks/btrfs.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 77061bf..010404a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -437,7 +437,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
- 		write_bytes -= copied;
- 		total_copied += copied;
- 
--		/* Return to btrfs_file_aio_write to fault page */
-+		/* Return to btrfs_file_write_iter to fault page */
- 		if (unlikely(copied == 0))
- 			break;
- 
-@@ -1426,27 +1426,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- }
- 
- static ssize_t __btrfs_direct_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos,
--				    loff_t *ppos, size_t count, size_t ocount)
-+				     struct iov_iter *iter, loff_t pos,
-+				    loff_t *ppos, size_t count)
- {
- 	struct file *file = iocb->ki_filp;
--	struct iov_iter i;
- 	ssize_t written;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
- 	int err;
- 
--	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
--					    count, ocount);
-+	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
- 
- 	if (written < 0 || written == count)
- 		return written;
- 
- 	pos += written;
- 	count -= written;
--	iov_iter_init(&i, iov, nr_segs, count, written);
--	written_buffered = __btrfs_buffered_write(file, &i, pos);
-+	written_buffered = __btrfs_buffered_write(file, iter, pos);
- 	if (written_buffered < 0) {
- 		err = written_buffered;
- 		goto out;
-@@ -1481,9 +1477,8 @@ static void update_time_for_write(struct inode *inode)
- 		inode_inc_iversion(inode);
- }
- 
--static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos)
-+static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
-+				     struct iov_iter *iter, loff_t pos)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = fdentry(file)->d_inode;
-@@ -1492,19 +1487,14 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	u64 start_pos;
- 	ssize_t num_written = 0;
- 	ssize_t err = 0;
--	size_t count, ocount;
-+	size_t count;
- 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
- 
- 	sb_start_write(inode->i_sb);
- 
- 	mutex_lock(&inode->i_mutex);
- 
--	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
--	if (err) {
--		mutex_unlock(&inode->i_mutex);
--		goto out;
--	}
--	count = ocount;
-+	count = iov_iter_count(iter);
- 
- 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
- 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
-@@ -1557,14 +1547,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
- 	if (unlikely(file->f_flags & O_DIRECT)) {
--		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
--						   pos, ppos, count, ocount);
-+		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
-+						   count);
- 	} else {
--		struct iov_iter i;
--
--		iov_iter_init(&i, iov, nr_segs, count, num_written);
--
--		num_written = __btrfs_buffered_write(file, &i, pos);
-+		num_written = __btrfs_buffered_write(file, iter, pos);
- 		if (num_written > 0)
- 			*ppos = pos + num_written;
+diff --git a/libblkid/src/superblocks/btrfs.c b/libblkid/src/superblocks/btrfs.c
+index 039be42..cb5004f 100644
+--- a/libblkid/src/superblocks/btrfs.c
++++ b/libblkid/src/superblocks/btrfs.c
+@@ -87,6 +87,14 @@ const struct blkid_idinfo btrfs_idinfo =
+ 	.magics		=
+ 	{
+ 		{ .magic = "_BHRfS_M", .len = 8, .kboff = 64, .sboff = 0x40 },
++		{ .magic = "_BHRfS_M", 
++		  .len = 8, 
++		  .kboff = 64 * 1024, 
++		  .sboff = 0x40 },
++		{ .magic = "_BHRfS_M", 
++		  .len = 8, 
++		  .kboff = 256 * 1024 * 1024, 
++		  .sboff = 0x40 },
+ 		{ NULL }
  	}
-@@ -2383,9 +2369,9 @@ const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
--	.aio_read       = generic_file_aio_read,
- 	.splice_read	= generic_file_splice_read,
--	.aio_write	= btrfs_file_aio_write,
-+	.read_iter	= generic_file_read_iter,
-+	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
- 	.open		= generic_file_open,
- 	.release	= btrfs_release_file,
+ };
 -- 
-1.8.1
+1.7.10.4 
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

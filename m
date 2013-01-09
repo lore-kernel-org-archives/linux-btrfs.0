@@ -1,50 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39430 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751580Ab3A2Uca (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 15:32:30 -0500
-Received: from int-mx12.intmail.prod.int.phx2.redhat.com (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r0TKWUT0011801
+Received: from userp1040.oracle.com ([156.151.31.81]:17657 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757167Ab3AIHOW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2013 02:14:22 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r097ELqs015597
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 15:32:30 -0500
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx12.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r0TKWSga009083
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 15:32:29 -0500
-Message-ID: <510831DC.4070709@redhat.com>
-Date: Tue, 29 Jan 2013 14:32:28 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 07:14:22 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r097EKA9022080
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 07:14:21 GMT
+Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r097EJPI002587
+	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 01:14:19 -0600
+Message-ID: <50ED18C5.8000107@oracle.com>
+Date: Wed, 09 Jan 2013 15:14:13 +0800
+From: Jeff Liu <jeff.liu@oracle.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] btrfs-progs: fix mkfs.btrfs -r option
+To: Simon Xu <xu.simon@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] remove "device show" from btrfs man page
+References: <1357713972-1581-1-git-send-email-xu.simon@oracle.com>
+In-Reply-To: <1357713972-1581-1-git-send-email-xu.simon@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 605e806166847872bb91831b397d58f95027975a broke the
-mkfs.btrfs -r option, because it calls make_btrfs
-without ever setting dev_block_count, in the -r case,
-so we tell it to make a filesystem of size 0.
+Hi Simon,
 
-Then we wander into ENOSPC land and segfault.
+For the next time when you post btrfs-progs related patches, please
+indicate it with a suffix "Btrfs-progs: " on the subject.
 
-As a quick one-line-fix, just set the dev_block_count
-to the size of the destination image file.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
-
-diff --git a/mkfs.c b/mkfs.c
-index fbf8319..940702d 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1337,6 +1337,8 @@ int main(int ac, char **av)
- 			fprintf(stderr, "unable to zero the output file\n");
- 			exit(1);
- 		}
-+		/* our "device" is the new image file */
-+		dev_block_count = block_count;
- 	}
- 	if (mixed) {
- 		if (metadata_profile != data_profile) {
+Thanks,
+-Jeff
+On 01/09/2013 02:46 PM, Simon Xu wrote:
+> Remove "device show" from btrfs man page as it's not supported by the
+> btrfs utility.
+> ---
+>  man/btrfs.8.in | 2 --
+>  1 file changed, 2 deletions(-)
+> 
+> diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+> index 9222580..e663da2 100644
+> --- a/man/btrfs.8.in
+> +++ b/man/btrfs.8.in
+> @@ -33,8 +33,6 @@ btrfs \- control a btrfs filesystem
+>  .PP
+>  \fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
+>  .PP
+> -\fBbtrfs\fP \fBdevice show\fP\fI [--all-devices|<uuid>|<label>]\fP
+> -.PP
+>  \fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
+>  .PP
+>  \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
+> 
 

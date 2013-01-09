@@ -1,180 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34215 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753589Ab3AIEhs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2013 23:37:48 -0500
-Date: Wed, 9 Jan 2013 12:34:45 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
+Received: from cantor2.suse.de ([195.135.220.15]:42120 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757390Ab3AILu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Jan 2013 06:50:28 -0500
+Date: Wed, 9 Jan 2013 12:50:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
-Message-ID: <20130109043443.GA4527@liubo>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20130109115025.GQ20089@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
  <20130107162050.GJ20089@twin.jikos.cz>
  <20130108024637.GA1916@liubo>
  <20130108083053.GD3763@twin.jikos.cz>
  <20130108172627.GP20089@twin.jikos.cz>
+ <20130109043443.GA4527@liubo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130108172627.GP20089@twin.jikos.cz>
+In-Reply-To: <20130109043443.GA4527@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 08, 2013 at 06:26:27PM +0100, David Sterba wrote:
-> On Tue, Jan 08, 2013 at 09:30:54AM +0100, David Sterba wrote:
-> > On Tue, Jan 08, 2013 at 10:46:38AM +0800, Liu Bo wrote:
-> > > Hmm, not always here, lockend = inode->i_size - 1, so lockend % 2 == 1 may not
-> > > be true.
+On Wed, Jan 09, 2013 at 12:34:45PM +0800, Liu Bo wrote:
+> > [20191.948060] D: __set_extent_bit isize = 0 odd range [774144,7384799041917984768)
+> > [20191.956581] D: clear_extent_bit isize = 0 odd range [774144,7384799041917984768)
 > > 
-> > Yeah, that's the case that must be handled,
-> > 
-> > > But this check can worked in those places where we've rounded the range up to
-> > > PAGE_SIZE :)
-> > 
-> > context:
-> > 2233         u64 lockend = i_size_read(inode);
-> > ...
-> > 2236         u64 len = i_size_read(inode);
-> > ...
-> > 2240         lockend = max_t(u64, root->sectorsize, lockend);
-> > ^^^^
-> > 
-> > lockend will be always at least root->sectorsize == PAGE_SIZE, so the simple
-> > % 2 == 1 test should work generally. Am I missing something? Do we really lock
-> > sub-PAGE_SIZE ranges?
+> > so I'm not sending it as a separate patch yet until the check covers all cases.
 > 
-> Of course this only works for files smaller than PAGE_SIZE, a larger
-> file is locked up to it's i_size. In that case the value of lockend that
-> arrives at eg. __set_extent_bit can be of any value.
-> We can access the inode->i_size via extent_io_tree::mapping->host, so
-> it's possible to do the exact check.
-> 
-> with this simple check:
-> 
-> void check_range(const char *caller, struct inode *inode, u64 start, u64 end)
-> {
->        u64 isize = i_size_read(inode);
-> 
->        if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
->                printk_ratelimited(KERN_DEBUG
->                        "D: %s isize = %llu odd range [%llu,%llu)\n",
->                                caller,
->                                (unsigned long long)isize,
->                                (unsigned long long)start,
->                                (unsigned long long)end);
->        }
-> 
-> }
-> 
-> called as:
-> 
-> 	check_range(__func__, tree->mapping->host, start, end);
-> 
-> from clear_extent_bit, wait_extent_bit, __set_extent_bit,
-> convert_extent_bit and your "lockend--" fix I can't reproduce the
-> off-by-one error.
-> 
-> $ cat seektest.c
-> #include <stdlib.h>
-> #include <stdio.h>
-> #include <unistd.h>
-> #include <string.h>
-> #include <sys/fcntl.h>
-> 
-> #ifndef SEEK_DATA
-> #define SEEK_DATA 3
-> #endif
-> 
-> static char buf[16*1024];
-> 
-> void do_test(const char *fname, loff_t data_start, loff_t len) {
->         int fd;
->         loff_t lret;
-> 
->         fd = open(fname, O_RDWR|O_CREAT, 0644);
->         if (fd == -1) {
->                 perror("open()");
->                 exit(1);
->         }
->         printf("[0,%llu] hole\n", data_start - 1);
->         llseek(fd, data_start, SEEK_SET);
->         write(fd, buf, len);
->         printf("[%llu,%llu] data\n", data_start, len - 1);
->         fsync(fd);
->         llseek(fd, 0, SEEK_SET);
->         lret = llseek(fd, 0, SEEK_DATA);
->         printf("seek to data returned: %llu\n",
->                         (unsigned long long)lret);
->         close(fd);
-> }
-> 
-> int main() {
->         do_test("seektest-small-even", 3072, 512);
->         do_test("seektest-small-odd", 3072, 511);
->         do_test("seektest-big-even", 8192, 512);
->         do_test("seektest-big-odd", 8192, 511);
->         do_test("seektest-big-aligned", 8192, 4096);
->         do_test("seektest-big-aligned-1", 8192, 4095);
->         do_test("seektest-big-aligned+1", 8192, 4097);
-> 
->         return 0;
-> }
-> ---
-> 
-> However, I'm running xfstests with this debugging patch and I cant'
-> explain such messages:
-> 
-> [20177.655732] D: __set_extent_bit isize = 0 odd range [352256,8740681790172090368)
-> [20177.664485] D: clear_extent_bit isize = 0 odd range [352256,8740681790172090368)
-> [20182.399257] D: __set_extent_bit isize = 944560 odd range [229376,7504638559450173440)
-> [20182.408465] D: clear_extent_bit isize = 944560 odd range [229376,7504638559450173440)
-> [20183.543186] D: __set_extent_bit isize = 396355 odd range [692224,2301956497953013760)
-> [20183.552170] D: clear_extent_bit isize = 396355 odd range [692224,2301956497953013760)
-> [20187.018092] D: __set_extent_bit isize = 0 odd range [401408,306555945915797504)
-> [20187.026532] D: clear_extent_bit isize = 0 odd range [401408,306555945915797504)
-> [20189.941615] D: __set_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
-> [20189.950751] D: clear_extent_bit isize = 1936258 odd range [2457600,6817576374066888704)
-> [20190.642796] D: __set_extent_bit isize = 0 odd range [274432,8022548162794254336)
-> [20190.651380] D: clear_extent_bit isize = 0 odd range [274432,8022548162794254336)
-> [20191.244458] D: __set_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
-> [20191.253508] D: clear_extent_bit isize = 845491 odd range [1671168,5821247760915324928)
-> [20191.948060] D: __set_extent_bit isize = 0 odd range [774144,7384799041917984768)
-> [20191.956581] D: clear_extent_bit isize = 0 odd range [774144,7384799041917984768)
-> 
-> so I'm not sending it as a separate patch yet until the check covers all cases.
+> Thanks for coding this up, I've checked the code, these messages can
+> be fixed by the following, please check if it works on your side :)
 
-Thanks for coding this up, I've checked the code, these messages can
-be fixed by the following, please check if it works on your side :)
+Thanks, no more of these warnings. There was one new to me, during test
+013:
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1b319df..1688669 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3895,7 +3913,7 @@ int extent_fiemap(struct inode *inode, struct
-fiemap_extent_info *fieinfo,
- 		last_for_get_extent = isize;
- 	}
- 
--	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len, 0,
-+	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len - 1, 0,
- 			 &cached_state);
- 
- 	em = get_extent_skip_holes(inode, start, last_for_get_extent,
-@@ -3982,7 +4000,7 @@ int extent_fiemap(struct inode *inode, struct
-fiemap_extent_info *fieinfo,
- out_free:
- 	free_extent_map(em);
- out:
--	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len,
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
- 			     &cached_state, GFP_NOFS);
- 	return ret;
- }
+[  348.433006] ------------[ cut here ]------------
+[  348.438926] WARNING: at fs/btrfs/disk-io.c:3210 free_fs_root+0x8b/0x90 [btrfs]()
+[  348.447596] Hardware name: Santa Rosa platform
+[  348.447602] Modules linked in: aoe dm_crypt loop btrfs
+[  348.447605] Pid: 9091, comm: umount Not tainted 3.8.0-rc2-default+ #229
+[  348.447607] Call Trace:
+[  348.447615]  [<ffffffff8104c6bf>] warn_slowpath_common+0x7f/0xc0
+[  348.447619]  [<ffffffff8104c71a>] warn_slowpath_null+0x1a/0x20
+[  348.447635]  [<ffffffffa002af3b>] free_fs_root+0x8b/0x90 [btrfs]
+[  348.447652]  [<ffffffffa002e75e>] btrfs_free_fs_root+0x7e/0x90 [btrfs]
+[  348.447668]  [<ffffffffa002e84b>] del_fs_roots+0xdb/0x120 [btrfs]
+[  348.447683]  [<ffffffffa002292e>] ? btrfs_free_block_groups+0x29e/0x370 [btrfs]
+[  348.447699]  [<ffffffffa0030182>] close_ctree+0x1d2/0x340 [btrfs]
+[  348.447705]  [<ffffffff81178c6f>] ? dispose_list+0x4f/0x60
+[  348.447711]  [<ffffffff811799d4>] ? evict_inodes+0x114/0x130
+[  348.447722]  [<ffffffffa0003c69>] btrfs_put_super+0x19/0x20 [btrfs]
+[  348.447727]  [<ffffffff811608f2>] generic_shutdown_super+0x62/0xf0
+[  348.447730]  [<ffffffff81160a16>] kill_anon_super+0x16/0x30
+[  348.447741]  [<ffffffffa0004d9a>] btrfs_kill_super+0x1a/0x90 [btrfs]
+[  348.447744]  [<ffffffff811618e2>] ? deactivate_super+0x42/0x70
+[  348.447748]  [<ffffffff81160c6d>] deactivate_locked_super+0x3d/0x90
+[  348.447751]  [<ffffffff811618ea>] deactivate_super+0x4a/0x70
+[  348.447755]  [<ffffffff8117dc70>] mntput_no_expire+0x100/0x160
+[  348.447759]  [<ffffffff8117ecb1>] sys_umount+0x71/0x3c0
+[  348.447763]  [<ffffffff81960919>] system_call_fastpath+0x16/0x1b
+[  348.447765] ---[ end trace 25a08f78869c0553 ]---
+[  348.614158] VFS: Busy inodes after unmount of sda8. Self-destruct in 5 seconds.  Have a nice day...
 
-thanks,
-liubo
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+looks like a leaked inode. The line number does not match a WARN in the
+sources, this one is better:
+
+(gdb) l *(free_fs_root+0x8b)
+0x2ab5b is in free_fs_root (fs/btrfs/disk-io.c:3206).
+3201    }
+3202
+3203    static void free_fs_root(struct btrfs_root *root)
+3204    {
+3205            iput(root->cache_inode);
+3206            WARN_ON(!RB_EMPTY_ROOT(&root->inode_tree));
+3207            if (root->anon_dev)
+3208                    free_anon_bdev(root->anon_dev);
+3209            free_extent_buffer(root->node);
+3210            free_extent_buffer(root->commit_root);
+
+I've added only the 2 fixes from you, no other change. I'll do another test
+based on current btrfs-next.
+
+
+david

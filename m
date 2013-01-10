@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35138 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752628Ab3AJNhg (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:33057 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751339Ab3AJQUK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 08:37:36 -0500
-Date: Thu, 10 Jan 2013 21:34:37 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
-Message-ID: <20130110133436.GB3616@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
- <20130107162050.GJ20089@twin.jikos.cz>
- <20130108024637.GA1916@liubo>
- <20130108083053.GD3763@twin.jikos.cz>
- <20130108172627.GP20089@twin.jikos.cz>
- <20130109043443.GA4527@liubo>
- <20130109115025.GQ20089@twin.jikos.cz>
- <20130110021747.GB4456@liubo>
- <20130110110458.GA20089@twin.jikos.cz>
+	Thu, 10 Jan 2013 11:20:10 -0500
+Date: Thu, 10 Jan 2013 08:20:09 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1 (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
+Message-ID: <20130110162009.GF16943@merlins.org>
+References: <20130108164958.GA2044@merlins.org> <20130108182541.GE2389@localhost.localdomain> <20130108184603.GG2044@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130110110458.GA20089@twin.jikos.cz>
+In-Reply-To: <20130108184603.GG2044@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 12:04:58PM +0100, David Sterba wrote:
-> On Thu, Jan 10, 2013 at 10:17:49AM +0800, Liu Bo wrote:
-> > Thanks for the report, could you please show me what options you're
-> > using?
+On Tue, Jan 08, 2013 at 10:46:03AM -0800, Marc MERLIN wrote:
+> On Tue, Jan 08, 2013 at 01:25:41PM -0500, Josef Bacik wrote:
+> > On Tue, Jan 08, 2013 at 09:49:58AM -0700, Marc MERLIN wrote:
+> > > Unfortunately my laptop deadlocks from time to time, and too often
+> > > it triggers this bug in btrfs which is quite hard to recover from.
+> > > 
+> > 
+> > You are getting bad tree blocks which really isn't the tree logs fault.  Can you
+> > scrub your file system and make sure there's not some sort of latent issue going
+> > on?  And if you have problems again please try btrfs-next as I've fixed a few
+> > log replay bugs recently.  Thanks,
 > 
-> Default mkfs, mount options 'space_cache,noatime', 40G test partition,
-> 10G scratch partition (ie. the same seatup as usual).
+> Thanks for your answer.
 > 
-> I see the free_fs_root warning only 3 times in the whole serial console
-> log, the first matches the first run and report, the two other are from
-> a repeated run of xfstests (I don't know which options were on during
-> the third, but can let it run again if needed).
+> I've only read about scrub in a mirorr situation, as per
+> https://blogs.oracle.com/wim/entry/btrfs_scrub_go_fix_corruptions
 > 
-> This strongly suggests that the warning is connected to the fixes.
+> It's a single device here, so if there are problems, I'm not sure how scrub
+> will be able to fix them.
+> Would you like me to go ahead and do it anyway?
+> 
+> And before I further remove potential debug state
+> 1) what about this problem?
+> btrfs-image: btrfs-image.c:518: create_metadump: Assertion `!(ret < 0)'
+> failed.
+> Aborted
+> 
+> 2) anything else you want me to get off my filesystem before I scrub it?
 
-Seems that I'm not able to reproduce the warning in running 013,
-maybe you can revert the two fixes and see if it still warns?
+Friendly ping :)
 
-I don't think the fixes has anything done with the warning...
-
-thanks,
-liubo
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

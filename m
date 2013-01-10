@@ -1,59 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:42143 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753430Ab3ACR0H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Jan 2013 12:26:07 -0500
-Message-ID: <50E5BF2D.20909@jan-o-sch.net>
-Date: Thu, 03 Jan 2013 18:26:05 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from cn.fujitsu.com ([222.73.24.84]:64226 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753765Ab3AJMw0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:52:26 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0ACqP6J022177
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:52:25 +0800
+Message-ID: <50EEB9AF.2010301@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 20:53:03 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        sami.liedes@iki.fi, chris.mason@fusionio.com, sensille@gmx.net
-Subject: Re: GPF in read_extent_buffer while scrubbing on 3.7.0-rc8-00014-g27d7c2a
-References: <20121206143458.GA24396@kashmir> <20121210222125.GA20072@kashmir> <20121214181149.GA15378@kashmir>
-In-Reply-To: <20121214181149.GA15378@kashmir>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 11/11] Btrfs: Add ACCESS_ONCE() to transaction->abort accesses
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mathieu,
+We may access and update transaction->abort on the different CPUs without lock,
+so we need ACCESS_ONCE() wrapper to make sure we can get the new value.
 
-Sorry for the late reply. I had quite a good reproducer once for what I suspect
-may be your problem here - but it suddenly stopped reproducing the problem and I
-still haven't figured out why. (see https://patchwork.kernel.org/patch/1773611/
-if you're interested)
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/super.c       | 2 +-
+ fs/btrfs/transaction.c | 9 ++++-----
+ 2 files changed, 5 insertions(+), 6 deletions(-)
 
-Can you please give the following patch a try and report back if it helps you
-(apply on top of cmason/for-linus, 57ba86c)? If it doesn't, you've got three
-choices:
-
-a) forget about the problem
-b) send me a dump of your whole file system (space can be provided)
-c) receive debug patches, apply them and send me the output
-
-Thanks,
--Jan
-
------->8---------
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 65f0367..d51185e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3324,8 +3324,6 @@ int close_ctree(struct btrfs_root *root)
-
- 	btrfs_dev_replace_suspend_for_unmount(fs_info);
-
--	btrfs_scrub_cancel(fs_info);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f714379..0d88513 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -267,7 +267,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			     function, line, errstr);
+ 		return;
+ 	}
+-	trans->transaction->aborted = errno;
++	ACCESS_ONCE(trans->transaction->aborted) = errno;
+ 	__btrfs_std_error(root->fs_info, function, line, errno, NULL);
+ }
+ /*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a950d48..ee6cf27 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1468,11 +1468,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto cleanup_transaction;
+ 	}
+ 
+-	if (cur_trans->aborted) {
+-		ret = cur_trans->aborted;
+-		goto cleanup_transaction;
+-	}
 -
- 	/* wait for any defraggers to finish */
- 	wait_event(fs_info->transaction_wait,
- 		   (atomic_read(&fs_info->defrag_running) == 0));
-@@ -3392,6 +3390,7 @@ int close_ctree(struct btrfs_root *root)
- 	btrfs_stop_workers(&fs_info->caching_workers);
- 	btrfs_stop_workers(&fs_info->readahead_workers);
- 	btrfs_stop_workers(&fs_info->flush_workers);
-+	btrfs_scrub_cancel(fs_info);
-
- #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
- 	if (btrfs_test_opt(root, CHECK_INTEGRITY))
+ 	/* make a pass through all the delayed refs we have so far
+ 	 * any runnings procs may add more while we are here
+ 	 */
+@@ -1574,6 +1569,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	wait_event(cur_trans->writer_wait,
+ 		   atomic_read(&cur_trans->num_writers) == 1);
+ 
++	if (ACCESS_ONCE(cur_trans->aborted)) {
++		ret = cur_trans->aborted;
++		goto cleanup_transaction;
++	}
+ 	/*
+ 	 * the reloc mutex makes sure that we stop
+ 	 * the balancing code from coming in and moving
+-- 
+1.7.11.7

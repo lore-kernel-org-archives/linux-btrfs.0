@@ -1,42 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36825 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754379Ab3AJMEv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 07:04:51 -0500
-Date: Thu, 10 Jan 2013 13:04:49 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Russell Coker <russell+btrfs@coker.com.au>
-Cc: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
-Subject: Re: 2 errors on scrub
-Message-ID: <20130110120446.GD20089@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201301101138.45428.russell+btrfs@coker.com.au>
+Received: from mail-ie0-f179.google.com ([209.85.223.179]:45255 "EHLO
+	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753276Ab3AJRQW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 12:16:22 -0500
+Received: by mail-ie0-f179.google.com with SMTP id k14so1116320iea.38
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 09:16:22 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201301101138.45428.russell+btrfs@coker.com.au>
+In-Reply-To: <20130110114329.GC20089@twin.jikos.cz>
+References: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
+	<50ECAC5C.9080902@electronsweatshop.com>
+	<CACCfv7roxHpeBd5PCUEwn9ACFpq4396wHSMg2itEsf6k3CDkrA@mail.gmail.com>
+	<50EE38DC.6000802@electronsweatshop.com>
+	<20130110114329.GC20089@twin.jikos.cz>
+Date: Fri, 11 Jan 2013 03:46:21 +1030
+Message-ID: <CACCfv7oWBNB4sBSSsENdTzqRuXOmQRrKSEW2oFXg1R71LP6gLw@mail.gmail.com>
+Subject: Re: Btrfs fs not mounting or being identified after power loss.
+From: Jordan Windsor <jordanw2@gmail.com>
+To: dsterba@suse.cz
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 11:38:45AM +1100, Russell Coker wrote:
-> The below is from a system running the Debian kernel 3.2.0-4-amd64 on a 120G 
-> Intel SSD.  What would these 2 errors be?
-> 
-> scrub device /dev/disk/by-uuid/7939c405-c656-4e85-a6a0-29f17be09585 (id 1) 
-> done
->         scrub started at Thu Jan 10 06:00:02 2013 and finished after 295 
-> seconds
->         total bytes scrubbed: 25.42GB with 2 errors
->         error details: super=2
+Hello,
+I've already recreated btrfs on the partition, so there'd be nothing
+useful to send.
+Thanks.
 
-The superblock errors are detected but not corrected right away, because
-next transaction commit will overvrite it.
-
-Does scub report the errors repeatedly?
-
-There are no other scrub errors reported, I guess there are also no
-relevant messages in syslog. During transaction commit scrub is paused,
-so it's not possible to verify a half-made superblock.
-
->         corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
-
-david
+On Thu, Jan 10, 2013 at 10:13 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Wed, Jan 09, 2013 at 10:43:24PM -0500, Randy Barlow wrote:
+>> -----BEGIN PGP SIGNED MESSAGE-----
+>> > kernel is at 3.6.11-1-ARCH
+>>
+>> Sorry I don't know much to help you, but I would suggest perhaps using
+>> a newer kernel in the future. It sounds like your FS might be in
+>> trouble as is, but I would recommend using the most recent RC kernel
+>> (3.8-rc3) and restoring your data to a new btrfs from backups. In
+>> general, it's a good idea to stick to pretty recent kernels with btrfs.
+>
+> There are some problems with the 3.8-rc kernels, please do not use them
+> yet, and I don't think that kernel upgrade would help in Jordan's case.
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

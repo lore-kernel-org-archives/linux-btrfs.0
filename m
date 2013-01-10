@@ -1,56 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:33057 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751339Ab3AJQUK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 11:20:10 -0500
-Date: Thu, 10 Jan 2013 08:20:09 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1 (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
-Message-ID: <20130110162009.GF16943@merlins.org>
-References: <20130108164958.GA2044@merlins.org> <20130108182541.GE2389@localhost.localdomain> <20130108184603.GG2044@merlins.org>
+Received: from tetsuo.zabbo.net ([50.193.208.193]:35979 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753205Ab3AJRGf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 12:06:35 -0500
+Date: Thu, 10 Jan 2013 09:06:34 -0800
+From: Zach Brown <zab@zabbo.net>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: add leak debug for extent map
+Message-ID: <20130110170634.GF12288@lenny.home.zabbo.net>
+References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
+ <20130108200734.GD12288@lenny.home.zabbo.net>
+ <20130110020517.GA4456@liubo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130108184603.GG2044@merlins.org>
+In-Reply-To: <20130110020517.GA4456@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 08, 2013 at 10:46:03AM -0800, Marc MERLIN wrote:
-> On Tue, Jan 08, 2013 at 01:25:41PM -0500, Josef Bacik wrote:
-> > On Tue, Jan 08, 2013 at 09:49:58AM -0700, Marc MERLIN wrote:
-> > > Unfortunately my laptop deadlocks from time to time, and too often
-> > > it triggers this bug in btrfs which is quite hard to recover from.
-> > > 
-> > 
-> > You are getting bad tree blocks which really isn't the tree logs fault.  Can you
-> > scrub your file system and make sure there's not some sort of latent issue going
-> > on?  And if you have problems again please try btrfs-next as I've fixed a few
-> > log replay bugs recently.  Thanks,
-> 
-> Thanks for your answer.
-> 
-> I've only read about scrub in a mirorr situation, as per
-> https://blogs.oracle.com/wim/entry/btrfs_scrub_go_fix_corruptions
-> 
-> It's a single device here, so if there are problems, I'm not sure how scrub
-> will be able to fix them.
-> Would you like me to go ahead and do it anyway?
-> 
-> And before I further remove potential debug state
-> 1) what about this problem?
-> btrfs-image: btrfs-image.c:518: create_metadump: Assertion `!(ret < 0)'
-> failed.
-> Aborted
-> 
-> 2) anything else you want me to get off my filesystem before I scrub it?
+> > Hmm, I guess it's cool to get the allocation-specific decoding which you
+> > don't get from the generic kernel leak tracking?
 
-Friendly ping :)
+I mean that by doing this in btrfs, instead of doing it generically in
+the allocator, you get specific knowledge that btrfs knows about the
+allocated objects:
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+> > > +		printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu flags %llu refs %d in tree %d compress %d\n",
+> > > +			em->start, em->len, em->block_start, em->flags, atomic_read(&em->refs), em->in_tree, em->compress_type);
+
+That's valuable.  I understand that it's quick and easy to implement
+this in btrfs.  It's hard to argue with working code.
+
+But the right way to do this would be to add a callback that
+kmem_cache_destroy() can use to generate debugging output for the
+allocated objects.  Maybe you have a registration function that sets the
+callback on the slab?  Slab already has tracking of allocated objects so
+you could always have this leak output on without runtime overhead.
+
+And, of course, other callers can easy also get this functionality
+instead of having to mess around with all the stuff btrfs did: ifdefs,
+locks, and lists.
+
+- z

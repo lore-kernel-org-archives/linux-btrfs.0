@@ -1,46 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36585 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753302Ab3AaMuy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 07:50:54 -0500
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mx2.suse.de (Postfix) with ESMTP id D0D61A3CEE
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 13:50:53 +0100 (CET)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: fix parallel build
-Date: Thu, 31 Jan 2013 13:50:52 +0100
-Message-Id: <1359636652-20586-1-git-send-email-dsterba@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:17915 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751407Ab3AJJVU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 04:21:20 -0500
+Message-ID: <50EE8805.6000601@oracle.com>
+Date: Thu, 10 Jan 2013 17:21:09 +0800
+From: Jeff Liu <jeff.liu@oracle.com>
+MIME-Version: 1.0
+To: Dan Carpenter <dan.carpenter@oracle.com>
+CC: Chris Mason <chris.mason@fusionio.com>,
+        Alexander Block <ablock84@googlemail.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+Subject: Re: [patch] Btrfs: fix access_ok() check in btrfs_ioctl_send()
+References: <20130110085725.GA23063@elgon.mountain>
+In-Reply-To: <20130110085725.GA23063@elgon.mountain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Parallel build may fail due to late creation of version.h, fix the rule name
-that does not match the filename.
+On 01/10/2013 04:57 PM, Dan Carpenter wrote:
+> The closing parenthesis is in the wrong place.  We want to check
+> "sizeof(*arg->clone_sources) * arg->clone_sources_count" instead of
+> "sizeof(*arg->clone_sources * arg->clone_sources_count)".
+> 
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+> ---
+> This is also vulnerable to integer overflows.  It's only done under
+> root, but these days we are trying to restrict what root can do without
+> configuring Secure Boot in UEFI.
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 5445454..4be3832 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4553,8 +4553,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+>  	}
+>  
+>  	if (!access_ok(VERIFY_READ, arg->clone_sources,
+> -			sizeof(*arg->clone_sources *
+> -			arg->clone_sources_count))) {
+> +			sizeof(*arg->clone_sources) *
+> +			arg->clone_sources_count)) {
+>  		ret = -EFAULT;
+>  		goto out;
+>  	}
+Reviewed-by: Jie Liu <jeff.liu@oracle.com>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- Makefile | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/Makefile b/Makefile
-index 6df402c..bef1e13 100644
---- a/Makefile
-+++ b/Makefile
-@@ -52,9 +52,9 @@ endif
- 	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
- 
- 
--all: version $(progs) manpages
-+all: version.h $(progs) manpages
- 
--version:
-+version.h:
- 	$(Q)bash version.sh
- 
- btrfs: $(objects) btrfs.o help.o $(cmds_objects)
--- 
-1.8.0.2
+Thanks,
+-Jeff
+> --
+> To unsubscribe from this list: send the line "unsubscribe kernel-janitors" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

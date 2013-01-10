@@ -1,39 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:52187 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753561Ab3AJLyc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 06:54:32 -0500
-Date: Thu, 10 Jan 2013 12:54:26 +0100
-From: David Sterba <dave@jikos.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Zach Brown <zab@zabbo.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: add leak debug for extent map
-Message-ID: <20130110115426.GF3763@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
- <20130108200734.GD12288@lenny.home.zabbo.net>
- <20130110020517.GA4456@liubo>
+Received: from cn.fujitsu.com ([222.73.24.84]:21421 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753777Ab3AJMrY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:47:24 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0AClMp1022114
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:47:22 +0800
+Message-ID: <50EEB880.4060308@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 20:48:00 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130110020517.GA4456@liubo>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 05/11] Btrfs: protect fs_info->alloc_start
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 10:05:39AM +0800, Liu Bo wrote:
-> On Tue, Jan 08, 2013 at 12:07:34PM -0800, Zach Brown wrote:
-> > > This is for detecting extent map leak.
-> > 
-> > Hmm, I guess it's cool to get the allocation-specific decoding which you
-> > don't get from the generic kernel leak tracking?
-> 
-> Thanks for the advice, but what allocation-specific decoding do you refer to?
-> Could you please show me any examples?
+fs_info->alloc_start was not protected strictly, it might be changed while
+we were accessing it. This patch fixes this problem by using two locks to
+protect it (fs_info->chunk_mutex and sb->s_umount). On the read side, we
+just need get one of these two locks, and on the write side, we must lock
+all of them.
 
-IMHO that there's a leak check that is targeted to one exact problem in
-one subsystem (extent_map in btrfs), does not need to be poked to do a
-scan-for-leaks so the leak can be reported immediatelly and not after
-some time. It makes sense for such a core structure like extent_map.
-Other structures are allocated from a slab so we can at least check for
-leaks upon module unload.
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h | 10 ++++++++++
+ fs/btrfs/super.c |  4 ++++
+ 2 files changed, 14 insertions(+)
 
-david
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3e672916..201be7d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1295,6 +1295,16 @@ struct btrfs_fs_info {
+ 	 * so it is also safe.
+ 	 */
+ 	u64 max_inline;
++	/*
++	 * Protected by ->chunk_mutex and sb->s_umount.
++	 *
++	 * The reason that we use two lock to protect it is because only
++	 * remount and mount operations can change it and these two operations
++	 * are under sb->s_umount, but the read side (chunk allocation) can not
++	 * acquire sb->s_umount or the deadlock would happen. So we use two
++	 * locks to protect it. On the write side, we must acquire two locks,
++	 * and on the read side, we just need acquire one of them.
++	 */
+ 	u64 alloc_start;
+ 	struct btrfs_transaction *running_transaction;
+ 	wait_queue_head_t transaction_throttle;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 073756a..6f0524d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -519,7 +519,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_alloc_start:
+ 			num = match_strdup(&args[0]);
+ 			if (num) {
++				mutex_lock(&info->chunk_mutex);
+ 				info->alloc_start = memparse(num, NULL);
++				mutex_unlock(&info->chunk_mutex);
+ 				kfree(num);
+ 				printk(KERN_INFO
+ 					"btrfs: allocations start at %llu\n",
+@@ -1289,7 +1291,9 @@ restore:
+ 	fs_info->mount_opt = old_opts;
+ 	fs_info->compress_type = old_compress_type;
+ 	fs_info->max_inline = old_max_inline;
++	mutex_lock(&fs_info->chunk_mutex);
+ 	fs_info->alloc_start = old_alloc_start;
++	mutex_unlock(&fs_info->chunk_mutex);
+ 	btrfs_resize_thread_pool(fs_info,
+ 		old_thread_pool_size, fs_info->thread_pool_size);
+ 	fs_info->metadata_ratio = old_metadata_ratio;
+-- 
+1.7.11.7

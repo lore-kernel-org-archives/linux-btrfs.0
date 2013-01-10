@@ -1,36 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35826 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:36825 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753426Ab3AJLna (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 06:43:30 -0500
-Date: Thu, 10 Jan 2013 12:43:29 +0100
+	id S1754379Ab3AJMEv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:04:51 -0500
+Date: Thu, 10 Jan 2013 13:04:49 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Randy Barlow <randy@electronsweatshop.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs fs not mounting or being identified after power loss.
-Message-ID: <20130110114329.GC20089@twin.jikos.cz>
+To: Russell Coker <russell+btrfs@coker.com.au>
+Cc: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
+Subject: Re: 2 errors on scrub
+Message-ID: <20130110120446.GD20089@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CACCfv7ouftvEwAg0HWxCVSaOh+Q=K0+T65n0L4KJRqVa-e2_NA@mail.gmail.com>
- <50ECAC5C.9080902@electronsweatshop.com>
- <CACCfv7roxHpeBd5PCUEwn9ACFpq4396wHSMg2itEsf6k3CDkrA@mail.gmail.com>
- <50EE38DC.6000802@electronsweatshop.com>
+References: <201301101138.45428.russell+btrfs@coker.com.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50EE38DC.6000802@electronsweatshop.com>
+In-Reply-To: <201301101138.45428.russell+btrfs@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 09, 2013 at 10:43:24PM -0500, Randy Barlow wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> > kernel is at 3.6.11-1-ARCH
+On Thu, Jan 10, 2013 at 11:38:45AM +1100, Russell Coker wrote:
+> The below is from a system running the Debian kernel 3.2.0-4-amd64 on a 120G 
+> Intel SSD.  What would these 2 errors be?
 > 
-> Sorry I don't know much to help you, but I would suggest perhaps using
-> a newer kernel in the future. It sounds like your FS might be in
-> trouble as is, but I would recommend using the most recent RC kernel
-> (3.8-rc3) and restoring your data to a new btrfs from backups. In
-> general, it's a good idea to stick to pretty recent kernels with btrfs.
+> scrub device /dev/disk/by-uuid/7939c405-c656-4e85-a6a0-29f17be09585 (id 1) 
+> done
+>         scrub started at Thu Jan 10 06:00:02 2013 and finished after 295 
+> seconds
+>         total bytes scrubbed: 25.42GB with 2 errors
+>         error details: super=2
 
-There are some problems with the 3.8-rc kernels, please do not use them
-yet, and I don't think that kernel upgrade would help in Jordan's case.
+The superblock errors are detected but not corrected right away, because
+next transaction commit will overvrite it.
+
+Does scub report the errors repeatedly?
+
+There are no other scrub errors reported, I guess there are also no
+relevant messages in syslog. During transaction commit scrub is paused,
+so it's not possible to verify a half-made superblock.
+
+>         corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
 
 david

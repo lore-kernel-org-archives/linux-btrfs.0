@@ -1,202 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61498 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:16158 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753782Ab3AJMnO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 07:43:14 -0500
+	id S1754507Ab3AJMno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:43:44 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0AChCGk022026
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:43:12 +0800
-Message-ID: <50EEB786.8080605@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 20:43:50 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0AChgPg022031
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:43:42 +0800
+Message-ID: <50EEB7A5.8050003@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 20:44:21 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 02/11] Btrfs: use atomic for fs_info->last_trans_committed
+Subject: [PATCH 03/11] Btrfs: use atomic for fs_info->last_trans_log_full_commit
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fs_info->last_trans_committed is a 64bits variant, we might get a wrong
-value on the 32bit machines if we access it directly. Fix it by atomic
+fs_info->last_trans_log_full_commit is a 64bits variant, we might get a
+wrong value on the 32bit machines if we access it directly. Fix it by atomic
 operation.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h        |  2 +-
- fs/btrfs/disk-io.c      |  2 +-
- fs/btrfs/file.c         |  2 +-
- fs/btrfs/ioctl.c        |  2 +-
- fs/btrfs/ordered-data.c |  2 +-
- fs/btrfs/scrub.c        |  2 +-
- fs/btrfs/transaction.c  |  5 +++--
- fs/btrfs/tree-log.c     | 16 +++++++++-------
- 8 files changed, 18 insertions(+), 15 deletions(-)
+ fs/btrfs/ctree.h       |  2 +-
+ fs/btrfs/extent-tree.c |  3 ++-
+ fs/btrfs/inode.c       |  3 ++-
+ fs/btrfs/tree-log.c    | 32 +++++++++++++++++++-------------
+ 4 files changed, 24 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c3edb22..34a60a8 100644
+index 34a60a8..745e7ad 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1279,7 +1279,7 @@ struct btrfs_fs_info {
- 	struct btrfs_block_rsv empty_block_rsv;
- 
- 	atomic64_t generation;
--	u64 last_trans_committed;
-+	atomic64_t last_trans_committed;
- 
- 	/*
+@@ -1285,7 +1285,7 @@ struct btrfs_fs_info {
  	 * this is updated to the current trans every time a full commit
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2d69541..9263c6e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2502,7 +2502,7 @@ retry_root_backup:
- 	}
- 
- 	atomic64_set(&fs_info->generation, generation);
--	fs_info->last_trans_committed = generation;
-+	atomic64_set(&fs_info->last_trans_committed, generation);
- 
- 	ret = btrfs_recover_balance(fs_info);
- 	if (ret) {
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 024246b..3e9fa0e 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1683,7 +1683,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	if (btrfs_inode_in_log(inode,
- 	    atomic64_read(&root->fs_info->generation)) ||
- 	    BTRFS_I(inode)->last_trans <=
--	    root->fs_info->last_trans_committed) {
-+	    atomic64_read(&root->fs_info->last_trans_committed)) {
- 		BTRFS_I(inode)->last_trans = 0;
- 
- 		/*
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7624212..804c57f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3110,7 +3110,7 @@ static noinline long btrfs_ioctl_start_sync(struct btrfs_root *root,
- 			return PTR_ERR(trans);
- 
- 		/* No running transaction, don't bother */
--		transid = root->fs_info->last_trans_committed;
-+		transid = atomic64_read(&root->fs_info->last_trans_committed);
- 		goto out;
- 	}
- 	transid = trans->transid;
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index f107312..f376621 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -975,7 +975,7 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 	 * if this file hasn't been changed since the last transaction
- 	 * commit, we can safely return without doing anything
+ 	 * is required instead of the faster short fsync log commits
  	 */
--	if (last_mod < root->fs_info->last_trans_committed)
-+	if (last_mod < atomic64_read(&root->fs_info->last_trans_committed))
- 		return;
+-	u64 last_trans_log_full_commit;
++	atomic64_t last_trans_log_full_commit;
+ 	unsigned long mount_opt;
+ 	unsigned long compress_type:4;
+ 	u64 max_inline;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2d9fe27..a302e3a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7894,7 +7894,8 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
  
- 	spin_lock(&root->fs_info->ordered_extent_lock);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index bdbb94f..af0b566 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2703,7 +2703,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
- 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
- 		return -EIO;
+ 	extent_root = root->fs_info->extent_root;
  
--	gen = root->fs_info->last_trans_committed;
-+	gen = atomic64_read(&root->fs_info->last_trans_committed);
+-	root->fs_info->last_trans_log_full_commit = trans->transid;
++	atomic64_set(&root->fs_info->last_trans_log_full_commit,
++		     trans->transid);
  
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index e7992ca..7999bf8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -459,7 +459,8 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
- 	int ret = 0;
+ 	cache = kzalloc(sizeof(*cache), GFP_NOFS);
+ 	if (!cache)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index aadb0db..fb70bcb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7396,7 +7396,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
  
- 	if (transid) {
--		if (transid <= root->fs_info->last_trans_committed)
-+		if (transid <=
-+		    atomic64_read(&root->fs_info->last_trans_committed))
- 			goto out;
- 
- 		ret = -EINVAL;
-@@ -1713,7 +1714,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	cur_trans->commit_done = 1;
- 
--	root->fs_info->last_trans_committed = cur_trans->transid;
-+	atomic64_set(&root->fs_info->last_trans_committed, cur_trans->transid);
- 
- 	wake_up(&cur_trans->commit_wait);
- 
+ 	if (unlikely(old_ino == BTRFS_FIRST_FREE_OBJECTID)) {
+ 		/* force full log commit if subvolume involved. */
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		atomic64_set(&root->fs_info->last_trans_log_full_commit,
++			     trans->transid);
+ 	} else {
+ 		ret = btrfs_insert_inode_ref(trans, dest,
+ 					     new_dentry->d_name.name,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 83186c7..e6c8eb2 100644
+index e6c8eb2..f352531 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3392,7 +3392,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	INIT_LIST_HEAD(&extents);
+@@ -2227,14 +2227,14 @@ static int wait_log_commit(struct btrfs_trans_handle *trans,
+ 				&wait, TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
  
- 	write_lock(&tree->lock);
--	test_gen = root->fs_info->last_trans_committed;
-+	test_gen = atomic64_read(&root->fs_info->last_trans_committed);
+-		if (root->fs_info->last_trans_log_full_commit !=
++		if (atomic64_read(&root->fs_info->last_trans_log_full_commit) !=
+ 		    trans->transid && root->log_transid < transid + 2 &&
+ 		    atomic_read(&root->log_commit[index]))
+ 			schedule();
  
- 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
- 		list_del_init(&em->list);
-@@ -3496,7 +3496,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 
- 	/* Only run delayed items if we are a dir or a new file */
- 	if (S_ISDIR(inode->i_mode) ||
--	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed) {
-+	    BTRFS_I(inode)->generation >
-+	    atomic64_read(&root->fs_info->last_trans_committed)) {
- 		ret = btrfs_commit_inode_delayed_items(trans, inode);
- 		if (ret) {
- 			btrfs_free_path(path);
-@@ -3738,7 +3739,8 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	struct super_block *sb;
- 	struct dentry *old_parent = NULL;
- 	int ret = 0;
--	u64 last_committed = root->fs_info->last_trans_committed;
-+	u64 last_committed = atomic64_read(
-+			     &root->fs_info->last_trans_committed);
- 
- 	sb = inode->i_sb;
- 
-@@ -3748,7 +3750,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		finish_wait(&root->log_commit_wait[index], &wait);
+ 		mutex_lock(&root->log_mutex);
+-	} while (root->fs_info->last_trans_log_full_commit !=
++	} while (atomic64_read(&root->fs_info->last_trans_log_full_commit) !=
+ 		 trans->transid && root->log_transid < transid + 2 &&
+ 		 atomic_read(&root->log_commit[index]));
+ 	return 0;
+@@ -2244,12 +2244,12 @@ static void wait_for_writer(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_root *root)
+ {
+ 	DEFINE_WAIT(wait);
+-	while (root->fs_info->last_trans_log_full_commit !=
++	while (atomic64_read(&root->fs_info->last_trans_log_full_commit) !=
+ 	       trans->transid && atomic_read(&root->log_writers)) {
+ 		prepare_to_wait(&root->log_writer_wait,
+ 				&wait, TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
+-		if (root->fs_info->last_trans_log_full_commit !=
++		if (atomic64_read(&root->fs_info->last_trans_log_full_commit) !=
+ 		    trans->transid && atomic_read(&root->log_writers))
+ 			schedule();
+ 		mutex_lock(&root->log_mutex);
+@@ -2306,7 +2306,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
  	}
  
- 	if (root->fs_info->last_trans_log_full_commit >
--	    root->fs_info->last_trans_committed) {
-+	    atomic64_read(&root->fs_info->last_trans_committed)) {
- 		ret = 1;
+ 	/* bail out if we need to do a full commit */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (atomic64_read(&root->fs_info->last_trans_log_full_commit) ==
++	    trans->transid) {
+ 		ret = -EAGAIN;
+ 		mutex_unlock(&root->log_mutex);
+ 		goto out;
+@@ -2361,7 +2362,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 			mutex_unlock(&log_root_tree->log_mutex);
+ 			goto out;
+ 		}
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		atomic64_set(&root->fs_info->last_trans_log_full_commit,
++			     trans->transid);
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		ret = -EAGAIN;
+@@ -2390,7 +2392,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * now that we've moved on to the tree of log tree roots,
+ 	 * check the full commit flag again
+ 	 */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (atomic64_read(&root->fs_info->last_trans_log_full_commit) ==
++	    trans->transid) {
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		ret = -EAGAIN;
+@@ -2614,7 +2617,8 @@ fail:
+ out_unlock:
+ 	mutex_unlock(&BTRFS_I(dir)->log_mutex);
+ 	if (ret == -ENOSPC) {
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		atomic64_set(&root->fs_info->last_trans_log_full_commit,
++			     trans->transid);
+ 		ret = 0;
+ 	} else if (ret < 0)
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -2647,7 +2651,8 @@ int btrfs_del_inode_ref_in_log(struct btrfs_trans_handle *trans,
+ 				  dirid, &index);
+ 	mutex_unlock(&BTRFS_I(inode)->log_mutex);
+ 	if (ret == -ENOSPC) {
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		atomic64_set(&root->fs_info->last_trans_log_full_commit,
++			     trans->transid);
+ 		ret = 0;
+ 	} else if (ret < 0 && ret != -ENOENT)
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -3702,8 +3707,8 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 			 * make sure any commits to the log are forced
+ 			 * to be full commits
+ 			 */
+-			root->fs_info->last_trans_log_full_commit =
+-				trans->transid;
++			atomic64_set(&root->fs_info->last_trans_log_full_commit,
++				trans->transid);
+ 			ret = 1;
+ 			break;
+ 		}
+@@ -3749,7 +3754,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		goto end_no_trans;
  	}
-@@ -3800,7 +3802,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 			break;
  
- 		if (BTRFS_I(inode)->generation >
--		    root->fs_info->last_trans_committed) {
-+		    atomic64_read(&root->fs_info->last_trans_committed)) {
- 			ret = btrfs_log_inode(trans, root, inode, inode_only);
- 			if (ret)
- 				goto end_trans;
-@@ -4063,9 +4065,9 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	 * from hasn't been logged, we don't need to log it
- 	 */
- 	if (BTRFS_I(inode)->logged_trans <=
--	    root->fs_info->last_trans_committed &&
-+	    atomic64_read(&root->fs_info->last_trans_committed) &&
- 	    (!old_dir || BTRFS_I(old_dir)->logged_trans <=
--		    root->fs_info->last_trans_committed))
-+		    atomic64_read(&root->fs_info->last_trans_committed)))
- 		return 0;
- 
- 	return btrfs_log_inode_parent(trans, root, inode, parent, 1);
+-	if (root->fs_info->last_trans_log_full_commit >
++	if (atomic64_read(&root->fs_info->last_trans_log_full_commit) >
+ 	    atomic64_read(&root->fs_info->last_trans_committed)) {
+ 		ret = 1;
+ 		goto end_no_trans;
+@@ -3819,7 +3824,8 @@ end_trans:
+ 	dput(old_parent);
+ 	if (ret < 0) {
+ 		WARN_ON(ret != -ENOSPC);
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		atomic64_set(&root->fs_info->last_trans_log_full_commit,
++			     trans->transid);
+ 		ret = 1;
+ 	}
+ 	btrfs_end_log_trans(root);
 -- 
 1.7.11.7

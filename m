@@ -1,152 +1,220 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:5780 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:2621 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754478Ab3AJMt5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 07:49:57 -0500
+	id S1754828Ab3AJMuv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:50:51 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0ACntCn022140
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:49:55 +0800
-Message-ID: <50EEB91A.4030605@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 20:50:34 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0AConC7022152
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:50:49 +0800
+Message-ID: <50EEB94F.2010608@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 20:51:27 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 08/11] Btrfs: use the inode own lock to protect its delalloc_bytes
+Subject: [PATCH 09/11] Btrfs: use seqlock to protect fs_info->avail_{data,
+ metadata, system}_alloc_bits
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need not use a global lock to protect the delalloc_bytes of the inode, just
-use its own lock. In this way, we can reduce the lock contention and
-->delalloc_lock will just protect delalloc inode list.
+There is no lock to protect fs_info->avail_{data, metadata, system}_alloc_bits,
+it may introduce some problem, such as the wrong profile information, so we add
+a seqlock to protect them.
 
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/btrfs_inode.h |  1 +
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/inode.c       | 47 ++++++++++++++++++++++++++++++++++-------------
- 3 files changed, 37 insertions(+), 13 deletions(-)
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/disk-io.c     |  1 +
+ fs/btrfs/extent-tree.c | 22 ++++++++++++++------
+ fs/btrfs/volumes.c     | 56 +++++++++++++++++++++++++++-----------------------
+ 4 files changed, 49 insertions(+), 32 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 2a8c242..c935a77 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -40,6 +40,7 @@
- #define BTRFS_INODE_HAS_ASYNC_EXTENT		6
- #define BTRFS_INODE_NEEDS_FULL_SYNC		7
- #define BTRFS_INODE_COPY_EVERYTHING		8
-+#define BTRFS_INODE_IN_DELALLOC_LIST		9
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 51515a3..c95b539 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1474,6 +1474,8 @@ struct btrfs_fs_info {
+ 	struct rb_root defrag_inodes;
+ 	atomic_t defrag_running;
  
- /* in memory btrfs inode */
- struct btrfs_inode {
++	/* Used to protect avail_{data, metadata, system}_alloc_bits */
++	seqlock_t profiles_lock;
+ 	/*
+ 	 * these three are in extended format (availability of single
+ 	 * chunks is denoted by BTRFS_AVAIL_ALLOC_BIT_SINGLE bit, other
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 750afd4..748ce06 100644
+index 748ce06..cf03a45 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3685,6 +3685,8 @@ static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
- 				    delalloc_inodes);
+@@ -2036,6 +2036,7 @@ int open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->tree_mod_seq_lock);
+ 	rwlock_init(&fs_info->tree_mod_log_lock);
+ 	mutex_init(&fs_info->reloc_mutex);
++	seqlock_init(&fs_info->profiles_lock);
  
- 		list_del_init(&btrfs_inode->delalloc_inodes);
-+		clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+			  &btrfs_inode->runtime_flags);
+ 	init_completion(&fs_info->kobj_unregister);
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2ec978b1..d6b47e7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3229,12 +3229,14 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
+ 	u64 extra_flags = chunk_to_extended(flags) &
+ 				BTRFS_EXTENDED_PROFILE_MASK;
  
- 		btrfs_invalidate_inodes(btrfs_inode->root);
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c29299d..f28ddf1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1508,15 +1508,22 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
- 
--		spin_lock(&root->fs_info->delalloc_lock);
--		BTRFS_I(inode)->delalloc_bytes += len;
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, len,
- 				     root->fs_info->delalloc_batch);
--		if (do_list && list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
--			list_add_tail(&BTRFS_I(inode)->delalloc_inodes,
--				      &root->fs_info->delalloc_inodes);
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->delalloc_bytes += len;
-+		if (do_list && !test_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					 &BTRFS_I(inode)->runtime_flags)) {
-+			spin_lock(&root->fs_info->delalloc_lock);
-+			if (list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
-+				list_add_tail(&BTRFS_I(inode)->delalloc_inodes,
-+					      &root->fs_info->delalloc_inodes);
-+				set_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					&BTRFS_I(inode)->runtime_flags);
-+			}
-+			spin_unlock(&root->fs_info->delalloc_lock);
- 		}
--		spin_unlock(&root->fs_info->delalloc_lock);
-+		spin_unlock(&BTRFS_I(inode)->lock);
- 	}
++	write_seqlock(&fs_info->profiles_lock);
+ 	if (flags & BTRFS_BLOCK_GROUP_DATA)
+ 		fs_info->avail_data_alloc_bits |= extra_flags;
+ 	if (flags & BTRFS_BLOCK_GROUP_METADATA)
+ 		fs_info->avail_metadata_alloc_bits |= extra_flags;
+ 	if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
+ 		fs_info->avail_system_alloc_bits |= extra_flags;
++	write_sequnlock(&fs_info->profiles_lock);
  }
  
-@@ -1551,16 +1558,22 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		    && do_list)
- 			btrfs_free_reserved_data_space(inode, len);
+ /*
+@@ -3326,12 +3328,18 @@ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
  
--		spin_lock(&root->fs_info->delalloc_lock);
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, -len,
- 				     root->fs_info->delalloc_batch);
-+		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->delalloc_bytes -= len;
--
- 		if (do_list && BTRFS_I(inode)->delalloc_bytes == 0 &&
--		    !list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
--			list_del_init(&BTRFS_I(inode)->delalloc_inodes);
-+		    test_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+			     &BTRFS_I(inode)->runtime_flags)) {
-+			spin_lock(&root->fs_info->delalloc_lock);
-+			if (!list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
-+				list_del_init(&BTRFS_I(inode)->delalloc_inodes);
-+				clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					  &BTRFS_I(inode)->runtime_flags);
-+			}
-+			spin_unlock(&root->fs_info->delalloc_lock);
- 		}
--		spin_unlock(&root->fs_info->delalloc_lock);
-+		spin_unlock(&BTRFS_I(inode)->lock);
- 	}
- }
- 
-@@ -7279,14 +7292,19 @@ fail:
- static int btrfs_getattr(struct vfsmount *mnt,
- 			 struct dentry *dentry, struct kstat *stat)
+ static u64 get_alloc_profile(struct btrfs_root *root, u64 flags)
  {
-+	u64 delalloc_bytes;
- 	struct inode *inode = dentry->d_inode;
- 	u32 blocksize = inode->i_sb->s_blocksize;
- 
- 	generic_fillattr(inode, stat);
- 	stat->dev = BTRFS_I(inode)->root->anon_dev;
- 	stat->blksize = PAGE_CACHE_SIZE;
+-	if (flags & BTRFS_BLOCK_GROUP_DATA)
+-		flags |= root->fs_info->avail_data_alloc_bits;
+-	else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
+-		flags |= root->fs_info->avail_system_alloc_bits;
+-	else if (flags & BTRFS_BLOCK_GROUP_METADATA)
+-		flags |= root->fs_info->avail_metadata_alloc_bits;
++	unsigned seq;
 +
-+	spin_lock(&BTRFS_I(inode)->lock);
-+	delalloc_bytes = BTRFS_I(inode)->delalloc_bytes;
-+	spin_unlock(&BTRFS_I(inode)->lock);
- 	stat->blocks = (ALIGN(inode_get_bytes(inode), blocksize) +
--		ALIGN(BTRFS_I(inode)->delalloc_bytes, blocksize)) >> 9;
-+			ALIGN(delalloc_bytes, blocksize)) >> 9;
- 	return 0;
++	do {
++		seq = read_seqbegin(&root->fs_info->profiles_lock);
++
++		if (flags & BTRFS_BLOCK_GROUP_DATA)
++			flags |= root->fs_info->avail_data_alloc_bits;
++		else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
++			flags |= root->fs_info->avail_system_alloc_bits;
++		else if (flags & BTRFS_BLOCK_GROUP_METADATA)
++			flags |= root->fs_info->avail_metadata_alloc_bits;
++	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
+ 
+ 	return btrfs_reduce_alloc_profile(root, flags);
+ }
+@@ -7963,12 +7971,14 @@ static void clear_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
+ 	u64 extra_flags = chunk_to_extended(flags) &
+ 				BTRFS_EXTENDED_PROFILE_MASK;
+ 
++	write_seqlock(&fs_info->profiles_lock);
+ 	if (flags & BTRFS_BLOCK_GROUP_DATA)
+ 		fs_info->avail_data_alloc_bits &= ~extra_flags;
+ 	if (flags & BTRFS_BLOCK_GROUP_METADATA)
+ 		fs_info->avail_metadata_alloc_bits &= ~extra_flags;
+ 	if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
+ 		fs_info->avail_system_alloc_bits &= ~extra_flags;
++	write_sequnlock(&fs_info->profiles_lock);
  }
  
-@@ -7569,8 +7587,11 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 		binode = list_entry(head->next, struct btrfs_inode,
- 				    delalloc_inodes);
- 		inode = igrab(&binode->vfs_inode);
--		if (!inode)
-+		if (!inode) {
- 			list_del_init(&binode->delalloc_inodes);
-+			clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+				  &binode->runtime_flags);
-+		}
- 		spin_unlock(&root->fs_info->delalloc_lock);
- 		if (inode) {
- 			work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5cce6aa..93baade 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1372,14 +1372,19 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	u64 devid;
+ 	u64 num_devices;
+ 	u8 *dev_uuid;
++	unsigned seq;
+ 	int ret = 0;
+ 	bool clear_super = false;
+ 
+ 	mutex_lock(&uuid_mutex);
+ 
+-	all_avail = root->fs_info->avail_data_alloc_bits |
+-		root->fs_info->avail_system_alloc_bits |
+-		root->fs_info->avail_metadata_alloc_bits;
++	do {
++		seq = read_seqbegin(&root->fs_info->profiles_lock);
++
++		all_avail = root->fs_info->avail_data_alloc_bits |
++			    root->fs_info->avail_system_alloc_bits |
++			    root->fs_info->avail_metadata_alloc_bits;
++	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
+ 
+ 	num_devices = root->fs_info->fs_devices->num_devices;
+ 	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
+@@ -2975,6 +2980,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	int mixed = 0;
+ 	int ret;
+ 	u64 num_devices;
++	unsigned seq;
+ 
+ 	if (btrfs_fs_closing(fs_info) ||
+ 	    atomic_read(&fs_info->balance_pause_req) ||
+@@ -3058,22 +3064,26 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	/* allow to reduce meta or sys integrity only if force set */
+ 	allowed = BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1 |
+ 			BTRFS_BLOCK_GROUP_RAID10;
+-	if (((bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	     (fs_info->avail_system_alloc_bits & allowed) &&
+-	     !(bctl->sys.target & allowed)) ||
+-	    ((bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	     (fs_info->avail_metadata_alloc_bits & allowed) &&
+-	     !(bctl->meta.target & allowed))) {
+-		if (bctl->flags & BTRFS_BALANCE_FORCE) {
+-			printk(KERN_INFO "btrfs: force reducing metadata "
+-			       "integrity\n");
+-		} else {
+-			printk(KERN_ERR "btrfs: balance will reduce metadata "
+-			       "integrity, use force if you want this\n");
+-			ret = -EINVAL;
+-			goto out;
++	do {
++		seq = read_seqbegin(&fs_info->profiles_lock);
++
++		if (((bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
++		     (fs_info->avail_system_alloc_bits & allowed) &&
++		     !(bctl->sys.target & allowed)) ||
++		    ((bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
++		     (fs_info->avail_metadata_alloc_bits & allowed) &&
++		     !(bctl->meta.target & allowed))) {
++			if (bctl->flags & BTRFS_BALANCE_FORCE) {
++				printk(KERN_INFO "btrfs: force reducing metadata "
++				       "integrity\n");
++			} else {
++				printk(KERN_ERR "btrfs: balance will reduce metadata "
++				       "integrity, use force if you want this\n");
++				ret = -EINVAL;
++				goto out;
++			}
+ 		}
+-	}
++	} while (read_seqretry(&fs_info->profiles_lock, seq));
+ 
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+ 		int num_tolerated_disk_barrier_failures;
+@@ -3875,10 +3885,7 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		return ret;
+ 
+-	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
+-				fs_info->avail_metadata_alloc_bits;
+-	alloc_profile = btrfs_reduce_alloc_profile(root, alloc_profile);
+-
++	alloc_profile = btrfs_get_alloc_profile(extent_root, 0);
+ 	ret = __btrfs_alloc_chunk(trans, extent_root, &map, &chunk_size,
+ 				  &stripe_size, chunk_offset, alloc_profile);
+ 	if (ret)
+@@ -3886,10 +3893,7 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 
+ 	sys_chunk_offset = chunk_offset + chunk_size;
+ 
+-	alloc_profile = BTRFS_BLOCK_GROUP_SYSTEM |
+-				fs_info->avail_system_alloc_bits;
+-	alloc_profile = btrfs_reduce_alloc_profile(root, alloc_profile);
+-
++	alloc_profile = btrfs_get_alloc_profile(fs_info->chunk_root, 0);
+ 	ret = __btrfs_alloc_chunk(trans, extent_root, &sys_map,
+ 				  &sys_chunk_size, &sys_stripe_size,
+ 				  sys_chunk_offset, alloc_profile);
 -- 
 1.7.11.7

@@ -1,76 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:34540 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750799Ab3AJIq6 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:53604 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753777Ab3AJIza (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 03:46:58 -0500
-Received: by mail-ie0-f178.google.com with SMTP id c12so372421ieb.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 00:46:58 -0800 (PST)
+	Thu, 10 Jan 2013 03:55:30 -0500
+Date: Thu, 10 Jan 2013 08:55:23 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Russell Coker <russell+btrfs@coker.com.au>
+Cc: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
+Subject: Re: 2 errors on scrub
+Message-ID: <20130110085523.GS19051@carfax.org.uk>
+References: <201301101138.45428.russell+btrfs@coker.com.au>
 MIME-Version: 1.0
-In-Reply-To: <50EE3492.4030704@cn.fujitsu.com>
-References: <CAOcd+r1VfBCRmDptpp47CLDAbH-o+NpAQxx42ou5JVG-hfM0PA@mail.gmail.com>
-	<50EE3492.4030704@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 10:46:58 +0200
-Message-ID: <CAOcd+r0QunaHT2bAMjVV5RWbJx09WVRLuGbhTRJf2EAJGbPp_w@mail.gmail.com>
-Subject: Re: [PATCH 0/2] send: Avoid sending disknr==0 and PREALLOC extents
- when possible
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Chen Yang <chenyang.fnst@cn.fujitsu.com>
-Cc: Alexander Block <ablock84@googlemail.com>,
-        Jan Schmidt <list.btrfs@jan-o-sch.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Arne Jansen <sensille@gmx.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="2EGzKU3DZJtwhC8d"
+In-Reply-To: <201301101138.45428.russell+btrfs@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chen,
-thanks for reviewing.
 
-I partially disagree with you. The new command(s) is required when the
-code detects a change and wants to communicate this change to the
-receive side. My patch addresses the cases when
-- no new command is required to communicate the change (patch1)
-- there is no change that is needed to be communicated (patch 2)
+--2EGzKU3DZJtwhC8d
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-So even if/when new command is added, my patch still holds, I believe.
-However, let's see what others will comment.
+On Thu, Jan 10, 2013 at 11:38:45AM +1100, Russell Coker wrote:
+> The below is from a system running the Debian kernel 3.2.0-4-amd64 on a 120G 
+> Intel SSD.  What would these 2 errors be?
+> 
+> scrub device /dev/disk/by-uuid/7939c405-c656-4e85-a6a0-29f17be09585 (id 1) 
+> done
+>         scrub started at Thu Jan 10 06:00:02 2013 and finished after 295 
+> seconds
+>         total bytes scrubbed: 25.42GB with 2 errors
+>         error details: super=2
+>         corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
 
-Thanks,
-Alex.
+   Looks like broken superblocks, from that message. There's probably
+more information in your kernel logs.
 
+> I know you all recommend later kernels, I'm upgrading things as fast as I can.
 
-On Thu, Jan 10, 2013 at 5:25 AM, Chen Yang <chenyang.fnst@cn.fujitsu.com> wrote:
-> Hi, Alex
-> The patches can only solve part of questions, but some like "punch holes" problems
-> as Alexander wrote are still unsolved. So I think these patches are unnecessary
-> if adding new command would help to solve all the questions.
->
-> Chen.
->
-> On 2013-1-9 4:11, Alex Lyakas wrote:
->> These two patches address the issue of sending unneeded zero data for
->> disknr==0 and PREALLOC extents.
->> There is room for additional improvement for PREALLOC extents, but it
->> requires adding a new command, so for
->> now this is not addressed.
->>
->> Please review and comment.
->>
->> Thanks,
->> Alex.
->>
->> Alex Lyakas (2):
->>   Avoid sending disknr==0 extents in the following cases:     1) full
->>     send 2) new inode in a diff-send 3) when disknr==0 extents are
->>     added to the end of an inode
->>   On a diff-send, avoid sending PREALLOC extents, if the parent root
->>     has only     PREALLOC extents on an appropriate file range.
->>
->>  fs/btrfs/send.c |  178 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
->>  1 file changed, 172 insertions(+), 6 deletions(-)
->>
->> --
->> 1.7.9.5
->>
->
+   Glad to hear it. :)
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+       --- We believe in free will because we have no choice. ---        
+
+--2EGzKU3DZJtwhC8d
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUO6B+79z9OVl50rAAQIJvhAAhlv1Qvol21agWHi9/qO8Zig1ojHOHGEW
+W5VqvuO1mCw/u4DUAzt7vSM6t++9wL1NHJHRZC425HgDxo5nYsiYwZP1ZLQvN+Kd
+dSCN6rUntQt+0NFfo/3cdQC/1hnYF603E/oZXzlJSAAFkmjVA4djYwsZufxBpoqw
+7wi+bJFgn4j9FRkTQNnA7klq+8dqjZXzes8jc6jGLscxVFDryX2VS4PthphvUcJU
+UmmKR0lsHURdCCtk06kp1p7WgiBN3kt5a7/a5X9d4aLn6ufX1PC5mD4b2ndSl+l0
+r8tiTlRml5/3wNrUMghl+2MDl+vngZkJLNZV1gGgCG4BaVvBhFQXeH4cAPIBA+gj
+HNVH87ovKTRu/3OsxPKYCjZous0d7WPSA91QWIpvc7vPRrTvDjZ+HdUfXjGyWCV8
+Ytbr7Be/VPUzo/u9KrcXKoYVNBS7NcszjwhE6EXQY7VqBn0IXJTQFA1DITMrVxCa
+Myx1h5rzU8mdJ0qpi5pYAKAM7plFAVuuxqwBtN/5+iR6qgUe1w+9K62ziOAjoB+J
+VYwIDps5tZTFlUM7MtCfJuGgEZEoPihp5wkYaIWi1ZZ9Yf7nQDkSTjBbUs/p9olX
+G3R8k3OqIzbaMbZiYjYXkRF6CMLA/WkmqIQ34f/LPaDy6apBEnz4aAZeaT8RG3Jk
+qTc1Pnb+yzI=
+=XDVq
+-----END PGP SIGNATURE-----
+
+--2EGzKU3DZJtwhC8d--

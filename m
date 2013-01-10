@@ -1,177 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from selda.webserv-it.de ([91.211.43.170]:49084 "EHLO
-	mercenary.garni.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752582Ab3AXQZW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 11:25:22 -0500
-Received: from 77-22-254-87-dynip.superkabel.de ([77.22.254.87] helo=queen.localnet)
-	by mercenary.garni.ch with esmtpsa (TLS1.0:DHE_RSA_AES_256_CBC_SHA1:32)
-	(Exim 4.71)
-	(envelope-from <info@syntax-k.de>)
-	id 1TyP9x-0004Tw-E6
-	for linux-btrfs@vger.kernel.org; Thu, 24 Jan 2013 16:56:19 +0100
-From: =?ISO-8859-1?Q?J=F6rg?= Walter <info@syntax-k.de>
-To: linux-btrfs@vger.kernel.org
-Date: Thu, 24 Jan 2013 16:56:06 +0100
-Message-ID: <1842933.L15n886rVc@queen>
+Received: from cn.fujitsu.com ([222.73.24.84]:56745 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753771Ab3AJMml (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jan 2013 07:42:41 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0ACgcuO022015
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 20:42:38 +0800
+Message-ID: <50EEB764.4010405@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 20:43:16 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="nextPart3293517.tvHoUb2QCt"
-Subject: btrfs-undelete shell-script
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 01/11] Btrfs: use atomic for btrfs_fs_info->generation
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
+fs_info->generation is a 64bit variant, we might get a wrong number on
+the 32bit machines if there is no lock or other methods to protect it.
 
---nextPart3293517.tvHoUb2QCt
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.c             | 7 ++++---
+ fs/btrfs/ctree.h             | 2 +-
+ fs/btrfs/disk-io.c           | 8 ++++----
+ fs/btrfs/file.c              | 6 ++++--
+ fs/btrfs/inode.c             | 5 +++--
+ fs/btrfs/qgroup.c            | 2 +-
+ fs/btrfs/transaction.c       | 4 ++--
+ include/trace/events/btrfs.h | 3 ++-
+ 8 files changed, 21 insertions(+), 16 deletions(-)
 
-Hi,
-
-I tried to recover an accidentally deleted text file from a btrfs volum=
-e using=20
-the trusty old 'grep --text -C 500' method and failed, since the filesy=
-stem was=20
-compressed. So I wrote a shell script that uses btrfs-progs for a prope=
-r=20
-undelete functionality.
-
-Attached is the script that implements a working btrfs-undelete using t=
-he find-
-root and restore tools from btrfs-progs. It is fairly complete and soli=
-d and=20
-it even has some command  line help. It needs bash and common unix util=
-ities=20
-(sed, grep, wc, dirname, sort). I have successfully used it to recover =
-a=20
-couple of files I deleted accidentally and was able to recover 2/3 of t=
-hem just=20
-fine. The rest was zero-sized, I assume that's because the file blocks =
-have=20
-already been reused.
-
-If you like it, feel free to add it to btrfs-progs. I've chosen GPLv2 o=
-r later=20
-as license, as that's what btrfs-progs seems to use.
-
-Please CC me on replies, I am not subscribed (and don't intend to).
-
---=20
-Mit freundlichen Gr=FC=DFen,
-
-=09J=F6rg Walter
---nextPart3293517.tvHoUb2QCt
-Content-Disposition: attachment; filename="btrfs-undelete"
-Content-Transfer-Encoding: quoted-printable
-Content-Type: application/x-shellscript; name="btrfs-undelete"
-
-#!/bin/bash
-# btrfs-undelete
-# Copyright (C) 2013 J=C3=B6rg Walter <info@syntax-k.de>
-# This program is free software; you can redistribute it and/or modify =
-it under
-# the term of the GNU General Public License as published by the Free S=
-oftware
-# Foundation; either version 2 of the License, or any later version.
-
-if [ ! -b "$1" -o -z "$2" ]; then
-=09echo "Usage: $0 <dev> <file/dir>" 1>&2
-=09echo
-=09echo "This program tries to recover the most recent version of the"
-=09echo "given file or directory (recursively)"
-=09echo
-=09echo "<dev> must not be mounted, otherwise this program may appear"
-=09echo "to work but find nothing."
-=09echo
-=09echo "<file/dir> must be specified relative to the filesystem root,"=
-
-=09echo "obviously. It may contain * and ? as wildcards, but in that"
-=09echo "case, empty files might be 'recovered'. If <file/dir> is a"
-=09echo "single file name, this program tries to recover the most"
-=09echo "recent non-empty version of the file."
-=09echo
-=09echo "Note that files are restored to a temporary subdirectory"
-=09echo "below /tmp, so you probably don't want to restore huge file"
-=09echo "trees unless your /tmp has enough free space."
-=09exit 1
-fi
-dir=3D"`dirname "$0"`"
-dev=3D"$1"
-file=3D"$2"
-
-file=3D"${file#/}"
-file=3D"${file%/}"
-regex=3D"${file//\\/\\\\}"
-
-# quote regex special characters
-regex=3D"${regex//./\.}"
-regex=3D"${regex//+/\+}"
-regex=3D"${regex//|/\|}"
-regex=3D"${regex//(/\(}"
-regex=3D"${regex//)/\)}"
-regex=3D"${regex//\[/\[}"
-regex=3D"${regex//]/\]}"
-regex=3D"${regex//\{/\{}"
-regex=3D"${regex//\}/\}}"
-
-# treat shell wildcards specially
-nowild=3D"$regex"
-regex=3D"${regex//\*/.*}"=20
-regex=3D"${regex//\?/.}"
-test "$nowild" !=3D "$regex"
-nowild=3D$?
-
-# extract number of slashes in order to get correct number of closing p=
-arens
-slashes=3D"${regex//[^\/]/}"
-
-# build final regex
-regex=3D"^/(|${regex//\//(|/}(|/.*${slashes//?/)}))\$"=20
-
-roots=3D/tmp/btrfs-undelete.$$.lst
-out=3D/tmp/btrfs-undelete.$$
-
-trap "rm $roots" EXIT
-trap "rm -r $out &> /dev/null; exit 1" SIGINT
-
-echo -ne "Searching roots..."
-"$dir"/find-root /dev/mapper/queen-home 2>&1 \
-=09| grep ^Well \
-=09| sed -e 's/Well block \(.*\) seems.*, have=3D\(.*\), want=3D/\2 \1 =
-/'  \
-=09| sort -n > $roots || exit 1
-
-i=3D0
-max=3D"$(wc -l $roots)"
-max=3D"${max%% *}"
-echo " found $max roots."
-
-while [ "$i" -lt "$max" ]; do
-=09((i+=3D1))
-=09echo -ne "Trying root $i...\r"
-=09tail -n $i $roots | {
-=09=09read x id y
-=09=09rm -r $out
-=09=09mkdir $out
-=09=09"$dir/restore" -i -t $id -m "$regex" "$dev" $out
-=09} &> /dev/null
-=09if [ "$?" =3D 0 ]; then
-=09=09if [ "$nowild" =3D 1 ]; then
-=09=09=09if [ -s "$out/$file" -o -d "$out/$file" ]; then
-=09=09=09=09echo "Recovered file '$out/$file' from root $i".
-=09=09=09=09exit 0
-=09=09=09fi
-=09=09else
-=09=09=09if ls "$out/"${file// /\ } &> /dev/null; then
-=09=09=09=09echo "Recovered file(s) '$out/$file' from root $i".
-=09=09=09=09exit 0
-=09=09=09fi
-=09=09fi
-=09fi
-done
-rm -r $out
-echo "Didn't find '$file'"
-exit 1
-
---nextPart3293517.tvHoUb2QCt--
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c7b67cf..dd57ce2 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1365,10 +1365,11 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		       (unsigned long long)
+ 		       root->fs_info->running_transaction->transid);
+ 
+-	if (trans->transid != root->fs_info->generation)
++	if (trans->transid != atomic64_read(&root->fs_info->generation))
+ 		WARN(1, KERN_CRIT "trans %llu running %llu\n",
+ 		       (unsigned long long)trans->transid,
+-		       (unsigned long long)root->fs_info->generation);
++		       (unsigned long long)atomic64_read(
++		       &root->fs_info->generation));
+ 
+ 	if (!should_cow_block(trans, root, buf)) {
+ 		*cow_ret = buf;
+@@ -1465,7 +1466,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	WARN_ON(trans->transaction != root->fs_info->running_transaction);
+-	WARN_ON(trans->transid != root->fs_info->generation);
++	WARN_ON(trans->transid != atomic64_read(&root->fs_info->generation));
+ 
+ 	parent_nritems = btrfs_header_nritems(parent);
+ 	blocksize = btrfs_level_size(root, parent_level - 1);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 547b7b0..c3edb22 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1278,7 +1278,7 @@ struct btrfs_fs_info {
+ 
+ 	struct btrfs_block_rsv empty_block_rsv;
+ 
+-	u64 generation;
++	atomic64_t generation;
+ 	u64 last_trans_committed;
+ 
+ 	/*
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4438aac..2d69541 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1200,7 +1200,7 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+ 	memset(&root->root_item, 0, sizeof(root->root_item));
+ 	memset(&root->defrag_progress, 0, sizeof(root->defrag_progress));
+ 	memset(&root->root_kobj, 0, sizeof(root->root_kobj));
+-	root->defrag_trans_start = fs_info->generation;
++	root->defrag_trans_start = atomic64_read(&fs_info->generation);
+ 	init_completion(&root->kobj_unregister);
+ 	root->defrag_running = 0;
+ 	root->root_key.objectid = objectid;
+@@ -2501,7 +2501,7 @@ retry_root_backup:
+ 		fs_info->pending_quota_state = 1;
+ 	}
+ 
+-	fs_info->generation = generation;
++	atomic64_set(&fs_info->generation, generation);
+ 	fs_info->last_trans_committed = generation;
+ 
+ 	ret = btrfs_recover_balance(fs_info);
+@@ -3436,12 +3436,12 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+ 	int was_dirty;
+ 
+ 	btrfs_assert_tree_locked(buf);
+-	if (transid != root->fs_info->generation)
++	if (transid != atomic64_read(&root->fs_info->generation))
+ 		WARN(1, KERN_CRIT "btrfs transid mismatch buffer %llu, "
+ 		       "found %llu running %llu\n",
+ 			(unsigned long long)buf->start,
+ 			(unsigned long long)transid,
+-			(unsigned long long)root->fs_info->generation);
++			(u64)atomic64_read(&root->fs_info->generation));
+ 	was_dirty = set_extent_buffer_dirty(buf);
+ 	if (!was_dirty) {
+ 		spin_lock(&root->fs_info->delalloc_lock);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 20452c1..024246b 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1588,7 +1588,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	 * otherwise subsequent syncs to a file that's been synced in this
+ 	 * transaction will appear to have already occured.
+ 	 */
+-	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
++	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation) +
++				     1;
+ 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
+ 	if (num_written > 0 || num_written == -EIOCBQUEUED) {
+ 		err = generic_write_sync(file, pos, num_written);
+@@ -1679,7 +1680,8 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 * syncing
+ 	 */
+ 	smp_mb();
+-	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
++	if (btrfs_inode_in_log(inode,
++	    atomic64_read(&root->fs_info->generation)) ||
+ 	    BTRFS_I(inode)->last_trans <=
+ 	    root->fs_info->last_trans_committed) {
+ 		BTRFS_I(inode)->last_trans = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2a2b5e1..aadb0db 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2632,7 +2632,8 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	 * idea about which extents were modified before we were evicted from
+ 	 * cache.
+ 	 */
+-	if (BTRFS_I(inode)->last_trans == root->fs_info->generation)
++	if (BTRFS_I(inode)->last_trans ==
++	    atomic64_read(&root->fs_info->generation))
+ 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			&BTRFS_I(inode)->runtime_flags);
+ 
+@@ -6852,7 +6853,7 @@ again:
+ 	set_page_dirty(page);
+ 	SetPageUptodate(page);
+ 
+-	BTRFS_I(inode)->last_trans = root->fs_info->generation;
++	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation);
+ 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
+ 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index fe9d02c..8bed26b 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -290,7 +290,7 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info)
+ 				goto out;
+ 			}
+ 			if (btrfs_qgroup_status_generation(l, ptr) !=
+-			    fs_info->generation) {
++			    atomic64_read(&fs_info->generation)) {
+ 				flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 				printk(KERN_ERR
+ 					"btrfs: qgroup generation mismatch, "
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 87fac9a..e7992ca 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -161,8 +161,8 @@ loop:
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+-	fs_info->generation++;
+-	cur_trans->transid = fs_info->generation;
++	atomic64_inc(&fs_info->generation);
++	cur_trans->transid = atomic64_read(&fs_info->generation);
+ 	fs_info->running_transaction = cur_trans;
+ 	cur_trans->aborted = 0;
+ 	spin_unlock(&fs_info->trans_lock);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index ea546a4..09dc72f 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -71,7 +71,8 @@ TRACE_EVENT(btrfs_transaction_commit,
+ 	),
+ 
+ 	TP_fast_assign(
+-		__entry->generation	= root->fs_info->generation;
++		__entry->generation	=
++				atomic64_read(&root->fs_info->generation);
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 	),
+ 
+-- 
+1.7.11.7

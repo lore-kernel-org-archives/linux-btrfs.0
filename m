@@ -1,101 +1,297 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24822 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:24833 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751518Ab3AJLez (ORCPT
+	with ESMTP id S1751518Ab3AJLe5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 06:34:55 -0500
+	Thu, 10 Jan 2013 06:34:57 -0500
 Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r0ABYsKx030439
+	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r0ABYu4r030488
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 11:34:55 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r0ABYsN7015639
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 11:34:57 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r0ABYtBm015678
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 11:34:54 GMT
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 11:34:55 GMT
 Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r0ABYsl1022212
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 05:34:54 -0600
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r0ABYtvG018410
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 05:34:55 -0600
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 00/11 V3] add show command to the subvol sub command
-Date: Thu, 10 Jan 2013 19:41:12 +0800
-Message-Id: <1357818083-15531-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 01/11] Btrfs-progs: move open_file_or_dir() to utils.c
+Date: Thu, 10 Jan 2013 19:41:13 +0800
+Message-Id: <1357818083-15531-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1357818083-15531-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <1357818083-15531-1-git-send-email-anand.jain@oracle.com>
 
-This is an attempt to make btrfs cli more end user friendly.
-And adds show subcommand to display all known (as of now)
-information of the given subvol including its snapshot(s).
+The definition of the function open_file_or_dir() is moved from common.c
+to utils.c in order to be able to share some common code between scrub
+and the device stats in the following step. That common code uses
+open_file_or_dir(). Since open_file_or_dir() makes use of the function
+dirfd(3), the required XOPEN version was raised from 6 to 7.
 
-The below patch:
- "Btrfs-progs: accommodate different layout for printing subvol list"
-obsoletes the previosuly submitted patch
- "Btrfs-progs: make provision to print subvol list tree format"
-
-Please provide your review comments. Thanks.
-
-An example output:
-
-First list out all the subvols/snapshots using the list subcommand.
-
-btrfs su list /btrfs
-ID 256 gen 10 top level 5 path sv1
-ID 259 gen 6 top level 5 path sv1/snap
-ID 260 gen 7 top level 5 path snap
-ID 261 gen 8 top level 5 path sv2
-ID 262 gen 9 top level 5 path sv1/snap2
-ID 263 gen 10 top level 5 path sv1/snap3
-
-Then use show subcommand to know all known information about the
-given subvol.
-
-btrfs su show /btrfs/sv1
-/btrfs/sv1
-	uuid: 			508b12a5-ed2a-3942-af63-830967201070
-	Parent uuid: 		-
-	Creation time: 		2013-01-07 13:53:30
-	Object ID: 		256
-	Generation (Gen): 	10
-	Gen at creation: 	5
-	Parent: 		5
-	Top Level: 		5
-	Snapshot(s):
-				sv1/snap
-				sv1/snap2
-				sv1/snap3
-
-
-v2->v3: List snapshots of the given subvol if any.
-        Uses a more simple approach to obtain the snapshots.
-
-Anand Jain (11):
-  Btrfs-progs: move open_file_or_dir() to utils.c
-  Btrfs-progs: Move printing outside of btrfs_list_subvols
-  Btrfs-progs: add parent uuid for snapshots
-  Btrfs-progs: move struct root_info to btrfs-list.h
-  Btrfs-progs: function to get root_info of a subvol
-  Btrfs-progs: provide method to check if filter is set
-  Btrfs-progs: add method to filter snapshots by parent uuid
-  Btrfs-progs: put find_mount_root() in commands.h
-  Btrfs-progs: maintain similar case in heading prefix
-  Btrfs-progs: accommodate different layout for printing subvol list
-  Btrfs-progs: add show to display all known parameters of the given
-    subvol
-
- Makefile         |    4 +-
- btrfs-list.c     |  200 +++++++++++++++++++++++++++++++++++-------------------
- btrfs-list.h     |   60 +++++++++++++++-
- btrfsctl.c       |    7 +-
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Original-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ Makefile         |    4 ++--
+ btrfsctl.c       |    7 ++++---
  cmds-balance.c   |    1 +
  cmds-inspect.c   |    1 +
  cmds-qgroup.c    |    1 +
  cmds-quota.c     |    1 +
- cmds-subvolume.c |  172 +++++++++++++++++++++++++++++++++++++++++++++-
- commands.h       |    6 +-
- common.c         |   46 ------------
- man/btrfs.8.in   |    6 ++
- utils.c          |   30 ++++++++-
- utils.h          |    3 +
- 14 files changed, 405 insertions(+), 133 deletions(-)
+ cmds-subvolume.c |    1 +
+ commands.h       |    3 ---
+ common.c         |   46 ----------------------------------------------
+ utils.c          |   30 ++++++++++++++++++++++++++++--
+ utils.h          |    3 +++
+ 11 files changed, 42 insertions(+), 56 deletions(-)
  delete mode 100644 common.c
+
+diff --git a/Makefile b/Makefile
+index 4894903..8576d90 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,8 +41,8 @@ all: version $(progs) manpages
+ version:
+ 	bash version.sh
+ 
+-btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
+-	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
++btrfs: $(objects) btrfs.o help.o $(cmds_objects)
++	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
+ 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+ 
+ calc-size: $(objects) calc-size.o
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 518684c..049a5f3 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -63,7 +63,7 @@ static void print_usage(void)
+ 	exit(1);
+ }
+ 
+-static int open_file_or_dir(const char *fname)
++static int btrfsctl_open_file_or_dir(const char *fname)
+ {
+ 	int ret;
+ 	struct stat st;
+@@ -91,6 +91,7 @@ static int open_file_or_dir(const char *fname)
+ 	}
+ 	return fd;
+ }
++
+ int main(int ac, char **av)
+ {
+ 	char *fname = NULL;
+@@ -128,7 +129,7 @@ int main(int ac, char **av)
+ 			snap_location = strdup(fullpath);
+ 			snap_location = dirname(snap_location);
+ 
+-			snap_fd = open_file_or_dir(snap_location);
++			snap_fd = btrfsctl_open_file_or_dir(snap_location);
+ 
+ 			name = strdup(fullpath);
+ 			name = basename(name);
+@@ -238,7 +239,7 @@ int main(int ac, char **av)
+ 		}
+ 		name = fname;
+ 	 } else {
+-		fd = open_file_or_dir(fname);
++		fd = btrfsctl_open_file_or_dir(fname);
+ 	 }
+ 
+ 	if (name) {
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 38a7426..6268b61 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -28,6 +28,7 @@
+ #include "volumes.h"
+ 
+ #include "commands.h"
++#include "utils.h"
+ 
+ static const char * const balance_cmd_group_usage[] = {
+ 	"btrfs [filesystem] balance <command> [options] <path>",
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index edabff5..79e069b 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -22,6 +22,7 @@
+ 
+ #include "kerncompat.h"
+ #include "ioctl.h"
++#include "utils.h"
+ 
+ #include "commands.h"
+ #include "btrfs-list.h"
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 1525c11..cafc284 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -24,6 +24,7 @@
+ #include "ioctl.h"
+ 
+ #include "commands.h"
++#include "utils.h"
+ 
+ static const char * const qgroup_cmd_group_usage[] = {
+ 	"btrfs qgroup <command> [options] <path>",
+diff --git a/cmds-quota.c b/cmds-quota.c
+index cf9ad97..8481514 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -23,6 +23,7 @@
+ #include "ioctl.h"
+ 
+ #include "commands.h"
++#include "utils.h"
+ 
+ static const char * const quota_cmd_group_usage[] = {
+ 	"btrfs quota <command> [options] <path>",
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index ac39f7b..e3cdb1e 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -32,6 +32,7 @@
+ #include "ctree.h"
+ #include "commands.h"
+ #include "btrfs-list.h"
++#include "utils.h"
+ 
+ static const char * const subvolume_cmd_group_usage[] = {
+ 	"btrfs subvolume <command> <args>",
+diff --git a/commands.h b/commands.h
+index bb6d2dd..8114a73 100644
+--- a/commands.h
++++ b/commands.h
+@@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
+ 
+ void help_command_group(const struct cmd_group *grp, int argc, char **argv);
+ 
+-/* common.c */
+-int open_file_or_dir(const char *fname);
+-
+ extern const struct cmd_group subvolume_cmd_group;
+ extern const struct cmd_group filesystem_cmd_group;
+ extern const struct cmd_group balance_cmd_group;
+diff --git a/common.c b/common.c
+deleted file mode 100644
+index 03f6570..0000000
+--- a/common.c
++++ /dev/null
+@@ -1,46 +0,0 @@
+-/*
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <dirent.h>
+-#include <fcntl.h>
+-
+-int open_file_or_dir(const char *fname)
+-{
+-	int ret;
+-	struct stat st;
+-	DIR *dirstream;
+-	int fd;
+-
+-	ret = stat(fname, &st);
+-	if (ret < 0) {
+-		return -1;
+-	}
+-	if (S_ISDIR(st.st_mode)) {
+-		dirstream = opendir(fname);
+-		if (!dirstream) {
+-			return -2;
+-		}
+-		fd = dirfd(dirstream);
+-	} else {
+-		fd = open(fname, O_RDWR);
+-	}
+-	if (fd < 0) {
+-		return -3;
+-	}
+-	return fd;
+-}
+diff --git a/utils.c b/utils.c
+index 205e667..774f81d 100644
+--- a/utils.c
++++ b/utils.c
+@@ -16,8 +16,9 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
+-#define _XOPEN_SOURCE 600
+-#define __USE_XOPEN2K
++#define _XOPEN_SOURCE 700
++#define __USE_XOPEN2K8
++#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #ifndef __CHECKER__
+@@ -1220,3 +1221,28 @@ scan_again:
+ 	return 0;
+ }
+ 
++int open_file_or_dir(const char *fname)
++{
++	int ret;
++	struct stat st;
++	DIR *dirstream;
++	int fd;
++
++	ret = stat(fname, &st);
++	if (ret < 0) {
++		return -1;
++	}
++	if (S_ISDIR(st.st_mode)) {
++		dirstream = opendir(fname);
++		if (!dirstream) {
++			return -2;
++		}
++		fd = dirfd(dirstream);
++	} else {
++		fd = open(fname, O_RDWR);
++	}
++	if (fd < 0) {
++		return -3;
++	}
++	return fd;
++}
+diff --git a/utils.h b/utils.h
+index 3a0368b..6975f10 100644
+--- a/utils.h
++++ b/utils.h
+@@ -19,6 +19,8 @@
+ #ifndef __UTILS__
+ #define __UTILS__
+ 
++#include "ctree.h"
++
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+@@ -46,4 +48,5 @@ int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ 
+ int btrfs_scan_block_devices(int run_ioctl);
++int open_file_or_dir(const char *fname);
+ #endif
+-- 
+1.7.1
 

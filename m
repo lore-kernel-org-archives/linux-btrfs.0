@@ -1,36 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:52902 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932224Ab3AJAiv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2013 19:38:51 -0500
-Received: from athena.localnet (unknown [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id D98CE16F136
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2013 11:38:48 +1100 (EST)
-From: Russell Coker <russell+btrfs@coker.com.au>
-Reply-To: russell+btrfs@coker.com.au
-To: "linux-btrfs@vger.kernel.org list" <linux-btrfs@vger.kernel.org>
-Subject: 2 errors on scrub
-Date: Thu, 10 Jan 2013 11:38:45 +1100
+Received: from cn.fujitsu.com ([222.73.24.84]:14297 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S932720Ab3AJDXk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Jan 2013 22:23:40 -0500
+Message-ID: <50EE345F.1090600@cn.fujitsu.com>
+Date: Thu, 10 Jan 2013 11:24:15 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Message-Id: <201301101138.45428.russell+btrfs@coker.com.au>
+To: dsterba@suse.cz
+CC: Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Ext4 <linux-ext4@vger.kernel.org>,
+        Christoph Hellwig <hch@infradead.org>,
+        Kamal Mostafa <kamal@canonical.com>, Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH RESEND] vfs: re-implement writeback_inodes_sb(_nr)_if_idle()
+ and rename them
+References: <50D2E3DF.4010105@cn.fujitsu.com> <20121228143338.GW14116@twin.jikos.cz>
+In-Reply-To: <20121228143338.GW14116@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The below is from a system running the Debian kernel 3.2.0-4-amd64 on a 120G 
-Intel SSD.  What would these 2 errors be?
+On Fri, 28 Dec 2012 15:33:38 +0100, David Sterba wrote:
+> On Thu, Dec 20, 2012 at 06:09:35PM +0800, Miao Xie wrote:
+>> --- a/fs/fs-writeback.c
+>> +++ b/fs/fs-writeback.c
+>> @@ -1314,7 +1314,6 @@ void writeback_inodes_sb_nr(struct super_block *sb,
+>>  	bdi_queue_work(sb->s_bdi, &work);
+>>  	wait_for_completion(&done);
+>>  }
+>> -EXPORT_SYMBOL(writeback_inodes_sb_nr);
+> 
+> Why do you remove the export? writeback_inodes_sb is exported as well.
 
-scrub device /dev/disk/by-uuid/7939c405-c656-4e85-a6a0-29f17be09585 (id 1) 
-done
-        scrub started at Thu Jan 10 06:00:02 2013 and finished after 295 
-seconds
-        total bytes scrubbed: 25.42GB with 2 errors
-        error details: super=2
-        corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
+As you said below, there is no user now.
 
-I know you all recommend later kernels, I'm upgrading things as fast as I can.
+> Originally the _nr variant has been introduced for btrfs
+> (3259f8bed2f0f57c2fdcdac1b510c3fa319ef97e) and there are no other users
+> now, so from that point it would make sense. From the other side, the
+> change is not strictly necessary for this patch and keeps the writeback
+> API a bit more flexible. I vote for keeping it.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Maybe you are right, I'll send out a new one.
+
+> Otherwise (for the btrfs part),
+> Tested-by: David Sterba <dsterba@suse.cz>
+
+Thanks for your test and review.
+Miao
+

@@ -1,182 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54113 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753530Ab3AJR5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 12:57:37 -0500
-Date: Thu, 10 Jan 2013 18:57:35 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 10/11] Btrfs: use bit operation for ->fs_state
-Message-ID: <20130110175735.GI20089@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <50EEB96F.6040706@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:34798 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753758Ab3AKIrZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Jan 2013 03:47:25 -0500
+Date: Fri, 11 Jan 2013 16:45:06 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Zach Brown <zab@zabbo.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: add leak debug for extent map
+Message-ID: <20130111084504.GA2008@liubo>
+Reply-To: bo.li.liu@oracle.com
+References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
+ <20130108200734.GD12288@lenny.home.zabbo.net>
+ <20130110020517.GA4456@liubo>
+ <20130110170634.GF12288@lenny.home.zabbo.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50EEB96F.6040706@cn.fujitsu.com>
+In-Reply-To: <20130110170634.GF12288@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 08:51:59PM +0800, Miao Xie wrote:
-> There is no lock to protect fs_info->fs_state, it will introduce some problems,
-> such as the value may be covered by the other task when several tasks modify
-> it. Now we use bit operation for it to fix the above problem.
+On Thu, Jan 10, 2013 at 09:06:34AM -0800, Zach Brown wrote:
+> > > Hmm, I guess it's cool to get the allocation-specific decoding which you
+> > > don't get from the generic kernel leak tracking?
+> 
+> I mean that by doing this in btrfs, instead of doing it generically in
+> the allocator, you get specific knowledge that btrfs knows about the
+> allocated objects:
+> 
+> > > > +		printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu flags %llu refs %d in tree %d compress %d\n",
+> > > > +			em->start, em->len, em->block_start, em->flags, atomic_read(&em->refs), em->in_tree, em->compress_type);
+> 
+> That's valuable.  I understand that it's quick and easy to implement
+> this in btrfs.  It's hard to argue with working code.
+> 
+> But the right way to do this would be to add a callback that
+> kmem_cache_destroy() can use to generate debugging output for the
+> allocated objects.  Maybe you have a registration function that sets the
+> callback on the slab?  Slab already has tracking of allocated objects so
+> you could always have this leak output on without runtime overhead.
+> 
+> And, of course, other callers can easy also get this functionality
+> instead of having to mess around with all the stuff btrfs did: ifdefs,
+> locks, and lists.
+> 
+> - z
 
-Can you please describe in more detail how does that happen and to what
-problems it leads?
+Yeah, adding a callback here is really a more graceful way!
+
+But after flipping slab code, I find that another callback will disable
+merging slabs when allocating a slab, so I'm not sure if it worth doing so...
+
+What do you think about it?
 
 thanks,
-david
-
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/ctree.h       | 4 +++-
->  fs/btrfs/disk-io.c     | 5 +++--
->  fs/btrfs/file.c        | 2 +-
->  fs/btrfs/scrub.c       | 2 +-
->  fs/btrfs/super.c       | 4 ++--
->  fs/btrfs/transaction.c | 9 ++++-----
->  6 files changed, 14 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index c95b539..c34e36e 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -338,7 +338,9 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
->  /*
->   * File system states
->   */
-> +#define BTRFS_FS_STATE_ERROR		0
->  
-> +/* Super block flags */
->  /* Errors detected */
->  #define BTRFS_SUPER_FLAG_ERROR		(1ULL << 2)
->  
-> @@ -1540,7 +1542,7 @@ struct btrfs_fs_info {
->  	u64 qgroup_seq;
->  
->  	/* filesystem state */
-> -	u64 fs_state;
-> +	unsigned long fs_state;
->  
->  	struct btrfs_delayed_root *delayed_root;
->  
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index cf03a45..d06e50c 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2196,7 +2196,8 @@ int open_ctree(struct super_block *sb,
->  		goto fail_alloc;
->  
->  	/* check FS state, whether FS is broken. */
-> -	fs_info->fs_state |= btrfs_super_flags(disk_super);
-> +	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_ERROR)
-> +		set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
->  
->  	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
->  	if (ret) {
-> @@ -3354,7 +3355,7 @@ int close_ctree(struct btrfs_root *root)
->  			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
->  	}
->  
-> -	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
->  		btrfs_error_commit_super(root);
->  
->  	btrfs_put_block_group_cache(fs_info);
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 3e9fa0e..ec87b69 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1531,7 +1531,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
->  	 * although we have opened a file as writable, we have
->  	 * to stop this write operation to ensure FS consistency.
->  	 */
-> -	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state)) {
->  		mutex_unlock(&inode->i_mutex);
->  		err = -EROFS;
->  		goto out;
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index af0b566..2e91b56 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -2700,7 +2700,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
->  	int	ret;
->  	struct btrfs_root *root = sctx->dev_root;
->  
-> -	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
->  		return -EIO;
->  
->  	gen = atomic64_read(&root->fs_info->last_trans_committed);
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 6f0524d..f714379 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -98,7 +98,7 @@ static void __save_error_info(struct btrfs_fs_info *fs_info)
->  	 * today we only save the error info into ram.  Long term we'll
->  	 * also send it down to the disk
->  	 */
-> -	fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
-> +	set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
->  }
->  
->  static void save_error_info(struct btrfs_fs_info *fs_info)
-> @@ -114,7 +114,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
->  	if (sb->s_flags & MS_RDONLY)
->  		return;
->  
-> -	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
->  		sb->s_flags |= MS_RDONLY;
->  		printk(KERN_INFO "btrfs is forced readonly\n");
->  		/*
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 7999bf8..a950d48 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -62,7 +62,7 @@ static noinline int join_transaction(struct btrfs_root *root, int type)
->  	spin_lock(&fs_info->trans_lock);
->  loop:
->  	/* The file system has been taken offline. No new transactions. */
-> -	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
->  		spin_unlock(&fs_info->trans_lock);
->  		return -EROFS;
->  	}
-> @@ -114,7 +114,7 @@ loop:
->  		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
->  		cur_trans = fs_info->running_transaction;
->  		goto loop;
-> -	} else if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-> +	} else if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
->  		spin_unlock(&fs_info->trans_lock);
->  		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
->  		return -EROFS;
-> @@ -302,7 +302,7 @@ start_transaction(struct btrfs_root *root, u64 num_items, int type,
->  	int ret;
->  	u64 qgroup_reserved = 0;
->  
-> -	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
-> +	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
->  		return ERR_PTR(-EROFS);
->  
->  	if (current->journal_info) {
-> @@ -635,9 +635,8 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  		btrfs_run_delayed_iputs(root);
->  
->  	if (trans->aborted ||
-> -	    root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-> +	    test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
->  		err = -EIO;
-> -	}
->  	assert_qgroups_uptodate(trans);
->  
->  	memset(trans, 0, sizeof(*trans));
-> -- 
-> 1.7.11.7
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+liubo

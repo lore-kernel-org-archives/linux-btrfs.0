@@ -1,49 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpq3.gn.mail.iss.as9143.net ([212.54.34.166]:43451 "EHLO
-	smtpq3.gn.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753377Ab3AKTuk (ORCPT
+Received: from mail-ob0-f172.google.com ([209.85.214.172]:37561 "EHLO
+	mail-ob0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753945Ab3AKUTa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jan 2013 14:50:40 -0500
-Received: from [212.54.34.133] (helo=smtp2.gn.mail.iss.as9143.net)
-	by smtpq3.gn.mail.iss.as9143.net with esmtp (Exim 4.71)
-	(envelope-from <r.wobben@home.nl>)
-	id 1TtkAP-0002L0-7s
-	for linux-btrfs@vger.kernel.org; Fri, 11 Jan 2013 20:21:25 +0100
-Received: from 524a811f.cm-4-3c.dynamic.ziggo.nl ([82.74.129.31] helo=[127.0.0.1])
-	by smtp2.gn.mail.iss.as9143.net with esmtpsa (TLS1.0:DHE_RSA_AES_256_CBC_SHA1:32)
-	(Exim 4.71)
-	(envelope-from <r.wobben@home.nl>)
-	id 1TtkAP-00074x-2D
-	for linux-btrfs@vger.kernel.org; Fri, 11 Jan 2013 20:21:25 +0100
-Message-ID: <50F06639.6030409@home.nl>
-Date: Fri, 11 Jan 2013 20:21:29 +0100
-From: Roelof Wobben <r.wobben@home.nl>
+	Fri, 11 Jan 2013 15:19:30 -0500
+Received: by mail-ob0-f172.google.com with SMTP id za17so2153803obc.31
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 12:19:29 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: partition question
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CAHX0HSZGuE_N1x3DTRPcQZ66B4Sqs7T9sj33=pyVs64wQSWwtw@mail.gmail.com>
+References: <CAHX0HSbVxW0HvvXi-LXPqGUDu5AZgNRJssMeWRp_MetvVc_gwQ@mail.gmail.com>
+	<CAHX0HSZGuE_N1x3DTRPcQZ66B4Sqs7T9sj33=pyVs64wQSWwtw@mail.gmail.com>
+Date: Fri, 11 Jan 2013 14:19:29 -0600
+Message-ID: <CAKcLGm8TnSE1mcpRNt5t-u52bW2ZV_PViBHGAgM52FAy=B3jqA@mail.gmail.com>
+Subject: Re: Errors not found by btrfsck or scrub
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: chris.r.carlin@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Fri, Jan 11, 2013 at 12:13 PM, Chris Carlin <chrisrcarlin@gmail.com> wrote:
+> I have a week-old filesystem that is reported clean by btrfsck and
+> scrub, but that fails under operations ranging from du to sync and
+> umount (but no failures if mounted readonly).
+>
+> My problem sounds similar to a few other reports (e.g. TM's in
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/22014 ) that
+> seem to hint at problems with full metadata. My df shows:
+>
 
-I have one thing I think I don't really understand about btrfs,
+I know this advice will run counter to what everyone else is saying,
+but I've had some luck booting with an older kernel (such as 3.4 or
+3.5) just long enough to get some more Metadata allocated.
 
-Normally if I use ext4 I make a  3 partitions for my distro.
-
-one for boot about 1G
-one for home about 30G
-one for root for the rest of my 100G.
-
-Now I wonder if I want to do the same with btrfs.
-
-Can I do the same so make 3 partitions with btrfs or can I better make 1 
-partiton of 100G and make the /boot /home and  / subvolumes of the big 
-partitiion.
-
-Can one of you btfrs gurus shine a light of this matter ?
-
-Regards,
-
-Roelof Wobben
-
+I would also caution you to back up your data.  I've had a similar
+issue, and that file system soon showed additional corruptions.

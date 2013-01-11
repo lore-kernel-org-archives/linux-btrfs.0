@@ -1,65 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:52948 "EHLO mx2.fusionio.com"
+Received: from cantor2.suse.de ([195.135.220.15]:38379 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754019Ab3AKOtz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jan 2013 09:49:55 -0500
-Date: Fri, 11 Jan 2013 09:49:52 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1
- (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
-Message-ID: <20130111144952.GA1876@localhost.localdomain>
-References: <20130108164958.GA2044@merlins.org>
- <20130108182541.GE2389@localhost.localdomain>
- <20130108184603.GG2044@merlins.org>
- <20130110162009.GF16943@merlins.org>
+	id S1753704Ab3AKPZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Jan 2013 10:25:19 -0500
+Date: Fri, 11 Jan 2013 16:25:16 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
+Message-ID: <20130111152516.GK20089@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
+ <20130107162050.GJ20089@twin.jikos.cz>
+ <20130108024637.GA1916@liubo>
+ <20130108083053.GD3763@twin.jikos.cz>
+ <20130108172627.GP20089@twin.jikos.cz>
+ <20130109043443.GA4527@liubo>
+ <20130109115025.GQ20089@twin.jikos.cz>
+ <20130110021747.GB4456@liubo>
+ <20130110110458.GA20089@twin.jikos.cz>
+ <20130110133436.GB3616@liubo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130110162009.GF16943@merlins.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130110133436.GB3616@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 09:20:09AM -0700, Marc MERLIN wrote:
-> On Tue, Jan 08, 2013 at 10:46:03AM -0800, Marc MERLIN wrote:
-> > On Tue, Jan 08, 2013 at 01:25:41PM -0500, Josef Bacik wrote:
-> > > On Tue, Jan 08, 2013 at 09:49:58AM -0700, Marc MERLIN wrote:
-> > > > Unfortunately my laptop deadlocks from time to time, and too often
-> > > > it triggers this bug in btrfs which is quite hard to recover from.
-> > > > 
-> > > 
-> > > You are getting bad tree blocks which really isn't the tree logs fault.  Can you
-> > > scrub your file system and make sure there's not some sort of latent issue going
-> > > on?  And if you have problems again please try btrfs-next as I've fixed a few
-> > > log replay bugs recently.  Thanks,
-> > 
-> > Thanks for your answer.
-> > 
-> > I've only read about scrub in a mirorr situation, as per
-> > https://blogs.oracle.com/wim/entry/btrfs_scrub_go_fix_corruptions
-> > 
-> > It's a single device here, so if there are problems, I'm not sure how scrub
-> > will be able to fix them.
-> > Would you like me to go ahead and do it anyway?
-> > 
+On Thu, Jan 10, 2013 at 09:34:37PM +0800, Liu Bo wrote:
+> On Thu, Jan 10, 2013 at 12:04:58PM +0100, David Sterba wrote:
+> > This strongly suggests that the warning is connected to the fixes.
+> 
+> Seems that I'm not able to reproduce the warning in running 013,
+> maybe you can revert the two fixes and see if it still warns?
 
-Well its mostly to verify you have some sort of latent corruption sitting
-around.  If you have DUP it will be able to fix it, but if you don't we'll at
-least know something else is wrong and we can try and work out if fsck will fix
-it.
+I'm not running just 013, but the full xfstests repeatedly with varying
+options, so this should be taken into account.
 
-> > And before I further remove potential debug state
-> > 1) what about this problem?
-> > btrfs-image: btrfs-image.c:518: create_metadump: Assertion `!(ret < 0)'
-> > failed.
-> > Aborted
+> I don't think the fixes has anything done with the warning...
 
-Probably just related to whatever corruption it is you are seeing.
+The warning does not show during other tests where the fixes are not
+applied (currently btrfs-next reproducing the csum problems).
 
-> > 
-> > 2) anything else you want me to get off my filesystem before I scrub it?
-
-Nope, hopefully it should be non-destructive.  Thanks,
-
-Josef
+david

@@ -1,38 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta03.emeryville.ca.mail.comcast.net ([76.96.30.32]:39444 "EHLO
-	qmta03.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754674Ab3AKW1d convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jan 2013 17:27:33 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: Errors not found by btrfsck or scrub
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAHX0HSby06a7x9iDgvRwtMJbcysQGkFYxeQf0XTM35rRHp=m2w@mail.gmail.com>
-Date: Fri, 11 Jan 2013 15:27:30 -0700
+Received: from mail-vb0-f53.google.com ([209.85.212.53]:40439 "EHLO
+	mail-vb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754762Ab3AKW3X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Jan 2013 17:29:23 -0500
+Received: by mail-vb0-f53.google.com with SMTP id b23so1941554vbz.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 14:29:22 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: chris.r.carlin@gmail.com
+In-Reply-To: <50F06639.6030409@home.nl>
+References: <50F06639.6030409@home.nl>
+From: Chris Carlin <chrisrcarlin@gmail.com>
+Date: Fri, 11 Jan 2013 17:29:02 -0500
+Message-ID: <CAHX0HSZoCpuOiOdNmLpU8LBtTXv=A1ddNdovtrUTGcP_wgvPHA@mail.gmail.com>
+Subject: Re: partition question
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <D6893685-FF9E-43CE-817A-6799ED518FAC@colorremedies.com>
-References: <CAHX0HSbVxW0HvvXi-LXPqGUDu5AZgNRJssMeWRp_MetvVc_gwQ@mail.gmail.com> <CAHX0HSZGuE_N1x3DTRPcQZ66B4Sqs7T9sj33=pyVs64wQSWwtw@mail.gmail.com> <20130111185449.GU19051@carfax.org.uk> <CAHX0HSby06a7x9iDgvRwtMJbcysQGkFYxeQf0XTM35rRHp=m2w@mail.gmail.com>
-To: chris.r.carlin@gmail.com, Chris Carlin <chrisrcarlin@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jan 11, 2013 at 2:21 PM, Roelof Wobben <r.wobben@home.nl> wrote:
+> Hello,
+>
+> I have one thing I think I don't really understand about btrfs,
+>
+> Normally if I use ext4 I make a  3 partitions for my distro.
+>
+> one for boot about 1G
+> one for home about 30G
+> one for root for the rest of my 100G.
+>
+> Now I wonder if I want to do the same with btrfs.
+>
+> Can I do the same so make 3 partitions with btrfs or can I better make 1
+> partiton of 100G and make the /boot /home and  / subvolumes of the big
+> partitiion.
 
-On Jan 11, 2013, at 2:57 PM, Chris Carlin <chrisrcarlin@gmail.com> wrote:
+Well. what is your motivation for doing it that way in the ext4?
 
-> Thanks for the response, Hugo!
-> 
-> This hard drive is not production, so I can afford to tinker with it
-> if it helps you guys track down anything interesting. Of course, I'd
-> prefer to restore it rather than wipe it…
+If you're looking to be able to selectively mount sections of your
+filesystem, then sure, subvolumes might work, but a lot of people
+divide partitions this way so that they'd be independent for purposes
+of reliability. Subvolumes of one btrfs partition wouldn't provide
+that independence.
 
-What is the result for?
-
-btrfs fi show
-
-I see from the first post that it must be two disks/partitions, since it's data raid0, and metadata partially raid1. And also it might be vaguely useful to see a conventional df or df -h.
-
-Based on some experiences I've had, and also seen on the list recently, you might be able to back out of this situation by adding another device to the volume. It almost doesn't matter how big it is. It could be a small partition on another disk, or even a USB stick. I can't tell you how much space. It might only need a few MB, but I'd give it what you can. And then see if you can redo the balance. But it sounds to me like the file system is very close to full, at least it can't allocate more space for metadata it seems.
-
-
-Chris Murphy
+~Chris

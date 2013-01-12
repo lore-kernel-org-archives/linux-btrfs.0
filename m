@@ -1,71 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpq3.gn.mail.iss.as9143.net ([212.54.34.166]:39605 "EHLO
-	smtpq3.gn.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752941Ab3ALIkm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Jan 2013 03:40:42 -0500
-Received: from [212.54.34.134] (helo=smtp3.gn.mail.iss.as9143.net)
-	by smtpq3.gn.mail.iss.as9143.net with esmtp (Exim 4.71)
-	(envelope-from <r.wobben@home.nl>)
-	id 1Ttwdt-0005OW-K3
-	for linux-btrfs@vger.kernel.org; Sat, 12 Jan 2013 09:40:41 +0100
-Received: from 524a811f.cm-4-3c.dynamic.ziggo.nl ([82.74.129.31] helo=[127.0.0.1])
-	by smtp3.gn.mail.iss.as9143.net with esmtpsa (TLS1.0:DHE_RSA_AES_256_CBC_SHA1:32)
-	(Exim 4.71)
-	(envelope-from <r.wobben@home.nl>)
-	id 1Ttwdt-0001IP-As
-	for linux-btrfs@vger.kernel.org; Sat, 12 Jan 2013 09:40:41 +0100
-Message-ID: <50F1218C.4000701@home.nl>
-Date: Sat, 12 Jan 2013 09:40:44 +0100
-From: Roelof Wobben <r.wobben@home.nl>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: partition question
-References: <50F06639.6030409@home.nl> <818D716E-CEFF-4170-B470-574D6E98375E@colorremedies.com> <20130111223845.GV19051@carfax.org.uk>
-In-Reply-To: <20130111223845.GV19051@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from len.romanrm.net ([176.31.121.172]:33657 "EHLO len.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751600Ab3ALLGt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 12 Jan 2013 06:06:49 -0500
+Date: Sat, 12 Jan 2013 17:06:45 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: Rick Liu <rickliu@broadcom.com>,
+        Joshua =?UTF-8?B?U2Now7xsZXI=?= <joshua.schueler@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: how to resize (grow) device partition of a multi-device BTRFS
+ filesystem?
+Message-ID: <20130112170645.3214f437@natsu>
+In-Reply-To: <20130112022848.GX19051@carfax.org.uk>
+References: <7D0754FFADBD2D4785C1D233C497C47B1BCD81D0@SJEXCHMB06.corp.ad.broadcom.com>
+	<20130112022848.GX19051@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/EfT00rj=/gjklb2PYr/Q6v6"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Op 11-1-2013 23:38, Hugo Mills schreef:
-> On Fri, Jan 11, 2013 at 03:34:25PM -0700, Chris Murphy wrote:
->> On Jan 11, 2013, at 12:21 PM, Roelof Wobben <r.wobben@home.nl> wrote:
->>> I have one thing I think I don't really understand about btrfs,
->>>
->>> Normally if I use ext4 I make a  3 partitions for my distro.
->>>
->>> one for boot about 1G
->>> one for home about 30G
->>> one for root for the rest of my 100G.
->>>
->>> Now I wonder if I want to do the same with btrfs.
->>>
->>> Can I do the same so make 3 partitions with btrfs or can I better make 1 partiton of 100G and make the /boot /home and  / subvolumes of the big partitiion.
->>>
->>> Can one of you btfrs gurus shine a light of this matter ?
->> You can make one Btrfs volume with /boot, /home, and / as
->> subvolumes. GRUB2 2.00 can boot this arrangement, and that's the
->> first caveat which is that many distributions are using older
->> versions of GRUB2. It even works with Btrfs data/metadata profiles
->> single, dup; and multiple device raid 0, 1, 10; and compression
->> zlib, and lzo.
->>
->> Swap still needs to be on a separate partition, as I don't think
->> Btrfs is supporting swapfiles yet still, but maybe someone else can
->> comment on the status of that.
->     I don't know this area of the code at all well, but as I understand
-> it, there's been some work in the kernel (swap over NFS) which lays
-> down some of the underlying infrastructure we'd need to support
-> swapfiles on btrfs, but we don't have anything beyond that. I don't
-> know of anyone working on it, either.
->
->     Hugo.
->
+--Sig_/EfT00rj=/gjklb2PYr/Q6v6
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Im testing Crux where I must make a custom partiion scheme before I can 
-start the installer.
-And Im making this scheme before because people told me that was the 
-best way to work.
+On Sat, 12 Jan 2013 02:28:49 +0000
+Hugo Mills <hugo@carfax.org.uk> wrote:
 
-Roelof
+> As long as the start of the partition isn't changed, deleting and
+> resizing in fdisk isn't damaging. It's just... slightly disconcerting.
+> :)
 
+For that reason I very much prefer the cfdisk implementation from the
+gnu-fdisk package. It has an option to really resize the partition. While
+resizing the filesystem within it will usually fail, the dialog goes like t=
+his:
+
+Select the patition, click "Resize".
+
+"Failed to resize filesystem, change partition size (EXPERT)?" - "Yes"
+
+"Start location? [Fixed start], [Specify different]?" - "Fixed start"
+
+"Partition size? [Max is nnnnMB]" - "nnnnMB".
+
+Done.
+
+--=20
+With respect,
+Roman
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
+
+--Sig_/EfT00rj=/gjklb2PYr/Q6v6
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlDxQ8UACgkQTLKSvz+PZwisfgCfb4KlxcOOkAQSztyImNzhPbCr
+FbAAn0YQeK5DSRK6YJIT2fg/QJEq7v5J
+=h4ii
+-----END PGP SIGNATURE-----
+
+--Sig_/EfT00rj=/gjklb2PYr/Q6v6--

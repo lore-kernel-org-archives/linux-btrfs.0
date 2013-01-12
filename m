@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:42495
-	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755212Ab3ALDLW convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jan 2013 22:11:22 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: how to resize (grow) device partition of a multi-device BTRFS filesystem?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130112022848.GX19051@carfax.org.uk>
-Date: Fri, 11 Jan 2013 20:11:19 -0700
-Message-Id: <91428FEA-7325-4B98-AF07-2B3FB072421E@colorremedies.com>
-References: <7D0754FFADBD2D4785C1D233C497C47B1BCD81D0@SJEXCHMB06.corp.ad.broadcom.com> <20130112022848.GX19051@carfax.org.uk>
-To: "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>
+Received: from mail-vc0-f170.google.com ([209.85.220.170]:57265 "EHLO
+	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753656Ab3ALEnr convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Jan 2013 23:43:47 -0500
+Received: by mail-vc0-f170.google.com with SMTP id fl11so2109175vcb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 20:43:47 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: chris.r.carlin@gmail.com
+In-Reply-To: <D6893685-FF9E-43CE-817A-6799ED518FAC@colorremedies.com>
+References: <CAHX0HSbVxW0HvvXi-LXPqGUDu5AZgNRJssMeWRp_MetvVc_gwQ@mail.gmail.com>
+ <CAHX0HSZGuE_N1x3DTRPcQZ66B4Sqs7T9sj33=pyVs64wQSWwtw@mail.gmail.com>
+ <20130111185449.GU19051@carfax.org.uk> <CAHX0HSby06a7x9iDgvRwtMJbcysQGkFYxeQf0XTM35rRHp=m2w@mail.gmail.com>
+ <D6893685-FF9E-43CE-817A-6799ED518FAC@colorremedies.com>
+From: Chris Carlin <chrisrcarlin@gmail.com>
+Date: Fri, 11 Jan 2013 23:43:25 -0500
+Message-ID: <CAHX0HSbWj6vywv56x32F6EyGkh_yt2WkZOXcEpUn4P0pmxoANw@mail.gmail.com>
+Subject: Re: Errors not found by btrfsck or scrub
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> Based on some experiences I've had, and also seen on the list recently, you might be able to back out of this situation by adding another device to the volume. It almost doesn't matter how big it is. It could be a small partition on another disk, or even a USB stick. I can't tell you how much space. It might only need a few MB, but I'd give it what you can. And then see if you can redo the balance. But it sounds to me like the file system is very close to full, at least it can't allocate more space for metadata it seems.
 
-On Jan 11, 2013, at 7:28 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+Aha! Worked fine.
 
-> On Sat, Jan 12, 2013 at 02:18:44AM +0000, Rick Liu wrote:
->>> 
->>>   You'll need to use something like fdisk or cfdisk to resize the
->>> partition first. With (c)fdisk, that involves deleting and recreating
->>> the partition with the same starting point. (fdisk gives you more
->>> control here). As with most low-level FS-resizing tools, btrfs fi
->>> resize doesn't attempt to change the size of the underlying device.
->>> 
->>>   Hugo.
->> [Rick Liu] 
->> I see.
->> So that means unlike ext4 filesystem,
->> which I can use resize2fs on line to grow partition without losing data,
->> BTRFS must re-create partition table (fdisk) and loss data.
-> 
->   No, with resize2fs, you also need to resize the partition, using
-> the same process. Deleting and enlarging a partition doesn't change
-> any of the data in it. resize2fs doesn't modify partition tables. (Or
-> at least, didn't the last time I really looked at it in detail).
+I added a temporary 10GB device, and everything instantly started
+working. After I ran another balance command with -dusage=5, I deleted
+the new device and everything's fine with the original two devices.
+The temporary device was barely touched by the filesystem, if it was
+touched at all.
 
-It's does not. To grow you must first change the size of the container: the partition, the LV, or array device. Then you can resize the file system. It's the same with XFS, and NTFS. I'm only aware of Apple's diskutil resizevolume command that resizes the flavors of HFS+ and at the same time sets the new end value for the partition entry.
+A weird thing is "btrfs fi show" showed tens of gigs of unallocated
+space the whole time.
 
-Chris Murphy
+Anyway, so for anyone who might have a similar problem in the future,
+giving btrfs a little temporary scratch space did the trick.
+
+~Chris

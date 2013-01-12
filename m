@@ -1,84 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53164 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753416Ab3AJRiC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jan 2013 12:38:02 -0500
-Date: Thu, 10 Jan 2013 18:38:00 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 11/11] Btrfs: Add ACCESS_ONCE() to transaction->abort
- accesses
-Message-ID: <20130110173800.GH20089@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <50EEB9AF.2010301@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from qmta05.emeryville.ca.mail.comcast.net ([76.96.30.48]:52008 "EHLO
+	qmta05.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752026Ab3ALFu7 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 12 Jan 2013 00:50:59 -0500
+From: Chris Murphy <lists@colorremedies.com>
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50EEB9AF.2010301@cn.fujitsu.com>
+Subject: obscure out of space, df and fi df are way off
+Message-Id: <A2AC222E-2F40-4B0A-BFA7-C9D2D3A5B193@colorremedies.com>
+Date: Fri, 11 Jan 2013 22:50:56 -0700
+To: "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 10, 2013 at 08:53:03PM +0800, Miao Xie wrote:
-> We may access and update transaction->abort on the different CPUs without lock,
-> so we need ACCESS_ONCE() wrapper to make sure we can get the new value.
+Very low priority.
+No user data at risk.
+8GB virtual disk being installed to, and the installer is puking. I'm trying to figure out why.
 
-ACCESS_ONCE is not the right synchronization primitive to be used here,
-it is a way to force compiler to generate a single access to the data
-through out the varaible scope, this does not have impact on inter-cpu
-synchronization. This does not give a guarantee of the latest value of
-abort.
+I first get an rsync error 12, followed by the installer crashing. What's interesting is this, deleting irrelevant source file systems, just showing the mounts for the installed system:
 
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -267,7 +267,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
->  			     function, line, errstr);
->  		return;
->  	}
-> -	trans->transaction->aborted = errno;
-> +	ACCESS_ONCE(trans->transaction->aborted) = errno;
->  	__btrfs_std_error(root->fs_info, function, line, errno, NULL);
+[root@localhost tmp]# df
+Filesystem                 1K-blocks    Used Available Use% Mounted on
+/dev/sda3                    3746816 3193172      1564 100% /mnt/sysimage
+/dev/sda1                     495844   31509    438735   7% /mnt/sysimage/boot
+/dev/sda3                    3746816 3193172      1564 100% /mnt/sysimage/home
 
-I don't think it's possible to reach 2 transaction aborts at the same
-time so that the 'aborted' value gets silently overwritten. The error
-message uses the 'errno' value passed to the function and thus this will
-be visible in the syslog. I don't see a better way how to decide which
-of the multiple 'aborted' values should win. A non-zero will abort, all
-of them are in syslog. Enough information for further debugging.
+So there's 1.5M of free space left according to conventional df. However:
 
->  }
->  /*
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index a950d48..ee6cf27 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1468,11 +1468,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  		goto cleanup_transaction;
->  	}
->  
-> -	if (cur_trans->aborted) {
-> -		ret = cur_trans->aborted;
-> -		goto cleanup_transaction;
-> -	}
+[root@localhost tmp]# btrfs fi show
+Label: 'fedora_f18v'  uuid: 0c9b2b62-5ec1-4610-ab2f-9f00c909428a
+	Total devices 1 FS bytes used 2.87GB
+	devid    1 size 3.57GB used 3.57GB path /dev/sda3
 
-This is called early in the function and stops commit actions in case
-the transaction has been aborted. Continuing despite that does not seem
-right, the filesystem is RO already.
+[root@localhost tmp]# btrfs fi df /mnt/sysimage
+Data: total=2.69GB, used=2.69GB
+System, DUP: total=8.00MB, used=4.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=438.94MB, used=183.36MB
+Metadata: total=8.00MB, used=0.00
 
-> -
->  	/* make a pass through all the delayed refs we have so far
->  	 * any runnings procs may add more while we are here
->  	 */
-> @@ -1574,6 +1569,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	wait_event(cur_trans->writer_wait,
->  		   atomic_read(&cur_trans->num_writers) == 1);
->  
-> +	if (ACCESS_ONCE(cur_trans->aborted)) {
-> +		ret = cur_trans->aborted;
-> +		goto cleanup_transaction;
-> +	}
->  	/*
->  	 * the reloc mutex makes sure that we stop
->  	 * the balancing code from coming in and moving
+And absolutely nothing in dmesg.
+
+This is confusing. fi show says 3.57GB available and used. Whereas fi df says 2.69 available and used. So is it 3.57GB? Or is it 2.69? I suppose the simple answer is, it doesn't matter, in either case it's full. But it seems like the installer is underestimating Btrfs requirements and should be more conservative, somehow so I'd like to better understand the allocation.
+
+But then, of course, it's a pretty small file system. This is a desktop installer, not embedded system, so the use case for an 8GB virtual disk itself calls into question the test perhaps.
 
 
-david
+Chris Murphy

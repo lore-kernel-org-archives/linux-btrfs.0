@@ -1,55 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:35727 "EHLO tetsuo.zabbo.net"
+Received: from mx1.redhat.com ([209.132.183.28]:57760 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754962Ab3AHTiK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Jan 2013 14:38:10 -0500
-Received: from lenny.home.zabbo.net (unknown [192.168.242.141])
-	by tetsuo.zabbo.net (Postfix) with ESMTP id EFD4B72001F7
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2013 11:38:09 -0800 (PST)
-From: Zach Brown <zab@redhat.com>
+	id S1755058Ab3ALC5Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Jan 2013 21:57:24 -0500
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r0C2vNp2022517
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 21:57:23 -0500
+Received: from Liberator-563.local (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r0C2vMV5008681
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 21:57:23 -0500
+Message-ID: <50F0D112.3020407@redhat.com>
+Date: Fri, 11 Jan 2013 20:57:22 -0600
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix btrfs_cont_expand() freeing IS_ERR em
-Date: Tue,  8 Jan 2013 11:37:58 -0800
-Message-Id: <1357673878-25591-1-git-send-email-zab@redhat.com>
+Subject: [PATCH] btrfs: update timestamps on truncate()
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_cont_expand() tries to free an IS_ERR em as it gets an error from
-btrfs_get_extent() and breaks out of its loop.
+truncate() vs. ftruncate() differ in the VFS; truncate()
+doesn't set (ATTR_CTIME | ATTR_MTIME), and it's up to the
+fs to do the timestamp updates if the size changes.
 
-An instance of -EEXIST was reported in the wild:
-
-  https://bugzilla.redhat.com/show_bug.cgi?id=874407
-
-I have no idea if that -EEXIST is surprising, or not.  Regardless, this
-error handling should be cleaned up to handle other reasonable errors
-(ENOMEM, EIO; whatever).
-
-This seemed to be the only buggy freeing of the relatively rare IS_ERR
-em so I opted to fix the caller rather than teach free_extent_map() to
-use IS_ERR_OR_NULL().
-
-Signed-off-by: Zach Brown <zab@redhat.com>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- fs/btrfs/inode.c | 1 +
- 1 file changed, 1 insertion(+)
+
+Hm, am I breaking the rules by updating the vfs inode fields
+before the transaction starts?
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index edd30ae..0bc7bb3 100644
+index 16d9e8e..af1ab2d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3690,6 +3690,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 				block_end - cur_offset, 0);
- 		if (IS_ERR(em)) {
- 			err = PTR_ERR(em);
-+			em = NULL;
- 			break;
- 		}
- 		last_byte = min(extent_map_end(em), block_end);
--- 
-1.7.11.7
+@@ -88,7 +88,7 @@ static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
+ 	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
+ };
+ 
+-static int btrfs_setsize(struct inode *inode, loff_t newsize);
++static int btrfs_setsize(struct inode *inode, struct iattr *attr);
+ static int btrfs_truncate(struct inode *inode);
+ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+ static noinline int cow_file_range(struct inode *inode,
+@@ -3748,16 +3748,27 @@ next:
+ 	return err;
+ }
+ 
+-static int btrfs_setsize(struct inode *inode, loff_t newsize)
++static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_trans_handle *trans;
+ 	loff_t oldsize = i_size_read(inode);
++	loff_t newsize = attr->ia_size;
++	int mask = attr->ia_valid;
+ 	int ret;
+ 
+ 	if (newsize == oldsize)
+ 		return 0;
+ 
++	/*
++	 * The regular truncate() case without ATTR_CTIME and ATTR_MTIME is a
++	 * special case where we need to update the times despite not having
++	 * these flags set.  For all other operations the VFS set these flags
++	 * explicitly if it wants a timestamp update.
++	 */
++	if (newsize != oldsize && (!(mask & (ATTR_CTIME | ATTR_MTIME))))
++		inode->i_ctime = inode->i_mtime = current_fs_time(inode->i_sb);
++
+ 	if (newsize > oldsize) {
+ 		truncate_pagecache(inode, oldsize, newsize);
+ 		ret = btrfs_cont_expand(inode, oldsize, newsize);
+@@ -3805,7 +3816,7 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 		return err;
+ 
+ 	if (S_ISREG(inode->i_mode) && (attr->ia_valid & ATTR_SIZE)) {
+-		err = btrfs_setsize(inode, attr->ia_size);
++		err = btrfs_setsize(inode, attr);
+ 		if (err)
+ 			return err;
+ 	}
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

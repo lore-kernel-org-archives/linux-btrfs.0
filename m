@@ -1,49 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f47.google.com ([209.85.214.47]:58222 "EHLO
-	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754183Ab3AKXxx (ORCPT
+Received: from mms3.broadcom.com ([216.31.210.19]:3996 "EHLO mms3.broadcom.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755262Ab3ALA37 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jan 2013 18:53:53 -0500
-Received: by mail-bk0-f47.google.com with SMTP id j4so1198389bkw.20
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2013 15:53:52 -0800 (PST)
-Message-ID: <50F0A60D.10001@gmail.com>
-Date: Sat, 12 Jan 2013 00:53:49 +0100
-From: =?ISO-8859-1?Q?Joshua_Sch=FCler?= <joshua.schueler@gmail.com>
+	Fri, 11 Jan 2013 19:29:59 -0500
+From: "Rick Liu" <rickliu@broadcom.com>
+To: =?iso-8859-1?Q?Joshua_Sch=FCler?= <joshua.schueler@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: how to resize (grow) device partition of a multi-device
+ BTRFS filesystem?
+Date: Sat, 12 Jan 2013 00:29:47 +0000
+Message-ID: <7D0754FFADBD2D4785C1D233C497C47B1BCD8161@SJEXCHMB06.corp.ad.broadcom.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: how to resize (grow) device partition of a multi-device BTRFS
- filesystem?
-References: <7D0754FFADBD2D4785C1D233C497C47B1BCD8121@SJEXCHMB06.corp.ad.broadcom.com>
-In-Reply-To: <7D0754FFADBD2D4785C1D233C497C47B1BCD8121@SJEXCHMB06.corp.ad.broadcom.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12.01.2013 00:39, Rick Liu wrote:
-> Hi,
 > 
-> I'm running OpenSUSE12.2 on VMware ESXi5.
-> I create /local using BTRFS file system with 3 devices (sdc, sdd, sde).
-> These 3 devices are VMware's virtual disk (vmdk files).
+> Hi Rick,
 > 
-> Instead of adding another new virtual disk,
-> ESXi allows to increase Virtual Disk size,
-> so I increase the size for 3 devices (sdc, sdd, sde) from 300GB to 500GB for each.
+> use
+> btrfs fi resize <devid>:max
+> to make btrfs use all space of disk <devid>
 > 
-> In EXT4 file system,
-> I can resize (grow) partition directly.
-> How to do this on BTRFS partition?
-> 
-> 
-> 
-> Thanks,
-> 
-> Rick
+[Rick Liu] 
+Hi,
 
-Hi Rick,
+I tried, but it seems no effect.
+(dev/sdc was 300GB and now is 500GB, )
+After resize,
+/dev/sdc1 is still 300GB.
 
-use
-btrfs fi resize <devid>:max
-to make btrfs use all space of disk <devid>
 
-Joshua
+# btrfs filesystem show
+Label: 'local'  uuid: 828bee8c-a28c-443f-b19a-8e65e3f94963
+        Total devices 3 FS bytes used 372.22GB
+        devid    3 size 500.00GB used 259.06GB path /dev/sde1
+        devid    4 size 500.00GB used 260.06GB path /dev/sdd
+        devid    5 size 300.00GB used 0.00 path /dev/sdc1
+Btrfs v0.19+
+
+# btrfs fi resize 5:max /local
+Resize '/local' of '5:max'
+
+# btrfs filesystem show
+Label: 'local'  uuid: 828bee8c-a28c-443f-b19a-8e65e3f94963
+        Total devices 3 FS bytes used 372.22GB
+        devid    3 size 500.00GB used 259.06GB path /dev/sde1
+        devid    4 size 500.00GB used 260.06GB path /dev/sdd
+        devid    5 size 300.00GB used 0.00 path /dev/sdc1
+Btrfs v0.19+
+

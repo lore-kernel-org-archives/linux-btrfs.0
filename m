@@ -1,113 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:44255 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751761Ab3ANHLG (ORCPT
+Received: from mail-la0-f48.google.com ([209.85.215.48]:47161 "EHLO
+	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756052Ab3ANLRV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Jan 2013 02:11:06 -0500
-Received: by mail-pa0-f44.google.com with SMTP id hz11so2063383pad.31
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Jan 2013 23:11:05 -0800 (PST)
+	Mon, 14 Jan 2013 06:17:21 -0500
+Received: by mail-la0-f48.google.com with SMTP id ej20so3642401lab.21
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Jan 2013 03:17:20 -0800 (PST)
+Message-ID: <50F3E93D.7000707@gmail.com>
+Date: Mon, 14 Jan 2013 11:17:17 +0000
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
 MIME-Version: 1.0
-Date: Mon, 14 Jan 2013 04:11:05 -0300
-Message-ID: <CAPVzhpw6rc9VuSwhaPx8xhP02u-vAXoQW_1-odaTiyfcsQx0jw@mail.gmail.com>
-Subject: kernel call trace when deleting a huge file (which used all the
- space) with btrfs
-From: Reartes Guillermo <rtguille@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: btrfs for files > 10GB = random spontaneous CRC failure.
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, i recently subscribed to this mailing list.
+Hi,
 
-Recently i have found some issues with BTRFS, i am using F18.
+Since I had some free time over Christmas, I decided to conduct few 
+tests over btrFS to se how it will cope with "real life storage" for 
+normal "gray users" and I've found that filesystem will always mess up 
+your files that are larger than 10GB.
 
-I installed F18 in a kvm guest.
+Long story:
+I've used my set of data that I've got nicelly backed up on personal 
+raid 5 to populate btrfs volumes: music, slr pics and video (an just a 
+few document). Disks used in test are all "green" 2TB disks from WD.
 
-What i found is:
+1. First I started with creating btrfs (4k blocks) on one disk, filling 
+it up and then adding second disk -> convert to raid1 through balance -> 
+convert to raid10 trough balance. Unfortunately converting to raid1 
+failed - because of CRC error in 49 files that vere bigger > 10GB. At 
+this point I was a bit spooked up that my controllers are failing or 
+that drives got some bad sectors. Tested everything (took few days) and 
+it turns out that there is no "apparent" issue with hardware (bad 
+sectors or io down to disks).
+2. At this point I thought "cool this will be a perfect test case for 
+scrub to show it's magical power!". Created raid1 over two volumes -> 
+try scrubbing -> FAIL ... It turns out that magically I've got corrupted 
+CRC in two exactly same logical locations on two different disks (~34 
+files > 10GB affected) hence scrub can't do anything with it. It only 
+reports it as "uncorrectable errors"
+3. Performed same test on raid10 setup (still 4k block). Same results 
+(just different file count).
 
-* Intermittent ENOSPC when writing after erasing a file which lead to a
-true ENOSPC (reported https://bugzilla.redhat.com/show_bug.cgi?id=894837)
-I reproduced this only in the disk i used to install F18 (/ and /boot subvols).
+Ok, time to dig more into this because it starts get intriguing. I'm 
+running ubuntu server 12.10 (64bit) with stock kernel, so my next step 
+was to get 3.7.1 kernel + new btrfs tool straight from git repo.
+Unfortunatelly 1 & 2 & 3 still provides same results, corrupt CRC only 
+in files > 10GB.
+At this point I thought "fine maybe when I'll expand allocation block - 
+it will make less block needed for big file to fit in resulting in 
+propperly storing those" -> time for 16K leafs :) (-n 16K -l 16K) 
+sectors are still 4K for known reasons :P. Well, it does exactly the 
+same thing -> 1 & 2 & 3 same results, big files get automagically corrupt.
 
-* Kernel Call Traces when deleting a file that was written previously
-and used all
-the space. (So there was a true ENOSPC). I reproduce these on an
-additional disk i
-added to the guest (41gb). I am not getting transient ENOSPC on that disk.
 
-Jan 13 22:17:21 localhost kernel: [18160.215176] ------------[ cut
-here ]------------
-Jan 13 22:17:21 localhost kernel: [18160.215223] WARNING: at
-fs/btrfs/extent-tree.c:6323 btrfs_alloc_free_block+0x376/0x380
-[btrfs]()
-Jan 13 22:17:21 localhost kernel: [18160.215226] Hardware name: Bochs
-Jan 13 22:17:21 localhost kernel: [18160.215228] Modules linked in:
-fuse ebtable_nat xt_CHECKSUM bridge stp llc nf_conntrack_netbios_ns
-nf_conntrack_broadcast ipt_MASQUERADE ip6table_mangle ip6t_REJECT
-nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat iptable_mangle
-nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack
-ebtable_filter bnep bluetooth ebtables rfkill ip6table_filter
-ip6_tables be2iscsi iscsi_boot_sysfs bnx2i cnic uio cxgb4i cxgb4
-cxgb3i cxgb3 mdio libcxgbi ib_iser rdma_cm ib_addr iw_cm ib_cm ib_sa
-ib_mad ib_core iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi
-snd_hda_intel snd_hda_codec snd_hwdep snd_seq snd_seq_device snd_pcm
-8139too snd_page_alloc snd_timer snd 8139cp soundcore i2c_piix4
-i2c_core mii virtio_balloon vhost_net tun macvtap macvlan kvm_amd kvm
-uinput btrfs libcrc32c zlib_deflate
-Jan 13 22:17:21 localhost kernel: [18160.215293] Pid: 28225, comm: rm
-Tainted: G        W    3.6.10-4.fc18.x86_64 #1
-Jan 13 22:17:21 localhost kernel: [18160.215296] Call Trace:
-Jan 13 22:17:21 localhost kernel: [18160.215307]  [<ffffffff8105c8df>]
-warn_slowpath_common+0x7f/0xc0
-Jan 13 22:17:21 localhost kernel: [18160.215313]  [<ffffffff8105c93a>]
-warn_slowpath_null+0x1a/0x20
-Jan 13 22:17:21 localhost kernel: [18160.215340]  [<ffffffffa0031a06>]
-btrfs_alloc_free_block+0x376/0x380 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215375]  [<ffffffffa005dc23>]
-? read_extent_buffer+0xc3/0x120 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215401]  [<ffffffffa001da9a>]
-__btrfs_cow_block+0x12a/0x510 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215427]  [<ffffffffa001df77>]
-btrfs_cow_block+0xf7/0x200 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215453]  [<ffffffffa00221a7>]
-btrfs_search_slot+0x3e7/0x8f0 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215459]  [<ffffffff810f1107>]
-? call_rcu_sched+0x17/0x20
-Jan 13 22:17:21 localhost kernel: [18160.215488]  [<ffffffffa003737f>]
-btrfs_del_csums+0x12f/0x310 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215516]  [<ffffffffa002b059>]
-__btrfs_free_extent+0x679/0x800 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215561]  [<ffffffffa002f526>]
-run_clustered_refs+0x316/0xb50 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215594]  [<ffffffffa007c3a3>]
-? find_ref_head+0x83/0xf0 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215622]  [<ffffffffa002fe48>]
-btrfs_run_delayed_refs+0xe8/0x2e0 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215654]  [<ffffffffa00420f1>]
-__btrfs_end_transaction+0xf1/0x3a0 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215685]  [<ffffffffa0042415>]
-btrfs_end_transaction+0x15/0x20 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215717]  [<ffffffffa004c440>]
-btrfs_evict_inode+0x200/0x310 [btrfs]
-Jan 13 22:17:21 localhost kernel: [18160.215730]  [<ffffffff811aa6b2>]
-evict+0xa2/0x1a0
-Jan 13 22:17:21 localhost kernel: [18160.215735]  [<ffffffff811aae73>]
-iput+0x103/0x190
-Jan 13 22:17:21 localhost kernel: [18160.215742]  [<ffffffff8119e51f>]
-do_unlinkat+0x15f/0x1a0
-Jan 13 22:17:21 localhost kernel: [18160.215749]  [<ffffffff810d8d5c>]
-? __audit_syscall_entry+0xcc/0x300
-Jan 13 22:17:21 localhost kernel: [18160.215756]  [<ffffffff81627045>]
-? do_async_page_fault+0x35/0x90
-Jan 13 22:17:21 localhost kernel: [18160.215762]  [<ffffffff811a0dab>]
-sys_unlinkat+0x1b/0x50
-Jan 13 22:17:21 localhost kernel: [18160.215767]  [<ffffffff8162bae9>]
-system_call_fastpath+0x16/0x1b
-Jan 13 22:17:21 localhost kernel: [18160.215771] ---[ end trace
-54a02fbdc3904cff ]---
-Jan 13 22:17:21 localhost kernel: [18160.218829] ------------[ cut
-here ]------------
+Something about test data:
+music - not more than 200MB files (tipical mix of mp3 & aac) 10 K files 
+give or take.
+pics - not more than 20MB (typical point & shot + dslr) 6K files give or 
+take.
+video1 - collection of little ones with size more than 300MB, less than 
+1.5GB ~ 400 files
+video2 - collection of 5GB - 18GB files ~400 files
 
-I get many of those on sdb1, and the transient ENOSPC on sda2
+I guess that stating that "files >10GB" are only affected is a long 
+shot, but so far I've not seen file less than 10GB affected (I was not 
+really thorough about checking size, but all files that size I've 
+checked were more than 10GB)
 
-Thanks in advance.
+ps. As a footnote I'll add that I've tried shuffling test 1, 2 & 3 
+without video2 and it all work just fine.
+
+If you've got any ideas for work around ( other than zfs :D ) I'm happy 
+to try it out.
+
+Tom.

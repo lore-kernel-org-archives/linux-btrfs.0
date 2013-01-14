@@ -1,68 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59496 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754989Ab3AMOjL (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:48070 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750894Ab3ANGGH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Jan 2013 09:39:11 -0500
-Date: Sun, 13 Jan 2013 14:39:08 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Holger Hoffstaette <holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Changing metadata block size after the fact
-Message-ID: <20130113143908.GY19051@carfax.org.uk>
-References: <pan.2013.01.13.14.07.00.577910@googlemail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="OsjXUGRLsfCucSoX"
-In-Reply-To: <pan.2013.01.13.14.07.00.577910@googlemail.com>
+	Mon, 14 Jan 2013 01:06:07 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-mm@kvack.org
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Zach Brown <zab@zabbo.net>
+Subject: [PATCH] mm/slab: add a leak decoder callback
+Date: Mon, 14 Jan 2013 14:03:39 +0800
+Message-Id: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This adds a leak decoder callback so that kmem_cache_destroy()
+can use to generate debugging output for the allocated objects.
 
---OsjXUGRLsfCucSoX
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Callers like btrfs are using their own leak tracking which will
+manage allocated objects in a list(or something else), this does
+indeed the same thing as what slab does.  So adding a callback
+for leak tracking can avoid this as well as runtime overhead.
 
-On Sun, Jan 13, 2013 at 03:07:00PM +0100, Holger Hoffstaette wrote:
-> 
-> Hi,
-> 
-> I have an existing btrfs filesystem which was initialized with defaults. I
-> want to increase the metadata block size, but after reading wiki/man pages
-> etc. have come to the conclusion that this does not seem to be possible.
-> Is this correct, and the only way would be backup/mkfs with -l/restore?
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+The idea is from Zach Brown <zab@zabbo.net>.
 
-   Correct, you can't change the metadata block size once the FS has
-been created.
+ fs/btrfs/extent_io.c     |   24 ++++++++++++++++++++++++
+ fs/btrfs/extent_map.c    |   12 ++++++++++++
+ include/linux/slab.h     |    1 +
+ include/linux/slab_def.h |    1 +
+ include/linux/slub_def.h |    1 +
+ mm/slab_common.c         |    1 +
+ mm/slub.c                |    5 +++++
+ 7 files changed, 45 insertions(+), 0 deletions(-)
 
-   Hugo.
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index bcc8dff..4954f3d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -63,6 +63,26 @@ tree_fs_info(struct extent_io_tree *tree)
+ 	return btrfs_sb(tree->mapping->host->i_sb);
+ }
+ 
++static void extent_state_leak_decoder(void *object)
++{
++	struct extent_state *state = object;
++
++	printk(KERN_ERR "btrfs state leak: start %llu end %llu "
++	       "state %lu in tree %p refs %d\n",
++	       (unsigned long long)state->start,
++	       (unsigned long long)state->end,
++	       state->state, state->tree, atomic_read(&state->refs));
++}
++
++static void extent_buffer_leak_decoder(void *object)
++{
++	struct extent_buffer *eb = object;
++
++	printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
++	       "refs %d\n", (unsigned long long)eb->start,
++	       eb->len, atomic_read(&eb->refs));
++}
++
+ int __init extent_io_init(void)
+ {
+ 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
+@@ -71,11 +91,15 @@ int __init extent_io_init(void)
+ 	if (!extent_state_cache)
+ 		return -ENOMEM;
+ 
++	extent_state_cache->decoder = extent_state_leak_decoder;
++
+ 	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
+ 			sizeof(struct extent_buffer), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_buffer_cache)
+ 		goto free_state_cache;
++
++	extent_buffer_cache->decoder = extent_buffer_leak_decoder;
+ 	return 0;
+ 
+ free_state_cache:
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 80370d6..d598a8d 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -16,6 +16,16 @@ static LIST_HEAD(emaps);
+ static DEFINE_SPINLOCK(map_leak_lock);
+ #endif
+ 
++static void extent_map_leak_decoder(void *object)
++{
++	struct extent_map *em = object;
++
++	printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu "
++	       "flags %lu refs %d in tree %d compress %d\n",
++	       em->start, em->len, em->block_start, em->flags,
++	       atomic_read(&em->refs), em->in_tree, (int)em->compress_type);
++}
++
+ int __init extent_map_init(void)
+ {
+ 	extent_map_cache = kmem_cache_create("btrfs_extent_map",
+@@ -23,6 +33,8 @@ int __init extent_map_init(void)
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_map_cache)
+ 		return -ENOMEM;
++
++	extent_map_cache->decoder = extent_map_leak_decoder;
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/slab.h b/include/linux/slab.h
+index 5d168d7..89a9efd 100644
+--- a/include/linux/slab.h
++++ b/include/linux/slab.h
+@@ -114,6 +114,7 @@ struct kmem_cache {
+ 	const char *name;	/* Slab name for sysfs */
+ 	int refcount;		/* Use counter */
+ 	void (*ctor)(void *);	/* Called on object slot creation */
++	void (*decoder)(void *);/* Called on object slot leak detection */
+ 	struct list_head list;	/* List of all slab caches on the system */
+ };
+ #endif
+diff --git a/include/linux/slab_def.h b/include/linux/slab_def.h
+index 8bb6e0e..7ca8309 100644
+--- a/include/linux/slab_def.h
++++ b/include/linux/slab_def.h
+@@ -48,6 +48,7 @@ struct kmem_cache {
+ 
+ 	/* constructor func */
+ 	void (*ctor)(void *obj);
++	void (*decoder)(void *obj);
+ 
+ /* 4) cache creation/removal */
+ 	const char *name;
+diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+index 9db4825..fc18af7 100644
+--- a/include/linux/slub_def.h
++++ b/include/linux/slub_def.h
+@@ -93,6 +93,7 @@ struct kmem_cache {
+ 	gfp_t allocflags;	/* gfp flags to use on each alloc */
+ 	int refcount;		/* Refcount for slab cache destroy */
+ 	void (*ctor)(void *);
++	void (*decoder)(void *);
+ 	int inuse;		/* Offset to metadata */
+ 	int align;		/* Alignment */
+ 	int reserved;		/* Reserved bytes at the end of slabs */
+diff --git a/mm/slab_common.c b/mm/slab_common.c
+index 3f3cd97..39a0fb2 100644
+--- a/mm/slab_common.c
++++ b/mm/slab_common.c
+@@ -193,6 +193,7 @@ kmem_cache_create_memcg(struct mem_cgroup *memcg, const char *name, size_t size,
+ 		s->object_size = s->size = size;
+ 		s->align = calculate_alignment(flags, align, size);
+ 		s->ctor = ctor;
++		s->decoder = NULL;
+ 
+ 		if (memcg_register_cache(memcg, s, parent_cache)) {
+ 			kmem_cache_free(kmem_cache, s);
+diff --git a/mm/slub.c b/mm/slub.c
+index ba2ca53..0496a2b 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -3098,6 +3098,8 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
+ 	for_each_object(p, s, addr, page->objects) {
+ 
+ 		if (!test_bit(slab_index(p, s, addr), map)) {
++			if (unlikely(s->decoder))
++				s->decoder(p);
+ 			printk(KERN_ERR "INFO: Object 0x%p @offset=%tu\n",
+ 							p, p - addr);
+ 			print_tracking(s, p);
+@@ -3787,6 +3789,9 @@ static int slab_unmergeable(struct kmem_cache *s)
+ 	if (s->ctor)
+ 		return 1;
+ 
++	if (s->decoder)
++		return 1;
++
+ 	/*
+ 	 * We may have set a slab to be unmergeable during bootstrap.
+ 	 */
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- In my day, we didn't have fancy high numbers.  We had ---      
-               "nothing", "one", "twain" and "multitudes".               
+1.7.7.6
 
---OsjXUGRLsfCucSoX
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUPLHDL9z9OVl50rAAQL/+A//e7fGV11auIC3b9zde7nkLp3WpPOeU/He
-NaX97HeSoT3+MQhFNyW/Jc5/CucgVQsYmca4YPzV/uMPHOnHi/UFGRM6qQmvsKe7
-KJOTPsj/miFVkA3VZxYAfYHdOQISVhr5cMkcNvtuVd2QOhct0/Lk+HJlxrHHq2Gv
-Cq20BUOtXFmQVJBGUCythWudWtbUf3TMwTG20skBZrhgxYzWu+lte7Whl072GRD6
-+Z8DPN/0RCJEdnA/dMmSgBS7v8BztelspM3o9UNQUXFl+cgGbPSE7m7+gTSSY0Eq
-dx9gKBic6gDrHCQBWCwmjDr8bGiJq1FWNZv5NlAz0NqzEMk0sdplvJo1TQjMMsZW
-DuK8Q1CrHGum4V1YJ0x+gQ7R+GIynUHgCEAJHC38bh30NHwKMmNquwEdSLPjes0s
-hXou9z+IjzcwfKOSIcOz9QcM69rSWbmY7OjHWhr2bwYomiJxNdpTkEuNT1NBZpwW
-c9CjQjMWRVPOPEsOETF3A15NEi08kC996XHpx/4U7gfcrXxgzB8hBY5fDaCuEwnt
-kY1AgyQT60JQLGWZ5qoEyPtbXYZrtNCk37h6gQ0QvsuCl2RKCeVuTBawzgLC/DJs
-Fb/8HcQZUyb53yxZcbhxkhD6o1/6T2syFS65YSMKnc6XpZWMzPJSH1zxcs4ZmpXZ
-WKJPWtahaHc=
-=xYDp
------END PGP SIGNATURE-----
-
---OsjXUGRLsfCucSoX--

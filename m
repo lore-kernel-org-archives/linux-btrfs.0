@@ -1,38 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57800 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755810Ab3AOOtO (ORCPT
+Received: from a193-30.smtp-out.amazonses.com ([199.255.193.30]:47508 "EHLO
+	a193-30.smtp-out.amazonses.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753933Ab3AOQay (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jan 2013 09:49:14 -0500
-Date: Tue, 15 Jan 2013 06:49:13 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: David Brown <btrfs@davidb.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Can moving data to a subvolume not take as long as a fully copy?
-Message-ID: <20130115144912.GB5890@merlins.org>
-References: <20130114173250.GA23026@merlins.org> <87libvaqlp.fsf@davidb.org>
+	Tue, 15 Jan 2013 11:30:54 -0500
+Date: Tue, 15 Jan 2013 16:30:52 +0000
+From: Christoph Lameter <cl@linux.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
+        Pekka Enberg <penberg@kernel.org>
+Subject: Re: [PATCH] mm/slab: add a leak decoder callback
+In-Reply-To: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
+Message-ID: <0000013c3f0c8af2-361e64b5-f822-4a93-a67e-b2902bb336fc-000000@email.amazonses.com>
+References: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <87libvaqlp.fsf@davidb.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 14, 2013 at 10:48:50PM -0800, David Brown wrote:
-> Why not make a snapshot of the root volume, and then delete the files
-> you want to move from the original root, and delete the rest of root
-> from the snapshot?
+On Mon, 14 Jan 2013, Liu Bo wrote:
 
-Are a snapshot of the root volume and a subvolume effectively the same thing
-as far as btrfs sees them?
-Once I have that snapshot which I'll treat as a subvolume, can I then
-snapshot that snapshot/subvolume further?
+> This adds a leak decoder callback so that kmem_cache_destroy()
+> can use to generate debugging output for the allocated objects.
 
-If so, that's definitely a good way of doing this for next time.
+Interesting idea.
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+> @@ -3787,6 +3789,9 @@ static int slab_unmergeable(struct kmem_cache *s)
+>  	if (s->ctor)
+>  		return 1;
+>
+> +	if (s->decoder)
+> +		return 1;
+> +
+>  	/*
+>  	 * We may have set a slab to be unmergeable during bootstrap.
+>  	 */
+
+The merge processing occurs during kmem_cache_create and you are setting
+up the decoder field afterwards! Wont work.
+
+

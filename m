@@ -1,171 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dd15408.kasserver.com ([85.13.136.168]:47001 "EHLO
-	dd15408.kasserver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752423Ab3APL6A (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:50873 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751321Ab3APMFy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jan 2013 06:58:00 -0500
-Message-ID: <50F6935A.70204@matthiasprager.de>
-Date: Wed, 16 Jan 2013 12:47:38 +0100
-From: Matthias Prager <linux@matthiasprager.de>
+	Wed, 16 Jan 2013 07:05:54 -0500
+Date: Wed, 16 Jan 2013 20:03:23 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <liub.liubo@gmail.com>
+Subject: Re: [PATCH 1/2] Btrfs: fix wrong max device number for single profile
+Message-ID: <20130116120322.GA1989@liubo>
+Reply-To: bo.li.liu@oracle.com
+References: <50F68E95.6070901@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        Liu Bo <bo.li.liu@oracle.com>
-CC: Matthias Prager <linux@matthiasprager.de>
-Subject: Re: [PATCH 2/2] Btrfs: make raid attr array more readable
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50F68E95.6070901@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One small error (see below):
+On Wed, Jan 16, 2013 at 07:27:17PM +0800, Miao Xie wrote:
+> The max device number of single profile is 1, not 0 (0 means 'as many as
+> possible'). Fix it.
 
-> As the title said, this patch just make raid attr array more readable.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
 > 
 > Cc: Liu Bo <bo.li.liu@oracle.com>
 > Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 > ---
->  fs/btrfs/ctree.h       | 10 +++++++++-
->  fs/btrfs/extent-tree.c | 22 +++++++++-------------
->  fs/btrfs/volumes.c     | 47 +++++++++++++++++++++++++++++++++++++++++------
->  3 files changed, 59 insertions(+), 20 deletions(-)
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 9ee099f..541ce9a 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -953,7 +953,15 @@ struct btrfs_dev_replace_item {
->  #define BTRFS_BLOCK_GROUP_DUP		(1ULL << 5)
->  #define BTRFS_BLOCK_GROUP_RAID10	(1ULL << 6)
->  #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
-> -#define BTRFS_NR_RAID_TYPES		5
-> +
-> +enum btrfs_raid_types {
-> +	BTRFS_RAID_RAID10,
-> +	BTRFS_RAID_RAID1,
-> +	BTRFS_RAID_DUP,
-> +	BTRFS_RAID_RAID0,
-> +	BTRFS_RAID_SINGLE,
-> +	BTRFS_NR_RAID_TYPES
-> +};
->  
->  #define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
->  					 BTRFS_BLOCK_GROUP_SYSTEM |  \
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index e68585d..6de0621 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5547,20 +5547,16 @@ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
->  
->  int __get_raid_index(u64 flags)
->  {
-> -	int index;
-> -
->  	if (flags & BTRFS_BLOCK_GROUP_RAID10)
-> -		index = 0;
-> +		return BTRFS_RAID_RAID10;
->  	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
-> -		index = 1;
-> +		return BTRFS_RAID_RAID1;
->  	else if (flags & BTRFS_BLOCK_GROUP_DUP)
-> -		index = 2;
-> +		return BTRFS_RAID_DUP;
->  	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
-> -		index = 3;
-> +		return BTRFS_RAID_RAID0;
->  	else
-> -		index = 4;
-> -
-> -	return index;
-> +		return BTRFS_RAID_SINGLE;
->  }
->  
->  static int get_block_group_index(struct btrfs_block_group_cache *cache)
-> @@ -7520,16 +7516,16 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
->  		index = get_block_group_index(block_group);
->  	}
->  
-> -	if (index == 0) {
-> +	if (index == BTRFS_RAID_RAID10) {
->  		dev_min = 4;
->  		/* Divide by 2 */
->  		min_free >>= 1;
-> -	} else if (index == 1) {
-> +	} else if (index == BTRFS_RAID_RAID1) {
->  		dev_min = 2;
-> -	} else if (index == 2) {
-> +	} else if (index == BTRFS_RAID_DUP) {
->  		/* Multiply by 2 */
->  		min_free <<= 1;
-> -	} else if (index == 3) {
-> +	} else if (index == BTRFS_RAID_RAID0) {
->  		dev_min = fs_devices->rw_devices;
->  		do_div(min_free, dev_min);
->  	}
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 7fa9773..edc5ee3 100644
+> index 86279c3..7fa9773 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -3492,13 +3492,48 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
->  }
->  
->  struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
-> -	{ 2, 1, 0, 4, 2, 2 /* raid10 */ },
-> -	{ 1, 1, 2, 2, 2, 2 /* raid1 */ },
-> -	{ 1, 2, 1, 1, 1, 2 /* dup */ },
-> -	{ 1, 1, 0, 2, 1, 1 /* raid0 */ },
-> -	{ 1, 1, 1, 1, 1, 1 /* single */ },
-> +	[BTRFS_RAID_RAID10] = {
-> +		.sub_stripes	= 2,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,	/* 0 == as many as possible */
-> +		.devs_min	= 4,
-> +		.devs_increment	= 2,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_RAID1] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 2,
-> +		.devs_min	= 2,
-> +		.devs_increment	= 2,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_DUP] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 2,
-> +		.devs_max	= 1,
-> +		.devs_min	= 1,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_RAID0] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,
-> +		.devs_min	= 2,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 1,
-> +	},
-> +	[BTRFS_RAID_RAID0] = {
-
-Shouldn't this rather be BTRFS_RAID_SINGLE ?
-
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 1,
-> +		.devs_min	= 1,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 1,
-> +	},
+> @@ -3496,7 +3496,7 @@ struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  	{ 1, 1, 2, 2, 2, 2 /* raid1 */ },
+>  	{ 1, 2, 1, 1, 1, 2 /* dup */ },
+>  	{ 1, 1, 0, 2, 1, 1 /* raid0 */ },
+> -	{ 1, 1, 0, 1, 1, 1 /* single */ },
+> +	{ 1, 1, 1, 1, 1, 1 /* single */ },
 >  };
-> -
-> + 
+>  
 >  static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  			       struct btrfs_root *extent_root,
->  			       struct map_lookup **map_ret,
 > -- 
 > 1.7.11.7
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-

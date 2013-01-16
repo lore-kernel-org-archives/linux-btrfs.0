@@ -1,36 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50689 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:53603 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752576Ab3APNMD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jan 2013 08:12:03 -0500
-Date: Wed, 16 Jan 2013 14:12:00 +0100
+	id S1752466Ab3APOE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Jan 2013 09:04:59 -0500
+Date: Wed, 16 Jan 2013 15:04:57 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>, Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: partition question
-Message-ID: <20130116131200.GT20089@twin.jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>
+Subject: Re: [PATCH 2/2] Btrfs: make raid attr array more readable
+Message-ID: <20130116140456.GU20089@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <50F06639.6030409@home.nl>
- <818D716E-CEFF-4170-B470-574D6E98375E@colorremedies.com>
- <20130111223845.GV19051@carfax.org.uk>
+References: <50F68FFB.3050806@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130111223845.GV19051@carfax.org.uk>
+In-Reply-To: <50F68FFB.3050806@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 11, 2013 at 10:38:45PM +0000, Hugo Mills wrote:
-> On Fri, Jan 11, 2013 at 03:34:25PM -0700, Chris Murphy wrote:
-> > Swap still needs to be on a separate partition, as I don't think
-> > Btrfs is supporting swapfiles yet still, but maybe someone else can
-> > comment on the status of that.
-> 
->    I don't know this area of the code at all well, but as I understand
-> it, there's been some work in the kernel (swap over NFS) which lays
-> down some of the underlying infrastructure we'd need to support
-> swapfiles on btrfs, but we don't have anything beyond that. I don't
-> know of anyone working on it, either.
+On Wed, Jan 16, 2013 at 07:33:15PM +0800, Miao Xie wrote:
+> As the title said, this patch just make raid attr array more readable.
 
-Nobody up to my knowledge.
+Nice cleanup, thanks.
+
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3492,13 +3492,48 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
+>  }
+>  
+>  struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+> -	{ 1, 1, 2, 2, 2, 2 /* raid1 */ },
+
+> +	[BTRFS_RAID_RAID1] = {
+> +		.sub_stripes	= 1,
+> +		.dev_stripes	= 1,
+> +		.devs_max	= 2,
+
+Unrelated, but I'm curious why is this set to 2 (and was before)? This
+will give preference to the same 2 devices as long as there's space, so
+the allocator will not spread the data over the device set. I'd expect
+the same behaviour as in RAID10 profile here.
+
+> +		.devs_min	= 2,
+> +		.devs_increment	= 2,
+> +		.ncopies	= 2,
+> +	},
 
 david

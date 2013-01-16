@@ -1,517 +1,295 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48112 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:48116 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757814Ab3APWhE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jan 2013 17:37:04 -0500
+	id S1757832Ab3APWhF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Jan 2013 17:37:05 -0500
 From: Mark Fasheh <mfasheh@suse.de>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Cc: ablock84@googlemail.com, aschnell@suse.de, Anand.Jain@oracle.com,
         Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/4] btrfs-progs: add send-test
-Date: Wed, 16 Jan 2013 14:30:07 -0800
-Message-Id: <1358375408-25285-4-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 4/4] btrfs-progs: make libbtrfs usable from C++
+Date: Wed, 16 Jan 2013 14:30:08 -0800
+Message-Id: <1358375408-25285-5-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1358375408-25285-1-git-send-email-mfasheh@suse.de>
 References: <1358375408-25285-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-send-test.c links against libbtrfs and uses the send functionality provided
-to decode and print a send stream to the console.
+From: Arvin Schnell <aschnell@suse.de>
 
+Please find attached a patch to make the new libbtrfs usable from
+C++ (at least for the parts snapper will likely need).
+
+Signed-off-by: Arvin Schnell <aschnell@suse.de>
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- Makefile    |    5 +-
- send-test.c |  458 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 462 insertions(+), 1 deletion(-)
- create mode 100644 send-test.c
+ extent_io.c   |    6 +++---
+ extent_io.h   |    6 +++---
+ ioctl.h       |    9 +++++++++
+ list.h        |   40 ++++++++++++++++++++--------------------
+ rbtree.h      |    2 +-
+ send-stream.h |    7 +++++++
+ send-utils.h  |    7 +++++++
+ send.h        |    8 ++++++++
+ 8 files changed, 58 insertions(+), 27 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index c5f5aa0..558cb3d 100644
---- a/Makefile
-+++ b/Makefile
-@@ -119,6 +119,9 @@ btrfs-convert: $(objects) $(libs) convert.o
- ioctl-test: $(objects) $(libs) ioctl-test.o
- 	$(CC) $(CFLAGS) -o ioctl-test $(objects) ioctl-test.o $(LDFLAGS) $(LIBS)
+diff --git a/extent_io.c b/extent_io.c
+index ebb35b2..70ecc48 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -48,7 +48,7 @@ static struct extent_state *alloc_extent_state(void)
+ 		return NULL;
+ 	state->refs = 1;
+ 	state->state = 0;
+-	state->private = 0;
++	state->xprivate = 0;
+ 	return state;
+ }
  
-+send-test: $(objects) send-test.o
-+	$(CC) $(CFLAGS) -o send-test send-test.o $(LDFLAGS) $(LIBS) -lpthread
-+
- manpages:
- 	cd man; $(MAKE)
+@@ -509,7 +509,7 @@ int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+-	state->private = private;
++	state->xprivate = private;
+ out:
+ 	return ret;
+ }
+@@ -530,7 +530,7 @@ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+-	*private = state->private;
++	*private = state->xprivate;
+ out:
+ 	return ret;
+ }
+diff --git a/extent_io.h b/extent_io.h
+index 4553859..6d8404d 100644
+--- a/extent_io.h
++++ b/extent_io.h
+@@ -54,7 +54,7 @@ struct extent_state {
+ 	u64 end;
+ 	int refs;
+ 	unsigned long state;
+-	u64 private;
++	u64 xprivate;
+ };
  
-@@ -128,7 +131,7 @@ install-man:
- clean :
- 	rm -f $(progs) $(libs) cscope.out *.o .*.d btrfs-convert btrfs-image \
- 	      btrfs-select-super btrfs-zero-log btrfstune dir-test ioctl-test \
--	      quick-test version.h
-+	      quick-test send-test version.h
- 	cd man; $(MAKE) clean
+ struct extent_buffer {
+@@ -93,8 +93,8 @@ int extent_buffer_uptodate(struct extent_buffer *eb);
+ int set_extent_buffer_uptodate(struct extent_buffer *eb);
+ int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
+ 				struct extent_buffer *eb);
+-int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
+-int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
++int set_state_private(struct extent_io_tree *tree, u64 start, u64 xprivate);
++int get_state_private(struct extent_io_tree *tree, u64 start, u64 *xprivate);
+ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
+ 					 u64 bytenr, u32 blocksize);
+ struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
+diff --git a/ioctl.h b/ioctl.h
+index b7f1ce3..56de39f 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -22,6 +22,10 @@
+ #include <linux/ioctl.h>
+ #include <time.h>
  
- install: $(libs) $(progs) install-man
-diff --git a/send-test.c b/send-test.c
-new file mode 100644
-index 0000000..8c14718
---- /dev/null
-+++ b/send-test.c
-@@ -0,0 +1,458 @@
-+/*
-+ * Copyright (C) 2013 SUSE.  All rights reserved.
-+ *
-+ * This code is adapted from cmds-send.c and cmds-receive.c,
-+ * Both of which are:
-+ *
-+ * Copyright (C) 2012 Alexander Block.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
++#ifdef __cplusplus
++extern "C" {
++#endif
 +
-+#define _GNU_SOURCE
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_VOL_NAME_MAX 255
+ 
+@@ -439,4 +443,9 @@ struct btrfs_ioctl_clone_range_args {
+ 					struct btrfs_ioctl_qgroup_create_args)
+ #define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
+ 					struct btrfs_ioctl_qgroup_limit_args)
 +
-+#include <unistd.h>
-+#include <stdint.h>
-+#include <dirent.h>
-+#include <pthread.h>
-+#include <math.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <sys/ioctl.h>
-+#include <libgen.h>
-+#include <mntent.h>
-+#include <limits.h>
-+#include <stdlib.h>
-+#include <asm/types.h>
-+#include <uuid/uuid.h>
-+
-+/*
-+ * This should be compilable without the rest of the btrfs-progs
-+ * source distribution.
-+ */
-+#if BTRFS_FLAT_INCLUDES
-+#include "send-utils.h"
-+#include "send-stream.h"
-+#else
-+#include <btrfs/send-utils.h>
-+#include <btrfs/send-stream.h>
-+#endif /* BTRFS_FLAT_INCLUDES */
-+
-+static int pipefd[2];
-+struct btrfs_ioctl_send_args io_send = {0, };
-+static char *subvol_path;
-+static char *root_path;
-+
-+struct recv_args {
-+	char *full_subvol_path;
-+	char *root_path;
-+};
-+
-+void usage(int error)
-+{
-+	printf("send-test <btrfs root> <subvol>\n");
-+	if (error)
-+		exit(error);
++#ifdef __cplusplus
 +}
++#endif
 +
-+static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
-+			void *user)
-+{
-+	struct recv_args *r = user;
-+	char uuid_str[128];
+ #endif
+diff --git a/list.h b/list.h
+index d31090c..50f4619 100644
+--- a/list.h
++++ b/list.h
+@@ -19,8 +19,8 @@
+ #ifndef _LINUX_LIST_H
+ #define _LINUX_LIST_H
+ 
+-#define LIST_POISON1  ((void *) 0x00100100)
+-#define LIST_POISON2  ((void *) 0x00200200)
++#define LIST_POISON1  ((struct list_head *) 0x00100100)
++#define LIST_POISON2  ((struct list_head *) 0x00200200)
+ 
+ /*
+  * Simple doubly linked list implementation.
+@@ -54,17 +54,17 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
+  * the prev/next entries already!
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void __list_add(struct list_head *new,
++static inline void __list_add(struct list_head *xnew,
+ 			      struct list_head *prev,
+ 			      struct list_head *next)
+ {
+-	next->prev = new;
+-	new->next = next;
+-	new->prev = prev;
+-	prev->next = new;
++	next->prev = xnew;
++	xnew->next = next;
++	xnew->prev = prev;
++	prev->next = xnew;
+ }
+ #else
+-extern void __list_add(struct list_head *new,
++extern void __list_add(struct list_head *xnew,
+ 			      struct list_head *prev,
+ 			      struct list_head *next);
+ #endif
+@@ -78,12 +78,12 @@ extern void __list_add(struct list_head *new,
+  * This is good for implementing stacks.
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void list_add(struct list_head *new, struct list_head *head)
++static inline void list_add(struct list_head *xnew, struct list_head *head)
+ {
+-	__list_add(new, head, head->next);
++	__list_add(xnew, head, head->next);
+ }
+ #else
+-extern void list_add(struct list_head *new, struct list_head *head);
++extern void list_add(struct list_head *xnew, struct list_head *head);
+ #endif
+ 
+ 
+@@ -95,9 +95,9 @@ extern void list_add(struct list_head *new, struct list_head *head);
+  * Insert a new entry before the specified head.
+  * This is useful for implementing queues.
+  */
+-static inline void list_add_tail(struct list_head *new, struct list_head *head)
++static inline void list_add_tail(struct list_head *xnew, struct list_head *head)
+ {
+-	__list_add(new, head->prev, head);
++	__list_add(xnew, head->prev, head);
+ }
+ 
+ /*
+@@ -137,18 +137,18 @@ extern void list_del(struct list_head *entry);
+  * Note: if 'old' was empty, it will be overwritten.
+  */
+ static inline void list_replace(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *xnew)
+ {
+-	new->next = old->next;
+-	new->next->prev = new;
+-	new->prev = old->prev;
+-	new->prev->next = new;
++	xnew->next = old->next;
++	xnew->next->prev = xnew;
++	xnew->prev = old->prev;
++	xnew->prev->next = xnew;
+ }
+ 
+ static inline void list_replace_init(struct list_head *old,
+-					struct list_head *new)
++					struct list_head *xnew)
+ {
+-	list_replace(old, new);
++	list_replace(old, xnew);
+ 	INIT_LIST_HEAD(old);
+ }
+ /**
+diff --git a/rbtree.h b/rbtree.h
+index b636ddd..8f717a9 100644
+--- a/rbtree.h
++++ b/rbtree.h
+@@ -149,7 +149,7 @@ extern struct rb_node *rb_first(struct rb_root *);
+ extern struct rb_node *rb_last(struct rb_root *);
+ 
+ /* Fast replacement of a single node without remove/rebalance/add/rebalance */
+-extern void rb_replace_node(struct rb_node *victim, struct rb_node *new, 
++extern void rb_replace_node(struct rb_node *victim, struct rb_node *xnew,
+ 			    struct rb_root *root);
+ 
+ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
+diff --git a/send-stream.h b/send-stream.h
+index 9a17e32..9223018 100644
+--- a/send-stream.h
++++ b/send-stream.h
+@@ -18,6 +18,10 @@
+ #ifndef SEND_STREAM_H_
+ #define SEND_STREAM_H_
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
 +
-+	r->full_subvol_path = path_cat(r->root_path, path);
-+	uuid_unparse(uuid, uuid_str);
-+
-+	printf("subvol\t%s\t%llu\t%s\n", uuid_str,
-+	       (unsigned long long)ctransid, r->full_subvol_path);
-+
-+	return 0;
+ struct btrfs_send_ops {
+ 	int (*subvol)(const char *path, const u8 *uuid, u64 ctransid,
+ 		      void *user);
+@@ -55,5 +59,8 @@ struct btrfs_send_ops {
+ int btrfs_read_and_process_send_stream(int fd,
+ 				       struct btrfs_send_ops *ops, void *user);
+ 
++#ifdef __cplusplus
 +}
++#endif
+ 
+ #endif /* SEND_STREAM_H_ */
+diff --git a/send-utils.h b/send-utils.h
+index 8040c50..199dd03 100644
+--- a/send-utils.h
++++ b/send-utils.h
+@@ -26,6 +26,10 @@
+ #include <btrfs/rbtree.h>
+ #endif /* BTRFS_FLAT_INCLUDES */
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
 +
-+static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
-+			  const u8 *parent_uuid, u64 parent_ctransid,
-+			  void *user)
-+{
-+	struct recv_args *r = user;
-+	char uuid_str[128];
-+	char parent_uuid_str[128];
-+
-+	r->full_subvol_path = path_cat(r->root_path, path);
-+	uuid_unparse(uuid, uuid_str);
-+	uuid_unparse(parent_uuid, parent_uuid_str);
-+
-+	printf("snapshot\t%s\t%llu\t%s\t%llu\t%s\n", uuid_str,
-+	       (unsigned long long)ctransid, parent_uuid_str,
-+	       (unsigned long long)parent_ctransid, r->full_subvol_path);
-+
-+	return 0;
+ enum subvol_search_type {
+ 	subvol_search_by_root_id,
+ 	subvol_search_by_uuid,
+@@ -70,5 +74,8 @@ void subvol_uuid_search_add(struct subvol_uuid_search *s,
+ char *path_cat(const char *p1, const char *p2);
+ char *path_cat3(const char *p1, const char *p2, const char *p3);
+ 
++#ifdef __cplusplus
 +}
++#endif
+ 
+ #endif /* SEND_UTILS_H_ */
+diff --git a/send.h b/send.h
+index 48d425a..e8da785 100644
+--- a/send.h
++++ b/send.h
+@@ -19,6 +19,10 @@
+ 
+ #include "ctree.h"
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
 +
-+static int print_mkfile(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+ #define BTRFS_SEND_STREAM_VERSION 1
+ 
+@@ -132,3 +136,7 @@ enum {
+ #ifdef __KERNEL__
+ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
+ #endif
 +
-+	printf("mkfile\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
++#ifdef __cplusplus
 +}
-+
-+static int print_mkdir(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("mkdir\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("mknod\t%llo\t0x%llx\t%s\n", (unsigned long long)mode,
-+	       (unsigned long long)dev, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_mkfifo(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("mkfifo\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_mksock(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("mksock\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_symlink(const char *path, const char *lnk, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("symlink\t%s\t%s\n", lnk, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_rename(const char *from, const char *to, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_from = path_cat(r->full_subvol_path, from);
-+	char *full_to = path_cat(r->full_subvol_path, to);
-+
-+	printf("rename\t%s\t%s\n", from, to);
-+
-+	free(full_from);
-+	free(full_to);
-+	return 0;
-+}
-+
-+static int print_link(const char *path, const char *lnk, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("link\t%s\t%s\n", lnk, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_unlink(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("unlink\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_rmdir(const char *path, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("rmdir\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_write(const char *path, const void *data, u64 offset,
-+		       u64 len, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("write\t%llu\t%llu\t%s\n", (unsigned long long)offset,
-+	       (unsigned long long)len, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_clone(const char *path, u64 offset, u64 len,
-+		       const u8 *clone_uuid, u64 clone_ctransid,
-+		       const char *clone_path, u64 clone_offset,
-+		       void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("clone\t%s\t%s\n", full_path, clone_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_set_xattr(const char *path, const char *name,
-+			   const void *data, int len, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("set_xattr\t%s\t%s\t%d\n", full_path,
-+	       name, len);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_remove_xattr(const char *path, const char *name, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("remove_xattr\t%s\t%s\n", full_path, name);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_truncate(const char *path, u64 size, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("truncate\t%llu\t%s\n", (unsigned long long)size, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_chmod(const char *path, u64 mode, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("chmod\t%llo\t%s\n", (unsigned long long)mode, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_chown(const char *path, u64 uid, u64 gid, void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("chown\t%llu\t%llu\t%s\n", (unsigned long long)uid,
-+	       (unsigned long long)gid, full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_utimes(const char *path, struct timespec *at,
-+			struct timespec *mt, struct timespec *ct,
-+			void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("utimes\t%s\n", full_path);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+static int print_update_extent(const char *path, u64 offset, u64 len,
-+			       void *user)
-+{
-+	struct recv_args *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+
-+	printf("update_extent\t%s\t%llu\t%llu\n", full_path, offset, len);
-+
-+	free(full_path);
-+	return 0;
-+}
-+
-+struct btrfs_send_ops send_ops_print = {
-+	.subvol = print_subvol,
-+	.snapshot = print_snapshot,
-+	.mkfile = print_mkfile,
-+	.mkdir = print_mkdir,
-+	.mknod = print_mknod,
-+	.mkfifo = print_mkfifo,
-+	.mksock = print_mksock,
-+	.symlink = print_symlink,
-+	.rename = print_rename,
-+	.link = print_link,
-+	.unlink = print_unlink,
-+	.rmdir = print_rmdir,
-+	.write = print_write,
-+	.clone = print_clone,
-+	.set_xattr = print_set_xattr,
-+	.remove_xattr = print_remove_xattr,
-+	.truncate = print_truncate,
-+	.chmod = print_chmod,
-+	.chown = print_chown,
-+	.utimes = print_utimes,
-+	.update_extent = print_update_extent,
-+};
-+
-+static void *process_thread(void *arg_)
-+{
-+	int ret;
-+
-+	while (1) {
-+		ret = btrfs_read_and_process_send_stream(pipefd[0],
-+							 &send_ops_print, arg_);
-+		if (ret)
-+			break;
-+	}
-+
-+	if (ret > 0)
-+		ret = 0;
-+
-+	return ERR_PTR(ret);
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	int ret = 0;
-+	int subvol_fd;
-+	pthread_t t_read;
-+	pthread_attr_t t_attr;
-+	void *t_err = NULL;
-+	struct recv_args r;
-+
-+	if (argc != 3)
-+		usage(EINVAL);
-+
-+	root_path = realpath(argv[1], NULL);
-+	if (!root_path) {
-+		ret = errno;
-+		usage(ret);
-+	}
-+
-+	subvol_path = realpath(argv[2], NULL);
-+	if (!subvol_path) {
-+		ret = errno;
-+		usage(ret);
-+	}
-+
-+	r.full_subvol_path = subvol_path;
-+	r.root_path = root_path;
-+
-+	subvol_fd = open(subvol_path, O_RDONLY|O_NOATIME);
-+	if (subvol_fd < 0) {
-+		ret = errno;
-+		fprintf(stderr, "ERROR: Subvolume open failed. %s\n",
-+			strerror(ret));
-+		goto out;
-+	}
-+
-+	ret = pthread_attr_init(&t_attr);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: pthread init failed. %s\n",
-+			strerror(ret));
-+		goto out;
-+	}
-+
-+	ret = pipe(pipefd);
-+	if (ret < 0) {
-+		ret = errno;
-+		fprintf(stderr, "ERROR: pipe failed. %s\n", strerror(ret));
-+		goto out;
-+	}
-+
-+	ret = pthread_create(&t_read, &t_attr, process_thread, &r);
-+	if (ret < 0) {
-+		ret = errno;
-+		fprintf(stderr, "ERROR: pthread create failed. %s\n",
-+			strerror(ret));
-+		goto out;
-+	}
-+
-+	io_send.send_fd = pipefd[1];
-+	io_send.clone_sources_count = 0;
-+	io_send.clone_sources = NULL;
-+	io_send.parent_root = 0;
-+	io_send.flags = BTRFS_SEND_FLAG_NO_FILE_DATA;
-+
-+	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
-+	if (ret) {
-+		ret = errno;
-+		fprintf(stderr, "ERROR: send ioctl failed with %d: %s\n", ret,
-+			strerror(ret));
-+		goto out;
-+	}
-+
-+	close(pipefd[1]);
-+
-+	ret = pthread_join(t_read, &t_err);
-+	if (ret) {
-+		fprintf(stderr, "ERROR: pthread_join failed: %s\n",
-+			strerror(ret));
-+		goto out;
-+	}
-+	if (t_err) {
-+		ret = (long int)t_err;
-+		fprintf(stderr, "ERROR: failed to process send stream, ret=%ld "
-+			"(%s)\n", (long int)t_err, strerror(ret));
-+		goto out;
-+	}
-+
-+	pthread_attr_destroy(&t_attr);
-+out:
-+	return ret;
-+}
++#endif
 -- 
 1.7.10.4
 

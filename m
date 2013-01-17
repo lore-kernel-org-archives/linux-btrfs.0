@@ -1,50 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29754 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752199Ab3AIKcx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2013 05:32:53 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id r09AWpRC020742
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 10:32:52 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r09AWpXP018129
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 10:32:51 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r09AWpHZ003809
-	for <linux-btrfs@vger.kernel.org>; Wed, 9 Jan 2013 04:32:51 -0600
-From: Simon Xu <xu.simon@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Simon Xu <xu.simon@oracle.com>
-Subject: [PATCH] btrfs-progs: remove '-h' from btrfs man page
-Date: Wed,  9 Jan 2013 18:32:44 +0800
-Message-Id: <1357727564-2509-1-git-send-email-xu.simon@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:53364 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755593Ab3AQPJe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Jan 2013 10:09:34 -0500
+Date: Thu, 17 Jan 2013 16:09:32 +0100
+From: Arvin Schnell <aschnell@suse.de>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH] trivial patch for btrfs-progs
+Message-ID: <20130117150932.GA11610@suse.de>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="fUYQa+Pmc3FrFX/N"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove '-h' from btrfs man page as it's not supported by the btrfs utility.
----
- man/btrfs.8.in | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 9222580..bf3ea13 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -52,7 +52,7 @@ btrfs \- control a btrfs filesystem
- \fBbtrfs\fP \fBinspect-internal logical-resolve\fP
- [-Pv] [-s size] \fI<logical>\fP \fI<path>\fP
- .PP
--\fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
-+\fBbtrfs\fP \fBhelp|\-\-help \fP\fI\fP
- .PP
- \fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
- .PP
+--fUYQa+Pmc3FrFX/N
+Content-Type: text/plain; charset=iso-8859-15
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+
+Hi,
+
+please find attached a trivial patch for btrfs-progs. Likely not
+strictly needed but I noticed valgrind complaining about
+uninitialised memory in the ioctl call.
+
+Regards,
+  Arvin
+
 -- 
-1.8.1
+Arvin Schnell, <aschnell@suse.de>
+Senior Software Engineer, Research & Development
+SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imendörffer, HRB 16746 (AG Nürnberg)
+Maxfeldstraße 5
+90409 Nürnberg
+Germany
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+--fUYQa+Pmc3FrFX/N
+Content-Type: text/x-patch; charset=us-ascii
+Content-Disposition: attachment; filename="memset.diff"
+
+diff --git a/cmds-send.c b/cmds-send.c
+index 9b47e70..aa8c5a3 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -271,6 +271,7 @@ static int do_send(struct btrfs_send *send, u64 root_id, u64 parent_root)
+ 		goto out;
+ 	}
+ 
++	memset(&io_send, 0, sizeof(io_send));
+ 	io_send.send_fd = pipefd[1];
+ 	send->send_fd = pipefd[0];
+ 
+
+--fUYQa+Pmc3FrFX/N--

@@ -1,98 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from a193-30.smtp-out.amazonses.com ([199.255.193.30]:3920 "EHLO
-	a193-30.smtp-out.amazonses.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751557Ab3APPU6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jan 2013 10:20:58 -0500
-Date: Wed, 16 Jan 2013 15:20:57 +0000
-From: Christoph Lameter <cl@linux.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, zab@zabbo.net, penberg@kernel.org
-Subject: Re: [PATCH V2] mm/slab: add a leak decoder callback
-In-Reply-To: <1358305393-3507-1-git-send-email-bo.li.liu@oracle.com>
-Message-ID: <0000013c43f2e550-649fcc34-13c2-4e4b-81be-96d68e63cf60-000000@email.amazonses.com>
-References: <1358305393-3507-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:38695 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750778Ab3AQFiR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Jan 2013 00:38:17 -0500
+Message-ID: <50F78E6B.2080701@cn.fujitsu.com>
+Date: Thu, 17 Jan 2013 13:38:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: dsterba@suse.cz
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>,
+        Matthias Prager <linux@matthiasprager.de>
+Subject: [PATCH V2 2/2] Btrfs: make raid attr array more readable
+References: <50F68FFB.3050806@cn.fujitsu.com> <20130116140456.GU20089@twin.jikos.cz>
+In-Reply-To: <20130116140456.GU20089@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 16 Jan 2013, Liu Bo wrote:
+The current code of raid attr arry is hard to understand and it is easy to
+introduce some problem if we modify the array. So I changed it and made it
+more readable.
 
-> --- a/include/linux/slub_def.h
-> +++ b/include/linux/slub_def.h
-> @@ -93,6 +93,7 @@ struct kmem_cache {
->  	gfp_t allocflags;	/* gfp flags to use on each alloc */
->  	int refcount;		/* Refcount for slab cache destroy */
->  	void (*ctor)(void *);
-> +	void (*decoder)(void *);
+Cc: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v1 -> v2:
+- fix missing initialization for single profile
+---
+ fs/btrfs/ctree.h       | 10 +++++++++-
+ fs/btrfs/extent-tree.c | 22 +++++++++-------------
+ fs/btrfs/volumes.c     | 47 +++++++++++++++++++++++++++++++++++++++++------
+ 3 files changed, 59 insertions(+), 20 deletions(-)
 
-The field needs to be moved away from the first hot cachelines in
-kmem_cache.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9ee099f..541ce9a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -953,7 +953,15 @@ struct btrfs_dev_replace_item {
+ #define BTRFS_BLOCK_GROUP_DUP		(1ULL << 5)
+ #define BTRFS_BLOCK_GROUP_RAID10	(1ULL << 6)
+ #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
+-#define BTRFS_NR_RAID_TYPES		5
++
++enum btrfs_raid_types {
++	BTRFS_RAID_RAID10,
++	BTRFS_RAID_RAID1,
++	BTRFS_RAID_DUP,
++	BTRFS_RAID_RAID0,
++	BTRFS_RAID_SINGLE,
++	BTRFS_NR_RAID_TYPES
++};
+ 
+ #define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
+ 					 BTRFS_BLOCK_GROUP_SYSTEM |  \
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e68585d..6de0621 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5547,20 +5547,16 @@ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
+ 
+ int __get_raid_index(u64 flags)
+ {
+-	int index;
+-
+ 	if (flags & BTRFS_BLOCK_GROUP_RAID10)
+-		index = 0;
++		return BTRFS_RAID_RAID10;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
+-		index = 1;
++		return BTRFS_RAID_RAID1;
+ 	else if (flags & BTRFS_BLOCK_GROUP_DUP)
+-		index = 2;
++		return BTRFS_RAID_DUP;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
+-		index = 3;
++		return BTRFS_RAID_RAID0;
+ 	else
+-		index = 4;
+-
+-	return index;
++		return BTRFS_RAID_SINGLE;
+ }
+ 
+ static int get_block_group_index(struct btrfs_block_group_cache *cache)
+@@ -7520,16 +7516,16 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 		index = get_block_group_index(block_group);
+ 	}
+ 
+-	if (index == 0) {
++	if (index == BTRFS_RAID_RAID10) {
+ 		dev_min = 4;
+ 		/* Divide by 2 */
+ 		min_free >>= 1;
+-	} else if (index == 1) {
++	} else if (index == BTRFS_RAID_RAID1) {
+ 		dev_min = 2;
+-	} else if (index == 2) {
++	} else if (index == BTRFS_RAID_DUP) {
+ 		/* Multiply by 2 */
+ 		min_free <<= 1;
+-	} else if (index == 3) {
++	} else if (index == BTRFS_RAID_RAID0) {
+ 		dev_min = fs_devices->rw_devices;
+ 		do_div(min_free, dev_min);
+ 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7fa9773..377da4c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3492,13 +3492,48 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
+ }
+ 
+ struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+-	{ 2, 1, 0, 4, 2, 2 /* raid10 */ },
+-	{ 1, 1, 2, 2, 2, 2 /* raid1 */ },
+-	{ 1, 2, 1, 1, 1, 2 /* dup */ },
+-	{ 1, 1, 0, 2, 1, 1 /* raid0 */ },
+-	{ 1, 1, 1, 1, 1, 1 /* single */ },
++	[BTRFS_RAID_RAID10] = {
++		.sub_stripes	= 2,
++		.dev_stripes	= 1,
++		.devs_max	= 0,	/* 0 == as many as possible */
++		.devs_min	= 4,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID1] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 2,
++		.devs_min	= 2,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_DUP] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 2,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.devs_increment	= 1,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID0] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 2,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
++	[BTRFS_RAID_SINGLE] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
+ };
+-
++ 
+ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *extent_root,
+ 			       struct map_lookup **map_ret,
+-- 
+1.7.11.7
 
-
-> index 3f3cd97..8c19bfd 100644
-> --- a/mm/slab_common.c
-> +++ b/mm/slab_common.c
-> @@ -193,6 +193,7 @@ kmem_cache_create_memcg(struct mem_cgroup *memcg, const char *name, size_t size,
->  		s->object_size = s->size = size;
->  		s->align = calculate_alignment(flags, align, size);
->  		s->ctor = ctor;
-> +		s->decoder = NULL;
->
->  		if (memcg_register_cache(memcg, s, parent_cache)) {
->  			kmem_cache_free(kmem_cache, s);
-
-Not necessary since s is filled with zeros on allocation.
-
-> @@ -248,7 +249,7 @@ kmem_cache_create(const char *name, size_t size, size_t align,
->  }
->  EXPORT_SYMBOL(kmem_cache_create);
->
-> -void kmem_cache_destroy(struct kmem_cache *s)
-> +static void __kmem_cache_destroy(struct kmem_cache *s, void (*decoder)(void *))
->  {
->  	/* Destroy all the children caches if we aren't a memcg cache */
->  	kmem_cache_destroy_memcg_children(s);
-> @@ -259,6 +260,9 @@ void kmem_cache_destroy(struct kmem_cache *s)
->  	if (!s->refcount) {
->  		list_del(&s->list);
->
-> +		if (unlikely(decoder))
-> +			s->decoder = decoder;
-> +
->  		if (!__kmem_cache_shutdown(s)) {
->  			mutex_unlock(&slab_mutex);
->  			if (s->flags & SLAB_DESTROY_BY_RCU)
-
-Now that is a bit weird since __kmem_cache_destroy now sets a field in
-kmem_cache?
-
-If a kmem_cache has a decoder field set then it is no longer mergeable.
-
-It looks like the decoder field would have to be set on cache creation.
-
-If we do that then the functionality could be more generic. I always
-wanted to have a function that checks the object integrity as well.
-
-The cache validation could then go through all objects and in addition to
-checking the slab meta data integrity could also have the subsystem
-confirm the integrity of the object.
-
-> index ba2ca53..34b3b75 100644
-> --- a/mm/slub.c
-> +++ b/mm/slub.c
-> @@ -3098,6 +3098,8 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
->  	for_each_object(p, s, addr, page->objects) {
->
->  		if (!test_bit(slab_index(p, s, addr), map)) {
-> +			if (unlikely(s->decoder))
-> +				s->decoder(p);
->  			printk(KERN_ERR "INFO: Object 0x%p @offset=%tu\n",
->  							p, p - addr);
->  			print_tracking(s, p);
->
-
-Hmmm... The function is currently only used on kmem_cache_destroy but that
-may change.

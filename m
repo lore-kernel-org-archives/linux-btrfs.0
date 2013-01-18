@@ -1,73 +1,262 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f43.google.com ([209.85.160.43]:40671 "EHLO
-	mail-pb0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755742Ab3AQUXR (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36573 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753193Ab3ARBBw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jan 2013 15:23:17 -0500
-Received: by mail-pb0-f43.google.com with SMTP id jt11so233827pbb.16
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2013 12:23:17 -0800 (PST)
+	Thu, 17 Jan 2013 20:01:52 -0500
+Date: Fri, 18 Jan 2013 08:59:19 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, zab@zabbo.net, cl@linux.com,
+        penberg@kernel.org
+Subject: Re: [PATCH V2] mm/slab: add a leak decoder callback
+Message-ID: <20130118005918.GC6768@liubo>
+Reply-To: bo.li.liu@oracle.com
+References: <1358305393-3507-1-git-send-email-bo.li.liu@oracle.com>
+ <20130117083446.GA17072@lge.com>
 MIME-Version: 1.0
-Date: Thu, 17 Jan 2013 17:23:17 -0300
-Message-ID: <CAPVzhpxSdjLTUhA0jVm5gLSvX9fB0N9zV6UTTQno2bANTsfGVw@mail.gmail.com>
-Subject: btrfs: could not do orphan cleanup -22
-From: Reartes Guillermo <rtguille@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130117083446.GA17072@lge.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I booted the guest in which i was testing btrfs (transient ENOSPC
-issues, etc). It booted in emergency mode.
+On Thu, Jan 17, 2013 at 05:34:46PM +0900, Joonsoo Kim wrote:
+> Hello, Liu Bo.
+> 
+> On Wed, Jan 16, 2013 at 11:03:13AM +0800, Liu Bo wrote:
+> > This adds a leak decoder callback so that slab destruction
+> > can use to generate debugging output for the allocated objects.
+> > 
+> > Callers like btrfs are using their own leak tracking which will
+> > manage allocated objects in a list(or something else), this does
+> > indeed the same thing as what slab does.  So adding a callback
+> > for leak tracking can avoid this as well as runtime overhead.
+> > 
+> > (The idea is from Zach Brown <zab@zabbo.net>.)
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > ---
+> > v2: add a wrapper API for slab destruction to make decoder only
+> > work in particular path.
+> > 
+> >  fs/btrfs/extent_io.c     |   26 ++++++++++++++++++++++++--
+> >  fs/btrfs/extent_map.c    |   13 ++++++++++++-
+> >  include/linux/slab.h     |    2 ++
+> >  include/linux/slab_def.h |    1 +
+> >  include/linux/slub_def.h |    1 +
+> >  mm/slab_common.c         |   17 ++++++++++++++++-
+> >  mm/slub.c                |    2 ++
+> >  7 files changed, 58 insertions(+), 4 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > index bcc8dff..355c7fc 100644
+> > --- a/fs/btrfs/extent_io.c
+> > +++ b/fs/btrfs/extent_io.c
+> > @@ -63,6 +63,26 @@ tree_fs_info(struct extent_io_tree *tree)
+> >  	return btrfs_sb(tree->mapping->host->i_sb);
+> >  }
+> >  
+> > +static void extent_state_leak_decoder(void *object)
+> > +{
+> > +	struct extent_state *state = object;
+> > +
+> > +	printk(KERN_ERR "btrfs state leak: start %llu end %llu "
+> > +	       "state %lu in tree %p refs %d\n",
+> > +	       (unsigned long long)state->start,
+> > +	       (unsigned long long)state->end,
+> > +	       state->state, state->tree, atomic_read(&state->refs));
+> > +}
+> > +
+> > +static void extent_buffer_leak_decoder(void *object)
+> > +{
+> > +	struct extent_buffer *eb = object;
+> > +
+> > +	printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
+> > +	       "refs %d\n", (unsigned long long)eb->start,
+> > +	       eb->len, atomic_read(&eb->refs));
+> > +}
+> > +
+> >  int __init extent_io_init(void)
+> >  {
+> >  	extent_state_cache = kmem_cache_create("btrfs_extent_state",
+> > @@ -115,9 +135,11 @@ void extent_io_exit(void)
+> >  	 */
+> >  	rcu_barrier();
+> >  	if (extent_state_cache)
+> > -		kmem_cache_destroy(extent_state_cache);
+> > +		kmem_cache_destroy_decoder(extent_state_cache,
+> > +					   extent_state_leak_decoder);
+> >  	if (extent_buffer_cache)
+> > -		kmem_cache_destroy(extent_buffer_cache);
+> > +		kmem_cache_destroy_decoder(extent_buffer_cache,
+> > +					   extent_buffer_leak_decoder);
+> >  }
+> >  
+> >  void extent_io_tree_init(struct extent_io_tree *tree,
+> > diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> > index f359e4c..bccba3d 100644
+> > --- a/fs/btrfs/extent_map.c
+> > +++ b/fs/btrfs/extent_map.c
+> > @@ -16,6 +16,16 @@ static LIST_HEAD(emaps);
+> >  static DEFINE_SPINLOCK(map_leak_lock);
+> >  #endif
+> >  
+> > +static void extent_map_leak_decoder(void *object)
+> > +{
+> > +	struct extent_map *em = object;
+> > +
+> > +	printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu "
+> > +	       "flags %lu refs %d in tree %d compress %d\n",
+> > +	       em->start, em->len, em->block_start, em->flags,
+> > +	       atomic_read(&em->refs), em->in_tree, (int)em->compress_type);
+> > +}
+> > +
+> >  int __init extent_map_init(void)
+> >  {
+> >  	extent_map_cache = kmem_cache_create("btrfs_extent_map",
+> > @@ -39,7 +49,8 @@ void extent_map_exit(void)
+> >  	}
+> >  
+> >  	if (extent_map_cache)
+> > -		kmem_cache_destroy(extent_map_cache);
+> > +		kmem_cache_destroy_decoder(extent_map_cache,
+> > +					   extent_map_leak_decoder);
+> >  }
+> >  
+> >  /**
+> > diff --git a/include/linux/slab.h b/include/linux/slab.h
+> > index 5d168d7..5c6a8d8 100644
+> > --- a/include/linux/slab.h
+> > +++ b/include/linux/slab.h
+> > @@ -114,6 +114,7 @@ struct kmem_cache {
+> >  	const char *name;	/* Slab name for sysfs */
+> >  	int refcount;		/* Use counter */
+> >  	void (*ctor)(void *);	/* Called on object slot creation */
+> > +	void (*decoder)(void *);/* Called on object slot leak detection */
+> >  	struct list_head list;	/* List of all slab caches on the system */
+> >  };
+> >  #endif
+> > @@ -132,6 +133,7 @@ struct kmem_cache *
+> >  kmem_cache_create_memcg(struct mem_cgroup *, const char *, size_t, size_t,
+> >  			unsigned long, void (*)(void *), struct kmem_cache *);
+> >  void kmem_cache_destroy(struct kmem_cache *);
+> > +void kmem_cache_destroy_decoder(struct kmem_cache *, void (*)(void *));
+> >  int kmem_cache_shrink(struct kmem_cache *);
+> >  void kmem_cache_free(struct kmem_cache *, void *);
+> >  
+> 
+> For SLUB,
+> kmem_cache_destroy_decoder works when CONFIG_SLUB_DEBUG is enable.
+> But, user for kmem_cache_destroy_decoder can't know about it.
+> 
+> How about below approach?
+> 
+> #ifdef CONFIG_SLUB_DEBUG
+> void kmem_cache_destroy_decoder(struct kmem_cache *, void (*)(void *));
+> #else
+> #define kmem_cache_destroy_decoder(s) kmem_cache_destory(s)
+> #endif
 
-[    6.705187] device label testfs1 devid 1 transid 4141 /dev/sdb1
-[    6.724353] device label fedora devid 1 transid 2036 /dev/sda2
-[    6.780931] device label fedora devid 1 transid 2036 /dev/sda2
-[    6.817157] snd_hda_intel 0000:00:04.0: irq 42 for MSI/MSI-X
-[    6.818326] snd_hda_intel 0000:00:04.0: setting latency timer to 64
-[    6.928264] Adding 1048572k swap on /dev/sda1.  Priority:-1
-extents:1 across:1048572k
-[    7.008342] device label testfs1 devid 1 transid 4141 /dev/sdb1
-[    7.011071] btrfs: disk space caching is enabled
->> [    7.165692] btrfs: Error removing orphan entry, stopping orphan cleanup
->> [    7.165696] btrfs: could not do orphan cleanup -22
->> [    8.910980] btrfs: open_ctree failed
-[    8.944598] systemd-journald[292]: Received SIGTERM
-[   70.616949] systemd-modules-load[453]: Module 'uinput' is already loaded
-[   70.676072] systemd-udevd[457]: starting version 197
-[   70.937319] microcode: AMD CPU family 0x6 not supported
-[   71.598671] btrfs: disk space caching is enabled
-[   71.617841] device label testfs1 devid 1 transid 4143 /dev/sdb1
-[   71.619164] btrfs: disk space caching is enabled
-[   71.629969] device label fedora devid 1 transid 2038 /dev/sda2
-[   71.805339] btrfs: Error removing orphan entry, stopping orphan cleanup
-[   71.806597] btrfs: could not do orphan cleanup -22
-[   71.986601] device label testfs1 devid 1 transid 4143 /dev/sdb1
-[   72.934724] btrfs: open_ctree failed
+Good Point!  Will update the patch as suggested :)
 
-I tried to btrfsck sdb1, the first time it
+thanks,
+liubo
 
-hecking extents
-checking fs roots
-checking root refs
-found 23233744896 bytes used err is 0
-total csum bytes: 21888908
-total tree bytes: 809082880
-total fs tree bytes: 744513536
-btree space waste bytes: 209930514
-file data blocks allocated: 22424662016
- referenced 22424662016
-Btrfs Btrfs v0.19
-
-Since sda2 is mounted i could not check it, but from the logs it is
-not clear to me if the issue is in sda2 or sdb1.
-
-maybe the error should be something like that:
-btrfs: sdaX: Error XXXXXX
-
-I intend to reinstall the guest, since it is for testing purposes
-(btrfs testing)
-
-I booted first with 3.8.0-0.rc3.git1.1.fc19 (which has a lot of
-issues) and then back with 3.7.2-201.fc18.
-
-Cheers.
+> 
+> > diff --git a/include/linux/slab_def.h b/include/linux/slab_def.h
+> > index 8bb6e0e..7ca8309 100644
+> > --- a/include/linux/slab_def.h
+> > +++ b/include/linux/slab_def.h
+> > @@ -48,6 +48,7 @@ struct kmem_cache {
+> >  
+> >  	/* constructor func */
+> >  	void (*ctor)(void *obj);
+> > +	void (*decoder)(void *obj);
+> >  
+> >  /* 4) cache creation/removal */
+> >  	const char *name;
+> > diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+> > index 9db4825..fc18af7 100644
+> > --- a/include/linux/slub_def.h
+> > +++ b/include/linux/slub_def.h
+> > @@ -93,6 +93,7 @@ struct kmem_cache {
+> >  	gfp_t allocflags;	/* gfp flags to use on each alloc */
+> >  	int refcount;		/* Refcount for slab cache destroy */
+> >  	void (*ctor)(void *);
+> > +	void (*decoder)(void *);
+> >  	int inuse;		/* Offset to metadata */
+> >  	int align;		/* Alignment */
+> >  	int reserved;		/* Reserved bytes at the end of slabs */
+> > diff --git a/mm/slab_common.c b/mm/slab_common.c
+> > index 3f3cd97..8c19bfd 100644
+> > --- a/mm/slab_common.c
+> > +++ b/mm/slab_common.c
+> > @@ -193,6 +193,7 @@ kmem_cache_create_memcg(struct mem_cgroup *memcg, const char *name, size_t size,
+> >  		s->object_size = s->size = size;
+> >  		s->align = calculate_alignment(flags, align, size);
+> >  		s->ctor = ctor;
+> > +		s->decoder = NULL;
+> >  
+> >  		if (memcg_register_cache(memcg, s, parent_cache)) {
+> >  			kmem_cache_free(kmem_cache, s);
+> > @@ -248,7 +249,7 @@ kmem_cache_create(const char *name, size_t size, size_t align,
+> >  }
+> >  EXPORT_SYMBOL(kmem_cache_create);
+> >  
+> > -void kmem_cache_destroy(struct kmem_cache *s)
+> > +static void __kmem_cache_destroy(struct kmem_cache *s, void (*decoder)(void *))
+> >  {
+> >  	/* Destroy all the children caches if we aren't a memcg cache */
+> >  	kmem_cache_destroy_memcg_children(s);
+> > @@ -259,6 +260,9 @@ void kmem_cache_destroy(struct kmem_cache *s)
+> >  	if (!s->refcount) {
+> >  		list_del(&s->list);
+> >  
+> > +		if (unlikely(decoder))
+> > +			s->decoder = decoder;
+> > +
+> >  		if (!__kmem_cache_shutdown(s)) {
+> >  			mutex_unlock(&slab_mutex);
+> >  			if (s->flags & SLAB_DESTROY_BY_RCU)
+> > @@ -279,8 +283,19 @@ void kmem_cache_destroy(struct kmem_cache *s)
+> >  	}
+> >  	put_online_cpus();
+> >  }
+> > +
+> > +void kmem_cache_destroy(struct kmem_cache *s)
+> > +{
+> > +	return __kmem_cache_destroy(s, NULL);
+> > +}
+> >  EXPORT_SYMBOL(kmem_cache_destroy);
+> >  
+> > +void kmem_cache_destroy_decoder(struct kmem_cache *s, void (*decoder)(void *))
+> > +{
+> > +	return __kmem_cache_destroy(s, decoder);
+> > +}
+> > +EXPORT_SYMBOL(kmem_cache_destroy_decoder);
+> > +
+> >  int slab_is_available(void)
+> >  {
+> >  	return slab_state >= UP;
+> > diff --git a/mm/slub.c b/mm/slub.c
+> > index ba2ca53..34b3b75 100644
+> > --- a/mm/slub.c
+> > +++ b/mm/slub.c
+> > @@ -3098,6 +3098,8 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
+> >  	for_each_object(p, s, addr, page->objects) {
+> >  
+> >  		if (!test_bit(slab_index(p, s, addr), map)) {
+> > +			if (unlikely(s->decoder))
+> > +				s->decoder(p);
+> >  			printk(KERN_ERR "INFO: Object 0x%p @offset=%tu\n",
+> >  							p, p - addr);
+> >  			print_tracking(s, p);
+> > -- 
+> > 1.7.7.6
+> > 
+> > --
+> > To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> > the body to majordomo@kvack.org.  For more info on Linux MM,
+> > see: http://www.linux-mm.org/ .
+> > Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

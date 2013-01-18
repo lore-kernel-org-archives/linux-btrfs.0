@@ -1,236 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:59331 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752604Ab3AQGjG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jan 2013 01:39:06 -0500
-Message-ID: <50F79C81.4050100@die-jansens.de>
-Date: Thu, 17 Jan 2013 07:38:57 +0100
-From: Arne Jansen <lists@die-jansens.de>
-MIME-Version: 1.0
-To: Mark Fasheh <mfasheh@suse.de>
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+Received: from cantor2.suse.de ([195.135.220.15]:56413 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752646Ab3ARVoz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Jan 2013 16:44:55 -0500
+Date: Fri, 18 Jan 2013 13:44:53 -0800
+From: Mark Fasheh <mfasheh@suse.de>
+To: Arne Jansen <lists@die-jansens.de>
+Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
         ablock84@googlemail.com, aschnell@suse.de, Anand.Jain@oracle.com
 Subject: Re: [PATCH 0/4] btrfs-progs: better support for external users of
- send, V2
-References: <1358375408-25285-1-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1358375408-25285-1-git-send-email-mfasheh@suse.de>
-Content-Type: text/plain; charset=ISO-8859-1
+	send, V2
+Message-ID: <20130118214453.GW12558@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1358375408-25285-1-git-send-email-mfasheh@suse.de> <50F79C81.4050100@die-jansens.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50F79C81.4050100@die-jansens.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mark,
+On Thu, Jan 17, 2013 at 07:38:57AM +0100, Arne Jansen wrote:
+> Splitting out the send/receive-specific parts into a lib is a great idea.
+> The original motivation behind our send stream format was to make it readily
+> receivable on different filesystems.
 
-On 16.01.2013 23:30, Mark Fasheh wrote:
-> Hi,
-> 
-> 	The following 4 patches make changes to btrfs-progs in order to
-> provide support for external software that wants to make use of the
-> excellent btrfs send ioctl.
-> 
-> The first patch introduces support for the BTRFS_SEND_FLAG_NO_FILE_DATA flag
-> which is introduced in my kernel patch titled:
-> 
-> 	btrfs: add "no file data" flag to btrfs send ioctl
-> 
-> which can be found on the btrfs list, and for convenience is also attached
-> at the end of this e-mail.
-> 
-> The 2nd patch creates a libbtrfs and links the rest of the build to it. The
-> functionality I chose to export as of right now centers on send support. 
-> With this library, an external program has a much easier time processing the
-> stream which a send ioctl provides. It's worth nothing btw that this patch
-> can stand alone if need be.
+Oh ok cool. I didn't actually know that it was meant to be used across
+multiple file systems. Seems like a pretty neat feature to me :)
 
-Splitting out the send/receive-specific parts into a lib is a great idea.
-The original motivation behind our send stream format was to make it readily
-receivable on different filesystems.
-For this we need a generic receiver which could be based on the lib. But to
-make this possible, all btrfs-specific parts need to be kept out of it, so
-it can readily compile on BSD for example.
-So it might make sense to split out 2 parts, one for the pure receive
-functionality and one with the btrfs-specific parts.
-The former lib could be named libfar, as this is the name we want to give
-the stream format to make it independent from btrfs. FAR stands for
-Filesystem Agnostic Replication. There are senders for other systems (especially
-zfs) in preparation.
-I don't know if this affects your efforts in any way, but it might be easiest
-to do the split right away while you're at it :)
 
-Thanks,
-Arne
+> For this we need a generic receiver which could be based on the lib. But to
+> make this possible, all btrfs-specific parts need to be kept out of it, so
+> it can readily compile on BSD for example.
+> So it might make sense to split out 2 parts, one for the pure receive
+> functionality and one with the btrfs-specific parts.
+> The former lib could be named libfar, as this is the name we want to give
+> the stream format to make it independent from btrfs. FAR stands for
+> Filesystem Agnostic Replication. There are senders for other systems (especially
+> zfs) in preparation.
+> I don't know if this affects your efforts in any way, but it might be easiest
+> to do the split right away while you're at it :)
 
-> 
-> The 3rd patch introduces send-test, a small piece of software (not built by
-> default) to allow for testing of the send ioctl (including our new flag). As
-> send-test is a client of libbtrfs it might also serve as example code for
-> developers looking to make use of send.
-> 
-> The final patch makes minor changes so that libbtrfs is usable from C++.
-> 
-> The patches can also be viewed on github:
-> 
-> https://github.com/markfasheh/btrfs-progs-patches/tree/no-data-and-libify
-> 
-> Testing has been pretty straight-forward - I build the software, verify that
-> things work by making a file system or using send-test.
-> 
-> Please review. Thanks,
-> 	--Mark
-> 
-> Changelog:
-> 
-> - Fixed whitespace error in patch 3 (thanks to Anand Jain for reporting)
-> 
-> - "make version; make install" should work now (again, thanks to Anand Jain)
-> 
-> - included patch by Arvin Schnell to make it possible to use libbtrfs from C++
->   - From this patch I removed some code from cmds-send.c that was added
->     by mistake.
-> 
-> - libbtrfs properly links to libuuid and libm (Reported by Arvin)
-> 
-> - library symlinks are now properly installed (Reported by Arvin)
-> 
-> 
-> From: Mark Fasheh <mfasheh@suse.de>
-> 
-> [PATCH] btrfs: add "no file data" flag to btrfs send ioctl
-> 
-> This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
-> ioctl code. When this flag is set, the btrfs send code will never write file
-> data into the stream (thus also avoiding expensive reads of that data in the
-> first place). BTRFS_SEND_C_UPDATE_EXTENT commands will be sent (instead of
-> BTRFS_SEND_C_WRITE) with an offset, length pair indicating the extent in
-> question.
-> 
-> This patch does not affect the operation of BTRFS_SEND_C_CLONE commands -
-> they will continue to be sent when a search finds an appropriate extent to
-> clone from.
-> 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-> ---
->  fs/btrfs/ioctl.h |    7 +++++++
->  fs/btrfs/send.c  |   48 ++++++++++++++++++++++++++++++++++++++++++++----
->  fs/btrfs/send.h  |    1 +
->  3 files changed, 52 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-> index 731e287..1f6cfdd 100644
-> --- a/fs/btrfs/ioctl.h
-> +++ b/fs/btrfs/ioctl.h
-> @@ -363,6 +363,13 @@ struct btrfs_ioctl_received_subvol_args {
->  	__u64	reserved[16];		/* in */
->  };
->  
-> +/*
-> + * Caller doesn't want file data in the send stream, even if the
-> + * search of clone sources doesn't find an extent. UPDATE_EXTENT
-> + * commands will be sent instead of WRITE commands.
-> + */
-> +#define BTRFS_SEND_FLAG_NO_FILE_DATA     0x1
-> +
->  struct btrfs_ioctl_send_args {
->  	__s64 send_fd;			/* in */
->  	__u64 clone_sources_count;	/* in */
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index e78b297..8d0c6b4 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -85,6 +85,7 @@ struct send_ctx {
->  	u32 send_max_size;
->  	u64 total_send_size;
->  	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
-> +	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
->  
->  	struct vfsmount *mnt;
->  
-> @@ -3707,6 +3708,39 @@ out:
->  	return ret;
->  }
->  
-> +/*
-> + * Send an update extent command to user space.
-> + */
-> +static int send_update_extent(struct send_ctx *sctx,
-> +			      u64 offset, u32 len)
-> +{
-> +	int ret = 0;
-> +	struct fs_path *p;
-> +
-> +	p = fs_path_alloc(sctx);
-> +	if (!p)
-> +		return -ENOMEM;
-> +
-> +	ret = begin_cmd(sctx, BTRFS_SEND_C_UPDATE_EXTENT);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
-> +	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
-> +	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
-> +
-> +	ret = send_cmd(sctx);
-> +
-> +tlv_put_failure:
-> +out:
-> +	fs_path_free(sctx, p);
-> +	return ret;
-> +}
-> +
->  static int send_write_or_clone(struct send_ctx *sctx,
->  			       struct btrfs_path *path,
->  			       struct btrfs_key *key,
-> @@ -3742,7 +3776,11 @@ static int send_write_or_clone(struct send_ctx *sctx,
->  		goto out;
->  	}
->  
-> -	if (!clone_root) {
-> +	if (clone_root) {
-> +		ret = send_clone(sctx, offset, len, clone_root);
-> +	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
-> +		ret = send_update_extent(sctx, offset, len);
-> +	} else {
->  		while (pos < len) {
->  			l = len - pos;
->  			if (l > BTRFS_SEND_READ_SIZE)
-> @@ -3755,10 +3793,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
->  			pos += ret;
->  		}
->  		ret = 0;
-> -	} else {
-> -		ret = send_clone(sctx, offset, len, clone_root);
->  	}
-> -
->  out:
->  	return ret;
->  }
-> @@ -4570,6 +4605,11 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->  	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
->  	INIT_LIST_HEAD(&sctx->name_cache_list);
->  
-> +	if (arg->flags & ~BTRFS_SEND_FLAG_NO_FILE_DATA)
-> +		return -EINVAL;
-> +
-> +	sctx->flags = arg->flags;
-> +
->  	sctx->send_filp = fget(arg->send_fd);
->  	if (IS_ERR(sctx->send_filp)) {
->  		ret = PTR_ERR(sctx->send_filp);
-> diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-> index 1bf4f32..8bb18f7 100644
-> --- a/fs/btrfs/send.h
-> +++ b/fs/btrfs/send.h
-> @@ -86,6 +86,7 @@ enum btrfs_send_cmd {
->  	BTRFS_SEND_C_UTIMES,
->  
->  	BTRFS_SEND_C_END,
-> +	BTRFS_SEND_C_UPDATE_EXTENT,
->  	__BTRFS_SEND_C_MAX,
->  };
->  #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+Hmm, splitting into two libs isn't really that hard or anything but the real
+work (as you note) would be in making it compile in other places. Honestly,
+I think that could be built right on top of these patches but I don't feel
+that it's within the scope of my current series.
+	--Mark
 
+--
+Mark Fasheh

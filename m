@@ -1,32 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([82.95.169.224]:36846 "EHLO panda.humilis.net"
+Received: from mx1.redhat.com ([209.132.183.28]:14483 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751235Ab3ARIov (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jan 2013 03:44:51 -0500
-Date: Fri, 18 Jan 2013 09:44:49 +0100
-From: Sander <sander@humilis.net>
-To: Reartes Guillermo <rtguille@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs: could not do orphan cleanup -22
-Message-ID: <20130118084449.GA16399@panda>
-Reply-To: sander@humilis.net
-References: <CAPVzhpxSdjLTUhA0jVm5gLSvX9fB0N9zV6UTTQno2bANTsfGVw@mail.gmail.com>
+	id S1750957Ab3ARL40 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Jan 2013 06:56:26 -0500
+Message-ID: <50F93863.8050508@redhat.com>
+Date: Fri, 18 Jan 2013 06:56:19 -0500
+From: Ric Wheeler <rwheeler@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPVzhpxSdjLTUhA0jVm5gLSvX9fB0N9zV6UTTQno2bANTsfGVw@mail.gmail.com>
+To: "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
+Subject: [Lsf-pc] [CFP] Linux Storage, Filesystem and Memory Management Summit
+ 2013
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reartes Guillermo wrote (ao):
-> [   71.617841] device label testfs1 devid 1 transid 4143 /dev/sdb1
-> [   71.619164] btrfs: disk space caching is enabled
-> [   71.629969] device label fedora devid 1 transid 2038 /dev/sda2
-> [   71.805339] btrfs: Error removing orphan entry, stopping orphan cleanup
-> [   71.806597] btrfs: could not do orphan cleanup -22
-> [   71.986601] device label testfs1 devid 1 transid 4143 /dev/sdb1
-> [   72.934724] btrfs: open_ctree failed
 
-> Since sda2 is mounted i could not check it, but from the logs it is
-> not clear to me if the issue is in sda2 or sdb1.
+The annual Linux Storage, Filesystem and Memory Management Summit for
+2013 will be held on April 18th and 19th following the Linux Foundation
+Collaboration Summit at Parc 55 Hotel in San Francisco, CA:
 
-Seems sda2 from the above.
+	https://events.linuxfoundation.org/events/collaboration-summit
+	https://events.linuxfoundation.org/events/lsfmm-summit
+
+We'd therefore like to issue a call for agenda proposals that are
+suitable for cross-track discussion as well as more technical subjects
+for discussion in the breakout sessions.
+
+1) Suggestions for agenda topics should be sent before February 8th
+2013 to:
+
+	lsf-pc@lists.linux-foundation.org
+
+and optionally cc the Linux list which would be most interested in it:
+
+	ATA: linux-ide@vger.kernel.org
+	SCSI: linux-scsi@vger.kernel.org
+	FS: linux-fsdevel@vger.kernel.org
+	MM: linux-mm@kvack.org
+
+Please remember to tag your subject with [LSF/MM TOPIC] to make it
+easier to track. Agenda topics and attendees will be selected by the
+program committee, but the final agenda will be formed by consensus of
+the attendees on the day.
+
+We'll try to cap attendance at around 25-30 per track to facilitate
+discussions although the final numbers will depend on the room sizes at
+the venue.
+
+2) Requests to attend the summit should be sent to:
+
+	lsf-pc@lists.linux-foundation.org
+
+Please summarize what expertise you will bring to the meeting, and what
+you'd like to discuss.  please also tag your email with [ATTEND] so
+there's less chance of it getting lost in the large mail pile.
+
+Presentations are allowed to guide discussion, but are strongly
+discouraged. There will be no recording or audio bridge. However,
+written minutes will be published as in previous years:
+
+2012:
+	http://lwn.net/Articles/490114/
+	http://lwn.net/Articles/490501/
+
+2011:
+	http://lwn.net/Articles/436871/
+	http://lwn.net/Articles/437066/
+
+2010:
+	http://lwn.net/Articles/399148/
+	http://lwn.net/Articles/399313/
+	http://lwn.net/Articles/400589/
+
+2009:
+	http://lwn.net/Articles/327601/
+	http://lwn.net/Articles/327740/
+	http://lwn.net/Articles/328347/
+
+Prior years:
+	http://www.usenix.org/events/lsf08/tech/lsf08sums.pdf
+	http://www.usenix.org/publications/login/2007-06/openpdfs...
+
+3) If you have feedback on last year's meeting that we can use to
+improve this year's, please also send that to:
+
+	lsf-pc@lists.linux-foundation.org
+
+Thank you on behalf of the program committee:
+
+Storage:
+	Martin K. Petersen
+	Jens Axboe
+	James Bottomley
+
+Filesystems:
+	Ric Wheeler
+	Christoph Hellwig
+	Jaegeuk Kim
+	Jeffrey Layton
+	Tao Ma
+	Chris Mason
+	Trond Myklebust
+	Eric Sandeen
+	Theodore Ts'o
+	Sage Weil
+
+MM:
+	Rik van Riel
+	Mel Gorman
+	Ying Han
+
+
+
+_______________________________________________
+Lsf-pc mailing list
+Lsf-pc@lists.linux-foundation.org
+https://lists.linuxfoundation.org/mailman/listinfo/lsf-pc

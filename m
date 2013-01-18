@@ -1,119 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:14483 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:35259 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750957Ab3ARL40 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jan 2013 06:56:26 -0500
-Message-ID: <50F93863.8050508@redhat.com>
-Date: Fri, 18 Jan 2013 06:56:19 -0500
-From: Ric Wheeler <rwheeler@redhat.com>
+	id S1751137Ab3ARMI5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Jan 2013 07:08:57 -0500
+Date: Fri, 18 Jan 2013 13:08:55 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Reartes Guillermo <rtguille@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs: could not do orphan cleanup -22
+Message-ID: <20130118120855.GH22785@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAPVzhpxSdjLTUhA0jVm5gLSvX9fB0N9zV6UTTQno2bANTsfGVw@mail.gmail.com>
 MIME-Version: 1.0
-To: "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
-Subject: [Lsf-pc] [CFP] Linux Storage, Filesystem and Memory Management Summit
- 2013
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPVzhpxSdjLTUhA0jVm5gLSvX9fB0N9zV6UTTQno2bANTsfGVw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jan 17, 2013 at 05:23:17PM -0300, Reartes Guillermo wrote:
+> [    7.008342] device label testfs1 devid 1 transid 4141 /dev/sdb1
+> [    7.011071] btrfs: disk space caching is enabled
+> >> [    7.165692] btrfs: Error removing orphan entry, stopping orphan cleanup
+> >> [    7.165696] btrfs: could not do orphan cleanup -22
+> >> [    8.910980] btrfs: open_ctree failed
 
-The annual Linux Storage, Filesystem and Memory Management Summit for
-2013 will be held on April 18th and 19th following the Linux Foundation
-Collaboration Summit at Parc 55 Hotel in San Francisco, CA:
+The orphan cleaning messages are harmless (and not useful to users
+anyway), not like the failed mount. As a workaround, mount it read-only
+and remount read write. It should be fixed after first mount cycle.
 
-	https://events.linuxfoundation.org/events/collaboration-summit
-	https://events.linuxfoundation.org/events/lsfmm-summit
+We've seen the -22 error during testing and Josef is aware of that, so
+it's going to be fixed after the checksum problems.
 
-We'd therefore like to issue a call for agenda proposals that are
-suitable for cross-track discussion as well as more technical subjects
-for discussion in the breakout sessions.
+> [    8.944598] systemd-journald[292]: Received SIGTERM
+> [   70.616949] systemd-modules-load[453]: Module 'uinput' is already loaded
+> [   70.676072] systemd-udevd[457]: starting version 197
+> [   70.937319] microcode: AMD CPU family 0x6 not supported
+> [   71.598671] btrfs: disk space caching is enabled
+> [   71.617841] device label testfs1 devid 1 transid 4143 /dev/sdb1
+> [   71.619164] btrfs: disk space caching is enabled
+> [   71.629969] device label fedora devid 1 transid 2038 /dev/sda2
+> [   71.805339] btrfs: Error removing orphan entry, stopping orphan cleanup
+> [   71.806597] btrfs: could not do orphan cleanup -22
+> [   71.986601] device label testfs1 devid 1 transid 4143 /dev/sdb1
+> [   72.934724] btrfs: open_ctree failed
+> 
+> I booted first with 3.8.0-0.rc3.git1.1.fc19 (which has a lot of
+> issues) and then back with 3.7.2-201.fc18.
 
-1) Suggestions for agenda topics should be sent before February 8th
-2013 to:
+I don't see from the messages under which kernel it happened, but I
+assume with both.
 
-	lsf-pc@lists.linux-foundation.org
-
-and optionally cc the Linux list which would be most interested in it:
-
-	ATA: linux-ide@vger.kernel.org
-	SCSI: linux-scsi@vger.kernel.org
-	FS: linux-fsdevel@vger.kernel.org
-	MM: linux-mm@kvack.org
-
-Please remember to tag your subject with [LSF/MM TOPIC] to make it
-easier to track. Agenda topics and attendees will be selected by the
-program committee, but the final agenda will be formed by consensus of
-the attendees on the day.
-
-We'll try to cap attendance at around 25-30 per track to facilitate
-discussions although the final numbers will depend on the room sizes at
-the venue.
-
-2) Requests to attend the summit should be sent to:
-
-	lsf-pc@lists.linux-foundation.org
-
-Please summarize what expertise you will bring to the meeting, and what
-you'd like to discuss.  please also tag your email with [ATTEND] so
-there's less chance of it getting lost in the large mail pile.
-
-Presentations are allowed to guide discussion, but are strongly
-discouraged. There will be no recording or audio bridge. However,
-written minutes will be published as in previous years:
-
-2012:
-	http://lwn.net/Articles/490114/
-	http://lwn.net/Articles/490501/
-
-2011:
-	http://lwn.net/Articles/436871/
-	http://lwn.net/Articles/437066/
-
-2010:
-	http://lwn.net/Articles/399148/
-	http://lwn.net/Articles/399313/
-	http://lwn.net/Articles/400589/
-
-2009:
-	http://lwn.net/Articles/327601/
-	http://lwn.net/Articles/327740/
-	http://lwn.net/Articles/328347/
-
-Prior years:
-	http://www.usenix.org/events/lsf08/tech/lsf08sums.pdf
-	http://www.usenix.org/publications/login/2007-06/openpdfs...
-
-3) If you have feedback on last year's meeting that we can use to
-improve this year's, please also send that to:
-
-	lsf-pc@lists.linux-foundation.org
-
-Thank you on behalf of the program committee:
-
-Storage:
-	Martin K. Petersen
-	Jens Axboe
-	James Bottomley
-
-Filesystems:
-	Ric Wheeler
-	Christoph Hellwig
-	Jaegeuk Kim
-	Jeffrey Layton
-	Tao Ma
-	Chris Mason
-	Trond Myklebust
-	Eric Sandeen
-	Theodore Ts'o
-	Sage Weil
-
-MM:
-	Rik van Riel
-	Mel Gorman
-	Ying Han
-
-
-
-_______________________________________________
-Lsf-pc mailing list
-Lsf-pc@lists.linux-foundation.org
-https://lists.linuxfoundation.org/mailman/listinfo/lsf-pc
+david

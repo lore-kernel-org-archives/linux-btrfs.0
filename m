@@ -1,56 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f44.google.com ([209.85.214.44]:63249 "EHLO
-	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754150Ab3ARRbq (ORCPT
+Received: from mail-wg0-f46.google.com ([74.125.82.46]:51114 "EHLO
+	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751993Ab3ASJLh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jan 2013 12:31:46 -0500
-Received: by mail-bk0-f44.google.com with SMTP id w11so2139187bku.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jan 2013 09:31:45 -0800 (PST)
-Message-ID: <50F9871A.90307@gmail.com>
-Date: Fri, 18 Jan 2013 18:32:10 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Sat, 19 Jan 2013 04:11:37 -0500
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>, David Sterba <dsterba@suse.cz>,
-        Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] btrfs-progs: more bugfixes for 0.20-rc1
-References: <20130117174721.GD22785@twin.jikos.cz> <20130117175159.GA30656@shiny.int.fusionio.com>
-In-Reply-To: <20130117175159.GA30656@shiny.int.fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
+References: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
+Date: Sat, 19 Jan 2013 11:11:35 +0200
+Message-ID: <CAOJsxLHGZzq7iFhWVz5AEOvTh8trLf86uME76ggJJ8gudLbwKg@mail.gmail.com>
+Subject: Re: [PATCH] mm/slab: add a leak decoder callback
+From: Pekka Enberg <penberg@kernel.org>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
+        Catalin Marinas <catalin.marinas@arm.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-On 01/17/2013 06:51 PM, Chris Mason wrote:
-> On Thu, Jan 17, 2013 at 10:47:21AM -0700, David Sterba wrote:
->> Hi Chris,
->>
-[...]
+Hello,
+
+On Mon, Jan 14, 2013 at 8:03 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> This adds a leak decoder callback so that kmem_cache_destroy()
+> can use to generate debugging output for the allocated objects.
 >
-> Thanks Dave, pulling these in.
-what about my patches "Enhance the command btrfs filesystem df" (see my 
-emails dated on 2012/11/02) [1] ?
-You stated an interesting in these patches; however then I never heard 
-anything...
-
-Do you want  I resubmit ? I reached a general consensus ( == nobody was 
-too unsatisfied :-) ) about the wording and the format.
-
-And I have another question: it is possible to access to the RAID5/6 
-develop branch. I am interesting to check how my patches work with 
-RAID5/6...
-
-
-
+> Callers like btrfs are using their own leak tracking which will
+> manage allocated objects in a list(or something else), this does
+> indeed the same thing as what slab does.  So adding a callback
+> for leak tracking can avoid this as well as runtime overhead.
 >
-> -chris
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-BR
-G.Baroncelli
+I'm OK with adding the hooks but I'd much rather see the reporting
+integrated with kmemleak. CONFIG_KMEMLEAK_LIGHTWEIGHT or something,
+maybe?
 
-
-[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21071
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> ---
+> The idea is from Zach Brown <zab@zabbo.net>.
+>
+>  fs/btrfs/extent_io.c     |   24 ++++++++++++++++++++++++
+>  fs/btrfs/extent_map.c    |   12 ++++++++++++
+>  include/linux/slab.h     |    1 +
+>  include/linux/slab_def.h |    1 +
+>  include/linux/slub_def.h |    1 +
+>  mm/slab_common.c         |    1 +
+>  mm/slub.c                |    5 +++++
+>  7 files changed, 45 insertions(+), 0 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index bcc8dff..4954f3d 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -63,6 +63,26 @@ tree_fs_info(struct extent_io_tree *tree)
+>         return btrfs_sb(tree->mapping->host->i_sb);
+>  }
+>
+> +static void extent_state_leak_decoder(void *object)
+> +{
+> +       struct extent_state *state = object;
+> +
+> +       printk(KERN_ERR "btrfs state leak: start %llu end %llu "
+> +              "state %lu in tree %p refs %d\n",
+> +              (unsigned long long)state->start,
+> +              (unsigned long long)state->end,
+> +              state->state, state->tree, atomic_read(&state->refs));
+> +}
+> +
+> +static void extent_buffer_leak_decoder(void *object)
+> +{
+> +       struct extent_buffer *eb = object;
+> +
+> +       printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
+> +              "refs %d\n", (unsigned long long)eb->start,
+> +              eb->len, atomic_read(&eb->refs));
+> +}
+> +
+>  int __init extent_io_init(void)
+>  {
+>         extent_state_cache = kmem_cache_create("btrfs_extent_state",
+> @@ -71,11 +91,15 @@ int __init extent_io_init(void)
+>         if (!extent_state_cache)
+>                 return -ENOMEM;
+>
+> +       extent_state_cache->decoder = extent_state_leak_decoder;
+> +
+>         extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
+>                         sizeof(struct extent_buffer), 0,
+>                         SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+>         if (!extent_buffer_cache)
+>                 goto free_state_cache;
+> +
+> +       extent_buffer_cache->decoder = extent_buffer_leak_decoder;
+>         return 0;
+>
+>  free_state_cache:
+> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> index 80370d6..d598a8d 100644
+> --- a/fs/btrfs/extent_map.c
+> +++ b/fs/btrfs/extent_map.c
+> @@ -16,6 +16,16 @@ static LIST_HEAD(emaps);
+>  static DEFINE_SPINLOCK(map_leak_lock);
+>  #endif
+>
+> +static void extent_map_leak_decoder(void *object)
+> +{
+> +       struct extent_map *em = object;
+> +
+> +       printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu "
+> +              "flags %lu refs %d in tree %d compress %d\n",
+> +              em->start, em->len, em->block_start, em->flags,
+> +              atomic_read(&em->refs), em->in_tree, (int)em->compress_type);
+> +}
+> +
+>  int __init extent_map_init(void)
+>  {
+>         extent_map_cache = kmem_cache_create("btrfs_extent_map",
+> @@ -23,6 +33,8 @@ int __init extent_map_init(void)
+>                         SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+>         if (!extent_map_cache)
+>                 return -ENOMEM;
+> +
+> +       extent_map_cache->decoder = extent_map_leak_decoder;
+>         return 0;
+>  }
+>
+> diff --git a/include/linux/slab.h b/include/linux/slab.h
+> index 5d168d7..89a9efd 100644
+> --- a/include/linux/slab.h
+> +++ b/include/linux/slab.h
+> @@ -114,6 +114,7 @@ struct kmem_cache {
+>         const char *name;       /* Slab name for sysfs */
+>         int refcount;           /* Use counter */
+>         void (*ctor)(void *);   /* Called on object slot creation */
+> +       void (*decoder)(void *);/* Called on object slot leak detection */
+>         struct list_head list;  /* List of all slab caches on the system */
+>  };
+>  #endif
+> diff --git a/include/linux/slab_def.h b/include/linux/slab_def.h
+> index 8bb6e0e..7ca8309 100644
+> --- a/include/linux/slab_def.h
+> +++ b/include/linux/slab_def.h
+> @@ -48,6 +48,7 @@ struct kmem_cache {
+>
+>         /* constructor func */
+>         void (*ctor)(void *obj);
+> +       void (*decoder)(void *obj);
+>
+>  /* 4) cache creation/removal */
+>         const char *name;
+> diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+> index 9db4825..fc18af7 100644
+> --- a/include/linux/slub_def.h
+> +++ b/include/linux/slub_def.h
+> @@ -93,6 +93,7 @@ struct kmem_cache {
+>         gfp_t allocflags;       /* gfp flags to use on each alloc */
+>         int refcount;           /* Refcount for slab cache destroy */
+>         void (*ctor)(void *);
+> +       void (*decoder)(void *);
+>         int inuse;              /* Offset to metadata */
+>         int align;              /* Alignment */
+>         int reserved;           /* Reserved bytes at the end of slabs */
+> diff --git a/mm/slab_common.c b/mm/slab_common.c
+> index 3f3cd97..39a0fb2 100644
+> --- a/mm/slab_common.c
+> +++ b/mm/slab_common.c
+> @@ -193,6 +193,7 @@ kmem_cache_create_memcg(struct mem_cgroup *memcg, const char *name, size_t size,
+>                 s->object_size = s->size = size;
+>                 s->align = calculate_alignment(flags, align, size);
+>                 s->ctor = ctor;
+> +               s->decoder = NULL;
+>
+>                 if (memcg_register_cache(memcg, s, parent_cache)) {
+>                         kmem_cache_free(kmem_cache, s);
+> diff --git a/mm/slub.c b/mm/slub.c
+> index ba2ca53..0496a2b 100644
+> --- a/mm/slub.c
+> +++ b/mm/slub.c
+> @@ -3098,6 +3098,8 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
+>         for_each_object(p, s, addr, page->objects) {
+>
+>                 if (!test_bit(slab_index(p, s, addr), map)) {
+> +                       if (unlikely(s->decoder))
+> +                               s->decoder(p);
+>                         printk(KERN_ERR "INFO: Object 0x%p @offset=%tu\n",
+>                                                         p, p - addr);
+>                         print_tracking(s, p);
+> @@ -3787,6 +3789,9 @@ static int slab_unmergeable(struct kmem_cache *s)
+>         if (s->ctor)
+>                 return 1;
+>
+> +       if (s->decoder)
+> +               return 1;
+> +
+>         /*
+>          * We may have set a slab to be unmergeable during bootstrap.
+>          */
+> --
+> 1.7.7.6
+>
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo@kvack.org.  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

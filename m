@@ -1,206 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f46.google.com ([74.125.82.46]:51114 "EHLO
-	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751993Ab3ASJLh (ORCPT
+Received: from mail-pb0-f44.google.com ([209.85.160.44]:44659 "EHLO
+	mail-pb0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751160Ab3ASWxI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Jan 2013 04:11:37 -0500
+	Sat, 19 Jan 2013 17:53:08 -0500
+Received: by mail-pb0-f44.google.com with SMTP id uo1so2668217pbc.17
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Jan 2013 14:53:08 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
-References: <1358143419-13074-1-git-send-email-bo.li.liu@oracle.com>
-Date: Sat, 19 Jan 2013 11:11:35 +0200
-Message-ID: <CAOJsxLHGZzq7iFhWVz5AEOvTh8trLf86uME76ggJJ8gudLbwKg@mail.gmail.com>
-Subject: Re: [PATCH] mm/slab: add a leak decoder callback
-From: Pekka Enberg <penberg@kernel.org>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Zach Brown <zab@zabbo.net>,
-        Catalin Marinas <catalin.marinas@arm.com>
+Date: Sat, 19 Jan 2013 19:53:08 -0300
+Message-ID: <CAPVzhpyj8oXMGyoPop6FadcDRAyDTmvX7VPncBLo0wuUOKxvwA@mail.gmail.com>
+Subject: btrfs: failed to read chunk tree on vde1 (f18 anaconda crash)
+From: Reartes Guillermo <rtguille@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-On Mon, Jan 14, 2013 at 8:03 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> This adds a leak decoder callback so that kmem_cache_destroy()
-> can use to generate debugging output for the allocated objects.
->
-> Callers like btrfs are using their own leak tracking which will
-> manage allocated objects in a list(or something else), this does
-> indeed the same thing as what slab does.  So adding a callback
-> for leak tracking can avoid this as well as runtime overhead.
->
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+I reported a bug to anaconda (rhbz 901905), but it might be btfs related.
 
-I'm OK with adding the hooks but I'd much rather see the reporting
-integrated with kmemleak. CONFIG_KMEMLEAK_LIGHTWEIGHT or something,
-maybe?
+Anaconda does this:
 
-> ---
-> The idea is from Zach Brown <zab@zabbo.net>.
->
->  fs/btrfs/extent_io.c     |   24 ++++++++++++++++++++++++
->  fs/btrfs/extent_map.c    |   12 ++++++++++++
->  include/linux/slab.h     |    1 +
->  include/linux/slab_def.h |    1 +
->  include/linux/slub_def.h |    1 +
->  mm/slab_common.c         |    1 +
->  mm/slub.c                |    5 +++++
->  7 files changed, 45 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index bcc8dff..4954f3d 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -63,6 +63,26 @@ tree_fs_info(struct extent_io_tree *tree)
->         return btrfs_sb(tree->mapping->host->i_sb);
->  }
->
-> +static void extent_state_leak_decoder(void *object)
-> +{
-> +       struct extent_state *state = object;
-> +
-> +       printk(KERN_ERR "btrfs state leak: start %llu end %llu "
-> +              "state %lu in tree %p refs %d\n",
-> +              (unsigned long long)state->start,
-> +              (unsigned long long)state->end,
-> +              state->state, state->tree, atomic_read(&state->refs));
-> +}
-> +
-> +static void extent_buffer_leak_decoder(void *object)
-> +{
-> +       struct extent_buffer *eb = object;
-> +
-> +       printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
-> +              "refs %d\n", (unsigned long long)eb->start,
-> +              eb->len, atomic_read(&eb->refs));
-> +}
-> +
->  int __init extent_io_init(void)
->  {
->         extent_state_cache = kmem_cache_create("btrfs_extent_state",
-> @@ -71,11 +91,15 @@ int __init extent_io_init(void)
->         if (!extent_state_cache)
->                 return -ENOMEM;
->
-> +       extent_state_cache->decoder = extent_state_leak_decoder;
-> +
->         extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
->                         sizeof(struct extent_buffer), 0,
->                         SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
->         if (!extent_buffer_cache)
->                 goto free_state_cache;
-> +
-> +       extent_buffer_cache->decoder = extent_buffer_leak_decoder;
->         return 0;
->
->  free_state_cache:
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index 80370d6..d598a8d 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -16,6 +16,16 @@ static LIST_HEAD(emaps);
->  static DEFINE_SPINLOCK(map_leak_lock);
->  #endif
->
-> +static void extent_map_leak_decoder(void *object)
-> +{
-> +       struct extent_map *em = object;
-> +
-> +       printk(KERN_ERR "btrfs ext map leak: start %llu len %llu block %llu "
-> +              "flags %lu refs %d in tree %d compress %d\n",
-> +              em->start, em->len, em->block_start, em->flags,
-> +              atomic_read(&em->refs), em->in_tree, (int)em->compress_type);
-> +}
-> +
->  int __init extent_map_init(void)
->  {
->         extent_map_cache = kmem_cache_create("btrfs_extent_map",
-> @@ -23,6 +33,8 @@ int __init extent_map_init(void)
->                         SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
->         if (!extent_map_cache)
->                 return -ENOMEM;
-> +
-> +       extent_map_cache->decoder = extent_map_leak_decoder;
->         return 0;
->  }
->
-> diff --git a/include/linux/slab.h b/include/linux/slab.h
-> index 5d168d7..89a9efd 100644
-> --- a/include/linux/slab.h
-> +++ b/include/linux/slab.h
-> @@ -114,6 +114,7 @@ struct kmem_cache {
->         const char *name;       /* Slab name for sysfs */
->         int refcount;           /* Use counter */
->         void (*ctor)(void *);   /* Called on object slot creation */
-> +       void (*decoder)(void *);/* Called on object slot leak detection */
->         struct list_head list;  /* List of all slab caches on the system */
->  };
->  #endif
-> diff --git a/include/linux/slab_def.h b/include/linux/slab_def.h
-> index 8bb6e0e..7ca8309 100644
-> --- a/include/linux/slab_def.h
-> +++ b/include/linux/slab_def.h
-> @@ -48,6 +48,7 @@ struct kmem_cache {
->
->         /* constructor func */
->         void (*ctor)(void *obj);
-> +       void (*decoder)(void *obj);
->
->  /* 4) cache creation/removal */
->         const char *name;
-> diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
-> index 9db4825..fc18af7 100644
-> --- a/include/linux/slub_def.h
-> +++ b/include/linux/slub_def.h
-> @@ -93,6 +93,7 @@ struct kmem_cache {
->         gfp_t allocflags;       /* gfp flags to use on each alloc */
->         int refcount;           /* Refcount for slab cache destroy */
->         void (*ctor)(void *);
-> +       void (*decoder)(void *);
->         int inuse;              /* Offset to metadata */
->         int align;              /* Alignment */
->         int reserved;           /* Reserved bytes at the end of slabs */
-> diff --git a/mm/slab_common.c b/mm/slab_common.c
-> index 3f3cd97..39a0fb2 100644
-> --- a/mm/slab_common.c
-> +++ b/mm/slab_common.c
-> @@ -193,6 +193,7 @@ kmem_cache_create_memcg(struct mem_cgroup *memcg, const char *name, size_t size,
->                 s->object_size = s->size = size;
->                 s->align = calculate_alignment(flags, align, size);
->                 s->ctor = ctor;
-> +               s->decoder = NULL;
->
->                 if (memcg_register_cache(memcg, s, parent_cache)) {
->                         kmem_cache_free(kmem_cache, s);
-> diff --git a/mm/slub.c b/mm/slub.c
-> index ba2ca53..0496a2b 100644
-> --- a/mm/slub.c
-> +++ b/mm/slub.c
-> @@ -3098,6 +3098,8 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
->         for_each_object(p, s, addr, page->objects) {
->
->                 if (!test_bit(slab_index(p, s, addr), map)) {
-> +                       if (unlikely(s->decoder))
-> +                               s->decoder(p);
->                         printk(KERN_ERR "INFO: Object 0x%p @offset=%tu\n",
->                                                         p, p - addr);
->                         print_tracking(s, p);
-> @@ -3787,6 +3789,9 @@ static int slab_unmergeable(struct kmem_cache *s)
->         if (s->ctor)
->                 return 1;
->
-> +       if (s->decoder)
-> +               return 1;
-> +
->         /*
->          * We may have set a slab to be unmergeable during bootstrap.
->          */
-> --
-> 1.7.7.6
->
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo@kvack.org.  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+18:49:10,317 INFO program: Running... mkfs.btrfs --data=single
+--label=fedora /dev/vdb1 /dev/vdc1 /dev/vdd1 /dev/vde1
+18:49:10,742 INFO program:
+18:49:10,746 INFO program: WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+18:49:10,746 INFO program: WARNING! - see http://btrfs.wiki.kernel.org
+before using
+18:49:10,748 INFO program:
+18:49:10,749 INFO program: SMALL VOLUME: forcing mixed metadata/data groups
+18:49:10,750 INFO program: Created a data/metadata chunk of size 8388608
+18:49:10,750 INFO program: adding device /dev/vdc1 id 2
+18:49:10,751 INFO program: adding device /dev/vdd1 id 3
+18:49:10,752 INFO program: adding device /dev/vde1 id 4
+18:49:10,752 INFO program: fs created label fedora on /dev/vdb1
+18:49:10,753 INFO program:      nodesize 4096 leafsize 4096 sectorsize
+4096 size 2.93GB
+18:49:10,754 INFO program: Btrfs Btrfs v0.19
+18:49:10,987 INFO program: Running... udevadm settle --timeout=300
+18:49:11,007 INFO program: Running... udevadm settle --timeout=300
+18:49:11,036 INFO program: Running... udevadm settle --timeout=300
+18:49:11,070 INFO program: Running... udevadm settle --timeout=300
+21:49:11,121 INFO program: Running... /bin/mount -n -t btrfs -o
+defaults /dev/vdb1 /tmp/btrfs-tmp.5205bBZQ
+21:49:11,135 ERR program: mount: wrong fs type, bad option, bad
+superblock on /dev/vdb1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so
+
+In the syslog file this is shown:
+
+21:49:10,371 INFO kernel:[  435.624404] device label fedora devid 1
+transid 3 /dev/vdb1
+21:49:10,371 INFO kernel:[  435.624720] device label fedora devid 1
+transid 3 /dev/vdb1
+21:49:10,385 INFO kernel:[  435.638653] device label fedora devid 1
+transid 3 /dev/vdb1
+21:49:10,396 INFO kernel:[  435.649839] device label fedora devid 2
+transid 3 /dev/vdc1
+21:49:10,404 INFO kernel:[  435.657442] device label fedora devid 3
+transid 3 /dev/vdd1
+21:49:10,434 INFO kernel:[  435.687677] device label fedora devid 4
+transid 3 /dev/vde1
+21:49:10,746 INFO kernel:[  435.999309] device label fedora devid 1
+transid 4 /dev/vdb1
+21:49:10,918 INFO kernel:[  436.171992] device label fedora devid 3
+transid 4 /dev/vdd1
+21:49:10,925 INFO kernel:[  436.178937] device label fedora devid 3
+transid 4 /dev/vdd1
+21:49:10,928 INFO kernel:[  436.181545] device label fedora devid 4
+transid 4 /dev/vde1
+21:49:10,929 INFO kernel:[  436.182475] device label fedora devid 1
+transid 4 /dev/vdc1
+21:49:10,930 INFO kernel:[  436.183409] device label fedora devid 4
+transid 4 /dev/vde1
+21:49:10,932 INFO kernel:[  436.185171] device label fedora devid 1
+transid 4 /dev/vdc1
+21:49:10,971 INFO kernel:[  436.224843] device label fedora devid 1
+transid 4 /dev/vdb1
+21:49:11,130 INFO kernel:[  436.383110] device label fedora devid 1
+transid 4 /dev/vdb1
+21:49:11,133 INFO kernel:[  436.386297] btrfs: disk space caching is enabled
+21:49:11,133 WARNING kernel:[  436.386697] btrfs: failed to read chunk
+tree on vde1
+21:49:11,134 WARNING kernel:[  436.387183] btrfs: open_ctree failed
+
+I booted again and did both the mk.btrfs and the mount manually and i
+got the same error.
+
+Is it a known issue?
+
+Thanks in advance.

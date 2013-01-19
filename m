@@ -1,66 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo202.cox.net ([68.230.241.217]:57086 "EHLO
-	eastrmfepo202.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751317Ab3ASO4j (ORCPT
+Received: from eastrmfepo102.cox.net ([68.230.241.214]:49065 "EHLO
+	eastrmfepo102.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751120Ab3ASO4i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Jan 2013 09:56:39 -0500
-Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo202.cox.net
+	Sat, 19 Jan 2013 09:56:38 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo102.cox.net
           (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130119145638.YPHX6475.eastrmfepo202.cox.net@eastrmimpo209>
+          id <20130119145638.DBHX7113.eastrmfepo102.cox.net@eastrmimpo209>
           for <linux-btrfs@vger.kernel.org>;
           Sat, 19 Jan 2013 09:56:38 -0500
 From: Gene Czarcinski <gene@czarc.net>
 To: linux-btrfs@vger.kernel.org
 Cc: Gene Czarcinski <gene@czarc.net>
-Subject: [PATCH 2/4] Fedora 18 - build-fixes.patch
-Date: Sat, 19 Jan 2013 09:56:23 -0500
-Message-Id: <1358607385-21163-3-git-send-email-gene@czarc.net>
+Subject: [PATCH 1/4] Fedora 18 - btrfs-init-dev-list.patch
+Date: Sat, 19 Jan 2013 09:56:22 -0500
+Message-Id: <1358607385-21163-2-git-send-email-gene@czarc.net>
 In-Reply-To: <1358607385-21163-1-git-send-email-gene@czarc.net>
 References: <1358607385-21163-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 ---
- btrfsck.c | 2 ++
- mkfs.c    | 4 ++--
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ utils.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/btrfsck.c b/btrfsck.c
-index a851008..6274ff7 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -22,7 +22,9 @@
- #include <stdlib.h>
- #include <unistd.h>
- #include <fcntl.h>
-+#include <sys/types.h>
- #include <sys/stat.h>
-+#include <unistd.h>
- #include <getopt.h>
- #include "kerncompat.h"
- #include "ctree.h"
-diff --git a/mkfs.c b/mkfs.c
-index fbf8319..d123d5f 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1206,7 +1206,7 @@ int main(int ac, char **av)
- 	u64 alloc_start = 0;
- 	u64 metadata_profile = 0;
- 	u64 data_profile = 0;
--	u32 leafsize = getpagesize();
-+	u32 leafsize = sysconf(_SC_PAGESIZE);
- 	u32 sectorsize = 4096;
- 	u32 nodesize = leafsize;
- 	u32 stripesize = 4096;
-@@ -1282,7 +1282,7 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
--	sectorsize = max(sectorsize, (u32)getpagesize());
-+	sectorsize = max(sectorsize, (u32)sysconf(_SC_PAGESIZE));
- 	if (check_leaf_or_node_size(leafsize, sectorsize))
- 		exit(1);
- 	if (check_leaf_or_node_size(nodesize, sectorsize))
+diff --git a/utils.c b/utils.c
+index 938f9a5..51b78d5 100644
+--- a/utils.c
++++ b/utils.c
+@@ -477,7 +477,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 	u64 num_devs;
+ 	int ret;
+ 
+-	device = kmalloc(sizeof(*device), GFP_NOFS);
++	device = kzalloc(sizeof(*device), GFP_NOFS);
+ 	if (!device)
+ 		return -ENOMEM;
+ 	buf = kmalloc(sectorsize, GFP_NOFS);
+@@ -503,6 +503,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 	device->bytes_used = 0;
+ 	device->total_ios = 0;
+ 	device->dev_root = root->fs_info->dev_root;
++	INIT_LIST_HEAD(&device->dev_list);
+ 
+ 	ret = btrfs_add_device(trans, root, device);
+ 	BUG_ON(ret);
 -- 
 1.8.1
 

@@ -1,101 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:51233 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753083Ab3AQOQr (ORCPT
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:38012 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751951Ab3ATNLg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jan 2013 09:16:47 -0500
-Date: Thu, 17 Jan 2013 06:16:43 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: David Sterba <dsterba@suse.cz>
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:3707 still not fixed in 3.7.1 (btrfs-zero-log required) but shown as "RIP btrfs_num_copies"
-Message-ID: <20130117141643.GA14606@merlins.org>
-References: <20130108164958.GA2044@merlins.org> <20130108182541.GE2389@localhost.localdomain> <20130108184603.GG2044@merlins.org> <20130110162009.GF16943@merlins.org> <20130111144952.GA1876@localhost.localdomain> <20130113031212.GI4038@merlins.org> <20130117113122.GW20089@twin.jikos.cz>
+	Sun, 20 Jan 2013 08:11:36 -0500
+Received: by mail-wi0-f177.google.com with SMTP id hm2so4207503wib.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jan 2013 05:11:34 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130117113122.GW20089@twin.jikos.cz>
+In-Reply-To: <20130110171040.GG20089@twin.jikos.cz>
+References: <50EEB880.4060308@cn.fujitsu.com>
+	<20130110171040.GG20089@twin.jikos.cz>
+Date: Sun, 20 Jan 2013 15:11:34 +0200
+Message-ID: <CAOcd+r1ok5yUeYBfzkV2XTqp5ytvzT+fYBsv3STS9QTYqd9DHQ@mail.gmail.com>
+Subject: Re: [PATCH 05/11] Btrfs: protect fs_info->alloc_start
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: dsterba@suse.cz
+Cc: Miao Xie <miaox@cn.fujitsu.com>, Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 17, 2013 at 12:31:22PM +0100, David Sterba wrote:
-> On Sat, Jan 12, 2013 at 07:12:12PM -0800, Marc MERLIN wrote:
-> > On Fri, Jan 11, 2013 at 09:49:52AM -0500, Josef Bacik wrote:
-> > > Probably just related to whatever corruption it is you are seeing.
-> >  
-> > So I have no corruption afterall, correct?
-> > 
-> > That's good news, but then it does mean that unclean sudden shutdowns in the wrong place.
-> > 
-> > I still have a truncated fs_image if someone wants it, and with an
-> > apparently uncorrupted FS, btrfs-image is still dying for me:
-> > andalfthegreat:~# btrfs-image -c 9 /dev/mapper/cryptroot  /var/tmp/fs_image2
-> > Check tree block failed, want=4261896192, have=10797364022063960087
-> > Check tree block failed, want=4261896192, have=10797364022063960087
-> > Check tree block failed, want=4261896192, have=13996544474027288730
-> > Check tree block failed, want=4261896192, have=10797364022063960087
-> > Check tree block failed, want=4261896192, have=10797364022063960087
-> 
-> want= are around 4G, have= numbers are way off, very likely a
-> corruption. the number does not translate into a meaningful pattern.
-
-Thanks for your answer, I appreciate it.
-
-So this is the corruption that ends up in my log, and if I remove the log
-that happened before the laptop died, then the rest of the filesystem seems
-ok and scrub finds nothing wrong.
-
-My very uneducatd guess is that when my SSD craps out, just before my laptop
-locks up, it's either responsible for causing that corrupted log to be
-written, or there is a bug in btrfs that happens where truncated writes
-happen before a device comes of the sata bus.
-Either way, I got this bug multiple times with the same device (which I just
-replaced yesterday, just in case).
-
-Here's what I've seen so far in case there is a useful pattern.
-There is a mix of what I got from btrfs-zero-log and btrfs-image.
-I did get the problem more often than just those, but those are the ones I
-recorded before zero'ing the log.
-
-Check tree block failed, want=259264512, have=12301165138967429629
-Check tree block failed, want=259264512, have=12301165138967429629
-Check tree block failed, want=259264512, have=7949122546735189447
-Check tree block failed, want=259264512, have=12301165138967429629
-Check tree block failed, want=259264512, have=12301165138967429629
-
-
-Check tree block failed, want=4268204032, have=2075122916315869932
-Check tree block failed, want=4268204032, have=2075122916315869932
-Check tree block failed, want=4268204032, have=12746175583536274708
-Check tree block failed, want=4268204032, have=2075122916315869932
-Check tree block failed, want=4268204032, have=2075122916315869932
-
-Check tree block failed, want=5212229632, have=12481778023482407252
-Check tree block failed, want=5212229632, have=12481778023482407252
-Check tree block failed, want=5212229632, have=14440972074482314957
-Check tree block failed, want=5212229632, have=12481778023482407252
-Check tree block failed, want=5212229632, have=12481778023482407252
-
-Check tree block failed, want=73949184, have=14419929907352990360
-Check tree block failed, want=73949184, have=14419929907352990360
-Check tree block failed, want=73949184, have=12288424950725929455
-Check tree block failed, want=73949184, have=14419929907352990360
-Check tree block failed, want=73949184, have=14419929907352990360
-
-Check tree block failed, want=4261896192, have=10797364022063960087
-Check tree block failed, want=4261896192, have=10797364022063960087
-Check tree block failed, want=4261896192, have=13996544474027288730
-Check tree block failed, want=4261896192, have=10797364022063960087
-Check tree block failed, want=4261896192, have=10797364022063960087
-
-I'm hopeful this is useful somehow, and hopefully btrfs will stop oops'ing
-at boot time, requiring a recovery disk and specialized knowledge to
-recover, when this happens.
+Hi David,
+do you think you can share this favorite stress-test that you have mentioned?
 
 Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Alex.
+
+
+On Thu, Jan 10, 2013 at 7:10 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Thu, Jan 10, 2013 at 08:48:00PM +0800, Miao Xie wrote:
+>> fs_info->alloc_start was not protected strictly, it might be changed while
+>> we were accessing it. This patch fixes this problem by using two locks to
+>> protect it (fs_info->chunk_mutex and sb->s_umount). On the read side, we
+>> just need get one of these two locks, and on the write side, we must lock
+>> all of them.
+>
+> Can you please describe how this can theoretically cause any problems?
+>
+> Out of curiosity I've been running this command on a 60G ssd disk for a while
+>
+> for i in `seq 1 10000|shuf`;do
+>         mount -o remount,alloc_start=$(($i*1024*1024)) /mnt/sdc;done
+>         #sleep 0 / 1 / 5
+> done
+>
+> together with one of my favourite stresstests (heavy writes, subvolume
+> activity).
+>
+> There are two direct users of fs_info->alloc_start:
+>
+> * statfs via btrfs_calc_avail_data_space
+> * find_free_dev_extent
+>
+> 960         search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
+>
+> as remount calls sync, there is a very tiny window where an allocation could
+> get the old value of alloc_start just between sync and do_remount. Theoretical
+> and without any visible effect.
+>
+> My NAK for this patch.
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

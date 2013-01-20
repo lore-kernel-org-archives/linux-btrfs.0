@@ -1,50 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56413 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752646Ab3ARVoz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jan 2013 16:44:55 -0500
-Date: Fri, 18 Jan 2013 13:44:53 -0800
-From: Mark Fasheh <mfasheh@suse.de>
-To: Arne Jansen <lists@die-jansens.de>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        ablock84@googlemail.com, aschnell@suse.de, Anand.Jain@oracle.com
-Subject: Re: [PATCH 0/4] btrfs-progs: better support for external users of
-	send, V2
-Message-ID: <20130118214453.GW12558@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1358375408-25285-1-git-send-email-mfasheh@suse.de> <50F79C81.4050100@die-jansens.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50F79C81.4050100@die-jansens.de>
+Received: from eastrmfepo102.cox.net ([68.230.241.214]:43646 "EHLO
+	eastrmfepo102.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752474Ab3ATVEh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Jan 2013 16:04:37 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo102.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130120210436.OLPT7113.eastrmfepo102.cox.net@eastrmimpo209>
+          for <linux-btrfs@vger.kernel.org>;
+          Sun, 20 Jan 2013 16:04:36 -0500
+From: Gene Czarcinski <gene@czarc.net>
+To: linux-btrfs@vger.kernel.org
+Cc: Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH 00/13] Btrfs-progs: more patches for integration
+Date: Sun, 20 Jan 2013 16:04:05 -0500
+Message-Id: <1358715858-4469-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 17, 2013 at 07:38:57AM +0100, Arne Jansen wrote:
-> Splitting out the send/receive-specific parts into a lib is a great idea.
-> The original motivation behind our send stream format was to make it readily
-> receivable on different filesystems.
+I have done some additional scraping of the mailing list to
+identify some "low hanging fruit" which I consider should
+be merged into the btrfs-progs repository.
 
-Oh ok cool. I didn't actually know that it was meant to be used across
-multiple file systems. Seems like a pretty neat feature to me :)
+All of the patches below were applied on top of the 19 bugfix
+patches pulled together by David Sterba and the 6 patches
+now part of the Fedora 18 btrfs-progs package.  All of this
+compiles but further testing is obviously needed.
 
+For the most part, these patches are bugfixes and they all
+appeared resonable but inspection by other eyes would
+be appreciated.  There is also one "simple" function
+addition in the form or the btrfs-show-super command.
 
-> For this we need a generic receiver which could be based on the lib. But to
-> make this possible, all btrfs-specific parts need to be kept out of it, so
-> it can readily compile on BSD for example.
-> So it might make sense to split out 2 parts, one for the pure receive
-> functionality and one with the btrfs-specific parts.
-> The former lib could be named libfar, as this is the name we want to give
-> the stream format to make it independent from btrfs. FAR stands for
-> Filesystem Agnostic Replication. There are senders for other systems (especially
-> zfs) in preparation.
-> I don't know if this affects your efforts in any way, but it might be easiest
-> to do the split right away while you're at it :)
+Arvin Schnell (1):
+  trivial patch for btrfs-progs
 
-Hmm, splitting into two libs isn't really that hard or anything but the real
-work (as you note) would be in making it compile in other places. Honestly,
-I think that could be built right on top of these patches but I don't feel
-that it's within the scope of my current series.
-	--Mark
+Chen Yang (1):
+  Btrfs-progs: Fix a segmentation fault in btrfstune when <device> is
+    invalid.
 
---
-Mark Fasheh
+Gene Czarcinski (1):
+  btrfs-show-super.c
+
+Goffredo Baroncelli (1):
+  Add btrfs-show-super
+
+Jan Schmidt (2):
+  Btrfs-progs: correcting misnamed parameter options for btrfs send
+  Btrfs-progs: bugfix for subvolume parent determination in btrfs send
+
+Nageswara R Sastry (1):
+  btrfs-progs: btrfs-image.c: Added NULL pointer check.
+
+Nirbheek Chauhan (1):
+  Btrfs-progs: fix resolving of loop devices
+
+Ulrik (1):
+  Btrfs-progs: correct btrfs receive usage string
+
+Wang Shilong (4):
+  Btrfs-progs: fix arg parsing for btrfs qgroup limit commands
+  Btrfs-progs: clean up reduplicate parse_qgroupid() and replace atoi
+    with strtoull
+  Btrfs-progs: check the relation of two group by real level numbers
+  Btrfs-progs: disable qgroupid 0 for quota_tree
+

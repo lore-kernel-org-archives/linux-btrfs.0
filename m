@@ -1,39 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35396 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752895Ab3AUQO3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 11:14:29 -0500
-Date: Mon, 21 Jan 2013 17:14:27 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gene Czarcinski <gene@czarc.net>
-Cc: linux-btrfs@vger.kernel.org,
-        Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>,
-        hector.oron@collabora.co.uk
-Subject: Re: [PATCH 02/13] Btrfs-progs: fix resolving of loop devices
-Message-ID: <20130121161427.GJ19967@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from eastrmfepo203.cox.net ([68.230.241.218]:48534 "EHLO
+	eastrmfepo203.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752493Ab3ATVEi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Jan 2013 16:04:38 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo203.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130120210437.TZLL21186.eastrmfepo203.cox.net@eastrmimpo209>
+          for <linux-btrfs@vger.kernel.org>;
+          Sun, 20 Jan 2013 16:04:37 -0500
+From: Gene Czarcinski <gene@czarc.net>
+To: linux-btrfs@vger.kernel.org
+Cc: Nageswara R Sastry <nasastry@in.ibm.com>, Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH 01/13] btrfs-progs: btrfs-image.c: Added NULL pointer check.
+Date: Sun, 20 Jan 2013 16:04:06 -0500
+Message-Id: <1358715858-4469-2-git-send-email-gene@czarc.net>
+In-Reply-To: <1358715858-4469-1-git-send-email-gene@czarc.net>
 References: <1358715858-4469-1-git-send-email-gene@czarc.net>
- <1358715858-4469-3-git-send-email-gene@czarc.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1358715858-4469-3-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 20, 2013 at 04:04:07PM -0500, Gene Czarcinski wrote:
-> From: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>
-> 
-> The LOOP_GET_STATUS ioctl truncates filenames to 64 characters. We should get
-> the backing file for a given loop device from /sys/. This is how losetup does it
-> as well.
-> 
-> Signed-off-by: Gene Czarcinski <gene@czarc.net>
+From: Nageswara R Sastry <nasastry@in.ibm.com>
 
-I'd expect Nirbheek's signed off here as well and I've noticed
+Check for the return value of 'open_ctree()' before dereferencing it.
 
-Tested-By: Hector Oron <hector.oron@collabora.co.uk>
-(https://patchwork.kernel.org/patch/1629581/)
+Signed-off-by: Nageswara R Sastry <nasastry@in.ibm.com>
+Signed-off-by: Gene Czarcinski <gene@czarc.net>
+---
+ btrfs-image.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Are you guys ok with adding them?
+diff --git a/btrfs-image.c b/btrfs-image.c
+index f2bbcc8..2a33a55 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -491,6 +491,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
+ 	int ret;
+ 
+ 	root = open_ctree(input, 0, 0);
++	BUG_ON(!root);
+ 	BUG_ON(root->nodesize != root->leafsize);
+ 
+ 	ret = metadump_init(&metadump, root, out, num_threads,
+-- 
+1.8.1
 
-david

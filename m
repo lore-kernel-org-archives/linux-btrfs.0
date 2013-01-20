@@ -1,88 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo201.cox.net ([68.230.241.216]:51142 "EHLO
-	eastrmfepo201.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751567Ab3AVUwA (ORCPT
+Received: from eastrmfepo203.cox.net ([68.230.241.218]:34577 "EHLO
+	eastrmfepo203.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752542Ab3ATVEl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jan 2013 15:52:00 -0500
-Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo201.cox.net
+	Sun, 20 Jan 2013 16:04:41 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo203.cox.net
           (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130122205159.TCRB17456.eastrmfepo201.cox.net@eastrmimpo306>
+          id <20130120210440.TZMF21186.eastrmfepo203.cox.net@eastrmimpo209>
           for <linux-btrfs@vger.kernel.org>;
-          Tue, 22 Jan 2013 15:51:59 -0500
+          Sun, 20 Jan 2013 16:04:40 -0500
 From: Gene Czarcinski <gene@czarc.net>
 To: linux-btrfs@vger.kernel.org
-Cc: Christian Hesse <list@eworm.de>, Gene Czarcinski <gene@czarc.net>
-Subject: [PATCH] fix btrfs-progs build
-Date: Tue, 22 Jan 2013 15:51:19 -0500
-Message-Id: <1358887879-6297-2-git-send-email-gene@czarc.net>
-In-Reply-To: <1358887879-6297-1-git-send-email-gene@czarc.net>
-References: <20130121164628.GK19967@twin.jikos.cz>
- <1358887879-6297-1-git-send-email-gene@czarc.net>
+Cc: Wang Shilong <wangsl-fnst@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>,
+        Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH 09/13] Btrfs-progs: fix arg parsing for btrfs qgroup limit commands
+Date: Sun, 20 Jan 2013 16:04:14 -0500
+Message-Id: <1358715858-4469-10-git-send-email-gene@czarc.net>
+In-Reply-To: <1358715858-4469-1-git-send-email-gene@czarc.net>
+References: <1358715858-4469-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Christian Hesse <list@eworm.de>
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-Hello everybody,
+We can use this command in two ways.
+1. btrfs qgroup limit size qgroupid path
+2. btrfs qgroup limit size path
 
-man pages for btrfs-progs are compressed by gzip by default. In Makefile the
-variable GZIP is use, this evaluates to 'gzip gzip' on my system. From man
-gzip:
+Before applying this patch, we differentiate them by check the parsing result
+of the second argument. It is not so good because it may make some mistakes,
+For example:
+  btrfs qgroup limit 1M 123456
+ 			^ It is a subvolume name.
 
-> The environment variable GZIP can hold a set of default options for gzip.
-> These options are interpreted first and can be overwritten by explicit
-> command line parameters.
+In fact, we can differentiate them just by the number of arguments, so fix it
+by this way.
 
-So using any other variable name fixes this. Patch is attached.
-
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 Signed-off-by: Gene Czarcinski <gene@czarc.net>
 ---
- man/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ cmds-qgroup.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/man/Makefile b/man/Makefile
-index 4a90b75..f7b57f7 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -1,4 +1,4 @@
--GZIP=gzip
-+GZIPCMD=gzip
- INSTALL= install
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 1525c11..129a4f0 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -383,7 +383,6 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 	}
  
- prefix ?= /usr/local
-@@ -12,22 +12,22 @@ MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz btrfs-image.8.gz \
- all: $(MANPAGES)
+ 	memset(&args, 0, sizeof(args));
+-	args.qgroupid = parse_qgroupid(argv[optind + 1]);
+ 	if (size) {
+ 		if (compressed)
+ 			args.lim.flags |= BTRFS_QGROUP_LIMIT_RFER_CMPR |
+@@ -397,9 +396,8 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 		}
+ 	}
  
- mkfs.btrfs.8.gz: mkfs.btrfs.8.in
--	$(GZIP) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
-+	$(GZIPCMD) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
+-	if (args.qgroupid == 0) {
+-		if (check_argc_exact(argc - optind, 2))
+-			usage(cmd_qgroup_limit_usage);
++	if (argc - optind == 2) {
++		args.qgroupid = 0;
+ 		path = argv[optind + 1];
+ 		ret = test_issubvolume(path);
+ 		if (ret < 0) {
+@@ -415,11 +413,11 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 		 * keep qgroupid at 0, this indicates that the subvolume the
+ 		 * fd refers to is to be limited
+ 		 */
+-	} else {
+-		if (check_argc_exact(argc - optind, 3))
+-			usage(cmd_qgroup_limit_usage);
++	} else if (argc - optind == 3) {
++		args.qgroupid = parse_qgroupid(argv[optind + 1]);
+ 		path = argv[optind + 2];
+-	}
++	} else
++		usage(cmd_qgroup_limit_usage);
  
- btrfs.8.gz: btrfs.8.in
--	$(GZIP) -n -c btrfs.8.in > btrfs.8.gz
-+	$(GZIPCMD) -n -c btrfs.8.in > btrfs.8.gz
- 
- btrfsctl.8.gz: btrfsctl.8.in
--	$(GZIP) -n -c btrfsctl.8.in > btrfsctl.8.gz
-+	$(GZIPCMD) -n -c btrfsctl.8.in > btrfsctl.8.gz
- 
- btrfsck.8.gz: btrfsck.8.in
--	$(GZIP) -n -c btrfsck.8.in > btrfsck.8.gz
-+	$(GZIPCMD) -n -c btrfsck.8.in > btrfsck.8.gz
- 
- btrfs-image.8.gz: btrfs-image.8.in
--	$(GZIP) -n -c btrfs-image.8.in > btrfs-image.8.gz
-+	$(GZIPCMD) -n -c btrfs-image.8.in > btrfs-image.8.gz
- 
- btrfs-show.8.gz: btrfs-show.8.in
--	$(GZIP) -n -c btrfs-show.8.in > btrfs-show.8.gz
-+	$(GZIPCMD) -n -c btrfs-show.8.in > btrfs-show.8.gz
- 
- clean :
- 	rm -f $(MANPAGES)
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
 -- 
 1.8.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

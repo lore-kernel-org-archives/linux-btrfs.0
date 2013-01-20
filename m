@@ -1,84 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo202.cox.net ([68.230.241.217]:51606 "EHLO
-	eastrmfepo202.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752488Ab3ATVEi (ORCPT
+Received: from eastrmfepo103.cox.net ([68.230.241.215]:43635 "EHLO
+	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752509Ab3ATVEj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jan 2013 16:04:38 -0500
-Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo202.cox.net
+	Sun, 20 Jan 2013 16:04:39 -0500
+Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo103.cox.net
           (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130120210437.PZD6475.eastrmfepo202.cox.net@eastrmimpo209>
+          id <20130120210438.HSGG23841.eastrmfepo103.cox.net@eastrmimpo209>
           for <linux-btrfs@vger.kernel.org>;
-          Sun, 20 Jan 2013 16:04:37 -0500
+          Sun, 20 Jan 2013 16:04:38 -0500
 From: Gene Czarcinski <gene@czarc.net>
 To: linux-btrfs@vger.kernel.org
-Cc: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>,
-        Gene Czarcinski <gene@czarc.net>
-Subject: [PATCH 02/13] Btrfs-progs: fix resolving of loop devices
-Date: Sun, 20 Jan 2013 16:04:07 -0500
-Message-Id: <1358715858-4469-3-git-send-email-gene@czarc.net>
+Cc: Ulrik <ulrik.sverdrup@gmail.com>, Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH 03/13] Btrfs-progs: correct btrfs receive usage string
+Date: Sun, 20 Jan 2013 16:04:08 -0500
+Message-Id: <1358715858-4469-4-git-send-email-gene@czarc.net>
 In-Reply-To: <1358715858-4469-1-git-send-email-gene@czarc.net>
 References: <1358715858-4469-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>
+From: Ulrik <ulrik.sverdrup@gmail.com>
 
-The LOOP_GET_STATUS ioctl truncates filenames to 64 characters. We should get
-the backing file for a given loop device from /sys/. This is how losetup does it
-as well.
+Fix the usage string to specify the correct '-f' option for input file,
+not '-i'.
 
+Signed-off-by: Ulrik Sverdrup <ulrik.sverdrup@gmail.com>
 Signed-off-by: Gene Czarcinski <gene@czarc.net>
 ---
- utils.c | 26 ++++++++++++++------------
- 1 file changed, 14 insertions(+), 12 deletions(-)
+ cmds-receive.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index 51b78d5..7953ef9 100644
---- a/utils.c
-+++ b/utils.c
-@@ -20,6 +20,7 @@
- #define __USE_XOPEN2K
- #include <stdio.h>
- #include <stdlib.h>
-+#include <string.h>
- #ifndef __CHECKER__
- #include <sys/ioctl.h>
- #include <sys/mount.h>
-@@ -653,21 +654,22 @@ int is_loop_device (const char* device) {
-  * the associated file (e.g. /images/my_btrfs.img) */
- int resolve_loop_device(const char* loop_dev, char* loop_file, int max_len)
- {
--	int loop_fd;
--	int ret_ioctl;
--	struct loop_info loopinfo;
-+	int ret;
-+	FILE *f;
-+	char fmt[20];
-+	char p[PATH_MAX];
-+	char real_loop_dev[PATH_MAX];
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 37d07db..2fae299 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -882,7 +882,7 @@ static const char * const receive_cmd_group_usage[] = {
+ };
  
--	if ((loop_fd = open(loop_dev, O_RDONLY)) < 0)
-+	if (!realpath(loop_dev, real_loop_dev))
-+		return -errno;
-+	snprintf(p, PATH_MAX, "/sys/block/%s/loop/backing_file", strrchr(real_loop_dev, '/'));
-+	if (!(f = fopen(p, "r")))
- 		return -errno;
- 
--	ret_ioctl = ioctl(loop_fd, LOOP_GET_STATUS, &loopinfo);
--	close(loop_fd);
--
--	if (ret_ioctl == 0) {
--		strncpy(loop_file, loopinfo.lo_name, max_len);
--		if (max_len > 0)
--			loop_file[max_len-1] = 0;
--	} else
-+	snprintf(fmt, 20, "%%%i[^\n]", max_len-1);
-+	ret = fscanf(f, fmt, loop_file);
-+	fclose(f);
-+	if (ret == EOF)
- 		return -errno;
- 
- 	return 0;
+ static const char * const cmd_receive_usage[] = {
+-	"btrfs receive [-v] [-i <infile>] <mount>",
++	"btrfs receive [-v] [-f <infile>] <mount>",
+ 	"Receive subvolumes from stdin.",
+ 	"Receives one or more subvolumes that were previously ",
+ 	"sent with btrfs send. The received subvolumes are stored",
 -- 
 1.8.1
 

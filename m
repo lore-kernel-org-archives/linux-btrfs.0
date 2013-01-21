@@ -1,69 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60999 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752544Ab3AULpe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 06:45:34 -0500
-Date: Mon, 21 Jan 2013 12:45:31 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Neil Schemenauer <neil@python.ca>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: scrub fails, any way to recover?
-Message-ID: <20130121114531.GF19967@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130120155438.GA5111@python.ca>
+Received: from mail-oa0-f44.google.com ([209.85.219.44]:36005 "EHLO
+	mail-oa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752499Ab3AUP4H (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jan 2013 10:56:07 -0500
+Received: by mail-oa0-f44.google.com with SMTP id n5so6251905oag.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 07:56:04 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130120155438.GA5111@python.ca>
+Date: Mon, 21 Jan 2013 15:48:04 +0000
+Message-ID: <CAJ-05NPaeLsv5YL3eSYtL-Kc5Sh-2xECJKFFa8z=cnMjdy7GyQ@mail.gmail.com>
+Subject: Tracking down causes of btrfs thread activity
+From: =?UTF-8?B?QWxleCBCZW5uw6ll?= <kernel-hacker@bennee.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 20, 2013 at 09:54:38AM -0600, Neil Schemenauer wrote:
-> I have a ~350 GB Btrfs filesystem that is corrupted.  I think the
-> damage was caused by a bad SATA cable.  I can mount the filesystem
-> and read most of the data (I already have backups of most everything).
-> 
-> The scrub is aborted after a few seconds with the following error in
-> the kernel log:
-> 
->     parent transid verify failed on 795639808 wanted 102145 found 101462
->     parent transid verify failed on 795639808 wanted 102145 found 101462
->     verify_parent_transid: 16273 callbacks suppressed
+Hi,
 
-the difference between 102145 and 101462 is small and looks like a bunch
-lost writes (ie. not a random corruption), this supports the 'bad cable'
-root cause.
+I've been running btrfs on one of my machines for a few months now but
+I keep hitting performance issues. My system quite frequently freezes
+due to IO starvation. Looking at iotop it tends to show the large
+majority of the disk I/O being taken up with various btrfs tasks
+peeking at 7-8M/s, namely:
 
->From '16273 callbacks suppressed', there is a large number of broken
-b-tree connections.
+    btrfs-endio-wri
+    btrfs-delayed-m
+    btrfs-transacti
+    btrfs-cleaner
 
-So far the rescue operation is to run btrfs-restore and copy the data
-out.
+I've already tracked down some sub-optimal performance to the fact I'm
+hosting a large number of RRDs which I've attempted to mitigate with
+moving them to a nocow sub-volume and performing the appropriate
+chattr magic on the host directories. However I'm still seeing these
+spikes occur at seemingly random times.
 
-> I've tried btrfsck but it fails as well.  Is there some way I can
-> remove the damaged data and save the good or is a re-format the only
-> solution?
+My next suspect is our build directories which contain about 400Mb of
+build artefacts that are shuffled around each build. However before
+going through a tedious exercise of eliminating all sources of I/O on
+the machine some questions:
 
-IIRC removing the damaged data hasn't been proposed yet, there was a
-patch to ignore the failures in a read-only mount
+Is there is any way to identify the higher level file activity behind
+the btrfs kernel threads?
+Would it be possible to hook into some of the btrfs code paths with
+perf to dump something like this?
 
-https://patchwork.kernel.org/patch/913642/
-(probably does not apply today)
+Secondary questions:
 
-I think that the -o recovery mode could be extended in a way that a
-read-only + recovery would ignore the failures.
+Does a truncate and write of an existing file (as a build would do)
+trigger a cow event?
+What about a write($FILE~), rename ($FILE~, $FILE)?
 
-I see two ways how to fix the on-disk b-tree structure (via fsck):
+I'm currently running 3.7 + the btrfs-next merged at the time I built it.
 
-1) wipe the broken blocks and unlink from b-tree -- but a broen node on
-   high level would kill lots of data unpredictably
-
-2) in some cases it would be possible to promote the old transids to the
-   current ones (to satisfy the transid verify check), however there may
-   be some blocks already overwritten so it only pushes the problem
-   farther
-
-Level of success depends on amount of data lost during the cable unplug
-and whether data or metadata were affected. It's more likely to rescue
-the filesystem if less metadata were affected.
-
-david
+--
+Alex, homepage: http://www.bennee.com/~alex/

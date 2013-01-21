@@ -1,46 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43082 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60999 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752135Ab3AULA2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 06:00:28 -0500
-Date: Mon, 21 Jan 2013 12:00:26 +0100
+	id S1752544Ab3AULpe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jan 2013 06:45:34 -0500
+Date: Mon, 21 Jan 2013 12:45:31 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Skender <skender@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: BTRFS dmesg error
-Message-ID: <20130121110026.GE19967@twin.jikos.cz>
+To: Neil Schemenauer <neil@python.ca>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: scrub fails, any way to recover?
+Message-ID: <20130121114531.GF19967@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20130121060136.GA11275@blackspider>
+References: <20130120155438.GA5111@python.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130121060136.GA11275@blackspider>
+In-Reply-To: <20130120155438.GA5111@python.ca>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 21, 2013 at 05:01:36PM +1100, Skender wrote:
-> I noticed in the dmesg logs that there seems to be a bug/issue with btrfs. Here is the trace/message from dmesg. Im going by the instructions from 
-> the https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F . Let me know if you need anything else.
+On Sun, Jan 20, 2013 at 09:54:38AM -0600, Neil Schemenauer wrote:
+> I have a ~350 GB Btrfs filesystem that is corrupted.  I think the
+> damage was caused by a bad SATA cable.  I can mount the filesystem
+> and read most of the data (I already have backups of most everything).
+> 
+> The scrub is aborted after a few seconds with the following error in
+> the kernel log:
+> 
+>     parent transid verify failed on 795639808 wanted 102145 found 101462
+>     parent transid verify failed on 795639808 wanted 102145 found 101462
+>     verify_parent_transid: 16273 callbacks suppressed
 
-Please paste a few lines around the messages, the error code is missing,
-though I'm suspecting it to be ENOSPC:
+the difference between 102145 and 101462 is small and looks like a bunch
+lost writes (ie. not a random corruption), this supports the 'bad cable'
+root cause.
 
-submit_compressed_extents:
- 659                 if (IS_ERR(trans)) {
- 660                         ret = PTR_ERR(trans);
- 661                 } else {
- 662                         trans->block_rsv = &root->fs_info->delalloc_block_rsv;
- 663                         ret = btrfs_reserve_extent(trans, root,
- 664                                            async_extent->compressed_size,
- 665                                            async_extent->compressed_size,
- 666                                            0, alloc_hint, &ins, 1);
- 667                         if (ret)
- 668                                 btrfs_abort_transaction(trans, root, ret);
+>From '16273 callbacks suppressed', there is a large number of broken
+b-tree connections.
 
-(here it aborts)
+So far the rescue operation is to run btrfs-restore and copy the data
+out.
 
- 669                         btrfs_end_transaction(trans, root);
- 670                 }
+> I've tried btrfsck but it fails as well.  Is there some way I can
+> remove the damaged data and save the good or is a re-format the only
+> solution?
 
-I've never seen this error before.
+IIRC removing the damaged data hasn't been proposed yet, there was a
+patch to ignore the failures in a read-only mount
+
+https://patchwork.kernel.org/patch/913642/
+(probably does not apply today)
+
+I think that the -o recovery mode could be extended in a way that a
+read-only + recovery would ignore the failures.
+
+I see two ways how to fix the on-disk b-tree structure (via fsck):
+
+1) wipe the broken blocks and unlink from b-tree -- but a broen node on
+   high level would kill lots of data unpredictably
+
+2) in some cases it would be possible to promote the old transids to the
+   current ones (to satisfy the transid verify check), however there may
+   be some blocks already overwritten so it only pushes the problem
+   farther
+
+Level of success depends on amount of data lost during the cable unplug
+and whether data or metadata were affected. It's more likely to rescue
+the filesystem if less metadata were affected.
 
 david

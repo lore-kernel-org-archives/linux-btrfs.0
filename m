@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34402 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:35396 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753763Ab3AUP4d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 10:56:33 -0500
-Date: Mon, 21 Jan 2013 16:56:30 +0100
+	id S1752895Ab3AUQO3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jan 2013 11:14:29 -0500
+Date: Mon, 21 Jan 2013 17:14:27 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Gene Czarcinski <gene@czarc.net>
-Cc: linux-btrfs@vger.kernel.org, Nageswara R Sastry <nasastry@in.ibm.com>
-Subject: Re: [PATCH 01/13] btrfs-progs: btrfs-image.c: Added NULL pointer
- check.
-Message-ID: <20130121155630.GI19967@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org,
+        Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>,
+        hector.oron@collabora.co.uk
+Subject: Re: [PATCH 02/13] Btrfs-progs: fix resolving of loop devices
+Message-ID: <20130121161427.GJ19967@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1358715858-4469-1-git-send-email-gene@czarc.net>
- <1358715858-4469-2-git-send-email-gene@czarc.net>
+ <1358715858-4469-3-git-send-email-gene@czarc.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1358715858-4469-2-git-send-email-gene@czarc.net>
+In-Reply-To: <1358715858-4469-3-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 20, 2013 at 04:04:06PM -0500, Gene Czarcinski wrote:
-> From: Nageswara R Sastry <nasastry@in.ibm.com>
+On Sun, Jan 20, 2013 at 04:04:07PM -0500, Gene Czarcinski wrote:
+> From: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>
 > 
-> Check for the return value of 'open_ctree()' before dereferencing it.
+> The LOOP_GET_STATUS ioctl truncates filenames to 64 characters. We should get
+> the backing file for a given loop device from /sys/. This is how losetup does it
+> as well.
 > 
-> --- a/btrfs-image.c
-> +++ b/btrfs-image.c
-> @@ -491,6 +491,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
->  	int ret;
->  
->  	root = open_ctree(input, 0, 0);
-> +	BUG_ON(!root);
+> Signed-off-by: Gene Czarcinski <gene@czarc.net>
 
-Bug_on is not the right fix here, I prefer a more extensive fix
+I'd expect Nirbheek's signed off here as well and I've noticed
 
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/15305
+Tested-By: Hector Oron <hector.oron@collabora.co.uk>
+(https://patchwork.kernel.org/patch/1629581/)
 
-which prints a message and exits.
+Are you guys ok with adding them?
 
->  	BUG_ON(root->nodesize != root->leafsize);
->  
->  	ret = metadump_init(&metadump, root, out, num_threads,
+david

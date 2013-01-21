@@ -1,108 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f53.google.com ([74.125.82.53]:46322 "EHLO
-	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752668Ab3AUSnU (ORCPT
+Received: from fallbackmx07.syd.optusnet.com.au ([211.29.132.9]:33065 "EHLO
+	fallbackmx07.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751965Ab3AUUW1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 13:43:20 -0500
-Received: by mail-wg0-f53.google.com with SMTP id fn15so166442wgb.20
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 10:43:19 -0800 (PST)
+	Mon, 21 Jan 2013 15:22:27 -0500
+Received: from mail28.syd.optusnet.com.au (mail28.syd.optusnet.com.au [211.29.133.169])
+	by fallbackmx07.syd.optusnet.com.au (8.13.1/8.13.1) with ESMTP id r0LKMP6k002690
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 07:22:25 +1100
+Date: Tue, 22 Jan 2013 07:20:17 +1100
+From: Skender <skender@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: Skender <skender@gmail.com>, linux-btrfs@vger.kernel.org,
+        jbacik@fusionio.com
+Subject: Re: BTRFS dmesg error
+Message-ID: <20130121202016.GA24179@blackspider>
+References: <20130121060136.GA11275@blackspider>
+ <20130121110026.GE19967@twin.jikos.cz>
 MIME-Version: 1.0
-Date: Mon, 21 Jan 2013 20:37:57 +0200
-Message-ID: <CAOcd+r0_u_4c+vi9MgYVGyT7B1tm2uH5aroBOZZ62Z0HW_9xpw@mail.gmail.com>
-Subject: btrfs_start_delalloc_inodes livelocks when creating snapshot under IO
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Miao Xie <miaox@cn.fujitsu.com>, Josef Bacik <jbacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130121110026.GE19967@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings all,
 
-I see the following issue during snap creation under IO:
-Transaction commit calls btrfs_start_delalloc_inodes() that locks the
-delalloc_inodes list, fetches the first inode, unlocks the list,
-triggers btrfs_alloc_delalloc_work/btrfs_queue_worker for this inode
-and then locks the list again. Then it checks the head of the list
-again. In my case, this is always exactly the same inode. As a result,
-this function allocates a huge amount of btrfs_delalloc_work
-structures, and I start seeing OOM messages in the kernel log, killing
-processes etc.
+Here are a couple of lines before and after.
 
-During that time this transaction commit is stuck, so, for example,
-other requests to create snapshot (that must wait for this transaction
-to commit first) get stuck. The transaction_kthread also gets stuck in
-attempt to commit the transaction.
+Cheers,
+Skender Haxhimolla
 
-Is this an intended behavior? Shouldn't we ensure that every inode in
-the delalloc list gets handled at most once? If the delalloc work is
-processed asynchronously, maybe the delalloc list can be locked once
-and traversed once?
 
-Josef, I see in commit 996d282c7ff470f150a467eb4815b90159d04c47 that
-you mention that "btrfs_start_delalloc_inodes will just walk the list
-of delalloc inodes and start writing them out, but it doesn't splice
-the list or anything so as long as somebody is doing work on the box
-you could end up in this section _forever_." I guess I am hitting this
-here also.
+[432770.724678] virtuoso-t[17472]: segfault at 8 ip 00000000007f4147 sp 00007fff69250848 error 4 in virtuoso-t[400000+9ad000]
+[615597.825359] mythtranscode[10886]: segfault at 4 ip 00000000004243c9 sp 00007fff27970368 error 4 in mythtranscode[400000+68000]
+[655330.131113] ------------[ cut here ]------------
+[655330.131123] WARNING: at fs/btrfs/super.c:246 __btrfs_abort_transaction+0x46/0xa0()
+[655330.131125] Hardware name: Precision WorkStation T3400  
+[655330.131126] btrfs: Transaction aborted
+[655330.131128] Modules linked in: xt_limit xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables rfcomm bnep bluetooth dm_crypt dvb_usb_cxusb snd_hda_codec_analog dib7000p dibx000_common dvb_usb snd_hda_intel snd_hda_codec snd_hwdep dvb_core snd_pcm snd_seq_midi snd_rawmidi snd_seq_midi_event rc_core dib0070 snd_seq coretemp snd_timer snd_seq_device snd kvm_intel soundcore kvm psmouse snd_page_alloc microcode x38_edac lpc_ich dcdbas serio_raw edac_core ppdev parport_pc lp parport floppy firewire_ohci firewire_core crc_itu_t nouveau tg3 ttm drm_kms_helper drm i2c_algo_bit mxm_wmi video wmi
+[655330.131182] Pid: 5838, comm: btrfs-delalloc- Not tainted 3.6.11-custom #1
+[655330.131183] Call Trace:
+[655330.131190]  [<ffffffff810507dc>] warn_slowpath_common+0x83/0x9c
+[655330.131193]  [<ffffffff81050898>] warn_slowpath_fmt+0x46/0x48
+[655330.131197]  [<ffffffff81231e0b>] ? btrfs_reserve_extent+0xbd/0x1c6
+[655330.131200]  [<ffffffff812208a7>] __btrfs_abort_transaction+0x46/0xa0
+[655330.131203]  [<ffffffff812468f4>] submit_compressed_extents+0x1bd/0x415
+[655330.131207]  [<ffffffff81246bd2>] async_cow_submit+0x86/0x8b
+[655330.131210]  [<ffffffff8125ec27>] run_ordered_completions+0x76/0xd5
+[655330.131213]  [<ffffffff8125f49e>] worker_loop+0x183/0x4b9
+[655330.131216]  [<ffffffff8125f31b>] ? btrfs_queue_worker+0x288/0x288
+[655330.131220]  [<ffffffff8106d9d0>] kthread+0x6f/0x77
+[655330.131225]  [<ffffffff815b59c4>] kernel_thread_helper+0x4/0x10
+[655330.131228]  [<ffffffff8106d961>] ? kthread_freezable_should_stop+0x48/0x48
+[655330.131231]  [<ffffffff815b59c0>] ? gs_change+0x13/0x13
+[655330.131233] ---[ end trace bc2b68accbd79b9c ]---
+[655330.131235] BTRFS warning (device sda2): Aborting unused transaction.
+[655729.210531] BTRFS warning (device sda2): Aborting unused transaction.
 
-Miao, I tested the behavior before your commit
-8ccf6f19b67f7e0921063cc309f4672a6afcb528 "Btrfs: make delalloc inodes
-be flushed by multi-task", on kernel 3.6. I see same issue there as
-well, but OOM doesn't happen, because before your change
-btrfs_start_delalloc_inodes() was calling filemap_flush() directly.
-But I see still that btrfs_start_delalloc_inodes() handles same inode
-more than once, and in some cases never returns in 15 minutes or more,
-delaying all other transactions. And snapshot creation gets stuck for
-all this time.
 
-(The stack I see on kernel 3.6 is like this:
-[<ffffffff812f26c6>] get_request_wait+0xf6/0x1d0
-[<ffffffff812f35df>] blk_queue_bio+0x7f/0x380
-[<ffffffff812f0374>] generic_make_request.part.50+0x74/0xb0
-[<ffffffff812f0788>] generic_make_request+0x68/0x70
-[<ffffffff812f0815>] submit_bio+0x85/0x110
-[<ffffffffa034ace5>] btrfs_map_bio+0x165/0x2f0 [btrfs]
-[<ffffffffa032880f>] btrfs_submit_bio_hook+0x7f/0x170 [btrfs]
-[<ffffffffa033b7da>] submit_one_bio+0x6a/0xa0 [btrfs]
-[<ffffffffa033f8a4>] submit_extent_page.isra.34+0xe4/0x230 [btrfs]
-[<ffffffffa034084c>] __extent_writepage+0x5ec/0x810 [btrfs]
-[<ffffffffa0340d22>]
-extent_write_cache_pages.isra.26.constprop.40+0x2b2/0x410 [btrfs]
-[<ffffffffa03410c5>] extent_writepages+0x45/0x60 [btrfs]
-[<ffffffffa0327178>] btrfs_writepages+0x28/0x30 [btrfs]
-[<ffffffff81122b21>] do_writepages+0x21/0x40
-[<ffffffff81118e5b>] __filemap_fdatawrite_range+0x5b/0x60
-[<ffffffff8111982c>] filemap_flush+0x1c/0x20
-[<ffffffffa0334289>] btrfs_start_delalloc_inodes+0xc9/0x1f0 [btrfs]
-[<ffffffffa0324f5d>] btrfs_commit_transaction+0x44d/0xaf0 [btrfs]
-[<ffffffffa035200d>] btrfs_mksubvol.isra.53+0x37d/0x440 [btrfs]
-[<ffffffffa03521ca>] btrfs_ioctl_snap_create_transid+0xfa/0x190 [btrfs]
-[<ffffffffa03523e3>] btrfs_ioctl_snap_create_v2+0x103/0x140 [btrfs]
-[<ffffffffa03546cf>] btrfs_ioctl+0x80f/0x1bf0 [btrfs]
-[<ffffffff8118a01a>] do_vfs_ioctl+0x8a/0x340
-[<ffffffff8118a361>] sys_ioctl+0x91/0xa0
-[<ffffffff81665c42>] system_call_fastpath+0x16/0x1b
-[<ffffffffffffffff>] 0xffffffffffffffff
 
-Somehow the request queue of the block device gets empty and the
-transaction waits for a long time to allocate a request.)
-
-Some details about my setup:
-I am testing for-linus Chris's branch
-I have one subvolume with 8 large files (10GB each).
-I am running two fio processes (one per file, so only 2 out of 8 files
-are involved) with 8 threads each like this:
-fio --thread --directory=/btrfs/subvol1 --rw=randwrite --randrepeat=1
---fadvise_hint=0 --fallocate=posix --size=1000m --filesize=10737418240
---bsrange=512b-64k --scramble_buffers=1 --nrfiles=1 --overwrite=1
---ioengine=sync --filename=file-1 --name=job0 --name=job1 --name=job2
---name=job3 --name=job4 --name=job5 --name=job6 --name=job7
-The files are preallocated with fallocate before the fio run.
-Mount options: noatime,nodatasum,nodatacow,nospace_cache
-
-Can somebody please advise on how to address this issue, and, if
-possible, how to solve it on kernel 3.6.
-
-Thanks,
-Alex.
+On 21/01/13 12:00 +0100, David Sterba wrote:
+> On Mon, Jan 21, 2013 at 05:01:36PM +1100, Skender wrote:
+> > I noticed in the dmesg logs that there seems to be a bug/issue with btrfs. Here is the trace/message from dmesg. Im going by the instructions from 
+> > the https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F . Let me know if you need anything else.
+> 
+> Please paste a few lines around the messages, the error code is missing,
+> though I'm suspecting it to be ENOSPC:
+> 
+> submit_compressed_extents:
+>  659                 if (IS_ERR(trans)) {
+>  660                         ret = PTR_ERR(trans);
+>  661                 } else {
+>  662                         trans->block_rsv = &root->fs_info->delalloc_block_rsv;
+>  663                         ret = btrfs_reserve_extent(trans, root,
+>  664                                            async_extent->compressed_size,
+>  665                                            async_extent->compressed_size,
+>  666                                            0, alloc_hint, &ins, 1);
+>  667                         if (ret)
+>  668                                 btrfs_abort_transaction(trans, root, ret);
+> 
+> (here it aborts)
+> 
+>  669                         btrfs_end_transaction(trans, root);
+>  670                 }
+> 
+> I've never seen this error before.
+> 
+> david

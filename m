@@ -1,87 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fallbackmx07.syd.optusnet.com.au ([211.29.132.9]:33065 "EHLO
-	fallbackmx07.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751965Ab3AUUW1 (ORCPT
+Received: from mail-pb0-f54.google.com ([209.85.160.54]:53154 "EHLO
+	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751620Ab3AUWoE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 15:22:27 -0500
-Received: from mail28.syd.optusnet.com.au (mail28.syd.optusnet.com.au [211.29.133.169])
-	by fallbackmx07.syd.optusnet.com.au (8.13.1/8.13.1) with ESMTP id r0LKMP6k002690
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 07:22:25 +1100
-Date: Tue, 22 Jan 2013 07:20:17 +1100
-From: Skender <skender@gmail.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: Skender <skender@gmail.com>, linux-btrfs@vger.kernel.org,
-        jbacik@fusionio.com
-Subject: Re: BTRFS dmesg error
-Message-ID: <20130121202016.GA24179@blackspider>
-References: <20130121060136.GA11275@blackspider>
- <20130121110026.GE19967@twin.jikos.cz>
+	Mon, 21 Jan 2013 17:44:04 -0500
+Received: by mail-pb0-f54.google.com with SMTP id rr4so1729854pbb.27
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 14:44:03 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130121110026.GE19967@twin.jikos.cz>
+In-Reply-To: <20130120132229.GA28546@carfax.org.uk>
+References: <CAPVzhpyj8oXMGyoPop6FadcDRAyDTmvX7VPncBLo0wuUOKxvwA@mail.gmail.com>
+	<20130120132229.GA28546@carfax.org.uk>
+Date: Mon, 21 Jan 2013 19:44:03 -0300
+Message-ID: <CAPVzhpz7HcFqnE_M_8T=wcDuOyPjiEiAzDZokW6okeXhJmx8XA@mail.gmail.com>
+Subject: Re: btrfs: failed to read chunk tree on vde1 (f18 anaconda crash)
+From: Reartes Guillermo <rtguille@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Reartes Guillermo <rtguille@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for asking, but in the end it was not btrfs related at all.
 
-Here are a couple of lines before and after.
+Virt-Manager failed to issue a warning (for yet unknown reasons) and a
+single hard disk image was being accessed as two
+different devices...
 
-Cheers,
-Skender Haxhimolla
+I spent quite a bit of time until i found it. (normally, virt-manager
+prevents this)
 
-
-[432770.724678] virtuoso-t[17472]: segfault at 8 ip 00000000007f4147 sp 00007fff69250848 error 4 in virtuoso-t[400000+9ad000]
-[615597.825359] mythtranscode[10886]: segfault at 4 ip 00000000004243c9 sp 00007fff27970368 error 4 in mythtranscode[400000+68000]
-[655330.131113] ------------[ cut here ]------------
-[655330.131123] WARNING: at fs/btrfs/super.c:246 __btrfs_abort_transaction+0x46/0xa0()
-[655330.131125] Hardware name: Precision WorkStation T3400  
-[655330.131126] btrfs: Transaction aborted
-[655330.131128] Modules linked in: xt_limit xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables rfcomm bnep bluetooth dm_crypt dvb_usb_cxusb snd_hda_codec_analog dib7000p dibx000_common dvb_usb snd_hda_intel snd_hda_codec snd_hwdep dvb_core snd_pcm snd_seq_midi snd_rawmidi snd_seq_midi_event rc_core dib0070 snd_seq coretemp snd_timer snd_seq_device snd kvm_intel soundcore kvm psmouse snd_page_alloc microcode x38_edac lpc_ich dcdbas serio_raw edac_core ppdev parport_pc lp parport floppy firewire_ohci firewire_core crc_itu_t nouveau tg3 ttm drm_kms_helper drm i2c_algo_bit mxm_wmi video wmi
-[655330.131182] Pid: 5838, comm: btrfs-delalloc- Not tainted 3.6.11-custom #1
-[655330.131183] Call Trace:
-[655330.131190]  [<ffffffff810507dc>] warn_slowpath_common+0x83/0x9c
-[655330.131193]  [<ffffffff81050898>] warn_slowpath_fmt+0x46/0x48
-[655330.131197]  [<ffffffff81231e0b>] ? btrfs_reserve_extent+0xbd/0x1c6
-[655330.131200]  [<ffffffff812208a7>] __btrfs_abort_transaction+0x46/0xa0
-[655330.131203]  [<ffffffff812468f4>] submit_compressed_extents+0x1bd/0x415
-[655330.131207]  [<ffffffff81246bd2>] async_cow_submit+0x86/0x8b
-[655330.131210]  [<ffffffff8125ec27>] run_ordered_completions+0x76/0xd5
-[655330.131213]  [<ffffffff8125f49e>] worker_loop+0x183/0x4b9
-[655330.131216]  [<ffffffff8125f31b>] ? btrfs_queue_worker+0x288/0x288
-[655330.131220]  [<ffffffff8106d9d0>] kthread+0x6f/0x77
-[655330.131225]  [<ffffffff815b59c4>] kernel_thread_helper+0x4/0x10
-[655330.131228]  [<ffffffff8106d961>] ? kthread_freezable_should_stop+0x48/0x48
-[655330.131231]  [<ffffffff815b59c0>] ? gs_change+0x13/0x13
-[655330.131233] ---[ end trace bc2b68accbd79b9c ]---
-[655330.131235] BTRFS warning (device sda2): Aborting unused transaction.
-[655729.210531] BTRFS warning (device sda2): Aborting unused transaction.
+Cheers.
 
 
-
-On 21/01/13 12:00 +0100, David Sterba wrote:
-> On Mon, Jan 21, 2013 at 05:01:36PM +1100, Skender wrote:
-> > I noticed in the dmesg logs that there seems to be a bug/issue with btrfs. Here is the trace/message from dmesg. Im going by the instructions from 
-> > the https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F . Let me know if you need anything else.
-> 
-> Please paste a few lines around the messages, the error code is missing,
-> though I'm suspecting it to be ENOSPC:
-> 
-> submit_compressed_extents:
->  659                 if (IS_ERR(trans)) {
->  660                         ret = PTR_ERR(trans);
->  661                 } else {
->  662                         trans->block_rsv = &root->fs_info->delalloc_block_rsv;
->  663                         ret = btrfs_reserve_extent(trans, root,
->  664                                            async_extent->compressed_size,
->  665                                            async_extent->compressed_size,
->  666                                            0, alloc_hint, &ins, 1);
->  667                         if (ret)
->  668                                 btrfs_abort_transaction(trans, root, ret);
-> 
-> (here it aborts)
-> 
->  669                         btrfs_end_transaction(trans, root);
->  670                 }
-> 
-> I've never seen this error before.
-> 
-> david
+On Sun, Jan 20, 2013 at 10:22 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Sat, Jan 19, 2013 at 07:53:08PM -0300, Reartes Guillermo wrote:
+>> Hi,
+>>
+>> I reported a bug to anaconda (rhbz 901905), but it might be btfs related.
+>>
+>> Anaconda does this:
+>>
+>> 18:49:10,317 INFO program: Running... mkfs.btrfs --data=single
+>> --label=fedora /dev/vdb1 /dev/vdc1 /dev/vdd1 /dev/vde1
+>> 18:49:10,742 INFO program:
+>> 18:49:10,746 INFO program: WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+>> 18:49:10,746 INFO program: WARNING! - see http://btrfs.wiki.kernel.org
+>> before using
+>> 18:49:10,748 INFO program:
+>> 18:49:10,749 INFO program: SMALL VOLUME: forcing mixed metadata/data groups
+>> 18:49:10,750 INFO program: Created a data/metadata chunk of size 8388608
+>> 18:49:10,750 INFO program: adding device /dev/vdc1 id 2
+>> 18:49:10,751 INFO program: adding device /dev/vdd1 id 3
+>> 18:49:10,752 INFO program: adding device /dev/vde1 id 4
+>> 18:49:10,752 INFO program: fs created label fedora on /dev/vdb1
+>
+>    Out of interest, how big are these devices?
+>
+>    Hugo.
+>
+> [snip]
+>> I booted again and did both the mk.btrfs and the mount manually and i
+>> got the same error.
+>>
+>> Is it a known issue?
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>        --- We believe in free will because we have no choice. ---

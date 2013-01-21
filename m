@@ -1,133 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30905 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752559Ab3AUBy0 (ORCPT
+Received: from fallbackmx08.syd.optusnet.com.au ([211.29.132.10]:52476 "EHLO
+	fallbackmx08.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751273Ab3AUGJY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jan 2013 20:54:26 -0500
-Date: Mon, 21 Jan 2013 09:51:58 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Elladan <elladan@eskimo.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: A couple bugs with btrfs and 3.5.0 kernel
-Message-ID: <20130121015157.GA10650@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <CAEm3SNAW-oGtPQ5Fjf4P0qEeMU29MA8frnNekGfSQ3rWCLSvsw@mail.gmail.com>
+	Mon, 21 Jan 2013 01:09:24 -0500
+Received: from mail12.syd.optusnet.com.au (mail12.syd.optusnet.com.au [211.29.132.193])
+	by fallbackmx08.syd.optusnet.com.au (8.13.1/8.13.1) with ESMTP id r0L62pWG008113
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 17:02:51 +1100
+Received: from blackspider (c58-109-90-42.rivrw4.nsw.optusnet.com.au [58.109.90.42])
+	by mail12.syd.optusnet.com.au (8.13.1/8.13.1) with ESMTP id r0L61b2p006547
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 17:01:38 +1100
+Date: Mon, 21 Jan 2013 17:01:36 +1100
+From: Skender <skender@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: BTRFS dmesg error
+Message-ID: <20130121060136.GA11275@blackspider>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEm3SNAW-oGtPQ5Fjf4P0qEeMU29MA8frnNekGfSQ3rWCLSvsw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 20, 2013 at 05:39:57PM -0800, Elladan wrote:
-> I upgraded to Ubuntu 12.10 and thought, "Hey, that 3.5 kernel is
-> relatively recent.  And they seem to finally have implemented
-> restriping.  Maybe it's time to try btrfs again!"
-> 
-> So, first off, I backed up all my data.
-> 
-> Next, I decided I would attempt to use btrfs's features for my benefit.
-> 
-> Specifically (this part is less interesting except as setup):
-> 
-> 1. I put a btrfs filesystem on top of dm-crypt on an external USB drive.
-> 2. I copied data to it.
-> 3. I unmounted the original partition, and then immediately mounted
-> the btrfs partition in its place.
-> 
-> Ok, now to the interesting bits:
-> 
-> My goal here is to delete the usb device and just leave myself with my
-> data, migrated back to the internal disk (with minimal downtime)
-> 
-> So, I figured I could use restriping/device delete to live-migrate
-> back onto the internal hard disk.
-> 
-> 4. I did a btrfs device add on a partition (over lvm/dm-crypt) on the
-> internal disk.  Now I have 2 partitons in the fs.
-> 
-> I attempted to btrfs device delete the usb disk, and it errored out
-> (with somewhat inscrutable information) telling me that I can't reduce
-> raid1 to dup this way.
-> 
-> Note: Arguably, this is a bug.  You really ought to do it, but with a
-> -f option, and automatically reduce the chunks appropriately.
-> 
-> Note: Also arguably, this is also a bug because it should not have
-> changed the metadata profile from dup to raid1 without asking me.
-> Maybe I don't want raid1.
-> 
-> Anyway, I figure I can fix this up with a balance filter (this is
-> primarily what made me think btrfs might be more usable now).
-> 
-> 6. I attempt to balance with a filter -mconvert=dup.  This immediately
-> errors out with no real indication as to why.
-> 
-> In the dmesg log I found:
-> 
-> [52656.153908] btrfs: unable to start balance with target metadata profile 32
-> 
-> Clearly a bug.
-> 
-> 7. After some random trial and error, I find that it accepts
-> -mconvert=single, and the result appears to be metadata in dup state.
-> Maybe.
-> 
-> Ok now that's done, it's time to delete.
-> 
-> 8. btrfs device delete /dev/dm-11 /btrfs
-> 
-> Some hours later, it fails.  I find stuff like this all over my dmesg log:
-> 
-> [113936.300109] bio too big device dm-11 (1024 > 240)
-> [113936.297242] btrfs: bdev /dev/dm-11 errs: wr 101, rd 10247, flush
-> 0, corrupt 109, gen 0
-> [113935.425960] btrfs_dev_stat_print_on_error: 38 callbacks suppressed
-> 
-> It also found 2 files with csum errors, which were left on the USB device.
-> 
-> [92750.052638] btrfs csum failed ino 257 off 49278976 csum 948519347
-> private 2127080388
-> [95692.348662] btrfs: checksum error at logical 94682349568 on dev
-> /dev/mapper/tempusb, sector 224788736, root 256, inode 114815, offset
-> 14360576, length 4096, links 1 (path:...path to file)
-> 
-> The csum errors appeared to have caused it to stop.
-> 
-> Googling around seemed to indicate that someone had once experienced a
-> similar problem with an external drive around the 3.0 kernel era.
-> They suggested something about the filesystem not working when dealing
-> with devices mixed between SATA and USB, which sounded a bit wacky to
-> me.  I initially assumed that maybe the USB drive was a bit flaky, but
-> this sounds to me like the csum errors were probably btrfs causing
-> silent corruption.
-> 
-> I tried deleting the files with the csum errors and running the device
-> delete again, but it immediately failed with invalid argument errors
-> and nothing in the dmesg log.  Clearly a bug.
-> 
-> Then, I tried unmounting, remounting, and then re-running the delete.
-> This time it started, but it's been running for a long time and
-> spamming my kernel logs with the bio too big for device errors.  I'm
-> guessing I'll probably need to sysrq reboot or something.
-> 
-> This is with Ubuntu's standard 3.5.0-22 generic kernel.
-> 
-> Any ideas?  I guess I could try to mount in degraded mode or try a 3.6
-> kernel or something, but this all seems like I should probably just
-> restore from backups and move on.
+Hi there,
 
-Hi Elladan,
+I noticed in the dmesg logs that there seems to be a bug/issue with btrfs. Here is the trace/message from dmesg. Im going by the instructions from 
+the https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F . Let me know if you need anything else.
 
-For 'bio too big' issue, this patch is helpful,
+Thanks,
+Skender Haxhimolla.
 
-https://patchwork.kernel.org/patch/1619691/
+skender@blackspider:~$ [655330.131113] ------------[ cut here ]------------
+[655330.131123] WARNING: at fs/btrfs/super.c:246 __btrfs_abort_transaction+0x46/0xa0()
+[655330.131125] Hardware name: Precision WorkStation T3400
+[655330.131126] btrfs: Transaction aborted
+[655330.131128] Modules linked in: xt_limit xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables rfcomm bnep bluetooth dm_crypt dvb_usb_cxusb snd_hda_codec_analog dib7000p dibx000_common dvb_usb snd_hda_intel snd_hda_codec snd_hwdep dvb_core snd_pcm snd_seq_midi snd_rawmidi snd_seq_midi_event rc_core dib0070 snd_seq coretemp snd_timer snd_seq_device snd kvm_intel soundcore kvm psmouse snd_page_alloc microcode x38_edac lpc_ich dcdbas serio_raw edac_core ppdev parport_pc lp parport floppy firewire_ohci firewire_core crc_itu_t nouveau tg3 ttm drm_kms_helper drm i2c_algo_bit mxm_wmi video wmi
+[655330.131182] Pid: 5838, comm: btrfs-delalloc- Not tainted 3.6.11-custom #1
+[655330.131183] Call Trace:
+[655330.131190]  [<ffffffff810507dc>] warn_slowpath_common+0x83/0x9c
+[655330.131193]  [<ffffffff81050898>] warn_slowpath_fmt+0x46/0x48
+[655330.131197]  [<ffffffff81231e0b>] ? btrfs_reserve_extent+0xbd/0x1c6
+[655330.131200]  [<ffffffff812208a7>] __btrfs_abort_transaction+0x46/0xa0
+[655330.131203]  [<ffffffff812468f4>] submit_compressed_extents+0x1bd/0x415
+[655330.131207]  [<ffffffff81246bd2>] async_cow_submit+0x86/0x8b
+[655330.131210]  [<ffffffff8125ec27>] run_ordered_completions+0x76/0xd5
+[655330.131213]  [<ffffffff8125f49e>] worker_loop+0x183/0x4b9
+[655330.131216]  [<ffffffff8125f31b>] ? btrfs_queue_worker+0x288/0x288
+[655330.131220]  [<ffffffff8106d9d0>] kthread+0x6f/0x77
+[655330.131225]  [<ffffffff815b59c4>] kernel_thread_helper+0x4/0x10
+[655330.131228]  [<ffffffff8106d961>] ? kthread_freezable_should_stop+0x48/0x48
+[655330.131231]  [<ffffffff815b59c0>] ? gs_change+0x13/0x13
+[655330.131233] ---[ end trace bc2b68accbd79b9c ]---
 
-thanks,
-liubo
-
-> 
-> Thanks!
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

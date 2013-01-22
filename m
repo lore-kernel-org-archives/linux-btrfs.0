@@ -1,68 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53622 "EHLO mx2.suse.de"
+Received: from mx1.fusionio.com ([66.114.96.30]:39442 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751749Ab3AXRit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 12:38:49 -0500
-Date: Thu, 24 Jan 2013 18:38:46 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <chris.mason@fusionio.com>, David Sterba <dsterba@suse.cz>,
-        Josef Bacik <JBacik@fusionio.com>, bo.li.liu@oracle.com,
-        miaox@cn.fujitsu.com,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: put csums on the right ordered extent
-Message-ID: <20130124173845.GR28263@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1358887535-7241-1-git-send-email-jbacik@fusionio.com>
- <20130123110107.GG28263@twin.jikos.cz>
- <20130123152106.GI28263@twin.jikos.cz>
- <20130123235709.GB3752@shiny>
+	id S1752376Ab3AVUiz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jan 2013 15:38:55 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id lrmMsXIPXnZQqISs (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 13:38:54 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: put csums on the right ordered extent
+Date: Tue, 22 Jan 2013 15:45:35 -0500
+Message-ID: <1358887535-7241-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130123235709.GB3752@shiny>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 23, 2013 at 06:57:09PM -0500, Chris Mason wrote:
-> Looks like Josef saw the same, so we have two different bugs (missing
-> crcs vs incorrect crcs).  Josef mentioned a much faster test for the
-> incorrect crcs...Josef what was that test?
+I noticed a WARN_ON going off when adding csums because we were going over
+the amount of csum bytes that should have been allowed for an ordered
+extent.  This is a leftover from when we used to hold the csums privately
+for direct io, but now we use the normal ordered sum stuff so we need to
+make sure and check if we've moved on to another extent so that the csums
+are added to the right extent.  Without this we could end up with csums for
+bytenrs that don't have extents to cover them yet.  Thanks,
 
-Yeah, 2 bugs, this patch fixed the incorrect csums with DIO, your
-scriptlet was able to trigger it reliably.
-
-I don't see a mail from Josef about the 2nd problem, so let me tell the
-story:
-
-I've tested plain 3.7 with the script and also with the repeated
-xfstests (that reproduced the 1st csum problem) -- all clear after 5.5
-hours. So we took it as a first good. All suspects in the post 3.7
-queue. Josef had a quick reproducer and bisected it to commit
-
-31e502298d80e2af9001d17dc419a3fd4b0bebef
-Author:     Liu Bo <bo.li.liu@oracle.com>
-
-Btrfs: put raid properties into global table
-
-Raid properties can be shared among raid calculation code, we can put
-them into a global table to keep it simple.
-
-https://patchwork.kernel.org/patch/1781061/
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
+ fs/btrfs/file-item.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Which mistakenly specified 0 as a maximum number of devices in single
-profile and was fixed by Miao later on, but the fix was not merged due
-to Josef debugging the 1st csum problem.
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 93ddc2e..f21b490 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -460,8 +460,8 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+ 		if (!contig)
+ 			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+ 
+-		if (!contig && (offset >= ordered->file_offset + ordered->len ||
+-		    offset < ordered->file_offset)) {
++		if (offset >= ordered->file_offset + ordered->len ||
++		    offset < ordered->file_offset) {
+ 			unsigned long bytes_left;
+ 			sums->len = this_sum_bytes;
+ 			this_sum_bytes = 0;
+-- 
+1.7.7.6
 
-https://patchwork.kernel.org/patch/1987481/
-
--	{ 1, 1, 0, 1, 1, 1 /* single */ },
-+	{ 1, 1, 1, 1, 1, 1 /* single */ },
-
-does indeed fix the 2nd bug.
-
-The reproducer that worked for me was to create raid0/raid0 filesystem,
-run the 50x fsx DIO load and do balance convert to single/single. Then
-fsx fail.
-
-cheers,
-david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

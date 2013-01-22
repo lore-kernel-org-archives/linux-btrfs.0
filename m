@@ -1,49 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f179.google.com ([209.85.214.179]:60667 "EHLO
-	mail-ob0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753126Ab3A3PJT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 10:09:19 -0500
-Received: by mail-ob0-f179.google.com with SMTP id un3so1699426obb.24
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 07:09:19 -0800 (PST)
+Received: from fw2a.glodns.net ([196.220.48.60]:60974 "EHLO fw2a.glodns.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751625Ab3AVTn1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jan 2013 14:43:27 -0500
+Received: from localhost (unknown [127.0.0.1])
+	by fw2a.glodns.net (Postfix) with ESMTP id F2D2028C130
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 19:43:24 +0000 (UTC)
+Received: from fw2a.glodns.net ([196.220.48.60])
+	by localhost (fw2a.glodns.net [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id qj2gqmdbFlyZ for <linux-btrfs@vger.kernel.org>;
+	Tue, 22 Jan 2013 21:43:19 +0200 (SAST)
+Received: from control.glodns.net (unknown [196.220.42.40])
+	by fw2a.glodns.net (Postfix) with ESMTP id 1993328C061
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 21:43:19 +0200 (SAST)
+Message-ID: <50FEEB9E.2060305@swiftspirit.co.za>
+Date: Tue, 22 Jan 2013 21:42:22 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-In-Reply-To: <20130129035216.GC23893@shiny.globalsuite.net>
-References: <1359429730-16729-1-git-send-email-bo.li.liu@oracle.com>
-	<20130129035216.GC23893@shiny.globalsuite.net>
-Date: Wed, 30 Jan 2013 09:09:19 -0600
-Message-ID: <CAKcLGm8=D7U_UW55dRCc8NukEivS2VJMWON+izPPtquNyxofvA@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix race between snapshot deletion and getting inode
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Chris Mason <chris.mason@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "mitch.harder@sabayonlinux.org" <mitch.harder@sabayonlinux.org>,
-        "dsterba@suse.cz" <dsterba@suse.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
+Subject: inconsistent output on sub list
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 28, 2013 at 9:52 PM, Chris Mason <chris.mason@fusionio.com> wrote:
-> On Mon, Jan 28, 2013 at 08:22:10PM -0700, Liu Bo wrote:
->> While running snapshot testscript created by Mitch and David,
->> the race between autodefrag and snapshot deletion can lead to
->> corruption of dead_root list so that we can get crash on
->> btrfs_clean_old_snapshots().
->
-> Really nice.  Thanks to everyone that hashed this out.
->
-> -chris
+Linux watricky 3.6.11-1-ARCH #1 SMP PREEMPT Tue Dec 18 08:57:15 CET 2012 
+x86_64 GNU/Linux
 
-I've been testing "[PATCH v2] Btrfs: fix race between snapshot
-deletion and getting inode" along with "[PATCH v6] Btrfs:
-snapshot-aware defrag" using the same work flow that was reproducing
-the dead_root list corruptions.
+In working on a snapshot maintenance script I've noticed some odd 
+behaviour. Note the smbshare path. I've put this into its own subvolume 
+as I don't plan on snapshotting it.
 
-I've been unable to reproduce the error in ~24 hours of testing.
+In the first command's output, this path is printed correctly, however 
+in the second output it has "4.snap" appended, similar to the names of 
+the snapshots I made 22 hours ago.
 
-Normally, I'd hit the error within an hour of testing on a single run.
- I've made three separate runs, and let the last run proceed
-overnight.
+If this is a documented issue with a fix then no worries. But if not and 
+anyone wants me to check into any further specifics, please let me know.
 
-I'll keep using these patches, and let you know if anything turns up.
+ > [root@watricky mnt]# btrfs subvolume list / -a
+ > ID 258 gen 4226 top level 384 path media/smbshare
+ > ID 259 gen 4337 top level 384 path home
+ > ID 384 gen 4321 top level 5 path <FS_TREE>/__active
+ > ID 392 gen 4337 top level 384 path var
+ > ID 393 gen 4267 top level 384 path usr
+ > ID 428 gen 4267 top level 5 path 
+<FS_TREE>/__snapshot/__active.20130121-23h44.snap
+ > ID 429 gen 3980 top level 5 path 
+<FS_TREE>/__snapshot/__active_home.20130121-23h45.snap
+ > ID 430 gen 4043 top level 5 path 
+<FS_TREE>/__snapshot/__active_var.20130121-23h45.snap
+ > ID 431 gen 4267 top level 5 path 
+<FS_TREE>/__snapshot/__active_usr.20130121-23h45.snap
+ > [root@watricky mnt]# btrfs subvolume list /home -a
+ > ID 258 gen 4226 top level 5 path <FS_TREE>/__active/media/smbshare4.snap
+ > ID 259 gen 4337 top level 5 path <FS_TREE>/__active/home
+ > ID 384 gen 4321 top level 5 path <FS_TREE>/__active
+ > ID 392 gen 4337 top level 5 path <FS_TREE>/__active/var
+ > ID 393 gen 4267 top level 5 path <FS_TREE>/__active/usr
+ > ID 428 gen 4267 top level 5 path 
+<FS_TREE>/__snapshot/__active.20130121-23h44.snap
+ > ID 429 gen 3980 top level 5 path 
+<FS_TREE>/__snapshot/__active_home.20130121-23h45.snap
+ > ID 430 gen 4043 top level 5 path 
+<FS_TREE>/__snapshot/__active_var.20130121-23h45.snap
+ > ID 431 gen 4267 top level 5 path 
+<FS_TREE>/__snapshot/__active_usr.20130121-23h45.snap
+ > [root@watricky mnt]#
 
-Thanks for all your work on this patch set.
+Note that the only directly mounted share is __active, mounted at /.
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

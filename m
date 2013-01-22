@@ -1,61 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo102.cox.net ([68.230.241.214]:41497 "EHLO
-	eastrmfepo102.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752539Ab3ATVEl (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:41498 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753559Ab3AVRDb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jan 2013 16:04:41 -0500
-Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo102.cox.net
-          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130120210440.OLQU7113.eastrmfepo102.cox.net@eastrmimpo209>
-          for <linux-btrfs@vger.kernel.org>;
-          Sun, 20 Jan 2013 16:04:40 -0500
-From: Gene Czarcinski <gene@czarc.net>
-To: linux-btrfs@vger.kernel.org
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, Gene Czarcinski <gene@czarc.net>
-Subject: [PATCH 08/13] Btrfs-progs: bugfix for subvolume parent determination in btrfs send
-Date: Sun, 20 Jan 2013 16:04:13 -0500
-Message-Id: <1358715858-4469-9-git-send-email-gene@czarc.net>
-In-Reply-To: <1358715858-4469-1-git-send-email-gene@czarc.net>
+	Tue, 22 Jan 2013 12:03:31 -0500
+Received: by mail-wi0-f181.google.com with SMTP id hq4so6115174wib.14
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 09:03:30 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAMO4zugaABrbTJB75Yyi_UravfSX81YyqJtmc3yGALrby7+RTQ@mail.gmail.com>
 References: <1358715858-4469-1-git-send-email-gene@czarc.net>
+	<20130121184016.GC7971@twin.jikos.cz>
+	<CAMO4zugaABrbTJB75Yyi_UravfSX81YyqJtmc3yGALrby7+RTQ@mail.gmail.com>
+Date: Tue, 22 Jan 2013 22:33:29 +0530
+Message-ID: <CAMO4zuhVCQgFnxa6YDd1vjn9iQQxx80iiWTGasDMFjR7yEn3JQ@mail.gmail.com>
+Subject: Fwd: [PATCH 00/13] Btrfs-progs: more patches for integration (integration-20130121)
+From: praneeth u <praneethu.u@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Hello,
+We are team of 5 students, interns at Green turtles technologies,
+interested in contributing to btrfs.
+Any space for contribution for btrfs testing ? we will be updating
+pogress twice in a week.
+Need suggestions on how to proceed.
 
-We missed to add the default subvolume, because it has no ROOT_BACKREF_ITEM.
-This made get_parent always fail for direct decendants of the default
-subvolume, resulting in lots of full streams where incremental streams were
-requested.
+On Tue, Jan 22, 2013 at 12:10 AM, David Sterba <dsterba@suse.cz> wrote:
+> On Sun, Jan 20, 2013 at 04:04:05PM -0500, Gene Czarcinski wrote:
+>> I have done some additional scraping of the mailing list to
+>> identify some "low hanging fruit" which I consider should
+>> be merged into the btrfs-progs repository.
+>
+> Thanks, I went through them and put together into an integration branch
+>
+>   git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130121
+>
+> I've modified the signed-off-by lines when I knew who was the author or
+> contributed to the patch. Please let me know if I've messed the credits
+> and fame attribution.
+>
+> There are three more patches that I've picked from my distro patch queue (and
+> were sent to the list long ago) they're placed at the top of the shortlog.
+>
+> Arne Jansen (1):
+>       Btrfs-progs: bugfix for scrubbing single devices
+>
+> Wang Sheng-Hui (1):
+>       btrfs-progs: add malloc check in transaction.h/btrfs_start_transaction
+>
+> Goffredo Baroncelli (1):
+>       Ignore the error ENXIO and ENOMEDIUM during a devs scan
+>
+> Arvin Schnell (1):
+>       btrfs-progs: initialize data before send ioctl
+>
+> Danny Kukawka (1):
+>       btrfs-progs: Handle errors returned from open_ctree
+>
+> Jan Schmidt (2):
+>       Btrfs-progs: correcting misnamed parameter options for btrfs send
+>       Btrfs-progs: bugfix for subvolume parent determination in btrfs send
+>
+> Josef Bacik (2):
+>       Btrfs-progs: detect if the disk we are formatting is a ssd
+>       Btrfs-progs: add btrfs device ready command
+>
+> Nirbheek Chauhan (1):
+>       Btrfs-progs: fix resolving of loop devices
+>
+> Stefan Behrens (1):
+>       btrfs-progs: Add btrfs-show-super
+>
+> Ulrik (1):
+>       Btrfs-progs: correct btrfs receive usage string
+>
+> Wang Shilong (3):
+>       Btrfs-progs: fix arg parsing for btrfs qgroup limit commands
+>       Btrfs-progs: clean up reduplicate parse_qgroupid() and replace atoi with strtoull
+>       Btrfs-progs: check the relation of two group by real level numbers
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Reviewed-by: Alexander Block <ablock84@googlemail.com>
-Signed-off-by: Gene Czarcinski <gene@czarc.net>
----
- send-utils.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/send-utils.c b/send-utils.c
-index fcde5c2..d8d3972 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -240,7 +240,8 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 				memcpy(&root_item, root_item_ptr,
- 						sizeof(root_item));
- 				root_item_valid = 1;
--			} else if (sh->type == BTRFS_ROOT_BACKREF_KEY) {
-+			} else if (sh->type == BTRFS_ROOT_BACKREF_KEY ||
-+				   root_item_valid) {
- 				if (!root_item_valid)
- 					goto skip;
- 
-@@ -274,7 +275,6 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 				subvol_uuid_search_add(s, si);
- 				root_item_valid = 0;
- 			} else {
--				root_item_valid = 0;
- 				goto skip;
- 			}
- 
--- 
-1.8.1
 
+--
+Praneeth U
+9448804728
+
+
+--
+Praneeth U
+9448804728

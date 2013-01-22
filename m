@@ -1,56 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo101.cox.net ([68.230.241.213]:37394 "EHLO
-	eastrmfepo101.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752463Ab3AVV4z (ORCPT
+Received: from eastrmfepo201.cox.net ([68.230.241.216]:55744 "EHLO
+	eastrmfepo201.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751127Ab3AVVpQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jan 2013 16:56:55 -0500
-Received: from eastrmimpo305 ([68.230.241.237]) by eastrmfepo101.cox.net
+	Tue, 22 Jan 2013 16:45:16 -0500
+Received: from eastrmimpo305 ([68.230.241.237]) by eastrmfepo201.cox.net
           (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130122215655.VTKT2891.eastrmfepo101.cox.net@eastrmimpo305>
+          id <20130122214515.XELZ17456.eastrmfepo201.cox.net@eastrmimpo305>
           for <linux-btrfs@vger.kernel.org>;
-          Tue, 22 Jan 2013 16:56:55 -0500
-Message-ID: <50FF0B26.6060508@czarc.net>
-Date: Tue, 22 Jan 2013 16:56:54 -0500
+          Tue, 22 Jan 2013 16:45:15 -0500
+Message-ID: <50FF086A.2030200@czarc.net>
+Date: Tue, 22 Jan 2013 16:45:14 -0500
 From: Gene Czarcinski <gene@czarc.net>
 MIME-Version: 1.0
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: chris.mason@fusionio.com, jbacik@fusionio.com
-Subject: Re: [PATCH 1/6] Fedora 18 - btrfs-init-dev-list.patch
-References: <1358618781-26629-1-git-send-email-gene@czarc.net> <1358618781-26629-2-git-send-email-gene@czarc.net>
-In-Reply-To: <1358618781-26629-2-git-send-email-gene@czarc.net>
+Subject: Re: [PATCH 3/6] Fedora 18 - fix-labels.patch
+References: <1358618781-26629-1-git-send-email-gene@czarc.net> <1358618781-26629-4-git-send-email-gene@czarc.net>
+In-Reply-To: <1358618781-26629-4-git-send-email-gene@czarc.net>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I could not find a source for this patch on the mailing list
+Here is the source of this patch:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg01850.html
+
+and  the update that is the current patch:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg01851.html
+
+Gene
 
 On 01/19/2013 01:06 PM, Gene Czarcinski wrote:
 > Signed-off-by: Gene Czarcinski <gene@czarc.net>
 > ---
->   utils.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
+>   mkfs.c | 7 -------
+>   1 file changed, 7 deletions(-)
 >
-> diff --git a/utils.c b/utils.c
-> index 938f9a5..51b78d5 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -477,7 +477,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
->   	u64 num_devs;
->   	int ret;
+> diff --git a/mkfs.c b/mkfs.c
+> index d123d5f..8c291c9 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -352,7 +352,6 @@ static u64 parse_profile(char *s)
 >   
-> -	device = kmalloc(sizeof(*device), GFP_NOFS);
-> +	device = kzalloc(sizeof(*device), GFP_NOFS);
->   	if (!device)
->   		return -ENOMEM;
->   	buf = kmalloc(sectorsize, GFP_NOFS);
-> @@ -503,6 +503,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
->   	device->bytes_used = 0;
->   	device->total_ios = 0;
->   	device->dev_root = root->fs_info->dev_root;
-> +	INIT_LIST_HEAD(&device->dev_list);
+>   static char *parse_label(char *input)
+>   {
+> -	int i;
+>   	int len = strlen(input);
 >   
->   	ret = btrfs_add_device(trans, root, device);
->   	BUG_ON(ret);
+>   	if (len >= BTRFS_LABEL_SIZE) {
+> @@ -360,12 +359,6 @@ static char *parse_label(char *input)
+>   			BTRFS_LABEL_SIZE - 1);
+>   		exit(1);
+>   	}
+> -	for (i = 0; i < len; i++) {
+> -		if (input[i] == '/' || input[i] == '\\') {
+> -			fprintf(stderr, "invalid label %s\n", input);
+> -			exit(1);
+> -		}
+> -	}
+>   	return strdup(input);
+>   }
+>   
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

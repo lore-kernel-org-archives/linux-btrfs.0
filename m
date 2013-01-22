@@ -1,137 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f170.google.com ([74.125.82.170]:43363 "EHLO
-	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752036Ab3AVBMd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 20:12:33 -0500
-Received: by mail-we0-f170.google.com with SMTP id r1so1866184wey.29
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 17:12:32 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:37513 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752221Ab3AVI7J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jan 2013 03:59:09 -0500
+Message-ID: <50FE5500.7040300@cn.fujitsu.com>
+Date: Tue, 22 Jan 2013 16:59:44 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Date: Tue, 22 Jan 2013 02:12:31 +0100
-Message-ID: <CAMQ-g0fbP98XvWX6NyzKPrMCNzdi4vSJ3uo0D66Sg+MCcFm5FA@mail.gmail.com>
-Subject: kernel BUG at fs/btrfs/extent-tree.c:5223
-From: Jan Steffens <jan.steffens@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs_start_delalloc_inodes livelocks when creating snapshot
+ under IO
+References: <CAOcd+r0_u_4c+vi9MgYVGyT7B1tm2uH5aroBOZZ62Z0HW_9xpw@mail.gmail.com>
+In-Reply-To: <CAOcd+r0_u_4c+vi9MgYVGyT7B1tm2uH5aroBOZZ62Z0HW_9xpw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 	mon, 21 Jan 2013 20:37:57 +0200, Alex Lyakas wrote:
+> Greetings all,
+> 
+> I see the following issue during snap creation under IO:
+> Transaction commit calls btrfs_start_delalloc_inodes() that locks the
+> delalloc_inodes list, fetches the first inode, unlocks the list,
+> triggers btrfs_alloc_delalloc_work/btrfs_queue_worker for this inode
+> and then locks the list again. Then it checks the head of the list
+> again. In my case, this is always exactly the same inode. As a result,
+> this function allocates a huge amount of btrfs_delalloc_work
+> structures, and I start seeing OOM messages in the kernel log, killing
+> processes etc.
 
-our build server's scratch btrfs is seriously broken now. Shortly
-after mount, btrfs-cleaner triggers a bug:
+OK, I will deal with this problem.
 
-device label chroots devid 1 transid 47052 /dev/mapper/vg_brynhild-chroots
-btrfs: use lzo compression
-btrfs: disk space caching is enabled
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/extent-tree.c:5223!
-invalid opcode: 0000 [#1] PREEMPT SMP
-Modules linked in: tun btrfs libcrc32c zlib_deflate coretemp kvm_intel
-kvm r8169 crc32c_intel i2c_i801 wmi acpi_cpufreq mperf gpio_ich mii
-microcode iTCO_wdt iTCO_vendor_support processor i7core_edac i2c_core
-edac_core lpc_ich ext4 crc16 jbd2 mbcache dm_mod raid1 md_mod sd_mod
-uhci_hcd ahci libahci libata ehci_hcd scsi_mod usbcore usb_common
-CPU 2
-Pid: 1163, comm: btrfs-cleaner Not tainted 3.7.3-1-ARCH #1 MSI
-MS-7522/MSI X58 Pro-E (MS-7522)
-RIP: 0010:[<ffffffffa064228c>]  [<ffffffffa064228c>]
-__btrfs_free_extent+0x7cc/0x880 [btrfs]
-RSP: 0018:ffff880231dc7b28  EFLAGS: 00010287
-RAX: 0000000010000001 RBX: ffff88022279b000 RCX: ffff88021d64d000
-RDX: 0000000000003000 RSI: 000000000000308d RDI: ffff88021dc82d70
-RBP: ffff880231dc7bf8 R08: 0000000000003091 R09: ffff880231dc7a90
-R10: 0000000000000000 R11: 0000000000000003 R12: 0000000000000001
-R13: 000000000000004a R14: 000000000000305c R15: 0000000000000000
-FS:  0000000000000000(0000) GS:ffff88023fc40000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000001646de8 CR3: 000000000180c000 CR4: 00000000000007e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs-cleaner (pid: 1163, threadinfo ffff880231dc6000, task
-ffff8802249a8000)
-Stack:
- 0000000000000000 0000000000000973 000000000001264a 0000000000000000
- ffff880200000000 ffff8802226840c0 0000003500000001 ffff88021dc82d70
- ffff880228e25000 0100000100000001 000000055f618000 ffff880228e26000
-Call Trace:
- [<ffffffffa06469f8>] run_clustered_refs+0x318/0xaf0 [btrfs]
- [<ffffffffa063d080>] ? block_group_cache_tree_search+0x90/0xd0 [btrfs]
- [<ffffffffa0698fc3>] ? find_ref_head+0x83/0xf0 [btrfs]
- [<ffffffffa0649f98>] btrfs_run_delayed_refs+0xc8/0x2f0 [btrfs]
- [<ffffffffa0659535>] btrfs_should_end_transaction+0x75/0x80 [btrfs]
- [<ffffffffa0648922>] btrfs_drop_snapshot+0x3b2/0x5c0 [btrfs]
- [<ffffffffa065b1f7>] btrfs_clean_old_snapshots+0xa7/0x150 [btrfs]
- [<ffffffffa0651a68>] cleaner_kthread+0xa8/0x120 [btrfs]
- [<ffffffffa06519c0>] ? btrfs_alloc_root+0x50/0x50 [btrfs]
- [<ffffffff8107b050>] kthread+0xc0/0xd0
- [<ffffffff81010000>] ? perf_trace_xen_mmu_set_pte_at+0xb0/0x100
- [<ffffffff8107af90>] ? kthread_freezable_should_stop+0x70/0x70
- [<ffffffff814b426c>] ret_from_fork+0x7c/0xb0
- [<ffffffff8107af90>] ? kthread_freezable_should_stop+0x70/0x70
-Code: ff 01 6c a0 e8 e6 52 a1 e0 e9 9c fc ff ff 0f 0b 0f 0b 48 8b 55
-a0 48 8b 3b 48 8d 73 40 e8 e0 63 07 00 39 45 20 0f 84 71 fd ff ff <0f>
-0b 0f 0b 48 8b 55 80 89 c6 48 c7 c7 20 1d 6c a0 31 c0 e8 2e
-RIP  [<ffffffffa064228c>] __btrfs_free_extent+0x7cc/0x880 [btrfs]
- RSP <ffff880231dc7b28>
----[ end trace 28edb33d5f184428 ]---
-note: btrfs-cleaner[1163] exited with preempt_count 2
+> 
+> During that time this transaction commit is stuck, so, for example,
+> other requests to create snapshot (that must wait for this transaction
+> to commit first) get stuck. The transaction_kthread also gets stuck in
+> attempt to commit the transaction.
+> 
+> Is this an intended behavior? Shouldn't we ensure that every inode in
+> the delalloc list gets handled at most once? If the delalloc work is
+> processed asynchronously, maybe the delalloc list can be locked once
+> and traversed once?
 
-Afterwards, an unreleased lock seems to cause process to hang all over.
-The btrfs is located on LVM on an mdraid1. Typical usage involves a
-lot of snapshotting and snapshot deleting.
+1st question:
+It is an intended behavior. We flush the delalloc inodes when committing
+the transaction is to guarantee that the data in the snapshot is the same
+as the source subvolume. For example:
+# dd if=/dev/zero of=<mnt>/file0 bs=1M count=1
+# btrfs subvolume snapshot <mnt> <mnt>/snap0
 
-The source is:
-5221                 if (found_extent) {
-5222                         BUG_ON(is_data && refs_to_drop !=
-5223                                extent_data_ref_count(root, path, iref));
-5224                         if (iref) {
+If we don't flush the delalloc inode(file0), we will find the data in
+<mnt/>snap0/file0 is different with <mnt>/file0. It is why we have to
+flush the delalloc inodes.
 
-If an umount is attempted before the cleaner crashes, umount crashes
-instead, with the same backtrace.
-Neither btrfs-zero-log nor -o recovery have any noticeable effect.
----
+2nd question:
+I think we needn't flush all the delalloc inodes in the fs when creating a
+snapshot, we just need flush all the delalloc inodes of the source subvolumes
+when creating a snapshot. If so, we must split the delalloc list and introduce
+pre-subvolume delalloc list.(If no one rejects this idea, I can implement it.)
 
-btrfs-find-root reports:
+3th question:
+Traversing the delalloc list once is reasonable and safe, because we can guarantee
+the following process is safe.
+	Task
+	write data into a file
+	make a snapshot
 
-Super think's the tree root is at 77758464, chunk root 131072
-Well block 9469952 seems great, but generation doesn't match,
-have=46931, want=47052
-Well block 63373312 seems great, but generation doesn't match,
-have=46936, want=47052
-Well block 64651264 seems great, but generation doesn't match,
-have=46937, want=47052
-Well block 65273856 seems great, but generation doesn't match,
-have=46938, want=47052
-Well block 66027520 seems great, but generation doesn't match,
-have=46939, want=47052
-Well block 67010560 seems great, but generation doesn't match,
-have=46940, want=47052
-Well block 73744384 seems great, but generation doesn't match,
-have=46948, want=47052
-Well block 77643776 seems great, but generation doesn't match,
-have=46953, want=47052
-Found tree root at 77758464
----
+Maybe somebody will worry this case:
+	Task0				Task1
+	make a snapshot
+	  commit transaction
+	    flush delalloc inodes
+					write data into a file
+	    commit all trees
+	    update super block
+	    transaction commit end
+because we can not get the data that Task1 wrote from the snapshot. I think this
+case can be ignored because this data was written into the file after we start
+the process of the snapshot creation. 
 
-btrfsck fails with:
+> Josef, I see in commit 996d282c7ff470f150a467eb4815b90159d04c47 that
+> you mention that "btrfs_start_delalloc_inodes will just walk the list
+> of delalloc inodes and start writing them out, but it doesn't splice
+> the list or anything so as long as somebody is doing work on the box
+> you could end up in this section _forever_." I guess I am hitting this
+> here also.
+> 
+> Miao, I tested the behavior before your commit
+> 8ccf6f19b67f7e0921063cc309f4672a6afcb528 "Btrfs: make delalloc inodes
+> be flushed by multi-task", on kernel 3.6. I see same issue there as
+> well, but OOM doesn't happen, because before your change
+> btrfs_start_delalloc_inodes() was calling filemap_flush() directly.
+> But I see still that btrfs_start_delalloc_inodes() handles same inode
+> more than once, and in some cases never returns in 15 minutes or more,
+> delaying all other transactions. And snapshot creation gets stuck for
+> all this time.
 
-btrfsck: disk-io.c:441: find_and_setup_root: Assertion `!(ret)' failed.
----
+You are right. I will fix this problem.
 
-btrfs-image fails with:
+> 
+> (The stack I see on kernel 3.6 is like this:
+> [<ffffffff812f26c6>] get_request_wait+0xf6/0x1d0
+> [<ffffffff812f35df>] blk_queue_bio+0x7f/0x380
+> [<ffffffff812f0374>] generic_make_request.part.50+0x74/0xb0
+> [<ffffffff812f0788>] generic_make_request+0x68/0x70
+> [<ffffffff812f0815>] submit_bio+0x85/0x110
+> [<ffffffffa034ace5>] btrfs_map_bio+0x165/0x2f0 [btrfs]
+> [<ffffffffa032880f>] btrfs_submit_bio_hook+0x7f/0x170 [btrfs]
+> [<ffffffffa033b7da>] submit_one_bio+0x6a/0xa0 [btrfs]
+> [<ffffffffa033f8a4>] submit_extent_page.isra.34+0xe4/0x230 [btrfs]
+> [<ffffffffa034084c>] __extent_writepage+0x5ec/0x810 [btrfs]
+> [<ffffffffa0340d22>]
+> extent_write_cache_pages.isra.26.constprop.40+0x2b2/0x410 [btrfs]
+> [<ffffffffa03410c5>] extent_writepages+0x45/0x60 [btrfs]
+> [<ffffffffa0327178>] btrfs_writepages+0x28/0x30 [btrfs]
+> [<ffffffff81122b21>] do_writepages+0x21/0x40
+> [<ffffffff81118e5b>] __filemap_fdatawrite_range+0x5b/0x60
+> [<ffffffff8111982c>] filemap_flush+0x1c/0x20
+> [<ffffffffa0334289>] btrfs_start_delalloc_inodes+0xc9/0x1f0 [btrfs]
+> [<ffffffffa0324f5d>] btrfs_commit_transaction+0x44d/0xaf0 [btrfs]
+> [<ffffffffa035200d>] btrfs_mksubvol.isra.53+0x37d/0x440 [btrfs]
+> [<ffffffffa03521ca>] btrfs_ioctl_snap_create_transid+0xfa/0x190 [btrfs]
+> [<ffffffffa03523e3>] btrfs_ioctl_snap_create_v2+0x103/0x140 [btrfs]
+> [<ffffffffa03546cf>] btrfs_ioctl+0x80f/0x1bf0 [btrfs]
+> [<ffffffff8118a01a>] do_vfs_ioctl+0x8a/0x340
+> [<ffffffff8118a361>] sys_ioctl+0x91/0xa0
+> [<ffffffff81665c42>] system_call_fastpath+0x16/0x1b
+> [<ffffffffffffffff>] 0xffffffffffffffff
+> 
+> Somehow the request queue of the block device gets empty and the
+> transaction waits for a long time to allocate a request.)
 
-checksum verify failed on 65536 wanted 6DA0839F found 29
-checksum verify failed on 65536 wanted 6DA0839F found 29
-Csum didn't match
-btrfs-image: btrfs-image.c:394: flush_pending: Assertion `!(!eb)' failed.
----
+I think it is because there is no enough memory and it must wait for
+the memory reclaim.
 
-Complete kmsg of 3.6.11 (first triggered): http://sprunge.us/BIjB
-Complete kmsg of 3.7.3: http://sprunge.us/XfDE
-I've still got the broken filesystem (107G) for debugging and an
-lrzip-compressed complete image of it, sized 32G, which I can send to
-you, if needed.
+1038  *
+1039  * Get a free request from @q.  If %__GFP_WAIT is set in @gfp_mask, this
+1040  * function keeps retrying under memory pressure and fails iff @q is dead.
+1041  *
 
-Thanks,
-Jan Steffens
+Thanks
+Miao
+
+> 
+> Some details about my setup:
+> I am testing for-linus Chris's branch
+> I have one subvolume with 8 large files (10GB each).
+> I am running two fio processes (one per file, so only 2 out of 8 files
+> are involved) with 8 threads each like this:
+> fio --thread --directory=/btrfs/subvol1 --rw=randwrite --randrepeat=1
+> --fadvise_hint=0 --fallocate=posix --size=1000m --filesize=10737418240
+> --bsrange=512b-64k --scramble_buffers=1 --nrfiles=1 --overwrite=1
+> --ioengine=sync --filename=file-1 --name=job0 --name=job1 --name=job2
+> --name=job3 --name=job4 --name=job5 --name=job6 --name=job7
+> The files are preallocated with fallocate before the fio run.
+> Mount options: noatime,nodatasum,nodatacow,nospace_cache
+> 
+> Can somebody please advise on how to address this issue, and, if
+> possible, how to solve it on kernel 3.6.
+> 
+> Thanks,
+> Alex.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

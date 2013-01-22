@@ -1,133 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8976 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:39771 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750915Ab3AVKsX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jan 2013 05:48:23 -0500
-Message-ID: <50FE6E9C.2040803@cn.fujitsu.com>
-Date: Tue, 22 Jan 2013 18:49:00 +0800
+	id S1750738Ab3AVKsz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jan 2013 05:48:55 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0MAmrwF019329
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 18:48:53 +0800
+Message-ID: <50FE6EBD.2060906@cn.fujitsu.com>
+Date: Tue, 22 Jan 2013 18:49:33 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Subject: [PATCH 1/5] Btrfs: fix repeated delalloc work allocation
+Subject: [PATCH 2/5] Btrfs: check the return value of btrfs_start_delalloc_inodes()
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_start_delalloc_inodes() locks the delalloc_inodes list, fetches the
-first inode, unlocks the list, triggers btrfs_alloc_delalloc_work/
-btrfs_queue_worker for this inode, and then it locks the list, checks the
-head of the list again. But because we don't delete the first inode that it
-deals with before, it will fetch the same inode. As a result, this function
-allocates a huge amount of btrfs_delalloc_work structures, and OOM happens.
+We forget to check the return value of btrfs_start_delalloc_inodes(), fix it.
 
-Fix this problem by splice this delalloc list.
-
-Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |   55 ++++++++++++++++++++++++++++++++++++++++-------------
- 1 files changed, 41 insertions(+), 14 deletions(-)
+ fs/btrfs/dev-replace.c |    6 +++++-
+ fs/btrfs/transaction.c |    4 +++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 67ed24a..86f1d25 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7545,41 +7545,61 @@ void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work)
-  */
- int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- {
--	struct list_head *head = &root->fs_info->delalloc_inodes;
- 	struct btrfs_inode *binode;
- 	struct inode *inode;
- 	struct btrfs_delalloc_work *work, *next;
- 	struct list_head works;
-+	struct list_head splice;
- 	int ret = 0;
- 
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
- 
- 	INIT_LIST_HEAD(&works);
--
-+	INIT_LIST_HEAD(&splice);
-+again:
- 	spin_lock(&root->fs_info->delalloc_lock);
--	while (!list_empty(head)) {
--		binode = list_entry(head->next, struct btrfs_inode,
-+	list_splice_init(&root->fs_info->delalloc_inodes, &splice);
-+	while (!list_empty(&splice)) {
-+		binode = list_entry(splice.next, struct btrfs_inode,
- 				    delalloc_inodes);
-+
-+		list_del_init(&binode->delalloc_inodes);
-+
- 		inode = igrab(&binode->vfs_inode);
- 		if (!inode)
--			list_del_init(&binode->delalloc_inodes);
-+			continue;
-+
-+		list_add_tail(&binode->delalloc_inodes,
-+			      &root->fs_info->delalloc_inodes);
- 		spin_unlock(&root->fs_info->delalloc_lock);
--		if (inode) {
--			work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
--			if (!work) {
--				ret = -ENOMEM;
--				goto out;
--			}
--			list_add_tail(&work->list, &works);
--			btrfs_queue_worker(&root->fs_info->flush_workers,
--					   &work->work);
-+
-+		work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
-+		if (unlikely(!work)) {
-+			ret = -ENOMEM;
-+			goto out;
- 		}
-+		list_add_tail(&work->list, &works);
-+		btrfs_queue_worker(&root->fs_info->flush_workers,
-+				   &work->work);
-+
- 		cond_resched();
- 		spin_lock(&root->fs_info->delalloc_lock);
- 	}
- 	spin_unlock(&root->fs_info->delalloc_lock);
- 
-+	list_for_each_entry_safe(work, next, &works, list) {
-+		list_del_init(&work->list);
-+		btrfs_wait_and_free_delalloc_work(work);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 66dbc8d..7ba7b39 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -465,7 +465,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	 * flush all outstanding I/O and inode extent mappings before the
+ 	 * copy operation is declared as being finished
+ 	 */
+-	btrfs_start_delalloc_inodes(root, 0);
++	ret = btrfs_start_delalloc_inodes(root, 0);
++	if (ret) {
++		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
++		return ret;
 +	}
-+
-+	spin_lock(&root->fs_info->delalloc_lock);
-+	if (!list_empty(&root->fs_info->delalloc_inodes)) {
-+		spin_unlock(&root->fs_info->delalloc_lock);
-+		goto again;
-+	}
-+	spin_unlock(&root->fs_info->delalloc_lock);
-+
- 	/* the filemap_flush will queue IO into the worker threads, but
- 	 * we have to make sure the IO is actually started and that
- 	 * ordered extents get created before we return
-@@ -7592,11 +7612,18 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 		    atomic_read(&root->fs_info->async_delalloc_pages) == 0));
+ 	btrfs_wait_ordered_extents(root, 0);
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 87fac9a..34c5b7b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1417,7 +1417,9 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
  	}
- 	atomic_dec(&root->fs_info->async_submit_draining);
-+	return 0;
- out:
- 	list_for_each_entry_safe(work, next, &works, list) {
- 		list_del_init(&work->list);
- 		btrfs_wait_and_free_delalloc_work(work);
+ 
+ 	if (flush_on_commit || snap_pending) {
+-		btrfs_start_delalloc_inodes(root, 1);
++		ret = btrfs_start_delalloc_inodes(root, 1);
++		if (ret)
++			return ret;
+ 		btrfs_wait_ordered_extents(root, 1);
  	}
-+
-+	if (!list_empty_careful(&splice)) {
-+		spin_lock(&root->fs_info->delalloc_lock);
-+		list_splice_tail(&splice, &root->fs_info->delalloc_inodes);
-+		spin_unlock(&root->fs_info->delalloc_lock);
-+	}
- 	return ret;
- }
  
 -- 
 1.6.5.2

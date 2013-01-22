@@ -1,41 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo101.cox.net ([68.230.241.213]:44855 "EHLO
-	eastrmfepo101.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752493Ab3ATVEk (ORCPT
+Received: from eastrmfepo201.cox.net ([68.230.241.216]:51142 "EHLO
+	eastrmfepo201.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751567Ab3AVUwA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jan 2013 16:04:40 -0500
-Received: from eastrmimpo209 ([68.230.241.224]) by eastrmfepo101.cox.net
+	Tue, 22 Jan 2013 15:52:00 -0500
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo201.cox.net
           (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130120210439.XERD2891.eastrmfepo101.cox.net@eastrmimpo209>
+          id <20130122205159.TCRB17456.eastrmfepo201.cox.net@eastrmimpo306>
           for <linux-btrfs@vger.kernel.org>;
-          Sun, 20 Jan 2013 16:04:39 -0500
+          Tue, 22 Jan 2013 15:51:59 -0500
 From: Gene Czarcinski <gene@czarc.net>
 To: linux-btrfs@vger.kernel.org
-Cc: Gene Czarcinski <gene@czarc.net>
-Subject: [PATCH 06/13] btrfs-show-super.c
-Date: Sun, 20 Jan 2013 16:04:11 -0500
-Message-Id: <1358715858-4469-7-git-send-email-gene@czarc.net>
-In-Reply-To: <1358715858-4469-1-git-send-email-gene@czarc.net>
-References: <1358715858-4469-1-git-send-email-gene@czarc.net>
+Cc: Christian Hesse <list@eworm.de>, Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH] fix btrfs-progs build
+Date: Tue, 22 Jan 2013 15:51:19 -0500
+Message-Id: <1358887879-6297-2-git-send-email-gene@czarc.net>
+In-Reply-To: <1358887879-6297-1-git-send-email-gene@czarc.net>
+References: <20130121164628.GK19967@twin.jikos.cz>
+ <1358887879-6297-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-remove extra blank line at EOF
+From: Christian Hesse <list@eworm.de>
+
+Hello everybody,
+
+man pages for btrfs-progs are compressed by gzip by default. In Makefile the
+variable GZIP is use, this evaluates to 'gzip gzip' on my system. From man
+gzip:
+
+> The environment variable GZIP can hold a set of default options for gzip.
+> These options are interpreted first and can be overwritten by explicit
+> command line parameters.
+
+So using any other variable name fixes this. Patch is attached.
+
 Signed-off-by: Gene Czarcinski <gene@czarc.net>
 ---
- btrfs-show-super.c |  1 -
- man/Makefile       | 14 +++++++-------
- 2 files changed, 7 insertions(+), 8 deletions(-)
+ man/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index a9e2524..7c66d84 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -281,4 +281,3 @@ static void dump_superblock(struct btrfs_super_block *sb)
- 	printf("dev_item.generation\t%llu\n", (unsigned long long)
- 	       btrfs_stack_device_generation(&sb->dev_item));
- }
--
 diff --git a/man/Makefile b/man/Makefile
 index 4a90b75..f7b57f7 100644
 --- a/man/Makefile
@@ -78,3 +82,7 @@ index 4a90b75..f7b57f7 100644
 -- 
 1.8.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

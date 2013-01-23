@@ -1,172 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51355 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:51320 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753763Ab3AWIHH (ORCPT
+	with ESMTP id S1753763Ab3AWIHD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 03:07:07 -0500
+	Wed, 23 Jan 2013 03:07:03 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
 Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 08/10] Btrfs-progs: make printing subvol extensible to newer layouts
-Date: Wed, 23 Jan 2013 16:12:49 +0800
-Message-Id: <1358928771-31960-9-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/10] Btrfs-progs: add function btrfs_get_subvol to get root_info of a subvol
+Date: Wed, 23 Jan 2013 16:12:46 +0800
+Message-Id: <1358928771-31960-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently you can print subvol in a list or table format.
-This patch will provide a way to extend this to other formats
-like the upcoming raw format.
+We need a function which can get the root_info of a given
+subvol. This is in preparation to add support for the show
+sub-cli.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c     | 26 +++++++++++++++-----------
- btrfs-list.h     |  3 +++
- cmds-subvolume.c | 23 ++++++++++++++++++++---
- 3 files changed, 38 insertions(+), 14 deletions(-)
+ btrfs-list.c | 38 ++++++++++++++++++++++++++++++++++++++
+ btrfs-list.h |  1 +
+ 2 files changed, 39 insertions(+)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index f5958cf..71f7239 100644
+index 1851f3e..ec64a36 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -54,12 +54,12 @@ struct {
- 	{
- 		.name		= "ID",
- 		.column_name	= "ID",
--		.need_print	= 1,
-+		.need_print	= 0,
- 	},
- 	{
- 		.name		= "gen",
- 		.column_name	= "Gen",
--		.need_print	= 1,
-+		.need_print	= 0,
- 	},
- 	{
- 		.name		= "cgen",
-@@ -74,7 +74,7 @@ struct {
- 	{
- 		.name		= "top level",
- 		.column_name	= "Top Level",
--		.need_print	= 1,
-+		.need_print	= 0,
- 	},
- 	{
- 		.name		= "otime",
-@@ -94,7 +94,7 @@ struct {
- 	{
- 		.name		= "path",
- 		.column_name	= "Path",
--		.need_print	= 1,
-+		.need_print	= 0,
- 	},
- 	{
- 		.name		= NULL,
-@@ -1403,21 +1403,25 @@ static void print_all_volume_info_tab_head()
+@@ -1455,6 +1455,44 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 	return 0;
  }
  
- static void print_all_volume_info(struct root_lookup *sorted_tree,
--				  int is_tab_result)
-+				  int layout)
- {
- 	struct rb_node *n;
- 	struct root_info *entry;
- 
--	if (is_tab_result)
-+	if (layout == BTRFS_LIST_LAYOUT_TABLE)
- 		print_all_volume_info_tab_head();
- 
- 	n = rb_first(&sorted_tree->root);
- 	while (n) {
- 		entry = rb_entry(n, struct root_info, sort_node);
--		if (is_tab_result)
--			print_single_volume_info_table(entry);
--		else
-+		switch (layout) {
-+		case BTRFS_LIST_LAYOUT_DEFAULT:
- 			print_single_volume_info_default(entry);
-+			break;
-+		case BTRFS_LIST_LAYOUT_TABLE:
-+			print_single_volume_info_table(entry);
++int btrfs_get_subvol(int fd, struct root_info *the_ri)
++{
++	int ret = -1;
++	struct root_lookup rl;
++	struct rb_node *rbn;
++	struct root_info *ri;
++	u64 root_id = btrfs_list_get_path_rootid(fd);
++
++	if (btrfs_list_subvols(fd, &rl))
++		return 13;
++
++	rbn = rb_first(&rl.root);
++	while(rbn) {
++		ri = rb_entry(rbn, struct root_info, rb_node);
++		resolve_root(&rl, ri, root_id);
++		if (!comp_entry_with_rootid(the_ri, ri, 0)) {
++			memcpy(the_ri, ri, offsetof(struct root_info, path));
++			if (ri->path)
++				the_ri->path = strdup(ri->path);
++			else
++				the_ri->path = NULL;
++			if (ri->name)
++				the_ri->name = strdup(ri->name);
++			else
++				the_ri->name = NULL;
++			if (ri->full_path)
++				the_ri->full_path = strdup(ri->full_path);
++			else
++				the_ri->name = NULL;
++			ret = 0;
 +			break;
 +		}
- 		n = rb_next(n);
- 	}
- }
-@@ -1443,7 +1447,7 @@ int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
- 
- int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 		       struct btrfs_list_comparer_set *comp_set,
--		       int is_tab_result)
-+		       int layout)
- {
- 	struct root_lookup root_lookup;
- 	struct root_lookup root_sort;
-@@ -1455,7 +1459,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
- 				 comp_set, fd);
- 
--	print_all_volume_info(&root_sort, is_tab_result);
-+	print_all_volume_info(&root_sort, layout);
- 	__free_all_subvolumn(&root_lookup);
- 
- 	return 0;
++		rbn = rb_next(rbn);
++	}
++	__free_all_subvolumn(&rl);
++	return ret;
++}
++
+ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+ 			    struct btrfs_file_extent_item *item,
+ 			    u64 found_gen, u64 *cache_dirid,
 diff --git a/btrfs-list.h b/btrfs-list.h
-index cde7a3f..5b60068 100644
+index 3b7b680..580d4d1 100644
 --- a/btrfs-list.h
 +++ b/btrfs-list.h
-@@ -18,6 +18,9 @@
- 
- #include "kerncompat.h"
- 
-+#define BTRFS_LIST_LAYOUT_DEFAULT	0
-+#define BTRFS_LIST_LAYOUT_TABLE	1
-+
- /*
-  * one of these for each root we find.
-  */
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ee36463..dd677f7 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -410,8 +410,18 @@ static int cmd_subvol_list(int argc, char **argv)
- 					BTRFS_LIST_FILTER_TOPID_EQUAL,
- 					top_id);
- 
--	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
--				is_tab_result);
-+	/* by default we shall print the following columns*/
-+	btrfs_list_setup_print_column(BTRFS_LIST_OBJECTID);
-+	btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
-+	btrfs_list_setup_print_column(BTRFS_LIST_TOP_LEVEL);
-+	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
-+
-+	if (is_tab_result)
-+		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
-+				BTRFS_LIST_LAYOUT_TABLE);
-+	else
-+		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
-+				BTRFS_LIST_LAYOUT_DEFAULT);
- 	if (ret)
- 		return 19;
- 	return 0;
-@@ -617,7 +627,14 @@ static int cmd_subvol_get_default(int argc, char **argv)
- 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_ROOTID,
- 				default_id);
- 
--	ret = btrfs_list_subvols_print(fd, filter_set, NULL, 0);
-+	/* by default we shall print the following columns*/
-+	btrfs_list_setup_print_column(BTRFS_LIST_OBJECTID);
-+	btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
-+	btrfs_list_setup_print_column(BTRFS_LIST_TOP_LEVEL);
-+	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
-+
-+	ret = btrfs_list_subvols_print(fd, filter_set, NULL,
-+		BTRFS_LIST_LAYOUT_DEFAULT);
- 	if (ret)
- 		return 19;
- 	return 0;
+@@ -151,3 +151,4 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
+ char *btrfs_list_path_for_root(int fd, u64 root);
+ u64 btrfs_list_get_path_rootid(int fd);
++int btrfs_get_subvol(int fd, struct root_info *the_ri);
 -- 
 1.8.1.227.g44fe835
 

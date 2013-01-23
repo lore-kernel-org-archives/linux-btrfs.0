@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f44.google.com ([74.125.83.44]:46876 "EHLO
-	mail-ee0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752909Ab3AUN4C (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:62251 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752985Ab3AWHZu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jan 2013 08:56:02 -0500
-Received: by mail-ee0-f44.google.com with SMTP id l10so2956135eei.31
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2013 05:56:00 -0800 (PST)
-From: Ilya Dryomov <idryomov@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
-Subject: [PATCH] Btrfs: fix a regression in balance usage filter
-Date: Mon, 21 Jan 2013 15:55:57 +0200
-Message-Id: <1358776557-5609-1-git-send-email-idryomov@gmail.com>
+	Wed, 23 Jan 2013 02:25:50 -0500
+Received: by mail-ie0-f174.google.com with SMTP id k11so7215320iea.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 23:25:50 -0800 (PST)
+Message-ID: <50FF905D.80805@gmail.com>
+Date: Wed, 23 Jan 2013 15:25:17 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: cleanup for btrfs_extend_item
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 3fed40cc ("Btrfs: cleanup duplicated division functions"), which
-was merged into 3.8-rc1, has introduced a regression by removing logic
-that was guarding us against bad user input.  Bring it back.
+Two cleanups:
+	* The data_size is the new added size, not the new size after extend.
+	  Make the description more clear.
+	* The var data_end is not used anymore after the data shift.
+	  Remove the useless assignment.
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- fs/btrfs/volumes.c |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
+  fs/btrfs/ctree.c |    4 ++--
+  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 86279c3..b577aee 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2614,7 +2614,14 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
- 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
- 	chunk_used = btrfs_block_group_used(&cache->item);
- 
--	user_thresh = div_factor_fine(cache->key.offset, bargs->usage);
-+	if (bargs->usage == 0)
-+		user_thresh = 0;
-+	else if (bargs->usage > 100)
-+		user_thresh = cache->key.offset;
-+	else
-+		user_thresh = div_factor_fine(cache->key.offset,
-+					      bargs->usage);
-+
- 	if (chunk_used < user_thresh)
- 		ret = 0;
- 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index eea5da7..c4f295e 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4376,7 +4376,8 @@ void btrfs_truncate_item(struct btrfs_trans_handle *trans,
+  }
+
+  /*
+- * make the item pointed to by the path bigger, data_size is the new size.
++ * make the item pointed to by the path bigger.
++ * data_size is the to be extended size.
+   */
+  void btrfs_extend_item(struct btrfs_trans_handle *trans,
+  		       struct btrfs_root *root, struct btrfs_path *path,
+@@ -4432,7 +4433,6 @@ void btrfs_extend_item(struct btrfs_trans_handle *trans,
+  		      data_end - data_size, btrfs_leaf_data(leaf) +
+  		      data_end, old_data - data_end);
+
+-	data_end = old_data;
+  	old_size = btrfs_item_size_nr(leaf, slot);
+  	item = btrfs_item_nr(leaf, slot);
+  	btrfs_set_item_size(leaf, item, old_size + data_size);
 -- 
-1.7.9.1
+1.7.10.4
 

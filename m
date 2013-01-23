@@ -1,42 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54062 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:55277 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755511Ab3AWQDQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 11:03:16 -0500
-Date: Wed, 23 Jan 2013 17:03:14 +0100
+	id S1751143Ab3AWQaG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jan 2013 11:30:06 -0500
+Date: Wed, 23 Jan 2013 17:30:04 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Racz Zoli <racz.zoli@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: File system development question
-Message-ID: <20130123160314.GK28263@twin.jikos.cz>
+To: Skender <skender@gmail.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        jbacik@fusionio.com
+Subject: Re: BTRFS dmesg error
+Message-ID: <20130123163004.GL28263@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CANoGd8=7Q=1yDiQxhkwQiNSf2d78p85AN-kkEn=i_2Vsat6paA@mail.gmail.com>
+References: <20130121060136.GA11275@blackspider>
+ <20130121110026.GE19967@twin.jikos.cz>
+ <20130121202016.GA24179@blackspider>
+ <20130122141702.GC28263@twin.jikos.cz>
+ <20130122214125.GA15469@blackspider>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANoGd8=7Q=1yDiQxhkwQiNSf2d78p85AN-kkEn=i_2Vsat6paA@mail.gmail.com>
+In-Reply-To: <20130122214125.GA15469@blackspider>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 22, 2013 at 11:39:31PM +0200, Racz Zoli wrote:
-> Can somebody help me with links to documentations, books or howtos
-> about how and where to start file system development in linux? It
-> doesn`t necessarily need to contain a full source code. I don`t want
-> to only copy paste somebody else`s code, and voila, I`m a kernel
-> developer. I would like to understand step by step how the vfs api is
-> actually working, how to do things, and maybe in the future to be able
-> to write my own file system, or to contribute to an existing one.
+On Wed, Jan 23, 2013 at 08:41:25AM +1100, Skender wrote:
+> The only lines the have anythinf with btrfs are as follows:
+[...]
 
-You may find this book useful
+That lacks information to analyze the error, so let's try it the usual
+way. I'm not sure if you can grab the state of free space (via
+btrfs fi df) from the time it happened, but that would at least say if
+it was the ENOSPC case.
 
-Practical File System Design: The Be File System
-http://www.nobius.org/~dbg/practical-file-system-design.pdf
-
-or for specific topics
-
-Understanding the Linux Kernel
-http://ceata.org/~tct/resurse/utlk.pdf
-
-Where the APIs changed, look into existing implementations, I don't know
-about any book that describes recent status of linux internals.
-
+thanks,
 david

@@ -1,49 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:41279 "EHLO csamuel.org"
+Received: from cantor2.suse.de ([195.135.220.15]:59627 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752579Ab3AWCfi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jan 2013 21:35:38 -0500
-Message-ID: <50FF4C66.5080003@csamuel.org>
-Date: Wed, 23 Jan 2013 13:35:18 +1100
-From: Chris Samuel <chris@csamuel.org>
+	id S1755378Ab3AWSML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jan 2013 13:12:11 -0500
+Date: Wed, 23 Jan 2013 19:12:09 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gene Czarcinski <gene@czarc.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, chris.mason@fusionio.com,
+        sandeen@redhat.com
+Subject: Re: [PATCH 2/6] Fedora 18 - build-fixes.patch
+Message-ID: <20130123181209.GP28263@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1358618781-26629-1-git-send-email-gene@czarc.net>
+ <1358618781-26629-3-git-send-email-gene@czarc.net>
+ <50FF03D8.3040009@czarc.net>
 MIME-Version: 1.0
-To: Brendan Hide <brendan@swiftspirit.co.za>
-CC: Gene Czarcinski <gene@czarc.net>, linux-btrfs@vger.kernel.org,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: Re: [PATCH 6/6] Btrfs-progs: detect if the disk we are formatting
- is a ssd
-References: <1358618781-26629-1-git-send-email-gene@czarc.net> <1358618781-26629-7-git-send-email-gene@czarc.net> <50FB0CA1.4070204@swiftspirit.co.za>
-In-Reply-To: <50FB0CA1.4070204@swiftspirit.co.za>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50FF03D8.3040009@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20/01/13 08:14, Brendan Hide wrote:
+On Tue, Jan 22, 2013 at 04:25:44PM -0500, Gene Czarcinski wrote:
+> I believe that this if the likely source of this patch:
+> http://article.gmane.org/gmane.comp.file-systems.btrfs/4547
 
-> Can't help but suggest that a "NO_DEDUP" command could be added to the
-> SATA Transport Protocol/SCSI Command set. Not sure where to submit that
-> idea ... :-/
+Thanks for the pointer.
 
-Serial ATA International Organization (SATA-IO) maintain the specs for
-SATA. Looks like membership is limited to companies and costs US$1,700 a
-year.
+> I do wonder how much this is still applicable.  However, it has been in the
+> btrfs-progs package for Fedora 15, 16, 17, and 18 plus likely some versions
+> of RHEL.
 
-http://sata-io.org/
+man getpagesize:
 
-SCSI is from the T10 committee:
+"Portable applications should employ sysconf(_SC_PAGESIZE) instead of getpagesize()"
 
-http://www.t10.org/
+added with the original changelog and s-o-b, modified the subject line
+to say "Use sysconf instead of getpagesize".
 
-The intro page indicates it's a fairly open group:
-
-# T10 operates under INCITS and is responsible for SCSI Storage
-# Interfaces. Its principal work is the Small Computer System
-# Interface (SCSI), including the family of SCSI-3 projects.
-# Anyone "directly and materially affected" is welcome to
-# participate on T10 (essentially, this amounts to anyone
-# interested in T10's work).
-
-cheers,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+david

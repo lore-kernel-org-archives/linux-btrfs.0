@@ -1,358 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49322 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49277 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753738Ab3AWIHK (ORCPT
+	with ESMTP id S1753752Ab3AWIHF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 03:07:10 -0500
+	Wed, 23 Jan 2013 03:07:05 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
 Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 10/10] Btrfs-progs: add show subcommand to subvol cli
-Date: Wed, 23 Jan 2013 16:12:51 +0800
-Message-Id: <1358928771-31960-11-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 09/10] Btrfs-progs: make get_subvol_name non cmds-send specific
+Date: Wed, 23 Jan 2013 16:12:50 +0800
+Message-Id: <1358928771-31960-10-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds show sub-command to the btrfs subvol cli
-to display detailed inforamtion of the given subvol
-or snapshot.
+get_subvol_name can be used other than the just with in cmds-send.c
+so this patch will make it possible with out changing the original
+intentions.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c     |  25 +++++++-
- btrfs-list.h     |   3 +-
- cmds-subvolume.c | 176 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- man/btrfs.8.in   |   6 ++
- 4 files changed, 203 insertions(+), 7 deletions(-)
+ cmds-send.c | 12 ++++++------
+ commands.h  |  1 +
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 71f7239..5be3ed9 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1337,6 +1337,22 @@ static void print_subvolume_column(struct root_info *subv,
- 	}
+diff --git a/cmds-send.c b/cmds-send.c
+index 9b47e70..beebac9 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -331,12 +331,12 @@ out:
+ 	return ret;
  }
  
-+static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefix)
-+{
-+	int i;
-+
-+	for (i = 0; i < BTRFS_LIST_ALL; i++) {
-+		if (!btrfs_list_columns[i].need_print)
-+			continue;
-+
-+		if(raw_prefix);
-+			printf("%s",raw_prefix);
-+
-+		print_subvolume_column(subv, i);
-+	}
-+	printf("\n");
-+}
-+
- static void print_single_volume_info_table(struct root_info *subv)
+-static const char *get_subvol_name(struct btrfs_send *s, const char *full_path)
++char *get_subvol_name(char *mnt, char *full_path)
  {
- 	int i;
-@@ -1403,7 +1419,7 @@ static void print_all_volume_info_tab_head()
- }
+-	int len = strlen(s->root_path);
++	int len = strlen(mnt);
+ 	if (!len)
+ 		return full_path;
+-	if (s->root_path[len - 1] != '/')
++	if (mnt[len - 1] != '/')
+ 		len += 1;
  
- static void print_all_volume_info(struct root_lookup *sorted_tree,
--				  int layout)
-+				  int layout, char *raw_prefix)
- {
- 	struct rb_node *n;
- 	struct root_info *entry;
-@@ -1421,6 +1437,9 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
- 		case BTRFS_LIST_LAYOUT_TABLE:
- 			print_single_volume_info_table(entry);
- 			break;
-+		case BTRFS_LIST_LAYOUT_RAW:
-+			print_single_volume_info_raw(entry, raw_prefix);
-+			break;
+ 	return full_path + len;
+@@ -445,7 +445,7 @@ int cmd_send_start(int argc, char **argv)
+ 			if (ret < 0)
+ 				goto out;
+ 
+-			ret = get_root_id(&send, get_subvol_name(&send, subvol),
++			ret = get_root_id(&send, get_subvol_name(send.root_path, subvol),
+ 					&root_id);
+ 			if (ret < 0) {
+ 				fprintf(stderr, "ERROR: could not resolve "
+@@ -506,7 +506,7 @@ int cmd_send_start(int argc, char **argv)
+ 
+ 	if (snapshot_parent != NULL) {
+ 		ret = get_root_id(&send,
+-				get_subvol_name(&send, snapshot_parent),
++				get_subvol_name(send.root_path, snapshot_parent),
+ 				&parent_root_id);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "ERROR: could not resolve root_id "
+@@ -565,7 +565,7 @@ int cmd_send_start(int argc, char **argv)
+ 			goto out;
  		}
- 		n = rb_next(n);
- 	}
-@@ -1447,7 +1466,7 @@ int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
  
- int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 		       struct btrfs_list_comparer_set *comp_set,
--		       int layout)
-+		       int layout, char *raw_prefix)
- {
- 	struct root_lookup root_lookup;
- 	struct root_lookup root_sort;
-@@ -1459,7 +1478,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
- 				 comp_set, fd);
+-		ret = get_root_id(&send, get_subvol_name(&send, subvol),
++		ret = get_root_id(&send, get_subvol_name(send.root_path, subvol),
+ 				&root_id);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "ERROR: could not resolve root_id "
+diff --git a/commands.h b/commands.h
+index 9b77f3e..631fb6b 100644
+--- a/commands.h
++++ b/commands.h
+@@ -106,3 +106,4 @@ int test_issubvolume(char *path);
  
--	print_all_volume_info(&root_sort, layout);
-+	print_all_volume_info(&root_sort, layout, raw_prefix);
- 	__free_all_subvolumn(&root_lookup);
- 
- 	return 0;
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 5b60068..09d35f7 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -20,6 +20,7 @@
- 
- #define BTRFS_LIST_LAYOUT_DEFAULT	0
- #define BTRFS_LIST_LAYOUT_TABLE	1
-+#define BTRFS_LIST_LAYOUT_RAW		2
- 
- /*
-  * one of these for each root we find.
-@@ -150,7 +151,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
- 
- int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 		       struct btrfs_list_comparer_set *comp_set,
--			int is_tab_result);
-+			int layout, char *raw_prefix);
- int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
- int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
- char *btrfs_list_path_for_root(int fd, u64 root);
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index dd677f7..7e5e28c 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -24,6 +24,7 @@
- #include <libgen.h>
- #include <limits.h>
- #include <getopt.h>
-+#include <uuid/uuid.h>
- 
- #include "kerncompat.h"
- #include "ioctl.h"
-@@ -418,10 +419,10 @@ static int cmd_subvol_list(int argc, char **argv)
- 
- 	if (is_tab_result)
- 		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
--				BTRFS_LIST_LAYOUT_TABLE);
-+				BTRFS_LIST_LAYOUT_TABLE, NULL);
- 	else
- 		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
--				BTRFS_LIST_LAYOUT_DEFAULT);
-+				BTRFS_LIST_LAYOUT_DEFAULT, NULL);
- 	if (ret)
- 		return 19;
- 	return 0;
-@@ -634,7 +635,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
- 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
- 
- 	ret = btrfs_list_subvols_print(fd, filter_set, NULL,
--		BTRFS_LIST_LAYOUT_DEFAULT);
-+		BTRFS_LIST_LAYOUT_DEFAULT, NULL);
- 	if (ret)
- 		return 19;
- 	return 0;
-@@ -721,6 +722,174 @@ static int cmd_find_new(int argc, char **argv)
- 	return 0;
- }
- 
-+static const char * const cmd_subvol_show_usage[] = {
-+	"btrfs subvolume show <subvol-path>",
-+	"Show more information of the subvolume",
-+	NULL
-+};
-+
-+static int cmd_subvol_show(int argc, char **argv)
-+{
-+	struct root_info get_ri;
-+	struct btrfs_list_filter_set *filter_set;
-+	char tstr[256];
-+	char uuidparse[37];
-+	char *fullpath, *svpath, *mnt = NULL;
-+	char raw_prefix[] = "\t\t\t\t";
-+	u64 sv_id, mntid;
-+	int fd, mntfd;
-+	int ret;
-+
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_subvol_show_usage);
-+
-+	fullpath = realpath(argv[1],0);
-+	if(!fullpath) {
-+		fprintf(stderr, "ERROR: finding real path for '%s', %s\n",
-+			argv[1], strerror(errno));
-+		return 1;
-+	}
-+	ret = test_issubvolume(fullpath);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: error accessing '%s'\n", fullpath);
-+		free(fullpath);
-+		return 1;
-+	}
-+	if (!ret) {
-+		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", fullpath);
-+		free(fullpath);
-+		return 1;
-+	}
-+
-+	ret = find_mount_root(fullpath, &mnt);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
-+				"%s\n", fullpath, strerror(-ret));
-+		free(fullpath);
-+		return 1;
-+	}
-+
-+	svpath = get_subvol_name(mnt, fullpath);
-+
-+	fd = open_file_or_dir(fullpath);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", fullpath);
-+		free(mnt);
-+		free(fullpath);
-+		return 1;
-+	}
-+	sv_id = btrfs_list_get_path_rootid(fd);
-+
-+	mntfd = open_file_or_dir(mnt);
-+	if (mntfd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", mnt);
-+		close(fd);
-+		free(mnt);
-+		free(fullpath);
-+		return 1;
-+	}
-+	mntid = btrfs_list_get_path_rootid(mntfd);
-+
-+	if (sv_id == 5) {
-+		printf("%s is btrfs root\n", fullpath);
-+		close(fd);
-+		close(mntfd);
-+		free(mnt);
-+		free(fullpath);
-+		return 1;
-+	}
-+
-+	memset(&get_ri, 0, sizeof(get_ri));
-+	get_ri.root_id = sv_id;
-+
-+	if (btrfs_get_subvol(mntfd, &get_ri)) {
-+		fprintf(stderr, "ERROR: can't find '%s'\n",
-+			svpath);
-+		close(fd);
-+		close(mntfd);
-+		free(fullpath);
-+		free(mnt);
-+		return 1;
-+	}
-+
-+	/* print the info */
-+	printf("%s", fullpath);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Name: \t\t\t%s", get_ri.name);
-+	printf("\n");
-+
-+	if (uuid_is_null(get_ri.uuid))
-+		strcpy(uuidparse, "-");
-+	else
-+		uuid_unparse(get_ri.uuid, uuidparse);
-+	printf("\t");
-+	printf("uuid: \t\t\t%s", uuidparse);
-+	printf("\n");
-+
-+        if (uuid_is_null(get_ri.puuid))
-+                strcpy(uuidparse, "-");
-+        else
-+                uuid_unparse(get_ri.puuid, uuidparse);
-+	printf("\t");
-+	printf("Parent uuid: \t\t%s", uuidparse);
-+	printf("\n");
-+
-+	if (get_ri.otime)
-+		strftime(tstr, 256, "%Y-%m-%d %X",
-+			 localtime(&get_ri.otime));
-+	else
-+		strcpy(tstr, "-");
-+	printf("\t");
-+	printf("Creation time: \t\t%s", tstr);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Object ID: \t\t%llu", get_ri.root_id);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Generation (Gen): \t%llu", get_ri.gen);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Gen at creation: \t%llu", get_ri.ogen);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Parent: \t\t%llu", get_ri.ref_tree);
-+	printf("\n");
-+
-+	printf("\t");
-+	printf("Top Level: \t\t%llu", get_ri.top_id);
-+	printf("\n");
-+
-+	/* print the snapshots of the given subvol if any*/
-+	printf("\t");
-+	printf("Snapshot(s):\n");
-+	filter_set = btrfs_list_alloc_filter_set();
-+	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
-+				get_ri.uuid);
-+	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
-+	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
-+			raw_prefix);
-+
-+	/* clean up */
-+	if (get_ri.path)
-+		free(get_ri.path);
-+	if (get_ri.name)
-+		free(get_ri.name);
-+	if (get_ri.full_path)
-+		free(get_ri.full_path);
-+
-+	close(fd);
-+	close(mntfd);
-+	free(mnt);
-+	free(fullpath);
-+	return 0;
-+}
-+
- const struct cmd_group subvolume_cmd_group = {
- 	subvolume_cmd_group_usage, NULL, {
- 		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
-@@ -732,6 +901,7 @@ const struct cmd_group subvolume_cmd_group = {
- 		{ "set-default", cmd_subvol_set_default,
- 			cmd_subvol_set_default_usage, NULL, 0 },
- 		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
-+		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
- 		{ 0, 0, 0, 0, 0 }
- 	}
- };
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 9222580..57c25b0 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -17,6 +17,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
- [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
- [<\fIfile\fR>|<\fIdir\fR>...]
-@@ -160,6 +162,10 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
- is similar to \fBsubvolume list\fR command.
- .TP
- 
-+\fBsubvolume show\fR\fI <path>\fR
-+Show information of a given subvolume in the \fI<path>\fR.
-+.TP
-+
- \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
- [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
- 
+ /* send.c */
+ int find_mount_root(const char *path, char **mount_root);
++char *get_subvol_name(char *mnt, char *full_path);
 -- 
 1.8.1.227.g44fe835
 

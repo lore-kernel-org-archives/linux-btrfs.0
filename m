@@ -1,55 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:62251 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752985Ab3AWHZu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 02:25:50 -0500
-Received: by mail-ie0-f174.google.com with SMTP id k11so7215320iea.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2013 23:25:50 -0800 (PST)
-Message-ID: <50FF905D.80805@gmail.com>
-Date: Wed, 23 Jan 2013 15:25:17 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+Received: from mx1.fusionio.com ([66.114.96.30]:45744 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755522Ab3AXPso (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 10:48:44 -0500
+Date: Thu, 24 Jan 2013 10:48:41 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <JBacik@fusionio.com>,
+        Alexander Block <ablock84@googlemail.com>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>,
+        Chen Yang <chenyang.fnst@cn.fujitsu.com>,
+        Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH 1/2] V2 Avoid sending disknr==0 extents when possible.
+Message-ID: <20130124154841.GD2349@localhost.localdomain>
+References: <CAOcd+r1_hiz7A98r0o1e_=60+3tN16n+HTgQs0SgMhHjGG-E7Q@mail.gmail.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: cleanup for btrfs_extend_item
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAOcd+r1_hiz7A98r0o1e_=60+3tN16n+HTgQs0SgMhHjGG-E7Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Two cleanups:
-	* The data_size is the new added size, not the new size after extend.
-	  Make the description more clear.
-	* The var data_end is not used anymore after the data shift.
-	  Remove the useless assignment.
+On Mon, Jan 21, 2013 at 03:27:22AM -0700, Alex Lyakas wrote:
+> In the following cases we do not send disknr==0 extents:
+> 1) full send 2) new inode in a diff-send 3) when disknr==0 extents are
+> added to the end of an inode
+> 
+> Original-version-by: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+> Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
-  fs/btrfs/ctree.c |    4 ++--
-  1 file changed, 2 insertions(+), 2 deletions(-)
+Neither of these would apply to btrfs-next, please rebase against btrfs-next and
+resend.  Thanks,
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index eea5da7..c4f295e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4376,7 +4376,8 @@ void btrfs_truncate_item(struct btrfs_trans_handle *trans,
-  }
-
-  /*
-- * make the item pointed to by the path bigger, data_size is the new size.
-+ * make the item pointed to by the path bigger.
-+ * data_size is the to be extended size.
-   */
-  void btrfs_extend_item(struct btrfs_trans_handle *trans,
-  		       struct btrfs_root *root, struct btrfs_path *path,
-@@ -4432,7 +4433,6 @@ void btrfs_extend_item(struct btrfs_trans_handle *trans,
-  		      data_end - data_size, btrfs_leaf_data(leaf) +
-  		      data_end, old_data - data_end);
-
--	data_end = old_data;
-  	old_size = btrfs_item_size_nr(leaf, slot);
-  	item = btrfs_item_nr(leaf, slot);
-  	btrfs_set_item_size(leaf, item, old_size + data_size);
--- 
-1.7.10.4
-
+Josef

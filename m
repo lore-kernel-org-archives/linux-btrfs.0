@@ -1,62 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo103.cox.net ([68.230.241.215]:48801 "EHLO
-	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755880Ab3AXVHf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 16:07:35 -0500
-Received: from eastrmimpo109 ([68.230.241.222]) by eastrmfepo103.cox.net
-          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130124210734.RIPI23841.eastrmfepo103.cox.net@eastrmimpo109>
-          for <linux-btrfs@vger.kernel.org>;
-          Thu, 24 Jan 2013 16:07:34 -0500
-Message-ID: <5101A295.9090908@czarc.net>
-Date: Thu, 24 Jan 2013 16:07:33 -0500
-From: Gene Czarcinski <gene@czarc.net>
+Received: from smtp209.alice.it ([82.57.200.105]:52220 "EHLO smtp209.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755877Ab3AXWJa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 17:09:30 -0500
+Message-ID: <5101B131.6010804@tiscalinet.it>
+Date: Thu, 24 Jan 2013 23:09:53 +0100
+From: Goffredo Baroncelli <kreijack@tiscalinet.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: dsterba@suse.cz
-Subject: Re: [PATCH 00/13] Btrfs-progs: more patches for integration (integration-20130121)
-References: <1358715858-4469-1-git-send-email-gene@czarc.net> <20130121184016.GC7971@twin.jikos.cz> <50FEF32B.6050005@czarc.net> <20130124181308.GT28263@twin.jikos.cz>
-In-Reply-To: <20130124181308.GT28263@twin.jikos.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+CC: kreijack@inwind.it, Goffredo Baroncelli <kreijack@gmail.com>,
+        Stefan Behrens <sbehrens@giantdisaster.de>,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.cz, gene@czarc.net
+Subject: Re: [PATCH 01/10] Btrfs-progs: move open_file_or_dir() to utils.c
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-2-git-send-email-anand.jain@oracle.com> <5100BB01.3030408@redhat.com> <5100FDA3.3040907@giantdisaster.de> <510175F7.5080806@gmail.com> <51018EBA.60201@redhat.com>
+In-Reply-To: <51018EBA.60201@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/24/2013 01:13 PM, David Sterba wrote:
-> On Tue, Jan 22, 2013 at 03:14:35PM -0500, Gene Czarcinski wrote:
->> On 01/21/2013 01:40 PM, David Sterba wrote:
->>> On Sun, Jan 20, 2013 at 04:04:05PM -0500, Gene Czarcinski wrote:
->>>>> I have done some additional scraping of the mailing list to
->>>>> identify some "low hanging fruit" which I consider should
->>>>> be merged into the btrfs-progs repository.
->>> Thanks, I went through them and put together into an integration branch
+On 01/24/2013 08:42 PM, Eric Sandeen wrote:
+> On 1/24/13 11:57 AM, Goffredo Baroncelli wrote:
+>> On 01/24/2013 10:23 AM, Stefan Behrens wrote:
+>>> On Wed, 23 Jan 2013 22:39:29 -0600, Eric Sandeen wrote:
+>>>> instead of renaming&   keeping the btrfsctl.c copy
 >>>
->>>    git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130121
->> There is a problem with one of the patches:
->>      detect if the disk we are formatting is a ssd
+>>> There is a new momentum to improve the Btrfs-progs quality :)
+>>>
+>>> IMO, one step is to get rid of the legacy tools and sources. It
+>>> wastes time to maintain them and these old tools cause confusion.
+>>> btrfsctl.c, btrfs-vol.c and btrfs-show.c are not needed anymore.
+>>> Please correct me if there are plans to use these old tools in
+>>> future Linux distributions. The "btrfs" tool replaces the legacy
+>>> "btrfsctl", "btrfs-vol" and "btrfs-show" tools. Below, the usage
+>>> text of the old tools is quoted. All these tasks are also offered
+>>> in the "btrfs" tool, and this tool is the newer one.
 >>
->> The commit comments appear to come from the patch I submitted. However, as I
->> said in the submission, the patch for mkfs.c has to be "refitted" because of
->> a conflict.  The conflict is a result of the patch:
->>      Fix compiler warnings on PPC64
->> which relocated the include "kerncompat.h" to a different line in the mkfs.c
->> file.
-> These merge conflicts are inevitable and normal (though sometimes not
-> that trivial). My initial aim was to build one linear branch only with
-> fixes and git-merge the patches that add features, but this will not be
-> easy to merge for much longer, so I'm going to do a linear integration
-> branch so others can take them as checkpoint to base the various
-> patchsets.
+>> I fully agree: btrfsctl, btrfs-vol, btrfs-show are perfectly
+>> replaced by by btrfs. Moreover time to time the patches are more
+>> complex than the needing because exists these "legacy" programs.
+>>
+>> I checked the debian package, and to me seems that there is no need
+>> of {btrfsctl,btrfs-vol,btrfs-show}
 >
-Yes, trying to merge branches with lots of changes are effectively 
-impossible (impractical?) as far as I am concerned.  Unless it is simple 
-I I understand exactly what is happening, I have found it easier/better 
-to apply a set of patches one at a time and resolve problems manually.
+> Hm, they are shipped in the Fedora package.
 
-I just got the subvol show patches applied.  I tried putting it into a 
-separate branch and then doing a merge but I could not trust my results 
-when I ran mergetool.  And, BTW they subvol show patches to apply with 
-not very many problems.  My working branch currently has 44 commits over 
-91d9eec and subvol show added another ten.
+The same is true for the debian package, but are these used in Fedora ?
 
-Gene
+>
+> For backwards compat, could those be turned into shell scripts which
+> invoke the btrfs tool?
+
+I don't see any gain to maintains a script bash (which has to be written 
+from scratch) instead of maintains the current C code.
+
+These programs were deprecated two years ago [1]. If some distribution 
+need them, could maintain them as separate patch. But I think that the 
+mainstream should remove.
+
+
+
+>
+> -Eric
+>
+>> BR Goffredo
+>>
+>
+>
+
+
+[1] $ git log 002d021c^..002d021c
+commit 002d021c5f2d838394e850e304546ffad283518a
+Author: Goffredo Baroncelli <kreijack@libero.it>
+Date:   Sun Dec 5 17:47:36 2010 +0000
+
+     Deprecate btrfsctl, btrfs-show, btrfs-vol
+
+     Hi all,
+
+     the patch below deprecates the following programs
+
+     * btrfsctl
+     * btrfs-vol
+     * btrfs-show
+
+     the reason is simple, these programs are superseded by the btrfs 
+utility,
+     both in terms of documentation, usability and bug. The goal is to avoid
+     to duplicate codes and avoid update two programs.
+
+     The patch adds a warning in the man pages, in the INSTALL file and 
+in the
+     programs.
+[...]
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

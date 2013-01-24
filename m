@@ -1,47 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:49643 "EHLO mx2.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:36900 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752550Ab3AWX5O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 18:57:14 -0500
-Date: Wed, 23 Jan 2013 18:57:09 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: David Sterba <dsterba@suse.cz>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: put csums on the right ordered extent
-Message-ID: <20130123235709.GB3752@shiny>
-References: <1358887535-7241-1-git-send-email-jbacik@fusionio.com>
- <20130123110107.GG28263@twin.jikos.cz>
- <20130123152106.GI28263@twin.jikos.cz>
+	id S1751598Ab3AXQof (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 11:44:35 -0500
+Date: Thu, 24 Jan 2013 11:44:33 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] Btrfs: fix memory leak on extent map after fsync
+Message-ID: <20130124164433.GE2349@localhost.localdomain>
+References: <1357656561-24604-1-git-send-email-bo.li.liu@oracle.com>
+ <1357656561-24604-2-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130123152106.GI28263@twin.jikos.cz>
+In-Reply-To: <1357656561-24604-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 23, 2013 at 08:21:07AM -0700, David Sterba wrote:
-> On Wed, Jan 23, 2013 at 12:01:08PM +0100, David Sterba wrote:
-> > Survived a few hours of Chris' test and I'm running the full xfstests
-> > again now.
+On Tue, Jan 08, 2013 at 07:49:21AM -0700, Liu Bo wrote:
+> During fsync, we put the changed parts(i.e. extent map) into the log tree,
+> and we ship these parts from a list of modified_extents to a local list
+> to process, of course, we must increment the refs of the extent maps to
+> avoid it from getting evicted from cache.
 > 
-> After 4.5 hours of the same testsuite as before, this popped up in
-> syslog:
+> The problem is
+> we don't hold the tree writer lock all the time of iterating the local list,
+> and it is possible that other threads hack in and delete the extent map from
+> the local list silently.  So we'll end up with memory leak here.
 > 
-> [53489.998888] btrfs csum failed ino 63793 off 106496 csum 2411266714 private 3462448526
+> I hit this when testing xfstest 274 with mount options 'autodefrag,compress=zlib'.
 > 
-> the file is $TEST/junk . Running md5sum on that file produces a
-> different checksum error messages:
-> 
-> [54187.259285] btrfs csum failed ino 63793 off 344064 csum 2566472073 private 1022717503
-> (3 times)
-> 
-> I've rerun chris' script again, no errors, and rechecked if I'm running
-> the kernel, yes.
+> With this fix, the memory leak has gone away.
 
-Looks like Josef saw the same, so we have two different bugs (missing
-crcs vs incorrect crcs).  Josef mentioned a much faster test for the
-incorrect crcs...Josef what was that test?
+This isn't going to work, we use the LOGGING flag to make sure the em isn't
+merged as well.  Thanks,
 
-Thanks to everyone that ran my script, sorry it ended up a distraction.
-
--chris
+Josef

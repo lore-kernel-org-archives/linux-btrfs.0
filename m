@@ -1,100 +1,385 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:23211 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:27550 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752933Ab3AXEzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 23:55:47 -0500
-Message-ID: <5100BD56.7080907@redhat.com>
-Date: Wed, 23 Jan 2013 22:49:26 -0600
+	id S1750810Ab3AXFHV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 00:07:21 -0500
+Message-ID: <5100C156.6010107@redhat.com>
+Date: Wed, 23 Jan 2013 23:06:30 -0600
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
 To: Anand Jain <anand.jain@oracle.com>
 CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: Re: [PATCH 05/10] Btrfs-progs: add function btrfs_get_subvol to get
- root_info of a subvol
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-6-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1358928771-31960-6-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH 10/10] Btrfs-progs: add show subcommand to subvol cli
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-11-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1358928771-31960-11-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 1/23/13 2:12 AM, Anand Jain wrote:
-> We need a function which can get the root_info of a given
-> subvol. This is in preparation to add support for the show
-> sub-cli.
-> 
+> This adds show sub-command to the btrfs subvol cli
+> to display detailed inforamtion of the given subvol
+> or snapshot.
+
+Couple things below.
+
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  btrfs-list.c | 38 ++++++++++++++++++++++++++++++++++++++
->  btrfs-list.h |  1 +
->  2 files changed, 39 insertions(+)
+>  btrfs-list.c     |  25 +++++++-
+>  btrfs-list.h     |   3 +-
+>  cmds-subvolume.c | 176 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  man/btrfs.8.in   |   6 ++
+>  4 files changed, 203 insertions(+), 7 deletions(-)
 > 
 > diff --git a/btrfs-list.c b/btrfs-list.c
-> index 1851f3e..ec64a36 100644
+> index 71f7239..5be3ed9 100644
 > --- a/btrfs-list.c
 > +++ b/btrfs-list.c
-> @@ -1455,6 +1455,44 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+> @@ -1337,6 +1337,22 @@ static void print_subvolume_column(struct root_info *subv,
+>  	}
+>  }
+>  
+> +static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefix)
+> +{
+> +	int i;
+> +
+> +	for (i = 0; i < BTRFS_LIST_ALL; i++) {
+> +		if (!btrfs_list_columns[i].need_print)
+> +			continue;
+> +
+> +		if(raw_prefix);
+
+That semicolon will eventually make you sad, I bet.  ;)
+And while you're at it, please add the space after "if?"
+
+> +			printf("%s",raw_prefix);
+> +
+> +		print_subvolume_column(subv, i);
+> +	}
+> +	printf("\n");
+> +}
+> +
+>  static void print_single_volume_info_table(struct root_info *subv)
+>  {
+>  	int i;
+> @@ -1403,7 +1419,7 @@ static void print_all_volume_info_tab_head()
+>  }
+>  
+>  static void print_all_volume_info(struct root_lookup *sorted_tree,
+> -				  int layout)
+> +				  int layout, char *raw_prefix)
+>  {
+>  	struct rb_node *n;
+>  	struct root_info *entry;
+> @@ -1421,6 +1437,9 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
+>  		case BTRFS_LIST_LAYOUT_TABLE:
+>  			print_single_volume_info_table(entry);
+>  			break;
+> +		case BTRFS_LIST_LAYOUT_RAW:
+> +			print_single_volume_info_raw(entry, raw_prefix);
+> +			break;
+>  		}
+>  		n = rb_next(n);
+>  	}
+> @@ -1447,7 +1466,7 @@ int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
+>  
+>  int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+>  		       struct btrfs_list_comparer_set *comp_set,
+> -		       int layout)
+> +		       int layout, char *raw_prefix)
+>  {
+>  	struct root_lookup root_lookup;
+>  	struct root_lookup root_sort;
+> @@ -1459,7 +1478,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+>  	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+>  				 comp_set, fd);
+>  
+> -	print_all_volume_info(&root_sort, layout);
+> +	print_all_volume_info(&root_sort, layout, raw_prefix);
+>  	__free_all_subvolumn(&root_lookup);
+>  
+>  	return 0;
+> diff --git a/btrfs-list.h b/btrfs-list.h
+> index 5b60068..09d35f7 100644
+> --- a/btrfs-list.h
+> +++ b/btrfs-list.h
+> @@ -20,6 +20,7 @@
+>  
+>  #define BTRFS_LIST_LAYOUT_DEFAULT	0
+>  #define BTRFS_LIST_LAYOUT_TABLE	1
+> +#define BTRFS_LIST_LAYOUT_RAW		2
+>  
+>  /*
+>   * one of these for each root we find.
+> @@ -150,7 +151,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+>  
+>  int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+>  		       struct btrfs_list_comparer_set *comp_set,
+> -			int is_tab_result);
+> +			int layout, char *raw_prefix);
+>  int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+>  int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
+>  char *btrfs_list_path_for_root(int fd, u64 root);
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index dd677f7..7e5e28c 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -24,6 +24,7 @@
+>  #include <libgen.h>
+>  #include <limits.h>
+>  #include <getopt.h>
+> +#include <uuid/uuid.h>
+>  
+>  #include "kerncompat.h"
+>  #include "ioctl.h"
+> @@ -418,10 +419,10 @@ static int cmd_subvol_list(int argc, char **argv)
+>  
+>  	if (is_tab_result)
+>  		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+> -				BTRFS_LIST_LAYOUT_TABLE);
+> +				BTRFS_LIST_LAYOUT_TABLE, NULL);
+>  	else
+>  		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+> -				BTRFS_LIST_LAYOUT_DEFAULT);
+> +				BTRFS_LIST_LAYOUT_DEFAULT, NULL);
+>  	if (ret)
+>  		return 19;
+>  	return 0;
+> @@ -634,7 +635,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+>  	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+>  
+>  	ret = btrfs_list_subvols_print(fd, filter_set, NULL,
+> -		BTRFS_LIST_LAYOUT_DEFAULT);
+> +		BTRFS_LIST_LAYOUT_DEFAULT, NULL);
+>  	if (ret)
+>  		return 19;
+>  	return 0;
+> @@ -721,6 +722,174 @@ static int cmd_find_new(int argc, char **argv)
 >  	return 0;
 >  }
 >  
-> +int btrfs_get_subvol(int fd, struct root_info *the_ri)
-> +{
-> +	int ret = -1;
-> +	struct root_lookup rl;
-> +	struct rb_node *rbn;
-> +	struct root_info *ri;
-> +	u64 root_id = btrfs_list_get_path_rootid(fd);
+> +static const char * const cmd_subvol_show_usage[] = {
+> +	"btrfs subvolume show <subvol-path>",
+> +	"Show more information of the subvolume",
+> +	NULL
+> +};
 > +
-> +	if (btrfs_list_subvols(fd, &rl))
-> +		return 13;
+> +static int cmd_subvol_show(int argc, char **argv)
+> +{
+> +	struct root_info get_ri;
+> +	struct btrfs_list_filter_set *filter_set;
+> +	char tstr[256];
+> +	char uuidparse[37];
+> +	char *fullpath, *svpath, *mnt = NULL;
+> +	char raw_prefix[] = "\t\t\t\t";
+> +	u64 sv_id, mntid;
+> +	int fd, mntfd;
+> +	int ret;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_subvol_show_usage);
+> +
+> +	fullpath = realpath(argv[1],0);
+> +	if(!fullpath) {
 
-Unless there is an ongoing plan to actually do something with these
-magical returns, can we maybe just be normal about error return values
-in new code?
+ideally "if (!fullpath)" with the space...
 
-The caller you add only cares about 0 or not, right?  Or is there some other
-purpose for "13" I'm not aware of?
-
-Thanks,
--Eric
-
-> +	rbn = rb_first(&rl.root);
-> +	while(rbn) {
-> +		ri = rb_entry(rbn, struct root_info, rb_node);
-> +		resolve_root(&rl, ri, root_id);
-> +		if (!comp_entry_with_rootid(the_ri, ri, 0)) {
-> +			memcpy(the_ri, ri, offsetof(struct root_info, path));
-> +			if (ri->path)
-> +				the_ri->path = strdup(ri->path);
-> +			else
-> +				the_ri->path = NULL;
-> +			if (ri->name)
-> +				the_ri->name = strdup(ri->name);
-> +			else
-> +				the_ri->name = NULL;
-> +			if (ri->full_path)
-> +				the_ri->full_path = strdup(ri->full_path);
-> +			else
-> +				the_ri->name = NULL;
-> +			ret = 0;
-> +			break;
-> +		}
-> +		rbn = rb_next(rbn);
+> +		fprintf(stderr, "ERROR: finding real path for '%s', %s\n",
+> +			argv[1], strerror(errno));
+> +		return 1;
 > +	}
-> +	__free_all_subvolumn(&rl);
-> +	return ret;
+> +	ret = test_issubvolume(fullpath);
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ERROR: error accessing '%s'\n", fullpath);
+> +		free(fullpath);
+> +		return 1;
+> +	}
+> +	if (!ret) {
+> +		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", fullpath);
+> +		free(fullpath);
+> +		return 1;
+> +	}
+> +
+> +	ret = find_mount_root(fullpath, &mnt);
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
+> +				"%s\n", fullpath, strerror(-ret));
+> +		free(fullpath);
+> +		return 1;
+> +	}
+> +
+> +	svpath = get_subvol_name(mnt, fullpath);
+> +
+> +	fd = open_file_or_dir(fullpath);
+> +	if (fd < 0) {
+> +		fprintf(stderr, "ERROR: can't access '%s'\n", fullpath);
+> +		free(mnt);
+> +		free(fullpath);
+> +		return 1;
+> +	}
+> +	sv_id = btrfs_list_get_path_rootid(fd);
+
+This could fail, right?
+
+> +	mntfd = open_file_or_dir(mnt);
+> +	if (mntfd < 0) {
+> +		fprintf(stderr, "ERROR: can't access '%s'\n", mnt);
+> +		close(fd);
+> +		free(mnt);
+> +		free(fullpath);
+> +		return 1;
+> +	}
+> +	mntid = btrfs_list_get_path_rootid(mntfd);
+> +
+> +	if (sv_id == 5) {
+> +		printf("%s is btrfs root\n", fullpath);
+> +		close(fd);
+> +		close(mntfd);
+> +		free(mnt);
+> +		free(fullpath);
+> +		return 1;
+
+Just wondering, at this point might a "goto out;" be cleaner error
+handling?  Every error case is getting longer ;)
+
+> +	}
+> +
+> +	memset(&get_ri, 0, sizeof(get_ri));
+> +	get_ri.root_id = sv_id;
+> +
+> +	if (btrfs_get_subvol(mntfd, &get_ri)) {
+> +		fprintf(stderr, "ERROR: can't find '%s'\n",
+> +			svpath);
+> +		close(fd);
+> +		close(mntfd);
+> +		free(fullpath);
+> +		free(mnt);
+> +		return 1;
+> +	}
+> +
+> +	/* print the info */
+> +	printf("%s", fullpath);
+> +	printf("\n");
+
+maybe   printf("%s\n", fullpath); ?
+
+> +
+> +	printf("\t");
+> +	printf("Name: \t\t\t%s", get_ri.name);
+> +	printf("\n");
+
+and printf("\tName: \t\t\t%s\n", get_ri.name);
+etc -
+or is there some reason for the single-char-printfs?
+
+> +
+> +	if (uuid_is_null(get_ri.uuid))
+> +		strcpy(uuidparse, "-");
+> +	else
+> +		uuid_unparse(get_ri.uuid, uuidparse);
+> +	printf("\t");
+> +	printf("uuid: \t\t\t%s", uuidparse);
+> +	printf("\n");
+> +
+> +        if (uuid_is_null(get_ri.puuid))
+> +                strcpy(uuidparse, "-");
+> +        else
+> +                uuid_unparse(get_ri.puuid, uuidparse);
+
+s/tabs/spaces/ here?
+
+> +	printf("\t");
+> +	printf("Parent uuid: \t\t%s", uuidparse);
+> +	printf("\n");
+> +
+> +	if (get_ri.otime)
+> +		strftime(tstr, 256, "%Y-%m-%d %X",
+> +			 localtime(&get_ri.otime));
+> +	else
+> +		strcpy(tstr, "-");
+> +	printf("\t");
+> +	printf("Creation time: \t\t%s", tstr);
+> +	printf("\n");
+> +
+> +	printf("\t");
+> +	printf("Object ID: \t\t%llu", get_ri.root_id);
+> +	printf("\n");
+> +
+> +	printf("\t");
+> +	printf("Generation (Gen): \t%llu", get_ri.gen);
+> +	printf("\n");
+> +
+> +	printf("\t");
+> +	printf("Gen at creation: \t%llu", get_ri.ogen);
+> +	printf("\n");
+> +
+> +	printf("\t");
+> +	printf("Parent: \t\t%llu", get_ri.ref_tree);
+> +	printf("\n");
+> +
+> +	printf("\t");
+> +	printf("Top Level: \t\t%llu", get_ri.top_id);
+> +	printf("\n");
+> +
+> +	/* print the snapshots of the given subvol if any*/
+> +	printf("\t");
+> +	printf("Snapshot(s):\n");
+> +	filter_set = btrfs_list_alloc_filter_set();
+> +	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
+> +				get_ri.uuid);
+> +	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+> +	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
+> +			raw_prefix);
+> +
+> +	/* clean up */
+> +	if (get_ri.path)
+> +		free(get_ri.path);
+> +	if (get_ri.name)
+> +		free(get_ri.name);
+> +	if (get_ri.full_path)
+> +		free(get_ri.full_path);
+> +
+> +	close(fd);
+> +	close(mntfd);
+> +	free(mnt);
+> +	free(fullpath);
+> +	return 0;
 > +}
 > +
->  static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
->  			    struct btrfs_file_extent_item *item,
->  			    u64 found_gen, u64 *cache_dirid,
-> diff --git a/btrfs-list.h b/btrfs-list.h
-> index 3b7b680..580d4d1 100644
-> --- a/btrfs-list.h
-> +++ b/btrfs-list.h
-> @@ -151,3 +151,4 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
->  int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
->  char *btrfs_list_path_for_root(int fd, u64 root);
->  u64 btrfs_list_get_path_rootid(int fd);
-> +int btrfs_get_subvol(int fd, struct root_info *the_ri);
+>  const struct cmd_group subvolume_cmd_group = {
+>  	subvolume_cmd_group_usage, NULL, {
+>  		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
+> @@ -732,6 +901,7 @@ const struct cmd_group subvolume_cmd_group = {
+>  		{ "set-default", cmd_subvol_set_default,
+>  			cmd_subvol_set_default_usage, NULL, 0 },
+>  		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
+> +		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
+>  		{ 0, 0, 0, 0, 0 }
+>  	}
+>  };
+> diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+> index 9222580..57c25b0 100644
+> --- a/man/btrfs.8.in
+> +++ b/man/btrfs.8.in
+> @@ -17,6 +17,8 @@ btrfs \- control a btrfs filesystem
+>  .PP
+>  \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
+>  .PP
+> +\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
+> +.PP
+>  \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
+>  [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
+>  [<\fIfile\fR>|<\fIdir\fR>...]
+> @@ -160,6 +162,10 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
+>  is similar to \fBsubvolume list\fR command.
+>  .TP
+>  
+> +\fBsubvolume show\fR\fI <path>\fR
+> +Show information of a given subvolume in the \fI<path>\fR.
+> +.TP
+> +
+>  \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
+>  [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
+>  
 > 
 

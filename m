@@ -1,37 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:59144 "EHLO mx1.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:40807 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754366Ab3AXSm0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 13:42:26 -0500
-Date: Thu, 24 Jan 2013 13:42:19 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Filipe Brandenburger <filbranden@google.com>
-CC: Chris Mason <clmason@fusionio.com>, Josef Bacik <JBacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Please revert 2794ed0 (fix permissions of empty files not
- affected by umask)
-Message-ID: <20130124184219.GG2349@localhost.localdomain>
-References: <CADU+-uD1HTtLd3t2VmpChQm00xvAxg3wcd+pWYD9Q_WcMtF0GA@mail.gmail.com>
+	id S1755405Ab3AXVwr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 16:52:47 -0500
+Date: Thu, 24 Jan 2013 16:52:45 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: Re: [GIT PULL] Btrfs fixes
+Message-ID: <20130124215245.GG10162@shiny.int.fusionio.com>
+References: <20130123004833.GA30526@shiny>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CADU+-uD1HTtLd3t2VmpChQm00xvAxg3wcd+pWYD9Q_WcMtF0GA@mail.gmail.com>
+In-Reply-To: <20130123004833.GA30526@shiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 24, 2013 at 11:32:17AM -0700, Filipe Brandenburger wrote:
-> Hi,
+On Tue, Jan 22, 2013 at 05:48:33PM -0700, Chris Mason wrote:
+> Hi Linus,
 > 
-> Please revert commit 2794ed013b3551cbae887ea1b93c52aaacb7370d. That
-> patch was meant to be added to btrfs_create and not to btrfs_mknod.
+> My for-linus branch has our batch of btrfs fixes:
 > 
-> (It was indeed later added to btrfs_create on commit
-> 9185aa587b7425f8f4520da2e66792f5f3c2b815, so that's already OK.)
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 > 
-> btrfs_mknod already has a call to btrfs_update_inode later in the code
-> so I don't think the duplicate is really needed at that point.
-> 
+> We've been hammering away at a crc corruption as well, which I was
+> really hoping to get into this pull.  It isn't nailed down yet, but we
+> were finally able to get a solid way to reproduce.  The only good
+> news is it isn't a recent regression.
 
-Hrm sorry I'll fix that in btrfs-next, I probably screwed this up when merging
-the patch, I remember having to manually apply this one.  Thanks,
+Update on this, we've tracked down the crc errors and are doing final
+checks on the patches.  Linus are you planning on taking this pull?  If
+not I can just fold the new stuff into a bigger request.
 
-Josef
+-chris

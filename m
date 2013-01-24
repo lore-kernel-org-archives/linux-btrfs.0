@@ -1,55 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:21025 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754466Ab3AQI05 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jan 2013 03:26:57 -0500
-Message-ID: <50F7B5CD.5020003@gmx.net>
-Date: Thu, 17 Jan 2013 09:26:53 +0100
-From: Arne Jansen <sensille@gmx.net>
+Received: from mx1.fusionio.com ([66.114.96.30]:54311 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750858Ab3AXPeX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jan 2013 10:34:23 -0500
+Date: Thu, 24 Jan 2013 10:34:20 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Cong Ding <dinggnu@gmail.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: fix potential null pointer dereference bug
+Message-ID: <20130124153420.GC2349@localhost.localdomain>
+References: <1358609265-347-1-git-send-email-dinggnu@gmail.com>
 MIME-Version: 1.0
-To: hopper@omnifarious.org
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Rendering a btrfs filesystem unmountable with the btrfs command
-References: <20130115204436.GC18291@omnifarious.org>
-In-Reply-To: <20130115204436.GC18291@omnifarious.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1358609265-347-1-git-send-email-dinggnu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Eric,
-
-thanks for reporting this. I sent a small patch series to the list
-to fix this.
-Sorry I forgot to CC you, will send the patches to you directly again.
-It would be great if you could give it some testing.
-
-Thanks,
-Arne
-
-On 15.01.2013 21:44, hopper@omnifarious.org wrote:
-> mkfs.btrfs /dev/sdb
-> mkdir /tmp/mnt
-> mount /dev/sdb /tmp/mnt
-> cd /tmp/mnt
-> btrfs quota enable .
-> btrfs subvol create foo
-> btrfs qgroup create 1/0
-> btrfs qgroup assign 0/257 1/0
-> btrfs subvol snapshot foo bar
-> btrfs qgroup assign 0/258 1/0
-> cd ..
-> umount /dev/sdb
-> mount /dev/sdb /tmp/mnt
-> # Still mountable!
-> cd mnt
-> btrfs qgroup destroy 1/0
-> cd ..
-> umount /dev/sdb
-> mount /dev/sdb /tmp/mnt
-> # Oops, no longer mountable, even in recovery mode!
+On Sat, Jan 19, 2013 at 08:27:45AM -0700, Cong Ding wrote:
+> The bug happens when rb_node == NULL. It causes variable node to be NULL and
+> then the NULL pointer is dereferenced this line:
+> 	BUG_ON((struct btrfs_root *)node->data != root);
 > 
-> Help!  BTW, I'm not a mailing list subscriber.
+> Based on my analysis, function tree_search should not return NULL to variable
+> rb_node in this case (otherwise here has to be something unknown thing wrong),
+> so I replace "if (rb_node)" with UG_ON(!rb_node).
 > 
-> Thanks,
+> Signed-off-by: Cong Ding <dinggnu@gmail.com>
 
+I don't want to add more BUG_ON()'s, just return an error.
+
+Josef

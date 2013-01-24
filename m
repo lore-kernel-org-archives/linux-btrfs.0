@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.180]:37692 "EHLO
+Received: from mo-p05-ob.rzone.de ([81.169.146.180]:49957 "EHLO
 	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752782Ab3AXK0V (ORCPT
+	with ESMTP id S1752489Ab3AXKcO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 05:26:21 -0500
-Message-ID: <51010ACD.2060302@gmx.net>
-Date: Thu, 24 Jan 2013 11:19:57 +0100
+	Thu, 24 Jan 2013 05:32:14 -0500
+Message-ID: <51010DAB.4060900@gmx.net>
+Date: Thu, 24 Jan 2013 11:32:11 +0100
 From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-To: praneeth u <praneethu.u@gmail.com>
+To: Lev Vainblat <lev@zadarastorage.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: Open for contribution towards Btrfs testing
-References: <CAMO4zuj7gSSo2D4x7gxMivggZ1rxXEHpT+aEcHk-TMm4W-dmCA@mail.gmail.com>
-In-Reply-To: <CAMO4zuj7gSSo2D4x7gxMivggZ1rxXEHpT+aEcHk-TMm4W-dmCA@mail.gmail.com>
+Subject: Re: Warnings on file removal after Quota exceeded error (EDQUOT)
+References: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
+In-Reply-To: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 24.01.2013 10:39, Lev Vainblat wrote:
+> Hi all,
+> 
+> I executed the following simple sequence of commands:
+> 
+> # mount /dev/sda /mnt/btrfs
+> # btrfs quota enable /mnt/btrfs/
+> # btrfs subvolume create /mnt/btrfs/SV
+> Create subvolume '/mnt/btrfs/SV'
+> # btrfs qgroup limit 1m /mnt/btrfs/SV
+> # dd if=/dev/zero of=/mnt/btrfs/SV/file bs=64x1024
+> dd: writing `/mnt/btrfs/SV/file': Disk quota exceeded
+> 16+0 records in
+> 15+0 records out
+> 983040 bytes (983 kB) copied, 0.00192474 s, 511 MB/s
+> # rm /mnt/btrfs/SV/file
+> 
+> The file was removed, but in the kern.log I see:
+> 
 
-On 24.01.2013 06:10, praneeth u wrote:
-> Hello,
-> We are team of 5 students, interns at Green turtles technologies,
-> interested in contributing to btrfs.
-> Any space for contribution in btrfs testing ? we will be updating
-> pogress twice in a week.
-> Need suggestions on how to proceed.
+[snip]
 
-The quota subsystem (qgroups) is new and there are no tests for
-it yet. Tests for space tracking and limiting are needed. Also
-hierarchical quota need testing.
-Stress testing would be useful, too.
-Would you be interested in that?
+> 
+> Is this an expected behavior? Am I doing anything wrong here?
+
+I can reproduce it here, will look into it. Thanks for reporting!
 
 -Arne
 
 > 
+> Thanks,
+>     -Lev. 
 > 
-> --
-> Praneeth U
-> 9448804728
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-

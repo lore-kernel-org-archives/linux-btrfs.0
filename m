@@ -1,103 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f52.google.com ([209.85.160.52]:40819 "EHLO
-	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751407Ab3A1MkK (ORCPT
+Received: from eastrmfepo103.cox.net ([68.230.241.215]:37514 "EHLO
+	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751749Ab3AXPxD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 07:40:10 -0500
-Received: by mail-pb0-f52.google.com with SMTP id uo5so1460725pbc.39
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 04:40:10 -0800 (PST)
-Message-ID: <5107531E.8060708@gmail.com>
-Date: Mon, 28 Jan 2013 20:42:06 -0800
-From: Wang Shilong <wangshilong1991@gmail.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net,
-        miaox@cn.fujitsu.com
-Subject: Re: [PATCH 05/10] Btrfs-progs: add function btrfs_get_subvol to get
- root_info of a subvol
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1359350559-25671-1-git-send-email-anand.jain@oracle.com> <1359350559-25671-6-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1359350559-25671-6-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 24 Jan 2013 10:53:03 -0500
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo103.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130124155302.RPEF23841.eastrmfepo103.cox.net@eastrmimpo306>
+          for <linux-btrfs@vger.kernel.org>;
+          Thu, 24 Jan 2013 10:53:02 -0500
+From: Gene Czarcinski <gene@czarc.net>
+To: linux-btrfs@vger.kernel.org
+Cc: Gene Czarcinski <gene@czarc.net>, Danny Kukawka <danny.kukawka@bisect.de>
+Subject: [PATCH] Btrfs-progs: Fix minor problems with btrfslabel.c
+Date: Thu, 24 Jan 2013 10:52:18 -0500
+Message-Id: <1359042738-14522-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-> We need a function which can get the root_info of a given
-> subvol. This is in preparation to add support for the show
-> sub-cli.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  btrfs-list.c | 38 ++++++++++++++++++++++++++++++++++++++
->  btrfs-list.h |  1 +
->  2 files changed, 39 insertions(+)
->
-> diff --git a/btrfs-list.c b/btrfs-list.c
-> index 909d814..0ee13b6 100644
-> --- a/btrfs-list.c
-> +++ b/btrfs-list.c
-> @@ -1453,6 +1453,44 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
->  	return 0;
->  }
->  
-> +int btrfs_get_subvol(int fd, struct root_info *the_ri)
-> +{
-> +	int ret = -1;
-> +	struct root_lookup rl;
-> +	struct rb_node *rbn;
-> +	struct root_info *ri;
-> +	u64 root_id = btrfs_list_get_path_rootid(fd);
-> +
-> +	if (btrfs_list_subvols(fd, &rl))
-> +		return 1;
-> +
-> +	rbn = rb_first(&rl.root);
-> +	while(rbn) {
-> +		ri = rb_entry(rbn, struct root_info, rb_node);
-> +		resolve_root(&rl, ri, root_id);
-     
-  Here subvolume/snapshot deletion may happen,add a check here...
-  if resolve_root return -ENOENT..it means deletion happens...
+Fixed indentation, replace spaces with tabs.
+Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
 
-  ret = reslove_root(&rl, ri, root_id);
-  if (ret)
-      goto again;
+Rebased, also fixed compiler warnings
+Signed-off-by: Gene Czarcinski <gene@czarc.net>
+---
+ btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 29 insertions(+), 28 deletions(-)
 
-                   
-> +		if (!comp_entry_with_rootid(the_ri, ri, 0)) {
-> +			memcpy(the_ri, ri, offsetof(struct root_info, path));
-> +			if (ri->path)
-> +				the_ri->path = strdup(ri->path);
-> +			else
-> +				the_ri->path = NULL;
-> +			if (ri->name)
-> +				the_ri->name = strdup(ri->name);
-> +			else
-> +				the_ri->name = NULL;
-> +			if (ri->full_path)
-> +				the_ri->full_path = strdup(ri->full_path);
-> +			else
-> +				the_ri->name = NULL;
-> +			ret = 0;
-> +			break;
-> +		}
- again：
-> +		rbn = rb_next(rbn);
-> +	}
-> +	__free_all_subvolumn(&rl);
-> +	return ret;
-> +}
-> +
->  static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
->  			    struct btrfs_file_extent_item *item,
->  			    u64 found_gen, u64 *cache_dirid,
-> diff --git a/btrfs-list.h b/btrfs-list.h
-> index 3b7b680..580d4d1 100644
-> --- a/btrfs-list.h
-> +++ b/btrfs-list.h
-> @@ -151,3 +151,4 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
->  int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
->  char *btrfs_list_path_for_root(int fd, u64 root);
->  u64 btrfs_list_get_path_rootid(int fd);
-> +int btrfs_get_subvol(int fd, struct root_info *the_ri);
+diff --git a/btrfslabel.c b/btrfslabel.c
+index 88a5196..bea1f89 100644
+--- a/btrfslabel.c
++++ b/btrfslabel.c
+@@ -48,42 +48,43 @@
+ 
+ static int change_label_unmounted(char *dev, char *nLabel)
+ {
+-       struct btrfs_root *root;
+-       struct btrfs_trans_handle *trans;
+-
+-       /* Open the super_block at the default location
+-        * and as read-write.
+-        */
+-       root = open_ctree(dev, 0, 1);
+-       if (!root) /* errors are printed by open_ctree() */
+-         return;
+-
+-       trans = btrfs_start_transaction(root, 1);
+-       strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
+-       root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
+-       btrfs_commit_transaction(trans, root);
+-
+-       /* Now we close it since we are done. */
+-       close_ctree(root);
++	struct btrfs_root *root;
++	struct btrfs_trans_handle *trans;
++
++	/* Open the super_block at the default location
++	 * and as read-write.
++	 */
++	root = open_ctree(dev, 0, 1);
++	if (!root) /* errors are printed by open_ctree() */
++	  return -1;
++
++	trans = btrfs_start_transaction(root, 1);
++	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
++	root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
++	btrfs_commit_transaction(trans, root);
++
++	/* Now we close it since we are done. */
++	close_ctree(root);
++	return 0;
+ }
+ 
+ int get_label_unmounted(char *dev)
+ {
+-       struct btrfs_root *root;
++	struct btrfs_root *root;
+ 
+-       /* Open the super_block at the default location
+-        * and as read-only.
+-        */
+-       root = open_ctree(dev, 0, 0);
++	/* Open the super_block at the default location
++	 * and as read-only.
++	 */
++	root = open_ctree(dev, 0, 0);
+ 
+-       if(!root)
+-         return -1;
++	if(!root)
++	  return -1;
+ 
+-       fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
++	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
+ 
+-       /* Now we close it since we are done. */
+-       close_ctree(root);
+-       return 0;
++	/* Now we close it since we are done. */
++	close_ctree(root);
++	return 0;
+ }
+ 
+ int get_label(char *btrfs_dev)
+-- 
+1.8.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

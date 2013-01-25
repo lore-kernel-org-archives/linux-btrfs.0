@@ -1,41 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:37109 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932196Ab3AYNwo (ORCPT
+Received: from eastrmfepo202.cox.net ([68.230.241.217]:60565 "EHLO
+	eastrmfepo202.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754620Ab3AYPE2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 08:52:44 -0500
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: Roman Mamedov <rm@romanrm.ru>
-Subject: Re: [PATCH] Btrfs-progs: Exit if not running as root
-Date: Sat, 26 Jan 2013 00:52:31 +1100
-Cc: Gene Czarcinski <gene@czarc.net>, linux-btrfs@vger.kernel.org
-References: <1359113550-23962-1-git-send-email-gene@czarc.net> <20130125175530.75402fb5@natsu>
-In-Reply-To: <20130125175530.75402fb5@natsu>
+	Fri, 25 Jan 2013 10:04:28 -0500
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo202.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130125150428.CZWN6475.eastrmfepo202.cox.net@eastrmimpo306>
+          for <linux-btrfs@vger.kernel.org>;
+          Fri, 25 Jan 2013 10:04:28 -0500
+Message-ID: <51029EFB.90301@czarc.net>
+Date: Fri, 25 Jan 2013 10:04:27 -0500
+From: Gene Czarcinski <gene@czarc.net>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Message-Id: <201301260052.31964.russell@coker.com.au>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs-progs: Exit if not running as root
+References: <1359113550-23962-1-git-send-email-gene@czarc.net>
+In-Reply-To: <1359113550-23962-1-git-send-email-gene@czarc.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 25 Jan 2013, Roman Mamedov <rm@romanrm.ru> wrote:
-> The user does not have to be root, they can be a member of the group "disk"
-> to manage this device.
-> 
-> Also some or all of the tools accept not just a block device, but also a
-> regular file as their parameter.
-> 
-> Wouldn't it be better to check whether or not the running user has
-> write access to the device or file to be operated on, before failing?
+OK, I think I have gotten the message that this is a bad idea as 
+implemented and that it should be dropped as such.  I believe that there 
+are some things ("btrfs fi show" comes to mind) which will need root and 
+I am going to explore doing something for that case.  And it also might 
+be reasonable for some situations to issue the message about root if 
+something errors-out.
 
-Also UID==0 doesn't necessarily mean ultimate access to the system.  The case 
-where the process is running as root but still lacks the access to perform the 
-operations in question should also be handled.
+Anyway, this approach is dead and I will continue to give this some thought.
 
-Yes, ability to read/write the device/file or whatever is being operated on 
-should be the criteria that is used not UID etc.
+Comments?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Gene
+
+
+
+On 01/25/2013 06:32 AM, Gene Czarcinski wrote:
+> This patch hits a lot of files but adds little code.  It
+> could be considered a bugfix,  Currently, when one of the
+> btrfs user-space programs is executed by a regular user,
+> the result if oftem a number of strange error messages
+> which do not indicate the real problem.  This patch changes
+> that situation.
+>
+> A test is performed as to whether the program is running
+> as root.  If it is not, issue an error message and exit.
+> Signed-off-by: Gene Czarcinski<gene@czarc.net>
+> ---
+>   btrfs-corrupt-block.c | 5 +++++
+>   btrfs-image.c         | 5 +++++
+>   btrfs-map-logical.c   | 5 +++++
+>   btrfs-select-super.c  | 5 +++++
+>   btrfs-show-super.c    | 5 +++++
+>   btrfs-show.c          | 5 +++++
+>   btrfs-vol.c           | 5 +++++
+>   btrfs-zero-log.c      | 5 +++++
+>   btrfs.c               | 6 ++++++
+>   btrfsck.c             | 5 +++++
+>   btrfsctl.c            | 5 +++++
+>   btrfstune.c           | 5 +++++
+>   calc-size.c           | 5 +++++
+>   convert.c             | 6 ++++++
+>   debug-tree.c          | 5 +++++
+>   dir-test.c            | 5 +++++
+>   find-root.c           | 5 +++++
+>   ioctl-test.c          | 6 ++++++
+>   mkfs.c                | 5 +++++
+>   quick-test.c          | 6 ++++++
+>   restore.c             | 5 +++++
+>   21 files changed, 109 insertions(+)
+

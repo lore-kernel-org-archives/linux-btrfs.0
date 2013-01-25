@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27591 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755454Ab3AYJOZ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42157 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755570Ab3AYJOb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 04:14:25 -0500
+	Fri, 25 Jan 2013 04:14:31 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
 Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 06/10] Btrfs-progs: add method to filter snapshots by parent uuid
-Date: Fri, 25 Jan 2013 17:19:29 +0800
-Message-Id: <1359105573-20726-7-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 09/10] Btrfs-progs: make get_subvol_name non cmds-send specific
+Date: Fri, 25 Jan 2013 17:19:32 +0800
+Message-Id: <1359105573-20726-10-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
 References: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
@@ -17,48 +17,72 @@ References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+get_subvol_name can be used other than the just with in cmds-send.c
+so this patch will make it possible with out changing the original
+intentions.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 6 ++++++
- btrfs-list.h | 1 +
- 2 files changed, 7 insertions(+)
+ cmds-send.c | 12 ++++++------
+ commands.h  |  1 +
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 0ee13b6..9c84ecb 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1142,6 +1142,11 @@ static int filter_topid_equal(struct root_info *ri, u64 data)
- 	return ri->top_id == data;
+diff --git a/cmds-send.c b/cmds-send.c
+index ac1d3cf..0416b79 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -333,12 +333,12 @@ out:
+ 	return ret;
  }
  
-+static int filter_by_parent(struct root_info *ri, u64 data)
-+{
-+	return !uuid_compare(ri->puuid, (u8 *)data);
-+}
-+
- static btrfs_list_filter_func all_filter_funcs[] = {
- 	[BTRFS_LIST_FILTER_ROOTID]		= filter_by_rootid,
- 	[BTRFS_LIST_FILTER_SNAPSHOT_ONLY]	= filter_snapshot,
-@@ -1153,6 +1158,7 @@ static btrfs_list_filter_func all_filter_funcs[] = {
- 	[BTRFS_LIST_FILTER_CGEN_LESS]		= filter_cgen_less,
- 	[BTRFS_LIST_FILTER_CGEN_EQUAL]          = filter_cgen_equal,
- 	[BTRFS_LIST_FILTER_TOPID_EQUAL]		= filter_topid_equal,
-+	[BTRFS_LIST_FILTER_BY_PARENT]		= filter_by_parent,
- };
+-static const char *get_subvol_name(struct btrfs_send *s, const char *full_path)
++char *get_subvol_name(char *mnt, char *full_path)
+ {
+-	int len = strlen(s->root_path);
++	int len = strlen(mnt);
+ 	if (!len)
+ 		return full_path;
+-	if (s->root_path[len - 1] != '/')
++	if (mnt[len - 1] != '/')
+ 		len += 1;
  
- struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 580d4d1..cde7a3f 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -117,6 +117,7 @@ enum btrfs_list_filter_enum {
- 	BTRFS_LIST_FILTER_CGEN_LESS,
- 	BTRFS_LIST_FILTER_CGEN_MORE,
- 	BTRFS_LIST_FILTER_TOPID_EQUAL,
-+	BTRFS_LIST_FILTER_BY_PARENT,
- 	BTRFS_LIST_FILTER_MAX,
- };
+ 	return full_path + len;
+@@ -452,7 +452,7 @@ int cmd_send_start(int argc, char **argv)
+ 			if (ret < 0)
+ 				goto out;
  
+-			ret = get_root_id(&send, get_subvol_name(&send, subvol),
++			ret = get_root_id(&send, get_subvol_name(send.root_path, subvol),
+ 					&root_id);
+ 			if (ret < 0) {
+ 				fprintf(stderr, "ERROR: could not resolve "
+@@ -513,7 +513,7 @@ int cmd_send_start(int argc, char **argv)
+ 
+ 	if (snapshot_parent != NULL) {
+ 		ret = get_root_id(&send,
+-				get_subvol_name(&send, snapshot_parent),
++				get_subvol_name(send.root_path, snapshot_parent),
+ 				&parent_root_id);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "ERROR: could not resolve root_id "
+@@ -572,7 +572,7 @@ int cmd_send_start(int argc, char **argv)
+ 			goto out;
+ 		}
+ 
+-		ret = get_root_id(&send, get_subvol_name(&send, subvol),
++		ret = get_root_id(&send, get_subvol_name(send.root_path, subvol),
+ 				&root_id);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "ERROR: could not resolve root_id "
+diff --git a/commands.h b/commands.h
+index 9b77f3e..631fb6b 100644
+--- a/commands.h
++++ b/commands.h
+@@ -106,3 +106,4 @@ int test_issubvolume(char *path);
+ 
+ /* send.c */
+ int find_mount_root(const char *path, char **mount_root);
++char *get_subvol_name(char *mnt, char *full_path);
 -- 
 1.8.1.227.g44fe835
 

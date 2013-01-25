@@ -1,398 +1,418 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41612 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751275Ab3AYJS3 (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:53544 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754418Ab3AYLld (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 04:18:29 -0500
-Message-ID: <51024F56.2080203@oracle.com>
-Date: Fri, 25 Jan 2013 17:24:38 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Fri, 25 Jan 2013 06:41:33 -0500
+Message-ID: <51026F74.4020307@giantdisaster.de>
+Date: Fri, 25 Jan 2013 12:41:40 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: Re: [PATCH 10/10] Btrfs-progs: add show subcommand to subvol cli
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-11-git-send-email-anand.jain@oracle.com> <5100C156.6010107@redhat.com>
-In-Reply-To: <5100C156.6010107@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Gene Czarcinski <gene@czarc.net>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: Exit if not running as root
+References: <1359113550-23962-1-git-send-email-gene@czarc.net>
+In-Reply-To: <1359113550-23962-1-git-send-email-gene@czarc.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, 25 Jan 2013 06:32:30 -0500, Gene Czarcinski wrote:
+> This patch hits a lot of files but adds little code.  It
+> could be considered a bugfix,  Currently, when one of the
+> btrfs user-space programs is executed by a regular user,
+> the result if oftem a number of strange error messages
+> which do not indicate the real problem.  This patch changes
+> that situation.
+> 
+> A test is performed as to whether the program is running
+> as root.  If it is not, issue an error message and exit.
+> Signed-off-by: Gene Czarcinski <gene@czarc.net>
+> ---
+>  btrfs-corrupt-block.c | 5 +++++
+>  btrfs-image.c         | 5 +++++
+>  btrfs-map-logical.c   | 5 +++++
+>  btrfs-select-super.c  | 5 +++++
+>  btrfs-show-super.c    | 5 +++++
+>  btrfs-show.c          | 5 +++++
+>  btrfs-vol.c           | 5 +++++
+>  btrfs-zero-log.c      | 5 +++++
+>  btrfs.c               | 6 ++++++
+>  btrfsck.c             | 5 +++++
+>  btrfsctl.c            | 5 +++++
+>  btrfstune.c           | 5 +++++
+>  calc-size.c           | 5 +++++
+>  convert.c             | 6 ++++++
+>  debug-tree.c          | 5 +++++
+>  dir-test.c            | 5 +++++
+>  find-root.c           | 5 +++++
+>  ioctl-test.c          | 6 ++++++
+>  mkfs.c                | 5 +++++
+>  quick-test.c          | 6 ++++++
+>  restore.c             | 5 +++++
+>  21 files changed, 109 insertions(+)
+> 
+> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+> index b57e757..083fd50 100644
+> --- a/btrfs-corrupt-block.c
+> +++ b/btrfs-corrupt-block.c
+> @@ -296,6 +296,11 @@ int main(int ac, char **av)
+>  
+>  	srand(128);
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "l:c:b:eEk", long_options,
+> diff --git a/btrfs-image.c b/btrfs-image.c
+> index 7dc131d..fd9b28a 100644
+> --- a/btrfs-image.c
+> +++ b/btrfs-image.c
+> @@ -831,6 +831,11 @@ int main(int argc, char *argv[])
+>  	int ret;
+>  	FILE *out;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while (1) {
+>  		int c = getopt(argc, argv, "rc:t:");
+>  		if (c < 0)
+> diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+> index fa4fb3f..59f2f0e 100644
+> --- a/btrfs-map-logical.c
+> +++ b/btrfs-map-logical.c
+> @@ -116,6 +116,11 @@ int main(int ac, char **av)
+>  	int out_fd = 0;
+>  	int err;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "l:c:o:b:", long_options,
+> diff --git a/btrfs-select-super.c b/btrfs-select-super.c
+> index 0c4f5c0..049379d 100644
+> --- a/btrfs-select-super.c
+> +++ b/btrfs-select-super.c
+> @@ -46,6 +46,11 @@ int main(int ac, char **av)
+>  	int num;
+>  	u64 bytenr = 0;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt(ac, av, "s:");
+> diff --git a/btrfs-show-super.c b/btrfs-show-super.c
+> index a9e2524..2fa4776 100644
+> --- a/btrfs-show-super.c
+> +++ b/btrfs-show-super.c
+> @@ -63,6 +63,11 @@ int main(int argc, char **argv)
+>  	int arg, i;
+>  	u64 sb_bytenr = btrfs_sb_offset(0);
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while ((opt = getopt(argc, argv, "ai:")) != -1) {
+>  		switch (opt) {
+>  		case 'i':
+> diff --git a/btrfs-show.c b/btrfs-show.c
+> index 8210fd2..6b3b91a 100644
+> --- a/btrfs-show.c
+> +++ b/btrfs-show.c
+> @@ -122,6 +122,11 @@ int main(int ac, char **av)
+>  		"** Please consider to switch to the btrfs utility\n"
+>  		"**\n");
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "", long_options,
+> diff --git a/btrfs-vol.c b/btrfs-vol.c
+> index ad824bd..7e02f72 100644
+> --- a/btrfs-vol.c
+> +++ b/btrfs-vol.c
+> @@ -83,6 +83,11 @@ int main(int ac, char **av)
+>  		"** Please consider to switch to the btrfs utility\n"
+>  		"**\n");
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "a:br:", long_options,
+> diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
+> index 1ea867b..80e4e38 100644
+> --- a/btrfs-zero-log.c
+> +++ b/btrfs-zero-log.c
+> @@ -45,6 +45,11 @@ int main(int ac, char **av)
+>  	struct btrfs_trans_handle *trans;
+>  	int ret;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	if (ac != 2)
+>  		print_usage();
+>  
+> diff --git a/btrfs.c b/btrfs.c
+> index 687acec..328966b 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -18,6 +18,7 @@
+>  #include <stdio.h>
+>  #include <stdlib.h>
+>  #include <string.h>
+> +#include <unistd.h>
+>  
+>  #include "crc32c.h"
+>  #include "commands.h"
+> @@ -261,6 +262,11 @@ int main(int argc, char **argv)
+>  {
+>  	const struct cmd_struct *cmd;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	crc32c_optimization_init();
+>  
+>  	argc--;
+> diff --git a/btrfsck.c b/btrfsck.c
+> index 6274ff7..bdfdfc5 100644
+> --- a/btrfsck.c
+> +++ b/btrfsck.c
+> @@ -3501,6 +3501,11 @@ int main(int ac, char **av)
+>  	int init_csum_tree = 0;
+>  	int rw = 0;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "as:", long_options,
+> diff --git a/btrfsctl.c b/btrfsctl.c
+> index 049a5f3..cbe41e7 100644
+> --- a/btrfsctl.c
+> +++ b/btrfsctl.c
+> @@ -113,6 +113,11 @@ int main(int ac, char **av)
+>  		"** Please consider to switch to the btrfs utility\n"
+>  		"**\n");
+>  	
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	if (ac == 2 && strcmp(av[1], "-a") == 0) {
+>  		fprintf(stderr, "Scanning for Btrfs filesystems\n");
+>  		btrfs_scan_one_dir("/dev", 1);
+> diff --git a/btrfstune.c b/btrfstune.c
+> index 6950f74..d4017f1 100644
+> --- a/btrfstune.c
+> +++ b/btrfstune.c
+> @@ -79,6 +79,11 @@ int main(int argc, char *argv[])
+>  	int seeding_value = 0;
+>  	int ret;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c = getopt(argc, argv, "S:");
+>  		if (c < 0)
+> diff --git a/calc-size.c b/calc-size.c
+> index c4adfb0..0d3442c 100644
+> --- a/calc-size.c
+> +++ b/calc-size.c
+> @@ -194,6 +194,11 @@ int main(int argc, char **argv)
+>  	int opt;
+>  	int ret = 0;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while ((opt = getopt(argc, argv, "vb")) != -1) {
+>  		switch (opt) {
+>  			case 'v':
+> diff --git a/convert.c b/convert.c
+> index 1de2a44..1b0e27c 100644
+> --- a/convert.c
+> +++ b/convert.c
+> @@ -2770,6 +2770,12 @@ int main(int argc, char *argv[])
+>  	int datacsum = 1;
+>  	int rollback = 0;
+>  	char *file;
+> +
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c = getopt(argc, argv, "dinr");
+>  		if (c < 0)
+> diff --git a/debug-tree.c b/debug-tree.c
+> index f6bd5d8..5b2f531 100644
+> --- a/debug-tree.c
+> +++ b/debug-tree.c
+> @@ -129,6 +129,11 @@ int main(int ac, char **av)
+>  	u64 block_only = 0;
+>  	struct btrfs_root *tree_root_scan;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	radix_tree_init();
+>  
+>  	while(1) {
+> diff --git a/dir-test.c b/dir-test.c
+> index c7644d6..9fa5b06 100644
+> --- a/dir-test.c
+> +++ b/dir-test.c
+> @@ -433,6 +433,11 @@ int main(int ac, char **av)
+>  	int err = 0;
+>  	int initial_only = 0;
+>  	struct btrfs_trans_handle *trans;
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	radix_tree_init();
+>  
+>  	root = open_ctree(av[ac-1], &super, 0);
+> diff --git a/find-root.c b/find-root.c
+> index 83f1592..06465eb 100644
+> --- a/find-root.c
+> +++ b/find-root.c
+> @@ -414,6 +414,11 @@ int main(int argc, char **argv)
+>  	int opt;
+>  	int ret;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while ((opt = getopt(argc, argv, "vo:")) != -1) {
+>  		switch(opt) {
+>  			case 'v':
+> diff --git a/ioctl-test.c b/ioctl-test.c
+> index 1c27d61..299d2af 100644
+> --- a/ioctl-test.c
+> +++ b/ioctl-test.c
+> @@ -1,5 +1,6 @@
+>  #include <stdio.h>
+>  #include <stdlib.h>
+> +#include <unistd.h>
+>  #include "kerncompat.h"
+>  #include "ioctl.h"
+>  
+> @@ -28,6 +29,11 @@ unsigned long ioctls[] = {
+>  int main(int ac, char **av)
+>  {
+>  	int i = 0;
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(ioctls[i]) {
+>  		printf("%lu\n" ,ioctls[i]);
+>  		i++;
+> diff --git a/mkfs.c b/mkfs.c
+> index a129ec4..501e384 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1274,6 +1274,11 @@ int main(int ac, char **av)
+>  	u64 source_dir_size = 0;
+>  	char *pretty_buf;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", av[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while(1) {
+>  		int c;
+>  		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VMK", long_options,
+> diff --git a/quick-test.c b/quick-test.c
+> index 05d73fd..e2d6f78 100644
+> --- a/quick-test.c
+> +++ b/quick-test.c
+> @@ -19,6 +19,7 @@
+>  #include <stdio.h>
+>  #include <stdlib.h>
+>  #include <fcntl.h>
+> +#include <unistd.h>
+>  #include "kerncompat.h"
+>  #include "radix-tree.h"
+>  #include "ctree.h"
+> @@ -49,6 +50,11 @@ int main(int ac, char **av) {
+>  	buf = malloc(512);
+>  	memset(buf, 0, 512);
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	radix_tree_init();
+>  
+>  	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+> diff --git a/restore.c b/restore.c
+> index 80afb84..4efc8b5 100644
+> --- a/restore.c
+> +++ b/restore.c
+> @@ -771,6 +771,11 @@ int main(int argc, char **argv)
+>  	int super_mirror = 0;
+>  	int find_dir = 0;
+>  
+> +	if (geteuid() != 0) {
+> +		fprintf(stderr,"Error: %s must run as root\n", argv[0]);
+> +		exit(1);
+> +	}
+> +
+>  	while ((opt = getopt(argc, argv, "sviot:u:df:")) != -1) {
+>  		switch (opt) {
+>  			case 's':
+> 
 
+21 times copy & paste, you set a new record :)
 
-Eric. All accepted. Thanks for the review.
-
-Anand
-
-On 01/24/2013 01:06 PM, Eric Sandeen wrote:
-> On 1/23/13 2:12 AM, Anand Jain wrote:
->> This adds show sub-command to the btrfs subvol cli
->> to display detailed inforamtion of the given subvol
->> or snapshot.
->
-> Couple things below.
->
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   btrfs-list.c     |  25 +++++++-
->>   btrfs-list.h     |   3 +-
->>   cmds-subvolume.c | 176 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
->>   man/btrfs.8.in   |   6 ++
->>   4 files changed, 203 insertions(+), 7 deletions(-)
->>
->> diff --git a/btrfs-list.c b/btrfs-list.c
->> index 71f7239..5be3ed9 100644
->> --- a/btrfs-list.c
->> +++ b/btrfs-list.c
->> @@ -1337,6 +1337,22 @@ static void print_subvolume_column(struct root_info *subv,
->>   	}
->>   }
->>
->> +static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefix)
->> +{
->> +	int i;
->> +
->> +	for (i = 0; i < BTRFS_LIST_ALL; i++) {
->> +		if (!btrfs_list_columns[i].need_print)
->> +			continue;
->> +
->> +		if(raw_prefix);
->
-> That semicolon will eventually make you sad, I bet.  ;)
-> And while you're at it, please add the space after "if?"
->
->> +			printf("%s",raw_prefix);
->> +
->> +		print_subvolume_column(subv, i);
->> +	}
->> +	printf("\n");
->> +}
->> +
->>   static void print_single_volume_info_table(struct root_info *subv)
->>   {
->>   	int i;
->> @@ -1403,7 +1419,7 @@ static void print_all_volume_info_tab_head()
->>   }
->>
->>   static void print_all_volume_info(struct root_lookup *sorted_tree,
->> -				  int layout)
->> +				  int layout, char *raw_prefix)
->>   {
->>   	struct rb_node *n;
->>   	struct root_info *entry;
->> @@ -1421,6 +1437,9 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
->>   		case BTRFS_LIST_LAYOUT_TABLE:
->>   			print_single_volume_info_table(entry);
->>   			break;
->> +		case BTRFS_LIST_LAYOUT_RAW:
->> +			print_single_volume_info_raw(entry, raw_prefix);
->> +			break;
->>   		}
->>   		n = rb_next(n);
->>   	}
->> @@ -1447,7 +1466,7 @@ int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
->>
->>   int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
->>   		       struct btrfs_list_comparer_set *comp_set,
->> -		       int layout)
->> +		       int layout, char *raw_prefix)
->>   {
->>   	struct root_lookup root_lookup;
->>   	struct root_lookup root_sort;
->> @@ -1459,7 +1478,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
->>   	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
->>   				 comp_set, fd);
->>
->> -	print_all_volume_info(&root_sort, layout);
->> +	print_all_volume_info(&root_sort, layout, raw_prefix);
->>   	__free_all_subvolumn(&root_lookup);
->>
->>   	return 0;
->> diff --git a/btrfs-list.h b/btrfs-list.h
->> index 5b60068..09d35f7 100644
->> --- a/btrfs-list.h
->> +++ b/btrfs-list.h
->> @@ -20,6 +20,7 @@
->>
->>   #define BTRFS_LIST_LAYOUT_DEFAULT	0
->>   #define BTRFS_LIST_LAYOUT_TABLE	1
->> +#define BTRFS_LIST_LAYOUT_RAW		2
->>
->>   /*
->>    * one of these for each root we find.
->> @@ -150,7 +151,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
->>
->>   int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
->>   		       struct btrfs_list_comparer_set *comp_set,
->> -			int is_tab_result);
->> +			int layout, char *raw_prefix);
->>   int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
->>   int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
->>   char *btrfs_list_path_for_root(int fd, u64 root);
->> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
->> index dd677f7..7e5e28c 100644
->> --- a/cmds-subvolume.c
->> +++ b/cmds-subvolume.c
->> @@ -24,6 +24,7 @@
->>   #include <libgen.h>
->>   #include <limits.h>
->>   #include <getopt.h>
->> +#include <uuid/uuid.h>
->>
->>   #include "kerncompat.h"
->>   #include "ioctl.h"
->> @@ -418,10 +419,10 @@ static int cmd_subvol_list(int argc, char **argv)
->>
->>   	if (is_tab_result)
->>   		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
->> -				BTRFS_LIST_LAYOUT_TABLE);
->> +				BTRFS_LIST_LAYOUT_TABLE, NULL);
->>   	else
->>   		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
->> -				BTRFS_LIST_LAYOUT_DEFAULT);
->> +				BTRFS_LIST_LAYOUT_DEFAULT, NULL);
->>   	if (ret)
->>   		return 19;
->>   	return 0;
->> @@ -634,7 +635,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
->>   	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
->>
->>   	ret = btrfs_list_subvols_print(fd, filter_set, NULL,
->> -		BTRFS_LIST_LAYOUT_DEFAULT);
->> +		BTRFS_LIST_LAYOUT_DEFAULT, NULL);
->>   	if (ret)
->>   		return 19;
->>   	return 0;
->> @@ -721,6 +722,174 @@ static int cmd_find_new(int argc, char **argv)
->>   	return 0;
->>   }
->>
->> +static const char * const cmd_subvol_show_usage[] = {
->> +	"btrfs subvolume show <subvol-path>",
->> +	"Show more information of the subvolume",
->> +	NULL
->> +};
->> +
->> +static int cmd_subvol_show(int argc, char **argv)
->> +{
->> +	struct root_info get_ri;
->> +	struct btrfs_list_filter_set *filter_set;
->> +	char tstr[256];
->> +	char uuidparse[37];
->> +	char *fullpath, *svpath, *mnt = NULL;
->> +	char raw_prefix[] = "\t\t\t\t";
->> +	u64 sv_id, mntid;
->> +	int fd, mntfd;
->> +	int ret;
->> +
->> +	if (check_argc_exact(argc, 2))
->> +		usage(cmd_subvol_show_usage);
->> +
->> +	fullpath = realpath(argv[1],0);
->> +	if(!fullpath) {
->
-> ideally "if (!fullpath)" with the space...
->
->> +		fprintf(stderr, "ERROR: finding real path for '%s', %s\n",
->> +			argv[1], strerror(errno));
->> +		return 1;
->> +	}
->> +	ret = test_issubvolume(fullpath);
->> +	if (ret < 0) {
->> +		fprintf(stderr, "ERROR: error accessing '%s'\n", fullpath);
->> +		free(fullpath);
->> +		return 1;
->> +	}
->> +	if (!ret) {
->> +		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", fullpath);
->> +		free(fullpath);
->> +		return 1;
->> +	}
->> +
->> +	ret = find_mount_root(fullpath, &mnt);
->> +	if (ret < 0) {
->> +		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
->> +				"%s\n", fullpath, strerror(-ret));
->> +		free(fullpath);
->> +		return 1;
->> +	}
->> +
->> +	svpath = get_subvol_name(mnt, fullpath);
->> +
->> +	fd = open_file_or_dir(fullpath);
->> +	if (fd < 0) {
->> +		fprintf(stderr, "ERROR: can't access '%s'\n", fullpath);
->> +		free(mnt);
->> +		free(fullpath);
->> +		return 1;
->> +	}
->> +	sv_id = btrfs_list_get_path_rootid(fd);
->
-> This could fail, right?
->
->> +	mntfd = open_file_or_dir(mnt);
->> +	if (mntfd < 0) {
->> +		fprintf(stderr, "ERROR: can't access '%s'\n", mnt);
->> +		close(fd);
->> +		free(mnt);
->> +		free(fullpath);
->> +		return 1;
->> +	}
->> +	mntid = btrfs_list_get_path_rootid(mntfd);
->> +
->> +	if (sv_id == 5) {
->> +		printf("%s is btrfs root\n", fullpath);
->> +		close(fd);
->> +		close(mntfd);
->> +		free(mnt);
->> +		free(fullpath);
->> +		return 1;
->
-> Just wondering, at this point might a "goto out;" be cleaner error
-> handling?  Every error case is getting longer ;)
->
->> +	}
->> +
->> +	memset(&get_ri, 0, sizeof(get_ri));
->> +	get_ri.root_id = sv_id;
->> +
->> +	if (btrfs_get_subvol(mntfd, &get_ri)) {
->> +		fprintf(stderr, "ERROR: can't find '%s'\n",
->> +			svpath);
->> +		close(fd);
->> +		close(mntfd);
->> +		free(fullpath);
->> +		free(mnt);
->> +		return 1;
->> +	}
->> +
->> +	/* print the info */
->> +	printf("%s", fullpath);
->> +	printf("\n");
->
-> maybe   printf("%s\n", fullpath); ?
->
->> +
->> +	printf("\t");
->> +	printf("Name: \t\t\t%s", get_ri.name);
->> +	printf("\n");
->
-> and printf("\tName: \t\t\t%s\n", get_ri.name);
-> etc -
-> or is there some reason for the single-char-printfs?
->
->> +
->> +	if (uuid_is_null(get_ri.uuid))
->> +		strcpy(uuidparse, "-");
->> +	else
->> +		uuid_unparse(get_ri.uuid, uuidparse);
->> +	printf("\t");
->> +	printf("uuid: \t\t\t%s", uuidparse);
->> +	printf("\n");
->> +
->> +        if (uuid_is_null(get_ri.puuid))
->> +                strcpy(uuidparse, "-");
->> +        else
->> +                uuid_unparse(get_ri.puuid, uuidparse);
->
-> s/tabs/spaces/ here?
->
->> +	printf("\t");
->> +	printf("Parent uuid: \t\t%s", uuidparse);
->> +	printf("\n");
->> +
->> +	if (get_ri.otime)
->> +		strftime(tstr, 256, "%Y-%m-%d %X",
->> +			 localtime(&get_ri.otime));
->> +	else
->> +		strcpy(tstr, "-");
->> +	printf("\t");
->> +	printf("Creation time: \t\t%s", tstr);
->> +	printf("\n");
->> +
->> +	printf("\t");
->> +	printf("Object ID: \t\t%llu", get_ri.root_id);
->> +	printf("\n");
->> +
->> +	printf("\t");
->> +	printf("Generation (Gen): \t%llu", get_ri.gen);
->> +	printf("\n");
->> +
->> +	printf("\t");
->> +	printf("Gen at creation: \t%llu", get_ri.ogen);
->> +	printf("\n");
->> +
->> +	printf("\t");
->> +	printf("Parent: \t\t%llu", get_ri.ref_tree);
->> +	printf("\n");
->> +
->> +	printf("\t");
->> +	printf("Top Level: \t\t%llu", get_ri.top_id);
->> +	printf("\n");
->> +
->> +	/* print the snapshots of the given subvol if any*/
->> +	printf("\t");
->> +	printf("Snapshot(s):\n");
->> +	filter_set = btrfs_list_alloc_filter_set();
->> +	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
->> +				get_ri.uuid);
->> +	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
->> +	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
->> +			raw_prefix);
->> +
->> +	/* clean up */
->> +	if (get_ri.path)
->> +		free(get_ri.path);
->> +	if (get_ri.name)
->> +		free(get_ri.name);
->> +	if (get_ri.full_path)
->> +		free(get_ri.full_path);
->> +
->> +	close(fd);
->> +	close(mntfd);
->> +	free(mnt);
->> +	free(fullpath);
->> +	return 0;
->> +}
->> +
->>   const struct cmd_group subvolume_cmd_group = {
->>   	subvolume_cmd_group_usage, NULL, {
->>   		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
->> @@ -732,6 +901,7 @@ const struct cmd_group subvolume_cmd_group = {
->>   		{ "set-default", cmd_subvol_set_default,
->>   			cmd_subvol_set_default_usage, NULL, 0 },
->>   		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
->> +		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
->>   		{ 0, 0, 0, 0, 0 }
->>   	}
->>   };
->> diff --git a/man/btrfs.8.in b/man/btrfs.8.in
->> index 9222580..57c25b0 100644
->> --- a/man/btrfs.8.in
->> +++ b/man/btrfs.8.in
->> @@ -17,6 +17,8 @@ btrfs \- control a btrfs filesystem
->>   .PP
->>   \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
->>   .PP
->> +\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
->> +.PP
->>   \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
->>   [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
->>   [<\fIfile\fR>|<\fIdir\fR>...]
->> @@ -160,6 +162,10 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
->>   is similar to \fBsubvolume list\fR command.
->>   .TP
->>
->> +\fBsubvolume show\fR\fI <path>\fR
->> +Show information of a given subvolume in the \fI<path>\fR.
->> +.TP
->> +
->>   \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
->>   [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
->>
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

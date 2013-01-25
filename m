@@ -1,31 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28066 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754683Ab3AYJPS (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43154 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753414Ab3AYJQb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 04:15:18 -0500
-Message-ID: <51024E9D.4070402@oracle.com>
-Date: Fri, 25 Jan 2013 17:21:33 +0800
+	Fri, 25 Jan 2013 04:16:31 -0500
+Message-ID: <51024F10.5040100@oracle.com>
+Date: Fri, 25 Jan 2013 17:23:28 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: Re: [PATCH 01/10] Btrfs-progs: move open_file_or_dir() to utils.c
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-2-git-send-email-anand.jain@oracle.com> <5100BB01.3030408@redhat.com>
-In-Reply-To: <5100BB01.3030408@redhat.com>
+To: Gene Czarcinski <gene@czarc.net>
+CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 00/10] add show sub-command for btrfs subvol cli
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <51019F1A.4070408@czarc.net>
+In-Reply-To: <51019F1A.4070408@czarc.net>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-> Cool, I had this on my stack too.  But can you maybe remove the
-> nonsensical return values, and instead of renaming & keeping the btrfsctl.c
-> copy, why not just use a common copy in utils.c?  It'd just be 2 checks
-> for fd < 0 in the btrfsctl callers.
 
-  Thanks for the comments Eric. Though I agree, but it deviates
-  from the purpose of this patch-set. It could be taken as a
-  separate patch.
+> OK, in spite of saying that these patches did not apply clean, it was
+> not terribly difficult to refit what did not apply.  I did this in two
+> steps:
+>
+> 1. I created the equivalent of the for-chris branch.  This did not apply
+> clean which surprised me.
 
-Anand
+  Yes I see it. Not sure where I went wrong, sorry about that,
+  now I have sent V2 of this patch set which also includes
+  Erics comments.
+
+>  However, minor things easily handled manually
+> in the first patch for utils.c and utils.h plus btrfs-lists.c in a later
+> patch.
+>
+> 2. After creating a new set of patches from the above effort, I then
+> moved to my working branch with includes all of the patches in the
+> integration-20130121 branch [careful, patch 0023 has a conflict in
+> mkfs.c] please others.  This time it was a very small problem in
+> cmds-qgroup.c.  I am running it now.
+>
+> Gene

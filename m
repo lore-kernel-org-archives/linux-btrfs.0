@@ -1,111 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23661 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:21005 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753406Ab3AYC5w (ORCPT
+	with ESMTP id S1755220Ab3AYJNh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jan 2013 21:57:52 -0500
-Message-ID: <5101F64A.5050706@oracle.com>
-Date: Fri, 25 Jan 2013 11:04:42 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Gene Czarcinski <gene@czarc.net>
-CC: linux-btrfs@vger.kernel.org, Danny Kukawka <danny.kukawka@bisect.de>
-Subject: Re: [PATCH] Btrfs-progs: Fix minor problems with btrfslabel.c
-References: <1359042738-14522-1-git-send-email-gene@czarc.net>
-In-Reply-To: <1359042738-14522-1-git-send-email-gene@czarc.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Fri, 25 Jan 2013 04:13:37 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH 02/10] Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+Date: Fri, 25 Jan 2013 17:19:25 +0800
+Message-Id: <1359105573-20726-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
+References: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+To improve the code reuse its better to have btrfs_list_subvols
+just return list of subvols witout printing
 
-  Thanks. comments below.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfs-list.c     | 28 ++++++++++++++++++----------
+ btrfs-list.h     |  2 +-
+ cmds-subvolume.c |  4 ++--
+ 3 files changed, 21 insertions(+), 13 deletions(-)
 
-On 01/24/2013 11:52 PM, Gene Czarcinski wrote:
-> Fixed indentation, replace spaces with tabs.
-> Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
->
-> Rebased, also fixed compiler warnings
-> Signed-off-by: Gene Czarcinski <gene@czarc.net>
-> ---
->   btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
->   1 file changed, 29 insertions(+), 28 deletions(-)
->
-> diff --git a/btrfslabel.c b/btrfslabel.c
-> index 88a5196..bea1f89 100644
-> --- a/btrfslabel.c
-> +++ b/btrfslabel.c
-> @@ -48,42 +48,43 @@
->
->   static int change_label_unmounted(char *dev, char *nLabel)
->   {
-> -       struct btrfs_root *root;
-> -       struct btrfs_trans_handle *trans;
-> -
-> -       /* Open the super_block at the default location
-> -        * and as read-write.
-> -        */
-> -       root = open_ctree(dev, 0, 1);
-> -       if (!root) /* errors are printed by open_ctree() */
-> -         return;
-> -
-> -       trans = btrfs_start_transaction(root, 1);
-> -       strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
-> -       root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
-> -       btrfs_commit_transaction(trans, root);
-> -
-> -       /* Now we close it since we are done. */
-> -       close_ctree(root);
-> +	struct btrfs_root *root;
-> +	struct btrfs_trans_handle *trans;
-> +
-> +	/* Open the super_block at the default location
-> +	 * and as read-write.
-> +	 */
-> +	root = open_ctree(dev, 0, 1);
-> +	if (!root) /* errors are printed by open_ctree() */
-> +	  return -1;
-> +
-> +	trans = btrfs_start_transaction(root, 1);
-> +	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
-> +	root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
-> +	btrfs_commit_transaction(trans, root);
-> +
-> +	/* Now we close it since we are done. */
-> +	close_ctree(root);
-> +	return 0;
->   }
->
->   int get_label_unmounted(char *dev)
->   {
-> -       struct btrfs_root *root;
-> +	struct btrfs_root *root;
->
-> -       /* Open the super_block at the default location
-> -        * and as read-only.
-> -        */
-> -       root = open_ctree(dev, 0, 0);
-> +	/* Open the super_block at the default location
-> +	 * and as read-only.
-> +	 */
-> +	root = open_ctree(dev, 0, 0);
->
-> -       if(!root)
-> -         return -1;
-> +	if(!root)
-> +	  return -1;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index cb42fbc..b404e1d 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1439,15 +1439,11 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
+ 	}
+ }
+ 
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+-		       struct btrfs_list_comparer_set *comp_set,
+-		       int is_tab_result)
++int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
+ {
+-	struct root_lookup root_lookup;
+-	struct root_lookup root_sort;
+ 	int ret;
+ 
+-	ret = __list_subvol_search(fd, &root_lookup);
++	ret = __list_subvol_search(fd, root_lookup);
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: can't perform the search - %s\n",
+ 				strerror(errno));
+@@ -1458,16 +1454,28 @@ int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+ 	 * now we have an rbtree full of root_info objects, but we need to fill
+ 	 * in their path names within the subvol that is referencing each one.
+ 	 */
+-	ret = __list_subvol_fill_paths(fd, &root_lookup);
+-	if (ret < 0)
+-		return ret;
++	ret = __list_subvol_fill_paths(fd, root_lookup);
++	return ret;
++}
+ 
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
++		       struct btrfs_list_comparer_set *comp_set,
++		       int is_tab_result)
++{
++	struct root_lookup root_lookup;
++	struct root_lookup root_sort;
++	int ret;
++
++	ret = btrfs_list_subvols(fd, &root_lookup);
++	if (ret)
++		return ret;
+ 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+ 				 comp_set, fd);
+ 
+ 	print_all_volume_info(&root_sort, is_tab_result);
+ 	__free_all_subvolumn(&root_lookup);
+-	return ret;
++
++	return 0;
+ }
+ 
+ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+diff --git a/btrfs-list.h b/btrfs-list.h
+index cde4b3c..71fe0f3 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -98,7 +98,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+ 			      enum btrfs_list_comp_enum comparer,
+ 			      int is_descending);
+ 
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+ 			int is_tab_result);
+ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e3cdb1e..c35dff7 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -406,7 +406,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 					BTRFS_LIST_FILTER_TOPID_EQUAL,
+ 					top_id);
+ 
+-	ret = btrfs_list_subvols(fd, filter_set, comparer_set,
++	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+ 				is_tab_result);
+ 	if (ret)
+ 		return 19;
+@@ -613,7 +613,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_ROOTID,
+ 				default_id);
+ 
+-	ret = btrfs_list_subvols(fd, filter_set, NULL, 0);
++	ret = btrfs_list_subvols_print(fd, filter_set, NULL, 0);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
+-- 
+1.8.1.227.g44fe835
 
-  minor: since you are here, should you add a space after if
-
-> -       fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
-> +	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
->
-> -       /* Now we close it since we are done. */
-> -       close_ctree(root);
-> -       return 0;
-> +	/* Now we close it since we are done. */
-> +	close_ctree(root);
-> +	return 0;
->   }
->
->   int get_label(char *btrfs_dev)
->

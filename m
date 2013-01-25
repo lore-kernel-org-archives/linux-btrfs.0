@@ -1,53 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:39089 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757114Ab3AYPa2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 10:30:28 -0500
-Received: by mail-oa0-f46.google.com with SMTP id h16so521351oag.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2013 07:30:27 -0800 (PST)
+Received: from mx1.redhat.com ([209.132.183.28]:31262 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757133Ab3AYPzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Jan 2013 10:55:48 -0500
+Message-ID: <5102A26A.5010203@redhat.com>
+Date: Fri, 25 Jan 2013 09:19:06 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <51029EFB.90301@czarc.net>
-References: <1359113550-23962-1-git-send-email-gene@czarc.net>
-	<51029EFB.90301@czarc.net>
-Date: Fri, 25 Jan 2013 09:30:27 -0600
-Message-ID: <CAE5mzvjgSufQGjSOa0Zk1_st32kTZJV_JTnrXtnYt7_0wigz=Q@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs-progs: Exit if not running as root
-From: cwillu <cwillu@cwillu.com>
-To: Gene Czarcinski <gene@czarc.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: kreijack@inwind.it
+CC: Goffredo Baroncelli <kreijack@gmail.com>,
+        Stefan Behrens <sbehrens@giantdisaster.de>,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.cz, gene@czarc.net
+Subject: Re: [PATCH 01/10] Btrfs-progs: move open_file_or_dir() to utils.c
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1358928771-31960-2-git-send-email-anand.jain@oracle.com> <5100BB01.3030408@redhat.com> <5100FDA3.3040907@giantdisaster.de> <510175F7.5080806@gmail.com> <51018EBA.60201@redhat.com>
+In-Reply-To: <51018EBA.60201@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 25, 2013 at 9:04 AM, Gene Czarcinski <gene@czarc.net> wrote:
-> OK, I think I have gotten the message that this is a bad idea as implemented
-> and that it should be dropped as such.  I believe that there are some things
-> ("btrfs fi show" comes to mind) which will need root and I am going to
-> explore doing something for that case.  And it also might be reasonable for
-> some situations to issue the message about root if something errors-out.
+On 1/24/13 1:42 PM, Eric Sandeen wrote:
+> On 1/24/13 11:57 AM, Goffredo Baroncelli wrote:
+>> On 01/24/2013 10:23 AM, Stefan Behrens wrote:
+>>> On Wed, 23 Jan 2013 22:39:29 -0600, Eric Sandeen wrote:
+>>>> instead of renaming&  keeping the btrfsctl.c copy
+>>>
+>>> There is a new momentum to improve the Btrfs-progs quality :)
+>>>
+>>> IMO, one step is to get rid of the legacy tools and sources. It wastes
+>>> time to maintain them and these old tools cause confusion. btrfsctl.c,
+>>> btrfs-vol.c and btrfs-show.c are not needed anymore. Please correct me
+>>> if there are plans to use these old tools in future Linux distributions.
+>>> The "btrfs" tool replaces the legacy "btrfsctl", "btrfs-vol" and
+>>> "btrfs-show" tools. Below, the usage text of the old tools is quoted.
+>>> All these tasks are also offered in the "btrfs" tool, and this tool is
+>>> the newer one.
+>>
+>> I fully agree: btrfsctl, btrfs-vol, btrfs-show are perfectly replaced by by btrfs. Moreover time to time the patches are more complex than the needing because exists these "legacy" programs.
+>>
+>> I checked the debian package, and to me seems that there is no need of {btrfsctl,btrfs-vol,btrfs-show}
+> 
+> Hm, they are shipped in the Fedora package.
+> 
+> For backwards compat, could those be turned into shell scripts which invoke the btrfs tool?
 
-Eh?  That's one of the clearest cases where you _may not_ need root.
+Turns out anaconda is using btrfsctl for resizing:
 
-cwillu@cwillu-home:~$ groups
-cwillu adm dialout cdrom audio video plugdev mlocate lpadmin admin sambashare
-cwillu@cwillu-home:~$ btrfs fi show /dev/sda3
-failed to read /dev/sda
-failed to read /dev/sda1
-failed to read /dev/sda2
-failed to read /dev/sda3
-failed to read /dev/sdb
-Btrfs v0.19-152-g1957076
+class BTRFS(FS):
+...
+    _resizefs = "btrfsctl"
+...
+    @property
+    def resizeArgs(self):
+        argv = ["-r", "%dm" % (self.targetSize,), self.device]
+        return argv
 
-cwillu@cwillu-home:~$ sudo addgroup cwillu disk
-cwillu@cwillu-home:~$ su cwillu
+but that should be trivial to replace w/ 
 
-cwillu@cwillu-home:~$ groups
-cwillu adm disk dialout cdrom audio video plugdev mlocate lpadmin
-admin sambashare
-cwillu@cwillu-home:~$ btrfs fi show /dev/sda3
-Label: none  uuid: ede59711-6230-474f-992d-f1e3deeddab7
-	Total devices 1 FS bytes used 72.12GB
-	devid    1 size 104.34GB used 104.34GB path /dev/sda3
+    btrfs filesystem resize [devid:][+/-]<newsize>[gkm]|[devid:]max <path>
 
-Btrfs v0.19-152-g1957076
+I'll ping the anaconda guys, don't let this use stop you :)
+
+-Eric
+
+
+
+ 
+> -Eric
+
+

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27563 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:27638 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755338Ab3AYJOV (ORCPT
+	with ESMTP id S1755481Ab3AYJO3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jan 2013 04:14:21 -0500
+	Fri, 25 Jan 2013 04:14:29 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
 Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 04/10] Btrfs-progs: move struct root_info to btrfs-list.h
-Date: Fri, 25 Jan 2013 17:19:27 +0800
-Message-Id: <1359105573-20726-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 10/10] Btrfs-progs: add show subcommand to subvol cli
+Date: Fri, 25 Jan 2013 17:19:33 +0800
+Message-Id: <1359105573-20726-11-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
 References: <1359105573-20726-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
@@ -17,132 +17,340 @@ References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we would add more ways to list and manage the subvols
-and snapshots, its better if we have struct root_info
-defined in the header file.
+This adds show sub-command to the btrfs subvol cli
+to display detailed inforamtion of the given subvol
+or snapshot.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 47 -----------------------------------------------
- btrfs-list.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 46 insertions(+), 48 deletions(-)
+ btrfs-list.c     |  25 +++++++-
+ btrfs-list.h     |   3 +-
+ cmds-subvolume.c | 172 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ man/btrfs.8.in   |   6 ++
+ 4 files changed, 199 insertions(+), 7 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index 13a365d..909d814 100644
+index 656de10..1915ece 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -46,53 +46,6 @@ struct root_lookup {
- 	struct rb_root root;
- };
+@@ -1335,6 +1335,22 @@ static void print_subvolume_column(struct root_info *subv,
+ 	}
+ }
  
--/*
-- * one of these for each root we find.
-- */
--struct root_info {
--	struct rb_node rb_node;
--	struct rb_node sort_node;
--
--	/* this root's id */
--	u64 root_id;
--
--	/* equal the offset of the root's key */
--	u64 root_offset;
--
--	/* flags of the root */
--	u64 flags;
--
--	/* the id of the root that references this one */
--	u64 ref_tree;
--
--	/* the dir id we're in from ref_tree */
--	u64 dir_id;
--
--	u64 top_id;
--
--	/* generation when the root is created or last updated */
--	u64 gen;
--
--	/* creation generation of this root in sec*/
--	u64 ogen;
--
--	/* creation time of this root in sec*/
--	time_t otime;
--
--	u8 uuid[BTRFS_UUID_SIZE];
--	u8 puuid[BTRFS_UUID_SIZE];
--
--	/* path from the subvol we live in to this root, including the
--	 * root's name.  This is null until we do the extra lookup ioctl.
--	 */
--	char *path;
--
--	/* the name of this root in the directory it lives in */
--	char *name;
--
--	char *full_path;
--};
--
- struct {
- 	char	*name;
- 	char	*column_name;
++static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefix)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		if (!btrfs_list_columns[i].need_print)
++			continue;
++
++		if (raw_prefix)
++			printf("%s",raw_prefix);
++
++		print_subvolume_column(subv, i);
++	}
++	printf("\n");
++}
++
+ static void print_single_volume_info_table(struct root_info *subv)
+ {
+ 	int i;
+@@ -1401,7 +1417,7 @@ static void print_all_volume_info_tab_head()
+ }
+ 
+ static void print_all_volume_info(struct root_lookup *sorted_tree,
+-				  int layout)
++				  int layout, char *raw_prefix)
+ {
+ 	struct rb_node *n;
+ 	struct root_info *entry;
+@@ -1419,6 +1435,9 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
+ 		case BTRFS_LIST_LAYOUT_TABLE:
+ 			print_single_volume_info_table(entry);
+ 			break;
++		case BTRFS_LIST_LAYOUT_RAW:
++			print_single_volume_info_raw(entry, raw_prefix);
++			break;
+ 		}
+ 		n = rb_next(n);
+ 	}
+@@ -1445,7 +1464,7 @@ int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
+ 
+ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+-		       int layout)
++		       int layout, char *raw_prefix)
+ {
+ 	struct root_lookup root_lookup;
+ 	struct root_lookup root_sort;
+@@ -1457,7 +1476,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+ 				 comp_set, fd);
+ 
+-	print_all_volume_info(&root_sort, layout);
++	print_all_volume_info(&root_sort, layout, raw_prefix);
+ 	__free_all_subvolumn(&root_lookup);
+ 
+ 	return 0;
 diff --git a/btrfs-list.h b/btrfs-list.h
-index 855e73d..3b7b680 100644
+index 5b60068..09d35f7 100644
 --- a/btrfs-list.h
 +++ b/btrfs-list.h
-@@ -18,7 +18,52 @@
+@@ -20,6 +20,7 @@
+ 
+ #define BTRFS_LIST_LAYOUT_DEFAULT	0
+ #define BTRFS_LIST_LAYOUT_TABLE	1
++#define BTRFS_LIST_LAYOUT_RAW		2
+ 
+ /*
+  * one of these for each root we find.
+@@ -150,7 +151,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+ 
+ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+-			int is_tab_result);
++			int layout, char *raw_prefix);
+ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
+ char *btrfs_list_path_for_root(int fd, u64 root);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index bb9629f..ad6afbc 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -24,6 +24,7 @@
+ #include <libgen.h>
+ #include <limits.h>
+ #include <getopt.h>
++#include <uuid/uuid.h>
  
  #include "kerncompat.h"
+ #include "ioctl.h"
+@@ -418,10 +419,10 @@ static int cmd_subvol_list(int argc, char **argv)
  
--struct root_info;
-+/*
-+ * one of these for each root we find.
-+ */
-+struct root_info {
-+	struct rb_node rb_node;
-+	struct rb_node sort_node;
-+
-+	/* this root's id */
-+	u64 root_id;
-+
-+	/* equal the offset of the root's key */
-+	u64 root_offset;
-+
-+	/* flags of the root */
-+	u64 flags;
-+
-+	/* the id of the root that references this one */
-+	u64 ref_tree;
-+
-+	/* the dir id we're in from ref_tree */
-+	u64 dir_id;
-+
-+	u64 top_id;
-+
-+	/* generation when the root is created or last updated */
-+	u64 gen;
-+
-+	/* creation generation of this root in sec*/
-+	u64 ogen;
-+
-+	/* creation time of this root in sec*/
-+	time_t otime;
-+
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	u8 puuid[BTRFS_UUID_SIZE];
-+
-+	/* path from the subvol we live in to this root, including the
-+	 * root's name.  This is null until we do the extra lookup ioctl.
-+	 */
-+	char *path;
-+
-+	/* the name of this root in the directory it lives in */
-+	char *name;
-+
-+	char *full_path;
+ 	if (is_tab_result)
+ 		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+-				BTRFS_LIST_LAYOUT_TABLE);
++				BTRFS_LIST_LAYOUT_TABLE, NULL);
+ 	else
+ 		ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+-				BTRFS_LIST_LAYOUT_DEFAULT);
++				BTRFS_LIST_LAYOUT_DEFAULT, NULL);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
+@@ -634,7 +635,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+ 
+ 	ret = btrfs_list_subvols_print(fd, filter_set, NULL,
+-		BTRFS_LIST_LAYOUT_DEFAULT);
++		BTRFS_LIST_LAYOUT_DEFAULT, NULL);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
+@@ -721,6 +722,170 @@ static int cmd_find_new(int argc, char **argv)
+ 	return 0;
+ }
+ 
++static const char * const cmd_subvol_show_usage[] = {
++	"btrfs subvolume show <subvol-path>",
++	"Show more information of the subvolume",
++	NULL
 +};
++
++static int cmd_subvol_show(int argc, char **argv)
++{
++	struct root_info get_ri;
++	struct btrfs_list_filter_set *filter_set;
++	char tstr[256];
++	char uuidparse[37];
++	char *fullpath, *svpath, *mnt = NULL;
++	char raw_prefix[] = "\t\t\t\t";
++	u64 sv_id, mntid;
++	int fd, mntfd;
++	int ret;
++	int clean = 0;
++
++	if (check_argc_exact(argc, 2))
++		usage(cmd_subvol_show_usage);
++
++	fullpath = realpath(argv[1],0);
++	if (!fullpath) {
++		fprintf(stderr, "ERROR: finding real path for '%s', %s\n",
++			argv[1], strerror(errno));
++		return 1;
++	}
++	clean++;
++
++	ret = test_issubvolume(fullpath);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: error accessing '%s'\n", fullpath);
++		ret = 1;
++		goto out;
++	}
++	if (!ret) {
++		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", fullpath);
++		ret = 1;
++		goto out;
++	}
++
++	ret = find_mount_root(fullpath, &mnt);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
++				"%s\n", fullpath, strerror(-ret));
++		ret = 1;
++		goto out;
++	}
++	clean++;
++
++	svpath = get_subvol_name(mnt, fullpath);
++
++	fd = open_file_or_dir(fullpath);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", fullpath);
++		ret = 1;
++		goto out;
++	}
++	clean++;
++
++	sv_id = btrfs_list_get_path_rootid(fd);
++	if (sv_id < 0) {
++		fprintf(stderr, "ERROR: can't get rootid for '%s'\n",
++			fullpath);
++		ret = 1;
++		goto out;
++	}
++
++	mntfd = open_file_or_dir(mnt);
++	if (mntfd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", mnt);
++		ret = 1;
++		goto out;
++	}
++	clean++;
++
++	mntid = btrfs_list_get_path_rootid(mntfd);
++	if (mntid < 0) {
++		fprintf(stderr, "ERROR: can't get rootid for '%s'\n", mnt);
++		ret = 1;
++		goto out;
++	}
++
++	if (sv_id == 5) {
++		printf("%s is btrfs root\n", fullpath);
++		ret = 1;
++		goto out;
++	}
++
++	memset(&get_ri, 0, sizeof(get_ri));
++	get_ri.root_id = sv_id;
++
++	if (btrfs_get_subvol(mntfd, &get_ri)) {
++		fprintf(stderr, "ERROR: can't find '%s'\n",
++			svpath);
++		ret = 1;
++		goto out;
++	}
++
++	ret = 0;
++	/* print the info */
++	printf("%s\n", fullpath);
++	printf("\tName: \t\t\t%s\n", get_ri.name);
++
++	if (uuid_is_null(get_ri.uuid))
++		strcpy(uuidparse, "-");
++	else
++		uuid_unparse(get_ri.uuid, uuidparse);
++	printf("\tuuid: \t\t\t%s\n", uuidparse);
++
++	if (uuid_is_null(get_ri.puuid))
++		strcpy(uuidparse, "-");
++	else
++		uuid_unparse(get_ri.puuid, uuidparse);
++	printf("\tParent uuid: \t\t%s\n", uuidparse);
++
++	if (get_ri.otime)
++		strftime(tstr, 256, "%Y-%m-%d %X",
++			 localtime(&get_ri.otime));
++	else
++		strcpy(tstr, "-");
++	printf("\tCreation time: \t\t%s\n", tstr);
++
++	printf("\tObject ID: \t\t%llu\n", get_ri.root_id);
++	printf("\tGeneration (Gen): \t%llu\n", get_ri.gen);
++	printf("\tGen at creation: \t%llu\n", get_ri.ogen);
++	printf("\tParent: \t\t%llu\n", get_ri.ref_tree);
++	printf("\tTop Level: \t\t%llu\n", get_ri.top_id);
++
++	/* print the snapshots of the given subvol if any*/
++	printf("\tSnapshot(s):\n");
++	filter_set = btrfs_list_alloc_filter_set();
++	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
++				get_ri.uuid);
++	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
++	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
++			raw_prefix);
++
++	/* clean up */
++	if (get_ri.path)
++		free(get_ri.path);
++	if (get_ri.name)
++		free(get_ri.name);
++	if (get_ri.full_path)
++		free(get_ri.full_path);
++
++out:
++	switch (clean) {
++	case 4:
++		close(mntfd);
++	case 3:
++		close(fd);
++	case 2:
++		free(mnt);
++	case 1:
++		free(fullpath);
++		break;
++	default:
++		BUG();
++	}
++	return ret;
++}
++
+ const struct cmd_group subvolume_cmd_group = {
+ 	subvolume_cmd_group_usage, NULL, {
+ 		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
+@@ -732,6 +897,7 @@ const struct cmd_group subvolume_cmd_group = {
+ 		{ "set-default", cmd_subvol_set_default,
+ 			cmd_subvol_set_default_usage, NULL, 0 },
+ 		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
++		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 }
+ 	}
+ };
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index d20e332..0008a06 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -17,6 +17,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
+ .PP
++\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
++.PP
+ \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
+ [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
+ [<\fIfile\fR>|<\fIdir\fR>...]
+@@ -158,6 +160,10 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
+ is similar to \fBsubvolume list\fR command.
+ .TP
  
- typedef int (*btrfs_list_filter_func)(struct root_info *, u64);
- typedef int (*btrfs_list_comp_func)(struct root_info *, struct root_info *,
++\fBsubvolume show\fR\fI <path>\fR
++Show information of a given subvolume in the \fI<path>\fR.
++.TP
++
+ \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
+ [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
+ 
 -- 
 1.8.1.227.g44fe835
 

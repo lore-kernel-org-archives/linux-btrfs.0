@@ -1,46 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo103.cox.net ([68.230.241.215]:35014 "EHLO
-	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752343Ab3AZSTP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Jan 2013 13:19:15 -0500
-Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo103.cox.net
-          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130126181914.KKCP23841.eastrmfepo103.cox.net@eastrmimpo306>
-          for <linux-btrfs@vger.kernel.org>;
-          Sat, 26 Jan 2013 13:19:14 -0500
-Message-ID: <51041E21.8040405@czarc.net>
-Date: Sat, 26 Jan 2013 13:19:13 -0500
-From: Gene Czarcinski <gene@czarc.net>
+Received: from kaa.mcnabbs.org ([173.255.195.144]:36217 "EHLO mail.mcnabbs.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754098Ab3AZU1M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Jan 2013 15:27:12 -0500
+Date: Sat, 26 Jan 2013 14:27:11 -0600
+From: Andrew McNabb <amcnabb@mcnabbs.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs stability
+Message-ID: <20130126202711.GB30537@mcnabbs.org>
+References: <20130125200514.GD4217@mcnabbs.org>
+ <20130125205322.GB3257@localhost.localdomain>
+ <20130125213950.GF4217@mcnabbs.org>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: Integration branch of btrfs-progs 2013-01-26 [not to be pulled]
-References: <20130126005525.GZ28263@twin.jikos.cz> <20130126111421.GA16594@twin.jikos.cz>
-In-Reply-To: <20130126111421.GA16594@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130125213950.GF4217@mcnabbs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/26/2013 06:14 AM, David Sterba wrote:
-> On Sat, Jan 26, 2013 at 01:55:25AM +0100, David Sterba wrote:
->> Eric Sandeen (2):
->>        btrfs-progs pretty/quiet build
-> This patch ended up mismerged, I'll fix it here but the branch will
-> diverge and is not suitable for pull now.
->
->
-David, you appear to have done a fine job of integration and your 
-selection of patches appears spot-on to me.
+Here's an update.  I tried the new kernel, and I seem to be having some
+new (possibly worse problems.  In my ssh session, I'm seeing many errors
+of this sort:
 
-There are to trivial patches I just submitted to fix some formatting and 
-a couple of compiler errors:
-http://article.gmane.org/gmane.comp.file-systems.btrfs/22669
-http://article.gmane.org/gmane.comp.file-systems.btrfs/22668
+Message from syslogd@guru at Jan 26 13:13:14 ...
+ kernel:[  308.223834] BUG: soft lockup - CPU#0 stuck for 23s!
+ [btrfs-endio-wri:2073]
 
-BTW, what was wrong with the quiet-build patch?
+Message from syslogd@guru at Jan 26 13:13:14 ...
+ kernel:[  308.248754] BUG: soft lockup - CPU#2 stuck for 23s!
+ [btrfs-delalloc-:594]
 
-I am almost completely rebased and plan to begin testing later today.
+In the logs, I'm seeing several warnings and bugs, including:
 
-Gene
+WARNING: at fs/btrfs/extent_map.c:78 free_extent_map+0x79/0x90 [btrfs]()
+WARNING: at lib/list_debug.c:62 __list_del_entry+0x82/0xd0()
+BUG: unable to handle kernel NULL pointer dereference at     (null)
+BUG: soft lockup - CPU#0 stuck for 22s! [btrfs-endio-wri:1489]
+BUG: soft lockup - CPU#1 stuck for 22s! [btrfs-delalloc-:607]
 
-Gene
+Kernel logs (across a few reboots) are at:
+
+http://students.cs.byu.edu/~amcnabb/messages2
+
+--
+Andrew McNabb
+http://www.mcnabbs.org/andrew/
+PGP Fingerprint: 8A17 B57C 6879 1863 DE55  8012 AB4D 6098 8826 6868

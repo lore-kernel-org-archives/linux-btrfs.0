@@ -1,61 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo203.cox.net ([68.230.241.218]:37985 "EHLO
-	eastrmfepo203.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757007Ab3A1RTN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 12:19:13 -0500
-Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo203.cox.net
-          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
-          id <20130128171913.QXMG21186.eastrmfepo203.cox.net@eastrmimpo306>
-          for <linux-btrfs@vger.kernel.org>;
-          Mon, 28 Jan 2013 12:19:13 -0500
-Message-ID: <5106B310.2000409@czarc.net>
-Date: Mon, 28 Jan 2013 12:19:12 -0500
-From: Gene Czarcinski <gene@czarc.net>
-MIME-Version: 1.0
+Received: from mail.vapor.com ([83.220.149.2]:50027 "EHLO nitrogen.vapor.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754976Ab3AZAZf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Jan 2013 19:25:35 -0500
+Received: from twilight.demius.net (c-297271d5.013-195-6c756e10.cust.bredbandsbolaget.se [213.113.114.41])
+	by nitrogen.vapor.com (Postfix) with ESMTPSA id B169629B26F
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jan 2013 01:25:33 +0100 (CET)
+Received: from lori.pomac.com (lori.local [10.0.0.13])
+	by twilight.demius.net (Postfix) with ESMTP id 2BE898E067B
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jan 2013 01:25:33 +0100 (CET)
+From: Ian Kumlien <pomac@demius.net>
 To: linux-btrfs@vger.kernel.org
-CC: dsterba@suse.cz, Danny Kukawka <danny.kukawka@bisect.de>,
-        jeff.liu@oracle.com
-Subject: Re: [PATCH] Btrfs-progs: v2 Fix minor problems in  btrfslabel.c
-References: <1359223796-8132-1-git-send-email-gene@czarc.net> <20130128161641.GB16977@twin.jikos.cz>
-In-Reply-To: <20130128161641.GB16977@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: [RFC] Add static build target, try two - using git send-email
+Date: Sat, 26 Jan 2013 01:21:55 +0100
+Message-Id: <1359159716-21062-1-git-send-email-pomac@demius.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/28/2013 11:16 AM, David Sterba wrote:
-> On Sat, Jan 26, 2013 at 01:09:56PM -0500, Gene Czarcinski wrote:
->> Fixed indentation, replace spaces with tabs.
->> Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
->>
->> Rebased; fixed compiler warnings; added space after "if"
->> Signed-off-by: Gene Czarcinski <gene@czarc.net>
->> ---
->>   btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
-> Jeff Liu has sent a series that updates the code and also fixes the
-> formatting. And I'd prefer to take his series as a more extensive
-> update.
->
-> Also, btrfslabel.c is another file to be removed and its contents placed
-> into the right locations, like cmds-filesystem.c or util.[ch] . I didn't
-> realize that during reviewing the label series.
->
-> Jeff, I suggest to add a new patch that moves the functions out of
-> btrfslabel.c, so you don't have to rework the whole series again.
->
-> thanks,
-> david
->
-No problem.   I was just going over what was integration-20130126-fix1 
-and this seemed missing and also trivial.
+And this adds the static compile target... *phew*
 
-My suggestion/recommendation is that the current set be integrated into 
-stable btrfs-progs and labeled "v0.20-rc2" and after 2/3/4/5 weeks if 
-there is nothing major it should become "v0.20".  There will always be 
-more good patches but we need some additional points in btrfs-progs stable.
-
-Then the next set of updates to be integrated can proceed with that as a 
-base ... patches such as "su show" and getting rid of the 
-legacy/deprecated programs.
-
-Gene
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-i

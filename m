@@ -1,42 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43323 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754205Ab3A1QQo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 11:16:44 -0500
-Date: Mon, 28 Jan 2013 17:16:42 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gene Czarcinski <gene@czarc.net>
-Cc: linux-btrfs@vger.kernel.org, Danny Kukawka <danny.kukawka@bisect.de>,
-        jeff.liu@oracle.com
-Subject: Re: [PATCH] Btrfs-progs: v2 Fix minor problems in  btrfslabel.c
-Message-ID: <20130128161641.GB16977@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1359223796-8132-1-git-send-email-gene@czarc.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1359223796-8132-1-git-send-email-gene@czarc.net>
+Received: from eastrmfepo202.cox.net ([68.230.241.217]:42326 "EHLO
+	eastrmfepo202.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753241Ab3AZSKI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Jan 2013 13:10:08 -0500
+Received: from eastrmimpo210 ([68.230.241.225]) by eastrmfepo202.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130126181006.XKXL6475.eastrmfepo202.cox.net@eastrmimpo210>
+          for <linux-btrfs@vger.kernel.org>;
+          Sat, 26 Jan 2013 13:10:06 -0500
+From: Gene Czarcinski <gene@czarc.net>
+To: linux-btrfs@vger.kernel.org
+Cc: Gene Czarcinski <gene@czarc.net>, Danny Kukawka <danny.kukawka@bisect.de>
+Subject: [PATCH] Btrfs-progs: v2 Fix minor problems in  btrfslabel.c
+Date: Sat, 26 Jan 2013 13:09:56 -0500
+Message-Id: <1359223796-8132-1-git-send-email-gene@czarc.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 26, 2013 at 01:09:56PM -0500, Gene Czarcinski wrote:
-> Fixed indentation, replace spaces with tabs.
-> Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
-> 
-> Rebased; fixed compiler warnings; added space after "if"
-> Signed-off-by: Gene Czarcinski <gene@czarc.net>
-> ---
->  btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
+Fixed indentation, replace spaces with tabs.
+Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
 
-Jeff Liu has sent a series that updates the code and also fixes the
-formatting. And I'd prefer to take his series as a more extensive
-update.
+Rebased; fixed compiler warnings; added space after "if"
+Signed-off-by: Gene Czarcinski <gene@czarc.net>
+---
+ btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 29 insertions(+), 28 deletions(-)
 
-Also, btrfslabel.c is another file to be removed and its contents placed
-into the right locations, like cmds-filesystem.c or util.[ch] . I didn't
-realize that during reviewing the label series.
+diff --git a/btrfslabel.c b/btrfslabel.c
+index 88a5196..5a91fc4 100644
+--- a/btrfslabel.c
++++ b/btrfslabel.c
+@@ -48,42 +48,43 @@
+ 
+ static int change_label_unmounted(char *dev, char *nLabel)
+ {
+-       struct btrfs_root *root;
+-       struct btrfs_trans_handle *trans;
+-
+-       /* Open the super_block at the default location
+-        * and as read-write.
+-        */
+-       root = open_ctree(dev, 0, 1);
+-       if (!root) /* errors are printed by open_ctree() */
+-         return;
+-
+-       trans = btrfs_start_transaction(root, 1);
+-       strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
+-       root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
+-       btrfs_commit_transaction(trans, root);
+-
+-       /* Now we close it since we are done. */
+-       close_ctree(root);
++	struct btrfs_root *root;
++	struct btrfs_trans_handle *trans;
++
++	/* Open the super_block at the default location
++	 * and as read-write.
++	 */
++	root = open_ctree(dev, 0, 1);
++	if (!root) /* errors are printed by open_ctree() */
++	  return -1;
++
++	trans = btrfs_start_transaction(root, 1);
++	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
++	root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
++	btrfs_commit_transaction(trans, root);
++
++	/* Now we close it since we are done. */
++	close_ctree(root);
++	return 0;
+ }
+ 
+ int get_label_unmounted(char *dev)
+ {
+-       struct btrfs_root *root;
++	struct btrfs_root *root;
+ 
+-       /* Open the super_block at the default location
+-        * and as read-only.
+-        */
+-       root = open_ctree(dev, 0, 0);
++	/* Open the super_block at the default location
++	 * and as read-only.
++	 */
++	root = open_ctree(dev, 0, 0);
+ 
+-       if(!root)
+-         return -1;
++	if (!root)
++	  return -1;
+ 
+-       fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
++	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
+ 
+-       /* Now we close it since we are done. */
+-       close_ctree(root);
+-       return 0;
++	/* Now we close it since we are done. */
++	close_ctree(root);
++	return 0;
+ }
+ 
+ int get_label(char *btrfs_dev)
+-- 
+1.8.1
 
-Jeff, I suggest to add a new patch that moves the functions out of
-btrfslabel.c, so you don't have to rework the whole series again.
-
-thanks,
-david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

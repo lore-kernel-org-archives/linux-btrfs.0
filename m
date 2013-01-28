@@ -1,37 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f52.google.com ([209.85.216.52]:56314 "EHLO
-	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754866Ab3A1WJE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 17:09:04 -0500
-Received: by mail-qa0-f52.google.com with SMTP id bs12so1262551qab.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 14:09:02 -0800 (PST)
+Received: from mx1.fusionio.com ([66.114.96.30]:42990 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751757Ab3A1XVm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 18:21:42 -0500
+Date: Mon, 28 Jan 2013 18:21:40 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: David Sterba <dsterba@suse.cz>
+CC: polack christian <baobab874@gmail.com>,
+        mailing list linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfsck and ctree version
+Message-ID: <20130128232140.GA23893@shiny.globalsuite.net>
+References: <CAC6BJd=gbiV+14yk=ghyUozp99Q6QCE6ip_FAp2WoPZTNYNVvw@mail.gmail.com>
+ <20130128220308.GI16977@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <6374853.0.1359291136570.JavaMail.root@zimbra>
-References: <6374853.0.1359291136570.JavaMail.root@zimbra>
-Date: Tue, 29 Jan 2013 09:09:02 +1100
-Message-ID: <CA+WRLO-uCWJR3MzNmXvLBCevQh+dOtk9UqMr3M4PwO-hS5ixFg@mail.gmail.com>
-Subject: Re: RAID-[56]?
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-Cc: Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130128220308.GI16977@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> More testing usually means more bugs found etc…
+On Mon, Jan 28, 2013 at 03:03:08PM -0700, David Sterba wrote:
+> On Mon, Jan 28, 2013 at 03:07:13PM +0100, polack christian wrote:
+> > i did use btrfsck to recover it
+> > i got the tool from
+> > 
+> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+> > 
+> > and i got this error message:
+> > ...
+> > Check tree block failed, want=294555648, have=0
+> > Check tree block failed, want=294559744, have=0
+> > Check tree block failed, want=294559744, have=0
+> > btrfsck: ctree.c:1690: leaf_space_used: Assertion `!(data_len < 0)' failed.
+> > Aborted (core dumped)
+> > 
+> > looking at
+> > 
+> > git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+> 
+> but this is a kernel source repository, not progs, I wonder
+> 
+> > this error in ctree.c have been corrected by this commit
+> > 
+> > http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=41be1f3b40b87de33cd2e7463dce88596dbdccc4
+> 
+> how this could happen. I have looked at the whether it does not silently
+> fix a bug, nothing wrong I can see now.  How did you verify that the
+> patch fixes the fsck problem?
 
+It sounds much more like the reboot or remount cleared the cache on the
+block device.
 
-Yes, but releasing code before it's somewhat polished just generates a
-mountain of bug reports.
+-chris
 
-Back in 2010 when I set up a server at work I was eagerly awaiting the
-RAID5 implementation that was just a couple of months away.
-
-Don't worry it does appear to be coming, as a couple of months has
-shortened over 2 years to be "end of this week" just before Christmas.
-
-
-PS: This email is intended to be helpful, and while slightly snarky I am
-very grateful for the work that has been done and I eagerly await the
-RAID56 features.

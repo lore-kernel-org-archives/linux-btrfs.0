@@ -1,79 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49179 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752439Ab3AWIGw (ORCPT
+Received: from eastrmfepo203.cox.net ([68.230.241.218]:37985 "EHLO
+	eastrmfepo203.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757007Ab3A1RTN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jan 2013 03:06:52 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 00/10] add show sub-command for btrfs subvol cli
-Date: Wed, 23 Jan 2013 16:12:41 +0800
-Message-Id: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
+	Mon, 28 Jan 2013 12:19:13 -0500
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo203.cox.net
+          (InterMail vM.8.01.04.00 201-2260-137-20101110) with ESMTP
+          id <20130128171913.QXMG21186.eastrmfepo203.cox.net@eastrmimpo306>
+          for <linux-btrfs@vger.kernel.org>;
+          Mon, 28 Jan 2013 12:19:13 -0500
+Message-ID: <5106B310.2000409@czarc.net>
+Date: Mon, 28 Jan 2013 12:19:12 -0500
+From: Gene Czarcinski <gene@czarc.net>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+CC: dsterba@suse.cz, Danny Kukawka <danny.kukawka@bisect.de>,
+        jeff.liu@oracle.com
+Subject: Re: [PATCH] Btrfs-progs: v2 Fix minor problems in  btrfslabel.c
+References: <1359223796-8132-1-git-send-email-gene@czarc.net> <20130128161641.GB16977@twin.jikos.cz>
+In-Reply-To: <20130128161641.GB16977@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David, Gene
+On 01/28/2013 11:16 AM, David Sterba wrote:
+> On Sat, Jan 26, 2013 at 01:09:56PM -0500, Gene Czarcinski wrote:
+>> Fixed indentation, replace spaces with tabs.
+>> Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
+>>
+>> Rebased; fixed compiler warnings; added space after "if"
+>> Signed-off-by: Gene Czarcinski <gene@czarc.net>
+>> ---
+>>   btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
+> Jeff Liu has sent a series that updates the code and also fixes the
+> formatting. And I'd prefer to take his series as a more extensive
+> update.
+>
+> Also, btrfslabel.c is another file to be removed and its contents placed
+> into the right locations, like cmds-filesystem.c or util.[ch] . I didn't
+> realize that during reviewing the label series.
+>
+> Jeff, I suggest to add a new patch that moves the functions out of
+> btrfslabel.c, so you don't have to rework the whole series again.
+>
+> thanks,
+> david
+>
+No problem.   I was just going over what was integration-20130126-fix1 
+and this seemed missing and also trivial.
 
-Please accept this patch set which is on top of
-  git://repo.or.cz/btrfs-progs-unstable/devel.git for-chris
+My suggestion/recommendation is that the current set be integrated into 
+stable btrfs-progs and labeled "v0.20-rc2" and after 2/3/4/5 weeks if 
+there is nothing major it should become "v0.20".  There will always be 
+more good patches but we need some additional points in btrfs-progs stable.
 
-to add 'show' sub-command feature for the btrfs subvol cli
-as in an example below..
+Then the next set of updates to be integrated can proceed with that as a 
+base ... patches such as "su show" and getting rid of the 
+legacy/deprecated programs.
 
-eg:
-btrfs su list /mnt
-ID 256 gen 54 top level 5 path sv1
-ID 278 gen 56 top level 5 path sv1/snap1
-ID 279 gen 54 top level 5 path sv2
-ID 280 gen 41 top level 5 path sv2/snap1
-
-btrfs su show /mnt/sv1
-/mnt/sv1
-	Name: 			sv1
-	uuid: 			3a914db2-8a40-1e49-9382-126c595e9abf
-	Parent uuid: 		-
-	Creation time: 		2013-01-10 12:16:18
-	Object ID: 		256
-	Generation (Gen): 	54
-	Gen at creation: 	5
-	Parent: 		5
-	Top Level: 		5
-	Snapshot(s):
-				snap1
-				<FS_TREE>/sv2/snap_sv1
-
-Anand Jain (10):
-  Btrfs-progs: move open_file_or_dir() to utils.c
-  Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
-  Btrfs-progs: add parent uuid for snapshots
-  Btrfs-progs: move struct root_info to btrfs-list.h
-  Btrfs-progs: add function btrfs_get_subvol to get root_info of a
-    subvol
-  Btrfs-progs: add method to filter snapshots by parent uuid
-  Btrfs-progs: put find_mount_root() in commands.h
-  Btrfs-progs: make printing subvol extensible to newer layouts
-  Btrfs-progs: make get_subvol_name non cmds-send specific
-  Btrfs-progs: add show subcommand to subvol cli
-
- Makefile         |   4 +-
- btrfs-list.c     | 190 +++++++++++++++++++++++++++++++++-------------------
- btrfs-list.h     |  58 +++++++++++++++-
- btrfsctl.c       |   7 +-
- cmds-balance.c   |   1 +
- cmds-inspect.c   |   1 +
- cmds-qgroup.c    |   1 +
- cmds-quota.c     |   1 +
- cmds-send.c      |  12 ++--
- cmds-subvolume.c | 200 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
- commands.h       |   7 +-
- common.c         |  46 -------------
- man/btrfs.8.in   |   6 ++
- utils.c          |  30 ++++++++-
- utils.h          |   3 +
- 15 files changed, 428 insertions(+), 139 deletions(-)
- delete mode 100644 common.c
-
--- 
-1.8.1.227.g44fe835
-
+Gene

@@ -1,42 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zimbra.karlsbakk.net ([213.236.233.66]:36446 "EHLO
-	zimbra.karlsbakk.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756683Ab3A0M76 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Jan 2013 07:59:58 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by zimbra.karlsbakk.net (Postfix) with ESMTP id 27843F5360
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Jan 2013 13:52:29 +0100 (CET)
-Received: from zimbra.karlsbakk.net ([127.0.0.1])
-	by localhost (zimbra.karlsbakk.net [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id FHtsBTC53aXN for <linux-btrfs@vger.kernel.org>;
-	Sun, 27 Jan 2013 13:52:16 +0100 (CET)
-Received: from zimbra.karlsbakk.net (zimbra.karlsbakk.net [213.236.233.66])
-	by zimbra.karlsbakk.net (Postfix) with ESMTP id E2332F52A1
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Jan 2013 13:52:16 +0100 (CET)
-Date: Sun, 27 Jan 2013 13:52:16 +0100 (CET)
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-To: Btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <6374853.0.1359291136570.JavaMail.root@zimbra>
-Subject: RAID-[56]?
+Received: from brockman.in8.de ([85.214.220.56]:41860 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753090Ab3A1Lz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 06:55:58 -0500
+Message-ID: <5106674B.6020304@jan-o-sch.net>
+Date: Mon, 28 Jan 2013 12:55:55 +0100
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+To: Lev Vainblat <lev@zadarastorage.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Warnings on file removal after Quota exceeded error (EDQUOT)
+References: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
+In-Reply-To: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+Hi Lev,
 
-I've heard raid-[56] is on its way somehow, and may be added to the next (or the one after (or perhaps a bit later)) kernel. While this is good, I want to ask if I can check out this source tree for testing (typically in a VM). More testing usually means more bugs found etc…
+On 24.01.2013 10:39, Lev Vainblat wrote:
+> I executed the following simple sequence of commands:
+> 
+> # mount /dev/sda /mnt/btrfs
+> # btrfs quota enable /mnt/btrfs/
+> # btrfs subvolume create /mnt/btrfs/SV
+> Create subvolume '/mnt/btrfs/SV'
+> # btrfs qgroup limit 1m /mnt/btrfs/SV
+> # dd if=/dev/zero of=/mnt/btrfs/SV/file bs=64x1024
+> dd: writing `/mnt/btrfs/SV/file': Disk quota exceeded
+> 16+0 records in
+> 15+0 records out
+> 983040 bytes (983 kB) copied, 0.00192474 s, 511 MB/s
+> # rm /mnt/btrfs/SV/file
 
--- 
-Vennlige hilsener / Best regards
+Thanks for the simple reproducer.
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 98013356
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
-GPG Public key: http://karlsbakk.net/roysigurdkarlsbakk.pubkey.txt
---
-I all pedagogikk er det essensielt at pensum presenteres intelligibelt. Det er et elementært imperativ for alle pedagoger å unngå eksessiv anvendelse av idiomer med xenotyp etymologi. I de fleste tilfeller eksisterer adekvate og relevante synonymer på norsk.
+Although you probably have noticed through the cc, I should mention in
+case someone digs this thread out of an archive: I sent a patch that
+should fix your problem some hours ago, subject "Btrfs: fix EDQUOT
+handling in btrfs_delalloc_reserve_metadata". Feel free to test and
+report back :-)
+
+-Jan

@@ -1,91 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23192 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754702Ab3A1I6Q (ORCPT
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:33987 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753147Ab3A1QLK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 03:58:16 -0500
-Date: Mon, 28 Jan 2013 16:55:29 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        lev@zadarastorage.com, sensille@gmx.net
-Subject: Re: [PATCH] Btrfs: fix EDQUOT handling in
- btrfs_delalloc_reserve_metadata
-Message-ID: <20130128085528.GB19533@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1359354360-604-1-git-send-email-list.btrfs@jan-o-sch.net>
+	Mon, 28 Jan 2013 11:11:10 -0500
+Received: by mail-wg0-f53.google.com with SMTP id fn15so1784559wgb.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 08:11:09 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1359354360-604-1-git-send-email-list.btrfs@jan-o-sch.net>
+Date: Mon, 28 Jan 2013 18:11:08 +0200
+Message-ID: <CAOcd+r36TOugPs+5P3W6v6m5pzojGnqZ3YUNS-zzFK2pdm1A8A@mail.gmail.com>
+Subject: backref for an extent not found in send_root (!backref_ctx->found_itself)
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Arne Jansen <sensille@gmx.net>, Alexander Block <ablock84@googlemail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 28, 2013 at 07:26:00AM +0100, Jan Schmidt wrote:
-> When btrfs_qgroup_reserve returned a failure, we were missing a counter
-> operation for BTRFS_I(inode)->outstanding_extents++, leading to warning
-> messages about outstanding extents and space_info->bytes_may_use != 0.
-> Additionally, the error handling code didn't take into account that we
-> dropped the inode lock which might require more cleanup.
-> 
-> Luckily, all the cleanup code we need is already there and can be shared
-> with reserve_metadata_bytes, which is exactly what this patch does.
+Hi Jan,
+I have a set of unit tests (part of the larger system) for the
+send-receive functionality, with which I am able to hit this error:
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Jan 28 18:01:00 687-dev kernel: [16968.451358] btrfs: ERROR did not
+find backref in send_root. inode=259, offset=139264, disk_byte=4263936
+found extent=4263936
 
-> 
-> Reported-by: Lev Vainblat <lev@zadarastorage.com>
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-> ---
->  fs/btrfs/extent-tree.c |   22 ++++++++++------------
->  1 files changed, 10 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 85b8454..61da9d0 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4534,7 +4534,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
->  	unsigned nr_extents = 0;
->  	int extra_reserve = 0;
->  	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
-> -	int ret;
-> +	int ret = 0;
->  	bool delalloc_lock = true;
->  
->  	/* If we are a free space inode we need to not flush since we will be in
-> @@ -4579,20 +4579,18 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
->  	csum_bytes = BTRFS_I(inode)->csum_bytes;
->  	spin_unlock(&BTRFS_I(inode)->lock);
->  
-> -	if (root->fs_info->quota_enabled) {
-> +	if (root->fs_info->quota_enabled)
->  		ret = btrfs_qgroup_reserve(root, num_bytes +
->  					   nr_extents * root->leafsize);
-> -		if (ret) {
-> -			spin_lock(&BTRFS_I(inode)->lock);
-> -			calc_csum_metadata_size(inode, num_bytes, 0);
-> -			spin_unlock(&BTRFS_I(inode)->lock);
-> -			if (delalloc_lock)
-> -				mutex_unlock(&BTRFS_I(inode)->delalloc_mutex);
-> -			return ret;
-> -		}
-> -	}
->  
-> -	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
-> +	/*
-> +	 * ret != 0 here means the qgroup reservation failed, we go straight to
-> +	 * the shared error handling then.
-> +	 */
-> +	if (ret == 0)
-> +		ret = reserve_metadata_bytes(root, block_rsv,
-> +					     to_reserve, flush);
-> +
->  	if (ret) {
->  		u64 to_free = 0;
->  		unsigned dropped;
-> -- 
-> 1.7.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+As the code states, this could indicate a bug in backref walking. This
+reproduces with "for-linus" branch.
+
+Typically this happens when a snapshot is deleted, immediately a new
+snap with the same name is created, and then "btrfs send" is issued
+without parent (i.e., full-send) on this snap.
+
+To debug this further, we can do one of two things:
+# I can apply patches/debug prints & reproduce
+# I can work to isolate the unit test into a bash script and send you
+a script that reproduces
+
+Please let me know.
+
+Thanks,
+Alex.

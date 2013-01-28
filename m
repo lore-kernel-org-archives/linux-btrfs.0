@@ -1,44 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:41860 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753090Ab3A1Lz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 06:55:58 -0500
-Message-ID: <5106674B.6020304@jan-o-sch.net>
-Date: Mon, 28 Jan 2013 12:55:55 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:63925 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755224Ab3A1OHe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 09:07:34 -0500
+Received: by mail-ob0-f174.google.com with SMTP id 16so2761222obc.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 06:07:33 -0800 (PST)
 MIME-Version: 1.0
-To: Lev Vainblat <lev@zadarastorage.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Warnings on file removal after Quota exceeded error (EDQUOT)
-References: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
-In-Reply-To: <C53E5EC1712746DBA90EFED6D9BAEF52@LevPC>
+From: polack christian <baobab874@gmail.com>
+Date: Mon, 28 Jan 2013 15:07:13 +0100
+Message-ID: <CAC6BJd=gbiV+14yk=ghyUozp99Q6QCE6ip_FAp2WoPZTNYNVvw@mail.gmail.com>
+Subject: btrfsck and ctree version
+To: mailing list linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Lev,
+hello
 
-On 24.01.2013 10:39, Lev Vainblat wrote:
-> I executed the following simple sequence of commands:
-> 
-> # mount /dev/sda /mnt/btrfs
-> # btrfs quota enable /mnt/btrfs/
-> # btrfs subvolume create /mnt/btrfs/SV
-> Create subvolume '/mnt/btrfs/SV'
-> # btrfs qgroup limit 1m /mnt/btrfs/SV
-> # dd if=/dev/zero of=/mnt/btrfs/SV/file bs=64x1024
-> dd: writing `/mnt/btrfs/SV/file': Disk quota exceeded
-> 16+0 records in
-> 15+0 records out
-> 983040 bytes (983 kB) copied, 0.00192474 s, 511 MB/s
-> # rm /mnt/btrfs/SV/file
+i am using fedora 18 with the last kernel  3.7.2-204.fc18.x86_64
 
-Thanks for the simple reproducer.
+I was trying to recover an old crashed btrfs filesystem one last time.
 
-Although you probably have noticed through the cc, I should mention in
-case someone digs this thread out of an archive: I sent a patch that
-should fix your problem some hours ago, subject "Btrfs: fix EDQUOT
-handling in btrfs_delalloc_reserve_metadata". Feel free to test and
-report back :-)
+recover tool is not helping much
 
--Jan
+ ./btrfs-find-root /dev/sdb1
+Super think's the tree root is at 799547392, chunk root 21299200
+Well block 4194304 seems great, but generation doesn't match, have=3,
+want=1635037
+Well block 4206592 seems great, but generation doesn't match, have=4,
+want=1635037
+Well block 4292608 seems good, but the csum doesn't match
+Found tree root at 799547392
+
+i did use btrfsck to recover it
+i got the tool from
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+
+and i got this error message:
+...
+Check tree block failed, want=294555648, have=0
+Check tree block failed, want=294559744, have=0
+Check tree block failed, want=294559744, have=0
+btrfsck: ctree.c:1690: leaf_space_used: Assertion `!(data_len < 0)' failed.
+Aborted (core dumped)
+
+looking at
+
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+
+this error in ctree.c have been corrected by this commit
+
+http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=41be1f3b40b87de33cd2e7463dce88596dbdccc4
+
+is there a more up-to-date version of btrfs-prog including this correction
+which is available ?
+
+thanks
+
+
+olivier

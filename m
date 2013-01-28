@@ -1,41 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from msa102.auone-net.jp ([61.117.18.162]:41313 "EHLO
-	msa102.auone-net.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757016Ab3A1Lkg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 06:40:36 -0500
-Date: Mon, 28 Jan 2013 20:33:31 +0900
-From: Kusanagi Kouichi <slash@ac.auone-net.jp>
-To: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Subject: [PATCH] Btrfs: Check CAP_DAC_READ_SEARCH for BTRFS_IOC_INO_PATHS
+Received: from cn.fujitsu.com ([222.73.24.84]:9719 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1757352Ab3A1MeN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 07:34:13 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0SCYA3O007382
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 20:34:11 +0800
+Message-ID: <5106706F.5030803@cn.fujitsu.com>
+Date: Mon, 28 Jan 2013 20:34:55 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-Id: <20130128113332.3B4B76AC03A@msa102.auone-net.jp>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/3] Btrfs: fix wrong sync_writers decrement in btrfs_file_aio_write()
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-CAP_DAC_READ_SEARCH overrides read and search permission check on
-file and directory. It seems fit for BTRFS_IOC_INO_PATHS.
+If the checks at the beginning of btrfs_file_aio_write() fail, we needn't
+decrease ->sync_writers, because we have not increased it. Fix it.
 
-Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/file.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5b22d45..2d6e3e1 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3286,7 +3286,7 @@ static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
- 	struct inode_fs_paths *ipath = NULL;
- 	struct btrfs_path *path;
- 
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!capable(CAP_DAC_READ_SEARCH))
- 		return -EPERM;
- 
- 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 20452c1..370ed5b 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1595,9 +1595,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 		if (err < 0 && num_written > 0)
+ 			num_written = err;
+ 	}
+-out:
++
+ 	if (sync)
+ 		atomic_dec(&BTRFS_I(inode)->sync_writers);
++out:
+ 	sb_end_write(inode->i_sb);
+ 	current->backing_dev_info = NULL;
+ 	return num_written ? num_written : err;
 -- 
-1.7.10.4
-
+1.6.5.2

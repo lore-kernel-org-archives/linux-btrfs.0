@@ -1,87 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33160 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:33172 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753412Ab3A1EEd (ORCPT
+	with ESMTP id S1753064Ab3A1EEg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Jan 2013 23:04:33 -0500
+	Sun, 27 Jan 2013 23:04:36 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 05/10] Btrfs-progs: add function btrfs_get_subvol to get root_info of a subvol
-Date: Mon, 28 Jan 2013 12:10:23 +0800
-Message-Id: <1359346228-24804-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 06/10] Btrfs-progs: add method to filter snapshots by parent uuid
+Date: Mon, 28 Jan 2013 12:10:24 +0800
+Message-Id: <1359346228-24804-7-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359346228-24804-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1359346228-24804-1-git-send-email-anand.jain@oracle.com>
 
-We need a function which can get the root_info of a given
-subvol. This is in preparation to add support for the show
-sub-cli.
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 38 ++++++++++++++++++++++++++++++++++++++
- btrfs-list.h |  1 +
- 2 files changed, 39 insertions(+)
+ btrfs-list.c | 6 ++++++
+ btrfs-list.h | 1 +
+ 2 files changed, 7 insertions(+)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index 909d814..0ee13b6 100644
+index 0ee13b6..9c84ecb 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -1453,6 +1453,44 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
- 	return 0;
+@@ -1142,6 +1142,11 @@ static int filter_topid_equal(struct root_info *ri, u64 data)
+ 	return ri->top_id == data;
  }
  
-+int btrfs_get_subvol(int fd, struct root_info *the_ri)
++static int filter_by_parent(struct root_info *ri, u64 data)
 +{
-+	int ret = -1;
-+	struct root_lookup rl;
-+	struct rb_node *rbn;
-+	struct root_info *ri;
-+	u64 root_id = btrfs_list_get_path_rootid(fd);
-+
-+	if (btrfs_list_subvols(fd, &rl))
-+		return 1;
-+
-+	rbn = rb_first(&rl.root);
-+	while(rbn) {
-+		ri = rb_entry(rbn, struct root_info, rb_node);
-+		resolve_root(&rl, ri, root_id);
-+		if (!comp_entry_with_rootid(the_ri, ri, 0)) {
-+			memcpy(the_ri, ri, offsetof(struct root_info, path));
-+			if (ri->path)
-+				the_ri->path = strdup(ri->path);
-+			else
-+				the_ri->path = NULL;
-+			if (ri->name)
-+				the_ri->name = strdup(ri->name);
-+			else
-+				the_ri->name = NULL;
-+			if (ri->full_path)
-+				the_ri->full_path = strdup(ri->full_path);
-+			else
-+				the_ri->name = NULL;
-+			ret = 0;
-+			break;
-+		}
-+		rbn = rb_next(rbn);
-+	}
-+	__free_all_subvolumn(&rl);
-+	return ret;
++	return !uuid_compare(ri->puuid, (u8 *)data);
 +}
 +
- static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
- 			    struct btrfs_file_extent_item *item,
- 			    u64 found_gen, u64 *cache_dirid,
+ static btrfs_list_filter_func all_filter_funcs[] = {
+ 	[BTRFS_LIST_FILTER_ROOTID]		= filter_by_rootid,
+ 	[BTRFS_LIST_FILTER_SNAPSHOT_ONLY]	= filter_snapshot,
+@@ -1153,6 +1158,7 @@ static btrfs_list_filter_func all_filter_funcs[] = {
+ 	[BTRFS_LIST_FILTER_CGEN_LESS]		= filter_cgen_less,
+ 	[BTRFS_LIST_FILTER_CGEN_EQUAL]          = filter_cgen_equal,
+ 	[BTRFS_LIST_FILTER_TOPID_EQUAL]		= filter_topid_equal,
++	[BTRFS_LIST_FILTER_BY_PARENT]		= filter_by_parent,
+ };
+ 
+ struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
 diff --git a/btrfs-list.h b/btrfs-list.h
-index 3b7b680..580d4d1 100644
+index 580d4d1..cde7a3f 100644
 --- a/btrfs-list.h
 +++ b/btrfs-list.h
-@@ -151,3 +151,4 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
- int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
- char *btrfs_list_path_for_root(int fd, u64 root);
- u64 btrfs_list_get_path_rootid(int fd);
-+int btrfs_get_subvol(int fd, struct root_info *the_ri);
+@@ -117,6 +117,7 @@ enum btrfs_list_filter_enum {
+ 	BTRFS_LIST_FILTER_CGEN_LESS,
+ 	BTRFS_LIST_FILTER_CGEN_MORE,
+ 	BTRFS_LIST_FILTER_TOPID_EQUAL,
++	BTRFS_LIST_FILTER_BY_PARENT,
+ 	BTRFS_LIST_FILTER_MAX,
+ };
+ 
 -- 
 1.8.1.227.g44fe835
 

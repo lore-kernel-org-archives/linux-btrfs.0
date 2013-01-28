@@ -1,63 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:63925 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755224Ab3A1OHe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 09:07:34 -0500
-Received: by mail-ob0-f174.google.com with SMTP id 16so2761222obc.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 06:07:33 -0800 (PST)
+Received: from mx2.fusionio.com ([66.114.96.31]:53287 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756298Ab3A1OR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 09:17:26 -0500
+Date: Mon, 28 Jan 2013 09:17:23 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Andrew McNabb <amcnabb@mcnabbs.org>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs stability
+Message-ID: <20130128141723.GC3257@localhost.localdomain>
+References: <20130125200514.GD4217@mcnabbs.org>
+ <20130125205322.GB3257@localhost.localdomain>
+ <20130125213950.GF4217@mcnabbs.org>
+ <20130126202711.GB30537@mcnabbs.org>
 MIME-Version: 1.0
-From: polack christian <baobab874@gmail.com>
-Date: Mon, 28 Jan 2013 15:07:13 +0100
-Message-ID: <CAC6BJd=gbiV+14yk=ghyUozp99Q6QCE6ip_FAp2WoPZTNYNVvw@mail.gmail.com>
-Subject: btrfsck and ctree version
-To: mailing list linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130126202711.GB30537@mcnabbs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello
+On Sat, Jan 26, 2013 at 01:27:11PM -0700, Andrew McNabb wrote:
+> Here's an update.  I tried the new kernel, and I seem to be having some
+> new (possibly worse problems.  In my ssh session, I'm seeing many errors
+> of this sort:
+> 
+> Message from syslogd@guru at Jan 26 13:13:14 ...
+>  kernel:[  308.223834] BUG: soft lockup - CPU#0 stuck for 23s!
+>  [btrfs-endio-wri:2073]
+> 
+> Message from syslogd@guru at Jan 26 13:13:14 ...
+>  kernel:[  308.248754] BUG: soft lockup - CPU#2 stuck for 23s!
+>  [btrfs-delalloc-:594]
+> 
+> In the logs, I'm seeing several warnings and bugs, including:
+> 
+> WARNING: at fs/btrfs/extent_map.c:78 free_extent_map+0x79/0x90 [btrfs]()
+> WARNING: at lib/list_debug.c:62 __list_del_entry+0x82/0xd0()
+> BUG: unable to handle kernel NULL pointer dereference at     (null)
+> BUG: soft lockup - CPU#0 stuck for 22s! [btrfs-endio-wri:1489]
+> BUG: soft lockup - CPU#1 stuck for 22s! [btrfs-delalloc-:607]
+> 
+> Kernel logs (across a few reboots) are at:
+> 
+> http://students.cs.byu.edu/~amcnabb/messages2
+> 
 
-i am using fedora 18 with the last kernel  3.7.2-204.fc18.x86_64
+Hrm well I didn't expect that.  I will look into this and see what I can come up
+with.  Thanks,
 
-I was trying to recover an old crashed btrfs filesystem one last time.
-
-recover tool is not helping much
-
- ./btrfs-find-root /dev/sdb1
-Super think's the tree root is at 799547392, chunk root 21299200
-Well block 4194304 seems great, but generation doesn't match, have=3,
-want=1635037
-Well block 4206592 seems great, but generation doesn't match, have=4,
-want=1635037
-Well block 4292608 seems good, but the csum doesn't match
-Found tree root at 799547392
-
-i did use btrfsck to recover it
-i got the tool from
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-
-and i got this error message:
-...
-Check tree block failed, want=294555648, have=0
-Check tree block failed, want=294559744, have=0
-Check tree block failed, want=294559744, have=0
-btrfsck: ctree.c:1690: leaf_space_used: Assertion `!(data_len < 0)' failed.
-Aborted (core dumped)
-
-looking at
-
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-
-this error in ctree.c have been corrected by this commit
-
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=41be1f3b40b87de33cd2e7463dce88596dbdccc4
-
-is there a more up-to-date version of btrfs-prog including this correction
-which is available ?
-
-thanks
-
-
-olivier
+Josef

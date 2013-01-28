@@ -1,72 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f54.google.com ([74.125.83.54]:58713 "EHLO
-	mail-ee0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751725Ab3AZHqK (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:32806 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751247Ab3A1CZb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Jan 2013 02:46:10 -0500
-Received: by mail-ee0-f54.google.com with SMTP id c41so520838eek.27
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2013 23:46:09 -0800 (PST)
-Message-ID: <510389E3.1070002@gmail.com>
-Date: Sat, 26 Jan 2013 08:46:43 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Sun, 27 Jan 2013 21:25:31 -0500
+Message-ID: <5105E33F.8000607@oracle.com>
+Date: Mon, 28 Jan 2013 10:32:31 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: russell@coker.com.au
-CC: Gene Czarcinski <gene@czarc.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs-progs: Exit if not running as root
-References: <1359113550-23962-1-git-send-email-gene@czarc.net> <51029EFB.90301@czarc.net> <201301261318.59880.russell@coker.com.au>
-In-Reply-To: <201301261318.59880.russell@coker.com.au>
+To: Gene Czarcinski <gene@czarc.net>
+CC: linux-btrfs@vger.kernel.org, Danny Kukawka <danny.kukawka@bisect.de>
+Subject: Re: [PATCH] Btrfs-progs: v2 Fix minor problems in  btrfslabel.c
+References: <1359223796-8132-1-git-send-email-gene@czarc.net>
+In-Reply-To: <1359223796-8132-1-git-send-email-gene@czarc.net>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/26/2013 03:18 AM, Russell Coker wrote:
-> On Sat, 26 Jan 2013, Gene Czarcinski<gene@czarc.net>  wrote:
->> OK, I think I have gotten the message that this is a bad idea as
->> implemented and that it should be dropped as such.  I believe that there
->> are some things ("btrfs fi show" comes to mind) which will need root and
->> I am going to explore doing something for that case.  And it also might
->> be reasonable for some situations to issue the message about root if
->> something errors-out.
+
+
+On 01/27/2013 02:09 AM, Gene Czarcinski wrote:
+> Fixed indentation, replace spaces with tabs.
+> Signed-off-by: Danny Kukawka <danny.kukawka@bisect.de>
 >
-> I think that a message such as Eric proposed of "failed to open /dev/sda:
-> Permission denied" is clear enough.  If you run as non-root on a system with
-> no security system other than Unix permissions then it will be quite obvious
-> that such an error can be fixed by running as root.
+> Rebased; fixed compiler warnings; added space after "if"
+> Signed-off-by: Gene Czarcinski <gene@czarc.net>
 
-Being pedantic, I would point out that the kernel is checking if the 
-user has CAP_SYS_ADMIN, which could be different than geteuid() == 0. I 
-can have both a root users without CAP_SYS_ADMIN and a normal user with 
-this capability.
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-If I can make a suggestion, the work of Gene could be changed in 
-checking which command really requires to be root.
-
-To day I can create a subvolume, and remove a subvolume [1] without 
-needing root. I am guessing if there is a valid reason to require "root" 
-to list the subvolumes.
-
-I know that behind the command "find-subvolumes" there is the ioctl 
-BTRFS_IOC_TREE_SEARCH which requires to be root, because it could export 
-some sensible information. But this can be easy solved creating an ioctl 
-which export only not-sensible data (i.e. it export only the name and 
-the path of the subvolume).
-
-I think that a good analysis of these situations could improve the btrfs 
-usability.
-
-My 2¢
-
-BR
-G.Baroncelli
+> ---
+>   btrfslabel.c | 57 +++++++++++++++++++++++++++++----------------------------
+>   1 file changed, 29 insertions(+), 28 deletions(-)
 >
-> But if you are running SE Linux or some other security system then you could
-> be prevented from running the program without the root/non-root status of it
-> being relevant.
+> diff --git a/btrfslabel.c b/btrfslabel.c
+> index 88a5196..5a91fc4 100644
+> --- a/btrfslabel.c
+> +++ b/btrfslabel.c
+> @@ -48,42 +48,43 @@
 >
-
-[1] Passing user_subvol_rm_allowed in option
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>   static int change_label_unmounted(char *dev, char *nLabel)
+>   {
+> -       struct btrfs_root *root;
+> -       struct btrfs_trans_handle *trans;
+> -
+> -       /* Open the super_block at the default location
+> -        * and as read-write.
+> -        */
+> -       root = open_ctree(dev, 0, 1);
+> -       if (!root) /* errors are printed by open_ctree() */
+> -         return;
+> -
+> -       trans = btrfs_start_transaction(root, 1);
+> -       strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
+> -       root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
+> -       btrfs_commit_transaction(trans, root);
+> -
+> -       /* Now we close it since we are done. */
+> -       close_ctree(root);
+> +	struct btrfs_root *root;
+> +	struct btrfs_trans_handle *trans;
+> +
+> +	/* Open the super_block at the default location
+> +	 * and as read-write.
+> +	 */
+> +	root = open_ctree(dev, 0, 1);
+> +	if (!root) /* errors are printed by open_ctree() */
+> +	  return -1;
+> +
+> +	trans = btrfs_start_transaction(root, 1);
+> +	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
+> +	root->fs_info->super_copy.label[BTRFS_LABEL_SIZE-1] = 0;
+> +	btrfs_commit_transaction(trans, root);
+> +
+> +	/* Now we close it since we are done. */
+> +	close_ctree(root);
+> +	return 0;
+>   }
+>
+>   int get_label_unmounted(char *dev)
+>   {
+> -       struct btrfs_root *root;
+> +	struct btrfs_root *root;
+>
+> -       /* Open the super_block at the default location
+> -        * and as read-only.
+> -        */
+> -       root = open_ctree(dev, 0, 0);
+> +	/* Open the super_block at the default location
+> +	 * and as read-only.
+> +	 */
+> +	root = open_ctree(dev, 0, 0);
+>
+> -       if(!root)
+> -         return -1;
+> +	if (!root)
+> +	  return -1;
+>
+> -       fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
+> +	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
+>
+> -       /* Now we close it since we are done. */
+> -       close_ctree(root);
+> -       return 0;
+> +	/* Now we close it since we are done. */
+> +	close_ctree(root);
+> +	return 0;
+>   }
+>
+>   int get_label(char *btrfs_dev)
+>

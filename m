@@ -1,49 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f43.google.com ([209.85.215.43]:34659 "EHLO
-	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755553Ab3A1PtW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 10:49:22 -0500
-Received: by mail-la0-f43.google.com with SMTP id ek20so903884lab.30
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 07:49:21 -0800 (PST)
-MIME-Version: 1.0
-Date: Mon, 28 Jan 2013 10:49:20 -0500
-Message-ID: <CAAdM644AsDFfyj_9PEFthNBbcnNc_jy4dxMZmbrb9dBHeK5xkw@mail.gmail.com>
-Subject: bug: per file cow flag is lost when renaming
-From: Marios Titas <redneb8888@gmail.com>
-To: btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from xp-ob.rzone.de ([81.169.146.136]:43187 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751271Ab3A1G0F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 01:26:05 -0500
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Cc: lev@zadarastorage.com, sensille@gmx.net
+Subject: [PATCH] Btrfs: fix EDQUOT handling in btrfs_delalloc_reserve_metadata
+Date: Mon, 28 Jan 2013 07:26:00 +0100
+Message-Id: <1359354360-604-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Try this:
+When btrfs_qgroup_reserve returned a failure, we were missing a counter
+operation for BTRFS_I(inode)->outstanding_extents++, leading to warning
+messages about outstanding extents and space_info->bytes_may_use != 0.
+Additionally, the error handling code didn't take into account that we
+dropped the inode lock which might require more cleanup.
 
-    touch test
-    chattr +C test
-    lsattr test
-    mv test test2
-    lsattr test2
+Luckily, all the cleanup code we need is already there and can be shared
+with reserve_metadata_bytes, which is exactly what this patch does.
 
-The original file (test) will have the C flag but when renamed the
-flag disappears. If the volume is unmounted and then mounted again the
-flag reappears. However, if the file is modified in any way after the
-renaming but before the umount/mount then even weirder things happen,
-eg:
+Reported-by: Lev Vainblat <lev@zadarastorage.com>
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/extent-tree.c |   22 ++++++++++------------
+ 1 files changed, 10 insertions(+), 12 deletions(-)
 
-    touch test
-    chattr +C test
-    head -c1048576 /dev/zero >> test
-    lsattr test
-    # the C flag exists and the file does not COW when modified as expected
-    mv test test2
-    lsattr test2
-    # now the C flag disappeared
-    # if you modify the file it will COW and the flag will not
-reappear after umount/mount
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 85b8454..61da9d0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4534,7 +4534,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	unsigned nr_extents = 0;
+ 	int extra_reserve = 0;
+ 	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
+-	int ret;
++	int ret = 0;
+ 	bool delalloc_lock = true;
+ 
+ 	/* If we are a free space inode we need to not flush since we will be in
+@@ -4579,20 +4579,18 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+-	if (root->fs_info->quota_enabled) {
++	if (root->fs_info->quota_enabled)
+ 		ret = btrfs_qgroup_reserve(root, num_bytes +
+ 					   nr_extents * root->leafsize);
+-		if (ret) {
+-			spin_lock(&BTRFS_I(inode)->lock);
+-			calc_csum_metadata_size(inode, num_bytes, 0);
+-			spin_unlock(&BTRFS_I(inode)->lock);
+-			if (delalloc_lock)
+-				mutex_unlock(&BTRFS_I(inode)->delalloc_mutex);
+-			return ret;
+-		}
+-	}
+ 
+-	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
++	/*
++	 * ret != 0 here means the qgroup reservation failed, we go straight to
++	 * the shared error handling then.
++	 */
++	if (ret == 0)
++		ret = reserve_metadata_bytes(root, block_rsv,
++					     to_reserve, flush);
++
+ 	if (ret) {
+ 		u64 to_free = 0;
+ 		unsigned dropped;
+-- 
+1.7.1
 
-even worse, if you try to use BTRFS_IOC_CLONE to clone test2 to a
-non-COW file with eg
-
-    cp --reflink test2 test3
-
-it will fail with EINVAL as if the file test2 had the COW flag.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,62 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19614 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753026Ab3A1C4g (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Jan 2013 21:56:36 -0500
-Message-ID: <5105EA90.6000507@oracle.com>
-Date: Mon, 28 Jan 2013 11:03:44 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:45739 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755561Ab3A1RFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 12:05:10 -0500
+Date: Mon, 28 Jan 2013 18:05:00 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Ian Kumlien <pomac@demius.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] [RFC] Add static compile target
+Message-ID: <20130128170500.GC16977@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1359158987-19921-1-git-send-email-pomac@demius.net>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: remove btrfsctl, btrfs-show and btrfs-vol
- from default build
-References: <1339178417-26051-1-git-send-email-sbehrens@giantdisaster.de>
-In-Reply-To: <1339178417-26051-1-git-send-email-sbehrens@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1359158987-19921-1-git-send-email-pomac@demius.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jan 26, 2013 at 01:09:47AM +0100, Ian Kumlien wrote:
+> Sometimes, when you least expect it, a static binary is what you need to
+> rescue your data... Or just get a good enough handle on things to make
+> it work again ;)
+> 
+> "make static" is a gift to you, dear user with filesystem problems!
 
-  This patch is much needed. thanks.
+Adding the build target does not cost us anything. The result depends on the
+distro and set of the needed libraries provided for a static build. Even
+the basic 'btrfs' too needs uuid (due to cmds-receive) and I don't have
+it in my distro. The other utilities may need static zlib or lzo
+(restore) or libblkid (mkfs.btrfs).
 
-  Further, IMO the summary may provide a table of mapping of
-  the original to its predecessor command-and-option so that
-  - it will ensure we have taken care of all the original
-  features in the new cli, and it will help to document
-  for the onlooker.
+I tried to build 'btrfs' only and moved the static libs definition to
+the beginning (still needs the uuid static library though):
 
-  eg:
-  old-command        replaced-by
-   btrfsctl -D        btrfs subvol del
-   ::
-   ::
+--- a/Makefile
++++ b/Makefile
+@@ -19,6 +19,7 @@ prefix ?= /usr/local
+ bindir = $(prefix)/bin
+ LIBS=-luuid -lm
+ RESTORE_LIBS=-lz
++STATIC_LIBS= -lpthread
 
-  (if this is already there somewhere providing a ref/copying
-  here will help)
+ progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
+        btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
+@@ -117,4 +118,9 @@ install: $(progs) install-man
+        $(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+        $(INSTALL) $(progs) $(DESTDIR)$(bindir)
 
-Thanks, Anand
-
-On 06/09/2012 02:00 AM, Stefan Behrens wrote:
-> Remove btrfsctl, btrfs-show and btrfs-vol from "all" target of Makefile.
->
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> ---
->   Makefile |    2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/Makefile b/Makefile
-> index aaf1381..79e7a56 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -18,7 +18,7 @@ bindir = $(prefix)/bin
->   LIBS=-luuid
->   RESTORE_LIBS=-lz
->
-> -progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
-> +progs = mkfs.btrfs btrfs-debug-tree btrfsck \
->   	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
->   	btrfs-find-root btrfs-restore btrfstune
->
->
++static: CFLAGS += -static
++static: LIBS = $(STATIC_LIBS)
++static: version btrfs

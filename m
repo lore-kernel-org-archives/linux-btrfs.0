@@ -1,88 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:38409 "EHLO mail.in8.de"
+Received: from xp-ob.rzone.de ([81.169.146.139]:57829 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751773Ab3A1Mv3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 07:51:29 -0500
-Message-ID: <5106744F.3030400@jan-o-sch.net>
-Date: Mon, 28 Jan 2013 13:51:27 +0100
+	id S1753090Ab3A1MDs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 07:03:48 -0500
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/3] Btrfs: fix missing release of the space/qgroup reservation
- in start_transaction()
-References: <510670C6.5030908@cn.fujitsu.com>
-In-Reply-To: <510670C6.5030908@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Cc: jmwdev38@gmail.com, jbacik@fusionio.com, sensille@gmx.net
+Subject: [PATCH] Btrfs: fix ENOSPC in qgroups (metadata)
+Date: Mon, 28 Jan 2013 13:03:46 +0100
+Message-Id: <1359374626-14109-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28.01.2013 13:36, Miao Xie wrote:
-> When we fail to start a transaction, we need to release the reserved free space
-> and qgroup space, fix it.
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/transaction.c |   27 +++++++++++++++++++--------
->  1 files changed, 19 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 87fac9a..194d0b5 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -333,12 +333,14 @@ start_transaction(struct btrfs_root *root, u64 num_items, int type,
->  					  &root->fs_info->trans_block_rsv,
->  					  num_bytes, flush);
->  		if (ret)
-> -			return ERR_PTR(ret);
-> +			goto reserve_fail;
->  	}
->  again:
->  	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-> -	if (!h)
-> -		return ERR_PTR(-ENOMEM);
-> +	if (!h) {
-> +		ret = -ENOMEM;
-> +		goto alloc_fail;
-> +	}
->  
->  	/*
->  	 * If we are JOIN_NOLOCK we're already committing a transaction and
-> @@ -365,11 +367,7 @@ again:
->  	if (ret < 0) {
->  		/* We must get the transaction if we are JOIN_NOLOCK. */
->  		BUG_ON(type == TRANS_JOIN_NOLOCK);
-> -
-> -		if (type < TRANS_JOIN_NOLOCK)
-> -			sb_end_intwrite(root->fs_info->sb);
-> -		kmem_cache_free(btrfs_trans_handle_cachep, h);
-> -		return ERR_PTR(ret);
-> +		goto join_fail;
->  	}
->  
->  	cur_trans = root->fs_info->running_transaction;
-> @@ -410,6 +408,19 @@ got_it:
->  	if (!current->journal_info && type != TRANS_USERSPACE)
->  		current->journal_info = h;
->  	return h;
-> +
-> +join_fail:
-> +	if (type < TRANS_JOIN_NOLOCK)
-> +		sb_end_intwrite(root->fs_info->sb);
-> +	kmem_cache_free(btrfs_trans_handle_cachep, h);
-> +alloc_fail:
-> +	if (num_bytes)
-> +		btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
-> +					num_bytes);
-> +reserve_fail:
-> +	if (qgroup_reserved)
-> +		btrfs_qgroup_free(root, qgroup_reserved);
-> +	return ERR_PTR(ret);
->  }
->  
->  struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
-> 
+When start_transaction() returns ENOSPC after btrfs_qgroup_reserve(), we
+must call btrfs_qgroup_free() to avoid the qgroup counters increasing when
+there's actually no data being written.
 
-Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
 
--Jan
+Josef: It looks like these places (except the first) are candidates for
+btrfs_block_rsv_release, please check.
+
+---
+ fs/btrfs/transaction.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 87fac9a..f2430fd 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -332,13 +332,17 @@ start_transaction(struct btrfs_root *root, u64 num_items, int type,
+ 		ret = btrfs_block_rsv_add(root,
+ 					  &root->fs_info->trans_block_rsv,
+ 					  num_bytes, flush);
+-		if (ret)
++		if (ret) {
++			btrfs_qgroup_free(root, qgroup_reserved);
+ 			return ERR_PTR(ret);
++		}
+ 	}
+ again:
+ 	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
+-	if (!h)
++	if (!h) {
++		btrfs_qgroup_free(root, qgroup_reserved);
+ 		return ERR_PTR(-ENOMEM);
++	}
+ 
+ 	/*
+ 	 * If we are JOIN_NOLOCK we're already committing a transaction and
+@@ -369,6 +373,7 @@ again:
+ 		if (type < TRANS_JOIN_NOLOCK)
+ 			sb_end_intwrite(root->fs_info->sb);
+ 		kmem_cache_free(btrfs_trans_handle_cachep, h);
++		btrfs_qgroup_free(root, qgroup_reserved);
+ 		return ERR_PTR(ret);
+ 	}
+ 
+-- 
+1.7.1
+

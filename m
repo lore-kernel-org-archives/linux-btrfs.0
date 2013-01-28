@@ -1,146 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29597 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750809Ab3A1FQ2 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:50967 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751215Ab3A1FQd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 00:16:28 -0500
+	Mon, 28 Jan 2013 00:16:33 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 04/10] Btrfs-progs: move struct root_info to btrfs-list.h
-Date: Mon, 28 Jan 2013 13:22:33 +0800
-Message-Id: <1359350559-25671-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 07/10] Btrfs-progs: put find_mount_root() in commands.h
+Date: Mon, 28 Jan 2013 13:22:36 +0800
+Message-Id: <1359350559-25671-8-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359350559-25671-1-git-send-email-anand.jain@oracle.com>
 References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
  <1359350559-25671-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we would add more ways to list and manage the subvols
-and snapshots, its better if we have struct root_info
-defined in the header file.
+A useful function need to define it in a header file.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 47 -----------------------------------------------
- btrfs-list.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 46 insertions(+), 48 deletions(-)
+ commands.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 13a365d..909d814 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -46,53 +46,6 @@ struct root_lookup {
- 	struct rb_root root;
- };
+diff --git a/commands.h b/commands.h
+index 8114a73..9b77f3e 100644
+--- a/commands.h
++++ b/commands.h
+@@ -103,3 +103,6 @@ int cmd_qgroup(int argc, char **argv);
  
--/*
-- * one of these for each root we find.
-- */
--struct root_info {
--	struct rb_node rb_node;
--	struct rb_node sort_node;
--
--	/* this root's id */
--	u64 root_id;
--
--	/* equal the offset of the root's key */
--	u64 root_offset;
--
--	/* flags of the root */
--	u64 flags;
--
--	/* the id of the root that references this one */
--	u64 ref_tree;
--
--	/* the dir id we're in from ref_tree */
--	u64 dir_id;
--
--	u64 top_id;
--
--	/* generation when the root is created or last updated */
--	u64 gen;
--
--	/* creation generation of this root in sec*/
--	u64 ogen;
--
--	/* creation time of this root in sec*/
--	time_t otime;
--
--	u8 uuid[BTRFS_UUID_SIZE];
--	u8 puuid[BTRFS_UUID_SIZE];
--
--	/* path from the subvol we live in to this root, including the
--	 * root's name.  This is null until we do the extra lookup ioctl.
--	 */
--	char *path;
--
--	/* the name of this root in the directory it lives in */
--	char *name;
--
--	char *full_path;
--};
--
- struct {
- 	char	*name;
- 	char	*column_name;
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 855e73d..3b7b680 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -18,7 +18,52 @@
- 
- #include "kerncompat.h"
- 
--struct root_info;
-+/*
-+ * one of these for each root we find.
-+ */
-+struct root_info {
-+	struct rb_node rb_node;
-+	struct rb_node sort_node;
+ /* subvolume exported functions */
+ int test_issubvolume(char *path);
 +
-+	/* this root's id */
-+	u64 root_id;
-+
-+	/* equal the offset of the root's key */
-+	u64 root_offset;
-+
-+	/* flags of the root */
-+	u64 flags;
-+
-+	/* the id of the root that references this one */
-+	u64 ref_tree;
-+
-+	/* the dir id we're in from ref_tree */
-+	u64 dir_id;
-+
-+	u64 top_id;
-+
-+	/* generation when the root is created or last updated */
-+	u64 gen;
-+
-+	/* creation generation of this root in sec*/
-+	u64 ogen;
-+
-+	/* creation time of this root in sec*/
-+	time_t otime;
-+
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	u8 puuid[BTRFS_UUID_SIZE];
-+
-+	/* path from the subvol we live in to this root, including the
-+	 * root's name.  This is null until we do the extra lookup ioctl.
-+	 */
-+	char *path;
-+
-+	/* the name of this root in the directory it lives in */
-+	char *name;
-+
-+	char *full_path;
-+};
- 
- typedef int (*btrfs_list_filter_func)(struct root_info *, u64);
- typedef int (*btrfs_list_comp_func)(struct root_info *, struct root_info *,
++/* send.c */
++int find_mount_root(const char *path, char **mount_root);
 -- 
 1.8.1.227.g44fe835
 

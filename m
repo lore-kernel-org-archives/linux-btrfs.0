@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:53287 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:44438 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756298Ab3A1OR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 09:17:26 -0500
-Date: Mon, 28 Jan 2013 09:17:23 -0500
+	id S1751415Ab3A1PKk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 10:10:40 -0500
+Date: Mon, 28 Jan 2013 10:10:37 -0500
 From: Josef Bacik <jbacik@fusionio.com>
 To: Andrew McNabb <amcnabb@mcnabbs.org>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs stability
-Message-ID: <20130128141723.GC3257@localhost.localdomain>
+Message-ID: <20130128151037.GD3257@localhost.localdomain>
 References: <20130125200514.GD4217@mcnabbs.org>
  <20130125205322.GB3257@localhost.localdomain>
  <20130125213950.GF4217@mcnabbs.org>
@@ -46,7 +46,11 @@ On Sat, Jan 26, 2013 at 01:27:11PM -0700, Andrew McNabb wrote:
 > http://students.cs.byu.edu/~amcnabb/messages2
 > 
 
-Hrm well I didn't expect that.  I will look into this and see what I can come up
-with.  Thanks,
+Ok I think I figured it out, can you give this a whirl?  Let me know when you
+get testers fatigue ;)
+
+http://koji.fedoraproject.org/koji/taskinfo?taskID=4908932
+
+Thanks,
 
 Josef

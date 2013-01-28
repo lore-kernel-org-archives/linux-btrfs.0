@@ -1,291 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29577 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:29597 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751112Ab3A1FQY (ORCPT
+	with ESMTP id S1750809Ab3A1FQ2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 00:16:24 -0500
+	Mon, 28 Jan 2013 00:16:28 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 01/10] Btrfs-progs: move open_file_or_dir() to utils.c
-Date: Mon, 28 Jan 2013 13:22:30 +0800
-Message-Id: <1359350559-25671-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 04/10] Btrfs-progs: move struct root_info to btrfs-list.h
+Date: Mon, 28 Jan 2013 13:22:33 +0800
+Message-Id: <1359350559-25671-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359350559-25671-1-git-send-email-anand.jain@oracle.com>
 References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
  <1359350559-25671-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The definition of the function open_file_or_dir() is moved from common.c
-to utils.c in order to be able to share some common code between scrub
-and the device stats in the following step. That common code uses
-open_file_or_dir(). Since open_file_or_dir() makes use of the function
-dirfd(3), the required XOPEN version was raised from 6 to 7.
+As we would add more ways to list and manage the subvols
+and snapshots, its better if we have struct root_info
+defined in the header file.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Original-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- Makefile         |  4 ++--
- btrfsctl.c       |  7 ++++---
- cmds-balance.c   |  1 +
- cmds-inspect.c   |  1 +
- cmds-qgroup.c    |  1 +
- cmds-quota.c     |  1 +
- cmds-subvolume.c |  1 +
- commands.h       |  3 ---
- common.c         | 46 ----------------------------------------------
- utils.c          | 30 ++++++++++++++++++++++++++++--
- utils.h          |  5 +++--
- 11 files changed, 42 insertions(+), 58 deletions(-)
- delete mode 100644 common.c
+ btrfs-list.c | 47 -----------------------------------------------
+ btrfs-list.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 46 insertions(+), 48 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 4894903..8576d90 100644
---- a/Makefile
-+++ b/Makefile
-@@ -41,8 +41,8 @@ all: version $(progs) manpages
- version:
- 	bash version.sh
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 13a365d..909d814 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -46,53 +46,6 @@ struct root_lookup {
+ 	struct rb_root root;
+ };
  
--btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
--	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
-+btrfs: $(objects) btrfs.o help.o $(cmds_objects)
-+	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
- 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
- 
- calc-size: $(objects) calc-size.o
-diff --git a/btrfsctl.c b/btrfsctl.c
-index 518684c..049a5f3 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -63,7 +63,7 @@ static void print_usage(void)
- 	exit(1);
- }
- 
--static int open_file_or_dir(const char *fname)
-+static int btrfsctl_open_file_or_dir(const char *fname)
- {
- 	int ret;
- 	struct stat st;
-@@ -91,6 +91,7 @@ static int open_file_or_dir(const char *fname)
- 	}
- 	return fd;
- }
-+
- int main(int ac, char **av)
- {
- 	char *fname = NULL;
-@@ -128,7 +129,7 @@ int main(int ac, char **av)
- 			snap_location = strdup(fullpath);
- 			snap_location = dirname(snap_location);
- 
--			snap_fd = open_file_or_dir(snap_location);
-+			snap_fd = btrfsctl_open_file_or_dir(snap_location);
- 
- 			name = strdup(fullpath);
- 			name = basename(name);
-@@ -238,7 +239,7 @@ int main(int ac, char **av)
- 		}
- 		name = fname;
- 	 } else {
--		fd = open_file_or_dir(fname);
-+		fd = btrfsctl_open_file_or_dir(fname);
- 	 }
- 
- 	if (name) {
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 38a7426..6268b61 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -28,6 +28,7 @@
- #include "volumes.h"
- 
- #include "commands.h"
-+#include "utils.h"
- 
- static const char * const balance_cmd_group_usage[] = {
- 	"btrfs [filesystem] balance <command> [options] <path>",
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 25b83d2..f10bf55 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -23,6 +23,7 @@
+-/*
+- * one of these for each root we find.
+- */
+-struct root_info {
+-	struct rb_node rb_node;
+-	struct rb_node sort_node;
+-
+-	/* this root's id */
+-	u64 root_id;
+-
+-	/* equal the offset of the root's key */
+-	u64 root_offset;
+-
+-	/* flags of the root */
+-	u64 flags;
+-
+-	/* the id of the root that references this one */
+-	u64 ref_tree;
+-
+-	/* the dir id we're in from ref_tree */
+-	u64 dir_id;
+-
+-	u64 top_id;
+-
+-	/* generation when the root is created or last updated */
+-	u64 gen;
+-
+-	/* creation generation of this root in sec*/
+-	u64 ogen;
+-
+-	/* creation time of this root in sec*/
+-	time_t otime;
+-
+-	u8 uuid[BTRFS_UUID_SIZE];
+-	u8 puuid[BTRFS_UUID_SIZE];
+-
+-	/* path from the subvol we live in to this root, including the
+-	 * root's name.  This is null until we do the extra lookup ioctl.
+-	 */
+-	char *path;
+-
+-	/* the name of this root in the directory it lives in */
+-	char *name;
+-
+-	char *full_path;
+-};
+-
+ struct {
+ 	char	*name;
+ 	char	*column_name;
+diff --git a/btrfs-list.h b/btrfs-list.h
+index 855e73d..3b7b680 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -18,7 +18,52 @@
  
  #include "kerncompat.h"
- #include "ioctl.h"
-+#include "utils.h"
  
- #include "commands.h"
- #include "btrfs-list.h"
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 1525c11..cafc284 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -24,6 +24,7 @@
- #include "ioctl.h"
- 
- #include "commands.h"
-+#include "utils.h"
- 
- static const char * const qgroup_cmd_group_usage[] = {
- 	"btrfs qgroup <command> [options] <path>",
-diff --git a/cmds-quota.c b/cmds-quota.c
-index cf9ad97..8481514 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -23,6 +23,7 @@
- #include "ioctl.h"
- 
- #include "commands.h"
-+#include "utils.h"
- 
- static const char * const quota_cmd_group_usage[] = {
- 	"btrfs quota <command> [options] <path>",
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ac39f7b..e3cdb1e 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -32,6 +32,7 @@
- #include "ctree.h"
- #include "commands.h"
- #include "btrfs-list.h"
-+#include "utils.h"
- 
- static const char * const subvolume_cmd_group_usage[] = {
- 	"btrfs subvolume <command> <args>",
-diff --git a/commands.h b/commands.h
-index bb6d2dd..8114a73 100644
---- a/commands.h
-+++ b/commands.h
-@@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
- 
- void help_command_group(const struct cmd_group *grp, int argc, char **argv);
- 
--/* common.c */
--int open_file_or_dir(const char *fname);
--
- extern const struct cmd_group subvolume_cmd_group;
- extern const struct cmd_group filesystem_cmd_group;
- extern const struct cmd_group balance_cmd_group;
-diff --git a/common.c b/common.c
-deleted file mode 100644
-index 03f6570..0000000
---- a/common.c
-+++ /dev/null
-@@ -1,46 +0,0 @@
--/*
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--
--#include <sys/types.h>
--#include <sys/stat.h>
--#include <dirent.h>
--#include <fcntl.h>
--
--int open_file_or_dir(const char *fname)
--{
--	int ret;
--	struct stat st;
--	DIR *dirstream;
--	int fd;
--
--	ret = stat(fname, &st);
--	if (ret < 0) {
--		return -1;
--	}
--	if (S_ISDIR(st.st_mode)) {
--		dirstream = opendir(fname);
--		if (!dirstream) {
--			return -2;
--		}
--		fd = dirfd(dirstream);
--	} else {
--		fd = open(fname, O_RDWR);
--	}
--	if (fd < 0) {
--		return -3;
--	}
--	return fd;
--}
-diff --git a/utils.c b/utils.c
-index 938f9a5..78530e1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -16,8 +16,9 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 600
--#define __USE_XOPEN2K
-+#define _XOPEN_SOURCE 700
-+#define __USE_XOPEN2K8
-+#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
- #include <stdio.h>
- #include <stdlib.h>
- #ifndef __CHECKER__
-@@ -1268,3 +1269,28 @@ u64 parse_size(char *s)
- 	return strtoull(s, NULL, 10) * mult;
- }
- 
-+int open_file_or_dir(const char *fname)
-+{
-+	int ret;
-+	struct stat st;
-+	DIR *dirstream;
-+	int fd;
+-struct root_info;
++/*
++ * one of these for each root we find.
++ */
++struct root_info {
++	struct rb_node rb_node;
++	struct rb_node sort_node;
 +
-+	ret = stat(fname, &st);
-+	if (ret < 0) {
-+		return -1;
-+	}
-+	if (S_ISDIR(st.st_mode)) {
-+		dirstream = opendir(fname);
-+		if (!dirstream) {
-+			return -2;
-+		}
-+		fd = dirfd(dirstream);
-+	} else {
-+		fd = open(fname, O_RDWR);
-+	}
-+	if (fd < 0) {
-+		return -3;
-+	}
-+	return fd;
-+}
-diff --git a/utils.h b/utils.h
-index 714fd7a..ed43e84 100644
---- a/utils.h
-+++ b/utils.h
-@@ -19,6 +19,8 @@
- #ifndef __UTILS__
- #define __UTILS__
- 
-+#include "ctree.h"
++	/* this root's id */
++	u64 root_id;
 +
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
++	/* equal the offset of the root's key */
++	u64 root_offset;
++
++	/* flags of the root */
++	u64 flags;
++
++	/* the id of the root that references this one */
++	u64 ref_tree;
++
++	/* the dir id we're in from ref_tree */
++	u64 dir_id;
++
++	u64 top_id;
++
++	/* generation when the root is created or last updated */
++	u64 gen;
++
++	/* creation generation of this root in sec*/
++	u64 ogen;
++
++	/* creation time of this root in sec*/
++	time_t otime;
++
++	u8 uuid[BTRFS_UUID_SIZE];
++	u8 puuid[BTRFS_UUID_SIZE];
++
++	/* path from the subvol we live in to this root, including the
++	 * root's name.  This is null until we do the extra lookup ioctl.
++	 */
++	char *path;
++
++	/* the name of this root in the directory it lives in */
++	char *name;
++
++	char *full_path;
++};
  
- int make_btrfs(int fd, const char *device, const char *label,
-@@ -44,8 +46,7 @@ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- char *pretty_sizes(u64 size);
- int check_label(char *input);
- int get_mountpt(char *dev, char *mntpt, size_t size);
--
- int btrfs_scan_block_devices(int run_ioctl);
--
- u64 parse_size(char *s);
-+int open_file_or_dir(const char *fname);
- #endif
+ typedef int (*btrfs_list_filter_func)(struct root_info *, u64);
+ typedef int (*btrfs_list_comp_func)(struct root_info *, struct root_info *,
 -- 
 1.8.1.227.g44fe835
 

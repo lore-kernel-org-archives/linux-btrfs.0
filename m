@@ -1,53 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:22606 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754949Ab3A2JHe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 04:07:34 -0500
-Message-ID: <51079151.4070905@jan-o-sch.net>
-Date: Tue, 29 Jan 2013 10:07:29 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mx2.fusionio.com ([66.114.96.31]:54074 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756017Ab3A1OqJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 09:46:09 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id vuI0DXugW03VqoqB (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 07:46:08 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not merge logged extents if we've removed them from the tree
+Date: Mon, 28 Jan 2013 09:52:56 -0500
+Message-ID: <1359384776-2107-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>, Arne Jansen <sensille@gmx.net>,
-        Alexander Block <ablock84@googlemail.com>
-Subject: Re: backref for an extent not found in send_root (!backref_ctx->found_itself)
-References: <CAOcd+r36TOugPs+5P3W6v6m5pzojGnqZ3YUNS-zzFK2pdm1A8A@mail.gmail.com>
-In-Reply-To: <CAOcd+r36TOugPs+5P3W6v6m5pzojGnqZ3YUNS-zzFK2pdm1A8A@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alex,
+You can run into this problem where if somebody is fsyncing and writing out
+the existing extents you will have removed the extent map from the em tree,
+but it's still valid for the current fsync so we go ahead and write it.  The
+problem is we unconditionally try to merge it back into the em tree, but if
+we've removed it from the em tree that will cause problems.  So fix this by
+only trying to merge it in if it is still a part of the tree.  Thanks,
 
-On Mon, January 28, 2013 at 17:11 (+0100), Alex Lyakas wrote:
-> Hi Jan,
-> I have a set of unit tests (part of the larger system) for the
-> send-receive functionality, with which I am able to hit this error:
-> 
-> Jan 28 18:01:00 687-dev kernel: [16968.451358] btrfs: ERROR did not
-> find backref in send_root. inode=259, offset=139264, disk_byte=4263936
-> found extent=4263936
-> 
-> As the code states, this could indicate a bug in backref walking. This
-> reproduces with "for-linus" branch.
-> 
-> Typically this happens when a snapshot is deleted, immediately a new
-> snap with the same name is created, and then "btrfs send" is issued
-> without parent (i.e., full-send) on this snap.
-> 
-> To debug this further, we can do one of two things:
-> # I can apply patches/debug prints & reproduce
-> # I can work to isolate the unit test into a bash script and send you
-> a script that reproduces
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent_map.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-I'd prefer #2 of the above. You can also send me the unit tests you've got if I
-can get them running without multiple days of setup.
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index ed88f5e..9759911 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -289,7 +289,8 @@ out:
+ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
+ {
+ 	clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
+-	try_merge_map(tree, em);
++	if (em->in_tree)
++		try_merge_map(tree, em);
+ }
+ 
+ /**
+-- 
+1.7.7.6
 
-I'm guessing that this is more likely going to end up in send.c than in
-backref.c, perhaps Alexander would like to trace this one down. But anyway, send
-me a reproducer (in private, if you don't want to publish it) and we'll see
-what's going on.
-
-Thanks,
--Jan

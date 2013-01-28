@@ -1,39 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42529 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755553Ab3A1PyR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 10:54:17 -0500
-Date: Mon, 28 Jan 2013 16:54:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gene Czarcinski <gene@czarc.net>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: Integration branch of btrfs-progs 2013-01-26 [not to be pulled]
-Message-ID: <20130128155415.GA16977@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130126005525.GZ28263@twin.jikos.cz>
- <20130126111421.GA16594@twin.jikos.cz>
- <51041E21.8040405@czarc.net>
+Received: from mail-we0-f177.google.com ([74.125.82.177]:64846 "EHLO
+	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755561Ab3A1RBv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jan 2013 12:01:51 -0500
+Received: by mail-we0-f177.google.com with SMTP id d7so1629524wer.36
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 09:01:49 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51041E21.8040405@czarc.net>
+Date: Mon, 28 Jan 2013 19:01:48 +0200
+Message-ID: <CAOcd+r0TW6oaHcASw7tujExyfpQbr-D-ahe01ff0+oo8m1qwjA@mail.gmail.com>
+Subject: [PATCH 0/2] send: Avoid sending disknr==0 and PREALLOC extents when
+ possible V3
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Cc: Chen Yang <chenyang.fnst@cn.fujitsu.com>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>,
+        Alexander Block <ablock84@googlemail.com>,
+        Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 26, 2013 at 01:19:13PM -0500, Gene Czarcinski wrote:
-> There are to trivial patches I just submitted to fix some formatting and a
-> couple of compiler errors:
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/22669
+These two patches address the issue of sending unneeded zero data for
+disknr==0 and PREALLOC extents.
+There is room for additional improvement for PREALLOC extents, but it
+requires adding a new send command, so for now this is not addressed.
 
-I'll add this one.
+Changes in V2: no functional change; previous patchset was malformed,
+so cleanup done with checkpatch.pl.
+Changes in V3: rebased against btrfs-next
 
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/22668
+Alex Lyakas (2):
+  Avoid sending disknr==0 extents when possible.
+  On a diff-send, avoid sending PREALLOC extents, if the     parent
+    root has only PREALLOC extents on an appropriate     file range.
 
-Will comment under the patch.
+ fs/btrfs/send.c |  184 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 178 insertions(+), 6 deletions(-)
 
-> BTW, what was wrong with the quiet-build patch?
-
-The patch was ok, but I did not merge it properly after conflicts (eg.
-the man/Makefile part was unintentionally ommitted)
-
-
-david
+--
+1.7.9.5

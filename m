@@ -1,159 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19835 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:9716 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751845Ab3A2KLV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 05:11:21 -0500
+	id S1751365Ab3A2KOL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jan 2013 05:14:11 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0TABIxY020765
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 18:11:18 +0800
-Message-ID: <5107A06F.8020909@cn.fujitsu.com>
-Date: Tue, 29 Jan 2013 18:11:59 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0TAE9sE020969
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 18:14:09 +0800
+Message-ID: <5107A118.9040105@cn.fujitsu.com>
+Date: Tue, 29 Jan 2013 18:14:48 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2 08/10] Btrfs: use the inode own lock to protect its delalloc_bytes
+Subject: [PATCH V2 10/10] Btrfs: use bit operation for ->fs_state
 References: <51079D72.7000301@cn.fujitsu.com>
 In-Reply-To: <51079D72.7000301@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need not use a global lock to protect the delalloc_bytes of the
-inode, just use its own lock. In this way, we can reduce the lock
-contention and ->delalloc_lock will just protect delalloc inode
-list.
+There is no lock to protect fs_info->fs_state, it will introduce
+some problems, such as the value may be covered by the other task
+when several tasks modify it. For example:
+	Task0 - CPU0		Task1 - CPU1
+	mov %fs_state rax
+	or $0x1 rax
+				mov %fs_state rax
+				or $0x2 rax
+	mov rax %fs_state
+				mov rax %fs_state
+The expected value is 3, but in fact, it is 2.
+
+Though this problem doesn't happen now (because there is only one
+flag currently), the code is error prone, if we add other flags,
+the above problem will happen to a certainty.
+
+Now we use bit operation for it to fix the above problem.
+In this way, we can make the code more robust and be easy to
+add new flags.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1 -> v2:
-- none.
+- modify the changelog and make it more clear and stringency.
 ---
- fs/btrfs/btrfs_inode.h |  1 +
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/inode.c       | 47 ++++++++++++++++++++++++++++++++++-------------
- 3 files changed, 37 insertions(+), 13 deletions(-)
+ fs/btrfs/ctree.h       | 4 +++-
+ fs/btrfs/disk-io.c     | 5 +++--
+ fs/btrfs/file.c        | 2 +-
+ fs/btrfs/scrub.c       | 2 +-
+ fs/btrfs/super.c       | 4 ++--
+ fs/btrfs/transaction.c | 9 ++++-----
+ 6 files changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 2a8c242..c935a77 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -40,6 +40,7 @@
- #define BTRFS_INODE_HAS_ASYNC_EXTENT		6
- #define BTRFS_INODE_NEEDS_FULL_SYNC		7
- #define BTRFS_INODE_COPY_EVERYTHING		8
-+#define BTRFS_INODE_IN_DELALLOC_LIST		9
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index c95b539..c34e36e 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -338,7 +338,9 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ /*
+  * File system states
+  */
++#define BTRFS_FS_STATE_ERROR		0
  
- /* in memory btrfs inode */
- struct btrfs_inode {
++/* Super block flags */
+ /* Errors detected */
+ #define BTRFS_SUPER_FLAG_ERROR		(1ULL << 2)
+ 
+@@ -1540,7 +1542,7 @@ struct btrfs_fs_info {
+ 	u64 qgroup_seq;
+ 
+ 	/* filesystem state */
+-	u64 fs_state;
++	unsigned long fs_state;
+ 
+ 	struct btrfs_delayed_root *delayed_root;
+ 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 29d52af..abf1f10 100644
+index a7797ed..caf329c 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3685,6 +3685,8 @@ static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
- 				    delalloc_inodes);
+@@ -2196,7 +2196,8 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_alloc;
  
- 		list_del_init(&btrfs_inode->delalloc_inodes);
-+		clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+			  &btrfs_inode->runtime_flags);
+ 	/* check FS state, whether FS is broken. */
+-	fs_info->fs_state |= btrfs_super_flags(disk_super);
++	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_ERROR)
++		set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
  
- 		btrfs_invalidate_inodes(btrfs_inode->root);
+ 	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
+ 	if (ret) {
+@@ -3354,7 +3355,7 @@ int close_ctree(struct btrfs_root *root)
+ 			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
  	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d98b508..4f92b35 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1508,15 +1508,22 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
  
--		spin_lock(&root->fs_info->delalloc_lock);
--		BTRFS_I(inode)->delalloc_bytes += len;
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, len,
- 				     root->fs_info->delalloc_batch);
--		if (do_list && list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
--			list_add_tail(&BTRFS_I(inode)->delalloc_inodes,
--				      &root->fs_info->delalloc_inodes);
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->delalloc_bytes += len;
-+		if (do_list && !test_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					 &BTRFS_I(inode)->runtime_flags)) {
-+			spin_lock(&root->fs_info->delalloc_lock);
-+			if (list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
-+				list_add_tail(&BTRFS_I(inode)->delalloc_inodes,
-+					      &root->fs_info->delalloc_inodes);
-+				set_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					&BTRFS_I(inode)->runtime_flags);
-+			}
-+			spin_unlock(&root->fs_info->delalloc_lock);
- 		}
--		spin_unlock(&root->fs_info->delalloc_lock);
-+		spin_unlock(&BTRFS_I(inode)->lock);
- 	}
+-	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
+ 		btrfs_error_commit_super(root);
+ 
+ 	btrfs_put_block_group_cache(fs_info);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 910ea99..796fd79 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1531,7 +1531,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	 * although we have opened a file as writable, we have
+ 	 * to stop this write operation to ensure FS consistency.
+ 	 */
+-	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state)) {
+ 		mutex_unlock(&inode->i_mutex);
+ 		err = -EROFS;
+ 		goto out;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index af0b566..2e91b56 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2700,7 +2700,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 	int	ret;
+ 	struct btrfs_root *root = sctx->dev_root;
+ 
+-	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
++	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
+ 		return -EIO;
+ 
+ 	gen = atomic64_read(&root->fs_info->last_trans_committed);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c96f132..6528482 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -98,7 +98,7 @@ static void __save_error_info(struct btrfs_fs_info *fs_info)
+ 	 * today we only save the error info into ram.  Long term we'll
+ 	 * also send it down to the disk
+ 	 */
+-	fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
++	set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
  }
  
-@@ -1551,16 +1558,22 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		    && do_list)
- 			btrfs_free_reserved_data_space(inode, len);
+ static void save_error_info(struct btrfs_fs_info *fs_info)
+@@ -114,7 +114,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ 	if (sb->s_flags & MS_RDONLY)
+ 		return;
  
--		spin_lock(&root->fs_info->delalloc_lock);
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, -len,
- 				     root->fs_info->delalloc_batch);
-+		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->delalloc_bytes -= len;
--
- 		if (do_list && BTRFS_I(inode)->delalloc_bytes == 0 &&
--		    !list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
--			list_del_init(&BTRFS_I(inode)->delalloc_inodes);
-+		    test_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+			     &BTRFS_I(inode)->runtime_flags)) {
-+			spin_lock(&root->fs_info->delalloc_lock);
-+			if (!list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
-+				list_del_init(&BTRFS_I(inode)->delalloc_inodes);
-+				clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+					  &BTRFS_I(inode)->runtime_flags);
-+			}
-+			spin_unlock(&root->fs_info->delalloc_lock);
- 		}
--		spin_unlock(&root->fs_info->delalloc_lock);
-+		spin_unlock(&BTRFS_I(inode)->lock);
+-	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+ 		sb->s_flags |= MS_RDONLY;
+ 		printk(KERN_INFO "btrfs is forced readonly\n");
+ 		/*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 29fdf1c..50437b4 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -62,7 +62,7 @@ static noinline int join_transaction(struct btrfs_root *root, int type)
+ 	spin_lock(&fs_info->trans_lock);
+ loop:
+ 	/* The file system has been taken offline. No new transactions. */
+-	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+ 		spin_unlock(&fs_info->trans_lock);
+ 		return -EROFS;
  	}
- }
+@@ -114,7 +114,7 @@ loop:
+ 		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
+ 		cur_trans = fs_info->running_transaction;
+ 		goto loop;
+-	} else if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++	} else if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+ 		spin_unlock(&fs_info->trans_lock);
+ 		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
+ 		return -EROFS;
+@@ -302,7 +302,7 @@ start_transaction(struct btrfs_root *root, u64 num_items, int type,
+ 	int ret;
+ 	u64 qgroup_reserved = 0;
  
-@@ -7316,14 +7329,19 @@ fail:
- static int btrfs_getattr(struct vfsmount *mnt,
- 			 struct dentry *dentry, struct kstat *stat)
- {
-+	u64 delalloc_bytes;
- 	struct inode *inode = dentry->d_inode;
- 	u32 blocksize = inode->i_sb->s_blocksize;
+-	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
++	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
+ 		return ERR_PTR(-EROFS);
  
- 	generic_fillattr(inode, stat);
- 	stat->dev = BTRFS_I(inode)->root->anon_dev;
- 	stat->blksize = PAGE_CACHE_SIZE;
-+
-+	spin_lock(&BTRFS_I(inode)->lock);
-+	delalloc_bytes = BTRFS_I(inode)->delalloc_bytes;
-+	spin_unlock(&BTRFS_I(inode)->lock);
- 	stat->blocks = (ALIGN(inode_get_bytes(inode), blocksize) +
--		ALIGN(BTRFS_I(inode)->delalloc_bytes, blocksize)) >> 9;
-+			ALIGN(delalloc_bytes, blocksize)) >> 9;
- 	return 0;
- }
+ 	if (current->journal_info) {
+@@ -635,9 +635,8 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 		btrfs_run_delayed_iputs(root);
  
-@@ -7611,8 +7629,11 @@ again:
- 		list_del_init(&binode->delalloc_inodes);
+ 	if (trans->aborted ||
+-	    root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++	    test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
+ 		err = -EIO;
+-	}
+ 	assert_qgroups_uptodate(trans);
  
- 		inode = igrab(&binode->vfs_inode);
--		if (!inode)
-+		if (!inode) {
-+			clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-+				  &binode->runtime_flags);
- 			continue;
-+		}
- 
- 		list_add_tail(&binode->delalloc_inodes,
- 			      &root->fs_info->delalloc_inodes);
+ 	memset(trans, 0, sizeof(*trans));
 -- 
 1.7.11.7
 

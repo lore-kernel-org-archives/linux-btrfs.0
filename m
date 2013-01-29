@@ -1,32 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:54619 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:9378 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755728Ab3A2J6h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 04:58:37 -0500
+	id S1751413Ab3A2J74 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jan 2013 04:59:56 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0T9wX8v019953
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 17:58:33 +0800
-Message-ID: <51079D72.7000301@cn.fujitsu.com>
-Date: Tue, 29 Jan 2013 17:59:14 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0T9xrGD020002
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 17:59:53 +0800
+Message-ID: <51079DC2.8090600@cn.fujitsu.com>
+Date: Tue, 29 Jan 2013 18:00:34 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2 01/10] Btrfs: use atomic for btrfs_fs_info->generation
+Subject: [PATCH V2 02/10] Btrfs: use atomic for fs_info->last_trans_committed
+References: <51079D72.7000301@cn.fujitsu.com>
+In-Reply-To: <51079D72.7000301@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fs_info->generation is a 64bit variant, and it can be accessed by
-multi-task, if there is no lock or other methods to protect it, we
-might get the wrong number, especially on 32bit machine.
+fs_info->last_trans_committed is a 64bit variant, and it can be
+accessed by multi-task, if there is no lock or other methods to
+protect it, we might get the wrong number, especially on 32bit
+machine.(Even on 64bit machine, it is possible that the compiler
+may split a 64bit operation into two 32bit operation.)
 
-For example, Assuming ->generation is 0x0000 0000 ffff ffff at the
-beginning, then we increase it by 1, ->generation will be
-0x0000 0001 0000 0000, but it is in the registers, then we store it
-into the memory. If some task accesses it at this time, just like
-this:
-	Task0 			Task1
+For example, Assuming ->last_trans_committed is 0x00000000ffffffff
+at the beginning, then we want set it to 0x0000000100000000.
+	Task0			Task1
 	set low 32 bits
 				load low 32 bits
 				load high 32 bits
@@ -42,181 +43,180 @@ Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 Changelog v1 -> v2:
 - modify the changelog and make it more clear and stringency.
 ---
- fs/btrfs/ctree.c             | 7 ++++---
- fs/btrfs/ctree.h             | 2 +-
- fs/btrfs/disk-io.c           | 8 ++++----
- fs/btrfs/file.c              | 6 ++++--
- fs/btrfs/inode.c             | 5 +++--
- fs/btrfs/qgroup.c            | 2 +-
- fs/btrfs/transaction.c       | 4 ++--
- include/trace/events/btrfs.h | 3 ++-
- 8 files changed, 21 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h        |  2 +-
+ fs/btrfs/disk-io.c      |  2 +-
+ fs/btrfs/file.c         |  2 +-
+ fs/btrfs/ioctl.c        |  2 +-
+ fs/btrfs/ordered-data.c |  2 +-
+ fs/btrfs/scrub.c        |  2 +-
+ fs/btrfs/transaction.c  |  5 +++--
+ fs/btrfs/tree-log.c     | 16 +++++++++-------
+ 8 files changed, 18 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index eea5da7..4a36c03 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1365,10 +1365,11 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		       (unsigned long long)
- 		       root->fs_info->running_transaction->transid);
- 
--	if (trans->transid != root->fs_info->generation)
-+	if (trans->transid != atomic64_read(&root->fs_info->generation))
- 		WARN(1, KERN_CRIT "trans %llu running %llu\n",
- 		       (unsigned long long)trans->transid,
--		       (unsigned long long)root->fs_info->generation);
-+		       (unsigned long long)atomic64_read(
-+		       &root->fs_info->generation));
- 
- 	if (!should_cow_block(trans, root, buf)) {
- 		*cow_ret = buf;
-@@ -1465,7 +1466,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	WARN_ON(trans->transaction != root->fs_info->running_transaction);
--	WARN_ON(trans->transid != root->fs_info->generation);
-+	WARN_ON(trans->transid != atomic64_read(&root->fs_info->generation));
- 
- 	parent_nritems = btrfs_header_nritems(parent);
- 	blocksize = btrfs_level_size(root, parent_level - 1);
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 547b7b0..c3edb22 100644
+index c3edb22..34a60a8 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1278,7 +1278,7 @@ struct btrfs_fs_info {
- 
+@@ -1279,7 +1279,7 @@ struct btrfs_fs_info {
  	struct btrfs_block_rsv empty_block_rsv;
  
--	u64 generation;
-+	atomic64_t generation;
- 	u64 last_trans_committed;
+ 	atomic64_t generation;
+-	u64 last_trans_committed;
++	atomic64_t last_trans_committed;
  
  	/*
+ 	 * this is updated to the current trans every time a full commit
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 65f0367..f03aebc 100644
+index f03aebc..87ed05a 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1200,7 +1200,7 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	memset(&root->root_item, 0, sizeof(root->root_item));
- 	memset(&root->defrag_progress, 0, sizeof(root->defrag_progress));
- 	memset(&root->root_kobj, 0, sizeof(root->root_kobj));
--	root->defrag_trans_start = fs_info->generation;
-+	root->defrag_trans_start = atomic64_read(&fs_info->generation);
- 	init_completion(&root->kobj_unregister);
- 	root->defrag_running = 0;
- 	root->root_key.objectid = objectid;
-@@ -2501,7 +2501,7 @@ retry_root_backup:
- 		fs_info->pending_quota_state = 1;
+@@ -2502,7 +2502,7 @@ retry_root_backup:
  	}
  
--	fs_info->generation = generation;
-+	atomic64_set(&fs_info->generation, generation);
- 	fs_info->last_trans_committed = generation;
+ 	atomic64_set(&fs_info->generation, generation);
+-	fs_info->last_trans_committed = generation;
++	atomic64_set(&fs_info->last_trans_committed, generation);
  
  	ret = btrfs_recover_balance(fs_info);
-@@ -3436,12 +3436,12 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
- 	int was_dirty;
- 
- 	btrfs_assert_tree_locked(buf);
--	if (transid != root->fs_info->generation)
-+	if (transid != atomic64_read(&root->fs_info->generation))
- 		WARN(1, KERN_CRIT "btrfs transid mismatch buffer %llu, "
- 		       "found %llu running %llu\n",
- 			(unsigned long long)buf->start,
- 			(unsigned long long)transid,
--			(unsigned long long)root->fs_info->generation);
-+			(u64)atomic64_read(&root->fs_info->generation));
- 	was_dirty = set_extent_buffer_dirty(buf);
- 	if (!was_dirty) {
- 		spin_lock(&root->fs_info->delalloc_lock);
+ 	if (ret) {
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 841cfe3..02409b6 100644
+index 02409b6..910ea99 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1588,7 +1588,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	 * otherwise subsequent syncs to a file that's been synced in this
- 	 * transaction will appear to have already occured.
- 	 */
--	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
-+	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation) +
-+				     1;
- 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
- 	if (num_written > 0 || num_written == -EIOCBQUEUED) {
- 		err = generic_write_sync(file, pos, num_written);
-@@ -1679,7 +1680,8 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 * syncing
- 	 */
- 	smp_mb();
--	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
-+	if (btrfs_inode_in_log(inode,
-+	    atomic64_read(&root->fs_info->generation)) ||
+@@ -1683,7 +1683,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	if (btrfs_inode_in_log(inode,
+ 	    atomic64_read(&root->fs_info->generation)) ||
  	    BTRFS_I(inode)->last_trans <=
- 	    root->fs_info->last_trans_committed) {
+-	    root->fs_info->last_trans_committed) {
++	    atomic64_read(&root->fs_info->last_trans_committed)) {
  		BTRFS_I(inode)->last_trans = 0;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ca7ace7..35c4dda 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2644,7 +2644,8 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 	 * idea about which extents were modified before we were evicted from
- 	 * cache.
+ 
+ 		/*
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index afbf3ac..3b6c339 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3114,7 +3114,7 @@ static noinline long btrfs_ioctl_start_sync(struct btrfs_root *root,
+ 			return PTR_ERR(trans);
+ 
+ 		/* No running transaction, don't bother */
+-		transid = root->fs_info->last_trans_committed;
++		transid = atomic64_read(&root->fs_info->last_trans_committed);
+ 		goto out;
+ 	}
+ 	transid = trans->transid;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index f107312..f376621 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -975,7 +975,7 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 	 * if this file hasn't been changed since the last transaction
+ 	 * commit, we can safely return without doing anything
  	 */
--	if (BTRFS_I(inode)->last_trans == root->fs_info->generation)
-+	if (BTRFS_I(inode)->last_trans ==
-+	    atomic64_read(&root->fs_info->generation))
- 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 			&BTRFS_I(inode)->runtime_flags);
+-	if (last_mod < root->fs_info->last_trans_committed)
++	if (last_mod < atomic64_read(&root->fs_info->last_trans_committed))
+ 		return;
  
-@@ -6903,7 +6904,7 @@ again:
- 	set_page_dirty(page);
- 	SetPageUptodate(page);
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index bdbb94f..af0b566 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2703,7 +2703,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
+ 		return -EIO;
  
--	BTRFS_I(inode)->last_trans = root->fs_info->generation;
-+	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation);
- 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
- 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
+-	gen = root->fs_info->last_trans_committed;
++	gen = atomic64_read(&root->fs_info->last_trans_committed);
  
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a5c8562..dd002ae 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -290,7 +290,7 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info)
- 				goto out;
- 			}
- 			if (btrfs_qgroup_status_generation(l, ptr) !=
--			    fs_info->generation) {
-+			    atomic64_read(&fs_info->generation)) {
- 				flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
- 				printk(KERN_ERR
- 					"btrfs: qgroup generation mismatch, "
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ 		bytenr = btrfs_sb_offset(i);
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f154946..105d642 100644
+index 105d642..29fdf1c 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -161,8 +161,8 @@ loop:
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
--	fs_info->generation++;
--	cur_trans->transid = fs_info->generation;
-+	atomic64_inc(&fs_info->generation);
-+	cur_trans->transid = atomic64_read(&fs_info->generation);
- 	fs_info->running_transaction = cur_trans;
- 	cur_trans->aborted = 0;
- 	spin_unlock(&fs_info->trans_lock);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index ea546a4..09dc72f 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -71,7 +71,8 @@ TRACE_EVENT(btrfs_transaction_commit,
- 	),
+@@ -459,7 +459,8 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
+ 	int ret = 0;
  
- 	TP_fast_assign(
--		__entry->generation	= root->fs_info->generation;
-+		__entry->generation	=
-+				atomic64_read(&root->fs_info->generation);
- 		__entry->root_objectid	= root->root_key.objectid;
- 	),
+ 	if (transid) {
+-		if (transid <= root->fs_info->last_trans_committed)
++		if (transid <=
++		    atomic64_read(&root->fs_info->last_trans_committed))
+ 			goto out;
  
+ 		ret = -EINVAL;
+@@ -1730,7 +1731,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	cur_trans->commit_done = 1;
+ 
+-	root->fs_info->last_trans_committed = cur_trans->transid;
++	atomic64_set(&root->fs_info->last_trans_committed, cur_trans->transid);
+ 
+ 	wake_up(&cur_trans->commit_wait);
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9027bb1..7f42a53 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3397,7 +3397,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	INIT_LIST_HEAD(&extents);
+ 
+ 	write_lock(&tree->lock);
+-	test_gen = root->fs_info->last_trans_committed;
++	test_gen = atomic64_read(&root->fs_info->last_trans_committed);
+ 
+ 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
+ 		list_del_init(&em->list);
+@@ -3502,7 +3502,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 
+ 	/* Only run delayed items if we are a dir or a new file */
+ 	if (S_ISDIR(inode->i_mode) ||
+-	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed) {
++	    BTRFS_I(inode)->generation >
++	    atomic64_read(&root->fs_info->last_trans_committed)) {
+ 		ret = btrfs_commit_inode_delayed_items(trans, inode);
+ 		if (ret) {
+ 			btrfs_free_path(path);
+@@ -3744,7 +3745,8 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	struct super_block *sb;
+ 	struct dentry *old_parent = NULL;
+ 	int ret = 0;
+-	u64 last_committed = root->fs_info->last_trans_committed;
++	u64 last_committed = atomic64_read(
++			     &root->fs_info->last_trans_committed);
+ 
+ 	sb = inode->i_sb;
+ 
+@@ -3754,7 +3756,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	if (root->fs_info->last_trans_log_full_commit >
+-	    root->fs_info->last_trans_committed) {
++	    atomic64_read(&root->fs_info->last_trans_committed)) {
+ 		ret = 1;
+ 		goto end_no_trans;
+ 	}
+@@ -3806,7 +3808,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 			break;
+ 
+ 		if (BTRFS_I(inode)->generation >
+-		    root->fs_info->last_trans_committed) {
++		    atomic64_read(&root->fs_info->last_trans_committed)) {
+ 			ret = btrfs_log_inode(trans, root, inode, inode_only);
+ 			if (ret)
+ 				goto end_trans;
+@@ -4069,9 +4071,9 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 	 * from hasn't been logged, we don't need to log it
+ 	 */
+ 	if (BTRFS_I(inode)->logged_trans <=
+-	    root->fs_info->last_trans_committed &&
++	    atomic64_read(&root->fs_info->last_trans_committed) &&
+ 	    (!old_dir || BTRFS_I(old_dir)->logged_trans <=
+-		    root->fs_info->last_trans_committed))
++		    atomic64_read(&root->fs_info->last_trans_committed)))
+ 		return 0;
+ 
+ 	return btrfs_log_inode_parent(trans, root, inode, parent, 1);
 -- 
 1.7.11.7
+

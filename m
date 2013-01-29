@@ -1,63 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:60305 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753175Ab3A2Kr1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 05:47:27 -0500
-Received: by mail-oa0-f46.google.com with SMTP id k1so262063oag.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 02:47:27 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:39475 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751720Ab3A2LNJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jan 2013 06:13:09 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0TBD6bb023454
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 19:13:06 +0800
+Message-ID: <5107AEEB.2030106@cn.fujitsu.com>
+Date: Tue, 29 Jan 2013 19:13:47 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-From: polack christian <baobab874@gmail.com>
-Date: Tue, 29 Jan 2013 11:47:06 +0100
-Message-ID: <CAC6BJdkN6XJJVD5ONLnk=n9yeag0rLbkvRS3tNMX4L-jwmQUjA@mail.gmail.com>
-Subject: btrfsck and ctree version
-To: mailing list linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: About Chunk Tree recover
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello
+Hi, everyone.
 
-i am using fedora 18 with the last kernel  3.7.2-204.fc18.x86_64
+About 1 years ago, we implemented the chunk tree recover function,
+but it has not been applied till now because that implementation
+need change the disk format.
+(http://marc.info/?l=linux-btrfs&m=129914269932543&w=2
+ http://marc.info/?l=linux-btrfs&m=130976668006281&w=2
+ http://marc.info/?l=linux-btrfs&m=129914269932543&w=2)
 
-I was trying to recover an old crashed btrfs filesystem one last time.
+Recently, I reconsidered the implementation of this function, and
+found a new approach that needn't change the disk format. That is
+the external chunk tree backup, just like external journal device
+of ext4. The basic idea is:
 
-recover tool is not helping much
+- specify a external file or device which is used to backup the
+  chunk tree when mount.
+- When mount, compare the super block in the external file/device
+  with the super block of the btrfs, if the checksum of the super
+  block in the externel file/device is right, and the FS UUID and
+  generation are the same as the fs, it means the chunk tree in
+  the external file/device is valid, needn't rebuild it. Otherwise,
+  we will rebuild the chunk tree in the external file/device
+  according to the chunk tree of the fs.
+- When we allocate a new chunk, we will log the new chunk
+  information into the external file/device
+- sync the external file/device when committing the transaction
+- If the chunk tree of the fs is corrupted, we use the information
+  in the external file/device to recover it.
+  
+By this way, we needn't change disk format and also needn't do a
+block device scan which need lots of time, and is very hard to
+find the start address and length of a chunk.
 
- ./btrfs-find-root /dev/sdb1
-Super think's the tree root is at 799547392, chunk root 21299200
-Well block 4194304 seems great, but generation doesn't match, have=3,
-want=1635037
-Well block 4206592 seems great, but generation doesn't match, have=4,
-want=1635037
-Well block 4292608 seems good, but the csum doesn't match
-Found tree root at 799547392
+Any comment for this idea?
 
-i did use btrfsck to recover it
-i got the tool from
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-
-and i got this error message:
-...
-Check tree block failed, want=294555648, have=0
-Check tree block failed, want=294559744, have=0
-Check tree block failed, want=294559744, have=0
-btrfsck: ctree.c:1690: leaf_space_used: Assertion `!(data_len < 0)' failed.
-Aborted (core dumped)
-
-looking at
-
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-
-this error in ctree.c have been corrected by this commit
-
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=41be1f3b40b87de33cd2e7463dce88596dbdccc4
-
-is there a more up-to-date version of btrfs-prog including this correction
-which is available ?
-
-
-thanks
-
-olivier
+Thanks
+Miao

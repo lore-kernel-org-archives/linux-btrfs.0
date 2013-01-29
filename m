@@ -1,170 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f202.google.com ([209.85.214.202]:55499 "EHLO
+Received: from mail-ob0-f202.google.com ([209.85.214.202]:33727 "EHLO
 	mail-ob0-f202.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753786Ab3A2GGt (ORCPT
+	with ESMTP id S1753815Ab3A2GGu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 01:06:49 -0500
-Received: by mail-ob0-f202.google.com with SMTP id lz20so15002obb.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 22:06:49 -0800 (PST)
+	Tue, 29 Jan 2013 01:06:50 -0500
+Received: by mail-ob0-f202.google.com with SMTP id lz20so15345obb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 22:06:47 -0800 (PST)
 From: Filipe Brandenburger <filbranden@google.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Brandenburger <filbranden@google.com>
-Subject: [PATCH 3/3] Add support for Btrfs ioctls: BTRFS_IOC_SPACE_INFO (filesystem df)
-Date: Mon, 28 Jan 2013 22:06:38 -0800
-Message-Id: <1359439598-4141-4-git-send-email-filbranden@google.com>
+Subject: [PATCH 1/3] Add support for Btrfs ioctls: decode them by name
+Date: Mon, 28 Jan 2013 22:06:36 -0800
+Message-Id: <1359439598-4141-2-git-send-email-filbranden@google.com>
 In-Reply-To: <1359439598-4141-1-git-send-email-filbranden@google.com>
 References: <1359439598-4141-1-git-send-email-filbranden@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds support for the BTRFS_IOC_SPACE_INFO (used by `btrfs filesystem df')
-by parsing the struct passed by userspace to the kernel and interpreting the
-output fields filled in by kernel code.
-
-TODO: Some constants are defined in the C file because they're not currently
-present in linux/btrfs.h, but they should be moved to that file in Btrfs source
-code so that they can be used by userspace programs that need those constants.
+This patch will include Btrfs-specific ioctls from linux/btrfs.h into
+ioctlent.h.in so that they get translated by strace. That's useful for using
+strace to debug the tools in btrfs-progs.
 
 Signed-off-by: Filipe Brandenburger <filbranden@google.com>
 ---
- btrfs.c | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 120 insertions(+)
+ linux/ioctlent.h.in | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/btrfs.c b/btrfs.c
-index a4895e4..799ae46 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -30,10 +30,130 @@
- 
- #ifdef HAVE_LINUX_BTRFS_H
- #include <linux/btrfs.h>
-+
-+/* TODO: in btrfs source code, these are currently in ctree.h, must be moved to btrfs.h */
-+#ifndef BTRFS_BLOCK_GROUP_DATA
-+#define BTRFS_BLOCK_GROUP_DATA          (1ULL << 0)
-+#define BTRFS_BLOCK_GROUP_SYSTEM        (1ULL << 1)
-+#define BTRFS_BLOCK_GROUP_METADATA      (1ULL << 2)
-+#define BTRFS_BLOCK_GROUP_RAID0         (1ULL << 3)
-+#define BTRFS_BLOCK_GROUP_RAID1         (1ULL << 4)
-+#define BTRFS_BLOCK_GROUP_DUP           (1ULL << 5)
-+#define BTRFS_BLOCK_GROUP_RAID10        (1ULL << 6)
-+#endif /* BTRFS_BLOCK_GROUP_DATA */
-+
-+static const struct xlat btrfs_space_info_flags[] = {
-+	{BTRFS_BLOCK_GROUP_DATA,        "BTRFS_BLOCK_GROUP_DATA"},
-+	{BTRFS_BLOCK_GROUP_SYSTEM,      "BTRFS_BLOCK_GROUP_SYSTEM"},
-+	{BTRFS_BLOCK_GROUP_METADATA,    "BTRFS_BLOCK_GROUP_METADATA"},
-+	{BTRFS_BLOCK_GROUP_RAID0,       "BTRFS_BLOCK_GROUP_RAID0"},
-+	{BTRFS_BLOCK_GROUP_RAID1,       "BTRFS_BLOCK_GROUP_RAID1"},
-+	{BTRFS_BLOCK_GROUP_DUP,         "BTRFS_BLOCK_GROUP_DUP"},
-+	{BTRFS_BLOCK_GROUP_RAID10,      "BTRFS_BLOCK_GROUP_RAID10"},
-+	{0, NULL}
-+};
-+
-+static void
-+print_space_info(struct btrfs_ioctl_space_info *si)
-+{
-+	__u64 flags;
-+	int first;
-+	const struct xlat *xl;
-+
-+	flags = si->flags;
-+	tprintf("{flags=%#llx", flags);
-+	first = 1;
-+	for (xl = btrfs_space_info_flags; flags && xl->val; xl++) {
-+		if (flags & xl->val) {
-+			if (first)
-+				tprints(" /* ");
-+			else
-+				tprints("|");
-+			first = 0;
-+			tprints(xl->str);
-+			flags &= ~xl->val;
-+		}
-+	}
-+	if (!first) {
-+		/* flags were expanded at least once */
-+		if (flags)
-+			tprintf("|%#llx */", flags);
-+		else
-+			tprints(" */");
-+	}
-+	tprintf(", total_bytes=%llu, used_bytes=%llu}", si->total_bytes, si->used_bytes);
-+}
-+
-+static void
-+print_space_args_out(struct tcb *tcp, long arg)
-+{
-+	struct btrfs_ioctl_space_args sa, *sa_ptr;
-+	__u64 i, total;
-+	int truncated;
-+	long sa_size;
-+
-+	if (syserror(tcp) || umove(tcp, arg, &sa) < 0)
-+		return;
-+
-+	total = sa.total_spaces;
-+	tprintf(", total_spaces=%llu", total);
-+	if (total > sa.space_slots)
-+		total = sa.space_slots;
-+	if (total <= 0)
-+		return;
-+	/* if total > 10 then truncate it */
-+	truncated = 0;
-+	if (total > 10) {
-+		total = 10;
-+		truncated = 1;
-+	}
-+
-+	sa_size = sizeof(struct btrfs_ioctl_space_args) + total * sizeof(struct btrfs_ioctl_space_info);
-+	sa_ptr = malloc(sa_size);
-+	if (!sa_ptr)
-+		return;
-+
-+	if (umoven(tcp, arg, sa_size, (char *) sa_ptr) < 0)
-+		goto out;
-+
-+	tprints(", spaces={");
-+	for (i = 0L; i < total; i++) {
-+		if (i)
-+			tprints(", ");
-+		tprintf("[%llu]=", i);
-+		print_space_info(&sa_ptr->spaces[i]);
-+	}
-+	if (truncated)
-+		tprints(", ...");
-+	tprints("}");
-+
-+out:
-+	free(sa_ptr);
-+}
-+
- #endif /* HAVE_LINUX_BTRFS_H */
- 
- int
- btrfs_ioctl(struct tcb *tcp, long code, long arg)
- {
-+#ifdef HAVE_LINUX_BTRFS_H
-+	switch (code) {
-+	case BTRFS_IOC_SPACE_INFO:
-+		if (entering(tcp)) {
-+			struct btrfs_ioctl_space_args sa;
-+			if (umove(tcp, arg, &sa) < 0)
-+				tprintf(", %#lx", arg);
-+			else {
-+				tprintf(", {space_slots=%llu", sa.space_slots);
-+			}
-+		}
-+		if (exiting(tcp)) {
-+			print_space_args_out(tcp, arg);
-+			tprints("}");
-+		}
-+		return 1;
-+	}
-+#endif /* HAVE_LINUX_BTRFS_H */
-+
- 	return 0;
- }
+diff --git a/linux/ioctlent.h.in b/linux/ioctlent.h.in
+index 8843b47..06a5300 100644
+--- a/linux/ioctlent.h.in
++++ b/linux/ioctlent.h.in
+@@ -1825,6 +1825,50 @@
+ 	{"linux/auto_fs4.h",	"AUTOFS_IOC_EXPIRE_MULTI",	0x9366},
+ 	{"linux/auto_fs4.h",	"AUTOFS_IOC_PROTOSUBVER",	0x9367},
+ 	{"linux/auto_fs4.h",	"AUTOFS_IOC_ASKUMOUNT",	0x9370},
++	{"linux/btrfs.h",	"BTRFS_IOC_SNAP_CREATE",	0x9401},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEFRAG",	0x9402},
++	{"linux/btrfs.h",	"BTRFS_IOC_RESIZE",	0x9403},
++	{"linux/btrfs.h",	"BTRFS_IOC_SCAN_DEV",	0x9404},
++	{"linux/btrfs.h",	"BTRFS_IOC_TRANS_START",	0x9406},
++	{"linux/btrfs.h",	"BTRFS_IOC_TRANS_END",	0x9407},
++	{"linux/btrfs.h",	"BTRFS_IOC_SYNC",	0x9408},
++	{"linux/btrfs.h",	"BTRFS_IOC_CLONE",	0x9409},
++	{"linux/btrfs.h",	"BTRFS_IOC_ADD_DEV",	0x940a},
++	{"linux/btrfs.h",	"BTRFS_IOC_RM_DEV",	0x940b},
++	{"linux/btrfs.h",	"BTRFS_IOC_BALANCE",	0x940c},
++	{"linux/btrfs.h",	"BTRFS_IOC_CLONE_RANGE",	0x940d},
++	{"linux/btrfs.h",	"BTRFS_IOC_SUBVOL_CREATE",	0x940e},
++	{"linux/btrfs.h",	"BTRFS_IOC_SNAP_DESTROY",	0x940f},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEFRAG_RANGE",	0x9410},
++	{"linux/btrfs.h",	"BTRFS_IOC_TREE_SEARCH",	0x9411},
++	{"linux/btrfs.h",	"BTRFS_IOC_INO_LOOKUP",	0x9412},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEFAULT_SUBVOL",	0x9413},
++	{"linux/btrfs.h",	"BTRFS_IOC_SPACE_INFO",	0x9414},
++	{"linux/btrfs.h",	"BTRFS_IOC_WAIT_SYNC",	0x9416},
++	{"linux/btrfs.h",	"BTRFS_IOC_SNAP_CREATE_V2",	0x9417},
++	{"linux/btrfs.h",	"BTRFS_IOC_START_SYNC",	0x9418},
++	{"linux/btrfs.h",	"BTRFS_IOC_SUBVOL_CREATE_V2",	0x9418},
++	{"linux/btrfs.h",	"BTRFS_IOC_SUBVOL_GETFLAGS",	0x9419},
++	{"linux/btrfs.h",	"BTRFS_IOC_SUBVOL_SETFLAGS",	0x941a},
++	{"linux/btrfs.h",	"BTRFS_IOC_SCRUB",	0x941b},
++	{"linux/btrfs.h",	"BTRFS_IOC_SCRUB_CANCEL",	0x941c},
++	{"linux/btrfs.h",	"BTRFS_IOC_SCRUB_PROGRESS",	0x941d},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEV_INFO",	0x941e},
++	{"linux/btrfs.h",	"BTRFS_IOC_FS_INFO",	0x941f},
++	{"linux/btrfs.h",	"BTRFS_IOC_BALANCE_V2",	0x9420},
++	{"linux/btrfs.h",	"BTRFS_IOC_BALANCE_CTL",	0x9421},
++	{"linux/btrfs.h",	"BTRFS_IOC_BALANCE_PROGRESS",	0x9422},
++	{"linux/btrfs.h",	"BTRFS_IOC_INO_PATHS",	0x9423},
++	{"linux/btrfs.h",	"BTRFS_IOC_LOGICAL_INO",	0x9424},
++	{"linux/btrfs.h",	"BTRFS_IOC_SET_RECEIVED_SUBVOL",	0x9425},
++	{"linux/btrfs.h",	"BTRFS_IOC_SEND",	0x9426},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEVICES_READY",	0x9427},
++	{"linux/btrfs.h",	"BTRFS_IOC_QUOTA_CTL",	0x9428},
++	{"linux/btrfs.h",	"BTRFS_IOC_QGROUP_ASSIGN",	0x9429},
++	{"linux/btrfs.h",	"BTRFS_IOC_QGROUP_CREATE",	0x942a},
++	{"linux/btrfs.h",	"BTRFS_IOC_QGROUP_LIMIT",	0x942b},
++	{"linux/btrfs.h",	"BTRFS_IOC_GET_DEV_STATS",	0x9434},
++	{"linux/btrfs.h",	"BTRFS_IOC_DEV_REPLACE",	0x9435},
+ 	{"linux/nbd.h",	"NBD_SET_SOCK",	0xab00},
+ 	{"linux/nbd.h",	"NBD_SET_BLKSIZE",	0xab01},
+ 	{"linux/nbd.h",	"NBD_SET_SIZE",	0xab02},
 -- 
 1.7.11.7
 

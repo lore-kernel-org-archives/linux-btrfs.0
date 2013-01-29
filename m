@@ -1,227 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:36197 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755300Ab3AaTYj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 14:24:39 -0500
-Received: by mail-wg0-f52.google.com with SMTP id 12so2363138wgh.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 11:24:37 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:54619 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755728Ab3A2J6h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jan 2013 04:58:37 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0T9wX8v019953
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2013 17:58:33 +0800
+Message-ID: <51079D72.7000301@cn.fujitsu.com>
+Date: Tue, 29 Jan 2013 17:59:14 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <51079151.4070905@jan-o-sch.net>
-References: <CAOcd+r36TOugPs+5P3W6v6m5pzojGnqZ3YUNS-zzFK2pdm1A8A@mail.gmail.com>
-	<51079151.4070905@jan-o-sch.net>
-Date: Thu, 31 Jan 2013 21:24:37 +0200
-Message-ID: <CAOcd+r0u=nF9V9wWGttQGMDbO7GJ+o-_CuaVf5Qi+-929WZt_A@mail.gmail.com>
-Subject: Re: backref for an extent not found in send_root (!backref_ctx->found_itself)
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Alexander Block <ablock84@googlemail.com>
-Content-Type: multipart/mixed; boundary=047d7bfcf524deb62504d49a93ad
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH V2 01/10] Btrfs: use atomic for btrfs_fs_info->generation
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---047d7bfcf524deb62504d49a93ad
-Content-Type: text/plain; charset=ISO-8859-1
+fs_info->generation is a 64bit variant, and it can be accessed by
+multi-task, if there is no lock or other methods to protect it, we
+might get the wrong number, especially on 32bit machine.
 
-Hi Jan,
-attached are bash scripts to repro the issue.
+For example, Assuming ->generation is 0x0000 0000 ffff ffff at the
+beginning, then we increase it by 1, ->generation will be
+0x0000 0001 0000 0000, but it is in the registers, then we store it
+into the memory. If some task accesses it at this time, just like
+this:
+	Task0 			Task1
+	set low 32 bits
+				load low 32 bits
+				load high 32 bits
+	set high 32 bits
 
-Some instructions on how to run them:
-- create 2 btrfs filesystems with "mkfs.btrfs /dev/sdXXX". I don't
-think that size matters.
-- mount them in /mnt/src and /mnt/dst
-- mount options: noatime,nodatasum,nodatacow,nospace_cache
-- put the 3 scripts into one directory and cd to it
-- run btrfs_init_tests.sh (it sets up a small file tree for tests)
-- run btrfs_test_first_ref_jan.sh
+The task will get 0, it is a wrong number.
 
-After about 20-30 seconds, it hits the error I mentioned and script
-stops. It happens on "for-linus" branch, top commit
-1eafa6c73791e4f312324ddad9cbcaf6a1b6052b.
-I suspect the issue might be that the test schedules a lot of
-subvolumes for deletion, and once the cleaner thread kicks in and also
-starts doing backref stuff, the problem happens.
+We fix this problem by the atomic operation.
 
-Another small note: there is an issue in btrfs-progs subvolume listing
-code (also used by send). When it finds a ROOT_ITEM in the root tree
-that is not linked with ROOT_REF/ROOT_BACKREF (i.e., one scheduled for
-deletion), it gets confused and exits. Miao sent a patch to fix it
-here:
-http://www.spinics.net/lists/linux-btrfs/msg19767.html
-I don't think it got merged into progs yet (progs are really behind:()
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v1 -> v2:
+- modify the changelog and make it more clear and stringency.
+---
+ fs/btrfs/ctree.c             | 7 ++++---
+ fs/btrfs/ctree.h             | 2 +-
+ fs/btrfs/disk-io.c           | 8 ++++----
+ fs/btrfs/file.c              | 6 ++++--
+ fs/btrfs/inode.c             | 5 +++--
+ fs/btrfs/qgroup.c            | 2 +-
+ fs/btrfs/transaction.c       | 4 ++--
+ include/trace/events/btrfs.h | 3 ++-
+ 8 files changed, 21 insertions(+), 16 deletions(-)
 
-If you want a quick fix, add code like this to the beginning of
-__list_subvol_fill_paths (but Miao sent a better patch):
-	/*
-	 * due to change in __list_subvol_search(), root_lookup
-	 * might contain subvolumes with ref_tree==0 (in deletion).
-	 */
-again:	
-	n = rb_first(&root_lookup->root);
-	while (n) {
-		struct root_info *entry = rb_entry(n, struct root_info, rb_node);
-		if (entry->ref_tree == 0) {
-			fprintf(stderr, "__list_subvol_fill_paths: drop root_id=%llu,
-because it has no ref_tree\n", entry->root_id);
-			rb_erase(n, &root_lookup->root);
-			free(entry);
-			goto again;
-		}
-		n = rb_next(n);
-	}
-
-Otherwise, "btrfs send" might fail, but this is not the failure we are
-looking for:)
-
-Thanks,
-Alex.
-
-
-
-
-
-On Tue, Jan 29, 2013 at 11:07 AM, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
-> Hi Alex,
->
-> On Mon, January 28, 2013 at 17:11 (+0100), Alex Lyakas wrote:
->> Hi Jan,
->> I have a set of unit tests (part of the larger system) for the
->> send-receive functionality, with which I am able to hit this error:
->>
->> Jan 28 18:01:00 687-dev kernel: [16968.451358] btrfs: ERROR did not
->> find backref in send_root. inode=259, offset=139264, disk_byte=4263936
->> found extent=4263936
->>
->> As the code states, this could indicate a bug in backref walking. This
->> reproduces with "for-linus" branch.
->>
->> Typically this happens when a snapshot is deleted, immediately a new
->> snap with the same name is created, and then "btrfs send" is issued
->> without parent (i.e., full-send) on this snap.
->>
->> To debug this further, we can do one of two things:
->> # I can apply patches/debug prints & reproduce
->> # I can work to isolate the unit test into a bash script and send you
->> a script that reproduces
->
-> I'd prefer #2 of the above. You can also send me the unit tests you've got if I
-> can get them running without multiple days of setup.
->
-> I'm guessing that this is more likely going to end up in send.c than in
-> backref.c, perhaps Alexander would like to trace this one down. But anyway, send
-> me a reproducer (in private, if you don't want to publish it) and we'll see
-> what's going on.
->
-> Thanks,
-> -Jan
-
---047d7bfcf524deb62504d49a93ad
-Content-Type: application/x-sh; name="btrfs_functions.sh"
-Content-Disposition: attachment; filename="btrfs_functions.sh"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hcma59xl0
-
-IyEgL2Jpbi9iYXNoCgpzZXQgLWUKCnByZXJlcSgpCnsKCWVjaG8gIlByZXJlcXVpc2l0ZXMiCglh
-cHQtZ2V0IGluc3RhbGwgLXkgdHJlZQp9CgpjbGVhbnVwKCkKewoJZWNobyAiQ2xlYW51cC4uLi4i
-CglidHJmcyBzdWIgZGVsIC9tbnQvc3JjL2NnMCB8fCB0cnVlCglidHJmcyBzdWIgZGVsIC9tbnQv
-c3JjL3NuYXBfY2cwX29yaWcvIHx8IHRydWUKCWJ0cmZzIHN1YiBkZWwgL21udC9zcmMvc25hcDAv
-IHx8IHRydWUKCWJ0cmZzIHN1YiBkZWwgL21udC9zcmMvc25hcDEvIHx8IHRydWUKCWJ0cmZzIHN1
-YiBkZWwgL21udC9kc3Qvc25hcDAvIHx8IHRydWUKCWJ0cmZzIHN1YiBkZWwgL21udC9kc3Qvc25h
-cDEvIHx8IHRydWUKfQoKYmFzZV9zdWJ2b2woKQp7CgllY2hvICJDcmVhdGUgYmFzZSBzdWJ2b2x1
-bWUgYW5kIGZpbGwgd2l0aCBkYXRhLi4uIgoJYnRyZnMgc3ViIGNyZWF0ZSAvbW50L3NyYy9jZzAK
-CW1rZGlyIC9tbnQvc3JjL2NnMC9kaXIxCglkZCBpZj0vZGV2L3VyYW5kb20gb2Y9L21udC9zcmMv
-Y2cwL2ZpbGUxX25vZCBicz0xIGNvdW50PTE2MwoJZGQgaWY9L2Rldi91cmFuZG9tIG9mPS9tbnQv
-c3JjL2NnMC9maWxlMl9ub2QgYnM9MSBjb3VudD05NTE1IHNlZWs9MTQwMDAwCglkZCBpZj0vZGV2
-L3VyYW5kb20gb2Y9L21udC9zcmMvY2cwL2RpcjEvZmlsZTJfZGlyMSBicz0xIGNvdW50PTIwMDAw
-IHNlZWs9MTAwMDAKCWRkIGlmPS9kZXYvdXJhbmRvbSBvZj0vbW50L3NyYy9jZzAvZGlyMS9maWxl
-MV9kaXIxIGJzPTEgY291bnQ9NzIwNjMKCWNwIC9tbnQvc3JjL2NnMC9kaXIxL2ZpbGUyX2RpcjEg
-L21udC9zcmMvY2cwL2RpcjEvZmlsZTNfZGlyMV90cnVuYwoJZGQgaWY9L2Rldi91cmFuZG9tIG9m
-PS9tbnQvc3JjL2NnMC9kaXIxL2ZpbGUzX2RpcjFfdHJ1bmMgYnM9MSBzZWVrPTY5OTk5IGNvdW50
-PTEgY29udj1ub3RydW5jCgl0b3VjaCAvbW50L3NyYy9jZzAvZmlsZTJfbm9kCgl0b3VjaCAvbW50
-L3NyYy9jZzAvZmlsZTNfbm9kCgl0b3VjaCAvbW50L3NyYy9jZzAvZGlyMS9maWxlNF9kaXIxCglt
-a2RpciAvbW50L3NyYy9jZzAvZGlyMgoJbG4gL21udC9zcmMvY2cwL2RpcjEvZmlsZTFfZGlyMSAv
-bW50L3NyYy9jZzAvZGlyMi9maWxlMV9kaXIxX0hMCgl0b3VjaCAvbW50L3NyYy9jZzAvZGlyMi9m
-aWxlMV9kaXIyCglta2RpciAvbW50L3NyYy9jZzAvZGlyMi9kaXIzCgl0b3VjaCAvbW50L3NyYy9j
-ZzAvZGlyMi9kaXIzL2ZpbGUxX2RpcjMKCXRvdWNoIC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvZmls
-ZTJfZGlyMwoJdG91Y2ggL21udC9zcmMvY2cwL2RpcjIvZGlyMy9maWxlM19kaXIzCglsbiAvbW50
-L3NyYy9jZzAvZGlyMS9maWxlMV9kaXIxIC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvCgkKCWVjaG8g
-IkNyZWF0aW5nIGJhY2t1cCBzbmFwLi4uIgoJYnRyZnMgc3ViIHNuYXAgLXIgL21udC9zcmMvY2cw
-IC9tbnQvc3JjL3NuYXBfY2cwX29yaWcvCn0KCmJhc2Vfc25hcCgpCnsKCWVjaG8gIi0tLS0tLUNy
-ZWF0ZSBiYXNlIHNuYXAgb24gc3JjIGFuZCBkc3QtLS0tLS0tLS0iCglidHJmcyBzdWJ2b2wgZGVs
-IC9tbnQvc3JjL3NuYXAwIHx8IHRydWUKCWJ0cmZzIHN1YnZvbCBkZWwgL21udC9kc3Qvc25hcDAg
-fHwgdHJ1ZQoJZWNobyAiQ3JlYXRpbmcgYmFzZSBzbmFwIGZvciBzZW5kIC4uLiIKCWJ0cmZzIHN1
-YiBzbmFwIC1yIC9tbnQvc3JjL2NnMCAvbW50L3NyYy9zbmFwMAoJCgllY2hvICJTZW5kaW5nIGZ1
-bGwgdHJlZS4uLiIKCWJ0cmZzIHNlbmQgLXYgLXYgLXYgL21udC9zcmMvc25hcDAgPiAvdG1wL2R1
-bXAKCWVjaG8gIlJlY2VpdmluZy4uLiIKCWJ0cmZzIHJlY2VpdmUgL21udC9kc3QgPCAvdG1wL2R1
-bXAKCgllY2hvICJDaGVja2luZyBkaWZmIC1yIgoJZGlmZiAtciAvbW50L3NyYy9zbmFwMCAvbW50
-L2RzdC9zbmFwMCAKCgllY2hvICJEb25lIGNyZWF0aW5nIGJhc2Ugc25hcDoiCgl0cmVlIC1BICAt
-cyAtLWlub2RlcyAtLW5vcmVwb3J0IC9tbnQvc3JjL3NuYXAwCn0KCnJlc3RvcmUoKQp7CgllY2hv
-ICItLS0tLS1SZXN0b3JlIENHLS0tLS0tLS0tIgoJZWNobyAiRGVsZXRlIGNnMCIKCWJ0cmZzIHN1
-YiBkZWwgL21udC9zcmMvY2cwCgllY2hvICJSZS1jcmVhdGUgY2cwIGZyb20gc25hcF9jZzBfb3Jp
-ZyIKCWJ0cmZzIHN1YiBzbmFwIC9tbnQvc3JjL3NuYXBfY2cwX29yaWcvIC9tbnQvc3JjL2NnMAoJ
-dHJlZSAtQSAgLS1pbm9kZXMgLS1ub3JlcG9ydCAvbW50L3NyYy9jZzAKCWVjaG8gIi0tLS0tLVJl
-c3RvcmUgYmFzZSBzbmFwc2hvdC0tLS0tLS0tLSIKCWJhc2Vfc25hcAoJZWNobyAiLS0tLS0tQ2xl
-YW51cCBkaWZmIHNuYXBzaG90LS0tLS0tLS0tIgoJYnRyZnMgc3ViIGRlbCAvbW50L3NyYy9zbmFw
-MSB8fCB0cnVlCglidHJmcyBzdWIgZGVsIC9tbnQvZHN0L3NuYXAxIHx8IHRydWUKfQoKZG9fZGlm
-Zl9zZW5kKCkKewoJZWNobyAiRGVsZXRlIHNuYXAxIGlmIGFueSIKCWJ0cmZzIHN1YiBkZWwgL21u
-dC9zcmMvc25hcDEgfHwgdHJ1ZQoJZWNobyAiQ3JlYXRlIHNuYXAxIGZyb20gY2cwIgoJYnRyZnMg
-c3ViIHNuYXAgLXIgL21udC9zcmMvY2cwIC9tbnQvc3JjL3NuYXAxCgllY2hvICJzZW5kIHNuYXAx
-IgoJYnRyZnMgc2VuZCAtdiAtdiAtdiAtdiAtcCAvbW50L3NyYy9zbmFwMCAvbW50L3NyYy9zbmFw
-MSA+IC90bXAvZHVtcAoJZWNobyAiUHJpbnQgcHJldiBhbmQgY3VyciB0cmVlcyIKCXRyZWUgLUEg
-IC0taW5vZGVzIC0tbm9yZXBvcnQgL21udC9zcmMvc25hcDAKCXRyZWUgLUEgIC0taW5vZGVzIC0t
-bm9yZXBvcnQgL21udC9zcmMvc25hcDEKCQoJZWNobyAiRGVsZXRlIHNuYXAxIGlmIGFueSBvbiBk
-ZXN0IgoJYnRyZnMgc3ViIGRlbCAvbW50L2RzdC9zbmFwMSB8fCB0cnVlCgllY2hvICJSZWNlaXZl
-IgoJYnRyZnMgcmVjZWl2ZSAtdiAtdiAtdiAvbW50L2RzdC8gIDwgL3RtcC9kdW1wCgllY2hvICJW
-YWxpZGF0ZSIKCWRpZmYgLXIgL21udC9zcmMvc25hcDEgL21udC9kc3Qvc25hcDEKCWVjaG8gIlN1
-Y2Nlc3MhIgp9Cgpkb19mdWxsX3NlbmQoKQp7CgllY2hvICJEZWxldGUgc25hcDEgaWYgYW55IgoJ
-YnRyZnMgc3ViIGRlbCAvbW50L3NyYy9zbmFwMSB8fCB0cnVlCgllY2hvICJDcmVhdGUgc25hcDEg
-ZnJvbSBjZzAiCglidHJmcyBzdWIgc25hcCAtciAvbW50L3NyYy9jZzAgL21udC9zcmMvc25hcDEK
-CWVjaG8gInNlbmQgc25hcDEgZnVsbHkiCglidHJmcyBzZW5kIC12IC12IC12IC12IC9tbnQvc3Jj
-L3NuYXAxID4gL3RtcC9kdW1wCgllY2hvICJQcmludCBmdWxsIHRyZWUiCgl0cmVlIC1BICAtLWlu
-b2RlcyAtLW5vcmVwb3J0IC9tbnQvc3JjL3NuYXAxCgoJZWNobyAiRGVsZXRlIHNuYXAxIGlmIGFu
-eSBvbiBkZXN0IgoJYnRyZnMgc3ViIGRlbCAvbW50L2RzdC9zbmFwMSB8fCB0cnVlCgllY2hvICJS
-ZWNlaXZlIgoJYnRyZnMgcmVjZWl2ZSAtdiAtdiAtdiAvbW50L2RzdC8gIDwgL3RtcC9kdW1wCgll
-Y2hvICJWYWxpZGF0ZSIKCWRpZmYgLXIgL21udC9zcmMvc25hcDEgL21udC9kc3Qvc25hcDEKCWVj
-aG8gIlN1Y2Nlc3MhIgp9Cg==
---047d7bfcf524deb62504d49a93ad
-Content-Type: application/x-sh; name="btrfs_init_tests.sh"
-Content-Disposition: attachment; filename="btrfs_init_tests.sh"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hcma59xo1
-
-IyEgL2Jpbi9iYXNoCgpzZXQgLWUKCk1ZRElSPSIkKGRpcm5hbWUgIiRCQVNIX1NPVVJDRVswXSIp
-Igpzb3VyY2UgJE1ZRElSL2J0cmZzX2Z1bmN0aW9ucy5zaAoKCnByZXJlcQpjbGVhbnVwCmJhc2Vf
-c3Vidm9sCmJhc2Vfc25hcAo=
---047d7bfcf524deb62504d49a93ad
-Content-Type: application/x-sh; name="btrfs_test_first_ref_jan.sh"
-Content-Disposition: attachment; filename="btrfs_test_first_ref_jan.sh"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hcma59xq2
-
-IyEgL2Jpbi9iYXNoCgpzZXQgLWUKCk1ZRElSPSIkKGRpcm5hbWUgIiRCQVNIX1NPVVJDRVswXSIp
-Igpzb3VyY2UgJE1ZRElSL2J0cmZzX2Z1bmN0aW9ucy5zaAoKdGVzdDEoKQp7CmVjaG8gIiMjIyMj
-IyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMiCmVjaG8gICJBZGQgSEwgdG8gZXhpc3Rp
-bmcgZmlsZSwgd2hpY2ggb3ZlcndyaXRlcyAnc2Vjb25kJyBITCBvZiBhbm90aGVyIGV4aXN0aW5n
-IGZpbGUiCnJlc3RvcmUKdW5saW5rIC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvZmlsZTFfZGlyMQps
-biAvbW50L3NyYy9jZzAvZmlsZTFfbm9kIC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvZmlsZTFfZGly
-MQpkb19mdWxsX3NlbmQKZG9fZGlmZl9zZW5kCmVjaG8gICJUZXN0IGRvbmUuIgp9Cgp0ZXN0MTEo
-KQp7CmVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMiCmVjaG8gICJB
-ZGQgSEwgdG8gZXhpc3RpbmcgZmlsZSwgd2hpY2ggb3ZlcndyaXRlcyAnZmlyc3QnIEhMIG9mIGFu
-b3RoZXIgZXhpc3RpbmcgZmlsZSIKcmVzdG9yZQp1bmxpbmsgL21udC9zcmMvY2cwL2RpcjEvZmls
-ZTFfZGlyMQpsbiAvbW50L3NyYy9jZzAvZmlsZTFfbm9kIC9tbnQvc3JjL2NnMC9kaXIxL2ZpbGUx
-X2RpcjEKZG9fZnVsbF9zZW5kCmRvX2RpZmZfc2VuZAplY2hvICAiVGVzdCBkb25lLiIKfQoKdGVz
-dDExMSgpCnsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyIKZWNo
-byAgIkFkZCBITCB0byBleGlzdGluZyBmaWxlLCB3aGljaCBvdmVyd3JpdGVzICdzZWNvbmQnIEhM
-IG9mIGFub3RoZXIgZXhpc3RpbmcgZmlsZSwgYnV0IHRoZSBleGlzdGluZyBmaWxlIGlzIGxvd2Vy
-IGlubyIKcmVzdG9yZQp1bmxpbmsgL21udC9zcmMvY2cwL2RpcjIvZGlyMy9maWxlMV9kaXIxCmxu
-IC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvZmlsZTNfZGlyMyAvbW50L3NyYy9jZzAvZGlyMi9kaXIz
-L2ZpbGUxX2RpcjEKZG9fZnVsbF9zZW5kCmRvX2RpZmZfc2VuZAplY2hvICAiVGVzdCBkb25lLiIK
-fQoKdGVzdDExMigpCnsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj
-IyIKZWNobyAgIkFkZCBITCB0byBleGlzdGluZyBmaWxlLCB3aGljaCBvdmVyd3JpdGVzICdmaXJz
-dCcgSEwgb2YgYW5vdGhlciBleGlzdGluZyBmaWxlLCBidXQgdGhlIGV4aXN0aW5nIGZpbGUgaXMg
-bG93ZXIgaW5vIgpyZXN0b3JlCnVubGluayAvbW50L3NyYy9jZzAvZGlyMS9maWxlMV9kaXIxCmxu
-IC9tbnQvc3JjL2NnMC9kaXIyL2RpcjMvZmlsZTNfZGlyMyAvbW50L3NyYy9jZzAvZGlyMS9maWxl
-MV9kaXIxCmRvX2Z1bGxfc2VuZApkb19kaWZmX3NlbmQKZWNobyAgIlRlc3QgZG9uZS4iCn0KCndo
-aWxlIHRydWUKZG8KCXRlc3QxCgl0ZXN0MTEKCXRlc3QxMTEKCXRlc3QxMTIKZG9uZQkKCg==
---047d7bfcf524deb62504d49a93ad--
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index eea5da7..4a36c03 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1365,10 +1365,11 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		       (unsigned long long)
+ 		       root->fs_info->running_transaction->transid);
+ 
+-	if (trans->transid != root->fs_info->generation)
++	if (trans->transid != atomic64_read(&root->fs_info->generation))
+ 		WARN(1, KERN_CRIT "trans %llu running %llu\n",
+ 		       (unsigned long long)trans->transid,
+-		       (unsigned long long)root->fs_info->generation);
++		       (unsigned long long)atomic64_read(
++		       &root->fs_info->generation));
+ 
+ 	if (!should_cow_block(trans, root, buf)) {
+ 		*cow_ret = buf;
+@@ -1465,7 +1466,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	WARN_ON(trans->transaction != root->fs_info->running_transaction);
+-	WARN_ON(trans->transid != root->fs_info->generation);
++	WARN_ON(trans->transid != atomic64_read(&root->fs_info->generation));
+ 
+ 	parent_nritems = btrfs_header_nritems(parent);
+ 	blocksize = btrfs_level_size(root, parent_level - 1);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 547b7b0..c3edb22 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1278,7 +1278,7 @@ struct btrfs_fs_info {
+ 
+ 	struct btrfs_block_rsv empty_block_rsv;
+ 
+-	u64 generation;
++	atomic64_t generation;
+ 	u64 last_trans_committed;
+ 
+ 	/*
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65f0367..f03aebc 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1200,7 +1200,7 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+ 	memset(&root->root_item, 0, sizeof(root->root_item));
+ 	memset(&root->defrag_progress, 0, sizeof(root->defrag_progress));
+ 	memset(&root->root_kobj, 0, sizeof(root->root_kobj));
+-	root->defrag_trans_start = fs_info->generation;
++	root->defrag_trans_start = atomic64_read(&fs_info->generation);
+ 	init_completion(&root->kobj_unregister);
+ 	root->defrag_running = 0;
+ 	root->root_key.objectid = objectid;
+@@ -2501,7 +2501,7 @@ retry_root_backup:
+ 		fs_info->pending_quota_state = 1;
+ 	}
+ 
+-	fs_info->generation = generation;
++	atomic64_set(&fs_info->generation, generation);
+ 	fs_info->last_trans_committed = generation;
+ 
+ 	ret = btrfs_recover_balance(fs_info);
+@@ -3436,12 +3436,12 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+ 	int was_dirty;
+ 
+ 	btrfs_assert_tree_locked(buf);
+-	if (transid != root->fs_info->generation)
++	if (transid != atomic64_read(&root->fs_info->generation))
+ 		WARN(1, KERN_CRIT "btrfs transid mismatch buffer %llu, "
+ 		       "found %llu running %llu\n",
+ 			(unsigned long long)buf->start,
+ 			(unsigned long long)transid,
+-			(unsigned long long)root->fs_info->generation);
++			(u64)atomic64_read(&root->fs_info->generation));
+ 	was_dirty = set_extent_buffer_dirty(buf);
+ 	if (!was_dirty) {
+ 		spin_lock(&root->fs_info->delalloc_lock);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 841cfe3..02409b6 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1588,7 +1588,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	 * otherwise subsequent syncs to a file that's been synced in this
+ 	 * transaction will appear to have already occured.
+ 	 */
+-	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
++	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation) +
++				     1;
+ 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
+ 	if (num_written > 0 || num_written == -EIOCBQUEUED) {
+ 		err = generic_write_sync(file, pos, num_written);
+@@ -1679,7 +1680,8 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 * syncing
+ 	 */
+ 	smp_mb();
+-	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
++	if (btrfs_inode_in_log(inode,
++	    atomic64_read(&root->fs_info->generation)) ||
+ 	    BTRFS_I(inode)->last_trans <=
+ 	    root->fs_info->last_trans_committed) {
+ 		BTRFS_I(inode)->last_trans = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ca7ace7..35c4dda 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2644,7 +2644,8 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	 * idea about which extents were modified before we were evicted from
+ 	 * cache.
+ 	 */
+-	if (BTRFS_I(inode)->last_trans == root->fs_info->generation)
++	if (BTRFS_I(inode)->last_trans ==
++	    atomic64_read(&root->fs_info->generation))
+ 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			&BTRFS_I(inode)->runtime_flags);
+ 
+@@ -6903,7 +6904,7 @@ again:
+ 	set_page_dirty(page);
+ 	SetPageUptodate(page);
+ 
+-	BTRFS_I(inode)->last_trans = root->fs_info->generation;
++	BTRFS_I(inode)->last_trans = atomic64_read(&root->fs_info->generation);
+ 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
+ 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index a5c8562..dd002ae 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -290,7 +290,7 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info)
+ 				goto out;
+ 			}
+ 			if (btrfs_qgroup_status_generation(l, ptr) !=
+-			    fs_info->generation) {
++			    atomic64_read(&fs_info->generation)) {
+ 				flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 				printk(KERN_ERR
+ 					"btrfs: qgroup generation mismatch, "
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f154946..105d642 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -161,8 +161,8 @@ loop:
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+-	fs_info->generation++;
+-	cur_trans->transid = fs_info->generation;
++	atomic64_inc(&fs_info->generation);
++	cur_trans->transid = atomic64_read(&fs_info->generation);
+ 	fs_info->running_transaction = cur_trans;
+ 	cur_trans->aborted = 0;
+ 	spin_unlock(&fs_info->trans_lock);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index ea546a4..09dc72f 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -71,7 +71,8 @@ TRACE_EVENT(btrfs_transaction_commit,
+ 	),
+ 
+ 	TP_fast_assign(
+-		__entry->generation	= root->fs_info->generation;
++		__entry->generation	=
++				atomic64_read(&root->fs_info->generation);
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 	),
+ 
+-- 
+1.7.11.7

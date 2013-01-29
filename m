@@ -1,60 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26086 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:51204 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750817Ab3A2Gw4 (ORCPT
+	with ESMTP id S1753523Ab3A2GZH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jan 2013 01:52:56 -0500
-Message-ID: <51077341.7060209@oracle.com>
-Date: Tue, 29 Jan 2013 14:59:13 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Tue, 29 Jan 2013 01:25:07 -0500
+Message-ID: <51076B0C.2060602@oracle.com>
+Date: Tue, 29 Jan 2013 14:24:12 +0800
+From: Jeff Liu <jeff.liu@oracle.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net,
-        miaox@cn.fujitsu.com
-Subject: Re: [PATCH 05/10] Btrfs-progs: add function btrfs_get_subvol to get
- root_info of a subvol
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com> <1359350559-25671-1-git-send-email-anand.jain@oracle.com> <1359350559-25671-6-git-send-email-anand.jain@oracle.com> <5107531E.8060708@gmail.com> <20130128180429.GB16594@twin.jikos.cz>
-In-Reply-To: <20130128180429.GB16594@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+CC: dsterba@suse.cz, Gene Czarcinski <gene@czarc.net>
+Subject: [PATCH 1/2] btrfs-progs: refactor check_label()
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <51076B08.2040709@oracle.com>
 
+Refactor check_label().
 
+Make it be static at first, this is a preparation step since we'll remove
+btrfslabel.[c|h] and move those functions at them to utils.[c|h], we can do
+pre-checking against the input label string with it.
 
-  here the code is correct, this base does not have
+Also, fix the input lable length verfication from BTRFS_LABEL_SIZE to
+BTRFS_LABEL_SIZE - 1.
 
-   [PATCH] Btrfs-progs: filter the deleted subvolumes when listing snapshots
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+CC: Gene Czarcinski <gene@czarc.net>
+---
+ utils.c |    8 ++++++--
+ utils.h |    1 -
+ 2 files changed, 6 insertions(+), 3 deletions(-)
 
-  which introduced -ENOENT as a return for the resolve_root.
-
-  however since we should have that. I have integrated, and
-  made corresponding changes in the btrfs_get_subvol. Kindly
-  find V4.
-
-Thanks, Anand
-
-
-On 01/29/2013 02:04 AM, David Sterba wrote:
-> On Mon, Jan 28, 2013 at 08:42:06PM -0800, Wang Shilong wrote:
->>> +	rbn = rb_first(&rl.root);
->>> +	while(rbn) {
->>> +		ri = rb_entry(rbn, struct root_info, rb_node);
->>> +		resolve_root(&rl, ri, root_id);
->>
->>    Here subvolume/snapshot deletion may happen,add a check here...
->>    if resolve_root return -ENOENT..it means deletion happens...
->>
->>    ret = reslove_root(&rl, ri, root_id);
->>    if (ret)
->>        goto again;
->>
-> [...]
->>
->>   again???
->>> +		rbn = rb_next(rbn);
->>> +	}
->
-> Then it looks like a for (...) { } pattern with 'continue' instead of
-> 'goto'.
->
-> david
+diff --git a/utils.c b/utils.c
+index d59bca3..034da8f 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1122,17 +1122,21 @@ char *pretty_sizes(u64 size)
+       -1    if the label is too long
+       -2    if the label contains an invalid character
+  */
+-int check_label(char *input)
++static int check_label(char *input)
+ {
+        int i;
+        int len = strlen(input);
+ 
+-       if (len > BTRFS_LABEL_SIZE) {
++       if (len > BTRFS_LABEL_SIZE - 1) {
++		fprintf(stderr, "ERROR: Label %s is too long (max %d)\n",
++			input, BTRFS_LABEL_SIZE - 1);
+                return -1;
+        }
+ 
+        for (i = 0; i < len; i++) {
+                if (input[i] == '/' || input[i] == '\\') {
++			fprintf(stderr, "ERROR: Label %s contains invalid "
++				"characters\n", input);
+                        return -2;
+                }
+        }
+diff --git a/utils.h b/utils.h
+index 8750f28..a0b782b 100644
+--- a/utils.h
++++ b/utils.h
+@@ -42,7 +42,6 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+ char *pretty_sizes(u64 size);
+-int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ 
+ int btrfs_scan_block_devices(int run_ioctl);
+-- 
+1.7.9.5

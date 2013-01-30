@@ -1,52 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24439 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:24447 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752651Ab3A3J6R (ORCPT
+	with ESMTP id S1753147Ab3A3J6S (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 04:58:17 -0500
+	Wed, 30 Jan 2013 04:58:18 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 00/12 v5] Btrfs-progs: add show sub-command for btrfs subvol cli
-Date: Wed, 30 Jan 2013 17:56:16 +0800
-Message-Id: <1359539788-10667-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 01/12] Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+Date: Wed, 30 Jan 2013 17:56:17 +0800
+Message-Id: <1359539788-10667-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1359539788-10667-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
+References: <1359539788-10667-1-git-send-email-anand.jain@oracle.com>
 
-David,
+To improve the code reuse its better to have btrfs_list_subvols
+just return list of subvols witout printing
 
- Please find this patch-set rebased with your integration-20130130 branch.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfs-list.c     | 28 ++++++++++++++++++----------
+ btrfs-list.h     |  2 +-
+ cmds-subvolume.c |  4 ++--
+ 3 files changed, 21 insertions(+), 13 deletions(-)
 
-v4->v5:
-	Fix a memory leak in the original code ref Patch 12/12
-	Fix the compiler warning in the patch 9/12
-
-Anand Jain (11):
-  Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
-  Btrfs-progs: add parent uuid for snapshots
-  Btrfs-progs: move struct root_info to btrfs-list.h
-  Btrfs-progs: add function btrfs_get_subvol to get root_info of a
-    subvol
-  Btrfs-progs: add method to filter snapshots by parent uuid
-  Btrfs-progs: put find_mount_root() in commands.h
-  Btrfs-progs: make printing subvol extensible to newer layouts
-  Btrfs-progs: make get_subvol_name non cmds-send specific
-  Btrfs-progs: add show subcommand to subvol cli
-  Btrfs-progs: update btrfs_get_subvol to be inline with resolve_root
-    ret changes
-  Btrfs-progs: Fix a small memory leak in managing the btrfs list filter
-
-Wang Shilong (1):
-  Btrfs-progs: filter the deleted subvolumes when listing snapshots
-
- btrfs-list.c     | 239 ++++++++++++++++++++++++++++++++++++-------------------
- btrfs-list.h     |  58 +++++++++++++-
- cmds-send.c      |  12 +--
- cmds-subvolume.c | 235 +++++++++++++++++++++++++++++++++++++++++++++++++-----
- commands.h       |   4 +
- man/btrfs.8.in   |   6 ++
- 6 files changed, 443 insertions(+), 111 deletions(-)
-
+diff --git a/btrfs-list.c b/btrfs-list.c
+index e09ee2d..ab42a33 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1440,15 +1440,11 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
+ 	}
+ }
+ 
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+-		       struct btrfs_list_comparer_set *comp_set,
+-		       int is_tab_result)
++int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
+ {
+-	struct root_lookup root_lookup;
+-	struct root_lookup root_sort;
+ 	int ret;
+ 
+-	ret = __list_subvol_search(fd, &root_lookup);
++	ret = __list_subvol_search(fd, root_lookup);
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: can't perform the search - %s\n",
+ 				strerror(errno));
+@@ -1459,16 +1455,28 @@ int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+ 	 * now we have an rbtree full of root_info objects, but we need to fill
+ 	 * in their path names within the subvol that is referencing each one.
+ 	 */
+-	ret = __list_subvol_fill_paths(fd, &root_lookup);
+-	if (ret < 0)
+-		return ret;
++	ret = __list_subvol_fill_paths(fd, root_lookup);
++	return ret;
++}
+ 
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
++		       struct btrfs_list_comparer_set *comp_set,
++		       int is_tab_result)
++{
++	struct root_lookup root_lookup;
++	struct root_lookup root_sort;
++	int ret;
++
++	ret = btrfs_list_subvols(fd, &root_lookup);
++	if (ret)
++		return ret;
+ 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+ 				 comp_set, fd);
+ 
+ 	print_all_volume_info(&root_sort, is_tab_result);
+ 	__free_all_subvolumn(&root_lookup);
+-	return ret;
++
++	return 0;
+ }
+ 
+ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+diff --git a/btrfs-list.h b/btrfs-list.h
+index cde4b3c..71fe0f3 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -98,7 +98,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+ 			      enum btrfs_list_comp_enum comparer,
+ 			      int is_descending);
+ 
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+ 			int is_tab_result);
+ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e3cdb1e..c35dff7 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -406,7 +406,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 					BTRFS_LIST_FILTER_TOPID_EQUAL,
+ 					top_id);
+ 
+-	ret = btrfs_list_subvols(fd, filter_set, comparer_set,
++	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+ 				is_tab_result);
+ 	if (ret)
+ 		return 19;
+@@ -613,7 +613,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_ROOTID,
+ 				default_id);
+ 
+-	ret = btrfs_list_subvols(fd, filter_set, NULL, 0);
++	ret = btrfs_list_subvols_print(fd, filter_set, NULL, 0);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
 -- 
 1.8.1.227.g44fe835
 

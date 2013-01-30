@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:53062 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:39699 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751669Ab3A3PQJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 10:16:09 -0500
-Date: Wed, 30 Jan 2013 10:16:06 -0500
+	id S1753919Ab3A3Qig (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 11:38:36 -0500
+Date: Wed, 30 Jan 2013 11:38:32 -0500
 From: Josef Bacik <jbacik@fusionio.com>
 To: Jim Schutt <jaschut@sandia.gov>
 CC: Josef Bacik <JBacik@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: fix a deadlock on chunk mutex
-Message-ID: <20130130151606.GG3660@localhost.localdomain>
+Message-ID: <20130130163832.GH3660@localhost.localdomain>
 References: <1355363557-2962-1-git-send-email-bo.li.liu@oracle.com>
  <20121218135242.GC2403@localhost.localdomain>
  <50E5D19E.3060406@sandia.gov>
@@ -92,7 +92,33 @@ On Tue, Jan 29, 2013 at 04:05:17PM -0700, Jim Schutt wrote:
 > mount it on my Ceph clients:
 > 
 
-Actually nevermind it looks like I figured out how to reproduce.  I'll let you
-know when I have something to test.  Thanks,
+Ok can you give this patch a whirl as well?  It seems to fix the problem for me.
+Thanks,
 
 Josef
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index dca5679..874bcf2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3677,8 +3677,18 @@ static int can_overcommit(struct btrfs_root *root,
+ 	u64 used;
+ 
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+-		space_info->bytes_pinned + space_info->bytes_readonly +
+-		space_info->bytes_may_use;
++		space_info->bytes_pinned + space_info->bytes_readonly;
++
++	/*
++	 * We only want to allow over committing if we have lots of actual space
++	 * free, but if we've tied up more than 80% of the space with actual
++	 * space reservation (not including bytes we _might_ use) then don't
++	 * allow overcommitting as it will just make things go badly for us.
++	 */
++	if (used > div_factor(space_info->total_bytes, 8))
++		return 0;
++
++	used += space_info->bytes_may_use;
+ 
+ 	spin_lock(&root->fs_info->free_chunk_lock);
+ 	avail = root->fs_info->free_chunk_space;

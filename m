@@ -1,35 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38219 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:24439 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753648Ab3AaDPH (ORCPT
+	with ESMTP id S1752651Ab3A3J6R (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 22:15:07 -0500
-Message-ID: <5109E14D.4020706@oracle.com>
-Date: Thu, 31 Jan 2013 11:13:17 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: dsterba@suse.cz, gene@czarc.net, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 10/12] Btrfs-progs: add show subcommand to subvol cli
-In-Reply-To: <5108F6D6.4030601@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+	Wed, 30 Jan 2013 04:58:17 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
+Subject: [PATCH 00/12 v5] Btrfs-progs: add show sub-command for btrfs subvol cli
+Date: Wed, 30 Jan 2013 17:56:16 +0800
+Message-Id: <1359539788-10667-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1359442141-25498-1-git-send-email-anand.jain@oracle.com>
- <1359442141-25498-11-git-send-email-anand.jain@oracle.com>
- <5108F6D6.4030601@gmail.com>
+In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 
+David,
 
-Wang,
+ Please find this patch-set rebased with your integration-20130130 branch.
 
->> +	ret = 0;
->> +	/* print the info */
->      I think it will be better if you can move the following
->      printing to a function..it will make the code more clear and
->      readable..
+v4->v5:
+	Fix a memory leak in the original code ref Patch 12/12
+	Fix the compiler warning in the patch 9/12
 
-  Thanks for looking into this. However IMO there is no need
-  "as of now".  This can be taken when there is more reasonable
-  need. I hope you would agree with me.
+Anand Jain (11):
+  Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+  Btrfs-progs: add parent uuid for snapshots
+  Btrfs-progs: move struct root_info to btrfs-list.h
+  Btrfs-progs: add function btrfs_get_subvol to get root_info of a
+    subvol
+  Btrfs-progs: add method to filter snapshots by parent uuid
+  Btrfs-progs: put find_mount_root() in commands.h
+  Btrfs-progs: make printing subvol extensible to newer layouts
+  Btrfs-progs: make get_subvol_name non cmds-send specific
+  Btrfs-progs: add show subcommand to subvol cli
+  Btrfs-progs: update btrfs_get_subvol to be inline with resolve_root
+    ret changes
+  Btrfs-progs: Fix a small memory leak in managing the btrfs list filter
 
--Anand
+Wang Shilong (1):
+  Btrfs-progs: filter the deleted subvolumes when listing snapshots
+
+ btrfs-list.c     | 239 ++++++++++++++++++++++++++++++++++++-------------------
+ btrfs-list.h     |  58 +++++++++++++-
+ cmds-send.c      |  12 +--
+ cmds-subvolume.c | 235 +++++++++++++++++++++++++++++++++++++++++++++++++-----
+ commands.h       |   4 +
+ man/btrfs.8.in   |   6 ++
+ 6 files changed, 443 insertions(+), 111 deletions(-)
+
+-- 
+1.8.1.227.g44fe835
+

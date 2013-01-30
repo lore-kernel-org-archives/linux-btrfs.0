@@ -1,180 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29397 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751801Ab3A2DZi (ORCPT
+Received: from mail-ob0-f179.google.com ([209.85.214.179]:60667 "EHLO
+	mail-ob0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753126Ab3A3PJT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 22:25:38 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: mitch.harder@sabayonlinux.org, dsterba@suse.cz
-Subject: [PATCH v2] Btrfs: fix race between snapshot deletion and getting inode
-Date: Tue, 29 Jan 2013 11:22:10 +0800
-Message-Id: <1359429730-16729-1-git-send-email-bo.li.liu@oracle.com>
+	Wed, 30 Jan 2013 10:09:19 -0500
+Received: by mail-ob0-f179.google.com with SMTP id un3so1699426obb.24
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 07:09:19 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20130129035216.GC23893@shiny.globalsuite.net>
+References: <1359429730-16729-1-git-send-email-bo.li.liu@oracle.com>
+	<20130129035216.GC23893@shiny.globalsuite.net>
+Date: Wed, 30 Jan 2013 09:09:19 -0600
+Message-ID: <CAKcLGm8=D7U_UW55dRCc8NukEivS2VJMWON+izPPtquNyxofvA@mail.gmail.com>
+Subject: Re: [PATCH v2] Btrfs: fix race between snapshot deletion and getting inode
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Chris Mason <chris.mason@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "mitch.harder@sabayonlinux.org" <mitch.harder@sabayonlinux.org>,
+        "dsterba@suse.cz" <dsterba@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While running snapshot testscript created by Mitch and David,
-the race between autodefrag and snapshot deletion can lead to
-corruption of dead_root list so that we can get crash on
-btrfs_clean_old_snapshots().
+On Mon, Jan 28, 2013 at 9:52 PM, Chris Mason <chris.mason@fusionio.com> wrote:
+> On Mon, Jan 28, 2013 at 08:22:10PM -0700, Liu Bo wrote:
+>> While running snapshot testscript created by Mitch and David,
+>> the race between autodefrag and snapshot deletion can lead to
+>> corruption of dead_root list so that we can get crash on
+>> btrfs_clean_old_snapshots().
+>
+> Really nice.  Thanks to everyone that hashed this out.
+>
+> -chris
 
-And besides autodefrag, scrub also does the same thing, ie. read
-root first and get inode.
+I've been testing "[PATCH v2] Btrfs: fix race between snapshot
+deletion and getting inode" along with "[PATCH v6] Btrfs:
+snapshot-aware defrag" using the same work flow that was reproducing
+the dead_root list corruptions.
 
-Here is the story(take autodefrag as an example):
-(1) when we delete a snapshot or subvolume, it will set its root's
-refs to zero and do a iput() on its own inode, and if this inode happens
-to be the only active in-meory one in root's inode rbtree, it will add
-itself to the global dead_roots list for later cleanup.
+I've been unable to reproduce the error in ~24 hours of testing.
 
-(2) after (1), the autodefrag thread may read another inode for defrag
-and the inode is just in the deleted snapshot/subvolume, but all of these
-are without checking if the root is still valid(refs > 0).  So the end up
-result is adding the deleted snapshot/subvolume's root to the global
-dead_roots list AGAIN.
+Normally, I'd hit the error within an hour of testing on a single run.
+ I've made three separate runs, and let the last run proceed
+overnight.
 
-Fortunately, we already have a srcu lock to avoid the race, ie. subvol_srcu.
+I'll keep using these patches, and let you know if anything turns up.
 
-So all we need to do is to take the lock to protect 'read root and get inode',
-since we synchronize to wait for the rcu grace period before adding something
-to the global dead_roots list.
-
-Reported-by: Mitch Harder <mitch.harder@sabayonlinux.org>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v1->v2: Address nice cleanup comments from David Sterba.
-
- fs/btrfs/file.c  |   22 ++++++++++++++++++----
- fs/btrfs/scrub.c |   25 ++++++++++++++++++++-----
- 2 files changed, 38 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 841cfe3..38ffd28 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -293,15 +293,24 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 	struct btrfs_key key;
- 	struct btrfs_ioctl_defrag_range_args range;
- 	int num_defrag;
-+	int index;
-+	int ret;
- 
- 	/* get the inode */
- 	key.objectid = defrag->root;
- 	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
- 	key.offset = (u64)-1;
-+
-+	index = srcu_read_lock(&fs_info->subvol_srcu);
-+
- 	inode_root = btrfs_read_fs_root_no_name(fs_info, &key);
- 	if (IS_ERR(inode_root)) {
--		kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
--		return PTR_ERR(inode_root);
-+		ret = PTR_ERR(inode_root);
-+		goto cleanup;
-+	}
-+	if (btrfs_root_refs(&inode_root->root_item) == 0) {
-+		ret = -ENOENT;
-+		goto cleanup;
- 	}
- 
- 	key.objectid = defrag->ino;
-@@ -309,9 +318,10 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 	key.offset = 0;
- 	inode = btrfs_iget(fs_info->sb, &key, inode_root, NULL);
- 	if (IS_ERR(inode)) {
--		kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
--		return PTR_ERR(inode);
-+		ret = PTR_ERR(inode);
-+		goto cleanup;
- 	}
-+	srcu_read_unlock(&fs_info->subvol_srcu, index);
- 
- 	/* do a chunk of defrag */
- 	clear_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags);
-@@ -346,6 +356,10 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 
- 	iput(inode);
- 	return 0;
-+cleanup:
-+	srcu_read_unlock(&fs_info->subvol_srcu, index);
-+	kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
-+	return ret;
- }
- 
- /*
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index bdbb94f..67783e0 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -580,20 +580,29 @@ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
- 	int corrected = 0;
- 	struct btrfs_key key;
- 	struct inode *inode = NULL;
-+	struct btrfs_fs_info *fs_info;
- 	u64 end = offset + PAGE_SIZE - 1;
- 	struct btrfs_root *local_root;
-+	int srcu_index;
- 
- 	key.objectid = root;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 	key.offset = (u64)-1;
--	local_root = btrfs_read_fs_root_no_name(fixup->root->fs_info, &key);
--	if (IS_ERR(local_root))
-+
-+	fs_info = fixup->root->fs_info;
-+	srcu_index = srcu_read_lock(&fs_info->subvol_srcu);
-+
-+	local_root = btrfs_read_fs_root_no_name(fs_info, &key);
-+	if (IS_ERR(local_root)) {
-+		srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
- 		return PTR_ERR(local_root);
-+	}
- 
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.objectid = inum;
- 	key.offset = 0;
--	inode = btrfs_iget(fixup->root->fs_info->sb, &key, local_root, NULL);
-+	inode = btrfs_iget(fs_info->sb, &key, local_root, NULL);
-+	srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
- 	if (IS_ERR(inode))
- 		return PTR_ERR(inode);
- 
-@@ -606,7 +615,6 @@ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
- 	}
- 
- 	if (PageUptodate(page)) {
--		struct btrfs_fs_info *fs_info;
- 		if (PageDirty(page)) {
- 			/*
- 			 * we need to write the data to the defect sector. the
-@@ -3180,18 +3188,25 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- 	u64 physical_for_dev_replace;
- 	u64 len;
- 	struct btrfs_fs_info *fs_info = nocow_ctx->sctx->dev_root->fs_info;
-+	int srcu_index;
- 
- 	key.objectid = root;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 	key.offset = (u64)-1;
-+
-+	srcu_index = srcu_read_lock(&fs_info->subvol_srcu);
-+
- 	local_root = btrfs_read_fs_root_no_name(fs_info, &key);
--	if (IS_ERR(local_root))
-+	if (IS_ERR(local_root)) {
-+		srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
- 		return PTR_ERR(local_root);
-+	}
- 
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.objectid = inum;
- 	key.offset = 0;
- 	inode = btrfs_iget(fs_info->sb, &key, local_root, NULL);
-+	srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
- 	if (IS_ERR(inode))
- 		return PTR_ERR(inode);
- 
--- 
-1.7.7.6
-
+Thanks for all your work on this patch set.

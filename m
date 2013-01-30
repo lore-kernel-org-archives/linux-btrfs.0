@@ -1,66 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44416 "EHLO mx2.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:58486 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751339Ab3AaQ21 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 11:28:27 -0500
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id eonpuyoOcc6aRtAE (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 09:28:26 -0700 (MST)
+	id S1751553Ab3A3U24 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 15:28:56 -0500
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id i1VqxVzwqktjLGIE (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 13:28:55 -0700 (MST)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix freeing delayed ref head while still holding its mutex V2
-Date: Thu, 31 Jan 2013 11:35:15 -0500
-Message-ID: <1359650115-12743-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: fix possible stale data exposure
+Date: Wed, 30 Jan 2013 15:35:44 -0500
+Message-ID: <1359578144-2329-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I hit this error when reproducing a bug that would end in a transaction
-abort.  We take the delayed ref head's mutex to keep anybody from processing
-it while we're destroying it, but we fail to drop the mutex before we carry
-on and free the damned thing.  Fix this by doing the remove logic for the
-head ourselves and unlock the mutex, that way we can avoid use after free's
-or hung tasks waiting on that mutex to come back so they know the delayed
-ref completed.  Thanks,
+We specifically do not update the disk i_size if there are ordered extents
+outstanding for any area between the current disk_i_size and our ordered
+extent so that we do not expose stale data.  The problem is the check we
+have only checks if the ordered extent starts at or after the current
+disk_i_size, which doesn't take into account an ordered extent that starts
+before the current disk_i_size and ends past the disk_i_size.  Fix this by
+checking if the extent ends past the disk_i_size.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-V1->V2: don't duplicate the freeing stuff, just unlock if we have a head.
+ fs/btrfs/ordered-data.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
- fs/btrfs/disk-io.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 12ef591..42f83aa 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3615,11 +3615,11 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 	}
- 
- 	while ((node = rb_first(&delayed_refs->root)) != NULL) {
--		ref = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
-+		struct btrfs_delayed_ref_head *head = NULL;
- 
-+		ref = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
- 		atomic_set(&ref->refs, 1);
- 		if (btrfs_delayed_ref_is_head(ref)) {
--			struct btrfs_delayed_ref_head *head;
- 
- 			head = btrfs_delayed_node_to_head(ref);
- 			if (!mutex_trylock(&head->mutex)) {
-@@ -3641,10 +3641,12 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				delayed_refs->num_heads_ready--;
- 			list_del_init(&head->cluster);
- 		}
-+
- 		ref->in_tree = 0;
- 		rb_erase(&ref->rb_node, &delayed_refs->root);
- 		delayed_refs->num_entries--;
--
-+		if (head)
-+			mutex_unlock(&head->mutex);
- 		spin_unlock(&delayed_refs->lock);
- 		btrfs_put_delayed_ref(ref);
- 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index f8b13e8..cd8f6e9 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -936,7 +936,7 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 			break;
+ 		if (test->file_offset >= i_size)
+ 			break;
+-		if (test->file_offset >= disk_i_size) {
++		if (entry_end(test) > disk_i_size) {
+ 			/*
+ 			 * we don't update disk_i_size now, so record this
+ 			 * undealt i_size. Or we will not know the real
 -- 
 1.7.7.6
 

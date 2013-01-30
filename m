@@ -1,99 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f180.google.com ([209.85.215.180]:45855 "EHLO
-	mail-ea0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751401Ab3A3O6G (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:62043 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752492Ab3A3SRa convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 09:58:06 -0500
-Received: by mail-ea0-f180.google.com with SMTP id c1so692103eaa.25
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 06:58:04 -0800 (PST)
-Message-ID: <510934E6.7080302@statystyka.net>
-Date: Wed, 30 Jan 2013 15:57:42 +0100
-From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Poor performance of btrfs. Suspected unidentified btrfs housekeeping
- process which writes a lot
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Wed, 30 Jan 2013 13:17:30 -0500
+Received: by mail-ie0-f174.google.com with SMTP id k10so1544676iea.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 10:17:28 -0800 (PST)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: corrupted file size on inline extent conversion?
+From: Mike Lowe <j.michael.lowe@gmail.com>
+In-Reply-To: <20130129145429.GD3660@localhost.localdomain>
+Date: Wed, 30 Jan 2013 13:17:25 -0500
+Cc: Sage Weil <sage@inktank.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "billk@iinet.net.au" <billk@iinet.net.au>
+Message-Id: <08479684-218C-4B6E-8D76-DE39B36EE12E@gmail.com>
+References: <alpine.DEB.2.00.1301281602060.8729@cobra.newdream.net> <20130129145429.GD3660@localhost.localdomain>
+To: Josef Bacik <jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Welcome,
+Well I found this, so I think it's likely:
 
-I've been using btrfs for over a 3 months to store my personal data on 
-my NAS server. Almost all interactions with files on the server are done 
-using unison synchronizer. After another use of bedup 
-(https://github.com/g2p/bedup) on my btrfs volume I experienced huge 
-perfomance loss with synchronization. It now takes over 3 hours what 
-have taken only 15 minutes! File browsing is not affected; but it takes 
-forever to read contents of the files!
+root@gwboss2:~# dmesg |grep bitten
+[ 3196.193238] this would have bitten us in the ass
+[ 3196.193784] this would have bitten us in the ass
 
-When I use `iotop -o -d 30` (which measures I/O activity for 30-second 
-interval) I can see:
+On Jan 29, 2013, at 9:54 AM, Josef Bacik <jbacik@fusionio.com> wrote:
 
-Total DISK READ:      98.66 K/s | Total DISK WRITE:     826.55 K/s
-   TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO> COMMAND
-  4296 be/4 root        3.99 K/s  408.59 K/s  0.00 % 98.64 % 
-[btrfs-transacti]
-  6407 be/4 adam       94.14 K/s    0.00 B/s  0.00 % 85.24 % unison -server
-   311 be/4 root        0.00 B/s    0.00 B/s  0.00 % 58.20 % [md1_raid6]
-   354 be/3 root        0.00 B/s    2.26 K/s  0.00 % 24.29 % [jbd2/md0-8]
-   306 be/4 root        0.00 B/s    0.00 B/s  0.00 %  4.79 % [md0_raid1]
-  1229 be/4 syslog      0.00 B/s  136.15 B/s  0.00 %  0.00 % rsyslogd -c5
-  1744 be/4 root        0.00 B/s  136.15 B/s  0.00 %  0.00 % 
-console-kit-daemon --no-daemon
-
-I expect no writes at all since the statistics were taken during the 
-"Looking for changes" phse. Normally, the `unison -server` process shold 
-have at least 5 M/s disk read speed. (The block device the btrfs is 
-build on has a measured capability of 50 M/s sequential throughput)
-
-When I pause the `unison -server` process (with htop), the disk activity 
-persists of another 5-30 seconds, so I am infer, that the btrfs is doing 
-some house-keeping work, and this is the reason I decided to post the 
-email on this list. I suspect, that this house-keeping work has a time 
-granularity of 5-30 seconds, and during this time access to the 
-filesystem is delayed. The problem is not specific to the unison. This 
-background process is triggered by just reading the file contents. Once 
-the system is through and the file is read, than all subsequent attempts 
-to read it are fine, even if I drop the cache (i.e. echo 3 > 
-/proc/sys/vm/drop_caches). But after a while (after reboot) the 
-performance hit recurs.
-
-The questions are:
-1. What sort of work is btrfs doing?
-What is it writing (and why is it writing 100x bytes more than reading)?
-2. Why does it take it so long?
-3. What can I do to speed-up the process?
-4. What can I do to prevent it from happening again?
-
-Here are details about my system that might help you with the diagnose. 
-If it is not enough,
-
-I suspect it has something to do with snapshots I make for backup. I 
-have 35 of them, and I ask bedup to find duplicates across all 
-subvolumes. But on the other hand it is supposed to work since kernel 
-3.5, and the filesystem has never seen kernel older than 3.6.
-
-My filesystem /dev/vg-adama-docs/lv-adama-docs is 372GB in size, and is 
-a quite complex setup:
-It is based on logical volume (LVM2), which has a single physical volume 
-made by dm-crypt device /dev/dm-1, which subsequently sits on top of 
-/dev/md1 linux raid 6, which is built with 4 identical 186GB GPT 
-partitions on each of my SATA 3TB hard drives.
-
-There are 272k files on the system (excluding 35 snaphosts), 23k folders 
-and 104 GB data.
-$ df /mnt/adama-docs -h
-Filesystem                                   Size  Used Avail Use% 
-Mounted on
-/dev/mapper/vg--adama--docs-lv--adama--docs  373G   85G  288G  23% 
-/mnt/adama-docs
-
-I was always using the latest kernel (its 3.7.1-030701-generic at the 
-moment) on my Ubuntu Quantal server.
-
--- 
-
-Adam Ryczkowski
-Skype:sisteczko <skype:sisteczko>
+> On Mon, Jan 28, 2013 at 05:12:12PM -0700, Sage Weil wrote:
+>> A ceph user observed a incorrect i_size on btrfs.  The pattern looks like 
+>> this:
+>> 
+>> - some writes at low file offsets
+>> - a write to 4185600 len 8704 (i_size should be 4MB)
+>> - more writes to low offsets
+>> - a write to 4181504 len 4096 (abutts the write above)
+>> - a bit of time goes by...
+>> - stat returns 4186112 (4MB - 8192)
+>> - that's a fwe bytes to the right of the top write above.
+>> 
+>> There are some logs showing the full read/write activity to the file at
+>> 
+>> 	http://tracker.newdream.net/attachments/658/object_log.txt
+>> 
+>> on issue
+>> 
+>> 	http://tracker.newdream.net/issues/3810
+>> 
+>> The kernel was 3.7.0-030700-generic (and probably also observed on 3.7.1).
+>> 
+>> Is this a known bug?
+> 
+> Not known but I took a long hard look at our ordered i size updating and I think
+> I spotted the bug.  Could you run this patch and see if you get the printk?  If
+> you do then that was the problem and you should be good to go.  It definitely
+> needs to be fixed, hopefully it's also your bug.  Thanks,
+> 
+> Josef
+> 
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index cbd4838..dbd4905 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -895,8 +895,14 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+> 	 * if the disk i_size is already at the inode->i_size, or
+> 	 * this ordered extent is inside the disk i_size, we're done
+> 	 */
+> -	if (disk_i_size == i_size || offset <= disk_i_size) {
+> +	if (disk_i_size == i_size)
+> 		goto out;
+> +
+> +	if (offset <= disk_i_size) {
+> +		if (ordered && ordered->outstanding_isize > disk_i_size)
+> +			printk(KERN_ERR "this would have bitten us in the ass\n");
+> +		else
+> +			goto out;
+> 	}
+> 
+> 	/*
 

@@ -1,19 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42528 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42725 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754216Ab3A3Wnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 17:43:43 -0500
-Date: Wed, 30 Jan 2013 14:43:41 -0800
+	id S1756323Ab3A3WuY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 17:50:24 -0500
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com
-Subject: [RESEND][PATCH] btrfs: add "no file data" flag to btrfs send ioctl
-Message-ID: <20130130224341.GZ12558@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@fusionio.com, Anand.Jain@oracle.com, aschnell@suse.de,
+        jeffm@suse.com, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 0/5] btrfs-progs: better support for external users of send, V3
+Date: Wed, 30 Jan 2013 14:50:22 -0800
+Message-Id: <1359586227-19762-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Hi,
+
+	The following 5 patches make changes to btrfs-progs in order to
+provide support for external software that wants to make use of the
+excellent btrfs send ioctl.
+
+The first patch introduces support for the BTRFS_SEND_FLAG_NO_FILE_DATA flag
+which is introduced in my kernel patch titled:
+
+	btrfs: add "no file data" flag to btrfs send ioctl
+
+which can be found on the btrfs list, and for convenience is also attached
+at the end of this e-mail.
+
+The 2nd patch creates a libbtrfs and links the rest of the build to it. The
+functionality I chose to export as of right now centers on send support. 
+With this library, an external program has a much easier time processing the
+stream which a send ioctl provides. It's worth nothing btw that this patch
+can stand alone if need be.
+
+The 3rd patch introduces send-test, a small piece of software (not built by
+default) to allow for testing of the send ioctl (including our new flag). As
+send-test is a client of libbtrfs it might also serve as example code for
+developers looking to make use of send.
+
+The 4th patch makes minor changes so that libbtrfs is usable from C++.
+
+The 5th patch was contributed by Jeff Mahoney and it changes the build to
+use autotools. This wound up making packaging of the resulting library far
+less painful so I felt it would be advantageous for us to have it upstream
+so all packagers can benefit from it.
+
+The patches can also be viewed on github:
+
+https://github.com/markfasheh/btrfs-progs-patches/tree/no-data-and-libify
+
+Testing has been pretty straight-forward - I build the software, verify that
+things work by making a file system or using send-test.
+
+Please review. Thanks,
+	--Mark
+
+Changelog:
+
+- included patch by Jeff Mahoney to use autotools
+
+- Fixed whitespace error in patch 3 (thanks to Anand Jain for reporting)
+
+- "make version; make install" should work now (again, thanks to Anand Jain)
+
+- included patch by Arvin Schnell to make it possible to use libbtrfs from C++
+  - From this patch I removed some code from cmds-send.c that was added
+    by mistake.
+
+- libbtrfs properly links to libuuid and libm (Reported by Arvin)
+
+- library symlinks are now properly installed (Reported by Arvin)
+
+
+From: Mark Fasheh <mfasheh@suse.de>
+
+btrfs: add "no file data" flag to btrfs send ioctl
 
 This patch adds the flag, BTRFS_SEND_FLAG_NO_FILE_DATA to the btrfs send
 ioctl code. When this flag is set, the btrfs send code will never write file
@@ -27,11 +88,6 @@ they will continue to be sent when a search finds an appropriate extent to
 clone from.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/ioctl.h |    7 +++++++
- fs/btrfs/send.c  |   48 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/send.h  |    1 +
- 3 files changed, 52 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
 index 731e287..1f6cfdd 100644
@@ -151,6 +207,3 @@ index 1bf4f32..8bb18f7 100644
  	__BTRFS_SEND_C_MAX,
  };
  #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
--- 
-1.7.10.4
-

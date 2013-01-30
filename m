@@ -1,44 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f171.google.com ([209.85.217.171]:46884 "EHLO
-	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755349Ab3A3TKJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 14:10:09 -0500
-Received: by mail-lb0-f171.google.com with SMTP id gg13so2517840lbb.16
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 11:10:07 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <keatr3$65q$1@ger.gmane.org>
-References: <keap27$oqb$1@ger.gmane.org>
-	<20130130100201.GN16285@carfax.org.uk>
-	<keatr3$65q$1@ger.gmane.org>
-Date: Wed, 30 Jan 2013 11:10:07 -0800
-Message-ID: <CADU+-uCCGhCgUQ3yc+XCpdiU-8gTJeqs2LDxOu5g8HyiFC-7DA@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:57594 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753862Ab3A3UGo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 15:06:44 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1U0dvv-0002ZT-T8
+	for linux-btrfs@vger.kernel.org; Wed, 30 Jan 2013 21:06:59 +0100
+Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 21:06:59 +0100
+Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 21:06:59 +0100
+To: linux-btrfs@vger.kernel.org
+From: Roger Binns <rogerb@rogerbinns.com>
 Subject: Re: RAID 0 across SSD and HDD
-From: Filipe Brandenburger <filbranden@google.com>
-To: Roger Binns <rogerb@rogerbinns.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Wed, 30 Jan 2013 12:06:32 -0800
+Message-ID: <kebug6$in6$1@ger.gmane.org>
+References: <keap27$oqb$1@ger.gmane.org> <20130130100201.GN16285@carfax.org.uk> <keatr3$65q$1@ger.gmane.org> <20130130120155.GA20862@panda>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20130130120155.GA20862@panda>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-On Wed, Jan 30, 2013 at 2:49 AM, Roger Binns <rogerb@rogerbinns.com> wrote:
-> It looks like my choices are:
->
-> * RAID 0 and getting 500GB of usable space, with performance 50% of the
-> accesses at HDD levels and 50% at SSD levels
->
-> * Single and getting 750GB of usable space with performance and usage
-> mostly on the HDD
+On 30/01/13 04:01, Sander wrote:
+> Do you know about bcache and EnhanceIO ?
 
-You could try something like "-l=linear" on md-raid or something
-similar on LVM to build a 750GB volume where the first 250GB are the
-SSD and the last 500GB are the HDD. But that would probably work best
-(as in, use more blocks from the beginning of the disk before moving
-to the end) with a non-COW filesystem like ext4 instead of Btrfs
-(although I can be wrong about that, I never really tried something
-similar.)
+Yes, but there are two reasons I don't use them.  One is that the capacity
+of your cache is not included in the filesystem - ie with a 250GB SSD and
+500GB the filesystem capacity will be 500GB not 750GB.
 
-Cheers,
-Filipe
+The second is that I use btrfs for my root filesystem so I'd have to get
+bcache/EnhanceIO integrated into the distributor's initramfs build
+mechanism, as well as worry about livecd/network boots without it.  This
+is a lot of unnecessary work and worry.
+
+Roger
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAlEJfUgACgkQmOOfHg372QR42wCfUV9MK6luScTtu59g4p9BsTdf
+6/8AoLlumP6NeEsSv/pmgd+857m/2LUF
+=Eigx
+-----END PGP SIGNATURE-----
+

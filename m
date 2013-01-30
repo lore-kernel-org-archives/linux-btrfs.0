@@ -1,61 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35119 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753759Ab3A3US6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 15:18:58 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1U0e7i-0007gj-O9
-	for linux-btrfs@vger.kernel.org; Wed, 30 Jan 2013 21:19:10 +0100
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 21:19:10 +0100
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 21:19:10 +0100
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
-Subject: Re: RAID 0 across SSD and HDD
-Date: Wed, 30 Jan 2013 12:18:41 -0800
-Message-ID: <kebv6v$q6t$1@ger.gmane.org>
-References: <keap27$oqb$1@ger.gmane.org> <20130130100201.GN16285@carfax.org.uk> <keatr3$65q$1@ger.gmane.org> <CADU+-uCCGhCgUQ3yc+XCpdiU-8gTJeqs2LDxOu5g8HyiFC-7DA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <CADU+-uCCGhCgUQ3yc+XCpdiU-8gTJeqs2LDxOu5g8HyiFC-7DA@mail.gmail.com>
+Received: from qmta13.emeryville.ca.mail.comcast.net ([76.96.27.243]:35732
+	"EHLO qmta13.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753237Ab3A3X64 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 18:58:56 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: Poor performance of btrfs. Suspected unidentified btrfs housekeeping process which writes a lot
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <510934E6.7080302@statystyka.net>
+Date: Wed, 30 Jan 2013 16:58:51 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <6F302998-3D6E-4E91-9DDA-C475344B51BF@colorremedies.com>
+References: <510934E6.7080302@statystyka.net>
+To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 30/01/13 11:10, Filipe Brandenburger wrote:
-> You could try something like "-l=linear" on md-raid or something 
-> similar on LVM to build a 750GB volume
+On Jan 30, 2013, at 7:57 AM, Adam Ryczkowski <adam.ryczkowski@statystyka.net> wrote:
+> 
+> I suspect it has something to do with snapshots I make for backup. I have 35 of them, and I ask bedup to find duplicates across all subvolumes.
 
-That would also require wiping the filesystems and starting again(*).  One
-of the joys of btrfs has been not dealing with LVM.  On my workstation I
-have two 2GB disks, but on one there is a sizeable Windows partition.
-Getting LVM to stripe across the common sized space and then just use the
-rest took quite a while to work out, requires running several different
-commands and was something I had to write down.  There was nothing
-intuitive.  It was a happy day when I could wipe and replace with btrfs.
 
-Contrast with btrfs where 'btrfs --help' is almost always sufficient and
-adding/removing/resizing is trivial (and online).
+Assuming most files do have identical duplicates, implies the same file in all 35 subvolumes is actually in the same physical location; it differs only in subvol reference. But it's not btrfs that determines the "duplicate" vs "unique" state of those 35 file instances, but unison. The fs still must send all 35x instances for the state to be determined, as if they were unique files.
 
-(*) I realise I could do things like add an external disk, btrfs add that
-and then btrfs delete the internals, redo the internal storage, btrfs add
-those back and then btrfs delete the external.  It would take a long time,
-and is a reminder as to why I would prefer to be all btrfs everywhere
-rather than also dealing with LVM and similar.
+Another thing, I'd expect this to scale very poorly if the 35 subvolumes contain any appreciable uniqueness, because searches can't be done in parallel. So the more subvolumes you add, the more disk contention you get, but also enormous amounts of latency as possibly 35 locations on the disk are being searched if they happen to be unique.
 
-Roger
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+So in either case "duplicate" vs "unique" you have a problem, just different kinds. And as the storage grows, it increasingly encounters both problems at the same time. Small problem. What size are the files?
 
-iEYEARECAAYFAlEJgCEACgkQmOOfHg372QSwEwCdG5GDUC2Ab/eVZo36t3Zs691R
-otAAn3p4Gq8lV2NgPp79799BflBwt/cW
-=yl2B
------END PGP SIGNATURE-----
+And that's on a bare drive before you went and did this:
+
+> My filesystem /dev/vg-adama-docs/lv-adama-docs is 372GB in size, and is a quite complex setup:
+> It is based on logical volume (LVM2), which has a single physical volume made by dm-crypt device /dev/dm-1, which subsequently sits on top of /dev/md1 linux raid 6, which is built with 4 identical 186GB GPT partitions on each of my SATA 3TB hard drives.
+
+Why are you using raid6 for four disks, instead of raid10?  What's the chunk size for the raid 6? What's the btrfs leaf size? What's the dedup chunk size?
+
+Why are you using LVM at all, while the /dev/dm-1 is the same size as the LV? You say the btrfs volume on LV is on dm-1 which means they're all the same size, obviating the need for LVM in this case entirely.
+
+Chris Murphy
 

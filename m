@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:58947 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:53062 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751438Ab3A3PGf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 10:06:35 -0500
-Date: Wed, 30 Jan 2013 10:06:32 -0500
+	id S1751669Ab3A3PQJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 10:16:09 -0500
+Date: Wed, 30 Jan 2013 10:16:06 -0500
 From: Josef Bacik <jbacik@fusionio.com>
 To: Jim Schutt <jaschut@sandia.gov>
 CC: Josef Bacik <JBacik@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: fix a deadlock on chunk mutex
-Message-ID: <20130130150632.GF3660@localhost.localdomain>
+Message-ID: <20130130151606.GG3660@localhost.localdomain>
 References: <1355363557-2962-1-git-send-email-bo.li.liu@oracle.com>
  <20121218135242.GC2403@localhost.localdomain>
  <50E5D19E.3060406@sandia.gov>
@@ -92,7 +92,7 @@ On Tue, Jan 29, 2013 at 04:05:17PM -0700, Jim Schutt wrote:
 > mount it on my Ceph clients:
 > 
 
-Well that makes me a sad panda, but hey it didn't panic this time.  What
-workload are you running on this fs/ceph cluster?  Thanks,
+Actually nevermind it looks like I figured out how to reproduce.  I'll let you
+know when I have something to test.  Thanks,
 
 Josef

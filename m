@@ -1,42 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:33919 "EHLO
-	bp-05.lab.msp.redhat.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754082Ab3AaAGj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 19:06:39 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 11/11] btrfs: don't try to notify udev about missing devices
-Date: Wed, 30 Jan 2013 18:55:02 -0600
-Message-Id: <1359593702-53056-12-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
+Received: from mx1.redhat.com ([209.132.183.28]:17280 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751082Ab3AaAPt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 19:15:49 -0500
+Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r0V0FmJp011993
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2013 19:15:49 -0500
+Date: Wed, 30 Jan 2013 16:15:47 -0800
+From: Zach Brown <zab@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/11] btrfs: misc fixes and cleanups
+Message-ID: <20130131001547.GB14246@lenny.home.zabbo.net>
 References: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we remove a missing device, bdev is null, and if we
-send that off to btrfs_kobject_uevent we'll panic.
+On Wed, Jan 30, 2013 at 06:54:51PM -0600, Eric Sandeen wrote:
+> A handful of fixes from looking at Coverity static checker
+> results, and the surrounding code.  Of varying severity,
+> but all worthwhile I hope.
+> 
+> Full disclosure: compile-tested only, but nothing too crazy
+> in here I think.
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
- fs/btrfs/volumes.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+Yeah, this all seems pretty reasonable to me.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 09c63ac..bdd6962 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1556,7 +1556,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	ret = 0;
- 
- 	/* Notify udev that device has changed */
--	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
-+	if (bdev)
-+		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
- 
- error_brelse:
- 	brelse(bh);
--- 
-1.7.1
+Signed-off-by: Zach Brown <zab@redhat.com>
 
+- z

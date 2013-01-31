@@ -1,109 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:43468 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751295Ab3AaNoO convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 08:44:14 -0500
-Received: from merkaba.localnet (ppp-93-104-144-28.dynamic.mnet-online.de [93.104.144.28])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id 14DE8AC
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 14:43:39 +0100 (CET)
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: /home on BTRFS on SSD, now highly fragmenting virtuoso database - use autodefrag?
-Date: Thu, 31 Jan 2013 14:44:12 +0100
+Received: from mx1.redhat.com ([209.132.183.28]:25334 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752703Ab3AaPhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 10:37:37 -0500
+Message-ID: <510A8FB6.50107@redhat.com>
+Date: Thu, 31 Jan 2013 09:37:26 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Message-Id: <201301311444.12314.Martin@lichtvoll.de>
+To: miaox@cn.fujitsu.com
+CC: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [BUG] kernel BUG at fs/btrfs/async-thread.c:605!
+References: <5109E70D.3010005@jp.fujitsu.com> <510A0756.40206@redhat.com> <510A243C.3010508@cn.fujitsu.com>
+In-Reply-To: <510A243C.3010508@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+On 1/31/13 1:58 AM, Miao Xie wrote:
+> On wed, 30 Jan 2013 23:55:34 -0600, Eric Sandeen wrote:
+>> if you move the fail_block_groups: target above the comment, does that fix it?
+>> (although I don't know yet what started IO . . . )
+>>
+>> like this:
+>>
+>> From: Eric Sandeen <sandeen@redhat.com>
+>>
+>> Make sure that we are always done with the btree_inode's mapping
+>> before we shut down the worker threads in open_ctree() error
+>> cases.
+> 
+> 
+> I reviewed your patch again, and found it just fix the above problem, it still
+> have similar problems which are not fixed.
 
-Today I converted my /home from Ext4 to BTRFS by reformatting and copying
-all over again.
+Can you explain the similar problems you found?
 
-I created the filesystem with -l 16384 -n 16384 -d single -m single on an
-logical volume Intel SSD 320 and mount with compress=lzo,spacecache. Current state:
+(Also, the reason I thought a write had been started was because the original
+panic was in comm: btrfs-endio-wr[iter])
 
-merkaba:~> btrfs filesystem show
-failed to read /dev/sr0
-Label: 'home'  uuid: […]
-        Total devices 1 FS bytes used 191.98GB
-        devid    1 size 223.52GB used 193.02GB path /dev/dm-2
-[…]
-merkaba:~> btrfs filesystem df /
-Data: total=14.01GB, used=9.98GB
-System: total=4.00MB, used=4.00KB
-Metadata: total=776.00MB, used=573.20MB
+Thanks,
+-Eric
 
+> How about this one?
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 0c31d07..d8fd711 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2728,13 +2728,13 @@ fail_cleaner:
+>  	 * kthreads
+>  	 */
+>  	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>  
+>  fail_block_groups:
+>  	btrfs_free_block_groups(fs_info);
+>  
+>  fail_tree_roots:
+>  	free_root_pointers(fs_info, 1);
+> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>  
+>  fail_sb_buffer:
+>  	btrfs_stop_workers(&fs_info->generic_worker);
+> @@ -2755,7 +2755,6 @@ fail_alloc:
+>  fail_iput:
+>  	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+>  
+> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>  	iput(fs_info->btree_inode);
+>  fail_bdi:
+>  	bdi_destroy(&fs_info->bdi);
+> 
 
-
-Works well so far and I see no issues.
-
-
-Except for a highly fragmenting file:
-
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> ls -lh
-insgesamt 1,2G
--rw------- 1 martin martin 1,3G Jan 31 14:07 soprano-virtuoso.db
--rw-r--r-- 1 martin martin   14 Jan 31 14:06 soprano-virtuoso.lck
--rw------- 1 martin martin    0 Jan 27 17:52 soprano-virtuoso.lock
--rw-r--r-- 1 martin martin  13K Jan 31 10:22 soprano-virtuoso.log
--rw-r--r-- 1 martin martin    0 Jan 27 17:52 soprano-virtuoso.pxa
--rw-r--r-- 1 martin martin 8,0M Jan 31 14:07 soprano-virtuoso-temp.db
--rw-r--r-- 1 martin martin  14K Jan 31 14:07 soprano-virtuoso.trx
-
-
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo filefrag soprano-virtuoso.db
-[sudo] password for martin: 
-soprano-virtuoso.db: 481 extents found
-[…]
-
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo btrfs filesystem defragment 
-soprano-virtuoso.db
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend#20> sudo filefrag soprano-
-virtuoso.db                   
-soprano-virtuoso.db: 481 extents found
-[…]
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sync
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo filefrag soprano-virtuoso.db
-soprano-virtuoso.db: 57 extents found
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo filefrag soprano-virtuoso.db
-[sudo] password for martin: 
-soprano-virtuoso.db: 3946 extents found
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo filefrag soprano-virtuoso.db
-soprano-virtuoso.db: 15143 extents found
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> 
-
-martin@merkaba:~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sudo filefrag soprano-virtuoso.db
-soprano-virtuoso.db: 15900 extents found
-
-
-
-Now I do not perceive any bottle neck so far and this is an SSD.
-
-What would be your recommendation: Add autodefrag to mount options or not?
-
-For now I am inclined to let it run that way and see how it goes. I am a bit
-reluctant about autodefrag cause of the additional writes it causes.
-
-
-Well, a direct dd of the file to memory is still quite fast:
-
-merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> echo 3 > 
-/proc/sys/vm/drop_caches; LANG=C dd if=soprano-virtuoso.db of=/dev/null bs=1M
-1322+0 records in
-1322+0 records out
-1386217472 bytes (1.4 GB) copied, 5.34167 s, 260 MB/s
-
-
-Another database is the Akonadi database, but I am using PostgreSQL for this at
-the moment which tends to use lots of (smaller) files and due to KDE PIM from
-KDE SC 4.4.11 still in Debian, there is no mail metadata in it, just contacts and
-calendar metadata.
-
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

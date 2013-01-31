@@ -1,59 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:52458 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753470Ab3AaEK7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 23:10:59 -0500
-Date: Thu, 31 Jan 2013 10:10:55 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: Ian Kumlien <pomac@demius.net>
-Cc: linux-btrfs@vger.kernel.org
+Received: from qmta02.emeryville.ca.mail.comcast.net ([76.96.30.24]:57064 "EHLO
+	qmta02.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756366Ab3AaEQ0 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jan 2013 23:16:26 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [RFC] Move btrfsck in to the btrfs command
-Message-ID: <20130131101055.44c138d5@natsu>
-In-Reply-To: <1359500633-7219-1-git-send-email-pomac@demius.net>
-References: <1359500633-7219-1-git-send-email-pomac@demius.net>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/vi+P6S8aZBscGfkKsUOirl="; protocol="application/pgp-signature"
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130131101055.44c138d5@natsu>
+Date: Wed, 30 Jan 2013 21:16:22 -0700
+Cc: Ian Kumlien <pomac@demius.net>, linux-btrfs@vger.kernel.org
+Message-Id: <852FE3A8-45AC-41ED-94AC-6B5ADDDD3D0D@colorremedies.com>
+References: <1359500633-7219-1-git-send-email-pomac@demius.net> <20130131101055.44c138d5@natsu>
+To: Roman Mamedov <rm@romanrm.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/vi+P6S8aZBscGfkKsUOirl=
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-On Wed, 30 Jan 2013 00:03:52 +0100
-Ian Kumlien <pomac@demius.net> wrote:
+On Jan 30, 2013, at 9:10 PM, Roman Mamedov <rm@romanrm.ru> wrote:
+> 
+> How about "btrfs check"?
 
-> This patch moves btrfsck in to "btrfs fsck".
+For that matter, separate out check and repair. Is there a potential for a btrfsck repair to make things worse? And if so, could this be determined with a check?
 
-Does the "...fs fs.." combination look less than ideally beautiful to anyone
-else? That's "Filesystem" abbreviated two times right there.
-Who can use an ATM Machine? Someone who knows a PIN Number.
 
-Also it's a complete clstrfck of nine consonants, with no vowels.
-
-How about "btrfs check"?
-
---=20
-With respect,
-Roman
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"Stallman had a printer,
-with code he could not see.
-So he began to tinker,
-and set the software free."
-
---Sig_/vi+P6S8aZBscGfkKsUOirl=
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlEJ7s8ACgkQTLKSvz+PZwijEQCePJ/1z0PWy0Ylb9tGZJIFTafP
-JjwAnRXLoo+eMTNPHx0Y+o2qpf1Zs4sd
-=2KKV
------END PGP SIGNATURE-----
-
---Sig_/vi+P6S8aZBscGfkKsUOirl=--
+Chris Murphy

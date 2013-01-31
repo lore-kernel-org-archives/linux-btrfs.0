@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:15606 "EHLO
+Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:33919 "EHLO
 	bp-05.lab.msp.redhat.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754270Ab3AaAGj (ORCPT
+	by vger.kernel.org with ESMTP id S1754082Ab3AaAGj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 30 Jan 2013 19:06:39 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 05/11] btrfs: annotate intentional switch case fallthroughs
-Date: Wed, 30 Jan 2013 18:54:56 -0600
-Message-Id: <1359593702-53056-6-git-send-email-sandeen@redhat.com>
+Subject: [PATCH 11/11] btrfs: don't try to notify udev about missing devices
+Date: Wed, 30 Jan 2013 18:55:02 -0600
+Message-Id: <1359593702-53056-12-git-send-email-sandeen@redhat.com>
 In-Reply-To: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
 References: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This keeps static checkers happy.
+If we remove a missing device, bdev is null, and if we
+send that off to btrfs_kobject_uevent we'll panic.
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- fs/btrfs/ctree.c |    1 +
- fs/btrfs/super.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ fs/btrfs/volumes.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index eea5da7..ac4a424 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1138,6 +1138,7 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
- 		switch (tm->op) {
- 		case MOD_LOG_KEY_REMOVE_WHILE_FREEING:
- 			BUG_ON(tm->slot < n);
-+			/* Fallthrough */
- 		case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
- 		case MOD_LOG_KEY_REMOVE:
- 			btrfs_set_node_key(eb, &tm->key, tm->slot);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d5e7e18..1dd2d86 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -437,6 +437,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_compress_force:
- 		case Opt_compress_force_type:
- 			compress_force = true;
-+			/* Fallthrough */
- 		case Opt_compress:
- 		case Opt_compress_type:
- 			if (token == Opt_compress ||
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 09c63ac..bdd6962 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1556,7 +1556,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	ret = 0;
+ 
+ 	/* Notify udev that device has changed */
+-	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
++	if (bdev)
++		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+ 
+ error_brelse:
+ 	brelse(bh);
 -- 
 1.7.1
 

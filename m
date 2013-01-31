@@ -1,85 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:9380 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:13906 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756911Ab3A1Mfl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jan 2013 07:35:41 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0SCZcAP007409
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2013 20:35:38 +0800
-Message-ID: <510670C6.5030908@cn.fujitsu.com>
-Date: Mon, 28 Jan 2013 20:36:22 +0800
+	id S1752950Ab3AaJiW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 04:38:22 -0500
+Message-ID: <510A3BB7.4090201@cn.fujitsu.com>
+Date: Thu, 31 Jan 2013 17:39:03 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/3] Btrfs: fix missing release of the space/qgroup reservation
- in start_transaction()
+CC: Josef Bacik <jbacik@fusionio.com>
+Subject: [RFC][PATCH 2/2] Btrfs: implement unlocked dio write
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we fail to start a transaction, we need to release the reserved free space
-and qgroup space, fix it.
+This idea is from ext4. By this patch, we can make the dio write parallel,
+and improve the performance.
+
+We needn't worry about the race between dio write and truncate, because the
+truncate need wait untill all the dio write end.
+
+And we also needn't worry about the race between dio write and punch hole,
+because we have extent lock to protect our operation.
+
+I ran fio to test the performance of this feature.
+
+== Hardware ==
+CPU: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz
+Mem: 2GB
+SSD: Intel X25-M 120GB (Test Partition: 60GB)
+
+== config file ==
+[global]
+ioengine=psync
+direct=1
+bs=4k
+size=32G
+runtime=60
+directory=/mnt/btrfs/
+filename=testfile
+group_reporting
+thread
+
+[file1]
+numjobs=1 # 2 4
+rw=randwrite
+
+== result (KBps) ==
+write	1	2	4
+lock	24936	24738	24726
+nolock	24962	30866	32101
+
+== result (iops) ==
+write	1	2	4
+lock	6234	6184	6181
+nolock	6240	7716	8025
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/transaction.c |   27 +++++++++++++++++++--------
- 1 files changed, 19 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 24 +++++++++++++-----------
+ 1 file changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 87fac9a..194d0b5 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -333,12 +333,14 @@ start_transaction(struct btrfs_root *root, u64 num_items, int type,
- 					  &root->fs_info->trans_block_rsv,
- 					  num_bytes, flush);
- 		if (ret)
--			return ERR_PTR(ret);
-+			goto reserve_fail;
- 	}
- again:
- 	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
--	if (!h)
--		return ERR_PTR(-ENOMEM);
-+	if (!h) {
-+		ret = -ENOMEM;
-+		goto alloc_fail;
-+	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d17a04b..091593a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6589,31 +6589,33 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file->f_mapping->host;
+ 	int flags = 0;
+-	bool wakeup = false;
++	bool wakeup = true;
+ 	int ret;
  
- 	/*
- 	 * If we are JOIN_NOLOCK we're already committing a transaction and
-@@ -365,11 +367,7 @@ again:
- 	if (ret < 0) {
- 		/* We must get the transaction if we are JOIN_NOLOCK. */
- 		BUG_ON(type == TRANS_JOIN_NOLOCK);
--
--		if (type < TRANS_JOIN_NOLOCK)
--			sb_end_intwrite(root->fs_info->sb);
--		kmem_cache_free(btrfs_trans_handle_cachep, h);
--		return ERR_PTR(ret);
-+		goto join_fail;
+ 	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iov,
+ 			    offset, nr_segs))
+ 		return 0;
+ 
+-	if (rw == READ) {
+-		atomic_inc(&inode->i_dio_count);
+-		smp_mb__after_atomic_inc();
+-		if (unlikely(test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+-				      &BTRFS_I(inode)->runtime_flags))) {
+-			inode_dio_done(inode);
+-			flags = DIO_LOCKING | DIO_SKIP_HOLES;
+-		} else {
+-			wakeup = true;
+-		}
++	atomic_inc(&inode->i_dio_count);
++	smp_mb__after_atomic_inc();
++	if (rw == WRITE) {
++		mutex_unlock(&inode->i_mutex);
++	} else if (unlikely(test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
++				     &BTRFS_I(inode)->runtime_flags))) {
++		inode_dio_done(inode);
++		flags = DIO_LOCKING | DIO_SKIP_HOLES;
++		wakeup = false;
  	}
  
- 	cur_trans = root->fs_info->running_transaction;
-@@ -410,6 +408,19 @@ got_it:
- 	if (!current->journal_info && type != TRANS_USERSPACE)
- 		current->journal_info = h;
- 	return h;
+ 	ret = __blockdev_direct_IO(rw, iocb, inode,
+ 			BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
+ 			iov, offset, nr_segs, btrfs_get_blocks_direct, NULL,
+ 			btrfs_submit_direct, flags);
 +
-+join_fail:
-+	if (type < TRANS_JOIN_NOLOCK)
-+		sb_end_intwrite(root->fs_info->sb);
-+	kmem_cache_free(btrfs_trans_handle_cachep, h);
-+alloc_fail:
-+	if (num_bytes)
-+		btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
-+					num_bytes);
-+reserve_fail:
-+	if (qgroup_reserved)
-+		btrfs_qgroup_free(root, qgroup_reserved);
-+	return ERR_PTR(ret);
+ 	if (wakeup)
+ 		inode_dio_done(inode);
++	if (rw == WRITE)
++		mutex_lock(&inode->i_mutex);
+ 	return ret;
  }
  
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
 -- 
-1.6.5.2
+1.7.11.7

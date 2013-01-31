@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:50961 "EHLO mx1.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:53765 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755776Ab3A3VzQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 16:55:16 -0500
-Date: Wed, 30 Jan 2013 16:55:13 -0500
+	id S1752143Ab3AaPdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 10:33:21 -0500
+Date: Thu, 31 Jan 2013 10:33:17 -0500
 From: Josef Bacik <jbacik@fusionio.com>
 To: Jim Schutt <jaschut@sandia.gov>
 CC: Josef Bacik <JBacik@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: fix a deadlock on chunk mutex
-Message-ID: <20130130215513.GL3660@localhost.localdomain>
+Message-ID: <20130131153317.GM3660@localhost.localdomain>
 References: <1355363557-2962-1-git-send-email-bo.li.liu@oracle.com>
  <20121218135242.GC2403@localhost.localdomain>
  <50E5D19E.3060406@sandia.gov>
@@ -102,9 +102,71 @@ On Wed, Jan 30, 2013 at 02:37:40PM -0700, Jim Schutt wrote:
 > having trouble first time, every time, I think it also seems to fix
 > the problem for me.
 > 
-> Thanks again!
-> 
 
-Awesome thanks for testing!
+Hey Jim,
+
+Could you test this patch instead?  I think it's a little less hamfisted and
+should give us a nice balance between not crashing and being good for
+performance.  Thanks,
 
 Josef
+
+commit 43510c0e5faad8e5e4d8ba13baa1dd5dfb3d39ce
+Author: Josef Bacik <jbacik@fusionio.com>
+Date:   Wed Jan 30 17:02:51 2013 -0500
+
+    Btrfs: do not allow overcommit to happen if we are over 80% in use
+    
+    Because of how little we allocate chunks now we can get really tight on
+    metadata space before we will allocate a new chunk.  This resulted in being
+    unable to add device extents when allocating a new metadata chunk as we did
+    not have enough space.  This is because we were allowed to overcommit too
+    much metadata without actually making sure we had enough space to make
+    allocations.  The idea behind overcommit is that we are allowed to say "sure
+    you can have that reservation" when most of the free space is occupied by
+    reservations, not actual allocations.  But in this case where a majority of
+    the total space is in use by actual allocations we can screw ourselves by
+    not being able to make real allocations when it matters.  So put this cap in
+    place for now to keep us from overcommitting so much that we run out of
+    space.  Thanks,
+    
+    Reported-and-tested-by: Jim Schutt <jaschut@sandia.gov>
+    Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index dca5679..156341e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3672,13 +3672,30 @@ static int can_overcommit(struct btrfs_root *root,
+ 			  struct btrfs_space_info *space_info, u64 bytes,
+ 			  enum btrfs_reserve_flush_enum flush)
+ {
++	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
+ 	u64 profile = btrfs_get_alloc_profile(root, 0);
++	u64 rsv_size = 0;
+ 	u64 avail;
+ 	u64 used;
+ 
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+-		space_info->bytes_pinned + space_info->bytes_readonly +
+-		space_info->bytes_may_use;
++		space_info->bytes_pinned + space_info->bytes_readonly;
++
++	spin_lock(&global_rsv->lock);
++	rsv_size = global_rsv->size;
++	spin_unlock(&global_rsv->lock);
++
++	/*
++	 * We only want to allow over committing if we have lots of actual space
++	 * free, but if we don't have enough space to handle the global reserve
++	 * space then we could end up having a real enospc problem when trying
++	 * to allocate a chunk or some other such important allocation.
++	 */
++	rsv_size <<= 1;
++	if (used + rsv_size >= space_info->total_bytes)
++		return 0;
++
++	used += space_info->bytes_may_use;
+ 
+ 	spin_lock(&root->fs_info->free_chunk_lock);
+ 	avail = root->fs_info->free_chunk_space;

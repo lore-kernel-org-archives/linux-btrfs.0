@@ -1,69 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49768 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750956Ab3AaFhP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 00:37:15 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH] Btrfs-progs: man btrfs: subcommands must be grouped together
-Date: Thu, 31 Jan 2013 13:35:31 +0800
-Message-Id: <1359610531-22279-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1359610531-22279-1-git-send-email-anand.jain@oracle.com>
-References: <1359610531-22279-1-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:46415 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751248Ab3AaIWb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 03:22:31 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0V8MSlC017906
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 16:22:28 +0800
+Message-ID: <510A2984.6010601@cn.fujitsu.com>
+Date: Thu, 31 Jan 2013 16:21:24 +0800
+From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, miaox@cn.fujitsu.com
+Subject: [PATCH] Btrfs-prog/send: fix wrong dump_fd check in cmd_send_start()
+References: <510A2791.1010607@cn.fujitsu.com>
+In-Reply-To: <510A2791.1010607@cn.fujitsu.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In cmd_send_start(), there is a check to make sure dump_fd is not a tty
+before parsing command options. So if we use the option "-f file",
+it doesn't work for the dump_fd has not been created. So fix it.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Cheng Yang <chenyang.fnst@cn.fujitsu.com>
 ---
- man/btrfs.8.in | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ cmds-send.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index c8fdc15..8d3ecba 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -19,6 +19,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
- [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
- [<\fIfile\fR>|<\fIdir\fR>...]
-@@ -29,8 +31,6 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
--\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
--.PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
-@@ -172,6 +172,10 @@ is similar to \fBsubvolume list\fR command.
- Show information of a given subvolume in the \fI<path>\fR.
- .TP
+diff --git a/cmds-send.c b/cmds-send.c
+index 2b9a610..aafa800 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -429,11 +429,6 @@ int cmd_send_start(int argc, char **argv)
+ 	memset(&send, 0, sizeof(send));
+ 	send.dump_fd = fileno(stdout);
  
-+\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
-+List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
-+.TP
-+
- \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
- [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
- 
-@@ -201,10 +205,6 @@ don't use it if you use snapshots, have de-duplicated your data or made
- copies with \fBcp --reflink\fP.
- .TP
- 
--\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
--List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
--.TP
+-	if (isatty(send.dump_fd)) {
+-		fprintf(stderr, "ERROR: not dumping send stream into a terminal, redirect it into a file\n");
+-		return 1;
+-	}
 -
- \fBfilesystem sync\fR\fI <path> \fR
- Force a sync for the filesystem identified by \fI<path>\fR.
- .TP
+ 	while ((c = getopt(argc, argv, "vf:i:p:")) != -1) {
+ 		switch (c) {
+ 		case 'v':
+@@ -497,6 +492,13 @@ int cmd_send_start(int argc, char **argv)
+ 		}
+ 	}
+ 
++	if (isatty(send.dump_fd)) {
++		fprintf(stderr, 
++			"ERROR: not dumping send stream into a terminal, "
++			"redirect it into a file\n");
++		return 1;
++	}
++
+ 	/* use first send subvol to determine mount_root */
+ 	subvol = argv[optind];
+ 
 -- 
-1.8.1.227.g44fe835
+1.7.7.6
+
+
 

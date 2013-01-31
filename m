@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:6550 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754240Ab3AaFzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 00:55:38 -0500
-Message-ID: <510A0756.40206@redhat.com>
-Date: Wed, 30 Jan 2013 23:55:34 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:63129 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754623Ab3AaGNq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 01:13:46 -0500
+Message-ID: <510A0BBF.4070709@cn.fujitsu.com>
+Date: Thu, 31 Jan 2013 14:14:23 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
@@ -16,7 +17,7 @@ Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/30/13 9:37 PM, Tsutomu Itoh wrote:
+On thu, 31 Jan 2013 12:37:49 +0900, Tsutomu Itoh wrote:
 > Hi,
 > 
 > In kernel 3.8-rc5, the following panics occurred when the mount was done
@@ -35,20 +36,6 @@ On 1/30/13 9:37 PM, Tsutomu Itoh wrote:
 >  564 static struct btrfs_worker_thread *find_worker(struct btrfs_workers *workers)
 >  565 {
 > ...
-
-I'm new at this so just taking a guess, but maybe a patch below.  :)
-
-Hm, so we can't get here unless:
-
-	worker = next_worker(workers);
-
-returned NULL.  And it can't return NULL unless idle_list is empty,
-and we are not at the maximum nr. of threads, or the current worker
-list is empty.
-
-So it's possible to return NULL from next_worker() if 
-idle_list and worker_list are both empty, I think.
-
 > ...
 >  595 fallback:
 >  596         fallback = NULL;
@@ -58,23 +45,21 @@ idle_list and worker_list are both empty, I think.
 >  600          */
 >  601         if (!list_empty(&workers->worker_list))
 >  602                 fallback = workers->worker_list.next;
-
-it's possible that we got here *because* the worker_list was
-empty...
-
 >  603         if (!list_empty(&workers->idle_list))
-
-... and that when we were called, this list was empty too.
-
 >  604                 fallback = workers->idle_list.next;
 >  605         BUG_ON(!fallback);              <---------------------- this !
-
-
-Seems quite possible that there are no worker threads at all at this point.
-How could that happen...
-
 >  606         worker = list_entry(fallback,
 >  607                   struct btrfs_worker_thread, worker_list);
+
+
+If worker_list is not empty, we get a worker from this list; if worker_list is empty,
+it means all the workers in idle_list, we get the worker from idle_list.
+
+So the above bug is introduced by the second if sentence. it should be "else if".
+
+Thanks
+Miao
+
 > 
 > -Tsutomu
 > 
@@ -83,10 +68,6 @@ How could that happen...
 > [ 7913.075890] btrfs: allowing degraded mounts
 > [ 7913.075893] btrfs: disk space caching is enabled
 > [ 7913.092031] Btrfs: too many missing devices, writeable mount is not allowed
-
-so this was supposed to fail the mount in open_ctree; it jumps to shutting down
-the worker threads.  Which might result in no threads available.
-
 > [ 7913.092297] ------------[ cut here ]------------
 > [ 7913.092313] kernel BUG at fs/btrfs/async-thread.c:605!
 > [ 7913.092326] invalid opcode: 0000 [#1] SMP
@@ -94,59 +75,6 @@ the worker threads.  Which might result in no threads available.
 > [ 7913.092575] CPU 0
 > [ 7913.092584] Pid: 3673, comm: btrfs-endio-wri Not tainted 3.8.0-rc5 #1 FUJITSU-SV      PRIMERGY            /D2399
 > [ 7913.092608] RIP: 0010:[<ffffffffa04670ef>]  [<ffffffffa04670ef>] btrfs_queue_worker+0x10e/0x236 [btrfs]
-
-but this is already trying to do work, and has no workers to handle it.
-
-The place we jump to is fail_block_groups, and before it is this comment:
-
-        /*      
-         * make sure we're done with the btree inode before we stop our
-         * kthreads
-         */
-        filemap_write_and_wait(fs_info->btree_inode->i_mapping);
-        invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-                                               
-fail_block_groups:
-        btrfs_free_block_groups(fs_info);
-
-if you move the fail_block_groups: target above the comment, does that fix it?
-(although I don't know yet what started IO . . . )
-
-like this:
-
-From: Eric Sandeen <sandeen@redhat.com>
-
-Make sure that we are always done with the btree_inode's mapping
-before we shut down the worker threads in open_ctree() error
-cases.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com> 
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d89da40..1e2abda 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2689,6 +2689,7 @@ fail_trans_kthread:
- fail_cleaner:
- 	kthread_stop(fs_info->cleaner_kthread);
- 
-+fail_block_groups:
- 	/*
- 	 * make sure we're done with the btree inode before we stop our
- 	 * kthreads
-@@ -2696,7 +2697,6 @@ fail_cleaner:
- 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
- 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 
--fail_block_groups:
- 	btrfs_free_block_groups(fs_info);
- 
- fail_tree_roots:
-
-Just a guess; but I don't know what would have started writes already...
-
--Eric
-
 > [ 7913.092663] RSP: 0018:ffff88019fc03c10  EFLAGS: 00010046
 > [ 7913.092676] RAX: 0000000000000000 RBX: ffff8801967b8a58 RCX: 0000000000000000
 > [ 7913.092894] RDX: 0000000000000000 RSI: ffff8801961239b8 RDI: ffff8801967b8ab8
@@ -159,15 +87,6 @@ Just a guess; but I don't know what would have started writes already...
 > [ 7913.093247] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
 > [ 7913.093247] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
 > [ 7913.093247] Process btrfs-endio-wri (pid: 3673, threadinfo ffff8801939ca000, task ffff880195795b00)
-
-This was started by 
-
-        btrfs_init_workers(&fs_info->endio_write_workers, "endio-write",
-                           fs_info->thread_pool_size,
-                           &fs_info->generic_worker);
-
-via open_ctree() before we jumped to fail_block_groups.
-
 > [ 7913.093247] Stack:
 > [ 7913.093247]  ffff8801967b8a88 ffff8801967b8a78 ffff88003fa0a600 ffff8801965ad0c0
 > [ 7913.093247]  ffff88003fa0a600 0000000000000000 0000000000000000 0000000000000000

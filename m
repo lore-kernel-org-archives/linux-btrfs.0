@@ -1,75 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:25334 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752703Ab3AaPhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 10:37:37 -0500
-Message-ID: <510A8FB6.50107@redhat.com>
-Date: Thu, 31 Jan 2013 09:37:26 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-bk0-f54.google.com ([209.85.214.54]:51723 "EHLO
+	mail-bk0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751731Ab3AaPkI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 10:40:08 -0500
+Received: by mail-bk0-f54.google.com with SMTP id w5so1409034bku.41
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 07:40:07 -0800 (PST)
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG] kernel BUG at fs/btrfs/async-thread.c:605!
-References: <5109E70D.3010005@jp.fujitsu.com> <510A0756.40206@redhat.com> <510A243C.3010508@cn.fujitsu.com>
-In-Reply-To: <510A243C.3010508@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+From: Christopher Thorjussen <joffer@onlinebackupcompany.com>
+Date: Thu, 31 Jan 2013 16:39:52 +0100
+Message-ID: <CAFKW2=ETvfXTyth9jHoc=6yZQDLj+5c8kRTZd4+79zVbs4LU-w@mail.gmail.com>
+Subject: btrfs subvolume list - with three subvolumes, the second is
+ missing/not showing
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/31/13 1:58 AM, Miao Xie wrote:
-> On wed, 30 Jan 2013 23:55:34 -0600, Eric Sandeen wrote:
->> if you move the fail_block_groups: target above the comment, does that fix it?
->> (although I don't know yet what started IO . . . )
->>
->> like this:
->>
->> From: Eric Sandeen <sandeen@redhat.com>
->>
->> Make sure that we are always done with the btree_inode's mapping
->> before we shut down the worker threads in open_ctree() error
->> cases.
-> 
-> 
-> I reviewed your patch again, and found it just fix the above problem, it still
-> have similar problems which are not fixed.
+I've created a large btrfs volume out of two large raid-60 devices. On
+there I've created three subvolumes. When I do a list of those the 2nd
+isn't displayed. If I however add a fouth subvol they all gets listed.
 
-Can you explain the similar problems you found?
+This is on a HP DL360 running RHEL6.3 with a P411 SAS Raid controller
+connected to a HP MD600 (70 x 2TB NL-SAS).
+I've installed kernel-ml v3.7.4 from elrepo and also installed
+btrfs-progs-0.19-12.el6.x86_64
 
-(Also, the reason I thought a write had been started was because the original
-panic was in comm: btrfs-endio-wr[iter])
+root@data01:/opt/data# btrfs fi sh
+failed to read /dev/sr0
+Label: none  uuid: 786684d1-95fa-4809-8fca-e17e37a79999
+        Total devices 2 FS bytes used 816.00KB
+        devid    1 size 54.58TB used 2.03GB path /dev/sdb
+        devid    2 size 54.58TB used 2.01GB path /dev/sdc
 
-Thanks,
--Eric
+Btrfs Btrfs v0.19
 
-> How about this one?
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 0c31d07..d8fd711 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2728,13 +2728,13 @@ fail_cleaner:
->  	 * kthreads
->  	 */
->  	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
-> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->  
->  fail_block_groups:
->  	btrfs_free_block_groups(fs_info);
->  
->  fail_tree_roots:
->  	free_root_pointers(fs_info, 1);
-> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->  
->  fail_sb_buffer:
->  	btrfs_stop_workers(&fs_info->generic_worker);
-> @@ -2755,7 +2755,6 @@ fail_alloc:
->  fail_iput:
->  	btrfs_mapping_tree_free(&fs_info->mapping_tree);
->  
-> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->  	iput(fs_info->btree_inode);
->  fail_bdi:
->  	bdi_destroy(&fs_info->bdi);
-> 
+root@data01:/opt/data# ls -l
+total 0
+drwxr-xr-x 1 root root 0 Jan 31 15:55 buffer
+drwxr-xr-x 1 root root 0 Jan 31 15:55 consolidated
+drwxr-xr-x 1 root root 0 Jan 31 15:55 staging
 
+root@data01:/opt/data# btrfs subvolume list .
+ID 265 top level 5 path consolidated
+ID 267 top level 5 path buffer
+
+root@data01:/opt/data# btrfs subvolume create 4thsubvol
+Create subvolume './4thsubvol'
+
+root@data01:/opt/data# btrfs subvolume list .
+ID 265 top level 5 path consolidated
+ID 266 top level 5 path staging
+ID 267 top level 5 path buffer
+ID 272 top level 5 path 4thsubvol
+
+root@data01:/opt/data# rpm -qa | grep btrfs
+btrfs-progs-0.19-12.el6.x86_64
+
+It surely is a bug, but has it been reported and/or fixed? I wasn't
+able to find out by googling just now.
+
+
+
+Med vennlig hilsen / kind regards
+
+Christopher Thorjussen
+System Administrator, VCP4/VCP5
+The Online Backup Company AS
+http://www.onlinebackupcompany.no
+
+"Backup isn't the real concern. Restoring normal business is."

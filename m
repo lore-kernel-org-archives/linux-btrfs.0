@@ -1,133 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62002 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751467Ab3AaJWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jan 2013 04:22:42 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r0V9Ma5W022155
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 17:22:36 +0800
-Message-ID: <510A3807.1040306@cn.fujitsu.com>
-Date: Thu, 31 Jan 2013 17:23:19 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-ee0-f41.google.com ([74.125.83.41]:44337 "EHLO
+	mail-ee0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753990Ab3AaJpX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jan 2013 04:45:23 -0500
+Received: by mail-ee0-f41.google.com with SMTP id c13so1318806eek.14
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2013 01:45:21 -0800 (PST)
+Message-ID: <510A3D1D.4010501@statystyka.net>
+Date: Thu, 31 Jan 2013 10:45:01 +0100
+From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] Btrfs: serialize unlocked dio reads with truncate
-Content-Type: text/plain; charset=UTF-8
+To: andrew.j.wade@gmail.com, linux-btrfs@vger.kernel.org
+Subject: Re: Poor performance of btrfs. Suspected unidentified btrfs housekeeping
+ process which writes a lot
+References: <CAAuLxcbVXFjzvZ+Oj4MUEHnsOhhbVPTeKx-34En2ym37J2wuuA@mail.gmail.com>
+In-Reply-To: <CAAuLxcbVXFjzvZ+Oj4MUEHnsOhhbVPTeKx-34En2ym37J2wuuA@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, we can do unlocked dio reads, but the following race
-is possible:
+On 2013-01-31 04:33, Andrew Wade wrote:
+> Hi Adam,
+>
+> Is btrfs mounted relatime? I'm wondering if you're seeing metadata
+> writes from atime updates. I've got my filesystem mounted noatime to
+> avoid breaking metadata sharing between subvolumes.
+>
+> Apologies for the broken threading - I'm not subscribed to the list.
+>
+> regards,
+> Andrew
 
-dio_read_task			truncate_task
-				->btrfs_setattr()
-->btrfs_direct_IO
-    ->__blockdev_direct_IO
-      ->btrfs_get_block
-				  ->btrfs_truncate()
-				 #alloc truncated blocks
-				 #to other inode
-      ->submit_io()
-     #INFORMATION LEAK
+Thank you, thank you!!! Hurray!! That was the problem!! I'm so happy 
+you've helped me out!!!
 
-In order to avoid this problem, we must serialize unlocked dio reads with
-truncate by inode_dio_wait().
+After mounting the system with noatime the problem disappeared, like in 
+magic.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/btrfs_inode.h | 19 +++++++++++++++++++
- fs/btrfs/inode.c       | 31 +++++++++++++++++++++++++++----
- 2 files changed, 46 insertions(+), 4 deletions(-)
+All the writes must have came from the dealyed metadata copy process. 
+Once all the metadata copy-update was done, file system speed was back 
+to normal, but once the new day broke out, all the copying business 
+needed to done again... This in 100% describes all the odd behavior.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 2a8c242..00e2601 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -40,6 +40,7 @@
- #define BTRFS_INODE_HAS_ASYNC_EXTENT		6
- #define BTRFS_INODE_NEEDS_FULL_SYNC		7
- #define BTRFS_INODE_COPY_EVERYTHING		8
-+#define BTRFS_INODE_READDIO_NEED_LOCK		9
- 
- /* in memory btrfs inode */
- struct btrfs_inode {
-@@ -216,4 +217,22 @@ static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
- 	return 0;
- }
- 
-+/*
-+ * Disable DIO read nolock optimization, so new dio readers will be forced
-+ * to grab i_mutex. It is used to avoid the endless truncate due to
-+ * nonlocked dio read.
-+ */
-+static inline void btrfs_inode_block_unlocked_dio(struct inode *inode)
-+{
-+	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &BTRFS_I(inode)->runtime_flags);
-+	smp_mb();
-+}
-+
-+static inline void btrfs_inode_resume_unlocked_dio(struct inode *inode)
-+{
-+	smp_mb__before_clear_bit();
-+	clear_bit(BTRFS_INODE_READDIO_NEED_LOCK,
-+		  &BTRFS_I(inode)->runtime_flags);
-+}
-+
- #endif
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 97f4c30..d17a04b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3785,6 +3785,11 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
- 
- 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
- 		truncate_setsize(inode, newsize);
-+
-+		btrfs_inode_block_unlocked_dio(inode);
-+		inode_dio_wait(inode);
-+		btrfs_inode_resume_unlocked_dio(inode);
-+
- 		ret = btrfs_truncate(inode);
- 	}
- 
-@@ -6583,15 +6588,33 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
-+	int flags = 0;
-+	bool wakeup = false;
-+	int ret;
- 
- 	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iov,
- 			    offset, nr_segs))
- 		return 0;
- 
--	return __blockdev_direct_IO(rw, iocb, inode,
--		   BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
--		   iov, offset, nr_segs, btrfs_get_blocks_direct, NULL,
--		   btrfs_submit_direct, 0);
-+	if (rw == READ) {
-+		atomic_inc(&inode->i_dio_count);
-+		smp_mb__after_atomic_inc();
-+		if (unlikely(test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
-+				      &BTRFS_I(inode)->runtime_flags))) {
-+			inode_dio_done(inode);
-+			flags = DIO_LOCKING | DIO_SKIP_HOLES;
-+		} else {
-+			wakeup = true;
-+		}
-+	}
-+
-+	ret = __blockdev_direct_IO(rw, iocb, inode,
-+			BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
-+			iov, offset, nr_segs, btrfs_get_blocks_direct, NULL,
-+			btrfs_submit_direct, flags);
-+	if (wakeup)
-+		inode_dio_done(inode);
-+	return ret;
- }
- 
- #define BTRFS_FIEMAP_FLAGS	(FIEMAP_FLAG_SYNC)
+In particular apparently the problem had nothing to do with my complex 
+block device setup, nor with bedup, nor with unison.
+
+Thank you again, Andrew!
+
+P.S. Maybe it is not be decided by me, but this small message about 
+performance (not even labeled as warning) in 
+https://btrfs.wiki.kernel.org/index.php/Mount_options IMHO should have 
+been made more conspicuous, maybe put somewhere when the snapshot 
+mechanism is described or in FAQ. I'll try to fix it.
+
 -- 
-1.7.11.7
+
+Adam Ryczkowski
++48505919892 <callto:+48505919892>
+Skype:sisteczko <skype:sisteczko>
+

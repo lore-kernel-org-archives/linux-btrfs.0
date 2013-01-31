@@ -1,47 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:46651 "EHLO
+Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:46510 "EHLO
 	bp-05.lab.msp.redhat.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751760Ab3AaAGi (ORCPT
+	by vger.kernel.org with ESMTP id S1754379Ab3AaAGk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jan 2013 19:06:38 -0500
+	Wed, 30 Jan 2013 19:06:40 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 08/11] btrfs: remove unused "item" in btrfs_insert_delayed_item()
-Date: Wed, 30 Jan 2013 18:54:59 -0600
-Message-Id: <1359593702-53056-9-git-send-email-sandeen@redhat.com>
+Subject: [PATCH 02/11] btrfs: list_entry can't return NULL
+Date: Wed, 30 Jan 2013 18:54:53 -0600
+Message-Id: <1359593702-53056-3-git-send-email-sandeen@redhat.com>
 In-Reply-To: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
 References: <1359593702-53056-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"item" was set but never used in this function.
+No need to test the result, we can't get a
+null pointer from list_entry()
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- fs/btrfs/delayed-inode.c |    2 --
+ fs/btrfs/disk-io.c |    2 --
  1 files changed, 0 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 3483603..092c680 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -875,7 +875,6 @@ static int btrfs_insert_delayed_item(struct btrfs_trans_handle *trans,
- 				     struct btrfs_delayed_item *delayed_item)
- {
- 	struct extent_buffer *leaf;
--	struct btrfs_item *item;
- 	char *ptr;
- 	int ret;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a8f652d..d89da40 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3823,8 +3823,6 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
  
-@@ -886,7 +885,6 @@ static int btrfs_insert_delayed_item(struct btrfs_trans_handle *trans,
+ 	while (!list_empty(&list)) {
+ 		t = list_entry(list.next, struct btrfs_transaction, list);
+-		if (!t)
+-			break;
  
- 	leaf = path->nodes[0];
+ 		btrfs_destroy_ordered_operations(root);
  
--	item = btrfs_item_nr(leaf, path->slots[0]);
- 	ptr = btrfs_item_ptr(leaf, path->slots[0], char);
- 
- 	write_extent_buffer(leaf, delayed_item->data, (unsigned long)ptr,
 -- 
 1.7.1
 

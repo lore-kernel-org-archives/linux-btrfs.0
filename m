@@ -1,136 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:40451 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751161Ab3BAFxZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 00:53:25 -0500
-Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id B10433EE0CB
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 14:53:23 +0900 (JST)
-Received: from smail (m4 [127.0.0.1])
-	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 94AC145DE59
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 14:53:23 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 708F545DE51
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 14:53:23 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 5FC7C1DB803B
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 14:53:23 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 01A651DB802F
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 14:53:23 +0900 (JST)
-Message-ID: <510B5845.2020602@jp.fujitsu.com>
-Date: Fri, 01 Feb 2013 14:53:09 +0900
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:26610 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751161Ab3BAF4G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Feb 2013 00:56:06 -0500
+Message-ID: <510B5912.7000908@cn.fujitsu.com>
+Date: Fri, 01 Feb 2013 13:56:34 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: Eric Sandeen <sandeen@redhat.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG] kernel BUG at fs/btrfs/async-thread.c:605!
-References: <5109E70D.3010005@jp.fujitsu.com> <510A0756.40206@redhat.com> <510A243C.3010508@cn.fujitsu.com> <510B0CE5.9090601@jp.fujitsu.com> <510B3B4B.6070607@cn.fujitsu.com>
-In-Reply-To: <510B3B4B.6070607@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+To: Josef Bacik <jbacik@fusionio.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] Btrfs: serialize unlocked dio reads with truncate
+References: <510A3807.1040306@cn.fujitsu.com> <20130131164041.GP3660@localhost.localdomain>
+In-Reply-To: <20130131164041.GP3660@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2013/02/01 12:49, Miao Xie wrote:
-> On Fri, 01 Feb 2013 09:31:33 +0900, Tsutomu Itoh wrote:
->> Hi,
+On Thu, 31 Jan 2013 11:40:41 -0500, Josef Bacik wrote:
+> On Thu, Jan 31, 2013 at 02:23:19AM -0700, Miao Xie wrote:
+>> Currently, we can do unlocked dio reads, but the following race
+>> is possible:
 >>
->> On 2013/01/31 16:58, Miao Xie wrote:
->>> On wed, 30 Jan 2013 23:55:34 -0600, Eric Sandeen wrote:
->>>> if you move the fail_block_groups: target above the comment, does that fix it?
->>>> (although I don't know yet what started IO . . . )
->>>>
->>>> like this:
->>>>
->>>> From: Eric Sandeen <sandeen@redhat.com>
->>>>
->>>> Make sure that we are always done with the btree_inode's mapping
->>>> before we shut down the worker threads in open_ctree() error
->>>> cases.
->>>
->>>
->>> I reviewed your patch again, and found it just fix the above problem, it still
->>> have similar problems which are not fixed.
->>>
->>> How about this one?
+>> dio_read_task			truncate_task
+>> 				->btrfs_setattr()
+>> ->btrfs_direct_IO
+>>     ->__blockdev_direct_IO
+>>       ->btrfs_get_block
+>> 				  ->btrfs_truncate()
+>> 				 #alloc truncated blocks
+>> 				 #to other inode
+>>       ->submit_io()
+>>      #INFORMATION LEAK
 >>
->> Thanks Eric and Miao.
->> But I can not reproduce this problem, yet.
->> ('Btrfs: too many missing devices, writeable mount is not allowed' messages was
->>   displayed, but not panic)
->>   So, I can not test your patch, sorry.
+>> In order to avoid this problem, we must serialize unlocked dio reads with
+>> truncate by inode_dio_wait().
 >>
->> Can you please explain similar problems, Miao?
 > 
-> Before missing device check, there are several places where we read the metadata,
-> such as reading chunk tree root, btrfs_read_chunk_tree, those functions may fail
-> after submit a bio. If we don't wait until the bio end, and just stop the workers,
-> the same problem will happen.
-> 
-> (invalidate_inode_pages2() will wait until the bio end, because it need lock the pages
->   which are going to be invalidated, and the page is locked if it is under disk read IO)
+> So I had thinking about this, are we sure we don't want to just lock the extent
+> range when we truncate?  I'm good with this, but it seems like we might as well
+> and be consistent and use the extent locks.  What do you think?  Thanks,
 
-I understood.
+But comparing with the current approach, the extent lock has the following problem:
+	Dio_Read_Task			Truncate_task
+					truncate file
+					  set isize to 4096
+					  drop pages
+	lock extent[4096, 8191]
+	read extent[4096, 8191]
+	unlock extent[4096, 8191]
+					  lock extent[4096, -1ULL]
+					  truncate item
+					  unlock extent[4096, -1ULL]
+	lock extent[8192, ...]
+	read extent[8192, ...]
+	  no extent item
+	  zero the buffer
+	unlock extent[8192, ...]
 
-My reproducer is not reproduce this problem yet. But the following messages were
-displayed when 'rmmod btrfs' command was executed.
+we get the data that is mixed with new data.(Punch hole also has this problem, we need
+fix)
 
- [76378.723481] =============================================================================
- [76378.723901] BUG btrfs_extent_buffer (Tainted: G   B       ): Objects remaining in btrfs_extent_buffer on kmem_cache_close()
- [76378.724333] -----------------------------------------------------------------------------
- [76378.724333]
- [76378.724959] INFO: Slab 0xffffea00065c3280 objects=23 used=2 fp=0xffff8801970caac0 flags=0x8000000000004080
- [76378.725391] Pid: 9156, comm: rmmod Tainted: G B        3.8.0-rc5 #1
- [76378.725397] Call Trace:
- [76378.725403]  [<ffffffff8111bc23>] slab_err+0xb0/0xd2
-
-I think that this message means there is a possibility that I/O did not end
-normally.
-and, after Miao's patch applied, this message is not displayed when rmmod was
-executed.
-
-So, Miao's patch seems to fix the problem for me.
-
-Thanks,
-Tsutomu
-
-> 
-> Thanks
-> Miao
-> 
->>
->> Thanks,
->> Tsutomu
->>
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 0c31d07..d8fd711 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -2728,13 +2728,13 @@ fail_cleaner:
->>>    	 * kthreads
->>>    	 */
->>>    	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
->>> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->>>    
->>>    fail_block_groups:
->>>    	btrfs_free_block_groups(fs_info);
->>>    
->>>    fail_tree_roots:
->>>    	free_root_pointers(fs_info, 1);
->>> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->>>    
->>>    fail_sb_buffer:
->>>    	btrfs_stop_workers(&fs_info->generic_worker);
->>> @@ -2755,7 +2755,6 @@ fail_alloc:
->>>    fail_iput:
->>>    	btrfs_mapping_tree_free(&fs_info->mapping_tree);
->>>    
->>> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->>>    	iput(fs_info->btree_inode);
->>>    fail_bdi:
->>>    	bdi_destroy(&fs_info->bdi);
->>>
-
-
+Thanks
+Miao

@@ -1,163 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22051 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754062Ab3BDNPJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 08:15:09 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r14DF8ur012545
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Feb 2013 13:15:09 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r14DF83F011687
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Feb 2013 13:15:08 GMT
-Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r14DF7jk006383
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Feb 2013 07:15:07 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: extend the checksum item as much as possible
-Date: Mon,  4 Feb 2013 21:12:18 +0800
-Message-Id: <1359983538-3412-1-git-send-email-bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:30122 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750918Ab3BAH6V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 02:58:21 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
+Subject: [PATCH 01/13] Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+Date: Fri,  1 Feb 2013 15:56:20 +0800
+Message-Id: <1359705392-7485-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
+ <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For write, we also reserve some space for COW blocks during updating
-the checksum tree, and we calculate the number of blocks by checking
-if the number of bytes outstanding that are going to need csums needs
-one more block for csum.
+To improve the code reuse its better to have btrfs_list_subvols
+just return list of subvols witout printing
 
-When we add these checksum into the checksum tree, we use ordered sums
-list.
-Every ordered sum contains csums for each sector, and we'll first try
-to look up an existing csum item,
-a) if we don't yet have a proper csum item, then we need to insert one,
-b) or if we find one but the csum item is not big enough, then we need
-to extend it.
-
-The point is we'll unlock the whole path and then insert or extend.
-So others can hack in and update the tree.
-
-Each insert or extend needs update the tree with COW on, and we may need
-to insert/extend for many times.
-
-That means what we've reserved for updating checksum tree is NOT enough
-indeed.
-
-The case is even more serious with having several write threads at the
-same time, it can end up eating our reserved space quickly and starting
-eating globle reserve pool instead.
-
-I don't yet come up with a way to calculate the worse case for updating
-csum, but extending the checksum item as much as possible can be helpful
-in my test.
-
-The idea behind is that it can reduce the times we insert/extend so that
-it saves us precious reserved space.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/file-item.c |   67 ++++++++++++++++++++++++++++++++++---------------
- 1 files changed, 46 insertions(+), 21 deletions(-)
+ btrfs-list.c     | 28 ++++++++++++++++++----------
+ btrfs-list.h     |  2 +-
+ cmds-subvolume.c |  4 ++--
+ 3 files changed, 21 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 94aa53b..ec16020 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -684,6 +684,24 @@ out:
- 	return ret;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index e09ee2d..ab42a33 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1440,15 +1440,11 @@ static void print_all_volume_info(struct root_lookup *sorted_tree,
+ 	}
  }
  
-+static u64 btrfs_sector_sum_left(struct btrfs_ordered_sum *sums,
-+				 struct btrfs_sector_sum *sector_sum,
-+				 u64 total_bytes, u64 sectorsize)
-+{
-+	u64 tmp = sectorsize;
-+	u64 next_sector = sector_sum->bytenr;
-+	struct btrfs_sector_sum *next = sector_sum + 1;
-+
-+	while ((tmp + total_bytes) < sums->len) {
-+		if (next_sector + sectorsize != next->bytenr)
-+			break;
-+		tmp += sectorsize;
-+		next_sector = next->bytenr;
-+		next++;
-+	}
-+	return tmp;
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+-		       struct btrfs_list_comparer_set *comp_set,
+-		       int is_tab_result)
++int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
+ {
+-	struct root_lookup root_lookup;
+-	struct root_lookup root_sort;
+ 	int ret;
+ 
+-	ret = __list_subvol_search(fd, &root_lookup);
++	ret = __list_subvol_search(fd, root_lookup);
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: can't perform the search - %s\n",
+ 				strerror(errno));
+@@ -1459,16 +1455,28 @@ int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
+ 	 * now we have an rbtree full of root_info objects, but we need to fill
+ 	 * in their path names within the subvol that is referencing each one.
+ 	 */
+-	ret = __list_subvol_fill_paths(fd, &root_lookup);
+-	if (ret < 0)
+-		return ret;
++	ret = __list_subvol_fill_paths(fd, root_lookup);
++	return ret;
 +}
+ 
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
++		       struct btrfs_list_comparer_set *comp_set,
++		       int is_tab_result)
++{
++	struct root_lookup root_lookup;
++	struct root_lookup root_sort;
++	int ret;
 +
- int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct btrfs_ordered_sum *sums)
-@@ -789,20 +807,32 @@ again:
- 		goto insert;
- 	}
++	ret = btrfs_list_subvols(fd, &root_lookup);
++	if (ret)
++		return ret;
+ 	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+ 				 comp_set, fd);
  
--	if (csum_offset >= btrfs_item_size_nr(leaf, path->slots[0]) /
-+	if (csum_offset == btrfs_item_size_nr(leaf, path->slots[0]) /
- 	    csum_size) {
--		u32 diff = (csum_offset + 1) * csum_size;
-+		int extend_nr;
-+		u64 tmp;
-+		u32 diff;
-+		u32 free_space;
- 
--		/*
--		 * is the item big enough already?  we dropped our lock
--		 * before and need to recheck
--		 */
--		if (diff < btrfs_item_size_nr(leaf, path->slots[0]))
--			goto csum;
-+		if (btrfs_leaf_free_space(root, leaf) <
-+				 sizeof(struct btrfs_item) + csum_size * 2)
-+			goto insert;
+ 	print_all_volume_info(&root_sort, is_tab_result);
+ 	__free_all_subvolumn(&root_lookup);
+-	return ret;
 +
-+		free_space = btrfs_leaf_free_space(root, leaf) -
-+					 sizeof(struct btrfs_item) - csum_size;
-+		tmp = btrfs_sector_sum_left(sums, sector_sum, total_bytes,
-+					    root->sectorsize);
-+		tmp >>= root->fs_info->sb->s_blocksize_bits;
-+		WARN_ON(tmp < 1);
-+
-+		extend_nr = max_t(int, 1, (int)tmp);
-+		diff = (csum_offset + extend_nr) * csum_size;
-+		diff = min(diff, MAX_CSUM_ITEMS(root, csum_size) * csum_size);
++	return 0;
+ }
  
- 		diff = diff - btrfs_item_size_nr(leaf, path->slots[0]);
--		if (diff != csum_size)
--			goto insert;
-+		diff = min(free_space, diff);
-+		diff /= csum_size;
-+		diff *= csum_size;
+ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+diff --git a/btrfs-list.h b/btrfs-list.h
+index cde4b3c..71fe0f3 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -98,7 +98,7 @@ int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+ 			      enum btrfs_list_comp_enum comparer,
+ 			      int is_descending);
  
- 		btrfs_extend_item(trans, root, path, diff);
- 		goto csum;
-@@ -812,19 +842,14 @@ insert:
- 	btrfs_release_path(path);
- 	csum_offset = 0;
- 	if (found_next) {
--		u64 tmp = total_bytes + root->sectorsize;
--		u64 next_sector = sector_sum->bytenr;
--		struct btrfs_sector_sum *next = sector_sum + 1;
-+		u64 tmp;
+-int btrfs_list_subvols(int fd, struct btrfs_list_filter_set *filter_set,
++int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+ 			int is_tab_result);
+ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e3cdb1e..c35dff7 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -406,7 +406,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 					BTRFS_LIST_FILTER_TOPID_EQUAL,
+ 					top_id);
  
--		while (tmp < sums->len) {
--			if (next_sector + root->sectorsize != next->bytenr)
--				break;
--			tmp += root->sectorsize;
--			next_sector = next->bytenr;
--			next++;
--		}
--		tmp = min(tmp, next_offset - file_key.offset);
-+		tmp = btrfs_sector_sum_left(sums, sector_sum, total_bytes,
-+					    root->sectorsize);
- 		tmp >>= root->fs_info->sb->s_blocksize_bits;
-+		tmp = min(tmp, (next_offset - file_key.offset) >>
-+					 root->fs_info->sb->s_blocksize_bits);
-+
- 		tmp = max((u64)1, tmp);
- 		tmp = min(tmp, (u64)MAX_CSUM_ITEMS(root, csum_size));
- 		ins_size = csum_size * tmp;
+-	ret = btrfs_list_subvols(fd, filter_set, comparer_set,
++	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
+ 				is_tab_result);
+ 	if (ret)
+ 		return 19;
+@@ -613,7 +613,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_ROOTID,
+ 				default_id);
+ 
+-	ret = btrfs_list_subvols(fd, filter_set, NULL, 0);
++	ret = btrfs_list_subvols_print(fd, filter_set, NULL, 0);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
 -- 
-1.7.7.6
+1.8.1.227.g44fe835
 

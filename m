@@ -1,88 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([85.222.100.130]:38162 "EHLO zlom.siedziba.pl"
+Received: from cantor2.suse.de ([195.135.220.15]:39061 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754766Ab3BAO7L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Feb 2013 09:59:11 -0500
-Received: from [85.222.100.130] (zlom.siedziba.pl [85.222.100.130])
-	by zlom.siedziba.pl (Postfix) with ESMTPSA id 0E6985A691F
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 15:59:07 +0100 (CET)
-Message-ID: <510BD802.6050203@siedziba.pl>
-Date: Fri, 01 Feb 2013 15:58:10 +0100
-From: =?UTF-8?B?UGlvdHIgUGF3xYJvdw==?= <pp@siedziba.pl>
+	id S1757219Ab3BARlO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Feb 2013 12:41:14 -0500
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mx2.suse.de (Postfix) with ESMTP id 87F94A38EA
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 18:41:12 +0100 (CET)
+Date: Fri, 1 Feb 2013 18:41:11 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Integration branch of btrfs-progs 2013-02-01
+Message-ID: <20130201174110.GC23239@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: IO failure when trying to convert degraded raid1 to single
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-Trying to convert degraded raid1 to single...
+documentation updates, mkfs support of extended refs (aka more hardlinks
+possible), new command 'subvolume show' and extensions/updates to
+the 'subvolume list' command and fsck fixes.
 
-# mount btrfs0.img /mnt/test -oloop,degraded
-# btrfs filesystem balance start -mconvert=single -dconvert=single -f 
-/mnt/test
+Please consider this more like a preview, there were some merge
+conflicts and I may have missed some combination of subvol list options
+that do not do what they're expected to do.
 
-...ends up with:
+I'm going to do some more testing of the previous integration branch and
+send a pull request as of 20130126.
 
-Btrfs v0.20-rc1-56-g6cd836d
-device fsid 88c73405-12f4-4dc8-90f2-71925867d0c5 devid 1 transid 4 
-/dev/loop0
-btrfs: allowing degraded mounts
-btrfs: disk space caching is enabled
-btrfs: force reducing metadata integrity
-BTRFS error (device loop0) in write_all_supers:3070: IO failure (errors 
-while submitting device barriers.)
-btrfs is forced readonly
-BTRFS warning (device loop0): Skipping commit of aborted transaction.
-------------[ cut here ]------------
-WARNING: at fs/btrfs/super.c:246 __btrfs_abort_transaction+0xb7/0xd0()
-Hardware name: Bochs
-Pid: 334, comm: btrfs Not tainted 3.6.0+ #1
-Call Trace:
-  [<c101f4b8>] warn_slowpath_common+0x68/0xa0
-  [<c110a0b7>] ? __btrfs_abort_transaction+0xb7/0xd0
-  [<c110a0b7>] ? __btrfs_abort_transaction+0xb7/0xd0
-  [<c101f54e>] warn_slowpath_fmt+0x2e/0x30
-  [<c110a0b7>] __btrfs_abort_transaction+0xb7/0xd0
-  [<c11305de>] btrfs_commit_transaction+0xde/0x940
-  [<c1111619>] ? btrfs_search_slot+0x3a9/0x7f0
-  [<c11508fe>] ? map_private_extent_buffer+0x5e/0xe0
-  [<c1129050>] ? btree_set_page_dirty+0x30/0x40
-  [<c10630b7>] ? set_page_dirty+0x47/0x50
-  [<c114fa4f>] ? set_extent_buffer_dirty+0x6f/0xa0
-  [<c1036b50>] ? abort_exclusive_wait+0x60/0x60
-  [<c110cc0b>] ? btrfs_free_path+0x1b/0x20
-  [<c11524a4>] insert_balance_item+0x494/0x4c0
-  [<c1003833>] ? do_IRQ+0x43/0xa0
-  [<c1156d16>] btrfs_balance+0x396/0x1030
-  [<c101cf0e>] ? kmap_atomic+0xe/0x10
-  [<c1060a6c>] ? get_page_from_freelist+0x22c/0x500
-  [<c101ce7e>] ? kmap_atomic_prot+0x3e/0xc0
-  [<c107d66a>] ? kmem_cache_alloc+0x5a/0xf0
-  [<c115d88d>] ? btrfs_ioctl_balance+0x13d/0x430
-  [<c115d816>] btrfs_ioctl_balance+0xc6/0x430
-  [<c1160940>] ? update_ioctl_balance_args+0x420/0x420
-  [<c116128f>] btrfs_ioctl+0x94f/0x1830
-  [<c1076736>] ? anon_vma_prepare+0xb6/0x110
-  [<c1064c8d>] ? lru_cache_add_lru+0x1d/0x40
-  [<c1075fdc>] ? page_add_new_anon_rmap+0x6c/0x80
-  [<c101c05e>] ? pte_alloc_one+0x1e/0x40
-  [<c1160940>] ? update_ioctl_balance_args+0x420/0x420
-  [<c108f456>] do_vfs_ioctl+0x76/0x570
-  [<c10192b3>] ? do_page_fault+0x173/0x410
-  [<c1073969>] ? do_brk+0x1a9/0x2d0
-  [<c108f97d>] sys_ioctl+0x2d/0x60
-  [<c1221a45>] syscall_call+0x7/0xb
----[ end trace b997a9531fdaebad ]---
-BTRFS error (device loop0) in cleanup_transaction:1378: IO failure
-delayed_refs has NO entry
 
-Kernel and tools compiled from git.
+david
 
-I also uploaded my minimal qemu setup, which I use to experiment with btrfs:
-http://pp.siedziba.pl/tmp/linux-btrfs-qemu.tar.xz (execute start.sh to 
-run qemu, then test.sh script to trigger the error)
+repo url: git://repo.or.cz/btrfs-progs-unstable/devel.git
+---
 
-Regards
+Anand Jain (14):
+      Btrfs-progs: man btrfs: subcommands must be grouped together
+      Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+      Btrfs-progs: add parent uuid for snapshots
+      Btrfs-progs: move struct root_info to btrfs-list.h
+      Btrfs-progs: add function btrfs_get_subvol to get root_info of a subvol
+      Btrfs-progs: add method to filter snapshots by parent uuid
+      Btrfs-progs: put find_mount_root() in commands.h
+      Btrfs-progs: make printing subvol extensible to newer layouts
+      Btrfs-progs: make get_subvol_name non cmds-send specific
+      Btrfs-progs: add show subcommand to subvol cli
+      Btrfs-progs: update btrfs_get_subvol to be inline with resolve_root ret changes
+      Btrfs-progs: Fix a small memory leak in managing the btrfs list filter
+      Btrfs-progs: add subvol flags to print
+      Btrfs-progs: dont print uuid unless -u option is given
+
+Chen Yang (2):
+      Btrfs-prog/send: fix wrong dump_fd check in cmd_send_start()
+      Btrfs-progs: Complete the help information of btrfs send/receive
+
+David Sterba (5):
+      btrfs-progs: fix parallel build
+      btrfs-progs: upcase filter options
+      btrfs-progs: add option g to show generation
+      btrfs-progs: add option c to show ogeneration
+      btrfs-progs: update man pages of subvol list
+
+Dieter Ries (1):
+      btrfs-progs: btrfsck: Print which filesystem to be checked to stdout
+
+Eric Sandeen (1):
+      btrfs-progs: fix mkfs.btrfs -r option
+
+Goffredo Baroncelli (1):
+      Update the man page with the new prefixes.
+
+Josef Bacik (1):
+      Btrfs-progs: use btrfs_lookup_first_block_group when fixing accounting
+
+Lukas Czerner (3):
+      Btrfs-progs: move path modification to filters
+      Btrfs-progs: add '-o' option into subvolume list command
+      Btrfs-progs: List all subvolumes by default
+
+Mark Fasheh (3):
+      btrfs-progs: Basic support for extended inode refs
+      btrfs-progs: add extended inode ref support to btrfsck
+      btrfs-progs: mkfs support for extended inode refs
+
+Wang Shilong (1):
+      Btrfs-progs: filter the deleted subvolumes when listing snapshots

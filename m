@@ -1,57 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:3807 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753053Ab3BZVu0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 16:50:26 -0500
-Message-ID: <512D2E1E.40102@redhat.com>
-Date: Tue, 26 Feb 2013 15:50:22 -0600
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: kreijack@inwind.it, Goffredo Baroncelli <kreijack@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 17/17 V3] btrfs-progs: initialize save_ptr prior to strtok_r
-References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-18-git-send-email-sandeen@redhat.com> <512D0325.5050308@gmail.com> <512D190E.2050002@redhat.com> <20130226204040.GA1993@zambezi.lan> <512D1F26.7020804@redhat.com> <20130226210742.GB1993@zambezi.lan>
-In-Reply-To: <20130226210742.GB1993@zambezi.lan>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from userp1040.oracle.com ([156.151.31.81]:29799 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751098Ab3BAH6V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 02:58:21 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
+Subject: [PATCH 00/13 v6] Btrfs-progs: add show sub-command for btrfs subvol cli
+Date: Fri,  1 Feb 2013 15:56:19 +0800
+Message-Id: <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
+References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The coverity runs had a false positive complaining that
-save_ptr is uninitialized in the call to strtok_r.
+David,
 
-Turns out that under the covers glibc was doing enough
-to confuse the checker about what was being called.
+ Please find this v6 show patch-set for your integration-20130130 branch.
 
-Just to keep the noise down, do a harmless initialization,
-with a comment as to why.
+v5->v6:
+	added
+	[PATCH 13/13] Btrfs-progs: add subvol flags to print
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+Anand Jain (12):
+  Btrfs-progs: move printing subvol list outside of btrfs_list_subvols
+  Btrfs-progs: add parent uuid for snapshots
+  Btrfs-progs: move struct root_info to btrfs-list.h
+  Btrfs-progs: add function btrfs_get_subvol to get root_info of a
+    subvol
+  Btrfs-progs: add method to filter snapshots by parent uuid
+  Btrfs-progs: put find_mount_root() in commands.h
+  Btrfs-progs: make printing subvol extensible to newer layouts
+  Btrfs-progs: make get_subvol_name non cmds-send specific
+  Btrfs-progs: add show subcommand to subvol cli
+  Btrfs-progs: update btrfs_get_subvol to be inline with resolve_root
+    ret changes
+  Btrfs-progs: Fix a small memory leak in managing the btrfs list filter
+  Btrfs-progs: add subvol flags to print
 
-V3: Keep strtok_r for old compat, and just init the var.
+Wang Shilong (1):
+  Btrfs-progs: filter the deleted subvolumes when listing snapshots
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index b671e1d..f5dc317 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -67,7 +67,7 @@ static int parse_one_profile(const char *profile, u64 *flags)
- static int parse_profiles(char *profiles, u64 *flags)
- {
- 	char *this_char;
--	char *save_ptr;
-+	char *save_ptr = NULL; /* Satisfy static checkers */
- 
- 	for (this_char = strtok_r(profiles, "|", &save_ptr);
- 	     this_char != NULL;
-@@ -136,7 +136,7 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
- {
- 	char *this_char;
- 	char *value;
--	char *save_ptr;
-+	char *save_ptr = NULL; /* Satisfy static checkers */
- 
- 	if (!filters)
- 		return 0;
+ btrfs-list.c     | 239 +++++++++++++++++++++++++++++++++++-------------------
+ btrfs-list.h     |  58 +++++++++++++-
+ cmds-send.c      |  12 +--
+ cmds-subvolume.c | 240 ++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ commands.h       |   4 +
+ man/btrfs.8.in   |   6 ++
+ 6 files changed, 448 insertions(+), 111 deletions(-)
 
+-- 
+1.8.1.227.g44fe835
 

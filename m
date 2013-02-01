@@ -1,56 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29898 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:29914 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755211Ab3BAH6f (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 02:58:35 -0500
+	with ESMTP id S1755733Ab3BAH6k (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 02:58:40 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 11/13] Btrfs-progs: update btrfs_get_subvol to be inline with resolve_root ret changes
-Date: Fri,  1 Feb 2013 15:56:30 +0800
-Message-Id: <1359705392-7485-12-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 13/13] Btrfs-progs: add subvol flags to print
+Date: Fri,  1 Feb 2013 15:56:32 +0800
+Message-Id: <1359705392-7485-14-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
 References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
  <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patch adds the flags row which as of now will show if the
+subvol/snapshot is readonly.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ cmds-subvolume.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 69ee3e7..eadfba4 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1503,19 +1503,24 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 5e51a26..c14e878 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -860,6 +860,11 @@ static int cmd_subvol_show(int argc, char **argv)
+ 	printf("\tParent: \t\t%llu\n", get_ri.ref_tree);
+ 	printf("\tTop Level: \t\t%llu\n", get_ri.top_id);
  
- int btrfs_get_subvol(int fd, struct root_info *the_ri)
- {
--	int ret = -1;
-+	int ret = 1, rr;
- 	struct root_lookup rl;
- 	struct rb_node *rbn;
- 	struct root_info *ri;
- 	u64 root_id = btrfs_list_get_path_rootid(fd);
- 
- 	if (btrfs_list_subvols(fd, &rl))
--		return 1;
-+		return ret;
- 
- 	rbn = rb_first(&rl.root);
- 	while(rbn) {
- 		ri = rb_entry(rbn, struct root_info, rb_node);
--		resolve_root(&rl, ri, root_id);
-+		rr = resolve_root(&rl, ri, root_id);
-+		if (rr == -ENOENT) {
-+			ret = -ENOENT;
-+			rbn = rb_next(rbn);
-+			continue;
-+		}
- 		if (!comp_entry_with_rootid(the_ri, ri, 0)) {
- 			memcpy(the_ri, ri, offsetof(struct root_info, path));
- 			if (ri->path)
++	if (get_ri.flags & BTRFS_ROOT_SUBVOL_RDONLY)
++		printf("\tFlags: \t\t\treadonly\n");
++	else
++		printf("\tFlags: \t\t\t-\n");
++
+ 	/* print the snapshots of the given subvol if any*/
+ 	printf("\tSnapshot(s):\n");
+ 	filter_set = btrfs_list_alloc_filter_set();
 -- 
 1.8.1.227.g44fe835
 

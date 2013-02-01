@@ -1,65 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26610 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751161Ab3BAF4G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Feb 2013 00:56:06 -0500
-Message-ID: <510B5912.7000908@cn.fujitsu.com>
-Date: Fri, 01 Feb 2013 13:56:34 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from cantor2.suse.de ([195.135.220.15]:56641 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753585Ab3BAMhL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Feb 2013 07:37:11 -0500
+Date: Fri, 1 Feb 2013 13:37:09 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Norbert Veber <nveber@pyre.virge.net>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs: extended inode refs
+Message-ID: <20130201123709.GB23239@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130131153337.GB14605@pyre.virge.net>
+ <20130131173404.GN30535@twin.jikos.cz>
+ <20130131182526.GC14605@pyre.virge.net>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Btrfs: serialize unlocked dio reads with truncate
-References: <510A3807.1040306@cn.fujitsu.com> <20130131164041.GP3660@localhost.localdomain>
-In-Reply-To: <20130131164041.GP3660@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130131182526.GC14605@pyre.virge.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 31 Jan 2013 11:40:41 -0500, Josef Bacik wrote:
-> On Thu, Jan 31, 2013 at 02:23:19AM -0700, Miao Xie wrote:
->> Currently, we can do unlocked dio reads, but the following race
->> is possible:
->>
->> dio_read_task			truncate_task
->> 				->btrfs_setattr()
->> ->btrfs_direct_IO
->>     ->__blockdev_direct_IO
->>       ->btrfs_get_block
->> 				  ->btrfs_truncate()
->> 				 #alloc truncated blocks
->> 				 #to other inode
->>       ->submit_io()
->>      #INFORMATION LEAK
->>
->> In order to avoid this problem, we must serialize unlocked dio reads with
->> truncate by inode_dio_wait().
->>
+On Thu, Jan 31, 2013 at 01:25:26PM -0500, Norbert Veber wrote:
+> On Thu, Jan 31, 2013 at 06:34:04PM +0100, David Sterba wrote:
+> > Otherwise, Mark's patches add the incompat bit unconditionally, we need
+> > a way how to make it tunable in the same way as other mkfs do. I'd say
+> > to take them as-is now and extend mkfs later.
 > 
-> So I had thinking about this, are we sure we don't want to just lock the extent
-> range when we truncate?  I'm good with this, but it seems like we might as well
-> and be consistent and use the extent locks.  What do you think?  Thanks,
+> Well I guess its more of a job for btrfstune.  Same way as tune2fs can
+> enable all of their features.
 
-But comparing with the current approach, the extent lock has the following problem:
-	Dio_Read_Task			Truncate_task
-					truncate file
-					  set isize to 4096
-					  drop pages
-	lock extent[4096, 8191]
-	read extent[4096, 8191]
-	unlock extent[4096, 8191]
-					  lock extent[4096, -1ULL]
-					  truncate item
-					  unlock extent[4096, -1ULL]
-	lock extent[8192, ...]
-	read extent[8192, ...]
-	  no extent item
-	  zero the buffer
-	unlock extent[8192, ...]
+Right.
 
-we get the data that is mixed with new data.(Punch hole also has this problem, we need
-fix)
+> Having to reformat seems uncecessary.
 
-Thanks
-Miao
+Right.
+
+david

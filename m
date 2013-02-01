@@ -1,127 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail6.webfaction.com ([74.55.86.74]:40534 "EHLO
-	smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932908Ab3BSO5c convert rfc822-to-8bit (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:44648 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752937Ab3BAAbq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Feb 2013 09:57:32 -0500
-Received: from [192.168.2.123] (unknown [149.241.149.45])
-	by smtp.webfaction.com (Postfix) with ESMTP id 93E3D2099436
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2013 14:57:31 +0000 (UTC)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Apple Message framework v1085)
-Subject: Re: btrfsck: extent-tree.c:2549: btrfs_reserve_extent: Assertion `!(ret)' failed.
-From: Richard Cooper <richard@richardcooper.net>
-In-Reply-To: <0400867D-6E5E-4D0F-8A06-B5AD3E58DEE6@richardcooper.net>
-Date: Tue, 19 Feb 2013 14:57:29 +0000
-Message-Id: <6CA8B0F1-D6CD-4DD7-994D-64BAB3B41AB1@richardcooper.net>
-References: <0400867D-6E5E-4D0F-8A06-B5AD3E58DEE6@richardcooper.net>
-To: linux-btrfs@vger.kernel.org
+	Thu, 31 Jan 2013 19:31:46 -0500
+Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D06163EE0B5
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 09:31:43 +0900 (JST)
+Received: from smail (m4 [127.0.0.1])
+	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id B9A2345DE4F
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 09:31:43 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 898D245DE50
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 09:31:43 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 7A0381DB802F
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 09:31:43 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 3095B1DB803B
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2013 09:31:43 +0900 (JST)
+Message-ID: <510B0CE5.9090601@jp.fujitsu.com>
+Date: Fri, 01 Feb 2013 09:31:33 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+MIME-Version: 1.0
+To: miaox@cn.fujitsu.com, Eric Sandeen <sandeen@redhat.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [BUG] kernel BUG at fs/btrfs/async-thread.c:605!
+References: <5109E70D.3010005@jp.fujitsu.com> <510A0756.40206@redhat.com> <510A243C.3010508@cn.fujitsu.com>
+In-Reply-To: <510A243C.3010508@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-On 3 Jan 2013, at 12:26, Richard Cooper wrote:
-> Hi All,
+On 2013/01/31 16:58, Miao Xie wrote:
+> On wed, 30 Jan 2013 23:55:34 -0600, Eric Sandeen wrote:
+>> if you move the fail_block_groups: target above the comment, does that fix it?
+>> (although I don't know yet what started IO . . . )
+>>
+>> like this:
+>>
+>> From: Eric Sandeen <sandeen@redhat.com>
+>>
+>> Make sure that we are always done with the btree_inode's mapping
+>> before we shut down the worker threads in open_ctree() error
+>> cases.
 > 
-> I'm trying to repair a broken fs using btrfsck and am hitting a failed assertion. I'd appreciate any suggestions for what to do next. Is there any thing I can do to help fix this bug? Any other information from my FS which would help? If the FS could be salvaged that would be a bonus, but I'm more interested in providing a useful bug report before wiping the disk.
+> 
+> I reviewed your patch again, and found it just fix the above problem, it still
+> have similar problems which are not fixed.
+> 
+> How about this one?
 
-After this error I reformatted and started again. A few days ago I hit exactly the same error in btrfsck again. Is it useful for me to report the same errors again? Would it make more sense for me to submit them to https://bugzilla.kernel.org? Is that tracker appropriate for btrfs-progs related bugs?
+Thanks Eric and Miao.
+But I can not reproduce this problem, yet.
+('Btrfs: too many missing devices, writeable mount is not allowed' messages was
+ displayed, but not panic)
+ So, I can not test your patch, sorry.
 
-My versions are:
-- OS - CentOS 6.3
-- Kernel -  3.7.8-1 from http://elrepo.org/tiki/kernel-ml 
-- btrfs-progs - v0.20-rc1-56-g6cd836d. Built from git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+Can you please explain similar problems, Miao?
 
-# ./btrfs-progs/btrfs fi show /dev/md4
-Label: none  uuid: fecad98e-63e8-47b7-9bc1-5d9351f15e76
-	Total devices 1 FS bytes used 702.22GB
-	devid    1 size 16.36TB used 723.04GB path /dev/md4
+Thanks,
+Tsutomu
 
-Btrfs v0.20-rc1-56-g6cd836d
-
-# ./btrfsck --repair /dev/md4 
-enabling repair mode
-checking extents
-incorrect offsets 2539 133611
-bad block 694804008960
-bad key ordering 26 27
-bad block 710147256320
-bad key ordering 29 30
-bad block 710793940992
-ref mismatch on [506097786880 8192] extent item 1, found 0
-btrfsck: extent-tree.c:2549: btrfs_reserve_extent: Assertion `!(ret)' failed.
-Aborted
-# echo $?
-134
-
-If i run btrfsck in non-repair mode I get:
-
-# ./btrfsck /dev/md4 
-checking extents
-incorrect offsets 2539 133611
-bad block 694804008960
-bad key ordering 26 27
-bad block 710147256320
-bad key ordering 29 30
-bad block 710793940992
-ref mismatch on [506097786880 8192] extent item 1, found 0
-Incorrect local backref count on 506097786880 root 257 owner 6201018 offset 0 found 0 wanted 1 back 0x72966380
-backpointer mismatch on [506097786880 8192]
-owner ref check failed [506097786880 8192]
-ref mismatch on [506097795072 8192] extent item 1, found 0
-Incorrect local backref count on 506097795072 root 257 owner 6201019 offset 0 found 0 wanted 1 back 0x72966460
-backpointer mismatch on [506097795072 8192]
-owner ref check failed [506097795072 8192]
-ref mismatch on [506097803264 8192] extent item 1, found 0
-Incorrect local backref count on 506097803264 root 257 owner 6201021 offset 0 found 0 wanted 1 back 0x72966540
-backpointer mismatch on [506097803264 8192]
-owner ref check failed [506097803264 8192]
-ref mismatch on [506097811456 8192] extent item 1, found 0
-Incorrect local backref count on 506097811456 root 257 owner 6201022 offset 0 found 0 wanted 1 back 0x72966620
-backpointer mismatch on [506097811456 8192]
-owner ref check failed [506097811456 8192]
-ref mismatch on [686802194432 20480] extent item 1, found 0
-Incorrect local backref count on 686802194432 root 257 owner 8037960 offset 0 found 0 wanted 1 back 0x82c1e2a0
-backpointer mismatch on [686802194432 20480]
-owner ref check failed [686802194432 20480]
-ref mismatch on [686802214912 20480] extent item 1, found 0
-Incorrect local backref count on 686802214912 root 257 owner 8037961 offset 0 found 0 wanted 1 back 0x82c1e380
-backpointer mismatch on [686802214912 20480]
-owner ref check failed [686802214912 20480]
-ref mismatch on [686802235392 20480] extent item 1, found 0
-Incorrect local backref count on 686802235392 root 257 owner 8037962 offset 0 found 0 wanted 1 back 0x82c1e460
-backpointer mismatch on [686802235392 20480]
-owner ref check failed [686802235392 20480]
-ref mismatch on [686802255872 20480] extent item 1, found 0
-Incorrect local backref count on 686802255872 root 257 owner 8037963 offset 0 found 0 wanted 1 back 0x82c1e540
-backpointer mismatch on [686802255872 20480]
-owner ref check failed [686802255872 20480]
-ref mismatch on [686802276352 20480] extent item 1, found 0
-Incorrect local backref count on 686802276352 root 257 owner 8037964 offset 0 found 0 wanted 1 back 0x82c1e620
-backpointer mismatch on [686802276352 20480]
-owner ref check failed [686802276352 20480]
-ref mismatch on [686802296832 20480] extent item 1, found 0
-Incorrect local backref count on 686802296832 root 257 owner 8037965 offset 0 found 0 wanted 1 back 0x82c1e700
-backpointer mismatch on [686802296832 20480]
-owner ref check failed [686802296832 20480]
-ref mismatch on [686802317312 20480] extent item 1, found 0
-Incorrect local backref count on 686802317312 root 257 owner 8037966 offset 0 found 0 wanted 1 back 0x82c1e7e0
-backpointer mismatch on [686802317312 20480]
-owner ref check failed [686802317312 20480]
-owner ref check failed [694804008960 4096]
-owner ref check failed [710147256320 4096]
-owner ref check failed [710793940992 4096]
-Errors found in extent allocation tree
-checking fs roots
-root 257 inode 6292865 errors 400
-root 257 inode 6292867 errors 400
-found 754001297408 bytes used err is 1
-total csum bytes: 718173168
-total tree bytes: 18407149568
-total fs tree bytes: 16537788416
-btree space waste bytes: 4527688532
-file data blocks allocated: 735593959424
- referenced 735590412288
-Btrfs v0.20-rc1-56-g6cd836d
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 0c31d07..d8fd711 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2728,13 +2728,13 @@ fail_cleaner:
+>   	 * kthreads
+>   	 */
+>   	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>   
+>   fail_block_groups:
+>   	btrfs_free_block_groups(fs_info);
+>   
+>   fail_tree_roots:
+>   	free_root_pointers(fs_info, 1);
+> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>   
+>   fail_sb_buffer:
+>   	btrfs_stop_workers(&fs_info->generic_worker);
+> @@ -2755,7 +2755,6 @@ fail_alloc:
+>   fail_iput:
+>   	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+>   
+> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>   	iput(fs_info->btree_inode);
+>   fail_bdi:
+>   	bdi_destroy(&fs_info->bdi);
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
 

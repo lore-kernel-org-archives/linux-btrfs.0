@@ -1,200 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f180.google.com ([74.125.82.180]:35168 "EHLO
-	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757662Ab3BBSMb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Feb 2013 13:12:31 -0500
-Received: by mail-we0-f180.google.com with SMTP id k14so3752409wer.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Feb 2013 10:12:30 -0800 (PST)
+Received: from smtp208.alice.it ([82.57.200.104]:56873 "EHLO smtp208.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758074Ab3BBUM2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 2 Feb 2013 15:12:28 -0500
+Message-ID: <510D7356.4030903@inwind.it>
+Date: Sat, 02 Feb 2013 21:13:10 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <20130202181117.GU16285@carfax.org.uk>
-References: <CAOeZVicqqcrBrL6EiVBgsUzc5uTSTzwghktS2ebtP09Gdg2miw@mail.gmail.com>
-	<20130202161959.GS16285@carfax.org.uk>
-	<CAOeZVicJEMg6OmDdkV5_Ti8==527bsH+VDbKkrgQe+Myyg4_gg@mail.gmail.com>
-	<CAOeZVicg6FNj_+nyQZzrrRs3CBmKaYbb5+fgCGdVf0U=M=49wQ@mail.gmail.com>
-	<20130202180239.GT16285@carfax.org.uk>
-	<CAOeZVidWKjVqqAq7=d2bW8M8u0ggMW4cS7nJOdGgx02mM-mccg@mail.gmail.com>
-	<20130202181117.GU16285@carfax.org.uk>
-Date: Sat, 2 Feb 2013 23:42:29 +0530
-Message-ID: <CAOeZVieLuvynQeuKG6dUhaPTJ7iMVb50ga2pZ4=U1KzmE=Zh4Q@mail.gmail.com>
-Subject: Re: Newbie help-- Making BTRFS partition
-From: Atri Sharma <atri.jiit@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Atri Sharma <atri.jiit@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@fusionio.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [BTRFS-PROGS][PATCH] remove __attribute_const__ from raid6.c
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Hugo.
+Hi all,
 
-Let me try it out.
+I am playing with the new branch raid56-experimental. Unfortunately 
+I was not able to compile the btrfs-progs tools because my gcc was unable 
+to find '__attribute_const__':
 
-Thanks a ton!
+[...]
+raid6.c:48:1: error: unknown type name ‘__attribute_const__’
+raid6.c:48:45: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘SHLBYTE’
+raid6.c:60:1: error: unknown type name ‘__attribute_const__’
+raid6.c:60:45: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘MASK’
+[...]
 
-Atri
+$ gcc -v
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/4.7/lto-wrapper
+Target: x86_64-linux-gnu
+Configured with: ../src/configure -v --with-pkgversion='Debian 4.7.2-5' 
+--with-bugurl=file:///usr/share/doc/gcc-4.7/README.Bugs 
+--enable-languages=c,c++,go,fortran,objc,obj-c++ 
+--prefix=/usr --program-suffix=-4.7 --enable-shared --enable-linker-build-id 
+--with-system-zlib --libexecdir=/usr/lib --without-included-gettext 
+--enable-threads=posix --with-gxx-include-dir=/usr/include/c++/4.7 
+--libdir=/usr/lib --enable-nls --with-sysroot=/ --enable-clocale=gnu 
+--enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object 
+--enable-plugin --enable-objc-gc --with-arch-32=i586 --with-tune=generic 
+--enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu 
+--target=x86_64-linux-gnu
+Thread model: posix
+gcc version 4.7.2 (Debian 4.7.2-5) 
 
-On Sat, Feb 2, 2013 at 11:41 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Sat, Feb 02, 2013 at 11:38:38PM +0530, Atri Sharma wrote:
->> Thanks a ton Hugo.
->>
->> It worked like a charm.
->>
->> One last thing, how do I create a document in that subvolume?
->
->    Same way you'd create a file anywhere else in any other filesystem... :)
->
->    btrfs is magic and different, but it's not *that* different.
->
->    Hugo.
->
->> I am running some tests for seeing the locking trends when mass
->> creation and deletion of files take place.
->>
->> Thanks,
->>
->> Atri
->>
->> On Sat, Feb 2, 2013 at 11:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> > On Sat, Feb 02, 2013 at 11:06:23PM +0530, Atri Sharma wrote:
->> >> Hi Hugo,
->> >>
->> >> Thanks for the earlier help.
->> >>
->> >> I needed some more help please.
->> >>
->> >> I created a BTRFS partition on /dev/sda3. To verify, the output of df
->> >> -T command:
->> >>
->> >> e
->> >> /dev/sda1                         fuseblk     102396   25180     77216
->> >>  25% /run/media/atri/System Reserved
->> >> /dev/sda3                         btrfs    331637760     120 317977536
->> >>   1% /run/media/atri/02fad498-f636-410e-a4bf-4d91428b9106
->> >>
->> >>
->> >> After this, I am trying to create a folder on the partition. How do I do that?
->> >
->> >    Well, a folder (aka a directory) is created with mkdir. But...
->> >
->> >> I tried :
->> >>
->> >> [atri@AtriServer ~]$ sudo btrfs subvolume create /dev/sda3/
->> >> Create subvolume '/dev/sda3'
->> >> ERROR: cannot create subvolume - Inappropriate ioctl for device
->> >
->> >    ... you're trying to create a subvolume here, so I'll assume that's
->> > what you want.
->> >
->> >    If you take a look at the output of "btrfs --help", you'll see that
->> > most of the commands take a path, not a device. This is usually the
->> > location of some file or directory, and in most cases should be a
->> > mount point of (some subvolume within) the filesystem.
->> >
->> >    In this case, what you want to do is create the subvolume with, for
->> > example:
->> >
->> > sudo btrfs subvolume create /run/media/atri/02fad498-f636-410e-a4bf-4d91428b9106/subvolumename
->> >
->> > because the filesystem is mounted at
->> > /run/media/atri/02fad498-f636-410e-a4bf-4d91428b9106/, so you need to
->> > specify a path below that to create any subvolumes in it. (I'd
->> > recommend mounting your filesystem somewhere with a slightly shorter
->> > name).
->> >
->> >    Once you've created the subvolume, it'll look like a directory, but
->> > it can also be mounted independently of the rest of the filesystem.
->> >
->> >    Hugo.
->> >
->> >> Please help.
->> >>
->> >> Atri
->> >>
->> >> On Sat, Feb 2, 2013 at 9:56 PM, Atri Sharma <atri.jiit@gmail.com> wrote:
->> >> > Hi Hugo,
->> >> >
->> >> > Thanks.
->> >> >  I was having some issues with my priviledges, and sorting them out has worked.
->> >> >
->> >> > Thanks a ton,
->> >> >
->> >> > Atri
->> >> >
->> >> > On Sat, Feb 2, 2013 at 9:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> >> >> On Sat, Feb 02, 2013 at 08:56:20PM +0530, Atri Sharma wrote:
->> >> >>> Hi all,
->> >> >>>
->> >> >>> I am running a Fedora 17 system. I am trying to set up a new partition
->> >> >>> of 2 GB size which has BTRFS as file system.
->> >> >>>
->> >> >>> When I am trying to do mkfs.btrfs on a partition, I get:
->> >> >>>
->> >> >>> [atri@AtriServer ~]$ mkfs.btrfs /dev/sda3
->> >> >>>
->> >> >>> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
->> >> >>> WARNING! - see http://btrfs.wiki.kernel.org before using
->> >> >>>
->> >> >>> check_mounted(): Could not open /dev/sda3
->> >> >>> error checking /dev/sda3 mount status
->> >> >>
->> >> >>    You need to be root, or (typically) to be in the "disk" group in
->> >> >> order to write to a block device.
->> >> >>
->> >> >>    Hugo.
->> >> >>
->> >> >> --
->> >> >> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->> >> >>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->> >> >>   --- "What's so bad about being drunk?" "You ask a glass of water" ---
->> >> >>
->> >> >
->> >> >
->> >> >
->> >> > --
->> >> > Regards,
->> >> >
->> >> > Atri
->> >> > l'apprenant
->> >>
->> >>
->> >>
->> >> --
->> >> Regards,
->> >>
->> >> Atri
->> >> l'apprenant
->> >> --
->> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> >> the body of a message to majordomo@vger.kernel.org
->> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> >
->> > --
->> > === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->> >   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->> >   --- We don't just borrow words;  on occasion, English has pursued ---
->> >          other languages down alleyways to beat them unconscious
->> >                and rifle their pockets for new vocabulary.
->>
->>
->>
->> --
->> Regards,
->>
->> Atri
->> l'apprenant
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->             --- You're never alone with a rubber duck... ---
+
+The patch below fixed that:
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+
+---
+
+>From 761a0b05f04da6029fec2a3060e64135ccb3046e Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Sat, 2 Feb 2013 21:10:20 +0100
+Subject: [PATCH] =?UTF-8?q?Remove=20=E2=80=98=5F=5Fattribute=5Fconst=5F=5F=E2?=
+ =?UTF-8?q?=80=99=20from=20raid6.c?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Remove ‘__attribute_const__’ from raid6.c otherwise gcc was unable
+to compile it.
+---
+ raid6.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/raid6.c b/raid6.c
+index 3a42bdf..a5a3dc3 100644
+--- a/raid6.c
++++ b/raid6.c
+@@ -45,7 +45,7 @@ typedef uint32_t unative_t;
+  * The SHLBYTE() operation shifts each byte left by 1, *not*
+  * rolling over into the next byte
+  */
+-static inline __attribute_const__ unative_t SHLBYTE(unative_t v)
++static inline unative_t SHLBYTE(unative_t v)
+ {
+ 	unative_t vv;
+ 
+@@ -57,7 +57,7 @@ static inline __attribute_const__ unative_t SHLBYTE(unative_t v)
+  * The MASK() operation returns 0xFF in any byte for which the high
+  * bit is 1, 0x00 for any byte for which the high bit is 0.
+  */
+-static inline __attribute_const__ unative_t MASK(unative_t v)
++static inline unative_t MASK(unative_t v)
+ {
+ 	unative_t vv;
+ 
+-- 
+1.7.10.4
+
+
 
 
 
 -- 
-Regards,
-
-Atri
-l'apprenant
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

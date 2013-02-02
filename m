@@ -1,104 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:64112 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752730Ab3BBRgZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Feb 2013 12:36:25 -0500
-Received: by mail-wi0-f181.google.com with SMTP id hm6so368548wib.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Feb 2013 09:36:23 -0800 (PST)
+Received: from moutng.kundenserver.de ([212.227.17.10]:62262 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757210Ab3BBR6U (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Feb 2013 12:58:20 -0500
+From: Arnd Bergmann <arnd@arndb.de>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "arnd@linaro.org" <arnd@linaro.org>
+Subject: Re: Oops when mounting btrfs partition
+Date: Sat, 02 Feb 2013 18:58:14 +0100
+Message-ID: <5060362.oVLQKVsh9C@wuerfel>
+In-Reply-To: <20130202152035.GA24264@shiny>
+References: <4028366.UQxPtEU6If@wuerfel> <20130202152035.GA24264@shiny>
 MIME-Version: 1.0
-In-Reply-To: <CAOeZVicJEMg6OmDdkV5_Ti8==527bsH+VDbKkrgQe+Myyg4_gg@mail.gmail.com>
-References: <CAOeZVicqqcrBrL6EiVBgsUzc5uTSTzwghktS2ebtP09Gdg2miw@mail.gmail.com>
-	<20130202161959.GS16285@carfax.org.uk>
-	<CAOeZVicJEMg6OmDdkV5_Ti8==527bsH+VDbKkrgQe+Myyg4_gg@mail.gmail.com>
-Date: Sat, 2 Feb 2013 23:06:23 +0530
-Message-ID: <CAOeZVicg6FNj_+nyQZzrrRs3CBmKaYbb5+fgCGdVf0U=M=49wQ@mail.gmail.com>
-Subject: Re: Newbie help-- Making BTRFS partition
-From: Atri Sharma <atri.jiit@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Atri Sharma <atri.jiit@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hugo,
+On Saturday 02 February 2013 10:20:35 Chris Mason wrote:
+> Hi Arnd,
+> 
+> First things first, nospace_cache is a safe thing to use.  It is slow
+> because it's finding free extents, but it's just a cache and always safe
+> to discard.  With your other errors, I'd just mount it readonly
+> and then you won't waste time on atime updates.
 
-Thanks for the earlier help.
+Ok, I see. Thanks for taking a look so quickly.
 
-I needed some more help please.
+> I'll take a look at the BUG you got during log recovery.  We've fixed a
+> few of those during the 3.8 rc cycle.
 
-I created a BTRFS partition on /dev/sda3. To verify, the output of df
--T command:
+Well, it happened on 3.8-rc4 and on 3.5 here, so I'd guess it's a
+different one.
 
-e
-/dev/sda1                         fuseblk     102396   25180     77216
- 25% /run/media/atri/System Reserved
-/dev/sda3                         btrfs    331637760     120 317977536
-  1% /run/media/atri/02fad498-f636-410e-a4bf-4d91428b9106
+> > Feb  1 22:57:37 localhost kernel: [ 8561.599482] Kernel BUG at ffffffffa01fdcf7 [verbose debug info unavailable]
+> 
+> > Jan 14 19:18:42 localhost kernel: [1060055.746373] btrfs csum failed ino 15619835 off 454656 csum 2755731641 private 864823192
+> > Jan 14 19:18:42 localhost kernel: [1060055.746381] btrfs: bdev /dev/sdb1 errs: wr 0, rd 0, flush 0, corrupt 17, gen 0
+> > ...
+> > Jan 21 16:35:40 localhost kernel: [1655047.701147] parent transid verify failed on 17006399488 wanted 54700 found 54764
+> 
+> These aren't good.  With a few exceptions for really tight races in fsx
+> use cases, csum errors are bad data from the disk.  The transid verify
+> failed shows we wanted to find a metadata block from generation 54700
+> but found 54764 instead:
+> 
+> 54700 = 0xD5AC
+> 54764 = 0xD5EC
+> 
+> This same bad block comes up a few different times.
 
+The machine has had problems with data consistency in the past, so
+I'm not too surprised with getting a single-bit error, although this
+is the first time in a year that I've seen problems, and I replaced
+the faulty memory modules some time ago.
 
-After this, I am trying to create a folder on the partition. How do I do that?
+Anyway, I already ordered a replacement box a few weeks ago, and that
+one will have ECC memory besides being a modern Opteron system to replace
+the aging Core 2.
 
-I tried :
+> > Jan 21 16:35:40 localhost kernel: [1655047.752692] btrfs read error corrected: ino 1 off 17006399488 (dev /dev/sdb1 sector 64689288)
+> 
+> This shows we pulled from the second copy of this block and got the
+> right answer, and then wrote the right answer to the duplicate.
+> Inode 1 means it was metadata.
+> 
+> But for some reason still aborted the transaction.  It could have been
+> an EIO on the correction, but the auto correction code in 3.5 did work
+> well.
+> 
+> I think your plan to pull the data off and reformat is a good one.  I'd
+> also look hard at your ram since drives don't usually send back single bit
+> errors.
 
-[atri@AtriServer ~]$ sudo btrfs subvolume create /dev/sda3/
-Create subvolume '/dev/sda3'
-ERROR: cannot create subvolume - Inappropriate ioctl for device
+Ok. I'll wait before reformmatting though, in case you need to take
+a look at the data later to find out why it crashed without fsck finding
+a problem.
 
-
-Please help.
-
-Atri
-
-On Sat, Feb 2, 2013 at 9:56 PM, Atri Sharma <atri.jiit@gmail.com> wrote:
-> Hi Hugo,
->
-> Thanks.
->  I was having some issues with my priviledges, and sorting them out has worked.
->
-> Thanks a ton,
->
-> Atri
->
-> On Sat, Feb 2, 2013 at 9:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> On Sat, Feb 02, 2013 at 08:56:20PM +0530, Atri Sharma wrote:
->>> Hi all,
->>>
->>> I am running a Fedora 17 system. I am trying to set up a new partition
->>> of 2 GB size which has BTRFS as file system.
->>>
->>> When I am trying to do mkfs.btrfs on a partition, I get:
->>>
->>> [atri@AtriServer ~]$ mkfs.btrfs /dev/sda3
->>>
->>> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
->>> WARNING! - see http://btrfs.wiki.kernel.org before using
->>>
->>> check_mounted(): Could not open /dev/sda3
->>> error checking /dev/sda3 mount status
->>
->>    You need to be root, or (typically) to be in the "disk" group in
->> order to write to a block device.
->>
->>    Hugo.
->>
->> --
->> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->>   --- "What's so bad about being drunk?" "You ask a glass of water" ---
->>
->
->
->
-> --
-> Regards,
->
-> Atri
-> l'apprenant
-
-
-
--- 
-Regards,
-
-Atri
-l'apprenant
+	Arnd

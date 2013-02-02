@@ -1,63 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:58027 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752730Ab3BBPUh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 2 Feb 2013 10:20:37 -0500
-Date: Sat, 2 Feb 2013 10:20:35 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Arnd Bergmann <arnd@arndb.de>
-CC: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "arnd@linaro.org" <arnd@linaro.org>
-Subject: Re: Oops when mounting btrfs partition
-Message-ID: <20130202152035.GA24264@shiny>
-References: <4028366.UQxPtEU6If@wuerfel>
+Received: from mail-we0-f170.google.com ([74.125.82.170]:59081 "EHLO
+	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752730Ab3BBP0V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Feb 2013 10:26:21 -0500
+Received: by mail-we0-f170.google.com with SMTP id z53so3836185wey.29
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Feb 2013 07:26:20 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <4028366.UQxPtEU6If@wuerfel>
+Date: Sat, 2 Feb 2013 20:56:20 +0530
+Message-ID: <CAOeZVicqqcrBrL6EiVBgsUzc5uTSTzwghktS2ebtP09Gdg2miw@mail.gmail.com>
+Subject: Newbie help-- Making BTRFS partition
+From: Atri Sharma <atri.jiit@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Arnd,
+Hi all,
 
-First things first, nospace_cache is a safe thing to use.  It is slow
-because it's finding free extents, but it's just a cache and always safe
-to discard.  With your other errors, I'd just mount it readonly
-and then you won't waste time on atime updates.
+I am running a Fedora 17 system. I am trying to set up a new partition
+of 2 GB size which has BTRFS as file system.
 
-I'll take a look at the BUG you got during log recovery.  We've fixed a
-few of those during the 3.8 rc cycle.
+When I am trying to do mkfs.btrfs on a partition, I get:
 
-> Feb  1 22:57:37 localhost kernel: [ 8561.599482] Kernel BUG at ffffffffa01fdcf7 [verbose debug info unavailable]
+[atri@AtriServer ~]$ mkfs.btrfs /dev/sda3
 
-> Jan 14 19:18:42 localhost kernel: [1060055.746373] btrfs csum failed ino 15619835 off 454656 csum 2755731641 private 864823192
-> Jan 14 19:18:42 localhost kernel: [1060055.746381] btrfs: bdev /dev/sdb1 errs: wr 0, rd 0, flush 0, corrupt 17, gen 0
-> ...
-> Jan 21 16:35:40 localhost kernel: [1655047.701147] parent transid verify failed on 17006399488 wanted 54700 found 54764
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
-These aren't good.  With a few exceptions for really tight races in fsx
-use cases, csum errors are bad data from the disk.  The transid verify
-failed shows we wanted to find a metadata block from generation 54700
-but found 54764 instead:
+check_mounted(): Could not open /dev/sda3
+error checking /dev/sda3 mount status
 
-54700 = 0xD5AC
-54764 = 0xD5EC
 
-This same bad block comes up a few different times.
+I have unallocated space on my hard disk, but I am not able to make a
+partition as it says that I already have 4 primary partitions. Now,I
+have no option but to try and convert an existing partition to BTRFS,
+which is giving the above error.
 
-> Jan 21 16:35:40 localhost kernel: [1655047.752692] btrfs read error corrected: ino 1 off 17006399488 (dev /dev/sdb1 sector 64689288)
+Please help.
 
-This shows we pulled from the second copy of this block and got the
-right answer, and then wrote the right answer to the duplicate.
-Inode 1 means it was metadata.
+Thanks,
 
-But for some reason still aborted the transaction.  It could have been
-an EIO on the correction, but the auto correction code in 3.5 did work
-well.
+Atri
 
-I think your plan to pull the data off and reformat is a good one.  I'd
-also look hard at your ram since drives don't usually send back single bit
-errors.
+--
+Regards,
 
--chris
-
+Atri
+l'apprenant

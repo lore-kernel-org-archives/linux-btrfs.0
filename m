@@ -1,65 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f202.google.com ([209.85.160.202]:42596 "EHLO
-	mail-gh0-f202.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758189Ab3BLIh5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 03:37:57 -0500
-Received: by mail-gh0-f202.google.com with SMTP id z10so696869ghb.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 00:37:57 -0800 (PST)
-From: Filipe Brandenburger <filbranden@google.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Brandenburger <filbranden@google.com>
-Subject: [RFC][PATCH 0/2] btrfs-progs: introduce kernelsrc directory to update it
-Date: Tue, 12 Feb 2013 00:37:43 -0800
-Message-Id: <1360658265-6987-1-git-send-email-filbranden@google.com>
+Received: from smtp208.alice.it ([82.57.200.104]:51104 "EHLO smtp208.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757710Ab3BBSCg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 2 Feb 2013 13:02:36 -0500
+Message-ID: <510D54E3.6090006@inwind.it>
+Date: Sat, 02 Feb 2013 19:03:15 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: "kreijack@inwind.it" <kreijack@inwind.it>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Chris Mason <chris.mason@fusionio.com>
+Subject: [BTRFS][PATCH] Removed the 'subvolrootid' mount option.
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi all,
 
-This is a proposal on a way to keep btrfs-progs in sync with kernel code.
-https://btrfs.wiki.kernel.org/index.php/Cleanup_ideas#Use_the_kernel_code_in_user_mode
+this is a trivial patch, which remove old unused code. Please apply.
 
-For now, the patch introduces a method to import and update the kernel source
-files into the btrfs-progs tree. Further work will be needed to update the
-kernel source code so to make it generic (i.e. add #define's and #ifdef's) so
-that it can be compiled in both kernel and user space.
+BR
 
-The Python script is just a draft, it's already functional but error handling
-(and reporting) could definitely be improved, the code could be cleaned up, it
-could cache the kernel source directory and allow a --force parameter to allow
-moving to an tag that's not a descendant, but it's already fully functional and
-it's probably a good start...
+----
 
-To see it in action, try this after applying the commits:
+The commit 830c4adb (Btrfs: fix how we mount subvol=<whatever>) removed
+the function related to the option 'subvolrootid'. The option is still here,
+the same is true for some code which handles the option parsing, but the 
+value is never used by btrfs.
 
-  $ kernelsrc/update_kernelsrc.py /path/to/linux v3.6
-  $ git status
-  $ git commit -m "btrfs-progs: initial checkout of kernelsrc v3.6"
-  $ vim kernelsrc/update_kernelsrc.filelist (add/delete a line)
-  $ kernelsrc/update_kernelsrc.py ../linux-btrfs/ v3.7
-  $ git status
-  $ git commit -m "btrfs-progs: upgrade kernelsrc from v3.6 to v3.7"
+This patch removed all the _unused_ codes around this option. In order
+to avoid break the boot process phase, if this options is passed again a
+WARNING is raised in the dmesg log instead of stopping the mount.
+---
+ fs/btrfs/super.c |   25 ++++++++-----------------
+ 1 file changed, 8 insertions(+), 17 deletions(-)
 
-Let me know what you think and if you think it's worth to continue on this path.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d8982e9..127943b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -322,6 +322,7 @@ enum {
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_old_option,
+ 	Opt_err,
+ };
+ 
+@@ -352,7 +353,7 @@ static match_table_t tokens = {
+ 	{Opt_clear_cache, "clear_cache"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
+ 	{Opt_enospc_debug, "enospc_debug"},
+-	{Opt_subvolrootid, "subvolrootid=%d"},
++	{Opt_old_option, "subvolrootid=%d"}, /* removed; old Opt_subvolrootid, */
+ 	{Opt_defrag, "autodefrag"},
+ 	{Opt_inode_cache, "inode_cache"},
+ 	{Opt_no_space_cache, "nospace_cache"},
+@@ -411,7 +412,6 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			break;
+ 		case Opt_subvol:
+ 		case Opt_subvolid:
+-		case Opt_subvolrootid:
+ 		case Opt_device:
+ 			/*
+ 			 * These are parsed by btrfs_parse_early_options
+@@ -629,6 +629,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			       "'%s'\n", p);
+ 			ret = -EINVAL;
+ 			goto out;
++		case Opt_old_option:
++			printk(KERN_WARNING 
++				"btrfs: obsolete mount option: '%s'\n", p );
++			break;
+ 		default:
+ 			break;
+ 		}
+@@ -648,7 +652,7 @@ out:
+  */
+ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 		void *holder, char **subvol_name, u64 *subvol_objectid,
+-		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
++		struct btrfs_fs_devices **fs_devices)
+ {
+ 	substring_t args[MAX_OPT_ARGS];
+ 	char *device_name, *opts, *orig, *p;
+@@ -690,18 +694,6 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 					*subvol_objectid = intarg;
+ 			}
+ 			break;
+-		case Opt_subvolrootid:
+-			intarg = 0;
+-			error = match_int(&args[0], &intarg);
+-			if (!error) {
+-				/* we want the original fs_tree */
+-				if (!intarg)
+-					*subvol_rootid =
+-						BTRFS_FS_TREE_OBJECTID;
+-				else
+-					*subvol_rootid = intarg;
+-			}
+-			break;
+ 		case Opt_device:
+ 			device_name = match_strdup(&args[0]);
+ 			if (!device_name) {
+@@ -1078,7 +1070,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	fmode_t mode = FMODE_READ;
+ 	char *subvol_name = NULL;
+ 	u64 subvol_objectid = 0;
+-	u64 subvol_rootid = 0;
+ 	int error = 0;
+ 
+ 	if (!(flags & MS_RDONLY))
+@@ -1086,7 +1077,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 
+ 	error = btrfs_parse_early_options(data, mode, fs_type,
+ 					  &subvol_name, &subvol_objectid,
+-					  &subvol_rootid, &fs_devices);
++					  &fs_devices);
+ 	if (error) {
+ 		kfree(subvol_name);
+ 		return ERR_PTR(error);
+-- 
+1.7.10.4
 
-Cheers,
-Filipe
-
-
-Filipe Brandenburger (2):
-  btrfs-progs: anchor gitignore patterns on root
-  btrfs-progs: introduce kernelsrc directory and script to update it
-
- .gitignore                          |  32 +++++---
- kernelsrc/README.kernelsrc          | 108 ++++++++++++++++++++++++
- kernelsrc/update_kernelsrc.filelist |  23 ++++++
- kernelsrc/update_kernelsrc.py       | 158 ++++++++++++++++++++++++++++++++++++
- 4 files changed, 308 insertions(+), 13 deletions(-)
- create mode 100644 kernelsrc/README.kernelsrc
- create mode 100644 kernelsrc/update_kernelsrc.filelist
- create mode 100755 kernelsrc/update_kernelsrc.py
 
 -- 
-1.8.1.2
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

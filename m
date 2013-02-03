@@ -1,38 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:61941 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752151Ab3BCNdN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Feb 2013 08:33:13 -0500
-Received: by mail-wi0-f173.google.com with SMTP id hq4so2041298wib.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Feb 2013 05:33:11 -0800 (PST)
-Message-ID: <510E6714.7040206@statystyka.net>
-Date: Sun, 03 Feb 2013 14:33:08 +0100
-From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
+Received: from mx1.redhat.com ([209.132.183.28]:8981 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752876Ab3BCP4N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 3 Feb 2013 10:56:13 -0500
+Message-ID: <510E8898.4050606@redhat.com>
+Date: Sun, 03 Feb 2013 09:56:08 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Is it possible to use send & receive features to clone the btrfs
- partition efficiently (including all snapshots inside)?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: kreijack@inwind.it
+CC: Chris Mason <chris.mason@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [BTRFS-PROGS][PATCH] remove __attribute_const__ from raid6.c
+References: <510D7356.4030903@inwind.it>
+In-Reply-To: <510D7356.4030903@inwind.it>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is very difficult for me to find any good documentation on send & 
-receive commands. Event the most recent btrfs progs man page (accessed 
-from git today) says nothing.
+On 2/2/13 2:13 PM, Goffredo Baroncelli wrote:
+> Hi all,
+> 
+> I am playing with the new branch raid56-experimental. Unfortunately 
+> I was not able to compile the btrfs-progs tools because my gcc was unable 
+> to find '__attribute_const__':
+> 
+> [...]
+> raid6.c:48:1: error: unknown type name ‘__attribute_const__’
+> raid6.c:48:45: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘SHLBYTE’
+> raid6.c:60:1: error: unknown type name ‘__attribute_const__’
+> raid6.c:60:45: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘MASK’
+> [...]
 
-I want to migrate data (including numerous read only snaphots) from 
-linux-raid - based storage into a native raid btrfs.
+Something like this might be more in the spirit of the kernel code copy,
+and will keep the annotations.  (I'm not sure why the kernel does it
+this way, TBH).
 
-I think that cloning via send & receive is a viable option.
 
-Can anyone help me please? I've posted my question also on 
-stackexchange: 
-http://unix.stackexchange.com/questions/63528/how-to-clone-btrfs-filesystem-into-different-medium-preserving-snapshots-sharin 
-. I will post the answer there, so everyone can benefit from it.
+From: Eric Sandeen <sandeen@redhat.com>
 
-Thank you,
+btrfs-progs: define __attribute_const__ in kerncompat.h
 
-Adam Ryczkowski
-+48505919892 <callto:+48505919892>
-Skype:sisteczko <skype:sisteczko>
+Without this we can't build userspace.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
+
+
+diff --git a/kerncompat.h b/kerncompat.h
+index d60f722..8004f9e 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -126,6 +126,8 @@ static inline int mutex_is_locked(struct mutex *m)
+ #define BITOP_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
+ #define BITOP_WORD(nr)		((nr) / BITS_PER_LONG)
+ 
++#define __attribute_const__	__attribute__((const))
++
+ /**
+  * __set_bit - Set a bit in memory
+  * @nr: the bit to set
+diff --git a/raid6.c b/raid6.c
+index 3a42bdf..ce0f655 100644
+--- a/raid6.c
++++ b/raid6.c
+@@ -19,6 +19,8 @@
+  */
+ #include <stdint.h>
+ #include <unistd.h>
++#include "kerncompat.h"
++
+ /*
+  * This is the C data type to use
+  */
+
+
 

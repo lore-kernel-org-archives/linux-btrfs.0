@@ -1,54 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:47758 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753737Ab3BDQ62 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 11:58:28 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id DA2117C038A
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2013 09:58:27 -0700 (MST)
-Date: Mon, 4 Feb 2013 11:58:25 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: =?utf-8?B?IlBpb3RyIFBhd8WCb3ci?= <pp@siedziba.pl>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1772
-Message-ID: <20130204165825.GC2275@localhost.localdomain>
-References: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+Received: from terminus.zytor.com ([198.137.202.10]:40136 "EHLO mail.zytor.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754448Ab3BDVme (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Feb 2013 16:42:34 -0500
+Message-ID: <51102B40.6000207@zytor.com>
+Date: Mon, 04 Feb 2013 13:42:24 -0800
+From: "H. Peter Anvin" <hpa@zytor.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+To: Chris Mason <chris.mason@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: experimental raid5/6 code in git
+References: <20130202160212.GB4694@shiny>
+In-Reply-To: <20130202160212.GB4694@shiny>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 03, 2013 at 04:37:58PM -0700, "Piotr Pawłow" wrote:
-> Hello,
-> 
-> 1 week ago I bought a new 2TB hard drive, created 1 partition on the whole
-> disk, and created root and swap LVM volumes on it. I formatted root to
-> btrfs with default options, except meta-data profile which I set to
-> "single". I copied all my data to it and unplugged my old hard drives. It
-> worked for a week.
-> 
-> Today I installed another 2TB hard drive, created LVM volumes as before,
-> and added to my root filesystem. I started balance with data and metadata
-> conversion to raid1. I left it doing its job, and returned few hours
-> later. When I returned hard disks were idle, screen would not unlock, and
-> I could not log in. I had to reset it.
-> 
-> After reset it won't mount. I booted the computer from a live-cd. It has
-> an ancient kernel, so I installed qemu and captured the oops on the
-> current version compiled from
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git:
-> 
+@@ -1389,6 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root, char
+*device_path)
+ 	}
+ 	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
 
-Ok good you have a git tree.  Can you run these commands
++	if ((all_avail & (BTRFS_BLOCK_GROUP_RAID5 |
++			  BTRFS_BLOCK_GROUP_RAID6) && num_devices <= 3)) {
++		printk(KERN_ERR "btrfs: unable to go below three devices "
++		       "on raid5 or raid6\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+ 		printk(KERN_ERR "btrfs: unable to go below four devices "
+ 		       "on raid10\n");
+@@ -1403,6 +1414,21 @@ int btrfs_rm_device(struct btrfs_root *root, char
+*device_path)
+ 		goto out;
+ 	}
 
-git remote-add josef \
-	git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-git fetch josef
-git co josef/piotr
++	if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
++	    root->fs_info->fs_devices->rw_devices <= 2) {
++		printk(KERN_ERR "btrfs: unable to go below two "
++		       "devices on raid5\n");
++		ret = -EINVAL;
++		goto out;
++	}
++	if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
++	    root->fs_info->fs_devices->rw_devices <= 3) {
++		printk(KERN_ERR "btrfs: unable to go below three "
++		       "devices on raid6\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
+ 	if (strcmp(device_path, "missing") == 0) {
+ 		struct list_head *devices;
+ 		struct btrfs_device *tmp;
 
-and then build that and run that.  It will spit out some debug stuff when it
-mounts before it panics, can you capture all the output and reply to this email
-with it?  Thanks,
 
-Josef
+This seems inconsistent?
+
+	-hpa
+

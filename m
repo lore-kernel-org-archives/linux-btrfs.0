@@ -1,183 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f169.google.com ([209.85.216.169]:50651 "EHLO
-	mail-qc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751428Ab3BDHBh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 02:01:37 -0500
-Received: by mail-qc0-f169.google.com with SMTP id t2so2567472qcq.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Feb 2013 23:01:36 -0800 (PST)
+Received: from zlom.siedziba.pl ([85.222.100.130]:33159 "EHLO zlom.siedziba.pl"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751825Ab3BDHld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Feb 2013 02:41:33 -0500
+Received: from lampka.siedziba.pl (localhost.graciarnia [127.0.0.1])
+	by zlom.siedziba.pl (Postfix) with ESMTPA id 7F87E82D7E4
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2013 08:41:27 +0100 (CET)
+Message-ID: <69d32024cba2f7912082b19a18e0d49f.squirrel@lampka.siedziba.pl>
+In-Reply-To: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+References: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+Date: Mon, 4 Feb 2013 08:41:27 +0100
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1755 (was: 1772)
+From: =?utf-8?B?IlBpb3RyIFBhd8WCb3ci?= <pp@siedziba.pl>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-In-Reply-To: <CAMQ-g0dj3X_hjnwDEqivwyrW2ZanCeEeA2r3x8kYFJ1YFaFaqA@mail.gmail.com>
-References: <CAGvr90BH3DWzqXt-5cJz9e0myU-rU-+Om=RmAG8eY_=N9hKUZw@mail.gmail.com>
-	<CAGvr90DA3KQrBTRG2pmAnihjhJ2wJ4srfP=BYqcJuCqRLob8Ug@mail.gmail.com>
-	<CAMQ-g0dj3X_hjnwDEqivwyrW2ZanCeEeA2r3x8kYFJ1YFaFaqA@mail.gmail.com>
-Date: Mon, 4 Feb 2013 02:01:36 -0500
-Message-ID: <CALJXSJrt1P3NPV2kiQXMMb4X7WUVObu+1tX2Hap8J41UL1kKdA@mail.gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:6185!
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Radek Machulka <radek.machulka@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Jan Steffens <jan.steffens@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I was however able to save my data with btrfs-restore command (it boots into
-> some systemd emergency shell or I can use recovery cd). I tried to mount it
-> manually and after no success (the mount command does not end) mount it with
-> -o recovery option, but it does not do anything nether (well the command is
-> 'running' for hours without any output until I turn the pc off, so I do not know
-> wheather it is recovering something or not). So before doing any btrfsck
-> --repair or btrfs-zero-log (which are pretty much all commands for
-> 'repairing' btrfs I founded over the net) I would like to ask for some help
-> or advices.
+I also tried for-linus branch, looks like the same problem:
 
-I recently encountered the same problem on kernel 3.8 with Archlinux,
-I'm running BTRFS in RAID1 and had pretty much the same problem.
-Mounting the volume resulted in this trace and no mount, trying to
-mount again would freeze and I would need to reboot to try again, I
-tried using clear_cache, recovery, ro without any success, tried
-btrsck --repair, it said it fixed something but fails to mount
-afterward and furthermore complains about space_cache being outdated.
+# mount /dev/hdb -odevice=/dev/hdc /mnt/test
+device label root devid 2 transid 56098 /dev/hdc
+device label root devid 1 transid 56098 /dev/hdb
+btrfs: disk space caching is enabled
+------------[ cut here ]------------
+WARNING: at fs/btrfs/delayed-ref.c:454 update_existing_ref+0xd2/0x110()
+Hardware name: Bochs
+Pid: 305, comm: exe Not tainted 3.7.0+ #1
+Call Trace:
+ [<c10202b8>] warn_slowpath_common+0x68/0xa0
+ [<c1176712>] ? update_existing_ref+0xd2/0x110
+ [<c1176712>] ? update_existing_ref+0xd2/0x110
+ [<c102039b>] warn_slowpath_null+0x1b/0x20
+ [<c1176712>] update_existing_ref+0xd2/0x110
+ [<c1176c0b>] add_delayed_tree_ref+0x12b/0x160
+ [<c1177688>] btrfs_add_delayed_tree_ref+0xf8/0x180
+ [<c111fbd5>] btrfs_free_extent+0x125/0x1a0
+ [<c11795e4>] replace_path+0x6d4/0x770
+ [<c114a037>] ? btrfs_get_token_64+0x57/0x110
+ [<c117df43>] merge_reloc_root+0x293/0x4e0
+ [<c117e276>] merge_reloc_roots+0xe6/0x120
+ [<c117f2b4>] btrfs_recover_relocation+0x384/0x3f0
+ [<c1131fde>] open_ctree+0x18be/0x1a60
+ [<c112c2d0>] ? btrfs_alloc_root+0x40/0x40
+ [<c11b09dd>] ? strlcpy+0x1d/0x110
+ [<c110c4b7>] btrfs_mount+0x677/0x850
+ [<c11ad4ad>] ? ida_get_new_above+0x1ed/0x220
+ [<c1081310>] ? __kmalloc_track_caller+0x70/0x130
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c1085acc>] mount_fs+0x1c/0xc0
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c109b0a4>] vfs_kern_mount+0x44/0xd0
+ [<c109b197>] do_kern_mount+0x37/0xf0
+ [<c109c594>] do_mount+0x3b4/0x700
+ [<c109c946>] sys_mount+0x66/0xa0
+ [<c122b2f5>] syscall_call+0x7/0xb
+---[ end trace 4c5c7c49fa61dfab ]---
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/extent-tree.c:1755!
+invalid opcode: 0000 [#1]
+Pid: 305, comm: exe Tainted: G        W    3.7.0+ #1 Bochs Bochs
+EIP: 0060:[<c111a7fc>] EFLAGS: 00010297 CPU: 0
+EIP is at insert_inline_extent_backref+0x13c/0x140
+EAX: 00000000 EBX: 00000000 ECX: d751c070 EDX: 00000000
+ESI: 00000000 EDI: 00000002 EBP: d790dabc ESP: d790da68
+ DS: 007b ES: 007b FS: 0000 GS: 0033 SS: 0068
+CR0: 8005003b CR2: 08053000 CR3: 178e4000 CR4: 00000690
+DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+DR6: ffff0ff0 DR7: 00000400
+Process exe (pid: 305, ti=d790c000 task=d7902fa0 task.ti=d790c000)
+Stack:
+ d790daac 90e31000 00000125 00001000 00000000 1be77000 000000c8 00000000
+ 00000000 00000002 00000000 00000000 00000000 00000001 d751c070 d78dec00
+ d74233c0 00000ecb 00000125 d751c070 d7230000 d790db28 c111a8a8 90e31000
+Call Trace:
+ [<c111a8a8>] __btrfs_inc_extent_ref+0xa8/0x240
+ [<c11207a1>] run_clustered_refs+0x501/0xb00
+ [<c1177517>] ? btrfs_find_ref_cluster+0xd7/0x150
+ [<c11244ce>] btrfs_run_delayed_refs+0x8e/0x250
+ [<c113419a>] __btrfs_end_transaction+0xaa/0x3b0
+ [<c11344bd>] btrfs_end_transaction_throttle+0xd/0x10
+ [<c117dee6>] merge_reloc_root+0x236/0x4e0
+ [<c117e276>] merge_reloc_roots+0xe6/0x120
+ [<c117f2b4>] btrfs_recover_relocation+0x384/0x3f0
+ [<c1131fde>] open_ctree+0x18be/0x1a60
+ [<c112c2d0>] ? btrfs_alloc_root+0x40/0x40
+ [<c11b09dd>] ? strlcpy+0x1d/0x110
+ [<c110c4b7>] btrfs_mount+0x677/0x850
+ [<c11ad4ad>] ? ida_get_new_above+0x1ed/0x220
+ [<c1081310>] ? __kmalloc_track_caller+0x70/0x130
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c1085acc>] mount_fs+0x1c/0xc0
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c109b0a4>] vfs_kern_mount+0x44/0xd0
+ [<c109b197>] do_kern_mount+0x37/0xf0
+ [<c109c594>] do_mount+0x3b4/0x700
+ [<c109c946>] sys_mount+0x66/0xa0
+ [<c122b2f5>] syscall_call+0x7/0xb
+Code: 1c 89 44 24 04 8b 45 f0 89 54 24 08 8b 55 e8 89 04 24 8b 45 ec e8 15
+f9 ff ff eb 8a 8d 76 00 81 ff ff 00 00 00 0f 87 59 ff ff ff <0f> 0b 66 90
+55 89 e5 57 89 d7 56 53 83 ec 58 8b 5d 28 89 45 ec
+EIP: [<c111a7fc>] insert_inline_extent_backref+0x13c/0x140 SS:ESP
+0068:d790da68
+---[ end trace 4c5c7c49fa61dfac ]---
+Segmentation fault
+/ # ------------[ cut here ]------------
+kernel BUG at fs/btrfs/extent-tree.c:1755!
+invalid opcode: 0000 [#2]
+Pid: 326, comm: btrfs-transacti Tainted: G      D W    3.7.0+ #1 Bochs Bochs
+EIP: 0060:[<c111a7fc>] EFLAGS: 00010297 CPU: 0
+EIP is at insert_inline_extent_backref+0x13c/0x140
+EAX: 00000000 EBX: 00000000 ECX: 00000000 EDX: 00000000
+ESI: 00000000 EDI: 00000002 EBP: d720bd40 ESP: d720bcec
+ DS: 007b ES: 007b FS: 0000 GS: 0000 SS: 0068
+CR0: 8005003b CR2: b7779000 CR3: 178fa000 CR4: 00000690
+DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+DR6: ffff0ff0 DR7: 00000400
+Process btrfs-transacti (pid: 326, ti=d720a000 task=d7208000
+task.ti=d720a000)
+Stack:
+ d720bd30 57175000 000000ef 00001000 00000000 1be77000 000000c8 00000000
+ 00000000 00000002 00000000 00000000 00000000 00000001 d751c4d0 d78dec00
+ d7423420 0000098e 000000ef d751c4d0 d78de800 d720bdac c111a8a8 57175000
+Call Trace:
+ [<c111a8a8>] __btrfs_inc_extent_ref+0xa8/0x240
+ [<c11207a1>] run_clustered_refs+0x501/0xb00
+ [<c1177517>] ? btrfs_find_ref_cluster+0xd7/0x150
+ [<c11244ce>] btrfs_run_delayed_refs+0x8e/0x250
+ [<c1133809>] btrfs_commit_transaction+0x69/0x920
+ [<c1040e80>] ? update_curr.constprop.48+0x50/0xa0
+ [<c107fc8a>] ? kmem_cache_alloc+0x5a/0xf0
+ [<c11345be>] ? start_transaction+0xee/0x3e0
+ [<c1134540>] ? start_transaction+0x70/0x3e0
+ [<c1037a80>] ? abort_exclusive_wait+0x60/0x60
+ [<c112c435>] transaction_kthread+0x165/0x1a0
+ [<c112c2d0>] ? btrfs_alloc_root+0x40/0x40
+ [<c103726e>] kthread+0x8e/0xa0
+ [<c122b717>] ret_from_kernel_thread+0x1b/0x28
+ [<c10371e0>] ? __kthread_parkme+0x60/0x60
+Code: 1c 89 44 24 04 8b 45 f0 89 54 24 08 8b 55 e8 89 04 24 8b 45 ec e8 15
+f9 ff ff eb 8a 8d 76 00 81 ff ff 00 00 00 0f 87 59 ff ff ff <0f> 0b 66 90
+55 89 e5 57 89 d7 56 53 83 ec 58 8b 5d 28 89 45 ec
+EIP: [<c111a7fc>] insert_inline_extent_backref+0x13c/0x140 SS:ESP
+0068:d720bcec
+---[ end trace 4c5c7c49fa61dfad ]---
 
-I had to use btrfs-zero-log before it could mount again.
+fs/btrfs/extent-tree.c:1755 is, again:
 
-Here is the trace I had:
+1755                 BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
 
-[   15.289140] device label p4-btrfs devid 1 transid 545533 /dev/dm-1
-[   15.336323] device label p4-openwrt devid 1 transid 56491 /dev/dm-2
-[   15.622376] device label p4-btrfsRoot devid 3 transid 128743 /dev/sdc4
-[   15.683499] btrfs: force clearing of disk cache
-[   15.697295] btrfs: disk space caching is enabled
-[   16.864388] ------------[ cut here ]------------
-[   16.877759] kernel BUG at fs/btrfs/free-space-cache.c:1542!
-[   16.891417] invalid opcode: 0000 [#1] PREEMPT SMP
-[   16.905434] Modules linked in: dm_crypt sr_mod cdrom sd_mod
-ata_generic pata_acpi hid_generic crc32c_intel ghash_clmulni_intel
-aesni_intel aes_x86_64 ablk_helper cryptd xts lrw gf128mul ahci
-sata_mv libahci pata_jmicron ehci_pci xhci_hcd uhci_hcd ata_piix
-libata btrfs crc32c libcrc32c zlib_deflate ext4 crc16 jbd2 mbcache
-fuse usbhid hid usb_storage scsi_mod ehci_hcd usbcore usb_common
-raid456 async_raid6_recov async_memcpy async_pq raid6_pq async_xor xor
-async_tx raid1 md_mod dm_snapshot dm_mod loop
-[   17.024301] CPU 0
-[   17.024553] Pid: 216, comm: mount Not tainted
-3.8.0-rc5-TiARCH-00004-g99beec4-dirty #3 Gigabyte Technology Co., Ltd.
-P55-USB3/P55-USB3
-[   17.080278] RIP: 0010:[<ffffffffa02bbfbf>]  [<ffffffffa02bbfbf>]
-remove_from_bitmap+0x16f/0x180 [btrfs]
-[   17.118802] RSP: 0018:ffff88011567f6e8  EFLAGS: 00010287
-[   17.138121] RAX: 0000000000000000 RBX: ffff88011769cf80 RCX: ffff880118e053a4
-[   17.157722] RDX: 00000001b0b22000 RSI: 0000000000008000 RDI: 0000000000006200
-[   17.177096] RBP: ffff88011567f738 R08: ffff880114c7d3c8 R09: 0000000000001e00
-[   17.196438] R10: ffffea0004500d80 R11: ffffffffa0267948 R12: ffff88011567f760
-[   17.216040] R13: ffff88011567f758 R14: ffff880118e05380 R15: 00000001b6e50000
-[   17.235653] FS:  00007f7f55594780(0000) GS:ffff88011fc00000(0000)
-knlGS:0000000000000000
-[   17.274869] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   17.294723] CR2: 0000000001dc9008 CR3: 0000000118fa2000 CR4: 00000000000007f0
-[   17.314910] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[   17.334664] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-[   17.353846] Process mount (pid: 216, threadinfo ffff88011567e000,
-task ffff8801154beb40)
-[   17.392013] Stack:
-[   17.410836]  ffff880114036600 ffff880118e053a4 00000001b0bce000
-00000000000a4000
-[   17.449642]  ffff88011567f738 ffff880118e05380 ffff880118e053a4
-0000000000000000
-[   17.488869]  ffff880118cf0200 ffff880115a95000 ffff88011567f788
-ffffffffa02be2d3
-[   17.527977] Call Trace:
-[   17.546721]  [<ffffffffa02be2d3>] btrfs_remove_free_space+0x53/0x290 [btrfs]
-[   17.565962]  [<ffffffffa026f80f>]
-btrfs_alloc_logged_file_extent+0x1bf/0x1e0 [btrfs]
-[   17.603515]  [<ffffffffa025b32a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-[   17.622918]  [<ffffffffa02b6e90>] replay_one_extent+0x620/0x690 [btrfs]
-[   17.641943]  [<ffffffffa0290604>] ? btrfs_destroy_inode+0x1c4/0x2e0 [btrfs]
-[   17.660666]  [<ffffffffa02a04f3>] ? read_extent_buffer+0xc3/0x120 [btrfs]
-[   17.679065]  [<ffffffffa02b7f1b>] replay_one_buffer+0x2db/0x3a0 [btrfs]
-[   17.697334]  [<ffffffffa029eded>] ? alloc_extent_buffer+0x9d/0x490 [btrfs]
-[   17.715505]  [<ffffffffa02b48e2>] walk_down_log_tree+0x212/0x400 [btrfs]
-[   17.733741]  [<ffffffffa02b4b6d>] walk_log_tree+0x9d/0x1f0 [btrfs]
-[   17.751879]  [<ffffffffa02bb41b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
-[   17.770168]  [<ffffffffa02b7c40>] ? replay_one_dir_item+0xf0/0xf0 [btrfs]
-[   17.788456]  [<ffffffffa027f45f>] open_ctree+0x166f/0x1d00 [btrfs]
-[   17.806537]  [<ffffffff81256ff1>] ? disk_name+0x61/0xc0
-[   17.824153]  [<ffffffffa0257b83>] btrfs_mount+0x633/0x770 [btrfs]
-[   17.841672]  [<ffffffff81168f38>] ? alloc_pages_current+0xb8/0x180
-[   17.859027]  [<ffffffff8118dfb3>] mount_fs+0x43/0x1b0
-[   17.876427]  [<ffffffff811a8c54>] vfs_kern_mount+0x74/0x110
-[   17.894093]  [<ffffffff811aac26>] do_mount+0x216/0xa80
-[   17.911362]  [<ffffffff81126d4e>] ? __get_free_pages+0xe/0x50
-[   17.928315]  [<ffffffff811aa87a>] ? copy_mount_options+0x3a/0x180
-[   17.945484]  [<ffffffff811ab51e>] sys_mount+0x8e/0xe0
-[   17.962222]  [<ffffffff814bb05d>] system_call_fastpath+0x1a/0x1f
-[   17.978677] Code: 8e 0f 1f 00 31 c0 48 83 7b 20 00 75 d5 48 89 de
-4c 89 f7 89 45 b0 e8 01 f8 ff ff 8b 45 b0 eb c2 0f 1f 40 00 b8 ea ff
-ff ff eb b7 <0f> 0b 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 66 66
-66 66
-[   18.029032] RIP  [<ffffffffa02bbfbf>] remove_from_bitmap+0x16f/0x180 [btrfs]
-[   18.045301]  RSP <ffff88011567f6e8>
-[   18.061636] ---[ end trace a76d6978e0d86d8a ]---
-[   18.077872] note: mount[216] exited with preempt_count 1
-[   18.094215] BUG: scheduling while atomic: mount/216/0x10000002
-[   18.110279] Modules linked in: dm_crypt sr_mod cdrom sd_mod
-ata_generic pata_acpi hid_generic crc32c_intel ghash_clmulni_intel
-aesni_intel aes_x86_64 ablk_helper cryptd xts lrw gf128mul ahci
-sata_mv libahci pata_jmicron ehci_pci xhci_hcd uhci_hcd ata_piix
-libata btrfs crc32c libcrc32c zlib_deflate ext4 crc16 jbd2 mbcache
-fuse usbhid hid usb_storage scsi_mod ehci_hcd usbcore usb_common
-raid456 async_raid6_recov async_memcpy async_pq raid6_pq async_xor xor
-async_tx raid1 md_mod dm_snapshot dm_mod loop
-[   18.231469] Pid: 216, comm: mount Tainted: G      D
-3.8.0-rc5-TiARCH-00004-g99beec4-dirty #3
-[   18.267744] Call Trace:
-[   18.285502]  [<ffffffff814ab69d>] __schedule_bug+0x4d/0x59
-[   18.303649]  [<ffffffff814b240a>] __schedule+0x8da/0x920
-[   18.321578]  [<ffffffff81168f38>] ? alloc_pages_current+0xb8/0x180
-[   18.339693]  [<ffffffff8108aa7a>] __cond_resched+0x2a/0x40
-[   18.357708]  [<ffffffff814b24cf>] _cond_resched+0x2f/0x40
-[   18.375638]  [<ffffffff8114b38c>] unmap_single_vma+0x44c/0x870
-[   18.393653]  [<ffffffff8112fbe0>] ? release_pages+0x1f0/0x230
-[   18.411723]  [<ffffffff8114c011>] unmap_vmas+0x51/0xa0
-[   18.429705]  [<ffffffff81154878>] exit_mmap+0x98/0x170
-[   18.447613]  [<ffffffff81054431>] mmput+0x61/0x120
-[   18.465337]  [<ffffffff8105cc4e>] do_exit+0x24e/0xa50
-[   18.482995]  [<ffffffff814ab130>] ? printk+0x4d/0x4f
-[   18.500233]  [<ffffffff8105aa51>] ? kmsg_dump+0xc1/0xd0
-[   18.517015]  [<ffffffff814b49cd>] oops_end+0x9d/0xe0
-[   18.533538]  [<ffffffff81018df8>] die+0x58/0x90
-[   18.549486]  [<ffffffff814b42ab>] do_trap+0x6b/0x170
-[   18.565109]  [<ffffffff81016385>] do_invalid_op+0x95/0xb0
-[   18.580717]  [<ffffffffa02bbfbf>] ? remove_from_bitmap+0x16f/0x180 [btrfs]
-[   18.596539]  [<ffffffffa025af19>] ? btrfs_set_path_blocking+0x39/0x80 [btrfs]
-[   18.612331]  [<ffffffffa02967f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
-[   18.627750]  [<ffffffff811303ab>] ? mark_page_accessed+0x4b/0x60
-[   18.642682]  [<ffffffff814bc2de>] invalid_op+0x1e/0x30
-[   18.657109]  [<ffffffffa0267948>] ?
-cache_block_group.isra.44+0x2f8/0x3e0 [btrfs]
-[   18.685083]  [<ffffffffa02bbfbf>] ? remove_from_bitmap+0x16f/0x180 [btrfs]
-[   18.699534]  [<ffffffffa02bbebd>] ? remove_from_bitmap+0x6d/0x180 [btrfs]
-[   18.713427]  [<ffffffffa02be2d3>] btrfs_remove_free_space+0x53/0x290 [btrfs]
-[   18.727197]  [<ffffffffa026f80f>]
-btrfs_alloc_logged_file_extent+0x1bf/0x1e0 [btrfs]
-[   18.753938]  [<ffffffffa025b32a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-[   18.768121]  [<ffffffffa02b6e90>] replay_one_extent+0x620/0x690 [btrfs]
-[   18.782519]  [<ffffffffa0290604>] ? btrfs_destroy_inode+0x1c4/0x2e0 [btrfs]
-[   18.797052]  [<ffffffffa02a04f3>] ? read_extent_buffer+0xc3/0x120 [btrfs]
-[   18.811591]  [<ffffffffa02b7f1b>] replay_one_buffer+0x2db/0x3a0 [btrfs]
-[   18.826220]  [<ffffffffa029eded>] ? alloc_extent_buffer+0x9d/0x490 [btrfs]
-[   18.840962]  [<ffffffffa02b48e2>] walk_down_log_tree+0x212/0x400 [btrfs]
-[   18.855839]  [<ffffffffa02b4b6d>] walk_log_tree+0x9d/0x1f0 [btrfs]
-[   18.870647]  [<ffffffffa02bb41b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
-[   18.885771]  [<ffffffffa02b7c40>] ? replay_one_dir_item+0xf0/0xf0 [btrfs]
-[   18.901055]  [<ffffffffa027f45f>] open_ctree+0x166f/0x1d00 [btrfs]
-[   18.916476]  [<ffffffff81256ff1>] ? disk_name+0x61/0xc0
-[   18.931962]  [<ffffffffa0257b83>] btrfs_mount+0x633/0x770 [btrfs]
-[   18.947622]  [<ffffffff81168f38>] ? alloc_pages_current+0xb8/0x180
-[   18.963421]  [<ffffffff8118dfb3>] mount_fs+0x43/0x1b0
-[   18.979230]  [<ffffffff811a8c54>] vfs_kern_mount+0x74/0x110
-[   18.995180]  [<ffffffff811aac26>] do_mount+0x216/0xa80
-[   19.011066]  [<ffffffff81126d4e>] ? __get_free_pages+0xe/0x50
-[   19.026876]  [<ffffffff811aa87a>] ? copy_mount_options+0x3a/0x180
-[   19.042588]  [<ffffffff811ab51e>] sys_mount+0x8e/0xe0
-[   19.058170]  [<ffffffff814bb05d>] system_call_fastpath+0x1a/0x1f
+Regards
+

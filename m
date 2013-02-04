@@ -1,64 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f42.google.com ([74.125.83.42]:49256 "EHLO
-	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754061Ab3BDJII (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 04:08:08 -0500
-Received: by mail-ee0-f42.google.com with SMTP id b47so3024138eek.15
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Feb 2013 01:08:07 -0800 (PST)
-Message-ID: <997C7B3B2B234B0ABBD6CFA921215298@moshePC>
-From: "Moshe" <moshe@zadarastorage.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: btrfs wastes disk space after snapshot deletetion.
-Date: Mon, 4 Feb 2013 11:08:01 +0200
+Received: from zlom.siedziba.pl ([85.222.100.130]:35459 "EHLO zlom.siedziba.pl"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753963Ab3BDJQK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Feb 2013 04:16:10 -0500
+Received: from lampka.siedziba.pl (localhost.graciarnia [127.0.0.1])
+	by zlom.siedziba.pl (Postfix) with ESMTPA id A3A78887ADE
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2013 10:16:02 +0100 (CET)
+Message-ID: <072778be6e5d13614eddce7132834608.squirrel@lampka.siedziba.pl>
+In-Reply-To: <69d32024cba2f7912082b19a18e0d49f.squirrel@lampka.siedziba.pl>
+References: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+    <69d32024cba2f7912082b19a18e0d49f.squirrel@lampka.siedziba.pl>
+Date: Mon, 4 Feb 2013 10:16:02 +0100
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1755 (was: 1772)
+From: =?utf-8?B?IlBpb3RyIFBhd8WCb3ci?= <pp@siedziba.pl>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="windows-1255";
-	reply-type=original
+Content-Type: text/plain;charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-If I write large sequential file on snapshot, then create another snapshot, 
-overwrite file with small amount of data and delete first snapshot, second 
-snapshot has very large data extent and only small part of it is used.
-For example if I use following sequence:
-mkfs.btrfs /dev/sdn
-mount -o noatime,nodatacow,nospace_cache /dev/sdn /mnt/b
-btrfs sub snap /mnt/b /mnt/b/snap1
-dd if=/dev/zero of=/mnt/b/snap1/t count=15000 bs=65535
-sync
-btrfs sub snap /mnt/b/snap1 /mnt/b/snap2
-dd if=/dev/zero of=/mnt/b/snap2/t seek=3 count=1 bs=2048
-sync
-btrfs sub delete /mnt/b/snap1
-btrfs-debug-tree /dev/sdn
-I see following data extents
-item 6 key (257 EXTENT_DATA 0) itemoff 3537 itemsize 53
-    extent data disk byte 1103101952 nr 194641920
-    extent data offset 0 nr 4096 ram 194641920
-    extent compression 0
-item 7 key (257 EXTENT_DATA 4096) itemoff 3484 itemsize 53
-    extent data disk byte 2086129664 nr 4096
-    extent data offset 0 nr 4096 ram 4096
-    extent compression 0
+situation update: I realized I haven't tried "nospace_cache" yet, even
+though I tried "clear_cache". "clear cache" doesn't help at all. On the
+other hand, with "nospace_cache":
 
-In item 6: only 4096 from 194641920 are in use. Rest of space is wasted.
+# mount /dev/hdb -odevice=/dev/hdc,nospace_cache /mnt/test
+device label root devid 2 transid 56099 /dev/hdc
+device label root devid 1 transid 56099 /dev/hdb
+btrfs: disabling disk space caching
+btrfs: unlinked 1 orphans
+/ # btrfs: continuing balance
+btrfs: relocating block group 776713797632 flags 4
 
-If I defragment like: btrfs filesystem defragment /mnt/b/snap2/t it release 
-wasted space. But I can't use defragment because if I have few snapshots I 
-need to run defragment on each snapshot and it disconnect relation between 
-snapshot and create multiple copies of same data.
+It successfully mounts rw and continues the balance.
 
-In our test that create and delete snapshots while writing data, we end up 
-with few GBs of disk space wasted.
+I'm still doing it all on qemu with "-snapshot" option, to keep HD
+contents unmodified. Now the question is: should I try to mount it
+"nospace_cache" for real, try to keep using it and see what happens, or is
+anyone interested in debugging this problem further before I potentially
+destroy the "evidence"?
 
-Is it possible to limit size of allocated data extents?
-Is it possible to defragment subvolume without breaking snapshots relations?
-Any other idea how to recover wasted space?
-
-Thanks,
-Moshe Melnikov
+Regards
 
 

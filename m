@@ -1,47 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:39069 "EHLO mx2.fusionio.com"
+Received: from cantor2.suse.de ([195.135.220.15]:60124 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756673Ab3BAU6o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Feb 2013 15:58:44 -0500
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id dQU5t3yDdITY480y (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 01 Feb 2013 13:58:43 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: account for orphan inodes properly during cleanup
-Date: Fri, 1 Feb 2013 16:05:17 -0500
-Message-ID: <1359752717-13540-1-git-send-email-jbacik@fusionio.com>
+	id S1755873Ab3BDPs7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Feb 2013 10:48:59 -0500
+Date: Mon, 4 Feb 2013 16:48:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
+Subject: Re: [RESEND][PATCH] btrfs: add "no file data" flag to btrfs send
+ ioctl
+Message-ID: <20130204154856.GA8462@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130130224341.GZ12558@wotan.suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130130224341.GZ12558@wotan.suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave sent me a panic where we were doing the orphan cleanup and panic'ed
-trying to release our reservation from the orphan block rsv.  The reason for
-this is because our orphan block rsv had been free'd out from underneath us
-because the transaction commit found that there were no orphan inodes
-according to its count and decided to free it.  This is incorrect so make
-sure we inc the orphan inodes count so the accounting is all done properly.
-This would also cause the warning in the orphan commit code normally if you
-had any orphans to cleanup as they would only decrement the orphan count so
-you'd get a negative orphan count which could cause problems during runtime.
-Thanks,
+On Wed, Jan 30, 2013 at 02:43:41PM -0800, Mark Fasheh wrote:
+> @@ -4570,6 +4605,11 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+>  	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
+>  	INIT_LIST_HEAD(&sctx->name_cache_list);
+>  
+> +	if (arg->flags & ~BTRFS_SEND_FLAG_NO_FILE_DATA)
+> +		return -EINVAL;
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+Doing just return skips the cleanup block (goto out;), also the test can
+be placed just after the access_ok() call and skip allocation and init
+of sctx.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 804a34b..5398883 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2502,6 +2502,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 		 */
- 		set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 			&BTRFS_I(inode)->runtime_flags);
-+		atomic_inc(&root->orphan_inodes);
- 
- 		/* if we have links, this was a truncate, lets do that */
- 		if (inode->i_nlink) {
--- 
-1.7.7.6
-
+> +
+> +	sctx->flags = arg->flags;
+> +
+>  	sctx->send_filp = fget(arg->send_fd);
+>  	if (IS_ERR(sctx->send_filp)) {
+>  		ret = PTR_ERR(sctx->send_filp);

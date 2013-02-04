@@ -1,39 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.HRZ.Uni-Dortmund.DE ([129.217.128.51]:50363 "EHLO
-	unimail.uni-dortmund.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753696Ab3BDM6S (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 07:58:18 -0500
-Received: from webmail.tu-dortmund.de (vmx028.itmc.tu-dortmund.de [129.217.131.82])
-	by unimail.uni-dortmund.de (8.14.6/8.14.5) with ESMTP id r14CbLR8017966
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Feb 2013 13:37:21 +0100 (CET)
-Message-ID: <687dbd42013568bf82390c86d4661ce4.squirrel@webmail.tu-dortmund.de>
-Date: Mon, 4 Feb 2013 13:37:21 +0100
-Subject: Does btrfs adapt to size changes of underlying block device(s)?
-From: "Simon Campese" <simon.campese@tu-dortmund.de>
+Received: from pipebreaker.pl ([109.107.25.67]:37111 "EHLO
+	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753696Ab3BDNAF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 08:00:05 -0500
+Date: Mon, 4 Feb 2013 14:00:01 +0100
+From: Tomasz Torcz <tomek@pipebreaker.pl>
 To: linux-btrfs@vger.kernel.org
-Reply-To: simon.campese@tu-dortmund.de
+Subject: Re: Does btrfs adapt to size changes of underlying block device(s)?
+Message-ID: <20130204130001.GC27997@mother.jarsat.pl>
+References: <687dbd42013568bf82390c86d4661ce4.squirrel@webmail.tu-dortmund.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <687dbd42013568bf82390c86d4661ce4.squirrel@webmail.tu-dortmund.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Mon, Feb 04, 2013 at 01:37:21PM +0100, Simon Campese wrote:
+> Hello,
+> 
+> I've got a quick question: Does btrfs adapt to size changes of the
+> underlying block device(s)?
+> 
+> My specific situation is as follows: I've got a luks-volume on which I
+> want to put btrfs. If this luks-volume grows in the future (i.e. by
+> 'cryptsetup resize'), will btrfs automatically (and reliably) "see" this
+> and be able to use the additional space?
 
-I've got a quick question: Does btrfs adapt to size changes of the
-underlying block device(s)?
+  Not automatically, you need to invoke btrfs command for that. But 
+shrinking and growing works online and is reliable.
 
-My specific situation is as follows: I've got a luks-volume on which I
-want to put btrfs. If this luks-volume grows in the future (i.e. by
-'cryptsetup resize'), will btrfs automatically (and reliably) "see" this
-and be able to use the additional space?
+   btrfs filesystem resize [devid:][+/-]<newsize>[gkm]|[devid:]max <path>
 
-Of course, one can always put an lvm-layer in between, but I would really
-like to avoid this.
-
-And as we're at it: What about shrinking of the underlying block-device?
-
-
-Thanks for your help,
-
-Simon
+-- 
+Tomasz Torcz                 Morality must always be based on practicality.
+xmpp: zdzichubg@chrome.pl                -- Baron Vladimir Harkonnen
 

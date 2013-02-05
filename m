@@ -1,97 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f181.google.com ([74.125.82.181]:61482 "EHLO
-	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751156Ab3BEJJJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Feb 2013 04:09:09 -0500
-Received: by mail-we0-f181.google.com with SMTP id t44so5519418wey.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Feb 2013 01:09:07 -0800 (PST)
-Message-ID: <B9CF5B4F4CCB49DDADED37C666FEB05A@moshePC>
-From: "Moshe" <moshe@zadarastorage.com>
-To: "Josef Bacik" <jbacik@fusionio.com>
-Cc: <linux-btrfs@vger.kernel.org>
-References: <997C7B3B2B234B0ABBD6CFA921215298@moshePC> <20130204155652.GB2275@localhost.localdomain>
-In-Reply-To: <20130204155652.GB2275@localhost.localdomain>
-Subject: Re: btrfs wastes disk space after snapshot deletetion.
-Date: Tue, 5 Feb 2013 11:09:02 +0200
+Received: from mail-ee0-f47.google.com ([74.125.83.47]:64679 "EHLO
+	mail-ee0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754159Ab3BEKQi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Feb 2013 05:16:38 -0500
+Received: by mail-ee0-f47.google.com with SMTP id e52so3795368eek.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Feb 2013 02:16:36 -0800 (PST)
+Message-ID: <5110DC02.4030409@gmail.com>
+Date: Tue, 05 Feb 2013 10:16:34 +0000
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="ISO-8859-1";
-	reply-type=original
+To: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+CC: Chris Mason <chris.mason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs for files > 10GB = random spontaneous CRC failure.
+References: <50F3E77B.2030901@gmail.com> <20130114145904.GA1387@shiny> <50F422BC.4000901@gmail.com> <20130114155718.GC1387@shiny> <50F43319.9040009@gmail.com> <20130114163433.GD1387@shiny> <50F5E6FA.60803@gmail.com> <50F6712F.3070408@itwm.fraunhofer.de>
+In-Reply-To: <50F6712F.3070408@itwm.fraunhofer.de>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your reply Josef.
-I want to experiment with extents size, to see how it influence size of 
-extent tree. Can you point me to code that I can change to limit size of 
-data extents?
-
-Thanks,
-Moshe Melnikov
-
-
------Original Message----- 
-From: Josef Bacik
-Sent: Monday, February 04, 2013 5:56 PM
-To: Moshe
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs wastes disk space after snapshot deletetion.
-
-On Mon, Feb 04, 2013 at 02:08:01AM -0700, Moshe wrote:
-> Hello,
+On 16/01/13 09:21, Bernd Schubert wrote:
+> On 01/16/2013 12:32 AM, Tom Kusmierz wrote:
 >
-> If I write large sequential file on snapshot, then create another 
-> snapshot,
-> overwrite file with small amount of data and delete first snapshot, second
-> snapshot has very large data extent and only small part of it is used.
-> For example if I use following sequence:
-> mkfs.btrfs /dev/sdn
-> mount -o noatime,nodatacow,nospace_cache /dev/sdn /mnt/b
-> btrfs sub snap /mnt/b /mnt/b/snap1
-> dd if=/dev/zero of=/mnt/b/snap1/t count=15000 bs=65535
-> sync
-> btrfs sub snap /mnt/b/snap1 /mnt/b/snap2
-> dd if=/dev/zero of=/mnt/b/snap2/t seek=3 count=1 bs=2048
-> sync
-> btrfs sub delete /mnt/b/snap1
-> btrfs-debug-tree /dev/sdn
-> I see following data extents
-> item 6 key (257 EXTENT_DATA 0) itemoff 3537 itemsize 53
->     extent data disk byte 1103101952 nr 194641920
->     extent data offset 0 nr 4096 ram 194641920
->     extent compression 0
-> item 7 key (257 EXTENT_DATA 4096) itemoff 3484 itemsize 53
->     extent data disk byte 2086129664 nr 4096
->     extent data offset 0 nr 4096 ram 4096
->     extent compression 0
+>> p.s. bizzare that when I "fill" ext4 partition with test data everything
+>> check's up OK (crc over all files), but with Chris tool it gets
+>> corrupted - for both Adaptec crappy pcie controller and for mother board
+>> built in one. Also since courses of history proven that my testing
+>> facilities are crap - any suggestion's on how can I test ram, cpu &
+>> controller would be appreciated.
 >
-> In item 6: only 4096 from 194641920 are in use. Rest of space is wasted.
+> Similar issues had been the reason we wrote ql-fstest at q-leap. Maybe 
+> you could try that? You can easily see the pattern of the corruption 
+> with that. But maybe Chris' stress.sh also provides it.
+> Anyway, I yesterday added support to specify min and max file size, as 
+> it before only used 1MiB to 1GiB sizes... It's a bit cryptic with 
+> bits, though, I will improve that later.
+> https://bitbucket.org/aakef/ql-fstest/downloads
 >
-> If I defragment like: btrfs filesystem defragment /mnt/b/snap2/t it 
-> release
-> wasted space. But I can't use defragment because if I have few snapshots I
-> need to run defragment on each snapshot and it disconnect relation between
-> snapshot and create multiple copies of same data.
 >
-> In our test that create and delete snapshots while writing data, we end up
-> with few GBs of disk space wasted.
+> Cheers,
+> Bernd
 >
-> Is it possible to limit size of allocated data extents?
-> Is it possible to defragment subvolume without breaking snapshots 
-> relations?
-> Any other idea how to recover wasted space?
+>
+> PS: But see my other thread, using ql-fstest I yesterday entirely 
+> broke a btrfs test file system resulting in kernel panics.
 
-This is all by design to try and limit the size of the extent tree.  Instead 
-of
-splitting references in the extent tree to account for the split extent we 
-do it
-in the file tree.  In your case it results in a lot of wasted space.  This 
-is on
-the list of things to fix, we will just split the references in the extent 
-tree
-and deal with the larger extent tree, but it's on the back burner while we 
-get
-things a bit more stable.  Thanks,
+Hi,
 
-Josef 
+Its been a while, but I think I should provide a "definite anwser" or 
+simply what was the cause of whole problem:
 
+It was a printer!
+
+Long story short, I was going nuts trying to diagnose which bit of my 
+server is going bad and effectively I was down to blaming a interface 
+card that connects hotswapable disks to mobo / pcie controllers. When 
+I've got back from my holiday I've sat in front of server and decided to 
+go with ql-fstest which in a very nice way reports errors with a very 
+low lag (~2 minutes) after they occurred. At this point my printer 
+kicked in with "self clean" and error just showed up after ~ two minutes 
+- so I've restarted printer and while it was going through it's own post 
+with self clean another error showed up. Issue here turned out to be 
+that I was using one of those fantastic pci 4 port ethernet cards and 
+printer was directly to it - after moving it and everything else to 
+switch all problem and issues have went away. AT the moment I'm running 
+server for 2 weeks without any corruptions, any random kernel btrfs 
+crashes etc.
+
+
+Anyway I wanted to thank again to Chris and rest of btrFS dev people for 
+this fantastic filesystem that let me discover how stupid setup I was 
+running and how deep into shiet I've put my self.
+
+CHEERS LADS !
+
+
+
+Tom.

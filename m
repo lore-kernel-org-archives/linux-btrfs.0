@@ -1,75 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:38048 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754282Ab3BENq2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Feb 2013 08:46:28 -0500
-Date: Tue, 5 Feb 2013 19:46:23 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Cc: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>,
-        Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs for files > 10GB = random spontaneous CRC failure.
-Message-ID: <20130205194623.07a9bcfd@natsu>
-In-Reply-To: <5110DC02.4030409@gmail.com>
-References: <50F3E77B.2030901@gmail.com>
-	<20130114145904.GA1387@shiny>
-	<50F422BC.4000901@gmail.com>
-	<20130114155718.GC1387@shiny>
-	<50F43319.9040009@gmail.com>
-	<20130114163433.GD1387@shiny>
-	<50F5E6FA.60803@gmail.com>
-	<50F6712F.3070408@itwm.fraunhofer.de>
-	<5110DC02.4030409@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/VcPE.PqaSOjYL1hK=uy6X.e"; protocol="application/pgp-signature"
+Received: from dkim2.fusionio.com ([66.114.96.54]:35335 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754009Ab3BENvv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Feb 2013 08:51:51 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 63F0D9A03EE
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Feb 2013 06:51:50 -0700 (MST)
+Date: Tue, 5 Feb 2013 08:51:47 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: =?utf-8?B?IlBpb3RyIFBhd8WCb3ci?= <pp@siedziba.pl>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1772
+Message-ID: <20130205135147.GD2275@localhost.localdomain>
+References: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+ <20130204165825.GC2275@localhost.localdomain>
+ <c70388910a26ddb79b9f358e0ccb78f5.squirrel@lampka.siedziba.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <c70388910a26ddb79b9f358e0ccb78f5.squirrel@lampka.siedziba.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/VcPE.PqaSOjYL1hK=uy6X.e
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, Feb 05, 2013 at 01:55:17AM -0700, "Piotr Pawłow" wrote:
+> > mounts before it panics, can you capture all the output and reply to this
+> > email
+> > with it?  Thanks,
+> 
+> I'm sorry, I could not keep it longer in that state. I used btrfs-image to
+> create metadata image from both disks, then let it run without space
+> cache.
+> 
+> Unfortunately, when I run qemu with these images:
+> 
 
-On Tue, 05 Feb 2013 10:16:34 +0000
-Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
+Yeah you can't mount images, we clear out the chunk tree so nothing works.
+Let me know if you run into any problems in the future.  Thanks,
 
-> that I was using one of those fantastic pci 4 port ethernet cards and=20
-> printer was directly to it - after moving it and everything else to=20
-> switch all problem and issues have went away. AT the moment I'm running=20
-> server for 2 weeks without any corruptions, any random kernel btrfs=20
-> crashes etc.
-
-If moving the printer over to a switch helped, perhaps it is indeed an
-electrical interference problem, but if your card is an old one from Sun, k=
-eep
-in mind that they also have some problems with DMA on machines with large
-amounts of RAM:
-
-  "sunhme" experiences corrupt packets if machine has more than 2GB of memo=
-ry
-  https://bugzilla.kernel.org/show_bug.cgi?id=3D10790
-
-Not hard to envision a horror story scenario where a rogue network card wou=
-ld
-shred your filesystem buffer cache with network packets DMAed all over it,
-like bullets from a machine gun :) But in reality afaik IOMMU is supposed to
-protect against this.
-
---=20
-With respect,
-Roman
-
---Sig_/VcPE.PqaSOjYL1hK=uy6X.e
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlERDS8ACgkQTLKSvz+PZwjL8QCfTO5/QtiYFb+cStWRJ4Pnw5ZR
-+dEAn1EpcA1O4gH+dEFsrxqMvbbVwoA0
-=obRG
------END PGP SIGNATURE-----
-
---Sig_/VcPE.PqaSOjYL1hK=uy6X.e--
+Josef

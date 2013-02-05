@@ -1,34 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:52066 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756080Ab3BEAEn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 19:04:43 -0500
-Date: Mon, 4 Feb 2013 16:04:43 -0800 (PST)
-From: Sage Weil <sage@inktank.com>
-To: Josef Bacik <jbacik@fusionio.com>
-cc: Mike Lowe <j.michael.lowe@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "billk@iinet.net.au" <billk@iinet.net.au>
-Subject: Re: corrupted file size on inline extent conversion?
-In-Reply-To: <20130130190940.GJ3660@localhost.localdomain>
-Message-ID: <alpine.DEB.2.00.1302041602350.14733@cobra.newdream.net>
-References: <alpine.DEB.2.00.1301281602060.8729@cobra.newdream.net> <20130129145429.GD3660@localhost.localdomain> <08479684-218C-4B6E-8D76-DE39B36EE12E@gmail.com> <20130130182213.GI3660@localhost.localdomain> <949A937F-7E0F-47E9-B63F-EC58E3B6370C@gmail.com>
- <20130130190940.GJ3660@localhost.localdomain>
+Received: from dkim1.fusionio.com ([66.114.96.53]:53703 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755182Ab3BEBaI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Feb 2013 20:30:08 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 5E0E37C035E
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2013 18:23:19 -0700 (MST)
+Date: Mon, 4 Feb 2013 20:23:16 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: "H. Peter Anvin" <hpa@zytor.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: experimental raid5/6 code in git
+Message-ID: <20130205012316.GB28437@shiny>
+References: <20130202160212.GB4694@shiny>
+ <51102B40.6000207@zytor.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <51102B40.6000207@zytor.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 30 Jan 2013, Josef Bacik wrote:
-> On Wed, Jan 30, 2013 at 11:30:49AM -0700, Mike Lowe wrote:
-> > I've been running rsync against a rbd device backed by btrfs filesystems that are about 11% full for about 45 minutes before I checked and noticed the printk message.  That was the first go with the patch.  Seems like I was able to get by without any problems until the btrfs filesystems got some use and filled up a little bit.
-> > 
+On Mon, Feb 04, 2013 at 02:42:24PM -0700, H. Peter Anvin wrote:
+> @@ -1389,6 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root, char
+> *device_path)
+>  	}
+>  	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
 > 
-> Ok since you are seeing the message I'll go ahead and post the patch and 
-> get it moving along, let me know if you still see the problem.  Thanks,
+> +	if ((all_avail & (BTRFS_BLOCK_GROUP_RAID5 |
+> +			  BTRFS_BLOCK_GROUP_RAID6) && num_devices <= 3)) {
+> +		printk(KERN_ERR "btrfs: unable to go below three devices "
+> +		       "on raid5 or raid6\n");
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+>  	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+>  		printk(KERN_ERR "btrfs: unable to go below four devices "
+>  		       "on raid10\n");
+> @@ -1403,6 +1414,21 @@ int btrfs_rm_device(struct btrfs_root *root, char
+> *device_path)
+>  		goto out;
+>  	}
+> 
+> +	if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
+> +	    root->fs_info->fs_devices->rw_devices <= 2) {
+> +		printk(KERN_ERR "btrfs: unable to go below two "
+> +		       "devices on raid5\n");
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +	if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
+> +	    root->fs_info->fs_devices->rw_devices <= 3) {
+> +		printk(KERN_ERR "btrfs: unable to go below three "
+> +		       "devices on raid6\n");
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+>  	if (strcmp(device_path, "missing") == 0) {
+>  		struct list_head *devices;
+>  		struct btrfs_device *tmp;
+> 
+> 
+> This seems inconsistent?
 
-Awesome.  Mike still hasn't seen a reocurrence, so it's looking like the 
-patch is good.
+Whoops, missed that one.  Thanks!
 
-Thanks so much!
-sage
+-chris
+

@@ -1,282 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f42.google.com ([209.85.216.42]:61170 "EHLO
-	mail-qa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751116Ab3BEGKj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Feb 2013 01:10:39 -0500
-Received: by mail-qa0-f42.google.com with SMTP id cr7so1622482qab.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Feb 2013 22:10:38 -0800 (PST)
+Received: from zlom.siedziba.pl ([85.222.100.130]:33129 "EHLO zlom.siedziba.pl"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755533Ab3BEIzV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Feb 2013 03:55:21 -0500
+Received: from lampka.siedziba.pl (localhost.graciarnia [127.0.0.1])
+	by zlom.siedziba.pl (Postfix) with ESMTPA id D9122887695
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Feb 2013 09:55:17 +0100 (CET)
+Message-ID: <c70388910a26ddb79b9f358e0ccb78f5.squirrel@lampka.siedziba.pl>
+In-Reply-To: <20130204165825.GC2275@localhost.localdomain>
+References: <55e4fbbdada4ee37bdccac2537683d83.squirrel@lampka.siedziba.pl>
+    <20130204165825.GC2275@localhost.localdomain>
+Date: Tue, 5 Feb 2013 09:55:17 +0100
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1772
+From: =?utf-8?B?IlBpb3RyIFBhd8WCb3ci?= <pp@siedziba.pl>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAAE6i0h4SjSRHxDK5UD+PQP-uuei40Ymg=nWckDU12+1hA9bZQ@mail.gmail.com>
-References: <20130202160212.GB4694@shiny>
-	<51102B40.6000207@zytor.com>
-	<20130205012316.GB28437@shiny>
-	<441f44ee-a354-4c03-86f3-ce37141cdc1c@email.android.com>
-	<CA+WRLO8Wkicve7AwHEvfYnKOLYXCLmJWUZsYPARwABf=LJ2nog@mail.gmail.com>
-	<CAAE6i0h4SjSRHxDK5UD+PQP-uuei40Ymg=nWckDU12+1hA9bZQ@mail.gmail.com>
-Date: Tue, 5 Feb 2013 17:10:38 +1100
-Message-ID: <CA+WRLO8v+oxrJo4Zkv=ZRzmW=omLapov96R3qKFzeWp524+8ew@mail.gmail.com>
-Subject: Re: experimental raid5/6 code in git
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Chester <somethingsome2000@gmail.com>
-Cc: "H. Peter Anvin" <hpa@zytor.com>, Chris Mason <chris.mason@fusionio.com>,
-        Chris Mason <clmason@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain;charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, that makes a lot of sense :)
+> mounts before it panics, can you capture all the output and reply to this
+> email
+> with it?  Thanks,
 
-It's been a good day, I've learnt something :)
+I'm sorry, I could not keep it longer in that state. I used btrfs-image to
+create metadata image from both disks, then let it run without space
+cache.
 
-On Tue, Feb 5, 2013 at 4:29 PM, Chester <somethingsome2000@gmail.com> wrote:
-> The last argument should be the directory you want to clone into. Use
-> '-b <branch>' to specify the branch you want to clone. I'm pretty sure
-> you've compiled just the master branch of both linux-btrfs and
-> btrfs-progs.
->
-> On Mon, Feb 4, 2013 at 8:59 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
->> I felt like having a small play with this stuff, as I've been wanting
->> it for so long :)
->>
->> But apparently I've made some incredibly newb error.
->>
->> I used the following two lines to check out the code:
->> git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
->> raid56-experimental
->> git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->> raid56-experimental-progs
->>
->> Then I did not very much to compile both of them (installed lots and
->> lots of packages that various places told me would be needed so they'd
->> both compile) finishing up with a "sudo make install" for both the
->> kernel and the tools.
->> Rebooting miracuously it came up with the new kernel and uname -a
->> assures me that I have a new kernel running:
->> btrfs@ubuntu:/kernel/raid56-experimental$ uname -a
->> Linux ubuntu 3.6.0+ #1 SMP Tue Feb 5 12:26:03 EST 2013 x86_64 x86_64
->> x86_64 GNU/Linux
->> but 3.6.0 sounds rather low, but it is newer than Ubuntu 12.10's 3.5
->> so I believe I am running the kernel I just compiled
->>
->> Where things fail is that I can figure out how to make a raid5 btrfs,
->> I'm certain I'm using the mkfs.btrfs that I just compiled (by
->> explicitly calling it in the make folder) but it wont recognise what I
->> assume the parameter to be:
->> btrfs@ubuntu:/kernel/raid56-experimental-progs$ ./mkfs.btrfs -m raid5
->> -d raid5 /dev/sd[bcdef]
->> Unknown profile raid5
->>
->> Which flavour of newb am I today?
->>
->> PS: I use newb in a very friendly way, I feel no shame over that term :)
->>
->> On Tue, Feb 5, 2013 at 1:26 PM, H. Peter Anvin <hpa@zytor.com> wrote:
->>> Also, a 2-member raid5 or 3-member raid6 are a raid1 and can be treated as such.
->>>
->>> Chris Mason <chris.mason@fusionio.com> wrote:
->>>
->>>>On Mon, Feb 04, 2013 at 02:42:24PM -0700, H. Peter Anvin wrote:
->>>>> @@ -1389,6 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root,
->>>>char
->>>>> *device_path)
->>>>>      }
->>>>>      btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
->>>>>
->>>>> +    if ((all_avail & (BTRFS_BLOCK_GROUP_RAID5 |
->>>>> +                      BTRFS_BLOCK_GROUP_RAID6) && num_devices <= 3)) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below three devices "
->>>>> +                   "on raid5 or raid6\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +
->>>>>      if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
->>>>>              printk(KERN_ERR "btrfs: unable to go below four devices "
->>>>>                     "on raid10\n");
->>>>> @@ -1403,6 +1414,21 @@ int btrfs_rm_device(struct btrfs_root *root,
->>>>char
->>>>> *device_path)
->>>>>              goto out;
->>>>>      }
->>>>>
->>>>> +    if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
->>>>> +        root->fs_info->fs_devices->rw_devices <= 2) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below two "
->>>>> +                   "devices on raid5\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +    if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
->>>>> +        root->fs_info->fs_devices->rw_devices <= 3) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below three "
->>>>> +                   "devices on raid6\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +
->>>>>      if (strcmp(device_path, "missing") == 0) {
->>>>>              struct list_head *devices;
->>>>>              struct btrfs_device *tmp;
->>>>>
->>>>>
->>>>> This seems inconsistent?
->>>>
->>>>Whoops, missed that one.  Thanks!
->>>>
->>>>-chris
->>>
->>> --
->>> Sent from my mobile phone. Please excuse brevity and lack of formatting.
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->> --
->> Gareth Pye
->> Level 2 Judge, Melbourne, Australia
->> Australian MTG Forum: mtgau.com
->> gareth@cerberos.id.au - www.rockpaperdynamite.wordpress.com
->> "Dear God, I would like to file a bug report"
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Unfortunately, when I run qemu with these images:
 
+# btrfs fi show
+Label: 'root'  uuid: 8b7a0276-d331-478c-b829-7614f2e7dc6a
+	Total devices 2 FS bytes used 758.99GB
+	devid    2 size 1.81TB used 554.03GB path /dev/hdc
+	devid    1 size 1.81TB used 766.04GB path /dev/hdb
 
+Looks good, let's try to mount:
 
---
-Gareth Pye
-Level 2 Judge, Melbourne, Australia
-Australian MTG Forum: mtgau.com
-gareth@cerberos.id.au - www.rockpaperdynamite.wordpress.com
-"Dear God, I would like to file a bug report"
+# mount /dev/hdb /mnt/test -odevice=/dev/hdc,ro
+device label root devid 2 transid 56099 /dev/hdc
+device label root devid 1 transid 56099 /dev/hdb
+btrfs: disk space caching is enabled
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:4586!
+invalid opcode: 0000 [#1]
+Pid: 307, comm: exe Not tainted 3.7.0+ #3 Bochs Bochs
+EIP: 0060:[<c115d369>] EFLAGS: 00010286 CPU: 0
+EIP is at btrfs_rmap_block+0x389/0x3d0
+EAX: c5c00000 EBX: 00000000 ECX: d742d000 EDX: c5c00000
+ESI: 00000000 EDI: 00000000 EBP: d7933c94 ESP: d7933c34
+ DS: 007b ES: 007b FS: 0000 GS: 0033 SS: 0068
+CR0: 8005003b CR2: 08053000 CR3: 1790c000 CR4: 00000690
+DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+DR6: ffff0ff0 DR7: 00000400
+Process exe (pid: 307, ti=d7932000 task=d7902fa0 task.ti=d7932000)
+Stack:
+ 00000001 00000000 d7430b80 d7933d42 00000019 00000006 d742d000 c5c00000
+ 00000000 00001000 000000c8 d7902fa0 00000000 00000000 00000000 d7933cac
+ c1154ede d7933c84 c1167fb7 d742d0e0 d7933c94 00010000 00000000 00000000
+Call Trace:
+ [<c1154ede>] ? map_private_extent_buffer+0x5e/0xe0
+ [<c1167fb7>] ? btrfs_set_lock_blocking_rw+0x57/0x90
+ [<c111b4c2>] exclude_super_stripes.isra.67+0x82/0x170
+ [<c11536a1>] ? free_extent_buffer+0x21/0x70
+ [<c1124401>] btrfs_read_block_groups+0x2e1/0x610
+ [<c1131f12>] open_ctree+0x12f2/0x1b70
+ [<c11b1c7d>] ? strlcpy+0x1d/0x110
+ [<c110c4b7>] btrfs_mount+0x677/0x850
+ [<c11ae74d>] ? ida_get_new_above+0x1ed/0x220
+ [<c1081310>] ? __kmalloc_track_caller+0x70/0x130
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c1085acc>] mount_fs+0x1c/0xc0
+ [<c109a4a2>] ? alloc_vfsmnt+0x62/0x100
+ [<c109b0a4>] vfs_kern_mount+0x44/0xd0
+ [<c109b197>] do_kern_mount+0x37/0xf0
+ [<c109c594>] do_mount+0x3b4/0x700
+ [<c109c946>] sys_mount+0x66/0xa0
+ [<c122c595>] syscall_call+0x7/0xb
+Code: fe ff ff 0f 85 2d ff ff ff 31 ff e9 0f ff ff ff 66 90 89 c8 31 d2 f7
+f6 89 c1 e9 1f fd ff ff c7 45 e8 00 00 00 00 e9 27 ff ff ff <0f> 0b ba 07
+12 00 00 b8 50 f8 28 c1 89 4d b0 e8 03 30 ec ff 8b
+EIP: [<c115d369>] btrfs_rmap_block+0x389/0x3d0 SS:ESP 0068:d7933c34
+---[ end trace 78658a7dd47c6f96 ]---
 
-On Tue, Feb 5, 2013 at 4:29 PM, Chester <somethingsome2000@gmail.com> wrote:
-> The last argument should be the directory you want to clone into. Use
-> '-b <branch>' to specify the branch you want to clone. I'm pretty sure
-> you've compiled just the master branch of both linux-btrfs and
-> btrfs-progs.
->
-> On Mon, Feb 4, 2013 at 8:59 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
->> I felt like having a small play with this stuff, as I've been wanting
->> it for so long :)
->>
->> But apparently I've made some incredibly newb error.
->>
->> I used the following two lines to check out the code:
->> git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
->> raid56-experimental
->> git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->> raid56-experimental-progs
->>
->> Then I did not very much to compile both of them (installed lots and
->> lots of packages that various places told me would be needed so they'd
->> both compile) finishing up with a "sudo make install" for both the
->> kernel and the tools.
->> Rebooting miracuously it came up with the new kernel and uname -a
->> assures me that I have a new kernel running:
->> btrfs@ubuntu:/kernel/raid56-experimental$ uname -a
->> Linux ubuntu 3.6.0+ #1 SMP Tue Feb 5 12:26:03 EST 2013 x86_64 x86_64
->> x86_64 GNU/Linux
->> but 3.6.0 sounds rather low, but it is newer than Ubuntu 12.10's 3.5
->> so I believe I am running the kernel I just compiled
->>
->> Where things fail is that I can figure out how to make a raid5 btrfs,
->> I'm certain I'm using the mkfs.btrfs that I just compiled (by
->> explicitly calling it in the make folder) but it wont recognise what I
->> assume the parameter to be:
->> btrfs@ubuntu:/kernel/raid56-experimental-progs$ ./mkfs.btrfs -m raid5
->> -d raid5 /dev/sd[bcdef]
->> Unknown profile raid5
->>
->> Which flavour of newb am I today?
->>
->> PS: I use newb in a very friendly way, I feel no shame over that term :)
->>
->> On Tue, Feb 5, 2013 at 1:26 PM, H. Peter Anvin <hpa@zytor.com> wrote:
->>> Also, a 2-member raid5 or 3-member raid6 are a raid1 and can be treated as such.
->>>
->>> Chris Mason <chris.mason@fusionio.com> wrote:
->>>
->>>>On Mon, Feb 04, 2013 at 02:42:24PM -0700, H. Peter Anvin wrote:
->>>>> @@ -1389,6 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root,
->>>>char
->>>>> *device_path)
->>>>>      }
->>>>>      btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
->>>>>
->>>>> +    if ((all_avail & (BTRFS_BLOCK_GROUP_RAID5 |
->>>>> +                      BTRFS_BLOCK_GROUP_RAID6) && num_devices <= 3)) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below three devices "
->>>>> +                   "on raid5 or raid6\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +
->>>>>      if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
->>>>>              printk(KERN_ERR "btrfs: unable to go below four devices "
->>>>>                     "on raid10\n");
->>>>> @@ -1403,6 +1414,21 @@ int btrfs_rm_device(struct btrfs_root *root,
->>>>char
->>>>> *device_path)
->>>>>              goto out;
->>>>>      }
->>>>>
->>>>> +    if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
->>>>> +        root->fs_info->fs_devices->rw_devices <= 2) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below two "
->>>>> +                   "devices on raid5\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +    if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
->>>>> +        root->fs_info->fs_devices->rw_devices <= 3) {
->>>>> +            printk(KERN_ERR "btrfs: unable to go below three "
->>>>> +                   "devices on raid6\n");
->>>>> +            ret = -EINVAL;
->>>>> +            goto out;
->>>>> +    }
->>>>> +
->>>>>      if (strcmp(device_path, "missing") == 0) {
->>>>>              struct list_head *devices;
->>>>>              struct btrfs_device *tmp;
->>>>>
->>>>>
->>>>> This seems inconsistent?
->>>>
->>>>Whoops, missed that one.  Thanks!
->>>>
->>>>-chris
->>>
->>> --
->>> Sent from my mobile phone. Please excuse brevity and lack of formatting.
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->> --
->> Gareth Pye
->> Level 2 Judge, Melbourne, Australia
->> Australian MTG Forum: mtgau.com
->> gareth@cerberos.id.au - www.rockpaperdynamite.wordpress.com
->> "Dear God, I would like to file a bug report"
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It fails in a different way :(
 
+4586         BUG_ON(!em || em->start != chunk_start);
+(kernel from btrfs-next/piotr)
 
+As to the original FS, balance kept running until the end and finished
+without errors. I'll try to run some more balance operations to see if it
+happens again.
 
--- 
-Gareth Pye
-Level 2 Judge, Melbourne, Australia
-Australian MTG Forum: mtgau.com
-gareth@cerberos.id.au - www.rockpaperdynamite.wordpress.com
-"Dear God, I would like to file a bug report"
+Thanks for your support.
+
+Regards
+

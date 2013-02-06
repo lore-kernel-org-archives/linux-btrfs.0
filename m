@@ -1,61 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx4-phx2.redhat.com ([209.132.183.25]:33075 "EHLO
-	mx4-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753001Ab3BFOOm convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 09:14:42 -0500
-Content-Type: text/plain;
-	charset=us-ascii
-Subject: Re: [PATCH] btrfs: add delayed_iput list head to btrfs inode
-References: <511180E4.2020600@redhat.com> <20130205231405.GM14246@lenny.home.zabbo.net> <20130206020854.GA2278@liubo.jp.oracle.com>
-From: Eric Sandeen <esandeen@redhat.com>
+Received: from cantor2.suse.de ([195.135.220.15]:43801 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754211Ab3BFO4O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Feb 2013 09:56:14 -0500
+Date: Wed, 6 Feb 2013 15:56:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: GIT PULL (was Re: Integration branch of btrfs-progs 2013-02-01)
+Message-ID: <20130206145612.GA12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130201174110.GC23239@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20130206020854.GA2278@liubo.jp.oracle.com>
-Message-Id: <C6207F92-AD17-4059-8442-2D0499095828@redhat.com>
-Date: Wed, 6 Feb 2013 09:14:39 -0500 (EST)
-To: "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>
-Cc: Zach Brown <zab@redhat.com>, Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Jeff Mahoney <jeffm@suse.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130201174110.GC23239@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 5, 2013, at 8:11 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+On Fri, Feb 01, 2013 at 06:41:11PM +0100, David Sterba wrote:
+> I'm going to do some more testing of the previous integration branch and
+> send a pull request as of 20130126.
 
-> On Tue, Feb 05, 2013 at 03:14:05PM -0800, Zach Brown wrote:
->>> +    struct btrfs_inode *b_inode = BTRFS_I(inode);
->>> +    struct btrfs_fs_info *fs_info = b_inode->root->fs_info;
->>> 
->>>    if (atomic_add_unless(&inode->i_count, -1, 1))
->>>        return;
->>> 
->>> -    delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
->>> -    delayed->inode = inode;
->>> -
->>>    spin_lock(&fs_info->delayed_iput_lock);
->>> -    list_add_tail(&delayed->list, &fs_info->delayed_iputs);
->>> +    list_add_tail(&b_inode->delayed_iput, &fs_info->delayed_iputs);
->>>    spin_unlock(&fs_info->delayed_iput_lock);
->>> }
->> 
->> Hmm.  I'm not great with inode life cycles, but isn't this only safe if
->> someone else can't get an i_count reference while this is in flight?  It
->> looks like the final iput does the unhashing, and so on, so couldn't an
->> iget/iput race with this and try to add the inode's list_head twice?
-> 
-> Yeah, same concern here.  Basically this will result in inodes still being
-> in use on unmount.
-> 
-> Actually I did a similar one, here is some disscussion:
-> 
-> https://patchwork.kernel.org/patch/1824711/
-> 
-Ok, thanks all.  We should remove Jeff's comment then, it sure sounded like a good idea...
+I didn't have that much time for testing as I wanted, at least did
+another review round of the pending patchset. Please pull
 
-Eric
+  git://repo.or.cz/btrfs-progs-unstable/devel.git for-chris
 
-> thanks,
-> liubo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+with top commit 78b35a43988163dbf71d9a
+
+Thanks,
+david

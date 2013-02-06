@@ -1,90 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48803 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757001Ab3BFChH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Feb 2013 21:37:07 -0500
-Date: Wed, 6 Feb 2013 10:34:19 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Moshe <moshe@zadarastorage.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs wastes disk space after snapshot deletetion.
-Message-ID: <20130206023418.GC2278@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <997C7B3B2B234B0ABBD6CFA921215298@moshePC>
+Received: from mail-ia0-f175.google.com ([209.85.210.175]:64414 "EHLO
+	mail-ia0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750963Ab3BFLSg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 06:18:36 -0500
+Received: by mail-ia0-f175.google.com with SMTP id r4so1385930iaj.20
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 03:18:36 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <997C7B3B2B234B0ABBD6CFA921215298@moshePC>
+Date: Wed, 6 Feb 2013 13:18:35 +0200
+Message-ID: <CAOcd+r2V_Na-hn10GnV04MqjM=CcdrXTQrWSbKbp6S=mxKaTew@mail.gmail.com>
+Subject: Leaking btrfs_qgroup_inherit on snapshot creation?
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, Arne Jansen <sensille@gmx.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Lev Vainblat <lev@zadarastorage.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 04, 2013 at 11:08:01AM +0200, Moshe wrote:
-> Hello,
-> 
-> If I write large sequential file on snapshot, then create another
-> snapshot, overwrite file with small amount of data and delete first
-> snapshot, second snapshot has very large data extent and only small
-> part of it is used.
-> For example if I use following sequence:
-> mkfs.btrfs /dev/sdn
-> mount -o noatime,nodatacow,nospace_cache /dev/sdn /mnt/b
-> btrfs sub snap /mnt/b /mnt/b/snap1
-> dd if=/dev/zero of=/mnt/b/snap1/t count=15000 bs=65535
-> sync
-> btrfs sub snap /mnt/b/snap1 /mnt/b/snap2
-> dd if=/dev/zero of=/mnt/b/snap2/t seek=3 count=1 bs=2048
-> sync
-> btrfs sub delete /mnt/b/snap1
-> btrfs-debug-tree /dev/sdn
-> I see following data extents
-> item 6 key (257 EXTENT_DATA 0) itemoff 3537 itemsize 53
->    extent data disk byte 1103101952 nr 194641920
->    extent data offset 0 nr 4096 ram 194641920
->    extent compression 0
-> item 7 key (257 EXTENT_DATA 4096) itemoff 3484 itemsize 53
->    extent data disk byte 2086129664 nr 4096
->    extent data offset 0 nr 4096 ram 4096
->    extent compression 0
-> 
-> In item 6: only 4096 from 194641920 are in use. Rest of space is wasted.
-> 
-> If I defragment like: btrfs filesystem defragment /mnt/b/snap2/t it
-> release wasted space. But I can't use defragment because if I have
-> few snapshots I need to run defragment on each snapshot and it
-> disconnect relation between snapshot and create multiple copies of
-> same data.
+Hi Jan, Arne,
+I see this code in create_snapshot:
 
-Well, just for this case, you can try our experimental feature for your
-test, 'snapshot-aware defrag', which is designed for this kind of problems.
+	if (inherit) {
+		pending_snapshot->inherit = *inherit;
+		*inherit = NULL;	/* take responsibility to free it */
+	}
 
-It's still floating on the ML, and I've no idea when it'll land in
-upstream.
+So, first thing I think it should be:
+if (*inherit)
+because in btrfs_ioctl_snap_create_v2() we have:
+struct btrfs_qgroup_inherit *inherit = NULL;
+...
+btrfs_ioctl_snap_create_transid(..., &inherit)
 
-Currently the latest patch is V6, and NOTE: if you want to use
-autodefrag(which is recommended), you'd like to apply the v6 patch along
-with another patch for autodefrag, otherwise it may crash your box.
+so the current check is very unlikely to be NULL.
 
-FYI,
-- snapshot-aware defrag
-	https://patchwork.kernel.org/patch/2058911/
-- autodefrag fix
-	https://patchwork.kernel.org/patch/2058921/
+Second, I don't see anybody freeing pending_snapshot->inherit. I guess
+it should be freed after callin btrfs_qgroup_inherit() and also in
+btrfs_destroy_pending_snapshots().
 
-thanks,
-liubo
-
-> 
-> In our test that create and delete snapshots while writing data, we
-> end up with few GBs of disk space wasted.
-> 
-> Is it possible to limit size of allocated data extents?
-> Is it possible to defragment subvolume without breaking snapshots relations?
-> Any other idea how to recover wasted space?
-> 
-> Thanks,
-> Moshe Melnikov
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Alex.

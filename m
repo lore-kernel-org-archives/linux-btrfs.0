@@ -1,72 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:46603 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754572Ab3BFPOO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 10:14:14 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 41B789A0358
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 08:14:14 -0700 (MST)
-Date: Wed, 6 Feb 2013 10:14:11 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Deleted subvolume reappears and other cleaner issues
-Message-ID: <20130206151411.GE26092@localhost.localdomain>
-References: <CAOcd+r3wBX5cYctFOetPm9=Hwx1z87rEkoR=2yHhXf+DmZP7bQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAOcd+r3wBX5cYctFOetPm9=Hwx1z87rEkoR=2yHhXf+DmZP7bQ@mail.gmail.com>
+Received: from mail-ye0-f174.google.com ([209.85.213.174]:34285 "EHLO
+	mail-ye0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754987Ab3BFQK1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 11:10:27 -0500
+Received: by mail-ye0-f174.google.com with SMTP id m3so384865yen.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 08:10:25 -0800 (PST)
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: [RFC] Btrfs: Allow the compressed extent size limit to be modified.
+Date: Wed,  6 Feb 2013 10:10:17 -0600
+Message-Id: <1360167017-19632-1-git-send-email-mitch.harder@sabayonlinux.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 31, 2013 at 06:03:06AM -0700, Alex Lyakas wrote:
-> Hi,
-> I want to check if any of the below issues are worth/should be  fixed:
-> 
-> # btrfs_ioctl_snap_destroy() does not commit a transaction. As a
-> result, user can ask to delete a subvol, he receives "ok" back. Even
-> if user does "btrfs sub list",
-> he will not see the deleted subvol (even though the transaction was
-> not committed yet). But if a crash happens, ORPHAN_ITEM will not
-> re-appear after crash.
-> So after crash, the subvolume still exists perfectly fine (happened
-> couple of times here).
+Provide for modification of the limit of compressed extent size
+utilizing mount-time configuration settings.
 
-Same thing happens to normal unlinks, I don't see a reason to have different
-rules for subvols.
+The size of compressed extents was limited to 128K, which
+leads to fragmentation of the extents (although the extents
+themselves may still be located contiguously).  This limit is
+put in place to ease the RAM required when spreading compression
+across several CPUs, and to make sure the amount of IO required
+to do a random read is reasonably small.
 
-> 
-> # btrfs_drop_snapshot() does not commit a transaction after
-> btrfs_del_orphan_item(). So if the subvol deletion completed in one go
-> (did not have to detach and re-attach to transaction, thus committing
-> the ORPHAN_ITEM and drop_progress/level), then after crash ORPHAN_ITEM
-> will not be in the tree, and subvolume still exists.
-> 
+This patch is still preliminary.
 
-Again same thing happens with normal files.
+In this version of the patch, the allowed compressed extent size is
+restricted to 128 (the default) and 512. I wanted to extensively test
+a single value for a change in compressed extent size before expanding
+and testing a wider range of parameters.
 
-> # btrfs_drop_snapshot() checks btrfs_should_end_transaction(), and
-> then does btrfs_end_transaction_throttle() and
-> btrfs_start_transaction(). However, it looks like it can rejoin the
-> same transaction if transaction was not not blocked yet. Minor issue,
-> perhaps?
+I submitted a similar patch about a year and a half ago where the
+change was hard-coded and not tuneable.
 
-No if we didn't block then its ok and we wait longer, we only throttle to give
-the transaction stuff a chance to commit, so if the join logic decides its ok to
-go on then we're good.
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/10516
 
-> 
-> # umount may get delayed because of pending-for-deletion subvolumes:
-> btrfs_commit_super() locks the cleaner_mutex, so it will wait for the
-> cleaner to complete.
-> On the other hand, cleaner will not give up until it completes
-> processing all its splice. If currently cleaner is not running, then
-> btrfs_commit_super()
-> calls btrfs_clean_old_snapshots() directly. So does it make sense:
-> - btrfs_commit_super() will not call btrfs_clean_old_snapshots()
-> - close_ctree() calls kthread_stop(cleaner_kthread) early, and cleaner
-> thread periodically checks if it needs to exit
+---
+ fs/btrfs/ctree.h      |  3 +++
+ fs/btrfs/disk-io.c    |  1 +
+ fs/btrfs/inode.c      |  8 ++++----
+ fs/btrfs/relocation.c |  7 ++++---
+ fs/btrfs/super.c      | 19 ++++++++++++++++++-
+ 5 files changed, 30 insertions(+), 8 deletions(-)
 
-I don't quite follow this, but sure?  Thanks,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 547b7b0..f37ec32 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1477,6 +1477,8 @@ struct btrfs_fs_info {
+ 	unsigned data_chunk_allocations;
+ 	unsigned metadata_ratio;
+ 
++	unsigned compressed_extent_size;
++
+ 	void *bdev_holder;
+ 
+ 	/* private scrub information */
+@@ -1829,6 +1831,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_COMPR_EXTENT_SIZE (1 << 23)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 830bc17..2d2be03 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2056,6 +2056,7 @@ int open_ctree(struct super_block *sb,
+ 	fs_info->trans_no_join = 0;
+ 	fs_info->free_chunk_space = 0;
+ 	fs_info->tree_mod_log = RB_ROOT;
++	fs_info->compressed_extent_size = 128;
+ 
+ 	/* readahead state */
+ 	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 148abeb..5b81b56 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -346,8 +346,8 @@ static noinline int compress_file_range(struct inode *inode,
+ 	unsigned long nr_pages_ret = 0;
+ 	unsigned long total_compressed = 0;
+ 	unsigned long total_in = 0;
+-	unsigned long max_compressed = 128 * 1024;
+-	unsigned long max_uncompressed = 128 * 1024;
++	unsigned long max_compressed = root->fs_info->compressed_extent_size * 1024;
++	unsigned long max_uncompressed = root->fs_info->compressed_extent_size * 1024;
+ 	int i;
+ 	int will_compress;
+ 	int compress_type = root->fs_info->compress_type;
+@@ -361,7 +361,7 @@ static noinline int compress_file_range(struct inode *inode,
+ again:
+ 	will_compress = 0;
+ 	nr_pages = (end >> PAGE_CACHE_SHIFT) - (start >> PAGE_CACHE_SHIFT) + 1;
+-	nr_pages = min(nr_pages, (128 * 1024UL) / PAGE_CACHE_SIZE);
++	nr_pages = min(nr_pages, (max_compressed * 1024UL) / PAGE_CACHE_SIZE);
+ 
+ 	/*
+ 	 * we don't want to send crud past the end of i_size through
+@@ -386,7 +386,7 @@ again:
+ 	 *
+ 	 * We also want to make sure the amount of IO required to do
+ 	 * a random read is reasonably small, so we limit the size of
+-	 * a compressed extent to 128k.
++	 * a compressed extent (default of 128k).
+ 	 */
+ 	total_compressed = min(total_compressed, max_uncompressed);
+ 	num_bytes = (end - start + blocksize) & ~(blocksize - 1);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 300e09a..8d6f6bf 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -144,7 +144,7 @@ struct tree_block {
+ 	unsigned int key_ready:1;
+ };
+ 
+-#define MAX_EXTENTS 128
++#define MAX_EXTENTS 512
+ 
+ struct file_extent_cluster {
+ 	u64 start;
+@@ -3055,6 +3055,7 @@ int relocate_data_extent(struct inode *inode, struct btrfs_key *extent_key,
+ 			 struct file_extent_cluster *cluster)
+ {
+ 	int ret;
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 
+ 	if (cluster->nr > 0 && extent_key->objectid != cluster->end + 1) {
+ 		ret = relocate_file_extent_cluster(inode, cluster);
+@@ -3066,12 +3067,12 @@ int relocate_data_extent(struct inode *inode, struct btrfs_key *extent_key,
+ 	if (!cluster->nr)
+ 		cluster->start = extent_key->objectid;
+ 	else
+-		BUG_ON(cluster->nr >= MAX_EXTENTS);
++		BUG_ON(cluster->nr >= fs_info->compressed_extent_size);
+ 	cluster->end = extent_key->objectid + extent_key->offset - 1;
+ 	cluster->boundary[cluster->nr] = extent_key->objectid;
+ 	cluster->nr++;
+ 
+-	if (cluster->nr >= MAX_EXTENTS) {
++	if (cluster->nr >= fs_info->compressed_extent_size) {
+ 		ret = relocate_file_extent_cluster(inode, cluster);
+ 		if (ret)
+ 			return ret;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d8982e9..6e9dc69 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -322,7 +322,7 @@ enum {
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors,
+-	Opt_err,
++	Opt_compr_extent_size, Opt_err,
+ };
+ 
+ static match_table_t tokens = {
+@@ -361,6 +361,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity, "check_int"},
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
++	{Opt_compr_extent_size, "compressed_extent_size=%d"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
+@@ -612,6 +613,19 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			ret = -EINVAL;
+ 			goto out;
+ #endif
++		case Opt_compr_extent_size:
++			intarg = 0;
++			match_int(&args[0], &intarg);
++			if ((intarg == 128) || (intarg == 512)) {
++				info->compressed_extent_size = intarg;
++				printk(KERN_INFO "btrfs: compressed extent size %d\n",
++				       info->compressed_extent_size);
++			} else {
++				printk(KERN_INFO "btrfs: "
++					"Invalid compressed extent size,"
++					" using default.\n");
++			}
++			break;
+ 		case Opt_fatal_errors:
+ 			if (strcmp(args[0].from, "panic") == 0)
+ 				btrfs_set_opt(info->mount_opt,
+@@ -951,6 +965,9 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",skip_balance");
+ 	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
+ 		seq_puts(seq, ",fatal_errors=panic");
++	if (btrfs_test_opt(root, COMPR_EXTENT_SIZE))
++		seq_printf(seq, ",compressed_extent_size=%d",
++			   (unsigned long long)info->compressed_extent_size);
+ 	return 0;
+ }
+ 
+-- 
+1.7.12.4
 
-Josef

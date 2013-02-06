@@ -1,129 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp208.alice.it ([82.57.200.104]:51104 "EHLO smtp208.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757710Ab3BBSCg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 2 Feb 2013 13:02:36 -0500
-Message-ID: <510D54E3.6090006@inwind.it>
-Date: Sat, 02 Feb 2013 19:03:15 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: "kreijack@inwind.it" <kreijack@inwind.it>
+Received: from dkim2.fusionio.com ([66.114.96.54]:49158 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754094Ab3BFSvr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 13:51:47 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id D63159A03E1
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 11:51:46 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id urQIsezSCbqJ4FDd (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 11:51:46 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: rework the overcommit logic to be based on the total size
+Date: Wed, 6 Feb 2013 13:58:39 -0500
+Message-ID: <1360177119-10614-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Chris Mason <chris.mason@fusionio.com>
-Subject: [BTRFS][PATCH] Removed the 'subvolrootid' mount option.
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+People have been complaining about random ENOSPC errors that will clear up
+after a umount or just a given amount of time.  Chris was able to reproduce
+this with stress.sh and lots of processes and so was I.  Basically the
+overcommit stuff would really let us get out of hand, in my tests I saw up
+to 30 gigs of outstanding reservations with only 2 gigs total of metadata
+space.  This usually worked out fine but with so much outstanding
+reservation the flushing stuff short circuits to make sure we don't hang
+forever flushing when we really need ENOSPC.  Plus we allocate chunks in
+order to alleviate the pressure, but this doesn't actually help us since we
+only use the non-allocated area in our over commit logic.
 
-this is a trivial patch, which remove old unused code. Please apply.
+So instead of basing overcommit on the amount of non-allocated space,
+instead just do it based on how much total space we have, and then limit it
+to the non-allocated space in case we are short on space to spill over into.
+This allows us to have the same performance as well as no longer giving
+random ENOSPC.  Thanks,
 
-BR
-
-----
-
-The commit 830c4adb (Btrfs: fix how we mount subvol=<whatever>) removed
-the function related to the option 'subvolrootid'. The option is still here,
-the same is true for some code which handles the option parsing, but the 
-value is never used by btrfs.
-
-This patch removed all the _unused_ codes around this option. In order
-to avoid break the boot process phase, if this options is passed again a
-WARNING is raised in the dmesg log instead of stopping the mount.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/super.c |   25 ++++++++-----------------
- 1 file changed, 8 insertions(+), 17 deletions(-)
+ fs/btrfs/extent-tree.c |   15 ++++++++++++---
+ 1 files changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d8982e9..127943b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -322,6 +322,7 @@ enum {
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors,
-+	Opt_old_option,
- 	Opt_err,
- };
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 11ffa16..981130b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3677,6 +3677,7 @@ static int can_overcommit(struct btrfs_root *root,
+ 	u64 rsv_size = 0;
+ 	u64 avail;
+ 	u64 used;
++	u64 to_add;
  
-@@ -352,7 +353,7 @@ static match_table_t tokens = {
- 	{Opt_clear_cache, "clear_cache"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
- 	{Opt_enospc_debug, "enospc_debug"},
--	{Opt_subvolrootid, "subvolrootid=%d"},
-+	{Opt_old_option, "subvolrootid=%d"}, /* removed; old Opt_subvolrootid, */
- 	{Opt_defrag, "autodefrag"},
- 	{Opt_inode_cache, "inode_cache"},
- 	{Opt_no_space_cache, "nospace_cache"},
-@@ -411,7 +412,6 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			break;
- 		case Opt_subvol:
- 		case Opt_subvolid:
--		case Opt_subvolrootid:
- 		case Opt_device:
- 			/*
- 			 * These are parsed by btrfs_parse_early_options
-@@ -629,6 +629,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			       "'%s'\n", p);
- 			ret = -EINVAL;
- 			goto out;
-+		case Opt_old_option:
-+			printk(KERN_WARNING 
-+				"btrfs: obsolete mount option: '%s'\n", p );
-+			break;
- 		default:
- 			break;
- 		}
-@@ -648,7 +652,7 @@ out:
-  */
- static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		void *holder, char **subvol_name, u64 *subvol_objectid,
--		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
-+		struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
- 	char *device_name, *opts, *orig, *p;
-@@ -690,18 +694,6 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 					*subvol_objectid = intarg;
- 			}
- 			break;
--		case Opt_subvolrootid:
--			intarg = 0;
--			error = match_int(&args[0], &intarg);
--			if (!error) {
--				/* we want the original fs_tree */
--				if (!intarg)
--					*subvol_rootid =
--						BTRFS_FS_TREE_OBJECTID;
--				else
--					*subvol_rootid = intarg;
--			}
--			break;
- 		case Opt_device:
- 			device_name = match_strdup(&args[0]);
- 			if (!device_name) {
-@@ -1078,7 +1070,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
--	u64 subvol_rootid = 0;
- 	int error = 0;
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+ 		space_info->bytes_pinned + space_info->bytes_readonly;
+@@ -3710,17 +3711,25 @@ static int can_overcommit(struct btrfs_root *root,
+ 		       BTRFS_BLOCK_GROUP_RAID10))
+ 		avail >>= 1;
  
- 	if (!(flags & MS_RDONLY))
-@@ -1086,7 +1077,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
++	to_add = space_info->total_bytes;
++
+ 	/*
+ 	 * If we aren't flushing all things, let us overcommit up to
+ 	 * 1/2th of the space. If we can flush, don't let us overcommit
+ 	 * too much, let it overcommit up to 1/8 of the space.
+ 	 */
+ 	if (flush == BTRFS_RESERVE_FLUSH_ALL)
+-		avail >>= 3;
++		to_add >>= 3;
+ 	else
+-		avail >>= 1;
++		to_add >>= 1;
++
++	/*
++	 * Limit the overcommit to the amount of free space we could possibly
++	 * allocate for chunks.
++	 */
++	to_add = min(avail, to_add);
  
- 	error = btrfs_parse_early_options(data, mode, fs_type,
- 					  &subvol_name, &subvol_objectid,
--					  &subvol_rootid, &fs_devices);
-+					  &fs_devices);
- 	if (error) {
- 		kfree(subvol_name);
- 		return ERR_PTR(error);
+-	if (used + bytes < space_info->total_bytes + avail)
++	if (used + bytes < space_info->total_bytes + to_add)
+ 		return 1;
+ 	return 0;
+ }
 -- 
-1.7.10.4
+1.7.7.6
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

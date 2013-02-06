@@ -1,46 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:60302 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751981Ab3BFNDf convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 08:03:35 -0500
-Received: by mail-ie0-f170.google.com with SMTP id c11so1896894ieb.29
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 05:03:34 -0800 (PST)
+Received: from mx4-phx2.redhat.com ([209.132.183.25]:33075 "EHLO
+	mx4-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753001Ab3BFOOm convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 09:14:42 -0500
+Content-Type: text/plain;
+	charset=us-ascii
+Subject: Re: [PATCH] btrfs: add delayed_iput list head to btrfs inode
+References: <511180E4.2020600@redhat.com> <20130205231405.GM14246@lenny.home.zabbo.net> <20130206020854.GA2278@liubo.jp.oracle.com>
+From: Eric Sandeen <esandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <20130205204523.GD26092@localhost.localdomain>
-References: <CAK0PdAkGdGWg8TzrDK0hRgcrqqkTF7XrcOHX2wh_7DLG3G0CLA@mail.gmail.com>
- <20130205193549.GC26092@localhost.localdomain> <CAK0PdAmnZgE2+nRzrrK_FLa1xcpZPLHyUN69Kx7W5rRVV2bvTA@mail.gmail.com>
- <20130205204523.GD26092@localhost.localdomain>
-From: Marguerite Su <i@marguerite.su>
-Date: Wed, 6 Feb 2013 21:03:14 +0800
-Message-ID: <CAK0PdAnMr20LgPriUz40YPg+uu08xqabE25Bh7W_h-Tzq+LEbA@mail.gmail.com>
-Subject: Re: btrfs: Error removing orphan entry, stopping orphan cleanup.
- could not do orphan cleanup -22
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20130206020854.GA2278@liubo.jp.oracle.com>
+Message-Id: <C6207F92-AD17-4059-8442-2D0499095828@redhat.com>
+Date: Wed, 6 Feb 2013 09:14:39 -0500 (EST)
+To: "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>
+Cc: Zach Brown <zab@redhat.com>, Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 6, 2013 at 4:45 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> Ok so I think we've fixed this already, can you build btrfs-next and try
-> mounting with that and see if it fixes the problem?  Thanks,
+On Feb 5, 2013, at 8:11 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
 
-Hi, Josef,
+> On Tue, Feb 05, 2013 at 03:14:05PM -0800, Zach Brown wrote:
+>>> +    struct btrfs_inode *b_inode = BTRFS_I(inode);
+>>> +    struct btrfs_fs_info *fs_info = b_inode->root->fs_info;
+>>> 
+>>>    if (atomic_add_unless(&inode->i_count, -1, 1))
+>>>        return;
+>>> 
+>>> -    delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+>>> -    delayed->inode = inode;
+>>> -
+>>>    spin_lock(&fs_info->delayed_iput_lock);
+>>> -    list_add_tail(&delayed->list, &fs_info->delayed_iputs);
+>>> +    list_add_tail(&b_inode->delayed_iput, &fs_info->delayed_iputs);
+>>>    spin_unlock(&fs_info->delayed_iput_lock);
+>>> }
+>> 
+>> Hmm.  I'm not great with inode life cycles, but isn't this only safe if
+>> someone else can't get an i_count reference while this is in flight?  It
+>> looks like the final iput does the unhashing, and so on, so couldn't an
+>> iget/iput race with this and try to add the inode's list_head twice?
+> 
+> Yeah, same concern here.  Basically this will result in inodes still being
+> in use on unmount.
+> 
+> Actually I did a similar one, here is some disscussion:
+> 
+> https://patchwork.kernel.org/patch/1824711/
+> 
+Ok, thanks all.  We should remove Jeff's comment then, it sure sounded like a good idea...
 
-Is there any btrfs git compatible with kernel 3.7 and absorbs this
-fix? So I can dkms it, I'm using openSUSE 12.3 Beta1 with kernel 3.7,
-I can update to 3.8, but next time I do system update to RC1 it will
-fallback to 3.7 again.
+Eric
 
-#btrfs-next seems to move forward to 3.8. /uapi/linux/btrfs.h doesn't
-exist in kernel 3.7, it still use the old ioctl.h, I tried to revert
-the ioctl.h > btrfs.h patch, but there's still errors about:
-
-/usr/src/linux-3.7.1-1/include/trace/events/btrfs.h: In function
-‘ftrace_raw_event_btrfs_transaction_commit’:
-/usr/src/linux-3.7.1-1/include/trace/events/btrfs.h:61:1: error:
-incompatible types when assigning to type ‘u64’ from type ‘atomic64_t’
-
-Thanks
-
-Marguerite
+> thanks,
+> liubo
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

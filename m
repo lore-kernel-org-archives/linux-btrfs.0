@@ -1,82 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:37009 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750842Ab3BFMNY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 07:13:24 -0500
-Message-ID: <5112491F.3080100@die-jansens.de>
-Date: Wed, 06 Feb 2013 13:14:23 +0100
-From: Arne Jansen <lists@die-jansens.de>
+Received: from mail-ie0-f170.google.com ([209.85.223.170]:60302 "EHLO
+	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751981Ab3BFNDf convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 08:03:35 -0500
+Received: by mail-ie0-f170.google.com with SMTP id c11so1896894ieb.29
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 05:03:34 -0800 (PST)
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, Arne Jansen <sensille@gmx.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Lev Vainblat <lev@zadarastorage.com>, miaox <miaox@cn.fujitsu.com>
-Subject: Re: Leaking btrfs_qgroup_inherit on snapshot creation?
-References: <CAOcd+r2V_Na-hn10GnV04MqjM=CcdrXTQrWSbKbp6S=mxKaTew@mail.gmail.com>
-In-Reply-To: <CAOcd+r2V_Na-hn10GnV04MqjM=CcdrXTQrWSbKbp6S=mxKaTew@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20130205204523.GD26092@localhost.localdomain>
+References: <CAK0PdAkGdGWg8TzrDK0hRgcrqqkTF7XrcOHX2wh_7DLG3G0CLA@mail.gmail.com>
+ <20130205193549.GC26092@localhost.localdomain> <CAK0PdAmnZgE2+nRzrrK_FLa1xcpZPLHyUN69Kx7W5rRVV2bvTA@mail.gmail.com>
+ <20130205204523.GD26092@localhost.localdomain>
+From: Marguerite Su <i@marguerite.su>
+Date: Wed, 6 Feb 2013 21:03:14 +0800
+Message-ID: <CAK0PdAnMr20LgPriUz40YPg+uu08xqabE25Bh7W_h-Tzq+LEbA@mail.gmail.com>
+Subject: Re: btrfs: Error removing orphan entry, stopping orphan cleanup.
+ could not do orphan cleanup -22
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alex,
+On Wed, Feb 6, 2013 at 4:45 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+> Ok so I think we've fixed this already, can you build btrfs-next and try
+> mounting with that and see if it fixes the problem?  Thanks,
 
-On 02/06/13 12:18, Alex Lyakas wrote:
-> Hi Jan, Arne,
-> I see this code in create_snapshot:
-> 
-> 	if (inherit) {
-> 		pending_snapshot->inherit = *inherit;
-> 		*inherit = NULL;	/* take responsibility to free it */
-> 	}
-> 
-> So, first thing I think it should be:
-> if (*inherit)
-> because in btrfs_ioctl_snap_create_v2() we have:
-> struct btrfs_qgroup_inherit *inherit = NULL;
-> ...
-> btrfs_ioctl_snap_create_transid(..., &inherit)
-> 
-> so the current check is very unlikely to be NULL.
+Hi, Josef,
 
-But in btrfs_ioctl_snap_create it is called with NULL, so *inherit would
-dereference a NULL pointer.
+Is there any btrfs git compatible with kernel 3.7 and absorbs this
+fix? So I can dkms it, I'm using openSUSE 12.3 Beta1 with kernel 3.7,
+I can update to 3.8, but next time I do system update to RC1 it will
+fallback to 3.7 again.
 
-> 
-> Second, I don't see anybody freeing pending_snapshot->inherit. I guess
-> it should be freed after callin btrfs_qgroup_inherit() and also in
-> btrfs_destroy_pending_snapshots().
+#btrfs-next seems to move forward to 3.8. /uapi/linux/btrfs.h doesn't
+exist in kernel 3.7, it still use the old ioctl.h, I tried to revert
+the ioctl.h > btrfs.h patch, but there's still errors about:
 
-You're right. In our original version (6f72c7e20dbaea5) it was still
-there, in transaction.c. It has been removed in 6fa9700e734:
+/usr/src/linux-3.7.1-1/include/trace/events/btrfs.h: In function
+‘ftrace_raw_event_btrfs_transaction_commit’:
+/usr/src/linux-3.7.1-1/include/trace/events/btrfs.h:61:1: error:
+incompatible types when assigning to type ‘u64’ from type ‘atomic64_t’
 
-commit 6fa9700e734275de2acbcb0e99414bd7ddfc60f1
-Author: Miao Xie <miaox@cn.fujitsu.com>
-Date:   Thu Sep 6 04:00:32 2012 -0600
+Thanks
 
-    Btrfs: fix error path in create_pending_snapshot()
-
-    This patch fixes the following problem:
-    - If we failed to deal with the delayed dir items, we should abort
-transaction,
-      just as its comment said. Fix it.
-    - If root reference or root back reference insertion failed, we should
-      abort transaction. Fix it.
-    - Fix the double free problem of pending->inherit.
-    - Do not restore the trans->rsv if we doesn't change it.
-    - make the error path more clearly.
-
-    Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-
-Miao, can you please explain where you see a double free?
-
--Arne
-
-
-> Thanks,
-> Alex.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Marguerite

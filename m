@@ -1,85 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:49158 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754094Ab3BFSvr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 13:51:47 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id D63159A03E1
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 11:51:46 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id urQIsezSCbqJ4FDd (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 11:51:46 -0700 (MST)
+Received: from dkim1.fusionio.com ([66.114.96.53]:45249 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757205Ab3BFVpF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 16:45:05 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 792757C0415
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 14:45:04 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Z2bvnD0OUbmpoQSG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 14:45:03 -0700 (MST)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: rework the overcommit logic to be based on the total size
-Date: Wed, 6 Feb 2013 13:58:39 -0500
-Message-ID: <1360177119-10614-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: handle errors in compression submission path
+Date: Wed, 6 Feb 2013 16:51:55 -0500
+Message-ID: <1360187515-2302-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-People have been complaining about random ENOSPC errors that will clear up
-after a umount or just a given amount of time.  Chris was able to reproduce
-this with stress.sh and lots of processes and so was I.  Basically the
-overcommit stuff would really let us get out of hand, in my tests I saw up
-to 30 gigs of outstanding reservations with only 2 gigs total of metadata
-space.  This usually worked out fine but with so much outstanding
-reservation the flushing stuff short circuits to make sure we don't hang
-forever flushing when we really need ENOSPC.  Plus we allocate chunks in
-order to alleviate the pressure, but this doesn't actually help us since we
-only use the non-allocated area in our over commit logic.
-
-So instead of basing overcommit on the amount of non-allocated space,
-instead just do it based on how much total space we have, and then limit it
-to the non-allocated space in case we are short on space to spill over into.
-This allows us to have the same performance as well as no longer giving
-random ENOSPC.  Thanks,
+I noticed we would deadlock if we aborted a transaction while doing
+compressed io.  This is because we don't unlock our pages if something goes
+horribly wrong.  To fix this we need to make sure that we call
+extent_clear_unlock_delalloc in order to unlock all the pages.  If we have
+to cow in the async submission thread we need to make sure to unlock our
+locked_page as the cow error path will not unlock the locked page as it
+depends on the caller to unlock that page.  With this patch we no longer
+deadlock on the page lock when we have an aborted transaction.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/extent-tree.c |   15 ++++++++++++---
- 1 files changed, 12 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c |   38 ++++++++++++++++++++++++++++----------
+ 1 files changed, 28 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 11ffa16..981130b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3677,6 +3677,7 @@ static int can_overcommit(struct btrfs_root *root,
- 	u64 rsv_size = 0;
- 	u64 avail;
- 	u64 used;
-+	u64 to_add;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5398883..44d95d1 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -608,7 +608,7 @@ static noinline int submit_compressed_extents(struct inode *inode,
+ 	if (list_empty(&async_cow->extents))
+ 		return 0;
  
- 	used = space_info->bytes_used + space_info->bytes_reserved +
- 		space_info->bytes_pinned + space_info->bytes_readonly;
-@@ -3710,17 +3711,25 @@ static int can_overcommit(struct btrfs_root *root,
- 		       BTRFS_BLOCK_GROUP_RAID10))
- 		avail >>= 1;
+-
++again:
+ 	while (!list_empty(&async_cow->extents)) {
+ 		async_extent = list_entry(async_cow->extents.next,
+ 					  struct async_extent, list);
+@@ -648,6 +648,8 @@ retry:
+ 						  async_extent->ram_size - 1,
+ 						  btrfs_get_extent,
+ 						  WB_SYNC_ALL);
++			else if (ret)
++				unlock_page(async_cow->locked_page);
+ 			kfree(async_extent);
+ 			cond_resched();
+ 			continue;
+@@ -672,6 +674,7 @@ retry:
  
-+	to_add = space_info->total_bytes;
+ 		if (ret) {
+ 			int i;
 +
- 	/*
- 	 * If we aren't flushing all things, let us overcommit up to
- 	 * 1/2th of the space. If we can flush, don't let us overcommit
- 	 * too much, let it overcommit up to 1/8 of the space.
- 	 */
- 	if (flush == BTRFS_RESERVE_FLUSH_ALL)
--		avail >>= 3;
-+		to_add >>= 3;
- 	else
--		avail >>= 1;
-+		to_add >>= 1;
+ 			for (i = 0; i < async_extent->nr_pages; i++) {
+ 				WARN_ON(async_extent->pages[i]->mapping);
+ 				page_cache_release(async_extent->pages[i]);
+@@ -679,12 +682,10 @@ retry:
+ 			kfree(async_extent->pages);
+ 			async_extent->nr_pages = 0;
+ 			async_extent->pages = NULL;
+-			unlock_extent(io_tree, async_extent->start,
+-				      async_extent->start +
+-				      async_extent->ram_size - 1);
 +
-+	/*
-+	 * Limit the overcommit to the amount of free space we could possibly
-+	 * allocate for chunks.
-+	 */
-+	to_add = min(avail, to_add);
+ 			if (ret == -ENOSPC)
+ 				goto retry;
+-			goto out_free; /* JDM: Requeue? */
++			goto out_free;
+ 		}
  
--	if (used + bytes < space_info->total_bytes + avail)
-+	if (used + bytes < space_info->total_bytes + to_add)
- 		return 1;
- 	return 0;
+ 		/*
+@@ -696,7 +697,8 @@ retry:
+ 					async_extent->ram_size - 1, 0);
+ 
+ 		em = alloc_extent_map();
+-		BUG_ON(!em); /* -ENOMEM */
++		if (!em)
++			goto out_free_reserve;
+ 		em->start = async_extent->start;
+ 		em->len = async_extent->ram_size;
+ 		em->orig_start = em->start;
+@@ -728,6 +730,9 @@ retry:
+ 						async_extent->ram_size - 1, 0);
+ 		}
+ 
++		if (ret)
++			goto out_free_reserve;
++
+ 		ret = btrfs_add_ordered_extent_compress(inode,
+ 						async_extent->start,
+ 						ins.objectid,
+@@ -735,7 +740,8 @@ retry:
+ 						ins.offset,
+ 						BTRFS_ORDERED_COMPRESSED,
+ 						async_extent->compress_type);
+-		BUG_ON(ret); /* -ENOMEM */
++		if (ret)
++			goto out_free_reserve;
+ 
+ 		/*
+ 		 * clear dirty, set writeback and unlock the pages.
+@@ -756,18 +762,30 @@ retry:
+ 				    ins.objectid,
+ 				    ins.offset, async_extent->pages,
+ 				    async_extent->nr_pages);
+-
+-		BUG_ON(ret); /* -ENOMEM */
+ 		alloc_hint = ins.objectid + ins.offset;
+ 		kfree(async_extent);
++		if (ret)
++			goto out;
+ 		cond_resched();
+ 	}
+ 	ret = 0;
+ out:
+ 	return ret;
++out_free_reserve:
++	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
+ out_free:
++	extent_clear_unlock_delalloc(inode, &BTRFS_I(inode)->io_tree,
++				     async_extent->start,
++				     async_extent->start +
++				     async_extent->ram_size - 1,
++				     NULL, EXTENT_CLEAR_UNLOCK_PAGE |
++				     EXTENT_CLEAR_UNLOCK |
++				     EXTENT_CLEAR_DELALLOC |
++				     EXTENT_CLEAR_DIRTY |
++				     EXTENT_SET_WRITEBACK |
++				     EXTENT_END_WRITEBACK);
+ 	kfree(async_extent);
+-	goto out;
++	goto again;
  }
+ 
+ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
 -- 
 1.7.7.6
 

@@ -1,84 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f41.google.com ([209.85.215.41]:52447 "EHLO
-	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754325Ab3BGQhJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2013 11:37:09 -0500
-Received: by mail-la0-f41.google.com with SMTP id fo12so2835436lab.28
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2013 08:37:08 -0800 (PST)
+Received: from dkim1.fusionio.com ([66.114.96.53]:54217 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758876Ab3BGVBq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2013 16:01:46 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 7183F7C040A
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Feb 2013 14:01:46 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id CCWICE9JKm7zAfVk (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2013 14:01:45 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: steal from global reserve if we are cleaning up orphans
+Date: Thu, 7 Feb 2013 16:08:38 -0500
+Message-ID: <1360271318-17721-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-In-Reply-To: <CAGRMg0nw2zubf9bO=8=FBPR3bgVW7474po=H23OAaZ8eCQSL8g@mail.gmail.com>
-References: <CAGRMg0kYWUf5rh0WXNc+++9gG+XZ0-n9_SWpVh8jRHN-_2DfXQ@mail.gmail.com>
-	<CAGRMg0nmjsMNp1psLzMnf77HWP2Zynj3fWAA1c0DGkFTgvWx+g@mail.gmail.com>
-	<20130206222122.GB28997@carfax.org.uk>
-	<CAGRMg0nw2zubf9bO=8=FBPR3bgVW7474po=H23OAaZ8eCQSL8g@mail.gmail.com>
-Date: Thu, 7 Feb 2013 17:37:07 +0100
-Message-ID: <CAGRMg0mk76ppTG8vS297G-M2OGOXtX+MqwPY0p+Zvk4cOOaUiA@mail.gmail.com>
-Subject: Re: btrfs balance -> hang/crash
-From: Michael Schneider <mike2.schneider@googlemail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-o.k.,
-I've deleted some files from my btrfs filesystem rebooted the machine
-and was able to cancel the balance operation thereafter.
+Sometimes xfstest 83 will fail to remount the scratch device because we've
+gotten ourselves so full that we cannot cleanup the orphan items.  In this
+case check to see if we're doing the orphan cleanup and if we are allow us
+to steal our reservation from the global block rsv.  With this patch I've
+not been able to reproduce the failed mount problem.  Thanks,
 
-So far, everything seems to be working again.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.h       |    5 +++++
+ fs/btrfs/extent-tree.c |   10 ++++++++++
+ fs/btrfs/inode.c       |    5 -----
+ 3 files changed, 15 insertions(+), 5 deletions(-)
 
--Mike
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 50d1be9..2b68f88 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1237,6 +1237,11 @@ struct seq_list {
+ 	u64 seq;
+ };
+ 
++enum btrfs_orphan_cleanup_state {
++	ORPHAN_CLEANUP_STARTED	= 1,
++	ORPHAN_CLEANUP_DONE	= 2,
++};
++
+ /* fs_info */
+ struct reloc_control;
+ struct btrfs_device;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 53c2898..8dbb45c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4099,6 +4099,16 @@ again:
+ 		goto again;
+ 
+ out:
++	if (ret == -ENOSPC &&
++	    unlikely(root->orphan_cleanup_state == ORPHAN_CLEANUP_STARTED)) {
++		struct btrfs_block_rsv *global_rsv =
++			&root->fs_info->global_block_rsv;
++
++		if (block_rsv != global_rsv &&
++		    !btrfs_block_rsv_migrate(global_rsv, block_rsv,
++					     orig_bytes))
++			ret = 0;
++	}
+ 	if (flushing) {
+ 		spin_lock(&space_info->lock);
+ 		space_info->flush = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 44d95d1..73e9409 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2218,11 +2218,6 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 	}
+ }
+ 
+-enum btrfs_orphan_cleanup_state {
+-	ORPHAN_CLEANUP_STARTED	= 1,
+-	ORPHAN_CLEANUP_DONE	= 2,
+-};
+-
+ /*
+  * This is called in transaction commit time. If there are no orphan
+  * files in the subvolume, it removes orphan item and frees block_rsv
+-- 
+1.7.7.6
 
-On Wed, Feb 6, 2013 at 11:26 PM, Michael Schneider
-<mike2.schneider@googlemail.com> wrote:
-> # btrfs fi show
-> failed to read /dev/sr0
-> Label: 'bootssd'  uuid: ac89584c-c757-488e-8a2a-5ee5a5484dde
->         Total devices 1 FS bytes used 34.98GB
->         devid    1 size 56.00GB used 41.07GB path /dev/dm-1
->
-> Btrfs v0.19+
->
-> # btrfs fi df /
-> Data: total=35.00GB, used=33.34GB
-> System, DUP: total=32.00MB, used=16.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=3.00GB, used=1.63GB
->
->
-> On Wed, Feb 6, 2013 at 11:21 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> On Wed, Feb 06, 2013 at 11:12:14PM +0100, Michael Schneider wrote:
->>> Hi,
->>>
->>> my btrfs "hangs" when doing a balance operation.
->>>
->>> I'm using a 3.7.1 kernel from opensuse:  linux-opzz 3.7.1-2.10-m4 #11 SMP
->>> PREEMPT Fri Jan 11 18:04:04 CET 2013 x86_64 x86_64 x86_64 GNU/Linux
->>> and Btrfs v0.19+
->>>
->>> I did a scrub which completed without errors. Then I tried "btrfs filesystem
->>> balance /" which work fine for the first 23 of 46 chunks, then ist stopped
->>> processing further chunks, but contiued to consume large amounts of the CPU.
->>> The system logged filled quickly with messages like:
->>>
->>> [  347.237658] btrfs: block rsv returned -28
->> [snip]
->>> Any idea what's going on?
->>
->>    You're running out of space. Can you post the output of:
->>
->> # btrfs fi df /mountpoint
->> # btrfs fi show
->>
->> this will give us a bit more info about likely scenarios. Also, josef
->> published a patch(*) in the last few hours, on this list, which may
->> help deal with the issue.
->>
->>    Hugo.
->>
->> (*) Btrfs: rework the overcommit logic to be based on the total size
->>
->> --
->> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->>   --- What do you give the man who has everything? -- Penicillin is ---
->>                              a good start...

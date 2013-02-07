@@ -1,145 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29822 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753583Ab3BAH6Y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Feb 2013 02:58:24 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, gene@czarc.net
-Subject: [PATCH 03/13] Btrfs-progs: move struct root_info to btrfs-list.h
-Date: Fri,  1 Feb 2013 15:56:22 +0800
-Message-Id: <1359705392-7485-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
-References: <1358928771-31960-1-git-send-email-anand.jain@oracle.com>
- <1359705392-7485-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36229 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757945Ab3BGAIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Feb 2013 19:08:15 -0500
+Date: Thu, 7 Feb 2013 01:08:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Donggeun Kim <dg77.kim@samsung.com>
+Subject: Re: [PATCH 2/2, RFC] btrfs-progs: overhaul mkfs.btrfs -r option
+Message-ID: <20130207000812.GE12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <510831DC.4070709@redhat.com>
+ <510833E4.6080609@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <510833E4.6080609@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we would add more ways to list and manage the subvols
-and snapshots, its better if we have struct root_info
-defined in the header file.
+On Tue, Jan 29, 2013 at 02:41:08PM -0600, Eric Sandeen wrote:
+> The manpage for the "-r" option simply says that
+> it will copy the path specified to -r into the newly
+> made filesystem.
+> 
+> There's not a lot of reason to treat that option as differently
+> as it is now - today it ignores discard, fs size, and mixed
+> options, for example.  It also failed to check whether the
+> target device was mounted before proceeding.  Etc...
+> 
+> Rework things so that we really follow the same paths whether
+> or not -r is specified, but with one special case for -r:
+> 
+> * If the device does not exist, it will be created as
+>   a regular file of the minimum size to hold the -r path,
+>   or of size specified by the -b option.
+> 
+> This also changes a little behavior; it does not pre-fill
+> the new file with zeros, but allows it to be sparse, and does
+> not truncate an existing device file.  If you want to start
+> with an empty file, just don't point it at an existing
+> file...
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- btrfs-list.c | 47 -----------------------------------------------
- btrfs-list.h | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 46 insertions(+), 48 deletions(-)
+Fixes numerous bugs and I find the changes in behaviour sane and
+reasonable. A quick test failed for me when the image file does not
+exist:
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 03a0d02..f41c008 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -46,53 +46,6 @@ struct root_lookup {
- 	struct rb_root root;
- };
- 
--/*
-- * one of these for each root we find.
-- */
--struct root_info {
--	struct rb_node rb_node;
--	struct rb_node sort_node;
--
--	/* this root's id */
--	u64 root_id;
--
--	/* equal the offset of the root's key */
--	u64 root_offset;
--
--	/* flags of the root */
--	u64 flags;
--
--	/* the id of the root that references this one */
--	u64 ref_tree;
--
--	/* the dir id we're in from ref_tree */
--	u64 dir_id;
--
--	u64 top_id;
--
--	/* generation when the root is created or last updated */
--	u64 gen;
--
--	/* creation generation of this root in sec*/
--	u64 ogen;
--
--	/* creation time of this root in sec*/
--	time_t otime;
--
--	u8 uuid[BTRFS_UUID_SIZE];
--	u8 puuid[BTRFS_UUID_SIZE];
--
--	/* path from the subvol we live in to this root, including the
--	 * root's name.  This is null until we do the extra lookup ioctl.
--	 */
--	char *path;
--
--	/* the name of this root in the directory it lives in */
--	char *name;
--
--	char *full_path;
--};
--
- struct {
- 	char	*name;
- 	char	*column_name;
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 855e73d..3b7b680 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -18,7 +18,52 @@
- 
- #include "kerncompat.h"
- 
--struct root_info;
-+/*
-+ * one of these for each root we find.
-+ */
-+struct root_info {
-+	struct rb_node rb_node;
-+	struct rb_node sort_node;
-+
-+	/* this root's id */
-+	u64 root_id;
-+
-+	/* equal the offset of the root's key */
-+	u64 root_offset;
-+
-+	/* flags of the root */
-+	u64 flags;
-+
-+	/* the id of the root that references this one */
-+	u64 ref_tree;
-+
-+	/* the dir id we're in from ref_tree */
-+	u64 dir_id;
-+
-+	u64 top_id;
-+
-+	/* generation when the root is created or last updated */
-+	u64 gen;
-+
-+	/* creation generation of this root in sec*/
-+	u64 ogen;
-+
-+	/* creation time of this root in sec*/
-+	time_t otime;
-+
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	u8 puuid[BTRFS_UUID_SIZE];
-+
-+	/* path from the subvol we live in to this root, including the
-+	 * root's name.  This is null until we do the extra lookup ioctl.
-+	 */
-+	char *path;
-+
-+	/* the name of this root in the directory it lives in */
-+	char *name;
-+
-+	char *full_path;
-+};
- 
- typedef int (*btrfs_list_filter_func)(struct root_info *, u64);
- typedef int (*btrfs_list_comp_func)(struct root_info *, struct root_info *,
--- 
-1.8.1.227.g44fe835
+$ rm image
+$ ./mkfs.btrfs -r . image
+...
+not enough free space
+add_file_items failed
+unable to traverse_directory
+Making image is aborted.
+ret = -1
+mkfs.btrfs: mkfs.c:1533: main: Assertion `!(ret)' failed.
 
+seems that the estimated size is not sufficient.
+
+'du' on the directory (without the image itself) gives me 59M, the image
+after failed mkfs has 102M, and it's empty when I try to mount it. Using
+the progs .git directory (18M) as sourcedir also failed, but it worked
+with man/ subdirectory (94K).
+
+david

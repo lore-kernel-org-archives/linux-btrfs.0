@@ -1,70 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:52512 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758099Ab3BGAN3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 19:13:29 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 3BD119A0415
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 17:13:29 -0700 (MST)
-Date: Wed, 6 Feb 2013 19:13:26 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20130207001326.GA21679@shiny>
+Received: from cn.fujitsu.com ([222.73.24.84]:31022 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750724Ab3BGFJd convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2013 00:09:33 -0500
+Message-ID: <51133737.1020105@cn.fujitsu.com>
+Date: Thu, 07 Feb 2013 13:10:15 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Arne Jansen <lists@die-jansens.de>
+CC: Alex Lyakas <alex.btrfs@zadarastorage.com>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>, Arne Jansen <sensille@gmx.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Lev Vainblat <lev@zadarastorage.com>
+Subject: Re: Leaking btrfs_qgroup_inherit on snapshot creation?
+References: <CAOcd+r2V_Na-hn10GnV04MqjM=CcdrXTQrWSbKbp6S=mxKaTew@mail.gmail.com> <5112491F.3080100@die-jansens.de>
+In-Reply-To: <5112491F.3080100@die-jansens.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ sorry, my lbdb seems to really like linux-kernel@vger.kerrnel.org,
-fixed for real this time ]
+On wed, 06 Feb 2013 13:14:23 +0100, Arne Jansen wrote:
+> Hi Alex,
+> 
+> On 02/06/13 12:18, Alex Lyakas wrote:
+>> Hi Jan, Arne,
+>> I see this code in create_snapshot:
+>>
+>> 	if (inherit) {
+>> 		pending_snapshot->inherit = *inherit;
+>> 		*inherit = NULL;	/* take responsibility to free it */
+>> 	}
+>>
+>> So, first thing I think it should be:
+>> if (*inherit)
+>> because in btrfs_ioctl_snap_create_v2() we have:
+>> struct btrfs_qgroup_inherit *inherit = NULL;
+>> ...
+>> btrfs_ioctl_snap_create_transid(..., &inherit)
+>>
+>> so the current check is very unlikely to be NULL.
+> 
+> But in btrfs_ioctl_snap_create it is called with NULL, so *inherit would
+> dereference a NULL pointer.
+> 
+>>
+>> Second, I don't see anybody freeing pending_snapshot->inherit. I guess
+>> it should be freed after callin btrfs_qgroup_inherit() and also in
+>> btrfs_destroy_pending_snapshots().
+> 
+> You're right. In our original version (6f72c7e20dbaea5) it was still
+> there, in transaction.c. It has been removed in 6fa9700e734:
+> 
+> commit 6fa9700e734275de2acbcb0e99414bd7ddfc60f1
+> Author: Miao Xie <miaox@cn.fujitsu.com>
+> Date:   Thu Sep 6 04:00:32 2012 -0600
+> 
+>     Btrfs: fix error path in create_pending_snapshot()
+> 
+>     This patch fixes the following problem:
+>     - If we failed to deal with the delayed dir items, we should abort
+> transaction,
+>       just as its comment said. Fix it.
+>     - If root reference or root back reference insertion failed, we should
+>       abort transaction. Fix it.
+>     - Fix the double free problem of pending->inherit.
+>     - Do not restore the trans->rsv if we doesn't change it.
+>     - make the error path more clearly.
+> 
+>     Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> 
+> Miao, can you please explain where you see a double free?
 
-Hi Linus,
+Sorry, I misread the code，I didn't notice that the pointer had been assigned
+to NULL.
 
-Please pull my for-linus branch:
+But I think we can make the code more readable and be easy to maintain, we can
+free the memory in the caller(btrfs_ioctl_snap_create_v2()) since we are sure
+the snapshot creation is done after btrfs_ioctl_snap_create_transid() completes.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Thanks
+Miao
 
-We've got corner cases for updating i_size that ceph was hitting, error
-handling for quotas when we run out of space, a very subtle snapshot
-deletion race, a crash while removing devices, and one deadlock between
-subvolume creation and the sb_internal code (thanks lockdep).
-
-Josef Bacik (3) commits (+12/-4):
-    Btrfs: do not merge logged extents if we've removed them from the tree (+2/-1)
-    Btrfs: fix possible stale data exposure (+1/-1)
-    Btrfs: fix missing i_size update (+9/-2)
-
-Miao Xie (2) commits (+21/-9):
-    Btrfs: fix missing release of the space/qgroup reservation in start_transaction() (+19/-8)
-    Btrfs: fix wrong sync_writers decrement in btrfs_file_aio_write() (+2/-1)
-
-Jan Schmidt (1) commits (+10/-12):
-    Btrfs: fix EDQUOT handling in btrfs_delalloc_reserve_metadata
-
-Liu Bo (1) commits (+38/-9):
-    Btrfs: fix race between snapshot deletion and getting inode
-
-Chris Mason (1) commits (+4/-1):
-    Btrfs: move d_instantiate outside the transaction during mksubvol
-
-Eric Sandeen (1) commits (+2/-1):
-    btrfs: don't try to notify udev about missing devices
-
-Total: (9) commits
-
- fs/btrfs/extent-tree.c  | 22 ++++++++++------------
- fs/btrfs/extent_map.c   |  3 ++-
- fs/btrfs/file.c         | 25 ++++++++++++++++++++-----
- fs/btrfs/ioctl.c        |  5 ++++-
- fs/btrfs/ordered-data.c | 13 ++++++++++---
- fs/btrfs/scrub.c        | 25 ++++++++++++++++++++-----
- fs/btrfs/transaction.c  | 27 +++++++++++++++++++--------
- fs/btrfs/volumes.c      |  3 ++-
- 8 files changed, 87 insertions(+), 36 deletions(-)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,99 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:60646 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759330Ab3BGVTm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2013 16:19:42 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 8292F9A04DF
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Feb 2013 14:19:41 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id poXRlvEzT2KPSooU (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2013 14:19:41 -0700 (MST)
+Received: from dkim1.fusionio.com ([66.114.96.53]:54467 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759330Ab3BGVVw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2013 16:21:52 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id C43987C04D5
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Feb 2013 14:21:51 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id KyAReRvEvPLkPZcF (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2013 14:21:51 -0700 (MST)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: steal from global reserve if we are cleaning up orphans V2
-Date: Thu, 7 Feb 2013 16:26:34 -0500
-Message-ID: <1360272394-19486-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: cleanup orphan reservation if truncate fails
+Date: Thu, 7 Feb 2013 16:28:44 -0500
+Message-ID: <1360272524-19548-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sometimes xfstest 83 will fail to remount the scratch device because we've
-gotten ourselves so full that we cannot cleanup the orphan items.  In this
-case check to see if we're doing the orphan cleanup and if we are allow us
-to steal our reservation from the global block rsv.  With this patch I've
-not been able to reproduce the failed mount problem.  Thanks,
+I noticed we were getting lots of warnings with xfstest 83 because we have
+reservations outstanding.  This is because we moved the orphan add outside
+of the truncate, but we don't actually cleanup our reservation if something
+fails.  This fixes the problem and I no longer see warnings.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-V1->V2: use block_rsv_use_bytes not migrate since we call add after we succeed
-in reserve_metadata_bytes.
+ fs/btrfs/inode.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
- fs/btrfs/ctree.h       |    5 +++++
- fs/btrfs/extent-tree.c |   11 +++++++++++
- fs/btrfs/inode.c       |    5 -----
- 3 files changed, 16 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 50d1be9..2b68f88 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1237,6 +1237,11 @@ struct seq_list {
- 	u64 seq;
- };
- 
-+enum btrfs_orphan_cleanup_state {
-+	ORPHAN_CLEANUP_STARTED	= 1,
-+	ORPHAN_CLEANUP_DONE	= 2,
-+};
-+
- /* fs_info */
- struct reloc_control;
- struct btrfs_device;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53c2898..b1534ba 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -102,6 +102,8 @@ static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
- 			    int dump_block_groups);
- static int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
- 				       u64 num_bytes, int reserve);
-+static int block_rsv_use_bytes(struct btrfs_block_rsv *block_rsv,
-+			       u64 num_bytes);
- 
- static noinline int
- block_group_cache_done(struct btrfs_block_group_cache *cache)
-@@ -4099,6 +4101,15 @@ again:
- 		goto again;
- 
- out:
-+	if (ret == -ENOSPC &&
-+	    unlikely(root->orphan_cleanup_state == ORPHAN_CLEANUP_STARTED)) {
-+		struct btrfs_block_rsv *global_rsv =
-+			&root->fs_info->global_block_rsv;
-+
-+		if (block_rsv != global_rsv &&
-+		    !block_rsv_use_bytes(global_rsv, orig_bytes))
-+			ret = 0;
-+	}
- 	if (flushing) {
- 		spin_lock(&space_info->lock);
- 		space_info->flush = 0;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 44d95d1..73e9409 100644
+index 73e9409..905297f 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2218,11 +2218,6 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
- 	}
- }
+@@ -2538,6 +2538,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				goto out;
  
--enum btrfs_orphan_cleanup_state {
--	ORPHAN_CLEANUP_STARTED	= 1,
--	ORPHAN_CLEANUP_DONE	= 2,
--};
--
- /*
-  * This is called in transaction commit time. If there are no orphan
-  * files in the subvolume, it removes orphan item and frees block_rsv
+ 			ret = btrfs_truncate(inode);
++			if (ret)
++				btrfs_orphan_del(NULL, inode);
+ 		} else {
+ 			nr_unlink++;
+ 		}
 -- 
 1.7.7.6
 

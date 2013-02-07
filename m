@@ -1,22 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:46563 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758099Ab3BGAJn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 19:09:43 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 1D11C7C0418
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 17:09:43 -0700 (MST)
-Date: Wed, 6 Feb 2013 19:09:40 -0500
+Received: from dkim2.fusionio.com ([66.114.96.54]:52512 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758099Ab3BGAN3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 19:13:29 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 3BD119A0415
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 17:13:29 -0700 (MST)
+Date: Wed, 6 Feb 2013 19:13:26 -0500
 From: Chris Mason <chris.mason@fusionio.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kerrnel.org>
+        LKML <linux-kernel@vger.kernel.org>
 Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20130207000940.GT20797@shiny>
+Message-ID: <20130207001326.GA21679@shiny>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+[ sorry, my lbdb seems to really like linux-kernel@vger.kerrnel.org,
+fixed for real this time ]
 
 Hi Linus,
 
@@ -61,3 +64,7 @@ Total: (9) commits
  fs/btrfs/transaction.c  | 27 +++++++++++++++++++--------
  fs/btrfs/volumes.c      |  3 ++-
  8 files changed, 87 insertions(+), 36 deletions(-)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

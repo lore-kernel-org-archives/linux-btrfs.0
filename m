@@ -1,75 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f43.google.com ([209.85.215.43]:35910 "EHLO
-	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754330Ab3BFW0T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 17:26:19 -0500
-Received: by mail-la0-f43.google.com with SMTP id ek20so1929098lab.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2013 14:26:17 -0800 (PST)
+Received: from dkim1.fusionio.com ([66.114.96.53]:46563 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758099Ab3BGAJn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2013 19:09:43 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 1D11C7C0418
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Feb 2013 17:09:43 -0700 (MST)
+Date: Wed, 6 Feb 2013 19:09:40 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kerrnel.org>
+Subject: [GIT PULL] Btrfs fixes
+Message-ID: <20130207000940.GT20797@shiny>
 MIME-Version: 1.0
-In-Reply-To: <20130206222122.GB28997@carfax.org.uk>
-References: <CAGRMg0kYWUf5rh0WXNc+++9gG+XZ0-n9_SWpVh8jRHN-_2DfXQ@mail.gmail.com>
-	<CAGRMg0nmjsMNp1psLzMnf77HWP2Zynj3fWAA1c0DGkFTgvWx+g@mail.gmail.com>
-	<20130206222122.GB28997@carfax.org.uk>
-Date: Wed, 6 Feb 2013 23:26:17 +0100
-Message-ID: <CAGRMg0nw2zubf9bO=8=FBPR3bgVW7474po=H23OAaZ8eCQSL8g@mail.gmail.com>
-Subject: Re: btrfs balance -> hang/crash
-From: Michael Schneider <mike2.schneider@googlemail.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Michael Schneider <mike2.schneider@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-# btrfs fi show
-failed to read /dev/sr0
-Label: 'bootssd'  uuid: ac89584c-c757-488e-8a2a-5ee5a5484dde
-        Total devices 1 FS bytes used 34.98GB
-        devid    1 size 56.00GB used 41.07GB path /dev/dm-1
+Hi Linus,
 
-Btrfs v0.19+
+Please pull my for-linus branch:
 
-# btrfs fi df /
-Data: total=35.00GB, used=33.34GB
-System, DUP: total=32.00MB, used=16.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=3.00GB, used=1.63GB
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+We've got corner cases for updating i_size that ceph was hitting, error
+handling for quotas when we run out of space, a very subtle snapshot
+deletion race, a crash while removing devices, and one deadlock between
+subvolume creation and the sb_internal code (thanks lockdep).
 
-On Wed, Feb 6, 2013 at 11:21 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Wed, Feb 06, 2013 at 11:12:14PM +0100, Michael Schneider wrote:
->> Hi,
->>
->> my btrfs "hangs" when doing a balance operation.
->>
->> I'm using a 3.7.1 kernel from opensuse:  linux-opzz 3.7.1-2.10-m4 #11 SMP
->> PREEMPT Fri Jan 11 18:04:04 CET 2013 x86_64 x86_64 x86_64 GNU/Linux
->> and Btrfs v0.19+
->>
->> I did a scrub which completed without errors. Then I tried "btrfs filesystem
->> balance /" which work fine for the first 23 of 46 chunks, then ist stopped
->> processing further chunks, but contiued to consume large amounts of the CPU.
->> The system logged filled quickly with messages like:
->>
->> [  347.237658] btrfs: block rsv returned -28
-> [snip]
->> Any idea what's going on?
->
->    You're running out of space. Can you post the output of:
->
-> # btrfs fi df /mountpoint
-> # btrfs fi show
->
-> this will give us a bit more info about likely scenarios. Also, josef
-> published a patch(*) in the last few hours, on this list, which may
-> help deal with the issue.
->
->    Hugo.
->
-> (*) Btrfs: rework the overcommit logic to be based on the total size
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->   --- What do you give the man who has everything? -- Penicillin is ---
->                              a good start...
+Josef Bacik (3) commits (+12/-4):
+    Btrfs: do not merge logged extents if we've removed them from the tree (+2/-1)
+    Btrfs: fix possible stale data exposure (+1/-1)
+    Btrfs: fix missing i_size update (+9/-2)
+
+Miao Xie (2) commits (+21/-9):
+    Btrfs: fix missing release of the space/qgroup reservation in start_transaction() (+19/-8)
+    Btrfs: fix wrong sync_writers decrement in btrfs_file_aio_write() (+2/-1)
+
+Jan Schmidt (1) commits (+10/-12):
+    Btrfs: fix EDQUOT handling in btrfs_delalloc_reserve_metadata
+
+Liu Bo (1) commits (+38/-9):
+    Btrfs: fix race between snapshot deletion and getting inode
+
+Chris Mason (1) commits (+4/-1):
+    Btrfs: move d_instantiate outside the transaction during mksubvol
+
+Eric Sandeen (1) commits (+2/-1):
+    btrfs: don't try to notify udev about missing devices
+
+Total: (9) commits
+
+ fs/btrfs/extent-tree.c  | 22 ++++++++++------------
+ fs/btrfs/extent_map.c   |  3 ++-
+ fs/btrfs/file.c         | 25 ++++++++++++++++++++-----
+ fs/btrfs/ioctl.c        |  5 ++++-
+ fs/btrfs/ordered-data.c | 13 ++++++++++---
+ fs/btrfs/scrub.c        | 25 ++++++++++++++++++++-----
+ fs/btrfs/transaction.c  | 27 +++++++++++++++++++--------
+ fs/btrfs/volumes.c      |  3 ++-
+ 8 files changed, 87 insertions(+), 36 deletions(-)

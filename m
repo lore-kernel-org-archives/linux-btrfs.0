@@ -1,47 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56234 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756794Ab3BKMd6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 07:33:58 -0500
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] btrfs: accept zero for balance usage filter
-Date: Mon, 11 Feb 2013 13:33:52 +0100
-Message-Id: <1360586032-22973-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:20762 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755091Ab3BHGzL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Feb 2013 01:55:11 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r186t58U028479
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Feb 2013 14:55:05 +0800
+Message-ID: <5114A177.5020604@cn.fujitsu.com>
+Date: Fri, 08 Feb 2013 14:55:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix the deadlock between the transaction attach and
+ commit
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The condition can be relaxed to accept also 0 which will delete
-unoccupied chunks and does not need space for the actual data
-relocation. Until there is an automatic empty chunk reclaim, we
-can use this as a last resort option under enospc.
+Here is the whole story:
+	Trans_Attach_Task		Trans_Commit_Task
+					btrfs_commit_transaction()
+					 |->wait writers to be 1
+	btrfs_attach_transaction()	 |
+	btrfs_commit_transaction()	 |
+	 |				 |->set trans_no_join to 1
+	 |				 |  (close join transaction)
+	 |->btrfs_run_ordered_operations |
+	    (Those ordered operations	 |
+	     are added when releasing	 |
+	     file)			 |
+	     |->btrfs_join_transaction() |
+		|->wait_commit()	 |
+					 |->wait writers to be 1
 
-CC: Ilya Dryomov <idryomov@gmail.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Then these two tasks waited for each other.
+
+As we know, btrfs_attach_transaction() is used to catch the current
+transaction, and commit it, so if someone has committed the transaction,
+it is unnecessary to join it and commit it, wait is the best choice
+for it. In this way, we can fix the above problem.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
+ fs/btrfs/transaction.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-Also needs progs update, but is not required for the kernel side.
-
- fs/btrfs/volumes.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5cbb7f4..fb871d0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2623,7 +2623,10 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
- 		user_thresh = div_factor_fine(cache->key.offset,
- 					      bargs->usage);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f154946..7be9d5e 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -285,6 +285,14 @@ static int may_wait_transaction(struct btrfs_root *root, int type)
+ 	if (type == TRANS_USERSPACE)
+ 		return 1;
  
--	if (chunk_used < user_thresh)
-+	pr_debug("btrfs: chunk_used %llu, user_thresh %llu\n",
-+			(unsigned long long)chunk_used,
-+			(unsigned long long)user_thresh);
-+	if (chunk_used <= user_thresh)
- 		ret = 0;
- 
- 	btrfs_put_block_group(cache);
++	/*
++	 * If we are ATTACH, it means we just want to catch the current
++	 * transaction and commit it. So if someone is committing the
++	 * current transaction now, it is very glad to wait it.
++	 */
++	if (type == TRANS_ATTACH)
++		return 1;
++
+ 	if (type == TRANS_START &&
+ 	    !atomic_read(&root->fs_info->open_ioctl_trans))
+ 		return 1;
 -- 
-1.7.9
-
+1.6.5.2

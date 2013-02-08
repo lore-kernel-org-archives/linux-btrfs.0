@@ -1,58 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35320 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1946481Ab3BHPF5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Feb 2013 10:05:57 -0500
-Date: Fri, 8 Feb 2013 16:05:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Jerry Snitselaar <dev@snitselaar.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs: question about error message
-Message-ID: <20130208150556.GG12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130206011054.GA1803@cantor.us.oracle.com>
+Received: from mail-oa0-f43.google.com ([209.85.219.43]:34766 "EHLO
+	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1946385Ab3BHPNh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 10:13:37 -0500
+Received: by mail-oa0-f43.google.com with SMTP id l10so4125974oag.16
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 07:13:37 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130206011054.GA1803@cantor.us.oracle.com>
+In-Reply-To: <20130208145307.GF12339@twin.jikos.cz>
+References: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+	<20130208002854.GA1575@twin.jikos.cz>
+	<CAKcLGm_z+bMYtBZYvQYRXrPVHxEfrnfaVNPo8=qeKb3JSUOgiw@mail.gmail.com>
+	<20130208145307.GF12339@twin.jikos.cz>
+Date: Fri, 8 Feb 2013 09:13:35 -0600
+Message-ID: <CAKcLGm9vBxnN9Y8dhzJ=80piB12vUdLdqKTgrKZAZXhKLgRd+A@mail.gmail.com>
+Subject: Re: [RFC] Btrfs: Allow the compressed extent size limit to be
+ modified v2
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 05, 2013 at 06:10:54PM -0700, Jerry Snitselaar wrote:
-> In some testing that was being done the tester ran into the following:
-> 
-> --
-> 
-> /mnt/abo is a filesystem in Raid1-configuration having two disks: /dev/sdg2 
-> and /dev/sdg3. When trying to remove one of the devices, you get this error 
-> on the console: 
-> 
-> # btrfs device delete /dev/sdg2 /mnt/abo 
-> ERROR: error removing the device '/dev/sdg2' - Invalid argument 
-> 
-> /var/log/messages shows the real error: 
-> Jan 29 13:54:58 ca-ostest202 kernel: btrfs: unable to go below two devices on 
-> raid1 
-> 
-> The error message on the console output is wrong : '/dev/sdg2' is not an 
-> invalid argument, there's another reason why the delete-action can't be 
-> executed. 
-> 
-> --
-> 
-> Looking at it I can see the EINVAL being correct because it is being
-> told to remove a member from a raid1 with only 2 members, but I can
-> see how that message could be confusing as well. Is there some place
-> that tells users to look at /var/log/messages to see the other
-> message? Wondering if the error message should point users to
-> /var/log/messages to get more details.
+On Fri, Feb 8, 2013 at 8:53 AM, David Sterba <dsterba@suse.cz> wrote:
+> On Thu, Feb 07, 2013 at 11:17:46PM -0600, Mitch Harder wrote:
+>> On Thu, Feb 7, 2013 at 6:28 PM, David Sterba <dave@jikos.cz> wrote:
+>> > On Thu, Feb 07, 2013 at 03:38:34PM -0600, Mitch Harder wrote:
+>> >> --- a/fs/btrfs/relocation.c
+>> >> +++ b/fs/btrfs/relocation.c
+>> >> @@ -144,7 +144,7 @@ struct tree_block {
+>> >>       unsigned int key_ready:1;
+>> >>  };
+>> >>
+>> >> -#define MAX_EXTENTS 128
+>> >> +#define MAX_EXTENTS 512
+>> >
+>> > Is this really related to compression? IIRC I've seen it only in context
+>> > of batch work in reloc, but not anywhere near compression. (I may be
+>> > wrong of course, just checking).
+>> >
+>>
+>> When you defragment compressed extents, it will run through relocation.
+>>
+>> If autodefrag is enabled, I found most everything I touched was
+>> running through relocation.
+>
+> AFAIK defragmentation runs through the writeback loop, blocks are marked
+> dirty, delalloc tries to make them contiguous and then synced back to
+> disk. Autodefrag uses the same loop, just affects newly written data.
+>
+>> It has been a while since I looked at the issue, but I think balancing
+>> your data will also run through relocation.
+>
+> Balance does go through reloc for sure.
+>
+> From the commit that introduces MAX_EXTENTS it's imo quite clear that
+> it's only a balance speedup:
+>
+> (0257bb82d21bedff26541bcf12f1461c23f9ed61)
+> Btrfs: relocate file extents in clusters
+>
+> The extent relocation code copy file extents one by one when
+> relocating data block group. This is inefficient if file
+> extents are small. This patch makes the relocation code copy
+> file extents in clusters. So we can can make better use of
+> read-ahead.
 
-The error message means that the action (done via a ioctl() call)
-returned EINVAL, and there's no established interface to accompany the
-numer with a message. Adding a notice about looking into
-/var/log/messages would be better (similar to what a failed mount does).
-
-Also, I think the error code could be changed to EPERM, because this
-says that the operation is valid, but not possible to do under current
-circumstances.
-
-david
+In an earlier version of the patch, I had the changes to relocation.c
+in a separate patch.  But, I couldn't consistently attain the changed
+maximum extent size unless I also addressed the issue with relocation.

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f169.google.com ([209.85.223.169]:56990 "EHLO
-	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1947176Ab3BHXJW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 18:09:22 -0500
-Received: by mail-ie0-f169.google.com with SMTP id 13so5708330iea.14
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 15:09:22 -0800 (PST)
+Received: from mail-lb0-f176.google.com ([209.85.217.176]:43869 "EHLO
+	mail-lb0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1947286Ab3BHXKW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 18:10:22 -0500
+Received: by mail-lb0-f176.google.com with SMTP id s4so3385176lbc.35
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 15:10:20 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <CAM-0MpV83W7VeV07FLFVj-qTWXDBUROBwPHVFha38RftLOwoJQ@mail.gmail.com>
 References: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
@@ -12,19 +12,20 @@ References: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
 	<20130208213745.GC10931@localhost.localdomain>
 	<CAM-0MpWoAXaCqcGLgXGE8s-zSn0fz7n4QUommSgqH0ayi=tJNA@mail.gmail.com>
 	<CAM-0MpV83W7VeV07FLFVj-qTWXDBUROBwPHVFha38RftLOwoJQ@mail.gmail.com>
-Date: Fri, 8 Feb 2013 17:09:22 -0600
-Message-ID: <CAE5mzvjh8jF5U4gWbYOw0_x1pYQ6p2MDU_W4kcp4oeP9T4wu5Q@mail.gmail.com>
+Date: Sat, 9 Feb 2013 00:10:20 +0100
+Message-ID: <CAM-0MpVJER0evsOGpMFQXhNfgYtrT2CSreM6fazuAcZ0QYZUFw@mail.gmail.com>
 Subject: Re: Fwd: Current State of BTRFS
-From: cwillu <cwillu@cwillu.com>
-To: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 8, 2013 at 4:56 PM, Florian Hofmann
-<fhofmann@techfak.uni-bielefeld.de> wrote:
+I just had another big freeze ... I could change to a terminal and
+sysrq-triggering gave this: http://pastebin.com/F1jQqtUQ
+
+2013/2/8 Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>:
 > Oh ... I should have mentioned that btrfs is running on top of LUKS.
 >
 > 2013/2/8 Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>:
@@ -49,12 +50,28 @@ On Fri, Feb 8, 2013 at 4:56 PM, Florian Hofmann
 >> output in dmesg (http://pastebin.com/swrCdC3U).
 >>
 >> Anything else?
-
-The pastebin didn't include any output from sysrq-w; even if there's
-nothing to report there would still be a dozen lines or so per cpu; at
-the absolute minimum there should be a line for each time you ran it:
-
-[4477369.680307] SysRq : Show Blocked State
-
-Note that you need to echo as root, or use the keyboard combo
-alt-sysrq-w to trigger.
+>>
+>> 2013/2/8 Josef Bacik <jbacik@fusionio.com>:
+>>> On Fri, Feb 08, 2013 at 02:30:04PM -0700, Florian Hofmann wrote:
+>>>> Hi everybody,
+>>>>
+>>>> I am using btrfs as my main fs for some time now, but I am
+>>>> experiencing severe performance drawbacks. I can't qualify the
+>>>> circumstances, but sometimes during disc access the whole system
+>>>> freezes for some time.
+>>>>
+>>>> Maybe somebody could suggest some general things I could try to search
+>>>> for the problem?
+>>>
+>>> Can I see
+>>>
+>>> btrfs fi df /mnt/point
+>>> btrfs fi show
+>>>
+>>> and then when you are having problems
+>>>
+>>> echo w > /proc/sysrq-trigger
+>>>
+>>> and capture dmesg.  Thanks,
+>>>
+>>> Josef

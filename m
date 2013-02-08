@@ -1,55 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.vapor.com ([83.220.149.2]:38208 "EHLO nitrogen.vapor.com"
+Received: from mail.vapor.com ([83.220.149.2]:38250 "EHLO nitrogen.vapor.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1946891Ab3BHSGE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Feb 2013 13:06:04 -0500
-Date: Fri, 8 Feb 2013 19:05:50 +0100
+	id S1946838Ab3BHSHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Feb 2013 13:07:14 -0500
+Date: Fri, 8 Feb 2013 19:07:13 +0100
 From: Ian Kumlien <pomac@vapor.com>
 To: kreijack@inwind.it
 Cc: Ian Kumlien <pomac@demius.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs-progs: Merge btrfs-restore, btrfsck, btrfs-select-super,
- btrfs-dump-super and btrfs-debug-tree in to btrfs
-Message-ID: <20130208180550.GM15780@pomac.netswarm.net>
+Subject: Re: [PATCH 6/6] Btrfs-progs: add the rescue section to btrfs
+Message-ID: <20130208180712.GN15780@pomac.netswarm.net>
 References: <1360283822-23452-1-git-send-email-pomac@demius.net>
- <51153892.5030601@gmail.com>
+ <1360283822-23452-7-git-send-email-pomac@demius.net>
+ <51153840.1040004@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51153892.5030601@gmail.com>
+In-Reply-To: <51153840.1040004@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 08, 2013 at 06:40:34PM +0100, Goffredo Baroncelli wrote:
-> On 02/08/2013 01:36 AM, Ian Kumlien wrote:
-> > Hi,
+On Fri, Feb 08, 2013 at 06:39:12PM +0100, Goffredo Baroncelli wrote:
+> On 02/08/2013 01:37 AM, Ian Kumlien wrote:
+> > the btrfs command now lists:
+> >     btrfs rescue select-super -s <number> <device>
+> >         Select a superblock
+> >     btrfs rescue dump-super <device>
+> >         Dump a superblock to disk
+> >     btrfs rescue debug-tree [options] <device>
+> >         Debug the filesystem
 > > 
-> > This patch series moves some of the commands around to reflect that
-> > they are now subcommands of btrfs.
+> > btrfs-dump-super.c was imported in to cmds-rescue-super-ops.c
 > > 
-> > As a stage in this we also add support for btrfs being called as 
-> > btrfsck which yeilds the, now(?), starnard "btrfs check" or 
-> > fsck.btrfs which is a noop to avoid complications with distributions.
+> > This patch integrates all the functionality...
 > > 
-> > We also merge Josef Baciks btrfs-dump-super in patch number 4.
-> > 
-> > This patchset has been rebased on top of David Sterbas latest WIP changes.
-> > 
-> > Comments? Ideas? Suggestions?
+> > cmds-rescue.c is used to glue cmds-rescue-debug-tree.c,
+> > cmds-rescue-restore.c and cmds-rescue-super-ops.c together to
+> > make the source files more managable.
+> [...]
+> > -int main(int ac, char **av)
+> > +const char * const cmd_dump_super_usage[] = {
+> > +	"btrfs rescue dump-super <device>",
+> > +	"Dump a superblock to disk",
+> > +	NULL
+> > +};
+> [...]
+> > +int cmd_dump_super(int argc, char **argv)
+> > +{
+> > +        int i;
+> > +
+> > +        if (argc != 2)
+> > +                usage(cmd_dump_super_usage);
+> > +
+> > +        for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+> > +                u64 bytenr = btrfs_sb_offset(i);
+> > +                int fd;
+> > +                struct btrfs_super_block sb;
+> > +                int block_size = sizeof(struct btrfs_super_block);
+> > +                char filename[1024];
+> > +                int bytes_read = read_block(argv[optind], bytenr, &sb);
+> > +                if (bytes_read < block_size)
+> > +                        continue;
+> I think that we should also implement a check of the superblock checksum.
 > 
-> Se my other two email for the specific comment. However I can ask you to
-> update the man page with these new commands. Any way I really appreciate
-> the improved help for these commands.
-
-I'll most definetly look in to it - =)
-
-> > 
-> > Please help me with all the help text and verify that it's correct enough ;)
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
+> > +
+> > +                sprintf(filename, "/tmp/block.%s.%llu",
+> > +                        strrchr(argv[optind], '/') + 1, bytenr);
+> > +                fd = open(filename, O_CREAT|O_WRONLY, 0644);
 > 
+> This is the part that I don't like. The output file name should be
+> passed via the command line. It should not be defined by some obscure
+> logic. The user is able to understand where the sb is written only after.
+
+This is only the import of the command, we can add anything we want
+after that.
+
+Josef also said that it could use some better usability - right now it's
+only there since the functionality is good to have when <something> hits
+the fan =)
+
+> > +                if (block_size != pwrite(fd, &sb, block_size, 0)) {
+> > +                        fprintf(stderr, "Failed to dump superblock %d", i);
+> > +                        continue;
+> > +                }
+> > +                fprintf(stderr, "Dumped superblock %s:%d, gen %llu to %s.\n",
+> > +                        argv[optind], i, sb.generation, filename);
+> > +                close(fd);
+> > +        }
+> [...]
 > 
 > -- 
 > gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>

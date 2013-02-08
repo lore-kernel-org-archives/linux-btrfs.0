@@ -1,91 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f178.google.com ([209.85.215.178]:37974 "EHLO
-	mail-ea0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1760180Ab3BHRi0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 12:38:26 -0500
-Received: by mail-ea0-f178.google.com with SMTP id a14so1862908eaa.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 09:38:25 -0800 (PST)
-Message-ID: <51153846.7020304@gmail.com>
-Date: Fri, 08 Feb 2013 18:39:18 +0100
+Received: from mail-ee0-f49.google.com ([74.125.83.49]:32884 "EHLO
+	mail-ee0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753868Ab3BHRiV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 12:38:21 -0500
+Received: by mail-ee0-f49.google.com with SMTP id d4so2033776eek.36
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 09:38:20 -0800 (PST)
+Message-ID: <51153840.1040004@gmail.com>
+Date: Fri, 08 Feb 2013 18:39:12 +0100
 From: Goffredo Baroncelli <kreijack@gmail.com>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
 To: Ian Kumlien <pomac@demius.net>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/6] Btrfs-progs: add btrfsck functionality to btrfs
-References: <1360283822-23452-1-git-send-email-pomac@demius.net> <1360283822-23452-3-git-send-email-pomac@demius.net>
-In-Reply-To: <1360283822-23452-3-git-send-email-pomac@demius.net>
+Subject: Re: [PATCH 6/6] Btrfs-progs: add the rescue section to btrfs
+References: <1360283822-23452-1-git-send-email-pomac@demius.net> <1360283822-23452-7-git-send-email-pomac@demius.net>
+In-Reply-To: <1360283822-23452-7-git-send-email-pomac@demius.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-H Iam,
-
-On 02/08/2013 01:36 AM, Ian Kumlien wrote:
-> This patch includes the functionality of btrfs, it's
-> found as "btrfs check" however it makes the binary
-> behave differently depending on what it's run as.
+On 02/08/2013 01:37 AM, Ian Kumlien wrote:
+> the btrfs command now lists:
+>     btrfs rescue select-super -s <number> <device>
+>         Select a superblock
+>     btrfs rescue dump-super <device>
+>         Dump a superblock to disk
+>     btrfs rescue debug-tree [options] <device>
+>         Debug the filesystem
+> 
+> btrfs-dump-super.c was imported in to cmds-rescue-super-ops.c
+> 
+> This patch integrates all the functionality...
+> 
+> cmds-rescue.c is used to glue cmds-rescue-debug-tree.c,
+> cmds-rescue-restore.c and cmds-rescue-super-ops.c together to
+> make the source files more managable.
 [...]
-
->  
-> +static int cmd_dummy(int argc, char **argv)
-> +{
-> +	return 0;
-
-I think we should warn that fsck.btrfs does nothing. Something like:
- +	fprintf(stderr, "WARNING: fsck.btrfs does nothing. "
-		"Try 'btrfs check'\n");
-
-
-
-> +}
-> +
-> +/* change behaviour depending on what we're called */
-> +const struct cmd_group function_cmd_group = {
-> +	NULL, NULL,
-> +	{
-> +		{ "btrfsck", cmd_check, NULL, NULL, 0 },
-> +		{ "fsck.btrfs", cmd_dummy, NULL, NULL, 0 },
-> +		{ 0, 0, 0, 0, 0 }
-> +	},
+> -int main(int ac, char **av)
+> +const char * const cmd_dump_super_usage[] = {
+> +	"btrfs rescue dump-super <device>",
+> +	"Dump a superblock to disk",
+> +	NULL
 > +};
+[...]
+> +int cmd_dump_super(int argc, char **argv)
+> +{
+> +        int i;
 > +
->  int main(int argc, char **argv)
->  {
->  	const struct cmd_struct *cmd;
-> +	char *called_as = strrchr(argv[0], '/');
-> +	if (called_as)
-> +		argv[0] = ++called_as;
->  
->  	crc32c_optimization_init();
->  
-> -	argc--;
-> -	argv++;
-> -	handle_options(&argc, &argv);
-> -	if (argc > 0) {
-> -		if (!prefixcmp(argv[0], "--"))
-> -			argv[0] += 2;
-> -	} else {
-> -		usage_command_group(&btrfs_cmd_group, 0, 0);
-> -		exit(1);
-> -	}
-> +	/* if we have cmd, we're started as a sub command */
-> +	if (parse_one_exact_token(argv[0], &function_cmd_group, &cmd) < 0)
-> +	{
-> +		argc--;
-> +		argv++;
->  
-> -	cmd = parse_command_token(argv[0], &btrfs_cmd_group);
-> +		handle_options(&argc, &argv);
-> +		if (argc > 0) {
-> +			if (!prefixcmp(argv[0], "--"))
-> +				argv[0] += 2;
+> +        if (argc != 2)
+> +                usage(cmd_dump_super_usage);
+> +
+> +        for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+> +                u64 bytenr = btrfs_sb_offset(i);
+> +                int fd;
+> +                struct btrfs_super_block sb;
+> +                int block_size = sizeof(struct btrfs_super_block);
+> +                char filename[1024];
+> +                int bytes_read = read_block(argv[optind], bytenr, &sb);
+> +                if (bytes_read < block_size)
+> +                        continue;
+I think that we should also implement a check of the superblock checksum.
 
-I can't understand the reason to skip '--' ? But this question is not
-related to your patch...
+> +
+> +                sprintf(filename, "/tmp/block.%s.%llu",
+> +                        strrchr(argv[optind], '/') + 1, bytenr);
+> +                fd = open(filename, O_CREAT|O_WRONLY, 0644);
 
-> +		} else {
-> +			usage_command_group(&btrfs_cmd_group, 0, 0);
+This is the part that I don't like. The output file name should be
+passed via the command line. It should not be defined by some obscure
+logic. The user is able to understand where the sb is written only after.
+
+> +                if (block_size != pwrite(fd, &sb, block_size, 0)) {
+> +                        fprintf(stderr, "Failed to dump superblock %d", i);
+> +                        continue;
+> +                }
+> +                fprintf(stderr, "Dumped superblock %s:%d, gen %llu to %s.\n",
+> +                        argv[optind], i, sb.generation, filename);
+> +                close(fd);
+> +        }
 [...]
 
 -- 

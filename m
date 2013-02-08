@@ -1,40 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f45.google.com ([209.85.215.45]:39496 "EHLO
-	mail-la0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753669Ab3BHVaG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 16:30:06 -0500
-Received: by mail-la0-f45.google.com with SMTP id er20so4245798lab.18
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 13:30:04 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:42508 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760323Ab3BHVhs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 16:37:48 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id D3BD29A0643
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Feb 2013 14:37:47 -0700 (MST)
+Date: Fri, 8 Feb 2013 16:37:45 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Fwd: Current State of BTRFS
+Message-ID: <20130208213745.GC10931@localhost.localdomain>
 References: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
-Date: Fri, 8 Feb 2013 22:30:04 +0100
-Message-ID: <CAM-0MpXTU5KUAy0tEcMu_eh5Fa75kEkUiuY8NBV-RpWp1GtypQ@mail.gmail.com>
-Subject: Fwd: Current State of BTRFS
-From: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+ <CAM-0MpXTU5KUAy0tEcMu_eh5Fa75kEkUiuY8NBV-RpWp1GtypQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAM-0MpXTU5KUAy0tEcMu_eh5Fa75kEkUiuY8NBV-RpWp1GtypQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everybody,
+On Fri, Feb 08, 2013 at 02:30:04PM -0700, Florian Hofmann wrote:
+> Hi everybody,
+> 
+> I am using btrfs as my main fs for some time now, but I am
+> experiencing severe performance drawbacks. I can't qualify the
+> circumstances, but sometimes during disc access the whole system
+> freezes for some time.
+> 
+> Maybe somebody could suggest some general things I could try to search
+> for the problem?
 
-I am using btrfs as my main fs for some time now, but I am
-experiencing severe performance drawbacks. I can't qualify the
-circumstances, but sometimes during disc access the whole system
-freezes for some time.
+Can I see
 
-Maybe somebody could suggest some general things I could try to search
-for the problem?
+btrfs fi df /mnt/point
+btrfs fi show
 
-Thanks in advance,
-Florian
+and then when you are having problems
 
----
+echo w > /proc/sysrq-trigger
 
-Some background information:
+and capture dmesg.  Thanks,
 
-$ mount | grep btrfs
-/dev/mapper/sda2crypt on / type btrfs (rw,relatime,compress=lzo,space_cache)
-
-Hmm ... couldn't think of more :(
+Josef

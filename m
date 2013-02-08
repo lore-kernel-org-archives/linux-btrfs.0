@@ -1,57 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39190 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1946518Ab3BHQau (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Feb 2013 11:30:50 -0500
-Date: Fri, 8 Feb 2013 17:30:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Olivier Bonvalet <btrfs.list@daevel.fr>
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: System unmountable RW
-Message-ID: <20130208163048.GJ12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1359756678.6019.30.camel@boolette.noo>
- <CAE5mzvgyOqw4ddd-jsW=QxLFqb8deB5d_jiB+WOj9t5hcq8_8A@mail.gmail.com>
- <1359803076.6019.39.camel@boolette.noo>
- <1359809062.6019.42.camel@boolette.noo>
- <1359810923.6019.44.camel@boolette.noo>
+Received: from dkim2.fusionio.com ([66.114.96.54]:41186 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760341Ab3BHTRx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 14:17:53 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 964FC9A04DF
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Feb 2013 12:17:52 -0700 (MST)
+Date: Fri, 8 Feb 2013 14:17:50 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Marguerite Su <i@marguerite.su>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs: Error removing orphan entry, stopping orphan cleanup.
+ could not do orphan cleanup -22
+Message-ID: <20130208191750.GA10931@localhost.localdomain>
+References: <CAK0PdAkGdGWg8TzrDK0hRgcrqqkTF7XrcOHX2wh_7DLG3G0CLA@mail.gmail.com>
+ <20130205193549.GC26092@localhost.localdomain>
+ <CAK0PdAmnZgE2+nRzrrK_FLa1xcpZPLHyUN69Kx7W5rRVV2bvTA@mail.gmail.com>
+ <20130205204523.GD26092@localhost.localdomain>
+ <CAK0PdAnMr20LgPriUz40YPg+uu08xqabE25Bh7W_h-Tzq+LEbA@mail.gmail.com>
+ <20130206151526.GF26092@localhost.localdomain>
+ <CAK0PdAmXh_mYQU2HSOcVXDQ-NH7AvAM5iYdzdusxsTgR6w13GQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1359810923.6019.44.camel@boolette.noo>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAK0PdAmXh_mYQU2HSOcVXDQ-NH7AvAM5iYdzdusxsTgR6w13GQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 02, 2013 at 02:15:23PM +0100, Olivier Bonvalet wrote:
-> Then, 30 minutes later there is no change, so I suppose it's "frozen".
-> I hope it can help :
+On Fri, Feb 08, 2013 at 11:36:48AM -0700, Marguerite Su wrote:
+> 
+> 
+> 
+> On Wed, Feb 6, 2013 at 11:15 PM, Josef Bacik <jbacik@fusionio.com<mailto:jbacik@fusionio.com>> wrote:
+> 
+> Btrfs-next is based on 3.7, you should be able to just git diff v3.7.. >
+> whatever.patch and get all the changes you need.  Thanks,
+> 
+> Hi, Josef,
+> 
+> Sorry to bother you again. I tried for days and asked some of my friends, but I'm still confused about what you want me to do and how to do...
+> 
+> I check the #btrfs-next[1], its latest tag is v3.4-rc2 and there's only one master branch. There's no `v3.7` around there...So I'm confused about what you meant. Can you be more detailed ?
+> 
+> I know I need a diff...but how...and which repo should I apply it on? my /usr/src/linux or #btrfs-next itself?
+> 
+> Thanks a lot
+> 
 
-If in doubt, look if the disk is active.
+Oh sorry I have the tags locally because I pull linus's tags onto my tree, but I
+don't push them out.  So pull my tree (I just pushed another fix for this
+problem out yesterday so it definitely should be fixed) and just do
 
-> [ 8081.557304] mount           D ffff8802bfc12080     0  2642   2595 0x00000000
-> [ 8081.557355]  [<ffffffff8107ba5f>] ? arch_local_irq_restore+0x7/0x8
-> [ 8081.557376]  [<ffffffffa0066660>] ? btrfs_tree_lock+0xcf/0x224 [btrfs]
-> [ 8081.557399]  [<ffffffffa0057941>] ? alloc_extent_buffer+0x6f/0x2d6 [btrfs]
-> [ 8081.557408]  [<ffffffff8106051a>] ? abort_exclusive_wait+0x79/0x79
-> [ 8081.557426]  [<ffffffffa00338c4>] ? btrfs_init_new_buffer+0x5a/0xe2 [btrfs]
-> [ 8081.557443]  [<ffffffffa0033aeb>] ? btrfs_alloc_free_block+0x19f/0x29d [btrfs]
-> [ 8081.557454]  [<ffffffff810a7e26>] ? __set_page_dirty_nobuffers+0xc4/0xe0
-> [ 8081.557468]  [<ffffffffa00261a8>] ? __btrfs_cow_block+0xf2/0x372 [btrfs]
-> [ 8081.557483]  [<ffffffffa0026551>] ? btrfs_cow_block+0xee/0xfd [btrfs]
-> [ 8081.557498]  [<ffffffffa00290e8>] ? btrfs_search_slot+0x234/0x660 [btrfs]
-> [ 8081.557513]  [<ffffffffa002a475>] ? btrfs_insert_empty_items+0x5d/0xae [btrfs]
-> [ 8081.557531]  [<ffffffffa0032b0a>] ? run_clustered_refs+0x4b1/0x81d [btrfs]
-> [ 8081.557540]  [<ffffffff8107ba5f>] ? arch_local_irq_restore+0x7/0x8
-> [ 8081.557557]  [<ffffffffa00350eb>] ? btrfs_run_delayed_refs+0xea/0x22e [btrfs]
-> [ 8081.557577]  [<ffffffffa00418c8>] ? btrfs_commit_transaction+0x3e8/0x927 [btrfs]
-> [ 8081.557587]  [<ffffffff8106051a>] ? abort_exclusive_wait+0x79/0x79
-> [ 8081.557605]  [<ffffffffa0041f8e>] ? __btrfs_end_transaction+0x158/0x2c4 [btrfs]
-> [ 8081.557621]  [<ffffffffa002ba70>] ? spin_unlock+0x5/0x8 [btrfs]
-> [ 8081.557638]  [<ffffffffa0033f34>] ? btrfs_drop_snapshot+0x34b/0x4b5 [btrfs]
-> [ 8081.557659]  [<ffffffffa0077b95>] ? merge_reloc_roots+0xe0/0x113 [btrfs]
-> [ 8081.557679]  [<ffffffffa007874f>] ? btrfs_recover_relocation+0x26c/0x32b [btrfs]
+git diff 29594404d7fe73cd80eaa4ee8c43dcc53970c60e.. > btrfs.patch
 
-This means that there was an interrupted balance in progress before, and
-now it tries to continue. You may optionally avoid restarting balance
-with 'skip_balance' mount option and then cancel the balance.
+and that should work.  Thanks,
 
-david
+Josef

@@ -1,65 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f52.google.com ([209.85.213.52]:49151 "EHLO
-	mail-yh0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1945909Ab3BHKzv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2013 05:55:51 -0500
-Received: by mail-yh0-f52.google.com with SMTP id q46so403104yhf.25
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2013 02:55:50 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:34633 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758113Ab3BHOxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Feb 2013 09:53:10 -0500
+Date: Fri, 8 Feb 2013 15:53:07 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Subject: Re: [RFC] Btrfs: Allow the compressed extent size limit to be
+ modified v2
+Message-ID: <20130208145307.GF12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+ <20130208002854.GA1575@twin.jikos.cz>
+ <CAKcLGm_z+bMYtBZYvQYRXrPVHxEfrnfaVNPo8=qeKb3JSUOgiw@mail.gmail.com>
 MIME-Version: 1.0
-Date: Fri, 8 Feb 2013 11:55:50 +0100
-Message-ID: <CA+PhV5YWiMJmMhph7kSBS1MPbmxcjGAZRO43AJF7MMGck8WkMw@mail.gmail.com>
-Subject: Very slow BTRFS
-From: Jaroslav Tvrdy <jtvrdy@jaroslav-tvrdy.info>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAKcLGm_z+bMYtBZYvQYRXrPVHxEfrnfaVNPo8=qeKb3JSUOgiw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi i am very very slow BTRFS, when i am start use this FS, work OK,
-but now is unusable
-it is on SWraid and LVM, not problem in RAID
+On Thu, Feb 07, 2013 at 11:17:46PM -0600, Mitch Harder wrote:
+> On Thu, Feb 7, 2013 at 6:28 PM, David Sterba <dave@jikos.cz> wrote:
+> > On Thu, Feb 07, 2013 at 03:38:34PM -0600, Mitch Harder wrote:
+> >> --- a/fs/btrfs/relocation.c
+> >> +++ b/fs/btrfs/relocation.c
+> >> @@ -144,7 +144,7 @@ struct tree_block {
+> >>       unsigned int key_ready:1;
+> >>  };
+> >>
+> >> -#define MAX_EXTENTS 128
+> >> +#define MAX_EXTENTS 512
+> >
+> > Is this really related to compression? IIRC I've seen it only in context
+> > of batch work in reloc, but not anywhere near compression. (I may be
+> > wrong of course, just checking).
+> >
+> 
+> When you defragment compressed extents, it will run through relocation.
+>
+> If autodefrag is enabled, I found most everything I touched was
+> running through relocation.
 
-Copy 12MB (~30 6 subdirs jpegs)
-# time cp -r directory ../../src/delme2
-real	2m13.965s
-user	0m0.008s
-sys	0m0.191s
-(91 kB/sec)
+AFAIK defragmentation runs through the writeback loop, blocks are marked
+dirty, delalloc tries to make them contiguous and then synced back to
+disk. Autodefrag uses the same loop, just affects newly written data.
 
-Fedora 18
-kernel: 3.7.2-204.fc18.x86_64
+> It has been a while since I looked at the issue, but I think balancing
+> your data will also run through relocation.
 
-modinfo:
-filename:       /lib/modules/3.7.2-204.fc18.x86_64/kernel/fs/btrfs/btrfs.ko
-license:        GPL
-alias:          devname:btrfs-control
-alias:          char-major-10-234
-depends:        libcrc32c,zlib_deflate
-intree:         Y
-vermagic:       3.7.2-204.fc18.x86_64 SMP mod_unload
+Balance does go through reloc for sure.
 
-# btrfs fi df /ontap
-Data: total=2.23TB, used=2.22TB
-System, DUP: total=32.00MB, used=248.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=5.00GB, used=4.82GB
+>From the commit that introduces MAX_EXTENTS it's imo quite clear that
+it's only a balance speedup:
 
-/dev/mapper/vol-data on /ontap type btrfs
-(rw,noatime,nobarrier,space_cache)   ... i am don't use compression,
-snapshots, subvolumes etc.
+(0257bb82d21bedff26541bcf12f1461c23f9ed61)
+Btrfs: relocate file extents in clusters
 
-When i am upgrade distro kernel from 3.6 to 3.7 BTRFS run these process:
-[ 7152.787631] btrfs: found 129 extents
-[ 7154.094930] btrfs: relocating block group 20971520 flags 34
-[ 7178.283544] btrfs: found 62 extents
-[ 7179.230863] btrfs: relocating block group 4194304 flags 4
-Yes i am waiting after process done, i am run test.
+The extent relocation code copy file extents one by one when
+relocating data block group. This is inefficient if file
+extents are small. This patch makes the relocation code copy
+file extents in clusters. So we can can make better use of
+read-ahead.
+---
 
-# btrfs filesystem show
-Label: 'ontap'  uuid: bdfb22ce-0475-4e51-9726-62e76636763a
-	Total devices 1 FS bytes used 2.23TB
-	devid    1 size 2.73TB used 2.24TB path /dev/dm-0
-Btrfs Btrfs v0.19
-
-
-Jarda
+david

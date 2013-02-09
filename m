@@ -1,58 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f52.google.com ([74.125.83.52]:33937 "EHLO
-	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758345Ab3BIR6X (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2013 12:58:23 -0500
-Received: by mail-ee0-f52.google.com with SMTP id b15so2395817eek.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2013 09:58:21 -0800 (PST)
-Date: Sat, 9 Feb 2013 20:57:42 +0300
+Received: from mail-ee0-f50.google.com ([74.125.83.50]:53459 "EHLO
+	mail-ee0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758564Ab3BISCo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2013 13:02:44 -0500
+Received: by mail-ee0-f50.google.com with SMTP id e51so2552637eek.23
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2013 10:02:41 -0800 (PST)
+Date: Sat, 9 Feb 2013 21:02:06 +0300
 From: Sergei Trofimovich <slyich@gmail.com>
 To: Ian Kumlien <pomac@demius.net>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add static compile target
-Message-ID: <20130209205742.00907573@sf>
-In-Reply-To: <1360365569-18996-1-git-send-email-pomac@demius.net>
-References: <1360365569-18996-1-git-send-email-pomac@demius.net>
+Subject: Re: [PATCH] Btrfs-progs: -U_FORTIFY_SOURCE before -D
+Message-ID: <20130209210206.66e2b886@sf>
+In-Reply-To: <1360366221-22703-1-git-send-email-pomac@demius.net>
+References: <1360366221-22703-1-git-send-email-pomac@demius.net>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/+7pdAwcnz3HUzkUQ_rbeHmB"; protocol="application/pgp-signature"
+ boundary="Sig_/Cvk03Yahv90xPYA3lhPS_6X"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/+7pdAwcnz3HUzkUQ_rbeHmB
+--Sig_/Cvk03Yahv90xPYA3lhPS_6X
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-On Sat,  9 Feb 2013 00:19:29 +0100
+On Sat,  9 Feb 2013 00:30:21 +0100
 Ian Kumlien <pomac@demius.net> wrote:
 
-> Sometimes, when you least expect it, a static binary is what you need to
-> rescue your data... Or just get a good enough handle on things to make
-> it work again ;)
+> My builds are cluttered with:
+> <command-line>:0:0: warning: "_FORTIFY_SOURCE" redefined [enabled by
+> default]
 >=20
-> "make static" is a gift to you, dear user with filesystem problems!
+> Which makes it hard to tell if something breaks or not.
 
-What's wrong with conventional LDFLAGS=3D-static make?
+> I don't know about you, but bilding with=20
+> GCC 4.7.2 on gentoo, this is a issue.
 
-> Anyway, on a more serious note, changed the cflags and ldflags so that
-> we create a smaller binary, 1.1MB stripped on my 64 bit system
-> (2.7MB with debug data)
->=20
+Unfortunately it's a gentoo specific gcc bug. I'd suggest reporting
+it to bugs.gentoo.org. That -D by default breaks linux's perf as well
+(due to -D_FOTIFY_SOURCE=3D2 -Werror in perf sources).
+
+Current workaround is to pass AM_CFLAGS to make:
+    make AM_CFLAGS=3Dstuff_w/o_fortify_source
+It's what gentoo's live ebuild does.
 
 --=20
 
   Sergei
 
---Sig_/+7pdAwcnz3HUzkUQ_rbeHmB
+--Sig_/Cvk03Yahv90xPYA3lhPS_6X
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.19 (GNU/Linux)
 
-iEYEARECAAYFAlEWjhkACgkQcaHudmEf86qT4wCdEtCR5XgdRfdgg/QesBKt9Ls6
-miwAni0a4oAJxBbulmcsxntj2rTOuwvZ
-=zc5r
+iEYEARECAAYFAlEWjx4ACgkQcaHudmEf86oZRQCeMSEOSA+Xp5McvmeiIs+j9YIQ
+vogAn3TPIYyJ088mOwTKcwsTNNJLxh1a
+=Sgvo
 -----END PGP SIGNATURE-----
 
---Sig_/+7pdAwcnz3HUzkUQ_rbeHmB--
+--Sig_/Cvk03Yahv90xPYA3lhPS_6X--

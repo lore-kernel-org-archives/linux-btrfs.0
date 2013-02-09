@@ -1,72 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.vapor.com ([83.220.149.2]:44893 "EHLO nitrogen.vapor.com"
+Received: from mail.vapor.com ([83.220.149.2]:45192 "EHLO nitrogen.vapor.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760833Ab3BIWVV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Feb 2013 17:21:21 -0500
-Date: Sat, 9 Feb 2013 23:21:08 +0100
+	id S1760833Ab3BIWdn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Feb 2013 17:33:43 -0500
+Date: Sat, 9 Feb 2013 23:33:41 +0100
 From: Ian Kumlien <pomac@vapor.com>
 To: Sergei Trofimovich <slyich@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add static compile target
-Message-ID: <20130209222108.GS15780@pomac.netswarm.net>
-References: <1360365569-18996-1-git-send-email-pomac@demius.net>
- <20130209205742.00907573@sf>
- <20130209185144.GQ15780@pomac.netswarm.net>
- <20130209224851.4560edf9@sf>
+Cc: Ian Kumlien <pomac@demius.net>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: -U_FORTIFY_SOURCE before -D
+Message-ID: <20130209223341.GT15780@pomac.netswarm.net>
+References: <1360366221-22703-1-git-send-email-pomac@demius.net>
+ <20130209210206.66e2b886@sf>
+ <20130209185720.GR15780@pomac.netswarm.net>
+ <20130210010626.487a8044@sf>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130209224851.4560edf9@sf>
+In-Reply-To: <20130210010626.487a8044@sf>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 09, 2013 at 10:48:51PM +0300, Sergei Trofimovich wrote:
-> On Sat, 9 Feb 2013 19:51:44 +0100
+On Sun, Feb 10, 2013 at 01:06:26AM +0300, Sergei Trofimovich wrote:
+> On Sat, 9 Feb 2013 19:57:20 +0100
 > Ian Kumlien <pomac@vapor.com> wrote:
 > 
-> > On Sat, Feb 09, 2013 at 08:57:42PM +0300, Sergei Trofimovich wrote:
-> > > On Sat,  9 Feb 2013 00:19:29 +0100
+> > On Sat, Feb 09, 2013 at 09:02:06PM +0300, Sergei Trofimovich wrote:
+> > > On Sat,  9 Feb 2013 00:30:21 +0100
 > > > Ian Kumlien <pomac@demius.net> wrote:
 > > > 
-> > > > Sometimes, when you least expect it, a static binary is what you need to
-> > > > rescue your data... Or just get a good enough handle on things to make
-> > > > it work again ;)
+> > > > My builds are cluttered with:
+> > > > <command-line>:0:0: warning: "_FORTIFY_SOURCE" redefined [enabled by
+> > > > default]
 > > > > 
-> > > > "make static" is a gift to you, dear user with filesystem problems!
+> > > > Which makes it hard to tell if something breaks or not.
 > > > 
-> > > What's wrong with conventional LDFLAGS=-static make?
+> > > > I don't know about you, but bilding with 
+> > > > GCC 4.7.2 on gentoo, this is a issue.
+> > > 
+> > > Unfortunately it's a gentoo specific gcc bug. I'd suggest reporting
+> > > it to bugs.gentoo.org. That -D by default breaks linux's perf as well
+> > > (due to -D_FOTIFY_SOURCE=2 -Werror in perf sources).
 > > 
-> > That doesn't work for me, does it actually work for you?
+> > Is it? There is a workaround in the android build system for compilers
+> > on ubuntu.
 > > 
-> > I'd say it wouldn't without adding LDFLAGS so that the compiler gets it
-> > for all object compilations.
+> > Where can i find that bug report?
 > 
-> -static is link-only flag.
-> Mostly yes, it works.
->     LDFLAGS="-static -pthread" make
+> I think you need to fill the new one.
 > 
-> make all binaries static.
+> > This is not a emerge, this is a normal system build.
 > 
-> It needs
->  sys-apps/util-linux
->  sys-libs/e2fsprogs-libs
->  sys-fs/e2fsprogs
->  sys-libs/zlib
-> to be built with USE=static-libs .
+> Yeah, gentoo has patched gcc specs so you get -D_FORTIFY_SOURCE=2
+> in gcc command line by default.
 > 
->     $ ldd btrfs
->         not a dynamic executable
->     $ ldd mkfs.btrfs 
->         not a dynamic executable
-> 
-> None of built binaries is dynamic.
+> http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo/src/patchsets/gcc/4.6.0/gentoo/10_all_default-fortify-source.patch?view=markup
 
-Yes, my point is it's not simply "LDFLAGS=-static", do you see any real
-harm in having a static tagrget?
+Actually they don't patch the specs they patch the source.
 
-Something that tries to make sure that it's actually built correctly?
+If they'd patched the specs i would have found it, i actually checked
+gcc -dumpspecs
 
-(Your approach relies on not likning any old objects since make doesn't
-honor CFLAGS/LDFLAGS as dependencies.)
+Again, is there any harm in adding this patch? Apparently other distors
+has done the same...
+
+> > > Current workaround is to pass AM_CFLAGS to make:
+> > >     make AM_CFLAGS=stuff_w/o_fortify_source
+> > > It's what gentoo's live ebuild does.
+> > 
+> > I can't see it here in the live ebuild... 
+> 
+> sys-fs/btrfs-progs/btrfs-progs-9999.ebuild:
+> ...
+> src_compile() {
+>         emake \
+>                 CC="$(tc-getCC)" \
+>                 AM_CFLAGS=-D_FILE_OFFSET_BITS=64 \
+>                 ...
+> }
+> 
+> This line overrides in-Makefiles AM_CFLAGS.
+
+Must have changed recently... Was it changed on the 4:th, 5 days ago?
+
 > -- 
 > 
 >   Sergei

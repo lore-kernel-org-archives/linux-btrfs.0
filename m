@@ -1,54 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.vapor.com ([83.220.149.2]:39029 "EHLO nitrogen.vapor.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760819Ab3BIS5V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Feb 2013 13:57:21 -0500
-Date: Sat, 9 Feb 2013 19:57:20 +0100
-From: Ian Kumlien <pomac@vapor.com>
-To: Sergei Trofimovich <slyich@gmail.com>
-Cc: Ian Kumlien <pomac@demius.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: -U_FORTIFY_SOURCE before -D
-Message-ID: <20130209185720.GR15780@pomac.netswarm.net>
-References: <1360366221-22703-1-git-send-email-pomac@demius.net>
- <20130209210206.66e2b886@sf>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130209210206.66e2b886@sf>
+Received: from mail-ea0-f176.google.com ([209.85.215.176]:35234 "EHLO
+	mail-ea0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932485Ab3BITte (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2013 14:49:34 -0500
+Received: by mail-ea0-f176.google.com with SMTP id a13so2047016eaa.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2013 11:49:33 -0800 (PST)
+Date: Sat, 9 Feb 2013 22:48:51 +0300
+From: Sergei Trofimovich <slyich@gmail.com>
+To: Ian Kumlien <pomac@vapor.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: add static compile target
+Message-ID: <20130209224851.4560edf9@sf>
+In-Reply-To: <20130209185144.GQ15780@pomac.netswarm.net>
+References: <1360365569-18996-1-git-send-email-pomac@demius.net>
+	<20130209205742.00907573@sf>
+	<20130209185144.GQ15780@pomac.netswarm.net>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_//1syMzyzFvRJlio3NJfIrfL"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 09, 2013 at 09:02:06PM +0300, Sergei Trofimovich wrote:
-> On Sat,  9 Feb 2013 00:30:21 +0100
-> Ian Kumlien <pomac@demius.net> wrote:
-> 
-> > My builds are cluttered with:
-> > <command-line>:0:0: warning: "_FORTIFY_SOURCE" redefined [enabled by
-> > default]
-> > 
-> > Which makes it hard to tell if something breaks or not.
-> 
-> > I don't know about you, but bilding with 
-> > GCC 4.7.2 on gentoo, this is a issue.
-> 
-> Unfortunately it's a gentoo specific gcc bug. I'd suggest reporting
-> it to bugs.gentoo.org. That -D by default breaks linux's perf as well
-> (due to -D_FOTIFY_SOURCE=2 -Werror in perf sources).
+--Sig_//1syMzyzFvRJlio3NJfIrfL
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Is it? There is a workaround in the android build system for compilers
-on ubuntu.
+On Sat, 9 Feb 2013 19:51:44 +0100
+Ian Kumlien <pomac@vapor.com> wrote:
 
-Where can i find that bug report?
+> On Sat, Feb 09, 2013 at 08:57:42PM +0300, Sergei Trofimovich wrote:
+> > On Sat,  9 Feb 2013 00:19:29 +0100
+> > Ian Kumlien <pomac@demius.net> wrote:
+> >=20
+> > > Sometimes, when you least expect it, a static binary is what you need=
+ to
+> > > rescue your data... Or just get a good enough handle on things to make
+> > > it work again ;)
+> > >=20
+> > > "make static" is a gift to you, dear user with filesystem problems!
+> >=20
+> > What's wrong with conventional LDFLAGS=3D-static make?
+>=20
+> That doesn't work for me, does it actually work for you?
+>=20
+> I'd say it wouldn't without adding LDFLAGS so that the compiler gets it
+> for all object compilations.
 
-This is not a emerge, this is a normal system build.
+-static is link-only flag.
+Mostly yes, it works.
+    LDFLAGS=3D"-static -pthread" make
 
-> Current workaround is to pass AM_CFLAGS to make:
->     make AM_CFLAGS=stuff_w/o_fortify_source
-> It's what gentoo's live ebuild does.
+make all binaries static.
 
-I can't see it here in the live ebuild... 
+It needs
+ sys-apps/util-linux
+ sys-libs/e2fsprogs-libs
+ sys-fs/e2fsprogs
+ sys-libs/zlib
+to be built with USE=3Dstatic-libs .
 
-> -- 
-> 
->   Sergei
+    $ ldd btrfs
+        not a dynamic executable
+    $ ldd mkfs.btrfs=20
+        not a dynamic executable
 
+None of built binaries is dynamic.
 
+--=20
+
+  Sergei
+
+--Sig_//1syMzyzFvRJlio3NJfIrfL
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iEYEARECAAYFAlEWqCMACgkQcaHudmEf86oMggCeKC7vIxs3yp5mi0TnTb75Jd5S
++GUAnRc/m/7LkHPXv9Y8kpb6EF3IP/i+
+=81uY
+-----END PGP SIGNATURE-----
+
+--Sig_//1syMzyzFvRJlio3NJfIrfL--

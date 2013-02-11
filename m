@@ -1,38 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.9]:57218 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757664Ab3BKRGP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 12:06:15 -0500
-From: Arnd Bergmann <arnd@arndb.de>
-To: dsterba@suse.cz
-Subject: Re: Oops when mounting btrfs partition
-Date: Mon, 11 Feb 2013 17:06:10 +0000
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <4028366.UQxPtEU6If@wuerfel> <201302042155.50977.arnd@arndb.de> <20130208161035.GI12339@twin.jikos.cz>
-In-Reply-To: <20130208161035.GI12339@twin.jikos.cz>
+Received: from cantor2.suse.de ([195.135.220.15]:42297 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758489Ab3BKRpv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Feb 2013 12:45:51 -0500
+Date: Mon, 11 Feb 2013 18:45:47 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: add cancellation points to defrag
+Message-ID: <20130211174547.GS12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1360453086-10683-1-git-send-email-dsterba@suse.cz>
+ <5119238A.9080306@redhat.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201302111706.10332.arnd@arndb.de>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5119238A.9080306@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 08 February 2013, David Sterba wrote:
-> On Mon, Feb 04, 2013 at 09:55:50PM +0000, Arnd Bergmann wrote:
-> > On Saturday 02 February 2013, Chris Mason wrote:
+On Mon, Feb 11, 2013 at 10:59:54AM -0600, Eric Sandeen wrote:
+> On 2/9/13 5:38 PM, David Sterba wrote:
+> > The defrag operation can take very long, we want to have a way how to
+> > cancel it. The code checks for a pending signal at safe points in the
+> > defrag loops and returns EAGAIN. This means a user can press ^C after
+> > running 'btrfs fi defrag', woks for both defrag modes, files and root.
 > > 
-> > I've done a full backup of all data now, without any further Ooops messages, but
-> > I did get these:
-> > 
-> > [66155.429029] btrfs no csum found for inode 1212139 start 23707648
+> > Returning from the command was instant in my light tests, but may take
+> > longer depending on the aging factor of the filesystem.
 > 
-> The missing csums were caused by a bug introcuded in 3.8-rc1 and fixed
-> in rc5.
+> When __btrfs_run_defrag_inode() calls btrfs_defrag_file() and gets
+> -EAGAIN back due to the cancellation, will it reset the defrag->
+> counters and call btrfs_requeue_inode_defrag()?  Is that ok?
 > 
+> Should __btrfs_run_defrag_inode explicitly check for and handle
+> an actual error returned to it?
 
-Ok, thanks for the information.
+__btrfs_run_defrag_inode -> btrfs_defrag_file applies only in case of
+autodefrag. The ioctl 'defrag' goes directly to btrfs_defrag_file and
+what you describe does not happen here.
 
-	Arnd
+(The autodefrag loop runs within kernel threads and I want to avoid
+enabling signals for them.)
+
+I agree that the negative error code should be handled in
+__btrfs_run_defrag_inode (there are two of them EINVAL and ENOMEM).
+Requeing defrag might make sense in theory in the ENOMEM case, but
+triggering more activity when the system is low on memory is not
+practical.
+
+
+david

@@ -1,52 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43589 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758626Ab3BKSOZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 13:14:25 -0500
-Date: Mon, 11 Feb 2013 19:14:23 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add cancellation points to defrag
-Message-ID: <20130211181423.GT12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1360453086-10683-1-git-send-email-dsterba@suse.cz>
- <5119238A.9080306@redhat.com>
- <20130211174547.GS12339@twin.jikos.cz>
- <51192EE4.4090403@redhat.com>
+Received: from mail-lb0-f172.google.com ([209.85.217.172]:52237 "EHLO
+	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932535Ab3BKVTm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Feb 2013 16:19:42 -0500
+Received: by mail-lb0-f172.google.com with SMTP id n8so5004212lbj.17
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2013 13:19:41 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51192EE4.4090403@redhat.com>
+In-Reply-To: <CAAeznToauNWzvwxR5giHhEpDo_ADNywEBw_wSQD4gViad3rb4g@mail.gmail.com>
+References: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
+	<CAM-0MpXTU5KUAy0tEcMu_eh5Fa75kEkUiuY8NBV-RpWp1GtypQ@mail.gmail.com>
+	<20130208213745.GC10931@localhost.localdomain>
+	<CAM-0MpWoAXaCqcGLgXGE8s-zSn0fz7n4QUommSgqH0ayi=tJNA@mail.gmail.com>
+	<CAM-0MpV83W7VeV07FLFVj-qTWXDBUROBwPHVFha38RftLOwoJQ@mail.gmail.com>
+	<CAE5mzvjh8jF5U4gWbYOw0_x1pYQ6p2MDU_W4kcp4oeP9T4wu5Q@mail.gmail.com>
+	<CAM-0MpUD-9j4zS58xCp5qu6e1SLMR9jHbQM95k9hhKbxK3FifA@mail.gmail.com>
+	<20130211160524.GA2611@localhost.localdomain>
+	<CAAeznToauNWzvwxR5giHhEpDo_ADNywEBw_wSQD4gViad3rb4g@mail.gmail.com>
+Date: Mon, 11 Feb 2013 22:19:41 +0100
+Message-ID: <CAM-0MpVb_8ZXXsfi=-3u_HaZ3xiDTod_BXSU6u_o2vHun+fBjw@mail.gmail.com>
+Subject: Re: Fwd: Current State of BTRFS
+From: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
+To: Leonidas Spyropoulos <artafinde@gmail.com>
+Cc: Josef Bacik <jbacik@fusionio.com>, cwillu <cwillu@cwillu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 11, 2013 at 11:48:20AM -0600, Eric Sandeen wrote:
-> On 2/11/13 11:45 AM, David Sterba wrote:
-> > __btrfs_run_defrag_inode -> btrfs_defrag_file applies only in case of
-> > autodefrag. The ioctl 'defrag' goes directly to btrfs_defrag_file and
-> > what you describe does not happen here.
-> 
-> Ok, was thinking that might be the case, but wasn't sure what all that
-> worker thread handled.  So I guess there should be no signals in that case.
+@Leonidas: I don't think so ... this is running on a i7 core and lzo
+is pretty damn fast.
 
-Just for the record, btrfs_run_defrag_inodes is called from cleaner
-thread, so if we had a cleaner way to inform the thread to stop the
-defrag it'd be possible to stop autodefrag as well. I tested defrag of a
-1G file with ~90k of extents (produced by overwriting random 4k ranges
-in the file) and then doing sequential rewrite of the file. Cpu and IO
-activity went expectedly high and in case of many files under defrag
-it'd be more flexible to actually control the internal defrag as well.
-Not by a signal, because in case of more mounted filesystems one cannot
-know which process to target.
-
-> > I agree that the negative error code should be handled in
-> > __btrfs_run_defrag_inode (there are two of them EINVAL and ENOMEM).
-> > Requeing defrag might make sense in theory in the ENOMEM case, but
-> > triggering more activity when the system is low on memory is not
-> > practical.
-> 
-> *nod* - but a separate issue, I guess.
-
-Yes.
-
-david
+2013/2/11 Leonidas Spyropoulos <artafinde@gmail.com>:
+> On Mon, Feb 11, 2013 at 4:05 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+>> On Fri, Feb 08, 2013 at 04:12:17PM -0700, Florian Hofmann wrote:
+>>> I ran it as root. The first times there was no output whatsoever. This
+>>> time triggering gave the SysRq : Show Blocked State line. Strange
+>>>
+>>
+>> Well that's weird, it looks like you don't have any blocked tasks, so either
+>> sysrq+w is screwing up or you are getting stuck in something CPU intensive.  Try
+>> doing sysrq+w next time it happens again and also run top and see if something
+>> is using up 100% of the CPU.  If it's something chewing up CPU then I'll tell
+>> you how to figure out what's going on.  Thanks,
+>>
+> I noticed you have the FS mounted with compress flag (compress=lzo).
+> Could it be that your CPU is bottle-necking the process?
+>
+>> Josef
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+> --
+> Caution: breathing may be hazardous to your health.
+>
+> #include <stdio.h>
+> int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}

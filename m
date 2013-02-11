@@ -1,29 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44723 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56234 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753296Ab3BLWM5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 17:12:57 -0500
-Date: Tue, 12 Feb 2013 23:12:55 +0100
+	id S1756794Ab3BKMd6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Feb 2013 07:33:58 -0500
 From: David Sterba <dsterba@suse.cz>
-To: Ilya Dryomov <idryomov@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: Re: [PATCH] btrfs: accept zero for balance usage filter
-Message-ID: <20130212221255.GC12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1360586032-22973-1-git-send-email-dsterba@suse.cz>
- <20130212163617.GA1922@zambezi.lan>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130212163617.GA1922@zambezi.lan>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] btrfs: accept zero for balance usage filter
+Date: Mon, 11 Feb 2013 13:33:52 +0100
+Message-Id: <1360586032-22973-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 12, 2013 at 06:36:17PM +0200, Ilya Dryomov wrote:
-> Josef, please don't pull this one into btrfs-next, it's been deprecated
-> by "Btrfs: allow for selecting only completely empty chunks" from me.
-> David and I discussed this on IRC, he is OK with it.
+The condition can be relaxed to accept also 0 which will delete
+unoccupied chunks and does not need space for the actual data
+relocation. Until there is an automatic empty chunk reclaim, we
+can use this as a last resort option under enospc.
 
-Ack.
+CC: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-david
+Also needs progs update, but is not required for the kernel side.
+
+ fs/btrfs/volumes.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5cbb7f4..fb871d0 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2623,7 +2623,10 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+ 		user_thresh = div_factor_fine(cache->key.offset,
+ 					      bargs->usage);
+ 
+-	if (chunk_used < user_thresh)
++	pr_debug("btrfs: chunk_used %llu, user_thresh %llu\n",
++			(unsigned long long)chunk_used,
++			(unsigned long long)user_thresh);
++	if (chunk_used <= user_thresh)
+ 		ret = 0;
+ 
+ 	btrfs_put_block_group(cache);
+-- 
+1.7.9
+

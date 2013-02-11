@@ -1,65 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f178.google.com ([209.85.220.178]:44570 "EHLO
-	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757255Ab3BKPkM (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:57175 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757844Ab3BKQF1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 10:40:12 -0500
-Received: by mail-vc0-f178.google.com with SMTP id m8so3857880vcd.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2013 07:40:11 -0800 (PST)
+	Mon, 11 Feb 2013 11:05:27 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id DFED49A041E
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2013 09:05:26 -0700 (MST)
+Date: Mon, 11 Feb 2013 11:05:24 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Florian Hofmann <fhofmann@techfak.uni-bielefeld.de>
+CC: cwillu <cwillu@cwillu.com>, Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Fwd: Current State of BTRFS
+Message-ID: <20130211160524.GA2611@localhost.localdomain>
+References: <CAM-0MpVDJ+TGC6x9JHd+wG5dsACdN4Y+JFgksQCsiwzGQYNanA@mail.gmail.com>
+ <CAM-0MpXTU5KUAy0tEcMu_eh5Fa75kEkUiuY8NBV-RpWp1GtypQ@mail.gmail.com>
+ <20130208213745.GC10931@localhost.localdomain>
+ <CAM-0MpWoAXaCqcGLgXGE8s-zSn0fz7n4QUommSgqH0ayi=tJNA@mail.gmail.com>
+ <CAM-0MpV83W7VeV07FLFVj-qTWXDBUROBwPHVFha38RftLOwoJQ@mail.gmail.com>
+ <CAE5mzvjh8jF5U4gWbYOw0_x1pYQ6p2MDU_W4kcp4oeP9T4wu5Q@mail.gmail.com>
+ <CAM-0MpUD-9j4zS58xCp5qu6e1SLMR9jHbQM95k9hhKbxK3FifA@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAMqPLXXgN6zN_wj-g-ALebeEhhujLSB4T+yrQ0Bnc9MTDeD2DQ@mail.gmail.com>
-References: <CAMqPLXVezXkqMPn3R56HTVkgPTN859fjukyr06dgtCFPme0Lug@mail.gmail.com>
-	<20130211132700.GP12339@twin.jikos.cz>
-	<CAMqPLXXgN6zN_wj-g-ALebeEhhujLSB4T+yrQ0Bnc9MTDeD2DQ@mail.gmail.com>
-Date: Mon, 11 Feb 2013 16:40:11 +0100
-Message-ID: <CAMqPLXXNacE+0H9C=o_w-x7n0XpU7X-eTWG7z6VUVi7w4ZCf=Q@mail.gmail.com>
-Subject: Re: btrfs-progs 0.20rc1.1, linux 3.7.6 - new filesystem: failed to
- recover relocation
-From: Sjon Hortensius <Sjon@hortensius.net>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAM-0MpUD-9j4zS58xCp5qu6e1SLMR9jHbQM95k9hhKbxK3FifA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After converting all my raw images to qcow2 the host no longer
-segfaults, but I still get a corrupted btrfs filesystem. Please have a
-look at this new image at
-http://home.react.nl/~sjon/bug-reports/btrfs/btrfs-corrupt.qcow2.gz
-(16 KiB) It contains a 20 GiB disk with 1 partition that btrfsck
-(again) has no problems with, but I cannot mount it.
+On Fri, Feb 08, 2013 at 04:12:17PM -0700, Florian Hofmann wrote:
+> I ran it as root. The first times there was no output whatsoever. This
+> time triggering gave the SysRq : Show Blocked State line. Strange
+>
 
-On Mon, Feb 11, 2013 at 3:08 PM, Sjon Hortensius <Sjon@hortensius.net> wrote:
-> On Mon, Feb 11, 2013 at 2:27 PM, David Sterba <dsterba@suse.cz> wrote:
->> On Mon, Feb 11, 2013 at 02:09:56PM +0100, Sjon Hortensius wrote:
->>> I have just completed installing an archlinux machine with 2 btrfs
->>> partitions, one works fine (the rootfs), the other one I cannot mount.
->>> Even after recreating the filesystem I still cannot mount it. I
->>> receive te following output in my dmesg:
->>>
->>> [ 6526.037089] device fsid 74cc8eb8-f60a-4797-9ab3-0c8ac4fe847f devid
->>> 1 transid 3 /dev/vdb1
->>> [ 6526.037763] btrfs: disk space caching is enabled
->>> [ 6526.038415] btrfs: failed to recover relocation
->>> [ 6526.039716] btrfs: open_ctree failed
->>
->> What was the size of the filesystem?
->
-> The first filesystem (of which I created the image) was ~ 20 GiB; the
-> dd dump is from a 100 MiB partition.
->
->>> btrfsck reports no errors. An image of this filesystem can be found
->>> here: http://home.react.nl/~sjon/bug-reports/btrfs/btrfs-failed-to-recover-relocation
->>> (29 KiB)
->>
->> Restoring the image produces a 4MB file, which is kind of too small,
->> there's a patch for mkfs to prevent creating such a fs. I'll get to
->> adding it to progs integration soon.
->>
->> david
->
-> While debugging this my vm-host began throwing segfaults as well, so I
-> think this problem was caused by something else (namely this:
-> https://bugzilla.redhat.com/show_bug.cgi?id=893854).
->
-> Thanks anyway.
+Well that's weird, it looks like you don't have any blocked tasks, so either
+sysrq+w is screwing up or you are getting stuck in something CPU intensive.  Try
+doing sysrq+w next time it happens again and also run top and see if something
+is using up 100% of the CPU.  If it's something chewing up CPU then I'll tell
+you how to figure out what's going on.  Thanks,
+
+Josef 

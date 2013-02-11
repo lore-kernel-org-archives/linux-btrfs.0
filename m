@@ -1,20 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:42291 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755002Ab3BKKMD (ORCPT
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:64858 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756764Ab3BKM2n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 05:12:03 -0500
-Received: by mail-wi0-f178.google.com with SMTP id o1so2887018wic.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2013 02:12:01 -0800 (PST)
-From: jean brugerolle <jbrugerolle94@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Create an iso image from several snapshot btrfs
-Date: Mon, 11 Feb 2013 11:11:46 +0100
-Message-ID: <3115554.o8BTaAJnI3@prisenote>
+	Mon, 11 Feb 2013 07:28:43 -0500
+Received: by mail-ie0-f177.google.com with SMTP id 16so7605877iea.36
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2013 04:28:43 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CACP9TETrrxT=HyvXWt+uBDXjW9o9LGvJdrAPpUmzy4nb5iWXwQ@mail.gmail.com>
+References: <CACP9TETrrxT=HyvXWt+uBDXjW9o9LGvJdrAPpUmzy4nb5iWXwQ@mail.gmail.com>
+Date: Mon, 11 Feb 2013 16:28:43 +0400
+Message-ID: <CACP9TETFnG2T3jqaOTRtLkrPV2TMiUn5bNdQoQfGEFzmwH18DA@mail.gmail.com>
+Subject: Raid1 not working as expected
+From: Alexey Polyakov <alexey.polyakov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can you create an iso image from several snapshot btrfs as does Mondo Rescue 
-or Relax-and-Recover?
+Hi!
+I created filesystem with two devices, 200gb partition each, raid1
+both for data and metadata, and 16k leaf and node size. After using it
+for day or two I got checksum error on one file. scrub reported about
+70 more similar errors. Each error was mirrored on two drives, so
+btrfsck and scrub showed everything as uncorrectable, attempts to make
+a copy of damaged file just repeated checksum error messages. I had to
+find and delete each file and then replace it by backup copy.
+I'm trying to figure out what to do next to find source of a problem.
+Can anyone help?
+
+Thanks!
+
+--
+Alexey

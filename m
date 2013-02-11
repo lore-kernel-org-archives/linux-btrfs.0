@@ -1,75 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49804 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38207 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933099Ab3BLM4e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 07:56:34 -0500
-Date: Tue, 12 Feb 2013 13:56:32 +0100
+	id S1757749Ab3BKQLl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Feb 2013 11:11:41 -0500
 From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Miao Xie <miaox@cn.fujitsu.com>, Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix the deadlock between the transaction attach
- and commit
-Message-ID: <20130212125632.GV12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5114A177.5020604@cn.fujitsu.com>
- <20130211203537.GB2611@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130211203537.GB2611@localhost.localdomain>
+To: linux-btrfs@vger.kernel.org
+Cc: alex.btrfs@zadarastorage.com, David Sterba <dsterba@suse.cz>
+Subject: [RFC][PATCH] btrfs: clean snapshots one by one
+Date: Mon, 11 Feb 2013 17:11:39 +0100
+Message-Id: <1360599099-30657-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 11, 2013 at 03:35:37PM -0500, Josef Bacik wrote:
-> or something like that.  Me and kdave reproduced by running 274 in a loop, it
-> happpened pretty quick.  I'd fix it myself but I have to leave my house for
-> people to come look at it.  If you haven't fixed this by tomorrow I'll fix it
-> up.  Thanks,
+Each time pick one dead root from the list and let the caller know if
+it's needed to continue. This should improve responsiveness during
+umount and balance which at some point wait for cleaning all currently
+queued dead roots.
 
-I found 224 stuck with this
+A new dead root is added to the end of the list, so the snapshots
+disappear in the order of deletion.
 
-[ 3840.176147] INFO: task btrfs-transacti:3692 blocked for more than 480 seconds.
-[ 3840.176157] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 3840.176162] btrfs-transacti D 0000000000000000     0  3692      2 0x00000000
-[ 3840.176172]  ffff880103a3bd98 0000000000000046 0000000000000000 ffff880103a3a010
-[ 3840.176183]  ffff880103a3a000 ffff880103a3a010 ffff880103a3a000 ffff880103a3a000
-[ 3840.176190]  ffff880103a3a000 ffff880103a3bfd8 ffff880102814800 ffffffff81a14420
-[ 3840.176200] Call Trace:
-[ 3840.176218]  [<ffffffff8108a0c9>] ? enqueue_entity+0x229/0xa40
-[ 3840.176230]  [<ffffffff815efc14>] schedule+0x24/0x70
-[ 3840.176296]  [<ffffffffa00cd0f5>] wait_current_trans+0xc5/0x110 [btrfs]
-[ 3840.176306]  [<ffffffff8106d890>] ? wake_up_bit+0x40/0x40
-[ 3840.176361]  [<ffffffffa00cfa48>] start_transaction+0x228/0x4c0 [btrfs]
-[ 3840.176400]  [<ffffffffa00cfcf2>] btrfs_attach_transaction+0x12/0x20 [btrfs]
-[ 3840.176434]  [<ffffffffa00c95c7>] transaction_kthread+0x167/0x220 [btrfs]
-[ 3840.176476]  [<ffffffffa00c9460>] ? __btree_submit_bio_start+0x10/0x10 [btrfs]
-[ 3840.176494]  [<ffffffff8106d086>] kthread+0xc6/0xd0
-[ 3840.176506]  [<ffffffff8106cfc0>] ? kthread_freezable_should_stop+0x70/0x70
-[ 3840.176514]  [<ffffffff815f82bc>] ret_from_fork+0x7c/0xb0
-[ 3840.176522]  [<ffffffff8106cfc0>] ? kthread_freezable_should_stop+0x70/0x70
-[ 3840.176528] INFO: task rm:15763 blocked for more than 480 seconds.
-[ 3840.176531] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 3840.176534] rm              D 0000000000000002     0 15763   3517 0x00000000
-[ 3840.176544]  ffff8801071b7c88 0000000000000086 00000002000280da ffff8801071b6010
-[ 3840.176551]  ffff8801071b6000 ffff8801071b6010 ffff8801071b6000 ffff8801071b6000
-[ 3840.176558]  ffff8801071b6000 ffff8801071b7fd8 ffff8800be5762c0 ffff88012af063c0
-[ 3840.176567] Call Trace:
-[ 3840.176578]  [<ffffffff8111f942>] ? __alloc_pages_nodemask+0x162/0x250
-[ 3840.176608]  [<ffffffffa00be468>] ? reserve_metadata_bytes+0x378/0x490 [btrfs]
-[ 3840.176622]  [<ffffffff815efc14>] schedule+0x24/0x70
-[ 3840.176664]  [<ffffffffa00cd0f5>] wait_current_trans+0xc5/0x110 [btrfs]
-[ 3840.176671]  [<ffffffff8106d890>] ? wake_up_bit+0x40/0x40
-[ 3840.176721]  [<ffffffffa00cfa48>] start_transaction+0x228/0x4c0 [btrfs]
-[ 3840.176769]  [<ffffffffa00cffd3>] btrfs_start_transaction+0x13/0x20 [btrfs]
-[ 3840.176812]  [<ffffffffa00d192e>] __unlink_start_trans+0x7e/0x490 [btrfs]
-[ 3840.176832]  [<ffffffff811891d7>] ? __d_lookup+0xa7/0x170
-[ 3840.176839]  [<ffffffff811432f1>] ? handle_pte_fault+0x91/0x200
-[ 3840.176849]  [<ffffffff81291fc9>] ? security_inode_permission+0x19/0x20
-[ 3840.176893]  [<ffffffffa00daca6>] btrfs_unlink+0x36/0xd0 [btrfs]
-[ 3840.176899]  [<ffffffff8117f7f4>] vfs_unlink+0xb4/0x110
-[ 3840.176905]  [<ffffffff81183f83>] do_unlinkat+0x233/0x240
-[ 3840.176912]  [<ffffffff811841ad>] sys_unlinkat+0x1d/0x40
-[ 3840.176918]  [<ffffffff815f8369>] system_call_fastpath+0x16/0x1b
+Process snapshot cleaning is now done only from the cleaner thread and
+the others wake it if needed.
 
-mounted with noatime,space_cache
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-david
+* btrfs_clean_old_snapshots is removed from the reloc loop, I don't know if this
+  is safe wrt reloc's assumptions
+
+* btrfs_run_delayed_iputs is left in place in super_commit, may get removed as
+  well because transaction commit calls it in the end
+
+* the responsiveness can be improved further if btrfs_drop_snapshot check
+  fs_closing, but this needs changes to error handling in the main reloc loop
+
+ fs/btrfs/disk-io.c     |    8 ++++--
+ fs/btrfs/relocation.c  |    3 --
+ fs/btrfs/transaction.c |   57 ++++++++++++++++++++++++++++++++----------------
+ fs/btrfs/transaction.h |    2 +-
+ 4 files changed, 44 insertions(+), 26 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 51bff86..6a02336 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1635,15 +1635,17 @@ static int cleaner_kthread(void *arg)
+ 	struct btrfs_root *root = arg;
+ 
+ 	do {
++		int again = 0;
++
+ 		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+ 		    mutex_trylock(&root->fs_info->cleaner_mutex)) {
+ 			btrfs_run_delayed_iputs(root);
+-			btrfs_clean_old_snapshots(root);
++			again = btrfs_clean_one_deleted_snapshot(root);
+ 			mutex_unlock(&root->fs_info->cleaner_mutex);
+ 			btrfs_run_defrag_inodes(root->fs_info);
+ 		}
+ 
+-		if (!try_to_freeze()) {
++		if (!try_to_freeze() && !again) {
+ 			set_current_state(TASK_INTERRUPTIBLE);
+ 			if (!kthread_should_stop())
+ 				schedule();
+@@ -3301,8 +3303,8 @@ int btrfs_commit_super(struct btrfs_root *root)
+ 
+ 	mutex_lock(&root->fs_info->cleaner_mutex);
+ 	btrfs_run_delayed_iputs(root);
+-	btrfs_clean_old_snapshots(root);
+ 	mutex_unlock(&root->fs_info->cleaner_mutex);
++	wake_up_process(root->fs_info->cleaner_kthread);
+ 
+ 	/* wait until ongoing cleanup work done */
+ 	down_write(&root->fs_info->cleanup_work_sem);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index ba5a321..ab6a718 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4060,10 +4060,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 
+ 	while (1) {
+ 		mutex_lock(&fs_info->cleaner_mutex);
+-
+-		btrfs_clean_old_snapshots(fs_info->tree_root);
+ 		ret = relocate_block_group(rc);
+-
+ 		mutex_unlock(&fs_info->cleaner_mutex);
+ 		if (ret < 0) {
+ 			err = ret;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 361fb7d..f1e3606 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -895,7 +895,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+ int btrfs_add_dead_root(struct btrfs_root *root)
+ {
+ 	spin_lock(&root->fs_info->trans_lock);
+-	list_add(&root->root_list, &root->fs_info->dead_roots);
++	list_add_tail(&root->root_list, &root->fs_info->dead_roots);
+ 	spin_unlock(&root->fs_info->trans_lock);
+ 	return 0;
+ }
+@@ -1783,31 +1783,50 @@ cleanup_transaction:
+ }
+ 
+ /*
+- * interface function to delete all the snapshots we have scheduled for deletion
++ * return < 0 if error
++ * 0 if there are no more dead_roots at the time of call
++ * 1 there are more to be processed, call me again
++ *
++ * The return value indicates there are certainly more snapshots to delete, but
++ * if there comes a new one during processing, it may return 0. We don't mind,
++ * because btrfs_commit_super will poke cleaner thread and it will process it a
++ * few seconds later.
+  */
+-int btrfs_clean_old_snapshots(struct btrfs_root *root)
++int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
+ {
+-	LIST_HEAD(list);
++	int ret;
++	int run_again = 1;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
++	if (root->fs_info->sb->s_flags & MS_RDONLY) {
++		pr_debug(G "btrfs: cleaner called for RO fs!\n");
++		return 0;
++	}
++
+ 	spin_lock(&fs_info->trans_lock);
+-	list_splice_init(&fs_info->dead_roots, &list);
++	if (list_empty(&fs_info->dead_roots)) {
++		spin_unlock(&fs_info->trans_lock);
++		return 0;
++	}
++	root = list_first_entry(&fs_info->dead_roots,
++			struct btrfs_root, root_list);
++	list_del(&root->root_list);
+ 	spin_unlock(&fs_info->trans_lock);
+ 
+-	while (!list_empty(&list)) {
+-		int ret;
+-
+-		root = list_entry(list.next, struct btrfs_root, root_list);
+-		list_del(&root->root_list);
++	pr_debug("btrfs: cleaner removing %llu\n",
++			(unsigned long long)root->objectid);
+ 
+-		btrfs_kill_all_delayed_nodes(root);
++	btrfs_kill_all_delayed_nodes(root);
+ 
+-		if (btrfs_header_backref_rev(root->node) <
+-		    BTRFS_MIXED_BACKREF_REV)
+-			ret = btrfs_drop_snapshot(root, NULL, 0, 0);
+-		else
+-			ret =btrfs_drop_snapshot(root, NULL, 1, 0);
+-		BUG_ON(ret < 0);
+-	}
+-	return 0;
++	if (btrfs_header_backref_rev(root->node) <
++			BTRFS_MIXED_BACKREF_REV)
++		ret = btrfs_drop_snapshot(root, NULL, 0, 0);
++	else
++		ret = btrfs_drop_snapshot(root, NULL, 1, 0);
++	/*
++	 * If we encounter a transaction abort during snapshot cleaning, we
++	 * don't want to crash here
++	 */
++	BUG_ON(ret < 0 && (ret != -EAGAIN || ret != -EROFS));
++	return run_again || ret == -EAGAIN;
+ }
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 69700f7..f8e9583 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -118,7 +118,7 @@ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
+ 
+ int btrfs_add_dead_root(struct btrfs_root *root);
+ int btrfs_defrag_root(struct btrfs_root *root, int cacheonly);
+-int btrfs_clean_old_snapshots(struct btrfs_root *root);
++int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root);
+ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+-- 
+1.7.9
+

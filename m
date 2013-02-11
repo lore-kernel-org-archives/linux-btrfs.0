@@ -1,96 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:25116 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758094Ab3BKRAg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Feb 2013 12:00:36 -0500
-Message-ID: <5119238A.9080306@redhat.com>
-Date: Mon, 11 Feb 2013 10:59:54 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from moutng.kundenserver.de ([212.227.17.9]:57218 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757664Ab3BKRGP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Feb 2013 12:06:15 -0500
+From: Arnd Bergmann <arnd@arndb.de>
+To: dsterba@suse.cz
+Subject: Re: Oops when mounting btrfs partition
+Date: Mon, 11 Feb 2013 17:06:10 +0000
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <4028366.UQxPtEU6If@wuerfel> <201302042155.50977.arnd@arndb.de> <20130208161035.GI12339@twin.jikos.cz>
+In-Reply-To: <20130208161035.GI12339@twin.jikos.cz>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add cancellation points to defrag
-References: <1360453086-10683-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1360453086-10683-1-git-send-email-dsterba@suse.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201302111706.10332.arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/9/13 5:38 PM, David Sterba wrote:
-> The defrag operation can take very long, we want to have a way how to
-> cancel it. The code checks for a pending signal at safe points in the
-> defrag loops and returns EAGAIN. This means a user can press ^C after
-> running 'btrfs fi defrag', woks for both defrag modes, files and root.
+On Friday 08 February 2013, David Sterba wrote:
+> On Mon, Feb 04, 2013 at 09:55:50PM +0000, Arnd Bergmann wrote:
+> > On Saturday 02 February 2013, Chris Mason wrote:
+> > 
+> > I've done a full backup of all data now, without any further Ooops messages, but
+> > I did get these:
+> > 
+> > [66155.429029] btrfs no csum found for inode 1212139 start 23707648
 > 
-> Returning from the command was instant in my light tests, but may take
-> longer depending on the aging factor of the filesystem.
-
-When __btrfs_run_defrag_inode() calls btrfs_defrag_file() and gets
--EAGAIN back due to the cancellation, will it reset the defrag->
-counters and call btrfs_requeue_inode_defrag()?  Is that ok?
-
-Should __btrfs_run_defrag_inode explicitly check for and handle
-an actual error returned to it?
-
-Thanks,
--Eric
-
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->  fs/btrfs/ctree.h       |    7 +++++++
->  fs/btrfs/ioctl.c       |    6 ++++++
->  fs/btrfs/transaction.c |    6 ++++++
->  3 files changed, 19 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 547b7b0..4b41d7c 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3745,4 +3745,11 @@ static inline int is_fstree(u64 rootid)
->  		return 1;
->  	return 0;
->  }
-> +
-> +static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
-> +{
-> +	return signal_pending(current);
-> +}
-> +
-> +
->  #endif
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 338f259..78a5580 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1206,6 +1206,12 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
->  		if (!(inode->i_sb->s_flags & MS_ACTIVE))
->  			break;
->  
-> +		if (btrfs_defrag_cancelled(root->fs_info)) {
-> +			printk(KERN_DEBUG "btrfs: defrag_file cancelled\n");
-> +			ret = -EAGAIN;
-> +			break;
-> +		}
-> +
->  		if (!should_defrag_range(inode, (u64)i << PAGE_CACHE_SHIFT,
->  					 extent_thresh, &last_len, &skip,
->  					 &defrag_end, range->flags &
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index fc03aa6..2c509c4 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -986,6 +986,12 @@ int btrfs_defrag_root(struct btrfs_root *root, int cacheonly)
->  
->  		if (btrfs_fs_closing(root->fs_info) || ret != -EAGAIN)
->  			break;
-> +
-> +		if (btrfs_defrag_cancelled(root->fs_info)) {
-> +			printk(KERN_DEBUG "btrfs: defrag_root cancelled\n");
-> +			ret = -EAGAIN;
-> +			break;
-> +		}
->  	}
->  	root->defrag_running = 0;
->  	return ret;
+> The missing csums were caused by a bug introcuded in 3.8-rc1 and fixed
+> in rc5.
 > 
 
+Ok, thanks for the information.
+
+	Arnd

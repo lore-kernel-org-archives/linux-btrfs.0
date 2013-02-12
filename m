@@ -1,54 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:38659 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758571Ab3BLPa5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 10:30:57 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 164A49A0373
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 08:30:57 -0700 (MST)
-Date: Tue, 12 Feb 2013 10:30:54 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Kaspar Schleiser <kaspar@schleiser.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clmason@fusionio.com>
-Subject: Re: experimental raid5/6 code in git
-Message-ID: <20130212153054.GA16687@shiny.masoncoding.com>
-References: <20130202160212.GB4694@shiny>
- <511A5CE1.60309@schleiser.de>
+Received: from mx1.redhat.com ([209.132.183.28]:49479 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933825Ab3BLSyx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Feb 2013 13:54:53 -0500
+Received: from int-mx12.intmail.prod.int.phx2.redhat.com (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r1CIsq0P012676
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 13:54:53 -0500
+Received: from localhost (vpn1-6-182.ams2.redhat.com [10.36.6.182])
+	by int-mx12.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r1CIspxA026600
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 13:54:52 -0500
+Date: Tue, 12 Feb 2013 18:54:49 +0000
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: What can I do to make btrfs work?
+Message-ID: <20130212185449.GA16773@rhmail.home.annexia.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <511A5CE1.60309@schleiser.de>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 12, 2013 at 08:16:49AM -0700, Kaspar Schleiser wrote:
-> Hey Chris,
-> 
-> On 02/02/2013 05:02 PM, Chris Mason wrote:
-> > Btrfs -- 604MB/s
-> > MD    -- 162MB/s
-> > 
-> > 
-> > MD -- 800MB/s very little system time
-> > Btrfs -- 3.8GB/s one CPU mostly pegged
-> 
-> > Btrfs -- 380MB/s seen by fio
-> > MD    -- 174MB/s seen by fio
-> 
-> > Creating 12 million files on Btrfs raid5 took 226 seconds, vs 485
-> > seconds on MD.
-> 
-> Do I read these numbers incorrectly, or does even this first iteration
-> of btrfs' raid5/6 code run circles around MD?
+Btrfs has been broken for me for ages.  I first reported it on this
+list 5 months ago[1].  Below is a very simple reproducer that anyone
+can run.
 
-Yes and no.  Most of the differences were on flash, and really it just
-looks like MD needs tuning for IO latency and concurrency.  There are
-some MD patches for this recently to add more threads for parity
-calculations, and these solve some throughput problems.
+*NB* before you run this, adjust /dev/sda & /dev/sda1 to point to an
+unused block device!
 
-But one thing that we've proven with btrfs is that helper threads mean
-more IO latencies.  So the MD code probably needs some short cuts to do
-the parity inline as well.
+----------------------------------------------------------------------
+#!/bin/sh -
+set -e
+while true; do
+  parted -s -- /dev/sda mklabel msdos
+  parted -s -- /dev/sda mkpart primary 64s -64s
+  wipefs -a /dev/sda1
+  mkfs.btrfs --label TEST /dev/sda1
+  mount /dev/sda1 /sysroot
+  touch /sysroot/foo
+  mkdir /sysroot/bar
+  umount /sysroot
+done
+----------------------------------------------------------------------
 
--chris
+On the latest 3.8.0 kernel, this fails immediately (at the mount), and
+on 3.7.x it usually fails after a very few iterations.  I see a
+variety of errors, but the latest kernel error is:
+
+[    8.474934] device label ROOT devid 1 transid 2 /dev/sda2
+[    8.570619] device label ROOT devid 1 transid 2 /dev/sda2
+[    8.581891] btrfs: disk space caching is enabled
+[    8.594146] btrfs bad tree block start 0 4194304
+[    8.595144] btrfs: failed to read tree root on sda2
+[    8.605308] btrfs: open_ctree failed
+
+I would really like btrfs to work.  What can I do?
+
+Rich.
+
+[1] http://article.gmane.org/gmane.comp.file-systems.btrfs/20257
+
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+Fedora Windows cross-compiler. Compile Windows programs, test, and
+build Windows installers. Over 100 libraries supported.
+http://fedoraproject.org/wiki/MinGW

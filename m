@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33849 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:33984 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933892Ab3BLTDG (ORCPT
+	with ESMTP id S932165Ab3BLTQk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 14:03:06 -0500
+	Tue, 12 Feb 2013 14:16:40 -0500
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id A57397C041F
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 12:03:05 -0700 (MST)
-Date: Tue, 12 Feb 2013 14:02:58 -0500
-From: Chris Mason <chris.mason@fusionio.com>
+	by dkim1.fusionio.com (Postfix) with ESMTP id 80C7D7C0416
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 12:16:40 -0700 (MST)
+Date: Tue, 12 Feb 2013 14:16:37 -0500
+From: Josef Bacik <jbacik@fusionio.com>
 To: "Richard W.M. Jones" <rjones@redhat.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: What can I do to make btrfs work?
-Message-ID: <20130212190258.GH16687@shiny.masoncoding.com>
+Message-ID: <20130212191637.GD2611@localhost.localdomain>
 References: <20130212185449.GA16773@rhmail.home.annexia.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -56,14 +56,7 @@ On Tue, Feb 12, 2013 at 11:54:49AM -0700, Richard W.M. Jones wrote:
 > 
 > I would really like btrfs to work.  What can I do?
 
-Hi Rich,
+Been running this in a loop for 20 minutes with no issues, is this in a virt
+guest or something?  Thanks,
 
-Can you try the btrfs-progs raid56-experimental branch.  It has this
-patch which was fixing things for me:
-
-https://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git;a=commit;h=8fe354744cd7b5c4f7a3314dcdbb5095192a032f
-
-I'm not 100% sure I've reproduced your exact problem, but I hope this is
-it.
-
--chris
+Josef

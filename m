@@ -1,51 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55391 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:48069 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760483Ab3BLPGS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 10:06:18 -0500
-Date: Tue, 12 Feb 2013 16:06:16 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
-Subject: Re: [PATCH] Btrfs-progs: check out if the swap device
-Message-ID: <20130212150616.GY12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201302120125.AA00019@FM-323941448.jp.fujitsu.com>
+	id S932342Ab3BLRz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Feb 2013 12:55:56 -0500
+Message-ID: <511A8228.9060109@redhat.com>
+Date: Tue, 12 Feb 2013 11:55:52 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201302120125.AA00019@FM-323941448.jp.fujitsu.com>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
+Subject: Re: [PATCH] Btrfs-progs: check out if the swap device
+References: <201302120125.AA00019@FM-323941448.jp.fujitsu.com> <5119C379.7080305@redhat.com> <5119D813.40101@jp.fujitsu.com>
+In-Reply-To: <5119D813.40101@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 12, 2013 at 10:25:23AM +0900, Tsutomu Itoh wrote:
-> Currently, the following commands succeed.
+On 2/11/13 11:50 PM, Tsutomu Itoh wrote:
+> Hi, Eric,
 > 
->  # cat /proc/swaps
->  Filename                                Type            Size    Used    Priority
->  /dev/sda3                               partition       8388604 0       -1
->  /dev/sdc8                               partition       9765884 0       -2
->  # mkfs.btrfs /dev/sdc8
+> Thanks for your comment.
+> 
+> On 2013/02/12 13:22, Eric Sandeen wrote:
+>> On 2/11/13 7:25 PM, Tsutomu Itoh wrote:
+>>> Currently, the following commands succeed.
+>>>
+>>>   # cat /proc/swaps
+>>>   Filename                                Type            Size    Used    Priority
+>>>   /dev/sda3                               partition       8388604 0       -1
+>>>   /dev/sdc8                               partition       9765884 0       -2
+>>>   # mkfs.btrfs /dev/sdc8
+>>>
+>>>   WARNING! - Btrfs v0.20-rc1-165-g82ac345 IS EXPERIMENTAL
+>>>   WARNING! - see http://btrfs.wiki.kernel.org before using
+>>>
+>>>   fs created label (null) on /dev/sdc8
+>>>           nodesize 4096 leafsize 4096 sectorsize 4096 size 9.31GB
+>>>   Btrfs v0.20-rc1-165-g82ac345
+>>>   # btrfs fi sh /dev/sdc8
+>>>   Label: none  uuid: fc0bdbd0-7eed-460f-b4e9-131273b66df2
+>>>           Total devices 1 FS bytes used 28.00KB
+>>>           devid    1 size 9.31GB used 989.62MB path /dev/sdc8
+>>>
+>>>   Btrfs v0.20-rc1-165-g82ac345
+>>>   #
+>>>
+>>> But we should check out the swap device. So fixed it.
+>>
+>> I guess it's nice to parse /proc/swaps to be able to offer the
+> 
+>> helpful error message in this case.  (though I wonder how long
+>> /proc/swaps will be available, and in this format?  Does it count
+>> as ABI?)
+> 
+> Umm, I don't know how long /proc/swaps will be available, too...
 
-if a swap device is backed by a file, mkfs succeeds:
+I guess it is good enough for e2fsprogs :)
 
-Filename                                Type            Size    Used
-Priority
-/dev/sda15                              partition       4232016 0 -2
-/mnt/swap                               file            10236   0 -3
+>>
+>> Your implementation looks just like the one in e2fsprogs, so it should
+>> work fine.
+> 
+> Yes.
+> 
+>>
+>> But I also wonder if overall it would be safest to open the device O_EXCL,
+>> which would fail with EBUSY if it were in use for swap, or mounted,
+>> or opened O_EXCL by another process for any other reason:
+> 
+> But details of the error cannot be notified when O_EXCL is used. and,
+> after is_swap_device(), check_mounted() check state of the mount or not.
+> 
+> So, I chose this one. (read /proc/swaps)
 
-$ mkfs.btrfs /mnt/swap
+Sure, I think your change is good.  I just think perhaps mkfs should also try
+to open O_EXCL after all those other tests, as a last safety check.
 
-WARNING! - Btrfs 0.20 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+I can take a look at the code & send that patch if it seems to make sense.
 
-SMALL VOLUME: forcing mixed metadata/data groups
-Created a data/metadata chunk of size 1048576
-fs created label (null) on /mnt/swap
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 10.00MB
-Btrfs 0.20
----
+Thanks,
+-Eric
+ 
+> Thanks,
+> Tsutomu
+> 
+>>
+>> [root@host tmp]# cat /proc/swaps
+>> Filename                Type        Size    Used    Priority
+>> /dev/sda3                               partition    2048280    822616    -1
+>>
+>> [root@host tmp]# strace -e open ./test
+>> open("/etc/ld.so.cache", O_RDONLY)      = 3
+>> open("/lib64/libc.so.6", O_RDONLY)      = 3
+>> open("/dev/sda3", O_RDWR|O_EXCL)        = -1 EBUSY (Device or resource busy)
+>> open: Device or resource busy
+>>
+>> -Eric
+>>
+>>> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+>>> ---
+>>> (this patch is based on Chris's raid56-experimental branch)
+>>> ---
+>>>   mkfs.c  | 18 ++++++++++++++++++
+>>>   utils.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>>   utils.h |  1 +
+>>>   3 files changed, 68 insertions(+)
+>>>
+>>> diff --git a/mkfs.c b/mkfs.c
+>>> index 2d3c2af..fdc3373 100644
+>>> --- a/mkfs.c
+>>> +++ b/mkfs.c
+>>> @@ -1366,6 +1366,15 @@ int main(int ac, char **av)
+>>>
+>>>       if (source_dir == 0) {
+>>>           file = av[optind++];
+>>> +        ret = is_swap_device(file);
+>>> +        if (ret < 0) {
+>>> +            fprintf(stderr, "error checking %s status\n", file);
+>>> +            exit(1);
+>>> +        }
+>>> +        if (ret == 1) {
+>>> +            fprintf(stderr, "%s is a swap device\n", file);
+>>> +            exit(1);
+>>> +        }
+>>>           ret = check_mounted(file);
+>>>           if (ret < 0) {
+>>>               fprintf(stderr, "error checking %s mount status\n", file);
+>>> @@ -1461,6 +1470,15 @@ int main(int ac, char **av)
+>>>           int old_mixed = mixed;
+>>>
+>>>           file = av[optind++];
+>>> +        ret = is_swap_device(file);
+>>> +        if (ret < 0) {
+>>> +            fprintf(stderr, "error checking %s status\n", file);
+>>> +            exit(1);
+>>> +        }
+>>> +        if (ret == 1) {
+>>> +            fprintf(stderr, "%s is a swap device\n", file);
+>>> +            exit(1);
+>>> +        }
+>>>           ret = check_mounted(file);
+>>>           if (ret < 0) {
+>>>               fprintf(stderr, "error checking %s mount status\n",
+>>> diff --git a/utils.c b/utils.c
+>>> index f9ee812..0c551a0 100644
+>>> --- a/utils.c
+>>> +++ b/utils.c
+>>> @@ -1386,3 +1386,52 @@ int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+>>>
+>>>       return 0;
+>>>   }
+>>> +
+>>> +/*
+>>> + * Checks if the swap device or not.
+>>> + * Returns 1 if the swap device, < 0 on error or 0 if not the swap device.
+>>> + */
+>>> +int is_swap_device(const char *file)
+>>> +{
+>>> +    FILE    *f;
+>>> +    struct stat    st_buf;
+>>> +    char    buf[1024];
+>>> +    char    *cp;
+>>> +    dev_t    rdev;
+>>> +    int    ret = 0;
+>>> +
+>>> +    if (stat(file, &st_buf) < 0)
+>>> +        return -errno;
+>>> +    if (!S_ISBLK(st_buf.st_mode))
+>>> +        return 0;
+>>> +
+>>> +    rdev = st_buf.st_rdev;
+>>> +
+>>> +    if ((f = fopen("/proc/swaps", "r")) == NULL)
+>>> +        return -errno;
+>>> +
+>>> +    /* skip the first line */
+>>> +    if (fgets(buf, sizeof(buf), f) == NULL)
+>>> +        goto out;
+>>> +
+>>> +    while (fgets(buf, sizeof(buf), f) != NULL) {
+>>> +        if ((cp = strchr(buf, ' ')) != NULL)
+>>> +            *cp = 0;
+>>> +        if ((cp = strchr(buf, '\t')) != NULL)
+>>> +            *cp = 0;
+>>> +        if (strcmp(file, buf) == 0) {
+>>> +            ret = 1;
+>>> +            break;
+>>> +        }
+>>> +        if ((stat(buf, &st_buf) == 0) && S_ISBLK(st_buf.st_mode) &&
+>>> +            rdev == st_buf.st_rdev) {
+>>> +            ret = 1;
+>>> +            break;
+>>> +        }
+>>> +    }
+>>> +
+>>> +out:
+>>> +    fclose(f);
+>>> +
+>>> +    return ret;
+>>> +}
+>>> diff --git a/utils.h b/utils.h
+>>> index bbcaf6a..60a0fea 100644
+>>> --- a/utils.h
+>>> +++ b/utils.h
+>>> @@ -55,6 +55,7 @@ int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+>>>           struct btrfs_ioctl_dev_info_args **di_ret);
+>>>
+>>>   char *__strncpy__null(char *dest, const char *src, size_t n);
+>>> +int is_swap_device(const char *file);
+>>>   /* Helper to always get proper size of the destination string */
+>>>   #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
+>>>
+>>>
+>>> -- 
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+> 
+> 
 
-Please add check for this as well.
-
-thanks,
-david

@@ -1,90 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f41.google.com ([74.125.83.41]:58334 "EHLO
-	mail-ee0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932375Ab3BLSN3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 13:13:29 -0500
-Received: by mail-ee0-f41.google.com with SMTP id c13so190715eek.14
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 10:13:28 -0800 (PST)
-Message-ID: <511A8680.7000400@gmail.com>
-Date: Tue, 12 Feb 2013 19:14:24 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
+Received: from mx1.redhat.com ([209.132.183.28]:20727 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752081Ab3BLU5f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Feb 2013 15:57:35 -0500
+Date: Tue, 12 Feb 2013 12:57:31 -0800
+From: Zach Brown <zab@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        chris.mason@fusionio.com
 Subject: Re: [PATCH] Btrfs-progs: check out if the swap device
+Message-ID: <20130212205731.GA11872@lenny.home.zabbo.net>
 References: <201302120125.AA00019@FM-323941448.jp.fujitsu.com>
-In-Reply-To: <201302120125.AA00019@FM-323941448.jp.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+ <5119C379.7080305@redhat.com>
+ <5119D813.40101@jp.fujitsu.com>
+ <511A8228.9060109@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <511A8228.9060109@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/12/2013 02:25 AM, Tsutomu Itoh wrote:
-> Currently, the following commands succeed.
+> > 
+> > So, I chose this one. (read /proc/swaps)
 > 
->  # cat /proc/swaps
->  Filename                                Type            Size    Used    Priority
->  /dev/sda3                               partition       8388604 0       -1
->  /dev/sdc8                               partition       9765884 0       -2
->  # mkfs.btrfs /dev/sdc8
->  
->  WARNING! - Btrfs v0.20-rc1-165-g82ac345 IS EXPERIMENTAL
->  WARNING! - see http://btrfs.wiki.kernel.org before using
->  
->  fs created label (null) on /dev/sdc8
->          nodesize 4096 leafsize 4096 sectorsize 4096 size 9.31GB
->  Btrfs v0.20-rc1-165-g82ac345
->  # btrfs fi sh /dev/sdc8
->  Label: none  uuid: fc0bdbd0-7eed-460f-b4e9-131273b66df2
->          Total devices 1 FS bytes used 28.00KB
->          devid    1 size 9.31GB used 989.62MB path /dev/sdc8
->  
->  Btrfs v0.20-rc1-165-g82ac345
->  #
-> 
-> But we should check out the swap device. So fixed it.
+> Sure, I think your change is good.  I just think perhaps mkfs should also try
+> to open O_EXCL after all those other tests, as a last safety check.
 
+I think mkfs should first try an O_EXCL open.  If that works it doesn't
+need to do any of this work to try and predict if the open will fail.
 
+After it fails it can poke around a bit to try and give nice context for
+why it failed.  But it might not be able to because /proc/swaps is
+fundamentally unreliable.
 
-> 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> ---
-> (this patch is based on Chris's raid56-experimental branch)
-> ---
->  mkfs.c  | 18 ++++++++++++++++++
->  utils.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
->  utils.h |  1 +
->  3 files changed, 68 insertions(+)
-> 
-> diff --git a/mkfs.c b/mkfs.c
-> index 2d3c2af..fdc3373 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -1366,6 +1366,15 @@ int main(int ac, char **av)
->  
->  	if (source_dir == 0) {
->  		file = av[optind++];
-> +		ret = is_swap_device(file);
-> +		if (ret < 0) {
-> +			fprintf(stderr, "error checking %s status\n", file);
-> +			exit(1);
-> +		}
+> >>>           file = av[optind++];
+> >>> +        ret = is_swap_device(file);
 
-The fact that it is not possible to perform a check shouldn't prohibit
-to run a mkfs.btrfs.
+The input string is a CWD-realtive path.  You'd at least want to use
+realpath() to get it to a canonical name.  So it's not full of junk like
+"./" and "../../.." which won't be present in /proc/swaps.
 
-It is possible to add a switch to bypass this kind of checks ? We should
-allow the user to be not limited by the fact that the check fails. I am
-thinking to a "rescue" scenario like boot in a single mode where not al
-filesystem are mounted.
+> >>> +    char    buf[1024];
 
-I am referring to all the "safety" check not this one only.
+Use PATH_MAX so it doesn't fail on absurd but allowed file names.
+(Where on earth does 1024 come from?)
 
-BR
-G.Baroncelli
+> >>> +    if ((f = fopen("/proc/swaps", "r")) == NULL)
+> >>> +        return -errno;
 
-[...]
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+As was pointed out, there's no reason this failure should stop mkfs.
+/proc/swaps might not be available or allowed and I should still be able
+to do an unpriviledged "./mkfs ./myfile; ./btrfs-debug-tree ./myfile".
+
+> >>> +        if (strcmp(file, buf) == 0) {
+> >>> +            ret = 1;
+> >>> +            break;
+> >>> +        }
+
+The command line path that lead to the inode might not be the path for
+the inode that is in /proc/swaps.  Bind mounts, chroot, name spaces,
+hard links, etc, all make it possible -- though unlikely -- that mkfs
+simply won't be able to tell if the path names are related.
+
+Also, /proc/swaps escapes whitespace in file names.  So you could be
+comparing "swap file" with "swap\040file".
+
+> >>> +        if ((stat(buf, &st_buf) == 0) && S_ISBLK(st_buf.st_mode) &&
+> >>> +            rdev == st_buf.st_rdev) {
+> >>> +            ret = 1;
+> >>> +            break;
+> >>> +        }
+
+One possible alternative is to then try and open every swap file path to
+see if it points to the same inode as the path mkfs was given.  But you
+might not have access to the paths and we're back to the unpriviledged
+failure case.
+
+- z

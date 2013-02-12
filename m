@@ -1,65 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:35800 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756983Ab3BLVm2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 16:42:28 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id D85A37C0416
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 14:42:27 -0700 (MST)
-Date: Tue, 12 Feb 2013 16:42:25 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: "Richard W.M. Jones" <rjones@redhat.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: What can I do to make btrfs work?
-Message-ID: <20130212214225.GM16687@shiny.masoncoding.com>
-References: <20130212185449.GA16773@rhmail.home.annexia.org>
- <20130212191637.GD2611@localhost.localdomain>
- <20130212210535.GC16773@rhmail.home.annexia.org>
+Received: from cantor2.suse.de ([195.135.220.15]:46596 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751990Ab3BLXP3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Feb 2013 18:15:29 -0500
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mx2.suse.de (Postfix) with ESMTP id 25FE3A52D4
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 00:15:28 +0100 (CET)
+Date: Wed, 13 Feb 2013 00:15:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Integration branch of btrfs-progs 2013-02
+Message-ID: <20130212231526.GE12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="iAL9S67WQOXgEPD9"
-In-Reply-To: <20130212210535.GC16773@rhmail.home.annexia.org>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---iAL9S67WQOXgEPD9
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
+Hi,
 
-On Tue, Feb 12, 2013 at 02:05:35PM -0700, Richard W.M. Jones wrote:
-> 
-> Yes, this is inside a very recent KVM (qemu 1.3.0), using virtio-scsi
-> as the backing disk.
+a few more fixes and enhancements: check and restore subcommands,
+support for send mode NO_FILE_DATA and partial "libifying".
 
-Ok, can you please run this on your virtio device file?  It will
-overwrite the first 256K, so don't do this on a file you care about.
+The libify patchset porting was not straightforward (based on old sources) and
+I fixed it here up to my satisfaction.  The changes were mostly small but there
+was quite a lot of them.  I'll send patches as a followup to this mail for
+review in case I did non-trivial modifications.
 
-gcc -Wall -o vtest vtest.c
+There's the patch converting build to autotools, but the conflict
+surface was too big so it's left out for now.
 
-./vtest /dev/xxx
+(The patch backlog is not yet finished.)
 
-I've attached vtest.c and gzip'd it just to make sure no mailers mess
-with my pretty code.
+Thanks for testing,
+david
 
--chris
+---
+Arvin Schnell (1):
+      btrfs-progs: make libbtrfs usable from C++
 
---iAL9S67WQOXgEPD9
-Content-Type: application/octet-stream
-Content-Disposition: attachment; filename="vtest.c.gz"
-Content-Transfer-Encoding: base64
+David Sterba (2):
+      btrfs-progs: build btrsfck to keep compatibility
+      btrfs-progs: don't link binaries to a dynamic library
 
-H4sICFu2GlEAA3Z0ZXN0LmMA3VTva9swEP1s/xW3li5O6m1KyQqjP2C0LpQNBklgsK4YxT61
-Yo5kbCVtt+V/30m2kzoJW+jHfTDIp3vvnZ5Oty9Vks1ShNPyqXxnnnIs396f+/utcGm4aUdF
-okzWDs2ULE26Bjap1BuhTE7WY4VUd5u6Rk7RRv39FIVUCFfXn6N4dP0tguDo/TH0oM+OBt3l
-9pf48noYXYw9xtiAPub7tnSZwFzLFB4KaTDWCuPJTARSGRBpCDNVyjuFKST3vIAebXX9X75X
-lvInxgYKNCe+l2kh6CfXJZwBo4BFZygM/S6LOvF9j9IplJWIPwLLzkIYRdGneBSNuxYmILAp
-p8C6QCpejkWhi2DPIfZsioeP0gR9u1wQ4cO9zBACp3XeoCoVdx6nQkXDoa0udEU5mqXUWYNa
-ijlgJfZMjeQohU54eFaf2nOqb5rfhb9oG1ogT/8jP+1xXmKnxb3QTXvsKZfKuceTsDatx+fO
-tE0va6sqispyWlTbgk6m+BRXvpG+fIynOOUZ8QSBu7Ver/uamEIYsA/H4cruZ362vUy4UprK
-yzKdcINAfLp4+q622WsJeELO9iuOpiYqhs9v+rcWIXJ67kYENApIIQTXjzQAwGg4KIk3hAbm
-aAHpNiu2dWSeIae9vNBzSVODL4HbqxMp1aFzVEGTF9LQGF5+HcJvWlwMo49jt6rmCLXbMWON
-LwTeaDPL9Zcuq00gw0o0gTO9wztrnnvtuVQ3YNfeokeLG3ZLRXcmnZ1Tk91T091TcfdU8a/U
-1uBY7VSvrOZ55Yjqp7Zx8RNejR9qFT1TKRwkrm8q7La3uKgexaxQdt4s/D/L1HUb+QYAAA==
+Eric Sandeen (2):
+      Btrfs-progs print more informative error when we fail to open a device
+      btrfs-progs: remove unused bit-radix.[ch] files
 
---iAL9S67WQOXgEPD9--
+Ian Kumlien (6):
+      Btrfs-progs: add static compile target
+      Btrfs-progs: -U_FORTIFY_SOURCE before -D
+      Btrfs-progs: Rename btrfsck.c -> cmds-check.c
+      Btrfs-progs: add btrfsck functionality to btrfs
+      Btrfs-progs: restore.c -> cmds-restore.c
+      Btrfs-progs: add restore command to btrfs
+
+Ilya Dryomov (3):
+      Btrfs-progs: move crc32c optimization init
+      Btrfs-progs: add btrfsck name detection to btrfs
+      Btrfs-progs: make 0 a valid usage filter argument
+
+Josef Bacik (3):
+      Btrfs-progs: handle errors reading fs roots
+      Btrfs-progs: fix double free of extent buffer
+      Btrfs-progs: return an error if we can't find an fs root
+
+Mark Fasheh (3):
+      btrfs-progs: Add support for BTRFS_SEND_FLAG_NO_FILE_DATA
+      btrfs-progs: libify some parts of btrfs-progs
+      btrfs-progs: add send-test
+
+Wang Sheng-Hui (1):
+      btrfs-progs: code cleanup for root-tree.c/btrfs_del_root

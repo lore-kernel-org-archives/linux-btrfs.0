@@ -1,102 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35192 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934065Ab3BMVLN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Feb 2013 16:11:13 -0500
-Date: Wed, 13 Feb 2013 13:11:12 -0800
-From: Mark Fasheh <mfasheh@suse.de>
-To: Filipe Brandenburger <filbranden@google.com>
-Cc: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Integration branch of btrfs-progs 2013-02
-Message-ID: <20130213211112.GA31017@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20130212231526.GE12339@twin.jikos.cz> <CADU+-uC64KQPys9K3yC3PG11LLCqQtSsRYDAPvKzcwsCn6MoVQ@mail.gmail.com>
+Received: from mail-la0-f41.google.com ([209.85.215.41]:65217 "EHLO
+	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751160Ab3BMVXk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Feb 2013 16:23:40 -0500
+Received: by mail-la0-f41.google.com with SMTP id fo12so1642315lab.28
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 13:23:39 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CADU+-uC64KQPys9K3yC3PG11LLCqQtSsRYDAPvKzcwsCn6MoVQ@mail.gmail.com>
+In-Reply-To: <20130213211112.GA31017@wotan.suse.de>
+References: <20130212231526.GE12339@twin.jikos.cz>
+	<CADU+-uC64KQPys9K3yC3PG11LLCqQtSsRYDAPvKzcwsCn6MoVQ@mail.gmail.com>
+	<20130213211112.GA31017@wotan.suse.de>
+Date: Wed, 13 Feb 2013 13:23:38 -0800
+Message-ID: <CADU+-uByu252tO1WpZ5hHy_AKx+_3tf=ZSmL6qFpJ_2DSAXeKw@mail.gmail.com>
+Subject: Re: Integration branch of btrfs-progs 2013-02
+From: Filipe Brandenburger <filbranden@google.com>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 12, 2013 at 07:35:31PM -0800, Filipe Brandenburger wrote:
-> Hi David,
-> 
-> I really have concerns about the libification, in particular this commit:
-> 
-> 6fc8b21 btrfs-progs: libify some parts of btrfs-progs
-> 
-> The relevant snippets that concern me below:
-> 
-> +libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
-> +              crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
-> +              extent_io.h ioctl.h ctree.h
-> ...
-> +headers = $(libbtrfs_headers)
-> ...
-> +       $(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
-> 
-> 
-> I really don't think that all those headers should be exposed to the userspace.
-> 
-> I think, to do it right, there should be a single or a few header
-> files, like /usr/include/btrfs.h or /usr/include/libbtrfs.h or
-> /usr/include/btrfs/xyz.h, that export only the parts that are really
-> necessary for an application that wants to use libbtrfs. Does it
-> really make sense to have btrfs-progs expose things like ctree.h or
-> crc32c.h or even list.h to userspace?!
+Hi Mark,
 
-It's worked in ocfs2-tools for years now. In fact on my system here I
-counted 6 other packages which expose some version of it which they took
-initially from the kernel. There's nothing inherently "kernely" about a lot
-of that stuff and it's stable code which has worked well for years. The same
-goes for the crc32 functions. Btrfs-progs needs that code to function.
-Anything linking against libbtrfs will need that too.
+On Wed, Feb 13, 2013 at 1:11 PM, Mark Fasheh <mfasheh@suse.de> wrote:
+> On Tue, Feb 12, 2013 at 07:35:31PM -0800, Filipe Brandenburger wrote:
+>> Another reason of my concerns is that I've been trying to work on
+>> exporting the equivalent of ioctl.h, with the constants and structs
+>> needed to call btrfs-specific ioctls, from the kernel side, I already
+>> submitted a patch to export it from a Linux kernel build as
+>> /usr/include/linux/btrfs.h. I believe that's the right way to export
+>> that particular information.
+>
+> I don't disagree with this goal, in fact I quite like it. Can you point us
+> to your work?
 
+Sure.
 
-> Another reason of my concerns is that I've been trying to work on
-> exporting the equivalent of ioctl.h, with the constants and structs
-> needed to call btrfs-specific ioctls, from the kernel side, I already
-> submitted a patch to export it from a Linux kernel build as
-> /usr/include/linux/btrfs.h. I believe that's the right way to export
-> that particular information.
+1) Exposing list of constants needed for ioctls from the kernel
+include files (that makes it into /usr/include/linux):
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg21678.html
 
-I don't disagree with this goal, in fact I quite like it. Can you point us
-to your work?
+I also wrote an initial patchset to use that from strace in order to
+be able to use strace on the btrfs-progs and interpret the ioctls:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg21679.html
 
+I want to resume that work, but that definitely involves shifting
+things around in header files and that looks to me like walking on
+quicksand right now so I'm a bit wary...
 
-> The other part of it is synchronizing the header files (and to some
-> extent some source files, like ctree.c) between the kernel and
-> btrfs-progs. The current version of those headers (and C source files)
-> in btrfs-progs was a copy of the same files from the kernel tree that
-> was edited to compile in userspace and then diverged from the copy of
-> the same files in the kernel. We should try to unify those (I sent
-> another patch with a suggestion of a script that would update those
-> from the kernel git tree.) Exposing those to userspace now would only
-> muddle that situation more.
-> 
-> If you think you can build a new header file that is clean and contain
-> only the prototypes and constants and structs that are strictly
-> required to export functions in a libbtrfs, then I'd fully support
-> this patchset. If it's going to export all the header files as it's
-> doing now, then I wouldn't...
+2) Merging headers and source files from kernel btrfs and btrfs-progs:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg22124.html
 
-It's impractical to expect us to hide that data when there is no official
-distribution of /usr/include/linux/btrfs.h and there are applications which
-want to be developed against this. In fact there's really no point of having
-the library if we don't expose interfaces (including necessary structure
-definitions).
+That's simply a proposal on using a script to "checkout" a certain
+version of the shared files from the kernel sources into the
+btrfs-progs git tree (think of it as a sparse git submodule.)
 
-If you look at the patch series that I posted, you'll notice that while I
-actually did some of the initial grunt work, there are patches from several
-people who were interested that the library work a certain way and I
-included their patches.
+It doesn't go into the lengths of making the kernel source compatible
+with userspace (e.g. using #ifdef's and #define's etc.) but it's a
+start having the files there so that you could try to compile them and
+see the issues.
 
-What about porting some of your work over to libbtrfs? That way we could get
-the nicely unified header files in both places.
-
-Btw, it's also trivial to add a configure check for /usr/include/linux/btrfs.h
-if different behavior on install is required. We could even add that now (if
-you have an idea of what would change) despite your patch not being upstream.
-	--Mark
-
---
-Mark Fasheh
+Cheers,
+Filipe

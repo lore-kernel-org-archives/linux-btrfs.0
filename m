@@ -1,38 +1,260 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34429 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755542Ab3BNMrV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 07:47:21 -0500
-Date: Thu, 14 Feb 2013 13:47:20 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: place ordered operations on a per transaction list
-Message-ID: <20130214124720.GK12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1360772002-8923-1-git-send-email-jbacik@fusionio.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:49378 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759820Ab3BMQG0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Feb 2013 11:06:26 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 0615F9A0361
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 09:06:26 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 0uAtrM8B7OVbi1dg (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 09:06:24 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: place ordered operations on a per transaction list
+Date: Wed, 13 Feb 2013 11:13:22 -0500
+Message-ID: <1360772002-8923-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1360772002-8923-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 13, 2013 at 11:13:22AM -0500, Josef Bacik wrote:
-> Miao made the ordered operations stuff run async, which introduced a
-> deadlock where we could get somebody (sync) racing in and committing the
-> transaction while a commit was already happening.  The new committer would
-> try and flush ordered operations which would hang waiting for the commit to
-> finish because it is done asynchronously and no longer inherits the callers
-> trans handle.  To fix this we need to make the ordered operations list a per
-> transaction list.  We can get new inodes added to the ordered operation list
-> by truncating them and then having another process writing to them, so this
-> makes it so that anybody trying to add an ordered operation _must_ start a
-> transaction in order to add itself to the list, which will keep new inodes
-> from getting added to the ordered operations list after we start committing.
-> This should fix the deadlock and also keeps us from doing a lot more work
-> than we need to during commit.  Thanks,
+Miao made the ordered operations stuff run async, which introduced a
+deadlock where we could get somebody (sync) racing in and committing the
+transaction while a commit was already happening.  The new committer would
+try and flush ordered operations which would hang waiting for the commit to
+finish because it is done asynchronously and no longer inherits the callers
+trans handle.  To fix this we need to make the ordered operations list a per
+transaction list.  We can get new inodes added to the ordered operation list
+by truncating them and then having another process writing to them, so this
+makes it so that anybody trying to add an ordered operation _must_ start a
+transaction in order to add itself to the list, which will keep new inodes
+from getting added to the ordered operations list after we start committing.
+This should fix the deadlock and also keeps us from doing a lot more work
+than we need to during commit.  Thanks,
 
-No deadlock after several hours of xfstests with various mkfs and mount
-options.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.h        |    7 -------
+ fs/btrfs/disk-io.c      |   11 ++++++-----
+ fs/btrfs/file.c         |   15 ++++++++++++++-
+ fs/btrfs/ordered-data.c |   13 ++++++++-----
+ fs/btrfs/ordered-data.h |    3 ++-
+ fs/btrfs/transaction.c  |    5 +++--
+ fs/btrfs/transaction.h  |    1 +
+ 7 files changed, 34 insertions(+), 21 deletions(-)
 
-Tested-by: David Sterba <dsterba@suse.cz>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0c4e4df..9f72ec8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1408,13 +1408,6 @@ struct btrfs_fs_info {
+ 	struct list_head delalloc_inodes;
+ 
+ 	/*
+-	 * special rename and truncate targets that must be on disk before
+-	 * we're allowed to commit.  This is basically the ext3 style
+-	 * data=ordered list.
+-	 */
+-	struct list_head ordered_operations;
+-
+-	/*
+ 	 * there is a pool of worker threads for checksumming during writes
+ 	 * and a pool for checksumming after reads.  This is because readers
+ 	 * can run with FS locks held, and the writers may be waiting for
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 52573d0..6baa77d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -56,7 +56,8 @@ static void end_workqueue_fn(struct btrfs_work *work);
+ static void free_fs_root(struct btrfs_root *root);
+ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 				    int read_only);
+-static void btrfs_destroy_ordered_operations(struct btrfs_root *root);
++static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
++					     struct btrfs_root *root);
+ static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
+ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 				      struct btrfs_root *root);
+@@ -2029,7 +2030,6 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->dead_roots);
+ 	INIT_LIST_HEAD(&fs_info->delayed_iputs);
+ 	INIT_LIST_HEAD(&fs_info->delalloc_inodes);
+-	INIT_LIST_HEAD(&fs_info->ordered_operations);
+ 	INIT_LIST_HEAD(&fs_info->caching_block_groups);
+ 	spin_lock_init(&fs_info->delalloc_lock);
+ 	spin_lock_init(&fs_info->trans_lock);
+@@ -3538,7 +3538,8 @@ void btrfs_error_commit_super(struct btrfs_root *root)
+ 	btrfs_cleanup_transaction(root);
+ }
+ 
+-static void btrfs_destroy_ordered_operations(struct btrfs_root *root)
++static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
++					     struct btrfs_root *root)
+ {
+ 	struct btrfs_inode *btrfs_inode;
+ 	struct list_head splice;
+@@ -3548,7 +3549,7 @@ static void btrfs_destroy_ordered_operations(struct btrfs_root *root)
+ 	mutex_lock(&root->fs_info->ordered_operations_mutex);
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+ 
+-	list_splice_init(&root->fs_info->ordered_operations, &splice);
++	list_splice_init(&t->ordered_operations, &splice);
+ 	while (!list_empty(&splice)) {
+ 		btrfs_inode = list_entry(splice.next, struct btrfs_inode,
+ 					 ordered_operations);
+@@ -3829,7 +3830,7 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
+ 	while (!list_empty(&list)) {
+ 		t = list_entry(list.next, struct btrfs_transaction, list);
+ 
+-		btrfs_destroy_ordered_operations(root);
++		btrfs_destroy_ordered_operations(t, root);
+ 
+ 		btrfs_destroy_ordered_extents(root);
+ 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 237bf92..848442c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1629,7 +1629,20 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
+ 	 */
+ 	if (test_and_clear_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
+ 			       &BTRFS_I(inode)->runtime_flags)) {
+-		btrfs_add_ordered_operation(NULL, BTRFS_I(inode)->root, inode);
++		struct btrfs_trans_handle *trans;
++		struct btrfs_root *root = BTRFS_I(inode)->root;
++
++		/*
++		 * We need to block on a committing transaction to keep us from
++		 * throwing a ordered operation on to the list and causing
++		 * something like sync to deadlock trying to flush out this
++		 * inode.
++		 */
++		trans = btrfs_start_transaction(root, 0);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++		btrfs_add_ordered_operation(trans, BTRFS_I(inode)->root, inode);
++		btrfs_end_transaction(trans, root);
+ 		if (inode->i_size > BTRFS_ORDERED_OPERATIONS_FLUSH_LIMIT)
+ 			filemap_flush(inode->i_mapping);
+ 	}
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index cd8f6e9..346dca0 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -612,10 +612,12 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
+  * extra check to make sure the ordered operation list really is empty
+  * before we return
+  */
+-int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
++int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root, int wait)
+ {
+ 	struct btrfs_inode *btrfs_inode;
+ 	struct inode *inode;
++	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct list_head splice;
+ 	struct list_head works;
+ 	struct btrfs_delalloc_work *work, *next;
+@@ -626,7 +628,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+ 
+ 	mutex_lock(&root->fs_info->ordered_operations_mutex);
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+-	list_splice_init(&root->fs_info->ordered_operations, &splice);
++	list_splice_init(&cur_trans->ordered_operations, &splice);
+ 	while (!list_empty(&splice)) {
+ 		btrfs_inode = list_entry(splice.next, struct btrfs_inode,
+ 				   ordered_operations);
+@@ -643,7 +645,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+ 
+ 		if (!wait)
+ 			list_add_tail(&BTRFS_I(inode)->ordered_operations,
+-				      &root->fs_info->ordered_operations);
++				      &cur_trans->ordered_operations);
+ 		spin_unlock(&root->fs_info->ordered_extent_lock);
+ 
+ 		work = btrfs_alloc_delalloc_work(inode, wait, 1);
+@@ -653,7 +655,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+ 				list_add_tail(&btrfs_inode->ordered_operations,
+ 					      &splice);
+ 			list_splice_tail(&splice,
+-					 &root->fs_info->ordered_operations);
++					 &cur_trans->ordered_operations);
+ 			spin_unlock(&root->fs_info->ordered_extent_lock);
+ 			ret = -ENOMEM;
+ 			goto out;
+@@ -1033,6 +1035,7 @@ out:
+ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root, struct inode *inode)
+ {
++	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	u64 last_mod;
+ 
+ 	last_mod = max(BTRFS_I(inode)->generation, BTRFS_I(inode)->last_trans);
+@@ -1047,7 +1050,7 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+ 	if (list_empty(&BTRFS_I(inode)->ordered_operations)) {
+ 		list_add_tail(&BTRFS_I(inode)->ordered_operations,
+-			      &root->fs_info->ordered_operations);
++			      &cur_trans->ordered_operations);
+ 	}
+ 	spin_unlock(&root->fs_info->ordered_extent_lock);
+ }
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index d523dbd..267ac99 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -197,7 +197,8 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
+ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered);
+ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
+-int btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
++int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root, int wait);
+ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root,
+ 				 struct inode *inode);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 49c79b3..149ce09 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -157,6 +157,7 @@ loop:
+ 	spin_lock_init(&cur_trans->delayed_refs.lock);
+ 
+ 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
++	INIT_LIST_HEAD(&cur_trans->ordered_operations);
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+@@ -1457,7 +1458,7 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
+ 	 * it here and no for sure that nothing new will be added
+ 	 * to the list
+ 	 */
+-	ret = btrfs_run_ordered_operations(root, 1);
++	ret = btrfs_run_ordered_operations(trans, root, 1);
+ 
+ 	return ret;
+ }
+@@ -1480,7 +1481,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	int should_grow = 0;
+ 	unsigned long now = get_seconds();
+ 
+-	ret = btrfs_run_ordered_operations(root, 0);
++	ret = btrfs_run_ordered_operations(trans, root, 0);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		btrfs_end_transaction(trans, root);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 4662821..3f772fd 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -43,6 +43,7 @@ struct btrfs_transaction {
+ 	wait_queue_head_t writer_wait;
+ 	wait_queue_head_t commit_wait;
+ 	struct list_head pending_snapshots;
++	struct list_head ordered_operations;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+ };
+-- 
+1.7.7.6
+

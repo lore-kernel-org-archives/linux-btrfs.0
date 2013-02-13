@@ -1,85 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.windriver.com ([147.11.146.13]:59563 "EHLO
-	mail1.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758990Ab3BNUuY (ORCPT
+Received: from mail-ee0-f44.google.com ([74.125.83.44]:34835 "EHLO
+	mail-ee0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934131Ab3BMU7o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 15:50:24 -0500
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-To: Chris Mason <chris.mason@fusionio.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        Paul Gortmaker <paul.gortmaker@windriver.com>
-Subject: [PATCH] btrfs: fixup/remove module.h usage as required
-Date: Thu, 14 Feb 2013 15:50:15 -0500
-Message-ID: <1360875015-4260-1-git-send-email-paul.gortmaker@windriver.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Wed, 13 Feb 2013 15:59:44 -0500
+Received: by mail-ee0-f44.google.com with SMTP id l10so894088eei.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 12:59:43 -0800 (PST)
+From: Andreas Philipp <philipp.andreas@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Andreas Philipp <philipp.andreas@gmail.com>,
+        Chris Mason <chris.mason@fusionio.com>
+Subject: [PATCH 1/2] Minor format cleanup.
+Date: Wed, 13 Feb 2013 21:59:23 +0100
+Message-Id: <d04639dcfe579f19e0ce3d4fe1fa3b034df03998.1360786936.git.philipp.andreas@gmail.com>
+In-Reply-To: <cover.1360786935.git.philipp.andreas@gmail.com>
+References: <cover.1360786935.git.philipp.andreas@gmail.com>
+In-Reply-To: <cover.1360786935.git.philipp.andreas@gmail.com>
+References: <cover.1360786935.git.philipp.andreas@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want to avoid module.h where posible, since it in turn includes
-nearly all of header space.  This means removing it where it is not
-required, and using export.h where we are only exporting symbols via
-EXPORT_SYMBOL and friends.
+Clean up the format of the definitions of BTRFS_BLOCK_GROUP_RAID5 and
+BTRFS_BLOCK_GROUP_RAID6.
 
-Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+Signed-off-by: Andreas Philipp <philipp.andreas@gmail.com>
 ---
+ fs/btrfs/ctree.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-[build tested on x86-64 and ppc on today's raid56-experimental branch]
-
- fs/btrfs/extent_io.c  | 1 -
- fs/btrfs/extent_map.c | 1 -
- fs/btrfs/sysfs.c      | 1 -
- fs/btrfs/ulist.c      | 2 +-
- 4 files changed, 1 insertion(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 907ed00..4c36420 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4,7 +4,6 @@
- #include <linux/mm.h>
- #include <linux/pagemap.h>
- #include <linux/page-flags.h>
--#include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/blkdev.h>
- #include <linux/swap.h>
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index ed88f5e..a84ae95 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -1,6 +1,5 @@
- #include <linux/err.h>
- #include <linux/slab.h>
--#include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/hardirq.h>
- #include "ctree.h"
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index daac9ae..5b326cd 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -21,7 +21,6 @@
- #include <linux/spinlock.h>
- #include <linux/completion.h>
- #include <linux/buffer_head.h>
--#include <linux/module.h>
- #include <linux/kobject.h>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e3a4fd7..ea688aa 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -954,8 +954,8 @@ struct btrfs_dev_replace_item {
+ #define BTRFS_BLOCK_GROUP_RAID1		(1ULL << 4)
+ #define BTRFS_BLOCK_GROUP_DUP		(1ULL << 5)
+ #define BTRFS_BLOCK_GROUP_RAID10	(1ULL << 6)
+-#define BTRFS_BLOCK_GROUP_RAID5    (1 << 7)
+-#define BTRFS_BLOCK_GROUP_RAID6    (1 << 8)
++#define BTRFS_BLOCK_GROUP_RAID5         (1ULL << 7)
++#define BTRFS_BLOCK_GROUP_RAID6         (1ULL << 8)
+ #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
+ #define BTRFS_NR_RAID_TYPES		7
  
- #include "ctree.h"
-diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-index 99be4c1..ddc61ca 100644
---- a/fs/btrfs/ulist.c
-+++ b/fs/btrfs/ulist.c
-@@ -5,7 +5,7 @@
-  */
- 
- #include <linux/slab.h>
--#include <linux/module.h>
-+#include <linux/export.h>
- #include "ulist.h"
- 
- /*
 -- 
-1.8.1.2
+1.7.12.4
 

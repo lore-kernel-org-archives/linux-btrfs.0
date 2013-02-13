@@ -1,72 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f48.google.com ([209.85.215.48]:56958 "EHLO
-	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752623Ab3BMDfd (ORCPT
+Received: from moltke.seatribe.se ([178.63.100.209]:36561 "EHLO
+	moltke.seatribe.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752504Ab3BMGSm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 22:35:33 -0500
-Received: by mail-la0-f48.google.com with SMTP id fq13so739622lab.21
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 19:35:32 -0800 (PST)
+	Wed, 13 Feb 2013 01:18:42 -0500
+Date: Wed, 13 Feb 2013 07:18:35 +0100 (CET)
+From: Fredrik Tolf <fredrik@dolda2000.com>
+To: Chris Murphy <lists@colorremedies.com>
+cc: linux-btrfs@vger.kernel.org
+Subject: Re: Rebalancing RAID1
+In-Reply-To: <C8ECD52F-F362-49CD-A3E3-627AF13CF180@colorremedies.com>
+Message-ID: <alpine.DEB.2.02.1302130711400.8810@shack.dolda2000.com>
+References: <alpine.DEB.2.02.1302122348460.8810@shack.dolda2000.com> <C8ECD52F-F362-49CD-A3E3-627AF13CF180@colorremedies.com>
 MIME-Version: 1.0
-In-Reply-To: <20130212231526.GE12339@twin.jikos.cz>
-References: <20130212231526.GE12339@twin.jikos.cz>
-Date: Tue, 12 Feb 2013 19:35:31 -0800
-Message-ID: <CADU+-uC64KQPys9K3yC3PG11LLCqQtSsRYDAPvKzcwsCn6MoVQ@mail.gmail.com>
-Subject: Re: Integration branch of btrfs-progs 2013-02
-From: Filipe Brandenburger <filbranden@google.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+On Tue, 12 Feb 2013, Chris Murphy wrote:
+>
+> On Feb 12, 2013, at 4:01 PM, Fredrik Tolf <fredrik@dolda2000.com> wrote:
+>>
+>> mkfs.btrfs -d raid -m raid1 /dev/sd{d,e}1
+>
+> Is that a typo? -d raid isn't valid.
 
-I really have concerns about the libification, in particular this commit:
+Ah yes, sorry. That was a typo.
 
-6fc8b21 btrfs-progs: libify some parts of btrfs-progs
+> What do you get for:
+> btrfs fi df /mnt
 
-The relevant snippets that concern me below:
+$ sudo ./btrfs fi df /mnt
+Data, RAID1: total=2.66TB, used=2.66TB
+Data: total=8.00MB, used=0.00
+System, RAID1: total=8.00MB, used=388.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=4.00GB, used=3.66GB
+Metadata: total=8.00MB, used=0.00
 
-+libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
-+              crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
-+              extent_io.h ioctl.h ctree.h
-...
-+headers = $(libbtrfs_headers)
-...
-+       $(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
+> Please report the result for each drive:
+> smartctl -a /dev/sdX
 
+As they're a bit long for mail, so see here:
+<http://www.dolda2000.com/~fredrik/tmp/smart-hde>
+<http://www.dolda2000.com/~fredrik/tmp/smart-hdi>
 
-I really don't think that all those headers should be exposed to the userspace.
+There's not a whole lot to see, though.
 
-I think, to do it right, there should be a single or a few header
-files, like /usr/include/btrfs.h or /usr/include/libbtrfs.h or
-/usr/include/btrfs/xyz.h, that export only the parts that are really
-necessary for an application that wants to use libbtrfs. Does it
-really make sense to have btrfs-progs expose things like ctree.h or
-crc32c.h or even list.h to userspace?!
+> smartctl -l scterc /dev/sdX
 
-Another reason of my concerns is that I've been trying to work on
-exporting the equivalent of ioctl.h, with the constants and structs
-needed to call btrfs-specific ioctls, from the kernel side, I already
-submitted a patch to export it from a Linux kernel build as
-/usr/include/linux/btrfs.h. I believe that's the right way to export
-that particular information.
+"Warning: device does not support SCT Error Recovery Control command"
 
-The other part of it is synchronizing the header files (and to some
-extent some source files, like ctree.c) between the kernel and
-btrfs-progs. The current version of those headers (and C source files)
-in btrfs-progs was a copy of the same files from the kernel tree that
-was edited to compile in userspace and then diverged from the copy of
-the same files in the kernel. We should try to unify those (I sent
-another patch with a suggestion of a script that would update those
-from the kernel git tree.) Exposing those to userspace now would only
-muddle that situation more.
+>> Also, why does it say that the errors are occuring /dev/sdd1? Is it just remembering the whole filesystem by that name since that's how I mounted it, or is it still trying to access the old removed instance of that disk and is that, then, why it's giving all these errors?
+>
+> I suspect bad sectors at the moment.
 
-If you think you can build a new header file that is clean and contain
-only the prototypes and constants and structs that are strictly
-required to export functions in a libbtrfs, then I'd fully support
-this patchset. If it's going to export all the header files as it's
-doing now, then I wouldn't...
+Doesn't seem that way to me; partly because of the SMART data, and partly 
+because of the errors that were logged as the drive failed:
 
-Thanks,
-Filipe
+Feb 12 16:36:49 nerv kernel: [36769.546522] ata6.00: Ata error. fis:0x21
+Feb 12 16:36:49 nerv kernel: [36769.550454] ata6: SError: { Handshk }
+Feb 12 16:36:51 nerv kernel: [36769.554129] ata6.00: failed command: WRITE FPDMA QUEUED
+Feb 12 16:36:51 nerv kernel: [36769.559375] ata6.00: cmd 61/00:00:00:ec:2e/04:00:cd:00:00/40 tag 0 ncq 524288 out
+Feb 12 16:36:51 nerv kernel: [36769.559375]          res 41/84:d0:00:98:2e/84:00:cd:00:00/40 Emask 0x10 (ATA bus error)
+Feb 12 16:36:51 nerv kernel: [36769.574831] ata6.00: status: { DRDY ERR }
+Feb 12 16:36:52 nerv kernel: [36769.578867] ata6.00: error: { ICRC ABRT }
+
+That's not typical for actual media problems, in my experience. :)
+
+What kernel version?
+
+Oh, sorry, it's 3.7.1. The system is otherwise a pretty much vanilla 
+Debian Squeeze (curreny Stable) that I've just compiled a newer kernel 
+(and btrfs-tools) for.
+
+Thanks for replying!
+
+--
+
+Fredrik Tolf

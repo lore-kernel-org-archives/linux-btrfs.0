@@ -1,50 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:60073 "EHLO mail.in8.de"
+Received: from mx1.redhat.com ([209.132.183.28]:60159 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758959Ab3BMNB1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Feb 2013 08:01:27 -0500
-Message-ID: <511B8EA6.9050806@jan-o-sch.net>
-Date: Wed, 13 Feb 2013 14:01:26 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S934002Ab3BMNKu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Feb 2013 08:10:50 -0500
+Date: Wed, 13 Feb 2013 13:10:44 +0000
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Chris Mason <chris.mason@fusionio.com>, Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: What can I do to make btrfs work?
+Message-ID: <20130213131044.GE16773@rhmail.home.annexia.org>
+References: <20130212185449.GA16773@rhmail.home.annexia.org>
+ <20130212191637.GD2611@localhost.localdomain>
+ <20130212210535.GC16773@rhmail.home.annexia.org>
+ <20130212214225.GM16687@shiny.masoncoding.com>
+ <20130213110033.GA1543@rhmail.home.annexia.org>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: Arne Jansen <sensille@gmx.net>, shyam.btrfs@gmail.com
-Subject: Re: [PATCH] Btrfs: fix crash in log replay with qgroups enabled
-References: <1360754401-24807-1-git-send-email-sensille@gmx.net>
-In-Reply-To: <1360754401-24807-1-git-send-email-sensille@gmx.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130213110033.GA1543@rhmail.home.annexia.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, February 13, 2013 at 12:20 (+0100), Arne Jansen wrote:
-> When replaying a log tree with qgroups enabled, tree_mod_log_rewind does a
-> sanity-check of the number of items against the maximum possible number.
-> It calculates that number with the nodesize of fs_root. Unfortunately
-> fs_root is not yet set at this stage. So instead use the nodesize from
-> tree_root, which is already initialized.
-> 
-> Signed-off-by: Arne Jansen <sensille@gmx.net>
-> ---
->  fs/btrfs/ctree.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index eea5da7..6eff0fa 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1222,7 +1222,7 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
->  
->  	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
->  	WARN_ON(btrfs_header_nritems(eb_rewin) >
-> -		BTRFS_NODEPTRS_PER_BLOCK(fs_info->fs_root));
-> +		BTRFS_NODEPTRS_PER_BLOCK(fs_info->tree_root));
->  
->  	return eb_rewin;
->  }
-> 
+On Wed, Feb 13, 2013 at 11:00:33AM +0000, Richard W.M. Jones wrote:
+> Will try the btrfsprogs patch next.
 
-Chris, please send this for the next patch round for 3.8, optionally with cc for
-stable (the check was added in 3.6).
+I applied this patch:
 
-Thanks,
--Jan
+https://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git;a=commitdiff_plain;h=8fe354744cd7b5c4f7a3314dcdbb5095192a032f
+
+to the version of btrfs-progs in Fedora Rawhide (currently
+"0.20.rc1.20121017git91d9eec").  Then I ran the simple reproducer, and
+the full libguestfs test suite on two machines.
+
+This does appear to fix the problem for me, but only on Rawhide.
+
+On Fedora 18 which has an older kernel, the patch does not fix the
+problem (same errors as before).
+
+Rawhide kernel: kernel-3.8.0-0.rc7.git0.1.fc19.x86_64
+
+Fedora 18 kernel: kernel-3.7.6-201.fc18.x86_64
+
+Anyway, it's an improvement so I'll make sure the patch is added to
+the Rawhide btrfs-progs package.
+
+Rich.
+
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+virt-top is 'top' for virtual machines.  Tiny program with many
+powerful monitoring features, net stats, disk stats, logging, etc.
+http://people.redhat.com/~rjones/virt-top

@@ -1,260 +1,436 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:49378 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759820Ab3BMQG0 (ORCPT
+Received: from peace.netnation.com ([204.174.223.2]:40946 "EHLO
+	peace.netnation.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760868Ab3BMVws (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Feb 2013 11:06:26 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 0615F9A0361
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 09:06:26 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 0uAtrM8B7OVbi1dg (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 09:06:24 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: place ordered operations on a per transaction list
-Date: Wed, 13 Feb 2013 11:13:22 -0500
-Message-ID: <1360772002-8923-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Wed, 13 Feb 2013 16:52:48 -0500
+Received: from sim by peace.netnation.com with local (Exim 4.80)
+	(envelope-from <becf70cc92b0b83660e97e19215de424a36ebdb3@peace.netnation.com>)
+	id 1U5jyl-00045e-Hm
+	for linux-btrfs@vger.kernel.org; Wed, 13 Feb 2013 13:34:59 -0800
+From: Simon Kirby <sim@hostway.ca>
+Date: Wed, 13 Feb 2013 15:25:31 -0600
+Subject: [PATCH] Btrfs: Include the device in most error printk()s
+To: linux-btrfs@vger.kernel.org
+Message-Id: <E1U5jyl-00045e-Hm@peace.netnation.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Miao made the ordered operations stuff run async, which introduced a
-deadlock where we could get somebody (sync) racing in and committing the
-transaction while a commit was already happening.  The new committer would
-try and flush ordered operations which would hang waiting for the commit to
-finish because it is done asynchronously and no longer inherits the callers
-trans handle.  To fix this we need to make the ordered operations list a per
-transaction list.  We can get new inodes added to the ordered operation list
-by truncating them and then having another process writing to them, so this
-makes it so that anybody trying to add an ordered operation _must_ start a
-transaction in order to add itself to the list, which will keep new inodes
-from getting added to the ordered operations list after we start committing.
-This should fix the deadlock and also keeps us from doing a lot more work
-than we need to during commit.  Thanks,
+With more than one btrfs volume mounted, it can be very difficult to find
+out which volume is hitting an error. btrfs_error() will print this, but
+it is currently rigged as more of a fatal error handler, while many of
+the printk()s are currently for debugging and yet-unhandled cases.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+This may introduce some confusion with volumes backed by multiple devices
+emitting errors referring to the primary device in the set instead of the
+one on which the error occurred.
+
+This patch just changes the functions where the device information is
+already available. Some cases remain where the root or fs_info is not
+passed to the function emitting the error.
+
+Signed-off-by: Simon Kirby <sim@hostway.ca>
 ---
- fs/btrfs/ctree.h        |    7 -------
- fs/btrfs/disk-io.c      |   11 ++++++-----
- fs/btrfs/file.c         |   15 ++++++++++++++-
- fs/btrfs/ordered-data.c |   13 ++++++++-----
- fs/btrfs/ordered-data.h |    3 ++-
- fs/btrfs/transaction.c  |    5 +++--
- fs/btrfs/transaction.h  |    1 +
- 7 files changed, 34 insertions(+), 21 deletions(-)
+ fs/btrfs/extent-tree.c      |   49 +++++++++++++++++++++++++++----------------
+ fs/btrfs/free-space-cache.c |   28 +++++++++++++++----------
+ fs/btrfs/inode.c            |   49 ++++++++++++++++++++++++++-----------------
+ fs/btrfs/print-tree.c       |    8 ++++---
+ fs/btrfs/volumes.c          |    8 ++++---
+ 5 files changed, 88 insertions(+), 54 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0c4e4df..9f72ec8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1408,13 +1408,6 @@ struct btrfs_fs_info {
- 	struct list_head delalloc_inodes;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5a3327b..6e9ebbe 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2300,7 +2300,10 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 					list_del_init(&locked_ref->cluster);
+ 					mutex_unlock(&locked_ref->mutex);
  
- 	/*
--	 * special rename and truncate targets that must be on disk before
--	 * we're allowed to commit.  This is basically the ext3 style
--	 * data=ordered list.
--	 */
--	struct list_head ordered_operations;
--
--	/*
- 	 * there is a pool of worker threads for checksumming during writes
- 	 * and a pool for checksumming after reads.  This is because readers
- 	 * can run with FS locks held, and the writers may be waiting for
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 52573d0..6baa77d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -56,7 +56,8 @@ static void end_workqueue_fn(struct btrfs_work *work);
- static void free_fs_root(struct btrfs_root *root);
- static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 				    int read_only);
--static void btrfs_destroy_ordered_operations(struct btrfs_root *root);
-+static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
-+					     struct btrfs_root *root);
- static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_root *root);
-@@ -2029,7 +2030,6 @@ int open_ctree(struct super_block *sb,
- 	INIT_LIST_HEAD(&fs_info->dead_roots);
- 	INIT_LIST_HEAD(&fs_info->delayed_iputs);
- 	INIT_LIST_HEAD(&fs_info->delalloc_inodes);
--	INIT_LIST_HEAD(&fs_info->ordered_operations);
- 	INIT_LIST_HEAD(&fs_info->caching_block_groups);
- 	spin_lock_init(&fs_info->delalloc_lock);
- 	spin_lock_init(&fs_info->trans_lock);
-@@ -3538,7 +3538,8 @@ void btrfs_error_commit_super(struct btrfs_root *root)
- 	btrfs_cleanup_transaction(root);
- }
+-					printk(KERN_DEBUG "btrfs: run_delayed_extent_op returned %d\n", ret);
++					printk(KERN_DEBUG "btrfs %s: "
++					       "run_delayed_extent_op "
++					       "returned %d\n",
++					       fs_info->sb->s_id, ret);
+ 					spin_lock(&delayed_refs->lock);
+ 					return ret;
+ 				}
+@@ -2346,7 +2349,8 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 				list_del_init(&locked_ref->cluster);
+ 				mutex_unlock(&locked_ref->mutex);
+ 			}
+-			printk(KERN_DEBUG "btrfs: run_one_delayed_ref returned %d\n", ret);
++			printk(KERN_DEBUG "btrfs %s: run_one_delayed_ref "
++			       "returned %d\n", fs_info->sb->s_id, ret);
+ 			spin_lock(&delayed_refs->lock);
+ 			return ret;
+ 		}
+@@ -2410,7 +2414,8 @@ int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
+ 	if (list_empty(&trans->qgroup_ref_list) !=
+ 	    !trans->delayed_ref_elem.seq) {
+ 		/* list without seq or seq without list */
+-		printk(KERN_ERR "btrfs: qgroup accounting update error, list is%s empty, seq is %llu\n",
++		printk(KERN_ERR "btrfs %s: qgroup accounting update error, "
++			"list is%s empty, seq is %llu\n", fs_info->sb->s_id,
+ 			list_empty(&trans->qgroup_ref_list) ? "" : " not",
+ 			trans->delayed_ref_elem.seq);
+ 		BUG();
+@@ -3543,8 +3548,8 @@ static void check_system_chunk(struct btrfs_trans_handle *trans,
  
--static void btrfs_destroy_ordered_operations(struct btrfs_root *root)
-+static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
-+					     struct btrfs_root *root)
- {
- 	struct btrfs_inode *btrfs_inode;
- 	struct list_head splice;
-@@ -3548,7 +3549,7 @@ static void btrfs_destroy_ordered_operations(struct btrfs_root *root)
- 	mutex_lock(&root->fs_info->ordered_operations_mutex);
- 	spin_lock(&root->fs_info->ordered_extent_lock);
- 
--	list_splice_init(&root->fs_info->ordered_operations, &splice);
-+	list_splice_init(&t->ordered_operations, &splice);
- 	while (!list_empty(&splice)) {
- 		btrfs_inode = list_entry(splice.next, struct btrfs_inode,
- 					 ordered_operations);
-@@ -3829,7 +3830,7 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
- 	while (!list_empty(&list)) {
- 		t = list_entry(list.next, struct btrfs_transaction, list);
- 
--		btrfs_destroy_ordered_operations(root);
-+		btrfs_destroy_ordered_operations(t, root);
- 
- 		btrfs_destroy_ordered_extents(root);
- 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 237bf92..848442c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1629,7 +1629,20 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
- 	 */
- 	if (test_and_clear_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
- 			       &BTRFS_I(inode)->runtime_flags)) {
--		btrfs_add_ordered_operation(NULL, BTRFS_I(inode)->root, inode);
-+		struct btrfs_trans_handle *trans;
-+		struct btrfs_root *root = BTRFS_I(inode)->root;
-+
-+		/*
-+		 * We need to block on a committing transaction to keep us from
-+		 * throwing a ordered operation on to the list and causing
-+		 * something like sync to deadlock trying to flush out this
-+		 * inode.
-+		 */
-+		trans = btrfs_start_transaction(root, 0);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+		btrfs_add_ordered_operation(trans, BTRFS_I(inode)->root, inode);
-+		btrfs_end_transaction(trans, root);
- 		if (inode->i_size > BTRFS_ORDERED_OPERATIONS_FLUSH_LIMIT)
- 			filemap_flush(inode->i_mapping);
+ 	thresh = get_system_chunk_thresh(root, type);
+ 	if (left < thresh && btrfs_test_opt(root, ENOSPC_DEBUG)) {
+-		printk(KERN_INFO "left=%llu, need=%llu, flags=%llu\n",
+-		       left, thresh, type);
++		printk(KERN_INFO "btrfs %s: left=%llu, need=%llu, flags=%llu\n",
++		       root->fs_info->sb->s_id, left, thresh, type);
+ 		dump_space_info(info, 0, 0);
  	}
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index cd8f6e9..346dca0 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -612,10 +612,12 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
-  * extra check to make sure the ordered operation list really is empty
-  * before we return
-  */
--int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
-+int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root, int wait)
- {
- 	struct btrfs_inode *btrfs_inode;
- 	struct inode *inode;
-+	struct btrfs_transaction *cur_trans = trans->transaction;
- 	struct list_head splice;
- 	struct list_head works;
- 	struct btrfs_delalloc_work *work, *next;
-@@ -626,7 +628,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
  
- 	mutex_lock(&root->fs_info->ordered_operations_mutex);
- 	spin_lock(&root->fs_info->ordered_extent_lock);
--	list_splice_init(&root->fs_info->ordered_operations, &splice);
-+	list_splice_init(&cur_trans->ordered_operations, &splice);
- 	while (!list_empty(&splice)) {
- 		btrfs_inode = list_entry(splice.next, struct btrfs_inode,
- 				   ordered_operations);
-@@ -643,7 +645,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+@@ -5155,8 +5160,9 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_search_slot(trans, extent_root,
+ 						&key, path, -1, 1);
+ 			if (ret) {
+-				printk(KERN_ERR "umm, got %d back from search"
+-				       ", was looking for %llu\n", ret,
++				printk(KERN_ERR "btrfs %s: umm, got %d back "
++				       "from search, was looking for %llu\n",
++				       info->sb->s_id, ret,
+ 				       (unsigned long long)bytenr);
+ 				if (ret > 0)
+ 					btrfs_print_leaf(extent_root,
+@@ -5171,8 +5177,9 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	} else if (ret == -ENOENT) {
+ 		btrfs_print_leaf(extent_root, path->nodes[0]);
+ 		WARN_ON(1);
+-		printk(KERN_ERR "btrfs unable to find ref byte nr %llu "
++		printk(KERN_ERR "btrfs %s: unable to find ref byte nr %llu "
+ 		       "parent %llu root %llu  owner %llu offset %llu\n",
++		       info->sb->s_id,
+ 		       (unsigned long long)bytenr,
+ 		       (unsigned long long)parent,
+ 		       (unsigned long long)root_objectid,
+@@ -5205,8 +5212,8 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_search_slot(trans, extent_root, &key, path,
+ 					-1, 1);
+ 		if (ret) {
+-			printk(KERN_ERR "umm, got %d back from search"
+-			       ", was looking for %llu\n", ret,
++			printk(KERN_ERR "btrfs %s: umm, got %d back from search"
++			       ", was looking for %llu\n", info->sb->s_id, ret,
+ 			       (unsigned long long)bytenr);
+ 			btrfs_print_leaf(extent_root, path->nodes[0]);
+ 		}
+@@ -5576,7 +5583,8 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
  
- 		if (!wait)
- 			list_add_tail(&BTRFS_I(inode)->ordered_operations,
--				      &root->fs_info->ordered_operations);
-+				      &cur_trans->ordered_operations);
- 		spin_unlock(&root->fs_info->ordered_extent_lock);
+ 	space_info = __find_space_info(root->fs_info, data);
+ 	if (!space_info) {
+-		printk(KERN_ERR "No space info for %llu\n", data);
++		printk(KERN_ERR "btrfs %s: No space info for %llu\n",
++			root->fs_info->sb->s_id, data);
+ 		return -ENOSPC;
+ 	}
  
- 		work = btrfs_alloc_delalloc_work(inode, wait, 1);
-@@ -653,7 +655,7 @@ int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
- 				list_add_tail(&btrfs_inode->ordered_operations,
- 					      &splice);
- 			list_splice_tail(&splice,
--					 &root->fs_info->ordered_operations);
-+					 &cur_trans->ordered_operations);
- 			spin_unlock(&root->fs_info->ordered_extent_lock);
- 			ret = -ENOMEM;
+@@ -5993,8 +6001,10 @@ again:
+ 			struct btrfs_space_info *sinfo;
+ 
+ 			sinfo = __find_space_info(root->fs_info, data);
+-			printk(KERN_ERR "btrfs allocation failed flags %llu, "
+-			       "wanted %llu\n", (unsigned long long)data,
++			printk(KERN_ERR "btrfs %s: allocation failed "
++			       "flags %llu, wanted %llu\n",
++			       root->fs_info->sb->s_id,
++			       (unsigned long long)data,
+ 			       (unsigned long long)num_bytes);
+ 			if (sinfo)
+ 				dump_space_info(sinfo, num_bytes, 1);
+@@ -6014,7 +6024,8 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
+ 
+ 	cache = btrfs_lookup_block_group(root->fs_info, start);
+ 	if (!cache) {
+-		printk(KERN_ERR "Unable to find block group for %llu\n",
++		printk(KERN_ERR "btrfs %s: Unable to find block group "
++		       "for %llu\n", root->fs_info->sb->s_id,
+ 		       (unsigned long long)start);
+ 		return -ENOSPC;
+ 	}
+@@ -6110,8 +6121,9 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 
+ 	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+-		printk(KERN_ERR "btrfs update block group failed for %llu "
+-		       "%llu\n", (unsigned long long)ins->objectid,
++		printk(KERN_ERR "btrfs %s: update block group failed for "
++		       "%llu %llu\n", fs_info->sb->s_id,
++		       (unsigned long long)ins->objectid,
+ 		       (unsigned long long)ins->offset);
+ 		BUG();
+ 	}
+@@ -6174,8 +6186,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+-		printk(KERN_ERR "btrfs update block group failed for %llu "
+-		       "%llu\n", (unsigned long long)ins->objectid,
++		printk(KERN_ERR "btrfs %s: update block group failed for "
++		       "%llu %llu\n", fs_info->sb->s_id,
++		       (unsigned long long)ins->objectid,
+ 		       (unsigned long long)ins->offset);
+ 		BUG();
+ 	}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0be7a87..ce7c502 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -104,7 +104,8 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (!((BTRFS_I(inode)->flags & flags) == flags)) {
+-		printk(KERN_INFO "Old style space inode found, converting.\n");
++		printk(KERN_INFO "btrfs %s: Old style space inode found, "
++		       "converting.\n", root->fs_info->sb->s_id);
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM |
+ 			BTRFS_INODE_NODATACOW;
+ 		block_group->disk_cache_state = BTRFS_DC_CLEAR;
+@@ -833,8 +834,9 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 
+ 	if (!matched) {
+ 		__btrfs_remove_free_space_cache(ctl);
+-		printk(KERN_ERR "block group %llu has an wrong amount of free "
+-		       "space\n", block_group->key.objectid);
++		printk(KERN_ERR "btrfs %s: block group %llu has wrong amount "
++		       "of free space\n", fs_info->sb->s_id,
++		       block_group->key.objectid);
+ 		ret = -1;
+ 	}
+ out:
+@@ -845,8 +847,9 @@ out:
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ 
+-		printk(KERN_ERR "btrfs: failed to load free space cache "
+-		       "for block group %llu\n", block_group->key.objectid);
++		printk(KERN_ERR "btrfs %s: failed to load free space cache "
++		       "for block group %llu\n", fs_info->sb->s_id,
++		       block_group->key.objectid);
+ 	}
+ 
+ 	iput(inode);
+@@ -1104,8 +1107,9 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ #ifdef DEBUG
+-		printk(KERN_ERR "btrfs: failed to write free space cache "
+-		       "for block group %llu\n", block_group->key.objectid);
++		printk(KERN_ERR "btrfs %s: failed to write free space cache "
++		       "for block group %llu\n", root->fs_info->sb->s_id,
++		       block_group->key.objectid);
+ #endif
+ 	}
+ 
+@@ -2891,8 +2895,9 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 	ret = __load_free_space_cache(root, inode, ctl, path, 0);
+ 
+ 	if (ret < 0)
+-		printk(KERN_ERR "btrfs: failed to load free ino cache for "
+-		       "root %llu\n", root->root_key.objectid);
++		printk(KERN_ERR "btrfs %s: failed to load free ino cache for "
++		       "root %llu\n", fs_info->sb->s_id,
++		       root->root_key.objectid);
+ out_put:
+ 	iput(inode);
+ out:
+@@ -2919,8 +2924,9 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	if (ret) {
+ 		btrfs_delalloc_release_metadata(inode, inode->i_size);
+ #ifdef DEBUG
+-		printk(KERN_ERR "btrfs: failed to write free ino cache "
+-		       "for root %llu\n", root->root_key.objectid);
++		printk(KERN_ERR "btrfs %s: failed to write free ino cache "
++		       "for root %llu\n", root->fs_info->sb->s_id,
++		       root->root_key.objectid);
+ #endif
+ 	}
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index cc93b23..88d7c07 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2106,8 +2106,9 @@ good:
+ 	return 0;
+ 
+ zeroit:
+-	printk_ratelimited(KERN_INFO "btrfs csum failed ino %llu off %llu csum %u "
+-		       "private %llu\n",
++	printk_ratelimited(KERN_INFO "btrfs %s: csum failed ino %llu "
++		       "off %llu csum %u private %llu\n",
++		       root->fs_info->sb->s_id,
+ 		       (unsigned long long)btrfs_ino(page->mapping->host),
+ 		       (unsigned long long)start, csum,
+ 		       (unsigned long long)private);
+@@ -2396,8 +2397,9 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		 */
+ 
+ 		if (found_key.offset == last_objectid) {
+-			printk(KERN_ERR "btrfs: Error removing orphan entry, "
+-			       "stopping orphan cleanup\n");
++			printk(KERN_ERR "btrfs %s: Error removing orphan "
++			       " entry, stopping orphan cleanup\n",
++			       root->fs_info->sb->s_id);
+ 			ret = -EINVAL;
  			goto out;
-@@ -1033,6 +1035,7 @@ out:
- void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root, struct inode *inode)
- {
-+	struct btrfs_transaction *cur_trans = trans->transaction;
- 	u64 last_mod;
- 
- 	last_mod = max(BTRFS_I(inode)->generation, BTRFS_I(inode)->last_trans);
-@@ -1047,7 +1050,7 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 	spin_lock(&root->fs_info->ordered_extent_lock);
- 	if (list_empty(&BTRFS_I(inode)->ordered_operations)) {
- 		list_add_tail(&BTRFS_I(inode)->ordered_operations,
--			      &root->fs_info->ordered_operations);
-+			      &cur_trans->ordered_operations);
+ 		}
+@@ -2454,8 +2456,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				ret = PTR_ERR(trans);
+ 				goto out;
+ 			}
+-			printk(KERN_ERR "auto deleting %Lu\n",
+-			       found_key.objectid);
++			printk(KERN_ERR "btrfs %s: auto deleting %Lu\n",
++			       root->fs_info->sb->s_id, found_key.objectid);
+ 			ret = btrfs_del_orphan_item(trans, root,
+ 						    found_key.objectid);
+ 			BUG_ON(ret); /* -ENOMEM or corruption (JDM: Recheck) */
+@@ -2516,13 +2518,16 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
  	}
- 	spin_unlock(&root->fs_info->ordered_extent_lock);
- }
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index d523dbd..267ac99 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -197,7 +197,8 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
- int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 				struct btrfs_ordered_extent *ordered);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
--int btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
-+int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root, int wait);
- void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
- 				 struct inode *inode);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 49c79b3..149ce09 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -157,6 +157,7 @@ loop:
- 	spin_lock_init(&cur_trans->delayed_refs.lock);
  
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
-+	INIT_LIST_HEAD(&cur_trans->ordered_operations);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-@@ -1457,7 +1458,7 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
- 	 * it here and no for sure that nothing new will be added
- 	 * to the list
- 	 */
--	ret = btrfs_run_ordered_operations(root, 1);
-+	ret = btrfs_run_ordered_operations(trans, root, 1);
+ 	if (nr_unlink)
+-		printk(KERN_INFO "btrfs: unlinked %d orphans\n", nr_unlink);
++		printk(KERN_INFO "btrfs %s: unlinked %d orphans\n",
++		       root->fs_info->sb->s_id, nr_unlink);
+ 	if (nr_truncate)
+-		printk(KERN_INFO "btrfs: truncated %d orphans\n", nr_truncate);
++		printk(KERN_INFO "btrfs %s: truncated %d orphans\n",
++		       root->fs_info->sb->s_id, nr_truncate);
  
+ out:
+ 	if (ret)
+-		printk(KERN_CRIT "btrfs: could not do orphan cleanup %d\n", ret);
++		printk(KERN_CRIT "btrfs %s: could not do orphan cleanup %d\n",
++		       root->fs_info->sb->s_id, ret);
+ 	btrfs_free_path(path);
  	return ret;
  }
-@@ -1480,7 +1481,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	int should_grow = 0;
- 	unsigned long now = get_seconds();
- 
--	ret = btrfs_run_ordered_operations(root, 0);
-+	ret = btrfs_run_ordered_operations(trans, root, 0);
+@@ -2863,8 +2868,9 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_del_inode_ref(trans, root, name, name_len, ino,
+ 				  dir_ino, &index);
  	if (ret) {
+-		printk(KERN_INFO "btrfs failed to delete reference to %.*s, "
+-		       "inode %llu parent %llu\n", name_len, name,
++		printk(KERN_INFO "btrfs %s: failed to delete reference to "
++		       "%.*s, inode %llu parent %llu\n",
++		       root->fs_info->sb->s_id, name_len, name,
+ 		       (unsigned long long)ino, (unsigned long long)dir_ino);
  		btrfs_abort_transaction(trans, root, ret);
- 		btrfs_end_transaction(trans, root);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 4662821..3f772fd 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -43,6 +43,7 @@ struct btrfs_transaction {
- 	wait_queue_head_t writer_wait;
- 	wait_queue_head_t commit_wait;
- 	struct list_head pending_snapshots;
-+	struct list_head ordered_operations;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
- };
+ 		goto err;
+@@ -3934,8 +3940,9 @@ void btrfs_evict_inode(struct inode *inode)
+ 			ret = btrfs_block_rsv_migrate(global_rsv, rsv, min_size);
+ 
+ 		if (ret) {
+-			printk(KERN_WARNING "Could not get space for a "
+-			       "delete, will truncate on mount %d\n", ret);
++			printk(KERN_WARNING "btrfs %s: Could not get space "
++			       "for a delete, will truncate on mount %d\n",
++			       root->fs_info->sb->s_id, ret);
+ 			btrfs_orphan_del(NULL, inode);
+ 			btrfs_free_block_rsv(root, rsv);
+ 			goto no_delete;
+@@ -5533,8 +5540,9 @@ not_found_em:
+ insert:
+ 	btrfs_release_path(path);
+ 	if (em->start > start || extent_map_end(em) <= start) {
+-		printk(KERN_ERR "Btrfs: bad extent! em: [%llu %llu] passed "
+-		       "[%llu %llu]\n", (unsigned long long)em->start,
++		printk(KERN_ERR "btrfs %s: bad extent! em: [%llu %llu] passed "
++		       "[%llu %llu]\n", root->fs_info->sb->s_id,
++		       (unsigned long long)em->start,
+ 		       (unsigned long long)em->len,
+ 		       (unsigned long long)start,
+ 		       (unsigned long long)len);
+@@ -6239,8 +6247,9 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+ 			flush_dcache_page(bvec->bv_page);
+ 			if (csum != private) {
+ failed:
+-				printk(KERN_ERR "btrfs csum failed ino %llu off"
+-				      " %llu csum %u private %u\n",
++				printk(KERN_ERR "btrfs %s: csum failed ino "
++				      " %llu off  %llu csum %u private %u\n",
++				      root->fs_info->sb->s_id,
+ 				      (unsigned long long)btrfs_ino(inode),
+ 				      (unsigned long long)start,
+ 				      csum, (unsigned)private);
+@@ -7186,7 +7195,8 @@ void btrfs_destroy_inode(struct inode *inode)
+ 
+ 	if (test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 		     &BTRFS_I(inode)->runtime_flags)) {
+-		printk(KERN_INFO "BTRFS: inode %llu still on the orphan list\n",
++		printk(KERN_INFO "btrfs %s: inode %llu still on the "
++		       "orphan list\n", root->fs_info->sb->s_id,
+ 		       (unsigned long long)btrfs_ino(inode));
+ 		atomic_dec(&root->orphan_inodes);
+ 	}
+@@ -7196,8 +7206,9 @@ void btrfs_destroy_inode(struct inode *inode)
+ 		if (!ordered)
+ 			break;
+ 		else {
+-			printk(KERN_ERR "btrfs found ordered "
++			printk(KERN_ERR "btrfs %s: found ordered "
+ 			       "extent %llu %llu on inode cleanup\n",
++			       root->fs_info->sb->s_id,
+ 			       (unsigned long long)ordered->file_offset,
+ 			       (unsigned long long)ordered->len);
+ 			btrfs_remove_ordered_extent(inode, ordered);
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index 50d95fd..9d70a0b 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -176,7 +176,8 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 
+ 	nr = btrfs_header_nritems(l);
+ 
+-	printk(KERN_INFO "leaf %llu total ptrs %d free space %d\n",
++	printk(KERN_INFO "btrfs %s: leaf %llu total ptrs %d free space %d\n",
++		root->fs_info->sb->s_id,
+ 		(unsigned long long)btrfs_header_bytenr(l), nr,
+ 		btrfs_leaf_free_space(root, l));
+ 	for (i = 0 ; i < nr ; i++) {
+@@ -318,9 +319,10 @@ void btrfs_print_tree(struct btrfs_root *root, struct extent_buffer *c)
+ 		btrfs_print_leaf(root, c);
+ 		return;
+ 	}
+-	printk(KERN_INFO "node %llu level %d total ptrs %d free spc %u\n",
++	printk(KERN_INFO "btrfs %s: node %llu level %d total ptrs %d free spc %u\n",
++	       root->fs_info->sb->s_id,
+ 	       (unsigned long long)btrfs_header_bytenr(c),
+-	      level, nr,
++	       level, nr,
+ 	       (u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr);
+ 	for (i = 0; i < nr; i++) {
+ 		btrfs_node_key_to_cpu(c, &key, i);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5cbb7f4..1b4ef28 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4095,7 +4095,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	read_unlock(&em_tree->lock);
+ 
+ 	if (!em) {
+-		printk(KERN_CRIT "btrfs: unable to find logical %llu len %llu\n",
++		printk(KERN_CRIT "btrfs %s: unable to find logical %llu "
++		       "len %llu\n", fs_info->sb->s_id,
+ 		       (unsigned long long)logical,
+ 		       (unsigned long long)*length);
+ 		BUG();
+@@ -4846,8 +4847,9 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 
+ 	total_devs = bbio->num_stripes;
+ 	if (map_length < length) {
+-		printk(KERN_CRIT "btrfs: mapping failed logical %llu bio len %llu "
+-		       "len %llu\n", (unsigned long long)logical,
++		printk(KERN_CRIT "btrfs %s: mapping failed logical %llu "
++		       "bio len %llu len %llu\n", root->fs_info->sb->s_id,
++		       (unsigned long long)logical,
+ 		       (unsigned long long)length,
+ 		       (unsigned long long)map_length);
+ 		BUG();
 -- 
-1.7.7.6
+1.7.10.4
 

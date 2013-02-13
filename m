@@ -1,84 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36167 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757828Ab3BLWKn (ORCPT
+Received: from mail-ee0-f42.google.com ([74.125.83.42]:40910 "EHLO
+	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934131Ab3BMU7m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 17:10:43 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id AA6D77C0416
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2013 15:10:42 -0700 (MST)
-Date: Tue, 12 Feb 2013 17:10:40 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, <miaox@cn.fujitsu.com>
-Subject: [RFC] fix async ordered operations flush deadlock
-Message-ID: <20130212221040.GA1247@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+	Wed, 13 Feb 2013 15:59:42 -0500
+Received: by mail-ee0-f42.google.com with SMTP id b47so877176eek.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2013 12:59:41 -0800 (PST)
+From: Andreas Philipp <philipp.andreas@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Andreas Philipp <philipp.andreas@gmail.com>,
+        Chris Mason <chris.mason@fusionio.com>
+Subject: [PATCH 0/2] Two small patches for the raid56 code
+Date: Wed, 13 Feb 2013 21:59:22 +0100
+Message-Id: <cover.1360786935.git.philipp.andreas@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-So btrfs_commit_transaction does this
+The last few days I have been playing around with Chris Mason's
+raid56-experimental branch (Thanks!) and discovered two minor issues.
 
-ret = btrfs_run_ordered_operations(root, 0);
-
-which async flushes all inodes on the ordered operations list.  The problem with
-this is that we wait for this flushing to finish, so we end up with this
-
-Task 1				Task 2			Task 3
-
-start transaction
-				set trans_no_join
-				wait forever
-commit
-btrfs_run_ordered_operations
-	async flush inode				cow_file_range
-								join_transaction
-								wait forever
-	wait forever
-
-Task1 is waiting for the flushint to finish, task 2 is waiting for task 1 to
-give up its num_writers, and task 3 is waiting to join the transaction.  This
-used to work fine because the flushing was done inline so we just took on the
-current journal info of the guy who managed to race in and get a ref on the
-transaction, but now we've gotten rid of that by doing it async.  Here is a
-basic bullshit patch that just moves the flushing below the "is somebody else
-committing right now?" logic which will hopefully fix the problem, but it's a
-shit patch but its 5:10 and I need to go make Liam dinner.  I'll try to think of
-a better solution between now and tomorrow, but I'm open to suggestions.
 Thanks,
+Andreas
 
-Josef
+Andreas Philipp (2):
+  Minor format cleanup.
+  Correct allowed raid levels on balance.
 
+ fs/btrfs/ctree.h   |  4 ++--
+ fs/btrfs/volumes.c | 11 +++++------
+ 2 files changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 49c79b3..8c50495 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1480,13 +1480,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	int should_grow = 0;
- 	unsigned long now = get_seconds();
- 
--	ret = btrfs_run_ordered_operations(root, 0);
--	if (ret) {
--		btrfs_abort_transaction(trans, root, ret);
--		btrfs_end_transaction(trans, root);
--		return ret;
--	}
--
- 	/* Stop the commit early if ->aborted is set */
- 	if (unlikely(ACCESS_ONCE(cur_trans->aborted))) {
- 		ret = cur_trans->aborted;
-@@ -1541,6 +1534,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	spin_unlock(&cur_trans->commit_lock);
- 	wake_up(&root->fs_info->transaction_blocked_wait);
- 
-+	ret = btrfs_run_ordered_operations(root, 0);
-+	if (ret)
-+		goto cleanup_transaction;
-+
- 	spin_lock(&root->fs_info->trans_lock);
- 	if (cur_trans->list.prev != &root->fs_info->trans_list) {
- 		prev_trans = list_entry(cur_trans->list.prev,
+-- 
+1.7.12.4
+

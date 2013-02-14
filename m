@@ -1,46 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53188 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:33517 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759869Ab3BLOSD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Feb 2013 09:18:03 -0500
-Date: Tue, 12 Feb 2013 15:18:01 +0100
+	id S934317Ab3BNMXB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Feb 2013 07:23:01 -0500
+Date: Thu, 14 Feb 2013 13:22:59 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Sergei Trofimovich <slyich@gmail.com>
-Cc: Ian Kumlien <pomac@demius.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: -U_FORTIFY_SOURCE before -D
-Message-ID: <20130212141801.GX12339@twin.jikos.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] Btrfs-progs: check out if the swap device
+Message-ID: <20130214122259.GI12339@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1360366221-22703-1-git-send-email-pomac@demius.net>
- <20130209210206.66e2b886@sf>
+References: <201302140753.AA00021@FM-323941448.jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130209210206.66e2b886@sf>
+In-Reply-To: <201302140753.AA00021@FM-323941448.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 09, 2013 at 09:02:06PM +0300, Sergei Trofimovich wrote:
-> On Sat,  9 Feb 2013 00:30:21 +0100
-> Ian Kumlien <pomac@demius.net> wrote:
-> 
-> > My builds are cluttered with:
-> > <command-line>:0:0: warning: "_FORTIFY_SOURCE" redefined [enabled by
-> > default]
-> > 
-> > Which makes it hard to tell if something breaks or not.
-> 
-> > I don't know about you, but bilding with 
-> > GCC 4.7.2 on gentoo, this is a issue.
-> 
-> Unfortunately it's a gentoo specific gcc bug. I'd suggest reporting
-> it to bugs.gentoo.org. That -D by default breaks linux's perf as well
-> (due to -D_FOTIFY_SOURCE=2 -Werror in perf sources).
-> 
-> Current workaround is to pass AM_CFLAGS to make:
->     make AM_CFLAGS=stuff_w/o_fortify_source
-> It's what gentoo's live ebuild does.
+On Thu, Feb 14, 2013 at 04:53:04PM +0900, Tsutomu Itoh wrote:
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-The fortify flag was added without a special reason, it's good to have
-it. I'm ok with adding the forced undefine to keep the build quiet and
-working as specified in the Makefile.
+Worked for me here in these situations (ie. mkfs failed, filenames
+specified given as simple path or with mixture of ./ and ../ leading to
+the device):
 
-david
+* mounted /dev/sdx
+* /dev/sdx part of a multi-device mounted fs
+* /dev/sdx swap device
+* file as a swap device
+* swap files with funny names: \ \040 \134 \888 <space>
+
+Tested-by: David Sterba <dsterba@suse.cz>

@@ -1,54 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:15159 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1761513Ab3BNSFk convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 13:05:40 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: Rebalancing RAID1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130214085925.GD28997@carfax.org.uk>
-Date: Thu, 14 Feb 2013 11:05:39 -0700
-Cc: Fredrik Tolf <fredrik@dolda2000.com>, linux-btrfs@vger.kernel.org
-Message-Id: <19ABBC76-F774-4225-87A4-73A4D546F53F@colorremedies.com>
-References: <alpine.DEB.2.02.1302122348460.8810@shack.dolda2000.com> <C8ECD52F-F362-49CD-A3E3-627AF13CF180@colorremedies.com> <alpine.DEB.2.02.1302130711400.8810@shack.dolda2000.com> <5EEA9264-5DCA-4A3F-B305-F3E64E9A3CC5@colorremedies.com> <alpine.DEB.2.02.1302140733070.8810@shack.dolda2000.com> <17E4F30E-2945-44FE-A87F-0F475DFD794F@colorremedies.com> <alpine.DEB.2.02.1302140830310.8810@shack.dolda2000.com> <2D5AAB44-9DA8-460D-9141-3544DE6C45D7@colorremedies.com> <20130214085925.GD28997@carfax.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
+Received: from mx1.redhat.com ([209.132.183.28]:63538 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758460Ab3BNSgG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Feb 2013 13:36:06 -0500
+Message-ID: <511D2E88.4010403@redhat.com>
+Date: Thu, 14 Feb 2013 12:35:52 -0600
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: linux-btrfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
+        =?UTF-8?B?THVrw6HFoSBDemVybmVy?= <lczerner@redhat.com>,
+        Chris Murphy <lists@colorremedies.com>, Karel Zak <kzak@redhat.com>,
+        xfs@oss.sgi.com, Zach Brown <zabrown@redhat.com>
+Subject: Re: [PATCH] xfs_mkfs: wipe old signatures from the device
+References: <1360667215-14701-1-git-send-email-lczerner@redhat.com> <alpine.LFD.2.00.1302140929570.2315@(none)> <20130214110423.GN26694@dastard> (sfid-20130214_122246_817720_6973E5AA) <201302141548.42185.Martin@lichtvoll.de>
+In-Reply-To: <201302141548.42185.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Feb 14, 2013, at 1:59 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> 
->> Data, RAID1: total=2.66TB, used=2.66TB
+On 2/14/13 8:48 AM, Martin Steigerwald wrote:
+> Am Donnerstag, 14. Februar 2013 schrieb Dave Chinner:
+>>> So I
+>>> think that it got to the point where users will usually use mkfs.xfs
+>>> -f all the time. And even if they did not and they would use a wrong
+>>> device they would probably get the same warning even for the device
+>>> they wanted to use in the first place.
+>>
+>> I get a couple of queries a year from people saying they
+>> accidentally ran mkfs.ext4 on the wrong device and want to know if
+>> they can recover their XFS filesystem. The next question is usually
+>> "why didn't mkfs.ext4 warn me there was an existing filesystem on
+>> the device like mkfs.xfs does?".
+>>
+>> That is why the "don't overwrite an existing filesystem by default"
+>> behaviour is important. Users like to be protected from mistakes
+>> they weren't aware they made, and far too few of our filesystem
+>> utilities provide that safety net.
+>>
+>> A couple of users a year losing data like this is a couple of users
+>> too many. Especially when it would only take a couple of hours of
+>> your time to implement....
+>>
+>>> So even thoug it might help in some cases I do not think that we
+>>> should go and change all file systems to do that as well, it would
+>>> not be very useful anyway.
+>>
+>> Tell that to the next user that trashes their data because a
+>> filesystem tool simply assumed in correctly that it owned the block
+>> device.
 > 
->   This is the amount of actual useful data (i.e. what you see with du
-> or ls -l). Double this (because it's RAID-1) to get the number of
-> bytes or raw storage used.
-
-Right, the decoder ring. Effectively no outsiders will understand this. It contradicts the behavior of conventional df with btrfs volumes. And it becomes untenable with per subvolume profiles.
-
-
->> Total devices 2 FS bytes used 1.64TB
->> devid    1 size 2.73TB used 1.64TB path /dev/sdi1
->> devid    2 size 2.73TB used 2.67TB path /dev/sde1
+> Full ACK.
 > 
->   This is the amount of raw disk space allocated. The total of used
-> here should add up to twice the "total" values above (for
-> Data+Metadata+System).
-
-I'm mostly complaining about the first line. If 2.67TB of writes to sde1 are successful enough to be stated as "used" on that device, then FS bytes used should be at least 2.67TB.
-
+> I always loved that mkfs.xfs asks in that case.
 > 
->> So I can't tell if it's ~1.64TB copied or 2.6TB.
-> 
->   Looks like /dev/sdi1 isn't actually being written to -- it should
-> be the same allocation as /dev/sde1.
+> IMO its just sane to do so.
 
-Yeah he's getting a lot of these, and I don't know what it is:
+I just sent a patch to do so for btrfs-progs, FWIW.  :)
 
-> Feb 14 08:32:30 nerv kernel: [180511.760850] lost page write due to I/O error on /dev/sdd1
+-Eric
 
-It's not tied to btrfs or libata so I don't think it's the drive itself reporting the write error. I think maybe the kernel has become confused as a result of the original ICRC ABRT, and the subsequent change from sdd to sdi. 
 
-Chris Murphy

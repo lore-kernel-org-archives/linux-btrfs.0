@@ -1,69 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20762 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755091Ab3BHGzL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Feb 2013 01:55:11 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r186t58U028479
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Feb 2013 14:55:05 +0800
-Message-ID: <5114A177.5020604@cn.fujitsu.com>
-Date: Fri, 08 Feb 2013 14:55:51 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from cantor2.suse.de ([195.135.220.15]:59617 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757468Ab3BNLit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Feb 2013 06:38:49 -0500
+Date: Thu, 14 Feb 2013 12:38:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Kyungsik Lee <kyungsik.lee@lge.com>
+Cc: Chris Mason <chris.mason@fusionio.com>, Li Zefan <lizf@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        hyojun.im@lge.com, chan.jeong@lge.com, raphael.andy.lee@gmail.com
+Subject: Re: [PATCH] btrfs: fix decompress buffer size
+Message-ID: <20130214113845.GH12339@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1360833139-5850-1-git-send-email-kyungsik.lee@lge.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix the deadlock between the transaction attach and
- commit
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1360833139-5850-1-git-send-email-kyungsik.lee@lge.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is the whole story:
-	Trans_Attach_Task		Trans_Commit_Task
-					btrfs_commit_transaction()
-					 |->wait writers to be 1
-	btrfs_attach_transaction()	 |
-	btrfs_commit_transaction()	 |
-	 |				 |->set trans_no_join to 1
-	 |				 |  (close join transaction)
-	 |->btrfs_run_ordered_operations |
-	    (Those ordered operations	 |
-	     are added when releasing	 |
-	     file)			 |
-	     |->btrfs_join_transaction() |
-		|->wait_commit()	 |
-					 |->wait writers to be 1
+On Thu, Feb 14, 2013 at 06:12:19PM +0900, Kyungsik Lee wrote:
+> lzo1x_1_compress() is unnecessarily used for allocating decompress buffer.
+> 
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -55,7 +55,7 @@ static struct list_head *lzo_alloc_workspace(void)
+>  		return ERR_PTR(-ENOMEM);
+>  
+>  	workspace->mem = vmalloc(LZO1X_MEM_COMPRESS);
+> -	workspace->buf = vmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE));
+> +	workspace->buf = vmalloc(PAGE_CACHE_SIZE);
 
-Then these two tasks waited for each other.
+Right, PAGE_CACHE_SIZE is enough in size, but then we don't even need
+vmalloc.
 
-As we know, btrfs_attach_transaction() is used to catch the current
-transaction, and commit it, so if someone has committed the transaction,
-it is unnecessary to join it and commit it, wait is the best choice
-for it. In this way, we can fix the above problem.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/transaction.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f154946..7be9d5e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -285,6 +285,14 @@ static int may_wait_transaction(struct btrfs_root *root, int type)
- 	if (type == TRANS_USERSPACE)
- 		return 1;
- 
-+	/*
-+	 * If we are ATTACH, it means we just want to catch the current
-+	 * transaction and commit it. So if someone is committing the
-+	 * current transaction now, it is very glad to wait it.
-+	 */
-+	if (type == TRANS_ATTACH)
-+		return 1;
-+
- 	if (type == TRANS_START &&
- 	    !atomic_read(&root->fs_info->open_ioctl_trans))
- 		return 1;
--- 
-1.6.5.2
+david

@@ -1,58 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:42152 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753361Ab3BNKPr (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:40081 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756916Ab3BNLE2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 05:15:47 -0500
-Received: by mail-wi0-f178.google.com with SMTP id o1so2500118wic.17
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2013 02:15:46 -0800 (PST)
+	Thu, 14 Feb 2013 06:04:28 -0500
+Date: Thu, 14 Feb 2013 22:04:23 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: =?utf-8?B?THVrw6HFoQ==?= Czerner <lczerner@redhat.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Karel Zak <kzak@redhat.com>,
+        xfs@oss.sgi.com, sandeen@redhat.com, Zach Brown <zabrown@redhat.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] xfs_mkfs: wipe old signatures from the device
+Message-ID: <20130214110423.GN26694@dastard>
+References: <1360667215-14701-1-git-send-email-lczerner@redhat.com>
+ <20130212202753.GC26694@dastard>
+ <20130213080154.GC18597@x2.net.home>
+ <alpine.LFD.2.00.1302131127070.2315@(none)>
+ <20130213121655.GA7799@x2.net.home>
+ <20130213221720.GH26694@dastard>
+ <982B8DBB-3FBA-4213-BC92-848A64C60110@colorremedies.com>
+ <alpine.LFD.2.00.1302140929570.2315@(none)>
 MIME-Version: 1.0
-Date: Thu, 14 Feb 2013 02:15:45 -0800
-Message-ID: <CABdGeLgO0ncKTx2Hs_KGoJ43vM2FjWE4+WQB_i3KdcHfrphEcg@mail.gmail.com>
-Subject: [btrfs] Periodic write spikes while idling, on btrfs root
-From: Vedant Kumar <vk@vedantk.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <alpine.LFD.2.00.1302140929570.2315@(none)>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, Feb 14, 2013 at 09:36:38AM +0100, Lukáš Czerner wrote:
+> On Thu, 14 Feb 2013, Chris Murphy wrote:
+> 
+> > Date: Thu, 14 Feb 2013 00:29:59 -0700
+> > From: Chris Murphy <lists@colorremedies.com>
+> > To: Dave Chinner <david@fromorbit.com>
+> > Cc: Karel Zak <kzak@redhat.com>, Lukáš Czerner <lczerner@redhat.com>,
+> >     xfs@oss.sgi.com, sandeen@redhat.com, Zach Brown <zabrown@redhat.com>,
+> >     linux-btrfs@vger.kernel.org
+> > Subject: Re: [PATCH] xfs_mkfs: wipe old signatures from the device
+> > 
+> > 
+> > On Feb 13, 2013, at 3:17 PM, Dave Chinner <david@fromorbit.com> wrote:
+> > > it is the responsibility of filesystem
+> > > tools to behave sanely, not for the rest of the world to have to
+> > > work around the dangerous behaviour of a specific filesystems'
+> > > toolset.
+> > 
+> > I appreciate this, and in particular that mkfs.xfs doesn't nerf a file system without the use of -f; even an existing XFS file system. Considering most data loss is user induced, I'd appreciate it if other file systems's tools weren't so easily made belligerent by (hopefully temporarily) confused apes wearing pants.
+> > 
+> > Chris Murphy
+> 
+> I would not be so optimistic about it. The reason being that there
+> are almost _always_ old file system signatures on the device.
 
-I'm experiencing periodic write spikes while my system is idle.
+That assumption is way off the mark.  What you do as a filesystem
+developer (remake filesystems on the same block device hundreds of
+times a day) is not at all typical, so you cannot extrapolate from
+your usage habits to what typically happens in production
+environments.
 
-According to iotop, they're being caused by "btrfs-endio-write",
-"btrfs-transaction", and "btrfs-dealloc". Mostly, the issue is with
-"endio-write": I've seen up to four of these processes write at the
-same time. Using iostat, I've determined that these writes range from
-1 to 6 megabytes in size, and that they occur roughly every 5 seconds.
+Admins don't tend to use "force" options by default (especially for
+destructive comands like mkfs) as 1) they are rarely necessary in the
+real world and 2) the consequences of errors are severe.  The most
+common filesystem creation pattern in production systems (be it
+desktop, workstation or server) is that storage, devices and
+filesystems are set up once and then used for the entire lifetime
+ofthe system without ever having mkfs run on them again. i.e on
+pristine, empty hardware. Hence users rarely, if ever, need to use
+the force option for mkfs.xfs.
 
-These write spikes may prevent my disk from spinning down and lower
-my battery life.
+> So I
+> think that it got to the point where users will usually use mkfs.xfs
+> -f all the time. And even if they did not and they would use a wrong
+> device they would probably get the same warning even for the device
+> they wanted to use in the first place.
 
-I fetched the latest unpatched mainline kernel and modified
-linux/fs/btrfs/inode.c:2051 to add a debugging printk() inside of
-btrfs_writepage_end_io_hook(). After running that kernel, I can confirm
-two things;
+I get a couple of queries a year from people saying they
+accidentally ran mkfs.ext4 on the wrong device and want to know if
+they can recover their XFS filesystem. The next question is usually
+"why didn't mkfs.ext4 warn me there was an existing filesystem on
+the device like mkfs.xfs does?".
 
-1. The write spikes occur whenever btrfs does:
+That is why the "don't overwrite an existing filesystem by default"
+behaviour is important. Users like to be protected from mistakes
+they weren't aware they made, and far too few of our filesystem
+utilities provide that safety net.
 
-/* btrfs/inode.c:2051 */
-workers = &root->fs_info->endio_write_workers;
-btrfs_queue_worker(workers, &ordered_extent->work);
+A couple of users a year losing data like this is a couple of users
+too many. Especially when it would only take a couple of hours of
+your time to implement....
 
-2. The write spikes seem to affect only one inode. That is to say, every
-time there is a write spike, my printk() indicates that it is the exact
-same inode being written to over and over again.
+> So even thoug it might help in some cases I do not think that we
+> should go and change all file systems to do that as well, it would
+> not be very useful anyway.
 
-I actually scanned my entire disk for this mysterious inode (using
-find / -inum ...), and it turned out to be some systemd log in
-/var/log/journal. I turned off journald and rebooted, but the write spike
-behavior remained. I tried removing write priviliges to that file and then
-deleting it outright, but endio-write just picked another inode to write
-to (which was again in /var/log/journal!).
+Tell that to the next user that trashes their data because a
+filesystem tool simply assumed in correctly that it owned the block
+device.
 
-I am not a kernel hacker and I'm not absolutely convinced this is a btrfs
-issue, but I'd appreciate some pointers in the right direction.
+Cheers,
 
-best,
--vk
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

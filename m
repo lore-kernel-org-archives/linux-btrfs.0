@@ -1,63 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:63538 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758460Ab3BNSgG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 13:36:06 -0500
-Message-ID: <511D2E88.4010403@redhat.com>
-Date: Thu, 14 Feb 2013 12:35:52 -0600
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60841 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1758463Ab3BNSps convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Feb 2013 13:45:48 -0500
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: Rebalancing RAID1
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <201302141544.05747.Martin@lichtvoll.de>
+Date: Thu, 14 Feb 2013 11:45:47 -0700
+Cc: "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>,
+        Fredrik Tolf <fredrik@dolda2000.com>, Hugo Mills <hugo@carfax.org.uk>
+Message-Id: <7857EB12-1C91-4FCA-A819-B85EC51281B5@colorremedies.com>
+References: <alpine.DEB.2.02.1302122348460.8810@shack.dolda2000.com> (sfid-20130213_093936_125418_3540CD10) <201302141544.05747.Martin@lichtvoll.de>
 To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: linux-btrfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
-        =?UTF-8?B?THVrw6HFoSBDemVybmVy?= <lczerner@redhat.com>,
-        Chris Murphy <lists@colorremedies.com>, Karel Zak <kzak@redhat.com>,
-        xfs@oss.sgi.com, Zach Brown <zabrown@redhat.com>
-Subject: Re: [PATCH] xfs_mkfs: wipe old signatures from the device
-References: <1360667215-14701-1-git-send-email-lczerner@redhat.com> <alpine.LFD.2.00.1302140929570.2315@(none)> <20130214110423.GN26694@dastard> (sfid-20130214_122246_817720_6973E5AA) <201302141548.42185.Martin@lichtvoll.de>
-In-Reply-To: <201302141548.42185.Martin@lichtvoll.de>
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/14/13 8:48 AM, Martin Steigerwald wrote:
-> Am Donnerstag, 14. Februar 2013 schrieb Dave Chinner:
->>> So I
->>> think that it got to the point where users will usually use mkfs.xfs
->>> -f all the time. And even if they did not and they would use a wrong
->>> device they would probably get the same warning even for the device
->>> they wanted to use in the first place.
->>
->> I get a couple of queries a year from people saying they
->> accidentally ran mkfs.ext4 on the wrong device and want to know if
->> they can recover their XFS filesystem. The next question is usually
->> "why didn't mkfs.ext4 warn me there was an existing filesystem on
->> the device like mkfs.xfs does?".
->>
->> That is why the "don't overwrite an existing filesystem by default"
->> behaviour is important. Users like to be protected from mistakes
->> they weren't aware they made, and far too few of our filesystem
->> utilities provide that safety net.
->>
->> A couple of users a year losing data like this is a couple of users
->> too many. Especially when it would only take a couple of hours of
->> your time to implement....
->>
->>> So even thoug it might help in some cases I do not think that we
->>> should go and change all file systems to do that as well, it would
->>> not be very useful anyway.
->>
->> Tell that to the next user that trashes their data because a
->> filesystem tool simply assumed in correctly that it owned the block
->> device.
-> 
-> Full ACK.
-> 
-> I always loved that mkfs.xfs asks in that case.
-> 
-> IMO its just sane to do so.
 
-I just sent a patch to do so for btrfs-progs, FWIW.  :)
+On Feb 14, 2013, at 7:44 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
 
--Eric
+> For some reason BTRFS is still trying to write to /dev/sdd, which isn´t
+> there anymore. That perfectly explains those lost page writes for me. If
+> that is the case, this seems to me like a serious bug in BTRFS.
+
+Following the ICRC ABRT error, /dev/sdd becomes /dev/sdi. Btrfs-progs recognizes this by only listing /dev/sdi and /dev/sde as devices in the volume. But the btrfs kernel space code continues to try to write to /dev/sdd, while /dev/sdi isn't getting any writes (at least, it's not filling up with data).
+
+Btrfs kernel space code is apparently unaware that /dev/sdd is gone. That seems to be the primary problem.
+
+A question is, if the kernel space code was aware of a member device vanishing and then reappearing, whether as the same or different block device designation, should it automatically re-add the device to the volume? Upon being re-added, it would be out of sync, leading to a follow-up question about whether it should be auto-scrubbed to fix this? And yet another follow-up question which is if the file system metadata contains information that can be used similar to the function of the md write-intent bitmap, reducing the time to catch the drive up, avoiding a full scrub?
 
 
+Chris Murphy

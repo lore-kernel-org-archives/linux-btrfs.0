@@ -1,59 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f43.google.com ([209.85.210.43]:47992 "EHLO
-	mail-da0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751357Ab3BOGjp (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:46005 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932895Ab3BOIrh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Feb 2013 01:39:45 -0500
-Received: by mail-da0-f43.google.com with SMTP id u36so1336144dak.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2013 22:39:45 -0800 (PST)
-From: Hemanth Kumar <hemanthkumar51@gmail.com>
-To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Cc: skjmca51@gmail.com, ganeshkumar14@gmail.com, kirantpatil@gmail.com,
-        praneethu.u@gmail.com, chethan.casey@gmail.com, sensille@gmx.net,
-        bo.li.liu@oracle.com, sandeen@redhat.com,
-        Hemanth Kumar <hemanthkumar51@gmail.com>
-Subject: [test] btrfs quotas testing
-Date: Fri, 15 Feb 2013 12:09:31 +0530
-Message-Id: <1360910371-3258-1-git-send-email-hemanthkumar51@gmail.com>
+	Fri, 15 Feb 2013 03:47:37 -0500
+Date: Fri, 15 Feb 2013 08:47:33 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Hemanth Kumar <hemanthkumar51@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com, skjmca51@gmail.com,
+        ganeshkumar14@gmail.com, kirantpatil@gmail.com, praneethu.u@gmail.com,
+        chetahan.casey@gmail.com, sensille@gmx.net, bo.li.liu@oracle.com,
+        sandeen@redhat.com
+Subject: Re: [test] comments removed
+Message-ID: <20130215084733.GH28997@carfax.org.uk>
+References: <1360909755-2966-1-git-send-email-hemanthkumar51@gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="NzX0AQGjRQPusK/O"
+In-Reply-To: <1360909755-2966-1-git-send-email-hemanthkumar51@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
----
- quota.sh | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
- create mode 100644 quota.sh
+--NzX0AQGjRQPusK/O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/quota.sh b/quota.sh
-new file mode 100644
-index 0000000..8b82bf9
---- /dev/null
-+++ b/quota.sh
-@@ -0,0 +1,23 @@
-+#! /bin/bash
-+# btrfs quotas test case
-+#tmp=/sample
-+status=1
-+
-+cleanup()
-+{
-+    btrfs subvolume delete $TEST_DIR/vol1
-+}
-+
-+#trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+btrfs quota enable $TEST_DIR
-+echo "quota enabled on $TEST_DEV"
-+btrfs subvolume create $TEST_DIR/vol1
-+echo "vol1 created"
-+btrfs qgroup show $TEST_DIR
-+btrfs qgroup limit 2m $TEST_DIR/vol1
-+echo "qgroup limited to 2mb"
-+dd if=$TEST_DEV of=$TEST_DIR/vol1/file1 bs=3M count=1
-+echo "tried to write 3m worth data"
-+cleanup
-+exit
+On Fri, Feb 15, 2013 at 11:59:15AM +0530, Hemanth Kumar wrote:
+
+   No description of what the patch does. You should probably also put
+[btrfs-progs] in the subject line, if you're patching against
+btrfs-progs (and in that case, you probably don't need to cc the xfs
+people).
+
+   More comments below.
+
+   Hugo.
+
+> Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
+> ---
+>  0001-heirarchical-quotas-test-case.patch | 44 ++++++++++++++++++++++++++++++++
+        hierarchical
+
+>  hquotas.sh                               |  2 --
+>  2 files changed, 44 insertions(+), 2 deletions(-)
+>  create mode 100644 0001-heirarchical-quotas-test-case.patch
+> 
+> diff --git a/0001-heirarchical-quotas-test-case.patch b/0001-heirarchical-quotas-test-case.patch
+
+    And here
+
+> new file mode 100644
+> index 0000000..c6577e0
+> --- /dev/null
+> +++ b/0001-heirarchical-quotas-test-case.patch
+
+    And here
+
+> @@ -0,0 +1,44 @@
+> +From 9f49a870eab70ae37028f937331f9ec1b67dadb1 Mon Sep 17 00:00:00 2001
+> +From: Hemanth Kumar <hemanthkumar51@gmail.com>
+> +Date: Fri, 15 Feb 2013 11:21:03 +0530
+> +Subject: [test] heirarchical quotas test case
+> +
+> +
+> +Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
+
+   You're sending a patch file that creates a patch file? This is wrong.
+
+> +---
+> + hquotas.sh | 8 ++++----
+> + 1 file changed, 4 insertions(+), 4 deletions(-)
+> +
+> +diff --git a/hquotas.sh b/hquotas.sh
+> +index 2eaae01..a870d4a 100644
+> +--- a/hquotas.sh
+> ++++ b/hquotas.sh
+> +@@ -1,7 +1,5 @@
+> + #! /bin/bash
+> +-# btrfs quotas test case
+> +-#owner=hemanthkumar51@gamil.com ganeshkumr14@gmail.com
+> +-
+> ++# btrfs hierarchical quotas test case
+> + #here=`pwd`
+> + #tmp=/sample
+> + status=1
+> +@@ -11,6 +9,8 @@ cleanup()
+> + 	btrfs subvolume delete $TEST_DIR/vol1/vol2/vol3
+> + 	btrfs subvolume delete $TEST_DIR/vol1/vol2
+> + 	btrfs subvolume delete $TEST_DIR/vol1
+> ++	btrfs quota disable $TEST_DIR
+> ++	echo"quota disabled"
+> + }
+> + 
+> + #trap "_cleanup ; exit \$status" 0 1 2 3 15
+> +@@ -25,6 +25,6 @@ btrfs qgroup limit 3m $TEST_DIR/vol1/vol2
+> + btrfs qgroup limit 1m $TEST_DIR/vol1/vol2/vol3
+> + dd if=$TEST_DEV of=$TEST_DIR/vol1/vol2/vol3/file3 bs=2M count=1
+> + dd if=$TEST_DEV of=$TEST_DIR/vol1/vol2/file2 bs=1M count=1
+> +-dd if=$TEST_DEV of=$TEST_DIR/vol1/file1 bs=5M count=1
+> ++dd if=$TEST_DEV of=$TEST_DIR/vol1/file1 bs=4M count=1
+> + cleanup
+> + exit
+> +-- 
+> +1.8.1.2
+> +
+> diff --git a/hquotas.sh b/hquotas.sh
+> index a870d4a..672b6d1 100644
+> --- a/hquotas.sh
+> +++ b/hquotas.sh
+> @@ -1,7 +1,5 @@
+>  #! /bin/bash
+>  # btrfs hierarchical quotas test case
+> -#here=`pwd`
+> -#tmp=/sample
+>  status=1
+>  
+>  cleanup()
+
 -- 
-1.8.1.2
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                    --- Beware geeks bearing GIFs ---                    
 
+--NzX0AQGjRQPusK/O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUR32JL9z9OVl50rAAQKz7BAAnz0UgNyihu2fHsO7Zk7CxbdfRXFAxRha
+jJgNTrir08xDOvkvpbSRCVh1ubopywP+I5PoPAPvgPcOS2RCq8vsVofrr/aR/CtY
+T2KkXxcrZ4HOce3dIm6+mRFUdXt8S8RlANJs1erbvr/UYiNBSJP/IRCfUBzno3HH
+J/R9Wy5PHHklL+Ber8AmLyDHsxsuD1aXuoN/AUSRdP9h0AyJE9rO/U3cGa/ASFGQ
+jOw9uGiWSdozpwrV3njnU5GNxAQ+2JDsVkyurzJB0ve5s24MJ3C1H4p6tXOJGIeS
+6fixyW1ws2qhHIVOBc/mS7sFozP49YPjEKFsr0EhOQfA8Uw6eYyTkVfE6iiVl+GB
+viLv4yzcLvRYvbY0sIoH/NU03NPDQKVyAdKMlnP3jPbiMUFLOKahX3OpZetHLVqk
+964lJJ7+mXk79xlbkrRpE7uQr8eQA4imEnIIFZ7n3gqMNB2oJn2PTGI5vDTUM6HR
+w6hcsqiDcR/ae7u9dcvFiLhoAvTAGsaNUEvXsK0/YcUVOpiMzJI075/GQ4hMwyxC
+v1kN0w9HshjDaNMDl2dqGYfPzUFn0CyLcbjucgqEGP0iQPd1XrxOzC4xnPj/6Jgu
+T1WxMCYNbt7niLQvrJWwrpH9QBPPdscx8oY4ULdH806cK/dJpQmionBe6JdfYLiZ
+qcPySLkbfjE=
+=9DB4
+-----END PGP SIGNATURE-----
+
+--NzX0AQGjRQPusK/O--

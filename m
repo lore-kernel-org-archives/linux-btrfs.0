@@ -1,88 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:22399 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1758408Ab3BNWLe convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 17:11:34 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from moltke.seatribe.se ([178.63.100.209]:42710 "EHLO
+	moltke.seatribe.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932745Ab3BODou (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Feb 2013 22:44:50 -0500
+Date: Fri, 15 Feb 2013 04:44:43 +0100 (CET)
+From: Fredrik Tolf <fredrik@dolda2000.com>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+cc: linux-btrfs@vger.kernel.org
 Subject: Re: Rebalancing RAID1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130214205632.GF28997@carfax.org.uk>
-Date: Thu, 14 Feb 2013 15:11:31 -0700
-Cc: Fredrik Tolf <fredrik@dolda2000.com>, linux-btrfs@vger.kernel.org
-Message-Id: <C904A523-80FC-480C-933E-50F1497605D2@colorremedies.com>
-References: <alpine.DEB.2.02.1302122348460.8810@shack.dolda2000.com> <C8ECD52F-F362-49CD-A3E3-627AF13CF180@colorremedies.com> <alpine.DEB.2.02.1302130711400.8810@shack.dolda2000.com> <5EEA9264-5DCA-4A3F-B305-F3E64E9A3CC5@colorremedies.com> <alpine.DEB.2.02.1302140733070.8810@shack.dolda2000.com> <17E4F30E-2945-44FE-A87F-0F475DFD794F@colorremedies.com> <alpine.DEB.2.02.1302140830310.8810@shack.dolda2000.com> <2D5AAB44-9DA8-460D-9141-3544DE6C45D7@colorremedies.com> <20130214085925.GD28997@carfax.org.uk> <19ABBC76-F774-4225-87A4-73A4D546F53F@colorremedies.com> <20130214205632.GF28997@carfax.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
+In-Reply-To: <201302141544.05747.Martin@lichtvoll.de>
+Message-ID: <alpine.DEB.2.02.1302150435450.8810@shack.dolda2000.com>
+References: <alpine.DEB.2.02.1302122348460.8810@shack.dolda2000.com> (sfid-20130213_093936_125418_3540CD10) <201302141544.05747.Martin@lichtvoll.de>
+MIME-Version: 1.0
+Content-Type: MULTIPART/MIXED; BOUNDARY="-1463765759-56451118-1360899884=:8810"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-On Feb 14, 2013, at 1:56 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+---1463765759-56451118-1360899884=:8810
+Content-Type: TEXT/PLAIN; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8BIT
 
->> 
-> 
->   Correct, but *all* other single-value (or small-number-of-values)
-> displays of space usage fail in similar ways. We've(*) had this
-> discussion out on this mailing list many times before. All "simple"
-> displays of disk usage will cause someone to misinterpret something at
-> some point, and get cross.
+On Thu, 14 Feb 2013, Martin Steigerwald wrote:
+> Am Mittwoch, 13. Februar 2013 schrieb Fredrik Tolf:
+> You started the balance after above btrfs fi show command?
 
-The decoder ring method causes misinterpretation.
+I did.
 
-I refuse the premise that there isn't a way to at least be consistent; and use switches for alternate presentations.
+> Then its obvious to me:
+>
+> For some reason BTRFS is still trying to write to /dev/sdd, which isn´t
+> there anymore. That perfectly explains those lost page writes for me. If
+> that is the case, this seems to me like a serious bug in BTRFS.
 
->   If you want a display of "raw bytes used/free", then someone will
-> complain that they had 20GB free, wrote a 10GB file, and it's all
-> gone. If you want a display of "usable data used/free", then we can't
-> predict the "free" part. There is no single set of values that will
-> make this simple.
+Now I have disconnected the drive entirely, quite simply, so that I can 
+try to do simply what I should do if the drive really had failed 
+completely and I had gotten a replacement in its stead. Neither any sdd 
+nor any sdi is seen by the system anymore. However, I'm still getting 
+kernel messages about being unable to write to sdd:
 
-This is exactly how (conventional) df -h works now. And it causes exactly the problem you describe. The df -h size and available numbers are double that of btrfs fi df/show. Not ok. Not consistent. Either df needs to change (likely) or btrfs fi needs to change.
+Feb 15 04:37:41 nerv kernel: [252822.640560] lost page write due to I/O error on /dev/sdd1
+Feb 15 04:37:41 nerv kernel: [252822.644531] btrfs: bdev /dev/sdd1 errs: wr 362195, rd 26, flush 1, corrupt 0, gen 0
 
-2x 80GB array, btrfs
+I can't say I know what conclusions that lead to with regards to your 
+observations.
 
-/dev/sdb        160G  112K  158G   1% /mnt
+> I´d restart the machine, see that BTRFS is using both devices again and
+> then try the balance again.
 
-2x 80GB array, md raid1 xfs
+I mentioned it in another mail, but I'd very much prefer not to do that. 
+I'd like to try and solve this as I normally should when a drive fails.
 
-/dev/md0         80G   33M   80G   1% /mnt
+When I'm running btrfs fi show, this is what I'm getting now:
 
-And I think it's (regular) df that needs to change the most. btrfs fi df contains 50% superfluous information as far as I can tell:
+> $ sudo ./btrfs fi show
+> Label: none  uuid: 40d346bb-2c77-4a78-8803-1e441bf0aff7
+>         Total devices 2 FS bytes used 2.66TB
+>         devid    2 size 2.73TB used 2.67TB path /dev/sde1
+>         *** Some devices missing
 
-[root@f18v ~]# btrfs fi df /mnt
-Data, RAID1: total=1.00GB, used=0.00
-*Data: total=8.00MB, used=0.00
-*System, RAID1: total=8.00MB, used=8.00KB
-*System: total=4.00MB, used=0.00
-Metadata, RAID1: total=1.00GB, used=48.00KB
-*Metadata: total=8.00MB, used=0.00
+So that's what it should look like when a drive fails, right?
 
-The lines marked * I see zero useful conveyed information. And fi show:
+At this point, I'm trying to remove the missing device from the filesystem 
+as the Wiki indicates that I should be able to, but alas:
 
-[root@f18v ~]# btrfs fi show
-Label: 'hello'  uuid: d5517733-7c9f-458a-9e99-5b832b8776b2
-	Total devices 2 FS bytes used 56.00KB
-	devid    2 size 80.00GB used 2.01GB path /dev/sdc
-	devid    1 size 80.00GB used 2.03GB path /dev/sdb
+> $ sudo ./btrfs device delete missing /mnt
+> ERROR: error removing the device 'missing' - Invalid argument
 
-I don't know why I should care about allocated chunks but if that's what used means in this case, it should say that, rather than "used". I'm sortof annoyed that the same words, total and used, have different meaning depending on their position, without other qualifiers. It's like being in school and the teacher would get pissed when students wouldn't specify units or label axes, and now I'm one of those types. What do these numbers mean? If I have to infer this, then they're obscure, so why should I care about them?
+The dmesg tells me this:
 
-And what I can get from btrfs fi df that it doesn't indicate at all, that could be more useful than regular df (simply because there's no room) is a:
+> Feb 15 04:42:22 nerv kernel: [253103.799201] btrfs: unable to go below two devices on raid1
 
-Free Space Estimate: min - max
+How do I remove the conception of the missing device so that I can replace 
+it? Should I simply add the replacement first, and only after that remove 
+the missing device?
 
+If the latter, how can I "scratch" the previous btrfs metadata from this 
+"replacement" drive so that it doesn't try to autoreinsert it into the 
+filesystem when it is detected? I assume it won't be enough be just 
+zeroing the first few sectors of the drive, right?
 
->   I think the solution, if it's certain that the drive is now
-> behaving sensibly again, is one of:
-> 
-> * unmount, btrfs dev scan, remount, scrub
-> or
-> * btrfs dev delete missing, add /dev/sdi1 to the FS, and balance
+Thanks for replying!
 
-The 2nd won't work because user space tools don't consider there to be a missing device.
+--
 
-So back to the question on how btrfs should behave in such a case. md would have tossed the drive and as far as I know doesn't automatically readd it if it reappears as either the same or a different block device. And when the user uses --re-add there's a resync.
-
-
-Chris Murphy
+Fredrik Tolf
+---1463765759-56451118-1360899884=:8810--

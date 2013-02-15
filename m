@@ -1,37 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay1.sgi.com ([192.48.179.29]:56266 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756295Ab3BOSSM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Feb 2013 13:18:12 -0500
-Date: Fri, 15 Feb 2013 12:18:07 -0600
-From: Ben Myers <bpm@sgi.com>
-To: Hemanth Kumar <hemanthkumar51@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com, chethan.casey@gmail.com,
-        sandeen@redhat.com, sensille@gmx.net, ganeshkumar14@gmail.com,
-        praneethu.u@gmail.com, hugo@carfax.org.uk, bo.li.liu@oracle.com,
-        skjmca51@gmail.com, kirantpatil@gmail.com
-Subject: Re: [btrfs-progs] Btrfs quotas testing
-Message-ID: <20130215181807.GN22182@sgi.com>
-References: <1360932324-2722-1-git-send-email-hemanthkumar51@gmail.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:37901 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750785Ab3BOSiO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Feb 2013 13:38:14 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D307D7C0414
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2013 11:38:13 -0700 (MST)
+Date: Fri, 15 Feb 2013 13:38:11 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Chris Mason <clmason@fusionio.com>
+CC: "Richard W.M. Jones" <rjones@redhat.com>,
+        Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: What can I do to make btrfs work?
+Message-ID: <20130215183811.GB28851@shiny.masoncoding.com>
+References: <20130212185449.GA16773@rhmail.home.annexia.org>
+ <20130212191637.GD2611@localhost.localdomain>
+ <20130212210535.GC16773@rhmail.home.annexia.org>
+ <20130212214225.GM16687@shiny.masoncoding.com>
+ <20130213110033.GA1543@rhmail.home.annexia.org>
+ <20130213131044.GE16773@rhmail.home.annexia.org>
+ <20130213133137.GA21623@shiny.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1360932324-2722-1-git-send-email-hemanthkumar51@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130213133137.GA21623@shiny.masoncoding.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Hemanth,
-
-On Fri, Feb 15, 2013 at 06:15:24PM +0530, Hemanth Kumar wrote:
+On Wed, Feb 13, 2013 at 06:31:37AM -0700, Chris Mason wrote:
+> On Wed, Feb 13, 2013 at 06:10:44AM -0700, Richard W.M. Jones wrote:
+> > On Wed, Feb 13, 2013 at 11:00:33AM +0000, Richard W.M. Jones wrote:
+> > > Will try the btrfsprogs patch next.
+> > 
+> > I applied this patch:
+> > 
+> > https://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git;a=commitdiff_plain;h=8fe354744cd7b5c4f7a3314dcdbb5095192a032f
+> > 
+> > to the version of btrfs-progs in Fedora Rawhide (currently
+> > "0.20.rc1.20121017git91d9eec").  Then I ran the simple reproducer, and
+> > the full libguestfs test suite on two machines.
+> > 
+> > This does appear to fix the problem for me, but only on Rawhide.
+> > 
+> > On Fedora 18 which has an older kernel, the patch does not fix the
+> > problem (same errors as before).
+> > 
+> > Rawhide kernel: kernel-3.8.0-0.rc7.git0.1.fc19.x86_64
+> > 
+> > Fedora 18 kernel: kernel-3.7.6-201.fc18.x86_64
+> > 
+> > Anyway, it's an improvement so I'll make sure the patch is added to
+> > the Rawhide btrfs-progs package.
 > 
-> Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
+> Ok, the patch is more of a bandaid, but between running my vtest program
+> and the patch helping, we're clearly not clearing caches properly
+> (somehow).  I'll take another stab at fixing this on the kernel side.
 
-Looks like this is btrfs specific.  You probably don't need to cross post to
-xfs@oss.sgi.com, unless you're interested in adding a test to xfstests.  If so,
-you might want to check out the existing quota group of tests to see if one
-could be modified to your purpose.
+Looks like the real problem is the udev event to register a new btrfs
+filesystem is racing in while we are still in mkfs.  If you disable the
+udev rule, the problem goes away (at least for me).
 
-~/xfstests$ grep quota group
-...
+It's not a udev bug though, our btrfs scanning function is improperly
+calling set_blocksize during a simple scan.  That's only legal when we
+are in mount and can't be racing with writes to the device.
 
-Regards,
-Ben
+Dave Sterba cooked up a fix for that, I'm testing it here.
+
+-chris
+

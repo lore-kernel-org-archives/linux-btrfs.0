@@ -1,90 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f178.google.com ([209.85.215.178]:54996 "EHLO
-	mail-ea0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752700Ab3BSHNj (ORCPT
+Received: from nm23-vm0.bullet.mail.ird.yahoo.com ([212.82.109.229]:43370 "HELO
+	nm23-vm0.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1755329Ab3BRVJP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Feb 2013 02:13:39 -0500
-Received: by mail-ea0-f178.google.com with SMTP id a14so2729337eaa.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2013 23:13:37 -0800 (PST)
-Message-ID: <5123249A.6080502@gmail.com>
-Date: Tue, 19 Feb 2013 08:07:06 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Zach Brown <zab@zabbo.net>
-CC: kreijack@inwind.it, linux-btrfs@vger.kernel.org,
-        Hugo Mills <hugo@carfax.org.uk>,
-        =?ISO-8859-1?Q?Michael_Kj=F6rling?= <michael@kjorling.se>,
+	Mon, 18 Feb 2013 16:09:15 -0500
+From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+        Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
         Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
         Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 1/8] Add some helpers to manage the strings allocation/deallocation.
-References: <1361221473-20347-1-git-send-email-goffredo.baroncelli@yahoo.com> <1361221473-20347-2-git-send-email-goffredo.baroncelli@yahoo.com> <20130218230842.GN22221@lenny.home.zabbo.net>
-In-Reply-To: <20130218230842.GN22221@lenny.home.zabbo.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: [PATCH][BTRFS-PROGS] Enhance btrfs fi df with raid5/6 support
+Date: Mon, 18 Feb 2013 22:04:25 +0100
+Message-Id: <1361221473-20347-1-git-send-email-goffredo.baroncelli@yahoo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/19/2013 12:08 AM, Zach Brown wrote:
-> On Mon, Feb 18, 2013 at 10:04:26PM +0100, Goffredo Baroncelli wrote:
->> This patch adds some helpers to manage the strings allocation and
->> deallocation.
->> The function string_list_add(char *) adds the passed string to a list;
->> the function string_list_free() frees all the strings together.
-> 
-> Please don't do this.  To verify that a given pointer isn't freed before
-> it's used we'd have to make sure that there are no string_list_free()
-> calls in the interim that would hit their pointer on this global list.
+Hi all, 
 
-The idea is that the code shouldn't care about do deallocate the strings
-until finishing its jobs. At the end it calls string_list_free().
+I updates my previous patches [1] to add support for raid5/6.
+These patches update the btrfs fi df command and add two new commands:
+- btrfs filesystem disk-usage <path>
+- btrfs device disk-usage <path>
 
-Of course, if after string_list_free() some dynamically allocated
-strings are used then bad things could happen.
+The command "btrfs filesystem df" now shows only the disk usage/available.
 
-Ideally string_list_free() should be called at the end of the main.
-I don't think that btrfs-progs allocates an huge quantity of string, so
-this could be an acceptable behaviour.
+$ sudo btrfs filesystem df /mnt/btrfs1/
+Disk size:		 400.00GB
+Disk allocated:		   8.04GB
+Disk unallocated:	 391.97GB
+Used:			  11.29MB
+Free (Estimated):	 250.45GB	(Max: 396.99GB, min: 201.00GB)
+Data to disk ratio:	     63 %
 
-> 
-> As far as I can tell, this is only used for the pretty units?  Instead
-> of
-> 	printf("%s", leaked_string(raw));
-> 
-> how about
-> 
-> 	printf("%llu%s", scaled_value(raw), static_unit_str(raw));
-> 
-> That'd avoid the need to pass back arbitrary allocated strings and this
-> code could go away.
+The "Free (Estimated)" tries to give an estimation of the free space
+on the basis of the chunks usage. Max and min are the maximum allowable
+space (if the next chunk are allocated as SINGLE) or the minimum one (
+if the next chunks are allocated as DUP/RAID1/RAID10).
 
-Sorry I don't understand the differences between {leaked, scaled,
-raw}_string. Could you elaborate a bit ?
+The other two commands show the chunks in the disks.
 
-> 
->> +	if (!strings_to_free) {
->> +		fprintf(stderr, "add_string_to_free(): Not enough memory\n");
->> +		strings_to_free = 0;
-> 
-> if (a == 0) a = 0?
-> 
->> +		count_string_to_free = 0;
->> +	}
->> +
->> +	strings_to_free[count_string_to_free-1] = s;
-> 
-> NULL[-1] = s?
+$ sudo btrfs filesystem disk-usage /mnt/btrfs1/
+Data,Single: Size:8.00MB, Used:0.00
+   /dev/vdb	    8.00MB
 
-Right, I will correct soon.
+Data,RAID6: Size:2.00GB, Used:11.25MB
+   /dev/vdb	    1.00GB
+   /dev/vdc	    1.00GB
+   /dev/vdd	    1.00GB
+   /dev/vde	    1.00GB
 
-> 
-> - z
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Metadata,Single: Size:8.00MB, Used:0.00
+   /dev/vdb	    8.00MB
 
+Metadata,RAID5: Size:3.00GB, Used:36.00KB
+   /dev/vdb	    1.00GB
+   /dev/vdc	    1.00GB
+   /dev/vdd	    1.00GB
+   /dev/vde	    1.00GB
+
+System,Single: Size:4.00MB, Used:0.00
+   /dev/vdb	    4.00MB
+
+System,RAID5: Size:12.00MB, Used:4.00KB
+   /dev/vdb	    4.00MB
+   /dev/vdc	    4.00MB
+   /dev/vdd	    4.00MB
+   /dev/vde	    4.00MB
+
+Unallocated:
+   /dev/vdb	   97.98GB
+   /dev/vdc	   98.00GB
+   /dev/vdd	   98.00GB
+   /dev/vde	   98.00GB
+
+or in tabular format
+
+$ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
+         Data   Data    Metadata Metadata System System             
+         Single RAID6   Single   RAID5    Single RAID5   Unallocated
+                                                                    
+/dev/vdb 8.00MB  1.00GB   8.00MB   1.00GB 4.00MB  4.00MB     97.98GB
+/dev/vdc      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+/dev/vdd      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+/dev/vde      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+         ====== ======= ======== ======== ====== ======= ===========
+Total    8.00MB  2.00GB   8.00MB   3.00GB 4.00MB 12.00MB    391.97GB
+Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB            
+
+These are the most complete output, where it is possible to know which
+disk a chunk uses and the usage of every chunk.
+
+Finally the last command shows which chunks a disk hosts:
+
+$ sudo ./btrfs device disk-usage /mnt/btrfs1/
+/dev/vdb	  100.00GB
+   Data,Single:              8.00MB
+   Data,RAID6:               1.00GB
+   Metadata,Single:          8.00MB
+   Metadata,RAID5:           1.00GB
+   System,Single:            4.00MB
+   System,RAID5:             4.00MB
+   Unallocated:             97.98GB
+
+/dev/vdc	  100.00GB
+   Data,RAID6:               1.00GB
+   Metadata,RAID5:           1.00GB
+   System,RAID5:             4.00MB
+   Unallocated:             98.00GB
+
+/dev/vdd	  100.00GB
+   Data,RAID6:               1.00GB
+   Metadata,RAID5:           1.00GB
+   System,RAID5:             4.00MB
+   Unallocated:             98.00GB
+
+/dev/vde	  100.00GB
+   Data,RAID6:               1.00GB
+   Metadata,RAID5:           1.00GB
+   System,RAID5:             4.00MB
+   Unallocated:             98.00GB
+
+More or less are the same information above, only grouped by disk.
+Unfortunately I don't have any information about the chunk usage per disk basis.
+
+Comments are welcome.
+The code is pullable from
+        http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+        df-du-raid56
+
+BR
+G.Baroncelli
+
+[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21071
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+

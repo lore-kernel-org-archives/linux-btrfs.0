@@ -1,96 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nm21-vm3.bullet.mail.ird.yahoo.com ([212.82.108.207]:28348 "HELO
-	nm21-vm3.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1756022Ab3BRVJy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Feb 2013 16:09:54 -0500
-From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-        Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
+Received: from tetsuo.zabbo.net ([50.193.208.193]:38780 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753223Ab3BRXIn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Feb 2013 18:08:43 -0500
+Date: Mon, 18 Feb 2013 15:08:42 -0800
+From: Zach Brown <zab@zabbo.net>
+To: kreijack@inwind.it
+Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>,
+        Michael =?iso-8859-1?Q?Kj=F6rling?= <michael@kjorling.se>,
         Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
         Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/8] Create the man page entry for the command btrfs fi df
-Date: Mon, 18 Feb 2013 22:04:28 +0100
-Message-Id: <1361221473-20347-4-git-send-email-goffredo.baroncelli@yahoo.com>
-In-Reply-To: <1361221473-20347-1-git-send-email-goffredo.baroncelli@yahoo.com>
+Subject: Re: [PATCH 1/8] Add some helpers to manage the strings
+ allocation/deallocation.
+Message-ID: <20130218230842.GN22221@lenny.home.zabbo.net>
 References: <1361221473-20347-1-git-send-email-goffredo.baroncelli@yahoo.com>
-Reply-to: kreijack@inwind.it
+ <1361221473-20347-2-git-send-email-goffredo.baroncelli@yahoo.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1361221473-20347-2-git-send-email-goffredo.baroncelli@yahoo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- man/btrfs.8.in |   49 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 49 insertions(+)
+On Mon, Feb 18, 2013 at 10:04:26PM +0100, Goffredo Baroncelli wrote:
+> This patch adds some helpers to manage the strings allocation and
+> deallocation.
+> The function string_list_add(char *) adds the passed string to a list;
+> the function string_list_free() frees all the strings together.
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 94f4ffe..e2f86ea 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -31,6 +31,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
-+\fBbtrfs\fP \fBfilesystem df\fP\fI [-b] \fIpath [path..]\fR\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
-@@ -266,6 +268,53 @@ NOTE: Currently there are the following limitations:
- - the filesystem should not have more than one device.
- .TP
- 
-+\fBfilesystem df\fP [-b] \fIpath [path..]\fR
-+
-+Show space usage information for a mount point.
-+
-+\fB-b\fP Set byte as unit
-+
-+The command \fBbtrfs filesystem df\fP is used to query how many space on the 
-+disk(s) are used and an estimation of the free
-+space of the filesystem.
-+The output of the command \fBbtrfs filesystem df\fP shows:
-+
-+.RS
-+.IP \fBDisk\ size\fP
-+the total size of the disks which compose the filesystem.
-+
-+.IP \fBDisk\ allocated\fP
-+the size of the area of the disks used by the chunks.
-+
-+.IP \fBDisk\ unallocated\fP 
-+the size of the area of the disks which is free (i.e.
-+the differences of the values above).
-+
-+.IP \fBUsed\fP
-+the portion of the logical space used by the file and metadata.
-+
-+.IP \fBFree\ (estimated)\fP
-+the estimated free space available: i.e. how many space can be used
-+by the user. The evaluation 
-+cannot be rigorous because it depends by the allocation policy (DUP, Single,
-+RAID1...) of the metadata and data chunks. If every chunk is stored as
-+"Single" the sum of the \fBfree (estimated)\fP space and the \fBused\fP 
-+space  is equal to the \fBdisk size\fP.
-+Otherwise if all the chunk are mirrored (raid1 or raid10) or duplicated
-+the sum of the \fBfree (estimated)\fP space and the \fBused\fP space is
-+half of the \fBdisk size\fP. Normally the \fBfree (estimated)\fP is between
-+these two limits.
-+
-+.IP \fBData\ to\ disk\ ratio\fP
-+the ratio betwen the \fBlogical size\fP (i.e. the space available by
-+the chunks) and the \fBdisk allocated\fP (by the chunks). Normally it is 
-+lower than 100% because the metadata is duplicated for security reasons.
-+If all the data and metadata are duplicated (or have a profile like RAID1)
-+the \fBData\ to\ disk\ ratio\fP could be 50%.
-+
-+.RE
-+.TP
-+
- \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
- Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
- \fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
--- 
-1.7.10.4
+Please don't do this.  To verify that a given pointer isn't freed before
+it's used we'd have to make sure that there are no string_list_free()
+calls in the interim that would hit their pointer on this global list.
 
+As far as I can tell, this is only used for the pretty units?  Instead
+of
+	printf("%s", leaked_string(raw));
+
+how about
+
+	printf("%llu%s", scaled_value(raw), static_unit_str(raw));
+
+That'd avoid the need to pass back arbitrary allocated strings and this
+code could go away.
+
+> +	if (!strings_to_free) {
+> +		fprintf(stderr, "add_string_to_free(): Not enough memory\n");
+> +		strings_to_free = 0;
+
+if (a == 0) a = 0?
+
+> +		count_string_to_free = 0;
+> +	}
+> +
+> +	strings_to_free[count_string_to_free-1] = s;
+
+NULL[-1] = s?
+
+- z

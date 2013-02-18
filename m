@@ -1,256 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:33275 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751438Ab3BQGs0 (ORCPT
+Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:44196
+	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752739Ab3BRHwY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Feb 2013 01:48:26 -0500
-From: Namjae Jeon <linkinjeon@gmail.com>
-To: bfields@fieldses.org, akpm@linux-foundation.org, viro@zeniv.linux.org.uk,
-        chris.mason@fusionio.com, sage@inktank.com, miklos@szeredi.hu,
-        swhiteho@redhat.com, konishi.ryusuke@lab.ntt.co.jp, mfasheh@suse.com,
-        jack@suse.cz, bpm@sgi.com, elder@kernel.org, david@fromorbit.com
-Cc: linux-fsdevel@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-nilfs@vger.kernel.org, reiserfs-devel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Namjae Jeon <linkinjeon@gmail.com>,
-        Namjae Jeon <namjae.jeon@samsung.com>,
-        Vivek Trivedi <t.vivek@samsung.com>
-Subject: [PATCH v2] fs: encode_fh: return FILEID_INVALID if invalid fid_type
-Date: Sun, 17 Feb 2013 15:48:11 +0900
-Message-Id: <1361083691-2818-1-git-send-email-linkinjeon@gmail.com>
+	Mon, 18 Feb 2013 02:52:24 -0500
+Message-ID: <5121DC0D.8060305@gmail.com>
+Date: Sun, 17 Feb 2013 23:45:17 -0800
+From: Bob McGowan <ramjr0915@gmail.com>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: "Fixing" mount points
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Namjae Jeon <namjae.jeon@samsung.com>
+First, apologies if this is "well known", I'm totally new here, and
+haven't figured out yet how to search the archives.
 
-This patch is a follow up on below patch:
+Also, I'm not a subscriber, so please respond to me as well as the list.
 
-[PATCH] exportfs: add FILEID_INVALID to indicate invalid fid_type
-commit: 216b6cbdcbd86b1db0754d58886b466ae31f5a63 
+I've had a number of issues with distribution installations (separate
+and unrelated issues, but history and context).  I had a system set up,
+with a separate /home (brtfs, sda1), when it crashed (badly) while
+updating and rebuilding the kernel.
 
-Signed-off-by: Namjae Jeon <namjae.jeon@samsung.com>
-Signed-off-by: Vivek Trivedi <t.vivek@samsung.com>
-Acked-by: Steven Whitehouse <swhiteho@redhat.com>
-Acked-by: Sage Weil <sage@inktank.com>
----
- fs/btrfs/export.c   |    4 ++--
- fs/ceph/export.c    |    4 ++--
- fs/fuse/inode.c     |    2 +-
- fs/gfs2/export.c    |    4 ++--
- fs/isofs/export.c   |    4 ++--
- fs/nilfs2/namei.c   |    4 ++--
- fs/ocfs2/export.c   |    4 ++--
- fs/reiserfs/inode.c |    4 ++--
- fs/udf/namei.c      |    4 ++--
- fs/xfs/xfs_export.c |    4 ++--
- mm/cleancache.c     |    2 +-
- mm/shmem.c          |    2 +-
- 12 files changed, 21 insertions(+), 21 deletions(-)
+I installed again (different window system, same distribution) and to be
+"completely safe", I left the /home out of the new setup.  I want (need)
+to keep it because it has a very large of digital photos and I'd rather
+not have to restore them again (between audio, video, the photos, DVD
+images, about 800GB).
 
-diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
-index 614f34a..81ee29e 100644
---- a/fs/btrfs/export.c
-+++ b/fs/btrfs/export.c
-@@ -22,10 +22,10 @@ static int btrfs_encode_fh(struct inode *inode, u32 *fh, int *max_len,
- 
- 	if (parent && (len < BTRFS_FID_SIZE_CONNECTABLE)) {
- 		*max_len = BTRFS_FID_SIZE_CONNECTABLE;
--		return 255;
-+		return FILEID_INVALID;
- 	} else if (len < BTRFS_FID_SIZE_NON_CONNECTABLE) {
- 		*max_len = BTRFS_FID_SIZE_NON_CONNECTABLE;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	len  = BTRFS_FID_SIZE_NON_CONNECTABLE;
-diff --git a/fs/ceph/export.c b/fs/ceph/export.c
-index ca3ab3f..16796be 100644
---- a/fs/ceph/export.c
-+++ b/fs/ceph/export.c
-@@ -81,7 +81,7 @@ static int ceph_encode_fh(struct inode *inode, u32 *rawfh, int *max_len,
- 		if (parent_inode) {
- 			/* nfsd wants connectable */
- 			*max_len = connected_handle_length;
--			type = 255;
-+			type = FILEID_INVALID;
- 		} else {
- 			dout("encode_fh %p\n", dentry);
- 			fh->ino = ceph_ino(inode);
-@@ -90,7 +90,7 @@ static int ceph_encode_fh(struct inode *inode, u32 *rawfh, int *max_len,
- 		}
- 	} else {
- 		*max_len = handle_length;
--		type = 255;
-+		type = FILEID_INVALID;
- 	}
- 	if (dentry)
- 		dput(dentry);
-diff --git a/fs/fuse/inode.c b/fs/fuse/inode.c
-index 9876a87..973e8f0 100644
---- a/fs/fuse/inode.c
-+++ b/fs/fuse/inode.c
-@@ -679,7 +679,7 @@ static int fuse_encode_fh(struct inode *inode, u32 *fh, int *max_len,
- 
- 	if (*max_len < len) {
- 		*max_len = len;
--		return  255;
-+		return  FILEID_INVALID;
- 	}
- 
- 	nodeid = get_fuse_inode(inode)->nodeid;
-diff --git a/fs/gfs2/export.c b/fs/gfs2/export.c
-index 4767774..9973df4 100644
---- a/fs/gfs2/export.c
-+++ b/fs/gfs2/export.c
-@@ -37,10 +37,10 @@ static int gfs2_encode_fh(struct inode *inode, __u32 *p, int *len,
- 
- 	if (parent && (*len < GFS2_LARGE_FH_SIZE)) {
- 		*len = GFS2_LARGE_FH_SIZE;
--		return 255;
-+		return FILEID_INVALID;
- 	} else if (*len < GFS2_SMALL_FH_SIZE) {
- 		*len = GFS2_SMALL_FH_SIZE;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	fh[0] = cpu_to_be32(ip->i_no_formal_ino >> 32);
-diff --git a/fs/isofs/export.c b/fs/isofs/export.c
-index 2b4f235..12088d8 100644
---- a/fs/isofs/export.c
-+++ b/fs/isofs/export.c
-@@ -125,10 +125,10 @@ isofs_export_encode_fh(struct inode *inode,
- 	 */
- 	if (parent && (len < 5)) {
- 		*max_len = 5;
--		return 255;
-+		return FILEID_INVALID;
- 	} else if (len < 3) {
- 		*max_len = 3;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	len = 3;
-diff --git a/fs/nilfs2/namei.c b/fs/nilfs2/namei.c
-index 1d0c0b8..9de78f0 100644
---- a/fs/nilfs2/namei.c
-+++ b/fs/nilfs2/namei.c
-@@ -517,11 +517,11 @@ static int nilfs_encode_fh(struct inode *inode, __u32 *fh, int *lenp,
- 
- 	if (parent && *lenp < NILFS_FID_SIZE_CONNECTABLE) {
- 		*lenp = NILFS_FID_SIZE_CONNECTABLE;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 	if (*lenp < NILFS_FID_SIZE_NON_CONNECTABLE) {
- 		*lenp = NILFS_FID_SIZE_NON_CONNECTABLE;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	fid->cno = root->cno;
-diff --git a/fs/ocfs2/export.c b/fs/ocfs2/export.c
-index 322216a..2965116 100644
---- a/fs/ocfs2/export.c
-+++ b/fs/ocfs2/export.c
-@@ -195,11 +195,11 @@ static int ocfs2_encode_fh(struct inode *inode, u32 *fh_in, int *max_len,
- 
- 	if (parent && (len < 6)) {
- 		*max_len = 6;
--		type = 255;
-+		type = FILEID_INVALID;
- 		goto bail;
- 	} else if (len < 3) {
- 		*max_len = 3;
--		type = 255;
-+		type = FILEID_INVALID;
- 		goto bail;
- 	}
- 
-diff --git a/fs/reiserfs/inode.c b/fs/reiserfs/inode.c
-index 30195bc..77d6d47 100644
---- a/fs/reiserfs/inode.c
-+++ b/fs/reiserfs/inode.c
-@@ -1604,10 +1604,10 @@ int reiserfs_encode_fh(struct inode *inode, __u32 * data, int *lenp,
- 
- 	if (parent && (maxlen < 5)) {
- 		*lenp = 5;
--		return 255;
-+		return FILEID_INVALID;
- 	} else if (maxlen < 3) {
- 		*lenp = 3;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	data[0] = inode->i_ino;
-diff --git a/fs/udf/namei.c b/fs/udf/namei.c
-index 95fee27..102c072 100644
---- a/fs/udf/namei.c
-+++ b/fs/udf/namei.c
-@@ -1270,10 +1270,10 @@ static int udf_encode_fh(struct inode *inode, __u32 *fh, int *lenp,
- 
- 	if (parent && (len < 5)) {
- 		*lenp = 5;
--		return 255;
-+		return FILEID_INVALID;
- 	} else if (len < 3) {
- 		*lenp = 3;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	*lenp = 3;
-diff --git a/fs/xfs/xfs_export.c b/fs/xfs/xfs_export.c
-index a836118..3391800 100644
---- a/fs/xfs/xfs_export.c
-+++ b/fs/xfs/xfs_export.c
-@@ -48,7 +48,7 @@ static int xfs_fileid_length(int fileid_type)
- 	case FILEID_INO32_GEN_PARENT | XFS_FILEID_TYPE_64FLAG:
- 		return 6;
- 	}
--	return 255; /* invalid */
-+	return FILEID_INVALID;
- }
- 
- STATIC int
-@@ -90,7 +90,7 @@ xfs_fs_encode_fh(
- 	len = xfs_fileid_length(fileid_type);
- 	if (*max_len < len) {
- 		*max_len = len;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 	*max_len = len;
- 
-diff --git a/mm/cleancache.c b/mm/cleancache.c
-index 32e6f41..d76ba74 100644
---- a/mm/cleancache.c
-+++ b/mm/cleancache.c
-@@ -89,7 +89,7 @@ static int cleancache_get_key(struct inode *inode,
- 		fhfn = sb->s_export_op->encode_fh;
- 		if  (fhfn) {
- 			len = (*fhfn)(inode, &key->u.fh[0], &maxlen, NULL);
--			if (len <= 0 || len == 255)
-+			if (len <= FILEID_ROOT || len == FILEID_INVALID)
- 				return -1;
- 			if (maxlen > CLEANCACHE_KEY_MAX)
- 				return -1;
-diff --git a/mm/shmem.c b/mm/shmem.c
-index a43ae7f..585b007 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -2351,7 +2351,7 @@ static int shmem_encode_fh(struct inode *inode, __u32 *fh, int *len,
- {
- 	if (*len < 3) {
- 		*len = 3;
--		return 255;
-+		return FILEID_INVALID;
- 	}
- 
- 	if (inode_unhashed(inode)) {
--- 
-1.7.9.5
+So, I now have a volume/subvolume on one disk, where the subvolume is
+/home (brtfs, sde2), and I want to change fstab to mount sda1 as /home
+instead.
 
+For any other FS I've worked with, simple edits of fstab would be
+enough, but doing so doesn't appear to be enough for btrfs.
+
+Even though things look OK from the command line, logging in through the
+window system fails (actually, just hangs).
+
+I assume this means I should be doing something to "clean up" the
+subvolume?  Or maybe there's something in the Window system
+configuration to change?
+
+I'm running Linux Mint 14 KDE.  My fstab for the parts in question looks
+like:
+
+# / was on /dev/sde2 during installation
+UUID=1a...9 /     btrfs   defaults,subvol=@     0       1
+# /home was on /dev/sde2 during installation
+UUID=1a...9 /home btrfs   defaults,subvol=@home 0       2
+
+What I want is something like:
+# / was on /dev/sde2 during installation
+UUID=1a...9 /     btrfs   defaults              0       1
+# /home is on /dev/sda1
+UUID=7f...3 /home btrfs   defaults              0       2
+
+Thanks for bearing with me as I learn this new environment. ;-)
+
+Bob

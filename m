@@ -1,126 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f41.google.com ([209.85.219.41]:62037 "EHLO
-	mail-oa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750896Ab3B1CGN (ORCPT
+Received: from mail6.webfaction.com ([74.55.86.74]:40534 "EHLO
+	smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932908Ab3BSO5c convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 21:06:13 -0500
-Received: by mail-oa0-f41.google.com with SMTP id i10so2706840oag.14
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 18:06:13 -0800 (PST)
-Message-ID: <512EBB84.3020301@gmail.com>
-Date: Thu, 28 Feb 2013 10:05:56 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: xfstests <xfs@oss.sgi.com>, linux-btrfs@vger.kernel.org,
-        list.btrfs@jan-o-sch.net, sandeen@redhat.com
-Subject: Re: [PATCH] xfstests 276: fix error 'FIBMAP: Invalid argument'
-References: <512DB284.1090806@gmail.com> <20130227230443.GB5551@dastard> <512E9EAC.9050700@gmail.com> <20130228002532.GJ5551@dastard>
-In-Reply-To: <20130228002532.GJ5551@dastard>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+	Tue, 19 Feb 2013 09:57:32 -0500
+Received: from [192.168.2.123] (unknown [149.241.149.45])
+	by smtp.webfaction.com (Postfix) with ESMTP id 93E3D2099436
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2013 14:57:31 +0000 (UTC)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Apple Message framework v1085)
+Subject: Re: btrfsck: extent-tree.c:2549: btrfs_reserve_extent: Assertion `!(ret)' failed.
+From: Richard Cooper <richard@richardcooper.net>
+In-Reply-To: <0400867D-6E5E-4D0F-8A06-B5AD3E58DEE6@richardcooper.net>
+Date: Tue, 19 Feb 2013 14:57:29 +0000
+Message-Id: <6CA8B0F1-D6CD-4DD7-994D-64BAB3B41AB1@richardcooper.net>
+References: <0400867D-6E5E-4D0F-8A06-B5AD3E58DEE6@richardcooper.net>
+To: linux-btrfs@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2013年02月28日 08:25, Dave Chinner wrote:
-> On Thu, Feb 28, 2013 at 08:02:52AM +0800, Wang Sheng-Hui wrote:
->> On 2013年02月28日 07:04, Dave Chinner wrote:
->>> On Wed, Feb 27, 2013 at 03:15:16PM +0800, Wang Sheng-Hui wrote:
->>>> Btrfs doesn't support FIEMAP_FLAG_XATTR, which is enabled by
->>>> -x option of filefrag, and will fail with
->>>> 	'FIBMAP: Invalid argument'
->>>> for 'filefrag -vx'. 'filefrag -vx' fails on btrfs with
->>>>      'FIEMAP failed with unsupported flags 2'
->>>> Remove the '-x' option.
->>>>
->>>> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
->>>
->>> I can see that this changes what gets dumped into the $seq.full
->>> file, but it seems to me that also changes the extent list returned
->>> to the checking functions. So either the test previously worked and
->>> now it fails with this change, or the test never worked and now it
->>> does, or perhaps something else?
->>>
->>> IOWs, I can't tell why you want to change this from the patch
->>> description, hence I don't know if the original behaviour was
->>> intentional or not.  Can you say describe what the overall effect of
->>> the change is in the commit description?
->>
->> Hi Dave,
->>
->> I run xfstests for btrfs against SLES11SP2, not upstream kernel.
->> In the seq.full, I can get the messages
->> 	'FIEMAP failed with unsupported flags 2'
->>
->> Then I found that the test will run 'filefrag -vx' on btrfs, and
->> '-v' will run FIEMAP_FLAG_XATTR, which is not supported by btrfs
->> yet, at least in 3.8 kernel.
->
-> Sure, I understand that. I'm not asking about how it fails - that
-> much is obvious. What I am asking is:
->
-> 	- did it ever work?
-> 	- if it did, why did it start failing?
-> 	- how long has it been broken for?
->
->> With the patch, I can pass the testcase:
->> =============================================
->> 276 8s ... 7s
->> Ran: 276
->> Passed all 1 tests
->
-> Great, but why did it break in the first place? That's the
-> information that needs to be in the commit message. Indeed, Eric has
-> pointed out to us *exactly* the information that shoul dbe in the
-> commit message. i.e. a description along the lines of:
->
-> "Commit 05dadc0 ("Btrfs: add fiemap's flag check") added validity
-> checks to the fiemap flags and hence invalid flags are now being
-> rejected. Test 276 passes an invalid fiemap flag to btrfs, and so
-> that test fails since this commit was added."
->
-> That tells us exactly why the test failed, why the change is
-> necessary, and how long the test has been broken for. Seen another
-> way, it makes me wonder how often anyone runs xfstests on a btrfs
-> dev tree or regression tests their own changes.
->
-> Cheers,
->
-> Dave.
->
 
-Modify the commit message.
-----------------------------------------------------------------
+On 3 Jan 2013, at 12:26, Richard Cooper wrote:
+> Hi All,
+> 
+> I'm trying to repair a broken fs using btrfsck and am hitting a failed assertion. I'd appreciate any suggestions for what to do next. Is there any thing I can do to help fix this bug? Any other information from my FS which would help? If the FS could be salvaged that would be a bonus, but I'm more interested in providing a useful bug report before wiping the disk.
 
-Per Eric, Commit 05dadc0 ("Btrfs: add fiemap's flag check") added
-validity checks to the fiemap flags and hence invalid flags are now
-being rejected. Test 276 passes an invalid fiemap flag to btrfs, and
-so that test fails since this commit was added.
+After this error I reformatted and started again. A few days ago I hit exactly the same error in btrfsck again. Is it useful for me to report the same errors again? Would it make more sense for me to submit them to https://bugzilla.kernel.org? Is that tracker appropriate for btrfs-progs related bugs?
 
-Btrfs doesn't support FIEMAP_FLAG_XATTR, which is enabled by -x option
-of filefrag, and will fail with
-	'FIBMAP: Invalid argument'
-for 'filefrag -vx'. 'filefrag -vx' fails on btrfs with
-     'FIEMAP failed with unsupported flags 2'
-Remove the '-x' option.
+My versions are:
+- OS - CentOS 6.3
+- Kernel -  3.7.8-1 from http://elrepo.org/tiki/kernel-ml 
+- btrfs-progs - v0.20-rc1-56-g6cd836d. Built from git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
-  276 |    2 +-
-  1 file changed, 1 insertion(+), 1 deletion(-)
+# ./btrfs-progs/btrfs fi show /dev/md4
+Label: none  uuid: fecad98e-63e8-47b7-9bc1-5d9351f15e76
+	Total devices 1 FS bytes used 702.22GB
+	devid    1 size 16.36TB used 723.04GB path /dev/md4
 
-diff --git a/276 b/276
-index 082f943..f2b17c9 100755
---- a/276
-+++ b/276
-@@ -75,7 +75,7 @@ _filter_extents()
+Btrfs v0.20-rc1-56-g6cd836d
 
-  _check_file_extents()
-  {
--	cmd="filefrag -vx $1"
-+	cmd="filefrag -v $1"
-  	echo "# $cmd" >> $seq.full
-  	out=`$cmd | _filter_extents`
-  	if [ -z "$out" ]; then
--- 
-1.7.10.4
+# ./btrfsck --repair /dev/md4 
+enabling repair mode
+checking extents
+incorrect offsets 2539 133611
+bad block 694804008960
+bad key ordering 26 27
+bad block 710147256320
+bad key ordering 29 30
+bad block 710793940992
+ref mismatch on [506097786880 8192] extent item 1, found 0
+btrfsck: extent-tree.c:2549: btrfs_reserve_extent: Assertion `!(ret)' failed.
+Aborted
+# echo $?
+134
+
+If i run btrfsck in non-repair mode I get:
+
+# ./btrfsck /dev/md4 
+checking extents
+incorrect offsets 2539 133611
+bad block 694804008960
+bad key ordering 26 27
+bad block 710147256320
+bad key ordering 29 30
+bad block 710793940992
+ref mismatch on [506097786880 8192] extent item 1, found 0
+Incorrect local backref count on 506097786880 root 257 owner 6201018 offset 0 found 0 wanted 1 back 0x72966380
+backpointer mismatch on [506097786880 8192]
+owner ref check failed [506097786880 8192]
+ref mismatch on [506097795072 8192] extent item 1, found 0
+Incorrect local backref count on 506097795072 root 257 owner 6201019 offset 0 found 0 wanted 1 back 0x72966460
+backpointer mismatch on [506097795072 8192]
+owner ref check failed [506097795072 8192]
+ref mismatch on [506097803264 8192] extent item 1, found 0
+Incorrect local backref count on 506097803264 root 257 owner 6201021 offset 0 found 0 wanted 1 back 0x72966540
+backpointer mismatch on [506097803264 8192]
+owner ref check failed [506097803264 8192]
+ref mismatch on [506097811456 8192] extent item 1, found 0
+Incorrect local backref count on 506097811456 root 257 owner 6201022 offset 0 found 0 wanted 1 back 0x72966620
+backpointer mismatch on [506097811456 8192]
+owner ref check failed [506097811456 8192]
+ref mismatch on [686802194432 20480] extent item 1, found 0
+Incorrect local backref count on 686802194432 root 257 owner 8037960 offset 0 found 0 wanted 1 back 0x82c1e2a0
+backpointer mismatch on [686802194432 20480]
+owner ref check failed [686802194432 20480]
+ref mismatch on [686802214912 20480] extent item 1, found 0
+Incorrect local backref count on 686802214912 root 257 owner 8037961 offset 0 found 0 wanted 1 back 0x82c1e380
+backpointer mismatch on [686802214912 20480]
+owner ref check failed [686802214912 20480]
+ref mismatch on [686802235392 20480] extent item 1, found 0
+Incorrect local backref count on 686802235392 root 257 owner 8037962 offset 0 found 0 wanted 1 back 0x82c1e460
+backpointer mismatch on [686802235392 20480]
+owner ref check failed [686802235392 20480]
+ref mismatch on [686802255872 20480] extent item 1, found 0
+Incorrect local backref count on 686802255872 root 257 owner 8037963 offset 0 found 0 wanted 1 back 0x82c1e540
+backpointer mismatch on [686802255872 20480]
+owner ref check failed [686802255872 20480]
+ref mismatch on [686802276352 20480] extent item 1, found 0
+Incorrect local backref count on 686802276352 root 257 owner 8037964 offset 0 found 0 wanted 1 back 0x82c1e620
+backpointer mismatch on [686802276352 20480]
+owner ref check failed [686802276352 20480]
+ref mismatch on [686802296832 20480] extent item 1, found 0
+Incorrect local backref count on 686802296832 root 257 owner 8037965 offset 0 found 0 wanted 1 back 0x82c1e700
+backpointer mismatch on [686802296832 20480]
+owner ref check failed [686802296832 20480]
+ref mismatch on [686802317312 20480] extent item 1, found 0
+Incorrect local backref count on 686802317312 root 257 owner 8037966 offset 0 found 0 wanted 1 back 0x82c1e7e0
+backpointer mismatch on [686802317312 20480]
+owner ref check failed [686802317312 20480]
+owner ref check failed [694804008960 4096]
+owner ref check failed [710147256320 4096]
+owner ref check failed [710793940992 4096]
+Errors found in extent allocation tree
+checking fs roots
+root 257 inode 6292865 errors 400
+root 257 inode 6292867 errors 400
+found 754001297408 bytes used err is 1
+total csum bytes: 718173168
+total tree bytes: 18407149568
+total fs tree bytes: 16537788416
+btree space waste bytes: 4527688532
+file data blocks allocated: 735593959424
+ referenced 735590412288
+Btrfs v0.20-rc1-56-g6cd836d
 
 

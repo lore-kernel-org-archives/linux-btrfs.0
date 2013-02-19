@@ -1,53 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46545 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750791Ab3BSKyx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Feb 2013 05:54:53 -0500
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 87258A4386
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2013 11:54:52 +0100 (CET)
-Date: Tue, 19 Feb 2013 11:54:51 +0100
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: Integration branch of btrfs-progs 2013-02-19
-Message-ID: <20130219105451.GU12339@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-oa0-f49.google.com ([209.85.219.49]:34928 "EHLO
+	mail-oa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933485Ab3BSUW2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Feb 2013 15:22:28 -0500
+Received: by mail-oa0-f49.google.com with SMTP id j6so7452343oag.36
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2013 12:22:27 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Date: Tue, 19 Feb 2013 14:22:27 -0600
+Message-ID: <CAKcLGm-Zk_8mZZUwz3Y-rsM-_ySFOSSR0OYcK2VU=2iYFQ=ZWA@mail.gmail.com>
+Subject: Snapshot Cleaner not Working with inode_cache
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I've encountered an issue where the space from previously deleted
+snapshots is not being freed up by the cleaner thread.
 
-a set of updates and fixes, plus two libify patches left out for
-now (*):
+I'm only encountering this issue when I mount with the inode_cache option.
 
-btrfs-progs: libify some parts of btrfs-progs
-btrfs-progs: don't link binaries to a dynamic library
+I've reproduced this on a 3.7.9 kernel merged with the latest
+for-linus branch.  No additional patches are involved.  My testing
+partition is 16 GB.
 
-* http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg22293.html
+There is nothing in dmesg indicating any issues.
 
-In the near-todo are the label patches as the kernel functionality is
-going to land in 3.9, otherwise I'm still processing the remaining old
-patches and will pick up recent fixes eventually.
+A simple manual test can reproduce the issue on my box
 
-  git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130219
+(1)  Format a fresh, scratch btrfs partition (it would probably work
+with an existing test partition, but I always like to test things that
+seem broken on a scratch partition).
+(2)  Mount partition (my options are -o
+compress-force=lzo,inode_cache).  My mount command was:
+mount -o compress-force=lzo,inode_cache /dev/sda7 /mnt/benchmark/
+(3)  Make a subvolume:  cd /mnt/<device>; btrfs su create test1
+(4)  Untar kernel sources to the subvolume:  cd test1; tar -xpf
+<path/to/kernel/source/tarball>
+I believe anything you use to populate the subvolume is sufficient.
+(5)  Make a note of the disk usage:  df -T /mnt/<device>
+(6)  Remove the subvolume:  cd ..; btrfs su delete test1
+(7)  Wait 2 minutes, and notice that the space has not been freed up.
+I've waited much longer, but I forget the exact timeout on the cleaner
+thread.
+df -T /mnt/<device>
 
+If I unmount and remount the partition with the same mount options,
+the cleaner will begin to correctly free the space.
 
-Thanks for testing,
-david
-
----
-Shortlog (only new patches on top of previous integration):
-
-Eric Sandeen (1):
-      btrfs-progs: require mkfs -f force option to overwrite filesystem or partition table
-
-Liu Bo (1):
-      Btrfs-progs: fix segmentation fault of 'btrfs-debug-tree -e'
-
-Mark Fasheh (1):
-      btrfs-progs: Fix pointer math in __ino_to_path_fd
-
-Tsutomu Itoh (1):
-      Btrfs-progs: check out if the swap device
+I've never used the inode_cache option before, so I'll try a few other
+kernels to see if this is a regression.

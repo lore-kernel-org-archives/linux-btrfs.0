@@ -1,69 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47715 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934921Ab3BTNL0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 08:11:26 -0500
-Date: Wed, 20 Feb 2013 14:11:23 +0100
-From: David Sterba <dsterba@suse.cz>
-To: =?iso-8859-1?B?Suly9G1l?= Poulin <jeromepoulin@gmail.com>
-Cc: Arne Jansen <lists@die-jansens.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel panic when scrub is used
-Message-ID: <20130220131123.GD9521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CALJXSJrNNkEmSeGkez+A5-SWT9k8CUA7fUW5MRviXBWTLB1nqQ@mail.gmail.com>
- <512266F5.7000109@die-jansens.de>
- <CALJXSJpEVB6vESOQmpLfBkHYSqxU0quhByYGSJqgUR5SVY6Shw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CALJXSJpEVB6vESOQmpLfBkHYSqxU0quhByYGSJqgUR5SVY6Shw@mail.gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:29226 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757742Ab3BTOLn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Feb 2013 09:11:43 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
+        Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs: fix cleaner thread not working with inode cache option
+Date: Wed, 20 Feb 2013 22:10:23 +0800
+Message-Id: <1361369423-2208-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 18, 2013 at 12:53:28PM -0500, Jérôme Poulin wrote:
-> http://tinypic.com/r/2r3xdvl/6
+Right now inode cache inode is treated as the same as space cache
+inode, ie. keep inode in memory till putting super.
 
-At the top of the listing there's apparent trace of a WARN_ON issued and
-it's in read_extent_buffer
+But this leads to an awkward situation.
 
-4660 void read_extent_buffer(struct extent_buffer *eb, void *dstv,
-4661                         unsigned long start,
-4662                         unsigned long len)
-4663 {
-4664         size_t cur;
-4665         size_t offset;
-4666         struct page *page;
-4667         char *kaddr;
-4668         char *dst = (char *)dstv;
-4669         size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
-4670         unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
-4671
-4672         WARN_ON(start > eb->len);
-4673         WARN_ON(start + len > eb->start + eb->len);
+If we're going to delete a snapshot/subvolume, btrfs will not
+actually delete it and return free space, but will add it to dead
+roots list until the last inode on this snap/subvol being destroyed.
+Then we'll fetch deleted roots and cleanup them via cleaner thread.
 
-4674
-4675         offset = (start_offset + start) & ((unsigned long)PAGE_CACHE_SIZE - 1);
-4676
-4677         while (len > 0) {
-4678                 page = extent_buffer_page(eb, i);
-4679
-4680                 cur = min(len, (PAGE_CACHE_SIZE - offset));
-4681                 kaddr = page_address(page);
-4682                 memcpy(dst, kaddr + offset, cur);
+So here is the problem, if we enable inode cache option, each
+snap/subvol has a cached inode which is used to store inode allcation
+information.  And this cache inode will be kept in memory, as the above
+said.  So with inode cache, snap/subvol can only be added into
+dead roots list during freeing roots stage in umount, so that we can
+ONLY get space back after another remount(we cleanup dead roots on mount).
 
-first segfault happens at memcpy, it's likely a bad value in 'offset'
-calculated from bogus values in 'eb'. With some luck we can guess at which page
-it happend (which of RBX=11, RCX=2, RDX=1 holds value of 'i') or what are
-values of other variables.
+But the real thing is we'll no more use the snap/subvol if we mark it
+deleted, so we can safely iput its cache inode when we delete snap/subvol.
 
-4683
-4684                 dst += cur;
-4685                 len -= cur;
-4686                 offset = 0;
-4687                 i++;
-4688         }
-4689 }
+Another thing is that we need to change the rules of droping inode, we
+don't keep snap/subvol's cache inode in memory till end so that we can
+add snap/subvol into dead roots list in time.
 
-Was the filesystem created with nodesize > 4k ?
+Reported-by: Mitch Harder <mitch.harder@sabayonlinux.org>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c |    3 ++-
+ fs/btrfs/ioctl.c |    6 ++++++
+ 2 files changed, 8 insertions(+), 1 deletions(-)
 
-david
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ca7ace7..d9984fa 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7230,8 +7230,9 @@ int btrfs_drop_inode(struct inode *inode)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
++	/* the snap/subvol tree is on deleting */
+ 	if (btrfs_root_refs(&root->root_item) == 0 &&
+-	    !btrfs_is_free_space_inode(inode))
++	    root != root->fs_info->tree_root)
+ 		return 1;
+ 	else
+ 		return generic_drop_inode(inode);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a31cd93..375f31f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2171,6 +2171,12 @@ out_unlock:
+ 		shrink_dcache_sb(root->fs_info->sb);
+ 		btrfs_invalidate_inodes(dest);
+ 		d_delete(dentry);
++
++		/* the last ref */
++		if (dest->cache_inode) {
++			iput(dest->cache_inode);
++			dest->cache_inode = NULL;
++		}
+ 	}
+ out_dput:
+ 	dput(dentry);
+-- 
+1.7.7.6
+

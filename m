@@ -1,36 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:38902 "EHLO tetsuo.zabbo.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933081Ab3BTSN0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 13:13:26 -0500
-Date: Wed, 20 Feb 2013 10:13:26 -0800
-From: Zach Brown <zab@zabbo.net>
-To: Petr Bena <benapetr@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs doesn't report proper error when removing subvolume
-Message-ID: <20130220181326.GU22221@lenny.home.zabbo.net>
-References: <CA+4EQ5dZN5YdvsJG+jO1LH8SghH_iedLYo7DN3zk1+m7o0QC9A@mail.gmail.com>
+Received: from mail-da0-f49.google.com ([209.85.210.49]:46168 "EHLO
+	mail-da0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933357Ab3BTSmo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Feb 2013 13:42:44 -0500
+Received: by mail-da0-f49.google.com with SMTP id t11so3679240daj.36
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2013 10:42:43 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CA+4EQ5dZN5YdvsJG+jO1LH8SghH_iedLYo7DN3zk1+m7o0QC9A@mail.gmail.com>
+In-Reply-To: <20130220131123.GD9521@twin.jikos.cz>
+References: <CALJXSJrNNkEmSeGkez+A5-SWT9k8CUA7fUW5MRviXBWTLB1nqQ@mail.gmail.com>
+	<512266F5.7000109@die-jansens.de>
+	<CALJXSJpEVB6vESOQmpLfBkHYSqxU0quhByYGSJqgUR5SVY6Shw@mail.gmail.com>
+	<20130220131123.GD9521@twin.jikos.cz>
+Date: Wed, 20 Feb 2013 13:42:42 -0500
+Message-ID: <CALJXSJq7Y4QyDpDY6g1A1o1=OoMRk+4p2L2vtAeU+-ATtbit-Q@mail.gmail.com>
+Subject: Re: Kernel panic when scrub is used
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: dsterba@suse.cz, =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>,
+        Arne Jansen <lists@die-jansens.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> petrb@bots-bnr1:/mnt$ btrfs subvolume delete ext2_saved/
-> Delete subvolume '/mnt/ext2_saved'
-> ERROR: cannot delete '/mnt/ext2_saved'
-> 
-> this is not really very descriptive. It would be really cool if it
-> told me why it can't delete it.
+On Wed, Feb 20, 2013 at 8:11 AM, David Sterba <dsterba@suse.cz> wrote:
+> Was the filesystem created with nodesize > 4k ?
 
-Hmm.  I think this has been fixed for a long time.
+Yes; 64KB.
 
-  [zab@f18 ~]$ btrfs sub delete /mnt/btrfs/blah/
-  Delete subvolume '/mnt/btrfs/blah'
-  ERROR: cannot delete '/mnt/btrfs/blah' - Operation not permitted
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git;a=commit;h=17cf679fb3622a9e3452777d07fcf3a346266ff1
-
-Where'd you find that btrfs-progs version? :)
-
-- z
+root@p4:~ btrfs-show-super /dev/sda4
+superblock: bytenr=65536, device=/dev/sda4
+---------------------------------------------------------
+csum 0x799cb7d1 [match]
+bytenr 65536
+flags 0x1
+magic _BHRfS_M [match]
+fsid 73f86413-2368-4cf8-8371-71a44d6d8bb3
+label p4-btrfsRoot
+generation 172418
+root 27028815872
+sys_array_size 226
+chunk_root_generation 171189
+root_level 0
+chunk_root 27538685952
+chunk_root_level 0
+log_root 27049787392
+log_root_transid 0
+log_root_level 0
+total_bytes 15415397888
+bytes_used 9044217856
+sectorsize 4096
+nodesize 65536
+leafsize 65536
+stripesize 4096
+root_dir 6
+num_devices 4
+compat_flags 0x0
+compat_ro_flags 0x0
+incompat_flags 0xab
+csum_type 0
+csum_size 4
+cache_generation 172418
+dev_item.uuid c0494d4e-82ad-4241-9a05-c3f2a1d31bd7
+dev_item.fsid 73f86413-2368-4cf8-8371-71a44d6d8bb3 [match]
+dev_item.type 0
+dev_item.total_bytes 3853848576
+dev_item.bytes_used 2973761536
+dev_item.io_align 4096
+dev_item.io_width 4096
+dev_item.sector_size 4096
+dev_item.devid 1
+dev_item.dev_group 0
+dev_item.seek_speed 0
+dev_item.bandwidth 0
+dev_item.generation 0

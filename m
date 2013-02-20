@@ -1,65 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta13.emeryville.ca.mail.comcast.net ([76.96.27.243]:34764
-	"EHLO qmta13.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S933969Ab3BTHdx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 02:33:53 -0500
-Message-ID: <51247C5B.8050805@gmail.com>
-Date: Tue, 19 Feb 2013 23:33:47 -0800
-From: Bob McGowan <ramjr0915@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:38586 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1756467Ab3BTJMq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Feb 2013 04:12:46 -0500
+Message-ID: <512493BC.4070105@cn.fujitsu.com>
+Date: Wed, 20 Feb 2013 17:13:32 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: Chris Murphy <lists@colorremedies.com>
-Subject: Re: "Fixing" mount points
-References: <5121DC0D.8060305@gmail.com> <C36BE313-EE1C-43CD-8A8A-D595586974DD@colorremedies.com>
-In-Reply-To: <C36BE313-EE1C-43CD-8A8A-D595586974DD@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH 1/3] Btrfs: fix the qgroup reserved space is released prematurely
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In start_transactio(), we will try to join the transaction again after
+the current transaction is committed, so we should not release the
+reserved space of the qgroup. Fix it.
 
-On 02/18/2013 09:08 AM, Chris Murphy wrote:
-> On Feb 18, 2013, at 12:45 AM, Bob McGowan <ramjr0915@gmail.com> wrote:
->
->> Even though things look OK from the command line, logging in through the
->> window system fails (actually, just hangs).
->>
->> I assume this means I should be doing something to "clean up" the
->> subvolume?  Or maybe there's something in the Window system
->> configuration to change?
->>
->> I'm running Linux Mint 14 KDE.  My fstab for the parts in question looks
->> like:
->>
->> # / was on /dev/sde2 during installation
->> UUID=1a...9 /     btrfs   defaults,subvol=@     0       1
->> # /home was on /dev/sde2 during installation
->> UUID=1a...9 /home btrfs   defaults,subvol=@home 0       2
->>
->> What I want is something like:
->> # / was on /dev/sde2 during installation
->> UUID=1a...9 /     btrfs   defaults              0       1
->> # /home is on /dev/sda1
->> UUID=7f...3 /home btrfs   defaults              0       2
-> The 2nd fstab implies a completely different disk, the first partition is btrfs, mounted as /home. So long as the contents are user folders, i.e. the same thing found in sde2 subvol @home, then it's functionally the same as what you had before.
->
-> Also, btrfs doesn't need fs_passno set.
->
->
-> Chris Murphy
-Hi, Chris,
+Cc: Arne Jansen <sensille@gmx.net>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Thanks for the information.  As for fs_passno, what you're seeing is
-what was put there by the install process.  I'm assuming, if it's not
-needed, that the proper value would be zero?
-
-You have confirmed what I thought was correct.  But trying it the first
-time failed.  My login acted as though the user was valid but login
-didn't complete, returning to the login screen.
-
-Since I was just able to reconfigure fstab, and it worked, I'd say I
-probably fat fingered something and just didn't notice.
-
-In any case, many thanks, again. ;)
-
-Bob
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index fc03aa6..bc2f2d1 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -383,7 +383,7 @@ again:
+ 	h->block_rsv = NULL;
+ 	h->orig_rsv = NULL;
+ 	h->aborted = 0;
+-	h->qgroup_reserved = qgroup_reserved;
++	h->qgroup_reserved = 0;
+ 	h->delayed_ref_elem.seq = 0;
+ 	h->type = type;
+ 	INIT_LIST_HEAD(&h->qgroup_ref_list);
+@@ -401,6 +401,7 @@ again:
+ 		h->block_rsv = &root->fs_info->trans_block_rsv;
+ 		h->bytes_reserved = num_bytes;
+ 	}
++	h->qgroup_reserved = qgroup_reserved;
+ 
+ got_it:
+ 	btrfs_record_root_in_trans(h, root);
+-- 
+1.6.5.2

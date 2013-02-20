@@ -1,82 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29226 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:35759 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757742Ab3BTOLn (ORCPT
+	with ESMTP id S935299Ab3BTOVU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 09:11:43 -0500
+	Wed, 20 Feb 2013 09:21:20 -0500
+Date: Wed, 20 Feb 2013 22:20:02 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-        Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH] Btrfs: fix cleaner thread not working with inode cache option
-Date: Wed, 20 Feb 2013 22:10:23 +0800
-Message-Id: <1361369423-2208-1-git-send-email-bo.li.liu@oracle.com>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Subject: Re: [RFC] Btrfs: Allow the compressed extent size limit to be
+ modified v2
+Message-ID: <20130220142001.GB4941@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Right now inode cache inode is treated as the same as space cache
-inode, ie. keep inode in memory till putting super.
+On Thu, Feb 07, 2013 at 03:38:34PM -0600, Mitch Harder wrote:
+> Provide for modification of the limit of compressed extent size
+> utilizing mount-time configuration settings.
+> 
+> The size of compressed extents was limited to 128K, which
+> leads to fragmentation of the extents (although the extents
+> themselves may still be located contiguously).  This limit is
+> put in place to ease the RAM required when spreading compression
+> across several CPUs, and to make sure the amount of IO required
+> to do a random read is reasonably small.
+> 
+> Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
+> ---
+> Changelog v1 -> v2:
+> - Use more self-documenting variable name:
+>   compressed_extent_size -> max_compressed_extent_kb
+> - Use #define BTRFS_DEFAULT_MAX_COMPR_EXTENTS instead of raw 128.
+> - Fix min calculation for nr_pages.
+> - Comment cleanup.
+> - Use more self-documenting mount option parameter:
+>   compressed_extent_size -> max_compressed_extent_kb
+> - Fix formatting in btrfs_show_options.
+> ---
+>  fs/btrfs/ctree.h      |  6 ++++++
+>  fs/btrfs/disk-io.c    |  1 +
+>  fs/btrfs/inode.c      |  8 ++++----
+>  fs/btrfs/relocation.c |  7 ++++---
+>  fs/btrfs/super.c      | 20 +++++++++++++++++++-
+>  5 files changed, 34 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 547b7b0..a62f20c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -191,6 +191,9 @@ static int btrfs_csum_sizes[] = { 4, 0 };
+>  /* ioprio of readahead is set to idle */
+>  #define BTRFS_IOPRIO_READA (IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0))
+>  
+> +/* Default value for maximum compressed extent size (kb) */
+> +#define BTRFS_DEFAULT_MAX_COMPR_EXTENTS	128
+> +
+>  /*
+>   * The key defines the order in the tree, and so it also defines (optimal)
+>   * block layout.
+> @@ -1477,6 +1480,8 @@ struct btrfs_fs_info {
+>  	unsigned data_chunk_allocations;
+>  	unsigned metadata_ratio;
+>  
+> +	unsigned max_compressed_extent_kb;
+> +
+>  	void *bdev_holder;
+>  
+>  	/* private scrub information */
+> @@ -1829,6 +1834,7 @@ struct btrfs_ioctl_defrag_range_args {
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+>  #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+> +#define BTRFS_MOUNT_COMPR_EXTENT_SIZE (1 << 23)
+>  
+>  #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+>  #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 830bc17..775e7ba 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2056,6 +2056,7 @@ int open_ctree(struct super_block *sb,
+>  	fs_info->trans_no_join = 0;
+>  	fs_info->free_chunk_space = 0;
+>  	fs_info->tree_mod_log = RB_ROOT;
+> +	fs_info->max_compressed_extent_kb = BTRFS_DEFAULT_MAX_COMPR_EXTENTS;
+>  
+>  	/* readahead state */
+>  	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 148abeb..78fc6eb 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -346,8 +346,8 @@ static noinline int compress_file_range(struct inode *inode,
+>  	unsigned long nr_pages_ret = 0;
+>  	unsigned long total_compressed = 0;
+>  	unsigned long total_in = 0;
+> -	unsigned long max_compressed = 128 * 1024;
+> -	unsigned long max_uncompressed = 128 * 1024;
+> +	unsigned long max_compressed = root->fs_info->max_compressed_extent_kb * 1024;
+> +	unsigned long max_uncompressed = root->fs_info->max_compressed_extent_kb * 1024;
+>  	int i;
+>  	int will_compress;
+>  	int compress_type = root->fs_info->compress_type;
+> @@ -361,7 +361,7 @@ static noinline int compress_file_range(struct inode *inode,
+>  again:
+>  	will_compress = 0;
+>  	nr_pages = (end >> PAGE_CACHE_SHIFT) - (start >> PAGE_CACHE_SHIFT) + 1;
+> -	nr_pages = min(nr_pages, (128 * 1024UL) / PAGE_CACHE_SIZE);
+> +	nr_pages = min(nr_pages, max_compressed / PAGE_CACHE_SIZE);
+>  
+>  	/*
+>  	 * we don't want to send crud past the end of i_size through
+> @@ -386,7 +386,7 @@ again:
+>  	 *
+>  	 * We also want to make sure the amount of IO required to do
+>  	 * a random read is reasonably small, so we limit the size of
+> -	 * a compressed extent to 128k.
+> +	 * a compressed extent.
+>  	 */
+>  	total_compressed = min(total_compressed, max_uncompressed);
+>  	num_bytes = (end - start + blocksize) & ~(blocksize - 1);
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 300e09a..64bbc9e 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -144,7 +144,7 @@ struct tree_block {
+>  	unsigned int key_ready:1;
+>  };
+>  
+> -#define MAX_EXTENTS 128
+> +#define MAX_EXTENTS 512
+>  
+>  struct file_extent_cluster {
+>  	u64 start;
+> @@ -3055,6 +3055,7 @@ int relocate_data_extent(struct inode *inode, struct btrfs_key *extent_key,
+>  			 struct file_extent_cluster *cluster)
+>  {
+>  	int ret;
+> +	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+>  
+>  	if (cluster->nr > 0 && extent_key->objectid != cluster->end + 1) {
+>  		ret = relocate_file_extent_cluster(inode, cluster);
+> @@ -3066,12 +3067,12 @@ int relocate_data_extent(struct inode *inode, struct btrfs_key *extent_key,
+>  	if (!cluster->nr)
+>  		cluster->start = extent_key->objectid;
+>  	else
+> -		BUG_ON(cluster->nr >= MAX_EXTENTS);
+> +		BUG_ON(cluster->nr >= fs_info->max_compressed_extent_kb);
+>  	cluster->end = extent_key->objectid + extent_key->offset - 1;
+>  	cluster->boundary[cluster->nr] = extent_key->objectid;
+>  	cluster->nr++;
+>  
+> -	if (cluster->nr >= MAX_EXTENTS) {
+> +	if (cluster->nr >= fs_info->max_compressed_extent_kb) {
+>  		ret = relocate_file_extent_cluster(inode, cluster);
+>  		if (ret)
+>  			return ret;
 
-But this leads to an awkward situation.
+MAX_EXTENTS is irrelevant to compress, it's just for efficiency of relocation.
 
-If we're going to delete a snapshot/subvolume, btrfs will not
-actually delete it and return free space, but will add it to dead
-roots list until the last inode on this snap/subvol being destroyed.
-Then we'll fetch deleted roots and cleanup them via cleaner thread.
+thanks,
+liubo
 
-So here is the problem, if we enable inode cache option, each
-snap/subvol has a cached inode which is used to store inode allcation
-information.  And this cache inode will be kept in memory, as the above
-said.  So with inode cache, snap/subvol can only be added into
-dead roots list during freeing roots stage in umount, so that we can
-ONLY get space back after another remount(we cleanup dead roots on mount).
 
-But the real thing is we'll no more use the snap/subvol if we mark it
-deleted, so we can safely iput its cache inode when we delete snap/subvol.
-
-Another thing is that we need to change the rules of droping inode, we
-don't keep snap/subvol's cache inode in memory till end so that we can
-add snap/subvol into dead roots list in time.
-
-Reported-by: Mitch Harder <mitch.harder@sabayonlinux.org>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode.c |    3 ++-
- fs/btrfs/ioctl.c |    6 ++++++
- 2 files changed, 8 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ca7ace7..d9984fa 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7230,8 +7230,9 @@ int btrfs_drop_inode(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 
-+	/* the snap/subvol tree is on deleting */
- 	if (btrfs_root_refs(&root->root_item) == 0 &&
--	    !btrfs_is_free_space_inode(inode))
-+	    root != root->fs_info->tree_root)
- 		return 1;
- 	else
- 		return generic_drop_inode(inode);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a31cd93..375f31f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2171,6 +2171,12 @@ out_unlock:
- 		shrink_dcache_sb(root->fs_info->sb);
- 		btrfs_invalidate_inodes(dest);
- 		d_delete(dentry);
-+
-+		/* the last ref */
-+		if (dest->cache_inode) {
-+			iput(dest->cache_inode);
-+			dest->cache_inode = NULL;
-+		}
- 	}
- out_dput:
- 	dput(dentry);
--- 
-1.7.7.6
-
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index d8982e9..25b8dc2 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -322,7 +322,7 @@ enum {
+>  	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+>  	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+>  	Opt_check_integrity_print_mask, Opt_fatal_errors,
+> -	Opt_err,
+> +	Opt_max_compr_extent_kb, Opt_err,
+>  };
+>  
+>  static match_table_t tokens = {
+> @@ -361,6 +361,7 @@ static match_table_t tokens = {
+>  	{Opt_check_integrity, "check_int"},
+>  	{Opt_check_integrity_including_extent_data, "check_int_data"},
+>  	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
+> +	{Opt_max_compr_extent_kb, "max_compressed_extent_kb=%d"},
+>  	{Opt_fatal_errors, "fatal_errors=%s"},
+>  	{Opt_err, NULL},
+>  };
+> @@ -612,6 +613,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  			ret = -EINVAL;
+>  			goto out;
+>  #endif
+> +		case Opt_max_compr_extent_kb:
+> +			intarg = 0;
+> +			match_int(&args[0], &intarg);
+> +			if ((intarg == 128) || (intarg == 512)) {
+> +				info->max_compressed_extent_kb = intarg;
+> +				printk(KERN_INFO "btrfs: "
+> +				       "max compressed extent size %d KB\n",
+> +				       info->max_compressed_extent_kb);
+> +			} else {
+> +				printk(KERN_INFO "btrfs: "
+> +				       "Invalid compressed extent size,"
+> +				       " using default.\n");
+> +			}
+> +			break;
+>  		case Opt_fatal_errors:
+>  			if (strcmp(args[0].from, "panic") == 0)
+>  				btrfs_set_opt(info->mount_opt,
+> @@ -951,6 +966,9 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+>  		seq_puts(seq, ",skip_balance");
+>  	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
+>  		seq_puts(seq, ",fatal_errors=panic");
+> +	if (btrfs_test_opt(root, COMPR_EXTENT_SIZE))
+> +		seq_printf(seq, ",max_compressed_extent_kb=%u",
+> +			   info->max_compressed_extent_kb);
+>  	return 0;
+>  }
+>  
+> -- 
+> 1.7.12.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

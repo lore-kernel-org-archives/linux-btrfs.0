@@ -1,67 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47347 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47715 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S935133Ab3BTM7U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 07:59:20 -0500
-Date: Wed, 20 Feb 2013 13:59:18 +0100
+	id S934921Ab3BTNL0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Feb 2013 08:11:26 -0500
+Date: Wed, 20 Feb 2013 14:11:23 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
-Subject: Re: [RFC] Btrfs: Allow the compressed extent size limit to be
- modified v2
-Message-ID: <20130220125918.GC9521@twin.jikos.cz>
+To: =?iso-8859-1?B?Suly9G1l?= Poulin <jeromepoulin@gmail.com>
+Cc: Arne Jansen <lists@die-jansens.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel panic when scrub is used
+Message-ID: <20130220131123.GD9521@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+References: <CALJXSJrNNkEmSeGkez+A5-SWT9k8CUA7fUW5MRviXBWTLB1nqQ@mail.gmail.com>
+ <512266F5.7000109@die-jansens.de>
+ <CALJXSJpEVB6vESOQmpLfBkHYSqxU0quhByYGSJqgUR5SVY6Shw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <CALJXSJpEVB6vESOQmpLfBkHYSqxU0quhByYGSJqgUR5SVY6Shw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 07, 2013 at 03:38:34PM -0600, Mitch Harder wrote:
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -144,7 +144,7 @@ struct tree_block {
->  	unsigned int key_ready:1;
->  };
->  
-> -#define MAX_EXTENTS 128
-> +#define MAX_EXTENTS 512
+On Mon, Feb 18, 2013 at 12:53:28PM -0500, Jérôme Poulin wrote:
+> http://tinypic.com/r/2r3xdvl/6
 
-I'm still not convinced this is needed and seeing
-max_compressed_extent_kb used in the middle of relocation code makes me
-wonder. There may be a bug related to the number but I have doubts that
-it is related to compression.
+At the top of the listing there's apparent trace of a WARN_ON issued and
+it's in read_extent_buffer
 
-> -		BUG_ON(cluster->nr >= MAX_EXTENTS);
-> +		BUG_ON(cluster->nr >= fs_info->max_compressed_extent_kb);
+4660 void read_extent_buffer(struct extent_buffer *eb, void *dstv,
+4661                         unsigned long start,
+4662                         unsigned long len)
+4663 {
+4664         size_t cur;
+4665         size_t offset;
+4666         struct page *page;
+4667         char *kaddr;
+4668         char *dst = (char *)dstv;
+4669         size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+4670         unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
+4671
+4672         WARN_ON(start > eb->len);
+4673         WARN_ON(start + len > eb->start + eb->len);
 
-...
+4674
+4675         offset = (start_offset + start) & ((unsigned long)PAGE_CACHE_SIZE - 1);
+4676
+4677         while (len > 0) {
+4678                 page = extent_buffer_page(eb, i);
+4679
+4680                 cur = min(len, (PAGE_CACHE_SIZE - offset));
+4681                 kaddr = page_address(page);
+4682                 memcpy(dst, kaddr + offset, cur);
 
-> @@ -612,6 +613,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
->  			ret = -EINVAL;
->  			goto out;
->  #endif
-> +		case Opt_max_compr_extent_kb:
-> +			intarg = 0;
-> +			match_int(&args[0], &intarg);
-> +			if ((intarg == 128) || (intarg == 512)) {
-> +				info->max_compressed_extent_kb = intarg;
-> +				printk(KERN_INFO "btrfs: "
-> +				       "max compressed extent size %d KB\n",
-> +				       info->max_compressed_extent_kb);
+first segfault happens at memcpy, it's likely a bad value in 'offset'
+calculated from bogus values in 'eb'. With some luck we can guess at which page
+it happend (which of RBX=11, RCX=2, RDX=1 holds value of 'i') or what are
+values of other variables.
 
-				btrfs_set_opt(fs_info->mount_opt,
-					COMPR_EXTENT_SIZE);
+4683
+4684                 dst += cur;
+4685                 len -= cur;
+4686                 offset = 0;
+4687                 i++;
+4688         }
+4689 }
 
-otherwise the value of the options is not visible in /proc/mounts
+Was the filesystem created with nodesize > 4k ?
 
-> +			} else {
-> +				printk(KERN_INFO "btrfs: "
-> +				       "Invalid compressed extent size,"
-> +				       " using default.\n");
-> +			}
-> +			break;
->  		case Opt_fatal_errors:
->  			if (strcmp(args[0].from, "panic") == 0)
->  				btrfs_set_opt(info->mount_opt,
+david

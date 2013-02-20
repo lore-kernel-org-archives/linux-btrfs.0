@@ -1,68 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f54.google.com ([209.85.160.54]:53635 "EHLO
-	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756367Ab3BVMC7 (ORCPT
+Received: from mail-da0-f49.google.com ([209.85.210.49]:38765 "EHLO
+	mail-da0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750698Ab3BTFA3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 07:02:59 -0500
-Received: by mail-pb0-f54.google.com with SMTP id rr4so368804pbb.41
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 04:02:58 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sensille@gmx.net
-Subject: [PATCH 2/2] Btrfs: disable the qgroup level 0 for userspace use
-Date: Fri, 22 Feb 2013 20:02:53 +0800
-Message-Id: <1361534573-2412-1-git-send-email-wangshilong1991@gmail.com>
+	Wed, 20 Feb 2013 00:00:29 -0500
+Received: by mail-da0-f49.google.com with SMTP id t11so3314821daj.22
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2013 21:00:28 -0800 (PST)
+MIME-Version: 1.0
+Date: Wed, 20 Feb 2013 00:00:28 -0500
+Message-ID: <CALJXSJpxVPeQa4v9w7Z1SOjVNNSAm4F1F3rbDdzThNmzV2JtGA@mail.gmail.com>
+Subject: bio too big/checksum errors during LVM pvmove
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+I get many checksum errors *during* pvmove operations, such as:
 
-This patch tries to stop users to create/destroy qgroup level 0,
-users can only create/destroy qgroup level more than 0.
+[13954.139079] bio too big device dm-4 (72 > 8)
+[13954.139091] bio too big device dm-4 (16 > 8)
+[13954.139104] bio too big device dm-4 (56 > 8)
+[14040.223812] bio too big device dm-4 (64 > 8)
+[14040.223818] btrfs_dev_stat_print_on_error: 9 callbacks suppressed
+...
+[14175.389937] btrfs: bdev /dev/mapper/btrfs2 errs: wr 0, rd 1196,
+flush 0, corrupt 0, gen 0
+[14175.389956] btrfs csum failed ino 508725 extent 3219001344 csum
+1636590654 wanted 2132898075 mirror 0
+[14206.788000] bio too big device dm-4 (64 > 8)
+[14206.788011] btrfs: bdev /dev/mapper/btrfs2 errs: wr 0, rd 1197,
+flush 0, corrupt 0, gen 0
+[14206.788035] btrfs csum failed ino 508725 extent 3219001344 csum
+3779168556 wanted 2132898075 mirror 0
+[14227.853863] bio too big device dm-4 (64 > 8)
+[14227.853870] btrfs: bdev /dev/mapper/btrfs2 errs: wr 0, rd 1198,
+flush 0, corrupt 0, gen 0
+[14227.853884] btrfs csum failed ino 508725 extent 3219001344 csum
+895061498 wanted 2132898075 mirror 0
+...
 
-See the fact:
-	a subvolume/snapshot qgroup was created automatically
-when creating subvolume/snapshot, so creating a qgroup level 0 can't
-be a subvolume/snapshot qgroup, the only way to use it is that assigning
-subvolume/snapshot qgroup to it, the point is that we don't want to have a
-parent qgroup whose level is 0.
+My setup is:
+sda3 \
+sdb3   \__  md0 RAID5 __ LVM2 PV __ Cryptsetup LV __ BTRFS
+sdc3   /
+sdd3 /
 
-	So we want to force users to use qgroup with clear relations
-which means a parent qgroup's level > child qgroup's level.For example:
+I pv-moved from md0 to md0 (alloc=anywhere to make room for pvresize)
+pvmove -v --alloc=anywhere /dev/md1:95793-99632 /dev/md1:70107-74032
 
-                          2/0
-                         /    \
-                        /      \
-                       /        \
-                      1/0       1/1
-                    /     \        \
-                   /       \        \       
-                  /         \        \
-            0/256    0/257    0/258
+During pvmove some program crash with SIGBUS. However, after pvmove
+completes, everything comes back to normal as if nothing has ever
+happened. I restart crashed program and they work just fine, now
+errors.
 
-This pattern of quota is nature and easy for users to understand, otherwise it will
-make the quota configuration confusing and difficult to maintain.
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Acked-by: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/ioctl.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a31cd93..3590c21 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3755,7 +3755,7 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 		goto drop_write;
- 	}
- 
--	if (!sa->qgroupid) {
-+	if (!(sa->qgroupid >> 48)) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
--- 
-1.7.7.6
-
+A scrub from initramfs completes without any error, I don't think this
+has a relation to my other issue (Kernel panic on scrub) as my root is
+directly on /dev/sd[abcd]4 and both do kernel panic when a scrub is
+started when the system is booted.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

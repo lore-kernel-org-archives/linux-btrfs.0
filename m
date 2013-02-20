@@ -1,78 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19561 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932307Ab3BTBPu (ORCPT
+Received: from qmta13.emeryville.ca.mail.comcast.net ([76.96.27.243]:34764
+	"EHLO qmta13.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933969Ab3BTHdx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Feb 2013 20:15:50 -0500
-Date: Wed, 20 Feb 2013 09:14:32 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Snapshot Cleaner not Working with inode_cache
-Message-ID: <20130220011431.GA4757@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <CAKcLGm-Zk_8mZZUwz3Y-rsM-_ySFOSSR0OYcK2VU=2iYFQ=ZWA@mail.gmail.com>
+	Wed, 20 Feb 2013 02:33:53 -0500
+Message-ID: <51247C5B.8050805@gmail.com>
+Date: Tue, 19 Feb 2013 23:33:47 -0800
+From: Bob McGowan <ramjr0915@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAKcLGm-Zk_8mZZUwz3Y-rsM-_ySFOSSR0OYcK2VU=2iYFQ=ZWA@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+CC: Chris Murphy <lists@colorremedies.com>
+Subject: Re: "Fixing" mount points
+References: <5121DC0D.8060305@gmail.com> <C36BE313-EE1C-43CD-8A8A-D595586974DD@colorremedies.com>
+In-Reply-To: <C36BE313-EE1C-43CD-8A8A-D595586974DD@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 19, 2013 at 02:22:27PM -0600, Mitch Harder wrote:
-> I've encountered an issue where the space from previously deleted
-> snapshots is not being freed up by the cleaner thread.
-> 
-> I'm only encountering this issue when I mount with the inode_cache option.
-> 
-> I've reproduced this on a 3.7.9 kernel merged with the latest
-> for-linus branch.  No additional patches are involved.  My testing
-> partition is 16 GB.
-> 
-> There is nothing in dmesg indicating any issues.
-> 
-> A simple manual test can reproduce the issue on my box
-> 
-> (1)  Format a fresh, scratch btrfs partition (it would probably work
-> with an existing test partition, but I always like to test things that
-> seem broken on a scratch partition).
-> (2)  Mount partition (my options are -o
-> compress-force=lzo,inode_cache).  My mount command was:
-> mount -o compress-force=lzo,inode_cache /dev/sda7 /mnt/benchmark/
-> (3)  Make a subvolume:  cd /mnt/<device>; btrfs su create test1
-> (4)  Untar kernel sources to the subvolume:  cd test1; tar -xpf
-> <path/to/kernel/source/tarball>
-> I believe anything you use to populate the subvolume is sufficient.
-> (5)  Make a note of the disk usage:  df -T /mnt/<device>
-> (6)  Remove the subvolume:  cd ..; btrfs su delete test1
-> (7)  Wait 2 minutes, and notice that the space has not been freed up.
-> I've waited much longer, but I forget the exact timeout on the cleaner
-> thread.
-> df -T /mnt/<device>
-> 
-> If I unmount and remount the partition with the same mount options,
-> the cleaner will begin to correctly free the space.
 
-Hi Mitch,
+On 02/18/2013 09:08 AM, Chris Murphy wrote:
+> On Feb 18, 2013, at 12:45 AM, Bob McGowan <ramjr0915@gmail.com> wrote:
+>
+>> Even though things look OK from the command line, logging in through the
+>> window system fails (actually, just hangs).
+>>
+>> I assume this means I should be doing something to "clean up" the
+>> subvolume?  Or maybe there's something in the Window system
+>> configuration to change?
+>>
+>> I'm running Linux Mint 14 KDE.  My fstab for the parts in question looks
+>> like:
+>>
+>> # / was on /dev/sde2 during installation
+>> UUID=1a...9 /     btrfs   defaults,subvol=@     0       1
+>> # /home was on /dev/sde2 during installation
+>> UUID=1a...9 /home btrfs   defaults,subvol=@home 0       2
+>>
+>> What I want is something like:
+>> # / was on /dev/sde2 during installation
+>> UUID=1a...9 /     btrfs   defaults              0       1
+>> # /home is on /dev/sda1
+>> UUID=7f...3 /home btrfs   defaults              0       2
+> The 2nd fstab implies a completely different disk, the first partition is btrfs, mounted as /home. So long as the contents are user folders, i.e. the same thing found in sde2 subvol @home, then it's functionally the same as what you had before.
+>
+> Also, btrfs doesn't need fs_passno set.
+>
+>
+> Chris Murphy
+Hi, Chris,
 
-Good summary.
+Thanks for the information.  As for fs_passno, what you're seeing is
+what was put there by the install process.  I'm assuming, if it's not
+needed, that the proper value would be zero?
 
-> 
-> I've never used the inode_cache option before, so I'll try a few other
-> kernels to see if this is a regression.
+You have confirmed what I thought was correct.  But trying it the first
+time failed.  My login acted as though the user was valid but login
+didn't complete, returning to the login screen.
 
-I think I know why inode_cache keeps us from freeing space, inode_cache adds
-a cache_inode in each btrfs root, and this cache_inode will be iput at the very
-last of stage during umount, ie. after we do cleanup work on old
-snapshot/subvols, where we free the space.
+Since I was just able to reconfigure fstab, and it worked, I'd say I
+probably fat fingered something and just didn't notice.
 
-A remount will force btrfs to do cleanup work on old snapshots during mount.
+In any case, many thanks, again. ;)
 
-This may explain the situation.
-
-thanks,
-liubo
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Bob

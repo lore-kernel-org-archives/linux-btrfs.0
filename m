@@ -1,52 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:38993 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751830Ab3BUAtv (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:39065 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751046Ab3BUFfh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 19:49:51 -0500
-Received: by mail-qc0-f174.google.com with SMTP id z24so3326889qcq.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2013 16:49:51 -0800 (PST)
+	Thu, 21 Feb 2013 00:35:37 -0500
+Received: by mail-wi0-f176.google.com with SMTP id hm14so7069590wib.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2013 21:35:36 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20130220164605.GA13504@uflip.org>
-References: <20130220164605.GA13504@uflip.org>
-Date: Thu, 21 Feb 2013 11:49:50 +1100
-Message-ID: <CA+WRLO8ESSq6NrHOvUTQ3Sm+4RyBmSoU+PZ1wnqxwQBgG04=Tw@mail.gmail.com>
-Subject: Re: Hybrid Storage proposal
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Matias Bjorling <mabj@itu.dk>
-Cc: jmad@itu.dk, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>, dsterba@suse.cz
+Date: Wed, 20 Feb 2013 23:35:36 -0600
+Message-ID: <CAKcLGm9g-c8oJu_ZymZ+kiAb_fq219AeUNXRrw4kdQQw9gM_BQ@mail.gmail.com>
+Subject: Kernel WARNINGs on btrfs-next
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 21, 2013 at 3:46 AM, Matias Bjorling <mabj@itu.dk> wrote:
-> Recent development in Linux SSD caches, uses a block IO approach to solve
-> caching. The approach assumes that data is stable on disk and evicts data based
-> on LRU, temparature, etc. This is great for read only IO patterns and in-place
-> writes. However, btrfs uses a copy on write approach, that reduces the benefits
-> of block IO caching. The block caches are unable to track updates (require
-> extensive hints forth and back between the cache layer). Additionally, data and
-> metadata is the same to the block layer.
+I'm getting a series of kernel WARNING messages when testing Josef's
+btrfs-next and Chris' next branch running xfstests 083 when mounted
+with compress-force=lzo.
 
+I'm not seeing any other indications of problems other than the
+WARNINGs on xfstests 083, so this may be some sort of false positive.
 
-Another great reason for this to be implemented in btrfs is that
-knowledge of redundancy can be applied. Chunks that are mirrored
-should be unlikely to need both copies on SSD devices unless they are
-very highly used (probably true for some of the meta data but not for
-data).
+Here are the messages against Chris' -next branch (the same warnings
+are being generated against josef's branch, except against a 3.7.x
+kernel):
 
-Conversely there is little benefit to putting one stripe of a
-raid0/5/6 into the SSD device without the rest of that data reaching
-the same level.
+[  553.194991] ------------[ cut here ]------------
+[  553.195002] WARNING: at fs/btrfs/inode.c:7908
+btrfs_destroy_inode+0x67/0x25b [btrfs]()
+[  553.195043] Hardware name: OptiPlex 745
+[  553.195046] Modules linked in: ipv6 snd_hda_codec_analog
+snd_hda_intel snd_hda_codec snd_hwdep ppdev parport_pc snd_pcm
+snd_page_alloc snd_timer snd floppy sr_mod i2c_i801 tg3 ptp iTCO_wdt
+pps_core iTCO_vendor_support ehci_pci parport lpc_ich microcode
+serio_raw pcspkr ablk_helper cryptd lrw xts gf128mul aes_x86_64
+sha256_generic fuse xfs nfs lockd sunrpc reiserfs btrfs zlib_deflate
+ext4 jbd2 ext3 jbd ext2 mbcache sl811_hcd hid_generic xhci_hcd
+ohci_hcd uhci_hcd ehci_hcd
+[  553.195099] Pid: 4674, comm: rm Not tainted 3.8.0-mason-next+ #1
+[  553.195102] Call Trace:
+[  553.195112]  [<ffffffff81030522>] warn_slowpath_common+0x83/0x9b
+[  553.195118]  [<ffffffff81030554>] warn_slowpath_null+0x1a/0x1c
+[  553.195135]  [<ffffffffa018d69e>] btrfs_destroy_inode+0x67/0x25b [btrfs]
+[  553.195141]  [<ffffffff8111759a>] destroy_inode+0x3b/0x54
+[  553.195145]  [<ffffffff811176fc>] evict+0x149/0x151
+[  553.195149]  [<ffffffff81117f82>] iput+0x12c/0x135
+[  553.195166]  [<ffffffffa0187f42>] ? btrfs_unlink_inode+0x38/0x40 [btrfs]
+[  553.195171]  [<ffffffff8110de10>] do_unlinkat+0x145/0x1df
+[  553.195177]  [<ffffffff81106e9f>] ? sys_newfstatat+0x2a/0x33
+[  553.195191]  [<ffffffff8110fce5>] sys_unlinkat+0x29/0x2b
+[  553.195212]  [<ffffffff81607746>] system_call_fastpath+0x1a/0x1f
+[  553.195224] ---[ end trace 0adc4db1ad1a6634 ]---
+[  553.195231] ------------[ cut here ]------------
+[  553.195247] WARNING: at fs/btrfs/inode.c:7909
+btrfs_destroy_inode+0x7e/0x25b [btrfs]()
+[  553.195249] Hardware name: OptiPlex 745
+[  553.195251] Modules linked in: ipv6 snd_hda_codec_analog
+snd_hda_intel snd_hda_codec snd_hwdep ppdev parport_pc snd_pcm
+snd_page_alloc snd_timer snd floppy sr_mod i2c_i801 tg3 ptp iTCO_wdt
+pps_core iTCO_vendor_support ehci_pci parport lpc_ich microcode
+serio_raw pcspkr ablk_helper cryptd lrw xts gf128mul aes_x86_64
+sha256_generic fuse xfs nfs lockd sunrpc reiserfs btrfs zlib_deflate
+ext4 jbd2 ext3 jbd ext2 mbcache sl811_hcd hid_generic xhci_hcd
+ohci_hcd uhci_hcd ehci_hcd
+[  553.195296] Pid: 4674, comm: rm Tainted: G        W    3.8.0-mason-next+ #1
+[  553.195298] Call Trace:
+[  553.195304]  [<ffffffff81030522>] warn_slowpath_common+0x83/0x9b
+[  553.195308]  [<ffffffff81030554>] warn_slowpath_null+0x1a/0x1c
+[  553.195324]  [<ffffffffa018d6b5>] btrfs_destroy_inode+0x7e/0x25b [btrfs]
+[  553.195329]  [<ffffffff8111759a>] destroy_inode+0x3b/0x54
+[  553.195333]  [<ffffffff811176fc>] evict+0x149/0x151
+[  553.195336]  [<ffffffff81117f82>] iput+0x12c/0x135
+[  553.195352]  [<ffffffffa0187f42>] ? btrfs_unlink_inode+0x38/0x40 [btrfs]
+[  553.195356]  [<ffffffff8110de10>] do_unlinkat+0x145/0x1df
+[  553.195360]  [<ffffffff81106e9f>] ? sys_newfstatat+0x2a/0x33
+[  553.195364]  [<ffffffff8110fce5>] sys_unlinkat+0x29/0x2b
+[  553.195368]  [<ffffffff81607746>] system_call_fastpath+0x1a/0x1f
+[  553.195371] ---[ end trace 0adc4db1ad1a6635 ]---
+[  553.195373] ------------[ cut here ]------------
+[  553.195389] WARNING: at fs/btrfs/inode.c:7911
+btrfs_destroy_inode+0xae/0x25b [btrfs]()
+[  553.195391] Hardware name: OptiPlex 745
+[  553.195393] Modules linked in: ipv6 snd_hda_codec_analog
+snd_hda_intel snd_hda_codec snd_hwdep ppdev parport_pc snd_pcm
+snd_page_alloc snd_timer snd floppy sr_mod i2c_i801 tg3 ptp iTCO_wdt
+pps_core iTCO_vendor_support ehci_pci parport lpc_ich microcode
+serio_raw pcspkr ablk_helper cryptd lrw xts gf128mul aes_x86_64
+sha256_generic fuse xfs nfs lockd sunrpc reiserfs btrfs zlib_deflate
+ext4 jbd2 ext3 jbd ext2 mbcache sl811_hcd hid_generic xhci_hcd
+ohci_hcd uhci_hcd ehci_hcd
+[  553.195437] Pid: 4674, comm: rm Tainted: G        W    3.8.0-mason-next+ #1
+[  553.195439] Call Trace:
+[  553.195444]  [<ffffffff81030522>] warn_slowpath_common+0x83/0x9b
+[  553.195449]  [<ffffffff81030554>] warn_slowpath_null+0x1a/0x1c
+[  553.195463]  [<ffffffffa018d6e5>] btrfs_destroy_inode+0xae/0x25b [btrfs]
+[  553.195470]  [<ffffffff8111759a>] destroy_inode+0x3b/0x54
+[  553.195474]  [<ffffffff811176fc>] evict+0x149/0x151
+[  553.195480]  [<ffffffff81117f82>] iput+0x12c/0x135
+[  553.195495]  [<ffffffffa0187f42>] ? btrfs_unlink_inode+0x38/0x40 [btrfs]
+[  553.195499]  [<ffffffff8110de10>] do_unlinkat+0x145/0x1df
+[  553.195504]  [<ffffffff81106e9f>] ? sys_newfstatat+0x2a/0x33
+[  553.195508]  [<ffffffff8110fce5>] sys_unlinkat+0x29/0x2b
+[  553.195512]  [<ffffffff81607746>] system_call_fastpath+0x1a/0x1f
+[  553.195515] ---[ end trace 0adc4db1ad1a6636 ]---
+[  553.404031] ------------[ cut here ]------------
+[  553.404068] WARNING: at fs/btrfs/extent-tree.c:4510
+btrfs_free_block_groups+0x13d/0x27e [btrfs]()
+[  553.404072] Hardware name: OptiPlex 745
+[  553.404076] Modules linked in: ipv6 snd_hda_codec_analog
+snd_hda_intel snd_hda_codec snd_hwdep ppdev parport_pc snd_pcm
+snd_page_alloc snd_timer snd floppy sr_mod i2c_i801 tg3 ptp iTCO_wdt
+pps_core iTCO_vendor_support ehci_pci parport lpc_ich microcode
+serio_raw pcspkr ablk_helper cryptd lrw xts gf128mul aes_x86_64
+sha256_generic fuse xfs nfs lockd sunrpc reiserfs btrfs zlib_deflate
+ext4 jbd2 ext3 jbd ext2 mbcache sl811_hcd hid_generic xhci_hcd
+ohci_hcd uhci_hcd ehci_hcd
+[  553.404146] Pid: 4704, comm: umount Tainted: G        W
+3.8.0-mason-next+ #1
+[  553.404149] Call Trace:
+[  553.404162]  [<ffffffff81030522>] warn_slowpath_common+0x83/0x9b
+[  553.404169]  [<ffffffff81030554>] warn_slowpath_null+0x1a/0x1c
+[  553.404188]  [<ffffffffa017159d>] btrfs_free_block_groups+0x13d/0x27e [btrfs]
+[  553.404211]  [<ffffffffa017c71a>] close_ctree+0x200/0x32f [btrfs]
+[  553.404218]  [<ffffffff81118323>] ? evict_inodes+0xd7/0xe3
+[  553.404235]  [<ffffffffa015a357>] btrfs_put_super+0x19/0x1b [btrfs]
+[  553.404242]  [<ffffffff811047e7>] generic_shutdown_super+0x59/0xd1
+[  553.404248]  [<ffffffff8111ad7a>] ? free_vfsmnt+0x17/0x3e
+[  553.404255]  [<ffffffff811048dd>] kill_anon_super+0x14/0x1f
+[  553.404270]  [<ffffffffa015a132>] btrfs_kill_super+0x17/0x89 [btrfs]
+[  553.404276]  [<ffffffff81104a44>] deactivate_locked_super+0x37/0x63
+[  553.404282]  [<ffffffff8110576a>] deactivate_super+0x3f/0x43
+[  553.404289]  [<ffffffff8111b30c>] mntput_no_expire+0x113/0x11b
+[  553.404295]  [<ffffffff8111c18b>] sys_umount+0x30a/0x33c
+[  553.404301]  [<ffffffff810415d1>] ? __set_current_blocked+0x36/0x4a
+[  553.404310]  [<ffffffff81607746>] system_call_fastpath+0x1a/0x1f
+[  553.404314] ---[ end trace 0adc4db1ad1a6637 ]---
+[  553.404317] ------------[ cut here ]------------
+[  553.404336] WARNING: at fs/btrfs/extent-tree.c:4511
+btrfs_free_block_groups+0x158/0x27e [btrfs]()
+[  553.404339] Hardware name: OptiPlex 745
+[  553.404342] Modules linked in: ipv6 snd_hda_codec_analog
+snd_hda_intel snd_hda_codec snd_hwdep ppdev parport_pc snd_pcm
+snd_page_alloc snd_timer snd floppy sr_mod i2c_i801 tg3 ptp iTCO_wdt
+pps_core iTCO_vendor_support ehci_pci parport lpc_ich microcode
+serio_raw pcspkr ablk_helper cryptd lrw xts gf128mul aes_x86_64
+sha256_generic fuse xfs nfs lockd sunrpc reiserfs btrfs zlib_deflate
+ext4 jbd2 ext3 jbd ext2 mbcache sl811_hcd hid_generic xhci_hcd
+ohci_hcd uhci_hcd ehci_hcd
+[  553.404406] Pid: 4704, comm: umount Tainted: G        W
+3.8.0-mason-next+ #1
+[  553.404409] Call Trace:
+[  553.404416]  [<ffffffff81030522>] warn_slowpath_common+0x83/0x9b
+[  553.404422]  [<ffffffff81030554>] warn_slowpath_null+0x1a/0x1c
+[  553.404441]  [<ffffffffa01715b8>] btrfs_free_block_groups+0x158/0x27e [btrfs]
+[  553.404463]  [<ffffffffa017c71a>] close_ctree+0x200/0x32f [btrfs]
+[  553.404469]  [<ffffffff81118323>] ? evict_inodes+0xd7/0xe3
+[  553.404485]  [<ffffffffa015a357>] btrfs_put_super+0x19/0x1b [btrfs]
+[  553.404491]  [<ffffffff811047e7>] generic_shutdown_super+0x59/0xd1
+[  553.404497]  [<ffffffff8111ad7a>] ? free_vfsmnt+0x17/0x3e
+[  553.404504]  [<ffffffff811048dd>] kill_anon_super+0x14/0x1f
+[  553.404519]  [<ffffffffa015a132>] btrfs_kill_super+0x17/0x89 [btrfs]
+[  553.404525]  [<ffffffff81104a44>] deactivate_locked_super+0x37/0x63
+[  553.404531]  [<ffffffff8110576a>] deactivate_super+0x3f/0x43
+[  553.404537]  [<ffffffff8111b30c>] mntput_no_expire+0x113/0x11b
+[  553.404543]  [<ffffffff8111c18b>] sys_umount+0x30a/0x33c
+[  553.404548]  [<ffffffff810415d1>] ? __set_current_blocked+0x36/0x4a
+[  553.404555]  [<ffffffff81607746>] system_call_fastpath+0x1a/0x1f
+[  553.404559] ---[ end trace 0adc4db1ad1a6638 ]---
 
-Not that additional reasons to do this work in btrfs were needed it
-does need to be thought about how this implementation interacts with
-those features.
+Xfstest 083 is showing a successful completion, and I'm not seeing any
+errors using btrfsck on the partitions after the test.
 
--- 
-Gareth Pye
-Level 2 Judge, Melbourne, Australia
-Australian MTG Forum: mtgau.com
-gareth@cerberos.id.au - www.rockpaperdynamite.wordpress.com
-"Dear God, I would like to file a bug report"
+For reference, here are the relevant sections of  inode.c and extent-tree.c:
+
+inode.c:
+
+7901 void btrfs_destroy_inode(struct inode *inode)
+7902 {
+7903         struct btrfs_ordered_extent *ordered;
+7904         struct btrfs_root *root = BTRFS_I(inode)->root;
+7905
+7906         WARN_ON(!hlist_empty(&inode->i_dentry));
+7907         WARN_ON(inode->i_data.nrpages);
+7908         WARN_ON(BTRFS_I(inode)->outstanding_extents);
+7909         WARN_ON(BTRFS_I(inode)->reserved_extents);
+7910         WARN_ON(BTRFS_I(inode)->delalloc_bytes);
+7911         WARN_ON(BTRFS_I(inode)->csum_bytes);
+
+extent-tree.c:
+
+4506 static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
+4507 {
+4508         block_rsv_release_bytes(fs_info, &fs_info->global_block_rsv, NULL,
+4509                                 (u64)-1);
+4510         WARN_ON(fs_info->delalloc_block_rsv.size > 0);
+4511         WARN_ON(fs_info->delalloc_block_rsv.reserved > 0);
+4512         WARN_ON(fs_info->trans_block_rsv.size > 0);
+4513         WARN_ON(fs_info->trans_block_rsv.reserved > 0);
+4514         WARN_ON(fs_info->chunk_block_rsv.size > 0);
+4515         WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
+4516         WARN_ON(fs_info->delayed_block_rsv.size > 0);
+4517         WARN_ON(fs_info->delayed_block_rsv.reserved > 0);
+4518 }

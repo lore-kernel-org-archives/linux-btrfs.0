@@ -1,49 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:48527 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934944Ab3BTPhR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 10:37:17 -0500
-Message-ID: <5124EDAB.5020003@giantdisaster.de>
-Date: Wed, 20 Feb 2013 16:37:15 +0100
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from cantor2.suse.de ([195.135.220.15]:41733 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751305Ab3BUNl4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Feb 2013 08:41:56 -0500
+Date: Thu, 21 Feb 2013 14:41:53 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Kyungsik Lee <kyungsik.lee@lge.com>
+Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, hyojun.im@lge.com, chan.jeong@lge.com,
+        raphael.andy.lee@gmail.com, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] btrfs: use kmalloc for lzo de/compress buffer
+Message-ID: <20130221134153.GD27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1361174164-7182-1-git-send-email-kyungsik.lee@lge.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH, RFC] btrfs-progs: require mkfs -f force option to overwrite
- filesystem or partition table
-References: <511D2D2B.8040804@redhat.com>
-In-Reply-To: <511D2D2B.8040804@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1361174164-7182-1-git-send-email-kyungsik.lee@lge.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 14 Feb 2013 12:30:03 -0600, Eric Sandeen wrote:
-> The core of this is shamelessly stolen from xfsprogs.
-> 
-> Use blkid to detect an existing filesystem or partition
-> table on any of the target devices.  If something is found,
-> require the '-f' option to overwrite it, hopefully avoiding
-> disaster due to mistyped devicenames, etc.
-> 
-> # mkfs.btrfs /dev/sda1
-> 
-> WARNING! - Btrfs v0.20-rc1-59-gd00279c-dirty IS EXPERIMENTAL
-> WARNING! - see http://btrfs.wiki.kernel.org before using
-> 
-> /dev/sda1 appears to contain an existing filesystem (xfs).
-> Use the -f option to force overwrite.
-> #
-> 
-> This does introduce a requirement on libblkid.
-> 
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+On Mon, Feb 18, 2013 at 04:56:04PM +0900, Kyungsik Lee wrote:
+> @@ -55,8 +55,9 @@ static struct list_head *lzo_alloc_workspace(void)
+>  		return ERR_PTR(-ENOMEM);
+>  
+>  	workspace->mem = vmalloc(LZO1X_MEM_COMPRESS);
+> -	workspace->buf = vmalloc(PAGE_CACHE_SIZE);
+> -	workspace->cbuf = vmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE));
+> +	workspace->buf = kmalloc(PAGE_CACHE_SIZE, GFP_NOFS);
+> +	workspace->cbuf = kmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE),
 
-This means that it is now required to change all occurrences of
-"mkfs.btrfs" to "mkfs.btrfs -f" everywhere. Can't we first establish a
-time period of 100 years where the -f option is tolerated and ignored,
-and then in 2113 we require that the users add the -f option?
+This is still larger than usual page size and allocator may issue a
+warning, so if we want to use kmalloc (it's ~4.4k in size and likely to
+be available, but not always due to possible page fragmentation), the
+__GFP_NOWARN should be supplied and if the allocation fails fall back to
+vmalloc.
 
-(Just had to do this string replacement everywhere, and had to add -f to
-xfstest's _scratch_mkfs in common.rc as well). Sigh.
-
+david

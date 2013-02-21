@@ -1,74 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f177.google.com ([209.85.210.177]:48901 "EHLO
-	mail-ia0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754493Ab3BURc6 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:38432 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755087Ab3BUU1N (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Feb 2013 12:32:58 -0500
-Received: by mail-ia0-f177.google.com with SMTP id o25so3646704iad.36
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 09:32:57 -0800 (PST)
+	Thu, 21 Feb 2013 15:27:13 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 6A6D49A0359
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 13:27:12 -0700 (MST)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id AhGVGxtcHliySVyj (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 13:27:11 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure NODATACOW also gets NODATASUM set
+Date: Thu, 21 Feb 2013 15:34:15 -0500
+Message-ID: <1361478855-5059-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-In-Reply-To: <20130220175410.GB2062@localhost.localdomain>
-References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
- <20130220175410.GB2062@localhost.localdomain>
-From: Aastha Mehta <aasthakm@gmail.com>
-Date: Thu, 21 Feb 2013 18:32:37 +0100
-Message-ID: <CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
-Subject: Re: basic questions regarding COW in Btrfs
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks a lot for the prompt response. I had seen that, but I am still
-not sure of where it really
-happens within fill_delalloc. Could you help me a little further in that path?
+A user reported hitting the BUG_ON() in btrfs_finished_ordered_io() where we had
+csums on a NOCOW extent.  This can happen if we have NODATACOW set but not
+NODATASUM set, which can happen in two cases, either we mount with -o nodatacow
+and then write into preallocated space, or chattr +C a directory and move a file
+into that directory.  This patch fixes up those two cases and now we should
+uniformly have NODATACOW and NODATASUM set always.  Thanks,
 
-Secondly, now I am confused between the btree_writepages and
-btrfs_writepages/btrfs_writepage
-methods. I thought btrfs_writepages was for writing the pages holding
-inodes and btree_writepages
-for writing the other indirect and leaf extents of the btree. Then, it
-seems that the write operations
-lead to update of the file system data structures in a top-down
-manner, i.e. first changing the inode
-and then the data extents. Is that correct?
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-Thirdly, it seems that the old extents maybe dropped before the new
-extents are flushed to the disk.
-What would happen if the write fails before the disk commit? What am I
-missing here?
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 40d49da..5d7ceb5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5574,7 +5574,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 		if (btrfs_test_opt(root, NODATASUM))
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+ 		if (btrfs_test_opt(root, NODATACOW))
+-			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
++			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW |
++				BTRFS_INODE_NODATASUM;
+ 	}
+ 
+ 	insert_inode_hash(inode);
+@@ -8069,7 +8070,8 @@ static void fixup_inode_flags(struct inode *dir, struct inode *inode)
+ 	struct btrfs_inode *b_inode = BTRFS_I(inode);
+ 
+ 	if (b_dir->flags & BTRFS_INODE_NODATACOW)
+-		b_inode->flags |= BTRFS_INODE_NODATACOW;
++		b_inode->flags |= BTRFS_INODE_NODATACOW |
++			BTRFS_INODE_NODATASUM;
+ 	else
+ 		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
+ 
+-- 
+1.7.7.6
 
-Thanks,
-Aastha.
-
-On 20 February 2013 18:54, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Wed, Feb 20, 2013 at 10:28:10AM -0700, Aastha Mehta wrote:
->> Hello,
->>
->> I am trying to understand the COW mechanism in Btrfs. Is it correct to
->> say that unless nodatacow option is specified, Btrfs always performs
->> COW for all the data+metadata extents used in the system?
->>
->
-> So we always cow the metadata, but yes nodatacow means we don't cow the actual
-> data in the data extents.
->
->> I saw that COWing is implemented in btrfs_cow_block() function, which
->> is called at the time of searching a slot for a particular item, while
->> inserting into a new slot, committing transactions, while creating
->> pending snapshots and few other places.
->>
->> However, while tracing through the complete write path, I could not
->> quite figure out when extents actually get COWed. Could you please
->> point me to the place where COWing takes place? Is there any time
->> when, for performance or any other reasons, the extents are not COWed
->> but overwritten in place (apart from the explicit nodatacow flag being
->> set during mount)?
->
-> You'll want to look at the tree operation ->fill_delalloc().  Thats where we do
-> cow_file_range().  We allocate new space and write.  When we finish the ordered
-> io we do btrfs_drop_extents() on the range we just wrote which will free up any
-> existing extents that exist, and then insert our new file extent.  Thanks,
->
-> Josef

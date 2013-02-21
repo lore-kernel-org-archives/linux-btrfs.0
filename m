@@ -1,55 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f172.google.com ([209.85.223.172]:51110 "EHLO
-	mail-ie0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754800Ab3BUPyX (ORCPT
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:48426 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754163Ab3BUPzW convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Feb 2013 10:54:23 -0500
-Received: by mail-ie0-f172.google.com with SMTP id c10so11554628ieb.31
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 07:54:21 -0800 (PST)
-Message-ID: <1361462073.18057.23.camel@cwalton-XPS-8300>
+	Thu, 21 Feb 2013 10:55:22 -0500
+Message-ID: <51264366.3040407@petaramesh.org>
+Date: Thu, 21 Feb 2013 16:55:18 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com
+CC: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
 Subject: Re: Another defrag question
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
-Date: Thu, 21 Feb 2013 10:54:33 -0500
-In-Reply-To: <51264146.3070504@petaramesh.org>
-References: <51264146.3070504@petaramesh.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+References: <51264146.3070504@petaramesh.org> <20130221155052.GA4628@liubo.jp.oracle.com>
+In-Reply-To: <20130221155052.GA4628@liubo.jp.oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2013-02-21 at 16:46 +0100, SwÃ¢mi Petaramesh wrote:
-> Hi again,
-> 
-> Having numerous snapshots, I prefer to ask rather than take the risk of
-> exploding my storage space, better safe than sorry ;-)
-> 
-> "man btrfs" states :
-> 
-> Â« NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed
-> copies of data, don't use it if  you  use  snapshots,  have 
-> deduplicated  your  data  or  made  copies with cp --reflink. Â»
-> 
-> I use :
-> # uname -r
-> 3.5.0-24-generic
-> 
-> ...So should I expect that defraging my BTRFS will be smart enough not
-> to uncow my snapshots ? Is it actually able to defrag both the file and
-> its snapshots altogether, keeping all this as a single physical copy of
-> the defragged data ?
+Le 21/02/2013 16:50, Liu Bo a écrit :
+> Well, there is already a patch which addresses your concern and it's
+> 'snapshot-aware defrag' feature and now in v6, it's not merged yet.
+> thanks, liubo 
 
-The message in the btrfs man page is a bit out of date - defragmenting
-files on btrfs will uncow files on all currently released kernels.
+Hi Liu,
 
-There's a patch available to fix this, but it hasn't been merged yet. It
-might show up in 3.9 or 3.10.
+So should I understand that, even though the manpage states that the
+issue is for kernels <= 2.6.37, I should however not defrag until the
+patch you mention is actually merged in a future kernel release ?
 
-You really should upgrade your kernel, however. 3.5.0 is rather old in
-btrfs-years! Lots of fixes have gone into newer kernels.
-
+TIA.
 
 -- 
-Calvin Walton <calvin.walton@kepstin.ca>
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 

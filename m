@@ -1,104 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f180.google.com ([209.85.215.180]:50392 "EHLO
-	mail-ea0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756151Ab3BUSX5 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:50817 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751266Ab3BUTTl convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Feb 2013 13:23:57 -0500
-Received: by mail-ea0-f180.google.com with SMTP id c1so3906869eaa.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 10:23:56 -0800 (PST)
-Message-ID: <51266681.9050209@gmail.com>
-Date: Thu, 21 Feb 2013 19:25:05 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Thu, 21 Feb 2013 14:19:41 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS fails defragging
+Date: Thu, 21 Feb 2013 20:18:49 +0100
+Cc: =?iso-8859-1?q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+References: <51263363.9020203@petaramesh.org> (sfid-20130221_164628_363653_61E8E5F6)
+In-Reply-To: <51263363.9020203@petaramesh.org>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix max chunk size on raid5/6
-References: <20130220213229.GC21291@shiny.masoncoding.com>
-In-Reply-To: <20130220213229.GC21291@shiny.masoncoding.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201302212018.49909.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-my comments below
-On 02/20/2013 10:32 PM, Chris Mason wrote:
-> Hi everyone,
+Am Donnerstag, 21. Februar 2013 schrieb Swâmi Petaramesh:
+> Hi folks,
 > 
-> This spot in the chunk allocation code has seen a lot of little tweaks,
-> so I wanted to send this patch out for more eyes.
+> I'm using Ubuntu 12.10 Quantal with
+> # uname -r
+> 3.5.0-24-generic
 > 
-> --
+> And it seems I cannot defrag :
 > 
-> We try to limit the size of a chunk to 10GB, which keeps the unit of
-> work reasonable during balance and resize operations.  The limit checks
-> were taking into account the number of copies of the data we had but
-> what they really should be doing is comparing against the logical
-> size of the chunk we're creating.
+> # filefrag /boot/initrd.img-3.5.0-24-generic
+> /boot/initrd.img-3.5.0-24-generic: 3 extents found
 > 
-> This moves the code around a little to use the count of data stripes
-> from raid5/6.
+> # btrfs filesystem defrag /boot/initrd.img-3.5.0-24-generic
+> # echo $?
+> 20
 > 
-> Signed-off-by: Chris Mason <chris.mason@fusionio.com>
+> # filefrag /boot/initrd.img-3.5.0-24-generic
+> /boot/initrd.img-3.5.0-24-generic: 3 extents found
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 5d6010b..538c5cf 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3837,10 +3837,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  	 */
->  	data_stripes = num_stripes / ncopies;
->  
-> -	if (stripe_size * ndevs > max_chunk_size * ncopies) {
-> -		stripe_size = max_chunk_size * ncopies;
-> -		do_div(stripe_size, ndevs);
-> -	}
->  	if (type & BTRFS_BLOCK_GROUP_RAID5) {
->  		raid_stripe_len = find_raid56_stripe_len(ndevs - 1,
->  				 btrfs_super_stripesize(info->super_copy));
-> @@ -3851,6 +3847,27 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  				 btrfs_super_stripesize(info->super_copy));
->  		data_stripes = num_stripes - 2;
->  	}
-> +
-> +	/*
-> +	 * Use the number of data stripes to figure out how big this chunk
-> +	 * is really going to be in terms of logical address space,
-> +	 * and compare that answer with the max chunk size
-> +	 */
-> +	if (stripe_size * data_stripes > max_chunk_size) {
-> +		u64 mask = (1ULL << 24) - 1;
+> Any clue appreciated ;-)
 
-1<<24 should be a #define or better a parameter tunable via sysfs and/or
-a superblock field.
+Make sure to wait long enough or issue the "sync" command.
 
-May be we can use everywhere BTRFS_STRIPE_LEN ? (of course increasing
-its value to 16MB or more ?) I am asking that because I don't know if it
-makes sense to have BTRFS_STRIPE_LEN different from the "round up" value ...
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> ls -lh soprano-virtuoso.db  
+-rw------- 1 martin martin 1,6G Feb 21 20:10 soprano-virtuoso.db
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> date ; filefrag soprano-virtuoso.db
+Do 21. Feb 20:16:27 CET 2013
+soprano-virtuoso.db: 58875 extents found
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> date ; btrfs fi defrag soprano-virtuoso.db 
+Do 21. Feb 20:16:39 CET 2013
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend#20> date ; filefrag soprano-virtuoso.db       
+Do 21. Feb 20:16:48 CET 2013
+soprano-virtuoso.db: 22424 extents found
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> date ; filefrag soprano-virtuoso.db
+Do 21. Feb 20:16:50 CET 2013
+soprano-virtuoso.db: 22424 extents found
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> sync
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend> date ; filefrag soprano-virtuoso.db
+Do 21. Feb 20:16:54 CET 2013
+soprano-virtuoso.db: 960 extents found
+merkaba:/home/martin/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend>
 
+(here "fragmentation" might not be real fragmentation always due to the way
+LZO compression works in BTRFS, AFAIR Hugo told me)
 
-> +		stripe_size = max_chunk_size;
-> +		do_div(stripe_size, data_stripes);
-> +
-> +		/* bump the answer up to a 16MB boundary */
-> +		stripe_size = (stripe_size + mask) & ~mask;
-> +
-> +		/* but don't go higher than the limits we found
-> +		 * while searching for free extents
-> +		 */
-> +		if (stripe_size > devices_info[ndevs-1].max_avail)
-> +			stripe_size = devices_info[ndevs-1].max_avail;
-> +	}
-> +
->  	do_div(stripe_size, dev_stripes);
-
-The logic to me seems correct.
-However my fear is that a "16MB" boundary is too low. I would felt
-better with a round-up to 128MB. So the stripe size would vary from
-128MB to 1GB in step of 128MB. The combination wouldn't be too high.
-
-
+Ciao,
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

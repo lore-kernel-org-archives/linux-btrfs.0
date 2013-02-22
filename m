@@ -1,67 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51390 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753479Ab3BVEe4 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27163 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752776Ab3BVIMw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Feb 2013 23:34:56 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1M4YtUk001324
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 04:34:55 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1M4Yskn027917
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 04:34:54 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1M4Yra1029634
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 22:34:53 -0600
+	Fri, 22 Feb 2013 03:12:52 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: use reserved space for creating a snapshot
-Date: Fri, 22 Feb 2013 12:33:36 +0800
-Message-Id: <1361507616-12342-1-git-send-email-bo.li.liu@oracle.com>
+Cc: Marios Titas <redneb8888@gmail.com>
+Subject: [PATCH] Btrfs: update inode flags when renaming
+Date: Fri, 22 Feb 2013 16:11:31 +0800
+Message-Id: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While inserting dir index and updating inode for a snapshot, we'd
-add delayed items which consume trans->block_rsv, if we don't have
-any space reserved in this trans handle, we either just return or
-reserve space again.
+A user reported some weird behaviours,
+if we move a file with the noCow flag to a directory without the
+noCow flag, the file is now without the flag, but after remount,
+we'll find the file's noCow flag comes back.
 
-But before creating pending snapshots during committing transaction,
-we've done a release on this trans handle, so we don't have space reserved
-in it at this stage.
+This is because we missed a proper inode update after inheriting
+parent directory's flags,
 
-What we're using is block_rsv of pending snapshots which has already
-reserved well enough space for both inserting dir index and updating
-inode, so we need to set trans handle to indicate that we have space
-now.
-
+Reported-by: Marios Titas <redneb8888@gmail.com>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/transaction.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/btrfs/inode.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index fc03aa6..5878bb4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1063,6 +1063,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d9984fa..d2e3352 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7478,8 +7478,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 					old_dentry->d_inode,
+ 					old_dentry->d_name.name,
+ 					old_dentry->d_name.len);
+-		if (!ret)
+-			ret = btrfs_update_inode(trans, root, old_inode);
+ 	}
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -7514,6 +7512,11 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	}
  
- 	rsv = trans->block_rsv;
- 	trans->block_rsv = &pending->block_rsv;
-+	trans->bytes_reserved = trans->block_rsv->reserved;
+ 	fixup_inode_flags(new_dir, old_inode);
++	ret = btrfs_update_inode(trans, root, old_inode);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto out_fail;
++	}
  
- 	dentry = pending->dentry;
- 	parent = dget_parent(dentry);
-@@ -1216,6 +1217,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- fail:
- 	dput(parent);
- 	trans->block_rsv = rsv;
-+	trans->bytes_reserved = 0;
- no_free_objectid:
- 	kfree(new_root_item);
- root_item_alloc_fail:
+ 	ret = btrfs_add_link(trans, new_dir, old_inode,
+ 			     new_dentry->d_name.name,
 -- 
 1.7.7.6
 

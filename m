@@ -1,60 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39323 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750790Ab3BVFz5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 00:55:57 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1U8lcF-0000Y4-8I
-	for linux-btrfs@vger.kernel.org; Fri, 22 Feb 2013 06:56:15 +0100
-Received: from h59ec0710.dkvnvan.sta.perspektivbredband.net ([89.236.7.16])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 06:56:15 +0100
-Received: from spam by h59ec0710.dkvnvan.sta.perspektivbredband.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 06:56:15 +0100
-To: linux-btrfs@vger.kernel.org
-From: Bardur Arantsson <spam@scientician.net>
-Subject: Re: Another defrag question
-Date: Fri, 22 Feb 2013 06:55:45 +0100
-Message-ID: <kg718u$6of$1@ger.gmane.org>
-References: <51264146.3070504@petaramesh.org> <1361462073.18057.23.camel@cwalton-XPS-8300> <512644DA.3050409@petaramesh.org> <20130221163844.GD14283@carfax.org.uk> <51265355.1020409@petaramesh.org> <20130221172502.GF14283@carfax.org.uk> <51265DB0.2060407@petaramesh.org> <kg61p4$jsi$1@ger.gmane.org> <20130221215602.GH27541@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <20130221215602.GH27541@twin.jikos.cz>
+Received: from mail-pb0-f53.google.com ([209.85.160.53]:51664 "EHLO
+	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751660Ab3BVGMk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Feb 2013 01:12:40 -0500
+Received: by mail-pb0-f53.google.com with SMTP id un1so214607pbc.40
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 22:12:40 -0800 (PST)
+From: Hemanth Kumar <hemanthkumar51@gmail.com>
+To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+Cc: skjmca51@gmail.com, ganeshkumar14@gmail.com, kirantpatil@gmail.com,
+        praneethu.u@gmail.com, chethan.casey@gmail.com, sensille@gmx.net,
+        bo.li.liu@oracle.com, hugo@carfax.org.uk, sandeen@redhat.com,
+        Hemanth Kumar <hemanthkumar51@gmail.com>
+Subject: [Tests] xfs test[299]:Btrfs hierarchical Quotas
+Date: Fri, 22 Feb 2013 11:42:19 +0530
+Message-Id: <1361513539-3954-1-git-send-email-hemanthkumar51@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/21/2013 10:56 PM, David Sterba wrote:
-> On Thu, Feb 21, 2013 at 09:58:16PM +0100, Bardur Arantsson wrote:
->> On 02/21/2013 06:47 PM, Sw�mi Petaramesh wrote:
->>> Le 21/02/2013 18:25, Hugo Mills a �crit :
->>>> Correct. But btrfs isn't at that stage yet. It's getting visibly
->>>> closer, but it's not quite there. Hence the very strong recommendation
->>>> to keep up with the latest code. Hugo. 
->>>
->>> The matter is that BTRFS had many early adopters just because it is -
->>> and has been for long now - in the mainline Linux kernel, so supposed
->>> stable and good choice for the future.
->>>
->>> To be honest (and not wanting to troll, promised) this is the only
->>> single reason for which I use BTRFS on 5 of my 6 machines at home - just
->>> because I thought that "Just upgrade the distro every 6 months and it
->>> will become better and better over time, no hassle, make my life easy".
->>>
->>
->> Unfortunately many distros don't make it obvious, but Btrfs is still
->> hidden behind a giant EXPERIMENTAL label in the kernel configuration.
-> 
-> Removed in 3.9-rc1 as a part of a broad Kconfig cleanup
-> 
-[--snip--]
-> 
-> is it still experimental then?
 
-Interesting, but IMO having the experimental label taken off is a
-necessary, but not sufficient condition for $X to be considered stable :).
+Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
+---
+ 299     | 38 ++++++++++++++++++++++++++++++++++++++
+ 299.out | 20 ++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
+ create mode 100644 299
+ create mode 100644 299.out
 
-Regards,
+diff --git a/299 b/299
+new file mode 100644
+index 0000000..6b03438
+--- /dev/null
++++ b/299
+@@ -0,0 +1,38 @@
++#! /bin/bash
++# FS QA Test No. 299
++#
++# Test btrfs's hierarchical quotas
++#
++#------------------------------------------------------------------
++#
++# creator
++owner=hemanthkumar51@gmail.com
++
++seq=`basename $0`
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1        # failure is the default!
++
++_cleanup()
++{
++    rm -rf $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++#Enabeling btrfs qutas
++btrfs quota enable $TEST_DIR
++echo "quota enabled on $TEST_DEV"
++btrfs subvolume create $TEST_DIR/vol1
++btrfs subvolume create $TEST_DIR/vol1/vol2
++btrfs subvolume create $TEST_DIR/vol1/vol2/vol3
++btrfs qgroup limit 5m $TEST_DIR/vol1
++btrfs qgroup limit 3m $TEST_DIR/vol1/vol2
++btrfs qgroup limit 2m $TEST_DIR/vol1/vol2/vol3
++dd if=$TEST_DEV of=$TEST_DIR/vol1/vol2/vol3/file1 bs=3M count=1
++dd if=$TEST_DEV of=$TEST_DIR/vol1/vol2/file1 bs=2M count=1
++dd if=$TEST_DEV of=$TEST_DIR/vol1/file1 bs=5M count=1
++btrfs qgroup show $TEST_DIR
++exit
+diff --git a/299.out b/299.out
+new file mode 100644
+index 0000000..f9a6b96
+--- /dev/null
++++ b/299.out
+@@ -0,0 +1,20 @@
++QA output created by 299
++quota enabled on /dev/sdc5
++Create subvolume '/test/vol1'
++Create subvolume '/test/vol1/vol2'
++Create subvolume '/test/vol1/vol2/vol3'
++dd: writing ‘/test/vol1/vol2/vol3/file1’: Disk quota exceeded
++1+0 records in
++0+0 records out
++2031616 bytes (2.0 MB) copied, 0.128843 s, 15.8 MB/s
++1+0 records in
++1+0 records out
++2097152 bytes (2.1 MB) copied, 0.00884457 s, 237 MB/s
++dd: writing ‘/test/vol1/file1’: Disk quota exceeded
++1+0 records in
++0+0 records out
++5177344 bytes (5.2 MB) copied, 0.0732531 s, 70.7 MB/s
++0/257 4096 4096
++0/258 4096 4096
++0/259 4096 4096
++
+-- 
+1.8.1.2
 

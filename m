@@ -1,61 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f50.google.com ([209.85.160.50]:53822 "EHLO
-	mail-pb0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757524Ab3BVRWE (ORCPT
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:38503 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757765Ab3BVRYr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 12:22:04 -0500
-Received: by mail-pb0-f50.google.com with SMTP id up1so514935pbc.37
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 09:22:04 -0800 (PST)
+	Fri, 22 Feb 2013 12:24:47 -0500
+Received: by mail-ie0-f176.google.com with SMTP id k13so983303iea.35
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 09:24:46 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20130222165302.GE2062@localhost.localdomain>
-References: <CAMfhy91avz+euv1vtomHMv87o-f57paUDAgegEXtn9gQ==W3Fg@mail.gmail.com>
-	<20130222165302.GE2062@localhost.localdomain>
-Date: Fri, 22 Feb 2013 12:22:04 -0500
-Message-ID: <CAMfhy91KbFSdCyNdQo1a4whWtqg2TbXKLuJdCiRTfj9E3oOePw@mail.gmail.com>
-Subject: Re: WARNING: at fs/btrfs/extent_io.c:4718 map_private_extent_buffer+0xd4/0xe0
- [btrfs]()
-From: Mace Moneta <moneta.mace@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <5127A6C0.6080104@alumni.calpoly.edu>
+References: <5127A6C0.6080104@alumni.calpoly.edu>
+Date: Fri, 22 Feb 2013 11:24:46 -0600
+Message-ID: <CAE5mzvg5ejN6_vxnQYLV9n1HjZhYB4fj2WhDKezg+-eEfden6w@mail.gmail.com>
+Subject: Re: copy on write misconception
+From: cwillu <cwillu@cwillu.com>
+To: Mike Power <dodtsair@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 22, 2013 at 11:53 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Fri, Feb 22, 2013 at 07:46:16AM -0700, Mace Moneta wrote:
->> https://bugzilla.redhat.com/show_bug.cgi?id=906142
->>
->> With 3.8 kernels in Fedora 18, using encfs on btrfs I get the
->> following error.  It can take hours of use before I get a
->> reoccurrence, and I need to btrfsck, btrfs-zero-log, and/or mount with
->> '-o recovery' to get the filesystem back after a reboot.  No data
->> appears to be lost, and a scrub runs to completion with no errors.
->
-> Could you do
->
-> gdb btrfs.ko
-> list *(btrfs_log_inode+0x3b8)
->
-> and tell me what it says?  Thanks,
->
-> Josef
+> Then if I copied this file no blocks would be copied until they are written.
+> Hence the two files would use the same blocks underneath. But specifically
+> that copy would be fast.  Since it would only need to write some metadata.
+> But when I copy the file:
+> time cp 10G 10G2
 
-# uname -r
-3.8.0-0.rc7.git0.1.fc19.x86_64
+cp without arguments still does a regular copy; btrfs does nothing to
+de-duplicate writes.
 
-# gdb /usr/lib/modules/3.8.0-0.rc7.git0.1.fc19.x86_64/kernel/fs/btrfs/btrfs.ko
-
-(gdb) list *(btrfs_log_inode+0x3b8)
-0x675b8 is in btrfs_log_inode (fs/btrfs/tree-log.c:3633).
-3628
-3629    log_extents:
-3630            if (fast_search) {
-3631                    btrfs_release_path(dst_path);
-3632                    ret = btrfs_log_changed_extents(trans, root,
-inode, dst_path);
-3633                    if (ret) {
-3634                            err = ret;
-3635                            goto out_unlock;
-3636                    }
-3637            } else {
-(gdb)
+"cp --reflink 10G 10G2" will give you the results you expect.

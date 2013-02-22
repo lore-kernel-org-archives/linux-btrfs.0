@@ -1,104 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f174.google.com ([209.85.210.174]:44299 "EHLO
-	mail-ia0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756818Ab3BVQ3m convert rfc822-to-8bit (ORCPT
+Received: from mail-lb0-f180.google.com ([209.85.217.180]:40514 "EHLO
+	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755691Ab3BVVT2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 11:29:42 -0500
-Received: by mail-ia0-f174.google.com with SMTP id u20so676709iag.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 08:29:41 -0800 (PST)
+	Fri, 22 Feb 2013 16:19:28 -0500
+Received: by mail-lb0-f180.google.com with SMTP id q12so874230lbc.39
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 13:19:27 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <5127705B.7080705@gmx.net>
-References: <1361534540-2381-1-git-send-email-wangshilong1991@gmail.com>
-	<5127705B.7080705@gmx.net>
-Date: Sat, 23 Feb 2013 00:29:41 +0800
-Message-ID: <CAP9B-Qm3Ype9X4nv4CV+bucufpsf4nstPK4JWo6ppYtFEVQ1eA@mail.gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs: create the qgroup that limits root subvolume automatically
-From: Shilong Wang <wangshilong1991@gmail.com>
-To: Arne Jansen <sensille@gmx.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20130222100015.GD12835@liubo.cn.oracle.com>
+References: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
+	<CAAdM645SGn=in2xq-Gv=DBCfpxJvynQEywr5tq7sh=jt-J197A@mail.gmail.com>
+	<20130222084034.GC12835@liubo.cn.oracle.com>
+	<CAAdM644hwRoGyrJVcmZgEY6S0EMDX4d-ZAQQ550mVi3SYVsYwg@mail.gmail.com>
+	<20130222100015.GD12835@liubo.cn.oracle.com>
+Date: Fri, 22 Feb 2013 16:19:27 -0500
+Message-ID: <CAAdM644O8k3K16As84tbtoP9Knac93wqNB5Bwg_wN6YJ16Ea3g@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: update inode flags when renaming
+From: Marios Titas <redneb8888@gmail.com>
+To: bo.li.liu@oracle.com
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2013/2/22 Arne Jansen <sensille@gmx.net>:
-> On 02/22/13 13:02, Wang Shilong wrote:
->> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
->>
->> Creating the root subvolume qgroup when enabling quota,with
+On Fri, Feb 22, 2013 at 5:00 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Fri, Feb 22, 2013 at 04:10:37AM -0500, Marios Titas wrote:
+>> You are right, your patch does improve the situation a bit. But it
+>> still does not address the main issue. To illustrate that, consider
+>> the following scenario:
 >
-> Why only create a qgroup for the root subvolume and not for
-> every existing subvolume?
+> Sorry for so much confusion for users.
 >
-
-Yes，You are right.
-Creating all the existed subvolume  qgroup is necessary when enabling
-quota since we try to prevent
-creating  group level 0...the subvolume/snapshot group should be
-operated automatically...
-
-Atfer this work.
-I think it is necessary to delete the subvolume/snapshot qgroup  as
-the deletion of sub volume/snapshot.
-
-BTW, there is a thing  to think about...
-During enabling quota...No new subvolume should be created before the
-enabling quota is done.
-
-I will try to implement such functions.....
-
->> this patch,it will be ok to limit the whole filesystem size.
->
-> This will not limit the whole filesystem, but only the root
-> subvolume. To limit the whole filesystem you'd have to create
-> a level 1 qgroup and add all subvolumes to it.
->
-
-Right, thanks for correcting it...
-
-Thanks,
-Wang
-
-
-> -Arne
+> Please let me explain the following senario,
 >
 >>
->> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
->> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
->> Cc: Arne Jansen <sensille@gmx.net>
->> ---
->>  fs/btrfs/qgroup.c |   12 ++++++++++++
->>  1 files changed, 12 insertions(+), 0 deletions(-)
+>> touch test
+>> chattr +C test
+>> head -c 1048576 /dev/zero >> test
+>> mv test test2
 >>
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index a5c8562..c409096 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -777,6 +777,7 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
->>       struct extent_buffer *leaf;
->>       struct btrfs_key key;
->>       int ret = 0;
->> +     struct btrfs_qgroup *qgroup = NULL;
+>> now test2 lost the C flag because it was renamed. But the data in
+>> test2 was written before it lost the C flag and so the extents do not
+>> have checksums!
+>> Also try to clone it with BTRFS_IOC_CLONE. It fails as if it had the C flag:
 >>
->>       spin_lock(&fs_info->qgroup_lock);
->>       if (fs_info->quota_root) {
->> @@ -823,7 +824,18 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
->>
->>       btrfs_mark_buffer_dirty(leaf);
->>
->> +     btrfs_release_path(path);
->> +     ret = add_qgroup_item(trans, quota_root, BTRFS_FS_TREE_OBJECTID);
->> +     if (ret)
->> +             goto out;
->> +
->>       spin_lock(&fs_info->qgroup_lock);
->> +     qgroup = add_qgroup_rb(fs_info, BTRFS_FS_TREE_OBJECTID);
->> +     if (IS_ERR(qgroup)) {
->> +             spin_unlock(&fs_info->qgroup_lock);
->> +             ret = PTR_ERR(qgroup);
->> +             goto out;
->> +     }
->>       fs_info->quota_root = quota_root;
->>       fs_info->pending_quota_state = 1;
->>       spin_unlock(&fs_info->qgroup_lock);
->>
+>> cp --reflink test2 test3
 >
+> We don't clone a file when the src(test2) file has NODATASUM and the dest(test3)
+> file does not have NODATASUM, or vice versa.  This ensures our checksum's valid.
+>
+> Here,
+> *  test2 does has NODATASUM because test has NODATASUM, while
+> *  test3 is a new created file, and we're not with '-o nodatasum' or
+>    '-o nodatacow' mount options or we don't chattr test3,
+>    so test3 does not have NODATASUM flags set.
+>
+> So 'cp' ends up 'INVALID'.
+>
+>>
+>> OTOH, if you try to clone over a file with NODATACOW then it works:
+>>
+>> touch test3
+>> chattr +C test3
+>> cp --reflink test2 test3
+>
+> Now test3 is with NODATACOW, so the above 'cp' works.
+>
+>>
+>> so the file is in an incosistent state: it sometimes behaves as if it
+>> had the NODATACOW flag and sometimes as if it didn't.
+>
+> The C flag refers to NODATACOW, this NODATACOW is used to tell btrfs
+> if we write the file's data on COW mode.
+>
+> So the failure of 'clone' does not equal to the file is NODATACOW.
+>
+> Feel free to correct me.
+
+I think that many end users will find all this very confusing. They
+will never expect that renaming a file will cause it to suddenly lose
+one flag (NODATACOW) while preserving the other (NODATASUM).
+Especially since they cannot explicitly control the NODATASUM flag on
+a per file basis. I think that renaming a file should preserve all
+flags no matter if it's done in the same directory or not. Just like
+it preserves permissions, ownership and inode number. So I think
+inheriting the flags from the parent on rename is not a good idea
+either. Interestingly enough, files don't lose any of the two flags if
+instead of renaming you link and then unlink the original.

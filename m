@@ -1,70 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f54.google.com ([209.85.215.54]:64100 "EHLO
-	mail-la0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750946Ab3BVGe2 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:46778 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752070Ab3BVHdw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 01:34:28 -0500
-Received: by mail-la0-f54.google.com with SMTP id gw10so292644lab.27
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 22:34:26 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1361478855-5059-1-git-send-email-jbacik@fusionio.com>
-References: <1361478855-5059-1-git-send-email-jbacik@fusionio.com>
-Date: Fri, 22 Feb 2013 01:34:26 -0500
-Message-ID: <CAAdM647zVT4uJnZ-iHQky_RC7Lq1GdVYYaxLcEc1+TwRcyxVvQ@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: make sure NODATACOW also gets NODATASUM set
-From: Marios Titas <redneb8888@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
+	Fri, 22 Feb 2013 02:33:52 -0500
+Date: Fri, 22 Feb 2013 15:32:32 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Marios Titas <redneb8888@gmail.com>
 Cc: btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: bug: per file cow flag is lost when renaming
+Message-ID: <20130222073231.GA12835@liubo.cn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <CAAdM644AsDFfyj_9PEFthNBbcnNc_jy4dxMZmbrb9dBHeK5xkw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAAdM644AsDFfyj_9PEFthNBbcnNc_jy4dxMZmbrb9dBHeK5xkw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A few weeks ago I reported a similar bug [1]. It has to do with file
-renaming. Do you think that it is related? This patch doesn't seem to
-help.
+On Mon, Jan 28, 2013 at 10:49:20AM -0500, Marios Titas wrote:
+> Try this:
+> 
+>     touch test
+>     chattr +C test
+>     lsattr test
+>     mv test test2
+>     lsattr test2
+> 
+> The original file (test) will have the C flag but when renamed the
+> flag disappears. If the volume is unmounted and then mounted again the
+> flag reappears. However, if the file is modified in any way after the
+> renaming but before the umount/mount then even weirder things happen,
+> eg:
+> 
+>     touch test
+>     chattr +C test
+>     head -c1048576 /dev/zero >> test
+>     lsattr test
+>     # the C flag exists and the file does not COW when modified as expected
+>     mv test test2
+>     lsattr test2
+>     # now the C flag disappeared
+>     # if you modify the file it will COW and the flag will not
+> reappear after umount/mount
+> 
+> even worse, if you try to use BTRFS_IOC_CLONE to clone test2 to a
+> non-COW file with eg
+> 
+>     cp --reflink test2 test3
+> 
+> it will fail with EINVAL as if the file test2 had the COW flag.
 
-[1] http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg21640.html
+Hi Marios,
 
-On Thu, Feb 21, 2013 at 3:34 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> A user reported hitting the BUG_ON() in btrfs_finished_ordered_io() where we had
-> csums on a NOCOW extent.  This can happen if we have NODATACOW set but not
-> NODATASUM set, which can happen in two cases, either we mount with -o nodatacow
-> and then write into preallocated space, or chattr +C a directory and move a file
-> into that directory.  This patch fixes up those two cases and now we should
-> uniformly have NODATACOW and NODATASUM set always.  Thanks,
->
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/inode.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 40d49da..5d7ceb5 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5574,7 +5574,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
->                 if (btrfs_test_opt(root, NODATASUM))
->                         BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
->                 if (btrfs_test_opt(root, NODATACOW))
-> -                       BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
-> +                       BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW |
-> +                               BTRFS_INODE_NODATASUM;
->         }
->
->         insert_inode_hash(inode);
-> @@ -8069,7 +8070,8 @@ static void fixup_inode_flags(struct inode *dir, struct inode *inode)
->         struct btrfs_inode *b_inode = BTRFS_I(inode);
->
->         if (b_dir->flags & BTRFS_INODE_NODATACOW)
-> -               b_inode->flags |= BTRFS_INODE_NODATACOW;
-> +               b_inode->flags |= BTRFS_INODE_NODATACOW |
-> +                       BTRFS_INODE_NODATASUM;
->         else
->                 b_inode->flags &= ~BTRFS_INODE_NODATACOW;
->
-> --
-> 1.7.7.6
->
+Seems that we've lost a proper update inode during rename.
+
+Moving to another dir without the C flag will clear the file's C flag, since
+we want file to inherit noCow flag from its parent directory.
+
+So after 'mv test test2', test is without C flag now.
+But we don't update the new inode flag onto disk so a remount will bring the
+C flag back.
+
+Could you please check if the following patch(based on latest cmason/for-linus)
+helps?
+
+thanks,
+liubo
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d9984fa..d2e3352 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7478,8 +7478,6 @@ static int btrfs_rename(struct inode *old_dir, struct
+dentry *old_dentry,
+ 					old_dentry->d_inode,
+ 					old_dentry->d_name.name,
+ 					old_dentry->d_name.len);
+-		if (!ret)
+-			ret = btrfs_update_inode(trans, root, old_inode);
+ 	}
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -7514,6 +7512,11 @@ static int btrfs_rename(struct inode *old_dir, struct
+dentry *old_dentry,
+ 	}
+ 
+ 	fixup_inode_flags(new_dir, old_inode);
++	ret = btrfs_update_inode(trans, root, old_inode);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto out_fail;
++	}
+ 
+ 	ret = btrfs_add_link(trans, new_dir, old_inode,
+ 			     new_dentry->d_name.name,
+
+
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

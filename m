@@ -1,69 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32803 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750707Ab3BVF3a (ORCPT
+Received: from LGEMRELSE6Q.lge.com ([156.147.1.121]:60541 "EHLO
+	LGEMRELSE6Q.lge.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753232Ab3BVI0g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 00:29:30 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1M5TRLu013254
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 05:29:27 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1M5TQ24005716
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 05:29:26 GMT
-Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1M5TQ1C013759
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2013 23:29:26 -0600
-Message-ID: <5127022B.6070200@oracle.com>
-Date: Fri, 22 Feb 2013 13:29:15 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Fri, 22 Feb 2013 03:26:36 -0500
+Date: Fri, 22 Feb 2013 17:26:31 +0900
+From: Kyungsik Lee <kyungsik.lee@lge.com>
+To: dsterba@suse.cz
+Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, hyojun.im@lge.com, chan.jeong@lge.com,
+        raphael.andy.lee@gmail.com
+Subject: Re: [PATCH v2] btrfs: use kmalloc for lzo de/compress buffer
+Message-ID: <20130222082630.GA21294@Corona>
+References: <1361174164-7182-1-git-send-email-kyungsik.lee@lge.com>
+ <20130221134153.GD27541@twin.jikos.cz>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [bug]  mkfs.btrfs reports device busy for ext4 mounted disk
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130221134153.GD27541@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Feb 21, 2013 at 02:41:53PM +0100, David Sterba wrote:
+> On Mon, Feb 18, 2013 at 04:56:04PM +0900, Kyungsik Lee wrote:
+> > @@ -55,8 +55,9 @@ static struct list_head *lzo_alloc_workspace(void)
+> >  		return ERR_PTR(-ENOMEM);
+> >  
+> >  	workspace->mem = vmalloc(LZO1X_MEM_COMPRESS);
+> > -	workspace->buf = vmalloc(PAGE_CACHE_SIZE);
+> > -	workspace->cbuf = vmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE));
+> > +	workspace->buf = kmalloc(PAGE_CACHE_SIZE, GFP_NOFS);
+> > +	workspace->cbuf = kmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE),
+> 
+> This is still larger than usual page size and allocator may issue a
+> warning, so if we want to use kmalloc (it's ~4.4k in size and likely to
+> be available, but not always due to possible page fragmentation), the
+> __GFP_NOWARN should be supplied and if the allocation fails fall back to
+> vmalloc.
+Right, there shoud be another fixed verson for this.
 
-setup:
-  mkfs.btrfs /dev/sdb
-  mkfs.ext4 /dev/sdb && mount /dev/sdb /ext4
-  mkfs.btrfs /dev/sdc /dev/sdd
-
-
-test case:
-  mkfs.btrfs /dev/sdc /dev/sdd
-
-
-problem:
-  mkfs is fine, however reports the following error ..
-  ---
-   ERROR: unable to scan the device '/dev/sdb' - Device or resource busy
-   ERROR: unable to scan the device '/dev/sdb' - Device or resource busy
-  ---
-
-
-findings:
-  First, since previously we have had multi-device btrfs,
-  so mkfs.btrfs would trigger scan for its partner to check
-  if its mounted.
-
-  Next, since previously we had btrfs on sdb and mkfs.ext4
-  does not overwrite super-block mirror 1.. so
-
-    btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 
-sb_bytenr)
-
-  finds btrfs on sdb. So we try to register sdb with the ioctl
-  BTRFS_IOC_SCAN_DEV and fail.
-
-
-  unless I am missing something. wipefs (along with the below patch)
-     [PATCH][v2] Btrfs: wipe all the superblock [redhat bugzilla 889888]
-  seems to be only solution as of now.
-
-  Any idea if there can be a better solution to handle stale btrfs
-  and can be done with in the btrfs limits.
-
-Thanks, Anand
+Thanks,
+Kyungsik

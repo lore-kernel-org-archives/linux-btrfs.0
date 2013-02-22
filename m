@@ -1,47 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49031 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757844Ab3BVWVW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 17:21:22 -0500
-Date: Fri, 22 Feb 2013 23:21:20 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Marios Titas <redneb8888@gmail.com>
-Cc: bo.li.liu@oracle.com, btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: update inode flags when renaming
-Message-ID: <20130222222120.GM27541@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
- <CAAdM645SGn=in2xq-Gv=DBCfpxJvynQEywr5tq7sh=jt-J197A@mail.gmail.com>
- <20130222084034.GC12835@liubo.cn.oracle.com>
- <CAAdM644hwRoGyrJVcmZgEY6S0EMDX4d-ZAQQ550mVi3SYVsYwg@mail.gmail.com>
- <20130222100015.GD12835@liubo.cn.oracle.com>
- <CAAdM644O8k3K16As84tbtoP9Knac93wqNB5Bwg_wN6YJ16Ea3g@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAAdM644O8k3K16As84tbtoP9Knac93wqNB5Bwg_wN6YJ16Ea3g@mail.gmail.com>
+Received: from mail-pb0-f54.google.com ([209.85.160.54]:53635 "EHLO
+	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756367Ab3BVMC7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Feb 2013 07:02:59 -0500
+Received: by mail-pb0-f54.google.com with SMTP id rr4so368804pbb.41
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 04:02:58 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net
+Subject: [PATCH 2/2] Btrfs: disable the qgroup level 0 for userspace use
+Date: Fri, 22 Feb 2013 20:02:53 +0800
+Message-Id: <1361534573-2412-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 22, 2013 at 04:19:27PM -0500, Marios Titas wrote:
-> I think that many end users will find all this very confusing. They
-> will never expect that renaming a file will cause it to suddenly lose
-> one flag (NODATACOW) while preserving the other (NODATASUM).
-> Especially since they cannot explicitly control the NODATASUM flag on
-> a per file basis. I think that renaming a file should preserve all
-> flags no matter if it's done in the same directory or not. Just like
-> it preserves permissions, ownership and inode number.
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-I agree. For completeness, the other inherited flags/attributes are
-compression statuses. Silently changing them on remove may be wrong in
-case the file gains the 'never try to compress' flag after some clever
-heuristic (which we do not have yet) decides so.
+This patch tries to stop users to create/destroy qgroup level 0,
+users can only create/destroy qgroup level more than 0.
 
-> So I think
-> inheriting the flags from the parent on rename is not a good idea
-> either. Interestingly enough, files don't lose any of the two flags if
-> instead of renaming you link and then unlink the original.
+See the fact:
+	a subvolume/snapshot qgroup was created automatically
+when creating subvolume/snapshot, so creating a qgroup level 0 can't
+be a subvolume/snapshot qgroup, the only way to use it is that assigning
+subvolume/snapshot qgroup to it, the point is that we don't want to have a
+parent qgroup whose level is 0.
 
-Link does not take the same codepath as new file or rename. A new
-directory entry is created and link count increased.
+	So we want to force users to use qgroup with clear relations
+which means a parent qgroup's level > child qgroup's level.For example:
 
-david
+                          2/0
+                         /    \
+                        /      \
+                       /        \
+                      1/0       1/1
+                    /     \        \
+                   /       \        \       
+                  /         \        \
+            0/256    0/257    0/258
+
+This pattern of quota is nature and easy for users to understand, otherwise it will
+make the quota configuration confusing and difficult to maintain.
+
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Acked-by: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/ioctl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a31cd93..3590c21 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3755,7 +3755,7 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+ 		goto drop_write;
+ 	}
+ 
+-	if (!sa->qgroupid) {
++	if (!(sa->qgroupid >> 48)) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-- 
+1.7.7.6
+

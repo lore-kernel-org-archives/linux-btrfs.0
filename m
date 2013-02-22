@@ -1,88 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f171.google.com ([209.85.223.171]:48253 "EHLO
-	mail-ie0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754722Ab3BVSfE (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:47846 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756101Ab3BVTkZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 13:35:04 -0500
-Received: by mail-ie0-f171.google.com with SMTP id 10so1089690ied.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 10:35:04 -0800 (PST)
+	Fri, 22 Feb 2013 14:40:25 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id DCEEF9A0359
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 12:40:24 -0700 (MST)
+Date: Fri, 22 Feb 2013 14:40:21 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Mace Moneta <moneta.mace@gmail.com>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: WARNING: at fs/btrfs/extent_io.c:4718
+ map_private_extent_buffer+0xd4/0xe0 [btrfs]()
+Message-ID: <20130222194021.GH2062@localhost.localdomain>
+References: <CAMfhy91avz+euv1vtomHMv87o-f57paUDAgegEXtn9gQ==W3Fg@mail.gmail.com>
+ <20130222165302.GE2062@localhost.localdomain>
+ <CAMfhy91KbFSdCyNdQo1a4whWtqg2TbXKLuJdCiRTfj9E3oOePw@mail.gmail.com>
+ <20130222174401.GF2062@localhost.localdomain>
+ <CAMfhy92G2yGh4HeQGq1VYVZ=pr2VkH+6yT86ZwfnLvxrUY=Wyg@mail.gmail.com>
+ <20130222181017.GG2062@localhost.localdomain>
+ <CAMfhy924GJHkxTmy2bDZc=TaYD9ivyg6Q8LBN=+9_m6Xo=tnag@mail.gmail.com>
+ <CAMfhy90toxsRFFQVB-3kotm4zyoCJDOFknq-AUegaCsia2pazg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <5127ADC3.7090808@alumni.calpoly.edu>
-References: <5127A6C0.6080104@alumni.calpoly.edu>
-	<20130222171604.GI14283@carfax.org.uk>
-	<5127ADC3.7090808@alumni.calpoly.edu>
-Date: Fri, 22 Feb 2013 12:35:03 -0600
-Message-ID: <CAE5mzvhLSL1DQEGK6gnm+9Hgg5Umu33Tx3m5LkHdjqq+_pUYpg@mail.gmail.com>
-Subject: Re: copy on write misconception
-From: cwillu <cwillu@cwillu.com>
-To: Mike Power <dodtsair@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAMfhy90toxsRFFQVB-3kotm4zyoCJDOFknq-AUegaCsia2pazg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 22, 2013 at 11:41 AM, Mike Power <dodtsair@gmail.com> wrote:
-> On 02/22/2013 09:16 AM, Hugo Mills wrote:
->>
->> On Fri, Feb 22, 2013 at 09:11:28AM -0800, Mike Power wrote:
->>>
->>> I think I have a misconception of what copy on write in btrfs means
->>> for individual files.
->>>
->>> I had originally thought that I could create a large file:
->>> time dd if=/dev/zero of=10G bs=1G count=10
->>> 10+0 records in
->>> 10+0 records out
->>> 10737418240 bytes (11 GB) copied, 100.071 s, 107 MB/s
->>>
->>> real    1m41.082s
->>> user    0m0.000s
->>> sys    0m7.792s
->>>
->>> Then if I copied this file no blocks would be copied until they are
->>> written.  Hence the two files would use the same blocks underneath.
->>> But specifically that copy would be fast.  Since it would only need
->>> to write some metadata.  But when I copy the file:
->>> time cp 10G 10G2
->>>
->>> real    3m38.790s
->>> user    0m0.124s
->>> sys    0m10.709s
->>>
->>> Oddly enough it actually takes longer then the initial file
->>> creation.  So I am guessing that the long duration copy of the file
->>> is expected and that is not one of the virtues of btrfs copy on
->>> write.  Does that sound right?
->>
->>     You probably want cp --reflink=always, which makes a CoW copy of
->> the file's metadata only. The resulting files have the semantics of
->> two different files, but share their blocks until a part of one of
->> them is modified (at which point, the modified blocks are no longer
->> shared).
->>
->>     Hugo.
->>
-> I see, and it works great:
-> time cp --reflink=always 10G 10G3
->
-> real    0m0.028s
-> user    0m0.000s
-> sys    0m0.000s
->
-> So from the user perspective I might say I want to opt out of this feature
-> not optin.  I want all copies by all applications done as a copy on write.
-> But if my understanding is correct that is up to the application being
-> called (in this case cp) and how it in turns makes calls to the system.
->
-> In short I can't remount the btrfs filesystem with some new args that says
-> always copy on write files because that is what it already.
+On Fri, Feb 22, 2013 at 11:31:07AM -0700, Mace Moneta wrote:
+> On Fri, Feb 22, 2013 at 1:16 PM, Mace Moneta <moneta.mace@gmail.com> wrote:
+> > On Fri, Feb 22, 2013 at 1:10 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> >> On Fri, Feb 22, 2013 at 10:52:19AM -0700, Mace Moneta wrote:
+> >>> On Fri, Feb 22, 2013 at 12:44 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> >>> > On Fri, Feb 22, 2013 at 10:22:04AM -0700, Mace Moneta wrote:
+> >>> >> On Fri, Feb 22, 2013 at 11:53 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+> >>> >> > On Fri, Feb 22, 2013 at 07:46:16AM -0700, Mace Moneta wrote:
+> >>> >> >> https://bugzilla.redhat.com/show_bug.cgi?id=906142
+> >>> >> >>
+> >>> >> >> With 3.8 kernels in Fedora 18, using encfs on btrfs I get the
+> >>> >> >> following error.  It can take hours of use before I get a
+> >>> >> >> reoccurrence, and I need to btrfsck, btrfs-zero-log, and/or mount with
+> >>> >> >> '-o recovery' to get the filesystem back after a reboot.  No data
+> >>> >> >> appears to be lost, and a scrub runs to completion with no errors.
+> >>> >> >
+> >>> >> > Could you do
+> >>> >> >
+> >>> >> > gdb btrfs.ko
+> >>> >> > list *(btrfs_log_inode+0x3b8)
+> >>> >> >
+> >>> >> > and tell me what it says?  Thanks,
+> >>> >> >
+> >>> >> > Josef
+> >>> >>
+> >>> >> # uname -r
+> >>> >> 3.8.0-0.rc7.git0.1.fc19.x86_64
+> >>> >>
+> >>> >> # gdb /usr/lib/modules/3.8.0-0.rc7.git0.1.fc19.x86_64/kernel/fs/btrfs/btrfs.ko
+> >>> >>
+> >>> >
+> >>> > Sigh sorry, I miseed the other line because of line wrapping, can you do
+> >>> >
+> >>> > list *(btrfs_log_changed_extents+0x384)
+> >>> >
+> >>> > Thanks,
+> >>> >
+> >>> > Josef
+> >>>
+> >>> (gdb) list *(btrfs_log_changed_extents+0x384)
+> >>> 0x65264 is in btrfs_log_changed_extents (fs/btrfs/ctree.h:2731).
+> >>> 2726                       generation, 64);
+> >>> 2727    BTRFS_SETGET_FUNCS(file_extent_disk_num_bytes, struct
+> >>> btrfs_file_extent_item,
+> >>> 2728                       disk_num_bytes, 64);
+> >>> 2729    BTRFS_SETGET_FUNCS(file_extent_offset, struct btrfs_file_extent_item,
+> >>> 2730                      offset, 64);
+> >>> 2731    BTRFS_SETGET_FUNCS(file_extent_num_bytes, struct btrfs_file_extent_item,
+> >>> 2732                       num_bytes, 64);
+> >>> 2733    BTRFS_SETGET_FUNCS(file_extent_ram_bytes, struct btrfs_file_extent_item,
+> >>> 2734                       ram_bytes, 64);
+> >>> 2735    BTRFS_SETGET_FUNCS(file_extent_compression, struct
+> >>> btrfs_file_extent_item,
+> >>> (gdb)
+> >>
+> >> Ok nothing obvious is jumping out at me, anything specifc to your btrfs setup?
+> >> Mount options, raid etc.  I'm going to setup encfs up here and hammer it with
+> >> fsstress and see if I can reproduce.  Thanks,
+> >>
+> >> Josef
+> >
+> > The btrfs mount options I'm using are: subvol=home,noatime,autodefrag
+> >
+> > The encfs is mounted with default options.
+> 
+> Oh, and there's no raid data, just a single drive.  I don't do heavy
+> I/O to the encfs, which may explain why it takes minutes to hours to
+> recreate.  I have my google-chrome config directory (cache, profile,
+> passwords, etc.) in the encfs, so it's getting read/written as I
+> browse.
 
-There's no "copy a file" syscall; when a program copies a file, it
-opens a new file, and writes all the bytes from the old to the new.
-Converting this to a reflink would require btrfs to implement full
-de-dup (which is rather expensive), and still wouldn't prevent the
-program from reading and writing all 10gb (and so wouldn't be any
-faster).
+So incase I can't reproduce can you build btrfs-next and see if it reproduces on
+there?  And if it does perfect I can send you debug patches to apply and such.
+Thanks,
 
-You can set an alias in your shell to make cp --reflink=auto the
-default, but that won't affect other programs, nor other users.
+Josef

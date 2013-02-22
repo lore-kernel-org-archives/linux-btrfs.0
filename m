@@ -1,57 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27163 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752776Ab3BVIMw (ORCPT
+Received: from mail-pb0-f49.google.com ([209.85.160.49]:60096 "EHLO
+	mail-pb0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756367Ab3BVMC0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 03:12:52 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+	Fri, 22 Feb 2013 07:02:26 -0500
+Received: by mail-pb0-f49.google.com with SMTP id xa12so371812pbc.36
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 04:02:25 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Marios Titas <redneb8888@gmail.com>
-Subject: [PATCH] Btrfs: update inode flags when renaming
-Date: Fri, 22 Feb 2013 16:11:31 +0800
-Message-Id: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
+Cc: sensille@gmx.net
+Subject: [PATCH 1/2] Btrfs: create the qgroup that limits root subvolume automatically
+Date: Fri, 22 Feb 2013 20:02:20 +0800
+Message-Id: <1361534540-2381-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported some weird behaviours,
-if we move a file with the noCow flag to a directory without the
-noCow flag, the file is now without the flag, but after remount,
-we'll find the file's noCow flag comes back.
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-This is because we missed a proper inode update after inheriting
-parent directory's flags,
+Creating the root subvolume qgroup when enabling quota,with
+this patch,it will be ok to limit the whole filesystem size.
 
-Reported-by: Marios Titas <redneb8888@gmail.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/inode.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/qgroup.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d9984fa..d2e3352 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7478,8 +7478,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 					old_dentry->d_inode,
- 					old_dentry->d_name.name,
- 					old_dentry->d_name.len);
--		if (!ret)
--			ret = btrfs_update_inode(trans, root, old_inode);
- 	}
- 	if (ret) {
- 		btrfs_abort_transaction(trans, root, ret);
-@@ -7514,6 +7512,11 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index a5c8562..c409096 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -777,6 +777,7 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+ 	int ret = 0;
++	struct btrfs_qgroup *qgroup = NULL;
  
- 	fixup_inode_flags(new_dir, old_inode);
-+	ret = btrfs_update_inode(trans, root, old_inode);
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto out_fail;
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	if (fs_info->quota_root) {
+@@ -823,7 +824,18 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_mark_buffer_dirty(leaf);
+ 
++	btrfs_release_path(path);
++	ret = add_qgroup_item(trans, quota_root, BTRFS_FS_TREE_OBJECTID);
++	if (ret)
++		goto out;
++
+ 	spin_lock(&fs_info->qgroup_lock);
++	qgroup = add_qgroup_rb(fs_info, BTRFS_FS_TREE_OBJECTID);
++	if (IS_ERR(qgroup)) {
++		spin_unlock(&fs_info->qgroup_lock);
++		ret = PTR_ERR(qgroup);
++		goto out;
 +	}
- 
- 	ret = btrfs_add_link(trans, new_dir, old_inode,
- 			     new_dentry->d_name.name,
+ 	fs_info->quota_root = quota_root;
+ 	fs_info->pending_quota_state = 1;
+ 	spin_unlock(&fs_info->qgroup_lock);
 -- 
 1.7.7.6
 

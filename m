@@ -1,42 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from LGEMRELSE6Q.lge.com ([156.147.1.121]:60541 "EHLO
-	LGEMRELSE6Q.lge.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753232Ab3BVI0g (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 03:26:36 -0500
-Date: Fri, 22 Feb 2013 17:26:31 +0900
-From: Kyungsik Lee <kyungsik.lee@lge.com>
-To: dsterba@suse.cz
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, hyojun.im@lge.com, chan.jeong@lge.com,
-        raphael.andy.lee@gmail.com
-Subject: Re: [PATCH v2] btrfs: use kmalloc for lzo de/compress buffer
-Message-ID: <20130222082630.GA21294@Corona>
-References: <1361174164-7182-1-git-send-email-kyungsik.lee@lge.com>
- <20130221134153.GD27541@twin.jikos.cz>
+Received: from tetsuo.zabbo.net ([50.193.208.193]:39009 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754394Ab3BVTD0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Feb 2013 14:03:26 -0500
+Date: Fri, 22 Feb 2013 11:03:25 -0800
+From: Zach Brown <zab@zabbo.net>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [bug]  mkfs.btrfs reports device busy for ext4 mounted disk
+Message-ID: <20130222190325.GC22221@lenny.home.zabbo.net>
+References: <5127022B.6070200@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130221134153.GD27541@twin.jikos.cz>
+In-Reply-To: <5127022B.6070200@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 21, 2013 at 02:41:53PM +0100, David Sterba wrote:
-> On Mon, Feb 18, 2013 at 04:56:04PM +0900, Kyungsik Lee wrote:
-> > @@ -55,8 +55,9 @@ static struct list_head *lzo_alloc_workspace(void)
-> >  		return ERR_PTR(-ENOMEM);
-> >  
-> >  	workspace->mem = vmalloc(LZO1X_MEM_COMPRESS);
-> > -	workspace->buf = vmalloc(PAGE_CACHE_SIZE);
-> > -	workspace->cbuf = vmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE));
-> > +	workspace->buf = kmalloc(PAGE_CACHE_SIZE, GFP_NOFS);
-> > +	workspace->cbuf = kmalloc(lzo1x_worst_compress(PAGE_CACHE_SIZE),
+>  Next, since previously we had btrfs on sdb and mkfs.ext4
+>  does not overwrite super-block mirror 1.. so
 > 
-> This is still larger than usual page size and allocator may issue a
-> warning, so if we want to use kmalloc (it's ~4.4k in size and likely to
-> be available, but not always due to possible page fragmentation), the
-> __GFP_NOWARN should be supplied and if the allocation fails fall back to
-> vmalloc.
-Right, there shoud be another fixed verson for this.
+>    btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64
+> sb_bytenr)
+> 
+>  finds btrfs on sdb.
 
-Thanks,
-Kyungsik
+btrfs-progs shouldn't be unconditionally trusting the backup superblocks
+if the primary is garbage.  It should only check the backups if the user
+specifically asks it to.
+
+>  unless I am missing something. wipefs (along with the below patch)
+>     [PATCH][v2] Btrfs: wipe all the superblock [redhat bugzilla 889888]
+>  seems to be only solution as of now.
+
+This is good practice and will work around the bug in btrfs-progs for
+now.
+
+- z

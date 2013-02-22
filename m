@@ -1,107 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:47846 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756101Ab3BVTkZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 14:40:25 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id DCEEF9A0359
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 12:40:24 -0700 (MST)
-Date: Fri, 22 Feb 2013 14:40:21 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Mace Moneta <moneta.mace@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: at fs/btrfs/extent_io.c:4718
- map_private_extent_buffer+0xd4/0xe0 [btrfs]()
-Message-ID: <20130222194021.GH2062@localhost.localdomain>
-References: <CAMfhy91avz+euv1vtomHMv87o-f57paUDAgegEXtn9gQ==W3Fg@mail.gmail.com>
- <20130222165302.GE2062@localhost.localdomain>
- <CAMfhy91KbFSdCyNdQo1a4whWtqg2TbXKLuJdCiRTfj9E3oOePw@mail.gmail.com>
- <20130222174401.GF2062@localhost.localdomain>
- <CAMfhy92G2yGh4HeQGq1VYVZ=pr2VkH+6yT86ZwfnLvxrUY=Wyg@mail.gmail.com>
- <20130222181017.GG2062@localhost.localdomain>
- <CAMfhy924GJHkxTmy2bDZc=TaYD9ivyg6Q8LBN=+9_m6Xo=tnag@mail.gmail.com>
- <CAMfhy90toxsRFFQVB-3kotm4zyoCJDOFknq-AUegaCsia2pazg@mail.gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:49468 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756826Ab3BVWfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Feb 2013 17:35:37 -0500
+Date: Fri, 22 Feb 2013 23:35:35 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Shilong Wang <wangshilong1991@gmail.com>
+Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
+Subject: Re: [RESEND RFC PATCH 2/2] Btrfs: disable the qgroup level 0 for
+ userspace use
+Message-ID: <20130222223535.GO27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1361534990-2627-1-git-send-email-wangshilong1991@gmail.com>
+ <51277409.6040007@gmx.net>
+ <CAP9B-Q=UW7=P7RuvwGFMmU7AaE0nQ0R5CKq+MW379+Wvx7oS_A@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAMfhy90toxsRFFQVB-3kotm4zyoCJDOFknq-AUegaCsia2pazg@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAP9B-Q=UW7=P7RuvwGFMmU7AaE0nQ0R5CKq+MW379+Wvx7oS_A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 22, 2013 at 11:31:07AM -0700, Mace Moneta wrote:
-> On Fri, Feb 22, 2013 at 1:16 PM, Mace Moneta <moneta.mace@gmail.com> wrote:
-> > On Fri, Feb 22, 2013 at 1:10 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> >> On Fri, Feb 22, 2013 at 10:52:19AM -0700, Mace Moneta wrote:
-> >>> On Fri, Feb 22, 2013 at 12:44 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> >>> > On Fri, Feb 22, 2013 at 10:22:04AM -0700, Mace Moneta wrote:
-> >>> >> On Fri, Feb 22, 2013 at 11:53 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> >>> >> > On Fri, Feb 22, 2013 at 07:46:16AM -0700, Mace Moneta wrote:
-> >>> >> >> https://bugzilla.redhat.com/show_bug.cgi?id=906142
-> >>> >> >>
-> >>> >> >> With 3.8 kernels in Fedora 18, using encfs on btrfs I get the
-> >>> >> >> following error.  It can take hours of use before I get a
-> >>> >> >> reoccurrence, and I need to btrfsck, btrfs-zero-log, and/or mount with
-> >>> >> >> '-o recovery' to get the filesystem back after a reboot.  No data
-> >>> >> >> appears to be lost, and a scrub runs to completion with no errors.
-> >>> >> >
-> >>> >> > Could you do
-> >>> >> >
-> >>> >> > gdb btrfs.ko
-> >>> >> > list *(btrfs_log_inode+0x3b8)
-> >>> >> >
-> >>> >> > and tell me what it says?  Thanks,
-> >>> >> >
-> >>> >> > Josef
-> >>> >>
-> >>> >> # uname -r
-> >>> >> 3.8.0-0.rc7.git0.1.fc19.x86_64
-> >>> >>
-> >>> >> # gdb /usr/lib/modules/3.8.0-0.rc7.git0.1.fc19.x86_64/kernel/fs/btrfs/btrfs.ko
-> >>> >>
-> >>> >
-> >>> > Sigh sorry, I miseed the other line because of line wrapping, can you do
-> >>> >
-> >>> > list *(btrfs_log_changed_extents+0x384)
-> >>> >
-> >>> > Thanks,
-> >>> >
-> >>> > Josef
-> >>>
-> >>> (gdb) list *(btrfs_log_changed_extents+0x384)
-> >>> 0x65264 is in btrfs_log_changed_extents (fs/btrfs/ctree.h:2731).
-> >>> 2726                       generation, 64);
-> >>> 2727    BTRFS_SETGET_FUNCS(file_extent_disk_num_bytes, struct
-> >>> btrfs_file_extent_item,
-> >>> 2728                       disk_num_bytes, 64);
-> >>> 2729    BTRFS_SETGET_FUNCS(file_extent_offset, struct btrfs_file_extent_item,
-> >>> 2730                      offset, 64);
-> >>> 2731    BTRFS_SETGET_FUNCS(file_extent_num_bytes, struct btrfs_file_extent_item,
-> >>> 2732                       num_bytes, 64);
-> >>> 2733    BTRFS_SETGET_FUNCS(file_extent_ram_bytes, struct btrfs_file_extent_item,
-> >>> 2734                       ram_bytes, 64);
-> >>> 2735    BTRFS_SETGET_FUNCS(file_extent_compression, struct
-> >>> btrfs_file_extent_item,
-> >>> (gdb)
-> >>
-> >> Ok nothing obvious is jumping out at me, anything specifc to your btrfs setup?
-> >> Mount options, raid etc.  I'm going to setup encfs up here and hammer it with
-> >> fsstress and see if I can reproduce.  Thanks,
-> >>
-> >> Josef
-> >
-> > The btrfs mount options I'm using are: subvol=home,noatime,autodefrag
-> >
-> > The encfs is mounted with default options.
+On Sat, Feb 23, 2013 at 12:39:24AM +0800, Shilong Wang wrote:
+> Hello,
 > 
-> Oh, and there's no raid data, just a single drive.  I don't do heavy
-> I/O to the encfs, which may explain why it takes minutes to hours to
-> recreate.  I have my google-chrome config directory (cache, profile,
-> passwords, etc.) in the encfs, so it's getting read/written as I
-> browse.
+> 2013/2/22 Arne Jansen <sensille@gmx.net>:
+> > On 02/22/13 13:09, Wang Shilong wrote:
+> >> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> >>
+> >> This patch tries to stop users to create/destroy qgroup level 0,
+> >> users can only create/destroy qgroup level more than 0.
+> >>
+> >> See the fact:
+> >>       a subvolume/snapshot qgroup was created automatically
+> >> when creating subvolume/snapshot, so creating a qgroup level 0 can't
+> >> be a subvolume/snapshot qgroup, the only way to use it is that assigning
+> >> subvolume/snapshot qgroup to it, the point is that we don't want to have a
+> >> parent qgroup whose level is 0.
+> >>
+> >>       So we want to force users to use qgroup with clear relations
+> >> which means a parent qgroup's level > child qgroup's level.For example:
+> >>
+> >>                           2/0
+> >>                          /    \
+> >>                         /      \
+> >>                        /        \
+> >>                       1/0       1/1
+> >>                     /     \        \
+> >>                    /       \        \
+> >>                   /         \        \
+> >>               0/256     0/257    0/258
+> >>
+> >> This pattern of quota is nature and easy for users to understand, otherwise it will
+> >> make the quota configuration confusing and difficult to maintain.
+> >
+> > I agree that a strict hierarchy of the levels should be enforced.
+> > Currently the kernel has no idea of 'level', it's just an artificial
+> > concept that lives in userspace. This patch would be the first place
+> > to add that magic shift '48' to the kernel.
+> > In my opinion it would be sufficient to do the enforcement in user
+> > space, as it is of no technical nature.
+> >
+> 
+> ...i have made some patches about these work in btrfs-prog, but it has
+> been not merged...
+> I will pick up thoses patches and do the other necessary work..
 
-So incase I can't reproduce can you build btrfs-next and see if it reproduces on
-there?  And if it does perfect I can send you debug patches to apply and such.
-Thanks,
+This one?
 
-Josef
+https://patchwork.kernel.org/patch/2008591/
+
+went through integration branch into progs' master.
+
+david

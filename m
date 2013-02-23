@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nm12.bullet.mail.ird.yahoo.com ([77.238.189.65]:38352 "HELO
-	nm12.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1759075Ab3BWNpQ (ORCPT
+Received: from nm8.bullet.mail.ird.yahoo.com ([77.238.189.23]:31363 "HELO
+	nm8.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1759094Ab3BWNpS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Feb 2013 08:45:16 -0500
+	Sat, 23 Feb 2013 08:45:18 -0500
 From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Hugo Mills <hugo@carfax.org.uk>,
@@ -11,9 +11,9 @@ Cc: Hugo Mills <hugo@carfax.org.uk>,
         Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
         Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
         Zach Brown <zab@zabbo.net>, Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/8] Create the man page entry for the command btrfs fi df
-Date: Sat, 23 Feb 2013 14:46:06 +0100
-Message-Id: <1361627171-8246-4-git-send-email-goffredo.baroncelli@yahoo.com>
+Subject: [PATCH 4/8] Add helpers functions to handle the printing of data in tabular format.
+Date: Sat, 23 Feb 2013 14:46:07 +0100
+Message-Id: <1361627171-8246-5-git-send-email-goffredo.baroncelli@yahoo.com>
 In-Reply-To: <1361627171-8246-1-git-send-email-goffredo.baroncelli@yahoo.com>
 References: <1361627171-8246-1-git-send-email-goffredo.baroncelli@yahoo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,78 +21,258 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
+This patch adds some functions to manage the printing of the data in
+tabular format.
+
+The function
+	struct string_table *table_create(int columns, int rows)
+creates an (empty) table.
+
+The functions
+	char *table_printf(struct string_table *tab, int column,
+		int row, char *fmt, ...)
+	char *table_vprintf(struct string_table *tab, int column,
+		int row, char *fmt, va_list ap)
+populate the table with text. To align the text to the left, the text
+shall be prefixed with '<', otherwise the text shall be prefixed by a
+'>'. If the first character is a '=', the the text is replace by a
+sequence of '=' to fill the column width.
+
+The function
+	void table_free(struct string_table *)
+frees all the data associated to the table.
+
+The function
+	void table_dump(struct string_table *tab)
+prints the table on stdout.
+
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- man/btrfs.8.in |   49 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 49 insertions(+)
+ Makefile       |    2 +-
+ string_table.c |  157 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ string_table.h |   36 +++++++++++++
+ 3 files changed, 194 insertions(+), 1 deletion(-)
+ create mode 100644 string_table.c
+ create mode 100644 string_table.h
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 94f4ffe..e2f86ea 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -31,6 +31,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
-+\fBbtrfs\fP \fBfilesystem df\fP\fI [-b] \fIpath [path..]\fR\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
-@@ -266,6 +268,53 @@ NOTE: Currently there are the following limitations:
- - the filesystem should not have more than one device.
- .TP
- 
-+\fBfilesystem df\fP [-b] \fIpath [path..]\fR
+diff --git a/Makefile b/Makefile
+index bd792b6..fd1b312 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o \
+ 	  volumes.o utils.o btrfs-list.o btrfslabel.o repair.o \
+ 	  send-stream.o send-utils.o qgroup.o raid6.o \
+-	  string_list.o
++	  string_list.o string_table.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-fi-disk_usage.o
+diff --git a/string_table.c b/string_table.c
+new file mode 100644
+index 0000000..9784422
+--- /dev/null
++++ b/string_table.c
+@@ -0,0 +1,157 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
-+Show space usage information for a mount point.
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++#include <stdarg.h>
 +
-+\fB-b\fP Set byte as unit
++#include "string_table.h"
 +
-+The command \fBbtrfs filesystem df\fP is used to query how many space on the 
-+disk(s) are used and an estimation of the free
-+space of the filesystem.
-+The output of the command \fBbtrfs filesystem df\fP shows:
++/*
++ *  This function create an array of char * which will represent a table
++ */
++struct string_table *table_create(int columns, int rows)
++{
++	struct string_table *p;
++	int size;
++	
++	
++	size = sizeof( struct string_table ) + 
++		rows * columns* sizeof(char *);
++	p = calloc(1, size);
 +
-+.RS
-+.IP \fBDisk\ size\fP
-+the total size of the disks which compose the filesystem.
++	if (!p) return NULL;
 +
-+.IP \fBDisk\ allocated\fP
-+the size of the area of the disks used by the chunks.
++	p->ncols = columns;
++	p->nrows = rows;
 +
-+.IP \fBDisk\ unallocated\fP 
-+the size of the area of the disks which is free (i.e.
-+the differences of the values above).
++	return p;
++}
 +
-+.IP \fBUsed\fP
-+the portion of the logical space used by the file and metadata.
++/*
++ * This function is like a vprintf, but store the results in a cell of
++ * the table.
++ * If fmt  starts with '<', the text is left aligned; if fmt starts with
++ * '>' the text is right aligned. If fmt is equal to '=' the text will
++ * be replaced by a '=====' dimensioned in the basis of the column width
++ */
++char *table_vprintf(struct string_table *tab, int column, int row,
++			  char *fmt, va_list ap)
++{
++	int idx = tab->ncols*row+column;
++	char *msg = calloc(100, sizeof(char));
 +
-+.IP \fBFree\ (estimated)\fP
-+the estimated free space available: i.e. how many space can be used
-+by the user. The evaluation 
-+cannot be rigorous because it depends by the allocation policy (DUP, Single,
-+RAID1...) of the metadata and data chunks. If every chunk is stored as
-+"Single" the sum of the \fBfree (estimated)\fP space and the \fBused\fP 
-+space  is equal to the \fBdisk size\fP.
-+Otherwise if all the chunk are mirrored (raid1 or raid10) or duplicated
-+the sum of the \fBfree (estimated)\fP space and the \fBused\fP space is
-+half of the \fBdisk size\fP. Normally the \fBfree (estimated)\fP is between
-+these two limits.
++	if (!msg)
++		return NULL;
 +
-+.IP \fBData\ to\ disk\ ratio\fP
-+the ratio betwen the \fBlogical size\fP (i.e. the space available by
-+the chunks) and the \fBdisk allocated\fP (by the chunks). Normally it is 
-+lower than 100% because the metadata is duplicated for security reasons.
-+If all the data and metadata are duplicated (or have a profile like RAID1)
-+the \fBData\ to\ disk\ ratio\fP could be 50%.
++	if (tab->cells[idx])
++		free(tab->cells[idx]);
++	tab->cells[idx] = msg;
++	vsnprintf(msg, 99, fmt, ap);
 +
-+.RE
-+.TP
++	return msg;
++}
 +
- \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
- Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
- \fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
++
++/*
++ * This function is like a printf, but store the results in a cell of
++ * the table.
++ */
++char *table_printf(struct string_table *tab, int column, int row,
++			  char *fmt, ...)
++{
++	va_list ap;
++	char *ret;
++
++	va_start(ap, fmt);
++	ret = table_vprintf(tab, column, row, fmt, ap);
++	va_end(ap);
++
++	return ret;
++}
++
++/*
++ * This function dumps the table. Every "=" string will be replaced by
++ * a "=======" length as the column
++ */
++void table_dump(struct string_table *tab)
++{
++	int	sizes[tab->ncols];
++	int	i, j;
++
++	for (i = 0 ; i < tab->ncols ; i++) {
++		sizes[i] = 0;
++		for (j = 0 ; j < tab->nrows ; j++) {
++			int idx = i + j*tab->ncols;
++			int s;
++
++			if (!tab->cells[idx])
++				continue;
++
++			s = strlen(tab->cells[idx]) - 1;
++			if (s < 1 || tab->cells[idx][0] == '=')
++				continue;
++
++			if (s > sizes[i])
++				sizes[i] = s;
++		}
++	}
++
++
++	for (j = 0 ; j < tab->nrows ; j++) {
++		for (i = 0 ; i < tab->ncols ; i++) {
++
++			int idx = i + j*tab->ncols;
++			char *s = tab->cells[idx];
++
++			if (!s|| !strlen(s)) {
++				printf("%*s", sizes[i], "");
++			} else if (s && s[0] == '=') {
++				int k = sizes[i];
++				while(k--)
++					putchar('=');
++			} else {
++				printf("%*s",
++					s[0] == '<' ? -sizes[i] : sizes[i],
++					s+1);
++			} 
++			if (i != (tab->ncols - 1))
++				putchar(' ');
++		}
++		putchar('\n');
++	}
++
++}
++
++/*
++ *  Deallocate a tabular and all its content
++ */
++
++void table_free(struct string_table *tab)
++{
++
++	int	i, count;
++
++	count = tab->ncols * tab->nrows;
++
++	for (i=0 ; i < count ; i++)
++		if (tab->cells[i])
++			free(tab->cells[i]);
++
++	free(tab);
++
++}
+diff --git a/string_table.h b/string_table.h
+new file mode 100644
+index 0000000..83c4425
+--- /dev/null
++++ b/string_table.h
+@@ -0,0 +1,36 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef STRING_TABLE_H
++#define STRING_TABLE_H
++
++struct string_table {
++
++	int	ncols, nrows;
++	char	*cells[];
++
++};
++
++
++struct string_table *table_create(int columns, int rows);
++char *table_printf(struct string_table *tab, int column, int row,
++			  char *fmt, ...);
++char *table_vprintf(struct string_table *tab, int column, int row,
++			  char *fmt, va_list ap);
++void table_dump(struct string_table *tab);
++void table_free(struct string_table *);
++
++#endif
 -- 
 1.7.10.4
 

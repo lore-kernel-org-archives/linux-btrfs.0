@@ -1,65 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moltke.seatribe.se ([178.63.100.209]:33718 "EHLO
-	moltke.seatribe.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755711Ab3BWAqN (ORCPT
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:10305 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757436Ab3BWBIV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 19:46:13 -0500
-Received: from [2002:54d9:e26d::1] (helo=nerv.dolda2000.com)
-	by moltke.seatribe.se with esmtp (Exim 4.72)
-	(envelope-from <fredrik@dolda2000.com>)
-	id 1U93Fd-00056p-HQ
-	for linux-btrfs@vger.kernel.org; Sat, 23 Feb 2013 01:46:10 +0100
-Received: from [2002:54d9:e26d:200:ca60:ff:fe16:97ac] ([IPv6:2002:54d9:e26d:200:ca60:ff:fe16:97ac])
-	(authenticated bits=0)
-	by nerv.dolda2000.com (8.14.3/8.14.3/Debian-9.4) with ESMTP id r1N0k3Ud008604
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 23 Feb 2013 01:46:04 +0100
-Date: Sat, 23 Feb 2013 01:46:03 +0100 (CET)
-From: Fredrik Tolf <fredrik@dolda2000.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Changing allocation mode
-Message-ID: <alpine.DEB.2.02.1302230138220.8295@shack.dolda2000.com>
+	Fri, 22 Feb 2013 20:08:21 -0500
+Date: Sat, 23 Feb 2013 12:08:17 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Hemanth Kumar <hemanthkumar51@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com, chethan.casey@gmail.com,
+        sandeen@redhat.com, sensille@gmx.net, ganeshkumar14@gmail.com,
+        praneethu.u@gmail.com, hugo@carfax.org.uk, bo.li.liu@oracle.com,
+        skjmca51@gmail.com, kirantpatil@gmail.com
+Subject: Re: [Tests] xfs test[298]: Btrfs Quota testing
+Message-ID: <20130223010817.GE26081@dastard>
+References: <1361512444-3451-1-git-send-email-hemanthkumar51@gmail.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1361512444-3451-1-git-send-email-hemanthkumar51@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear list,
+On Fri, Feb 22, 2013 at 11:24:04AM +0530, Hemanth Kumar wrote:
+> 
+> Signed-off-by: Hemanth Kumar <hemanthkumar51@gmail.com>
 
-I'm still in the process of transferring all the data I have to the btrfs 
-filesystem I have had your help in debugging in a previous thread, and I 
-have a slight question, if you will humour me.
+Description?
 
-I have the data I want to transfer on an old ReiserFS partition, 
-consisting of 2 mdraid mirrors, one of which consists of two 1.5 TB disks, 
-and the other of two 3 TB disks. The btrfs I'm copying the data to 
-consists of two 3 TB disks only that I have put in RAID-1 mode, and the 
-data on the old filesystem is only slightly larger than 3 TB. I am now at 
-the point where I have transferred just under 3 TB.
+> ---
+>  298     | 37 +++++++++++++++++++++++++++++++++++++
+>  298.out | 12 ++++++++++++
+>  2 files changed, 49 insertions(+)
+>  create mode 100644 298
+>  create mode 100644 298.out
 
-If I were transferring the data to a new filesystem on mdraid, the 
-procedure I would use for that last portion of the data would be to remove 
-one disk only from either of the old mdraid mirror arrays (putting that 
-array in degraded mode), and then create a new mirror in degraded mode 
-with only that disk, add that mirror to the new filesystem, expand it, 
-copy the last data, and then delete the old mirrors, moving the rest of 
-the disks to the new filesystem.
+You didn't actaully run this in the xfstests, harness, did you? i.e.
 
-Is there a way to mirror this procedure in btrfs? I'm not yet quite so 
-familiar with all btrfs concepts that I know quite what I'm talking about, 
-but I'm guessing that what I want to do is to merely temporarily set the 
-allocator to allocate new btrfs on a single disk only, and then add a 
-single disk to the filesystem. And then copy the rest of the data, abandon 
-the old filesystem and add another disk and rebalance those 
-singly-allocated extents to RAID-1 mode.
+$ ./check 298
 
-Have I described a conceptionable idea in saying so? And if so, how does 
-one actually do that? I don't know if I'm just blind, but I haven't found 
-any btrfs command to change the allocation algorithm without having to 
-rebalance the existing data, which seems a bit unnecessary in this case.
+because it won't run as there is no entry in the group file for this
+test....
 
-Thanks for any help you can offer!
+> 
+> diff --git a/298 b/298
+> new file mode 100644
+> index 0000000..d699fb7
+> --- /dev/null
+> +++ b/298
+> @@ -0,0 +1,37 @@
+> +
+> +#! /bin/bash
+> +# FS QA Test No. 298
 
---
+Newline at top of patch.
 
-Fredrik Tolf
+> +#
+> +# Test btrfs's quotas
+> +#
+> +#------------------------------------------------------------------
+> +#
+> +# creator
+> +#owner=hemanthkumar51@gmail.com
+
+Copyright statement?
+
+> +
+> +
+> +seq=`basename $0`
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1        # failure is the default!
+> +
+> +_cleanup()
+> +{
+> +    rm -rf $tmp.*
+> +}
+> +
+> +trap "_cleanup ; exit \$status" 0 1 2 3 15
+> +
+> +#Enabeling btrfs qutas
+
+Where are all the usual _require....() statements?
+
+> +btrfs quota enable $TEST_DIR
+> +echo "quota enabled on $TEST_DEV"
+
+That won't work - you're not allowed to output actual device names
+into the golden output. We always filter then the to
+TEST_DEV/TEST_DIR or SCRATCH_DEV/SCRATCH_MNT
+
+> +btrfs subvolume create $TEST_DIR/vol1
+> +echo "vol1 created"
+> +btrfs qgroup show $TEST_DIR
+
+That output will change for different filesystem configurations.
+needs filtering, or dropping.
+
+> +btrfs qgroup limit 2m $TEST_DIR/vol1
+> +echo "qgroup limited to 2mb"
+> +dd if=$TEST_DEV of=$TEST_DIR/vol1/file1 bs=3M count=1
+
+You need to filter the output of dd to remove all variable data.
+However, it is preferable to use xfs_io for doing IO. i.e:
+
+$XFS_IO_PROG -f -c "pwrite 0 3m" $TEST_DIR/vol1/file1 | filter_io
+
+> +echo "tried to write 3m worth data"
+> +exit
+
+You never set status=0, so the test will always fail.
+
+Also, you don't undo any of the modifications you made to the
+TEST_DEV, which means that it will affect all subsequent tests. If
+you are doing specific configuration tests, your should be using the
+SCRATCH_DEV/SCRATCH_MNT....
+
+> diff --git a/298.out b/298.out
+> new file mode 100644
+> index 0000000..344ab7f
+> --- /dev/null
+> +++ b/298.out
+> @@ -0,0 +1,12 @@
+> +QA output created by 298
+> +quota enabled on /dev/sdb5
+> +Create subvolume '/test/vol1'
+> +vol1 created
+> +0/257 4096 4096
+> +qgroup limited to 2mb
+> +dd: writing ‘/test/vol1/file1’: Disk quota exceeded
+
+You've got environment specific characters in your output.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,85 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f41.google.com ([209.85.210.41]:47110 "EHLO
-	mail-da0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755622Ab3BWSaR (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:51893 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756959Ab3BWTxt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Feb 2013 13:30:17 -0500
-Received: by mail-da0-f41.google.com with SMTP id e20so862050dak.28
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Feb 2013 10:30:16 -0800 (PST)
-Message-ID: <51290AB6.3090709@alumni.calpoly.edu>
-Date: Sat, 23 Feb 2013 10:30:14 -0800
-From: Mike Power <dodtsair@gmail.com>
+	Sat, 23 Feb 2013 14:53:49 -0500
+Date: Sat, 23 Feb 2013 19:53:44 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Tomasz Kusmierz <wally_tm@wally-tm.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Changing node & leaf size on live partition.
+Message-ID: <20130223195344.GJ14283@carfax.org.uk>
+References: <5128DCF0.4040209@wally-tm.com>
 MIME-Version: 1.0
-To: cwillu <cwillu@cwillu.com>
-CC: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: copy on write misconception
-References: <5127A6C0.6080104@alumni.calpoly.edu> <20130222171604.GI14283@carfax.org.uk> <5127ADC3.7090808@alumni.calpoly.edu> <CAE5mzvhLSL1DQEGK6gnm+9Hgg5Umu33Tx3m5LkHdjqq+_pUYpg@mail.gmail.com>
-In-Reply-To: <CAE5mzvhLSL1DQEGK6gnm+9Hgg5Umu33Tx3m5LkHdjqq+_pUYpg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="XigHxYirkHk2Kxsx"
+In-Reply-To: <5128DCF0.4040209@wally-tm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/22/2013 10:35 AM, cwillu wrote:
-> On Fri, Feb 22, 2013 at 11:41 AM, Mike Power <dodtsair@gmail.com> wrote:
->> On 02/22/2013 09:16 AM, Hugo Mills wrote:
->>> On Fri, Feb 22, 2013 at 09:11:28AM -0800, Mike Power wrote:
->>>> I think I have a misconception of what copy on write in btrfs means
->>>> for individual files.
->>>>
->>>> I had originally thought that I could create a large file:
->>>> time dd if=/dev/zero of=10G bs=1G count=10
->>>> 10+0 records in
->>>> 10+0 records out
->>>> 10737418240 bytes (11 GB) copied, 100.071 s, 107 MB/s
->>>>
->>>> real    1m41.082s
->>>> user    0m0.000s
->>>> sys    0m7.792s
->>>>
->>>> Then if I copied this file no blocks would be copied until they are
->>>> written.  Hence the two files would use the same blocks underneath.
->>>> But specifically that copy would be fast.  Since it would only need
->>>> to write some metadata.  But when I copy the file:
->>>> time cp 10G 10G2
->>>>
->>>> real    3m38.790s
->>>> user    0m0.124s
->>>> sys    0m10.709s
->>>>
->>>> Oddly enough it actually takes longer then the initial file
->>>> creation.  So I am guessing that the long duration copy of the file
->>>> is expected and that is not one of the virtues of btrfs copy on
->>>> write.  Does that sound right?
->>>      You probably want cp --reflink=always, which makes a CoW copy of
->>> the file's metadata only. The resulting files have the semantics of
->>> two different files, but share their blocks until a part of one of
->>> them is modified (at which point, the modified blocks are no longer
->>> shared).
->>>
->>>      Hugo.
->>>
->> I see, and it works great:
->> time cp --reflink=always 10G 10G3
->>
->> real    0m0.028s
->> user    0m0.000s
->> sys    0m0.000s
->>
->> So from the user perspective I might say I want to opt out of this feature
->> not optin.  I want all copies by all applications done as a copy on write.
->> But if my understanding is correct that is up to the application being
->> called (in this case cp) and how it in turns makes calls to the system.
->>
->> In short I can't remount the btrfs filesystem with some new args that says
->> always copy on write files because that is what it already.
-> There's no "copy a file" syscall; when a program copies a file, it
-> opens a new file, and writes all the bytes from the old to the new.
-> Converting this to a reflink would require btrfs to implement full
-> de-dup (which is rather expensive), and still wouldn't prevent the
-> program from reading and writing all 10gb (and so wouldn't be any
-> faster).
->
-> You can set an alias in your shell to make cp --reflink=auto the
-> default, but that won't affect other programs, nor other users.
-Thanks for the help guys.  I learned that if I want some application to 
-support this behavior they must specifically choose to implement it.
+
+--XigHxYirkHk2Kxsx
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Feb 23, 2013 at 03:14:56PM +0000, Tomasz Kusmierz wrote:
+> Hi,
+> 
+> Question is pretty simple:
+> 
+> "How to change node size and leaf size on previously created partition?"
+
+   Right now, I'm afraid we don't support it. It's one of the trickier
+conversions to do, and I suspect that if it does happen, it'll be
+offline only, and may not be implemented in the near future (if at all).
+
+> Now, I know what most people will say: "you should've be smarter
+> while typing mkfs.btrfs". Well, I'm intending to convert in place
+> ext4 partition but there seems to be no option for leaf and node
+> size in this tool. If it's not possible I guess I'll have to create
+> "/" from scratch and copy all my content there.
+
+   Yeah, that's probably your best bet for the forseeable future, I'm
+afraid. (But given that we recommend having backups anyway, it's not a
+big problem to wipe it all and restore from them, right? ;) )
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- Q: What goes, "Pieces of seven! Pieces of seven!"? A: ---      
+                            A parroty error.                             
+
+--XigHxYirkHk2Kxsx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUSkeSL9z9OVl50rAAQKa8A/+It0XsCIMCr5ThlEbIF+uH/xLRvZQIfJL
+sls1Yk7ZnmdmxM1qKJZZU+KvePQnS0b4UU4l4nA/FqTRp6Kx7J1t2UogEOeziSJk
+QsZELEujhxkDIr3ts37NqFo3khPFVxMr08AT0h7mUF3GX5lEWS+KAzE+KfFNYlPa
+RWCKSdd6pMnhoPbMuGk+N0mlEDOSOg5fuPL1XLcm6ZOyo/9d8P7MBOGAvz1IxhP5
+NNLy6vXQgWkJvIoRn6xF5P7EyubWehgp8vyqCk/UowHQayUNrlf5iN1n1JR6BGfs
+A2qEKpepOHmCah4QZa0Gwci3jycxwm6ngDxtkraiBiUBCaYYG25gyTk0Qtxo5SLB
+5290GyB7C42dlX9VbqfvSZceXGZJm3goorGfzDw0CLThIcrA/tfPMyFNsxzdzj5k
+EB4zzxXE017zuKixbi5xQdKmn6obwiCnZ7jpFG3aWoTOMkuLBGgrJmqKqAcetLCa
+6rNHq0tDINWxIiVAVLKNDoCUs/6k/dX9AWgslbZkpXGDoDi8YJjOh5rIabBbQ5RN
+ylpdmE74D6t8EHsfakkspPMogCe367875AMj/uzbiFKkjyISJgv81KprGx55Itqc
+/kwVpud/WZp8cmhAhDbGYQJU7AkSlsCcGN8dRsjjwkwPlHSEh077YZEldWimmXHA
+creN1uUubls=
+=X9wV
+-----END PGP SIGNATURE-----
+
+--XigHxYirkHk2Kxsx--

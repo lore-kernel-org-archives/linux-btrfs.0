@@ -1,188 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60879 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758712Ab3BYKUZ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 05:20:25 -0500
-Message-ID: <512B3AE7.9090208@cn.fujitsu.com>
-Date: Mon, 25 Feb 2013 18:20:23 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from cantor2.suse.de ([195.135.220.15]:44309 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751120Ab3BYLyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Feb 2013 06:54:18 -0500
+Date: Mon, 25 Feb 2013 12:54:16 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Tomasz Kusmierz <wally_tm@wally-tm.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Changing node & leaf size on live partition.
+Message-ID: <20130225115416.GT27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <5128DCF0.4040209@wally-tm.com>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/3] Btrfs: fix the deadlock between the transaction start/attach
- and commit
-References: <51249468.6010004@cn.fujitsu.com> <CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com>
-In-Reply-To: <CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5128DCF0.4040209@wally-tm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On sun, 24 Feb 2013 21:49:55 +0200, Alex Lyakas wrote:
-> Hi Miao,
-> can you please explain your solution a bit more.
+On Sat, Feb 23, 2013 at 03:14:56PM +0000, Tomasz Kusmierz wrote:
+> Question is pretty simple:
 > 
-> On Wed, Feb 20, 2013 at 11:16 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->> Now btrfs_commit_transaction() does this
->>
->> ret = btrfs_run_ordered_operations(root, 0)
->>
->> which async flushes all inodes on the ordered operations list, it introduced
->> a deadlock that transaction-start task, transaction-commit task and the flush
->> workers waited for each other.
->> (See the following URL to get the detail
->>  http://marc.info/?l=linux-btrfs&m=136070705732646&w=2)
->>
->> As we know, if ->in_commit is set, it means someone is committing the
->> current transaction, we should not try to join it if we are not JOIN
->> or JOIN_NOLOCK, wait is the best choice for it. In this way, we can avoid
->> the above problem. In this way, there is another benefit: there is no new
->> transaction handle to block the transaction which is on the way of commit,
->> once we set ->in_commit.
->>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/transaction.c |   17 ++++++++++++++++-
->>  1 files changed, 16 insertions(+), 1 deletions(-)
->>
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index bc2f2d1..71b7e2e 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -51,6 +51,14 @@ static noinline void switch_commit_root(struct btrfs_root *root)
->>         root->commit_root = btrfs_root_node(root);
->>  }
->>
->> +static inline int can_join_transaction(struct btrfs_transaction *trans,
->> +                                      int type)
->> +{
->> +       return !(trans->in_commit &&
->> +                type != TRANS_JOIN &&
->> +                type != TRANS_JOIN_NOLOCK);
->> +}
->> +
->>  /*
->>   * either allocate a new transaction or hop into the existing one
->>   */
->> @@ -86,6 +94,10 @@ loop:
->>                         spin_unlock(&fs_info->trans_lock);
->>                         return cur_trans->aborted;
->>                 }
->> +               if (!can_join_transaction(cur_trans, type)) {
->> +                       spin_unlock(&fs_info->trans_lock);
->> +                       return -EBUSY;
->> +               }
->>                 atomic_inc(&cur_trans->use_count);
->>                 atomic_inc(&cur_trans->num_writers);
->>                 cur_trans->num_joined++;
->> @@ -360,8 +372,11 @@ again:
->>
->>         do {
->>                 ret = join_transaction(root, type);
->> -               if (ret == -EBUSY)
->> +               if (ret == -EBUSY) {
->>                         wait_current_trans(root);
->> +                       if (unlikely(type == TRANS_ATTACH))
->> +                               ret = -ENOENT;
->> +               }
+> "How to change node size and leaf size on previously created partition?"
 > 
-> So I understand that instead of incrementing num_writes and joining
-> the current transaction, you do not join and wait for the current
-> transaction to unblock.
+> Now, I know what most people will say: "you should've be smarter while
+> typing mkfs.btrfs". Well, I'm intending to convert in place ext4 partition
+> but there seems to be no option for leaf and node size in this tool. If it's
+> not possible I guess I'll have to create "/" from scratch and copy all my
+> content there.
 
-More specifically，TRANS_START、TRANS_USERSPACE and TRANS_ATTACH can not
-join and just wait for the current transaction to unblock if ->in_commit
-is set.
+I tried a quick hack to extend the options with nodesize and pass that
+further to the convert process, but it does not work (there are probably
+some assumptions about blocksize and nodesize that I've missed). Sending
+the patch if somebody wants to continue.
 
-> Which task in Josef's example
-> http://marc.info/?l=linux-btrfs&m=136070705732646&w=2
-> task 1, task 2 or task 3 is the one that will not join the
-> transaction, but instead wait?
+david
 
-Task1 will not join the transaction, in this way, async inode flush
-won't run, and then task3 won't do anything.
-
-Before applying the patch:
-Start/Attach_Trans_Task			Commit_Task			Flush_Worker
-(Task1)					(Task2)				(Task3)		-- the name in Josef's example
-btrfs_start_transaction()
- |->may_wait_transaction()
- |  (return 0)
- |					btrfs_commit_transaction()
- |					 |->set ->in_commit and
- |					 |  blocked to 1
- |					 |->wait writers to be 1
- |					 |  (writers is 1)
- |->join_transaction()			 |
- |  (writers is 2)			 |
- |->btrfs_commit_transaction()		 |
-     |					 |->set trans_no_join to 1
-     |					 |  (close join transaction)
-     |->btrfs_run_ordered_operations	 |
-	(Those ordered operations	 |
-	 are added when releasing	 |
-	 file)				 |
-	 |->async inode flush()		 |
-	 |->wait_flush_comlete()	 |
-					 |				work_loop()
-					 |				 |->run_work()
-					 |				     |->btrfs_join_transaction()
-					 |					 |->wait_current_trans()
-					 |->wait writers to be 1
-					    
-This three tasks waited for each other.
-
-After applying this patch:
-Start/Attach_Trans_Task			Commit_Task			Flush_Worker
-(Task1)					(Task2)				(Task3)	
-btrfs_start_transaction()
- |->may_wait_transaction()
- |  (return 0)
- |					btrfs_commit_transaction()
- |					 |->set ->in_commit and
- |					 |  blocked to 1
- |					 |->wait writers to be 1
- |					 |  (writers is 1)
- |->join_transaction() fail		 |
- |  (return -EBUSY, writers is still 1)	 |
- |->wait_current_trans()		 |
-					 |->set trans_no_join to 1
-					 |  (close join transaction)
-					 |->wait writers to be 1
-					 |->continue committing
-									(Task3 does nothing)
-> Also, I think I don't fully understand Josef's example. What is
-> preventing from async flushing to complete?
-> Is task 3 waiting because trans_no_join is set?
-> Is task 3 the one that actually does the delalloc flush?
-
-See above.
-
-Thanks
-Miao
-
-> 
-> Thanks,
-> Alex.
-> 
-> 
-> 
-> 
-> 
-> 
->>         } while (ret == -EBUSY);
->>
->>         if (ret < 0) {
->> --
->> 1.6.5.2
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--- a/convert.c
++++ b/convert.c
+@@ -49,6 +49,7 @@
+ #define STRIPE_LEN (64 * 1024)
+ #define EXT2_IMAGE_SUBVOL_OBJECTID BTRFS_FIRST_FREE_OBJECTID
+ 
++static int nodesize = 0;
+ /*
+  * Open Ext2fs in readonly mode, read block allocation bitmap and
+  * inode bitmap into memory.
+@@ -1806,20 +1807,20 @@ static int prepare_system_chunk_sb(struct btrfs_super_block *super)
+ 	return 0;
+ }
+ 
+-static int prepare_system_chunk(int fd, u64 sb_bytenr, u32 sectorsize)
++static int prepare_system_chunk(int fd, u64 sb_bytenr, u32 nodesize)
+ {
+ 	int ret;
+ 	struct extent_buffer *buf;
+ 	struct btrfs_super_block *super;
+ 
+-	BUG_ON(sectorsize < sizeof(*super));
+-	buf = malloc(sizeof(*buf) + sectorsize);
++	BUG_ON(nodesize < sizeof(*super));
++	buf = malloc(sizeof(*buf) + nodesize);
+ 	if (!buf)
+ 		return -ENOMEM;
+ 
+-	buf->len = sectorsize;
+-	ret = pread(fd, buf->data, sectorsize, sb_bytenr);
+-	if (ret != sectorsize)
++	buf->len = nodesize;
++	ret = pread(fd, buf->data, nodesize, sb_bytenr);
++	if (ret != nodesize)
+ 		goto fail;
+ 
+ 	super = (struct btrfs_super_block *)buf->data;
+@@ -1830,9 +1831,9 @@ static int prepare_system_chunk(int fd, u64 sb_bytenr, u32 sectorsize)
+ 	if (ret)
+ 		goto fail;
+ 
+-	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, sectorsize, sb_bytenr);
+-	if (ret != sectorsize)
++	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 1);
++	ret = pwrite(fd, buf->data, nodesize, sb_bytenr);
++	if (ret != nodesize)
+ 		goto fail;
+ 
+ 	ret = 0;
+@@ -2317,14 +2318,14 @@ int do_convert(const char *devname, int datacsum, int packing, int noxattr)
+ 		goto fail;
+ 	}
+ 	ret = make_btrfs(fd, devname, ext2_fs->super->s_volume_name,
+-			 blocks, total_bytes, blocksize, blocksize,
++			 blocks, total_bytes, nodesize, nodesize,
+ 			 blocksize, blocksize);
+ 	if (ret) {
+ 		fprintf(stderr, "unable to create initial ctree\n");
+ 		goto fail;
+ 	}
+ 	/* create a system chunk that maps the whole device */
+-	ret = prepare_system_chunk(fd, super_bytenr, blocksize);
++	ret = prepare_system_chunk(fd, super_bytenr, nodesize);
+ 	if (ret) {
+ 		fprintf(stderr, "unable to update system chunk\n");
+ 		goto fail;
+@@ -2753,13 +2754,36 @@ fail:
+ 	return -1;
+ }
+ 
++/* copied from mkfs.c */
++static int check_leaf_or_node_size(u32 size, u32 sectorsize)
++{
++	if (size < sectorsize) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (smaller than %u)\n",
++			size, sectorsize);
++		return -1;
++	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
++			size, BTRFS_MAX_METADATA_BLOCKSIZE);
++		return -1;
++	} else if (size & (sectorsize - 1)) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (not align to %u)\n",
++			size, sectorsize);
++		return -1;
++	}
++	return 0;
++}
++
+ static void print_usage(void)
+ {
+-	printf("usage: btrfs-convert [-d] [-i] [-n] [-r] device\n");
++	printf("usage: btrfs-convert [-d] [-i] [-n] [-r] [-l size] device\n");
+ 	printf("\t-d disable data checksum\n");
+ 	printf("\t-i ignore xattrs and ACLs\n");
+ 	printf("\t-n disable packing of small files\n");
+ 	printf("\t-r roll back to ext2fs\n");
++	printf("\t-l set leafsize/nodesize of btrfs metadata\n");
+ }
+ 
+ int main(int argc, char *argv[])
+@@ -2770,8 +2794,10 @@ int main(int argc, char *argv[])
+ 	int datacsum = 1;
+ 	int rollback = 0;
+ 	char *file;
++
++	nodesize = 4096;
+ 	while(1) {
+-		int c = getopt(argc, argv, "dinr");
++		int c = getopt(argc, argv, "dinrl:");
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -2787,6 +2813,11 @@ int main(int argc, char *argv[])
+ 			case 'r':
+ 				rollback = 1;
+ 				break;
++			case 'l':
++				nodesize = parse_size(optarg);
++				if (check_leaf_or_node_size(nodesize, 4096))
++					exit(1);
++				break;
+ 			default:
+ 				print_usage();
+ 				return 1;
+-- 
+1.8.0.2
 

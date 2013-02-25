@@ -1,49 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:42034 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757464Ab3BWOSn (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37634 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759505Ab3BYDwN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Feb 2013 09:18:43 -0500
-From: Alexandre Oliva <oliva@gnu.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: collapse concurrent forced allocations
-References: <orvc9lqsgt.fsf@livre.home> <orobfdqhbu.fsf@livre.home>
-	<20130222155403.GC2062@localhost.localdomain>
-Date: Sat, 23 Feb 2013 11:18:29 -0300
-In-Reply-To: <20130222155403.GC2062@localhost.localdomain> (Josef Bacik's
-	message of "Fri, 22 Feb 2013 10:54:03 -0500")
-Message-ID: <orvc9jp0zu.fsf@livre.home>
+	Sun, 24 Feb 2013 22:52:13 -0500
+Date: Mon, 25 Feb 2013 11:50:01 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, Miao Xie <miaox@cn.fujitsu.com>,
+        Marios Titas <redneb8888@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: update inode flags when renaming
+Message-ID: <20130225034959.GA3480@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
+ <CAAdM645SGn=in2xq-Gv=DBCfpxJvynQEywr5tq7sh=jt-J197A@mail.gmail.com>
+ <20130222084034.GC12835@liubo.cn.oracle.com>
+ <51273BB7.60504@cn.fujitsu.com>
+ <20130222220440.GL27541@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130222220440.GL27541@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 22, 2013, Josef Bacik <jbacik@fusionio.com> wrote:
+On Fri, Feb 22, 2013 at 11:04:40PM +0100, David Sterba wrote:
+> On Fri, Feb 22, 2013 at 05:34:47PM +0800, Miao Xie wrote:
+> > On 	fri, 22 Feb 2013 16:40:35 +0800, Liu Bo wrote:
+> > > On Fri, Feb 22, 2013 at 03:32:50AM -0500, Marios Titas wrote:
+> > >> Sorry, but the bug persists even with the above patch.
+> > >>
+> > >> touch test
+> > >> chattr +C test
+> > >> lsattr test
+> > >> mv test test2
+> > >> lsattr test2
+> > >>
+> > >> In the above scenario test2 will not have the C flag.
+> > > 
+> > > What do you expect?  IMO it's right that test2 does not have the C flag.
+> > 
+> > No, it's not right.
+> > For the users, they expect the C flag is not lost because they just do
+> > a rename operation. but fixup_inode_flags() re-sets the flags by the
+> > parent directory's flag.
+> > 
+> > I think we should inherit the flags from the parent just when we create
+> > a new file/directory, in the other cases, just give a option to the users.
+> > How do you think about?
+> 
+> I agree with that. The COW status of a file should not be changed at all
+> when renamed. The typical users are database files and vm images, losing
+> the NOCOW flag just from moving here and back is quite unexpected.
+> 
+> david
 
-> So I understand what you are getting at, but I think you are doing it wrong.  If
-> we're calling with CHUNK_ALLOC_FORCE, but somebody has already started to
-> allocate with CHUNK_ALLOC_NO_FORCE, we'll reset the space_info->force_alloc to
-> our original caller's CHUNK_ALLOC_FORCE.
+Yeah, I agree to remove this bad 'change in rename', will send a patch to
+address it.
 
-But that's ok, do_chunk_alloc will set space_info->force_alloc to
-CHUNK_ALLOC_NO_FORCE at the end, when it succeeds allocating, and then
-anyone else waiting on the mutex to try to allocate will load the
-NO_FORCE from space_info.
-
-> So we only really care about making sure a chunk is actually
-> allocated, instead of doing this flag shuffling we should just do
-
-> if (space_info->chunk_alloc) {
-> 	spin_unlock(&space_info->lock);
-> 	wait_event(!space_info->chunk_alloc);
-> 	return 0;
-> }
-
-Sorry, I don't follow.
-
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+thanks,
+liubo

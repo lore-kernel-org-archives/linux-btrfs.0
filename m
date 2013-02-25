@@ -1,47 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:52149 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759578Ab3BYOah (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:57917 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753638Ab3BYR1W (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 09:30:37 -0500
-Received: by mail-pa0-f50.google.com with SMTP id fa11so1769596pad.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 06:30:36 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wangshilong1991@gmail.com
-Subject: [PATCH] Btrfs: fix overhead check for qgroupid in the kernel
-Date: Mon, 25 Feb 2013 22:30:32 +0800
-Message-Id: <1361802632-2491-1-git-send-email-wangshilong1991@gmail.com>
+	Mon, 25 Feb 2013 12:27:22 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 88F727C0401
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 10:27:21 -0700 (MST)
+Date: Mon, 25 Feb 2013 12:27:19 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Aastha Mehta <aasthakm@gmail.com>
+CC: Josef Bacik <josef@toxicpanda.com>, Josef Bacik <JBacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: basic questions regarding COW in Btrfs
+Message-ID: <20130225172719.GA2434@localhost.localdomain>
+References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
+ <20130220175410.GB2062@localhost.localdomain>
+ <CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+ <CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+ <CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+On Mon, Feb 25, 2013 at 08:15:40AM -0700, Aastha Mehta wrote:
+> Thanks again Josef.
+> 
+> I understood that cow_file_range is called for a regular file. Just to
+> clarify, in cow_file_range is cow done at the time of reserving
+> extents in the extent btree for the io to be done in this delalloc? I
+> see the following comment above find_free_extent() which is called
+> while trying to reserve extents:
+> 
+> /*
+>  * walks the btree of allocated extents and find a hole of a given size.
+>  * The key ins is changed to record the hole:
+>  * ins->objectid == block start
+>  * ins->flags = BTRFS_EXTENT_ITEM_KEY
+>  * ins->offset == number of blocks
+>  * Any available blocks before search_start are skipped.
+>  */
+> 
+> This seems to be the only place where a cow might be done, because a
+> key is being inserted into an extent which modifies it.
+>
 
-As we implement the strict hierarchy quota in the userspace,
-it is sufficient to check this ruler in the userspace.remove
-the special check for qgroup 0.
+The key isn't inserted at this time, it's just returned with those values for us
+to do as we please.  There is no update of the btree until
+insert_reserved_extent/btrfs_mark_extent_written in btrfs_finish_ordered_io.
+Thanks,
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c | 5 -----
- 1 file changed, 5 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 059546a..8a31a04 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3764,11 +3764,6 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 		goto drop_write;
- 	}
- 
--	if (!sa->qgroupid) {
--		ret = -EINVAL;
--		goto out;
--	}
--
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
--- 
-1.7.11.7
-
+Josef 

@@ -1,35 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:17792 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750736Ab3BNFgl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Feb 2013 00:36:41 -0500
-Date: Wed, 13 Feb 2013 21:35:52 -0800
-From: Zach Brown <zab@redhat.com>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>,
-        chris.mason@fusionio.com, dsterba@suse.cz, kreijack@gmail.com
-Subject: Re: [PATCH] Btrfs-progs: check out if the swap device
-Message-ID: <20130214053552.GE22221@lenny.home.zabbo.net>
-References: <201302120125.AA00019@FM-323941448.jp.fujitsu.com>
- <5119C379.7080305@redhat.com>
- <5119D813.40101@jp.fujitsu.com>
- <511A8228.9060109@redhat.com>
- <20130212205731.GA11872@lenny.home.zabbo.net>
- <511B18BD.7070706@jp.fujitsu.com>
- <20130213215833.GC22221@lenny.home.zabbo.net>
- <511C29B7.9060805@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <511C29B7.9060805@jp.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:24484 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754959Ab3BYFbv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Feb 2013 00:31:51 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1P5Vo95029691
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:51 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1P5VohN013612
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:50 GMT
+Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1P5VnRZ015067
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Feb 2013 23:31:49 -0600
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4] Btrfs: Add support for subvol label
+Date: Mon, 25 Feb 2013 13:31:44 +0800
+Message-Id: <1361770305-1206-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
+References: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I think realpath() is unnecessary if it checks it by using only
-> stat() information. (if do not compare path)
-> 
-> Am I misunderstanding anything?
+This is the btrfs kernel changes to add supprt for the
+subvol label.
 
-Sure, that'd be fine, but then you'd want to try unescaping the paths
-before stati()ng them.
+The related (v4) Btrfs-progs patches are 
 
-- z
+  Btrfs-progs: add feature to label subvol and snapshot
+  Btrfs-progs: cmd option to show or set the subvol label
+
+v4: rebased to Josef Bacik btrfs-next
+
+Anand Jain (1):
+  Btrfs: ability to add label to snapshot and subvol
+
+ fs/btrfs/ctree.h           | 12 +++++++++-
+ fs/btrfs/ioctl.c           | 58 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.c     |  1 +
+ include/uapi/linux/btrfs.h |  2 ++
+ 4 files changed, 72 insertions(+), 1 deletion(-)
+
+-- 
+1.8.1.227.g44fe835
+

@@ -1,90 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39762 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755982Ab3BYOnZ (ORCPT
+Received: from mail-ia0-f173.google.com ([209.85.210.173]:39164 "EHLO
+	mail-ia0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756348Ab3BYPQB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 09:43:25 -0500
-Date: Mon, 25 Feb 2013 22:41:10 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Marios Titas <redneb8888@gmail.com>, David Sterba <dsterba@suse.cz>,
-        Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: do not change inode flags in rename
-Message-ID: <20130225144109.GA7646@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 25 Feb 2013 10:16:01 -0500
+Received: by mail-ia0-f173.google.com with SMTP id h37so2538781iak.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 07:16:00 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
+ <20130220175410.GB2062@localhost.localdomain> <CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+ <CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Mon, 25 Feb 2013 16:15:40 +0100
+Message-ID: <CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+Subject: Re: basic questions regarding COW in Btrfs
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(add Miao to CC)
-On Mon, Feb 25, 2013 at 12:04:42PM +0800, Liu Bo wrote:
-> Before we forced to change a file's NOCOW and COMPRESS flag due to
-> the parent directory's, but this ends up a bad idea, because it
-> confuses end users a lot about file's NOCOW status, eg. if someone
-> change a file to NOCOW via 'chattr' and then rename it in the current
-> directory which is without NOCOW attribute, the file will lose the
-> NOCOW flag silently.
-> 
-> This diables 'change flags in rename', so from now on we'll only
-> inherit flags from the parent directory on creation stage while in
-> other places we can use 'chattr' to set NOCOW or COMPRESS flags.
-> 
-> Reported-by: Marios Titas <redneb8888@gmail.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/inode.c |   25 -------------------------
->  1 files changed, 0 insertions(+), 25 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index d9984fa..383a7d8 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7325,29 +7325,6 @@ static int btrfs_getattr(struct vfsmount *mnt,
->  	return 0;
->  }
->  
-> -/*
-> - * If a file is moved, it will inherit the cow and compression flags of the new
-> - * directory.
-> - */
-> -static void fixup_inode_flags(struct inode *dir, struct inode *inode)
-> -{
-> -	struct btrfs_inode *b_dir = BTRFS_I(dir);
-> -	struct btrfs_inode *b_inode = BTRFS_I(inode);
-> -
-> -	if (b_dir->flags & BTRFS_INODE_NODATACOW)
-> -		b_inode->flags |= BTRFS_INODE_NODATACOW;
-> -	else
-> -		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
-> -
-> -	if (b_dir->flags & BTRFS_INODE_COMPRESS) {
-> -		b_inode->flags |= BTRFS_INODE_COMPRESS;
-> -		b_inode->flags &= ~BTRFS_INODE_NOCOMPRESS;
-> -	} else {
-> -		b_inode->flags &= ~(BTRFS_INODE_COMPRESS |
-> -				    BTRFS_INODE_NOCOMPRESS);
-> -	}
-> -}
-> -
->  static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
->  			   struct inode *new_dir, struct dentry *new_dentry)
->  {
-> @@ -7513,8 +7490,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
->  		}
->  	}
->  
-> -	fixup_inode_flags(new_dir, old_inode);
-> -
->  	ret = btrfs_add_link(trans, new_dir, old_inode,
->  			     new_dentry->d_name.name,
->  			     new_dentry->d_name.len, 0, index);
-> -- 
-> 1.7.7.6
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks again Josef.
+
+I understood that cow_file_range is called for a regular file. Just to
+clarify, in cow_file_range is cow done at the time of reserving
+extents in the extent btree for the io to be done in this delalloc? I
+see the following comment above find_free_extent() which is called
+while trying to reserve extents:
+
+/*
+ * walks the btree of allocated extents and find a hole of a given size.
+ * The key ins is changed to record the hole:
+ * ins->objectid == block start
+ * ins->flags = BTRFS_EXTENT_ITEM_KEY
+ * ins->offset == number of blocks
+ * Any available blocks before search_start are skipped.
+ */
+
+This seems to be the only place where a cow might be done, because a
+key is being inserted into an extent which modifies it.
+
+Thanks,
+Aastha.
+
+On 24 February 2013 02:39, Josef Bacik <josef@toxicpanda.com> wrote:
+> On Thu, Feb 21, 2013 at 12:32 PM, Aastha Mehta <aasthakm@gmail.com> wrote:
+>>
+>> Thanks a lot for the prompt response. I had seen that, but I am still
+>> not sure of where it really
+>> happens within fill_delalloc. Could you help me a little further in that
+>> path?
+>>
+>
+> So we check the properties of the inode and do one of 3 things, either we
+> call btrfs_cow_file_range directly in the case of a normal file,
+> run_delalloc_nocow in the case of a file with prealloc extents or NOCOW, or
+> we do the compression dance.  We make an ordered extent for this range and
+> return.  And then the normal io path happens.
+>
+>>
+>> Secondly, now I am confused between the btree_writepages and
+>> btrfs_writepages/btrfs_writepage
+>> methods. I thought btrfs_writepages was for writing the pages holding
+>> inodes and btree_writepages
+>> for writing the other indirect and leaf extents of the btree. Then, it
+>> seems that the write operations
+>> lead to update of the file system data structures in a top-down
+>> manner, i.e. first changing the inode
+>> and then the data extents. Is that correct?
+>
+>
+> You are right that btrfs_writepages/writepage are for normal files and
+> btree_writepages is for the metadata.  The write operations do start in data
+> and then modify metadata later down the line if that is what you are getting
+> at.
+>
+>>
+>> Thirdly, it seems that the old extents maybe dropped before the new
+>> extents are flushed to the disk.
+>> What would happen if the write fails before the disk commit? What am I
+>> missing here?
+>>
+>
+> Yeah, the metadata isn't updated until the data is on the disk.  In
+> ->fill_delalloc we setup an btrfs_ordered_extent that describes the range of
+> the dirty pages we are writing.  When we've written all these pages we run
+> btrfs_finish_ordered_io, which will drop the old extent entries if there are
+> any and then add the new extent entries and update the references and such.
+> So if something fails we just continue to point to the original file extent
+> entries and return an EIO, we maintain consistency by making sure the
+> metadata is updated only after the data is written out.  I hope that helps.
+> Thanks,
+>
+> Josef
+
+
+
+--
+Aastha Mehta
+MPI-SWS, Germany
+E-mail: aasthakm@mpi-sws.org

@@ -1,95 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37726 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756493Ab3BYUp0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 15:45:26 -0500
-Date: Mon, 25 Feb 2013 20:45:23 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Anand Jain <anand.jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:44534 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755004Ab3BYX0w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Feb 2013 18:26:52 -0500
+Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r1PNQqPU009745
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 18:26:52 -0500
+Date: Mon, 25 Feb 2013 15:26:51 -0800
+From: Zach Brown <zab@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4] Btrfs: ability to add label to snapshot and subvol
-Message-ID: <20130225204523.GK14283@carfax.org.uk>
-References: <1361770305-1206-1-git-send-email-anand.jain@oracle.com>
- <1361770305-1206-2-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH 01/17] btrfs-progs: Unify size-parsing
+Message-ID: <20130225232651.GE1658@lenny.home.zabbo.net>
+References: <1361832890-40921-1-git-send-email-sandeen@redhat.com>
+ <1361832890-40921-2-git-send-email-sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="HcXnUX77nabWBLF4"
-In-Reply-To: <1361770305-1206-2-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1361832890-40921-2-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+>  		case 'e':
+>  			mult *= 1024;
+> +			/* Fallthrough */
 
---HcXnUX77nabWBLF4
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+These comments still annoy me :).  And really, that code kind of annoys
+me too.  That's a lot of duplicated code for a mapping of characters to
+powers of 1024.
 
-On Mon, Feb 25, 2013 at 01:31:45PM +0800, Anand Jain wrote:
-> Generally snapshots are machine generated, so at any point in time
-> if a sysadmin looks at a list of snapshots there should be some
-> info about the snapshots to indicate purpose of it being created.
+How about.. 
 
-   I still can't see what benefits you get from having this extra
-metadata that you couldn't put in a filename -- particularly in the
-case of a scripted snapshot. However, assuming that you can bend the
-argument to needing this feature...
+u64 pow_u64(u64 x, unsigned y)
+{
+	u64 ret = 1;
 
-> With this patch and along with the corresponding btrfs-progs patch
-> a 32byte info can be added to the snapshots/subvol.
+	while (y--)
+		ret *= x;
 
-   How is this any different to using extended attributes to store the
-same information? With the exception that xattrs:
+	return ret;
+}
 
- - can store more than 32 bytes
- - can store an arbitrary number of items 
- - have already been implemented
- - don't introduce more FS-specific ioctls
- - don't take up valuable extra space in metadata structures
+u64 get_mult(char unit)
+{
+	static char *units = "bkmgtpe";
+	char *found = index(units, unit);
 
-> Further, ioctl is preferred over the attribute to write the label
-> since btrfs-progs is not only the application which might be
-> interacting with the subvol to write the label, for example
-> btrfs-gui might as well write the label, so that needs an
-> additional efforts to maintain a consistent keyword across the
-> applications is difficult in the long run.
+	if (found)
+		return pow_u64(1024, found - units);
+	return 0;
+}
 
-   As long as there's a well-known xattr name that's written by
-btrfs-progs, that'll become the de-facto standard. If any other system
-fails to use that attribute name, it becomes non-interoperable with
-the default tools. This is probably enough to ensure that it'll get
-fixed fairly quickly in this case (because the users that care about
-the feature will complain it's not working right).
+Seems like a lot less noise for the same functionality.
 
-   My conclusion: go with user xattrs.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Welcome to Hollywood, a land just off the coast ---         
-                            of Planet Earth.                             
-
---HcXnUX77nabWBLF4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUSvNY79z9OVl50rAAQKnww//RZoWRWhBm2AjCKqERMaYQIKnnT99vAE2
-00ueDH1wtwo6Z/ccSiAspgpfa1FR/c2XxdCVta1edN+HOvGnmsDi5KGOXnCOlLTT
-QOQdrj2XNL8Wb127TqGHQuAhqxIfEZBzNzgs1ff4CV4Z9DOUZyfXIMawEjsutzvy
-6TXd6mpfYst4HPGBJEigCNGRGF1V8PPn1895GdsWGhTo0MTea5sue17kUxm98VXF
-O+hIQU3BIkFAqZ9FwG1cimMu5OVVlmqd6GIoJ82lZ8xidWnyt3awu0ZYUjmyqXi1
-CLSbu5AKRpZp4Xz9gKE7mcTXKD5om+Alw3SwEsVweSVj9NTZyaDoPlTWBMF9CiTN
-m+nArN/h8AK5Xtz+/FiTk9pkL3YDxvnSPpWbQYofZuv8njlyfR75bx+s9tQgUZ9a
-oZkkbz5s5rkn1xtPKDCtpM5wblVGsQDaVBreJFBPZODNZBVoFGVmbqqfSrlC8nur
-HztbVpTrbBjsNwD4iup+R3OzlQKyTRUoIfBpnLEU4gMTJNjhYPJ/gCfssXOJoImP
-zN9hudCC6DxD0tHCPQpkgHuvG9RA8oaKmh2ohQL5cWcaf/oZCduBZ+j8fcTJWAqF
-2rFKazb/eEjE2IA3Oz+qwJlbm9ZHmaEHm299SHPUiT8VQJer9wGyjNBaU4EBiFN5
-4CU447w0ub4=
-=f+ac
------END PGP SIGNATURE-----
-
---HcXnUX77nabWBLF4--
+- z

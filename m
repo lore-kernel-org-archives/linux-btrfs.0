@@ -1,84 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52544 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751078Ab3B1KEr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Feb 2013 05:04:47 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r1SA4j1N006146
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 18:04:45 +0800
-Message-ID: <512F2BF0.3060201@cn.fujitsu.com>
-Date: Thu, 28 Feb 2013 18:05:36 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] Btrfs: fix wrong reserved space when deleting a snapshot/subvolume
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:34331 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752743Ab3BYEGu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Feb 2013 23:06:50 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Marios Titas <redneb8888@gmail.com>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: do not change inode flags in rename
+Date: Mon, 25 Feb 2013 12:04:42 +0800
+Message-Id: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When deleting a snapshot/subvolume, we need remove root ref/backref,
-dir entries and update the dir inode, so we must reserve free space
-for those operations.
+Before we forced to change a file's NOCOW and COMPRESS flag due to
+the parent directory's, but this ends up a bad idea, because it
+confuses end users a lot about file's NOCOW status, eg. if someone
+change a file to NOCOW via 'chattr' and then rename it in the current
+directory which is without NOCOW attribute, the file will lose the
+NOCOW flag silently.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+This diables 'change flags in rename', so from now on we'll only
+inherit flags from the parent directory on creation stage while in
+other places we can use 'chattr' to set NOCOW or COMPRESS flags.
+
+Reported-by: Marios Titas <redneb8888@gmail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ioctl.c |   21 +++++++++++++++++++--
- 1 files changed, 19 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c |   25 -------------------------
+ 1 files changed, 0 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8046cfc..0b46081 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2064,6 +2064,8 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	struct btrfs_root *dest = NULL;
- 	struct btrfs_ioctl_vol_args *vol_args;
- 	struct btrfs_trans_handle *trans;
-+	struct btrfs_block_rsv block_rsv;
-+	u64 qgroup_reserved;
- 	int namelen;
- 	int ret;
- 	int err = 0;
-@@ -2153,12 +2155,23 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	if (err)
- 		goto out_up_write;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d9984fa..383a7d8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7325,29 +7325,6 @@ static int btrfs_getattr(struct vfsmount *mnt,
+ 	return 0;
+ }
  
-+	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
-+	/*
-+	 * One for dir inode, two for dir entries, two for root
-+	 * ref/backref.
-+	 */
-+	err = btrfs_subvolume_reserve_metadata(root, &block_rsv,
-+					       5, &qgroup_reserved);
-+	if (err)
-+		goto out_up_write;
-+
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
--		goto out_up_write;
-+		goto out_release;
- 	}
--	trans->block_rsv = &root->fs_info->global_block_rsv;
-+	trans->block_rsv = &block_rsv;
-+	trans->bytes_reserved = block_rsv.size;
- 
- 	ret = btrfs_unlink_subvol(trans, root, dir,
- 				dest->root_key.objectid,
-@@ -2188,10 +2201,14 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+-/*
+- * If a file is moved, it will inherit the cow and compression flags of the new
+- * directory.
+- */
+-static void fixup_inode_flags(struct inode *dir, struct inode *inode)
+-{
+-	struct btrfs_inode *b_dir = BTRFS_I(dir);
+-	struct btrfs_inode *b_inode = BTRFS_I(inode);
+-
+-	if (b_dir->flags & BTRFS_INODE_NODATACOW)
+-		b_inode->flags |= BTRFS_INODE_NODATACOW;
+-	else
+-		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
+-
+-	if (b_dir->flags & BTRFS_INODE_COMPRESS) {
+-		b_inode->flags |= BTRFS_INODE_COMPRESS;
+-		b_inode->flags &= ~BTRFS_INODE_NOCOMPRESS;
+-	} else {
+-		b_inode->flags &= ~(BTRFS_INODE_COMPRESS |
+-				    BTRFS_INODE_NOCOMPRESS);
+-	}
+-}
+-
+ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 			   struct inode *new_dir, struct dentry *new_dentry)
+ {
+@@ -7513,8 +7490,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
  		}
  	}
- out_end_trans:
-+	trans->block_rsv = NULL;
-+	trans->bytes_reserved = 0;
- 	ret = btrfs_end_transaction(trans, root);
- 	if (ret && !err)
- 		err = ret;
- 	inode->i_flags |= S_DEAD;
-+out_release:
-+	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
- out_up_write:
- 	up_write(&root->fs_info->subvol_sem);
- out_unlock:
+ 
+-	fixup_inode_flags(new_dir, old_inode);
+-
+ 	ret = btrfs_add_link(trans, new_dir, old_inode,
+ 			     new_dentry->d_name.name,
+ 			     new_dentry->d_name.len, 0, index);
 -- 
-1.6.5.2
+1.7.7.6
+

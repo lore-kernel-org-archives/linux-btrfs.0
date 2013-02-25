@@ -1,79 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24419 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753276Ab3BYFbf (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31841 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753276Ab3BYFbg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 00:31:35 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1P5VYfB029565
+	Mon, 25 Feb 2013 00:31:36 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1P5VZRd005496
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:35 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1P5VX28006043
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:36 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1P5VZ6t009387
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:34 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 05:31:35 GMT
 Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1P5VXY5020084
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 Feb 2013 23:31:33 -0600
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1P5VYBW014951
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Feb 2013 23:31:34 -0600
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2 v4] Btrfs-progs: Add support for subvol label
-Date: Mon, 25 Feb 2013 13:31:27 +0800
-Message-Id: <1361770289-1165-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
+Subject: [PATCH 1/2 v4] Btrfs-progs: add feature to label subvol and snapshot
+Date: Mon, 25 Feb 2013 13:31:28 +0800
+Message-Id: <1361770289-1165-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1361770289-1165-1-git-send-email-anand.jain@oracle.com>
 References: <1351766770-4044-1-git-send-email-Anand.Jain@oracle.com>
+ <1361770289-1165-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the Btrfs-progs changes to add support for the subvol label.
-As discussed in the mailing-list there are two ways we could get the
-label attached to the subvol, using kernel-ioctl method and the
-other method is by using attributes.
+btrfs-progs framework to add support to label the subvol and
+snapshots. This patch is for the ioctl-way to write label
+to the subvol and snapshot. (the other way is to use attribute
+if then only this patch has to be backed out in btrfs-progs
+and replace with the patch titled
+ Btrfs-progs: add attribute label for subvol and snapshot)
 
-I preferred kernel-ioctl method over the attribute since
-there might be more than just the btrfs-progs which is reading and
-writing the label, if used attributes, the keyword is defined and
-used at the application level, which will be difficult to publicize
-and maintain the consistent keyword across any application in the
-long run.  In the kernel-ioctl method we don't have this problem.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfslabel.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ btrfslabel.h |  4 +++-
+ ctree.h      |  4 +++-
+ ioctl.h      |  2 ++
+ print-tree.c |  2 ++
+ 5 files changed, 55 insertions(+), 2 deletions(-)
 
-For kernel-ioctl method you need the below two Btrfs-progs 
-patches and the following kernel patch which is posted to
-mailing-list
-
- --------
-  Btrfs: ability to add label to snapshot and subvol
-
- fs/btrfs/ctree.h           | 12 +++++++++-
- fs/btrfs/ioctl.c           | 58 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.c     |  1 +
- include/uapi/linux/btrfs.h |  2 ++
- 4 files changed, 72 insertions(+), 1 deletion(-)
- --------
-
-Still in any case if we decide to use the attributes method
-over the kernel-ioctl method, then following btrfs-progs patch
-  Btrfs-progs: add feature to label subvol and snapshot
-should be replaced with
-  Btrfs-progs: add attribute label for subvol and snapshot
-  (also posted in the mailing-list)
-and the above kernel patch should be removed.
-
-v4: rebased to David's integration-20130219 branch
-
-Anand Jain (2):
-  Btrfs-progs: add feature to label subvol and snapshot
-  Btrfs-progs: cmd option to show or set the subvol label
-
- btrfslabel.c     | 45 +++++++++++++++++++++++++++++++++++++++++++++
- btrfslabel.h     |  4 +++-
- cmds-subvolume.c | 37 +++++++++++++++++++++++++++++++++++++
- ctree.h          |  4 +++-
- ioctl.h          |  2 ++
- man/btrfs.8.in   |  6 ++++++
- print-tree.c     |  2 ++
- 7 files changed, 98 insertions(+), 2 deletions(-)
-
+diff --git a/btrfslabel.c b/btrfslabel.c
+index a421a8b..b3ad540 100644
+--- a/btrfslabel.c
++++ b/btrfslabel.c
+@@ -126,3 +126,48 @@ int set_label(char *btrfs_dev, char *nLabel)
+ 	}
+ 	return change_label_unmounted(btrfs_dev, nLabel);
+ }
++
++int get_subvol_label(char *subvol, char *labelp)
++{
++	int fd, e=0;
++
++	fd = open_file_or_dir(subvol);
++
++	if(ioctl(fd, BTRFS_IOC_SUBVOL_GETLABEL, labelp) < 0) {
++		e = errno;
++		fprintf(stderr, "ERROR: get subvol label failed, %s\n",
++			strerror(e));
++		close(fd);
++		return -e;
++	}
++	labelp[BTRFS_LABEL_SIZE] = '\0';
++	if (!strlen(labelp))
++		return -1;
++	close(fd);
++	return 0;
++}
++
++int set_subvol_label(char *subvol, char *labelp)
++{
++	int fd, e=0;
++	char label[BTRFS_SUBVOL_LABEL_SIZE+1];
++
++	if (strlen(labelp) > BTRFS_SUBVOL_LABEL_SIZE) {
++		fprintf(stderr, "ERROR: Subvol label is more than max length %d\n",
++			BTRFS_SUBVOL_LABEL_SIZE);
++		return -1;
++	}
++	memset(label, 0, BTRFS_SUBVOL_LABEL_SIZE+1);
++	strcpy(label, labelp);
++	fd = open_file_or_dir(subvol);
++
++	if(ioctl(fd, BTRFS_IOC_SUBVOL_SETLABEL, label) < 0) {
++		e = errno;
++		fprintf(stderr, "ERROR: set subvol label failed, %s\n",
++			strerror(e));
++		close(fd);
++		return -e;
++	}
++	close(fd);
++	return 0;
++}
+diff --git a/btrfslabel.h b/btrfslabel.h
+index abf43ad..1abc483 100644
+--- a/btrfslabel.h
++++ b/btrfslabel.h
+@@ -2,4 +2,6 @@
+ 
+ 
+ int get_label(char *btrfs_dev);
+-int set_label(char *btrfs_dev, char *nLabel);
+\ No newline at end of file
++int set_label(char *btrfs_dev, char *nLabel);
++int get_subvol_label(char *subvol, char *labelp);
++int set_subvol_label(char *subvol, char *labelp);
+diff --git a/ctree.h b/ctree.h
+index 12f8fe3..bacb7d1 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -332,6 +332,7 @@ struct btrfs_header {
+  */
+ #define BTRFS_SYSTEM_CHUNK_ARRAY_SIZE 2048
+ #define BTRFS_LABEL_SIZE 256
++#define BTRFS_SUBVOL_LABEL_SIZE 32
+ 
+ /*
+  * just in case we somehow lose the roots and are not able to mount,
+@@ -721,7 +722,8 @@ struct btrfs_root_item {
+ 	struct btrfs_timespec otime;
+ 	struct btrfs_timespec stime;
+ 	struct btrfs_timespec rtime;
+-        __le64 reserved[8]; /* for future */
++	char label[BTRFS_SUBVOL_LABEL_SIZE];
++        __le64 reserved[4]; /* for future */
+ } __attribute__ ((__packed__));
+ 
+ /*
+diff --git a/ioctl.h b/ioctl.h
+index 3e7e451..4cbae3a 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -524,6 +524,8 @@ struct btrfs_ioctl_clone_range_args {
+ 				      struct btrfs_ioctl_get_dev_stats)
+ #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+ 				    struct btrfs_ioctl_dev_replace_args)
++#define BTRFS_IOC_SUBVOL_GETLABEL _IOWR(BTRFS_IOCTL_MAGIC, 55, __u64)
++#define BTRFS_IOC_SUBVOL_SETLABEL _IOW(BTRFS_IOCTL_MAGIC, 56, __u64)
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/print-tree.c b/print-tree.c
+index c9e891b..3d097dd 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -366,6 +366,8 @@ static void print_root(struct extent_buffer *leaf, int slot)
+ 				btrfs_root_stransid(&root_item),
+ 				btrfs_root_rtransid(&root_item));
+ 		}
++		if (strlen(root_item.label))
++			printf("\t\tlabel %s\n", root_item.label);
+ 	}
+ 	if (btrfs_root_refs(&root_item) == 0) {
+ 		struct btrfs_key drop_key;
 -- 
 1.8.1.227.g44fe835
 

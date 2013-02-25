@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static-108-0-197-17.lsanca.fios.verizon.net ([108.0.197.17]:54598
-	"EHLO orca4.orcaware.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751924Ab3BYRix (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:58884 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758612Ab3BYS4u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 12:38:53 -0500
-Message-ID: <512BA1AA.4000309@orcaware.com>
-Date: Mon, 25 Feb 2013 09:38:50 -0800
-From: Blair Zajac <blair@orcaware.com>
+	Mon, 25 Feb 2013 13:56:50 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 327A37C0445
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 11:56:50 -0700 (MST)
+Date: Mon, 25 Feb 2013 13:56:47 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Marios Titas <redneb8888@gmail.com>, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: do not change inode flags in rename
+Message-ID: <20130225185647.GB2434@localhost.localdomain>
+References: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix overhead check for qgroupid in the kernel
-References: <1361802632-2491-1-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1361802632-2491-1-git-send-email-wangshilong1991@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/25/2013 06:30 AM, Wang Shilong wrote:
-> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+On Sun, Feb 24, 2013 at 09:04:42PM -0700, Liu Bo wrote:
+> Before we forced to change a file's NOCOW and COMPRESS flag due to
+> the parent directory's, but this ends up a bad idea, because it
+> confuses end users a lot about file's NOCOW status, eg. if someone
+> change a file to NOCOW via 'chattr' and then rename it in the current
+> directory which is without NOCOW attribute, the file will lose the
+> NOCOW flag silently.
+> 
+> This diables 'change flags in rename', so from now on we'll only
+> inherit flags from the parent directory on creation stage while in
+> other places we can use 'chattr' to set NOCOW or COMPRESS flags.
 >
-> As we implement the strict hierarchy quota in the userspace,
-> it is sufficient to check this ruler in the userspace.remove
-> the special check for qgroup 0.
 
-I haven't done any kernel coding so I'm curious, but is this a safe 
-change?  When I code, I always have the authoritative code do a check, 
-e.g. in web programing, the browser can do data validation but you 
-always have the web server check incoming data also, so it doesn't hurt 
-to have it in the kernel itself.
+I'm of the mind we definitely shouldn't drop flags we've set previously, but I
+think we should also inherit any flags we have set on the directory, so if we
+move a file into a NOCOW directory we should inherit the flag.  I'm not married
+to the idea, but it seems to make the most sense to me.  Thanks,
 
-The other thing is that it is possible for people and distributions to 
-upgrade the kernel without upgrading the btrfs tools, so there could be 
-a window when there is no check on somebody's system.
-
-Regards,
-Blair
-
+Josef 

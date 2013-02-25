@@ -1,17 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20976 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751928Ab3BYFGR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 00:06:17 -0500
-Date: Mon, 25 Feb 2013 13:03:58 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:42927 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758837Ab3BYLXA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Feb 2013 06:23:00 -0500
+Date: Mon, 25 Feb 2013 12:22:57 +0100
+From: David Sterba <dsterba@suse.cz>
 To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: dsterba@suse.cz, Marios Titas <redneb8888@gmail.com>,
+Cc: bo.li.liu@oracle.com, dsterba@suse.cz, Marios Titas <redneb8888@gmail.com>,
         btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: update inode flags when renaming
-Message-ID: <20130225050357.GC3480@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20130225112257.GR27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1361520691-22665-1-git-send-email-bo.li.liu@oracle.com>
  <CAAdM645SGn=in2xq-Gv=DBCfpxJvynQEywr5tq7sh=jt-J197A@mail.gmail.com>
  <20130222084034.GC12835@liubo.cn.oracle.com>
@@ -65,15 +64,9 @@ On Mon, Feb 25, 2013 at 12:23:03PM +0800, Miao Xie wrote:
 > to a new directory, or create a new file, we will inherit the flags of the parent.
 > If not set, we inherit the flags only when create a new file.
 > How do you think about it?
-> 
 
-I'm ok with the option, but...
-from some reports on the list, end users are more likely to control, use chattr
-files by themselves, inheriting flags via moving a file to a new directory is
-indeed not very welcomed.
+I'd rather see mount options being used for filesystem-wide (or
+subvolume-wide) things, and renaming files is a local operation
+for which a finer grained control via chattr seems more fit.
 
-So for practical use, I assume that it's fairly enough to inherit flags only on
-creation?
-
-thanks,
-liubo
+david

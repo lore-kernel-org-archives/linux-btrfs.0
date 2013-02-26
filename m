@@ -1,77 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:34422 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757452Ab3BYU7O (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:44196 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753371Ab3BZLJ4 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 15:59:14 -0500
-Received: by mail-wi0-f174.google.com with SMTP id hi8so3989530wib.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2013 12:59:13 -0800 (PST)
-Message-ID: <512BD0EC.8040707@gmail.com>
-Date: Mon, 25 Feb 2013 22:00:28 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Tue, 26 Feb 2013 06:09:56 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2][BTRFS-PROGS] Enhance btrfs fi df with raid5/6 support
+Date: Tue, 26 Feb 2013 12:09:53 +0100
+Cc: Zach Brown <zab@redhat.com>,
+        Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Michael =?iso-8859-1?q?Kj=F6rling?= <michael@kjorling.se>,
+        cwillu <cwillu@cwillu.com>, Chris Murphy <lists@colorremedies.com>,
+        David Sterba <dsterba@suse.cz>
+References: <1361627171-8246-1-git-send-email-goffredo.baroncelli@yahoo.com> <20130225173808.GH22221@lenny.home.zabbo.net> (sfid-20130225_205250_875827_BF73B40B)
+In-Reply-To: <20130225173808.GH22221@lenny.home.zabbo.net>
 MIME-Version: 1.0
-To: Zach Brown <zab@redhat.com>
-CC: kreijack@inwind.it, Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/8] Add some helpers to manage the strings allocation/deallocation.
-References: <1361627171-8246-1-git-send-email-goffredo.baroncelli@yahoo.com> <1361627171-8246-2-git-send-email-goffredo.baroncelli@yahoo.com> <512ACA84.3010408@redhat.com> <512BC2B2.2010108@tiscalinet.it> <20130225201950.GC1658@lenny.home.zabbo.net>
-In-Reply-To: <20130225201950.GC1658@lenny.home.zabbo.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201302261209.54617.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/25/2013 09:19 PM, Zach Brown wrote:
->>    printf("Disk size:\t\t%*s\n", width,
->>         df_pretty_sizes(total_disk, mode));
->>
->> it would be translated (note the '%*s'):
->>
->>    if (mode == DF_HUMAN_UNIT)
->> 	   printf("Disk size:\t\t%*s%s\n", width-2,
->>         	df_pretty_sizes_number(total_disk),
->> 		df_pretty_sizes_unit(total_disk));
->>    else
->> 	   printf("Disk size:\t\t%*lld\n", width, total_disk);
+Am Montag, 25. Februar 2013 schrieb Zach Brown:
+> > I updates my previous patches [1] to add support for raid5/6.
+> > These patches update the btrfs fi df command and add two new commands:
+> > - btrfs filesystem disk-usage <path>
+> > - btrfs device disk-usage <path>
 > 
-> So use mode as the argument in the second case, just like you did in the
-> first.
+> This seems like a ton of code.
 > 
-> printf("Disk dize:\t\t"sz_fmt"\n", sz_arg(total_disk, mode, width));
+> Here's a thought experiment: What's the smallest possible change that
+> could communicate the information that people don't have today?
 
-> 
-> #define sz_fmt "%*llu%s"
-> #define sz_fmt(v,m,w) width(w, m), scaled(v, m), units(v, m)
-I suppose s/sz_fmt/sz_arg/
+The kind and amount of information output of these additions have been 
+discussed several times before.
 
-> And again, the reason we jump through these mildly distasteful hoops is
-> that *it gets rid of allocated strings entirely*.
-I am not entirely convinced, however if you prepare a patch I will
-integrate it quickly
+I found the output provided quite useful. As others.
 
-> That bug in df_pretty_sizes() where it allocates a 20 byte buffer to
-> store a string that can be 21 bytes long with its null?  It'd just
-> vanish.  Not needed.
-Good catch
+Free space seems to be a complex matter in BTRFS and one conclusion was that 
+its not easily possible to provide a single number to show how much space is 
+free.
 
->> To avoid all this mess, we should add another conversion specifier with
->> the function register_printf_function(). Unfortunately I was not able to
->> find the equivalent one for sprintf().
-> 
-> Doesn't that prevent compile-time verification that the types of the
-> format specifiers match the arguments?
+I´d still like that for df, whose output is quite bogus in certain BTRFS 
+setups at the moment and does not give applications a realistic estimate at 
+all. One example is raid 1 with 10 GB each disk. Shows 20 GB free. An 
+application which wants to write 15 GB will fail. Which can break installer 
+scripts, package management, cache software or anything else which checks 
+for free space. Thus I´d like df to default to *minimum* free.
 
-Yes this was another cons...
+But what is it concretely, what you feel uncomfortable with? The Linux 
+kernel is also a ton of code.
 
-> 
-> - z
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I´d really like to see Goffredo improvements go in instead of them being 
+discussed endlessly. So I´d like to feedback to be as concrete as possible, 
+so Goffredo has a chance to work on it.
 
-
+Ciao,
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

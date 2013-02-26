@@ -1,45 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37556 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752847Ab3BZSxc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 13:53:32 -0500
-Date: Tue, 26 Feb 2013 10:53:20 -0800
-From: Zach Brown <zab@redhat.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] btrfs: cleanup for open-coded alignment
-Message-ID: <20130226185320.GJ1658@lenny.home.zabbo.net>
-References: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-wi0-f175.google.com ([209.85.212.175]:40501 "EHLO
+	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932591Ab3BZTOl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 14:14:41 -0500
+Received: by mail-wi0-f175.google.com with SMTP id l13so5315051wie.14
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 11:14:40 -0800 (PST)
+Message-ID: <512D09ED.9000103@gmail.com>
+Date: Tue, 26 Feb 2013 20:15:57 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+CC: kreijack@inwind.it, Hendrik Friedel <hendrik@friedels.name>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Needed change in Wiki
+References: <512A2019.6000201@friedels.name> <512A4CD6.7050804@gmail.com> <512AEAF3.1080100@oracle.com>
+In-Reply-To: <512AEAF3.1080100@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Sometimes these open-coded alignment is not so easy to understand for
-> newbie like me.
+Hi Anand,
 
-Thanks, this is a nice change.
+On 02/25/2013 05:39 AM, Anand Jain wrote:
+> 
+> 
+> You may need to update the minimum version of
+> libblkid-dev that is required. Since.
+> 
+> latest btrfs-progs needs
+>   blkid_probe_get_wholedisk_devno()
+> from the libblkid-dev.
+> found libblkid-dev version 2.17.2 does not work,
+> and 2.22 works. Not sure which version introduced the
+> function required here.
 
-You might have mentioned in the commit message that some of the changes
-aren't *strictly* equivalent but that they're still safe.
+Which error is returned when you try to compile with the 2.17.2 ?
 
-> -		iosize = (iosize + blocksize - 1) & ~((u64)blocksize - 1);
-> +		iosize = ALIGN(iosize, blocksize);
 
-This is equivalent to
+> 
+> 
+> HTH
+> Anand
 
-> +		iosize = (iosize + blocksize - 1) & ~((size_t)blocksize - 1);
 
-Which is fine.  That u64 was overkill.  The manual casts only need to
-make sure that the mask is as wide as the input value to avoid losing
-bits and the macro now guarantees that.
 
-> -	num_bytes = (end - start + blocksize) & ~(blocksize - 1);
-> +	num_bytes = ALIGN(end - start + 1, blocksize);
 
-Nice catch.
-
-Reviewed-by: Zach Brown <zab@redhat.com>
-
-- z
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

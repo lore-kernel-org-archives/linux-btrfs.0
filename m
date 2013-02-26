@@ -1,95 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:13665 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753717Ab3BZEgo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Feb 2013 23:36:44 -0500
-Message-ID: <512C3BD9.6000008@redhat.com>
-Date: Mon, 25 Feb 2013 22:36:41 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-ee0-f48.google.com ([74.125.83.48]:65136 "EHLO
+	mail-ee0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753868Ab3BZSph (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 13:45:37 -0500
+Received: by mail-ee0-f48.google.com with SMTP id t10so2587133eei.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 10:45:36 -0800 (PST)
+Message-ID: <512D031D.20408@gmail.com>
+Date: Tue, 26 Feb 2013 19:46:53 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Shilong Wang <wangshilong1991@gmail.com>
+To: Eric Sandeen <sandeen@redhat.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 14/17] btrfs-progs: fix mem leak in resolve_root
-References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-15-git-send-email-sandeen@redhat.com> <CAP9B-QkUP7ZftFkWw-_W-K2YKT8KdymabTf2mEK8Z_mgiKaJnA@mail.gmail.com>
-In-Reply-To: <CAP9B-QkUP7ZftFkWw-_W-K2YKT8KdymabTf2mEK8Z_mgiKaJnA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [PATCH 16/17] btrfs-progs: fix fd leak in cmd_subvol_set_default
+References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-17-git-send-email-sandeen@redhat.com>
+In-Reply-To: <1361832890-40921-17-git-send-email-sandeen@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/25/13 6:36 PM, Shilong Wang wrote:
-> Hello, Eric
+Hi Eric,
+
+On 02/25/2013 11:54 PM, Eric Sandeen wrote:
+> Rearrange cmd_subvol_set_default() slightly so we
+> don't have to close the fd on an error return.
 > 
-> 2013/2/26 Eric Sandeen <sandeen@redhat.com>:
->> If we exit with error we must free the allocated memory
->> to avoid a leak.
->>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->>  btrfs-list.c |    8 ++++++--
->>  1 files changed, 6 insertions(+), 2 deletions(-)
->>
->> diff --git a/btrfs-list.c b/btrfs-list.c
->> index 851c059..8c3f84d 100644
->> --- a/btrfs-list.c
->> +++ b/btrfs-list.c
->> @@ -568,8 +568,10 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
->>                 * ref_tree = 0 indicates the subvolumes
->>                 * has been deleted.
->>                 */
->> -               if (!found->ref_tree)
->> +               if (!found->ref_tree) {
->> +                       free(full_path);
->>                         return -ENOENT;
->> +               }
->>                 int add_len = strlen(found->path);
->>
->>                 /* room for / and for null */
->> @@ -612,8 +614,10 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
->>                 * subvolume was deleted.
->>                 */
->>                 found = root_tree_search(rl, next);
->> -               if (!found)
->> +               if (!found) {
->> +                       free(full_path);
->>                         return -ENOENT;
->> +               }
->>         }
->>
->>         ri->full_path = full_path;
->> --
->> 1.7.1
+> While we're at it, fix whitespace & remove magic
+> return values.
 > 
-> I think the patch is wrong;
-> Here we return ENOENT, it means a subvolume/snapshot deletion happens.
-> We just filter them in the filter_root, But the free work is done by
-> the function all_subvolume_free..
-> so your modification will cause a double free..
-
-Thanks for the review.  I'll admit that when looking at too many of
-these static checker reports, sometimes things look obvious when
-they are actually subtle, and I've certainly made mistakes before. :)
-
-However, full_path location doesn't seem to be available outside the
-scope of this function unless we exit normally and do:
-
-        ri->full_path = full_path;
-
-        return 0;
-}
-
-If we exit early at the -ENOENT points, it seems that full_path
-is leaked; there are no other references to it.
-Am I missing something?
-
-Thanks,
--Eric
-
-> Thanks,
-> Wang
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+>  cmds-subvolume.c |   17 +++++++++--------
+>  1 files changed, 9 insertions(+), 8 deletions(-)
 > 
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index 0dfaefe..461eed9 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -712,24 +712,25 @@ static int cmd_subvol_set_default(int argc, char **argv)
+>  	subvolid = argv[1];
+>  	path = argv[2];
+>  
+> +	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
 
+Could you replace strtoll() with strtoull() ? Note that:
+
+strtoull("0xffffffffffffffff",0,0)  == 0xffffffffffffffff
+strtoull("-1",0,0)  == 0xffffffffffffffff
+strtoll("-1",0,0)  == 0xffffffffffffffff
+strtoll("0xffffffffffffffff",0,0)  -> ERANGE
+
+> +	if (errno == ERANGE) {
+
+Pay attention that if strtoull() doesn't encounter a problem errno *is
+not* touched: this check could catch a previous error. I don't know if
+it is an hole in the standard or a bug in the gnu-libc; however I think
+that before strtoXll() we should put 'errno = 0;'.
+
+> +		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
+> +		return 1;
+> +	}
+> +
+>  	fd = open_file_or_dir(path);
+>  	if (fd < 0) {
+>  		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+> -		return 12;
+> +		return 1;
+>  	}
+>  
+> -	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
+> -	if (errno == ERANGE) {
+> -		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
+> -		return 30;
+> -	}
+>  	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
+>  	e = errno;
+>  	close(fd);
+> -	if( ret < 0 ){
+> +	if (ret < 0) {
+>  		fprintf(stderr, "ERROR: unable to set a new default subvolume - %s\n",
+>  			strerror(e));
+> -		return 30;
+> +		return 1;
+>  	}
+>  	return 0;
+>  }
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

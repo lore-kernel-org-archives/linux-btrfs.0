@@ -1,37 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44296 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753254Ab3BZGiM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 01:38:12 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UAEBJ-0000yb-I7
-	for linux-btrfs@vger.kernel.org; Tue, 26 Feb 2013 07:38:29 +0100
-Received: from rain.gmane.org ([80.91.229.7])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 07:38:29 +0100
-Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 07:38:29 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:24141 "EHLO
+	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756077Ab3BZHIU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 02:08:20 -0500
+Date: Tue, 26 Feb 2013 18:08:17 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Remco Hosman - Yerf IT <remco@yerf-it.nl>
+Cc: Suman C <schakrava@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: lvm volume like support
-Date: Mon, 25 Feb 2013 22:37:53 -0800
-Message-ID: <kghl7u$fon$1@ger.gmane.org>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <CAPF83mvfLrDvBvbP5Oe_R94BM7Lr5pZD=gpnDrr4TquBq88q5Q@mail.gmail.com> <20130226115704.50102196@natsu> <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com> <FEF2721D-ABA2-4CE7-A562-6210B0946BF8@yerf-it.nl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Message-ID: <20130226070817.GQ5551@dastard>
+References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com>
+ <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com>
+ <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com>
+ <CAPF83mvfLrDvBvbP5Oe_R94BM7Lr5pZD=gpnDrr4TquBq88q5Q@mail.gmail.com>
+ <20130226115704.50102196@natsu>
+ <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com>
+ <FEF2721D-ABA2-4CE7-A562-6210B0946BF8@yerf-it.nl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <FEF2721D-ABA2-4CE7-A562-6210B0946BF8@yerf-it.nl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remco Hosman - Yerf IT wrote:
+On Tue, Feb 26, 2013 at 07:28:43AM +0100, Remco Hosman - Yerf IT wrote:
+> would be really cool if a TRIM to the loopback device would do a
+> 'hole punch' on the file
 
-> would be really cool if a TRIM to the loopback device would do a 'hole
-> punch' on the file
+dfaa2ef loop: add discard support for loop devices
 
-There are patches on the scsi target mailing list to make this happen for 
-the FILEIO backend. This has the added benefit that if you set it up via 
-LIO, it appears as a full SCSI device, and can be exported via iSCSI, 
-firewire, FC, USB, etc as well as being visible as a local disk.
-
+-- 
+Dave Chinner
+david@fromorbit.com

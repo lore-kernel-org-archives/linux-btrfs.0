@@ -1,32 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55198 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:37556 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753124Ab3BZSMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 13:12:32 -0500
-Date: Tue, 26 Feb 2013 19:12:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
-Subject: Re: [RFC] Btrfs: Allow the compressed extent size limit to be
- modified v2
-Message-ID: <20130226181229.GZ27541@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+	id S1752847Ab3BZSxc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 13:53:32 -0500
+Date: Tue, 26 Feb 2013 10:53:20 -0800
+From: Zach Brown <zab@redhat.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] btrfs: cleanup for open-coded alignment
+Message-ID: <20130226185320.GJ1658@lenny.home.zabbo.net>
+References: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1360273114-4672-1-git-send-email-mitch.harder@sabayonlinux.org>
+In-Reply-To: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 07, 2013 at 03:38:34PM -0600, Mitch Harder wrote:
-> @@ -361,6 +361,7 @@ static match_table_t tokens = {
->  	{Opt_check_integrity, "check_int"},
->  	{Opt_check_integrity_including_extent_data, "check_int_data"},
->  	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
-> +	{Opt_max_compr_extent_kb, "max_compressed_extent_kb=%d"},
+> Sometimes these open-coded alignment is not so easy to understand for
+> newbie like me.
 
-Can we possibly find a name that one can remember? I had to copy&paste
-it each time. Let's say something with 'compress-' prefix, maybe
-compress-extent-kb (or with underscores for "consistency").
+Thanks, this is a nice change.
 
-david
+You might have mentioned in the commit message that some of the changes
+aren't *strictly* equivalent but that they're still safe.
+
+> -		iosize = (iosize + blocksize - 1) & ~((u64)blocksize - 1);
+> +		iosize = ALIGN(iosize, blocksize);
+
+This is equivalent to
+
+> +		iosize = (iosize + blocksize - 1) & ~((size_t)blocksize - 1);
+
+Which is fine.  That u64 was overkill.  The manual casts only need to
+make sure that the mask is as wide as the input value to avoid losing
+bits and the macro now guarantees that.
+
+> -	num_bytes = (end - start + blocksize) & ~(blocksize - 1);
+> +	num_bytes = ALIGN(end - start + 1, blocksize);
+
+Nice catch.
+
+Reviewed-by: Zach Brown <zab@redhat.com>
+
+- z

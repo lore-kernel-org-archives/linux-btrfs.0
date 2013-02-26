@@ -1,104 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:22693 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753258Ab3BZUX7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 15:23:59 -0500
-Message-ID: <512D169C.3020100@redhat.com>
-Date: Tue, 26 Feb 2013 14:10:04 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-ee0-f50.google.com ([74.125.83.50]:55317 "EHLO
+	mail-ee0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758547Ab3BZUkw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 15:40:52 -0500
+Received: by mail-ee0-f50.google.com with SMTP id e51so2808596eek.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 12:40:51 -0800 (PST)
+Date: Tue, 26 Feb 2013 22:40:40 +0200
+From: Ilya Dryomov <idryomov@gmail.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: kreijack@inwind.it, Goffredo Baroncelli <kreijack@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 17/17 V2] btrfs-progs: replace strtok_r with strsep
+Message-ID: <20130226204040.GA1993@zambezi.lan>
+References: <1361832890-40921-1-git-send-email-sandeen@redhat.com>
+ <1361832890-40921-18-git-send-email-sandeen@redhat.com>
+ <512D0325.5050308@gmail.com>
+ <512D190E.2050002@redhat.com>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 16/17] btrfs-progs: fix fd leak in cmd_subvol_set_default
-References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-17-git-send-email-sandeen@redhat.com> <512D031D.20408@gmail.com>
-In-Reply-To: <512D031D.20408@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <512D190E.2050002@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/26/13 12:46 PM, Goffredo Baroncelli wrote:
-> Hi Eric,
+On Tue, Feb 26, 2013 at 02:20:30PM -0600, Eric Sandeen wrote:
+> The coverity runs had a false positive complaining that save_ptr
+> is uninitialized in the call to strtok_r.
 > 
-> On 02/25/2013 11:54 PM, Eric Sandeen wrote:
->> Rearrange cmd_subvol_set_default() slightly so we
->> don't have to close the fd on an error return.
->>
->> While we're at it, fix whitespace & remove magic
->> return values.
->>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->>  cmds-subvolume.c |   17 +++++++++--------
->>  1 files changed, 9 insertions(+), 8 deletions(-)
->>
->> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
->> index 0dfaefe..461eed9 100644
->> --- a/cmds-subvolume.c
->> +++ b/cmds-subvolume.c
->> @@ -712,24 +712,25 @@ static int cmd_subvol_set_default(int argc, char **argv)
->>  	subvolid = argv[1];
->>  	path = argv[2];
->>  
->> +	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
+> We could initialize it, but Zach points out that just using
+> strsep is a lot simpler if there's only one delimiter,
+> so just switch to that.
 > 
-> Could you replace strtoll() with strtoull() ? Note that:
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
 > 
-> strtoull("0xffffffffffffffff",0,0)  == 0xffffffffffffffff
-> strtoull("-1",0,0)  == 0xffffffffffffffff
-> strtoll("-1",0,0)  == 0xffffffffffffffff
-> strtoll("0xffffffffffffffff",0,0)  -> ERANGE
-
-Probably a good idea, I think I had noticed that earlier and
-then spaced it.  :(
-
-But I figure one functional change per patch is the way to go;
-making this other change would probably be best under its own commit;
-one to fix the fd leak, and one to fix this issue?
-
->> +	if (errno == ERANGE) {
+> V2: Remove accidentally-added debug printfs, thanks Geoffredo!
 > 
-> Pay attention that if strtoull() doesn't encounter a problem errno *is
-> not* touched: this check could catch a previous error. I don't know if
-> it is an hole in the standard or a bug in the gnu-libc; however I think
-> that before strtoXll() we should put 'errno = 0;'.
+> diff --git a/cmds-balance.c b/cmds-balance.c
+> index b671e1d..cfbb8eb 100644
+> --- a/cmds-balance.c
+> +++ b/cmds-balance.c
+> @@ -67,11 +67,8 @@ static int parse_one_profile(const char *profile, u64 *flags)
+>  static int parse_profiles(char *profiles, u64 *flags)
+>  {
+>  	char *this_char;
+> -	char *save_ptr;
+>  
+> -	for (this_char = strtok_r(profiles, "|", &save_ptr);
+> -	     this_char != NULL;
+> -	     this_char = strtok_r(NULL, "|", &save_ptr)) {
+> +	while ((this_char = strsep(&profiles, "|"))) {
+>  		if (parse_one_profile(this_char, flags))
+>  			return 1;
+>  	}
+> @@ -136,14 +133,11 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
+>  {
+>  	char *this_char;
+>  	char *value;
+> -	char *save_ptr;
+>  
+>  	if (!filters)
+>  		return 0;
+>  
+> -	for (this_char = strtok_r(filters, ",", &save_ptr);
+> -	     this_char != NULL;
+> -	     this_char = strtok_r(NULL, ",", &save_ptr)) {
+> +	while ((this_char = strsep(&filters , ","))) {
 
-yeah, ugh.  But this problem existed before, correct?  So I think a
-separate fix makes sense, do you agree?  Or have I made something
-worse here with this change?
+					  ^^^ whitespace
+
+
+One of the differences between strtok() and strsep() is that the former
+allows multiple delimiters between two tokens.  With strsep(), this
+
+btrfs balance -dfoo1=bar1,,,foo2=bar2 <mnt>
+
+fails with error, whereas with strtok() it passes.  I don't have a
+strong opinion here (this has been loosely modeled on the way mount(8)
+handles -o options), but might it be better to just initialize save_ptr?
+(And yes, I know that strsep() is better ;))
 
 Thanks,
--Eric
 
-
-
->> +		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
->> +		return 1;
->> +	}
->> +
->>  	fd = open_file_or_dir(path);
->>  	if (fd < 0) {
->>  		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
->> -		return 12;
->> +		return 1;
->>  	}
->>  
->> -	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
->> -	if (errno == ERANGE) {
->> -		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
->> -		return 30;
->> -	}
->>  	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
->>  	e = errno;
->>  	close(fd);
->> -	if( ret < 0 ){
->> +	if (ret < 0) {
->>  		fprintf(stderr, "ERROR: unable to set a new default subvolume - %s\n",
->>  			strerror(e));
->> -		return 30;
->> +		return 1;
->>  	}
->>  	return 0;
->>  }
-> 
-> 
-
+		Ilya

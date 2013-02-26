@@ -1,100 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:6767 "EHLO mx1.redhat.com"
+Received: from smtp206.alice.it ([82.57.200.102]:47140 "EHLO smtp206.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758806Ab3BZUqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 15:46:35 -0500
-Message-ID: <512D1F26.7020804@redhat.com>
-Date: Tue, 26 Feb 2013 14:46:30 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1759705Ab3BZVCx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 16:02:53 -0500
+Message-ID: <512D2344.40607@tiscalinet.it>
+Date: Tue, 26 Feb 2013 22:04:04 +0100
+From: Goffredo Baroncelli <kreijack@tiscalinet.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: kreijack@inwind.it, Goffredo Baroncelli <kreijack@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 17/17 V2] btrfs-progs: replace strtok_r with strsep
-References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-18-git-send-email-sandeen@redhat.com> <512D0325.5050308@gmail.com> <512D190E.2050002@redhat.com> <20130226204040.GA1993@zambezi.lan>
-In-Reply-To: <20130226204040.GA1993@zambezi.lan>
+To: Eric Sandeen <sandeen@redhat.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 16/17] btrfs-progs: fix fd leak in cmd_subvol_set_default
+References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-17-git-send-email-sandeen@redhat.com> <512D031D.20408@gmail.com> <512D169C.3020100@redhat.com>
+In-Reply-To: <512D169C.3020100@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/26/13 2:40 PM, Ilya Dryomov wrote:
-> On Tue, Feb 26, 2013 at 02:20:30PM -0600, Eric Sandeen wrote:
->> The coverity runs had a false positive complaining that save_ptr
->> is uninitialized in the call to strtok_r.
+On 02/26/2013 09:10 PM, Eric Sandeen wrote:
+> On 2/26/13 12:46 PM, Goffredo Baroncelli wrote:
+>> Hi Eric,
 >>
->> We could initialize it, but Zach points out that just using
->> strsep is a lot simpler if there's only one delimiter,
->> so just switch to that.
+>> On 02/25/2013 11:54 PM, Eric Sandeen wrote:
+>>> Rearrange cmd_subvol_set_default() slightly so we
+>>> don't have to close the fd on an error return.
+>>>
+>>> While we're at it, fix whitespace & remove magic
+>>> return values.
+>>>
+>>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+>>> ---
+>>>  cmds-subvolume.c |   17 +++++++++--------
+>>>  1 files changed, 9 insertions(+), 8 deletions(-)
+>>>
+>>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>>> index 0dfaefe..461eed9 100644
+>>> --- a/cmds-subvolume.c
+>>> +++ b/cmds-subvolume.c
+>>> @@ -712,24 +712,25 @@ static int cmd_subvol_set_default(int argc, char **argv)
+>>>  	subvolid = argv[1];
+>>>  	path = argv[2];
+>>>  
+>>> +	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
 >>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
+>> Could you replace strtoll() with strtoull() ? Note that:
 >>
->> V2: Remove accidentally-added debug printfs, thanks Geoffredo!
+>> strtoull("0xffffffffffffffff",0,0)  == 0xffffffffffffffff
+>> strtoull("-1",0,0)  == 0xffffffffffffffff
+>> strtoll("-1",0,0)  == 0xffffffffffffffff
+>> strtoll("0xffffffffffffffff",0,0)  -> ERANGE
+> 
+> Probably a good idea, I think I had noticed that earlier and
+> then spaced it.  :(
+> 
+> But I figure one functional change per patch is the way to go;
+> making this other change would probably be best under its own commit;
+> one to fix the fd leak, and one to fix this issue?
+
+IMHO this would be simple enough to be done in one shot. However this
+problem exists also in other points.
+May be that for now your patch is ok. But then we should start another
+set of patches which correct/sanitise all these use of
+"parse_size/strto[u]ll/parse_limit...".
+
+Unfortunately this means that these next series of patches will start
+only when these one will be accepted in order to avoid patches conflict.
+
+> 
+>>> +	if (errno == ERANGE) {
 >>
->> diff --git a/cmds-balance.c b/cmds-balance.c
->> index b671e1d..cfbb8eb 100644
->> --- a/cmds-balance.c
->> +++ b/cmds-balance.c
->> @@ -67,11 +67,8 @@ static int parse_one_profile(const char *profile, u64 *flags)
->>  static int parse_profiles(char *profiles, u64 *flags)
->>  {
->>  	char *this_char;
->> -	char *save_ptr;
->>  
->> -	for (this_char = strtok_r(profiles, "|", &save_ptr);
->> -	     this_char != NULL;
->> -	     this_char = strtok_r(NULL, "|", &save_ptr)) {
->> +	while ((this_char = strsep(&profiles, "|"))) {
->>  		if (parse_one_profile(this_char, flags))
->>  			return 1;
->>  	}
->> @@ -136,14 +133,11 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
->>  {
->>  	char *this_char;
->>  	char *value;
->> -	char *save_ptr;
->>  
->>  	if (!filters)
->>  		return 0;
->>  
->> -	for (this_char = strtok_r(filters, ",", &save_ptr);
->> -	     this_char != NULL;
->> -	     this_char = strtok_r(NULL, ",", &save_ptr)) {
->> +	while ((this_char = strsep(&filters , ","))) {
+>> Pay attention that if strtoull() doesn't encounter a problem errno *is
+>> not* touched: this check could catch a previous error. I don't know if
+>> it is an hole in the standard or a bug in the gnu-libc; however I think
+>> that before strtoXll() we should put 'errno = 0;'.
 > 
-> 					  ^^^ whitespace
+> yeah, ugh.  But this problem existed before, correct?  So I think a
+> separate fix makes sense, do you agree?  Or have I made something
+> worse here with this change?
+
+No the things aren't worse. You are doing a great work
+
 > 
-> 
-> One of the differences between strtok() and strsep() is that the former
-> allows multiple delimiters between two tokens.  With strsep(), this
-> 
-> btrfs balance -dfoo1=bar1,,,foo2=bar2 <mnt>
-> 
-> fails with error, whereas with strtok() it passes.  I don't have a
-> strong opinion here (this has been loosely modeled on the way mount(8)
-> handles -o options), but might it be better to just initialize save_ptr?
-> (And yes, I know that strsep() is better ;))
-
-I don't really care much either way, TBH.  Initializing it seems a little
-bit magic, but with a comment as to why, it'd be fine.  If you did it this
-way intentionally to allow the above format, and changing it would break
-expectations, then I'll happily just initialize save_ptr.
-
-(And, I realize that lots of these changes are pedantic and seemingly
-pointless, but we've gotten the static checker errors down from over 100
-to under 30 and dropping; the more noise we remove the more likely we are
-to pay attention to the output and catch actual errors.  At least that's
-my feeling; if people think this is getting to be pointless churn, I'm
-ok with that, too).
-
-Thanks for the review,
--Eric
-
-p.s. Zach made me do it. ;)
-
-
 > Thanks,
+> -Eric
 > 
-> 		Ilya
+> 
+> 
+>>> +		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
+>>> +		return 1;
+>>> +	}
+>>> +
+>>>  	fd = open_file_or_dir(path);
+>>>  	if (fd < 0) {
+>>>  		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+>>> -		return 12;
+>>> +		return 1;
+>>>  	}
+>>>  
+>>> -	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
+>>> -	if (errno == ERANGE) {
+>>> -		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
+>>> -		return 30;
+>>> -	}
+>>>  	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
+>>>  	e = errno;
+>>>  	close(fd);
+>>> -	if( ret < 0 ){
+>>> +	if (ret < 0) {
+>>>  		fprintf(stderr, "ERROR: unable to set a new default subvolume - %s\n",
+>>>  			strerror(e));
+>>> -		return 30;
+>>> +		return 1;
+>>>  	}
+>>>  	return 0;
+>>>  }
+>>
+>>
+> 
 > 
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

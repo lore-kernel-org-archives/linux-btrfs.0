@@ -1,104 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:42939 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759830Ab3BZVQ6 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 16:16:58 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: kreijack@inwind.it
-Subject: Re: [PATCH, RFC] btrfs-progs: require mkfs -f force option to overwrite filesystem or partition table
-Date: Tue, 26 Feb 2013 22:16:55 +0100
-Cc: linux-btrfs@vger.kernel.org, Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-        Eric Sandeen <sandeen@redhat.com>, chris.mason@fusionio.com,
-        Stefan Behrens <sbehrens@giantdisaster.de>,
-        David Sterba <dsterba@suse.cz>
-References: <511D2D2B.8040804@redhat.com> <201302261137.46319.Martin@lichtvoll.de> <512D092F.5040003@gmail.com> (sfid-20130226_220055_922165_4972CB32)
-In-Reply-To: <512D092F.5040003@gmail.com>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201302262216.56187.Martin@lichtvoll.de>
+Received: from plane.gmane.org ([80.91.229.3]:35977 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753728Ab3BZVp1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 16:45:27 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UASLI-0001y4-Ct
+	for linux-btrfs@vger.kernel.org; Tue, 26 Feb 2013 22:45:44 +0100
+Received: from rain.gmane.org ([80.91.229.7])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 22:45:44 +0100
+Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 22:45:44 +0100
+To: linux-btrfs@vger.kernel.org
+From: Alex Elsayed <eternaleye@gmail.com>
+Subject: Swapfile on btrfs
+Date: Tue, 26 Feb 2013 13:45:12 -0800
+Message-ID: <kgjad5$7kt$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 26. Februar 2013 schrieb Goffredo Baroncelli:
-> > And I teach not to in my trainings as well.
-> >
-> > 
-> >
-> > Everyone who uses rm -rf by default even just for deleting a single
-> > file does  it as long as he or she deleted his / her home directory or
-> > something.
-> 
-> Unfortunately the "rm -rf" is a different case. Removing a directory is
-> a common case. We should not be forced to use the -f for common case. A
-> '-f' flag should be used only in "uncommon" case (like *re*format a disk
-> or a test-suite)...
-> 
-> However I think that '-f' is good for mkfs.btrfs.
+Hey, I was looking at the wiki 'unclaimed projects' list and I thought I'd 
+take a look at what might be needed to use the swap-over-n{fs,bd} 
+functionality in order to implement swapfile support. It *looks* like it's 
+surprisingly uncomplicated - to the point where I suspect I'm missing 
+something, and would like some sanity checking.
 
-I don´t get you on this one:
+My primary references for this are the patch[1] implementing swap-over-NFS 
+and HEAD of cmason's for-linus branch.
 
-artin@merkaba:~/Zeit> export LANG=C
-martin@merkaba:~/Zeit> mkdir test
-martin@merkaba:~/Zeit> rm test
-rm: cannot remove 'test': Is a directory
-martin@merkaba:~/Zeit#1> rm -f test
-rm: cannot remove 'test': Is a directory
-martin@merkaba:~/Zeit#1> rm -r test
-martin@merkaba:~/Zeit> mkdir test
-martin@merkaba:~/Zeit> rmdir test
-martin@merkaba:~/Zeit>
+I'm going to go over the sections of the commitdiff from top to bottom (and 
+hunk-by-hunk where I feel it necessary), and I'd like it if people could 
+correct any mistakes I make.
 
-So you do not need -f to remove a directory, but either rm -r or rmdir (if 
-its empty).
+Kconfig:
+Simple enough that I'm not worried.
 
-I think that special casing deleting empty directories with rmdir command 
-doesn´t make much sense. The most important distinction there IMHO is to 
-recurse or not to recurse. Thus I would let rm also delete empty directories 
-and remove rmdir altogether or alias it to rm (without -r!). Thats how it 
-was done on AmigaOS delete command. Delete would delete files and empty 
-dirs, and recurse only if ALL option was given.
+direct.c:
+The first hunk seems to serve to factor out the difference between 
+rw={READ,WRITE} and the KERNEL_ equivalents into a 'uio' parameter, so I'll 
+view it as being mostly a code organization thing.
 
-rm -f doesn´t work anyway if parent directory has write permission removed:
+The second hunk just adds that uio param to read_schedule_segment(), which 
+it is given secondhand via direct_read().
 
-martin@merkaba:~/Zeit> mkdir -p test/test
-martin@merkaba:~/Zeit> chmod a-w test
-martin@merkaba:~/Zeit> cd test
-martin@merkaba:~/Zeit> rm -r test
-rm: descend into write-protected directory 'test'? y
-rm: cannot remove 'test/test': Permission denied
-martin@merkaba:~/Zeit> rm -rf test
-rm: cannot remove 'test/test': Permission denied
+The third hunk seems to be where the actual reading occurs in 
+read_schedule_segment(), and the differences between uio and !uio seem to 
+boil down to that KERNEL_READ is only allowed to operate one page at a time 
+under penalty of BUG, and that it uses get_kernel_page instead of 
+get_user_pages. Since btrfs calls into __blockdev_direct_IO(), I suspect 
+that fs/direct-io.c would (in this case) be the right place to implement 
+both the {READ,WRITE} vs KERNEL_* logic and those checks in this case. Also, 
+check_direct_IO() in fs/btrfs/inode.c may want to treat KERNEL_WRITE 
+similarly to WRITE - I'm not completely sure of that, however.
 
-       -f, --force
-              ignore nonexistent files and arguments, never prompt
+Hunks 4-8 are just dealing with passing the additional uio parameter around.
 
+Hunk 9 is the write-side equivalent of hunk 3, and seems to correspond 
+pretty exactly. It's looking like fs/direct_io.c is definitely the place to 
+implement this.
 
+Hunks 10-17 are more uio parameter passing.
 
-Only in the case the directory itself is write-protected rm -f makes the 
-prompt go away:
+file.c:
+Pretty simple - as far as I can tell, the activate() sets the span to what 
+the swap header expects, the xs_swapper call basically sets the appropriate 
+kmalloc flags for the network stuff (irrelevant here), and the deactivate() 
+just resets those flags. All the smarts seem to be in the DIO code.
 
-martin@merkaba:~/Zeit> mkdir test
-martin@merkaba:~/Zeit> chmod a-w test
-martin@merkaba:~/Zeit> rm -r test
-rm: remove write-protected directory 'test'? y
-martin@merkaba:~/Zeit> mkdir -m a-w test
-martin@merkaba:~/Zeit> ls -ld test
-dr-xr-xr-x 1 martin martin 0 Feb 26 22:12 test
-martin@merkaba:~/Zeit> rm -rf test
+The rest:
+The remainder of the patch seems to just be a.) handing that uio parameter 
+around and b.) stuff specific to swapping over the network.
 
-But on skipping write protection -f is justified I think.
+Did I miss anything important? If not, I may well decide to tackle this as 
+my first non-trivial kernel contribution. Does anyone have any suggestions 
+on how I should stresstest this? I figure a good starting point would be 
+running xfstests under memory pressure with such a swapfile.
 
-But more so since this is a empty directory and the parent directory has 
-write protection, rmdir will remove it without -f (which it doesn´t support 
-anyway):
+[1] 
+http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;h=a564b8f
 
-martin@merkaba:~/Zeit> mkdir -m a-w test
-martin@merkaba:~/Zeit> rmdir test
-martin@merkaba:~/Zeit> 
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

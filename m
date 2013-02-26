@@ -1,91 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f48.google.com ([74.125.83.48]:65136 "EHLO
-	mail-ee0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753868Ab3BZSph (ORCPT
+Received: from mail-ee0-f44.google.com ([74.125.83.44]:60613 "EHLO
+	mail-ee0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753868Ab3BZSpp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 13:45:37 -0500
-Received: by mail-ee0-f48.google.com with SMTP id t10so2587133eei.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 10:45:36 -0800 (PST)
-Message-ID: <512D031D.20408@gmail.com>
-Date: Tue, 26 Feb 2013 19:46:53 +0100
+	Tue, 26 Feb 2013 13:45:45 -0500
+Received: by mail-ee0-f44.google.com with SMTP id l10so2611182eei.17
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 10:45:44 -0800 (PST)
+Message-ID: <512D0325.5050308@gmail.com>
+Date: Tue, 26 Feb 2013 19:47:01 +0100
 From: Goffredo Baroncelli <kreijack@gmail.com>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
 To: Eric Sandeen <sandeen@redhat.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 16/17] btrfs-progs: fix fd leak in cmd_subvol_set_default
-References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-17-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1361832890-40921-17-git-send-email-sandeen@redhat.com>
+Subject: Re: [PATCH 17/17] btrfs-progs: replace strtok_r with strsep
+References: <1361832890-40921-1-git-send-email-sandeen@redhat.com> <1361832890-40921-18-git-send-email-sandeen@redhat.com>
+In-Reply-To: <1361832890-40921-18-git-send-email-sandeen@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Eric,
-
 On 02/25/2013 11:54 PM, Eric Sandeen wrote:
-> Rearrange cmd_subvol_set_default() slightly so we
-> don't have to close the fd on an error return.
+> The coverity had a false positive complaining that save_ptr
+> is uninitialized in the call to strtok_r.
 > 
-> While we're at it, fix whitespace & remove magic
-> return values.
+> We could initialize it, but Zach points out that just using
+> strsep is a lot simpler if there's only one delimiter,
+> so just switch to that.
 > 
 > Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 > ---
->  cmds-subvolume.c |   17 +++++++++--------
->  1 files changed, 9 insertions(+), 8 deletions(-)
+>  cmds-balance.c |   12 ++++--------
+>  1 files changed, 4 insertions(+), 8 deletions(-)
 > 
-> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-> index 0dfaefe..461eed9 100644
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -712,24 +712,25 @@ static int cmd_subvol_set_default(int argc, char **argv)
->  	subvolid = argv[1];
->  	path = argv[2];
+> diff --git a/cmds-balance.c b/cmds-balance.c
+> index b671e1d..e8b9d90 100644
+> --- a/cmds-balance.c
+> +++ b/cmds-balance.c
+> @@ -67,11 +67,9 @@ static int parse_one_profile(const char *profile, u64 *flags)
+>  static int parse_profiles(char *profiles, u64 *flags)
+>  {
+>  	char *this_char;
+> -	char *save_ptr;
 >  
-> +	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
+> -	for (this_char = strtok_r(profiles, "|", &save_ptr);
+> -	     this_char != NULL;
+> -	     this_char = strtok_r(NULL, "|", &save_ptr)) {
+> +	while ((this_char = strsep(&profiles, "|"))) {
+> +		printf("got profile %s\n", this_char);
 
-Could you replace strtoll() with strtoull() ? Note that:
+In the  original code the printf() doesn't exist. May be this is a
+residual of a debugging code ?
 
-strtoull("0xffffffffffffffff",0,0)  == 0xffffffffffffffff
-strtoull("-1",0,0)  == 0xffffffffffffffff
-strtoll("-1",0,0)  == 0xffffffffffffffff
-strtoll("0xffffffffffffffff",0,0)  -> ERANGE
-
-> +	if (errno == ERANGE) {
-
-Pay attention that if strtoull() doesn't encounter a problem errno *is
-not* touched: this check could catch a previous error. I don't know if
-it is an hole in the standard or a bug in the gnu-libc; however I think
-that before strtoXll() we should put 'errno = 0;'.
-
-> +		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
-> +		return 1;
-> +	}
-> +
->  	fd = open_file_or_dir(path);
->  	if (fd < 0) {
->  		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-> -		return 12;
-> +		return 1;
+>  		if (parse_one_profile(this_char, flags))
+>  			return 1;
 >  	}
+> @@ -136,14 +134,12 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
+>  {
+>  	char *this_char;
+>  	char *value;
+> -	char *save_ptr;
 >  
-> -	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
-> -	if (errno == ERANGE) {
-> -		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
-> -		return 30;
-> -	}
->  	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
->  	e = errno;
->  	close(fd);
-> -	if( ret < 0 ){
-> +	if (ret < 0) {
->  		fprintf(stderr, "ERROR: unable to set a new default subvolume - %s\n",
->  			strerror(e));
-> -		return 30;
-> +		return 1;
->  	}
->  	return 0;
->  }
+>  	if (!filters)
+>  		return 0;
+>  
+> -	for (this_char = strtok_r(filters, ",", &save_ptr);
+> -	     this_char != NULL;
+> -	     this_char = strtok_r(NULL, ",", &save_ptr)) {
+> +	while ((this_char = strsep(&filters , ","))) {
+> +		printf("got %s\n", this_char);
+
+Same here
+
+>  		if ((value = strchr(this_char, '=')) != NULL)
+>  			*value++ = 0;
+>  		if (!strcmp(this_char, "profiles")) {
 
 
 -- 

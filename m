@@ -1,63 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:47634 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751434Ab3BZKad (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 05:30:33 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: lvm volume like support
-Date: Tue, 26 Feb 2013 11:30:31 +0100
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-        Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        Suman C <schakrava@gmail.com>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> (sfid-20130226_100033_972763_9AF0DA19)
-In-Reply-To: <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:39866 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750926Ab3BZMdD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Feb 2013 07:33:03 -0500
+Date: Tue, 26 Feb 2013 13:33:00 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Marios Titas <redneb8888@gmail.com>, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: do not change inode flags in rename
+Message-ID: <20130226123300.GU27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1361765082-6331-1-git-send-email-bo.li.liu@oracle.com>
+ <20130225185647.GB2434@localhost.localdomain>
+ <20130226001116.GA8524@liubo>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201302261130.31494.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130226001116.GA8524@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 26. Februar 2013 schrieb Fajar A. Nugraha:
-> On Tue, Feb 26, 2013 at 11:59 AM, Mike Fleetwood
-> 
-> <mike.fleetwood@googlemail.com> wrote:
-> > On 25 February 2013 23:35, Suman C <schakrava@gmail.com> wrote:
-> >> Hi,
-> >> 
-> >> I think it would be great if there is a lvm volume or zfs zvol type
-> >> support in btrfs.
+On Tue, Feb 26, 2013 at 08:11:17AM +0800, Liu Bo wrote:
+> On Mon, Feb 25, 2013 at 01:56:47PM -0500, Josef Bacik wrote:
+> > On Sun, Feb 24, 2013 at 09:04:42PM -0700, Liu Bo wrote:
+> > > Before we forced to change a file's NOCOW and COMPRESS flag due to
+> > > the parent directory's, but this ends up a bad idea, because it
+> > > confuses end users a lot about file's NOCOW status, eg. if someone
+> > > change a file to NOCOW via 'chattr' and then rename it in the current
+> > > directory which is without NOCOW attribute, the file will lose the
+> > > NOCOW flag silently.
+> > > 
+> > > This diables 'change flags in rename', so from now on we'll only
+> > > inherit flags from the parent directory on creation stage while in
+> > > other places we can use 'chattr' to set NOCOW or COMPRESS flags.
+> > >
 > > 
-> > Btrfs already has capabilities to add and remove block devices on the
-> > fly.  Data can be stripped or mirrored or both.  Raid 5/6 is in
-> > testing at the moment.
-> > https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devic
-> > es https://btrfs.wiki.kernel.org/index.php/UseCases#RAID
+> > I'm of the mind we definitely shouldn't drop flags we've set previously, but I
+> > think we should also inherit any flags we have set on the directory, so if we
+> > move a file into a NOCOW directory we should inherit the flag.  I'm not married
+> > to the idea, but it seems to make the most sense to me.  Thanks,
 > > 
-> > Which specific features do you think btrfs is lacking?
+> (Said in another thread)
+> I'm ok with either one, but...
+> from some reports on the list, end users are more likely to control, use chattr
+> files by themselves, inheriting flags via moving a file to a new directory is
+> indeed not very welcomed.
 > 
-> I think he's talking about zvol-like feature.
-> 
-> In zfs, instead of creating a
-> filesystem-that-is-accessible-as-a-directory, you can create a zvol
-> which behaves just like any other standard block device (e.g. you can
-> use it as swap, or create ext4 filesystem on top of it). But it would
-> also have most of the benefits that a normal zfs filesystem has, like:
-> - thin provisioning (sparse allocation, snapshot & clone)
-> - compression
-> - integrity check (via checksum)
-> 
-> Typical use cases would be:
-> - swap in a pure-zfs system
-> - virtualization (xen, kvm, etc)
-> - NAS which exports the block device using iscsi/AoE
-> 
-> AFAIK no such feature exist in btrfs yet.
+> So for practical use, I assume that it's fairly enough to inherit flags only on
+> creation?
 
-Sounds like the RADOS block device stuff for Ceph.
+I still haven't figured out in what cases the silent flag inheritance
+(for a non-empty) file would help and the user would be happy that it
+works like this.
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+david

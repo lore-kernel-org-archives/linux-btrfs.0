@@ -1,152 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41952 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751547Ab3B0KNI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 05:13:08 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UAe0s-0004Q3-FX
-	for linux-btrfs@vger.kernel.org; Wed, 27 Feb 2013 11:13:26 +0100
-Received: from rain.gmane.org ([80.91.229.7])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:13:26 +0100
-Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:13:26 +0100
+Received: from aserp1040.oracle.com ([141.146.126.69]:27971 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759904Ab3B0NaA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 08:30:00 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1RDTvfu005090
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 13:30:00 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1RDTuvD014505
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 13:29:57 GMT
+Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1RDTuI4016600
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 07:29:56 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: lvm volume like support
-Date: Wed, 27 Feb 2013 02:12:56 -0800
-Message-ID: <kgkm75$p2g$1@ger.gmane.org>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <201302261130.31494.Martin@lichtvoll.de> <CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com> <20130227100558.37d86d82@natsu> <kgkhcp$dfg$1@ger.gmane.org> <kgklb0$g6a$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Subject: [PATCH 1/2] Btrfs: fix memory leak of log roots
+Date: Wed, 27 Feb 2013 21:28:24 +0800
+Message-Id: <1361971705-8933-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1361971705-8933-1-git-send-email-bo.li.liu@oracle.com>
+References: <1361971705-8933-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex Elsayed wrote:
+When we abort a transaction while fsyncing, we'll skip freeing log roots
+part of committing a transaction, which leads to memory leak.
 
-...and a second version, because I forgot to actually remove the calls to
-tcm_node in favor of poking configfs like I said.
+This adds a 'free log roots' in putting super when no more users hold
+references on log roots, so it's safe and clean.
 
----cut---
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c  |    5 +++++
+ fs/btrfs/tree-log.c |    6 ++++--
+ 2 files changed, 9 insertions(+), 2 deletions(-)
 
-#!/bin/bash
-
-gen_naa() {
-    local UUID="$( uuidgen -r )"
-    UUID="${UUID//-/}"
-    UUID="${UUID:0:9}"
-    echo "naa.6001405${UUID}"
-}
-
-setup() {
-    local FILE
-    local INPUT_NAME
-    local NAME
-    local BACKEND_IDX
-    local TRANSPORT_IDX
-    declare -a NAA
-    FILE="${1}"
-    INPUT_NAME="${2}"
-    NAME="${INPUT_NAME//\//_}"
-    BACKEND_IDX='-1'
-    TRANSPORT_IDX='-1'
-
-    if [[ $UID -ne 0 ]]; then
-        echo "You must be root in order to set up a lioloop device" >&2
-        exit 1
-    fi
-
-    if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
-        echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
-    fi
-
-    declare SIZE="$(du -b "${FILE}")"
-    SIZE="${SIZE/[^0123456789]*}"
-
-    # Load the scsi target core and backends
-    modprobe target_core_mod >/dev/null 2>&1
-
-    while BACKEND_IDX=$((BACKEND_IDX + 1)); do
-        if [[ -d "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" ]]; then
-            echo "A backstore with the name '${NAME}' already exists" >&2
-            exit 1
-        elif ! [[ -d /sys/kernel/config/target/core/fileio_${BACKEND_IDX} ]]; then
-    # Create the backstore
-            mkdir -p "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}"
-    # Tell it where the file is and how big it is
-            echo "fd_dev_name=${FILE},fd_dev_size=${SIZE}" > \
-                "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}/control"
-    # Turn it on
-            echo 1 > "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}/enable"
-    # Give it a unique serial
-            echo "$(uuidgen -r)" > "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}/wwn/vpd_unit_serial"
-            break
-        fi
-    done
-
-    # Load the local scsi frontend transport
-    modprobe tcm_loop >/dev/null 2>&1
-    mkdir -p /sys/kernel/config/target/loopback
-
-    NAA=( "$(gen_naa)" "$(gen_naa)" )
-    # Some setup so you have a place to put LUNs
-    mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1"
-    echo "${NAA[1]}" > "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/nexus"
-
-    # Create a fresh LUN...
-    while TRANSPORT_IDX=$((TRANSPORT_IDX + 1)); do
-        if ! [[ -d "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}" ]]; then
-            mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
-    # ...and map the file to it.
-            ln -s "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" \
-                "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
-            break
-        fi
-    done
-}
-
-teardown() {
-    local INPUT_NAME="${1}"
-    local NAME="${INPUT_NAME//\//_}"
-
-    if [[ $UID -ne 0 ]]; then
-        echo "You must be root in order to tear down a lioloop device" >&2
-        exit 1
-    fi
-
-    if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
-        echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
-    fi
-
-    local FOUND=''
-    for LUN in /sys/kernel/config/target/loopback/*/tpgt_1/lun/lun_*; do
-        if [[ -L "${LUN}/${NAME}" ]]; then
-            rm -f "${LUN}/${NAME}"
-            FOUND=1
-        fi
-    done
-
-    if [[ -z "${FOUND}" ]]; then
-        echo "No lioloop with the name '${NAME}' was found" >&2
-        return
-    fi
-
-    for BACKSTORE in /sys/kernel/config/target/core/fileio_*; do
-        if [[ -d "${BACKSTORE}/${NAME}" ]]; then
-            rmdir "${BACKSTORE}/${NAME}"
-        fi
-    done
-}
-
-if [[ "$1" == '-d' ]]; then
-    shift;
-    for name in "$@"; do
-        teardown "${name}"
-    done
-else
-    setup "$@"
-fi
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65f0367..1ce5611 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3195,6 +3195,11 @@ void btrfs_free_fs_root(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 	if (btrfs_root_refs(&root->root_item) == 0)
+ 		synchronize_srcu(&fs_info->subvol_srcu);
+ 
++	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++		btrfs_free_log(NULL, root);
++		btrfs_free_log_root_tree(NULL, fs_info);
++	}
++
+ 	__btrfs_remove_free_space_cache(root->free_ino_pinned);
+ 	__btrfs_remove_free_space_cache(root->free_ino_ctl);
+ 	free_fs_root(root);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9027bb1..a74d2fc 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2461,8 +2461,10 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
+ 		.process_func = process_one_buffer
+ 	};
+ 
+-	ret = walk_log_tree(trans, log, &wc);
+-	BUG_ON(ret);
++	if (trans) {
++		ret = walk_log_tree(trans, log, &wc);
++		BUG_ON(ret);
++	}
+ 
+ 	while (1) {
+ 		ret = find_first_extent_bit(&log->dirty_log_pages,
+-- 
+1.7.7
 

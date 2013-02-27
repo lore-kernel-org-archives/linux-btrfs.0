@@ -1,53 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f51.google.com ([209.85.216.51]:61958 "EHLO
-	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759773Ab3B0Lu6 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 06:50:58 -0500
-Received: by mail-qa0-f51.google.com with SMTP id cr7so392967qab.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 03:50:58 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:60664 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757414Ab3B0L7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 06:59:50 -0500
+Date: Wed, 27 Feb 2013 12:59:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Subject: Re: [PATCH] btrfs: cleanup for open-coded alignment
+Message-ID: <20130227115944.GA27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <512CB3E4.9040203@itu.dk>
-References: <20130220164605.GA13504@uflip.org>
-	<CAEH94Liiy3ftSrkpiKyr68LHwQw55od4LY6hzZwzBKtCixxg+w@mail.gmail.com>
-	<512CB3E4.9040203@itu.dk>
-Date: Wed, 27 Feb 2013 19:50:56 +0800
-Message-ID: <CAEH94LgAW98USGwE_1mM3gLEqF5q-xoPVyth+h7XfH6rbRwBtw@mail.gmail.com>
-Subject: Re: [POSSIBLE SPAM] Re: Hybrid Storage proposal
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: =?ISO-8859-1?Q?Matias_Bj=F8rling?= <mabj@itu.dk>
-Cc: jmad@itu.dk, linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
-        dsterba@suse.cz
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 26, 2013 at 9:08 PM, Matias Bjørling <mabj@itu.dk> wrote:
-> On 02/26/2013 12:04 PM, Zhi Yong Wu wrote:
->>
->> HI,
->>
->> It's a bit long so that i haven't read its whole, but i want to know
->> if it has any collision with my ongoing feature "btrfs hot
->> relocation/migration"?
->
->
-> It will utilize the hot track patch set you're been creating for VFS. I
-> think the methods are complementary. Do you have a description of the
-> relocation/migration approach?
-sorry, no currently. i will post out them after they are completed.
+On Tue, Feb 26, 2013 at 04:10:22PM +0800, Qu Wenruo wrote:
+> Though most of the btrfs codes are using ALIGN macro for page alignment,
+> there are still some codes using open-coded alignment like the
+> following:
+> ------
+>         u64 mask = ((u64)root->stripesize - 1);
+>         u64 ret = (val + mask) & ~mask;
+> ------
+> Or even hidden one:
+> ------
+>         num_bytes = (end - start + blocksize) & ~(blocksize - 1);
 
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It's unobvious but not a bug. The 'end' values are sometimes inclusive,
+sometimes not.  The range we want to align is
 
+   RANGE = end + start + 1
 
+then the alignment transformation does
 
--- 
-Regards,
+  (RANGE + ALIGNMENT - 1) & ~(ALIGNMENT - 1)
 
-Zhi Yong Wu
+where
+
+  RANGE + ALIGNMENT - 1 = end + start + 1 + ALIGNMENT - 1
+                        = end + start + ALIGNMENT
+
+I have covered all cases in my original patch with a coccinelle semantic
+patch http://www.spinics.net/lists/linux-btrfs/msg12750.html and also
+removed the useless stripe_align helper and updated it's callers (and it
+still applies after merging the raid56 code that updated the function
+with 2 unused arguments).
+
+> Also there is a previous patch from David Sterba with similar changes,
+> but the patch is for 3.2 kernel and seems not merged.
+> http://www.spinics.net/lists/linux-btrfs/msg12747.html
+
+Yeah, amount of unmerged patches was high back then and I got no
+feedback whether such changes are desired not, moreover a few of them
+touched all sources likely to clash with every secnod patch in flight
+(eg. "Btrfs: kill key type helpers").
+
+If you used my patch I'd appreciate to keep the signed-off.
+
+> Cc: David Sterba <dave@jikos.cz>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>

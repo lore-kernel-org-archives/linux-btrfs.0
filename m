@@ -1,75 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46326 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750927Ab3B0ROr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 12:14:47 -0500
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 30439A341E
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 18:14:46 +0100 (CET)
-Date: Wed, 27 Feb 2013 18:14:45 +0100
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Integration branch of btrfs-progs 2013-02-27
-Message-ID: <20130227171445.GL27541@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-ee0-f53.google.com ([74.125.83.53]:39139 "EHLO
+	mail-ee0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759605Ab3B0STu convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 13:19:50 -0500
+Received: by mail-ee0-f53.google.com with SMTP id e53so788611eek.40
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 10:19:49 -0800 (PST)
+Content-Type: text/plain; charset=utf-8; format=flowed; delsp=yes
+To: "Josef Bacik" <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Running Apache Derby on 3.8 and BTRFS cause kernel oops
+References: <op.ws51z2nllpxuyk@kozzifx.lan>
+ <20130227132513.GG19641@localhost.localdomain>
+Date: Wed, 27 Feb 2013 19:19:46 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: =?utf-8?Q?Daniel_Koz=C3=A1k?= <kozzi11@gmail.com>
+Message-ID: <op.ws6fu8smlpxuyk@kozzifx.lan>
+In-Reply-To: <20130227132513.GG19641@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-this time it's the label set/get patches to match ioctl added into
-3.9-pre, the initial libify support and small fixes recently sent to the
-mailinglist.
+[kozzi@KozziFX ~]$ mkdir derby
+[kozzi@KozziFX ~]$ cd derby/
+[kozzi@KozziFX derby]$ wget -c -q  
+http://mirror.hosting90.cz/apache//db/derby/db-derby-10.9.1.0/db-derby-10.9.1.0-bin.zip
+[kozzi@KozziFX derby]$ unzip -qq db-derby-10.9.1.0-bin.zip
+[kozzi@KozziFX derby]$ cd db-derby-10.9.1.0-bin/
+[kozzi@KozziFX db-derby-10.9.1.0-bin]$ DERBY_HOME=`pwd`
+[kozzi@KozziFX db-derby-10.9.1.0-bin]$ java -jar  
+$DERBY_HOME/lib/derbyrun.jar server start &
+[kozzi@KozziFX db-derby-10.9.1.0-bin]$ java -jar  
+$DERBY_HOME/lib/derbyrun.jar ij
+verze ij 10.9
+ij> CONNECT 'jdbc:derby://localhost:1527/seconddb;create=true';
 
-   git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130227
+BTW. after this I must restart my PC, and after restart, my system doesn't  
+boot anymore :-) (some more btrfs oops).
+So I must use btrfs check --repair /dev/sdaX.
 
-For those who haven't noticed, the previous integration branch has been
-merged and is now in the upstream master branch.
+Dne Wed, 27 Feb 2013 14:25:13 +0100 Josef Bacik <jbacik@fusionio.com>  
+napsal(a):
 
-david
+> On Wed, Feb 27, 2013 at 06:20:16AM -0700, Daniel Kozák wrote:
+>> Hello,
+>>
+>> On my both machine I have ArchLinux with recent kernel 3.8.0 btrfs as a
+>> filesystem (with lzo compression). When I try use Apache derby (create
+>> database), I almost every time get this kernel oops:
+>
+> Sweet somebody else is hitting this and I haven't been able to  
+> reproduce.  Can
+> you give me the exact commands you run so I can try and reproduce myself?
+> Thanks,
+>
+> Josef
 
----
-Anand Jain (1):
-      Btrfs-progs: add correct indentation
 
-David Sterba (1):
-      btrfs-progs: don't link binaries to a dynamic library
-
-Eric Sandeen (16):
-      btrfs-progs: fix btrfs_get_subvol cut/paste error
-      btrfs-progs: Remove write-only var fdres in cmd_dev_stats()
-      btrfs-progs: btrfs_list_get_path_rootid error handling
-      btrfs-progs: avoid double-free in __btrfs_map_block
-      btrfs-progs: fix open error test in cmd_start_replace
-      btrfs-progs: fix close of error fd in scrub cancel
-      btrfs-progs: more scrub cancel error handling
-      btrfs-progs: free memory before error exit in read_whole_eb
-      btrfs-progs: don't call close on error fd
-      btrfs-progs: provide positive errno to strerror in cmd_restore
-      btrfs-progs: free allocated di_args in cmd_start_replace
-      btrfs-progs: close fd on cmd_subvol_get_default return
-      btrfs-progs: fix mem leak in resolve_root
-      btrfs-progs: Tidy up resolve_root
-      btrfs-progs: fix fd leak in cmd_subvol_set_default
-      btrfs-progs: initialize save_ptr prior to strtok_r
-
-Jeff Liu (5):
-      Btrfs-progs: Change the label of a mounted file system
-      Btrfs-progs: Fix set_label_unmounted() with label length validation
-      Btrfs-progs: fix cmd_label_usage to reflect this change.
-      btrfs-progs: refactor check_label()
-      btrfs-progs: move btrfslabel.[c|h] stuff to utils.[c|h]
-
-Mark Fasheh (1):
-      btrfs-progs: libify some parts of btrfs-progs
-
-Tsutomu Itoh (1):
-      Btrfs-progs: fix segmentation fault of "btrfs check"
-
-Wang Shilong (2):
-      Btrfs-progs: let the error message outputed only once
-      Btrfs-progs: output the error reason when qgroup_show fails
-
+-- 
+Vytvořeno poštovní aplikací Opery: http://www.opera.com/mail/

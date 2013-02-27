@@ -1,52 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22872 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933188Ab3B0Aim (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18382 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755486Ab3B0BaE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 19:38:42 -0500
-Date: Wed, 27 Feb 2013 08:37:08 +0800
+	Tue, 26 Feb 2013 20:30:04 -0500
+Date: Wed, 27 Feb 2013 09:28:33 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2165
- btrfs_orphan_commit_root+0xcb/0xdf()
-Message-ID: <20130227003707.GA7028@liubo>
+To: Fredrik Tolf <fredrik@dolda2000.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Changing allocation mode
+Message-ID: <20130227012832.GB7028@liubo>
 Reply-To: bo.li.liu@oracle.com
-References: <20130225025546.GC14143@merlins.org>
- <20130226142043.GD19641@localhost.localdomain>
+References: <alpine.DEB.2.02.1302230138220.8295@shack.dolda2000.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130226142043.GD19641@localhost.localdomain>
+In-Reply-To: <alpine.DEB.2.02.1302230138220.8295@shack.dolda2000.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 26, 2013 at 09:20:43AM -0500, Josef Bacik wrote:
-> On Sun, Feb 24, 2013 at 07:55:46PM -0700, Marc MERLIN wrote:
-> > Is this useful to anyone?
-> > 
-> > Got this after a crash/reboot:
-> > 
-> > 	if (block_rsv) {
-> > 		WARN_ON(block_rsv->size > 0);  <<<<<<<<<<<<<<<<<<<<<<
-> > 		btrfs_free_block_rsv(root, block_rsv);
-> > 	}
-> > 
+On Sat, Feb 23, 2013 at 01:46:03AM +0100, Fredrik Tolf wrote:
+> Dear list,
 > 
-> Fixed in btrfs-next, thanks for reporting!
+> I'm still in the process of transferring all the data I have to the
+> btrfs filesystem I have had your help in debugging in a previous
+> thread, and I have a slight question, if you will humour me.
+> 
+> I have the data I want to transfer on an old ReiserFS partition,
+> consisting of 2 mdraid mirrors, one of which consists of two 1.5 TB
+> disks, and the other of two 3 TB disks. The btrfs I'm copying the
+> data to consists of two 3 TB disks only that I have put in RAID-1
+> mode, and the data on the old filesystem is only slightly larger
+> than 3 TB. I am now at the point where I have transferred just under
+> 3 TB.
+> 
+> If I were transferring the data to a new filesystem on mdraid, the
+> procedure I would use for that last portion of the data would be to
+> remove one disk only from either of the old mdraid mirror arrays
+> (putting that array in degraded mode), and then create a new mirror
+> in degraded mode with only that disk, add that mirror to the new
+> filesystem, expand it, copy the last data, and then delete the old
+> mirrors, moving the rest of the disks to the new filesystem.
 
-FYI, the commit Josef mentioned is
-
-Btrfs: cleanup orphan reservation if truncate fails
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-next.git;a=commit;h=4a7d0f6854c4a4ad1dba00a3b128a32d39b9a742
-
-(Correct me if it is wrong.)
+That sounds like using seed device, although seed disk is designed for another
+different purpose.
 
 thanks,
 liubo
 
 > 
-> Josef
+> Is there a way to mirror this procedure in btrfs? I'm not yet quite
+> so familiar with all btrfs concepts that I know quite what I'm
+> talking about, but I'm guessing that what I want to do is to merely
+> temporarily set the allocator to allocate new btrfs on a single disk
+> only, and then add a single disk to the filesystem. And then copy
+> the rest of the data, abandon the old filesystem and add another
+> disk and rebalance those singly-allocated extents to RAID-1 mode.
+> 
+> Have I described a conceptionable idea in saying so? And if so, how
+> does one actually do that? I don't know if I'm just blind, but I
+> haven't found any btrfs command to change the allocation algorithm
+> without having to rebalance the existing data, which seems a bit
+> unnecessary in this case.
+> 
+> Thanks for any help you can offer!
+> 
+> --
+> 
+> Fredrik Tolf
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

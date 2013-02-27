@@ -1,59 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34417 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753282Ab3BVG7i (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:37909 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755377Ab3B0CcO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Feb 2013 01:59:38 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1M6xbea001501
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 06:59:37 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1M6xa0v010243
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 06:59:36 GMT
-Received: from abhmt107.oracle.com (abhmt107.oracle.com [141.146.116.59])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1M6xaeA008012
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2013 00:59:36 -0600
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: add correct indentation
-Date: Fri, 22 Feb 2013 14:59:24 +0800
-Message-Id: <1361516364-25810-1-git-send-email-anand.jain@oracle.com>
+	Tue, 26 Feb 2013 21:32:14 -0500
+Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 2FA1B3EE0BB
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:32:13 +0900 (JST)
+Received: from smail (m1 [127.0.0.1])
+	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 18AAF45DE55
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:32:13 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0188E45DE58
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:32:13 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id E5261E0800E
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:32:12 +0900 (JST)
+Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 9F4DAE08004
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:32:12 +0900 (JST)
+Message-Id: <201302270231.AA00022@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Wed, 27 Feb 2013 11:31:54 +0900
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: fix segmentation fault of "btrfs check"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A trivial fix, corrects the indentation.
+Segmentation fault occurred in the following command.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+ # btrfs check /dev/sdc7
+ No valid Btrfs found on /dev/sdc7
+ Segmentation fault (core dumped)
+
+Fix it.
+
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- utils.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ cmds-check.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index d660507..9c2e510 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1192,12 +1192,13 @@ scan_again:
- 		return -ENOENT;
+diff --git a/cmds-check.c b/cmds-check.c
+index d63e945..5d2e9ed 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -3610,12 +3610,12 @@ int cmd_check(int argc, char **argv)
  	}
- 	/* skip the header */
--	for(i=0; i < 2 ; i++)
--		if(!fgets(buf, 1023, proc_partitions)){
--		fprintf(stderr, "Unable to read '/proc/partitions' for scanning\n");
--		fclose(proc_partitions);
--		return -ENOENT;
--	}
-+	for (i=0; i < 2 ; i++)
-+		if (!fgets(buf, 1023, proc_partitions)) {
-+			fprintf(stderr,
-+				"Unable to read '/proc/partitions' for scanning\n");
-+			fclose(proc_partitions);
-+			return -ENOENT;
-+		}
  
- 	strcpy(fullpath,"/dev/");
- 	while(fgets(buf, 1023, proc_partitions)) {
--- 
-1.8.1.227.g44fe835
+ 	info = open_ctree_fs_info(argv[optind], bytenr, rw, 1);
+-	uuid_unparse(info->super_copy.fsid, uuidbuf);
+-	printf("Checking filesystem on %s\nUUID: %s\n", argv[optind], uuidbuf);
+-
+ 	if (info == NULL)
+ 		return 1;
+ 
++	uuid_unparse(info->super_copy.fsid, uuidbuf);
++	printf("Checking filesystem on %s\nUUID: %s\n", argv[optind], uuidbuf);
++
+ 	if (!extent_buffer_uptodate(info->tree_root->node) ||
+ 	    !extent_buffer_uptodate(info->dev_root->node) ||
+ 	    !extent_buffer_uptodate(info->extent_root->node) ||
 

@@ -1,60 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:28301 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758711Ab3BZUmn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Feb 2013 15:42:43 -0500
-Message-ID: <512D1E3E.9050907@redhat.com>
-Date: Tue, 26 Feb 2013 14:42:38 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:33116 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750818Ab3B0HPc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 02:15:32 -0500
+Received: by mail-pa0-f45.google.com with SMTP id kl14so252590pab.32
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2013 23:15:32 -0800 (PST)
+Message-ID: <512DB284.1090806@gmail.com>
+Date: Wed, 27 Feb 2013 15:15:16 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-To: xfs-oss <xfs@oss.sgi.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH] xfstests: handle new mkfs.btrfs -f option cleanly
-Content-Type: text/plain; charset=ISO-8859-1
+To: xfstests <xfs@oss.sgi.com>, linux-btrfs@vger.kernel.org,
+        list.btrfs@jan-o-sch.net
+Subject: [PATCH] xfstests 276: fix error 'FIBMAP: Invalid argument'
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I added an "-f" option to mkfs.btrfs to force overwrite
-of an existing filesystem.  Now on an xfstests run, new
-mkfs.btrfs requires it, and old mkfs.btrfs cannot accept
-it.
+Btrfs doesn't support FIEMAP_FLAG_XATTR, which is enabled by
+-x option of filefrag, and will fail with
+	'FIBMAP: Invalid argument'
+for 'filefrag -vx'. 'filefrag -vx' fails on btrfs with
+     'FIEMAP failed with unsupported flags 2'
+Remove the '-x' option.
 
-So, add a helper which works out whether -f is needed,
-and add it to the MKFS_BTRFS_PROG env. var as necessary,
-so that it is an always-included option during the tests.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
+  276 |    2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/common.config b/common.config
-index 57f505d..9f1d309 100644
---- a/common.config
-+++ b/common.config
-@@ -101,6 +101,17 @@ set_prog_path()
-     return 1
- }
- 
-+# Handle mkfs.btrfs which does (or does not) require -f to overwrite
-+set_btrfs_mkfs_prog_path_with_opts()
-+{
-+	p=`set_prog_path mkfs.btrfs`
-+	if grep -q 'force overwrite' $p; then
-+		echo "$p -f"
-+	else
-+		echo $p
-+	fi
-+}
-+
- _fatal()
- {
-     echo "$*"
-@@ -185,7 +196,7 @@ case "$HOSTOS" in
-     Linux)
-         export MKFS_XFS_PROG="`set_prog_path mkfs.xfs`"
-         export MKFS_UDF_PROG="`set_prog_path mkudffs`"
--        export MKFS_BTRFS_PROG="`set_prog_path mkfs.btrfs`"
-+        export MKFS_BTRFS_PROG="`set_btrfs_mkfs_prog_path_with_opts`"
-         export BTRFS_UTIL_PROG="`set_prog_path btrfs`"
-         export XFS_FSR_PROG="`set_prog_path xfs_fsr`"
-         export MKFS_NFS_PROG="false"
+diff --git a/276 b/276
+index 082f943..f2b17c9 100755
+--- a/276
++++ b/276
+@@ -75,7 +75,7 @@ _filter_extents()
+
+  _check_file_extents()
+  {
+-	cmd="filefrag -vx $1"
++	cmd="filefrag -v $1"
+  	echo "# $cmd" >> $seq.full
+  	out=`$cmd | _filter_extents`
+  	if [ -z "$out" ]; then
+-- 
+1.7.10.4
 

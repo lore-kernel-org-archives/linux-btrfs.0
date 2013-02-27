@@ -1,103 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52635 "EHLO plane.gmane.org"
+Received: from len.romanrm.net ([176.31.121.172]:54119 "EHLO len.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754832Ab3B0Iut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 03:50:49 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UAcjE-0003CK-T7
-	for linux-btrfs@vger.kernel.org; Wed, 27 Feb 2013 09:51:08 +0100
-Received: from rain.gmane.org ([80.91.229.7])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 09:51:08 +0100
-Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 09:51:08 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
+	id S1754130Ab3B0JRY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 04:17:24 -0500
+Date: Wed, 27 Feb 2013 15:17:21 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: "Fajar A. Nugraha" <list@fajar.net>,
+        "linux-btrfs" <linux-btrfs@vger.kernel.org>,
+        Mike Fleetwood <mike.fleetwood@googlemail.com>,
+        Suman C <schakrava@gmail.com>
 Subject: Re: lvm volume like support
-Date: Wed, 27 Feb 2013 00:50:34 -0800
-Message-ID: <kgkhcp$dfg$1@ger.gmane.org>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <201302261130.31494.Martin@lichtvoll.de> <CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com> <20130227100558.37d86d82@natsu>
+Message-ID: <20130227151721.5da0c46d@natsu>
+In-Reply-To: <201302270942.03347.Martin@lichtvoll.de>
+References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com>
+	<CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com>
+	<20130227100558.37d86d82@natsu>
+	<201302270942.03347.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/G+rPriupMTiAp6O_nV0Ocx3"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov wrote:
+--Sig_/G+rPriupMTiAp6O_nV0Ocx3
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> On Wed, 27 Feb 2013 13:23:23 +1100
-> "Fajar A. Nugraha" <list@fajar.net> wrote:
-> 
->> Not to mention the hassle in accessing the data if it resides on a
->> partition inside the file (e.g. you need losetup + kpartx to access it,
->> and you must remember to do the reverse when you're finished with it).
-> 
->> 
->> In zfsonlinux it's very easy to do so since a zvol is treated pretty
->> much like a disk, and whenever there's a partition inside a zvol, a
->> coressponding device noed is also created automatically.
-> 
-> So I'd say what you (we) need is a generic Linux kernel framework that
-> would allow treating any regular file pretty much like a disk. Not some
-> filesystem-specific block device emulation kludge.
-> 
-> Btw some years ago there was a patchset adding proper automatic partition
-> support to 'loop'; but it seems like that went nowhere, and I have no idea
-> why something this useful did not end up being added into the mainline
-> kernel.
-> 
+On Wed, 27 Feb 2013 09:42:02 +0100
+Martin Steigerwald <Martin@lichtvoll.de> wrote:
 
-I mentioned it in another branch of the thread, but the SCSI Target stack 
-*does* this. If you use the FILEIO backend and the 'loopback' transport, you 
-get a file that is visible to the local system as Just Another SCSI Disk. 
-There are patches on the scsi target list to add UNMAP and WRITE SAME 
-w/UNMAP=1 support to the FILEIO backend, at which point it will do 
-FL_PUNCH_HOLE operations appropriately.
+> Are you sure about the partition support? I thought something related to=
+=20
+> loop partition support has gone into some not so recent kernel.
 
-The commands are:
+Sorry, you are correct, this was in fact added since 2.6.26.
 
----cut---
+Just tried out making a partitioned loop device:
 
-# $IDX = a preferably-unique index
-# $NAME = a useful name for humans
-# $IMGFILE = a disk image
-# $SIZE = the size of $IMGFILE in bytes
-# $UUID = a random v4 UUID
-# ${NAA[x]} = a valid naa WWN, targetcli generates this as
-#     "naa.6001405" + the first 10 digits of a random v4 UUID
-#     (not the same uuid as $UUID). When x varies, it's a different
-#     WWN, since more than one gets used.
+  dd if=3D/dev/zero of=3D100GB bs=3D1 count=3D1 seek=3D100G
+  modprobe loop max_part=3D8
+  losetup /dev/loop7 100GB
+  cfdisk /dev/loop7
 
-# Load the scsi target core and backends
-modprobe target_core_mod
+  [ made two partitions, commit, quit cfdisk ]
 
-# Tell it where the file is and how big it is
-tcm_node --establishdev "fileio_$IDX/$NAME" \
-    "fd_dev_name=$IMGFILE,fd_dev_size=$SIZE"
+  [ ...but partitions did not automatically appear as /dev/loop7pX ]
 
-# Give it a unique serial
-tcm_node --setunitserialwithmd fileio_$IDX/$NAME $UUID
+  blockdev --rereadpt /dev/loop7
 
-# Load the local scsi frontend transport
-modprobe tcm_loop
-mkdir -p /sys/kernel/config/target/loopback
+  [ OK, now here they are: ]
+ =20
+  $ ls -la /dev/loop7p?
+  brw-rw---T 1 root disk 7, 113 Feb 27 15:10 /dev/loop7p1
+  brw-rw---T 1 root disk 7, 114 Feb 27 15:10 /dev/loop7p2
 
-# Some setup so you have a place to put LUNs
-mkdir -p /sys/kernel/config/target/loopback/${NAA[1]}/tpgt_1
-echo ${NAA[2]} > /sys/kernel/config/target/loopback/${NAA[1]}/tpgt_1/nexus
+--=20
+With respect,
+Roman
 
-# Create a fresh LUN...
-mkdir -p /sys/kernel/config/target/loopback/${NAA[1]}/tpgt_1/lun/lun_$IDX
+--Sig_/G+rPriupMTiAp6O_nV0Ocx3
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-# ...and map the file to it.
-ln -s /sys/kernel/config/target/core/fileio_$IDX/$NAME \
-    /sys/kernel/config/target/loopback/${NAA[1]}/tpgt_1/lun/lun_$IDX
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
----cut---
+iEYEARECAAYFAlEtzyEACgkQTLKSvz+PZwi0vwCfQ8bt914fKdhMuo4qJ5yxH/JD
+BdkAnR21rF88Qfsrzg8sGL1hPtvR4RBF
+=+MPF
+-----END PGP SIGNATURE-----
 
-This could be pretty easily put into a shell script that uses du -b and 
-manually pokes configfs instead of calling tcm_node, and it'd be able to run 
-without any nonstandard userspace dependencies.
-
+--Sig_/G+rPriupMTiAp6O_nV0Ocx3--

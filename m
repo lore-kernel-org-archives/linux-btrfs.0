@@ -1,36 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f54.google.com ([209.85.219.54]:56650 "EHLO
-	mail-oa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751248Ab3B0VUz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 16:20:55 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:52308 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752587Ab3B0VbP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 16:31:15 -0500
+Date: Wed, 27 Feb 2013 13:31:05 -0800
+From: Zach Brown <zab@redhat.com>
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com, sensille@gmx.net
+Subject: Re: [PATCH 2/3] Btrfs: return ENOMEM rather than use BUG_ON when
+ btrfs_alloc_path fails
+Message-ID: <20130227213105.GN1658@lenny.home.zabbo.net>
+References: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAEzrpqeQTVwSYd_0NpjnfMJKiLPeL-tC2tGPAh6ov2ViBndXUg@mail.gmail.com>
-References: <20130227052247.GA20213@redhat.com>
-	<20130227132736.GH19641@localhost.localdomain>
-	<CAFDW0jK6zigx0YgVMHomUkRQkqpw5mUgkdeynv36LUiQn4XTxg@mail.gmail.com>
-	<20130227182617.GI19641@localhost.localdomain>
-	<CAFDW0jJ2yHftRW5Kp8sc+uxNC3oS4AZKqG0Szz2rUyxeeA0+2Q@mail.gmail.com>
-	<CAEzrpqeQTVwSYd_0NpjnfMJKiLPeL-tC2tGPAh6ov2ViBndXUg@mail.gmail.com>
-Date: Wed, 27 Feb 2013 22:20:54 +0100
-Message-ID: <CAFDW0j+=ULTneaMsZKAQW1mOQqMA5U11jAbqPzebKWDJQeJf5A@mail.gmail.com>
-Subject: Re: btrfs crash when low on memory.
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: Josef Bacik <jbacik@fusionio.com>, Dave Jones <davej@redhat.com>,
-        Linux Kernel <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> If we're corrupting on abort that is a bug too that needs to be fixed
-> too.  I've banged on the abort stuff a lot recently when trying to
-> make it not panic the box and it appears to work fine.  Obviously that
-> kind of stuff needs to be tested as well, but so far I haven't seen
-> abort corrupt the file system.  Thanks,
+> Return ENOMEM rather trigger BUG_ON, fix it.
 
-thank you for the info Josef.
-i will report a bug next time i hit such a case then.
+These changes look good.  The resulting surrounding state buildup and
+cleanup paths look correct.
 
-Ahmet
+Thanks for helping remove a few more BUG_ON()s :).
+
+Reviewed-by: Zach Brown <zab@redhat.com>
+

@@ -1,69 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:39631 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751547Ab3B0K2H (ORCPT
+Received: from mail-da0-f50.google.com ([209.85.210.50]:45340 "EHLO
+	mail-da0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758614Ab3B0LVB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 05:28:07 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
+	Wed, 27 Feb 2013 06:21:01 -0500
+Received: by mail-da0-f50.google.com with SMTP id h15so253005dan.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 03:21:01 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs crash when low on memory.
-Date: Wed, 27 Feb 2013 11:28:05 +0100
-Cc: Dave Jones <davej@redhat.com>, Linux Kernel <linux-kernel@vger.kernel.org>
-References: <20130227052247.GA20213@redhat.com> (sfid-20130227_093819_089601_169F45B6)
-In-Reply-To: <20130227052247.GA20213@redhat.com>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201302271128.05815.Martin@lichtvoll.de>
+Cc: wangshilong1991@gmail.com, miaox@cn.fujitsu.com, sensille@gmx.net
+Subject: [PATCH 2/3] Btrfs: return ENOMEM rather than use BUG_ON when btrfs_alloc_path fails
+Date: Wed, 27 Feb 2013 19:20:56 +0800
+Message-Id: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 27. Februar 2013 schrieb Dave Jones:
-> Something I've yet to repeat managed to leak a whole bunch of memory
-> while I was travelling, and locked up my workstation.
-> 
-> When I got home, this was the last thing printed out before it locked up
-> (it did make it into the logs thankfully) after a bunch of instances of
-> the oom-killers handywork.
-> 
-> 
-> 
-> SLUB: Unable to allocate memory on node -1 (gfp=0x50)
->   cache: btrfs_extent_state, object size: 176, buffer size: 504, default
-> order: 1, min order: 0 node 0: slabs: 49, objs: 640, free: 0
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/extent_io.c:748!
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-Thank you for reporting this Dave.
+Return ENOMEM rather trigger BUG_ON, fix it.
 
-I have lockups due to memory pressure conditions on my ThinkPad T520 as well 
-when playing Planeshift for some time. (AFAIR since I switched my home 
-directory to BTRFS (/ was BTRFS before), but I am not sure about this.) 
-Planeshift goes from 2 GB to about 4 GB RSS and then the machine usually 
-starts to swap to SSD. 
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
-I did not get around to report this yet. The machine is basically locked (at 
-least for long periods of times like minutes). I intend to collect some 
-photos and upload them somewhere, cause I do not see anything in logs after 
-reboot.
-
-I think this happens *before* real OOM conditions are met (i.e. all of swap 
-is being used up as well).
-
-In backtraces btrfs related stuff appears.
-
-Expected results of cause: System continues swapping and if OOM conditions 
-are met calls the OOM killer (which might try to get rid of running 
-Planeshift client).
-
-Current workaround: Develop a good feeling on when to better restart the PS 
-client. :)
-
-So for now just a heads up that I have seen similar issues. (But I think my 
-backtraces might have been different, difficult to say since some of it 
-scrolls by quite quickly.)
-
-Ciao,
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index f011d9b..69fa487 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -620,7 +620,9 @@ static int update_qgroup_limit_item(struct btrfs_trans_handle *trans,
+ 	key.offset = qgroupid;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
++
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+@@ -661,7 +663,9 @@ static int update_qgroup_info_item(struct btrfs_trans_handle *trans,
+ 	key.offset = qgroup->qgroupid;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
++
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+@@ -702,7 +706,9 @@ static int update_qgroup_status_item(struct btrfs_trans_handle *trans,
+ 	key.offset = 0;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
++
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	if (ret > 0)
+ 		ret = -ENOENT;
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+1.7.7.6
+

@@ -1,61 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f53.google.com ([74.125.83.53]:39139 "EHLO
-	mail-ee0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759605Ab3B0STu convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:58943 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759605Ab3B0S0T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 13:19:50 -0500
-Received: by mail-ee0-f53.google.com with SMTP id e53so788611eek.40
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 10:19:49 -0800 (PST)
-Content-Type: text/plain; charset=utf-8; format=flowed; delsp=yes
-To: "Josef Bacik" <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Running Apache Derby on 3.8 and BTRFS cause kernel oops
-References: <op.ws51z2nllpxuyk@kozzifx.lan>
- <20130227132513.GG19641@localhost.localdomain>
-Date: Wed, 27 Feb 2013 19:19:46 +0100
+	Wed, 27 Feb 2013 13:26:19 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 8B1C99A0425
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 11:26:19 -0700 (MST)
+Date: Wed, 27 Feb 2013 13:26:17 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+CC: Josef Bacik <JBacik@fusionio.com>, Dave Jones <davej@redhat.com>,
+        Linux Kernel <linux-kernel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs crash when low on memory.
+Message-ID: <20130227182617.GI19641@localhost.localdomain>
+References: <20130227052247.GA20213@redhat.com>
+ <20130227132736.GH19641@localhost.localdomain>
+ <CAFDW0jK6zigx0YgVMHomUkRQkqpw5mUgkdeynv36LUiQn4XTxg@mail.gmail.com>
 MIME-Version: 1.0
-From: =?utf-8?Q?Daniel_Koz=C3=A1k?= <kozzi11@gmail.com>
-Message-ID: <op.ws6fu8smlpxuyk@kozzifx.lan>
-In-Reply-To: <20130227132513.GG19641@localhost.localdomain>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAFDW0jK6zigx0YgVMHomUkRQkqpw5mUgkdeynv36LUiQn4XTxg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-[kozzi@KozziFX ~]$ mkdir derby
-[kozzi@KozziFX ~]$ cd derby/
-[kozzi@KozziFX derby]$ wget -c -q  
-http://mirror.hosting90.cz/apache//db/derby/db-derby-10.9.1.0/db-derby-10.9.1.0-bin.zip
-[kozzi@KozziFX derby]$ unzip -qq db-derby-10.9.1.0-bin.zip
-[kozzi@KozziFX derby]$ cd db-derby-10.9.1.0-bin/
-[kozzi@KozziFX db-derby-10.9.1.0-bin]$ DERBY_HOME=`pwd`
-[kozzi@KozziFX db-derby-10.9.1.0-bin]$ java -jar  
-$DERBY_HOME/lib/derbyrun.jar server start &
-[kozzi@KozziFX db-derby-10.9.1.0-bin]$ java -jar  
-$DERBY_HOME/lib/derbyrun.jar ij
-verze ij 10.9
-ij> CONNECT 'jdbc:derby://localhost:1527/seconddb;create=true';
-
-BTW. after this I must restart my PC, and after restart, my system doesn't  
-boot anymore :-) (some more btrfs oops).
-So I must use btrfs check --repair /dev/sdaX.
-
-Dne Wed, 27 Feb 2013 14:25:13 +0100 Josef Bacik <jbacik@fusionio.com>  
-napsal(a):
-
-> On Wed, Feb 27, 2013 at 06:20:16AM -0700, Daniel Kozák wrote:
->> Hello,
->>
->> On my both machine I have ArchLinux with recent kernel 3.8.0 btrfs as a
->> filesystem (with lzo compression). When I try use Apache derby (create
->> database), I almost every time get this kernel oops:
+On Wed, Feb 27, 2013 at 07:31:11AM -0700, Ahmet Inan wrote:
+> > Yeah we have a lot of
+> >
+> > ptr = kmalloc();
+> > BUG_ON(ptr);
+> >
+> > everywhere.  I'll fix this one up but I really need to sit down and go through
+> > all of them and make sure we do the right thing in all these places.  Thanks,
+> 
+> But what would be the right thing to do when you got no memory?
+> Spinlock until you can kmalloc? Pre-reserve some memory?
 >
-> Sweet somebody else is hitting this and I haven't been able to  
-> reproduce.  Can
-> you give me the exact commands you run so I can try and reproduce myself?
-> Thanks,
->
-> Josef
 
+Return ENOMEM?  We have a way to abort transactions now, if it's in a horrible
+of enough spot we can just abort the transaction and let the user deal with the
+aftermath, it's nicer than panicing.  Thanks,
 
--- 
-Vytvořeno poštovní aplikací Opery: http://www.opera.com/mail/
+Josef 

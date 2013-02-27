@@ -1,40 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f43.google.com ([209.85.219.43]:43613 "EHLO
-	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1760025Ab3B0ObL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 09:31:11 -0500
+Received: from cantor2.suse.de ([195.135.220.15]:41323 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757821Ab3B0PT7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 10:19:59 -0500
+Date: Wed, 27 Feb 2013 16:19:57 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Hugo Mills <hugo@carfax.org.uk>, penn43@gmx.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Writing a wtapper for BTRFS
+Message-ID: <20130227151957.GG27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <512E01BD.2040302@gmx.com>
+ <20130227130846.GM14283@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <20130227132736.GH19641@localhost.localdomain>
-References: <20130227052247.GA20213@redhat.com>
-	<20130227132736.GH19641@localhost.localdomain>
-Date: Wed, 27 Feb 2013 15:31:11 +0100
-Message-ID: <CAFDW0jK6zigx0YgVMHomUkRQkqpw5mUgkdeynv36LUiQn4XTxg@mail.gmail.com>
-Subject: Re: btrfs crash when low on memory.
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Dave Jones <davej@redhat.com>, Linux Kernel <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130227130846.GM14283@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Yeah we have a lot of
->
-> ptr = kmalloc();
-> BUG_ON(ptr);
->
-> everywhere.  I'll fix this one up but I really need to sit down and go through
-> all of them and make sure we do the right thing in all these places.  Thanks,
+On Wed, Feb 27, 2013 at 01:08:46PM +0000, Hugo Mills wrote:
+>    You may want to look at the btrfs-progs libify patches (posted to
+> this list in the last couple of months), which try to pull out the
+> more useful bits of btrfs-progs as a userspace C API.
 
-But what would be the right thing to do when you got no memory?
-Spinlock until you can kmalloc? Pre-reserve some memory?
+FYI, libify patch will be in the next integration branch.
 
-At the moment im using:
+>    You may also want to look at the bits I implemented in python[2]
+> for a subset of the btrfs ioctls and data structures in btrfs-gui.
+> 
+>    Other than that, it's down to the data structures documentation on
+> the wiki[1], and reading through ioctl.h.
 
-vm.min_free_kbytes = 65536
+bedup https://github.com/g2p/bedup does python binding, in a different
+way than btrfs-gui.
 
-Which helps most of the time and i think is the better way to handle
-this kind of Situation.
-
-Ahmet
+david

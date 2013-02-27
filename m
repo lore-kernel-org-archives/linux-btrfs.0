@@ -1,64 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60767 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44776 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933919Ab3BTSSC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Feb 2013 13:18:02 -0500
-Date: Wed, 20 Feb 2013 19:17:59 +0100
+	id S1752037Ab3B0Qny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 11:43:54 -0500
+Date: Wed, 27 Feb 2013 17:43:52 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        Audrius Butkevicius <audrius.butkevicius@elastichosts.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: add '-b' option to filesystem df and show
-Message-ID: <20130220181759.GB27541@twin.jikos.cz>
+To: Florian Albrechtskirchinger <falbrechtskirchinger@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: add UUID switches to mkfs and convert
+Message-ID: <20130227164352.GJ27541@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20130201095947.GA32445@gmail.com>
- <20130201103031.GQ16285@carfax.org.uk>
- <5124CA35.2080009@elastichosts.com>
- <CAMU1PDhjNpJTO14oB26Dxy+HoEwKEEKcxByh6CO+8DiTd1Grfw@mail.gmail.com>
- <20130220145409.GA14283@carfax.org.uk>
+References: <1357486331-4615-1-git-send-email-falbrechtskirchinger@gmail.com>
+ <1357486331-4615-2-git-send-email-falbrechtskirchinger@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130220145409.GA14283@carfax.org.uk>
+In-Reply-To: <1357486331-4615-2-git-send-email-falbrechtskirchinger@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 20, 2013 at 02:54:09PM +0000, Hugo Mills wrote:
->    Option 1 has an icky global (but one that's pretty much read-only,
-> so it's not all that bad). Option 2 pushes a piece of information
-> through a whole load of functions which really don't have to know
-> about it themselves.
+On Sun, Jan 06, 2013 at 04:32:11PM +0100, Florian Albrechtskirchinger wrote:
+> Add the following switches to mkfs.btrfs and update man page:
+> * -U UUID, --uuid UUID
 > 
->    Either way, it's not particularly elegant, but either way would
-> work. Unless someone else (Chris? Dave?) has any particular feelings
-> either way, I'd probably go for option 1.
+> Add the following switches to btrfs-convert:
+> * -U UUID
+> * -U new
+>   Generates a random UUID (default behavior).
+> * -U copy
+>   Copies the UUID from the ext2fs.
 
-I prefer option 1 as well.
+Can you please enhance it with a check that the UUID is not duplicate
+among other filesystems? It should be available throgh libblkid:
 
->    I'd _like_ to see "bytes" as the default option (which also means
-> that we don't need to use up -b), but that changes the behaviour of
-> the tool (for anyone who was parsing the output of it in scripts), so
-> we probably shouldn't do that. OTOH, we're going to be changing the
-> output of the tool anyway with this change, so maybe it's worth doing
-> it all at once...
+	blkid_probe_lookup_value(probe, "UUID", &uuid, NULL);
 
-For brief overview of the filesytem, the values with suffixes are much easier
-to grasp.
+This is a sort of paranoia check with the generated UUID, but I think
+that an accidentally repeated command or copy&paste with an existing
+uuid can happen.
 
-This is what I use in scripts:
-
-# perl
-sub tobytes($$) {
-        my ($a,$suff)=@_;
-        $a*=1024*1024*1024*1024 if($suff eq "TiB");
-        $a*=1024*1024*1024 if($suff eq "GiB");
-        $a*=1024*1024 if($suff eq "MiB");
-        $a*=1024 if($suff eq "KiB");
-
-        return $a;
-}
-
-so it'll use raw value in case of an unrecognized suffix (forget for now that
-it does not recognize the 1000x variants).
-
+thanks,
 david

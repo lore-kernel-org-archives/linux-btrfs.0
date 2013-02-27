@@ -1,67 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f50.google.com ([209.85.210.50]:45340 "EHLO
-	mail-da0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758614Ab3B0LVB (ORCPT
+Received: from mail-qa0-f51.google.com ([209.85.216.51]:61958 "EHLO
+	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759773Ab3B0Lu6 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 06:21:01 -0500
-Received: by mail-da0-f50.google.com with SMTP id h15so253005dan.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 03:21:01 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wangshilong1991@gmail.com, miaox@cn.fujitsu.com, sensille@gmx.net
-Subject: [PATCH 2/3] Btrfs: return ENOMEM rather than use BUG_ON when btrfs_alloc_path fails
-Date: Wed, 27 Feb 2013 19:20:56 +0800
-Message-Id: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
+	Wed, 27 Feb 2013 06:50:58 -0500
+Received: by mail-qa0-f51.google.com with SMTP id cr7so392967qab.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 03:50:58 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <512CB3E4.9040203@itu.dk>
+References: <20130220164605.GA13504@uflip.org>
+	<CAEH94Liiy3ftSrkpiKyr68LHwQw55od4LY6hzZwzBKtCixxg+w@mail.gmail.com>
+	<512CB3E4.9040203@itu.dk>
+Date: Wed, 27 Feb 2013 19:50:56 +0800
+Message-ID: <CAEH94LgAW98USGwE_1mM3gLEqF5q-xoPVyth+h7XfH6rbRwBtw@mail.gmail.com>
+Subject: Re: [POSSIBLE SPAM] Re: Hybrid Storage proposal
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: =?ISO-8859-1?Q?Matias_Bj=F8rling?= <mabj@itu.dk>
+Cc: jmad@itu.dk, linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
+        dsterba@suse.cz
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+On Tue, Feb 26, 2013 at 9:08 PM, Matias Bjørling <mabj@itu.dk> wrote:
+> On 02/26/2013 12:04 PM, Zhi Yong Wu wrote:
+>>
+>> HI,
+>>
+>> It's a bit long so that i haven't read its whole, but i want to know
+>> if it has any collision with my ongoing feature "btrfs hot
+>> relocation/migration"?
+>
+>
+> It will utilize the hot track patch set you're been creating for VFS. I
+> think the methods are complementary. Do you have a description of the
+> relocation/migration approach?
+sorry, no currently. i will post out them after they are completed.
 
-Return ENOMEM rather trigger BUG_ON, fix it.
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/qgroup.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index f011d9b..69fa487 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -620,7 +620,9 @@ static int update_qgroup_limit_item(struct btrfs_trans_handle *trans,
- 	key.offset = qgroupid;
- 
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path)
-+		return -ENOMEM;
-+
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	if (ret > 0)
- 		ret = -ENOENT;
-@@ -661,7 +663,9 @@ static int update_qgroup_info_item(struct btrfs_trans_handle *trans,
- 	key.offset = qgroup->qgroupid;
- 
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path)
-+		return -ENOMEM;
-+
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	if (ret > 0)
- 		ret = -ENOENT;
-@@ -702,7 +706,9 @@ static int update_qgroup_status_item(struct btrfs_trans_handle *trans,
- 	key.offset = 0;
- 
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path)
-+		return -ENOMEM;
-+
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	if (ret > 0)
- 		ret = -ENOENT;
+
 -- 
-1.7.7.6
+Regards,
 
+Zhi Yong Wu

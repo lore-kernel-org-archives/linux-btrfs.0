@@ -1,37 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41323 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46326 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757821Ab3B0PT7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 10:19:59 -0500
-Date: Wed, 27 Feb 2013 16:19:57 +0100
+	id S1750927Ab3B0ROr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 12:14:47 -0500
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 30439A341E
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 18:14:46 +0100 (CET)
+Date: Wed, 27 Feb 2013 18:14:45 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>, penn43@gmx.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Writing a wtapper for BTRFS
-Message-ID: <20130227151957.GG27541@twin.jikos.cz>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Integration branch of btrfs-progs 2013-02-27
+Message-ID: <20130227171445.GL27541@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <512E01BD.2040302@gmx.com>
- <20130227130846.GM14283@carfax.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130227130846.GM14283@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 27, 2013 at 01:08:46PM +0000, Hugo Mills wrote:
->    You may want to look at the btrfs-progs libify patches (posted to
-> this list in the last couple of months), which try to pull out the
-> more useful bits of btrfs-progs as a userspace C API.
+Hi,
 
-FYI, libify patch will be in the next integration branch.
+this time it's the label set/get patches to match ioctl added into
+3.9-pre, the initial libify support and small fixes recently sent to the
+mailinglist.
 
->    You may also want to look at the bits I implemented in python[2]
-> for a subset of the btrfs ioctls and data structures in btrfs-gui.
-> 
->    Other than that, it's down to the data structures documentation on
-> the wiki[1], and reading through ioctl.h.
+   git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130227
 
-bedup https://github.com/g2p/bedup does python binding, in a different
-way than btrfs-gui.
+For those who haven't noticed, the previous integration branch has been
+merged and is now in the upstream master branch.
 
 david
+
+---
+Anand Jain (1):
+      Btrfs-progs: add correct indentation
+
+David Sterba (1):
+      btrfs-progs: don't link binaries to a dynamic library
+
+Eric Sandeen (16):
+      btrfs-progs: fix btrfs_get_subvol cut/paste error
+      btrfs-progs: Remove write-only var fdres in cmd_dev_stats()
+      btrfs-progs: btrfs_list_get_path_rootid error handling
+      btrfs-progs: avoid double-free in __btrfs_map_block
+      btrfs-progs: fix open error test in cmd_start_replace
+      btrfs-progs: fix close of error fd in scrub cancel
+      btrfs-progs: more scrub cancel error handling
+      btrfs-progs: free memory before error exit in read_whole_eb
+      btrfs-progs: don't call close on error fd
+      btrfs-progs: provide positive errno to strerror in cmd_restore
+      btrfs-progs: free allocated di_args in cmd_start_replace
+      btrfs-progs: close fd on cmd_subvol_get_default return
+      btrfs-progs: fix mem leak in resolve_root
+      btrfs-progs: Tidy up resolve_root
+      btrfs-progs: fix fd leak in cmd_subvol_set_default
+      btrfs-progs: initialize save_ptr prior to strtok_r
+
+Jeff Liu (5):
+      Btrfs-progs: Change the label of a mounted file system
+      Btrfs-progs: Fix set_label_unmounted() with label length validation
+      Btrfs-progs: fix cmd_label_usage to reflect this change.
+      btrfs-progs: refactor check_label()
+      btrfs-progs: move btrfslabel.[c|h] stuff to utils.[c|h]
+
+Mark Fasheh (1):
+      btrfs-progs: libify some parts of btrfs-progs
+
+Tsutomu Itoh (1):
+      Btrfs-progs: fix segmentation fault of "btrfs check"
+
+Wang Shilong (2):
+      Btrfs-progs: let the error message outputed only once
+      Btrfs-progs: output the error reason when qgroup_show fails
+

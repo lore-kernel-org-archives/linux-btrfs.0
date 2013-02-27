@@ -1,74 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:54119 "EHLO len.romanrm.net"
+Received: from plane.gmane.org ([80.91.229.3]:56373 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754130Ab3B0JRY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 04:17:24 -0500
-Date: Wed, 27 Feb 2013 15:17:21 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-        "linux-btrfs" <linux-btrfs@vger.kernel.org>,
-        Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        Suman C <schakrava@gmail.com>
+	id S1750715Ab3B0J6G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 04:58:06 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UAdmL-0006Ga-2C
+	for linux-btrfs@vger.kernel.org; Wed, 27 Feb 2013 10:58:25 +0100
+Received: from rain.gmane.org ([80.91.229.7])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 10:58:25 +0100
+Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 10:58:25 +0100
+To: linux-btrfs@vger.kernel.org
+From: Alex Elsayed <eternaleye@gmail.com>
 Subject: Re: lvm volume like support
-Message-ID: <20130227151721.5da0c46d@natsu>
-In-Reply-To: <201302270942.03347.Martin@lichtvoll.de>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com>
-	<CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com>
-	<20130227100558.37d86d82@natsu>
-	<201302270942.03347.Martin@lichtvoll.de>
+Date: Wed, 27 Feb 2013 01:57:55 -0800
+Message-ID: <kgklb0$g6a$1@ger.gmane.org>
+References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <201302261130.31494.Martin@lichtvoll.de> <CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com> <20130227100558.37d86d82@natsu> <kgkhcp$dfg$1@ger.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/G+rPriupMTiAp6O_nV0Ocx3"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/G+rPriupMTiAp6O_nV0Ocx3
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Alex Elsayed wrote:
 
-On Wed, 27 Feb 2013 09:42:02 +0100
-Martin Steigerwald <Martin@lichtvoll.de> wrote:
+> Roman Mamedov wrote:
+> 
+>> On Wed, 27 Feb 2013 13:23:23 +1100
+>> "Fajar A. Nugraha" <list@fajar.net> wrote:
 
-> Are you sure about the partition support? I thought something related to=
-=20
-> loop partition support has gone into some not so recent kernel.
+<snip>
 
-Sorry, you are correct, this was in fact added since 2.6.26.
+> This could be pretty easily put into a shell script that uses du -b and
+> manually pokes configfs instead of calling tcm_node, and it'd be able to
+> run without any nonstandard userspace dependencies.
 
-Just tried out making a partitioned loop device:
+Just for fun, I decided to put my money where my mouth is and implement
+a quick scsi-target-losetup that actually worked, both for creation and
+deletion. Here it is:
 
-  dd if=3D/dev/zero of=3D100GB bs=3D1 count=3D1 seek=3D100G
-  modprobe loop max_part=3D8
-  losetup /dev/loop7 100GB
-  cfdisk /dev/loop7
+---cut---
 
-  [ made two partitions, commit, quit cfdisk ]
+#!/bin/bash
 
-  [ ...but partitions did not automatically appear as /dev/loop7pX ]
+gen_naa() {
+    local UUID="$( uuidgen -r )"
+    UUID="${UUID//-/}"
+    UUID="${UUID:0:9}"
+    echo "naa.6001405${UUID}"
+}
 
-  blockdev --rereadpt /dev/loop7
+setup() {
+    local FILE
+    local INPUT_NAME
+    local NAME
+    local BACKEND_IDX
+    local TRANSPORT_IDX
+    declare -a NAA
+    FILE="${1}"
+    INPUT_NAME="${2}"
+    NAME="${INPUT_NAME//\//_}"
+    BACKEND_IDX='-1'
+    TRANSPORT_IDX='-1'
 
-  [ OK, now here they are: ]
- =20
-  $ ls -la /dev/loop7p?
-  brw-rw---T 1 root disk 7, 113 Feb 27 15:10 /dev/loop7p1
-  brw-rw---T 1 root disk 7, 114 Feb 27 15:10 /dev/loop7p2
+    if [[ $UID -ne 0 ]]; then
+        echo "You must be root in order to set up a lioloop device" >&2
+        exit 1
+    fi
 
---=20
-With respect,
-Roman
+    if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
+        echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
+    fi
 
---Sig_/G+rPriupMTiAp6O_nV0Ocx3
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+    declare SIZE="$(du -b "${FILE}")"
+    SIZE="${SIZE/[^0123456789]*}"
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+    # Load the scsi target core and backends
+    modprobe target_core_mod >/dev/null 2>&1
 
-iEYEARECAAYFAlEtzyEACgkQTLKSvz+PZwi0vwCfQ8bt914fKdhMuo4qJ5yxH/JD
-BdkAnR21rF88Qfsrzg8sGL1hPtvR4RBF
-=+MPF
------END PGP SIGNATURE-----
+    while BACKEND_IDX=$((BACKEND_IDX + 1)); do
+        if [[ -d "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" ]]; then
+            echo "A backstore with the name '${NAME}' already exists" >&2
+            exit 1
+        elif ! [[ -d /sys/kernel/config/target/core/fileio_${BACKEND_IDX} ]]; then
+    #        mkdir -p "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}"
+    # Tell it where the file is and how big it is
+            tcm_node --establishdev "fileio_${BACKEND_IDX}/${NAME}" \
+                "fd_dev_name=${FILE},fd_dev_size=${SIZE}"
+    # Give it a unique serial
+            tcm_node --setunitserialwithmd "fileio_${BACKEND_IDX}/${NAME}" "$(uuidgen -r)"
+            break
+        fi
+    done
 
---Sig_/G+rPriupMTiAp6O_nV0Ocx3--
+    # Load the local scsi frontend transport
+    modprobe tcm_loop >/dev/null 2>&1
+    mkdir -p /sys/kernel/config/target/loopback
+
+    NAA=( "$(gen_naa)" "$(gen_naa)" )
+    # Some setup so you have a place to put LUNs
+    mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1"
+    echo "${NAA[1]}" > "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/nexus"
+
+    # Create a fresh LUN...
+    while TRANSPORT_IDX=$((TRANSPORT_IDX + 1)); do
+        if ! [[ -d "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}" ]]; then
+            mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
+    # ...and map the file to it.
+            ln -s "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" \
+                "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
+            break
+        fi
+    done
+}
+
+teardown() {
+    local INPUT_NAME="${1}"
+    local NAME="${INPUT_NAME//\//_}"
+
+    if [[ $UID -ne 0 ]]; then
+        echo "You must be root in order to tear down a lioloop device" >&2
+        exit 1
+    fi
+
+    if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
+        echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
+    fi
+
+    local FOUND=''
+    for LUN in /sys/kernel/config/target/loopback/*/tpgt_1/lun/lun_*; do
+        if [[ -L "${LUN}/${NAME}" ]]; then
+            rm -f "${LUN}/${NAME}"
+            FOUND=1
+        fi
+    done
+
+    if [[ -z "${FOUND}" ]]; then
+        echo "No lioloop with the name '${NAME}' was found" >&2
+        return
+    fi
+
+    for BACKSTORE in /sys/kernel/config/target/core/fileio_*; do
+        if [[ -d "${BACKSTORE}/${NAME}" ]]; then
+            rmdir "${BACKSTORE}/${NAME}"
+        fi
+    done
+}
+
+if [[ "$1" == '-d' ]]; then
+    shift;
+    for name in "$@"; do
+        teardown "${name}"
+    done
+else
+    setup "$@"
+fi
+
+
+

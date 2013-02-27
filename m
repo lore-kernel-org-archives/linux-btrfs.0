@@ -1,28 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52308 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:41349 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752587Ab3B0VbP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 16:31:15 -0500
-Date: Wed, 27 Feb 2013 13:31:05 -0800
+	id S1750955Ab3B0VfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 16:35:10 -0500
+Date: Wed, 27 Feb 2013 13:34:21 -0800
 From: Zach Brown <zab@redhat.com>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com, sensille@gmx.net
-Subject: Re: [PATCH 2/3] Btrfs: return ENOMEM rather than use BUG_ON when
- btrfs_alloc_path fails
-Message-ID: <20130227213105.GN1658@lenny.home.zabbo.net>
-References: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
+To: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>, penn43@gmx.com,
+        linux-btrfs@vger.kernel.org
+Cc: Andy Grover <agrover@redhat.com>
+Subject: Re: Writing a wtapper for BTRFS
+Message-ID: <20130227213421.GO1658@lenny.home.zabbo.net>
+References: <512E01BD.2040302@gmx.com>
+ <20130227130846.GM14283@carfax.org.uk>
+ <20130227151957.GG27541@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1361964056-2455-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <20130227151957.GG27541@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Return ENOMEM rather trigger BUG_ON, fix it.
+On Wed, Feb 27, 2013 at 04:19:57PM +0100, David Sterba wrote:
+> On Wed, Feb 27, 2013 at 01:08:46PM +0000, Hugo Mills wrote:
+> >    You may want to look at the btrfs-progs libify patches (posted to
+> > this list in the last couple of months), which try to pull out the
+> > more useful bits of btrfs-progs as a userspace C API.
+> 
+> FYI, libify patch will be in the next integration branch.
+> 
+> >    You may also want to look at the bits I implemented in python[2]
+> > for a subset of the btrfs ioctls and data structures in btrfs-gui.
+> > 
+> >    Other than that, it's down to the data structures documentation on
+> > the wiki[1], and reading through ioctl.h.
+> 
+> bedup https://github.com/g2p/bedup does python binding, in a different
+> way than btrfs-gui.
 
-These changes look good.  The resulting surrounding state buildup and
-cleanup paths look correct.
+Andy also mentioned being interested in language bindings of a libified
+btrfs-progs, cc:ing.
 
-Thanks for helping remove a few more BUG_ON()s :).
-
-Reviewed-by: Zach Brown <zab@redhat.com>
-
+- z

@@ -1,41 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34296 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:35296 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753583Ab3B0MiV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 07:38:21 -0500
-Date: Wed, 27 Feb 2013 13:38:19 +0100
+	id S1759866Ab3B0NDq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Feb 2013 08:03:46 -0500
+Date: Wed, 27 Feb 2013 14:03:44 +0100
 From: David Sterba <dsterba@suse.cz>
-To: kreijack@inwind.it
-Cc: Eric Sandeen <sandeen@redhat.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 16/17] btrfs-progs: fix fd leak in cmd_subvol_set_default
-Message-ID: <20130227123819.GB27541@twin.jikos.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Shilong Wang <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 14/17] btrfs-progs: fix mem leak in resolve_root
+Message-ID: <20130227130344.GC27541@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1361832890-40921-1-git-send-email-sandeen@redhat.com>
- <1361832890-40921-17-git-send-email-sandeen@redhat.com>
- <512D031D.20408@gmail.com>
- <512D169C.3020100@redhat.com>
- <512D2344.40607@tiscalinet.it>
+ <1361832890-40921-15-git-send-email-sandeen@redhat.com>
+ <CAP9B-QkUP7ZftFkWw-_W-K2YKT8KdymabTf2mEK8Z_mgiKaJnA@mail.gmail.com>
+ <512C3BD9.6000008@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <512D2344.40607@tiscalinet.it>
+In-Reply-To: <512C3BD9.6000008@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 26, 2013 at 10:04:04PM +0100, Goffredo Baroncelli wrote:
-> On 02/26/2013 09:10 PM, Eric Sandeen wrote:
-> IMHO this would be simple enough to be done in one shot. However this
-> problem exists also in other points.
-> May be that for now your patch is ok. But then we should start another
-> set of patches which correct/sanitise all these use of
-> "parse_size/strto[u]ll/parse_limit...".
+On Mon, Feb 25, 2013 at 10:36:41PM -0600, Eric Sandeen wrote:
+> On 2/25/13 6:36 PM, Shilong Wang wrote:
+> >> --- a/btrfs-list.c
+> >> +++ b/btrfs-list.c
+> >> @@ -568,8 +568,10 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
+> >>                 * ref_tree = 0 indicates the subvolumes
+> >>                 * has been deleted.
+> >>                 */
+> >> -               if (!found->ref_tree)
+> >> +               if (!found->ref_tree) {
+> >> +                       free(full_path);
+> >>                         return -ENOENT;
+> >> +               }
+> >>                 int add_len = strlen(found->path);
+> >>
+> >>                 /* room for / and for null */
+> >> @@ -612,8 +614,10 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
+> >>                 * subvolume was deleted.
+> >>                 */
+> >>                 found = root_tree_search(rl, next);
+> >> -               if (!found)
+> >> +               if (!found) {
+> >> +                       free(full_path);
+> >>                         return -ENOENT;
+> >> +               }
+> >>         }
+> >>
+> >>         ri->full_path = full_path;
+> >> --
+> >> 1.7.1
+> > 
+> > I think the patch is wrong;
+> > Here we return ENOENT, it means a subvolume/snapshot deletion happens.
+> > We just filter them in the filter_root, But the free work is done by
+> > the function all_subvolume_free..
+> > so your modification will cause a double free..
 > 
-> Unfortunately this means that these next series of patches will start
-> only when these one will be accepted in order to avoid patches conflict.
+> Thanks for the review.  I'll admit that when looking at too many of
+> these static checker reports, sometimes things look obvious when
+> they are actually subtle, and I've certainly made mistakes before. :)
+> 
+> However, full_path location doesn't seem to be available outside the
+> scope of this function unless we exit normally and do:
+> 
+>         ri->full_path = full_path;
+> 
+>         return 0;
+> }
+> 
+> If we exit early at the -ENOENT points, it seems that full_path
+> is leaked; there are no other references to it.
 
-The small and localized changes as can be found in this series are going
-to the integration branches early. Thanks all who are reviewing, it
-helps to speed up the process. I prefer to separate the changes here, as
-you point out there are other places to be fixed.
+I agree with you, the freed value is local.
 
-thanks,
 david

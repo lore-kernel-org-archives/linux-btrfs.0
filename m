@@ -1,47 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56891 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752073Ab3B1MkL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Feb 2013 07:40:11 -0500
-Date: Thu, 28 Feb 2013 13:40:08 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, zab@redhat.com
-Subject: Re: [PATCH] btrfs: cleanup for open-coded alignment
-Message-ID: <20130228124008.GQ27541@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1361866222-5746-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20130227115944.GA27541@twin.jikos.cz>
- <512EA9DD.9010003@cn.fujitsu.com>
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:56122 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752460Ab3B1NDE convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Feb 2013 08:03:04 -0500
+Received: from mfilter5-d.gandi.net (mfilter5-d.gandi.net [217.70.178.132])
+	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 7E5E941C09E
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 14:03:02 +0100 (CET)
+Received: from relay5-d.mail.gandi.net ([217.70.183.197])
+	by mfilter5-d.gandi.net (mfilter5-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id vnpQekaKEROK for <linux-btrfs@vger.kernel.org>;
+	Thu, 28 Feb 2013 14:03:01 +0100 (CET)
+Received: from [192.168.1.66] (AMontpellier-256-1-187-75.w92-143.abo.wanadoo.fr [92.143.82.75])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 0E33E41C06D
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 14:03:00 +0100 (CET)
+Message-ID: <512F5583.4060406@petaramesh.org>
+Date: Thu, 28 Feb 2013 14:02:59 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <512EA9DD.9010003@cn.fujitsu.com>
+To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Subject: Defragmenting open files
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 28, 2013 at 08:50:37AM +0800, Qu Wenruo wrote:
-> >I have covered all cases in my original patch with a coccinelle semantic
-> >patch http://www.spinics.net/lists/linux-btrfs/msg12750.html and also
-> >removed the useless stripe_align helper and updated it's callers (and it
-> >still applies after merging the raid56 code that updated the function
-> >with 2 unused arguments).
-> Thanks for pointing out the original rules.
-> The orginal rules is pretty good but can only
-> deal with the open-coded alignment in one line.
-> 
-> If there is something using varient "mask",
-> the rules seems no help like the following:
-> ------
-> 
->         u64 mask = ((u64)root->stripesize - 1);
->         u64 ret = (val + mask) & ~mask;
+Hi folks,
 
-You're right, the semantic patch does not cover that, so you've found
-more cases in the end, that's good.
+My BTRFS systems now have slowed down to the point where I finally
+decided to trash all my snapshots and try and defrag it all.
 
-> And sorry for the wrong signed-off, it seems that I'm using one of your
-> deprecated mail address.
+I basically wrote a shell script that goes down the complete FS tree,
+runs a "filefrag" over each file and issues a "btrfs filesystem defrag
+$blah" against every files which number of fragments is > 1.
 
-Still active, but I prefer to use the $job one.
+I'm currently running it, but I notice that for every file that is
+likely open (i.e. /bin/bash), my script spits out :
 
-david
+failed to open /bin/bash
+open:: Text file busy
+total 1 failures
+FAILED !
+
+I expected that the BTRS defragmentation was done by the kernel and was
+able to handle open files, but apparently not ?
+
+Another question is : Is there a way to determine if a directory needs a
+defrag ? filefrag doesn't seem to be able to work properly against a
+directory...
+
+TIA.
+
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

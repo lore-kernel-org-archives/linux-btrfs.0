@@ -1,59 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:56122 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752460Ab3B1NDE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Feb 2013 08:03:04 -0500
-Received: from mfilter5-d.gandi.net (mfilter5-d.gandi.net [217.70.178.132])
-	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 7E5E941C09E
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 14:03:02 +0100 (CET)
-Received: from relay5-d.mail.gandi.net ([217.70.183.197])
-	by mfilter5-d.gandi.net (mfilter5-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id vnpQekaKEROK for <linux-btrfs@vger.kernel.org>;
-	Thu, 28 Feb 2013 14:03:01 +0100 (CET)
-Received: from [192.168.1.66] (AMontpellier-256-1-187-75.w92-143.abo.wanadoo.fr [92.143.82.75])
-	(Authenticated sender: swami@petaramesh.org)
-	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 0E33E41C06D
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 14:03:00 +0100 (CET)
-Message-ID: <512F5583.4060406@petaramesh.org>
-Date: Thu, 28 Feb 2013 14:02:59 +0100
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from mout.gmx.net ([212.227.15.19]:63322 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752620Ab3B1NnY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Feb 2013 08:43:24 -0500
+Received: from mailout-eu.gmx.com ([10.1.101.211]) by mrigmx.server.lan
+ (mrigmx002) with ESMTP (Nemesis) id 0MDjZQ-1U2oQ033gU-00H3b8 for
+ <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 14:43:22 +0100
+Message-ID: <512F5EF6.5070305@gmx.com>
+Date: Thu, 28 Feb 2013 14:43:18 +0100
+From: penn43@gmx.com
 MIME-Version: 1.0
-To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
-Subject: Defragmenting open files
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Writing a wrapper for BTRFS
+References: <512E01BD.2040302@gmx.com> <20130227130846.GM14283@carfax.org.uk>
+In-Reply-To: <20130227130846.GM14283@carfax.org.uk>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi folks,
+Thanks for your replies.
 
-My BTRFS systems now have slowed down to the point where I finally
-decided to trash all my snapshots and try and defrag it all.
+Just so that I know what I am getting into if I decide to try writing 
+Btrfs bindings, is this something that requires expertise of C on my part?
 
-I basically wrote a shell script that goes down the complete FS tree,
-runs a "filefrag" over each file and issues a "btrfs filesystem defrag
-$blah" against every files which number of fragments is > 1.
+Supposing that I only need bindings for the most basic filesystem 
+functionality, plus access to extended metadata, how long is this work 
+going to take (considering that I have no prior experience with bindings)?
 
-I'm currently running it, but I notice that for every file that is
-likely open (i.e. /bin/bash), my script spits out :
+Thanks
 
-failed to open /bin/bash
-open:: Text file busy
-total 1 failures
-FAILED !
-
-I expected that the BTRS defragmentation was done by the kernel and was
-able to handle open files, but apparently not ?
-
-Another question is : Is there a way to determine if a directory needs a
-defrag ? filefrag doesn't seem to be able to work properly against a
-directory...
-
-TIA.
-
-Kind regards.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
+Penn
 

@@ -1,45 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57506 "EHLO mx2.suse.de"
+Received: from mail2.postal.name ([77.37.20.68]:34767 "EHLO mail2.postal.name"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751441Ab3B0XOS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 18:14:18 -0500
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id C99F5A398E
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 00:14:16 +0100 (CET)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: remove a printk from scan_one_device
-Date: Thu, 28 Feb 2013 00:13:55 +0100
-Message-Id: <1362006835-12622-1-git-send-email-dsterba@suse.cz>
+	id S932405Ab3B1QhZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Feb 2013 11:37:25 -0500
+Date: Thu, 28 Feb 2013 17:30:41 +0100 (CET)
+From: mpbtr@postal.name
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH, RFC] btrfs-progs: require mkfs -f force option to
+ overwrite filesystem or partition table
+In-Reply-To: <20130226070525.GP5551@dastard>
+Message-ID: <alpine.DEB.2.00.1302281724460.8604@file.outer-space.net>
+References: <511D2D2B.8040804@redhat.com> <5124EDAB.5020003@giantdisaster.de> <512BF648.1090602@jp.fujitsu.com> <512BFCD1.3030709@redhat.com> <512C3230.8020305@jp.fujitsu.com> <512C34CC.3070904@redhat.com> <512C3927.2080708@jp.fujitsu.com>
+ <20130226070525.GP5551@dastard>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave pointed out that he saw messages from btrfs although there was no
-such filesystem on his computers. The automatic device scan is called on
-every new blockdevice if the usual distro udev rule set is used. The
-printk introduced in 6f60cbd3ae442c was a remainder from copying
-portions of code from btrfs_get_bdev_and_sb which is used under
-different conditions and the warning makes sense there.
+Hi,
 
-Reported-by: Dave Chinner <dchinner@redhat.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/volumes.c | 1 -
- 1 file changed, 1 deletion(-)
+writing from a user perspective :
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index db72e0c..35bb2d4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -829,7 +829,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 
- 	if (IS_ERR(bdev)) {
- 		ret = PTR_ERR(bdev);
--		printk(KERN_INFO "btrfs: open %s failed\n", path);
- 		goto error;
- 	}
- 
--- 
-1.8.1.4
+The "-f" option would be highly appreciated. I agree with Dave Chinner and 
+I guess most people who operate maschines do as well.
 
+Cheers,
+Markus
+
+On Tue, 26 Feb 2013, Dave Chinner wrote:
+
+> On Tue, Feb 26, 2013 at 01:25:11PM +0900, Tsutomu Itoh wrote:
+>> On 2013/02/26 13:06, Eric Sandeen wrote:
+>>> On 2/25/13 9:55 PM, Tsutomu Itoh wrote:
+>>>> EXPERIMENTAL... It's certainly so.
+>>>> However, I think that we should not add the option that it troubles
+>>>> a lot of people.
+>>>
+>>> Well, I sent it as an RFC.  Chris merged it; I'll defer to his judgement.
+>>
+>> Agreed. So, I sent revert request to Chris :)
+>
+> Where? I want to NACK the revert - this is not a matter to joke
+> about.
+>
+> You're all smart enough to know how to use shell aliases and script
+> variables, so this "need to type -f all the time" argument holds
+> absolutely no weight at all. Further, most of the time you're
+> working on systems that don't hold any data you care about and so
+> the consequences of a mistake are very minor.
+>
+> However, users often make mistakes and we have to take that into
+> account when deciding on the default behaviour of our tools.
+> Tools that destroy data *must* err on the side of conservative
+> default behaviour simply because of the fact that destroying the
+> wrong data can have catastrophic consequences. It's not your data
+> that is being destroyed, but it is data that you have a
+> *responsibility to safeguard* as a filesystem developer.
+>
+> Think about it this way: how happy would an important customer be if
+> they decided that *you* were directly responsible for a major data
+> loss incident because they found it would have been prevented by the
+> "-f" patch? I don't think that the explanation of "it was
+> inconvenient to me" would be an acceptable answer.....
+>
+> Cheers,
+>
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

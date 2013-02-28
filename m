@@ -1,71 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27979 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759953Ab3B0NaB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Feb 2013 08:30:01 -0500
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r1RDU0Go005127
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 13:30:01 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r1RDU07l009501
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 13:30:00 GMT
-Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r1RDU0qO017358
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2013 07:30:00 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix NULL pointer after aborting a transaction
-Date: Wed, 27 Feb 2013 21:28:25 +0800
-Message-Id: <1361971705-8933-3-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1361971705-8933-1-git-send-email-bo.li.liu@oracle.com>
-References: <1361971705-8933-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:16832 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751443Ab3B1KA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Feb 2013 05:00:26 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r1SA0Ot8005880
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 18:00:24 +0800
+Message-ID: <512F2AEB.5000705@cn.fujitsu.com>
+Date: Thu, 28 Feb 2013 18:01:15 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/3] Btrfs: remove unnecessary dget_parent/dput when creating
+ the pending snapshot
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While doing cleanup work on an aborted transaction, we've set
-the global running transaction pointer to NULL _before_ waiting all
-other transaction handles to finish, so others'd hit NULL pointer
-crash when referencing the global running transaction pointer.
+Since we have grabbed the parent inode at the beginning of the
+snapshot creation, and both sync and async snapshot creation
+release it after the pending snapshots are actually created,
+it is safe to access the parent inode directly during the snapshot
+creation, we needn't use dget_parent/dput to fix the parent dentry
+and get the dir inode.
 
-This first sets a hint to avoid new transaction handle joining, then
-waits other existing handles to abort or finish so that we can safely
-set the above global pointer to NULL.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/transaction.c |    8 +++++++-
- 1 files changed, 7 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c       |   10 ++++++----
+ fs/btrfs/transaction.c |    5 +----
+ fs/btrfs/transaction.h |    1 +
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2bbbed5..75c551d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -530,9 +530,10 @@ fail:
+ 	return ret;
+ }
+ 
+-static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+-			   char *name, int namelen, u64 *async_transid,
+-			   bool readonly, struct btrfs_qgroup_inherit *inherit)
++static int create_snapshot(struct btrfs_root *root, struct inode *dir,
++			   struct dentry *dentry, char *name, int namelen,
++			   u64 *async_transid, bool readonly,
++			   struct btrfs_qgroup_inherit *inherit)
+ {
+ 	struct inode *inode;
+ 	struct btrfs_pending_snapshot *pending_snapshot;
+@@ -551,6 +552,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 	pending_snapshot->dentry = dentry;
+ 	pending_snapshot->root = root;
+ 	pending_snapshot->readonly = readonly;
++	pending_snapshot->dir = dir;
+ 	pending_snapshot->inherit = inherit;
+ 
+ 	trans = btrfs_start_transaction(root->fs_info->extent_root, 6);
+@@ -728,7 +730,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+ 		goto out_up_read;
+ 
+ 	if (snap_src) {
+-		error = create_snapshot(snap_src, dentry, name, namelen,
++		error = create_snapshot(snap_src, dir, dentry, name, namelen,
+ 					async_transid, readonly, inherit);
+ 	} else {
+ 		error = create_subvol(BTRFS_I(dir)->root, dentry,
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5878bb4..4caa1fa 100644
+index 955204c..63390a3 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -1387,6 +1387,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root, int err)
- {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
-+	DEFINE_WAIT(wait);
+@@ -1061,7 +1061,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	struct inode *parent_inode;
+ 	struct btrfs_path *path;
+ 	struct btrfs_dir_item *dir_item;
+-	struct dentry *parent;
+ 	struct dentry *dentry;
+ 	struct extent_buffer *tmp;
+ 	struct extent_buffer *old;
+@@ -1118,8 +1117,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	trans->block_rsv = &pending->block_rsv;
  
- 	WARN_ON(trans->use_count > 1);
+ 	dentry = pending->dentry;
+-	parent = dget_parent(dentry);
+-	parent_inode = parent->d_inode;
++	parent_inode = pending->dir;
+ 	parent_root = BTRFS_I(parent_inode)->root;
+ 	record_root_in_trans(trans, parent_root);
  
-@@ -1395,8 +1396,13 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 	spin_lock(&root->fs_info->trans_lock);
- 	list_del_init(&cur_trans->list);
- 	if (cur_trans == root->fs_info->running_transaction) {
-+		root->fs_info->trans_no_join = 1;
-+		spin_unlock(&root->fs_info->trans_lock);
-+		wait_event(cur_trans->writer_wait,
-+			   atomic_read(&cur_trans->num_writers) == 1);
-+
-+		spin_lock(&root->fs_info->trans_lock);
- 		root->fs_info->running_transaction = NULL;
--		root->fs_info->trans_no_join = 0;
- 	}
- 	spin_unlock(&root->fs_info->trans_lock);
+@@ -1267,7 +1265,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, root, ret);
+ fail:
+-	dput(parent);
+ 	trans->block_rsv = rsv;
+ no_free_objectid:
+ 	kfree(new_root_item);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 5afd7b1..5f67fba 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -84,6 +84,7 @@ struct btrfs_trans_handle {
  
+ struct btrfs_pending_snapshot {
+ 	struct dentry *dentry;
++	struct inode *dir;
+ 	struct btrfs_root *root;
+ 	struct btrfs_root *snap;
+ 	struct btrfs_qgroup_inherit *inherit;
 -- 
-1.7.7
-
+1.6.5.2

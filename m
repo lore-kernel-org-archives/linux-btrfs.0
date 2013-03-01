@@ -1,76 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:18363 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:58280 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751151Ab3CARhL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Mar 2013 12:37:11 -0500
-Message-ID: <5130E745.9010306@redhat.com>
-Date: Fri, 01 Mar 2013 11:37:09 -0600
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
+	id S1751436Ab3CAS1n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Mar 2013 13:27:43 -0500
+Date: Fri, 1 Mar 2013 10:27:41 -0800
+From: Zach Brown <zab@redhat.com>
 To: Anand Jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs-progs: traverse to backup super-block only when
  indicated
-References: <5127022B.6070200@oracle.com> <1362132800-29563-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <20130301182741.GW1658@lenny.home.zabbo.net>
+References: <5127022B.6070200@oracle.com>
+ <1362132800-29563-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1362132800-29563-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/1/13 4:13 AM, Anand Jain wrote:
+On Fri, Mar 01, 2013 at 06:13:20PM +0800, Anand Jain wrote:
 > This patch adds 4th parameter to btrfs_scan_one_device()
 > which when set to non-zero value will traverse to check
 > backup super-block.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  btrfs-show.c      |  2 +-
->  btrfsctl.c        |  2 +-
->  cmds-device.c     |  4 ++--
->  cmds-filesystem.c |  4 ++--
->  cmds-replace.c    |  2 +-
->  disk-io.c         | 11 +++++++----
->  disk-io.h         |  3 ++-
->  find-root.c       |  6 +++---
->  utils.c           | 19 ++++++++++---------
->  utils.h           |  6 +++---
->  volumes.c         |  4 ++--
->  volumes.h         |  2 +-
->  12 files changed, 35 insertions(+), 30 deletions(-)
-> 
-> diff --git a/btrfs-show.c b/btrfs-show.c
-> index 8210fd2..7b1a35f 100644
-> --- a/btrfs-show.c
-> +++ b/btrfs-show.c
-> @@ -138,7 +138,7 @@ int main(int ac, char **av)
->  		search = av[optind];
->  	}
->  
-> -	ret = btrfs_scan_one_dir("/dev", 0);
-> +	ret = btrfs_scan_one_dir("/dev", 0, 1);
 
-It might be helpful to define some self-documenting macros
-for the 0/1 boolean args, which otherwise are pretty nonobvious.
+Cool, thanks for working on this.
 
-i.e. BTRFS_SCAN_ALL_SB / BTRFS_SCAN_PRIMARY_SB or something
-similar, also for the "run_ioctls" arg - maybe BTRFS_SCAN_REGISTER etc?
+How'd you decide which callers wanted to scan the backups and which
+didn't?  Where are the options to force checking the backups?  This
+should be discussed in the commit message.
 
-btrfs_scan_one_dir("/dev/", BTRFS_SCAN_REGISTER, BTRFS_SCAN_PRIMARY_SB)
+>  	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+> +		if (i > 0 && !rd_sb_mirror)
+> +			break;
 
-is clearer than:
+FWIW, I probably would have done something like
 
-btrfs_scan_one_dir("/dev/", 1, 0);
+	max = rd_sb_mirror ? BTRFS_SUPER_MIRROR_MAX : 1;
+  	for (i = 0; i < max; i++) {
 
-Or maybe a flags var:
+> -		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1)))
+> +		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1, 0)))
 
-flags = BTRFS_SCAN_REGISTER | BTRFS_SCAN_PRIMARY_SB;
-btrfs_scan_one_dir("/dev/", flags)
+I agree with Eric.  The ", 1, 0" isn't great.  I guess I'd go for flags
+(SCAN_REGISTER|SCAN_BACKUPS), but don't feel strongly about it.
+Whatever feels least gross to you ;).
 
-Or, depending on how things get called, maybe self-named wrappers:
-
-btrfs_scan_one_dir_primary("/dev");
-
-I think anything is better than a string of 0's & 1's :)
-
--Eric
-
+- z 

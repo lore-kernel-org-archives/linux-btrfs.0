@@ -1,172 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f181.google.com ([209.85.128.181]:62962 "EHLO
-	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751462Ab3CBGYq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 01:24:46 -0500
-Received: by mail-ve0-f181.google.com with SMTP id d10so3480603vea.40
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Mar 2013 22:24:45 -0800 (PST)
+Received: from mail-wg0-f51.google.com ([74.125.82.51]:65433 "EHLO
+	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752461Ab3CBVHQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 16:07:16 -0500
+Received: by mail-wg0-f51.google.com with SMTP id 8so3272410wgl.18
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Mar 2013 13:07:14 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <kgklb0$g6a$1@ger.gmane.org>
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com>
-	<CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com>
-	<CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com>
-	<201302261130.31494.Martin@lichtvoll.de>
-	<CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com>
-	<20130227100558.37d86d82@natsu>
-	<kgkhcp$dfg$1@ger.gmane.org>
-	<kgklb0$g6a$1@ger.gmane.org>
-Date: Fri, 1 Mar 2013 23:24:45 -0700
-Message-ID: <CALFpzo4JnF=OXcFVCDCLAsj61QpG2Mckfd5EXpmJUu0vpT6s5w@mail.gmail.com>
-Subject: Re: lvm volume like support
-From: Marcus Sorensen <shadowsor@gmail.com>
-To: Alex Elsayed <eternaleye@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
+References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
+	<20130220175410.GB2062@localhost.localdomain>
+	<CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+	<CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+	<CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+	<20130225172719.GA2434@localhost.localdomain>
+	<CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
+Date: Sat, 2 Mar 2013 23:07:14 +0200
+Message-ID: <CAOcd+r1C_tHGzZ3WQejkW3xycFhNLisOpk7BtUv70pog5Og6xQ@mail.gmail.com>
+Subject: Re: basic questions regarding COW in Btrfs
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Aastha Mehta <aasthakm@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-That's great, but the issue is that usually the block device version
-performs better than just creating a file and using it as a raw image
-or loop device. Creating a file, then running it through a SCSI target
-seems like it's going in the opposite direction.
+Hi Josef,
+I hope it's ok to piggy back on this thread for the following question:
 
-On Wed, Feb 27, 2013 at 2:57 AM, Alex Elsayed <eternaleye@gmail.com> wrote:
-> Alex Elsayed wrote:
+I see that in btrfs_cross_ref_exist()=>check_committed_ref() path,
+there is the following check:
+
+if (btrfs_extent_generation(leaf, ei) <=
+    btrfs_root_last_snapshot(&root->root_item))
+	goto out;
+
+So this basically means that after we have taken a snap of a subvol,
+then all subvol's extents must be COW'ed, even if we delete the snap a
+minute later.
+I wonder, why is that so?
+Is this because file extents can be shared indirectly, like when we
+create a snap, we only COW the root and only mark all root's
+*immediate* children shared in the extent tree?
+Can the new backref walking code be used here to check more
+accurately, if the extent is shared by anybody else?
+
+Thanks,
+Alex.
+
+
+
+On Mon, Feb 25, 2013 at 9:00 PM, Aastha Mehta <aasthakm@gmail.com> wrote:
+> Ah okay, I now see how it works. Thanks a lot for your response.
 >
->> Roman Mamedov wrote:
+> Regards,
+> Aastha.
+>
+>
+> On 25 February 2013 18:27, Josef Bacik <jbacik@fusionio.com> wrote:
+>> On Mon, Feb 25, 2013 at 08:15:40AM -0700, Aastha Mehta wrote:
+>>> Thanks again Josef.
+>>>
+>>> I understood that cow_file_range is called for a regular file. Just to
+>>> clarify, in cow_file_range is cow done at the time of reserving
+>>> extents in the extent btree for the io to be done in this delalloc? I
+>>> see the following comment above find_free_extent() which is called
+>>> while trying to reserve extents:
+>>>
+>>> /*
+>>>  * walks the btree of allocated extents and find a hole of a given size.
+>>>  * The key ins is changed to record the hole:
+>>>  * ins->objectid == block start
+>>>  * ins->flags = BTRFS_EXTENT_ITEM_KEY
+>>>  * ins->offset == number of blocks
+>>>  * Any available blocks before search_start are skipped.
+>>>  */
+>>>
+>>> This seems to be the only place where a cow might be done, because a
+>>> key is being inserted into an extent which modifies it.
+>>>
 >>
->>> On Wed, 27 Feb 2013 13:23:23 +1100
->>> "Fajar A. Nugraha" <list@fajar.net> wrote:
->
-> <snip>
->
->> This could be pretty easily put into a shell script that uses du -b and
->> manually pokes configfs instead of calling tcm_node, and it'd be able to
->> run without any nonstandard userspace dependencies.
->
-> Just for fun, I decided to put my money where my mouth is and implement
-> a quick scsi-target-losetup that actually worked, both for creation and
-> deletion. Here it is:
->
-> ---cut---
->
-> #!/bin/bash
->
-> gen_naa() {
->     local UUID="$( uuidgen -r )"
->     UUID="${UUID//-/}"
->     UUID="${UUID:0:9}"
->     echo "naa.6001405${UUID}"
-> }
->
-> setup() {
->     local FILE
->     local INPUT_NAME
->     local NAME
->     local BACKEND_IDX
->     local TRANSPORT_IDX
->     declare -a NAA
->     FILE="${1}"
->     INPUT_NAME="${2}"
->     NAME="${INPUT_NAME//\//_}"
->     BACKEND_IDX='-1'
->     TRANSPORT_IDX='-1'
->
->     if [[ $UID -ne 0 ]]; then
->         echo "You must be root in order to set up a lioloop device" >&2
->         exit 1
->     fi
->
->     if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
->         echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
->     fi
->
->     declare SIZE="$(du -b "${FILE}")"
->     SIZE="${SIZE/[^0123456789]*}"
->
->     # Load the scsi target core and backends
->     modprobe target_core_mod >/dev/null 2>&1
->
->     while BACKEND_IDX=$((BACKEND_IDX + 1)); do
->         if [[ -d "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" ]]; then
->             echo "A backstore with the name '${NAME}' already exists" >&2
->             exit 1
->         elif ! [[ -d /sys/kernel/config/target/core/fileio_${BACKEND_IDX} ]]; then
->     #        mkdir -p "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}"
->     # Tell it where the file is and how big it is
->             tcm_node --establishdev "fileio_${BACKEND_IDX}/${NAME}" \
->                 "fd_dev_name=${FILE},fd_dev_size=${SIZE}"
->     # Give it a unique serial
->             tcm_node --setunitserialwithmd "fileio_${BACKEND_IDX}/${NAME}" "$(uuidgen -r)"
->             break
->         fi
->     done
->
->     # Load the local scsi frontend transport
->     modprobe tcm_loop >/dev/null 2>&1
->     mkdir -p /sys/kernel/config/target/loopback
->
->     NAA=( "$(gen_naa)" "$(gen_naa)" )
->     # Some setup so you have a place to put LUNs
->     mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1"
->     echo "${NAA[1]}" > "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/nexus"
->
->     # Create a fresh LUN...
->     while TRANSPORT_IDX=$((TRANSPORT_IDX + 1)); do
->         if ! [[ -d "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}" ]]; then
->             mkdir -p "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
->     # ...and map the file to it.
->             ln -s "/sys/kernel/config/target/core/fileio_${BACKEND_IDX}/${NAME}" \
->                 "/sys/kernel/config/target/loopback/${NAA[0]}/tpgt_1/lun/lun_${TRANSPORT_IDX}"
->             break
->         fi
->     done
-> }
->
-> teardown() {
->     local INPUT_NAME="${1}"
->     local NAME="${INPUT_NAME//\//_}"
->
->     if [[ $UID -ne 0 ]]; then
->         echo "You must be root in order to tear down a lioloop device" >&2
->         exit 1
->     fi
->
->     if [[ "${NAME}" != "${INPUT_NAME}" ]]; then
->         echo "The chosen name '${INPUT_NAME}' contained slashes, using '${NAME}' instead" >&2
->     fi
->
->     local FOUND=''
->     for LUN in /sys/kernel/config/target/loopback/*/tpgt_1/lun/lun_*; do
->         if [[ -L "${LUN}/${NAME}" ]]; then
->             rm -f "${LUN}/${NAME}"
->             FOUND=1
->         fi
->     done
->
->     if [[ -z "${FOUND}" ]]; then
->         echo "No lioloop with the name '${NAME}' was found" >&2
->         return
->     fi
->
->     for BACKSTORE in /sys/kernel/config/target/core/fileio_*; do
->         if [[ -d "${BACKSTORE}/${NAME}" ]]; then
->             rmdir "${BACKSTORE}/${NAME}"
->         fi
->     done
-> }
->
-> if [[ "$1" == '-d' ]]; then
->     shift;
->     for name in "$@"; do
->         teardown "${name}"
->     done
-> else
->     setup "$@"
-> fi
->
->
->
+>> The key isn't inserted at this time, it's just returned with those values for us
+>> to do as we please.  There is no update of the btree until
+>> insert_reserved_extent/btrfs_mark_extent_written in btrfs_finish_ordered_io.
+>> Thanks,
+>>
+>> Josef
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

@@ -1,32 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35383 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751543Ab3CAXfv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Mar 2013 18:35:51 -0500
-Date: Sat, 2 Mar 2013 00:35:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Zach Brown <zab@redhat.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: try harder to allocate raid56 stripe cache
-Message-ID: <20130301233548.GX27541@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1362150180-13792-1-git-send-email-dsterba@suse.cz>
- <20130301181827.GV1658@lenny.home.zabbo.net>
+Received: from moltke.seatribe.se ([178.63.100.209]:53307 "EHLO
+	moltke.seatribe.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751691Ab3CBApT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Mar 2013 19:45:19 -0500
+Date: Sat, 2 Mar 2013 01:45:02 +0100 (CET)
+From: Fredrik Tolf <fredrik@dolda2000.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+cc: linux-btrfs@vger.kernel.org
+Subject: Re: Changing allocation mode
+In-Reply-To: <20130227012832.GB7028@liubo>
+Message-ID: <alpine.DEB.2.02.1303020144341.8295@shack.dolda2000.com>
+References: <alpine.DEB.2.02.1302230138220.8295@shack.dolda2000.com> <20130227012832.GB7028@liubo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130301181827.GV1658@lenny.home.zabbo.net>
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 01, 2013 at 10:18:27AM -0800, Zach Brown wrote:
-> > -	table = kzalloc(sizeof(*table) + sizeof(*h) * num_entries, GFP_NOFS);
-> 
-> > +	table = kzalloc(table_size, GFP_KERNEL | __GFP_NOWARN | __GFP_REPEAT);
-> 
-> I guess this lost _NOFS on purpose because it was always being done in
-> mount?  But if it's done on-demand as Chris wanted it might be called
-> from paths that'd need _NOFS again?
+On Wed, 27 Feb 2013, Liu Bo wrote:
+> On Sat, Feb 23, 2013 at 01:46:03AM +0100, Fredrik Tolf wrote:
+>> If I were transferring the data to a new filesystem on mdraid, the
+>> procedure I would use for that last portion of the data would be to
+>> remove one disk only from either of the old mdraid mirror arrays
+>> (putting that array in degraded mode), and then create a new mirror
+>> in degraded mode with only that disk, add that mirror to the new
+>> filesystem, expand it, copy the last data, and then delete the old
+>> mirrors, moving the rest of the disks to the new filesystem.
+>
+> That sounds like using seed device, although seed disk is designed for another
+> different purpose.
 
-Right, then better change it now than to forget to do it later.
+It does? I must admit I don't see quite how that would be applicable.
 
-david
+--
+
+Fredrik Tolf

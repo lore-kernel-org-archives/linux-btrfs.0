@@ -1,44 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:53739 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752536Ab3CBSse convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 13:48:34 -0500
-Received: from mfilter5-d.gandi.net (mfilter5-d.gandi.net [217.70.178.132])
-	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 219A9A80BE
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Mar 2013 19:48:33 +0100 (CET)
-Received: from relay3-d.mail.gandi.net ([217.70.183.195])
-	by mfilter5-d.gandi.net (mfilter5-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id bVJaNPJEZZcQ for <linux-btrfs@vger.kernel.org>;
-	Sat,  2 Mar 2013 19:48:31 +0100 (CET)
-Received: from [192.168.1.66] (AMontpellier-256-1-187-75.w92-143.abo.wanadoo.fr [92.143.82.75])
-	(Authenticated sender: swami@petaramesh.org)
-	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 7E465A80B1
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Mar 2013 19:48:31 +0100 (CET)
-Message-ID: <5132497E.2010702@petaramesh.org>
-Date: Sat, 02 Mar 2013 19:48:30 +0100
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:58686 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752500Ab3CBVPz convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 16:15:55 -0500
+Received: by mail-wg0-f42.google.com with SMTP id 12so644312wgh.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Mar 2013 13:15:53 -0800 (PST)
 MIME-Version: 1.0
-To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
-Subject: BTRFS quota support
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <512B3AE7.9090208@cn.fujitsu.com>
+References: <51249468.6010004@cn.fujitsu.com>
+	<CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com>
+	<512B3AE7.9090208@cn.fujitsu.com>
+Date: Sat, 2 Mar 2013 23:15:53 +0200
+Message-ID: <CAOcd+r2pwqVP6anH_J6fR_b-feOfGfzBHopGVAPq0AZ4VoW5TQ@mail.gmail.com>
+Subject: Re: [PATCH 2/3] Btrfs: fix the deadlock between the transaction
+ start/attach and commit
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: miaox@cn.fujitsu.com
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi folks,
+Hi Miao,
+thanks for the great ASCII graphics and detailed explanation!
 
-Finaly following general advice received here, I could manage to upgrade
-all of my BTRFS boxes to the next Ubuntu Raring kernel (3.8.0-9), so I
-assume I now have something decently new ;-)
+Alex.
 
-I'm now looking for quota support, but, even though the wiki page and
-Wikipedia english page says BTRFS now has quota support, I couldn't find
-any documentation or specific information about it.
 
-If such documentation exists, I would appreciate a pointer...
-
-TIA.
-
--- 
-Sw�mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
-
+On Mon, Feb 25, 2013 at 12:20 PM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+> On sun, 24 Feb 2013 21:49:55 +0200, Alex Lyakas wrote:
+>> Hi Miao,
+>> can you please explain your solution a bit more.
+>>
+>> On Wed, Feb 20, 2013 at 11:16 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>>> Now btrfs_commit_transaction() does this
+>>>
+>>> ret = btrfs_run_ordered_operations(root, 0)
+>>>
+>>> which async flushes all inodes on the ordered operations list, it introduced
+>>> a deadlock that transaction-start task, transaction-commit task and the flush
+>>> workers waited for each other.
+>>> (See the following URL to get the detail
+>>>  http://marc.info/?l=linux-btrfs&m=136070705732646&w=2)
+>>>
+>>> As we know, if ->in_commit is set, it means someone is committing the
+>>> current transaction, we should not try to join it if we are not JOIN
+>>> or JOIN_NOLOCK, wait is the best choice for it. In this way, we can avoid
+>>> the above problem. In this way, there is another benefit: there is no new
+>>> transaction handle to block the transaction which is on the way of commit,
+>>> once we set ->in_commit.
+>>>
+>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>>> ---
+>>>  fs/btrfs/transaction.c |   17 ++++++++++++++++-
+>>>  1 files changed, 16 insertions(+), 1 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>>> index bc2f2d1..71b7e2e 100644
+>>> --- a/fs/btrfs/transaction.c
+>>> +++ b/fs/btrfs/transaction.c
+>>> @@ -51,6 +51,14 @@ static noinline void switch_commit_root(struct btrfs_root *root)
+>>>         root->commit_root = btrfs_root_node(root);
+>>>  }
+>>>
+>>> +static inline int can_join_transaction(struct btrfs_transaction *trans,
+>>> +                                      int type)
+>>> +{
+>>> +       return !(trans->in_commit &&
+>>> +                type != TRANS_JOIN &&
+>>> +                type != TRANS_JOIN_NOLOCK);
+>>> +}
+>>> +
+>>>  /*
+>>>   * either allocate a new transaction or hop into the existing one
+>>>   */
+>>> @@ -86,6 +94,10 @@ loop:
+>>>                         spin_unlock(&fs_info->trans_lock);
+>>>                         return cur_trans->aborted;
+>>>                 }
+>>> +               if (!can_join_transaction(cur_trans, type)) {
+>>> +                       spin_unlock(&fs_info->trans_lock);
+>>> +                       return -EBUSY;
+>>> +               }
+>>>                 atomic_inc(&cur_trans->use_count);
+>>>                 atomic_inc(&cur_trans->num_writers);
+>>>                 cur_trans->num_joined++;
+>>> @@ -360,8 +372,11 @@ again:
+>>>
+>>>         do {
+>>>                 ret = join_transaction(root, type);
+>>> -               if (ret == -EBUSY)
+>>> +               if (ret == -EBUSY) {
+>>>                         wait_current_trans(root);
+>>> +                       if (unlikely(type == TRANS_ATTACH))
+>>> +                               ret = -ENOENT;
+>>> +               }
+>>
+>> So I understand that instead of incrementing num_writes and joining
+>> the current transaction, you do not join and wait for the current
+>> transaction to unblock.
+>
+> More specifically，TRANS_START、TRANS_USERSPACE and TRANS_ATTACH can not
+> join and just wait for the current transaction to unblock if ->in_commit
+> is set.
+>
+>> Which task in Josef's example
+>> http://marc.info/?l=linux-btrfs&m=136070705732646&w=2
+>> task 1, task 2 or task 3 is the one that will not join the
+>> transaction, but instead wait?
+>
+> Task1 will not join the transaction, in this way, async inode flush
+> won't run, and then task3 won't do anything.
+>
+> Before applying the patch:
+> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
+> (Task1)                                 (Task2)                         (Task3)         -- the name in Josef's example
+> btrfs_start_transaction()
+>  |->may_wait_transaction()
+>  |  (return 0)
+>  |                                      btrfs_commit_transaction()
+>  |                                       |->set ->in_commit and
+>  |                                       |  blocked to 1
+>  |                                       |->wait writers to be 1
+>  |                                       |  (writers is 1)
+>  |->join_transaction()                   |
+>  |  (writers is 2)                       |
+>  |->btrfs_commit_transaction()           |
+>      |                                   |->set trans_no_join to 1
+>      |                                   |  (close join transaction)
+>      |->btrfs_run_ordered_operations     |
+>         (Those ordered operations        |
+>          are added when releasing        |
+>          file)                           |
+>          |->async inode flush()          |
+>          |->wait_flush_comlete()         |
+>                                          |                              work_loop()
+>                                          |                               |->run_work()
+>                                          |                                   |->btrfs_join_transaction()
+>                                          |                                       |->wait_current_trans()
+>                                          |->wait writers to be 1
+>
+> This three tasks waited for each other.
+>
+> After applying this patch:
+> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
+> (Task1)                                 (Task2)                         (Task3)
+> btrfs_start_transaction()
+>  |->may_wait_transaction()
+>  |  (return 0)
+>  |                                      btrfs_commit_transaction()
+>  |                                       |->set ->in_commit and
+>  |                                       |  blocked to 1
+>  |                                       |->wait writers to be 1
+>  |                                       |  (writers is 1)
+>  |->join_transaction() fail              |
+>  |  (return -EBUSY, writers is still 1)  |
+>  |->wait_current_trans()                 |
+>                                          |->set trans_no_join to 1
+>                                          |  (close join transaction)
+>                                          |->wait writers to be 1
+>                                          |->continue committing
+>                                                                         (Task3 does nothing)
+>> Also, I think I don't fully understand Josef's example. What is
+>> preventing from async flushing to complete?
+>> Is task 3 waiting because trans_no_join is set?
+>> Is task 3 the one that actually does the delalloc flush?
+>
+> See above.
+>
+> Thanks
+> Miao
+>
+>>
+>> Thanks,
+>> Alex.
+>>
+>>
+>>
+>>
+>>
+>>
+>>>         } while (ret == -EBUSY);
+>>>
+>>>         if (ret < 0) {
+>>> --
+>>> 1.6.5.2
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>

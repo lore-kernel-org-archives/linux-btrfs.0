@@ -1,65 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40195 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750819Ab3CBHOz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 02:14:55 -0500
-From: Jerry Snitselaar <jerry.snitselaar@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:54024 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751836Ab3CBKIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 2 Mar 2013 05:08:00 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UBjMZ-0005lP-T8
+	for linux-btrfs@vger.kernel.org; Sat, 02 Mar 2013 11:08:19 +0100
+Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Mar 2013 11:08:19 +0100
+Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Mar 2013 11:08:19 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com, dsterba@suse.cz, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: return EPERM in btrfs_rm_device()
-Date: Sat,  2 Mar 2013 00:13:59 -0700
-Message-Id: <1362208439-19245-1-git-send-email-jerry.snitselaar@oracle.com>
+From: Gabriel de Perthuis <g2p.code@gmail.com>
+Subject: Permanent uncancellable balance
+Date: Sat, 2 Mar 2013 10:07:45 +0000 (UTC)
+Message-ID: <kgsj1h$oo1$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently there are error paths in btrfs_rm_device() where EINVAL is
-returned telling the user they passed an invalid argument even though
-they passed a valid device. Change to return EPERM instead as the
-operation is not permitted.
+Hello,
+I have a filesystem that has become unusable because of a balance I can't 
+stop. It is very close to full, and the balance is preventing me from 
+growing it.
 
-Signed-off-by: Jerry Snitselaar <jerry.snitselaar@oracle.com>
----
- fs/btrfs/volumes.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+It was started like this:
+sudo btrfs filesystem balance start -v -musage=60 -dusage=60 /srv/backups
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5cbb7f4..3e1586c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1392,14 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
- 		printk(KERN_ERR "btrfs: unable to go below four devices "
- 		       "on raid10\n");
--		ret = -EINVAL;
-+		ret = -EPERM;
- 		goto out;
- 	}
- 
- 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) && num_devices <= 2) {
- 		printk(KERN_ERR "btrfs: unable to go below two "
- 		       "devices on raid1\n");
--		ret = -EINVAL;
-+		ret = -EPERM;
- 		goto out;
- 	}
- 
-@@ -1449,14 +1449,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 
- 	if (device->is_tgtdev_for_dev_replace) {
- 		pr_err("btrfs: unable to remove the dev_replace target dev\n");
--		ret = -EINVAL;
-+		ret = -EPERM;
- 		goto error_brelse;
- 	}
- 
- 	if (device->writeable && root->fs_info->fs_devices->rw_devices == 1) {
- 		printk(KERN_ERR "btrfs: unable to remove the only writeable "
- 		       "device\n");
--		ret = -EINVAL;
-+		ret = -EPERM;
- 		goto error_brelse;
- 	}
- 
--- 
-1.8.2.rc1
+It has been stuck at 0% across reboots and kernel upgrades (currently on 
+3.8.1), and cancelling it had no effect:
+
+Balance on '/srv/backups' is running
+0 out of about 5 chunks balanced (95 considered), 100% left
+
+According to atop it is writing but not reading anything.
+Unmounting never terminates, so does remounting ro, the only way to 
+temporarilly kill it is to reboot. SIGKILL has no effect either. Is there 
+*any* way I can get rid of it?
 

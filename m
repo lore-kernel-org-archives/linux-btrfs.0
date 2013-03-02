@@ -1,74 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:54309 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752156Ab3CBSEI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 13:04:08 -0500
-Date: Sat, 2 Mar 2013 20:04:04 +0200
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Jerry Snitselaar <jerry.snitselaar@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com, dsterba@suse.cz,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: return EPERM in btrfs_rm_device()
-Message-ID: <20130302180404.GA1991@zambezi.lan>
-References: <1362208439-19245-1-git-send-email-jerry.snitselaar@oracle.com>
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:53739 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752536Ab3CBSse convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 13:48:34 -0500
+Received: from mfilter5-d.gandi.net (mfilter5-d.gandi.net [217.70.178.132])
+	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 219A9A80BE
+	for <linux-btrfs@vger.kernel.org>; Sat,  2 Mar 2013 19:48:33 +0100 (CET)
+Received: from relay3-d.mail.gandi.net ([217.70.183.195])
+	by mfilter5-d.gandi.net (mfilter5-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id bVJaNPJEZZcQ for <linux-btrfs@vger.kernel.org>;
+	Sat,  2 Mar 2013 19:48:31 +0100 (CET)
+Received: from [192.168.1.66] (AMontpellier-256-1-187-75.w92-143.abo.wanadoo.fr [92.143.82.75])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 7E465A80B1
+	for <linux-btrfs@vger.kernel.org>; Sat,  2 Mar 2013 19:48:31 +0100 (CET)
+Message-ID: <5132497E.2010702@petaramesh.org>
+Date: Sat, 02 Mar 2013 19:48:30 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1362208439-19245-1-git-send-email-jerry.snitselaar@oracle.com>
+To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Subject: BTRFS quota support
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 02, 2013 at 12:13:59AM -0700, Jerry Snitselaar wrote:
-> Currently there are error paths in btrfs_rm_device() where EINVAL is
-> returned telling the user they passed an invalid argument even though
-> they passed a valid device. Change to return EPERM instead as the
-> operation is not permitted.
-> 
-> Signed-off-by: Jerry Snitselaar <jerry.snitselaar@oracle.com>
-> ---
->  fs/btrfs/volumes.c | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 5cbb7f4..3e1586c 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1392,14 +1392,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->  	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
->  		printk(KERN_ERR "btrfs: unable to go below four devices "
->  		       "on raid10\n");
-> -		ret = -EINVAL;
-> +		ret = -EPERM;
->  		goto out;
->  	}
->  
->  	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) && num_devices <= 2) {
->  		printk(KERN_ERR "btrfs: unable to go below two "
->  		       "devices on raid1\n");
-> -		ret = -EINVAL;
-> +		ret = -EPERM;
->  		goto out;
->  	}
->  
-> @@ -1449,14 +1449,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->  
->  	if (device->is_tgtdev_for_dev_replace) {
->  		pr_err("btrfs: unable to remove the dev_replace target dev\n");
-> -		ret = -EINVAL;
-> +		ret = -EPERM;
->  		goto error_brelse;
->  	}
->  
->  	if (device->writeable && root->fs_info->fs_devices->rw_devices == 1) {
->  		printk(KERN_ERR "btrfs: unable to remove the only writeable "
->  		       "device\n");
-> -		ret = -EINVAL;
-> +		ret = -EPERM;
+Hi folks,
 
-I don't think returning EPERM in these cases is any better than EINVAL.
-FWIW, many other btrfs ioctls, especially balance, suffer from this as
-well.  What we really need is some kind of error message delivery
-system, but that's not going to happen any time soon...
+Finaly following general advice received here, I could manage to upgrade
+all of my BTRFS boxes to the next Ubuntu Raring kernel (3.8.0-9), so I
+assume I now have something decently new ;-)
 
-Thanks,
+I'm now looking for quota support, but, even though the wiki page and
+Wikipedia english page says BTRFS now has quota support, I couldn't find
+any documentation or specific information about it.
 
-		Ilya
+If such documentation exists, I would appreciate a pointer...
+
+TIA.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

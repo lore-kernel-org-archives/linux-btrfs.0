@@ -1,46 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0.parallels.com ([199.115.104.20]:49496 "EHLO
-	mx0.parallels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752946Ab3CCMcb convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 07:32:31 -0500
-From: James Bottomley <jbottomley@parallels.com>
-To: Chris Mason <chris.mason@fusionio.com>
-CC: "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: fix compile failure on parisc
-Date: Sun, 3 Mar 2013 12:22:53 +0000
-Message-ID: <1362313371.3057.28.camel@dabdike.int.hansenpartnership.com>
-Content-Type: text/plain; charset=US-ASCII
+Received: from dkim2.fusionio.com ([66.114.96.54]:34240 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753120Ab3CCMcw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 07:32:52 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id D2E559A069B
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 Mar 2013 05:32:51 -0700 (MST)
+Date: Sun, 3 Mar 2013 07:32:49 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        "JBottomley@parallels.com" <JBottomley@parallels.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Subject: [GIT PULL] Btrfs fixup
+Message-ID: <20130303123249.GB18135@shiny.masoncoding.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-x86 seems to include vmalloc.h by default along some of its arch paths,
-but most other architectures don't, leading to this compile failure:
+Hi Linus,
 
-fs/btrfs/raid56.c: In function 'btrfs_alloc_stripe_hash_table':
-fs/btrfs/raid56.c:206: error: implicit declaration of function 'vzalloc'
-fs/btrfs/raid56.c:206: warning: assignment makes pointer from integer
-without a cast
-fs/btrfs/raid56.c:226: error: implicit declaration of function 'vfree'
-make[2]: *** [fs/btrfs/raid56.o] Error 1
+Geert and James both sent this one in, sorry guys.
 
-Fix this by adding vmalloc.h explicitly to the includes list
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Geert Uytterhoeven (1) commits (+1/-0):
+    btrfs/raid56: Add missing #include <linux/vmalloc.h>
 
----
+Total: (1) commits (+1/-0)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 0722205..1f0f57e 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -30,6 +30,7 @@
- #include <linux/raid/pq.h>
- #include <linux/hash.h>
- #include <linux/list_sort.h>
-+#include <linux/vmalloc.h>
- #include <linux/raid/xor.h>
- #include <asm/div64.h>
- #include "compat.h"
-
+ fs/btrfs/raid56.c | 1 +
+ 1 file changed, 1 insertion(+)

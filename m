@@ -1,56 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:65433 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752461Ab3CBVHQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2013 16:07:16 -0500
-Received: by mail-wg0-f51.google.com with SMTP id 8so3272410wgl.18
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Mar 2013 13:07:14 -0800 (PST)
+Received: from mail-ie0-f172.google.com ([209.85.223.172]:47564 "EHLO
+	mail-ie0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753537Ab3CCPll (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 10:41:41 -0500
+Received: by mail-ie0-f172.google.com with SMTP id c10so5297132ieb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Mar 2013 07:41:41 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
 References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
-	<20130220175410.GB2062@localhost.localdomain>
-	<CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
-	<CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
-	<CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
-	<20130225172719.GA2434@localhost.localdomain>
-	<CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
-Date: Sat, 2 Mar 2013 23:07:14 +0200
-Message-ID: <CAOcd+r1C_tHGzZ3WQejkW3xycFhNLisOpk7BtUv70pog5Og6xQ@mail.gmail.com>
+ <20130220175410.GB2062@localhost.localdomain> <CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+ <CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+ <CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+ <20130225172719.GA2434@localhost.localdomain> <CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Sun, 3 Mar 2013 16:41:18 +0100
+Message-ID: <CAEx9m454t17kngaKv+PWL2V=DLYr6viT6J_eWEtHFfc10csioQ@mail.gmail.com>
 Subject: Re: basic questions regarding COW in Btrfs
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: Aastha Mehta <aasthakm@gmail.com>,
+Cc: Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Josef,
-I hope it's ok to piggy back on this thread for the following question:
 
-I see that in btrfs_cross_ref_exist()=>check_committed_ref() path,
-there is the following check:
+I have some more questions following up on my previous e-mails.
+I now do somewhat understand the place where extent entries get
+cow'ed. But I am unclear about the order of operations.
 
-if (btrfs_extent_generation(leaf, ei) <=
-    btrfs_root_last_snapshot(&root->root_item))
-	goto out;
+Is it correct that the data extent written first, then the pointer in
+the indirect block needs to be updated, so then it is cowed and
+written to disk and so on recursively up the tree? Or is the entire
+path from leaf to node that is going to be affected by the write cowed
+first and then all the cowed extents are written to the disk and then
+the rest of the metadata pointers, (for example, in checksum tree,
+extent tree, etc., I am not sure about this)?
 
-So this basically means that after we have taken a snap of a subvol,
-then all subvol's extents must be COW'ed, even if we delete the snap a
-minute later.
-I wonder, why is that so?
-Is this because file extents can be shared indirectly, like when we
-create a snap, we only COW the root and only mark all root's
-*immediate* children shared in the extent tree?
-Can the new backref walking code be used here to check more
-accurately, if the extent is shared by anybody else?
+Also, I need to understand specifically how the data (leaf nodes) of a
+file is written to disk v/s the metadata including the indirect nodes
+of the file. In extent_writepage I only know the pages of a file that
+are to be written. I guess, I can identify metadata pages based on the
+inode of the page's owner. But is it possible to distinguish the pages
+available in extent_writepage path as belonging to the leaf node or
+internal node for a file? If it cannot be identified at this point,
+where earlier in the path can this be decided?
 
-Thanks,
-Alex.
+Many thanks,
+Aastha.
 
-
-
-On Mon, Feb 25, 2013 at 9:00 PM, Aastha Mehta <aasthakm@gmail.com> wrote:
+On 25 February 2013 20:00, Aastha Mehta <aasthakm@gmail.com> wrote:
 > Ah okay, I now see how it works. Thanks a lot for your response.
 >
 > Regards,
@@ -86,7 +85,3 @@ On Mon, Feb 25, 2013 at 9:00 PM, Aastha Mehta <aasthakm@gmail.com> wrote:
 >> Thanks,
 >>
 >> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

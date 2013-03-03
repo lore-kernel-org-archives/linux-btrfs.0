@@ -1,65 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:56640 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754544Ab3CDAym (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 19:54:42 -0500
-From: Alexandre Oliva <oliva@gnu.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: collapse concurrent forced allocations
-References: <orvc9lqsgt.fsf@livre.home> <orobfdqhbu.fsf@livre.home>
-	<20130222155403.GC2062@localhost.localdomain>
-	<orvc9jp0zu.fsf@livre.home>
-Date: Sun, 03 Mar 2013 21:54:05 -0300
-In-Reply-To: <orvc9jp0zu.fsf@livre.home> (Alexandre Oliva's message of "Sat,
-	23 Feb 2013 11:18:29 -0300")
-Message-ID: <orr4jwnfwy.fsf@livre.home>
+Received: from mail-we0-f182.google.com ([74.125.82.182]:62978 "EHLO
+	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753252Ab3CCXwq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 18:52:46 -0500
+Received: by mail-we0-f182.google.com with SMTP id t57so4075364wey.27
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Mar 2013 15:52:44 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAEx9m454t17kngaKv+PWL2V=DLYr6viT6J_eWEtHFfc10csioQ@mail.gmail.com>
+References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
+	<20130220175410.GB2062@localhost.localdomain>
+	<CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+	<CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+	<CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+	<20130225172719.GA2434@localhost.localdomain>
+	<CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
+	<CAEx9m454t17kngaKv+PWL2V=DLYr6viT6J_eWEtHFfc10csioQ@mail.gmail.com>
+Date: Sun, 3 Mar 2013 18:52:44 -0500
+Message-ID: <CAEzrpqe86eFRTr+AL+1agmaF712nGS0fXwpDf67CnaDd86KuLQ@mail.gmail.com>
+Subject: Re: basic questions regarding COW in Btrfs
+From: Josef Bacik <josef@toxicpanda.com>
+To: Aastha Mehta <aasthakm@gmail.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 23, 2013, Alexandre Oliva <oliva@gnu.org> wrote:
+On Sun, Mar 3, 2013 at 10:41 AM, Aastha Mehta <aasthakm@gmail.com> wrote:
+> Hi Josef,
+>
+> I have some more questions following up on my previous e-mails.
+> I now do somewhat understand the place where extent entries get
+> cow'ed. But I am unclear about the order of operations.
+>
+> Is it correct that the data extent written first, then the pointer in
+> the indirect block needs to be updated, so then it is cowed and
+> written to disk and so on recursively up the tree? Or is the entire
+> path from leaf to node that is going to be affected by the write cowed
+> first and then all the cowed extents are written to the disk and then
+> the rest of the metadata pointers, (for example, in checksum tree,
+> extent tree, etc., I am not sure about this)?
 
-> On Feb 22, 2013, Josef Bacik <jbacik@fusionio.com> wrote:
->> So I understand what you are getting at, but I think you are doing it wrong.  If
->> we're calling with CHUNK_ALLOC_FORCE, but somebody has already started to
->> allocate with CHUNK_ALLOC_NO_FORCE, we'll reset the space_info->force_alloc to
->> our original caller's CHUNK_ALLOC_FORCE.
+The second one.  We COW the entire path from root to leaf as things
+need COW'ing.  We start a transaction, we insert the file extent
+entries, we add the checksums, and we add the delayed ref updates to
+the extent tree.  The delayed things are guaranteed to happen in that
+transaction so we have consistency there.  The COW'ing from top to
+bottom works like that for all trees.
 
-> But that's ok, do_chunk_alloc will set space_info->force_alloc to
-> CHUNK_ALLOC_NO_FORCE at the end, when it succeeds allocating, and then
-> anyone else waiting on the mutex to try to allocate will load the
-> NO_FORCE from space_info.
+>
+> Also, I need to understand specifically how the data (leaf nodes) of a
+> file is written to disk v/s the metadata including the indirect nodes
+> of the file. In extent_writepage I only know the pages of a file that
+> are to be written. I guess, I can identify metadata pages based on the
+> inode of the page's owner. But is it possible to distinguish the pages
+> available in extent_writepage path as belonging to the leaf node or
+> internal node for a file? If it cannot be identified at this point,
+> where earlier in the path can this be decided?
+>
 
->> So we only really care about making sure a chunk is actually
->> allocated, instead of doing this flag shuffling we should just do
+So they are different things, and they could change from the time we
+write to the time that the write completes because of COW.  Also keep
+in mind that the metadata (the file extent items and such) for the
+inodes are not stored specifically within the inode, they're stored
+inside the same tree that the inode resides in.  So you can have a
+leaf node with multiple inodes and extents for those different inodes.
+ And so any sort of random things can happen, other inodes can be
+deleted and this inode's metadata will be shifted into a new leaf, or
+another inode could be added and this inode's data could be pushed off
+into an adjacent leaf.  The only way to know which leaf/page the inode
+is associated with is to search for whatever you are looking for in
+the tree, and then while you are holding all of the locks and
+reference counting you can be sure that those pages contain the
+metadata you are looking for, but once you let that go there are no
+guarantees.
 
->> if (space_info->chunk_alloc) { spin_unlock(&space_info->lock);
->> wait_event(!space_info->chunk_alloc); return 0;
+So as far as how it is written to disk, that is where transactions
+come in.  We track all the dirty metadata pages we have per
+transaction, and then at transaction commit time we make sure that all
+of those pages are written to disk and then we commit our super to
+point to the new root of the tree root, which in turn points at all of
+our new roots because of COW.  These pages can be written before the
+commit though because of memory pressure, and if they are written and
+then modified again within in the same transaction we will re-cow them
+to make sure we don't have any partial-page updates.  Keeping track of
+where a specific inodes metadata is contained is a tricky business.
+Let me know if that helped.  Thanks,
 
-I looked a bit further into it.  I think I this would work if we had a
-wait_queue for space_info->chunk_alloc.  We don't, so the mutex
-interface is probably the best we can do.
-
-OTOH, I found out we seem to get into an allocate spree when a large
-file is being quickly created, such as when creating a ceph journal or
-making a copy of a multi-GB file.  I suppose btrfs is just trying to
-allocate contiguous space for the file, but unfortunately there doesn't
-seem to be a fallback for allocation failure: as soon as data allocation
-fails and space_info is set as full, the large write fails and the
-filesystem becomes full, without even trying to use non-contiguous
-storage.  Isn't that a bug?
-
-
-I've also been trying to track down why, on a single-data filesystem,
-(compressed?) data reads that fail because of bad blocks also spike the
-CPU load and lock the file that failed to map in and the entire
-filesystem, so that the only way to recover is to force a reboot.
-Does this sound familiar to anyone?
-
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+Josef

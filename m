@@ -1,48 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58280 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:34367 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751436Ab3CAS1n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Mar 2013 13:27:43 -0500
-Date: Fri, 1 Mar 2013 10:27:41 -0800
-From: Zach Brown <zab@redhat.com>
-To: Anand Jain <anand.jain@oracle.com>
+	id S1753721Ab3CCQ6b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 3 Mar 2013 11:58:31 -0500
+Date: Sun, 3 Mar 2013 17:58:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Simon Kirby <sim@hostway.ca>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: traverse to backup super-block only when
- indicated
-Message-ID: <20130301182741.GW1658@lenny.home.zabbo.net>
-References: <5127022B.6070200@oracle.com>
- <1362132800-29563-1-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH] Btrfs: Include the device in most error printk()s
+Message-ID: <20130303165828.GZ27541@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130214124433.GJ12339@twin.jikos.cz>
+ <E1U8IjD-0001td-Vm@peace.netnation.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1362132800-29563-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <E1U8IjD-0001td-Vm@peace.netnation.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 01, 2013 at 06:13:20PM +0800, Anand Jain wrote:
-> This patch adds 4th parameter to btrfs_scan_one_device()
-> which when set to non-zero value will traverse to check
-> backup super-block.
+On Fri, Feb 15, 2013 at 05:12:37PM -0600, Simon Kirby wrote:
+[...]
+> Signed-off-by: Simon Kirby <sim@hostway.ca>
 
-Cool, thanks for working on this.
+Thanks! 2 comments below.
 
-How'd you decide which callers wanted to scan the backups and which
-didn't?  Where are the options to force checking the backups?  This
-should be discussed in the commit message.
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
->  	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> +		if (i > 0 && !rd_sb_mirror)
-> +			break;
+> @@ -2919,8 +2923,9 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+>  	if (ret) {
+>  		btrfs_delalloc_release_metadata(inode, inode->i_size);
+>  #ifdef DEBUG
+> -		printk(KERN_ERR "btrfs: failed to write free ino cache "
+> -		       "for root %llu\n", root->root_key.objectid);
+> +		btrfs_err(root->fs_info,
+> +			"btrfs %s: failed to write free ino cache for root %llu",
+> +			root->root_key.objectid);
 
-FWIW, I probably would have done something like
+ 			"failed to write free ino cache for root %llu",
 
-	max = rd_sb_mirror ? BTRFS_SUPER_MIRROR_MAX : 1;
-  	for (i = 0; i < max; i++) {
+>  #endif
+>  	}
+>  
+> @@ -2454,8 +2456,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+>  				ret = PTR_ERR(trans);
+>  				goto out;
+>  			}
+> -			printk(KERN_ERR "auto deleting %Lu\n",
+> -			       found_key.objectid);
+> +			btrfs_err(root->fs_info, "auto deleting %Lu",
+> +				found_key.objectid);
 
-> -		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1)))
-> +		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1, 0)))
+That's probably only a debugging message, so btrfs_debug would be more
+appropriate here.
 
-I agree with Eric.  The ", 1, 0" isn't great.  I guess I'd go for flags
-(SCAN_REGISTER|SCAN_BACKUPS), but don't feel strongly about it.
-Whatever feels least gross to you ;).
-
-- z 
+>  			ret = btrfs_del_orphan_item(trans, root,
+>  						    found_key.objectid);
+>  			BUG_ON(ret); /* -ENOMEM or corruption (JDM: Recheck) */

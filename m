@@ -1,66 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33459 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932115Ab3CDQ1V (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2013 11:27:21 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r24GRKZv019217
+Received: from userp1040.oracle.com ([156.151.31.81]:20912 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932115Ab3CDQ1X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2013 11:27:23 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r24GRMIH027874
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:20 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:23 GMT
 Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r24GRJKw009787
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r24GRLpl004625
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:20 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:22 GMT
 Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r24GRJwN019192
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 10:27:19 -0600
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r24GRL08019228
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 10:27:21 -0600
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] Btrfs: free all recorded tree blocks on error
-Date: Tue,  5 Mar 2013 00:25:38 +0800
-Message-Id: <1362414341-17306-4-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 4/6] Btrfs: do not BUG_ON in prepare_to_reloc
+Date: Tue,  5 Mar 2013 00:25:39 +0800
+Message-Id: <1362414341-17306-5-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1362414341-17306-1-git-send-email-bo.li.liu@oracle.com>
 References: <1362414341-17306-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've missed the 'free blocks' part on ENOMEM error.
+We can bail out from here gracefully instead of a cold BUG_ON.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/relocation.c |    9 ++++++---
- 1 files changed, 6 insertions(+), 3 deletions(-)
+ fs/btrfs/relocation.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 8608afb..8cae3d7 100644
+index 8cae3d7..c45c833 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2848,8 +2848,10 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 	int err = 0;
+@@ -3731,7 +3731,15 @@ int prepare_to_relocate(struct reloc_control *rc)
+ 	set_reloc_control(rc);
  
- 	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		err = -ENOMEM;
-+		goto out_path;
+ 	trans = btrfs_join_transaction(rc->extent_root);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans)) {
++		unset_reloc_control(rc);
++		/*
++		 * extent tree is not a ref_cow tree and has no reloc_root to
++		 * cleanup.  And callers are responsible to free the above
++		 * block rsv.
++		 */
++		return PTR_ERR(trans);
 +	}
- 
- 	rb_node = rb_first(blocks);
- 	while (rb_node) {
-@@ -2888,10 +2890,11 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 		rb_node = rb_next(rb_node);
- 	}
- out:
--	free_block_list(blocks);
- 	err = finish_pending_nodes(trans, rc, path, err);
- 
- 	btrfs_free_path(path);
-+out_path:
-+	free_block_list(blocks);
- 	return err;
+ 	btrfs_commit_transaction(trans, rc->extent_root);
+ 	return 0;
  }
- 
 -- 
 1.7.7
 

@@ -1,135 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:64532 "EHLO
+Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:3573 "EHLO
 	bp-05.lab.msp.redhat.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932565Ab3CDVkc (ORCPT
+	by vger.kernel.org with ESMTP id S932566Ab3CDVkc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 4 Mar 2013 16:40:32 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 08/14] btrfs-progs: Free resources when returning error from cmd_snapshot()
-Date: Mon,  4 Mar 2013 16:39:58 -0600
-Message-Id: <1362436804-16766-9-git-send-email-sandeen@redhat.com>
+Subject: [PATCH 09/14] btrfs-progs: tidy up cmd_subvol_create() whitespace & returns
+Date: Mon,  4 Mar 2013 16:39:59 -0600
+Message-Id: <1362436804-16766-10-git-send-email-sandeen@redhat.com>
 In-Reply-To: <1362436804-16766-1-git-send-email-sandeen@redhat.com>
 References: <1362436804-16766-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cmd_snapshot() currently returns without freeing resources
-in almost every error case.  Switch to a goto arrangement
-so all cleanup can be done in one place.
+Just whitespace fixes, and magical return value removal.
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- cmds-subvolume.c |   41 ++++++++++++++++++++++++-----------------
- 1 files changed, 24 insertions(+), 17 deletions(-)
+ cmds-subvolume.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index a4d88a1..96f7cbd 100644
+index 96f7cbd..b7777ee 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -489,7 +489,9 @@ static const char * const cmd_snapshot_usage[] = {
- static int cmd_snapshot(int argc, char **argv)
- {
- 	char	*subvol, *dst;
--	int	res, fd, fddst, len, e, readonly = 0;
-+	int	res, retval;
-+	int	fd = -1, fddst = -1;
-+	int	len, readonly = 0;
- 	char	*newname;
- 	char	*dstdir;
- 	struct btrfs_ioctl_vol_args_v2	args;
-@@ -532,20 +534,21 @@ static int cmd_snapshot(int argc, char **argv)
- 	subvol = argv[optind];
- 	dst = argv[optind + 1];
- 
-+	retval = 1;	/* failure */
- 	res = test_issubvolume(subvol);
- 	if (res < 0) {
- 		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
--		return 1;
-+		goto out;
- 	}
- 	if (!res) {
- 		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
--		return 1;
-+		goto out;
- 	}
+@@ -104,9 +104,9 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	dst = argv[optind];
  
  	res = test_isdir(dst);
- 	if (res == 0) {
- 		fprintf(stderr, "ERROR: '%s' exists and it is not a directory\n", dst);
--		return 1;
-+		goto out;
+-	if(res >= 0 ){
++	if (res >= 0) {
+ 		fprintf(stderr, "ERROR: '%s' exists\n", dst);
+-		return 12;
++		return 1;
  	}
  
- 	if (res > 0) {
-@@ -563,27 +566,26 @@ static int cmd_snapshot(int argc, char **argv)
+ 	newname = strdup(dst);
+@@ -114,24 +114,24 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	dstdir = strdup(dst);
+ 	dstdir = dirname(dstdir);
+ 
+-	if( !strcmp(newname,".") || !strcmp(newname,"..") ||
++	if (!strcmp(newname,".") || !strcmp(newname,"..") ||
  	     strchr(newname, '/') ){
- 		fprintf(stderr, "ERROR: incorrect snapshot name ('%s')\n",
+ 		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
  			newname);
--		return 1;
-+		goto out;
+-		return 14;
++		return 1;
  	}
  
  	len = strlen(newname);
  	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
- 		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+ 		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
  			newname);
--		return 1;
-+		goto out;
+-		return 14;
++		return 1;
  	}
  
  	fddst = open_file_or_dir(dstdir);
  	if (fddst < 0) {
  		fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
--		return 1;
-+		goto out;
+-		return 12;
++		return 1;
  	}
  
- 	fd = open_file_or_dir(subvol);
- 	if (fd < 0) {
--		close(fddst);
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
--		return 1;
-+		goto out;
+ 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
+@@ -159,10 +159,10 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	close(fddst);
+ 	free(inherit);
+ 
+-	if(res < 0 ){
+-		fprintf( stderr, "ERROR: cannot create subvolume - %s\n",
++	if (res < 0) {
++		fprintf(stderr, "ERROR: cannot create subvolume - %s\n",
+ 			strerror(e));
+-		return 11;
++		return 1;
  	}
  
- 	if (readonly) {
-@@ -602,20 +604,25 @@ static int cmd_snapshot(int argc, char **argv)
- 		args.qgroup_inherit = inherit;
- 	}
- 	strncpy_null(args.name, newname);
--	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
--	e = errno;
- 
--	close(fd);
--	close(fddst);
--	free(inherit);
-+	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
- 
- 	if (res < 0) {
- 		fprintf( stderr, "ERROR: cannot snapshot '%s' - %s\n",
--			subvol, strerror(e));
--		return 1;
-+			subvol, strerror(errno));
-+		goto out;
- 	}
- 
--	return 0;
-+	retval = 0;	/* success */
-+
-+out:
-+	if (fd != -1)
-+		close(fd);
-+	if (fddst != -1)
-+		close(fddst);
-+	free(inherit);
-+
-+	return retval;
- }
- 
- static const char * const cmd_subvol_get_default_usage[] = {
+ 	return 0;
 -- 
 1.7.1
 

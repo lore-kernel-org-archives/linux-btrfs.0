@@ -1,69 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47337 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750838Ab3CECw7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2013 21:52:59 -0500
-Date: Tue, 5 Mar 2013 10:51:24 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: allow running defrag in parallel to
- administrative tasks
-Message-ID: <20130305025123.GA18743@liubo.cn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1362418118-20277-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:52151 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755978Ab3CDJoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Mar 2013 04:44:12 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r249iA8Z022238
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 17:44:10 +0800
+Message-ID: <51346D22.2080007@cn.fujitsu.com>
+Date: Mon, 04 Mar 2013 17:45:06 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1362418118-20277-1-git-send-email-sbehrens@giantdisaster.de>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/2] Btrfs: fix unclosed transaction handler when the async
+ transaction commitment fails
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 04, 2013 at 06:28:38PM +0100, Stefan Behrens wrote:
-> Commit 5ac00add added a testnset mutex and code that disallows
-> running administrative tasks in parallel. It is prevented that
-> the device add/delete/balance/replace/resize operations are
-> started in parallel. By mistake, the defragmentation operation
-> was included in the check for mutually exclusiveness as well.
-> This is fixed with this commit.
-> 
+If the async transaction commitment failed, we need close the
+current transaction handler, or the current transaction will be
+blocked to commit because of this orphan handler.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+We fix the problem by doing sync transaction commitment, that is
+to invoke btrfs_commit_transaction().
 
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> ---
->  fs/btrfs/ioctl.c | 8 --------
->  1 file changed, 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index b908960..40631cf 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2245,13 +2245,6 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
->  	if (ret)
->  		return ret;
->  
-> -	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
-> -			1)) {
-> -		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
-> -		mnt_drop_write_file(file);
-> -		return -EINVAL;
-> -	}
-> -
->  	if (btrfs_root_readonly(root)) {
->  		ret = -EROFS;
->  		goto out;
-> @@ -2306,7 +2299,6 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
->  		ret = -EINVAL;
->  	}
->  out:
-> -	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
->  	mnt_drop_write_file(file);
->  	return ret;
->  }
-> -- 
-> 1.8.1.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 94c0e42..3fdfabc 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -527,6 +527,8 @@ fail:
+ 	if (async_transid) {
+ 		*async_transid = trans->transid;
+ 		err = btrfs_commit_transaction_async(trans, root, 1);
++		if (err)
++			err = btrfs_commit_transaction(trans, root);
+ 	} else {
+ 		err = btrfs_commit_transaction(trans, root);
+ 	}
+@@ -592,6 +594,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 		*async_transid = trans->transid;
+ 		ret = btrfs_commit_transaction_async(trans,
+ 				     root->fs_info->extent_root, 1);
++		if (ret)
++			ret = btrfs_commit_transaction(trans, root);
+ 	} else {
+ 		ret = btrfs_commit_transaction(trans,
+ 					       root->fs_info->extent_root);
+-- 
+1.6.5.2

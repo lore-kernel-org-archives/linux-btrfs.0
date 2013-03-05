@@ -1,47 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f52.google.com ([209.85.215.52]:48159 "EHLO
-	mail-la0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750816Ab3CFI6B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Mar 2013 03:58:01 -0500
-Received: by mail-la0-f52.google.com with SMTP id fs12so7176424lab.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Mar 2013 00:57:59 -0800 (PST)
-From: Ilya Dryomov <idryomov@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>, David Sterba <dsterba@suse.cz>,
-        idryomov@gmail.com
-Subject: [PATCH] Btrfs: fix a mismerge in btrfs_balance()
-Date: Wed,  6 Mar 2013 10:57:55 +0200
-Message-Id: <1362560275-3223-1-git-send-email-idryomov@gmail.com>
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:46731 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932290Ab3CEBvY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2013 20:51:24 -0500
+Received: by mail-wg0-f50.google.com with SMTP id es5so4793247wgb.17
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Mar 2013 17:51:23 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAEx9m44R=sF9pMzCZix-LxZg0VFRHPT5Mdek3T-sEuPO1r7CRQ@mail.gmail.com>
+References: <CAEx9m45BO=McK-NrL3fX7QiJMtf-T+bKoc1D1G=6vHxYT8b36g@mail.gmail.com>
+	<20130220175410.GB2062@localhost.localdomain>
+	<CAEx9m46b9rW4xDiQi8QiTmyC5Wa9hNcasL_nXF4Y2qdyPE+D6g@mail.gmail.com>
+	<CAEzrpqcGeiq=tHEvcH9625vZpCZaD94PrpjYO1_r4nS2GP9ByA@mail.gmail.com>
+	<CAEx9m45V6aUkNQe0PTf+qJjpkJLHyMc4UBfSex9mxGOy-X7GrQ@mail.gmail.com>
+	<20130225172719.GA2434@localhost.localdomain>
+	<CAEx9m44BBv-rZqF_tv5PgKkHjfzBYo9p-4h3WeGLdykA+s+71A@mail.gmail.com>
+	<CAEx9m454t17kngaKv+PWL2V=DLYr6viT6J_eWEtHFfc10csioQ@mail.gmail.com>
+	<CAEzrpqe86eFRTr+AL+1agmaF712nGS0fXwpDf67CnaDd86KuLQ@mail.gmail.com>
+	<CAEx9m44R=sF9pMzCZix-LxZg0VFRHPT5Mdek3T-sEuPO1r7CRQ@mail.gmail.com>
+Date: Mon, 4 Mar 2013 20:51:23 -0500
+Message-ID: <CAEzrpqf2ioE+Q8rZrJJoOZw0=EWStoWWd-9fSPh4+OevAiV2XQ@mail.gmail.com>
+Subject: Re: basic questions regarding COW in Btrfs
+From: Josef Bacik <josef@toxicpanda.com>
+To: Aastha Mehta <aasthakm@gmail.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Raid56 merge (merge commit e942f88) had mistakenly removed a call to
-__cancel_balance(), which resulted in balance not cleaning up after itself
-after a successful finish.  (Cleanup includes switching the state, removing
-the balance item and releasing mut_ex_op testnset lock.)  Bring it back.
+On Mon, Mar 4, 2013 at 7:57 PM, Aastha Mehta <aasthakm@gmail.com> wrote:
+> I must admit, it is quite convoluted :-)
+>
+> Please tell me if I understand this. A file system tree (containing
+> the inodes, the extents of all the inodes, etc.) is itself laid out in
+> the leaf extents of another big tree, which is the root tree. This is
+> why you say that inode and other such metadata may be lying in the
+> leaf nodes. Correct?
+>
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/volumes.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+Sort of.  We have lot's of tree's, but the inode data is laid out in
+what we refer to as fs trees.  All these trees are just b-trees that
+have different data in them.  In the fs-trees they will hold inode
+items, directory items, file extent items, xattr items and orphan
+items.  So any given leaf in this tree could have any number of those
+items in them referring to any number of inodes.  You could have
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 35bb2d4..33440da 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3230,6 +3230,11 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		update_ioctl_balance_args(fs_info, 0, bargs);
- 	}
- 
-+	if ((ret && ret != -ECANCELED && ret != -ENOSPC) ||
-+	    balance_need_close(fs_info)) {
-+		__cancel_balance(fs_info);
-+	}
-+
- 	wake_up(&fs_info->balance_wait_q);
- 
- 	return ret;
--- 
-1.7.9.1
+[inode item for inode 1][file extent item for inode 1][inode item for
+inode 2][xattr for inode 2][file extent item for inode 2]
 
+all contained within one leaf.  Does that make sense?
+
+> I did not completely understand what you meant when you said that the
+> metadata (the file extent items and such) for the inodes are stored
+> inside the same tree that the inode resides in. I thought the
+> btrfs_file_extent_item associated with EXTENT_DATA_KEY corresponds to
+> the actual data of a file.
+>
+
+Yes the btrfs_file_extent_item points to a [offset, size] pair that
+describes a data extent.
+
+> Okay, now I am not even sure if in btrfs there is something like an
+> indirect block for a huge file. In file systems with fixed block size,
+> one can hold only as many pointers to data blocks and hence when the
+> file size grows indirects are added in the file's tree. Is there any
+> equivalent indirect extent required for huge files in btrfs, or do all
+> the files fit within one level? If there are indirects, what item type
+> do they have? Would something like btrfs_get_extent() be useful to get
+> the indirect extents of a file?
+>
+
+So there are no indirects, there are just btrfs_file_extent_items that
+are held within the btree that describe all of the extents that relate
+to a particular file.  So you can have (in the case of large
+fragmented files) hundreds of leaves within the btree that just
+contain btrfs_file_extent_items for all the ranges for a file.
+btrfs_get_extent() just looks up the relevant btrfs_file_extent_item
+for the range that you are wondering about, and maps it to our
+extent_map structure internally.  Hth,
+
+Josef

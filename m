@@ -1,46 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33731 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758346Ab3B1SSp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Feb 2013 13:18:45 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4075E7C040A
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 11:18:45 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id u007BGnNy84rA0P5 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2013 11:18:44 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: copy everything if we've created an inline extent
-Date: Thu, 28 Feb 2013 13:25:52 -0500
-Message-ID: <1362075952-1429-1-git-send-email-jbacik@fusionio.com>
+Received: from relay1.sgi.com ([192.48.179.29]:36546 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758521Ab3CESnp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Mar 2013 13:43:45 -0500
+Message-ID: <51363CE6.1010807@sgi.com>
+Date: Tue, 5 Mar 2013 12:43:50 -0600
+From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Wang Sheng-Hui <shhuiw@gmail.com>
+CC: xfstests <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>,
+        <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH] xfstests 276: fix error 'FIBMAP: Invalid argument'
+References: <512DB284.1090806@gmail.com>
+In-Reply-To: <512DB284.1090806@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I noticed while looking into a tree logging bug that we aren't logging inline
-extents properly.  Since this requires copying and it shouldn't happen too often
-just force us to copy everything for the inode into the tree log when we have an
-inline extent.  With this patch we have valid data after a crash when we write
-an inline extent.  Thanks,
+This patch has been committed.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+--Rich
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9ef7a5b..ecd9c4c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -266,6 +266,7 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
- 		return 1;
- 	}
- 
-+	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(inode)->runtime_flags);
- 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
- 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
- 	return 0;
--- 
-1.7.7.6
+commit eba3a5206cd7f8df73d6e6dbf2bb0afca677fca8
+Author: Wang Sheng-Hui <shhuiw@gmail.com>
+Date:   Thu Feb 28 02:05:56 2013 +0000
+
+     xfstests 276: fix error 'FIBMAP: Invalid argument'
+
+     Commit 05dadc0 ("Btrfs: add fiemap's flag check") added validity
+     checks to the fiemap flags and hence invalid flags are now being
+     rejected. Test 276 passes an invalid fiemap flag to btrfs, and so
+     that test fails since this commit was added.
+
+     Btrfs doesn't support FIEMAP_FLAG_XATTR, which is enabled by -x option
+     of filefrag, and will fail with
+         'FIBMAP: Invalid argument'
+     for 'filefrag -vx'. 'filefrag -vx' fails on btrfs with
+          'FIEMAP failed with unsupported flags 2'
+     Remove the '-x' option.
 

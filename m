@@ -1,55 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20945 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932153Ab3CDQ11 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2013 11:27:27 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r24GRQXo027930
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:26 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r24GRPmJ002076
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 16:27:26 GMT
-Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r24GRPDS021074
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 10:27:25 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] Btrfs: avoid deadlock on transaction waiting list
-Date: Tue,  5 Mar 2013 00:25:41 +0800
-Message-Id: <1362414341-17306-7-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1362414341-17306-1-git-send-email-bo.li.liu@oracle.com>
-References: <1362414341-17306-1-git-send-email-bo.li.liu@oracle.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:44514 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753500Ab3CEPLY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Mar 2013 10:11:24 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id C5CC17C0415
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Mar 2013 08:11:23 -0700 (MST)
+Date: Tue, 5 Mar 2013 10:11:21 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: Chris Mason <clmason@fusionio.com>,
+        Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+        "zab@redhat.com" <zab@redhat.com>
+Subject: Re: [BUG] during balance operation, WARNING: at
+ fs/btrfs/relocation.c:1624 replace_file_extents+0x74b/0x7e0 [btrfs]()
+Message-ID: <20130305151121.GE30680@shiny.masoncoding.com>
+References: <5134D8D7.9000501@giantdisaster.de>
+ <20130304193137.GA30680@shiny.masoncoding.com>
+ <5135DE09.4080605@giantdisaster.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <5135DE09.4080605@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Only let one trans handle to wait for other handles, otherwise we
-will get ABBA issues.
+On Tue, Mar 05, 2013 at 04:59:05AM -0700, Stefan Behrens wrote:
+> On Mon, 4 Mar 2013 14:31:37 -0500, Chris Mason wrote:
+> > On Mon, Mar 04, 2013 at 10:24:39AM -0700, Stefan Behrens wrote:
+> >> Just ran the following command sequence and got lots of WARNINGs.
+> >> The issue is reproducible.
+> >> The box was running the cmason/for-linus that made it into Linux 3.9 RC1.
+> >>
+> >> #!/bin/sh
+> >> mkfs.btrfs -f /dev/sdl /dev/sdk -m raid1 -d raid1 -l 16384
+> >> mount /dev/sdl /mnt
+> >> dd if=/dev/urandom of=/mnt/urandom.1GB bs=10M count=100 &
+> >> dd if=/dev/zero of=/mnt/zero.4GB bs=10M count=400 &
+> >> (cd ~/kernel-src; tar cf - fs) | (cd /mnt && tar xf -)
+> >> wait
+> >>
+> >> ((cd ~/kernel-src; tar cf - drivers) | (cd /mnt && tar xf -)) &
+> >> sleep 5
+> >> btrfs fi balance start /mnt
+> > 
+> > This doesn't look new, are you able to trigger it with an older kernel?
+> > 
+> 
+> git bisect identifies the following post v3.8 commit to be the one:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/transaction.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+Is your dd running fallocate?  Trying to figure out how this is related.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4caa1fa..7cc38ed 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1394,6 +1394,13 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 	btrfs_abort_transaction(trans, root, err);
- 
- 	spin_lock(&root->fs_info->trans_lock);
-+
-+	if (list_empty(&cur_trans->list)) {
-+		spin_unlock(&root->fs_info->trans_lock);
-+		btrfs_end_transaction(trans, root);
-+		return;
-+	}
-+
- 	list_del_init(&cur_trans->list);
- 	if (cur_trans == root->fs_info->running_transaction) {
- 		root->fs_info->trans_no_join = 1;
--- 
-1.7.7
-
+-chris

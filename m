@@ -1,283 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:17828 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932372Ab3CECPR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Mar 2013 21:15:17 -0500
-Message-ID: <51355565.9010904@cn.fujitsu.com>
-Date: Tue, 05 Mar 2013 10:16:05 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from aserp1040.oracle.com ([141.146.126.69]:48318 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753595Ab3CFAjN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Mar 2013 19:39:13 -0500
+Date: Wed, 6 Mar 2013 08:37:34 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Chris Mason <chris.mason@fusionio.com>,
+        Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+        Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: improve the delayed inode throttling
+Message-ID: <20130306003733.GB3151@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20130305154017.GF30680@shiny.masoncoding.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Dan Carpenter <dan.carpenter@oracle.com>
-Subject: Re: [PATCH 1/2] Btrfs: fix wrong handle at error path of create_snapshot()
- when the commit fails
-References: <51346CFD.20608@cn.fujitsu.com> <20130304105401.GL11468@liubo.jp.oracle.com>
-In-Reply-To: <20130304105401.GL11468@liubo.jp.oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130305154017.GF30680@shiny.masoncoding.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 4 Mar 2013 18:54:02 +0800, Liu Bo wrote:
-> On Mon, Mar 04, 2013 at 05:44:29PM +0800, Miao Xie wrote:
->> There are several bugs at error path of create_snapshot() when the
->> transaction commitment failed.
->> - access the freed transaction handler. At the end of the
->>   transaction commitment, the transaction handler was freed, so we
->>   should not access it after the transaction commitment.
->> - we were not aware of the error which happened during the snapshot
->>   creation if we submitted a async transaction commitment.
->> - pending snapshot access vs pending snapshot free. when something
->>   wrong happened after we submitted a async transaction commitment,
->>   the transaction committer would cleanup the pending snapshots and
->>   free them. But the snapshot creators were not aware of it, they
->>   would access the freed pending snapshots.
->>
->> This patch fixes the above problems by:
->> - remove the dangerous code that accessed the freed handler
->> - assign ->error if the error happens during the snapshot creation
->> - the transaction committer doesn't free the pending snapshots,
->>   just assigns the error number and evicts them before we unblock
->>   the transaction.
->>
->> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/disk-io.c     |   16 +++++-------
->>  fs/btrfs/ioctl.c       |    6 +----
->>  fs/btrfs/transaction.c |   58 +++++++++++++++++++++++++++--------------------
->>  3 files changed, 41 insertions(+), 39 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 02369a3..7d84651 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -62,7 +62,7 @@ static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
->>  static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
->>  static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
->>  				      struct btrfs_root *root);
->> -static void btrfs_destroy_pending_snapshots(struct btrfs_transaction *t);
->> +static void btrfs_evict_pending_snapshots(struct btrfs_transaction *t);
->>  static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
->>  static int btrfs_destroy_marked_extents(struct btrfs_root *root,
->>  					struct extent_io_tree *dirty_pages,
->> @@ -3687,7 +3687,7 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
->>  	return ret;
->>  }
->>  
->> -static void btrfs_destroy_pending_snapshots(struct btrfs_transaction *t)
->> +static void btrfs_evict_pending_snapshots(struct btrfs_transaction *t)
->>  {
->>  	struct btrfs_pending_snapshot *snapshot;
->>  	struct list_head splice;
->> @@ -3700,10 +3700,8 @@ static void btrfs_destroy_pending_snapshots(struct btrfs_transaction *t)
->>  		snapshot = list_entry(splice.next,
->>  				      struct btrfs_pending_snapshot,
->>  				      list);
->> -
->> +		snapshot->error = -ECANCELED;
+On Tue, Mar 05, 2013 at 10:40:17AM -0500, Chris Mason wrote:
+> Hi everyone,
 > 
-> ECANCELED or EROFS?  Now that EROFS is why we're here.
-
-If trans->blocks_used is not 0, the file system may not be set to read-only, so I chose ECANCELED,
-this error number is proper, I think.
-
-Thanks
-Miao
-
-> Others look good.
+> While running fs_mark against raid5/6 I noticed the delayed inode
+> insertions were creating a lot of latencies.  Reading through things, I
+> think we need to move to a model where we fire off fewer work items and
+> have the ones we do fire last longer.
 > 
-> thanks,
-> liubo
+> With this commit our average file creation rates goes from 130K
+> files/sec up to 160K files/sec for my big fs_mark run.
 > 
->>  		list_del_init(&snapshot->list);
->> -
->> -		kfree(snapshot);
->>  	}
->>  }
->>  
->> @@ -3840,6 +3838,8 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
->>  	cur_trans->blocked = 1;
->>  	wake_up(&root->fs_info->transaction_blocked_wait);
->>  
->> +	btrfs_evict_pending_snapshots(cur_trans);
->> +
->>  	cur_trans->blocked = 0;
->>  	wake_up(&root->fs_info->transaction_wait);
->>  
->> @@ -3849,8 +3849,6 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
->>  	btrfs_destroy_delayed_inodes(root);
->>  	btrfs_assert_delayed_root_empty(root);
->>  
->> -	btrfs_destroy_pending_snapshots(cur_trans);
->> -
->>  	btrfs_destroy_marked_extents(root, &cur_trans->dirty_pages,
->>  				     EXTENT_DIRTY);
->>  	btrfs_destroy_pinned_extent(root,
->> @@ -3894,6 +3892,8 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
->>  		if (waitqueue_active(&root->fs_info->transaction_blocked_wait))
->>  			wake_up(&root->fs_info->transaction_blocked_wait);
->>  
->> +		btrfs_evict_pending_snapshots(t);
->> +
->>  		t->blocked = 0;
->>  		smp_mb();
->>  		if (waitqueue_active(&root->fs_info->transaction_wait))
->> @@ -3907,8 +3907,6 @@ int btrfs_cleanup_transaction(struct btrfs_root *root)
->>  		btrfs_destroy_delayed_inodes(root);
->>  		btrfs_assert_delayed_root_empty(root);
->>  
->> -		btrfs_destroy_pending_snapshots(t);
->> -
->>  		btrfs_destroy_delalloc_inodes(root);
->>  
->>  		spin_lock(&root->fs_info->trans_lock);
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index b908960..94c0e42 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -596,12 +596,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
->>  		ret = btrfs_commit_transaction(trans,
->>  					       root->fs_info->extent_root);
->>  	}
->> -	if (ret) {
->> -		/* cleanup_transaction has freed this for us */
->> -		if (trans->aborted)
->> -			pending_snapshot = NULL;
->> +	if (ret)
->>  		goto fail;
->> -	}
->>  
->>  	ret = pending_snapshot->error;
->>  	if (ret)
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index f11c2e0..d8fce6f 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -1053,7 +1053,12 @@ int btrfs_defrag_root(struct btrfs_root *root)
->>  
->>  /*
->>   * new snapshots need to be created at a very specific time in the
->> - * transaction commit.  This does the actual creation
->> + * transaction commit.  This does the actual creation.
->> + *
->> + * Note:
->> + * If the error which may affect the commitment of the current transaction
->> + * happens, we should return the error number. If the error which just affect
->> + * the creation of the pending snapshots, just return 0.
->>   */
->>  static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->>  				   struct btrfs_fs_info *fs_info,
->> @@ -1072,7 +1077,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->>  	struct extent_buffer *tmp;
->>  	struct extent_buffer *old;
->>  	struct timespec cur_time = CURRENT_TIME;
->> -	int ret;
->> +	int ret = 0;
->>  	u64 to_reserve = 0;
->>  	u64 index = 0;
->>  	u64 objectid;
->> @@ -1081,40 +1086,36 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->>  
->>  	path = btrfs_alloc_path();
->>  	if (!path) {
->> -		ret = pending->error = -ENOMEM;
->> -		return ret;
->> +		pending->error = -ENOMEM;
->> +		return 0;
->>  	}
->>  
->>  	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
->>  	if (!new_root_item) {
->> -		ret = pending->error = -ENOMEM;
->> +		pending->error = -ENOMEM;
->>  		goto root_item_alloc_fail;
->>  	}
->>  
->> -	ret = btrfs_find_free_objectid(tree_root, &objectid);
->> -	if (ret) {
->> -		pending->error = ret;
->> +	pending->error = btrfs_find_free_objectid(tree_root, &objectid);
->> +	if (pending->error)
->>  		goto no_free_objectid;
->> -	}
->>  
->>  	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
->>  
->>  	if (to_reserve > 0) {
->> -		ret = btrfs_block_rsv_add(root, &pending->block_rsv,
->> -					  to_reserve,
->> -					  BTRFS_RESERVE_NO_FLUSH);
->> -		if (ret) {
->> -			pending->error = ret;
->> +		pending->error = btrfs_block_rsv_add(root,
->> +						     &pending->block_rsv,
->> +						     to_reserve,
->> +						     BTRFS_RESERVE_NO_FLUSH);
->> +		if (pending->error)
->>  			goto no_free_objectid;
->> -		}
->>  	}
->>  
->> -	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
->> -				   objectid, pending->inherit);
->> -	if (ret) {
->> -		pending->error = ret;
->> +	pending->error = btrfs_qgroup_inherit(trans, fs_info,
->> +					      root->root_key.objectid,
->> +					      objectid, pending->inherit);
->> +	if (pending->error)
->>  		goto no_free_objectid;
->> -	}
->>  
->>  	key.objectid = objectid;
->>  	key.offset = (u64)-1;
->> @@ -1142,7 +1143,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->>  					 dentry->d_name.len, 0);
->>  	if (dir_item != NULL && !IS_ERR(dir_item)) {
->>  		pending->error = -EEXIST;
->> -		goto fail;
->> +		goto dir_item_existed;
->>  	} else if (IS_ERR(dir_item)) {
->>  		ret = PTR_ERR(dir_item);
->>  		btrfs_abort_transaction(trans, root, ret);
->> @@ -1273,6 +1274,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->>  	if (ret)
->>  		btrfs_abort_transaction(trans, root, ret);
->>  fail:
->> +	pending->error = ret;
->> +dir_item_existed:
->>  	trans->block_rsv = rsv;
->>  	trans->bytes_reserved = 0;
->>  no_free_objectid:
->> @@ -1288,12 +1291,17 @@ root_item_alloc_fail:
->>  static noinline int create_pending_snapshots(struct btrfs_trans_handle *trans,
->>  					     struct btrfs_fs_info *fs_info)
->>  {
->> -	struct btrfs_pending_snapshot *pending;
->> +	struct btrfs_pending_snapshot *pending, *next;
->>  	struct list_head *head = &trans->transaction->pending_snapshots;
->> +	int ret = 0;
->>  
->> -	list_for_each_entry(pending, head, list)
->> -		create_pending_snapshot(trans, fs_info, pending);
->> -	return 0;
->> +	list_for_each_entry_safe(pending, next, head, list) {
->> +		list_del(&pending->list);
->> +		ret = create_pending_snapshot(trans, fs_info, pending);
->> +		if (ret)
->> +			break;
->> +	}
->> +	return ret;
->>  }
->>  
->>  static void update_super_roots(struct btrfs_root *root)
->> -- 
->> 1.6.5.2
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> But before I toss it into git, I wanted to run it by everyone and see if
+> there are workloads this doesn't fit well.
 > 
+> --
+> 
+> The delayed inode code batches up changes to the btree in hopes of doing
+> them in bulk.  As the changes build up, processes kick off worker
+> threads and wait for them to make progress.
+> 
+> The current code kicks off an async work queue item for each delayed
+> node, which creates a lot of churn.  It also uses a fixed 1 HZ waiting
+> period for the throttle, which allows us to build a lot of pending
+> work and can slow down the commit.
+> 
+> This changes us to watch a sequence counter as it is bumped during the
+> operations.  We kick off fewer work items and have each work item do
+> more work.
+> 
+> Signed-off-by: Chris Mason <chris.mason@fusionio.com>
+> 
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 0b278b1..460d1a8 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -22,8 +22,8 @@
+[...]  
+> @@ -1424,30 +1449,52 @@ void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
+>  	WARN_ON(btrfs_first_delayed_node(delayed_root));
+>  }
+>  
+> +static int refs_newer(struct btrfs_delayed_root *delayed_root,
+> +		      int seq, int count)
+> +{
+> +	int val = atomic_read(&delayed_root->items_seq);
+> +
+> +	if (val < seq || val >= seq + count)
+> +		return 1;
+> +	return 0;
+> +}
+> +
+>  void btrfs_balance_delayed_items(struct btrfs_root *root)
+>  {
+>  	struct btrfs_delayed_root *delayed_root;
+> +	int seq;
+>  
+>  	delayed_root = btrfs_get_delayed_root(root);
+>  
+>  	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
+>  		return;
+>  
+> +	seq = atomic_read(&delayed_root->items_seq);
+> +
+>  	if (atomic_read(&delayed_root->items) >= BTRFS_DELAYED_WRITEBACK) {
+>  		int ret;
+> +		DEFINE_WAIT(__wait);
+> +
+>  		ret = btrfs_wq_run_delayed_node(delayed_root, root, 1);
+>  		if (ret)
+>  			return;
+>  
+> -		wait_event_interruptible_timeout(
+> -				delayed_root->wait,
+> -				(atomic_read(&delayed_root->items) <
+> -				 BTRFS_DELAYED_BACKGROUND),
+> -				HZ);
+> -		return;
+> +		while (1) {
+> +			prepare_to_wait(&delayed_root->wait, &__wait,
+> +					TASK_INTERRUPTIBLE);
+> +
+> +			if (refs_newer(delayed_root, seq, 16) ||
+> +			    atomic_read(&delayed_root->items) <
+> +			    BTRFS_DELAYED_BACKGROUND) {
+> +				break;
+> +			}
+> +			if (!signal_pending(current))
+> +				schedule();
 
+Do we need a 'break' here?
+
+Like
+
+if (!signal_pending(current))
+	schedule();
+else
+	break;
+
+thanks,
+liubo
+
+> +		}
+> +		finish_wait(&delayed_root->wait, &__wait);
+>  	}
+>  
+> -	btrfs_wq_run_delayed_node(delayed_root, root, 0);
+> +	btrfs_wq_run_delayed_node(delayed_root, root, 16);
+>  }
+>  
+>  /* Will return 0 or -ENOMEM */
+> diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+> index 78b6ad0..1d5c5f7 100644
+> --- a/fs/btrfs/delayed-inode.h
+> +++ b/fs/btrfs/delayed-inode.h
+> @@ -43,6 +43,7 @@ struct btrfs_delayed_root {
+>  	 */
+>  	struct list_head prepare_list;
+>  	atomic_t items;		/* for delayed items */
+> +	atomic_t items_seq;	/* for delayed items */
+>  	int nodes;		/* for delayed nodes */
+>  	wait_queue_head_t wait;
+>  };
+> @@ -86,6 +87,7 @@ static inline void btrfs_init_delayed_root(
+>  				struct btrfs_delayed_root *delayed_root)
+>  {
+>  	atomic_set(&delayed_root->items, 0);
+> +	atomic_set(&delayed_root->items_seq, 0);
+>  	delayed_root->nodes = 0;
+>  	spin_lock_init(&delayed_root->lock);
+>  	init_waitqueue_head(&delayed_root->wait);
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

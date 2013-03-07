@@ -1,43 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f177.google.com ([209.85.214.177]:35701 "EHLO
-	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750751Ab3CGRGG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 12:06:06 -0500
-Received: by mail-ob0-f177.google.com with SMTP id eh20so536724obb.36
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 09:06:05 -0800 (PST)
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:40571 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932266Ab3CGSGs convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 13:06:48 -0500
+Received: by mail-vc0-f175.google.com with SMTP id p1so423741vcq.20
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 10:06:47 -0800 (PST)
 MIME-Version: 1.0
-From: Steve Heyns <notzippy@gmail.com>
-Date: Thu, 7 Mar 2013 09:05:45 -0800
-Message-ID: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
-Subject: Drive low space / huge performance hit.
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <5138B08F.70607@petaramesh.org>
+References: <513883DD.8080203@petaramesh.org>
+	<5138980C.8080000@redhat.com>
+	<5138ADA6.5070101@petaramesh.org>
+	<5138AE96.3020304@redhat.com>
+	<5138B08F.70607@petaramesh.org>
+Date: Thu, 7 Mar 2013 13:06:47 -0500
+Message-ID: <CALJXSJrbF678ghk63P=m2wc5NGnRjrvk2cGMqSnKHXzXG+i3Tg@mail.gmail.com>
+Subject: Re: mkfs.btrfs broken
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
+Cc: Eric Sandeen <sandeen@redhat.com>,
+        "BTRFS, Linux" <linux-btrfs@vger.kernel.org>,
+        Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi
+On Thu, Mar 7, 2013 at 10:21 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+> lstat64("/sqfs_disk", 0xbff57820)       = -1 ENOENT (No such file or
+> directory)
 
-I am using compression lzo on my 350GB partition, I have 2 subvolumes
-on this partition. My kernel is 3.7 BTRFS v0.19 -
-
-According to my system (df -h) that partition has 75Gb available.
-According to btrfs
-
-btrfs fi df /mnt/DevSystem/
-Data: total=260.01GB, used=259.09GB
-System, DUP: total=8.00MB, used=36.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=8.00GB, used=7.87GB
-Metadata: total=8.00MB, used=0.00
-
-du -cxsf shows
-312GB used on one subvolume, 21GB used on the other subvolume (total of 333gb )
-
->From what I understand the metadata would be duplicated so that is
-16G, and the data is 260G, that leaves about 80GB unallocated for, but
-the drive is seeing a huge performance hit (drive is mounted with
-autodefrag). I believe the issue is the fact that the partition is
-getting close to be full but then what happened to the 80GB ?
-
-Thanks
-Nz
+mkfs.btrfs tries to lookup loop devices by their filenames and fails
+if any loop device file is missing.

@@ -1,59 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58018 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:46402 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751008Ab3CGLz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Mar 2013 06:55:29 -0500
-Date: Thu, 7 Mar 2013 12:55:27 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <chris.mason@fusionio.com>, David Sterba <dsterba@suse.cz>,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: clean snapshots one by one
-Message-ID: <20130307115526.GL21081@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAOcd+r152Ot9RYjGfCc_sW46BNKuKrhEN=xR_hw_9QKSu5Agpw@mail.gmail.com>
- <1362154654-17655-1-git-send-email-dsterba@suse.cz>
- <CAOcd+r2_8sXRgQ2EnLBQhKR0kOZz-PEOXUhLy7GmS7oS-8y0Dw@mail.gmail.com>
- <20130306180915.GD21081@twin.jikos.cz>
- <20130307031211.GC13323@shiny.masoncoding.com>
+	id S932694Ab3CGTuo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Mar 2013 14:50:44 -0500
+Date: Thu, 7 Mar 2013 11:50:42 -0800
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: add a incompatible format change for smaller
+ metadata extent refs
+Message-ID: <20130307195042.GI3565@lenny.home.zabbo.net>
+References: <1362684477-19402-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130307031211.GC13323@shiny.masoncoding.com>
+In-Reply-To: <1362684477-19402-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 06, 2013 at 10:12:11PM -0500, Chris Mason wrote:
-> > > Also, I want to ask, hope this is not inappropriate. Do you also agree
-> > > with Josef, that it's ok for BTRFS_IOC_SNAP_DESTROY not to commit the
-> > > transaction, but just to detach from it? Had we committed, we would
-> > > have ensured that ORPHAN_ITEM is in the root tree, thus preventing
-> > > from subvol to re-appear after crash.
-> > > It seems a little inconsistent with snap creation, where not only the
-> > > transaction is committed, but delalloc flush is performed to ensure
-> > > that all data is on disk before creating the snap.
-> > 
-> > That's another question, can you please point me to the thread where
-> > this was discussed?
-> 
-> That's a really old one.  The original snapshot code expected people to
-> run sync first, but that's not very user friendly.  The idea is that if
-> you write a file and then take a snapshot, that file should be in the
-> snapshot.
 
-The snapshot behaviour sounds ok to me.
+> +static inline int btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+> +{
+> +	struct btrfs_super_block *disk_super;
+> +	disk_super = fs_info->super_copy;
+> +	return (btrfs_super_incompat_flags(disk_super) & flag);
+> +}
 
-That a subvol/snapshot may appear after crash if transation commit did
-not happen does not feel so good. We know that the subvol is only
-scheduled for deletion and needs to be processed by cleaner.
-
->From that point I'd rather see the commit to happen to avoid any
-unexpected surprises.  A subvolume that re-appears still holds the data
-references and consumes space although the user does not assume that.
-
-Automated snapshotting and deleting needs some guarantees about the
-behaviour and what to do after a crash. So now it has to process the
-backlog of previously deleted snapshots and verify that they're not
-there, compared to "deleted -> will never appear, can forget about it".
+That'll fail if there are ever flag bits that don't fit in an int.  The
+sneakest fix is wrapping the conditional in the obscure !!().  Making it
+a bool and really returning true and false would probably be easier on
+the brain.
 
 
-david
+>  	ret = btrfs_search_slot(trans, root, &key, path, extra_size, 1);
+>  	if (ret < 0) {
+>  		err = ret;
+>  		goto out;
+>  	}
+> +
+> +	/*
+> +	 * We may be a newly converted file system which still has the old fat
+> +	 * extent entries for metadata, so try and see if we have one of those.
+> +	 */
+> +	if (ret > 0 && skinny_metadata) {
+> +		skinny_metadata = false;
+> +		if (path->slots[0]) {
+> +			path->slots[0]--;
+> +			btrfs_item_key_to_cpu(path->nodes[0], &key,
+> +					      path->slots[0]);
+> +			if (key.objectid == bytenr &&
+> +			    key.type == BTRFS_EXTENT_ITEM_KEY &&
+> +			    key.offset == num_bytes)
+> +				ret = 0;
+> +		}
+> +		if (ret) {
+> +			key.type = BTRFS_EXTENT_ITEM_KEY;
+> +			key.offset = num_bytes;
+> +			btrfs_release_path(path);
+> +			goto again;
+> +		}
+> +	}
+> +
+
+>  			ret = btrfs_search_slot(trans, extent_root,
+>  						&key, path, -1, 1);
+> +			if (ret > 0 && skinny_metadata && path->slots[0]) {
+> +				/*
+> +				 * Couldn't find our skinny metadata item,
+> +				 * see if we have ye olde extent item.
+> +				 */
+> +				path->slots[0]--;
+> +				btrfs_item_key_to_cpu(path->nodes[0], &key,
+> +						      path->slots[0]);
+> +				if (key.objectid == bytenr &&
+> +				    key.type == BTRFS_EXTENT_ITEM_KEY &&
+> +				    key.offset == num_bytes)
+> +					ret = 0;
+> +			}
+> +
+> +			if (ret > 0 && skinny_metadata) {
+> +				skinny_metadata = false;
+> +				key.type = BTRFS_EXTENT_ITEM_KEY;
+> +				key.offset = num_bytes;
+> +				btrfs_release_path(path);
+> +				ret = btrfs_search_slot(trans, extent_root,
+> +							&key, path, -1, 1);
+> +			}
+> +
+
+These blobs of similar code sure look like they should be in a function.
+
+- z

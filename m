@@ -1,46 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:57944 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752765Ab3CGPkF convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 10:40:05 -0500
-Message-ID: <5138B4D1.8070208@petaramesh.org>
-Date: Thu, 07 Mar 2013 16:40:01 +0100
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from mail-ob0-f177.google.com ([209.85.214.177]:35701 "EHLO
+	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750751Ab3CGRGG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 12:06:06 -0500
+Received: by mail-ob0-f177.google.com with SMTP id eh20so536724obb.36
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 09:06:05 -0800 (PST)
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>, Eric Sandeen <sandeen@redhat.com>,
-        "BTRFS, Linux" <linux-btrfs@vger.kernel.org>,
-        "Anand.Jain@oracle.com" <Anand.Jain@oracle.com>
-Subject: Re: mkfs.btrfs broken
-References: <513883DD.8080203@petaramesh.org> <5138980C.8080000@redhat.com> <5138ADA6.5070101@petaramesh.org> <5138AE96.3020304@redhat.com> <5138B08F.70607@petaramesh.org> <20130307153507.GA5784@shiny.masoncoding.com>
-In-Reply-To: <20130307153507.GA5784@shiny.masoncoding.com>
+From: Steve Heyns <notzippy@gmail.com>
+Date: Thu, 7 Mar 2013 09:05:45 -0800
+Message-ID: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
+Subject: Drive low space / huge performance hit.
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 07/03/2013 16:35, Chris Mason a écrit :
-> Could you please send the contents of /proc/mounts
-Here it goes !
+hi
 
-(Last line is the USB key I dropped in just for taking a copy of
-/proc/mounts ; it didn't exist at the time the errors occured...)
+I am using compression lzo on my 350GB partition, I have 2 subvolumes
+on this partition. My kernel is 3.7 BTRFS v0.19 -
 
-rootfs / rootfs rw 0 0
-proc /proc proc rw,relatime 0 0
-sysfs /sys sysfs rw,relatime 0 0
-devtmpfs /dev devtmpfs
-rw,relatime,size=990948k,nr_inodes=170721,mode=755 0 0
-tmpfs /run tmpfs rw,relatime 0 0
-devpts /dev/pts devpts rw,relatime,gid=5,mode=620,ptmxmode=000 0 0
-fusectl /sys/fs/fuse/connections fusectl rw,relatime 0 0
-/dev/loop2 /br_sqfs squashfs ro,relatime 0 0
-aufs / aufs rw,relatime,si=6434ca9 0 0
-tmpfs /tmp tmpfs rw,relatime 0 0
-nfsd /proc/fs/nfsd nfsd rw,relatime 0 0
-/dev/sdc1 /media/sdc1 vfat
-rw,relatime,fmask=0022,dmask=0022,codepage=cp437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro
-0 0
+According to my system (df -h) that partition has 75Gb available.
+According to btrfs
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
+btrfs fi df /mnt/DevSystem/
+Data: total=260.01GB, used=259.09GB
+System, DUP: total=8.00MB, used=36.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=8.00GB, used=7.87GB
+Metadata: total=8.00MB, used=0.00
 
+du -cxsf shows
+312GB used on one subvolume, 21GB used on the other subvolume (total of 333gb )
+
+>From what I understand the metadata would be duplicated so that is
+16G, and the data is 260G, that leaves about 80GB unallocated for, but
+the drive is seeing a huge performance hit (drive is mounted with
+autodefrag). I believe the issue is the fact that the partition is
+getting close to be full but then what happened to the 80GB ?
+
+Thanks
+Nz

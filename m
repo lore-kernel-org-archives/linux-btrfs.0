@@ -1,30 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static-108-0-197-17.lsanca.fios.verizon.net ([108.0.197.17]:56842
-	"EHLO orca4.orcaware.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751787Ab3CGUY6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 15:24:58 -0500
-Message-ID: <5138F798.6000104@orcaware.com>
-Date: Thu, 07 Mar 2013 12:24:56 -0800
-From: Blair Zajac <blair@orcaware.com>
+Received: from mail-ia0-f172.google.com ([209.85.210.172]:60360 "EHLO
+	mail-ia0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756788Ab3CGUuH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 15:50:07 -0500
+Received: by mail-ia0-f172.google.com with SMTP id l29so842446iag.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 12:50:06 -0800 (PST)
 MIME-Version: 1.0
-To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
-Subject: Forwarding orphan cleanup fix(es) to 3.8 stable
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
+References: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
+Date: Thu, 7 Mar 2013 14:50:06 -0600
+Message-ID: <CAE5mzvhig1Y8=C2A9RP_SrCok_fqReOdPzQaZ_-iRBSbRUkZ9Q@mail.gmail.com>
+Subject: Re: Drive low space / huge performance hit.
+From: cwillu <cwillu@cwillu.com>
+To: Steve Heyns <notzippy@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks like [1] and [2] didn't make it into 3.8 and are not in 3.8.2, 
-nor the queue [3].  Can somebody forward them to stable, if they are 
-appropriate?  I think these are the proper commits:
+On Thu, Mar 7, 2013 at 11:05 AM, Steve Heyns <notzippy@gmail.com> wrote:
+> hi
+>
+> I am using compression lzo on my 350GB partition, I have 2 subvolumes
+> on this partition. My kernel is 3.7 BTRFS v0.19 -
+>
+> According to my system (df -h) that partition has 75Gb available.
+> According to btrfs
+>
+> btrfs fi df /mnt/DevSystem/
+> Data: total=260.01GB, used=259.09GB
+> System, DUP: total=8.00MB, used=36.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=8.00GB, used=7.87GB
+> Metadata: total=8.00MB, used=0.00
 
-925396e Btrfs: account for orphan inodes properly during cleanup
-4a7d0f6 Btrfs: cleanup orphan reservation if truncate fails
-
-Thanks,
-Blair
-
-[1] https://patchwork.kernel.org/patch/2083101/
-[2] 
-http://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=4a7d0f6854c4a4ad1dba00a3b128a32d39b9a742
-[3] 
-http://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git/tree/queue-3.8
+Show btrfs fi show /dev/whatever

@@ -1,38 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:37204 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752366Ab3CGPfK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 10:35:10 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 965267C0435
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2013 08:35:09 -0700 (MST)
-Date: Thu, 7 Mar 2013 10:35:07 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-CC: Eric Sandeen <sandeen@redhat.com>,
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:57944 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752765Ab3CGPkF convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 10:40:05 -0500
+Message-ID: <5138B4D1.8070208@petaramesh.org>
+Date: Thu, 07 Mar 2013 16:40:01 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: Chris Mason <chris.mason@fusionio.com>, Eric Sandeen <sandeen@redhat.com>,
         "BTRFS, Linux" <linux-btrfs@vger.kernel.org>,
         "Anand.Jain@oracle.com" <Anand.Jain@oracle.com>
 Subject: Re: mkfs.btrfs broken
-Message-ID: <20130307153507.GA5784@shiny.masoncoding.com>
-References: <513883DD.8080203@petaramesh.org>
- <5138980C.8080000@redhat.com>
- <5138ADA6.5070101@petaramesh.org>
- <5138AE96.3020304@redhat.com>
- <5138B08F.70607@petaramesh.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-In-Reply-To: <5138B08F.70607@petaramesh.org>
+References: <513883DD.8080203@petaramesh.org> <5138980C.8080000@redhat.com> <5138ADA6.5070101@petaramesh.org> <5138AE96.3020304@redhat.com> <5138B08F.70607@petaramesh.org> <20130307153507.GA5784@shiny.masoncoding.com>
+In-Reply-To: <20130307153507.GA5784@shiny.masoncoding.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 07, 2013 at 08:21:51AM -0700, Swâmi Petaramesh wrote:
-> Le 07/03/2013 16:13, Eric Sandeen a écrit :
-> > # strace -o tracefile.txt mkfs.btrfs /dev/sda5 tracefile.txt will
-> > contain all syscalls made by the binary and their results, which might
-> > give us a clue what's gone wrong. -Eric
-> 
-> Here it goes !
+Le 07/03/2013 16:35, Chris Mason a écrit :
+> Could you please send the contents of /proc/mounts
+Here it goes !
 
-Could you please send the contents of /proc/mounts
+(Last line is the USB key I dropped in just for taking a copy of
+/proc/mounts ; it didn't exist at the time the errors occured...)
 
--chris
+rootfs / rootfs rw 0 0
+proc /proc proc rw,relatime 0 0
+sysfs /sys sysfs rw,relatime 0 0
+devtmpfs /dev devtmpfs
+rw,relatime,size=990948k,nr_inodes=170721,mode=755 0 0
+tmpfs /run tmpfs rw,relatime 0 0
+devpts /dev/pts devpts rw,relatime,gid=5,mode=620,ptmxmode=000 0 0
+fusectl /sys/fs/fuse/connections fusectl rw,relatime 0 0
+/dev/loop2 /br_sqfs squashfs ro,relatime 0 0
+aufs / aufs rw,relatime,si=6434ca9 0 0
+tmpfs /tmp tmpfs rw,relatime 0 0
+nfsd /proc/fs/nfsd nfsd rw,relatime 0 0
+/dev/sdc1 /media/sdc1 vfat
+rw,relatime,fmask=0022,dmask=0022,codepage=cp437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro
+0 0
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

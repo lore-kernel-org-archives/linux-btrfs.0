@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f172.google.com ([209.85.210.172]:60360 "EHLO
-	mail-ia0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756788Ab3CGUuH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 15:50:07 -0500
-Received: by mail-ia0-f172.google.com with SMTP id l29so842446iag.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 12:50:06 -0800 (PST)
+Received: from mail-oa0-f49.google.com ([209.85.219.49]:32802 "EHLO
+	mail-oa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757365Ab3CGVMf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 16:12:35 -0500
+Received: by mail-oa0-f49.google.com with SMTP id j6so1204670oag.36
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 13:12:35 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
+In-Reply-To: <CAE5mzvhig1Y8=C2A9RP_SrCok_fqReOdPzQaZ_-iRBSbRUkZ9Q@mail.gmail.com>
 References: <CANDob0JBA8P1jVtB7zd=qfHVcBZMrC7pusNcSr3+OtKQv5=49g@mail.gmail.com>
-Date: Thu, 7 Mar 2013 14:50:06 -0600
-Message-ID: <CAE5mzvhig1Y8=C2A9RP_SrCok_fqReOdPzQaZ_-iRBSbRUkZ9Q@mail.gmail.com>
+ <CAE5mzvhig1Y8=C2A9RP_SrCok_fqReOdPzQaZ_-iRBSbRUkZ9Q@mail.gmail.com>
+From: Steve Heyns <notzippy@gmail.com>
+Date: Thu, 7 Mar 2013 13:12:15 -0800
+Message-ID: <CANDob0L4Yh6eLdN9038NFsQ3xEiS7kR1utNX+vjBiJc1gyKOdg@mail.gmail.com>
 Subject: Re: Drive low space / huge performance hit.
-From: cwillu <cwillu@cwillu.com>
-To: Steve Heyns <notzippy@gmail.com>
+To: cwillu <cwillu@cwillu.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 7, 2013 at 11:05 AM, Steve Heyns <notzippy@gmail.com> wrote:
-> hi
->
-> I am using compression lzo on my 350GB partition, I have 2 subvolumes
-> on this partition. My kernel is 3.7 BTRFS v0.19 -
->
-> According to my system (df -h) that partition has 75Gb available.
-> According to btrfs
->
-> btrfs fi df /mnt/DevSystem/
-> Data: total=260.01GB, used=259.09GB
-> System, DUP: total=8.00MB, used=36.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=8.00GB, used=7.87GB
-> Metadata: total=8.00MB, used=0.00
+ # btrfs fi show /dev/sda1
 
-Show btrfs fi show /dev/whatever
+Label: 'DevSystem_Backup'  uuid: e781af8b-bc92-4fc3-aeb9-b21712bcadf9
+        Total devices 1 FS bytes used 134.48GB
+        devid    1 size 350.00GB used 276.04GB path /dev/sda1
+
+thanks
+
+
+On Thu, Mar 7, 2013 at 12:50 PM, cwillu <cwillu@cwillu.com> wrote:
+> btrfs fi show /dev/

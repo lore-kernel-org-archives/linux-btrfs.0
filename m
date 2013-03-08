@@ -1,199 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44673 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753481Ab3CHPYn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 10:24:43 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r28FOgB0015728
+Received: from aserp1040.oracle.com ([141.146.126.69]:51077 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758746Ab3CHPYo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 10:24:44 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r28FOhot019527
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:24:43 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:24:44 GMT
 Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r28FOfGC007199
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r28FOhfN009001
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:24:42 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:24:43 GMT
 Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r28FOfnp023266
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 09:24:41 -0600
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r28FOh08023284
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 09:24:43 -0600
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: Introduce flag BTRFS_SCAN_REGISTER to replace run_ioctl
-Date: Fri,  8 Mar 2013 23:24:58 +0800
-Message-Id: <1362756300-30212-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/3] btrfs-progs: Introduce flag BTRFS_SCAN_BACKUP_SB for btrfs_read_dev_super
+Date: Fri,  8 Mar 2013 23:24:59 +0800
+Message-Id: <1362756300-30212-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1362756300-30212-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com>
 
-Introduce flag BTRFS_SCAN_REGISTER to replace the parameter run_ioctl
-which controls calling the function btrfs_register_one_device().
+As of now btrfs_read_dev_super() reads the backup super block
+by default and calling function has no control. However in the
+following patch we would see that is undesirable.
+So with the flag BTRFS_SCAN_BACKUP_SB the calling function
+can now indicate if btrfs_read_dev_super should scan for
+the backup SB when primary SB fails.
+
+This patch just provides the frame-work, keeping all the logic
+in the code same with or without this patch.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfsctl.c    |  2 +-
- cmds-device.c |  4 ++--
- disk-io.c     |  3 ++-
- find-root.c   |  3 ++-
- utils.c       | 17 +++++++++--------
- utils.h       |  7 ++++---
- 6 files changed, 20 insertions(+), 16 deletions(-)
+ disk-io.c   | 10 +++++++---
+ disk-io.h   |  3 ++-
+ find-root.c |  3 ++-
+ utils.h     |  1 +
+ volumes.c   |  4 +++-
+ 5 files changed, 15 insertions(+), 6 deletions(-)
 
-diff --git a/btrfsctl.c b/btrfsctl.c
-index 8fd8cc3..75bc52d 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -115,7 +115,7 @@ int main(int ac, char **av)
- 	
- 	if (ac == 2 && strcmp(av[1], "-a") == 0) {
- 		fprintf(stderr, "Scanning for Btrfs filesystems\n");
--		btrfs_scan_one_dir("/dev", 1);
-+		btrfs_scan_one_dir("/dev", BTRFS_SCAN_REGISTER);
- 		exit(0);
- 	}
- 	for (i = 1; i < ac; i++) {
-diff --git a/cmds-device.c b/cmds-device.c
-index 58df6da..1b8f378 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -203,9 +203,9 @@ static int cmd_scan_dev(int argc, char **argv)
- 
- 		printf("Scanning for Btrfs filesystems\n");
- 		if(checklist)
--			ret = btrfs_scan_block_devices(1);
-+			ret = btrfs_scan_block_devices(BTRFS_SCAN_REGISTER);
- 		else
--			ret = btrfs_scan_one_dir("/dev", 1);
-+			ret = btrfs_scan_one_dir("/dev", BTRFS_SCAN_REGISTER);
- 		if (ret){
- 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
- 			return 18;
 diff --git a/disk-io.c b/disk-io.c
-index 897d0cf..5197456 100644
+index 5197456..33e7e78 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -833,7 +833,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+@@ -877,7 +877,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 	fs_info->super_bytenr = sb_bytenr;
+ 	disk_super = &fs_info->super_copy;
+ 	ret = btrfs_read_dev_super(fs_devices->latest_bdev,
+-				   disk_super, sb_bytenr);
++				   disk_super, sb_bytenr,
++				   BTRFS_SCAN_BACKUP_SB);
+ 	if (ret) {
+ 		printk("No valid btrfs found\n");
+ 		goto out_devices;
+@@ -1100,7 +1101,8 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+ 	return info->fs_root;
+ }
+ 
+-int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
++int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
++	u64 flags)
+ {
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	int fsid_is_initialized = 0;
+@@ -1109,6 +1111,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
+ 	int ret;
+ 	u64 transid = 0;
+ 	u64 bytenr;
++	int max;
+ 
+ 	if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
+ 		ret = pread64(fd, &buf, sizeof(buf), sb_bytenr);
+@@ -1123,7 +1126,8 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
+ 		return 0;
  	}
  
- 	if (total_devs != 1) {
--		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
-+		ret = btrfs_scan_for_fsid(fs_devices, total_devs,
-+			BTRFS_SCAN_REGISTER);
- 		if (ret)
- 			goto out;
- 	}
+-	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++	max = flags & BTRFS_SCAN_BACKUP_SB ? BTRFS_SUPER_MIRROR_MAX : 1;
++	for (i = 0; i < max; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+ 		ret = pread64(fd, &buf, sizeof(buf), bytenr);
+ 		if (ret < sizeof(buf))
+diff --git a/disk-io.h b/disk-io.h
+index ff87958..38c6b4f 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -59,7 +59,8 @@ int close_ctree(struct btrfs_root *root);
+ int write_all_supers(struct btrfs_root *root);
+ int write_ctree_super(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root);
+-int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr);
++int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
++		u64 flags);
+ int btrfs_map_bh_to_logical(struct btrfs_root *root, struct extent_buffer *bh,
+ 			    u64 logical);
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
 diff --git a/find-root.c b/find-root.c
-index 20ff972..234daf4 100644
+index 234daf4..c76de2b 100644
 --- a/find-root.c
 +++ b/find-root.c
-@@ -110,7 +110,8 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
- 	}
- 
- 	if (total_devs != 1) {
--		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
-+		ret = btrfs_scan_for_fsid(fs_devices, total_devs,
-+			BTRFS_SCAN_REGISTER);
- 		if (ret)
- 			goto out;
- 	}
-diff --git a/utils.c b/utils.c
-index 1813dda..feee572 100644
---- a/utils.c
-+++ b/utils.c
-@@ -840,7 +840,8 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
- 
- 	/* scan other devices */
- 	if (is_btrfs && total_devs > 1) {
--		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1)))
-+		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs,
-+				BTRFS_SCAN_REGISTER)))
- 			return ret;
- 	}
- 
-@@ -951,7 +952,7 @@ void btrfs_register_one_device(char *fname)
- 	close(fd);
- }
- 
--int btrfs_scan_one_dir(char *dirname, int run_ioctl)
-+int btrfs_scan_one_dir(char *dirname, u64 flags)
- {
- 	DIR *dirp = NULL;
- 	struct dirent *dirent;
-@@ -1032,7 +1033,7 @@ again:
- 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
- 					    &num_devices,
- 					    BTRFS_SUPER_INFO_OFFSET);
--		if (ret == 0 && run_ioctl > 0) {
-+		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
- 			btrfs_register_one_device(fullpath);
- 		}
- 		close(fd);
-@@ -1057,13 +1058,13 @@ fail:
- }
- 
- int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
--			int run_ioctls)
-+			u64 flags)
- {
- 	int ret;
- 
--	ret = btrfs_scan_block_devices(run_ioctls);
-+	ret = btrfs_scan_block_devices(flags);
- 	if (ret)
--		ret = btrfs_scan_one_dir("/dev", run_ioctls);
-+		ret = btrfs_scan_one_dir("/dev", flags);
- 	return ret;
- }
- 
-@@ -1294,7 +1295,7 @@ int set_label(const char *btrfs_dev, const char *label)
- 		set_label_mounted(btrfs_dev, label);
- }
- 
--int btrfs_scan_block_devices(int run_ioctl)
-+int btrfs_scan_block_devices(u64 flags)
- {
- 
- 	struct stat st;
-@@ -1361,7 +1362,7 @@ scan_again:
- 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
- 					    &num_devices,
- 					    BTRFS_SUPER_INFO_OFFSET);
--		if (ret == 0 && run_ioctl > 0) {
-+		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
- 			btrfs_register_one_device(fullpath);
- 		}
- 		close(fd);
+@@ -150,7 +150,8 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
+ 	fs_info->super_bytenr = BTRFS_SUPER_INFO_OFFSET;
+ 	disk_super = &fs_info->super_copy;
+ 	ret = btrfs_read_dev_super(fs_devices->latest_bdev,
+-				   disk_super, BTRFS_SUPER_INFO_OFFSET);
++				   disk_super, BTRFS_SUPER_INFO_OFFSET,
++				   BTRFS_SCAN_BACKUP_SB);
+ 	if (ret) {
+ 		printk("No valid btrfs found\n");
+ 		goto out_devices;
 diff --git a/utils.h b/utils.h
-index 0b681ed..c4d0d00 100644
+index c4d0d00..4641ce3 100644
 --- a/utils.h
 +++ b/utils.h
-@@ -22,6 +22,7 @@
- #include "ctree.h"
+@@ -23,6 +23,7 @@
  
  #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
-+#define BTRFS_SCAN_REGISTER	(1ULL << 1)
+ #define BTRFS_SCAN_REGISTER	(1ULL << 1)
++#define BTRFS_SCAN_BACKUP_SB	(1ULL << 2)
  
  int make_btrfs(int fd, const char *device, const char *label,
  	       u64 blocks[6], u64 num_bytes, u32 nodesize,
-@@ -35,9 +36,9 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 		      u64 block_count, u32 io_width, u32 io_align,
- 		      u32 sectorsize);
- int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
--			int run_ioctls);
-+			u64 flags);
- void btrfs_register_one_device(char *fname);
--int btrfs_scan_one_dir(char *dirname, int run_ioctl);
-+int btrfs_scan_one_dir(char *dirname, u64 flags);
- int check_mounted(const char *devicename);
- int check_mounted_where(int fd, const char *file, char *where, int size,
- 			struct btrfs_fs_devices **fs_devices_mnt);
-@@ -45,7 +46,7 @@ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
- char *pretty_sizes(u64 size);
- int get_mountpt(char *dev, char *mntpt, size_t size);
--int btrfs_scan_block_devices(int run_ioctl);
-+int btrfs_scan_block_devices(u64 flags);
- u64 parse_size(char *s);
- int open_file_or_dir(const char *fname);
- int get_device_info(int fd, u64 devid,
+diff --git a/volumes.c b/volumes.c
+index ca1b402..b6e3f29 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -29,6 +29,7 @@
+ #include "transaction.h"
+ #include "print-tree.h"
+ #include "volumes.h"
++#include "utils.h"
+ 
+ struct stripe {
+ 	struct btrfs_device *dev;
+@@ -225,7 +226,8 @@ int btrfs_scan_one_device(int fd, const char *path,
+ 		goto error;
+ 	}
+ 	disk_super = (struct btrfs_super_block *)buf;
+-	ret = btrfs_read_dev_super(fd, disk_super, super_offset);
++	ret = btrfs_read_dev_super(fd, disk_super, super_offset,
++		BTRFS_SCAN_BACKUP_SB);
+ 	if (ret < 0) {
+ 		ret = -EIO;
+ 		goto error_brelse;
 -- 
 1.8.1.191.g414c78c
 

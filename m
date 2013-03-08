@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e37.co.us.ibm.com ([32.97.110.158]:57007 "EHLO
-	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751233Ab3CDBgu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Mar 2013 20:36:50 -0500
-Received: from /spool/local
-	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 3 Mar 2013 18:36:49 -0700
-Received: from d03relay01.boulder.ibm.com (d03relay01.boulder.ibm.com [9.17.195.226])
-	by d03dlp01.boulder.ibm.com (Postfix) with ESMTP id BFA6B1FF0039
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 Mar 2013 18:31:54 -0700 (MST)
-Received: from d03av02.boulder.ibm.com (d03av02.boulder.ibm.com [9.17.195.168])
-	by d03relay01.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r241alfO109138
-	for <linux-btrfs@vger.kernel.org>; Sun, 3 Mar 2013 18:36:47 -0700
-Received: from d03av02.boulder.ibm.com (loopback [127.0.0.1])
-	by d03av02.boulder.ibm.com (8.14.4/8.13.1/NCO v10.0 AVout) with ESMTP id r241akaa003802
-	for <linux-btrfs@vger.kernel.org>; Sun, 3 Mar 2013 18:36:46 -0700
-From: zwu.kernel@gmail.com
+Received: from userp1040.oracle.com ([156.151.31.81]:45163 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758718Ab3CHPZ0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 10:25:26 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r28FPPtI016667
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:25:26 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r28FPOCT008800
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 15:25:25 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r28FPO7U012272
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Mar 2013 09:25:24 -0600
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [PATCH] btrfs-progs: update mkfs.btrfs help info for raid5/6
-Date: Mon,  4 Mar 2013 09:37:28 +0800
-Message-Id: <1362361048-30744-1-git-send-email-zwu.kernel@gmail.com>
+Subject: [PATCH] btrfs-progs: update the .gitignore file
+Date: Fri,  8 Mar 2013 23:25:45 +0800
+Message-Id: <1362756345-30253-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-
-  Since raid5/6 support was introduced, we should update mkfs.btrfs help info.
-
-Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- mkfs.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ .gitignore | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/mkfs.c b/mkfs.c
-index 5ece186..f9f26a5 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -326,7 +326,7 @@ static void print_usage(void)
- 	fprintf(stderr, "options:\n");
- 	fprintf(stderr, "\t -A --alloc-start the offset to start the FS\n");
- 	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
--	fprintf(stderr, "\t -d --data data profile, raid0, raid1, raid10, dup or single\n");
-+	fprintf(stderr, "\t -d --data data profile, raid0, raid1, raid5, raid6, raid10, dup or single\n");
- 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
- 	fprintf(stderr, "\t -L --label set a label\n");
- 	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
+diff --git a/.gitignore b/.gitignore
+index 230dfbd..a32b96c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -15,3 +15,13 @@ find-root
+ mkfs.btrfs
+ repair
+ restore
++btrfs-convert
++btrfs-find-root
++btrfs-image
++btrfs-show-super
++btrfs-zero-log
++btrfstune
++libbtrfs.a
++libbtrfs.so
++libbtrfs.so.0
++libbtrfs.so.0.1
 -- 
-1.7.11.7
+1.8.1.191.g414c78c
 

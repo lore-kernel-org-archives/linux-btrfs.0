@@ -1,50 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:57957 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753319Ab3CHUfW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 15:35:22 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 8E9189A0407
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2013 13:35:20 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id DgaUOC76UN0REZ5a (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 08 Mar 2013 13:35:20 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: return EIO if we have extent tree corruption
-Date: Fri, 8 Mar 2013 15:42:31 -0500
-Message-ID: <1362775351-2620-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from userp1040.oracle.com ([156.151.31.81]:30424 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759676Ab3CHWws (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 17:52:48 -0500
+From: Dave Kleikamp <dave.kleikamp@oracle.com>
+To: Zach Brown <zab@zabbo.net>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Dave Kleikamp <dave.kleikamp@oracle.com>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH V7 -next 25/33] btrfs: add support for read_iter and write_iter
+Date: Fri,  8 Mar 2013 16:52:20 -0600
+Message-Id: <1362783148-22736-26-git-send-email-dave.kleikamp@oracle.com>
+In-Reply-To: <1362783148-22736-1-git-send-email-dave.kleikamp@oracle.com>
+References: <1362783148-22736-1-git-send-email-dave.kleikamp@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The callers of lookup_inline_extent_info all handle getting an error back
-properly, so return an error if we have corruption instead of being a jerk and
-panicing.  Still WARN_ON() since this is kind of crucial and I've been seeing it
-a bit too much recently for my taste, I think we're doing something wrong
-somewhere.  Thanks,
+btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
+on btrfs_file_aio_write(), then have the latter call the former.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
+Cc: Zach Brown <zab@zabbo.net>
+Cc: Chris Mason <chris.mason@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
 ---
- fs/btrfs/extent-tree.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+ fs/btrfs/file.c | 42 ++++++++++++++----------------------------
+ 1 file changed, 14 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index dd23e8e..742b7a7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1538,8 +1538,11 @@ again:
- 	if (ret && !insert) {
- 		err = -ENOENT;
- 		goto out;
-+	} else if (ret) {
-+		err = -EIO;
-+		WARN_ON(1);
-+		goto out;
- 	}
--	BUG_ON(ret); /* Corruption */
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b400e5d..1e8e734 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -457,7 +457,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
+ 		write_bytes -= copied;
+ 		total_copied += copied;
  
- 	leaf = path->nodes[0];
- 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-		/* Return to btrfs_file_aio_write to fault page */
++		/* Return to btrfs_file_write_iter to fault page */
+ 		if (unlikely(copied == 0))
+ 			break;
+ 
+@@ -1445,27 +1445,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ }
+ 
+ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos,
+-				    loff_t *ppos, size_t count, size_t ocount)
++				     struct iov_iter *iter, loff_t pos,
++				    loff_t *ppos, size_t count)
+ {
+ 	struct file *file = iocb->ki_filp;
+-	struct iov_iter i;
+ 	ssize_t written;
+ 	ssize_t written_buffered;
+ 	loff_t endbyte;
+ 	int err;
+ 
+-	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
+-					    count, ocount);
++	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
+ 
+ 	if (written < 0 || written == count)
+ 		return written;
+ 
+ 	pos += written;
+ 	count -= written;
+-	iov_iter_init(&i, iov, nr_segs, count, written);
+-	written_buffered = __btrfs_buffered_write(file, &i, pos);
++	written_buffered = __btrfs_buffered_write(file, iter, pos);
+ 	if (written_buffered < 0) {
+ 		err = written_buffered;
+ 		goto out;
+@@ -1500,9 +1496,8 @@ static void update_time_for_write(struct inode *inode)
+ 		inode_inc_iversion(inode);
+ }
+ 
+-static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+-				    const struct iovec *iov,
+-				    unsigned long nr_segs, loff_t pos)
++static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
++				     struct iov_iter *iter, loff_t pos)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file_inode(file);
+@@ -1511,7 +1506,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	u64 start_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+-	size_t count, ocount;
++	size_t count;
+ 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
+ 
+ 	if (!sb_start_file_write(file))
+@@ -1519,12 +1514,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 
+-	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
+-	if (err) {
+-		mutex_unlock(&inode->i_mutex);
+-		goto out;
+-	}
+-	count = ocount;
++	count = iov_iter_count(iter);
+ 
+ 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
+ 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
+@@ -1577,14 +1567,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 		atomic_inc(&BTRFS_I(inode)->sync_writers);
+ 
+ 	if (unlikely(file->f_flags & O_DIRECT)) {
+-		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
+-						   pos, ppos, count, ocount);
++		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
++						   count);
+ 	} else {
+-		struct iov_iter i;
+-
+-		iov_iter_init(&i, iov, nr_segs, count, num_written);
+-
+-		num_written = __btrfs_buffered_write(file, &i, pos);
++		num_written = __btrfs_buffered_write(file, iter, pos);
+ 		if (num_written > 0)
+ 			*ppos = pos + num_written;
+ 	}
+@@ -2441,9 +2427,9 @@ const struct file_operations btrfs_file_operations = {
+ 	.llseek		= btrfs_file_llseek,
+ 	.read		= do_sync_read,
+ 	.write		= do_sync_write,
+-	.aio_read       = generic_file_aio_read,
+ 	.splice_read	= generic_file_splice_read,
+-	.aio_write	= btrfs_file_aio_write,
++	.read_iter	= generic_file_read_iter,
++	.write_iter	= btrfs_file_write_iter,
+ 	.mmap		= btrfs_file_mmap,
+ 	.open		= generic_file_open,
+ 	.release	= btrfs_release_file,
 -- 
-1.7.7.6
+1.8.1.5
 

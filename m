@@ -1,96 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:52384 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751690Ab3CIVIT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 16:08:19 -0500
-Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
-	by frost.carfax.org.uk with esmtp (Exim 4.72)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1UEQQD-0007mv-6S
-	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 20:31:13 +0000
-Received: from [10.0.0.10] (helo=ruthven.carfax.org.uk)
-	by ruthven.carfax.org.uk with esmtp (Exim 4.80)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1UEQQC-0003Hi-P9
-	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 20:31:12 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] Add man page description for nCmSpP replication levels
-Date: Sat,  9 Mar 2013 20:31:11 +0000
-Message-Id: <1362861071-12589-6-git-send-email-hugo@carfax.org.uk>
+Received: from mail-lb0-f182.google.com ([209.85.217.182]:54861 "EHLO
+	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751567Ab3CIViX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 16:38:23 -0500
+Received: by mail-lb0-f182.google.com with SMTP id gg6so2220534lbb.13
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 13:38:21 -0800 (PST)
+MIME-Version: 1.0
 In-Reply-To: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
 References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+From: Harald Glatt <mail@hachre.de>
+Date: Sat, 9 Mar 2013 22:38:01 +0100
+Message-ID: <CAFWF=ans6uvoW7yXj_dgKsgCzTq+HpP9fAJLVaOAOzW_SuU16A@mail.gmail.com>
+Subject: Re: [PATCH 0/5] [RFC] RAID-level terminology change
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- man/btrfs.8.in      |    9 +++++++++
- man/mkfs.btrfs.8.in |   24 +++++++++++++++++++++++-
- 2 files changed, 32 insertions(+), 1 deletion(-)
+On Sat, Mar 9, 2013 at 9:31 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>    Some time ago, and occasionally since, we've discussed altering the
+> "RAID-n" terminology to change it to an "nCmSpP" format, where n is the
+> number of copies, m is the number of (data) devices in a stripe per copy,
+> and p is the number of parity devices in a stripe.
+>
+>    The current kernel implementation uses as many devices as it can in the
+> striped modes (RAID-0, -10, -5, -6), and in this implementation, that is
+> written as "mS" (with a literal "m"). The mS and pP sections are omitted
+> if the value is 1S or 0P.
+>
+>    The magic look-up table for old-style / new-style is:
+>
+> single           1C (or omitted, in btrfs fi df output)
+> RAID-0           1CmS
+> RAID-1           2C
+> DUP                      2CD
+> RAID-10          2CmS
+> RAID-5           1CmS1P
+> RAID-6           1CmS2P
+>
+>    The following patch set modifies userspace tools to accept C/S/P formats
+> in input (mkfs and the restriper). The older formats are also accepted. It
+> also prints the newer formats by default in btrfs fi df, with an option to
+> show the older format for the traditionalists.
+>
+>    I'm not sure whether we should omit the 1C in btrfs fi df output, or
+> make it explicit even in the "single" case.
+>
+>    Hugo.
+>
+> Hugo Mills (5):
+>   Use nCmSpP format for mkfs
+>   Move parse_profile to utils.c
+>   Convert balance filter parser to use common nCmSpP replication-level
+>     parser
+>   Change output of btrfs fi df to report new (or old) RAID names
+>   Add man page description for nCmSpP replication levels
+>
+>  cmds-balance.c      |   23 +++------
+>  cmds-filesystem.c   |  135 +++++++++++++++++++++++++++++++++++++++++++--------
+>  man/btrfs.8.in      |    9 ++++
+>  man/mkfs.btrfs.8.in |   24 ++++++++-
+>  mkfs.c              |   35 ++++---------
+>  utils.c             |   94 +++++++++++++++++++++++++++++++++++
+>  utils.h             |    1 +
+>  7 files changed, 258 insertions(+), 63 deletions(-)
+>
+> --
+> 1.7.10.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 94f4ffe..2799ec7 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -25,6 +25,8 @@ btrfs \- control a btrfs filesystem
- [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
- [<\fIfile\fR>|<\fIdir\fR>...]
- .PP
-+\fBbtrfs\fP \fBfilesystem df\fP [-r]\fI <path> \fP
-+.PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBfilesystem resize\fP\fI [devid:][+/\-]<size>[gkm]|[devid:]max <filesystem>\fP
-@@ -217,6 +219,13 @@ don't use it if you use snapshots, have de-duplicated your data or made
- copies with \fBcp --reflink\fP.
- .TP
- 
-+\fBfilesystem df\fR [-r] \fI<path>\fR
-+Show usage information for the filesystem identified by \fI<path>\fR.
-+
-+\fB-r, --raid\fP Use old-style "RAID-n" terminology to show replication types
-+
-+.TP
-+
- \fBfilesystem sync\fR\fI <path> \fR
- Force a sync for the filesystem identified by \fI<path>\fR.
- .TP
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 41163e0..2e71e65 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -37,7 +37,29 @@ mkfs.btrfs uses all the available storage for the filesystem.
- .TP
- \fB\-d\fR, \fB\-\-data \fItype\fR
- Specify how the data must be spanned across the devices specified. Valid
--values are raid0, raid1, raid10 or single.
-+values are of the form <n>C[D][<m>S[<p>P]], where <n> is the number of copies
-+of data, <m> is the number of stripes per copy, and <p> is the number of parity
-+stripes. The <m> parameter must (currently) be a literal "m", indicating that
-+as many stripes as possible will be used. The letter D may be added to the
-+number of copies, to indicate non-redundant copies (e.g. on the same device).
-+
-+The following deprecated values may also be used:
-+.RS 16
-+.P
-+single	1C
-+.P
-+raid0	1CmS
-+.P
-+raid1	2C
-+.P
-+dup		2CD
-+.P
-+raid10	2CmS
-+.P
-+raid5	1CmS1P
-+.P
-+raid6	1CmS2P
-+.RS -16
- .TP
- \fB\-f\fR
- Force overwrite when an existing filesystem is detected on the device.
--- 
-1.7.10.4
-
+I vote make it explicit to give people a chance to understand the new
+way it works even with just one device. The idea for this new naming
+scheme is great, I like it!! Will btrfs allow for things like 2C10SP2
+too? Basically two RAID6 arrays with 12 drives each (10 for data, 2
+for parity), if I understand it right with the entire array being
+mirrored to another one.

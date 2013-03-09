@@ -1,50 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56591 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753522Ab3CIMEm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Mar 2013 07:04:42 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UEIWN-0001uB-BU
-	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 13:05:03 +0100
-Received: from 195.238.191.47 ([195.238.191.47])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 13:05:03 +0100
-Received: from mr.swasher by 195.238.191.47 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 13:05:03 +0100
-To: linux-btrfs@vger.kernel.org
-From: Swasher <mr.swasher@gmail.com>
-Subject: Balance terminating
-Date: Sat, 9 Mar 2013 12:03:07 +0000 (UTC)
-Message-ID: <loom.20130309T124930-192@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:63909 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751843Ab3CIWdD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 17:33:03 -0500
+Received: by mail-wi0-f176.google.com with SMTP id hm14so317649wib.9
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 14:33:01 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAOcd+r1EyuWm4xm3N-F2v82Uh9c+QCY1oO7ovfPL744OsxhPMA@mail.gmail.com>
+References: <CAOcd+r2p9AonnEwGZCS4CPUJ8O2EuQkSAA15twERY47FtrqLEw@mail.gmail.com>
+	<20130303152839.GC18135@shiny.masoncoding.com>
+	<CAOcd+r1EyuWm4xm3N-F2v82Uh9c+QCY1oO7ovfPL744OsxhPMA@mail.gmail.com>
+Date: Sun, 10 Mar 2013 00:33:01 +0200
+Message-ID: <CAOcd+r0jPP18bgpfdd9NEK6dnMX-CO30zpCKCOHspyey1qjB4Q@mail.gmail.com>
+Subject: Re: same EXTENT_ITEM appears twice in the extent tree
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, i'm started balancing on my raid0:
+So, no advice on how this could have happened?
+Ok, maybe it won't happen again...
 
-$ btrfs fi show
-Label: none  uuid: efdcd026-f5f0-49e7-a173-8eb777018119
-        Total devices 3 FS bytes used 4.57TB
-        devid    3 size 1.82TB used 1.82TB path /dev/sdd
-        devid    1 size 1.82TB used 1.82TB path /dev/sdc
-        devid    2 size 1.82TB used 1.82TB path /dev/sdb
-
-Btrfs Btrfs v0.19
-
-After it, I'm start watch for progress via 'balance status', and I can see how 
-progress run. But only for 83% left. 
-
-I'm wait few hours and try cancel it with 'balance cancel'.
-More than 12 hours had passed, but balance stalled in this state:
-
-$ btrfs fi balance status /mnt/raid/  
-Balance on '/mnt/raid/' is running, cancel requested
-386 out of about 2231 chunks balanced (387 considered),  83% left
-
-Question: Can I'm safetly reboot server? Or should I do something else?
-
-
+On Sun, Mar 3, 2013 at 5:44 PM, Alex Lyakas
+<alex.btrfs@zadarastorage.com> wrote:
+> Hi Chris,
+>
+> On Sun, Mar 3, 2013 at 5:28 PM, Chris Mason <chris.mason@fusionio.com> wrote:
+>> On Sun, Mar 03, 2013 at 06:40:50AM -0700, Alex Lyakas wrote:
+>>> Greetings all,
+>>> I have an extent tree that looks like follows:
+>>>
+>>>       item 22 key (27059916800 EXTENT_ITEM 16384) itemoff 2656 itemsize 24
+>>>               extent refs 1 gen 164 flags 1
+>>>       item 23 key (27059916800 EXTENT_ITEM 98304) itemoff 2603 itemsize 53
+>>>               extent refs 1 gen 165 flags 1
+>>>               extent data backref root 257 objectid 257 offset 17446191104 count 1
+>>>       item 24 key (27059916800 SHARED_DATA_REF 47169536) itemoff 2599 itemsize 4
+>>>               shared data backref count 1
+>>
+>> Have you been experimenting on this FS with snapshot deletion patches?
+>
+> No, I haven't applied any patches on top of the commit I mentioned. (I
+> presume you mean David's patch for one-by-one deletion). Since
+> created, this FS has only seen straight IO with parallel snapshot
+> creation and deletion. However, the kernel was crashing pretty
+> frequently during this test, so I presume log replay was taking place.
+>
+> Any particular thing I can look for in the debug-tree output, except
+> searching for more double-allocations?
+>
+> Thanks,
+> Alex.
+>
+>
+>>
+>> -chris

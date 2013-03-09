@@ -1,71 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:52858 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932716Ab3CIAii (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 19:38:38 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id D810B7C04F9
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2013 17:38:35 -0700 (MST)
-Date: Fri, 8 Mar 2013 19:38:26 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs updates
-Message-ID: <20130309003826.GB21566@shiny.masoncoding.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from plane.gmane.org ([80.91.229.3]:56591 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753522Ab3CIMEm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Mar 2013 07:04:42 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UEIWN-0001uB-BU
+	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 13:05:03 +0100
+Received: from 195.238.191.47 ([195.238.191.47])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 13:05:03 +0100
+Received: from mr.swasher by 195.238.191.47 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 13:05:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Swasher <mr.swasher@gmail.com>
+Subject: Balance terminating
+Date: Sat, 9 Mar 2013 12:03:07 +0000 (UTC)
+Message-ID: <loom.20130309T124930-192@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hello, i'm started balancing on my raid0:
 
-Please grab my for-linus:
+$ btrfs fi show
+Label: none  uuid: efdcd026-f5f0-49e7-a173-8eb777018119
+        Total devices 3 FS bytes used 4.57TB
+        devid    3 size 1.82TB used 1.82TB path /dev/sdd
+        devid    1 size 1.82TB used 1.82TB path /dev/sdc
+        devid    2 size 1.82TB used 1.82TB path /dev/sdb
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Btrfs Btrfs v0.19
 
-These are scattered fixes and one performance improvement.  The biggest
-functional change is in how we throttle metadata changes.  The new code
-bumps our average file creation rate up by ~13% in fs_mark, and lowers
-CPU usage.
+After it, I'm start watch for progress via 'balance status', and I can see how 
+progress run. But only for 83% left. 
 
-Stefan bisected out a regression in our allocation code that made
-balance loop on extents larger than 256MB.
+I'm wait few hours and try cancel it with 'balance cancel'.
+More than 12 hours had passed, but balance stalled in this state:
 
-Liu Bo (6) commits (+71/-19):
-    Btrfs: build up error handling for merge_reloc_roots (+35/-12)
-    Btrfs: check for NULL pointer in updating reloc roots (+2/-0)
-    Btrfs: avoid deadlock on transaction waiting list (+7/-0)
-    Btrfs: free all recorded tree blocks on error (+6/-3)
-    Btrfs: do not BUG_ON on aborted situation (+12/-3)
-    Btrfs: do not BUG_ON in prepare_to_reloc (+9/-1)
+$ btrfs fi balance status /mnt/raid/  
+Balance on '/mnt/raid/' is running, cancel requested
+386 out of about 2231 chunks balanced (387 considered),  83% left
 
-Chris Mason (2) commits (+96/-63):
-    Btrfs: enforce min_bytes parameter during extent allocation (+4/-2)
-    Btrfs: improve the delayed inode throttling (+92/-61)
+Question: Can I'm safetly reboot server? Or should I do something else?
 
-Miao Xie (2) commits (+45/-39):
-    Btrfs: fix unclosed transaction handler when the async transaction commitment fails (+4/-0)
-    Btrfs: fix wrong handle at error path of create_snapshot() when the commit fails (+41/-39)
 
-Stefan Behrens (1) commits (+0/-8):
-    Btrfs: allow running defrag in parallel to administrative tasks
-
-Ilya Dryomov (1) commits (+5/-0):
-    Btrfs: fix a mismerge in btrfs_balance()
-
-Josef Bacik (1) commits (+4/-1):
-    Btrfs: use set_nlink if our i_nlink is 0
-
-Total: (13) commits (+221/-130)
-
- fs/btrfs/delayed-inode.c | 151 ++++++++++++++++++++++++++++-------------------
- fs/btrfs/delayed-inode.h |   2 +
- fs/btrfs/disk-io.c       |  16 +++--
- fs/btrfs/inode.c         |   6 +-
- fs/btrfs/ioctl.c         |  18 ++----
- fs/btrfs/relocation.c    |  74 +++++++++++++++++------
- fs/btrfs/transaction.c   |  65 ++++++++++++--------
- fs/btrfs/tree-log.c      |   5 +-
- fs/btrfs/volumes.c       |  14 ++++-
- 9 files changed, 221 insertions(+), 130 deletions(-)

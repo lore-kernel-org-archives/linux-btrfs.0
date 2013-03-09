@@ -1,66 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:49227 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933360Ab3CTTUg convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 15:20:36 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Impossible or Possible to Securely Erase File on Btrfs?
-Date: Wed, 20 Mar 2013 20:20:34 +0100
-Cc: Marek Otahal <markotahal@gmail.com>, Kyle <lists@lolwut.org>
-References: <514759B5.5000507@lolwut.org> <1510992.7BWEEWRdZp@beruska> (sfid-20130319_235455_099058_370B3F2E)
-In-Reply-To: <1510992.7BWEEWRdZp@beruska>
+Received: from dkim1.fusionio.com ([66.114.96.53]:55321 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757220Ab3CIM1O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 07:27:14 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 768B37C041D
+	for <linux-btrfs@vger.kernel.org>; Sat,  9 Mar 2013 05:27:13 -0700 (MST)
+Date: Sat, 9 Mar 2013 07:27:10 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Eric Sandeen <sandeen@redhat.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] use rcu_barrier() to wait for bdev puts at unmount
+Message-ID: <20130309122710.GA15521@shiny.masoncoding.com>
+References: <513AC735.1090500@redhat.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201303202020.34699.Martin@lichtvoll.de>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <513AC735.1090500@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 19. März 2013 schrieb Marek Otahal:
-> Hi,
+On Fri, Mar 08, 2013 at 10:23:01PM -0700, Eric Sandeen wrote:
+> Doing this would reliably fail with -EBUSY for me:
 > 
-> just reading chattr manpage..
+> # mount /dev/sdb2 /mnt/scratch; umount /mnt/scratch; mkfs.btrfs -f /dev/sdb2
+> ...
+> unable to open /dev/sdb2: Device or resource busy
 > 
-> On Monday 18 March 2013 14:15:17 you wrote:
-> > Hi,
-> > 
-> > After reading through the btrfs documentation I'm curious to know if
-> > it's possible to ever securely erase a file from a btrfs filesystem (or
-> > ZFS for that matter). On non-COW filesystems atop regular HDDs one can
-> > simply overwrite the file with zeros or random data using dd or some
-> > other tool and rest assured that the blocks which contained the
-> > sensitive information have been wiped. However on btrfs it would seem
-> > any such attempt would write the zeros/random data to a new location,
-> > leaving the old blocks with the sensitive data intact. Further, since
-> > specifying NOCOW is only possible for newly created files, there seems
-> > to be no way to overwrite the appropriate blocks short of deleting the
-> > associated file and then filling the entire free filesystem space with
-> > zeros/random data such that the old blocks are eventually overwritten.
-> > What's the verdict on this?
+> because mkfs.btrfs tries to open the device O_EXCL, and somebody still has it.
 > 
-> what would chattr +s do?
+> Using systemtap to track bdev gets & puts shows a kworker thread doing a
+> blkdev put after mkfs attempts a get; this is left over from the unmount.
 > 
-> "
-> When a file with the `s' attribute set is deleted, its blocks are zeroed
-> and written back to the disk.  Note: please make sure to read the bugs
-> and limitations section at the end of this document. "
-> 
-> Nice spring to all of you! :)
+> Adding an rcu_barrier() to btrfs_close_devices() causes unmount to wait
+> until all blkdev_put()s are done, and the device is truly free once
+> unmount completes.
 
-Did you read on as suggested?
+Thanks for tracking this down Eric.  Is this kworker triggered by btrfs
+or is this something we should be doing for the other filesystems too?
 
-BUGS AND LIMITATIONS
-       The `c', 's',  and `u' attributes are not honored by the ext2 and 
-ext3 filesystems as implemented in the current mainline Linux kernels.
+I'd move it down to close_ctree, but I don't really have a good reason.
 
-
-But well question still stands: Does BTRFS honor it?
-
-My bet is: It doesn´t.
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+-chris

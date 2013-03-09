@@ -1,142 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30424 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759676Ab3CHWws (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 17:52:48 -0500
-From: Dave Kleikamp <dave.kleikamp@oracle.com>
-To: Zach Brown <zab@zabbo.net>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Dave Kleikamp <dave.kleikamp@oracle.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V7 -next 25/33] btrfs: add support for read_iter and write_iter
-Date: Fri,  8 Mar 2013 16:52:20 -0600
-Message-Id: <1362783148-22736-26-git-send-email-dave.kleikamp@oracle.com>
-In-Reply-To: <1362783148-22736-1-git-send-email-dave.kleikamp@oracle.com>
-References: <1362783148-22736-1-git-send-email-dave.kleikamp@oracle.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:52858 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932716Ab3CIAii (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2013 19:38:38 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D810B7C04F9
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2013 17:38:35 -0700 (MST)
+Date: Fri, 8 Mar 2013 19:38:26 -0500
+From: Chris Mason <chris.mason@fusionio.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs updates
+Message-ID: <20130309003826.GB21566@shiny.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
-on btrfs_file_aio_write(), then have the latter call the former.
+Hi Linus,
 
-Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
-Cc: Zach Brown <zab@zabbo.net>
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/file.c | 42 ++++++++++++++----------------------------
- 1 file changed, 14 insertions(+), 28 deletions(-)
+Please grab my for-linus:
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b400e5d..1e8e734 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -457,7 +457,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
- 		write_bytes -= copied;
- 		total_copied += copied;
- 
--		/* Return to btrfs_file_aio_write to fault page */
-+		/* Return to btrfs_file_write_iter to fault page */
- 		if (unlikely(copied == 0))
- 			break;
- 
-@@ -1445,27 +1445,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- }
- 
- static ssize_t __btrfs_direct_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos,
--				    loff_t *ppos, size_t count, size_t ocount)
-+				     struct iov_iter *iter, loff_t pos,
-+				    loff_t *ppos, size_t count)
- {
- 	struct file *file = iocb->ki_filp;
--	struct iov_iter i;
- 	ssize_t written;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
- 	int err;
- 
--	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
--					    count, ocount);
-+	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
- 
- 	if (written < 0 || written == count)
- 		return written;
- 
- 	pos += written;
- 	count -= written;
--	iov_iter_init(&i, iov, nr_segs, count, written);
--	written_buffered = __btrfs_buffered_write(file, &i, pos);
-+	written_buffered = __btrfs_buffered_write(file, iter, pos);
- 	if (written_buffered < 0) {
- 		err = written_buffered;
- 		goto out;
-@@ -1500,9 +1496,8 @@ static void update_time_for_write(struct inode *inode)
- 		inode_inc_iversion(inode);
- }
- 
--static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos)
-+static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
-+				     struct iov_iter *iter, loff_t pos)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file_inode(file);
-@@ -1511,7 +1506,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	u64 start_pos;
- 	ssize_t num_written = 0;
- 	ssize_t err = 0;
--	size_t count, ocount;
-+	size_t count;
- 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
- 
- 	if (!sb_start_file_write(file))
-@@ -1519,12 +1514,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 
- 	mutex_lock(&inode->i_mutex);
- 
--	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
--	if (err) {
--		mutex_unlock(&inode->i_mutex);
--		goto out;
--	}
--	count = ocount;
-+	count = iov_iter_count(iter);
- 
- 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
- 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
-@@ -1577,14 +1567,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
- 	if (unlikely(file->f_flags & O_DIRECT)) {
--		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
--						   pos, ppos, count, ocount);
-+		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
-+						   count);
- 	} else {
--		struct iov_iter i;
--
--		iov_iter_init(&i, iov, nr_segs, count, num_written);
--
--		num_written = __btrfs_buffered_write(file, &i, pos);
-+		num_written = __btrfs_buffered_write(file, iter, pos);
- 		if (num_written > 0)
- 			*ppos = pos + num_written;
- 	}
-@@ -2441,9 +2427,9 @@ const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
--	.aio_read       = generic_file_aio_read,
- 	.splice_read	= generic_file_splice_read,
--	.aio_write	= btrfs_file_aio_write,
-+	.read_iter	= generic_file_read_iter,
-+	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
- 	.open		= generic_file_open,
- 	.release	= btrfs_release_file,
--- 
-1.8.1.5
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+These are scattered fixes and one performance improvement.  The biggest
+functional change is in how we throttle metadata changes.  The new code
+bumps our average file creation rate up by ~13% in fs_mark, and lowers
+CPU usage.
+
+Stefan bisected out a regression in our allocation code that made
+balance loop on extents larger than 256MB.
+
+Liu Bo (6) commits (+71/-19):
+    Btrfs: build up error handling for merge_reloc_roots (+35/-12)
+    Btrfs: check for NULL pointer in updating reloc roots (+2/-0)
+    Btrfs: avoid deadlock on transaction waiting list (+7/-0)
+    Btrfs: free all recorded tree blocks on error (+6/-3)
+    Btrfs: do not BUG_ON on aborted situation (+12/-3)
+    Btrfs: do not BUG_ON in prepare_to_reloc (+9/-1)
+
+Chris Mason (2) commits (+96/-63):
+    Btrfs: enforce min_bytes parameter during extent allocation (+4/-2)
+    Btrfs: improve the delayed inode throttling (+92/-61)
+
+Miao Xie (2) commits (+45/-39):
+    Btrfs: fix unclosed transaction handler when the async transaction commitment fails (+4/-0)
+    Btrfs: fix wrong handle at error path of create_snapshot() when the commit fails (+41/-39)
+
+Stefan Behrens (1) commits (+0/-8):
+    Btrfs: allow running defrag in parallel to administrative tasks
+
+Ilya Dryomov (1) commits (+5/-0):
+    Btrfs: fix a mismerge in btrfs_balance()
+
+Josef Bacik (1) commits (+4/-1):
+    Btrfs: use set_nlink if our i_nlink is 0
+
+Total: (13) commits (+221/-130)
+
+ fs/btrfs/delayed-inode.c | 151 ++++++++++++++++++++++++++++-------------------
+ fs/btrfs/delayed-inode.h |   2 +
+ fs/btrfs/disk-io.c       |  16 +++--
+ fs/btrfs/inode.c         |   6 +-
+ fs/btrfs/ioctl.c         |  18 ++----
+ fs/btrfs/relocation.c    |  74 +++++++++++++++++------
+ fs/btrfs/transaction.c   |  65 ++++++++++++--------
+ fs/btrfs/tree-log.c      |   5 +-
+ fs/btrfs/volumes.c       |  14 ++++-
+ 9 files changed, 221 insertions(+), 130 deletions(-)

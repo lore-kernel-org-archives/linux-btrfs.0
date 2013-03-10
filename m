@@ -1,85 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f176.google.com ([74.125.82.176]:35414 "EHLO
-	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751619Ab3CJRv0 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:58870 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751331Ab3CJVgK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 13:51:26 -0400
-Received: by mail-we0-f176.google.com with SMTP id s43so2807069wey.35
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2013 10:51:25 -0700 (PDT)
-Message-ID: <513CC87B.50005@gmail.com>
-Date: Sun, 10 Mar 2013 18:52:59 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Sun, 10 Mar 2013 17:36:10 -0400
+Date: Sun, 10 Mar 2013 21:36:06 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/5] [RFC] RAID-level terminology change
+Message-ID: <20130310213606.GE30771@carfax.org.uk>
+References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+ <201303101223.56805.Martin@lichtvoll.de>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, kreijack@inwind.it,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/5] Add man page description for nCmSpP replication levels
-References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk> <1362861071-12589-6-git-send-email-hugo@carfax.org.uk> <513C9228.6020703@gmail.com> <20130310172009.GC30771@carfax.org.uk>
-In-Reply-To: <20130310172009.GC30771@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="PGNNI9BzQDUtgA2J"
+In-Reply-To: <201303101223.56805.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/10/2013 06:20 PM, Hugo Mills wrote:
-> On Sun, Mar 10, 2013 at 03:01:12PM +0100, Goffredo Baroncelli wrote:
->> Hi Hugo,
->>
->> could you please add also to the btrfs man page a section where are
->> described the nCmSpP levels ?
->>
->> Thanks.
->> GB
->>
->>
->>
->> On 03/09/2013 09:31 PM, Hugo Mills wrote:
->>> Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
->>> ---
-> [snip]
->>> diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
->>> index 41163e0..2e71e65 100644
->>> --- a/man/mkfs.btrfs.8.in
->>> +++ b/man/mkfs.btrfs.8.in
->>> @@ -37,7 +37,29 @@ mkfs.btrfs uses all the available storage for the filesystem.
->>>  .TP
->>>  \fB\-d\fR, \fB\-\-data \fItype\fR
->>>  Specify how the data must be spanned across the devices specified. Valid
->>> -values are raid0, raid1, raid10 or single.
-> 
->    Like here?
 
-Yes, I thought about a section which lists the allowable raid level.
+--PGNNI9BzQDUtgA2J
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 
->>> +values are of the form <n>C[D][<m>S[<p>P]], where <n> is the number of copies
->>> +of data, <m> is the number of stripes per copy, and <p> is the number of parity
->>> +stripes. The <m> parameter must (currently) be a literal "m", indicating that
->>> +as many stripes as possible will be used. The letter D may be added to the
->>> +number of copies, to indicate non-redundant copies (e.g. on the same device).
->>> +
->>> +The following deprecated values may also be used:
->>> +.RS 16
->>> +.P
->>> +single	1C
->>> +.P
->>> +raid0	1CmS
->>> +.P
->>> +raid1	2C
->>> +.P
->>> +dup		2CD
->>> +.P
->>> +raid10	2CmS
->>> +.P
->>> +raid5	1CmS1P
->>> +.P
->>> +raid6	1CmS2P
->>> +.RS -16
->>>  .TP
->>>  \fB\-f\fR
->>>  Force overwrite when an existing filesystem is detected on the device.
-> 
+On Sun, Mar 10, 2013 at 12:23:56PM +0100, Martin Steigerwald wrote:
+> Hi Hugo,
+>=20
+> Am Samstag, 9. M=E4rz 2013 schrieb Hugo Mills:
+> >    Some time ago, and occasionally since, we've discussed altering the
+> > "RAID-n" terminology to change it to an "nCmSpP" format, where n is the
+> > number of copies, m is the number of (data) devices in a stripe per cop=
+y,
+> > and p is the number of parity devices in a stripe.
+> >=20
+> >    The current kernel implementation uses as many devices as it can in
+> > the striped modes (RAID-0, -10, -5, -6), and in this implementation,
+> > that is written as "mS" (with a literal "m"). The mS and pP sections are
+> > omitted if the value is 1S or 0P.
+> >=20
+> >    The magic look-up table for old-style / new-style is:
+> >=20
+> > single           1C (or omitted, in btrfs fi df output)
+> > RAID-0           1CmS
+> > RAID-1           2C
+> > DUP                      2CD
+>=20
+> What does the "D" in "2CD" mean? Its not explained above, unless I miss=
+=20
+> something.
 
+   Oh, sorry. It's "reduced redundancy", aka DUP -- i.e. you get that
+number of copies, but not guarantee that the copies all live on
+different devices. I'm not devoted to showing it this way. Other
+suggestions for making this distinction are welcomed. :)
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> > RAID-10          2CmS
+> > RAID-5           1CmS1P
+> > RAID-6           1CmS2P
+>=20
+> I think its great to clarify the RAID-level terminology, but I find the n=
+ew=20
+> notation a bit, hmmm, cryptic.
+>=20
+> Maybe for displaying it would be nice to show a more verbose format like
+>=20
+> 2 copies, many stripes, 1 parity (1CmS1P)
+>=20
+> by default and the abbreviated one in parentheses?
+
+   The only place it gets output right now is btrfs fi df, and
+something that verbose would probably get in the way.
+
+> Any other idea to make it less cryptic?
+
+   Not necessarily less cryptic, but using lower-case c/s/p would
+probably improve readability: 1c2s1p. Possibly also using * instead of
+m for the "s" setting: 2c*s. That will change the heights of the
+characters, so you only really need to look at the tall ones.
+
+   Hugo.
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+       --- There's many a slip 'twixt wicket-keeper and gully. ---      =20
+
+--PGNNI9BzQDUtgA2J
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUTz8xr9z9OVl50rAAQJudg//R8gTQst1udvmUqe9y7l49BZ40pfsXEbv
+hUnFVmkI812QiOMoetYCoKOk6Mx7+PTbqXTlQLl8sBMGzPr7zCInu9akiNhWgo57
+htEvtHL1FSw6/B5ysoRXN7dYiTF1oL18FLgdIzYDng+v3sRJ6gLmlm8DfNdcyl31
+Cq/cZSl1UZcLMRJ/5pUILFtabAxiOwtnXX2OWWUlcKDWds+s33a08zMQL52RMzo3
+yDyDTHe3VoyrAJTubxqlUrIErUNBX+x54HvjqYAt4QmdrU8kPAYU5FfSss4kjj1J
+K+mpf+10k49Bapyt0ZP12xHDG+XzWj44qmMk+nRT943hEerH9xMTQMaWQCET/MCh
+rf1neiMLAa6H9m2VXtQD0DlIDimPuQxduga6N7m/SVDssCGRirXSZHbFlymmZY6T
+u1bY3kBnizJIhdgM5NHiNfJNcEjFnc+GR7flRi5DiZlqpCnSva3h2bYiuYV8lqUs
+g9DNWSRHiUWJxVsh6T1o9m9dBKXlilR/nZfKFPR63DHaQdwP2FhED60DYgb71DDD
+lofqOMUuk5JXf1TxjGzCzC8v98QhInvf/h7vhUpaqWeeJJtLpsVF0IJYofgxT9kv
+bUFYW26XuIIZqwJXmp6ngL7SNIaVO6Ga/JsE2mzuws9l1Wlg7W3qqp0Pc3w8KEig
+JrLjJoPoCrY=
+=10xL
+-----END PGP SIGNATURE-----
+
+--PGNNI9BzQDUtgA2J--

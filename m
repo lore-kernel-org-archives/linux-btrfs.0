@@ -1,36 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48169 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751862Ab3CVMFF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Mar 2013 08:05:05 -0400
-Date: Fri, 22 Mar 2013 13:05:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>, Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Simon Kirby <sim@hostway.ca>
-Subject: Re: [PATCH v2] Btrfs: Include the device in most error printk()s
-Message-ID: <20130322120501.GN31559@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130319224123.GA4779@hostway.ca>
- <20130321134950.GI31559@twin.jikos.cz>
- <20130321175819.30044.75697@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130321175819.30044.75697@localhost.localdomain>
+Received: from nm11.bullet.mail.ird.yahoo.com ([77.238.189.64]:42628 "HELO
+	nm11.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1751191Ab3CJMQ3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Mar 2013 08:16:29 -0400
+From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+        Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
+        Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
+        Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
+        Zach Brown <zab@zabbo.net>, Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/8] Add some helpers to manage the strings allocation/deallocation.
+Date: Sun, 10 Mar 2013 13:17:32 +0100
+Message-Id: <1362917859-18824-2-git-send-email-goffredo.baroncelli@yahoo.com>
+In-Reply-To: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com>
+References: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 21, 2013 at 01:58:19PM -0400, Chris Mason wrote:
-> I really like this patch, but we're going to have to sit on it until the
-> next merge window.  It's fairly large and we need to stick with things
-> that are more clearly bug fixes for now.
-> 
-> But, I don't have a problem with queuing it into linux-next.  After the
-> next rc we can get Josef's tree into the full linux-next for more
-> testing.
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-I agree, this is not for current dev cycle, we may want to tweak the
-messages and transform more printks to the enhanced format.
+This patch adds some helpers to manage the strings allocation and
+deallocation.
+The function string_list_add(char *) adds the passed string to a list;
+the function string_list_free() frees all the strings together.
 
-david
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ Makefile      |    3 ++-
+ string_list.c |   65 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ string_list.h |   23 ++++++++++++++++++++
+ 3 files changed, 90 insertions(+), 1 deletion(-)
+ create mode 100644 string_list.c
+ create mode 100644 string_list.h
+
+diff --git a/Makefile b/Makefile
+index 596bf93..0d6c43a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,8 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o \
+ 	  inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o \
+ 	  volumes.o utils.o btrfs-list.o btrfslabel.o repair.o \
+-	  send-stream.o send-utils.o qgroup.o raid6.o
++	  send-stream.o send-utils.o qgroup.o raid6.o \
++	  string_list.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o
+diff --git a/string_list.c b/string_list.c
+new file mode 100644
+index 0000000..f840048
+--- /dev/null
++++ b/string_list.c
+@@ -0,0 +1,65 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#include "string_list.h"
++
++/* To store the strings */
++static void **strings_to_free;
++static int count_string_to_free;
++
++/* 
++ * Add a string to the dynamic allocated string list
++ */
++char *string_list_add(char *s)
++{
++	int  size;
++
++	size = sizeof(void *) * ++count_string_to_free;
++	strings_to_free = realloc(strings_to_free, size);
++
++	/* if we don't have enough memory, we have more serius
++	   problem than that a wrong handling of not enough memory */
++	if (!strings_to_free) {
++		fprintf(stderr, "add_string_to_free(): Not enough memory\n");
++		count_string_to_free = 0;
++		return NULL;
++	}
++
++	strings_to_free[count_string_to_free-1] = s;
++	return s;
++}
++
++/*
++ * Free the dynamic allocated strings list
++ */
++void string_list_free()
++{
++	int	i;
++	for (i = 0 ; i < count_string_to_free ; i++)
++		free(strings_to_free[i]);
++
++	free(strings_to_free);
++
++	strings_to_free = 0;
++	count_string_to_free = 0;
++}
++
++
+diff --git a/string_list.h b/string_list.h
+new file mode 100644
+index 0000000..fdc027d
+--- /dev/null
++++ b/string_list.h
+@@ -0,0 +1,23 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef STRING_LIST_H
++#define STRING_LIST_H
++
++char *string_list_add(char *s);
++void string_list_free();
++
++#endif
+-- 
+1.7.10.4
+

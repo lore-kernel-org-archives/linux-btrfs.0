@@ -1,210 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:49766 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751229Ab3CJAZD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Mar 2013 19:25:03 -0500
-Message-ID: <513BD2DD.6050609@sandeen.net>
-Date: Sat, 09 Mar 2013 18:25:01 -0600
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:22284 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753259Ab3CJXD2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Mar 2013 19:03:28 -0400
+Date: Mon, 11 Mar 2013 10:03:25 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <sandeen@sandeen.net>
+Cc: Koen De Wit <koen.de.wit@oracle.com>, xfs@oss.sgi.com,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: xfstests: 301: sparse copy between different
+ filesystems/mountpoints on btrfs
+Message-ID: <20130310230325.GM23616@dastard>
+References: <50F9C331.9000501@oracle.com>
+ <513BD2CF.5020204@sandeen.net>
 MIME-Version: 1.0
-To: Koen De Wit <koen.de.wit@oracle.com>
-CC: xfs@oss.sgi.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: xfstests: 302: cross-subvolume sparse copies on btrfs
-References: <50F9C339.6010000@oracle.com>
-In-Reply-To: <50F9C339.6010000@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <513BD2CF.5020204@sandeen.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/18/13 3:48 PM, Koen De Wit wrote:
-> Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
+On Sat, Mar 09, 2013 at 06:24:47PM -0600, Eric Sandeen wrote:
+> On 1/18/13 3:48 PM, Koen De Wit wrote:
+> > +}
+> > +
+> > +_scratch_mount
+> > +_create_reflinks_to $TESTDIR2
+> > +_scratch_unmount
+> > +
+> > +mount $TEST_DEV $SCRATCH_MNT
+> > +_create_reflinks_to $TESTDIR3
+> > +umount $SCRATCH_MNT
 > 
-> ---
-> 302     |  108 
-> +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->   302.out |   28 ++++++++++++++++
->   2 files changed, 136 insertions(+), 0 deletions(-)
->   create mode 100644 302
->   create mode 100644 302.out
-> 
-> diff --git a/302 b/302
-> new file mode 100644
-> index 0000000..b7f7507
-> --- /dev/null
-> +++ b/302
-> @@ -0,0 +1,108 @@
-> +#! /bin/bash
-> +# FS QA Test No. 302
-> +#
-> +# Testing cross-subvolume sparse copy on btrfs
-> +#    - Create two subvolumes, mount one of them
-> +#    - Create a file on each (sub/root)volume,
-> +#      reflink them on the other volumes
-> +#    - Change one original and two reflinked files
-> +#    - Move and delete files
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +# creator
-> +owner=koen.de.wit@oracle.com
-> +
-> +seq=`basename $0`
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1    # failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +    cd /
-> +    rm -f $tmp.*
+> TBH this confuses me, not that it's necessarily wrong (?)
+> You mount TEST_DEV on $SCRATCH_MNT which makes my brain hurt a little.
+> Then _create_reflinks_to $TESTDIR3 and at that point, um, what's going on,
+> what's linking what to where?
 
-should cleanup delete created subvols?
+Mounting the TEST_DEV on SCRATCH_MNT is almost always a bad thing to
+do. The test harness expects TEST_DEV to be mounted on TEST_DIR, not
+anywhere else.
 
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common.rc
-> +. ./common.filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +
-> +_require_scratch
-> +_require_cp_reflink
+If you need multiple scratch filesystems to test cross-device
+linkage errors, use loopback devices or make use of the btrfs
+scratch device pool...
 
-same basic stuff, need the above deifined somewehre,
-add to groups, add some context to output & comments if
-you would, to make it easier for future testers.
+Cheers,
 
-> +
-> +_catfiles() {
-
-_checksum_files
-
-> +    for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
-> +    do
-> +        for F in file1 file2 file3
-> +        do
-> +            md5sum $D/$F | $AWK_PROG 'END {print $1}'
-
-md5sum $D/$F | _filter_testdirs to get filenames?
-
-> +        done
-> +    done
-> +}
-> +
-> +_scratch_unmount 2>/dev/null
-> +TESTDIR1=$TEST_DIR/test-$seq.$$-1
-> +TESTDIR2=$TEST_DIR/test-$seq.$$-2
-> +SUBVOL1=$TEST_DIR/subvol-$seq.$$-1
-> +SUBVOL2=$TEST_DIR/subvol-$seq.$$-2
-
-same mild concern w/ using pids.
-
-> +
-> +mkdir $TESTDIR1
-> +mkdir $TESTDIR2
-> +btrfs subvolume create $SUBVOL1 > /dev/null
-> +btrfs subvolume create $SUBVOL2 > /dev/null
-> +mount -t btrfs -o subvol=subvol-$seq.$$-1 $TEST_DEV $SCRATCH_MNT
-
-eek, $TEST_DEV on $SCRATCH_MNT again ;)  I guess we need some
-more btrfs-aware basic infrastructure.
-
-> +
-> +$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/file1 > /dev/null
-> +$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $SCRATCH_MNT/file2 > /dev/null
-> +$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $SUBVOL2/file3 > /dev/null
-
-echos & things to add context to the output file would help.
-
-> +cp --reflink $TESTDIR1/file1 $SUBVOL1
-> +cp --reflink $TESTDIR1/file1 $SUBVOL2
-> +cp --reflink $SUBVOL1/file2 $TESTDIR1/
-> +cp --reflink $SUBVOL1/file2 $SUBVOL2
-> +cp --reflink $SUBVOL2/file3 $TESTDIR1/
-> +cp --reflink $SUBVOL2/file3 $SUBVOL1
-
-
-
-> +_catfiles
-> +
-> +$XFS_IO_PROG -c 'pwrite -S 0x64 0 9000' $TESTDIR1/file1 > /dev/null
-> +$XFS_IO_PROG -c 'pwrite -S 0x66 7000 21000' $SUBVOL2/file2 > /dev/null
-> +$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $SCRATCH_MNT/file3 > /dev/null
-> +_catfiles
-> +
-> +mv $TESTDIR1/file* $TESTDIR2
-> +mv $SCRATCH_MNT/file* $TESTDIR1/
-> +mv $SUBVOL2/file* $SCRATCH_MNT/
-> +mv $TESTDIR2/file* $SUBVOL2/
-> +_catfiles
-> +
-> +rm -rf $TESTDIR1
-> +rm -rf $TESTDIR2
-> +umount $SCRATCH_MNT
-> +btrfs subvolume delete $SUBVOL1 > /dev/null
-> +btrfs subvolume delete $SUBVOL2 > /dev/null
-> +
-> +# success, all done
-> +status=0
-> +exit
-> diff --git a/302.out b/302.out
-> new file mode 100644
-> index 0000000..a4bc12e
-> --- /dev/null
-> +++ b/302.out
-> @@ -0,0 +1,28 @@
-> +QA output created by 302
-
-you can imagine the problem here if, say, the 12th md5sum is wrong
-in the output.  What's a tester to think? ;)
-
-> +42d69d1a6d333a7ebdf64792a555e392
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +5a95800e4c04b11117aa4e4de057721f
-> +42d69d1a6d333a7ebdf64792a555e392
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +5a95800e4c04b11117aa4e4de057721f
-> +42d69d1a6d333a7ebdf64792a555e392
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +5a95800e4c04b11117aa4e4de057721f
-> +2e26ad0e8b8e123d18c2d20c81cab0a8
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +5a95800e4c04b11117aa4e4de057721f
-> +42d69d1a6d333a7ebdf64792a555e392
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +b9f275cd638cb784c9e61def94c622a8
-> +42d69d1a6d333a7ebdf64792a555e392
-> +a229d0159dad76eecec390d9b1db16d3
-> +5a95800e4c04b11117aa4e4de057721f
-> +42d69d1a6d333a7ebdf64792a555e392
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +b9f275cd638cb784c9e61def94c622a8
-> +42d69d1a6d333a7ebdf64792a555e392
-> +a229d0159dad76eecec390d9b1db16d3
-> +5a95800e4c04b11117aa4e4de057721f
-> +2e26ad0e8b8e123d18c2d20c81cab0a8
-> +d7402b46310fbbfbc5e466b1dccb043b
-> +5a95800e4c04b11117aa4e4de057721f
-> 
-
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

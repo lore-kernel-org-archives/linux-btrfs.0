@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:47835 "EHLO sandeen.net"
+Received: from sandeen.net ([63.231.237.45]:49759 "EHLO sandeen.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750737Ab3CISIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Mar 2013 13:08:07 -0500
-Message-ID: <513B7A85.6070606@sandeen.net>
-Date: Sat, 09 Mar 2013 12:08:05 -0600
+	id S1751229Ab3CJAYt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Mar 2013 19:24:49 -0500
+Message-ID: <513BD2CF.5020204@sandeen.net>
+Date: Sat, 09 Mar 2013 18:24:47 -0600
 From: Eric Sandeen <sandeen@sandeen.net>
 MIME-Version: 1.0
 To: Koen De Wit <koen.de.wit@oracle.com>
 CC: xfs@oss.sgi.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: xfstests: 300: diskspace consumption of cloned files on btrfs
-References: <50F9C32A.6000600@oracle.com>
-In-Reply-To: <50F9C32A.6000600@oracle.com>
+Subject: Re: xfstests: 301: sparse copy between different filesystems/mountpoints
+ on btrfs
+References: <50F9C331.9000501@oracle.com>
+In-Reply-To: <50F9C331.9000501@oracle.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,27 +21,37 @@ On 1/18/13 3:48 PM, Koen De Wit wrote:
 > Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
 > 
 > ---
-> 300     |   84 
+> 301     |   95 
 > +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->   300.out |    4 +++
->   2 files changed, 88 insertions(+), 0 deletions(-)
->   create mode 100644 300
->   create mode 100644 300.out
-> 
-> diff --git a/300 b/300
+>   301.out |    7 ++++
+>   2 files changed, 102 insertions(+), 0 deletions(-)
+>   create mode 100644 301
+>   create mode 100644 301.out
+
+
+> Invalid cross-device link
+> +0
+
+Seems like the above lines should be at the end of the patch (?)
+ 
+> diff --git a/301 b/301
 > new file mode 100644
-> index 0000000..a6f706c
+> index 0000000..05b9b39
 > --- /dev/null
-> +++ b/300
-> @@ -0,0 +1,84 @@
+> +++ b/301
+> @@ -0,0 +1,95 @@
 > +#! /bin/bash
-> +# FS QA Test No. 300
+> +# FS QA Test No. 301
 > +#
-> +# Diskspace consumption of sparse file clones ("reflinks") on btrfs
-> +#    - Check that a reflink does not consume space
-> +#    - Check that a reflink starts to consume space when the original file
-> +#      is modified
-> +#    - Check that diskspace is freed up after deleting all files
+> +# Check if creating a sparse copy ("reflink") of a file on btrfs
+> +# expectedly fails when it's done betweeen different filesystems or
+> +# different mount points of the same filesystem.
+> +#
+> +# For both situations, these actions are executed:
+> +#    - Copy a file with the reflink=auto option.
+> +#      A normal copy should be created.
+> +#    - Copy a file with the reflink=always option. Should result in error,
+> +#      no file should be created.
 > +#
 > +#-----------------------------------------------------------------------
 > +# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
@@ -84,90 +95,107 @@ On 1/18/13 3:48 PM, Koen De Wit wrote:
 > +_supported_fs btrfs
 > +_supported_os Linux
 > +
+> +_require_scratch
 > +_require_cp_reflink
 
-need def'n
+same deal, need thisdefinition
 
+> +
 > +TESTDIR1=$TEST_DIR/test-$seq.$$
+> +TESTDIR2=$SCRATCH_MNT/test-$seq.$$
+> +TESTDIR3=$SCRATCH_MNT/test-bis-$seq.$$
+
+I might drop the .$$ for reasons stated earlier, etc.
+
+You might also consider not naming something on $SCRATCH_MNT
+as $TESTDIR when there's another standard variable named $TEST_DIR -
+it's confusing.  Maybe name them as TEST_SOURCEDIR,
+SCRATCH_TARGETDIR1, or similar, to make it easier to keep it
+straight when reading the test.
+
+> +
 > +mkdir $TESTDIR1
-
-possible clash if pids cycle?
-
-> +_free() {
-> +    _df_dir $TEST_DIR | $AWK_PROG '{ print $5 }'
+> +_scratch_mkfs
+> +$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original > /dev/null
+> +
+> +_filter_testdirs()
+> +{
+> +    sed -e "s,$TESTDIR1,TESTDIR1,g" \
+> +        -e "s,$TESTDIR2,TESTDIR2,g" \
+> +        -e "s,$TESTDIR3,TESTDIR3,g"
 > +}
 > +
-> +free_before=`_free`
-> +$XFS_IO_PROG -f -c "pwrite -S 0x61 0 10m" -c "fsync" $TESTDIR1/original 
->  > /dev/null
+> +_create_reflinks_to()
+> +{
+> +    mkdir $1
+> +    cp --reflink=auto $TESTDIR1/original $1/copy
+> +    md5sum $1/copy | $AWK_PROG 'END {print $1}'
 
-patch wrapped.  FWIW sometimes redirecting to $seq.full rather than
-/dev/null makes it easier to see what's happened if anything goes wrong.
+for more output context:
 
-> +cp --reflink=always $TESTDIR1/original $TESTDIR1/copy1
-> +cp --reflink=auto $TESTDIR1/copy1 $TESTDIR1/copy2
-> +btrfs filesystem sync $TEST_DIR > /dev/null
-> +free_after_creating_reflinks=`_free`
-> +_within_tolerance "free space after creating 1 file and 2 reflinks" \
-> +    `expr $free_before - $free_after_creating_reflinks` 10252 512 -v
+md5sum $1/copy | _filter_testdirs
+
+> +    rm -rf $1
+> +    mkdir $1
+> +    cp --reflink=always $TESTDIR1/original $1/copyfail 2>&1 | 
+> _filter_testdirs
+
+patch wrapped
+
+> +    ls $1/copyfail | wc -l
+
+Here if you dropped the $$ from the filename and did:
+
+ls $1/copyfail | _filter_testdirs
+
+the output might be more informative on a failure?
+
+> +}
 > +
+> +_scratch_mount
+> +_create_reflinks_to $TESTDIR2
+> +_scratch_unmount
+> +
+> +mount $TEST_DEV $SCRATCH_MNT
+> +_create_reflinks_to $TESTDIR3
+> +umount $SCRATCH_MNT
 
-A comment about what's being checked here might help, unfortunately
-the _within_tolerance helper is a little cryptic.
+TBH this confuses me, not that it's necessarily wrong (?)
+You mount TEST_DEV on $SCRATCH_MNT which makes my brain hurt a little.
+Then _create_reflinks_to $TESTDIR3 and at that point, um, what's going on,
+what's linking what to where?
 
-why should the difference be 10252, out of curiosity?  Does that depend
-on block size or anything?
-
-> +$XFS_IO_PROG -c "pwrite -S 0x62 3m 5m" -c "fsync" $TESTDIR1/original > 
-> /dev/null
-
-patch wrapped :)
-
-> +btrfs filesystem sync $TEST_DIR > /dev/null
-> +free_after_overwriting=`_free`
-
-
-> +_within_tolerance "free space after overwriting original file" \
-> +    `expr $free_before - $free_after_overwriting` 15376 512 -v
-
-Ok, so you overwrote 5 megs of the original 10 meg file now.
-
-So this is checking that the difference is within 512 bytes
-newly-consumed space against . . . 15376 what?  It'd just be nice
-to have a comment for future readers.
-
-I wonder if comparing to $free_after_creating_reflinks would
-be clearer, so the space used is just that space used for
-the new data?
-
-> +rm $TESTDIR1/original $TESTDIR1/copy1 $TESTDIR1/copy2
-> +btrfs filesystem sync $TEST_DIR > /dev/null
-> +free_after_removing=`_free`
-> +_within_tolerance "free space after removing all files" \
-> +    `expr $free_before - $free_after_removing` 0 128 -v
-
-This makes sense, make sure we're back to the original.
-
-Is the 128 slop even necessary?
-
-Need to add this test to groups as well.
-
-Thanks,
--Eric
+Some comments about what is being tested & the expected result,
+maybe w/ echos like mentioned before, and descriptive var names
+would help me, at least.
 
 > +
 > +# success, all done
 > +status=0
 > +exit
-> diff --git a/300.out b/300.out
+> diff --git a/301.out b/301.out
 > new file mode 100644
-> index 0000000..bbb94f4
+> index 0000000..3b66682
 > --- /dev/null
-> +++ b/300.out
-> @@ -0,0 +1,4 @@
-> +QA output created by 300
-> +free space after creating 1 file and 2 reflinks is in range
-> +free space after overwriting original file is in range
-> +free space after removing all files is in range
-> 
+> +++ b/301.out
+> @@ -0,0 +1,7 @@
+> +QA output created by 301
+> +42d69d1a6d333a7ebdf64792a555e392
+> +cp: failed to clone `TESTDIR2/copyfail' from `TESTDIR1/original': Invalid cross-device link
+
+Hm, my cp fails like:
+
++cp: failed to clone `TESTDIR3/copyfail': Invalid cross-device link
+
+so might need a special filter to catch both variants.
+
+> +0
+> +42d69d1a6d333a7ebdf64792a555e392
+> +cp: failed to clone `TESTDIR3/copyfail' from `TESTDIR1/original': 
+
+malformed patch, supposed to be 7 new lines but only 6.
+
+Thanks,
+-Eric
+ 
 

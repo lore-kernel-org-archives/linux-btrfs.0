@@ -1,169 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:52373 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751425Ab3CIVIM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 16:08:12 -0500
-Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
-	by frost.carfax.org.uk with esmtp (Exim 4.72)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1UEQQC-0007mq-KE
-	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 20:31:13 +0000
-Received: from [10.0.0.10] (helo=ruthven.carfax.org.uk)
-	by ruthven.carfax.org.uk with esmtp (Exim 4.80)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1UEQQC-0003Hi-3t
-	for linux-btrfs@vger.kernel.org; Sat, 09 Mar 2013 20:31:12 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/5] Use nCmSpP format for mkfs
-Date: Sat,  9 Mar 2013 20:31:07 +0000
-Message-Id: <1362861071-12589-2-git-send-email-hugo@carfax.org.uk>
-In-Reply-To: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+Received: from mail-we0-f169.google.com ([74.125.82.169]:54456 "EHLO
+	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750921Ab3CJPl5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Mar 2013 11:41:57 -0400
+Received: by mail-we0-f169.google.com with SMTP id t11so2816242wey.28
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2013 08:41:56 -0700 (PDT)
+Message-ID: <513CAA25.2010803@gmail.com>
+Date: Sun, 10 Mar 2013 16:43:33 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Hugo Mills <hugo@carfax.org.uk>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/5] [RFC] RAID-level terminology change
 References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Teach mkfs.btrfs about nCmSpP format for replication levels, which avoids
-the semantic uncertainty over the "RAID-XYZ" naming.
+Hi Hugo,
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- mkfs.c |   91 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 84 insertions(+), 7 deletions(-)
+On 03/09/2013 09:31 PM, Hugo Mills wrote:
+>    Some time ago, and occasionally since, we've discussed altering the
+> "RAID-n" terminology to change it to an "nCmSpP" format, where n is the
+> number of copies, m is the number of (data) devices in a stripe per copy,
+> and p is the number of parity devices in a stripe.
+> 
+>    The current kernel implementation uses as many devices as it can in the
+> striped modes (RAID-0, -10, -5, -6), and in this implementation, that is
+> written as "mS" (with a literal "m"). The mS and pP sections are omitted
+> if the value is 1S or 0P.
+> 
+>    The magic look-up table for old-style / new-style is:
+> 
+> single 		 1C (or omitted, in btrfs fi df output)
+> RAID-0		 1CmS
+> RAID-1		 2C
+> DUP			 2CD
+> RAID-10		 2CmS
+> RAID-5		 1CmS1P
+> RAID-6		 1CmS2P
 
-diff --git a/mkfs.c b/mkfs.c
-index 5ece186..02a7086 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -326,7 +326,9 @@ static void print_usage(void)
- 	fprintf(stderr, "options:\n");
- 	fprintf(stderr, "\t -A --alloc-start the offset to start the FS\n");
- 	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
--	fprintf(stderr, "\t -d --data data profile, raid0, raid1, raid10, dup or single\n");
-+	fprintf(stderr, "\t -d --data data profile: <n>C[<m>S[<p>P]]\n");
-+	fprintf(stderr, "\t\tfor n copies, m stripes, p parity stripes\n");
-+	fprintf(stderr, "\t\tor raid0, raid1, raid10, dup or single (deprecated)\n");
- 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
- 	fprintf(stderr, "\t -L --label set a label\n");
- 	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
-@@ -346,8 +348,36 @@ static void print_version(void)
- 	exit(0);
- }
- 
--static u64 parse_profile(char *s)
-+static u64 make_profile(int copies, int dup, int stripes, int parity)
- {
-+	if(copies == 1 && !dup && stripes == 0 && parity == 0)
-+		return 0;
-+	else if(copies == 2 && dup && stripes == 0 && parity == 0)
-+		return BTRFS_BLOCK_GROUP_DUP;
-+	else if(copies == 2 && !dup && stripes == 0 && parity == 0)
-+		return BTRFS_BLOCK_GROUP_RAID1;
-+	else if(copies == 2 && !dup && stripes == -1 && parity == 0)
-+		return BTRFS_BLOCK_GROUP_RAID10;
-+	else if(copies == 1 && !dup && stripes == -1 && parity == 0)
-+		return BTRFS_BLOCK_GROUP_RAID0;
-+	else if(copies == 1 && !dup && stripes == -1 && parity == 1)
-+		return BTRFS_BLOCK_GROUP_RAID5;
-+	else if(copies == 1 && !dup && stripes == -1 && parity == 2)
-+		return BTRFS_BLOCK_GROUP_RAID6;
-+
-+	return (u64)-1;
-+}
-+
-+static u64 parse_profile(const char *s)
-+{
-+	char *pos, *parse_end;
-+	int copies = 1;
-+	int stripes = 0;
-+	int parity = 0;
-+	int dup = 0;
-+	u64 profile = (u64)-1;
-+
-+	/* Look for exact match with historical forms first */
- 	if (strcmp(s, "raid0") == 0) {
- 		return BTRFS_BLOCK_GROUP_RAID0;
- 	} else if (strcmp(s, "raid1") == 0) {
-@@ -362,12 +392,54 @@ static u64 parse_profile(char *s)
- 		return BTRFS_BLOCK_GROUP_DUP;
- 	} else if (strcmp(s, "single") == 0) {
- 		return 0;
-+	}
-+
-+	/* Attempt to parse new nCmSpP form */
-+	/* nC is required and n must be an unsigned decimal number */
-+	copies = strtoul(s, &parse_end, 10);
-+	if(parse_end == s || (*parse_end != 'c' && *parse_end != 'C'))
-+		goto unknown;
-+
-+	/* C may be followed by D to indicate non-redundant/DUP */
-+	pos = parse_end + 1;
-+	if(*pos == 'D' || *pos == 'd') {
-+		dup = 1;
-+		pos++;
-+	}
-+	if(*pos == 0)
-+		goto done;
-+
-+	/* mS is optional, and m may be an integer, or a literal "m" */
-+	if(*pos == 'm') {
-+		stripes = -1;
-+		parse_end = pos+1;
- 	} else {
--		fprintf(stderr, "Unknown profile %s\n", s);
--		print_usage();
-+		stripes = strtoul(pos, &parse_end, 10);
- 	}
--	/* not reached */
--	return 0;
-+	if(parse_end == pos || (*parse_end != 's' && *parse_end != 'S'))
-+		goto unknown;
-+
-+	pos = parse_end + 1;
-+	if(*pos == 0)
-+		goto done;
-+
-+	/* pP is optional, and p must be an integer */
-+	parity = strtoul(pos, &parse_end, 10);
-+	if(parse_end == pos || (*parse_end != 'p' && *parse_end != 'P'))
-+		goto unknown;
-+	pos = parse_end + 1;
-+	if(*pos != 0)
-+		goto unknown;
-+
-+done:
-+	profile = make_profile(copies, dup, stripes, parity);
-+	if(profile == (u64)-1)
-+		fprintf(stderr, "Unknown or unavailable profile '%s'\n", s);
-+	return profile;
-+
-+unknown:
-+	fprintf(stderr, "Unparseable profile '%s'\n", s);
-+	return (u64)-1;
- }
- 
- static char *parse_label(char *input)
-@@ -1447,6 +1519,11 @@ int main(int ac, char **av)
- 	printf("\nWARNING! - %s IS EXPERIMENTAL\n", BTRFS_BUILD_VERSION);
- 	printf("WARNING! - see http://btrfs.wiki.kernel.org before using\n\n");
- 
-+	if (data_profile == (u64)-1 || metadata_profile == (u64)-1) {
-+		fprintf(stderr, "Cannot handle requested replication profile. Aborting\n");
-+		exit(1);
-+	}
-+
- 	if (source_dir == 0) {
- 		file = av[optind++];
- 		ret = is_swap_device(file);
-@@ -1666,7 +1743,7 @@ raid_groups:
- 
- 		flags |= BTRFS_FEATURE_INCOMPAT_RAID56;
- 		btrfs_set_super_incompat_flags(super, flags);
--		printf("Setting RAID5/6 feature flag\n");
-+		printf("Setting parity-RAID feature flag\n");
- 	}
- 
- 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+
+Even I found a bit more rational the "nCmSpP" format, I think that this
+is a bit too complex.
+
+As you told:
+>    Chris is definitely planning fixed values for mS (so you can ask
+> for, say, exactly 4 stripes and one parity), and values for nC greater
+> than 2. As far as I know, there aren't any plans for nC > 1 and pP > 0
+> together. I haven't got far enough into the kernel code to work out
+> whether that's simple or not to implement.
+
+On the basis of that we should handle few cases than the full "nCDmSpP"
+format allow. So I suggest to allow the following "shorts forms":
+
+- DUP			-> dD		(to allow more that 2 copy per
+					 disk)
+
+- RAID1			-> nC or *C	
+
+- RAID0 		-> mS or *S
+
+- RAID10		-> nCmS or *CmS or nC*s
+
+- RAID with parity	-> mSpP or *SpP or mS*p (it is possible ?)
+
+- single		-> 1C or 1D or 1S or "single"
+
+
+where d,n,m,p are integers; '*' is the literal '*' and means "how many
+possible".
+
+For example if I have 6 disks:
+*C2S	-> means: 3 copies, 2 stripes ( m*n = 3*2 == num disk == 6)
+2C*S	-> means: 2 copies, 3 stripes ( m*n = 3*2 == num disk == 6)
+*S2P	-> means: 2 parity, 4 stripes ( p+m = 4+2 == num disk == 6)
+
+We could also have some defaults, like: d=2, n=2, m=*, p=1, so some
+common forms become:
+D	-> means DUP (d==2)
+S	-> means RAID0 (s=*)
+C	-> means RAID1 (n=2)
+CS	-> means RAID10 (n=2, m=*)
+SP	-> means RAID5 (m=*, p=1)
+SP2	-> means RAID6 (m=*, p=2)
+
+It would allowable also more complex form like
+	5C3D4S2P
+but I don't think it will be supported ever.
+
+I have a request: could we consider to swap letters with the numbers ?
+For example 3S2P could become S3P2. For my *subjective* point of view,
+this seems more clear. What do you think ?
+
+However I am open also to the following forms
+
+dD -> DUP(d), as backward compatibility DUP means d==2
+nC -> RAID1(n), as backward compatibility RAID1 means n==2
+mS -> RAID0(n), as backward compatibility RAID0 means m==*
+nCmS -> RAID10(n,m), as backward compatibility RAID10 means n=2, m=*
+mSpP -> RAIDP(n,m), as backward compatibility RAID6 means p=2, m=*
+			RAID5 means p=1, m=*
+
+more verbose but also more familiar to the administrator.
+
+What do you think ?
+
 -- 
-1.7.10.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

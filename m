@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nm7.bullet.mail.ird.yahoo.com ([77.238.189.21]:27567 "HELO
-	nm7.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1751987Ab3CJMQi (ORCPT
+Received: from nm4.bullet.mail.ird.yahoo.com ([77.238.189.61]:40899 "HELO
+	nm4.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1751987Ab3CJMQl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 08:16:38 -0400
+	Sun, 10 Mar 2013 08:16:41 -0400
 From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Hugo Mills <hugo@carfax.org.uk>,
@@ -11,9 +11,9 @@ Cc: Hugo Mills <hugo@carfax.org.uk>,
         Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
         Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
         Zach Brown <zab@zabbo.net>, Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 6/8] Create entry in man page for btrfs filesystem disk-usage
-Date: Sun, 10 Mar 2013 13:17:37 +0100
-Message-Id: <1362917859-18824-7-git-send-email-goffredo.baroncelli@yahoo.com>
+Subject: [PATCH 8/8] Create a new entry in btrfs man page for btrfs device disk-usage.
+Date: Sun, 10 Mar 2013 13:17:39 +0100
+Message-Id: <1362917859-18824-9-git-send-email-goffredo.baroncelli@yahoo.com>
 In-Reply-To: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com>
 References: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,40 +23,35 @@ From: Goffredo Baroncelli <kreijack@inwind.it>
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- man/btrfs.8.in |   13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ man/btrfs.8.in |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index e2f86ea..50dc510 100644
+index 50dc510..e60c81f 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -29,6 +29,9 @@ btrfs \- control a btrfs filesystem
+@@ -46,6 +46,8 @@ btrfs \- control a btrfs filesystem
  .PP
- \fBbtrfs\fP \fBfilesystem resize\fP\fI [devid:][+/\-]<size>[gkm]|[devid:]max <filesystem>\fP
+ \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
  .PP
-+\fBbtrfs\fP \fBfilesystem filesystem disk-usage [-t][-b]\fP\fI <path> 
-+[path..]\fP
++\fBbtrfs\fP \fBdevice disk-usage\fP\fI [-b] <path> [<path>...] \fP
 +.PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+ \fBbtrfs\fP \fBreplace start\fP \fI[-Bfr] <srcdev>|<devid> <targetdev> <path>\fP
  .PP
- \fBbtrfs\fP \fBfilesystem df\fP\fI [-b] \fIpath [path..]\fR\fP
-@@ -251,6 +254,16 @@ it with the new desired size.  When recreating the partition make sure to use
- the same starting disk cylinder as before.
+ \fBbtrfs\fP \fBreplace status\fP \fI[-1] <path>\fP
+@@ -360,6 +362,12 @@ Add device(s) to the filesystem identified by \fI<path>\fR.
+ Remove device(s) from a filesystem identified by \fI<path>\fR.
  .TP
  
-+\fBfilesystem disk-usage\fP [-t][-b] \fIpath [path..]\fR
++\fBdevice disk-usage\fR\fI [-b] <path> [<path>..] <path>\fR
++Show which chunks are in a device.
 +
-+Show in which disk the chunks are allocated.
-+
-+\fB-b\fP Set byte as unit
-+
-+\fB-t\fP Show data in tabular format
-+
++\fB-b\fP set byte as unit.
 +.TP
 +
- \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
- filesystem. 
+ \fBdevice scan\fR \fI[--all-devices|<device> [<device>...]\fR
+ If one or more devices are passed, these are scanned for a btrfs filesystem. 
+ If no devices are passed, \fBbtrfs\fR scans all the block devices listed
 -- 
 1.7.10.4
 

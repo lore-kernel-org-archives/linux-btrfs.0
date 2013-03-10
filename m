@@ -1,76 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f170.google.com ([209.85.210.170]:34812 "EHLO
-	mail-ia0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751915Ab3CJEVS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Mar 2013 23:21:18 -0500
-Received: by mail-ia0-f170.google.com with SMTP id h8so2671831iaa.15
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 20:21:18 -0800 (PST)
-MIME-Version: 1.0
-Date: Sun, 10 Mar 2013 12:21:18 +0800
-Message-ID: <CAP9B-Qkzy=Q+Lh5zeH7LhgQUQuEa4DPubku6cTr4DEuVxu1Swg@mail.gmail.com>
-Subject: about btrfs quota issues
-From: Shilong Wang <wangshilong1991@gmail.com>
-To: Arne Jansen <sensille@gmx.net>
+Received: from twin.jikos.cz ([89.185.236.188]:47460 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752711Ab3CJTLV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Mar 2013 15:11:21 -0400
+Date: Sun, 10 Mar 2013 20:11:08 +0100
+From: David Sterba <dave@jikos.cz>
+To: Swasher <mr.swasher@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Balance terminating
+Message-ID: <20130310191108.GB29984@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <loom.20130309T124930-192@post.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <loom.20130309T124930-192@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, Arne
+On Sat, Mar 09, 2013 at 12:03:07PM +0000, Swasher wrote:
+> After it, I'm start watch for progress via 'balance status', and I can see how 
+> progress run. But only for 83% left. 
+> 
+> I'm wait few hours and try cancel it with 'balance cancel'.
+> More than 12 hours had passed, but balance stalled in this state:
+> 
+> $ btrfs fi balance status /mnt/raid/  
+> Balance on '/mnt/raid/' is running, cancel requested
+> 386 out of about 2231 chunks balanced (387 considered),  83% left
 
-          Steps to reproduce:
+What's the kernel version?
 
+> Question: Can I'm safetly reboot server? Or should I do something else?
 
-                mkfs.btrfs <disk>
-                mount <disk> <mnt>
-                btrfs quota enable <mnt>
+Yes it's safe. Please note that an interrupted balance will continue on
+next mount unless 'skip_balance' is specified (and then balance cancel
+will clear the state from the fs).
 
-                btrfs sub create <mnt>/sub
-                btrfs qgroup create 1/1 <mnt>
-                btrfs qgroup assign sub_qgroupid 1/1 <mnt>
-
-
-                dd if=/dev/zero of=<mnt>/sub/data bs=1M count=1
-                sync
-                btrfs qgroup show  <mnt>
-                #until now, every thing goes well, however, if snapshot happens
-                #the quota accounting will go wrong
-
-               btrfs sub snapshot <mnt>/sub <mnt>/snap
-               sync
-               btrfs qgroup show <mnt>
-               #the accounting information of group(1/1) is not expected
-               #here exclusive of group (1/1) do not change as expected.
-
-So i took a close look at the algorithm of quota accounting, the 3
-steps of algorithm don't
-consider some cases like the above example.
-
-In fact, i think you try to put some work on users, especially when
-snapshot happens.
-It is complex to track all the group's accounting when having
-snapshots..See the following
-commands.
-
-btrfs sub snapshot -c src_qgroupid:dst_qgroupid  <mnt>
-btrfs sub snapshot  -x src_qgroupid:dst_qgroupid <mnt>
-
-
-Are these commands designed for some cases regarding to
-snapshots/subvolume cases?
-If so, i think it really confusing and too complex for users to do
-such work, is't it?...
-
-BTW, i have a question about the function btrfs_qgroup_inherit(),
-when copying exclusive value from src_qgroup to dst_qgroup:
-
-       dst_qgroup->exclusive = src_qgroup->exclusive + level_size
-
-while copying referenced value from src_qgroup to dot_qgroup:
-
-       dst_qgroup->referenced = src_qgroup->referenced -level_size
-
-I can't really figure out...~_~
-
-Thanks,
-Wang
+david

@@ -1,67 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:37129 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751086Ab3CJGh3 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:47256 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751253Ab3CJLX7 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 01:37:29 -0500
-Received: by mail-lb0-f179.google.com with SMTP id j14so2295045lbo.24
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Mar 2013 22:37:27 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAFWF=anqt8ssajAQtVR2CBCLVXJJSneLjuvRZERm7m-oPkK=Ug@mail.gmail.com>
-References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
- <khgcsi$1k4$1@ger.gmane.org> <20130310014434.GB30771@carfax.org.uk>
- <khh6er$nmk$1@ger.gmane.org> <CAFWF=anqt8ssajAQtVR2CBCLVXJJSneLjuvRZERm7m-oPkK=Ug@mail.gmail.com>
-From: Harald Glatt <mail@hachre.de>
-Date: Sun, 10 Mar 2013 07:37:07 +0100
-Message-ID: <CAFWF=amO=G+BtqJxBNj8h_5Y7d8T=38xK4qnu=LZbUQyn3Zvew@mail.gmail.com>
+	Sun, 10 Mar 2013 07:23:59 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 0/5] [RFC] RAID-level terminology change
-To: Roger Binns <rogerb@rogerbinns.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sun, 10 Mar 2013 12:23:56 +0100
+Cc: Hugo Mills <hugo@carfax.org.uk>
+References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk> (sfid-20130310_104347_651723_C84E4102)
+In-Reply-To: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201303101223.56805.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Very good points,
->
-> I was also gonna write something by the lines of 'all that matters is
-> achieving the minimum amount of redundancy, as requested by the user,
-> at the maximum possible performance'.
->
-> After reading your post now, Roger, I'm much more clear on what I
-> actually wanted to say, which is pretty much the same thing:
->
-> In paradise really all I would have to tell btrfs is how many drives
-> I'm willing to give away so that they will be used exclusively for
-> redundancy. Everything else btrfs should figure out by itself. Not
-> just because it's simpler for the user, but also because btrfs
-> actually is in a position to KNOW better.
->
-> As Roger said, as long as the given minimum redundancy quota is
-> filled, btrfs could make choices that favor either even more
-> redundancy or more performance based on my usage of the filesystem by
-> meassuring things like throughput, ioops or space used. I could
-> imagine that a snail filesystem that barely fills and doesn't do whole
-> lot could easily work itself up on building huge redunancy, while a
-> filesystem that requires high performance would do excessive striping
-> to achieve maximum performance, while only keeping the minimum
-> requested redundancy intact.
->
-> It sounds quite futuristic to me, but it is definitely something that
-> we have to achieve hopefully rather sooner than later :)
->
-> I'm looking forward to it!
+Hi Hugo,
 
-I have to add something to my own message: Even the notion of thinking
-in 'how many devices do I want to give away for redundancy' is
-outdated... What it really comes down to is how much space am I
-willing to sacrifice so that my reliablilty is increasing. Rather than
-addressing that at a per-drive level with a futuristic fs like btrfs I
-think setting a percent value of total space would be best. Here are
-my n hard drives, I want to give up thirty percent of maximum space so
-that basically I can lose that amount of space across any device
-combination and be safe. Do this for me and do it at maximum possible
-performance with the device count, and type, and sizes that I've given
-you. And if I'm not using the filesystem much, if I have tons of space
-free, feel free to build even more redundancy while idle.
+Am Samstag, 9. März 2013 schrieb Hugo Mills:
+>    Some time ago, and occasionally since, we've discussed altering the
+> "RAID-n" terminology to change it to an "nCmSpP" format, where n is the
+> number of copies, m is the number of (data) devices in a stripe per copy,
+> and p is the number of parity devices in a stripe.
+> 
+>    The current kernel implementation uses as many devices as it can in
+> the striped modes (RAID-0, -10, -5, -6), and in this implementation,
+> that is written as "mS" (with a literal "m"). The mS and pP sections are
+> omitted if the value is 1S or 0P.
+> 
+>    The magic look-up table for old-style / new-style is:
+> 
+> single           1C (or omitted, in btrfs fi df output)
+> RAID-0           1CmS
+> RAID-1           2C
+> DUP                      2CD
 
-This is pretty much what it would be like in a perfect world, in my opinion :)
+What does the "D" in "2CD" mean? Its not explained above, unless I miss 
+something.
+
+> RAID-10          2CmS
+> RAID-5           1CmS1P
+> RAID-6           1CmS2P
+
+I think its great to clarify the RAID-level terminology, but I find the new 
+notation a bit, hmmm, cryptic.
+
+Maybe for displaying it would be nice to show a more verbose format like
+
+2 copies, many stripes, 1 parity (1CmS1P)
+
+by default and the abbreviated one in parentheses?
+
+Any other idea to make it less cryptic?
+
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

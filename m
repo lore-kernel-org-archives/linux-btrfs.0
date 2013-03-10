@@ -1,177 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nm24-vm5.bullet.mail.ird.yahoo.com ([212.82.109.196]:33653 "HELO
-	nm24-vm5.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1751319Ab3CJMQ2 (ORCPT
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:37025 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751264Ab3CJPvV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 08:16:28 -0400
-From: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-        Michael =?utf-8?q?Kj=C3=B6rling?= <michael@kjorling.se>,
-        Martin Steigerwald <Martin@lichtvoll.de>, cwillu <cwillu@cwillu.com>,
-        Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Zach Brown <zab@zabbo.net>
-Subject: [PATCH V3][BTRFS-PROGS] Enhance btrfs fi df with raid5/6 support
-Date: Sun, 10 Mar 2013 13:17:31 +0100
-Message-Id: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com>
+	Sun, 10 Mar 2013 11:51:21 -0400
+Received: by mail-wg0-f43.google.com with SMTP id e12so4219631wge.22
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2013 08:51:20 -0700 (PDT)
+Message-ID: <513CAC59.9020803@gmail.com>
+Date: Sun, 10 Mar 2013 16:52:57 +0100
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: Goffredo Baroncelli <goffredo.baroncelli@yahoo.com>,
+        linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>,
+        =?UTF-8?B?TWljaGFlbCBLasO2cmxpbmc=?= <michael@kjorling.se>,
+        cwillu <cwillu@cwillu.com>, Chris Murphy <lists@colorremedies.com>,
+        David Sterba <dsterba@suse.cz>, Zach Brown <zab@zabbo.net>
+Subject: Re: [PATCH V3][BTRFS-PROGS] Enhance btrfs fi df with raid5/6 support
+References: <1362917859-18824-1-git-send-email-goffredo.baroncelli@yahoo.com> (sfid-20130310_140722_430440_73B14E31) <201303101416.02781.Martin@lichtvoll.de>
+In-Reply-To: <201303101416.02781.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all, 
+Hi Martin,
 
-This is the third attempt of my patches related to show how the data
-are stored in a btrfs filesystem. I rebased all the patches on the latest
-mason git. I tried to address the Zach concern abou the using of
-the string_list_add() in the df_pretty_sizes(): string_list_add() is
-removed from the df_pretty_sizes() and I created the new function 
-sla_pretty_sizes() which calls df_pretty_sizes() and string_list_add().
+On 03/10/2013 02:16 PM, Martin Steigerwald wrote:
+> Am Sonntag, 10. März 2013 schrieb Goffredo Baroncelli:
+>> Hi all, 
+> 
+> Hi Goffredo,
+> 
+>> This is the third attempt of my patches related to show how the data
+>> are stored in a btrfs filesystem. I rebased all the patches on the latest
+>> mason git. I tried to address the Zach concern abou the using of
+>> the string_list_add() in the df_pretty_sizes(): string_list_add() is
+>> removed from the df_pretty_sizes() and I created the new function 
+>> sla_pretty_sizes() which calls df_pretty_sizes() and string_list_add().
+> 
+> Thanks for your new round of patches.
+> 
+>> Unfortunately I noticed a regression which passed all the reviews until
+>> now: the command btrfs fi df previous didn't require the root
+>> capability, now with my patches it is required, because I need to know
+>> some info about the chunks so I need to use the "BTRFS_IOC_TREE_SEARCH".
+>>
+>> I think that there are the following possibilities:
+>> 1) accept this regresssion
+>> 2) remove the command "btrfs fi df" and leave only "btrfs fi disk-usage"
+>> and "btrfs dev disk-usage"
+>> 3) adding a new ioctl which could be used without root capability. Of
+>> course this ioctl would return only a subset of the
+>> BTRFS_IOC_TREE_SEARCH info
+>>
+>> I think that the 3) would be the "long term" solution. I am not happy
+>> about the 1), so as "short term solution" I think that we should go with
+>> the 2). What do you think ?
+> 
+> Uhm, but exactly the new btrfs fi df contains a good overview:
+> 
+>> Below the description of the patches.
+>>
+>> --
+>>
+>> These patches update the btrfs fi df command and add two new commands:
+>> - btrfs filesystem disk-usage <path>
+>> - btrfs device disk-usage <path>
+>>
+>> The command "btrfs filesystem df" now shows only the disk
+>> usage/available.
+>>
+>> $ sudo btrfs filesystem df /mnt/btrfs1/
+>> Disk size:               400.00GB
+>> Disk allocated:            8.04GB
+>> Disk unallocated:        391.97GB
+>> Used:                     11.29MB
+>> Free (Estimated):        250.45GB       (Max: 396.99GB, min: 201.00GB)
+>> Data to disk ratio:          63 %
+>>
+>> The "Free (Estimated)" tries to give an estimation of the free space
+>> on the basis of the chunks usage. Max and min are the maximum allowable
+>> space (if the next chunk are allocated as SINGLE) or the minimum one (
+>> if the next chunks are allocated as DUP/RAID1/RAID10).
+> 
+> What information fi df can´t display without root permissions? Maybe its
+> okay to just omit it for now if being run as user or display a "run as root" 
+> hint instead?
 
-Unfortunately I noticed a regression which passed all the reviews until now:
-the command btrfs fi df previous didn't require the root capability,
-now with my patches it is required, because I need to know some info
-about the chunks so I need to use the "BTRFS_IOC_TREE_SEARCH".
+I need the root permission to know how many stripes the raid5/6 chunks
+are allocated.
+For the RAID1/RAID10/RAID0 the computation of the disk usage by the
+stripes was easy. I need to multiply the field " total_bytes" of the
+struct btrfs_ioctl_space_args by a factor depending by the kind of RAID
+(for example for RAID1 this factor is two: the disk space used is two
+times the space available).
+Instead for RAID5/6 this value depends by the number of disk at "the
+time of the chunk creation". If the chunk was created in a RAID5 with 4
+disks, the ratio space available/disk space used is 3/4. If I add
+another disk and don't perform a balance, for the old chunk the ration
+is 3/4 for a new chunk the ratio become 4/5. To got this information I
+need to retrieve the chunk info using the BTRFS_IOC_TREE_SEARCH ioctl.
 
-I think that there are the following possibilities:
-1) accept this regresssion
-2) remove the command "btrfs fi df" and leave only "btrfs fi disk-usage" and
-   "btrfs dev disk-usage"
-3) adding a new ioctl which could be used without root capability. Of course
-   this ioctl would return only a subset of the BTRFS_IOC_TREE_SEARCH info
-
-I think that the 3) would be the "long term" solution. I am not happy about
-the 1), so as "short term solution" I think that we should go with the 2).
-What do you think ?
-
-Below the description of the patches.
-
---
-
-These patches update the btrfs fi df command and add two new commands:
-- btrfs filesystem disk-usage <path>
-- btrfs device disk-usage <path>
-
-The command "btrfs filesystem df" now shows only the disk usage/available.
-
-$ sudo btrfs filesystem df /mnt/btrfs1/
-Disk size:		 400.00GB
-Disk allocated:		   8.04GB
-Disk unallocated:	 391.97GB
-Used:			  11.29MB
-Free (Estimated):	 250.45GB	(Max: 396.99GB, min: 201.00GB)
-Data to disk ratio:	     63 %
-
-The "Free (Estimated)" tries to give an estimation of the free space
-on the basis of the chunks usage. Max and min are the maximum allowable
-space (if the next chunk are allocated as SINGLE) or the minimum one (
-if the next chunks are allocated as DUP/RAID1/RAID10).
-
-The other two commands show the chunks in the disks.
-
-$ sudo btrfs filesystem disk-usage /mnt/btrfs1/
-Data,Single: Size:8.00MB, Used:0.00
-   /dev/vdb	    8.00MB
-
-Data,RAID6: Size:2.00GB, Used:11.25MB
-   /dev/vdb	    1.00GB
-   /dev/vdc	    1.00GB
-   /dev/vdd	    1.00GB
-   /dev/vde	    1.00GB
-
-Metadata,Single: Size:8.00MB, Used:0.00
-   /dev/vdb	    8.00MB
-
-Metadata,RAID5: Size:3.00GB, Used:36.00KB
-   /dev/vdb	    1.00GB
-   /dev/vdc	    1.00GB
-   /dev/vdd	    1.00GB
-   /dev/vde	    1.00GB
-
-System,Single: Size:4.00MB, Used:0.00
-   /dev/vdb	    4.00MB
-
-System,RAID5: Size:12.00MB, Used:4.00KB
-   /dev/vdb	    4.00MB
-   /dev/vdc	    4.00MB
-   /dev/vdd	    4.00MB
-   /dev/vde	    4.00MB
-
-Unallocated:
-   /dev/vdb	   97.98GB
-   /dev/vdc	   98.00GB
-   /dev/vdd	   98.00GB
-   /dev/vde	   98.00GB
-
-or in tabular format
-
-$ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
-         Data   Data    Metadata Metadata System System             
-         Single RAID6   Single   RAID5    Single RAID5   Unallocated
-                                                                    
-/dev/vdb 8.00MB  1.00GB   8.00MB   1.00GB 4.00MB  4.00MB     97.98GB
-/dev/vdc      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
-/dev/vdd      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
-/dev/vde      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
-         ====== ======= ======== ======== ====== ======= ===========
-Total    8.00MB  2.00GB   8.00MB   3.00GB 4.00MB 12.00MB    391.97GB
-Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB            
-
-These are the most complete output, where it is possible to know which
-disk a chunk uses and the usage of every chunk.
-
-Finally the last command shows which chunks a disk hosts:
-
-$ sudo ./btrfs device disk-usage /mnt/btrfs1/
-/dev/vdb	  100.00GB
-   Data,Single:              8.00MB
-   Data,RAID6:               1.00GB
-   Metadata,Single:          8.00MB
-   Metadata,RAID5:           1.00GB
-   System,Single:            4.00MB
-   System,RAID5:             4.00MB
-   Unallocated:             97.98GB
-
-/dev/vdc	  100.00GB
-   Data,RAID6:               1.00GB
-   Metadata,RAID5:           1.00GB
-   System,RAID5:             4.00MB
-   Unallocated:             98.00GB
-
-/dev/vdd	  100.00GB
-   Data,RAID6:               1.00GB
-   Metadata,RAID5:           1.00GB
-   System,RAID5:             4.00MB
-   Unallocated:             98.00GB
-
-/dev/vde	  100.00GB
-   Data,RAID6:               1.00GB
-   Metadata,RAID5:           1.00GB
-   System,RAID5:             4.00MB
-   Unallocated:             98.00GB
-
-More or less are the same information above, only grouped by disk.
-Unfortunately I don't have any information about the chunk usage per disk basis.
-
-Comments are welcome.
-The code is pullable from
-        http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-branch
-        df-du-raid56
-
-BR
-G.Baroncelli
-
-[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/21071
-
-Changelog:
-v1 2013/02/18 First issue
-v2 2013/02/23 Fix uncorrct "not enough memory" handling in patch #1.
-              Thanks to Zac to highlight it.
-v3 2013/03/10 - Rebased on the latest mason git repository
-              - Small fix in the comment
-              - Increase the buffer in the function df_pretty_sizes() to
-		avoid buffer pverwflow (thanks to Zach to highlight it)
-	      - adding the sla_pretty_sizes() function to remove the call
-	        of string_list_add() from df_pretty_sizes.
+GB
 
 
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

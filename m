@@ -1,60 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f170.google.com ([209.85.217.170]:50282 "EHLO
-	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752994Ab3CKW53 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 18:57:29 -0400
-Received: by mail-lb0-f170.google.com with SMTP id ge1so3596163lbb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 15:57:27 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:44743 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752994Ab3CKXD2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 19:03:28 -0400
+Date: Tue, 12 Mar 2013 00:03:26 +0100
+From: David Sterba <dsterba@suse.cz>
+To: chris.mason@fusionio.com
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: [PULL] Re: Integration branch of btrfs-progs 2013-02-27
+Message-ID: <20130311230326.GJ7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130227171445.GL27541@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <CAMQ-g0fHk3VQRS4GV6=1_fe3PfHnPT=eOpZi2hO7=d_tVYLnvA@mail.gmail.com>
-References: <CAF8C-HiwkgnuMOgq_4AGYoK9pOKZoL-WGYVFc497BuU+_z2GbQ@mail.gmail.com>
- <CAFWF=amr90tjbkd7H5_a4dC-UxrhEVhirmisZTLzViYqWO2T3w@mail.gmail.com> <CAMQ-g0fHk3VQRS4GV6=1_fe3PfHnPT=eOpZi2hO7=d_tVYLnvA@mail.gmail.com>
-From: Harald Glatt <mail@hachre.de>
-Date: Mon, 11 Mar 2013 23:57:07 +0100
-Message-ID: <CAFWF=amgZerPCKd3cEhNu-mY7SmhdG5g7bU-Y_Q7=8FGZ1Zz5Q@mail.gmail.com>
-Subject: Re: Unable to boot btrfs filesystem, and btrfsck aborts
-To: Matthew Booth <matthew@heisenbug.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130227171445.GL27541@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you are going to use btrfs-zero-log please create a btrfs-image
-first that you can then upload to a bug report so that this can be
-fixed.
+Hi Chris,
 
-# btrfs-image -c 9 -t 8 /dev/yourbtrfs /tmp/fs_image
+please pull this integration branch
 
-On Mon, Mar 11, 2013 at 11:53 PM, Jan Steffens <jan.steffens@gmail.com> wrote:
-> On Mon, Mar 11, 2013 at 11:49 PM, Harald Glatt <mail@hachre.de> wrote:
->> On Mon, Mar 11, 2013 at 11:44 PM, Matthew Booth <matthew@heisenbug.com> wrote:
->>> My laptop crashed hard earlier today. It reset immediately to a black
->>> screen followed by the BIOS. I have no idea why.
->>>
->>> However, it now fails to boot. I took a picture of the kernel panic
->>> that results from trying to mount the root filesystem:
->>> https://plus.google.com/107763699965053810188/posts/QZZt7GYzBZi
->>>
->>> To make things worse, btrfsck aborts with a double free, without
->>> fixing it. I took a picture of that, too:
->>> https://plus.google.com/107763699965053810188/posts/gKYqGgFhWyT
->>>
->>> As the kernel panic mentions btrfs_remove_free_space, I also tried
->>> mounting with clear_cache. Unfortunately it didn't dislodge anything.
->>>
->>> This is on a fully updated Fedora 18 system. I would really like to
->>> get this data back. If anybody could offer a suggestion I'd be very
->>> grateful.
->> If you can make a complete image backup of the drive before trying any
->> things to bring it back.
->> Try mounting with -o nospace_cache, also try -o ro and -o recovery as
->> well as -o recovery,ro.
->
-> I think the bug happens during log recovery, so btrfs-zero-log might
-> get it mountable again, with the caveat of losing the most recently
-> fsynced changes.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+    git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130227
+
+so far no problems reported (which may also mean that nobody is using
+it), worked in my test setups and I've tested the label get/set patches
+specifically.
+
+thanks,
+david
+
+On Wed, Feb 27, 2013 at 06:14:45PM +0100, David Sterba wrote:
+> Anand Jain (1):
+>       Btrfs-progs: add correct indentation
+> 
+> David Sterba (1):
+>       btrfs-progs: don't link binaries to a dynamic library
+> 
+> Eric Sandeen (16):
+>       btrfs-progs: fix btrfs_get_subvol cut/paste error
+>       btrfs-progs: Remove write-only var fdres in cmd_dev_stats()
+>       btrfs-progs: btrfs_list_get_path_rootid error handling
+>       btrfs-progs: avoid double-free in __btrfs_map_block
+>       btrfs-progs: fix open error test in cmd_start_replace
+>       btrfs-progs: fix close of error fd in scrub cancel
+>       btrfs-progs: more scrub cancel error handling
+>       btrfs-progs: free memory before error exit in read_whole_eb
+>       btrfs-progs: don't call close on error fd
+>       btrfs-progs: provide positive errno to strerror in cmd_restore
+>       btrfs-progs: free allocated di_args in cmd_start_replace
+>       btrfs-progs: close fd on cmd_subvol_get_default return
+>       btrfs-progs: fix mem leak in resolve_root
+>       btrfs-progs: Tidy up resolve_root
+>       btrfs-progs: fix fd leak in cmd_subvol_set_default
+>       btrfs-progs: initialize save_ptr prior to strtok_r
+> 
+> Jeff Liu (5):
+>       Btrfs-progs: Change the label of a mounted file system
+>       Btrfs-progs: Fix set_label_unmounted() with label length validation
+>       Btrfs-progs: fix cmd_label_usage to reflect this change.
+>       btrfs-progs: refactor check_label()
+>       btrfs-progs: move btrfslabel.[c|h] stuff to utils.[c|h]
+> 
+> Mark Fasheh (1):
+>       btrfs-progs: libify some parts of btrfs-progs
+> 
+> Tsutomu Itoh (1):
+>       Btrfs-progs: fix segmentation fault of "btrfs check"
+> 
+> Wang Shilong (2):
+>       Btrfs-progs: let the error message outputed only once
+>       Btrfs-progs: output the error reason when qgroup_show fails

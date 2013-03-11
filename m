@@ -1,42 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:24704 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751690Ab3CKTCx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 15:02:53 -0400
-Date: Mon, 11 Mar 2013 12:02:09 -0700
-From: Zach Brown <zab@redhat.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: clean up transaction abort messages
-Message-ID: <20130311190209.GP3565@lenny.home.zabbo.net>
-References: <1363021720-15684-1-git-send-email-dsterba@suse.cz>
-MIME-Version: 1.0
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:62755 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753438Ab3CKUPt convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 16:15:49 -0400
+Received: by mail-wg0-f48.google.com with SMTP id 16so5257890wgi.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 13:15:48 -0700 (PDT)
+From: Remco Hosman <remco@yerf-it.nl>
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1363021720-15684-1-git-send-email-dsterba@suse.cz>
+Subject: converting to raid5
+Message-Id: <19DDB13F-E8EC-4751-A916-E83555347D7E@hosman.xs4all.nl>
+Date: Mon, 11 Mar 2013 21:15:44 +0100
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> * print the exact negative errno from btrfs_decode_error and
->   don't expect a simple snprintf to fail
+Hi,
 
-What an.. odd function.  Looks like it was inherited from ext*.  And the
-callers over in that neck of the woods also don't check for the
-implemented-but-basically-impossible snprintf failure that leads to
-returning null.
+Just installed 3.9.0-rc2 and the latest btrfs-progs. 
 
-> +		snprintf(nbuf, 16, "error %d", errno);
+filesystem is a 4 disk raid1 array.
 
-The buffer is only used to print the error number for unknown errors?
+first, i did the following: `btrfs val start -dconvert=raid5,usage=1` to convert the mostly empty chunks.
+This resulted in a lot of allocated space (10's of gigs), with only a few 100 meg used.
+i did `btrfs val start -dusage=75` to clean things up.
 
-If changing this function anyway, maybe you can find a few minutes to:
+then i ran `btrfs bal start -dconvert=raid5,soft`.
+I noticed how the difference between total and used for raid5 kept growing. 
+My guess is that its taking 1 raid1 chunk (2x1 gig disk space, 1 gig data), and moving it to 1 raid5 chunk (4gig disk space, 3gig data), leaving all chunks 33% used.
 
- - drop the nbuf arugment
- - just return static strings for known errnos
- - return "unknown" for unknown errors
- - and have the callers always print the string and error
-   ": %s (errno %d)"
+This is what 3 calls of `btrfs file df /` looks like a few minutes after each other, with the balance still running:
 
-No worries if you're not keen to fix it up, but it'd be nice.  One less
-wart to be distracted by when stumbling through the code.
+Data, RAID1: total=807.00GB, used=805.70GB
+Data, RAID5: total=543.00GB, used=192.81GB
+System, RAID1: total=32.00MB, used=192.00KB
+Metadata, RAID1: total=6.00GB, used=3.54GB
+--
+Data, RAID1: total=800.00GB, used=798.70GB
+Data, RAID5: total=564.00GB, used=199.30GB
+System, RAID1: total=32.00MB, used=192.00KB
+Metadata, RAID1: total=6.00GB, used=3.53GB
+--
+Data, RAID1: total=795.00GB, used=793.70GB
+Data, RAID5: total=579.00GB, used=204.81GB
+System, RAID1: total=32.00MB, used=192.00KB
+Metadata, RAID1: total=6.00GB, used=3.54GB
 
-- z
+
+Remco

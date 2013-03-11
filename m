@@ -1,43 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f51.google.com ([74.125.83.51]:47508 "EHLO
-	mail-ee0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753228Ab3CJXm6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 19:42:58 -0400
-From: Alexandru Gheorghiu <gheorghiuandru@gmail.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Alexandru Gheorghiu <gheorghiuandru@gmail.com>
-Subject: [PATCH] fs: btrfs: Replaced calls to kmalloc and memcpy with kmemdup
-Date: Sat,  9 Mar 2013 14:42:10 +0200
-Message-Id: <1362832930-7114-1-git-send-email-gheorghiuandru@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:33997 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752063Ab3CKR0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 13:26:42 -0400
+Date: Mon, 11 Mar 2013 18:26:40 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: get better concurrency for snapshot-aware defrag
+ work
+Message-ID: <20130311172640.GF7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1362993658-30147-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1362993658-30147-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replaced calls to kmalloc followed by memcpy with single call to kmemdup.
-This patch was found using coccicheck.
+On Mon, Mar 11, 2013 at 05:20:58PM +0800, Liu Bo wrote:
+> Using spinning case instead of blocking will result in better concurrency
+> overall.
 
-Signed-off-by: Alexandru Gheorghiu <gheorghiuandru@gmail.com>
----
- fs/btrfs/send.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Do you have numbers to support that?
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index f7a8b86..f1e1e34 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3429,10 +3429,9 @@ static int __find_xattr(int num, struct btrfs_key *di_key,
- 	    strncmp(name, ctx->name, name_len) == 0) {
- 		ctx->found_idx = num;
- 		ctx->found_data_len = data_len;
--		ctx->found_data = kmalloc(data_len, GFP_NOFS);
-+		ctx->found_data = kmemdup(data, data_len, GFP_NOFS);
- 		if (!ctx->found_data)
- 			return -ENOMEM;
--		memcpy(ctx->found_data, data, data_len);
- 		return 1;
- 	}
- 	return 0;
--- 
-1.7.9.5
-
+david

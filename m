@@ -1,39 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:47460 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752711Ab3CJTLV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 15:11:21 -0400
-Date: Sun, 10 Mar 2013 20:11:08 +0100
-From: David Sterba <dave@jikos.cz>
-To: Swasher <mr.swasher@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Balance terminating
-Message-ID: <20130310191108.GB29984@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <loom.20130309T124930-192@post.gmane.org>
+Received: from mail-ia0-f172.google.com ([209.85.210.172]:39125 "EHLO
+	mail-ia0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751002Ab3CKFbI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 01:31:08 -0400
+Received: by mail-ia0-f172.google.com with SMTP id l29so3240823iag.17
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2013 22:31:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <loom.20130309T124930-192@post.gmane.org>
+Date: Sun, 10 Mar 2013 22:31:08 -0700
+Message-ID: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
+Subject: snapshot deletion / unmount slowness
+From: Michael Johnson - MJ <mj@revmj.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 09, 2013 at 12:03:07PM +0000, Swasher wrote:
-> After it, I'm start watch for progress via 'balance status', and I can see how 
-> progress run. But only for 83% left. 
-> 
-> I'm wait few hours and try cancel it with 'balance cancel'.
-> More than 12 hours had passed, but balance stalled in this state:
-> 
-> $ btrfs fi balance status /mnt/raid/  
-> Balance on '/mnt/raid/' is running, cancel requested
-> 386 out of about 2231 chunks balanced (387 considered),  83% left
+I currently have a btrfs filesystem that I am unmounting and it has
+been has been "unmounting" for the last 20 minutes.
 
-What's the kernel version?
+I'm pretty sure I know exactly what is going on and in my current
+situation it's not a huge issues, but it would be a problem if this
+was a production system and I was trying to do a maintenance.
 
-> Question: Can I'm safetly reboot server? Or should I do something else?
+Here is how I got into this situation:
 
-Yes it's safe. Please note that an interrupted balance will continue on
-next mount unless 'skip_balance' is specified (and then balance cancel
-will clear the state from the fs).
+I am migrating my data from one pair of disks (mirrored with btrfs) to
+another pair of disks.  I rsync'd my data from the original btrfs file
+system to the other.  When it completed, my new filesystem showed
+165GB used. The original show 1.8TB used.  I came to the conclusion
+that it must be the daily snapshots I have that were using the
+majority of the space and because I was going to destroy the
+filesystem, I decided, what the heck, let me destroy the snapshots and
+see what it looks like.
 
-david
+To my surprise, removing all the snapshots resulted in the usage
+dropping from 1.8TB to 1.7TB.  I re-ran my rsync, it complete without
+transferring any new data.  I then did a du -s in the mountpoint for
+the original filesystem and is reported back 165GB which agrees with
+what rsync and df on the new filesystem reports.
+
+My first thought was that I must have some sort of bizarre corruption
+on the original filesystem.  And then I went to unmount it and it
+still has not returned.
+
+What I now suspect is going on is that while deleting the snapshots
+was quick, that probably kicks of a background thread which actually
+does the heavy lifting.  I noticed a btrfs-cleaner process that was in
+an io wait state, which I presumed was the process in question.
+However, now 40 minutes later, my unmount is still hung and the
+btrfs-cleaner process is sleeping, so perhaps I am wrong.
+
+At this point I am going to powercycle my system, but I figured I
+would check and see if anyone else knew for certain it this was the
+type of behavior one would expect to see when removing large snapshots
+and then immediately trying to unmount the filesystem.  If so, it
+seems like this is something that would need to change before someone
+would want to seriously consider using btrfs w/ snapshots in a
+production environment.  I know btrfs is not considered production
+ready yet (well, at least not by the developers, regardless of what
+Oracle and Suse say).  At the same time, I've not been able to find
+any mention of similar problems, so I figured it was worth mentioning.
+
+--
+Michael Johnson - MJ

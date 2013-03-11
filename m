@@ -1,32 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f169.google.com ([209.85.214.169]:55295 "EHLO
-	mail-ob0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752692Ab3CKPQg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 11:16:36 -0400
-Received: by mail-ob0-f169.google.com with SMTP id ta14so3404509obb.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 08:16:35 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 11 Mar 2013 16:16:34 +0100
-Message-ID: <CAFvQSYSONvdw7U+UZ_fxe-6=OALvWmaZiF=7+JE=vV0A6_z3uw@mail.gmail.com>
-Subject: Creating zero-filled file aborts after 20GB in a 4GB volume with compress=lzo
-From: Clemens Eisserer <linuxhippy@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:33199 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751302Ab3CKRHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 13:07:48 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id B47EFA4386
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 18:07:47 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/2] btrfs: merge save_error_info helpers into one
+Date: Mon, 11 Mar 2013 18:07:45 +0100
+Message-Id: <1363021665-15359-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/super.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
 
-When running ...
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 68a29a1..eed1464 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -91,7 +91,7 @@ static const char *btrfs_decode_error(int errno, char nbuf[16])
+ 	return errstr;
+ }
+ 
+-static void __save_error_info(struct btrfs_fs_info *fs_info)
++static void save_error_info(struct btrfs_fs_info *fs_info)
+ {
+ 	/*
+ 	 * today we only save the error info into ram.  Long term we'll
+@@ -100,11 +100,6 @@ static void __save_error_info(struct btrfs_fs_info *fs_info)
+ 	set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
+ }
+ 
+-static void save_error_info(struct btrfs_fs_info *fs_info)
+-{
+-	__save_error_info(fs_info);
+-}
+-
+ /* btrfs handle error by forcing the filesystem readonly */
+ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ {
+-- 
+1.7.9
 
-> dd if=/dev/zero of=testfile bs=1M
-
-on a compressed btrfs volume of 4GB mounted with compress=lzo, dd
-aborts after about 20GB written.
-
-As I don't think this can be attributed to metadata consumed ... Any
-ideas why lzo achieves such a poor ratio for even highly compressible
-data?
-
-Thank you in advance, Clemens

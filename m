@@ -1,113 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45249 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753262Ab3CKAVm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Mar 2013 20:21:42 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UEqV8-0006FL-1F
-	for linux-btrfs@vger.kernel.org; Mon, 11 Mar 2013 01:22:02 +0100
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 01:22:02 +0100
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 01:22:02 +0100
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:33755 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752679Ab3CKI4a (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 04:56:30 -0400
+Date: Mon, 11 Mar 2013 08:56:26 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: sam tygier <samtygier@yahoo.co.uk>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 0/5] [RFC] RAID-level terminology change
-Date: Sun, 10 Mar 2013 17:21:28 -0700
-Message-ID: <khj826$386$1@ger.gmane.org>
-References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk> <khgcsi$1k4$1@ger.gmane.org> <20130310014434.GB30771@carfax.org.uk> <khh6er$nmk$1@ger.gmane.org> <20130310220422.GF30771@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <20130310220422.GF30771@carfax.org.uk>
+Message-ID: <20130311085626.GI30771@carfax.org.uk>
+References: <1362861071-12589-1-git-send-email-hugo@carfax.org.uk>
+ <khj6gq$nan$1@ger.gmane.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="/8E7gjuj425jZz9t"
+In-Reply-To: <khj6gq$nan$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 10/03/13 15:04, Hugo Mills wrote:
-> On Sat, Mar 09, 2013 at 09:41:50PM -0800, Roger Binns wrote:
->> The only constraints that matter are surviving N device failures, and
->> data not lost if at least N devices are still present.  Under the
->> hood the best way of meeting those can be heuristically determined,
->> and I'd expect things like overhead to dynamically adjust as storage
->> fills up or empties.
+--/8E7gjuj425jZz9t
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sun, Mar 10, 2013 at 11:55:10PM +0000, sam tygier wrote:
+> On 09/03/13 20:31, Hugo Mills wrote:
+> >    Some time ago, and occasionally since, we've discussed altering the
+> > "RAID-n" terminology to change it to an "nCmSpP" format, where n is the
+> > number of copies, m is the number of (data) devices in a stripe per copy,
+> > and p is the number of parity devices in a stripe.
+> > 
+> >    The current kernel implementation uses as many devices as it can in the
+> > striped modes (RAID-0, -10, -5, -6), and in this implementation, that is
+> > written as "mS" (with a literal "m"). The mS and pP sections are omitted
+> > if the value is 1S or 0P.
+> > 
+> >    The magic look-up table for old-style / new-style is:
+> > 
+> > single 		 1C (or omitted, in btrfs fi df output)
+> > RAID-0		 1CmS
+> > RAID-1		 2C
+> > DUP			 2CD
+> > RAID-10		 2CmS
+> > RAID-5		 1CmS1P
+> > RAID-6		 1CmS2P
 > 
-> That's really not going to work happily -- you'd have to run the 
-> restriper in the background automatically as the device fills up.
+> Are these the only valid options?
 
-Which is the better approach - the administrator has to sit there
-adjusting various parameters after having done some difficult calculations
-redoing it as data and devices increase or decrease - or a computer with
-billions of bytes of memory and billions of cpu cycles per second just
-figures it out based on experience :-)
+   Currently, yes.
 
-> Given that this is going to end up rewriting *all* of the data on the 
-> FS,
+> Are 'sensible' new levels (eg 3C, mirrored to 3 disk or 1CmS3P, like
+> raid6 with but with 3 parity blocks) allowed?
 
-Why does all data have to be rewritten?  Why does every piece of data have
-to have exactly the same storage parameters in terms of
-non-redundancy/performance/striping options?
+   Not right now, but:
 
-I can easily imagine the final implementation being informed by hot data
-tracking.  There is absolutely no need for data that is rarely read to be
-using the maximum striping/performance/overhead options.
+ - I don't know if the forthcoming 3c code will allow arbitrary values
+   or not, but Chris has promised 3c.
 
-There is no need to rewrite everything anyway - if a filesystem with 1GB
-of data is heading towards 2GB of data then only enough readjusts need to
-be made to release that additional 1GB of overhead.
+ - Fixed S will definitely happen for the parity-RAID levels. I'm not
+   sure about the stripe-RAID levels.
 
-I also assume that the probability of all devices being exactly the same
-size and exactly the same performance characteristics is going to
-decrease.  Many will expect that they can add an SSD to the soup, and over
-time add/update devices.  ie the homogenous case that regular RAID
-implicitly assumes will become increasingly rare.
+ - Higher P are mathematically possible, but (AIUI) awkward to
+   construct efficient and effective ones (and it's a manual process
+   to do so). I suspect that 3p may happen, but 4p may not for a long
+   time.
 
-> If you want maximum storage (with some given redundancy), regardless of
-> performance, then you might as well start with the parity-based levels
-> and just leave it at that.
+> Are any arbitrary levels allowed (some other comments in the thread
+> suggest no)?
 
-In the short term it would certainly make sense to have an online
-calculator or mkfs helper where you specify the device sizes and
-redundancy requirements together with how much data you have, and it then
-spits out the string of numbers and letters to use for mkfs/balance.
+   Currently, no, and I don't think there are immediate plans to
+generalise it, but I'd like to see that happen eventually.
 
-> Thinking about it, specifying a (redundancy, acceptable_wastage) pair
-> is fairly pointless in controlling the performance levels,
+> Will there be a recommended (or supported) set?
 
-I don't think there is merit in specifying acceptable message - the answer
-is obvious in that any unused space is acceptable for use.  That also
-means it changes over time as storage is used/freed.
+   Quite likely, even with the limited (forthcoming) set of
+parameters. Using mSpP on an array of larger than some particular size
+is probably not going to be particularly good for performance, for
+example.
 
-> There's not much else a heuristic can do, without effectively exposing
-> all the config options to the admin, in some obfuscated form.
+   Hugo.
 
-There is lots heuristics can do.  At the simplest level btrfs can monitor
-device performance characteristics and use that as a first pass.  One
-database that I use has an interesting approach for queries - rather than
-trying to work out the single best perfect execution strategy (eg which
-indices in which order) it actually tries them all out concurrently and
-picks the quickest.  That is then used for future similar queries with the
-performance being monitored.  Once responses times no longer match the
-strategy it tries them all again to pick a new winner.
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- You stay in the theatre because you're afraid of having no ---    
+                         money? There's irony...                         
 
-There is no reason btrfs can't try a similar approach.  When presented
-with a pile of heterogenous storage with different sizes and performance
-characteristics, use all reasonable approaches and monitor resulting
-read/write performance.  Then start biasing towards what works best.  Use
-hot data tracking to determine which data would most benefit from its
-approach being changed to more optimal values.
+--/8E7gjuj425jZz9t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Roger
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlE9I4UACgkQmOOfHg372QTNZgCeJe7H9FDiwMq1CWWZTWE89/4O
-fDsAn1s6/J1am4mxHhOYUnz/3JUZ6VJx
-=/XF8
+iQIVAwUBUT2cOb9z9OVl50rAAQJODg/+N9NiZ19uWnsiY15z0YARd+OhxMppQOUM
+xxgQlYm4/S0DjhvOwL+2miEiWTsMUoZX2sPtuw+vViU+knTn/D22qJbaEE23qV9N
+wSlqFqPBDSlj2slt5vEzftrf0nV+tHUI7h22gS2YUaiLTpgtGFCCszT45H/ss5VR
+9d6g6ASqYbZK5pO3ZayTCngZvstBSVWk8zmSE4xa0JeNjuvJe6vgKP9DEesiPrzf
+TZJcHcolylClx4IKT3TtiPWyhPx4c6PJoGV/vWLBEv7+paEPO0CzgXdgg14V82rV
+6x+8SHzuwNE80gSlA1rmWXyUmD6Faj1vuSjTb4Wupwv4NklieJ1MU3mthmUrl6xw
+GCwl4LoKRZtTz1Lp3YUAQf3us8fbItBU/qgHnkt7EgmeHg6mCy/xojUWGJGKsHhz
+6uJVL0FsZ3XPUjunlaN3wD8p2InVjtZle8uDuwHzHWXloemXsz4iK/aRPUxGKEn3
+OQnc1PReTxBdP+gefxGqyiBpzUzhuQ0SwraKsutC/rKRkPnSvmgqLgEnrQwZBmYT
+u7Gaj0dgr4YB5pMWEXB1wgFhgwUVZ1igdwfSwR4N2ckbqfj02Er1mkY9yGe1kC5o
+u1qZHF1nVvXOT5WAzELtGUhHiN/eJaYsWsOnolwDepIRSwZnv8eIteIL7g/VEztU
+mXylIF8Q31Y=
+=gkKQ
 -----END PGP SIGNATURE-----
 
+--/8E7gjuj425jZz9t--

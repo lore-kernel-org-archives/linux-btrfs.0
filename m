@@ -1,47 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43912 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752079Ab3CKJj3 (ORCPT
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:38959 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752797Ab3CKKUU convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 05:39:29 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2B9dSDE019834
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 09:39:29 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2B9dSRV009749
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 09:39:28 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2B9dRws015421
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2013 04:39:27 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove btrfs_try_spin_lock
-Date: Mon, 11 Mar 2013 17:37:45 +0800
-Message-Id: <1362994665-30217-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 11 Mar 2013 06:20:20 -0400
+Message-ID: <513DAFDF.2040805@petaramesh.org>
+Date: Mon, 11 Mar 2013 11:20:15 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
+CC: Roman Mamedov <rm@romanrm.ru>, Michael Johnson - MJ <mj@revmj.com>
+Subject: Re: snapshot deletion / unmount slowness
+References: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com> <20130311121143.5cfa69d8@natsu> <20130311064749.GA28468@liubo.jp.oracle.com>
+In-Reply-To: <20130311064749.GA28468@liubo.jp.oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove an useless function claim.
+Le 11/03/2013 07:47, Liu Bo a écrit :
+> A recent commit(commit fa6ac8765c48a06dfed914e8c8c3a903f9d313a0
+> Btrfs: fix cleaner thread not working with inode cache option)
+> may improve the situation.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/locking.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+Hi Liu,
 
-diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
-index ca52681..b81e0e9 100644
---- a/fs/btrfs/locking.h
-+++ b/fs/btrfs/locking.h
-@@ -26,7 +26,6 @@
- 
- void btrfs_tree_lock(struct extent_buffer *eb);
- void btrfs_tree_unlock(struct extent_buffer *eb);
--int btrfs_try_spin_lock(struct extent_buffer *eb);
- 
- void btrfs_tree_read_lock(struct extent_buffer *eb);
- void btrfs_tree_read_unlock(struct extent_buffer *eb);
+I have never seen this issue with btrfs-cleaner not working, when I
+delete snapshots it typically kicks in a few seconds later and works
+"until done".
+
+Does the bug you mention affect only specific kernel versions ?
+
+AFAIK I use inode_cache (it's not in my fstab but I mounted my FSes
+using it manually, and I believe it's a "persistent" option ? - I may
+possibly be wrong...)
+
+TIA
+
+Kind regards.
+
 -- 
-1.7.7.6
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 

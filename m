@@ -1,65 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33977 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:35023 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751379Ab3CKR0B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 13:26:01 -0400
-Date: Mon, 11 Mar 2013 18:25:59 +0100
+	id S1751247Ab3CKRqj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 13:46:39 -0400
+Date: Mon, 11 Mar 2013 18:46:37 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Clemens Eisserer <linuxhippy@gmail.com>
+To: Michael Johnson - MJ <mj@revmj.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Creating zero-filled file aborts after 20GB in a 4GB volume with
- compress=lzo
-Message-ID: <20130311172559.GE7229@twin.jikos.cz>
+Subject: Re: snapshot deletion / unmount slowness
+Message-ID: <20130311174637.GG7229@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CAFvQSYSONvdw7U+UZ_fxe-6=OALvWmaZiF=7+JE=vV0A6_z3uw@mail.gmail.com>
+References: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAFvQSYSONvdw7U+UZ_fxe-6=OALvWmaZiF=7+JE=vV0A6_z3uw@mail.gmail.com>
+In-Reply-To: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 11, 2013 at 04:16:34PM +0100, Clemens Eisserer wrote:
-> When running ...
+On Sun, Mar 10, 2013 at 10:31:08PM -0700, Michael Johnson - MJ wrote:
+> I currently have a btrfs filesystem that I am unmounting and it has
+> been has been "unmounting" for the last 20 minutes.
 > 
-> > dd if=/dev/zero of=testfile bs=1M
+> I'm pretty sure I know exactly what is going on and in my current
+> situation it's not a huge issues, but it would be a problem if this
+> was a production system and I was trying to do a maintenance.
 > 
-> on a compressed btrfs volume of 4GB mounted with compress=lzo, dd
-> aborts after about 20GB written.
+> Here is how I got into this situation:
+> 
+> What I now suspect is going on is that while deleting the snapshots
+> was quick, that probably kicks of a background thread which actually
+> does the heavy lifting.  I noticed a btrfs-cleaner process that was in
+> an io wait state, which I presumed was the process in question.
+> However, now 40 minutes later, my unmount is still hung and the
+> btrfs-cleaner process is sleeping, so perhaps I am wrong.
 
-# mkfs 4g
-# dd if=/dev/zero of=testfile bs=1M
-dd: writing `testfile': No space left on device
-58623787008 bytes (59 GB) copied, 154.548 s, 379 MB/s
-# btrfs fi df .
-Data: total=2.04GB, used=1.71GB
-System, DUP: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=204.75MB, used=77.56MB
-Metadata: total=8.00MB, used=0.00
-# pretty $(filesize testfile)
-58,623,787,008 bytes (54.6 GiB)
+The umount blocked by cleaner is known and I have now a patch ready to
+improve that
 
-I'm not sure why the enospc came so early (never seen that before *cough*),
-maybe the other tests running in parallel, so a usuall
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/23212
 
-# cat /dev/zero > zerofill
-cat: write error: No space left on device
-# pretty $(filesize zerofill)
-47648243712 bytes (44.4 GiB)
+cleaner does not wait to do the background work for all deleted
+snapshots and is able to return in the middle of processing the current
+one when the fs si going down.
 
-# btrfs fi df .
-Data: total=3.32GB, used=3.10GB
-System, DUP: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=332.75MB, used=144.19MB
-Metadata: total=8.00MB, used=0.00
+There's another umount blocker, when a huge orphan file is being cleaned
+up, but from first look it also seems to be possible exit early if
+umount is detected.
 
-Now that looks like a full fs, with ~100GB worth of compressed zeros.
-
-> As I don't think this can be attributed to metadata consumed ... Any
-> ideas why lzo achieves such a poor ratio for even highly compressible
-> data?
-
-What does your 'fi df' report before and after the test?
 
 david

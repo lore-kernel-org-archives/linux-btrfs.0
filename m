@@ -1,66 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f172.google.com ([209.85.210.172]:39125 "EHLO
-	mail-ia0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751002Ab3CKFbI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Mar 2013 01:31:08 -0400
-Received: by mail-ia0-f172.google.com with SMTP id l29so3240823iag.17
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2013 22:31:08 -0700 (PDT)
-MIME-Version: 1.0
-Date: Sun, 10 Mar 2013 22:31:08 -0700
-Message-ID: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
-Subject: snapshot deletion / unmount slowness
-From: Michael Johnson - MJ <mj@revmj.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from len.romanrm.net ([176.31.121.172]:47126 "EHLO len.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751455Ab3CKGLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 02:11:48 -0400
+Date: Mon, 11 Mar 2013 12:11:43 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: Michael Johnson - MJ <mj@revmj.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: snapshot deletion / unmount slowness
+Message-ID: <20130311121143.5cfa69d8@natsu>
+In-Reply-To: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
+References: <CAHGunUmrWW1-Tb3e4ov9dHcjQN9yHcNZGXMVydzKAKWky2PL8w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/qucWI27pRzXDeEV+6yrZkK/"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I currently have a btrfs filesystem that I am unmounting and it has
-been has been "unmounting" for the last 20 minutes.
+--Sig_/qucWI27pRzXDeEV+6yrZkK/
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I'm pretty sure I know exactly what is going on and in my current
-situation it's not a huge issues, but it would be a problem if this
-was a production system and I was trying to do a maintenance.
+On Sun, 10 Mar 2013 22:31:08 -0700
+Michael Johnson - MJ <mj@revmj.com> wrote:
 
-Here is how I got into this situation:
+> What I now suspect is going on is that while deleting the snapshots
+> was quick, that probably kicks of a background thread which actually
+> does the heavy lifting.
 
-I am migrating my data from one pair of disks (mirrored with btrfs) to
-another pair of disks.  I rsync'd my data from the original btrfs file
-system to the other.  When it completed, my new filesystem showed
-165GB used. The original show 1.8TB used.  I came to the conclusion
-that it must be the daily snapshots I have that were using the
-majority of the space and because I was going to destroy the
-filesystem, I decided, what the heck, let me destroy the snapshots and
-see what it looks like.
+Exactly that, the snapshot deletion only "syncs" on unmount, there is no
+other way to ensure it is complete.
 
-To my surprise, removing all the snapshots resulted in the usage
-dropping from 1.8TB to 1.7TB.  I re-ran my rsync, it complete without
-transferring any new data.  I then did a du -s in the mountpoint for
-the original filesystem and is reported back 165GB which agrees with
-what rsync and df on the new filesystem reports.
+If you have some patience and let it unmount properly and then remount it, =
+you
+may find that you have gained much more free space, due to all the snapshots
+being actually deleted and the space they were occupying freed only just no=
+w.
 
-My first thought was that I must have some sort of bizarre corruption
-on the original filesystem.  And then I went to unmount it and it
-still has not returned.
+--=20
+With respect,
+Roman
 
-What I now suspect is going on is that while deleting the snapshots
-was quick, that probably kicks of a background thread which actually
-does the heavy lifting.  I noticed a btrfs-cleaner process that was in
-an io wait state, which I presumed was the process in question.
-However, now 40 minutes later, my unmount is still hung and the
-btrfs-cleaner process is sleeping, so perhaps I am wrong.
+--Sig_/qucWI27pRzXDeEV+6yrZkK/
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-At this point I am going to powercycle my system, but I figured I
-would check and see if anyone else knew for certain it this was the
-type of behavior one would expect to see when removing large snapshots
-and then immediately trying to unmount the filesystem.  If so, it
-seems like this is something that would need to change before someone
-would want to seriously consider using btrfs w/ snapshots in a
-production environment.  I know btrfs is not considered production
-ready yet (well, at least not by the developers, regardless of what
-Oracle and Suse say).  At the same time, I've not been able to find
-any mention of similar problems, so I figured it was worth mentioning.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
---
-Michael Johnson - MJ
+iEYEARECAAYFAlE9dZ8ACgkQTLKSvz+PZwhQPQCeOm1sk2LO4+n55eHMC8rgeQff
+0XcAnRkNYEe4rA27i51qtOcsK5UF2Z0Y
+=uqPl
+-----END PGP SIGNATURE-----
+
+--Sig_/qucWI27pRzXDeEV+6yrZkK/--

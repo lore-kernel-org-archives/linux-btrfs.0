@@ -1,44 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46774 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932336Ab3CDWtl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Mar 2013 17:49:41 -0500
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r24MnfFX004499
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 17:49:41 -0500
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r24Mnexo025581
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Mar 2013 17:49:41 -0500
-Message-ID: <51352504.7040104@redhat.com>
-Date: Mon, 04 Mar 2013 16:49:40 -0600
+Received: from nat-pool-rdu.redhat.com ([66.187.233.202]:32826 "EHLO
+	bp-05.lab.msp.redhat.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754763Ab3CKWN3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Mar 2013 18:13:29 -0400
 From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 15/14] btrfs-progs: fix scrub error return from pthread_mutex_lock
-References: <1362436804-16766-1-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1362436804-16766-1-git-send-email-sandeen@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Cc: Eric Sandeen <sandeen@redhat.com>
+Subject: [PATCH 1/4] btrfs-progs: close fd on return from label get/set functions
+Date: Mon, 11 Mar 2013 18:12:58 -0500
+Message-Id: <1363043581-15812-2-git-send-email-sandeen@redhat.com>
+In-Reply-To: <1363043581-15812-1-git-send-email-sandeen@redhat.com>
+References: <1363043581-15812-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If pthread_mutex_lock() fails it returns the error in ret,
-and does not set errno.
+Somehow missed these 2 in the last round.
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
+ utils.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index f73b3c6..8129601 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -763,7 +763,7 @@ static int scrub_write_progress(pthread_mutex_t *m, const char *fsid,
- 
- 	ret = pthread_mutex_lock(m);
- 	if (ret) {
--		err = -errno;
-+		err = -ret;
- 		goto out;
+diff --git a/utils.c b/utils.c
+index f68436d..1c73d67 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1217,6 +1217,7 @@ static int set_label_mounted(const char *mount_path, const char *label)
+ 		return -1;
  	}
  
++	close(fd);
+ 	return 0;
+ }
+ 
+@@ -1274,6 +1275,7 @@ static int get_label_mounted(const char *mount_path)
+ 	}
+ 
+ 	fprintf(stdout, "%s\n", label);
++	close(fd);
+ 	return 0;
+ }
+ 
+-- 
+1.7.1
+

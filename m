@@ -1,37 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f176.google.com ([209.85.220.176]:44001 "EHLO
-	mail-vc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753106Ab3CNXhV (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:57958 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932454Ab3CLRbG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Mar 2013 19:37:21 -0400
-Received: by mail-vc0-f176.google.com with SMTP id ib11so818511vcb.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 16:37:20 -0700 (PDT)
+	Tue, 12 Mar 2013 13:31:06 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 327D19A0370
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:06 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id CMdk5aVcMOXgZjhV (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:04 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Btrfs-progs: Update btrfs restore so it matches all current development
+Date: Tue, 12 Mar 2013 13:38:07 -0400
+Message-ID: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-In-Reply-To: <20130314231034.GY7229@twin.jikos.cz>
-References: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
- <1363109897-7931-5-git-send-email-jbacik@fusionio.com> <20130314231034.GY7229@twin.jikos.cz>
-From: David Marcin <djmarcin@google.com>
-Date: Thu, 14 Mar 2013 16:36:39 -0700
-Message-ID: <CAEzz368FWq77jeKJgsKzLck-OsZ94qTZSsBEr-L70LXfjw=BOQ@mail.gmail.com>
-Subject: Re: [PATCH 04/10] btrfs-progs: Fix error handling for failed reads in
- restore tool when mirrors exist
-To: dsterba@suse.cz, Josef Bacik <jbacik@fusionio.com>,
-        linux-btrfs@vger.kernel.org, David Marcin <djmarcin@google.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 14, 2013 at 4:10 PM, David Sterba <dsterba@suse.cz> wrote:
->
-> On Tue, Mar 12, 2013 at 01:38:11PM -0400, Josef Bacik wrote:
-> > From: David Marcin <djmarcin@google.com>
->
-> Missing signed-off from David, please let us know if it's ok to add it.
->
-> thanks,
-> david
->
+Hello,
 
-Yes, OK to add.  Sorry for missing that the first time around.
+I noticed today that a bunch of work that had been done to restore last year
+wasn't in the normal btrfs-progs restore.  So this work forward ports all of the
+patches that were missing, and redoes a bunch of the work that was done to deal
+with really broken file systems so that it uses more of the generic helpers that
+Chris wrote a while ago.  This is based on the latest integration branch, Dave
+if you want to just pull you can do
 
-David
+git://github.com/josefbacik/btrfs-progs.git for-kdave
+
+Thanks,
+
+Josef

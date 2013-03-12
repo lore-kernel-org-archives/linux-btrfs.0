@@ -1,282 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58464 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751321Ab3CLERm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Mar 2013 00:17:42 -0400
-Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r2C4HgNE009532
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 00:17:42 -0400
-Message-ID: <513EAC64.7020706@redhat.com>
-Date: Mon, 11 Mar 2013 23:17:40 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:50750 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932938Ab3CLRbH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Mar 2013 13:31:07 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id A0F4F7C04E9
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:06 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 0vMex46tCoATqdgE (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:06 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 01/10] Btrfs-progs: add an option for specifying the root to restore
+Date: Tue, 12 Mar 2013 13:38:08 -0400
+Message-ID: <1363109897-7931-2-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
+References: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4 V2] btrfs-progs: rework get_fs_info to remove side effects
-References: <1363043581-15812-1-git-send-email-sandeen@redhat.com> <1363043581-15812-5-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1363043581-15812-5-git-send-email-sandeen@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-get_fs_info() has been silently switching from a device to a mounted
-path as needed; the caller's filehandle was unexpectedly closed &
-reopened outside the caller's scope.  Not so great.
+From: Josef Bacik <josef@redhat.com>
 
-The callers do want "fdmnt" to be the filehandle for the mount point
-in all cases, though - the various ioctls act on this (not on an fd
-for the device).  But switching it in the local scope of get_fs_info
-is incorrect; it just so happens that *usually* the fd number is
-unchanged.
+If the normal fs tree is hosed and the user has multiple subvolumes it's handy
+to be able to specify just one of the subvolumes to restore.  It's also handy if
+a user only wants to restore say /home instead of his entire disk.  Thanks,
 
-So - use the new helpers to detect when an argument is a block
-device, and open the the mounted path more obviously / explicitly
-for ioctl use, storing the filehandle in fdmnt.
-
-Then, in get_fs_info, ignore the fd completely, and use the path on
-the argument to determine if the caller wanted to act on just that
-device, or on all devices for the filesystem.
-
-Affects those commands which are documented to accept either
-a block device or a path:
-
-* btrfs device stats
-* btrfs replace start
-* btrfs scrub start
-* btrfs scrub status
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
+ cmds-restore.c |   32 ++++++++++++++++++++++++++++----
+ 1 files changed, 28 insertions(+), 4 deletions(-)
 
-V2: don't call BTRFS_IOC_FS_INFO in the single device case
-after we change path/fd to be for the fs mount point.
-
-In the single device case we manually filled in fi_args;
-calling this ioctl after switching fd/path to the mount point
-overwrites that setup.
-
-diff --git a/cmds-device.c b/cmds-device.c
-index 58df6da..41e79d3 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -321,13 +321,14 @@ static int cmd_dev_stats(int argc, char **argv)
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 4a14f93..467e5ef 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -773,13 +773,14 @@ int cmd_restore(int argc, char **argv)
+ 	char dir_name[128];
+ 	u64 tree_location = 0;
+ 	u64 fs_location = 0;
++	u64 root_objectid = 0;
+ 	int len;
+ 	int ret;
+ 	int opt;
+ 	int super_mirror = 0;
+ 	int find_dir = 0;
  
- 	path = argv[optind];
- 
--	fdmnt = open_file_or_dir(path);
-+	fdmnt = open_path_or_dev_mnt(path);
-+
- 	if (fdmnt < 0) {
- 		fprintf(stderr, "ERROR: can't access '%s'\n", path);
- 		return 12;
- 	}
- 
--	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = get_fs_info(path, &fi_args, &di_args);
- 	if (ret) {
- 		fprintf(stderr, "ERROR: getting dev info for devstats failed: "
- 				"%s\n", strerror(-ret));
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 10030f6..6397bb5 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -168,7 +168,9 @@ static int cmd_start_replace(int argc, char **argv)
- 	if (check_argc_exact(argc - optind, 3))
- 		usage(cmd_start_replace_usage);
- 	path = argv[optind + 2];
--	fdmnt = open_file_or_dir(path);
-+
-+	fdmnt = open_path_or_dev_mnt(path);
-+
- 	if (fdmnt < 0) {
- 		fprintf(stderr, "ERROR: can't access \"%s\": %s\n",
- 			path, strerror(errno));
-@@ -215,7 +217,7 @@ static int cmd_start_replace(int argc, char **argv)
+-	while ((opt = getopt(argc, argv, "sviot:u:df:")) != -1) {
++	while ((opt = getopt(argc, argv, "sviot:u:df:r:")) != -1) {
+ 		switch (opt) {
+ 			case 's':
+ 				get_snaps = 1;
+@@ -822,6 +823,14 @@ int cmd_restore(int argc, char **argv)
+ 			case 'd':
+ 				find_dir = 1;
+ 				break;
++			case 'r':
++				errno = 0;
++				root_objectid = (u64)strtoll(optarg, NULL, 10);
++				if (errno != 0) {
++					fprintf(stderr, "Root objectid not valid\n");
++					exit(1);
++				}
++				break;
+ 			default:
+ 				usage(cmd_restore_usage);
  		}
- 		start_args.start.srcdevid = (__u64)atoi(srcdev);
- 
--		ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
-+		ret = get_fs_info(path, &fi_args, &di_args);
- 		if (ret) {
- 			fprintf(stderr, "ERROR: getting dev info for devstats failed: "
- 					"%s\n", strerror(-ret));
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index e5fccc7..52264f1 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1101,13 +1101,14 @@ static int scrub_start(int argc, char **argv, int resume)
- 
- 	path = argv[optind];
- 
--	fdmnt = open_file_or_dir(path);
-+	fdmnt = open_path_or_dev_mnt(path);
-+
- 	if (fdmnt < 0) {
- 		ERR(!do_quiet, "ERROR: can't access '%s'\n", path);
- 		return 12;
- 	}
- 
--	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = get_fs_info(path, &fi_args, &di_args);
- 	if (ret) {
- 		ERR(!do_quiet, "ERROR: getting dev info for scrub failed: "
- 		    "%s\n", strerror(-ret));
-@@ -1558,13 +1559,14 @@ static int cmd_scrub_status(int argc, char **argv)
- 
- 	path = argv[optind];
- 
--	fdmnt = open_file_or_dir(path);
-+	fdmnt = open_path_or_dev_mnt(path);
-+
- 	if (fdmnt < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
- 		return 12;
- 	}
- 
--	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = get_fs_info(path, &fi_args, &di_args);
- 	if (ret) {
- 		fprintf(stderr, "ERROR: getting dev info for scrub failed: "
- 				"%s\n", strerror(-ret));
-diff --git a/utils.c b/utils.c
-index 4bf457f..c756e23 100644
---- a/utils.c
-+++ b/utils.c
-@@ -717,7 +717,7 @@ int open_path_or_dev_mnt(const char *path)
- 			errno = EINVAL;
- 			return -1;
+@@ -852,8 +861,6 @@ int cmd_restore(int argc, char **argv)
  		}
--		fdmnt = open(mp, O_RDWR);
-+		fdmnt = open_file_or_dir(mp);
- 	} else
- 		fdmnt = open_file_or_dir(path);
- 
-@@ -1544,9 +1544,20 @@ int get_device_info(int fd, u64 devid,
- 	return ret ? -errno : 0;
- }
- 
--int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
-+/*
-+ * For a given path, fill in the ioctl fs_ and info_ args.
-+ * If the path is a btrfs mountpoint, fill info for all devices.
-+ * If the path is a btrfs device, fill in only that device.
-+ *
-+ * The path provided must be either on a mounted btrfs fs,
-+ * or be a mounted btrfs device.
-+ *
-+ * Returns 0 on success, or a negative errno.
-+ */
-+int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		struct btrfs_ioctl_dev_info_args **di_ret)
- {
-+	int fd = -1;
- 	int ret = 0;
- 	int ndevs = 0;
- 	int i = 1;
-@@ -1556,33 +1567,56 @@ int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 
- 	memset(fi_args, 0, sizeof(*fi_args));
- 
--	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
--	if (ret && (errno == EINVAL || errno == ENOTTY)) {
--		/* path is not a mounted btrfs. Try if it's a device */
-+	if (is_block_device(path)) {
-+		/* Ensure it's mounted, then set path to the mountpoint */
-+		fd = open(path, O_RDONLY);
-+		if (fd < 0) {
-+			ret = -errno;
-+			fprintf(stderr, "Couldn't open %s: %s\n",
-+				path, strerror(errno));
-+			goto out;
-+		}
- 		ret = check_mounted_where(fd, path, mp, sizeof(mp),
- 					  &fs_devices_mnt);
--		if (!ret)
--			return -EINVAL;
-+		if (!ret) {
-+			ret = -EINVAL;
-+			goto out;
-+		}
- 		if (ret < 0)
--			return ret;
-+			goto out;
-+		path = mp;
-+		/* Only fill in this one device */
- 		fi_args->num_devices = 1;
- 		fi_args->max_id = fs_devices_mnt->latest_devid;
- 		i = fs_devices_mnt->latest_devid;
- 		memcpy(fi_args->fsid, fs_devices_mnt->fsid, BTRFS_FSID_SIZE);
- 		close(fd);
--		fd = open_file_or_dir(mp);
--		if (fd < 0)
--			return -errno;
--	} else if (ret) {
--		return -errno;
-+	}
-+
-+	/* at this point path must not be for a block device */
-+	fd = open_file_or_dir(path);
-+	if (fd < 0) {
-+		ret = -errno;
-+		goto out;
-+	}
-+
-+	/* fill in fi_args if not just a single device */
-+	if (fi_args->num_devices != 1) {
-+		ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
-+		if (ret < 0) {
-+			ret = -errno;
-+			goto out;
-+		}
  	}
  
- 	if (!fi_args->num_devices)
--		return 0;
-+		goto out;
- 
- 	di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
--	if (!di_args)
--		return -errno;
-+	if (!di_args) {
-+		ret = -errno;
-+		goto out;
-+	}
- 
- 	for (; i <= fi_args->max_id; ++i) {
- 		BUG_ON(ndevs >= fi_args->num_devices);
-@@ -1590,13 +1624,16 @@ int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		if (ret == -ENODEV)
- 			continue;
- 		if (ret)
--			return ret;
-+			goto out;
- 		ndevs++;
- 	}
- 
- 	BUG_ON(ndevs == 0);
+-	printf("Root objectid is %Lu\n", root->objectid);
 -
--	return 0;
-+	ret = 0;
-+out:
-+	if (fd != -1)
-+		close(fd);
-+	return ret;
- }
+ 	memset(path_name, 0, 4096);
  
- #define isoctal(c)	(((c) & ~7) == '0')
-diff --git a/utils.h b/utils.h
-index 8e0252b..885b9c5 100644
---- a/utils.h
-+++ b/utils.h
-@@ -50,7 +50,7 @@ u64 parse_size(char *s);
- int open_file_or_dir(const char *fname);
- int get_device_info(int fd, u64 devid,
- 		    struct btrfs_ioctl_dev_info_args *di_args);
--int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
-+int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		struct btrfs_ioctl_dev_info_args **di_ret);
- int get_label(const char *btrfs_dev);
- int set_label(const char *btrfs_dev, const char *label);
-
+ 	strncpy(dir_name, argv[optind + 1], sizeof dir_name);
+@@ -865,6 +872,23 @@ int cmd_restore(int argc, char **argv)
+ 		dir_name[len] = '\0';
+ 	}
+ 
++	if (root_objectid != 0) {
++		struct btrfs_root *orig_root = root;
++
++		key.objectid = root_objectid;
++		key.type = BTRFS_ROOT_ITEM_KEY;
++		key.offset = (u64)-1;
++		root = btrfs_read_fs_root(orig_root->fs_info, &key);
++		if (IS_ERR(root)) {
++			fprintf(stderr, "Error reading root\n");
++			root = orig_root;
++			ret = 1;
++			goto out;
++		}
++		key.type = 0;
++		key.offset = 0;
++	}
++
+ 	if (find_dir) {
+ 		ret = find_first_dir(root, &key.objectid);
+ 		if (ret)
+@@ -873,7 +897,7 @@ int cmd_restore(int argc, char **argv)
+ 		key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+ 	}
+ 
+-	ret = search_dir(root->fs_info->fs_root, &key, dir_name);
++	ret = search_dir(root, &key, dir_name);
+ 
+ out:
+ 	close_ctree(root);
+-- 
+1.7.7.6
 

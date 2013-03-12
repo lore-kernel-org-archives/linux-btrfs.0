@@ -1,695 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25761 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753685Ab3CLJnA (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:47531 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755333Ab3CLLrQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Mar 2013 05:43:00 -0400
-Date: Tue, 12 Mar 2013 17:41:13 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: WARNING: at fs/btrfs/extent_map.c:77 free_extent_map
-Message-ID: <20130312094110.GD31527@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <20130311223404.5f9c3f51@fem.tu-ilmenau.de>
- <20130312013934.GB31527@liubo.jp.oracle.com>
- <20130312103209.71307e9e@fem.tu-ilmenau.de>
+	Tue, 12 Mar 2013 07:47:16 -0400
+Received: by mail-wi0-f179.google.com with SMTP id ez12so1738118wid.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 04:47:14 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130312103209.71307e9e@fem.tu-ilmenau.de>
+In-Reply-To: <1361460927-16355-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <CAOcd+r36TOugPs+5P3W6v6m5pzojGnqZ3YUNS-zzFK2pdm1A8A@mail.gmail.com>
+	<1361460927-16355-1-git-send-email-list.btrfs@jan-o-sch.net>
+Date: Tue, 12 Mar 2013 13:47:14 +0200
+Message-ID: <CAOcd+r2HHDyHz0VqaJr5KWLMSMazFJ1kDKQULq7jkrEF6Ag15w@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix backref walking race with tree deletions
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 12, 2013 at 10:32:09AM +0100, Johannes Hirte wrote:
-> On Tue, 12 Mar 2013 09:39:35 +0800
-> Liu Bo <bo.li.liu@oracle.com> wrote:
-> 
-> > Hi Johannes,
-> > 
-> > Could you please tell us what mount options you're with?
-> > 
-> > thanks,
-> > liubo
-> 
-> The Filesystem has six subvolumes, so mount options are:
-> 
-> noatime,inode_cache,autodefrag,subvolid=...
-> 
+Hi Jan,
+I have been testing your patch, and definitely the reproducer now passes.
+However, my system tests still hit the issue, but unfortunately I am
+unable to isolate it into a bash script. All bash scripts work
+alright:)
 
-hmm, autodefrag + fsync.
+I have added some prints to attempt to debug this, and here is what I see:
+So the extent in question is:
 
-> for each subvol.
-> 
-> I was able to reproduce it and getting a full backtrace
-> with netconsole:
+	item 16 key (4378624 EXTENT_ITEM 8192) itemoff 3163 itemsize 66
+		extent refs 2 gen 6 flags 1
+		extent data backref root 261 objectid 276 offset 0 count 1
+		shared data backref parent 4214784 count 1
 
-Does it reproduce reliable?  Maybe you can show me how to so that I can do it
-on my box.
+It is shared by three subvolumes: 257, 261,262, while 261/2 share the
+same leaf in the file tree. 257 has its own leaf. Inode in all three
+subvolumes is 276, and this is the only EXTENT_DATA of this inode.
 
-thanks,
-liubo
+file tree key (257 ROOT_ITEM 6)
+	...
+leaf 4214784 items 38 free space 461 generation 6 owner 256
+	...
+	item 29 key (276 INODE_ITEM 0) itemoff 1897 itemsize 160
+		inode generation 6 transid 6 size 5777 block group 0 mode 100644 links 1
+	item 30 key (276 INODE_REF 271) itemoff 1871 itemsize 26
+		inode ref index 6 namelen 16 name: file_with_xattr1
+	item 29 key (276 INODE_ITEM 0) itemoff 1897 itemsize 160
+		inode generation 6 transid 6 size 5777 block group 0 mode 100644 links 1
+	item 30 key (276 INODE_REF 271) itemoff 1871 itemsize 26
+		inode ref index 6 namelen 16 name: file_with_xattr1
+	item 31 key (276 XATTR_ITEM 3895912174) itemoff 1815 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr1
+		data attr1_XXX
+	item 32 key (276 XATTR_ITEM 4217771290) itemoff 1759 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr2
+		data attr2_YYY
+	item 33 key (276 EXTENT_DATA 0) itemoff 1706 itemsize 53
+		extent data disk byte 4378624 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0
 
-> 
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15870, comm: bogofilter Not tainted 3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8108ef08>] ? find_get_pages_contig+0x100/0x115
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacc5 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15870, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8108ef08>] ? find_get_pages_contig+0x100/0x115
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacc6 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacc7 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacc8 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacc9 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacca ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716baccb ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716baccc ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec---[ end trace a3b02a44716bacce ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716baccf ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15887, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8108eddd>] ? find_get_pages_tag+0xfa/0x125
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacdc ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacde ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8108ef08>] ? find_get_pages_contig+0x100/0x115
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacdf ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  acer_wmi k10tempPid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ------------[ cut here ]------------
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Call Trace:
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacf5 ]---
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacf6 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
-> ---[ end trace a3b02a44716bacf7 ]---
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
-> ---[ end trace a3b02a44716bacf9 ]---
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
-> ---[ end trace a3b02a44716bacfa ]---
-> Hardware name: EasyNote TK81
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81486bfa>] ? _raw_read_unlock+0x1e/0x2a
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacfb ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff8116139b>] ? free_extent_state+0x12/0x21
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff81164836>] ? extent_writepages+0x49/0x60
->  [<ffffffff8108fc58>] ? __filemap_fdatawrite_range+0x4d/0x52
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8115bc57>] ? btrfs_drop_extent_cache+0x363/0x39f
->  [<ffffffff81152db4>] ? __cow_file_range+0x175/0x3c1
->  [<ffffffff8114d9f7>] ? start_transaction+0x2d8/0x3e8
->  [<ffffffff811538f7>] ? run_delalloc_range+0x9d/0x33b
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff8116451d>] ? extent_write_cache_pages.isra.29.constprop.47+0x14a/0x255
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810c85ff>] ? vfs_write+0xaf/0xf8
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacfd ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:77 free_extent_map+0x64/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8115dcff>] ? free_extent_map+0x64/0x76
->  [<ffffffff8114bb02>] ? join_transaction.isra.34+0x30f/0x31a
->  [<ffffffff8115383e>] ? cow_file_range+0xa9/0xc5
->  [<ffffffff81163fa3>] ? __extent_writepage+0x1a8/0x5d8
->  [<ffffffff811635ae>] ? end_extent_writepage+0x5d/0x5d
->  [<ffffffff81150146>] ? btrfs_update_inode_item+0xde/0xde
->  [<ffffffff8115a192>] ? btrfs_sync_file+0x48/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:76 free_extent_map+0x43/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcde>] ? free_extent_map+0x43/0x76
->  [<ffffffff81179f6a>] ? btrfs_log_inode+0x5d9/0x72e
->  [<ffffffff8114eabc>] ? btrfs_submit_bio_hook+0xae/0x14f
->  [<ffffffff8117afc0>] ? btrfs_log_inode_parent+0x1cf/0x2ea
->  [<ffffffff8117b110>] ? btrfs_log_dentry_safe+0x35/0x4e
->  [<ffffffff8115a2a5>] ? btrfs_sync_file+0x15b/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bacff ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:74 free_extent_map+0x21/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcbc>] ? free_extent_map+0x21/0x76
->  [<ffffffff81179f6a>] ? btrfs_log_inode+0x5d9/0x72e
->  [<ffffffff8114eabc>] ? btrfs_submit_bio_hook+0xae/0x14f
->  [<ffffffff8117afc0>] ? btrfs_log_inode_parent+0x1cf/0x2ea
->  [<ffffffff8117b110>] ? btrfs_log_dentry_safe+0x35/0x4e
->  [<ffffffff8115a2a5>] ? btrfs_sync_file+0x15b/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bad00 ]---
-> INFO: rcu_preempt detected stalls on CPUs/tasks: {} (detected by 1, t=60002 jiffies, g=144241, c=144240, q=6)
-> INFO: Stall ended before state dump start
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:76 free_extent_map+0x43/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcde>] ? free_extent_map+0x43/0x76
->  [<ffffffff81179f6a>] ? btrfs_log_inode+0x5d9/0x72e
->  [<ffffffff8114eabc>] ? btrfs_submit_bio_hook+0xae/0x14f
->  [<ffffffff8117afc0>] ? btrfs_log_inode_parent+0x1cf/0x2ea
->  [<ffffffff8117b110>] ? btrfs_log_dentry_safe+0x35/0x4e
->  [<ffffffff8115a2a5>] ? btrfs_sync_file+0x15b/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bad01 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:74 free_extent_map+0x21/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> INFO: rcu_preempt detected stalls on CPUs/tasks: {} (detected by 1, t=240007 jiffies, g=144241, c=144240, q=6)
-> INFO: Stall ended before state dump start
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:76 free_extent_map+0x43/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> Pid: 15893, comm: bogofilter Tainted: G        W    3.9.0-rc2-00112-g7c6baa3 #294
-> Call Trace:
->  [<ffffffff8102abc2>] ? warn_slowpath_common+0x76/0x8c
->  [<ffffffff8115dcde>] ? free_extent_map+0x43/0x76
->  [<ffffffff81179f6a>] ? btrfs_log_inode+0x5d9/0x72e
->  [<ffffffff8114eabc>] ? btrfs_submit_bio_hook+0xae/0x14f
->  [<ffffffff8117afc0>] ? btrfs_log_inode_parent+0x1cf/0x2ea
->  [<ffffffff8117b110>] ? btrfs_log_dentry_safe+0x35/0x4e
->  [<ffffffff8115a2a5>] ? btrfs_sync_file+0x15b/0x203
->  [<ffffffff810e783b>] ? do_fsync+0x2b/0x50
->  [<ffffffff810e7a42>] ? sys_fdatasync+0xb/0xf
->  [<ffffffff814877d2>] ? system_call_fastpath+0x16/0x1b
-> ---[ end trace a3b02a44716bad03 ]---
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent_map.c:74 free_extent_map+0x21/0x76()
-> Hardware name: EasyNote TK81
-> Modules linked in: netconsole configfs nfsd exportfs auth_rpcgss nfs_acl fuse nfs lockd sunrpc snd_hda_codec_hdmi ath9k sr_mod snd_hda_codec_realtek acpi_cpufreq broadcom tg3 acer_wmi k10temp mperf ath9k_common ath9k_hw ath snd_hda_intel snd_hda_codec snd_hwdep snd_pcm cdrom snd_page_alloc snd_timer snd wmi soundcore i2c_piix4 ohci_hcd
-> SysRq : Emergency Sync
-> SysRq : Emergency Remount R/O
-> SysRq : Resetting
-> ACPI MEMORY or I/O RESET_REG.
-> 
-> 
-> regards,
->   Johannes
+file tree key (261 ROOT_ITEM 10)
+	...
+leaf 4431872 items 38 free space 441 generation 11 owner 261
+	...
+	item 29 key (276 INODE_ITEM 0) itemoff 1877 itemsize 160
+		inode generation 6 transid 6 size 5777 block group 0 mode 100644 links 1
+	item 30 key (276 INODE_REF 271) itemoff 1851 itemsize 26
+		inode ref index 6 namelen 16 name: file_with_xattr1
+	item 31 key (276 XATTR_ITEM 3895912174) itemoff 1795 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr1
+		data attr1_XXX
+	item 32 key (276 XATTR_ITEM 4217771290) itemoff 1739 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr2
+		data attr2_YYY
+	item 33 key (276 EXTENT_DATA 0) itemoff 1686 itemsize 53
+		extent data disk byte 4378624 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0
+
+file tree key (262 ROOT_ITEM 11)
+	...
+leaf 4431872 items 38 free space 441 generation 11 owner 261
+	...
+	item 29 key (276 INODE_ITEM 0) itemoff 1877 itemsize 160
+		inode generation 6 transid 6 size 5777 block group 0 mode 100644 links 1
+	item 30 key (276 INODE_REF 271) itemoff 1851 itemsize 26
+		inode ref index 6 namelen 16 name: file_with_xattr1
+	item 31 key (276 XATTR_ITEM 3895912174) itemoff 1795 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr1
+		data attr1_XXX
+	item 32 key (276 XATTR_ITEM 4217771290) itemoff 1739 itemsize 56
+		location key (0 UNKNOWN.0 0) type 8
+		namelen 16 datalen 10 name: user.ztest_attr2
+		data attr2_YYY
+	item 33 key (276 EXTENT_DATA 0) itemoff 1686 itemsize 53
+		extent data disk byte 4378624 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0
+
+During the failure, roots 261 and 262 are found, but not root 257,
+which is the root being sent. The send has no parent in this case
+(full-send):
+
+btrfs [find_extent_clone] Search [rt=257 ino=276 off=0 len=8192]
+[found extent=4378624 extent_item_pos=0]
+btrfs [iterate_extent_inodes] resolving for extent 4378624 pos=0
+btrfs [iterate_extent_inodes] extent 4378624 pos=0 found 1 leafs
+btrfs [iterate_extent_inodes] extent 4378624 pos=0 root 262 references
+leaf 4431872
+btrfs [iterate_extent_inodes] extent 4378624 pos=0 root 261 references
+leaf 4431872
+btrfs: ERROR did not find backref in send_root. inode=276, offset=0,
+disk_byte=4378624 found extent=4378624
+
+So btrfs_find_all_leafs() finds one leaf 4431872, which is shared
+between 261 and 262. But it does not find leaf 4214784, which is the
+leaf of subvolume 257.
+
+The tree-dump I showed you is taken after the test failed, and at this
+point if I try "btrfs send", everything is resolved alright:
+
+btrfs [find_extent_clone] Search [rt=257 ino=277 off=0 len=8192]
+[found extent=4386816 extent_item_pos=0]
+btrfs [iterate_extent_inodes] resolving for extent 4386816 pos=0
+btrfs [iterate_extent_inodes] extent 4386816 pos=0 found 2 leafs
+btrfs [iterate_extent_inodes] extent 4386816 pos=0 root 262 references
+leaf 4431872
+btrfs [iterate_extent_inodes] extent 4386816 pos=0 root 261 references
+leaf 4431872
+btrfs [iterate_extent_inodes] extent 4386816 pos=0 root 257 references
+leaf 4214784
+
+Can you advise on how to debug this further?
+
+Thanks,
+Alex.
+
+
+
+On Thu, Feb 21, 2013 at 5:35 PM, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
+> When a subvolume is removed, we remove the root item from the root tree,
+> while the tree blocks and backrefs remain for a while. When backref walking
+> comes across one of those orphan tree blocks, it can find a backref for a
+> no longer existing root. This is all good, we only must tolerate
+> __resolve_indirect_ref returning an error and continue with the good refs
+> found.
+>
+> Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+>  fs/btrfs/backref.c |    5 +----
+>  1 files changed, 1 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 04edf69..bd605c8 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -352,11 +352,8 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+>                 err = __resolve_indirect_ref(fs_info, search_commit_root,
+>                                              time_seq, ref, parents,
+>                                              extent_item_pos);
+> -               if (err) {
+> -                       if (ret == 0)
+> -                               ret = err;
+> +               if (err)
+>                         continue;
+> -               }
+>
+>                 /* we put the first parent into the ref at hand */
+>                 ULIST_ITER_INIT(&uiter);
+> --
+> 1.7.1
+>

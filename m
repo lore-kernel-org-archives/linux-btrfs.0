@@ -1,59 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from y235201.ppp.asahi-net.or.jp ([118.243.235.201]:41338 "EHLO
-	mactop" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1753653Ab3CMJ2x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 05:28:53 -0400
-Received: from [10.81.1.3] (mydomain.com [10.81.1.3])
-	by mactop (Postfix) with ESMTP id 142765FCFD
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 18:28:52 +0900 (JST)
-Message-ID: <514046D4.6050104@parallels.com>
-Date: Wed, 13 Mar 2013 18:28:52 +0900
-From: dima <dolenin@parallels.com>
+Received: from mail-qa0-f42.google.com ([209.85.216.42]:34271 "EHLO
+	mail-qa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755474Ab3CMK43 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Mar 2013 06:56:29 -0400
+Received: by mail-qa0-f42.google.com with SMTP id cr7so2121962qab.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 03:56:29 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: File space cache
-References: <loom.20130312T171252-0@post.gmane.org> <51400F2F.5060109@parallels.com> <20130313085309.GB2327@carfax.org.uk>
-In-Reply-To: <20130313085309.GB2327@carfax.org.uk>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com>
+References: <201303131238.33692.russell@coker.com.au> <513FDE67.1050907@redhat.com>
+ <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com>
+From: Bart Noordervliet <bart@noordervliet.net>
+Date: Wed, 13 Mar 2013 11:56:08 +0100
+Message-ID: <CAGy7Uthf3P-4eefV-RbJQ=mW=OpjR3CXauPfCSbiv5eKMa5H8Q@mail.gmail.com>
+Subject: Re: Debian 3.7.1 BTRFS crash
+To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/13/2013 05:53 PM, Hugo Mills wrote:
-> On Wed, Mar 13, 2013 at 02:31:27PM +0900, dima wrote:
->> Hello Alex,
->>
->> On 03/13/2013 01:17 AM, Alex wrote:
->>> Hi All,
->>>
->>> It seems my btrfs file space cache is corrupt; I had to run clear the log
->>> through a kernel problem.
->>>
->>> I've seen messages that the cache is rebuilt automatically, but this doesn't
->>> seem to be true as the messages that the free space is what is expected keep
->>> coming.
->>>
->>> I'm running kernel 3.8.2 (Siduction) on Debian testing.
->>
->>
->> I believe you may try clear_cache mount option
->> https://btrfs.wiki.kernel.org/index.php/Mount_options
->>
->>
->>>
->>> As a subsidiary question, please, should the <pass> value in fstab be zero or
->>> non-zero?
->>
->>
->> It should be zero. But since fsck.btrfs is non-existent, it does not
->> really matter I guess.
->
->     Eh? We've had a functional btrfsck for nearly a year.
+On Wed, Mar 13, 2013 at 6:07 AM, Jérôme Poulin <jeromepoulin@gmail.com> wrote:
+> It seems the SSD has bad blocks now, BTRFS seems to abuse SSD disks, I
+> burnt 1 SSD disk and 2 USB flash drive since I'm using BTRFS, in about
+> 2 months for each.
 
+USB flash drives are rubbish for any filesystem except FAT32 and then
+still only gracefully accept large sequential writes. A few years ago
+I thought it would be a good idea to put the root partition of a few
+of my small Debian servers on USB flash, so that the harddisks could
+spin down at night and I could easily prepare and switch a new
+Debian-version. However, each and every USB stick got trashed within a
+year, no matter which brand, size or product line and despite
+specifically formatting them ext3 without a journal. I now use low-end
+but recent series of SSD's and have had no such problems any more. I
+don't use btrfs on them as yet, but ext4 even with a journal is doing
+just fine.
 
-Right. But it is not something that you run on boot, is it. That is why 
-I mentioned fsck.btrfs
+Regards,
 
-
-
->     Hugo.
->
+Bart

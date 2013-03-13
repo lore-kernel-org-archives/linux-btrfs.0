@@ -1,34 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:65085 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754506Ab3CMFHk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 01:07:40 -0400
-Received: by mail-wi0-f173.google.com with SMTP id hq4so2438350wib.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 22:07:36 -0700 (PDT)
+Received: from y235201.ppp.asahi-net.or.jp ([118.243.235.201]:38174 "EHLO
+	mactop" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1754138Ab3CMFkX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Mar 2013 01:40:23 -0400
+Message-ID: <51400F2F.5060109@parallels.com>
+Date: Wed, 13 Mar 2013 14:31:27 +0900
+From: dima <dolenin@parallels.com>
 MIME-Version: 1.0
-In-Reply-To: <513FDE67.1050907@redhat.com>
-References: <201303131238.33692.russell@coker.com.au>
-	<513FDE67.1050907@redhat.com>
-Date: Wed, 13 Mar 2013 01:07:34 -0400
-Message-ID: <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com>
-Subject: Re: Debian 3.7.1 BTRFS crash
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: russell@coker.com.au, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Alex <alex@bpmit.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: File space cache
+References: <loom.20130312T171252-0@post.gmane.org>
+In-Reply-To: <loom.20130312T171252-0@post.gmane.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 12, 2013 at 10:03 PM, Eric Sandeen <sandeen@redhat.com> wrote:
-> [   37.176790] BTRFS error (device dm-0) in __btrfs_free_extent:5143: IO failure
-> [   37.176791] btrfs is forced readonly
-> [   37.176793] btrfs: run_one_delayed_ref returned -5
+Hello Alex,
+
+On 03/13/2013 01:17 AM, Alex wrote:
+> Hi All,
 >
+> It seems my btrfs file space cache is corrupt; I had to run clear the log
+> through a kernel problem.
+>
+> I've seen messages that the cache is rebuilt automatically, but this doesn't
+> seem to be true as the messages that the free space is what is expected keep
+> coming.
+>
+> I'm running kernel 3.8.2 (Siduction) on Debian testing.
 
 
-It seems the SSD has bad blocks now, BTRFS seems to abuse SSD disks, I
-burnt 1 SSD disk and 2 USB flash drive since I'm using BTRFS, in about
-2 months for each. ddrescue'ing the SSD would probably give better
-chances of recovery and give BTRFS/btrfsck a chance to write correctly
-to the newly copied image.
+I believe you may try clear_cache mount option
+https://btrfs.wiki.kernel.org/index.php/Mount_options
+
+
+>
+> As a subsidiary question, please, should the <pass> value in fstab be zero or
+> non-zero?
+
+
+It should be zero. But since fsck.btrfs is non-existent, it does not 
+really matter I guess.
+
+
+~dima
+
+
+> Kind regards.
+>
+> Al.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

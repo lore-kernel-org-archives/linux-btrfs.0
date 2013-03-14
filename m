@@ -1,39 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55646 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:34698 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932235Ab3CLRx1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Mar 2013 13:53:27 -0400
-Date: Tue, 12 Mar 2013 18:53:25 +0100
+	id S1753324Ab3CNW0E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Mar 2013 18:26:04 -0400
+Date: Thu, 14 Mar 2013 23:26:01 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org, Hugo Mills <h.r.mills@reading.ac.uk>
-Subject: Re: [PATCH] btrfs-progs: add Makefile rule for static build of
- btrfs-find-root
-Message-ID: <20130312175325.GR7229@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: update .gitignore file
+Message-ID: <20130314222601.GX7229@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1363103051-10207-1-git-send-email-hugo@carfax.org.uk>
+References: <1363227161-6878-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1363103051-10207-1-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1363227161-6878-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 12, 2013 at 03:44:11PM +0000, Hugo Mills wrote:
-> From: Hugo Mills <h.r.mills@reading.ac.uk>
-> 
-> btrfs-find-root isn't yet integrated into the main btrfs tool, and is
-> an important recovery tool, so it deserves to be built as a static
-> binary.
+I've added the rest of the missing make targets into that commit
 
-Thanks, I'll add this now as a separate target, though find-root might
-end up merged into 'btrfs' eventually.
-
-> +btrfs-find-root.static: $(static_objects) $(libs) find-root.static.o
-
-I've noticed that the (newly added) mkfs.btrfs.static target does not
-depend on $(libs) and this is correct, we don't need $(libs) for .static
-targets.  I'll fix both btrfs.static and find-root here.
-
-> +	@echo "    [LD]     $@"
-> +	$(Q)$(CC) $(STATIC_CFLAGS) -o btrfs-find-root.static find-root.static.o $(static_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
-> +
+@@ -12,15 +12,24 @@ btrfs-show
+ btrfs-vol
+ btrfsck
+ btrfsctl
++calc-size
++ioctl-test
++dir-test
++send-test
++quick-test
+ find-root
+ mkfs.btrfs
++mkfs.btrfs.static
+ repair
+ restore
+ btrfs-convert
+ btrfs-find-root
++btrfs-find-root.static
+ btrfs-image
+ btrfs-show-super
+ btrfs-zero-log
++btrfs-corrupt-block
++btrfs-select-super
+ btrfstune
+ libbtrfs.a
+ libbtrfs.so

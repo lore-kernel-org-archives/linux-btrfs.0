@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30477 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:40102 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756008Ab3CMLnx (ORCPT
+	with ESMTP id S933465Ab3CNDFZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 07:43:53 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2DBhqD6015513
+	Wed, 13 Mar 2013 23:05:25 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2E35OXt015648
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 11:43:52 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2DBhpQ5020018
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:05:24 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2E35NpB007258
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 11:43:52 GMT
-Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2DBhpMi000835
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 06:43:51 -0500
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:05:23 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2E35NFe002518
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 22:05:23 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3 v3] flags to access backup SB
-Date: Wed, 13 Mar 2013 19:44:17 +0800
-Message-Id: <1363175060-30970-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 0/3 v4] flags to access backup SB
+Date: Thu, 14 Mar 2013 11:05:54 +0800
+Message-Id: <1363230357-7438-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1362756300-30212-1-git-send-email-anand.jain@oracle.com>
 References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -29,6 +29,10 @@ We need a mechanism to tell when to use the backup super_block.
 To do this it needs a frame-work, and the patch #1 and #2 below
 provides the same without change in the logic. The last patch
 uses the framework to fix the bug(s).
+
+v3->v4:
+	Fixed some warnings introduced by patch #3 below,
+	sorry my mistake.
 
 v2->v3:
         Accepts David and Eric review, which would result in disabled

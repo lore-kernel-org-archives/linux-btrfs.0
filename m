@@ -1,55 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:42146 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752477Ab3CNJxA convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:47601 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757607Ab3CNNE1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Mar 2013 05:53:00 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Any method to 'umount' a subvolume?
-Date: Thu, 14 Mar 2013 10:52:57 +0100
-Cc: Harald Glatt <mail@hachre.de>, Queen Adam <adam900710@gmail.com>
-References: <CAFy8SQVzHYXmCkwgJ2tmE4QoZDGF4z1efN4z4CkVACQi2LEY_Q@mail.gmail.com> <CAFWF=amiXCdrvrWnuPW5-bn2V5FgvaK3VaOXMKGdfZwHH2KLfA@mail.gmail.com> (sfid-20130314_092330_722501_8C14D0AE)
-In-Reply-To: <CAFWF=amiXCdrvrWnuPW5-bn2V5FgvaK3VaOXMKGdfZwHH2KLfA@mail.gmail.com>
+	Thu, 14 Mar 2013 09:04:27 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 991DD9A03C9
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 07:04:26 -0600 (MDT)
+Date: Thu, 14 Mar 2013 09:04:23 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Russell Coker <russell@coker.com.au>
+CC: Chris Mason <clmason@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Debian 3.7.1 BTRFS crash
+Message-ID: <20130314130423.GJ15014@shiny.masoncoding.com>
+References: <201303131238.33692.russell@coker.com.au>
+ <201303140103.53907.russell@coker.com.au>
+ <20130313191918.GF15014@shiny.masoncoding.com>
+ <201303141736.09724.russell@coker.com.au>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201303141052.58093.Martin@lichtvoll.de>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <201303141736.09724.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 14. März 2013 schrieb Harald Glatt:
-> That's because the test shouldn't be in your root in the first place.
-> The common way of thinking now is to create a btrfs volume with a
-> structure for holding subvolumes inside of which your system root is a
-> member. You then mount the system root via -o subvol= and will only
-> see it and nothing else. If you want access to the "control" structure
-> you mount that without -o subvol. If you want to mount another
-> subvolume (even in place of your root) you mount that with -o subvol
-> to whereever you want.
+On Thu, Mar 14, 2013 at 12:36:09AM -0600, Russell Coker wrote:
+> On Thu, 14 Mar 2013, Chris Mason <chris.mason@fusionio.com> wrote:
+> > Bad key ordering is pretty rare, and it usually means memory
+> > corruptions.  Are you reproducing this on the same machine or a
+> > different one?
 > 
-> Examples:
-> real btrfs root:
-> /root/default
-> /root/snap1
-> /root/snap2
-> /home/default
-> /home/snap1
-> 
-> The system root mounts /root/default on boot via -o
-> subvol=root/default as well as the /home/default subvolume for /home.
-> 
-> Then if you want to make a snapshot you mount btrfs to something like
-> /mnt/ctrl and do 'btrfs sub snap / /mnt/ctrl/root/snap3' and umount
-> /mnt/ctrl again.
+> I've attached a kernel message log of mounting it on another system (which 
+> incidentally has ECC RAM) running the Debian package of kernel 3.8.2.  The end 
+> result of this was a system on which the sync command blocked in D state 
+> indefinitely and which couldn't be rebooted in any way other than a hardware 
+> reset.
 
-I use it that way, but I use
+Just to make sure I've got the sequence right, this is mounting the same
+corrupted image on a second system?
 
-btrfs subvolume set-default NUMBER /mount/path
+The end result of that should be some messages about the bad blocks we
+found and then the FS forced readonly.  If not, you're right there is
+definitely a bug there.
 
-in order to not have to put the subvolid option into fstab.
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+-chris

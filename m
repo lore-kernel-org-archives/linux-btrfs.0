@@ -1,46 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:47601 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757607Ab3CNNE1 (ORCPT
+Received: from plane.gmane.org ([80.91.229.3]:45199 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751389Ab3CNTFH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Mar 2013 09:04:27 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 991DD9A03C9
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 07:04:26 -0600 (MDT)
-Date: Thu, 14 Mar 2013 09:04:23 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Russell Coker <russell@coker.com.au>
-CC: Chris Mason <clmason@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+	Thu, 14 Mar 2013 15:05:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UGDSx-0004uJ-9W
+	for linux-btrfs@vger.kernel.org; Thu, 14 Mar 2013 20:05:27 +0100
+Received: from p5dc4a722.dip.t-dialin.net ([93.196.167.34])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 20:05:27 +0100
+Received: from scno by p5dc4a722.dip.t-dialin.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 20:05:27 +0100
+To: linux-btrfs@vger.kernel.org
+From: "Norbert Scheibner" <scno@gmx.net>
 Subject: Re: Debian 3.7.1 BTRFS crash
-Message-ID: <20130314130423.GJ15014@shiny.masoncoding.com>
+Date: Thu, 14 Mar 2013 20:04:08 +0100
+Message-ID: <op.wtx9w60ur07q8e@tron.scheibner.rb>
 References: <201303131238.33692.russell@coker.com.au>
- <201303140103.53907.russell@coker.com.au>
- <20130313191918.GF15014@shiny.masoncoding.com>
- <201303141736.09724.russell@coker.com.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <201303141736.09724.russell@coker.com.au>
+ <513FDE67.1050907@redhat.com>
+ <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com>
+ <CAGy7Uthf3P-4eefV-RbJQ=mW=OpjR3CXauPfCSbiv5eKMa5H8Q@mail.gmail.com>
+ <51406375.6050502@petaramesh.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-15; format=flowed; delsp=yes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 14, 2013 at 12:36:09AM -0600, Russell Coker wrote:
-> On Thu, 14 Mar 2013, Chris Mason <chris.mason@fusionio.com> wrote:
-> > Bad key ordering is pretty rare, and it usually means memory
-> > corruptions.  Are you reproducing this on the same machine or a
-> > different one?
-> 
-> I've attached a kernel message log of mounting it on another system (which 
-> incidentally has ECC RAM) running the Debian package of kernel 3.8.2.  The end 
-> result of this was a system on which the sync command blocked in D state 
-> indefinitely and which couldn't be rebooted in any way other than a hardware 
-> reset.
+Am 13.03.2013, 12:31 Uhr, schrieb Swâmi Petaramesh <swami@petaramesh.org>:
 
-Just to make sure I've got the sequence right, this is mounting the same
-corrupted image on a second system?
+> Le 13/03/2013 11:56, Bart Noordervliet a écrit :
+>> USB flash drives are rubbish for any filesystem except FAT32 and then
+>> still only gracefully accept large sequential writes. A few years ago
+>> I thought it would be a good idea to put the root partition of a few
+>> of my small Debian servers on USB flash, so that the harddisks could
+>> spin down at night and I could easily prepare and switch a new
+>> Debian-version. However, each and every USB stick got trashed within a
+>> year
+> I have an ARM box that runs a little Debian server (typically an
+> advanced NAS), it uses an USB key as an ext2 root filesystem. Everything
+> but big storage is there, and it's been up and running 24/7 for 3+ years
+> without any USB key incident...
 
-The end result of that should be some messages about the bad blocks we
-found and then the FS forced readonly.  If not, you're right there is
-definitely a bug there.
+The difference is the fs. Ext3 uses a journal which uses always the same
+physical sectors on disc. If the disc is a hard disk, it does not matter,
+rewrites are no problem for platters. If it is an modern SSD, the SSD-
+controller takes care and redirects the writes to different physical
+sectors. USB-sticks have no smart controller and so the writes hit
+always the same physical sector, it's like burning a hole in the flash
+chip. If the commit time is standard for desktops set to 5 seconds, then
+a whole year means a lot of writes to the same sector on an USB-stick.
 
--chris
+Regards
+   Norbert
+

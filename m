@@ -1,378 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32061 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:40108 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755451Ab3CMLrG (ORCPT
+	with ESMTP id S933465Ab3CNDF0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 07:47:06 -0400
-Message-ID: <51406728.5030705@oracle.com>
-Date: Wed, 13 Mar 2013 19:46:48 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs-progs: use BTRFS_SCAN_BACKUP_SB flag in btrfs_scan_one_device
-References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com> <1362756300-30212-4-git-send-email-anand.jain@oracle.com> <513DF252.8070109@redhat.com> <20130311181635.GH7229@twin.jikos.cz>
-In-Reply-To: <20130311181635.GH7229@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Wed, 13 Mar 2013 23:05:26 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2E35QB9015654
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:05:26 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2E35OKG029595
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:05:25 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2E35OpL002528
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 22:05:24 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3 v4] btrfs-progs: Introduce flag BTRFS_SCAN_REGISTER to replace run_ioctl
+Date: Thu, 14 Mar 2013 11:05:55 +0800
+Message-Id: <1363230357-7438-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1363230357-7438-1-git-send-email-anand.jain@oracle.com>
+References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com>
+ <1363230357-7438-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Introduce flag BTRFS_SCAN_REGISTER to replace the parameter run_ioctl
+which controls calling the function btrfs_register_one_device().
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfsctl.c    |  2 +-
+ cmds-device.c |  4 ++--
+ disk-io.c     |  3 ++-
+ find-root.c   |  3 ++-
+ utils.c       | 17 +++++++++--------
+ utils.h       |  7 ++++---
+ 6 files changed, 20 insertions(+), 16 deletions(-)
+
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 8fd8cc3..75bc52d 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -115,7 +115,7 @@ int main(int ac, char **av)
+ 	
+ 	if (ac == 2 && strcmp(av[1], "-a") == 0) {
+ 		fprintf(stderr, "Scanning for Btrfs filesystems\n");
+-		btrfs_scan_one_dir("/dev", 1);
++		btrfs_scan_one_dir("/dev", BTRFS_SCAN_REGISTER);
+ 		exit(0);
+ 	}
+ 	for (i = 1; i < ac; i++) {
+diff --git a/cmds-device.c b/cmds-device.c
+index 58df6da..1b8f378 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -203,9 +203,9 @@ static int cmd_scan_dev(int argc, char **argv)
+ 
+ 		printf("Scanning for Btrfs filesystems\n");
+ 		if(checklist)
+-			ret = btrfs_scan_block_devices(1);
++			ret = btrfs_scan_block_devices(BTRFS_SCAN_REGISTER);
+ 		else
+-			ret = btrfs_scan_one_dir("/dev", 1);
++			ret = btrfs_scan_one_dir("/dev", BTRFS_SCAN_REGISTER);
+ 		if (ret){
+ 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
+ 			return 18;
+diff --git a/disk-io.c b/disk-io.c
+index a9fd374..8205b3c 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -834,7 +834,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 	}
+ 
+ 	if (total_devs != 1) {
+-		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
++		ret = btrfs_scan_for_fsid(fs_devices, total_devs,
++			BTRFS_SCAN_REGISTER);
+ 		if (ret)
+ 			goto out;
+ 	}
+diff --git a/find-root.c b/find-root.c
+index f99fb76..ca41447 100644
+--- a/find-root.c
++++ b/find-root.c
+@@ -110,7 +110,8 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
+ 	}
+ 
+ 	if (total_devs != 1) {
+-		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
++		ret = btrfs_scan_for_fsid(fs_devices, total_devs,
++			BTRFS_SCAN_REGISTER);
+ 		if (ret)
+ 			goto out;
+ 	}
+diff --git a/utils.c b/utils.c
+index f68436d..c29861b 100644
+--- a/utils.c
++++ b/utils.c
+@@ -840,7 +840,8 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 
+ 	/* scan other devices */
+ 	if (is_btrfs && total_devs > 1) {
+-		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1)))
++		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs,
++				BTRFS_SCAN_REGISTER)))
+ 			return ret;
+ 	}
+ 
+@@ -951,7 +952,7 @@ void btrfs_register_one_device(char *fname)
+ 	close(fd);
+ }
+ 
+-int btrfs_scan_one_dir(char *dirname, int run_ioctl)
++int btrfs_scan_one_dir(char *dirname, u64 flags)
+ {
+ 	DIR *dirp = NULL;
+ 	struct dirent *dirent;
+@@ -1032,7 +1033,7 @@ again:
+ 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+ 					    &num_devices,
+ 					    BTRFS_SUPER_INFO_OFFSET);
+-		if (ret == 0 && run_ioctl > 0) {
++		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
+ 			btrfs_register_one_device(fullpath);
+ 		}
+ 		close(fd);
+@@ -1057,13 +1058,13 @@ fail:
+ }
+ 
+ int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
+-			int run_ioctls)
++			u64 flags)
+ {
+ 	int ret;
+ 
+-	ret = btrfs_scan_block_devices(run_ioctls);
++	ret = btrfs_scan_block_devices(flags);
+ 	if (ret)
+-		ret = btrfs_scan_one_dir("/dev", run_ioctls);
++		ret = btrfs_scan_one_dir("/dev", flags);
+ 	return ret;
+ }
+ 
+@@ -1294,7 +1295,7 @@ int set_label(const char *btrfs_dev, const char *label)
+ 		set_label_mounted(btrfs_dev, label);
+ }
+ 
+-int btrfs_scan_block_devices(int run_ioctl)
++int btrfs_scan_block_devices(u64 flags)
+ {
+ 
+ 	struct stat st;
+@@ -1361,7 +1362,7 @@ scan_again:
+ 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+ 					    &num_devices,
+ 					    BTRFS_SUPER_INFO_OFFSET);
+-		if (ret == 0 && run_ioctl > 0) {
++		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
+ 			btrfs_register_one_device(fullpath);
+ 		}
+ 		close(fd);
+diff --git a/utils.h b/utils.h
+index 0b681ed..c4d0d00 100644
+--- a/utils.h
++++ b/utils.h
+@@ -22,6 +22,7 @@
+ #include "ctree.h"
+ 
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
++#define BTRFS_SCAN_REGISTER	(1ULL << 1)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+ 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
+@@ -35,9 +36,9 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      u64 block_count, u32 io_width, u32 io_align,
+ 		      u32 sectorsize);
+ int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
+-			int run_ioctls);
++			u64 flags);
+ void btrfs_register_one_device(char *fname);
+-int btrfs_scan_one_dir(char *dirname, int run_ioctl);
++int btrfs_scan_one_dir(char *dirname, u64 flags);
+ int check_mounted(const char *devicename);
+ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 			struct btrfs_fs_devices **fs_devices_mnt);
+@@ -45,7 +46,7 @@ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+ char *pretty_sizes(u64 size);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+-int btrfs_scan_block_devices(int run_ioctl);
++int btrfs_scan_block_devices(u64 flags);
+ u64 parse_size(char *s);
+ int open_file_or_dir(const char *fname);
+ int get_device_info(int fd, u64 devid,
+-- 
+1.8.1.227.g44fe835
 
-
-Thanks Eric and David.
-
-  I have sent out V3 patch-set which will disable access
-  to backup super-block unless requested by the user.
-
-  here below are some test cases and results before and
-  after this fix.. which finds the patch works awesome.
-
-
---------
-the original problem which all this started..
-
-mkfs.btrfs /dev/sdb -f && yes| mkfs.ext4 /dev/sdb && mount /dev/sdb /ext4
-~/before/mkfs.btrfs -f /dev/sdc /dev/sdd (run twice)
-~/before/mkfs.btrfs -f /dev/sdc /dev/sdd
-::
-ERROR: unable to scan the device '/dev/sdb' - Device or resource busy
-ERROR: unable to scan the device '/dev/sdb' - Device or resource busy
-adding device /dev/sdd id 2
-fs created label (null) on /dev/sdc
-         nodesize 4096 leafsize 4096 sectorsize 4096 size 3.11GB
-
-
-after the fix.
-
-# mkfs.btrfs -f /dev/sdc /dev/sdd
-
-WARNING! - Btrfs v0.20-rc1-238-g170881a-dirty IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-adding device /dev/sdd id 2
-fs created label (null) on /dev/sdc
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 104.98GB
-Btrfs v0.20-rc1-238-g170881a-dirty
--------------
-
-# umount /ext4
-
-# mkfs.btrfs /dev/sdb /dev/sdc -f && wipefs /dev/sdb
-
-There is an existing bug..
-
-# ~/before/btrfs check /dev/sdc --repair
-enabling repair mode
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sdc
-UUID: e03c477d-b696-46c1-bf79-43b8b8454f11
-checking extents
-checking fs roots
-checking root refs
-btrfs: extent-tree.c:2553: btrfs_reserve_extent: Assertion `!(ret)' failed.
-Aborted (core dumped)
-#
-
-and its still there even after this patch :-)
-
-# btrfs check /dev/sdc --repair
-enabling repair mode
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sdc
-UUID: e03c477d-b696-46c1-bf79-43b8b8454f11
-checking extents
-checking fs roots
-checking root refs
-btrfs: extent-tree.c:2553: btrfs_reserve_extent: Assertion `!(ret)' failed.
-Aborted (core dumped)
-
--------------------------
-
-
-# mkfs.btrfs /dev/sdb /dev/sdc -f && yes|mkfs.ext4 /dev/sdb
-
-without the fix
-# ~/before/btrfs restore -o /dev/sdb ~/tmp
-ERROR: device scan failed '/dev/sdb' - Invalid argument
-ERROR: device scan failed '/dev/sdb' - Invalid argument
-Root objectid is 5
-
-with the fix
-
-# btrfs restore -o /dev/sdb ~/tmp
-No valid Btrfs found on /dev/sdb
-Could not open root, trying backup super
-Root objectid is 5
-
-now I say to use sb backup 1..
-
-# btrfs restore -u 1 -o /dev/sdb ~/tmp
-Root objectid is 5
-# echo $?
-0
-
---------------
-
-# mkfs.btrfs /dev/sdb /dev/sdc -f && yes|mkfs.ext4 /dev/sdb
-
-# ~/before/btrfs check /dev/sdc --repair
-enabling repair mode
-ERROR: device scan failed '/dev/sdb' - Invalid argument
-ERROR: device scan failed '/dev/sdb' - Invalid argument
-Checking filesystem on /dev/sdc
-UUID: 5dc5c663-eeea-4ec2-b8fe-170157f5d68d
-checking extents
-checking fs roots
-checking root refs
-found 28672 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 28672
-total fs tree bytes: 8192
-btree space waste bytes: 22420
-file data blocks allocated: 0
-  referenced 0
-Btrfs v0.20-rc1-235-gdd21bc1
-
-# mkfs.btrfs /dev/sdb /dev/sdc -f && yes|mkfs.ext4 /dev/sdb
-
-since now new code doesn't read backup SB of devid1
-it hits the earlier known bug.
-
-# btrfs check /dev/sdc --repair
-enabling repair mode
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sdc
-UUID: daa0dc6d-35b6-43ab-8333-894710a5b917
-checking extents
-checking fs roots
-checking root refs
-btrfs: extent-tree.c:2553: btrfs_reserve_extent: Assertion `!(ret)' failed.
-Aborted (core dumped)
-
-So user would need to fix the devid1 first.
-
-# btrfs check /dev/sdb --repair
-enabling repair mode
-No valid Btrfs found on /dev/sdb
-
-# btrfs check -s 1 /dev/sdb --repair
-using SB copy 1, bytenr 67108864
-enabling repair mode
-Checking filesystem on /dev/sdb
-UUID: daa0dc6d-35b6-43ab-8333-894710a5b917
-checking extents
-checking fs roots
-checking root refs
-found 28672 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 28672
-total fs tree bytes: 8192
-btree space waste bytes: 22420
-file data blocks allocated: 0
-  referenced 0
-Btrfs v0.20-rc1-238-g170881a-dirty
-
-# btrfs check /dev/sdc --repair
-enabling repair mode
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sdc
-UUID: daa0dc6d-35b6-43ab-8333-894710a5b917
-checking extents
-checking fs roots
-checking root refs
-btrfs: extent-tree.c:2553: btrfs_reserve_extent: Assertion `!(ret)' failed.
-Aborted (core dumped)
-
-Need to write back the backup SB to primary SB.
-IMO when -s 1 was given it had the chance to fix
-primary.. this can be fixed later.
-
-# ./btrfs-select-super -s 1 /dev/sdb
-using SB copy 1, bytenr 67108864
-ERROR: device scan failed '/dev/sdb' - Invalid argument
-
-# btrfs check /dev/sdc --repair
-enabling repair mode
-Checking filesystem on /dev/sdc
-UUID: daa0dc6d-35b6-43ab-8333-894710a5b917
-checking extents
-checking fs roots
-checking root refs
-found 28672 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 28672
-total fs tree bytes: 8192
-btree space waste bytes: 22420
-file data blocks allocated: 0
-  referenced 0
-Btrfs v0.20-rc1-238-g170881a-dirty
----------------------------------------------------------------
-
-
-I am not sure if I have a wipe -a working for btrfs,
-so I would clean using dd.
-
-# dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((64*1024+64))
-8+0 records in
-8+0 records out
-8 bytes (8 B) copied, 0.000324503 s, 24.7 kB/s
-
-# dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((64*1024*1024+64))
-8+0 records in
-8+0 records out
-8 bytes (8 B) copied, 0.000364635 s, 21.9 kB/s
-
-# dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((256*1024*1024*1024+64))
-dd: `/dev/sdb': cannot seek: Invalid argument
-0+0 records in
-0+0 records out
-0 bytes (0 B) copied, 0.000430846 s, 0.0 kB/s
-
-This behavior is same before and after the patch.
-
-# btrfs check /dev/sdb
-No valid Btrfs found on /dev/sdb
-# btrfs check /dev/sdb -s 1
-using SB copy 1, bytenr 67108864
-No valid Btrfs found on /dev/sdb
-# btrfs check /dev/sdb -s 2
-using SB copy 2, bytenr 274877906944
-No valid Btrfs found on /dev/sdb
-#
-------------------------
-
-  # mkfs.btrfs /dev/sdb /dev/sdc -f && mount /dev/sdc /btrfs
-
-  # dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((64*1024+64))
-  # dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((64*1024*1024+64))
-  # dd if=/dev/zero bs=1 count=8 of=/dev/sdb seek=$((256*1024*1024*1024+64))
-
-# mkfs.btrfs /dev/sdb
-
-WARNING! - Btrfs v0.20-rc1-238-g170881a-dirty IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-/dev/sdb is mounted
-
-
-# umount /btrfs
-
-# mkfs.btrfs /dev/sdb
-
-WARNING! - Btrfs v0.20-rc1-238-g170881a-dirty IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-/dev/sdb appears to contain an existing filesystem (btrfs).
-Use the -f option to force overwrite.
-#
-
--------------------------
-
-
-# mkfs.btrfs /dev/sdd /dev/sde -f
-
-WARNING! - Btrfs v0.20-rc1-238-g170881a-dirty IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-adding device /dev/sde id 2
-fs created label (null) on /dev/sdd
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 93.22GB
-Btrfs v0.20-rc1-238-g170881a-dirty
-# mount /dev/sde /btrfs
-# umount /btrfs
-# dd if=/dev/zero bs=1 count=8 of=/dev/sde seek=$((64*1024+64))
-8+0 records in
-8+0 records out
-8 bytes (8 B) copied, 0.0149415 s, 0.5 kB/s
-
-remove /dev/sdd
-
-# x="0 0 3 0"
-# echo "scsi remove-single-device $x" > /proc/scsi/scsi
-# lsscsi
-[0:0:0:0]    disk    Sun      boot1            V1.0  /dev/sda
-[0:0:2:0]    disk    Sun      boot3            V1.0  /dev/sdc
-[0:0:4:0]    disk    Sun      boot5            V1.0  /dev/sde
-[0:1:0:0]    disk    SEAGATE  ST914602SSUN146G 0603  -
-[0:1:1:0]    disk    SEAGATE  ST914602SSUN146G 0603  -
-[0:3:0:0]    enclosu ADAPTEC  Virtual SGPIO  0 0001  -
-
-
-# btrfs check /dev/sde
-No valid Btrfs found on /dev/sde
-
-# btrfs check /dev/sde -s 1
-using SB copy 1, bytenr 67108864
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sde
-UUID: fa08122d-832f-4f32-87ee-58eb9380d5da
-checking extents
-checking fs roots
-checking root refs
-found 815104 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 28672
-total fs tree bytes: 8192
-btree space waste bytes: 21476
-file data blocks allocated: 786432
-  referenced 786432
-Btrfs v0.20-rc1-238-g170881a-dirty
-
-# ./btrfs-select-super -s 1 /dev/sde
-using SB copy 1, bytenr 67108864
-ERROR: device scan failed '/dev/sdc' - Invalid argument
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-
-# btrfs check /dev/sde
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-Checking filesystem on /dev/sde
-UUID: fa08122d-832f-4f32-87ee-58eb9380d5da
-checking extents
-checking fs roots
-checking root refs
-found 815104 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 28672
-total fs tree bytes: 8192
-btree space waste bytes: 21476
-file data blocks allocated: 786432
-  referenced 786432
-Btrfs v0.20-rc1-238-g170881a-dirty
-#
----------------
-
-
-Thanks, Anand
-
-
-On 03/12/2013 02:16 AM, David Sterba wrote:
-> On Mon, Mar 11, 2013 at 10:03:46AM -0500, Eric Sandeen wrote:
->> IMHO, nothing should be checking the backup superblocks unless explicitly
->> told to.
->
-> That's the whole point I believe.
->
-> update the infrastructure, every SB access looks to the first copy
-> unless told by command line options.
->
->
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

@@ -1,193 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:58237 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753781Ab3CNGgO (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:55966 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756654Ab3CNJsx convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Mar 2013 02:36:14 -0400
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: Chris Mason <chris.mason@fusionio.com>
+	Thu, 14 Mar 2013 05:48:53 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: Debian 3.7.1 BTRFS crash
-Date: Thu, 14 Mar 2013 17:36:09 +1100
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-References: <201303131238.33692.russell@coker.com.au> <201303140103.53907.russell@coker.com.au> <20130313191918.GF15014@shiny.masoncoding.com>
-In-Reply-To: <20130313191918.GF15014@shiny.masoncoding.com>
+Date: Thu, 14 Mar 2013 10:48:47 +0100
+Cc: =?utf-8?q?J=C3=A9r=C3=B4me_Poulin?= <jeromepoulin@gmail.com>,
+        Eric Sandeen <sandeen@redhat.com>, russell@coker.com.au
+References: <201303131238.33692.russell@coker.com.au> <513FDE67.1050907@redhat.com> <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com> (sfid-20130313_100808_915882_684A4123)
+In-Reply-To: <CALJXSJqNermOKN7KZ_8x2SP0J8-f7F=tRiEMym6UWum7_Vf-4A@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: Multipart/Mixed;
-  boundary="Boundary-00=_Z/WQR5GZqDVrQki"
-Message-Id: <201303141736.09724.russell@coker.com.au>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201303141048.48180.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Boundary-00=_Z/WQR5GZqDVrQki
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: 7bit
+Hi Jérôme,
 
-On Thu, 14 Mar 2013, Chris Mason <chris.mason@fusionio.com> wrote:
-> Bad key ordering is pretty rare, and it usually means memory
-> corruptions.  Are you reproducing this on the same machine or a
-> different one?
+Am Mittwoch, 13. März 2013 schrieb Jérôme Poulin:
+> On Tue, Mar 12, 2013 at 10:03 PM, Eric Sandeen <sandeen@redhat.com> wrote:
+> > [   37.176790] BTRFS error (device dm-0) in __btrfs_free_extent:5143:
+> > IO failure [   37.176791] btrfs is forced readonly
+> > [   37.176793] btrfs: run_one_delayed_ref returned -5
+> 
+> It seems the SSD has bad blocks now, BTRFS seems to abuse SSD disks, I
+> burnt 1 SSD disk and 2 USB flash drive since I'm using BTRFS, in about
+> 2 months for each. ddrescue'ing the SSD would probably give better
+> chances of recovery and give BTRFS/btrfsck a chance to write correctly
+> to the newly copied image.
 
-I've attached a kernel message log of mounting it on another system (which 
-incidentally has ECC RAM) running the Debian package of kernel 3.8.2.  The end 
-result of this was a system on which the sync command blocked in D state 
-indefinitely and which couldn't be rebooted in any way other than a hardware 
-reset.
+Well, the Intel SSD 320 in this ThinkPad T520 so far didn´t seem to notice
+any significant abuse due to BTRFS in use:
 
-After that I ran btrfsck (which reported lots of errors) and it appeared to 
-mount correctly.  I haven't yet tried to verify the integrity of the contents.
+smartctl-a-2013-03-14
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       5250
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       202408
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203778
 
-I've now run memtest86+ on the origin system and it reported some memory 
-errors.  I'm now in the process of trying to determine what parts of the 
-hardware failed.
+Above value has always been in that range… according to a PDF from Intel the 
+Media_Wearout_Indicator below is important.
 
-So while the original corrupted filesystem was probably no fault of BTRFS the 
-fact that another system with no hardware problem failed to operate correctly 
-after trying to mount it seems to be a bug.
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       202408
 
-Thanks for your advice.
 
+I have about 20 GB / on BTRFS since the beginning. Thats almost 2 years now.
+
+Now I also have 200GB /home on BTRFS, since a month or two. Granted this is
+more data, but unless proven by observed I/O patterns or so, I suggest
+being careful with suggestions that BTRFS abuses SSD disks out of just your
+own experience and suggest to ask it as a question in case you do not know
+for sure.
+
+According to my irregular data points I also see no significant increase in
+wear out after I switched BTRFS to /home although it is a bit premature to
+say for sure - I will continue to have a look at it:
+
+martin@merkaba:~/Computer/Merkaba/Intel SSD 320> for F in $(ls smartctl*) ; do echo "$F" | cut -c1-21 ; egrep "(Wear|Host_Writes|Erase_Fail_Count|
+Power_On_Hours)" "$F" ; done
+smartctl-a-2011-05-19
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       0
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+smartctl-a-2011-05-19
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       1
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+smartctl-a-2011-06-23
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       324
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19158
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203342
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19158
+smartctl-a-2011-06-23
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       324
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19158
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203342
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19158
+smartctl-a-2011-06-23
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       325
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19160
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203342
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19160
+smartctl-a-2011-06-23
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       320
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19041
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203342
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       19041
+smartctl-a-2011-12-16
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       271
+
+Mow thats funny. Intel SSD went back in time? From 325 to 271 power on
+hours in half year. I knew I had a time machine somewhere. I just forgot
+where it is. :)
+
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+
+First occurence with erase failures. But didn´t raise after then.
+
+No other error related occurences in other values so far :)
+
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66757
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203450
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66757
+smartctl-a-2011-12-16
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       271
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66759
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203450
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66759
+smartctl-a-2011-12-16
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       271
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66757
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203450
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       66757
+smartctl-a-2012-07-19
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       2444
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       128105
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       314
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       128105
+smartctl-a-2012-07-19
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       2443
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       127984
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       314
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       127984
+smartctl-a-2012-07-30
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       2582
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       131072
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203604
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       131072
+smartctl-a-2012-12-02
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       4023
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       170107
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203703
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       170107
+smartctl-a-2013-02-22
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       5010
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       198165
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203768
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       198165
+smartctl-a-2013-02-22
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       5010
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       198163
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203768
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       198163
+smartctl-a-2013-03-14
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       5250
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
+225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       202408
+226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2203778
+233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       202408
+
+More than one data point on one day, is before and after self tests.
+
+Basically the wear out related values didn´t change much at all. The indicicative
+Media_Wearout_Indicitor didn´t change at all.
+
+I leave about 20 GB of the 300 GB free at most times, according to a paper
+from Intel this helps long time performance and from my understanding of
+SSD workings it also helps long evity.
+
+Thanks,
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
---Boundary-00=_Z/WQR5GZqDVrQki
-Content-Type: application/x-gzip;
-  name="mount-log.txt.gz"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
-	filename="mount-log.txt.gz"
-
-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
-
---Boundary-00=_Z/WQR5GZqDVrQki--
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

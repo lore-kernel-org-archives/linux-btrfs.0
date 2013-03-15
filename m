@@ -1,59 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59845 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754203Ab3COMrr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 08:47:47 -0400
-Date: Fri, 15 Mar 2013 13:47:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Remco Hosman <remco@yerf-it.nl>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: converting to raid5
-Message-ID: <20130315124744.GF7229@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <19DDB13F-E8EC-4751-A916-E83555347D7E@hosman.xs4all.nl>
+Received: from dkim1.fusionio.com ([66.114.96.53]:49948 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755081Ab3CONNd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 09:13:33 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 6E93B7C067B
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 07:13:33 -0600 (MDT)
+Date: Fri, 15 Mar 2013 09:13:30 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: David Sterba <dsterba@suse.cz>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "sensille@gmx.net" <sensille@gmx.net>,
+        "sbehrens@giantdisaster.de" <sbehrens@giantdisaster.de>
+Subject: Re: Scrub and raid10 (3.9-rc2+) transid verify failed
+Message-ID: <20130315131330.GE1980@localhost.localdomain>
+References: <20130312170312.GO7229@twin.jikos.cz>
+ <20130312180124.GB12725@shiny.masoncoding.com>
+ <20130315120708.GE7229@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <19DDB13F-E8EC-4751-A916-E83555347D7E@hosman.xs4all.nl>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130315120708.GE7229@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 11, 2013 at 09:15:44PM +0100, Remco Hosman wrote:
-> first, i did the following: `btrfs val start -dconvert=raid5,usage=1` to convert the mostly empty chunks.
-> This resulted in a lot of allocated space (10's of gigs), with only a few 100 meg used.
-
-Matches my expectation, converting to the new profile needs to allocate
-full 1G chunks, but the usage=1 filter allows to fill them partially.
-
-After this step, several ~empty raid1 chunks should disappear.
-
-> i did `btrfs val start -dusage=75` to clean things up.
+On Fri, Mar 15, 2013 at 06:07:08AM -0600, David Sterba wrote:
+> On Tue, Mar 12, 2013 at 02:01:24PM -0400, Chris Mason wrote:
+> > Please go back to just 3.9-rc2 and see if you can trigger it.  Josef put
+> > his skinny extents into btrfs-next/master, which is pretty exciting but
+> > may be related to these failures.
+> > 
+> > I'm unable to reproduce here so far.
 > 
-> then i ran `btrfs bal start -dconvert=raid5,soft`.
-> I noticed how the difference between total and used for raid5 kept growing. 
+> Me neither, 3.9-rc2 with top commit (a2362d24764a4e9a3187fc).
+> 
 
-Do you remember if this was temporary or if the difference was
-unexpectedly big after the whole operation finished?
+:(, I'll see if I can reproduce with my skinny extent stuff.
 
-> My guess is that its taking 1 raid1 chunk (2x1 gig disk space, 1 gig
-> data), and moving it to 1 raid5 chunk (4gig disk space, 3gig data),
-> leaving all chunks 33% used.
-
-Why 3G of data in raid5 case? I assume you talk about the actually used
-data and this should be the same as in raid1 case, but spread over 3x
-1GB chunks and leaving them 33% utilized, that makes sense, but is not
-clear from your description.
-
-> This is what 3 calls of `btrfs file df /` looks like a few minutes after each other, with the balance still running:
-
-> Data, RAID1: total=807.00GB, used=805.70GB
-> Data, RAID5: total=543.00GB, used=192.81GB
-> --
-> Data, RAID1: total=800.00GB, used=798.70GB
-> Data, RAID5: total=564.00GB, used=199.30GB
-> --
-> Data, RAID1: total=795.00GB, used=793.70GB
-> Data, RAID5: total=579.00GB, used=204.81GB
-
-raid1 numbers going down, raid5 going up, all ok.
-
-david
+Josef

@@ -1,49 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:50763 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933155Ab3CLRbV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Mar 2013 13:31:21 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 23B137C04E9
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:21 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id T5AfAGcuWpBMpBBC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:20 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 08/10] btrfs-progs: fix regexec to only work if we actually have a regexec
-Date: Tue, 12 Mar 2013 13:38:15 -0400
-Message-ID: <1363109897-7931-9-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
-References: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:42403 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754310Ab3COQKv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 12:10:51 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id DB9C2A4FFA
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 17:10:50 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Jan Kara <jack@suse.cz>
+Subject: [PATCH] btrfs-progs: convert: access name_len and file_type the old way
+Date: Fri, 15 Mar 2013 17:10:45 +0100
+Message-Id: <1363363845-23318-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <josef@redhat.com>
+We can't use ext2_dir_entry_2 typecast on big endian machines directly.
+The bytes do not get converted during extX block read due to missing
+flag EXT2_DIRBLOCK_V2_STRUCT passed down to ext2fs_read_dir_block4 from
+ext2fs_process_dir_block. Fixing on the ext2 side needs updating callers
+and (maybe) the library interfaces. We'll fix it on the convert side for
+now.
 
-We were unconditionally executing our regular expression, even though we may not
-have one, so check to make sure mreg is not null before calling regexec.
-Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
+CC: Jan Kara <jack@suse.cz>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- cmds-restore.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ convert.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 3e0ada2..7e99970 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -642,7 +642,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		/* full path from root of btrfs being restored */
- 		snprintf(fs_name, 4096, "%s/%s", dir, filename);
+diff --git a/convert.c b/convert.c
+index 400488e..7766c09 100644
+--- a/convert.c
++++ b/convert.c
+@@ -264,10 +264,13 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
+ 	struct btrfs_key location;
+ 	struct ext2_dir_entry_2 *dirent = (struct ext2_dir_entry_2 *)old;
+ 	struct dir_iterate_data *idata = (struct dir_iterate_data *)priv_data;
++	int name_len;
++
++	name_len = old->name_len & 0xFF;
  
--		if (REG_NOMATCH == regexec(mreg, fs_name, 0, NULL, 0))
-+		if (mreg && REG_NOMATCH == regexec(mreg, fs_name, 0, NULL, 0))
- 			goto next;
+ 	objectid = dirent->inode + INO_OFFSET;
+-	if (!strncmp(dirent->name, dotdot, dirent->name_len)) {
+-		if (dirent->name_len == 2) {
++	if (!strncmp(dirent->name, dotdot, name_len)) {
++		if (name_len == 2) {
+ 			BUG_ON(idata->parent != 0);
+ 			idata->parent = objectid;
+ 		}
+@@ -280,7 +283,7 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
+ 	location.offset = 0;
+ 	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
  
- 		/* full path from system root */
+-	file_type = dirent->file_type;
++	file_type = old->name_len >> 8;
+ 	BUG_ON(file_type > EXT2_FT_SYMLINK);
+ 	ret = btrfs_insert_dir_item(idata->trans, idata->root,
+ 				    dirent->name, dirent->name_len,
 -- 
-1.7.7.6
+1.8.1.4
 

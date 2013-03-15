@@ -1,62 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:35182 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754762Ab3COQFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 12:05:10 -0400
-Message-ID: <514346B4.3040701@sandeen.net>
-Date: Fri, 15 Mar 2013 11:05:08 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from relay2.sgi.com ([192.48.179.30]:57681 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750920Ab3CORHJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 13:07:09 -0400
+Message-ID: <51435555.2020706@sgi.com>
+Date: Fri, 15 Mar 2013 12:07:33 -0500
+From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-To: Rich Johnston <rjohnston@sgi.com>
-CC: dsterba@suse.cz, Eric Sandeen <sandeen@redhat.com>,
-        xfs-oss <xfs@oss.sgi.com>,
-        ext4 development <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: make defrag test 222 generic
-References: <513F5B0A.4030405@redhat.com> <20130315145540.GG7229@twin.jikos.cz> <51434653.40808@sgi.com>
-In-Reply-To: <51434653.40808@sgi.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Eric Sandeen <sandeen@redhat.com>
+CC: xfs-oss <xfs@oss.sgi.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] xfstests: enable test 032 (mkfs overwrite) for btrfs
+References: <5140A2BC.7010800@redhat.com>
+In-Reply-To: <5140A2BC.7010800@redhat.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/15/13 11:03 AM, Rich Johnston wrote:
-> On 03/15/2013 09:55 AM, David Sterba wrote:
->> On Tue, Mar 12, 2013 at 11:42:50AM -0500, Eric Sandeen wrote:
->>> Define a new _defrag_dir() helper which just runs noisy/debug
->>> dir defrag for ext4 and/or btrfs as well, and use that in 222
->>> instead of hardcoded xfs_fsr.
->>
->> Dir defrag on btrfs does not recurse in the given directory to defrag
->> all files, but defragments the tree of the containing subvolume and the
->> whole extent tree (thus needs CAP_SYS_ADMIN).
->>
->> This is known (and not very intuitive) behaviour, it would be better to
->> add a special parameter to defrag the root and/or the extent root and
->> pass it down to the ioctl via flags.
->>
->> Until this is implemented I suggest to use a workaround via 'find':
->>
->>   find $dir -print -execdir $DEFRAG_PROG '{}' +
->>
->> Otherwise the test looks ok.
->>
->> david
-> 
-> Eric, I will make this change at commit time if you agree?
-> 
-> David, can I put your name as the reviewer when I do?
+Eric,
 
-I think that's big enough change I should send a V2. and
-make a btrfs-special case in _defrag_dir.
+Thanks once more for the patch.  Once I finally got the correct version 
+of mkfs.btrfs this looks good.
 
--Eric
+Reviewed-by: Rich Johnston <rjohnston@sgi.com>
 
-> Thanks
-> --Rich
-> 
+Interesting that the default make install of btrfs-progs did not install 
+over my btrfsprogs rpm.
+
+Was running SLES11 SP2 with btrfsprogs-0.19-5.31.1.x86_64.
+
+It did not put mkfs.btrfs in /sbin.  This did however, validate all the 
+error paths ;).
+
+--Rich
+
+
+
+
+On 03/13/2013 11:01 AM, Eric Sandeen wrote:
+> Now that btrfs has an "-f" arg, we can test that it doesn't
+> improperly overwrite other filesystems in 032 like we do
+> for xfs.
+>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+>
+> diff --git a/032 b/032
+> index bf88492..89fb225 100755
+> --- a/032
+> +++ b/032
+> @@ -38,12 +38,18 @@ rm -f $seq.full
+>   . ./common.filter
+>
+>   # real QA test starts here
+> -_supported_fs xfs
+> +_supported_fs xfs btrfs
+>   _supported_os Linux
+>
+>   _require_nobigloopfs
+>   _require_scratch
+>
+> +# mkfs.btrfs did not have overwrite detection at first
+> +if [ "$FSTYP" == "btrfs" ]; then
+> +	grep -q 'force overwrite' `echo $MKFS_BTRFS_PROG | awk '{print $1}'` || \
+> +		_notrun "Installed mkfs.btrfs does not support -f option"
+> +fi
+> +
+>   echo "Silence is golden."
+>   for fs in `echo ${MKFS_PROG}.* | sed -e 's/.sbin.mkfs.//g'`
+>   do
+> @@ -61,7 +67,7 @@ do
+>   	[ $fs = gfs2 ] && preop="echo y |" && preargs="-p lock_nolock -j 1"
+>   	[ $fs = reiserfs ] && preop="echo y |" && preargs="-f"
+>   	# cramfs mkfs requires a directory argument
+> -	[ $fs = cramfs ] && preargs=/proc/fs/xfs
+> +	[ $fs = cramfs ] && preargs=/proc/fs
+>   	[ $fs = ext2 ] && preargs="-F"
+>   	[ $fs = ext3 ] && preargs="-F"
+>   	[ $fs = ext4 ] && preargs="-F"
+> @@ -77,8 +83,8 @@ do
+>
+>   	if [ $? -eq 0 ] ; then
+>   		# next, ensure we don't overwrite it
+> -		echo "=== Attempting XFS overwrite of $fs..." >>$seq.full
+> -		${MKFS_PROG}.xfs $SCRATCH_DEV >>$seq.full 2>&1
+> +		echo "=== Attempting $FSTYP overwrite of $fs..." >>$seq.full
+> +		${MKFS_PROG}.$FSTYP $SCRATCH_DEV >>$seq.full 2>&1
+>
+>   		[ $? -eq 0 ] && echo "Failed - overwrote fs type ${fs}!"
+>   	else
+>
+>
 > _______________________________________________
 > xfs mailing list
 > xfs@oss.sgi.com
 > http://oss.sgi.com/mailman/listinfo/xfs
-> 
+>
+
 

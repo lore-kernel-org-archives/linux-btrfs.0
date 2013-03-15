@@ -1,38 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:63433 "EHLO
-	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755155Ab3CHDWV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Mar 2013 22:22:21 -0500
-Date: Fri, 8 Mar 2013 14:19:42 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Zach Brown <zab@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: add a incompatible format change for smaller
- metadata extent refs
-Message-ID: <20130308031942.GC23616@dastard>
-References: <1362684477-19402-1-git-send-email-jbacik@fusionio.com>
- <20130307195042.GI3565@lenny.home.zabbo.net>
- <20130307212918.GB1905@localhost.localdomain>
+Received: from cantor2.suse.de ([195.135.220.15]:40056 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932151Ab3COPW0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 11:22:26 -0400
+Date: Fri, 15 Mar 2013 16:22:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Alex Elsayed <eternaleye@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Swapfile on btrfs
+Message-ID: <20130315152224.GH7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <kgjad5$7kt$1@ger.gmane.org>
+ <20130227175226.GM27541@twin.jikos.cz>
+ <kglrn1$cdu$1@ger.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130307212918.GB1905@localhost.localdomain>
+In-Reply-To: <kglrn1$cdu$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 07, 2013 at 04:29:18PM -0500, Josef Bacik wrote:
-> The searches do different things in different places so we have to have samey
-> blobs like this until we get everybody on skinny metadata and can delete the old
-> code.  Thanks,
+On Wed, Feb 27, 2013 at 12:52:50PM -0800, Alex Elsayed wrote:
+> Also, in talking on IRC with Hugo Mills he helped me realize another issue - 
+> specifically, that a.) DIO to compressed data falls back to buffered IO, and 
+> b.) (at least according to the wiki) the compress_force mount option takes 
+> precedence over the NOCOMPRESS file flag.
+> 
+> Thinking about it further, I realized that individual extents could be 
+> compressed, at which point this could get rather onerous on swapon since we 
+> might well need to check each and every extent to make sure it isn't 
+> compressed.
 
-History says that once you have a disk format out in the wild, there
-will still be people using it 10 years later. IOWs, you'll probably
-never be able to delete the old code....
+There are a few limitations I can think of:
 
-Cheers,
+* the file has to be nocow (stable block ranges)
+* no compression for the swap file (due to nocow)
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+* snapshot of the swapfile would work probably the same way as in any
+other nocow file, but may imply unexpected or unwanted locking and
+interfering with swap.
+
+* relocation must not move the file extents, which makes balance
+still possible, but it may not be able to satisfy the filter
+requirements (the 1G chunks are basically pinned until the swap file
+is active)
+  - this affects 'device remove', 'fi resize'
+  - depends on the raid profile used for the file, raid 0 is likely to
+    pin all devices
+
+david

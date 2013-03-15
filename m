@@ -1,68 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39151 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932656Ab3CMQBH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 12:01:07 -0400
-Message-ID: <5140A2BC.7010800@redhat.com>
-Date: Wed, 13 Mar 2013 11:01:00 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:42336 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753282Ab3COKQ3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 06:16:29 -0400
+Date: Fri, 15 Mar 2013 21:16:25 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <sandeen@sandeen.net>
+Cc: Eric Sandeen <sandeen@redhat.com>, linux-btrfs@vger.kernel.org,
+        xfs@oss.sgi.com
+Subject: Re: [PATCH 3/3 V4] xfstests: btrfs tests for basic informational
+ commands
+Message-ID: <20130315101625.GE6369@dastard>
+References: <1363186623-1378-1-git-send-email-sandeen@redhat.com>
+ <1363186623-1378-4-git-send-email-sandeen@redhat.com>
+ <5140AB9D.2070001@redhat.com>
+ <5140CB3F.5010704@redhat.com>
+ <5140CD26.7050201@sandeen.net>
 MIME-Version: 1.0
-To: xfs-oss <xfs@oss.sgi.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] xfstests: enable test 032 (mkfs overwrite) for btrfs
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5140CD26.7050201@sandeen.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that btrfs has an "-f" arg, we can test that it doesn't
-improperly overwrite other filesystems in 032 like we do 
-for xfs.
+On Wed, Mar 13, 2013 at 02:01:58PM -0500, Eric Sandeen wrote:
+> Run basic btrfs information commands in various ways, performing
+> sanity tests of: filesystem show, label, sync, and device stats
+> (sync is included just because it's simple).  These are mostly
+> just smoke tests, although for example show by label & UUID
+> should verify that the correct fs was shown.
+> 
+> This also adds quite a few new filters to accommodate the output
+> of the new commands.
+> 
+> Cc: linux-btrfs@vger.kernel.org
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+> 
+> V2: sort & uniq device stats output to account for variable
+> nrs. of devices.  Optionally check that the proper nr. of
+> devices was returned, as well.
+> 
+> V3: _filter_uuid needs to pay attention to $1, not hope
+> that the caller has set $UUID.  Oops.
+> 
+> V4: fix stats filter to set UNIQ_OPT in both cases, ugh.
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+Something I just noticed in this commit:
 
-diff --git a/032 b/032
-index bf88492..89fb225 100755
---- a/032
-+++ b/032
-@@ -38,12 +38,18 @@ rm -f $seq.full
- . ./common.filter
- 
- # real QA test starts here
--_supported_fs xfs
-+_supported_fs xfs btrfs
- _supported_os Linux
- 
- _require_nobigloopfs
- _require_scratch
- 
-+# mkfs.btrfs did not have overwrite detection at first
-+if [ "$FSTYP" == "btrfs" ]; then
-+	grep -q 'force overwrite' `echo $MKFS_BTRFS_PROG | awk '{print $1}'` || \
-+		_notrun "Installed mkfs.btrfs does not support -f option"
-+fi
-+
- echo "Silence is golden."
- for fs in `echo ${MKFS_PROG}.* | sed -e 's/.sbin.mkfs.//g'`
- do
-@@ -61,7 +67,7 @@ do
- 	[ $fs = gfs2 ] && preop="echo y |" && preargs="-p lock_nolock -j 1"
- 	[ $fs = reiserfs ] && preop="echo y |" && preargs="-f"
- 	# cramfs mkfs requires a directory argument
--	[ $fs = cramfs ] && preargs=/proc/fs/xfs
-+	[ $fs = cramfs ] && preargs=/proc/fs
- 	[ $fs = ext2 ] && preargs="-F"
- 	[ $fs = ext3 ] && preargs="-F"
- 	[ $fs = ext4 ] && preargs="-F"
-@@ -77,8 +83,8 @@ do
- 
- 	if [ $? -eq 0 ] ; then
- 		# next, ensure we don't overwrite it
--		echo "=== Attempting XFS overwrite of $fs..." >>$seq.full
--		${MKFS_PROG}.xfs $SCRATCH_DEV >>$seq.full 2>&1
-+		echo "=== Attempting $FSTYP overwrite of $fs..." >>$seq.full
-+		${MKFS_PROG}.$FSTYP $SCRATCH_DEV >>$seq.full 2>&1
- 
- 		[ $? -eq 0 ] && echo "Failed - overwrote fs type ${fs}!"
- 	else
+> +# get standard environment, filters and checks
+> +. ./common.rc
+> +. ./btrfs.filter
 
+That should probably have been named "common.filter.btrfs".
+I found this updating my patchset that moves all the common.* files
+into a common/ directory....
 
+I'll rename it to common/filter.btrfs....
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

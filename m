@@ -1,31 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41321 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752648Ab3COBg7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Mar 2013 21:36:59 -0400
-Message-ID: <51427B5F.1070403@oracle.com>
-Date: Fri, 15 Mar 2013 09:37:35 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46897 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751419Ab3CORwk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 13:52:40 -0400
+Date: Fri, 15 Mar 2013 18:52:37 +0100
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs@vger.kernel.org, Hugo Mills <h.r.mills@reading.ac.uk>
+Subject: Re: [PATCH] btrfs-progs: add Makefile rule for static build of
+ btrfs-find-root
+Message-ID: <20130315175236.GI7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1363103051-10207-1-git-send-email-hugo@carfax.org.uk>
+ <20130312175325.GR7229@twin.jikos.cz>
 MIME-Version: 1.0
-To: David Sterba <dsterba@ds.suse.cz>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: print errno string when /dev/btrfs-control
- open fails
-References: <1363231039-7580-1-git-send-email-anand.jain@oracle.com> <20130314224133.GA16857@ds.suse.cz>
-In-Reply-To: <20130314224133.GA16857@ds.suse.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130312175325.GR7229@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Mar 12, 2013 at 06:53:25PM +0100, David Sterba wrote:
+> On Tue, Mar 12, 2013 at 03:44:11PM +0000, Hugo Mills wrote:
+> > +btrfs-find-root.static: $(static_objects) $(libs) find-root.static.o
+> 
+> I've noticed that the (newly added) mkfs.btrfs.static target does not
+> depend on $(libs) and this is correct
 
-> I think the common pattern here is that error details follow the
-> message, like
->
-> +			"skipping device registration: %s\n",
->
-> I'll fix it here, if you don't mind.
+... well, it's partially correct, we don't need $(libs) but we need the
+object files and possibly built with the same cflags as the rest of the
+.static.o group. So far the build works if libbtrfs.a is built and the
+final binary is linked against it. I finally made it to compile and link
+the way it should IMHO be, patch will follow after cleaning.
 
-  Pls do. Thanks David.
-
--Anand
+david

@@ -1,53 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43227 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753653Ab3CNDQt (ORCPT
+Received: from mail-ee0-f45.google.com ([74.125.83.45]:60802 "EHLO
+	mail-ee0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753867Ab3COODR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Mar 2013 23:16:49 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2E3Gl2Z024138
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:16:48 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2E3Gl0j013625
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2013 03:16:47 GMT
-Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2E3Gla4007822
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2013 22:16:47 -0500
-From: Anand Jain <anand.jain@oracle.com>
+	Fri, 15 Mar 2013 10:03:17 -0400
+Received: by mail-ee0-f45.google.com with SMTP id b57so1581363eek.18
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 07:03:16 -0700 (PDT)
+From: =?UTF-8?q?Matias=20Bj=C3=B8rling?= <m@bjorling.me>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: print errno string when /dev/btrfs-control open fails
-Date: Thu, 14 Mar 2013 11:17:19 +0800
-Message-Id: <1363231039-7580-1-git-send-email-anand.jain@oracle.com>
+Cc: dsterba@suse.cz, =?UTF-8?q?Matias=20Bj=C3=B8rling?= <m@bjorling.me>
+Subject: [PATCH] btrfs-progs: mkfs: add missing raid5/6 description
+Date: Fri, 15 Mar 2013 15:02:57 +0100
+Message-Id: <1363356177-3532-1-git-send-email-m@bjorling.me>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Of recently and intermittently I am seeing open fail
-for /dev/btrfs-control (btrfs is loaded), and there are no
-dmesg errors, this may not be a complete help in digging
-this issue but something which is necessary.
-Thanks
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Matias Bjørling <m@bjorling.me>
 ---
- utils.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ man/mkfs.btrfs.8.in |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index c29861b..17c6553 100644
---- a/utils.c
-+++ b/utils.c
-@@ -938,7 +938,8 @@ void btrfs_register_one_device(char *fname)
- 	fd = open("/dev/btrfs-control", O_RDONLY);
- 	if (fd < 0) {
- 		fprintf(stderr, "failed to open /dev/btrfs-control "
--			"skipping device registration\n");
-+			"%s, skipping device registration\n",
-+			strerror(errno));
- 		return;
- 	}
- 	strncpy(args.name, fname, BTRFS_PATH_NAME_MAX);
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+index 41163e0..db8c57c 100644
+--- a/man/mkfs.btrfs.8.in
++++ b/man/mkfs.btrfs.8.in
+@@ -37,7 +37,7 @@ mkfs.btrfs uses all the available storage for the filesystem.
+ .TP
+ \fB\-d\fR, \fB\-\-data \fItype\fR
+ Specify how the data must be spanned across the devices specified. Valid
+-values are raid0, raid1, raid10 or single.
++values are raid0, raid1, raid5, raid6, raid10 or single.
+ .TP
+ \fB\-f\fR
+ Force overwrite when an existing filesystem is detected on the device.
+@@ -53,10 +53,11 @@ Specify a label for the filesystem.
+ .TP
+ \fB\-m\fR, \fB\-\-metadata \fIprofile\fR
+ Specify how metadata must be spanned across the devices specified. Valid
+-values are raid0, raid1, raid10, single or dup.  Single device will have dup
+-set by default except in the case of SSDs which will default to single.  This is
+-because SSDs can remap blocks internally so duplicate blocks could end up in the
+-same erase block which negates the benefits of doing metadata duplication.
++values are raid0, raid1, raid5, raid6, raid10, single or dup.  Single device
++will have dup set by default except in the case of SSDs which will default to
++single. This is because SSDs can remap blocks internally so duplicate blocks
++could end up in the same erase block which negates the benefits of doing
++metadata duplication.
+ .TP
+ \fB\-M\fR, \fB\-\-mixed\fR
+ Mix data and metadata chunks together for more efficient space 
 -- 
-1.8.1.227.g44fe835
+1.7.10.4
 

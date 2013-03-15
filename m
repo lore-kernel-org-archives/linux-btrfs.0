@@ -1,71 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx4-phx2.redhat.com ([209.132.183.25]:37854 "EHLO
-	mx4-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755005Ab3CONqs convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 09:46:48 -0400
-Content-Type: text/plain;
-	charset=us-ascii
-Subject: Re: [PATCH 3/3 V4] xfstests: btrfs tests for basic informational commands
-References: <1363186623-1378-1-git-send-email-sandeen@redhat.com> <1363186623-1378-4-git-send-email-sandeen@redhat.com> <5140AB9D.2070001@redhat.com> <5140CB3F.5010704@redhat.com> <5140CD26.7050201@sandeen.net> <20130315101625.GE6369@dastard>
-From: Eric Sandeen <esandeen@redhat.com>
+Received: from relay3.sgi.com ([192.48.152.1]:34060 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1754432Ab3COOWk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 10:22:40 -0400
+Message-ID: <51432EC5.5090208@sgi.com>
+Date: Fri, 15 Mar 2013 09:23:01 -0500
+From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-In-Reply-To: <20130315101625.GE6369@dastard>
-Message-Id: <737235E6-72C8-45F5-A6F4-EEEFD094706E@redhat.com>
-Date: Fri, 15 Mar 2013 09:46:35 -0400 (EDT)
-To: Dave Chinner <david@fromorbit.com>
-Cc: Eric Sandeen <sandeen@sandeen.net>, Eric Sandeen <sandeen@redhat.com>,
+To: Eric Sandeen <esandeen@redhat.com>
+CC: Dave Chinner <david@fromorbit.com>, Eric Sandeen <sandeen@redhat.com>,
+        Eric Sandeen <sandeen@sandeen.net>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         "xfs@oss.sgi.com" <xfs@oss.sgi.com>
+Subject: Re: [PATCH 3/3 V4] xfstests: btrfs tests for basic informational
+ commands
+References: <1363186623-1378-1-git-send-email-sandeen@redhat.com> <1363186623-1378-4-git-send-email-sandeen@redhat.com> <5140AB9D.2070001@redhat.com> <5140CB3F.5010704@redhat.com> <5140CD26.7050201@sandeen.net> <20130315101625.GE6369@dastard> <737235E6-72C8-45F5-A6F4-EEEFD094706E@redhat.com>
+In-Reply-To: <737235E6-72C8-45F5-A6F4-EEEFD094706E@redhat.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yep sorry.  I figure its always a race in numbers do I don't bother with fixing them up.  Should I?
+On 03/15/2013 08:46 AM, Eric Sandeen wrote:
+> Yep sorry.  I figure its always a race in numbers do I don't bother with fixing them up.  Should I?
+>
 
-On Mar 15, 2013, at 5:16 AM, Dave Chinner <david@fromorbit.com> wrote:
+Eric,
+I was going to revert and resubmit as test 306, is that OK with you?
 
-> On Wed, Mar 13, 2013 at 02:01:58PM -0500, Eric Sandeen wrote:
->> Run basic btrfs information commands in various ways, performing
->> sanity tests of: filesystem show, label, sync, and device stats
->> (sync is included just because it's simple).  These are mostly
->> just smoke tests, although for example show by label & UUID
->> should verify that the correct fs was shown.
->> 
->> This also adds quite a few new filters to accommodate the output
->> of the new commands.
->> 
->> Cc: linux-btrfs@vger.kernel.org
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->> 
->> V2: sort & uniq device stats output to account for variable
->> nrs. of devices.  Optionally check that the proper nr. of
->> devices was returned, as well.
->> 
->> V3: _filter_uuid needs to pay attention to $1, not hope
->> that the caller has set $UUID.  Oops.
->> 
->> V4: fix stats filter to set UNIQ_OPT in both cases, ugh.
-> 
-> Something I just noticed in this commit:
-> 
->> +# get standard environment, filters and checks
->> +. ./common.rc
->> +. ./btrfs.filter
-> 
-> That should probably have been named "common.filter.btrfs".
-> I found this updating my patchset that moves all the common.* files
-> into a common/ directory....
-> 
-> I'll rename it to common/filter.btrfs....
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> On Mar 15, 2013, at 5:16 AM, Dave Chinner <david@fromorbit.com> wrote:
+>
+>> On Wed, Mar 13, 2013 at 02:01:58PM -0500, Eric Sandeen wrote:
+>>> Run basic btrfs information commands in various ways, performing
+>>> sanity tests of: filesystem show, label, sync, and device stats
+>>> (sync is included just because it's simple).  These are mostly
+>>> just smoke tests, although for example show by label & UUID
+>>> should verify that the correct fs was shown.
+>>>
+>>> This also add2730c49a3s quite a few new filters to accommodate the output
+>>> of the new commands.
+>>>
+>>> Cc: linux-btrfs@vger.kernel.org
+>>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+>>> ---
+>>>
+>>> V2: sort & uniq device stats output to account for variable
+>>> nrs. of devices.  Optionally check that the proper nr. of
+>>> devices was returned, as well.
+>>>
+>>> V3: _filter_uuid needs to pay attention to $1, not hope
+>>> that the caller has set $UUID.  Oops.
+>>>
+>>> V4: fix stats filter to set UNIQ_OPT in both cases, ugh.
+>>
+>> Something I just noticed in this commit:
+>>
+>>> +# get standard environment, filters and checks
+>>> +. ./common.rc
+>>> +. ./btrfs.filter
+>>
+>> That should probably have been named "common.filter.btrfs".
+
+Dave,
+Do you want me to rename btrfs.filter to common.filter.btrfs when I 
+resubmit this patch?
+
+Regards
+--Rich
+
+>> I found this updating my patchset that moves all the common.* files
+>> into a common/ directory....
+>>
+>> I'll rename it to common/filter.btrfs....
+>>
+>> Cheers,
+>>
+>> Dave.
+>> --
+>> Dave Chinner
+>> david@fromorbit.com
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> _______________________________________________
+> xfs mailing list
+> xfs@oss.sgi.com
+> http://oss.sgi.com/mailman/listinfo/xfs
+>
+
+

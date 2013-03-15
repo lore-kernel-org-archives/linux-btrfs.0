@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:39808 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:53626 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751008Ab3CGTYE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2013 14:24:04 -0500
+	with ESMTP id S1753240Ab3COSpP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Mar 2013 14:45:15 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 853917C0430
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2013 12:24:04 -0700 (MST)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id tgNccMc4ro6UhgCx (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2013 12:24:03 -0700 (MST)
+	by dkim1.fusionio.com (Postfix) with ESMTP id EFF827C0447
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 12:45:14 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id pGfE4mdY9pSpQheC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 12:45:13 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: add skinny metadata support to progs
-Date: Thu, 7 Mar 2013 14:31:14 -0500
-Message-ID: <1362684674-19468-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs-progs: add skinny metadata support to progs V2
+Date: Fri, 15 Mar 2013 14:52:29 -0400
+Message-ID: <1363373549-15423-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,6 +25,9 @@ Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
+V1->V2: forgot to add support for skinny metadata to btrfs-image.
+
+ btrfs-image.c |    8 ++-
  btrfstune.c   |   28 +++++++-
  cmds-check.c  |   78 ++++++++++++++------
  ctree.c       |    6 +-
@@ -31,10 +35,34 @@ Signed-off-by: Josef Bacik <jbacik@fusionio.com>
  extent-tree.c |  226 ++++++++++++++++++++++++++++++++++++++++++++++++++------
  mkfs.c        |   13 +++-
  print-tree.c  |   20 ++++-
- 7 files changed, 334 insertions(+), 60 deletions(-)
+ 8 files changed, 340 insertions(+), 62 deletions(-)
 
+diff --git a/btrfs-image.c b/btrfs-image.c
+index a54e6c9..e553e7e 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -528,13 +528,17 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
+ 
+ 		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+ 		if (key.objectid < bytenr ||
+-		    key.type != BTRFS_EXTENT_ITEM_KEY) {
++		    (key.type != BTRFS_EXTENT_ITEM_KEY &&
++		     key.type != BTRFS_METADATA_ITEM_KEY)) {
+ 			path->slots[0]++;
+ 			continue;
+ 		}
+ 
+ 		bytenr = key.objectid;
+-		num_bytes = key.offset;
++		if (key.type == BTRFS_METADATA_ITEM_KEY)
++			num_bytes = key.offset;
++		else
++			num_bytes = root->leafsize;
+ 
+ 		if (btrfs_item_size_nr(leaf, path->slots[0]) > sizeof(*ei)) {
+ 			ei = btrfs_item_ptr(leaf, path->slots[0],
 diff --git a/btrfstune.c b/btrfstune.c
-index 6e68bda..74ee8eb 100644
+index 6e68bda..5d8d109 100644
 --- a/btrfstune.c
 +++ b/btrfstune.c
 @@ -81,11 +81,28 @@ int enable_extrefs_flag(struct btrfs_root *root)
@@ -47,7 +75,7 @@ index 6e68bda..74ee8eb 100644
 +	struct btrfs_super_block *disk_super;
 +	u64 super_flags;
 +
-+	disk_super = &root->fs_info->super_copy;
++	disk_super = root->fs_info->super_copy;
 +	super_flags = btrfs_super_incompat_flags(disk_super);
 +	super_flags |= BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA;
 +	trans = btrfs_start_transaction(root, 1);
@@ -382,7 +410,7 @@ index 1778a51..16f4daa 100644
  		}
  	} else {
 diff --git a/ctree.h b/ctree.h
-index 12f8fe3..548f777 100644
+index 12f8fe3..419143c 100644
 --- a/ctree.h
 +++ b/ctree.h
 @@ -445,9 +445,10 @@ struct btrfs_super_block {
@@ -427,8 +455,8 @@ index 12f8fe3..548f777 100644
 +static inline int btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
 +{
 +	struct btrfs_super_block *disk_super;
-+	disk_super = &fs_info->super_copy;
-+	return (btrfs_super_incompat_flags(disk_super) & flag);
++	disk_super = fs_info->super_copy;
++	return !!(btrfs_super_incompat_flags(disk_super) & flag);
 +}
 +
  /* helper function to cast into the data area of the leaf. */

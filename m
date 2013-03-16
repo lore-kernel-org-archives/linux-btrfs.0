@@ -1,47 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49186 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755044Ab3CPMCW (ORCPT
+Received: from mail-ia0-f170.google.com ([209.85.210.170]:49718 "EHLO
+	mail-ia0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753927Ab3CPMYs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 Mar 2013 08:02:22 -0400
-Received: from athena.localnet (unknown [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 3433B228CB0
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 Mar 2013 23:02:20 +1100 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: linux-btrfs@vger.kernel.org
-Subject: multiple btrfsck runs
-Date: Sat, 16 Mar 2013 23:02:14 +1100
+	Sat, 16 Mar 2013 08:24:48 -0400
+Received: by mail-ia0-f170.google.com with SMTP id h8so4066745iaa.29
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Mar 2013 05:24:47 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201303162302.14746.russell@coker.com.au>
+In-Reply-To: <201303162302.14746.russell@coker.com.au>
+References: <201303162302.14746.russell@coker.com.au>
+Date: Sat, 16 Mar 2013 06:24:47 -0600
+Message-ID: <CAE5mzvj4DF98MmzW7M29WZtKiW3p_f7=GzZ54q3+jo6CWgPvxw@mail.gmail.com>
+Subject: Re: multiple btrfsck runs
+From: cwillu <cwillu@cwillu.com>
+To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is it expected that running btrfsck more than once will keep reporting errors?
+On Sat, Mar 16, 2013 at 6:02 AM, Russell Coker <russell@coker.com.au> wrote:
+> Is it expected that running btrfsck more than once will keep reporting errors?
 
-Below is the end of a btrfsck output when run the second time.
-
-backpointer mismatch on [111942471680 32768]
-owner ref check failed [111942471680 32768]
-ref mismatch on [111942504448 40960] extent item 1, found 0
-Incorrect local backref count on 111942504448 root 5 owner 160739 offset 
-3440640 found 0 wanted 1 back 0x14331f48
-backpointer mismatch on [111942504448 40960]
-owner ref check failed [111942504448 40960]
-Errors found in extent allocation tree
-checking fs roots
-root 5 inode 427603 errors 400
-found 79658786895 bytes used err is 1
-total csum bytes: 75604824
-total tree bytes: 2109984768
-total fs tree bytes: 1835044864
-btree space waste bytes: 593880456
-file data blocks allocated: 1065636474880
- referenced 133464895488
-Btrfs Btrfs v0.19
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Without options, btrfsck does not write to the disk.

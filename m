@@ -1,23 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43055 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753522Ab3COUPy (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:59155 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755729Ab3CPOfp convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 16:15:54 -0400
-Date: Fri, 15 Mar 2013 13:15:48 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, johannes.hirte@fem.tu-ilmenau.de
-Subject: Re: [PATCH] Btrfs: fix warning of free_extent_map
-Message-ID: <20130315201548.GM5313@blackbox.djwong.org>
-References: <1363358799-17991-1-git-send-email-bo.li.liu@oracle.com>
+	Sat, 16 Mar 2013 10:35:45 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 313BB7C04E9
+	for <linux-btrfs@vger.kernel.org>; Sat, 16 Mar 2013 08:35:45 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Liu Bo <bo.li.liu@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Chris Mason <chris.mason@fusionio.com>
 In-Reply-To: <1363358799-17991-1-git-send-email-bo.li.liu@oracle.com>
+CC: "johannes.hirte@fem.tu-ilmenau.de" <johannes.hirte@fem.tu-ilmenau.de>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>
+References: <1363358799-17991-1-git-send-email-bo.li.liu@oracle.com>
+Message-ID: <20130316143543.5385.43571@localhost.localdomain>
+Subject: Re: [PATCH] Btrfs: fix warning of free_extent_map
+Date: Sat, 16 Mar 2013 10:35:43 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 15, 2013 at 10:46:39PM +0800, Liu Bo wrote:
+Quoting Liu Bo (2013-03-15 10:46:39)
 > Users report that an extent map's list is still linked when it's actually
 > going to be freed from cache.
 > 
@@ -35,32 +40,7 @@ On Fri, Mar 15, 2013 at 10:46:39PM +0800, Liu Bo wrote:
 > EXTENT_FLAG_LOGGING only during fsync.
 > 
 > So clear flag EXTENT_FLAG_LOGGING for extent maps split from a large one.
-> 
-> Reported-by: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-> Reported-by: Darrick J. Wong <darrick.wong@oracle.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-This seems to fix my problem, so you can add:
-Tested-by: Darrick J. Wong <darrick.wong@oracle.com>
+Thanks for tracking this down!  I've got it in my tree now.
 
---D
-
-> ---
->  fs/btrfs/file.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 83c790d..7bdb47f 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -591,6 +591,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
->  		}
->  		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
->  		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
-> +		clear_bit(EXTENT_FLAG_LOGGING, &flags);
->  		remove_extent_mapping(em_tree, em);
->  		if (no_splits)
->  			goto next;
-> -- 
-> 1.7.7.6
-> 
+-chris

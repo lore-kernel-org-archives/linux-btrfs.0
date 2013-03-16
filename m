@@ -1,48 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:32977 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755156Ab3COTMo (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49186 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755044Ab3CPMCW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 15:12:44 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 23BF29A036E
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 13:12:44 -0600 (MDT)
-Date: Fri, 15 Mar 2013 15:12:41 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Josef Bacik <jbacik@fusionio.com>
-CC: David Sterba <dsterba@suse.cz>, Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "sensille@gmx.net" <sensille@gmx.net>,
-        "sbehrens@giantdisaster.de" <sbehrens@giantdisaster.de>
-Subject: Re: Scrub and raid10 (3.9-rc2+) transid verify failed
-Message-ID: <20130315191241.GG1980@localhost.localdomain>
-References: <20130312170312.GO7229@twin.jikos.cz>
- <20130312180124.GB12725@shiny.masoncoding.com>
- <20130315120708.GE7229@twin.jikos.cz>
- <20130315131330.GE1980@localhost.localdomain>
+	Sat, 16 Mar 2013 08:02:22 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 3433B228CB0
+	for <linux-btrfs@vger.kernel.org>; Sat, 16 Mar 2013 23:02:20 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: multiple btrfsck runs
+Date: Sat, 16 Mar 2013 23:02:14 +1100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130315131330.GE1980@localhost.localdomain>
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201303162302.14746.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 15, 2013 at 07:13:30AM -0600, Josef Bacik wrote:
-> On Fri, Mar 15, 2013 at 06:07:08AM -0600, David Sterba wrote:
-> > On Tue, Mar 12, 2013 at 02:01:24PM -0400, Chris Mason wrote:
-> > > Please go back to just 3.9-rc2 and see if you can trigger it.  Josef put
-> > > his skinny extents into btrfs-next/master, which is pretty exciting but
-> > > may be related to these failures.
-> > > 
-> > > I'm unable to reproduce here so far.
-> > 
-> > Me neither, 3.9-rc2 with top commit (a2362d24764a4e9a3187fc).
-> > 
-> 
-> :(, I'll see if I can reproduce with my skinny extent stuff.
-> 
+Is it expected that running btrfsck more than once will keep reporting errors?
 
-I can't reproduce with btrfs-next or btrfs-next ontop of 3.9-rc2.  Can you just
-patch out the skinny metadata patch and see if the problem still happens?
-Thanks,
+Below is the end of a btrfsck output when run the second time.
 
-Josef
+backpointer mismatch on [111942471680 32768]
+owner ref check failed [111942471680 32768]
+ref mismatch on [111942504448 40960] extent item 1, found 0
+Incorrect local backref count on 111942504448 root 5 owner 160739 offset 
+3440640 found 0 wanted 1 back 0x14331f48
+backpointer mismatch on [111942504448 40960]
+owner ref check failed [111942504448 40960]
+Errors found in extent allocation tree
+checking fs roots
+root 5 inode 427603 errors 400
+found 79658786895 bytes used err is 1
+total csum bytes: 75604824
+total tree bytes: 2109984768
+total fs tree bytes: 1835044864
+btree space waste bytes: 593880456
+file data blocks allocated: 1065636474880
+ referenced 133464895488
+Btrfs Btrfs v0.19
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

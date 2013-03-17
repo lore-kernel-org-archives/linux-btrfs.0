@@ -1,45 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:20292 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754716Ab3C1Afu (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:51445 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755785Ab3CQW5K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 20:35:50 -0400
-Date: Thu, 28 Mar 2013 11:35:47 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Rich Johnston <rjohnston@sgi.com>, xfs-oss <xfs@oss.sgi.com>,
-        linux-ext4@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Announce re-factor all current xfstests patches request
-Message-ID: <20130328003547.GX6369@dastard>
-References: <5152F2BB.4000709@sgi.com>
- <20130327134606.GJ5861@thunk.org>
- <20130327205407.GU6369@dastard>
- <20130327214804.GA28143@thunk.org>
+	Sun, 17 Mar 2013 18:57:10 -0400
+Received: by mail-ob0-f174.google.com with SMTP id 16so4777746obc.5
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2013 15:57:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130327214804.GA28143@thunk.org>
+In-Reply-To: <CAMiUzp9m5kFZmNdc793VhSodAM73NupCE8Ggyg2VZ63p-GTgaA@mail.gmail.com>
+References: <CAMiUzp95BXF8fcNb9EQQsrz1NpDtX9qr=FdC9C=+r3KYkYxgzw@mail.gmail.com>
+	<CAB9VWqCjoFGdZVx0Uup2zmvuqS2PHiQO=h2EKawH-dZiGqvfDQ@mail.gmail.com>
+	<20121218013111.GB22912@shiny>
+	<CAMiUzp9m5kFZmNdc793VhSodAM73NupCE8Ggyg2VZ63p-GTgaA@mail.gmail.com>
+Date: Sun, 17 Mar 2013 23:57:09 +0100
+Message-ID: <CAMiUzp9Xd7-pCVooqfCSbdBjAvShRQKsPQujF7vEb-v3=y2i_g@mail.gmail.com>
+Subject: Re: Online Deduplication for Btrfs (Master's thesis)
+From: =?UTF-8?B?TWFydGluIEvFmcOtxb5law==?= <martin.krizek@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>,
+        Alexander Block <ablock84@gmail.com>,
+        =?UTF-8?B?TWFydGluIEvFmcOtxb5law==?= <martin.krizek@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "lczerner@redhat.com" <lczerner@redhat.com>, jbacik@fusionio.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 27, 2013 at 05:48:04PM -0400, Theodore Ts'o wrote:
-> On Thu, Mar 28, 2013 at 07:54:07AM +1100, Dave Chinner wrote:
-> > 
-> > Support for named tests have not yet been added. From the check
-> > script:
-> > 
-> > SUPPORTED_TESTS="[0-9][0-9][0-9] [0-9][0-9][0-9][0-9]"
-> 
-> Ah, I thought support for named tests was there.  For right now,
-> though, if we have test ext4/123 and btrfs/123, that's OK and they are
-> considered separate tests, right?  Or do we still need to keep the
-> numbers unique for now?
+Hi,
 
-Test numbers within a subdir are unique. So yes, ext4/123 and
-btrfs/123 are recognised as different tests.
+I am looking for a place (source code wise) where the actual
+online/immediate dedup would happen:
+-- splitting an extent about to be written into new extents that are
+unique (that would be actually written) and into blocks of the
+original extent that would be thrown away (duplicates) and
+file_extent_item pointing to portion of existing extent created
+instead.
 
-Cheers,
+Could anyone please give me some pointers on that place and/or
+functions that could be used for that? Would delalloc time would be
+appropriate?
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Thanks!
+Martin

@@ -1,55 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:41953 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750955Ab3CQMeq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Mar 2013 08:34:46 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 5A6539A0402
-	for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2013 06:34:46 -0600 (MDT)
-Date: Sun, 17 Mar 2013 08:34:44 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20130317123444.GA3300@shiny.masoncoding.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56694 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752148Ab3CRRd2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Mar 2013 13:33:28 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 70BB1A5230
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 18:33:27 +0100 (CET)
+Date: Mon, 18 Mar 2013 18:33:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Integration branch of btrfs-progs 2013-03-18
+Message-ID: <20130318173326.GO7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hi,
 
-My for-linus branch has some btrfs fixes:
+shortdesc: core code fixes, more static build targets, restore updates,
+doc/help updates.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+  git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130318
 
-Eric's rcu barrier patch fixes a long standing problem with our unmount
-code hanging on to devices in workqueue helpers.  Liu Bo nailed down a
-difficult assertion for in-memory extent mappings.
+shortlog:
+Anand Jain (2):
+      btrfs-progs: update .gitignore file
+      btrfs-progs: print errno string when /dev/btrfs-control open fails
 
-Liu Bo (4) commits (+9/-7):
-    Btrfs: get better concurrency for snapshot-aware defrag work (+3/-0)
-    Btrfs: fix warning when creating snapshots (+5/-6)
-    Btrfs: fix warning of free_extent_map (+1/-0)
-    Btrfs: remove btrfs_try_spin_lock (+0/-1)
+Antoine Sirinelli (1):
+      btrfs-progs: Add a rule to build a static mkfs.btrfs
 
-Josef Bacik (1) commits (+4/-1):
-    Btrfs: return EIO if we have extent tree corruption
+David Marcin (1):
+      btrfs-progs: Fix error handling for failed reads in restore tool when mirrors exist
 
-Eric Sandeen (1) commits (+6/-0):
-    btrfs: use rcu_barrier() to wait for bdev puts at unmount
+Eric Sandeen (5):
+      btrfs-progs: close fd on return from label get/set functions
+      btrfs-progs: three new device/path helpers
+      btrfs-progs: don't open-code mountpoint discovery in scrub cancel
+      btrfs-progs: rework get_fs_info to remove side effects
+      btrfs-progs: document force option in mkfs usage(); add long opt
 
-Wang Shilong (1) commits (+6/-4):
-    Btrfs: return as soon as possible when edquot happens
+Hugo Mills (1):
+      btrfs-progs: add Makefile rule for static build of btrfs-find-root
 
-Total: (7) commits (+25/-12)
+Josef Bacik (6):
+      Btrfs-progs: alloc our super copy in btrfs-find-root
+      Btrfs-progs: add an option for specifying the root to restore
+      Btrfs-progs: try other mirrors if decompression fails
+      Btrfs-progs: try other mirrors on read failure
+      btrfs-progs: add lzo compression support to restore
+      Btrfs-progs: give restore a list roots option
 
- fs/btrfs/extent-tree.c |  5 ++++-
- fs/btrfs/file.c        |  1 +
- fs/btrfs/inode.c       |  3 +++
- fs/btrfs/locking.h     |  1 -
- fs/btrfs/qgroup.c      | 10 ++++++----
- fs/btrfs/transaction.c | 11 +++++------
- fs/btrfs/volumes.c     |  6 ++++++
- 7 files changed, 25 insertions(+), 12 deletions(-)
+Matias Bjørling (1):
+      btrfs-progs: mkfs: add missing raid5/6 description
+
+Peter Stuge (1):
+      restore: Split output directory and btrfs-local path search_dir() parameters
+
+
+short unsigned mail;

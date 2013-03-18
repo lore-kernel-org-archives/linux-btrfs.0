@@ -1,76 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49410 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:34534 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752935Ab3CRPVx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Mar 2013 11:21:53 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B415EA5200
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 16:21:51 +0100 (CET)
-Date: Mon, 18 Mar 2013 16:21:51 +0100
-From: Jan Kara <jack@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH] btrfs-progs: convert: access name_len and file_type
- the old way
-Message-ID: <20130318152151.GA28508@quack.suse.cz>
-References: <1363363845-23318-1-git-send-email-dsterba@suse.cz>
+	id S1751278Ab3CRQST (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Mar 2013 12:18:19 -0400
+Message-ID: <51473E55.9010100@redhat.com>
+Date: Mon, 18 Mar 2013 11:18:29 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1363363845-23318-1-git-send-email-dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: return zero for success
+References: <1363591441-6335-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1363591441-6335-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 15-03-13 17:10:45, David Sterba wrote:
-> We can't use ext2_dir_entry_2 typecast on big endian machines directly.
-> The bytes do not get converted during extX block read due to missing
-> flag EXT2_DIRBLOCK_V2_STRUCT passed down to ext2fs_read_dir_block4 from
-> ext2fs_process_dir_block. Fixing on the ext2 side needs updating callers
-> and (maybe) the library interfaces. We'll fix it on the convert side for
-> now.
-> 
-> CC: Jan Kara <jack@suse.cz>
-> Signed-off-by: David Sterba <dsterba@suse.cz>
+On 3/18/13 2:24 AM, Anand Jain wrote:
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+
+You've got your testcase leaking into this defrag fix.
+
+When you resend, can you add "defrag" to the patch subject somehow?
+
+-Eric
+
 > ---
->  convert.c | 9 ++++++---
->  1 file changed, 6 insertions(+), 3 deletions(-)
+>  Makefile          |  6 +++++-
+>  check-mounted.c   | 31 +++++++++++++++++++++++++++++++
+>  cmds-filesystem.c |  2 +-
+>  3 files changed, 37 insertions(+), 2 deletions(-)
+>  create mode 100644 check-mounted.c
 > 
-> diff --git a/convert.c b/convert.c
-> index 400488e..7766c09 100644
-> --- a/convert.c
-> +++ b/convert.c
-> @@ -264,10 +264,13 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
->  	struct btrfs_key location;
->  	struct ext2_dir_entry_2 *dirent = (struct ext2_dir_entry_2 *)old;
-  You may as well remove this and use 'old' everywhere. But technically the
-patch is OK.
-
-									Honza
-
->  	struct dir_iterate_data *idata = (struct dir_iterate_data *)priv_data;
-> +	int name_len;
+> diff --git a/Makefile b/Makefile
+> index d102dee..c97e6b7 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -159,6 +159,10 @@ btrfs-select-super: $(objects) $(libs) btrfs-select-super.o
+>  	@echo "    [LD]     $@"
+>  	$(Q)$(CC) $(CFLAGS) -o btrfs-select-super $(objects) btrfs-select-super.o $(LDFLAGS) $(LIBS)
+>  
+> +check-mounted: $(objects) $(libs) check-mounted.o
+> +	@echo "    [LD]     $@"
+> +	$(Q)$(CC) $(CFLAGS) -o check-mounted $(objects) check-mounted.o $(LDFLAGS) $(LIBS)
 > +
-> +	name_len = old->name_len & 0xFF;
+>  btrfstune: $(objects) $(libs) btrfstune.o
+>  	@echo "    [LD]     $@"
+>  	$(Q)$(CC) $(CFLAGS) -o btrfstune $(objects) btrfstune.o $(LDFLAGS) $(LIBS)
+> @@ -205,7 +209,7 @@ clean :
+>  	@echo "Cleaning"
+>  	$(Q)rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
+>  	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test send-test btrfs.static btrfsck \
+> -	      version.h \
+> +	      version.h check-mounted\
+>  	      $(libs) $(lib_links)
+>  	$(Q)$(MAKE) $(MAKEOPTS) -C man $@
 >  
->  	objectid = dirent->inode + INO_OFFSET;
-> -	if (!strncmp(dirent->name, dotdot, dirent->name_len)) {
-> -		if (dirent->name_len == 2) {
-> +	if (!strncmp(dirent->name, dotdot, name_len)) {
-> +		if (name_len == 2) {
->  			BUG_ON(idata->parent != 0);
->  			idata->parent = objectid;
->  		}
-> @@ -280,7 +283,7 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
->  	location.offset = 0;
->  	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+> diff --git a/check-mounted.c b/check-mounted.c
+> new file mode 100644
+> index 0000000..781edec
+> --- /dev/null
+> +++ b/check-mounted.c
+> @@ -0,0 +1,31 @@
+> +
+> +#define _XOPEN_SOURCE 500
+> +#define _GNU_SOURCE 1
+> +#include <stdio.h>
+> +#include <stdlib.h>
+> +#include <unistd.h>
+> +#include <fcntl.h>
+> +#include <sys/stat.h>
+> +#include "kerncompat.h"
+> +#include "ctree.h"
+> +#include "disk-io.h"
+> +#include "print-tree.h"
+> +#include "transaction.h"
+> +#include "list.h"
+> +#include "version.h"
+> +#include "utils.h"
+> +
+> +int main(int ac, char **av)
+> +{
+> +	int ret;
+> +
+> +	if((ret = check_mounted(av[optind])) < 0) {
+> +		fprintf(stderr, "Could not check mount status: %s\n", strerror(-ret));
+> +		return ret;
+> +	} else if(ret) {
+> +		fprintf(stderr, "%s is currently mounted. Aborting.\n", av[optind]);
+> +		return -EBUSY;
+> +	}
+> +	printf("Not mounted\n");
+> +	return 0;
+> +}
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 2210020..f3d3130 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -446,7 +446,7 @@ static int cmd_defrag(int argc, char **argv)
+>  		exit(1);
+>  	}
 >  
-> -	file_type = dirent->file_type;
-> +	file_type = old->name_len >> 8;
->  	BUG_ON(file_type > EXT2_FT_SYMLINK);
->  	ret = btrfs_insert_dir_item(idata->trans, idata->root,
->  				    dirent->name, dirent->name_len,
-> -- 
-> 1.8.1.4
+> -	return errors + 20;
+> +	return errors;
+>  }
+>  
+>  static const char * const cmd_resize_usage[] = {
 > 
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+

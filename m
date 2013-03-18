@@ -1,180 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:57971 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933160Ab3CLRbY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Mar 2013 13:31:24 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id EFDDC9A0370
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:23 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id MH6fvzrPhnHCMfij (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2013 11:31:22 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 09/10] Btrfs-progs: give restore a list roots option
-Date: Tue, 12 Mar 2013 13:38:16 -0400
-Message-ID: <1363109897-7931-10-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
-References: <1363109897-7931-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:59710 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753831Ab3CRSjj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Mar 2013 14:39:39 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 19633A522C
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 19:39:38 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Jan Kara <jack@suse.cz>
+Subject: [PATCH v2] btrfs-progs: convert: access name_len and file_type the old way
+Date: Mon, 18 Mar 2013 19:39:31 +0100
+Message-Id: <1363631971-2929-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <20130318152151.GA28508@quack.suse.cz>
+References: <20130318152151.GA28508@quack.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <josef@redhat.com>
+We can't use ext2_dir_entry_2 typecast on big endian machines directly.
+The bytes do not get converted during extX block read due to missing
+flag EXT2_DIRBLOCK_V2_STRUCT passed down to ext2fs_read_dir_block4 from
+ext2fs_process_dir_block. Fixing on the ext2 side needs updating callers
+and (maybe) the library interfaces. We'll fix it on the convert side for
+now.
 
-Since restore has the ability to open really really screwed up file systems, add
-a list roots option to it so we can still get the contents of the tree root on a
-horribly broken fs.  Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
+CC: Jan Kara <jack@suse.cz>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- cmds-restore.c |   92 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 files changed, 85 insertions(+), 7 deletions(-)
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 7e99970..f4e75cf 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -776,9 +776,70 @@ next:
- 	return 0;
- }
+v2:
+- use v1 ext2_dir_entry everywhere
+- fix remaining incorrect uses of dirent->name_len
+
+ convert.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/convert.c b/convert.c
+index f462597..399856f 100644
+--- a/convert.c
++++ b/convert.c
+@@ -252,7 +252,7 @@ static u8 filetype_conversion_table[EXT2_FT_MAX] = {
+ };
  
--static struct btrfs_root *open_fs(const char *dev, u64 root_location, int super_mirror)
-+static int do_list_roots(struct btrfs_root *root)
+ static int dir_iterate_proc(ext2_ino_t dir, int entry,
+-			    struct ext2_dir_entry *old,
++			    struct ext2_dir_entry *dirent,
+ 			    int offset, int blocksize,
+ 			    char *buf,void *priv_data)
  {
--	struct btrfs_root *root;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_disk_key disk_key;
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_root_item ri;
-+	unsigned long offset;
-+	int slot;
-+	int ret;
+@@ -262,12 +262,14 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
+         u64 inode_size;
+ 	char dotdot[] = "..";
+ 	struct btrfs_key location;
+-	struct ext2_dir_entry_2 *dirent = (struct ext2_dir_entry_2 *)old;
+ 	struct dir_iterate_data *idata = (struct dir_iterate_data *)priv_data;
++	int name_len;
 +
-+	root = root->fs_info->tree_root;
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		fprintf(stderr, "Failed to alloc path\n");
-+		return -1;
-+	}
-+
-+	key.offset = 0;
-+	key.objectid = 0;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0) {
-+		fprintf(stderr, "Failed to do search %d\n", ret);
-+		btrfs_free_path(path);
-+		return -1;
-+	}
-+
-+	while (1) {
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		if (slot >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret)
-+				break;
-+			leaf = path->nodes[0];
-+			slot = path->slots[0];
-+		}
-+		btrfs_item_key(leaf, &disk_key, slot);
-+		btrfs_disk_key_to_cpu(&found_key, &disk_key);
-+		if (btrfs_key_type(&found_key) != BTRFS_ROOT_ITEM_KEY) {
-+			path->slots[0]++;
-+			continue;
-+		}
-+
-+		offset = btrfs_item_ptr_offset(leaf, slot);
-+		read_extent_buffer(leaf, &ri, offset, sizeof(ri));
-+		printf(" tree ");
-+		btrfs_print_key(&disk_key);
-+		printf(" %Lu level %d\n", btrfs_root_bytenr(&ri),
-+		       btrfs_root_level(&ri));
-+		path->slots[0]++;
-+	}
-+	btrfs_free_path(path);
-+
-+	return 0;
-+}
-+
-+static struct btrfs_root *open_fs(const char *dev, u64 root_location,
-+				  int super_mirror, int list_roots)
-+{
-+	struct btrfs_root *root = NULL;
- 	u64 bytenr;
- 	int i;
++	name_len = dirent->name_len & 0xFF;
  
-@@ -786,11 +847,19 @@ static struct btrfs_root *open_fs(const char *dev, u64 root_location, int super_
- 		bytenr = btrfs_sb_offset(i);
- 		root = open_ctree_recovery(dev, bytenr, root_location);
- 		if (root)
--			return root;
-+			break;
- 		fprintf(stderr, "Could not open root, trying backup super\n");
- 	}
- 
--	return NULL;
-+	if (root && list_roots) {
-+		int ret = do_list_roots(root);
-+		if (ret) {
-+			close_ctree(root);
-+			root = NULL;
-+		}
-+	}
-+
-+	return root;
- }
- 
- static int find_first_dir(struct btrfs_root *root, u64 *objectid)
-@@ -885,8 +954,9 @@ int cmd_restore(int argc, char **argv)
- 	int match_cflags = REG_EXTENDED | REG_NOSUB | REG_NEWLINE;
- 	regex_t match_reg, *mreg = NULL;
- 	char reg_err[256];
-+	int list_roots = 0;
- 
--	while ((opt = getopt(argc, argv, "sviot:u:df:r:cm:")) != -1) {
-+	while ((opt = getopt(argc, argv, "sviot:u:df:r:cm:l")) != -1) {
- 		switch (opt) {
- 			case 's':
- 				get_snaps = 1;
-@@ -943,12 +1013,17 @@ int cmd_restore(int argc, char **argv)
- 			case 'm':
- 				match_regstr = optarg;
- 				break;
-+			case 'l':
-+				list_roots = 1;
-+				break;
- 			default:
- 				usage(cmd_restore_usage);
+ 	objectid = dirent->inode + INO_OFFSET;
+-	if (!strncmp(dirent->name, dotdot, dirent->name_len)) {
+-		if (dirent->name_len == 2) {
++	if (!strncmp(dirent->name, dotdot, name_len)) {
++		if (name_len == 2) {
+ 			BUG_ON(idata->parent != 0);
+ 			idata->parent = objectid;
  		}
- 	}
+@@ -280,24 +282,24 @@ static int dir_iterate_proc(ext2_ino_t dir, int entry,
+ 	location.offset = 0;
+ 	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
  
--	if (optind + 1 >= argc)
-+	if (!list_roots && optind + 1 >= argc)
-+		usage(cmd_restore_usage);
-+	else if (list_roots && optind >= argc)
- 		usage(cmd_restore_usage);
- 
- 	if ((ret = check_mounted(argv[optind])) < 0) {
-@@ -960,10 +1035,13 @@ int cmd_restore(int argc, char **argv)
- 		return 1;
- 	}
- 
--	root = open_fs(argv[optind], tree_location, super_mirror);
-+	root = open_fs(argv[optind], tree_location, super_mirror, list_roots);
- 	if (root == NULL)
- 		return 1;
- 
-+	if (list_roots)
-+		goto out;
-+
- 	if (fs_location != 0) {
- 		free_extent_buffer(root->node);
- 		root->node = read_tree_block(root, fs_location, 4096, 0);
+-	file_type = dirent->file_type;
++	file_type = dirent->name_len >> 8;
+ 	BUG_ON(file_type > EXT2_FT_SYMLINK);
+ 	ret = btrfs_insert_dir_item(idata->trans, idata->root,
+-				    dirent->name, dirent->name_len,
++				    dirent->name, name_len,
+ 				    idata->objectid, &location,
+ 				    filetype_conversion_table[file_type],
+ 				    idata->index_cnt);
+ 	if (ret)
+ 		goto fail;
+ 	ret = btrfs_insert_inode_ref(idata->trans, idata->root,
+-				     dirent->name, dirent->name_len,
++				     dirent->name, name_len,
+ 				     objectid, idata->objectid,
+ 				     idata->index_cnt);
+ 	if (ret)
+ 		goto fail;
+ 	idata->index_cnt++;
+ 	inode_size = btrfs_stack_inode_size(idata->inode) +
+-		     dirent->name_len * 2;
++		     name_len * 2;
+ 	btrfs_set_stack_inode_size(idata->inode, inode_size);
+ 	return 0;
+ fail:
 -- 
-1.7.7.6
+1.8.1.4
 

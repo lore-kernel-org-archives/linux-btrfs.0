@@ -1,14 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pipebreaker.pl ([109.107.25.67]:51446 "EHLO
-	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753240Ab3COSrf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 14:47:35 -0400
-Date: Fri, 15 Mar 2013 19:47:33 +0100
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-To: linux-btrfs@vger.kernel.org
+Received: from cantor2.suse.de ([195.135.220.15]:39898 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751021Ab3CRMkk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Mar 2013 08:40:40 -0400
+Date: Mon, 18 Mar 2013 13:40:38 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs-progs: add skinny metadata support to progs V2
-Message-ID: <20130315184733.GC23825@mother.pipebreaker.pl>
+Message-ID: <20130318124038.GL7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1363373549-15423-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -18,15 +19,10 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 On Fri, Mar 15, 2013 at 02:52:29PM -0400, Josef Bacik wrote:
 > This fixes up the progs to properly deal with skinny metadata.  This adds the -x
-> option to mkfs and btrfstune for enabling the skinny metadata option.  This also
-> makes changes to fsck so it can properly deal with the skinny metadata entries.
-> Thanks,
+> option to mkfs and btrfstune for enabling the skinny metadata option.
 
-  Can we have a manpage for mkfs.btrfs, explaining what "skinny metadata", "mixed mode"
-and other *are*?
+We'll cover the filesystem features with one option (-O), I've sent a
+patch for that but need to rewrite it to be more flexible. Extending
+btrfstune to tweak the features is only a bandaid (better than nothing).
 
--- 
-Tomasz   .. oo o.   oo o. .o   .o o. o. oo o.   ..
-Torcz    .. .o .o   .o .o oo   oo .o .. .. oo   oo
-o.o.o.   .o .. o.   o. o. o.   o. o. oo .. ..   o.
-
+david

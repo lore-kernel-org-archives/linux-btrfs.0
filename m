@@ -1,52 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:55059 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932466Ab3COVFx (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41312 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751106Ab3CRH26 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 17:05:53 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id DCFA87C0402
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 15:05:52 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 6XLb4GR3L6HU1ikD (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2013 15:05:52 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix segfault when using tools fs with tree log
-Date: Fri, 15 Mar 2013 17:13:08 -0400
-Message-ID: <1363381988-2544-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 18 Mar 2013 03:28:58 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2I7SuV3006301
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 07:28:57 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2I7StjU004747
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 07:28:56 GMT
+Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2I7St0X020459
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 02:28:55 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: defrag return zero on success
+Date: Mon, 18 Mar 2013 15:29:38 +0800
+Message-Id: <1363591778-6430-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We just free the log root after we set it up when we open a ctree in the tools.
-This isn't nice, it makes double free's and leaks eb's, makes segfaults with
-btrfs-image.  So fix this to be correct, and fix the cleanup if the buffer is
-not uptodate.  With this fix I no longer segfault trying to do btrfs-image on a
-file system with a log tree.  Thanks,
-
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- disk-io.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ cmds-filesystem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index 5aa9aa3..da7086f 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -656,11 +656,12 @@ static int find_and_setup_log_root(struct btrfs_root *tree_root,
- 	fs_info->log_root_tree = log_root;
- 
- 	if (!extent_buffer_uptodate(log_root->node)) {
-+		free_extent_buffer(log_root->node);
- 		free(log_root);
-+		fs_info->log_root_tree = NULL;
- 		return -EIO;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 2210020..f3d3130 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -446,7 +446,7 @@ static int cmd_defrag(int argc, char **argv)
+ 		exit(1);
  	}
  
--	free(log_root);
- 	return 0;
+-	return errors + 20;
++	return errors;
  }
  
+ static const char * const cmd_resize_usage[] = {
 -- 
-1.7.7.6
+1.8.1.227.g44fe835
 

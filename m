@@ -1,44 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta03.emeryville.ca.mail.comcast.net ([76.96.30.32]:53201 "EHLO
-	qmta03.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753168Ab3CRTQt convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Mar 2013 15:16:49 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from dkim2.fusionio.com ([66.114.96.54]:51839 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751001Ab3CRTSS convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Mar 2013 15:18:18 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id B014C9A04E9
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 13:18:17 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+From: Chris Mason <chris.mason@fusionio.com>
+To: Kyle <lists@lolwut.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <514759B5.5000507@lolwut.org>
+In-Reply-To: <514759B5.5000507@lolwut.org>
+Message-ID: <20130318191815.15073.49770@localhost.localdomain>
 Subject: Re: Impossible or Possible to Securely Erase File on Btrfs?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130318185702.GB19395@carfax.org.uk>
-Date: Mon, 18 Mar 2013 13:09:39 -0600
-Cc: Kyle <lists@lolwut.org>, linux-btrfs@vger.kernel.org
-Message-Id: <140D9ED4-B0CF-437E-AE58-9B6FB209DBD2@colorremedies.com>
-References: <514759B5.5000507@lolwut.org> <20130318185702.GB19395@carfax.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
+Date: Mon, 18 Mar 2013 15:18:15 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Mar 18, 2013, at 12:57 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-
-> On Mon, Mar 18, 2013 at 02:15:17PM -0400, Kyle wrote:
->> After reading through the btrfs documentation I'm curious to know if
->> it's possible to ever securely erase a file from a btrfs filesystem
->> (or ZFS for that matter).
+Quoting Kyle (2013-03-18 14:15:17)
+> Hi,
 > 
->   Not really.
-> 
->   It gets even worse for SSDs, because the SSD itself can be
-> effectively CoW, with old pages lurking away in the flash storage
-> where (with a bit of physical persuasion of the hardware) they can be
-> read. So you have the same problem on SSDs even with non-CoW
-> filesystems.
+> After reading through the btrfs documentation I'm curious to know if 
+> it's possible to ever securely erase a file from a btrfs filesystem (or 
+> ZFS for that matter). On non-COW filesystems atop regular HDDs one can 
+> simply overwrite the file with zeros or random data using dd or some 
+> other tool and rest assured that the blocks which contained the 
+> sensitive information have been wiped. However on btrfs it would seem 
+> any such attempt would write the zeros/random data to a new location, 
+> leaving the old blocks with the sensitive data intact. Further, since 
+> specifying NOCOW is only possible for newly created files, there seems 
+> to be no way to overwrite the appropriate blocks short of deleting the 
+> associated file and then filling the entire free filesystem space with 
+> zeros/random data such that the old blocks are eventually overwritten. 
+> What's the verdict on this?
 
-Encryption is the solution, either dmcrypt, encryptfs, or Opal SED.
+We don't do this now for other reasons mentioned in the thread.  The
+best path to get here is to use trim, and to find a device that supports
+a secure erase trim (I don't know if this even exists, sorry).
 
-With even consumer SSDs now, Opal 2.0 is increasingly common, so data on the SSD is already encrypted whether locked or not. By default the drive is unlocked, so the DEK is exposed but data on the chips is encrypted. Unfortunately I'm not aware of user space tools to manage Opal drives on linux, it's a side topic question but if anyone knows of such a tool I'd like to know about it. I don't think hdparm does, rather it manages the ATA  Security features like Secure Erase, Secure Enhanced Erase, and I think it can also cause DEK regeneration on SED drives which effectively is encryption erase (removes the existing DEK, creates a new one, thereby rendering the drive effectively erased in seconds). But I don't think it manages KEKs and the locking/unlocking of the drive.
+Outside of that, the only way to do this securely is to delete the
+files, rotate in new drives, rotate out the old drives, and run a full
+drive secure delete (not very practical).
 
-Booting from these Opal compliant SEDs is difficult because it requires firmware or bootloader support; and then also kernel and user space tools to support to lock/unlock when the computer is put to sleep/hibernation and then woken. For that use case it's necessary to use software encryption, dmcrypt/LUKS on Linux.
-
-Another possibility for the OP's use case is encryptfs which encrypts above btrfs. The file contents are encrypted, but the file names and file system itself (and metadata) are not. In this case, deletion is functionally equivalent to having filled the blocks with random data (short of the DEK escaping into the wild).
-
-Chris Murphy
+-chris

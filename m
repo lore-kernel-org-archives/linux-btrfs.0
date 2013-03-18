@@ -1,129 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:3688 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751502Ab3COQey (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 12:34:54 -0400
-Message-ID: <51434DAC.9000206@redhat.com>
-Date: Fri, 15 Mar 2013 11:34:52 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:41171 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751085Ab3CRDjH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 17 Mar 2013 23:39:07 -0400
+Message-ID: <51468C84.2060204@oracle.com>
+Date: Mon, 18 Mar 2013 11:39:48 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
+To: Eric Sandeen <sandeen@redhat.com>
 CC: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 3/3 v4] btrfs-progs: disable using backup superblock by
  default
-References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com> <1363230357-7438-1-git-send-email-anand.jain@oracle.com> <1363230357-7438-4-git-send-email-anand.jain@oracle.com> <514153B0.7020100@redhat.com> <514190AA.2080405@oracle.com> <5141E31B.30407@redhat.com> <5141E36C.10905@redhat.com> <51430E10.5070807@oracle.com>
-In-Reply-To: <51430E10.5070807@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+References: <1362756300-30212-1-git-send-email-anand.jain@oracle.com> <1363230357-7438-1-git-send-email-anand.jain@oracle.com> <1363230357-7438-4-git-send-email-anand.jain@oracle.com> <514153B0.7020100@redhat.com> <514190AA.2080405@oracle.com> <5141E31B.30407@redhat.com> <5141E36C.10905@redhat.com> <51430E10.5070807@oracle.com> <51434DAC.9000206@redhat.com>
+In-Reply-To: <51434DAC.9000206@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/15/13 7:03 AM, Anand Jain wrote:
-> 
-> 
->>>>> <maybe a little more commit log would be good?>
->>>>>
->>>>> So here is what confuses me now. :)
->>>>>
->>>>> *every* caller of btrfs_read_dev_super() is now called with
->>>>> 0 for the flags variable, so it never reads the backup
->>>>> under any circumstance.
->>>>>
->>>>> If it's always called w/ 0, what is the point of the argument?
->>>>> Is there another patch you have planned that would use this argument
->>>>> later?
->>>>
->>>>   Thanks for the review. yes true. as of now it (BTRFS_SCAN_BACKUP_SB)
->>>>   only serves the purpose if in future should we need it.
->>>>   purpose is something like a user initiated thread which
->>>>   should to go to the backup-SB if primary-SB is not found ?.
->>>>   Or I can drop BTRFS_SCAN_BACKUP_SB idea depending on how
->>>>   it is convenient as a whole.
->>>
->>> See what others think, perhaps, but if nobody is using it, I think
->>> it should just go away.  I'd call it "dead code." :)
->>>
->>> But I am surprised that none of the commands which accept alternate
->>> superblock locations find their way into btrfs_read_dev_super() -
->>> that seems odd to me.  Is it re-implemented or open-coded in other
->>> places?
+
+>> # mkfs.btrfs /dev/sdb /dev/sdc -f && mount /dev/sdb /btrfs
+>> # ./check-mounted /dev/sdc
+>> its btrfs
+>> /dev/sdc is currently mounted. Aborting.
+>> # dd if=/dev/zero of=/dev/sdc count=8 seek=$(((64 * 1024)/512))
+>> # ./check-mounted /dev/sdc
+>
+> what is "./check-mounted?"
+
+  sorry forgot to mention.. check-mounted is small prog it unit-tests
+  check_mounted() function (Find the diff below.)
+
+>> Not mounted
+>> # cat /proc/mounts | egrep btrfs
+>> /dev/sdb /btrfs btrfs rw,seclabel,relatime,noacl,space_cache 0 0
 >>
->> So to be clearer, rather than removing the code right away, maybe
->> it's worth a look to see if the other commands which *want* backup
->> superblocks should be using this same code.  Then you'd have a reason
->> for your new flag.  :)
-> 
-> 
->  when non primary SB (sb_bytenr) is specified in btrfs_read_dev_super()
->  (that is when user is involved)  it would directly fetch it. so its
->  not a problem when we know which SB to read other than the primary SB.
+>>
+>>   So we have to set BTRFS_SCAN_BACKUP_SB for check_mounted()
+>>   But the above scenario is not simple enough to be practical though.
+>
+> (Seems like a mount check would be best implemented by asking the kernel
+> which devices are in use for mounted btrfs filesystems, rather than
+> scanning the block devices directly, but maybe that's a different issue.)
+>
+> I guess I need to stop & think more carefully about this, it seems like
+> I am not seeing the whole picture.
+>
+> The overall goal here is to not discover "btrfs" devices which actually
+> only have stale backup superblocks present, right?
+>
+> The loop in btrfs_read_dev_super() might be ok for verifying backups,
+> but it should probably fail outright on the first bad one it finds,
+> or at least if the primary is bad; the user would be notified of the
+> inconsistency and could take corrective action w/ fsck or whatnot, right?
 
-Oh, right - I had forgotten that, I'm sorry.
+  This logic is not be suitable for the function check_mounted().
+  The above test case just demonstrates that. This is about btrfs
+  on multi-dev and we use one dev to mount and another dev to check
+  if its mounted, now if the primary SB is corrupted on this (latter)
+  dev we still need to find its mounted by reading from the backup SB,
+  so setting the BTRFS_SCAN_BACKUP_SB will help.
 
-So the behavior is:
+Thanks,  Anand
 
-if sb_bytenr is specified and it is not the first sb, read it and return
-it on success.
+---------------------------------------------------------------------
+diff --git a/Makefile b/Makefile
+index d102dee..c97e6b7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -159,6 +159,10 @@ btrfs-select-super: $(objects) $(libs) 
+btrfs-select-super.o
+         @echo "    [LD]     $@"
+         $(Q)$(CC) $(CFLAGS) -o btrfs-select-super $(objects) 
+btrfs-select-super.o $(LDFLAGS) $(LIBS)
 
-Otherwise, read the first superblock and return it if it's ok.
++check-mounted: $(objects) $(libs) check-mounted.o
++       @echo "    [LD]     $@"
++       $(Q)$(CC) $(CFLAGS) -o check-mounted $(objects) check-mounted.o 
+$(LDFLAGS) $(LIBS)
++
+  btrfstune: $(objects) $(libs) btrfstune.o
+         @echo "    [LD]     $@"
+         $(Q)$(CC) $(CFLAGS) -o btrfstune $(objects) btrfstune.o 
+$(LDFLAGS) $(LIBS)
+@@ -205,7 +209,7 @@ clean :
+         @echo "Cleaning"
+         $(Q)rm -f $(progs) cscope.out *.o .*.d btrfs-convert 
+btrfs-image btrfs-select-super \
+               btrfs-zero-log btrfstune dir-test ioctl-test quick-test 
+send-test btrfs.static btrfsck \
+-             version.h \
++             version.h check-mounted\
+               $(libs) $(lib_links)
+         $(Q)$(MAKE) $(MAKEOPTS) -C man $@
 
-If it's bad, and *if* your new flag is set, continue reading other
-superblocks until a good one is found, or return failure if none are found.
+diff --git a/check-mounted.c b/check-mounted.c
+new file mode 100644
+index 0000000..781edec
+--- /dev/null
++++ b/check-mounted.c
+@@ -0,0 +1,31 @@
++
++#define _XOPEN_SOURCE 500
++#define _GNU_SOURCE 1
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include "kerncompat.h"
++#include "ctree.h"
++#include "disk-io.h"
++#include "print-tree.h"
++#include "transaction.h"
++#include "list.h"
++#include "version.h"
++#include "utils.h"
++
++int main(int ac, char **av)
++{
++       int ret;
++
++       if((ret = check_mounted(av[optind])) < 0) {
++               fprintf(stderr, "Could not check mount status: %s\n", 
+strerror(-ret));
++               return ret;
++       } else if(ret) {
++               fprintf(stderr, "%s is currently mounted. Aborting.\n", 
+av[optind]);
++               return -EBUSY;
++       }
++       printf("Not mounted\n");
++       return 0;
++}
+------------------------------------------------------------------------------
 
-Now that I think about it, that's a somewhat convoluted set of behaviors
-for one function.
 
->  However when primary SB is specified it would look for only primary SB
->  unless BTRFS_SCAN_BACKUP_SB flag is set (with the patch). 
 
-Right, ok.
 
-> Now, do we
->  need this flag ? looks like Yes ! (sorry to change my opinion here
->  though) and as below..
-> 
->  In some cases when user is _not_ involved. Like in
-> 
->  check_mounted().
-> 
->  In a multi dev btrfs mounted fs. If by any chance the primary SB
->  is corrupted then we would say the device is NOT mounted even
->  if it is mounted.
-> 
-> eg:
-> # mkfs.btrfs /dev/sdb /dev/sdc -f && mount /dev/sdb /btrfs
-> # ./check-mounted /dev/sdc
-> its btrfs
-> /dev/sdc is currently mounted. Aborting.
-> # dd if=/dev/zero of=/dev/sdc count=8 seek=$(((64 * 1024)/512))
-> # ./check-mounted /dev/sdc
-
-what is "./check-mounted?"
-
-> Not mounted
-> # cat /proc/mounts | egrep btrfs
-> /dev/sdb /btrfs btrfs rw,seclabel,relatime,noacl,space_cache 0 0
-> 
-> 
->  So we have to set BTRFS_SCAN_BACKUP_SB for check_mounted()
->  But the above scenario is not simple enough to be practical though.
-
-(Seems like a mount check would be best implemented by asking the kernel
-which devices are in use for mounted btrfs filesystems, rather than
-scanning the block devices directly, but maybe that's a different issue.)
-
-I guess I need to stop & think more carefully about this, it seems like
-I am not seeing the whole picture.
-
-The overall goal here is to not discover "btrfs" devices which actually
-only have stale backup superblocks present, right?
-
-The loop in btrfs_read_dev_super() might be ok for verifying backups,
-but it should probably fail outright on the first bad one it finds,
-or at least if the primary is bad; the user would be notified of the
-inconsistency and could take corrective action w/ fsck or whatnot, right?
-
--Eric
-
-> 
-> -Anand
 

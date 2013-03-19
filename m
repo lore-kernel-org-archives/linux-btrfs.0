@@ -1,47 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56283 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754491Ab3CSJT7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 05:19:59 -0400
-Date: Tue, 19 Mar 2013 10:19:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: Chris Mason <chris.mason@fusionio.com>, Kyle <lists@lolwut.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from mail-ee0-f50.google.com ([74.125.83.50]:47365 "EHLO
+	mail-ee0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932663Ab3CSWqL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 18:46:11 -0400
+Received: by mail-ee0-f50.google.com with SMTP id e51so506571eek.37
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2013 15:46:09 -0700 (PDT)
+From: Marek Otahal <markotahal@gmail.com>
+To: Kyle <lists@lolwut.org>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Impossible or Possible to Securely Erase File on Btrfs?
-Message-ID: <20130319091956.GR7229@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Date: Tue, 19 Mar 2013 23:46:01 +0100
+Message-ID: <1510992.7BWEEWRdZp@beruska>
+In-Reply-To: <514759B5.5000507@lolwut.org>
 References: <514759B5.5000507@lolwut.org>
- <20130318191815.15073.49770@localhost.localdomain>
- <CA+WRLO_09TLuoJ4QEzudrNxksJUYsktTRqgYX3=GR2O3989oCw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CA+WRLO_09TLuoJ4QEzudrNxksJUYsktTRqgYX3=GR2O3989oCw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 19, 2013 at 09:48:56AM +1100, Gareth Pye wrote:
-> Would it make sense for btrfs to support a write zeros to empty space
-> erase? I know it would be slow as it would have to write to all the
-> free space in the file system but it would be useful.
+Hi, 
+
+just reading chattr manpage.. 
+
+On Monday 18 March 2013 14:15:17 you wrote:
+> Hi,
 > 
-> It's probably pretty far down the priority list for development though I expect.
+> After reading through the btrfs documentation I'm curious to know if 
+> it's possible to ever securely erase a file from a btrfs filesystem (or 
+> ZFS for that matter). On non-COW filesystems atop regular HDDs one can 
+> simply overwrite the file with zeros or random data using dd or some 
+> other tool and rest assured that the blocks which contained the 
+> sensitive information have been wiped. However on btrfs it would seem 
+> any such attempt would write the zeros/random data to a new location, 
+> leaving the old blocks with the sensitive data intact. Further, since 
+> specifying NOCOW is only possible for newly created files, there seems 
+> to be no way to overwrite the appropriate blocks short of deleting the 
+> associated file and then filling the entire free filesystem space with 
+> zeros/random data such that the old blocks are eventually overwritten. 
+> What's the verdict on this?
 
-I have prototyped this some time ago
+what would chattr +s do? 
 
-http://repo.or.cz/w/linux-2.6/btrfs-unstable.git/commit/55ec5c00022be8f2bbed06b99b5f4be5832a5451
+"
+When a file with the `s' attribute set is deleted, its blocks are zeroed and written back to the disk.  Note: please make sure to read the bugs and limitations section at the end of this document.
+"
 
-It reuses the trim code that already traverses the free space but calls
-blkdev_issue_zeroout instead. The overwrite pattern could be extended to
-random data, some posion patterns (like leaf that has 0 items and could
-be recognized in the code to catch misdirected writes; similarly for
-tree node blocks), or the secure discard.
+Nice spring to all of you! :)
+Mark
 
-(I haven't resolved what to do if there's a mixture of HDDs and SSDs,
-rewriting the free space has different impact on the underlying
-devices.)
+> 
+> Regards,
+> 
+> Kyle
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
 
-The existing FITRIM ioctl structure fstrim_range does not contain any
-spare bytes so either we need to go with own ioctl or propose FITRIM_V2.
-
-david
+Marek Otahal :o)

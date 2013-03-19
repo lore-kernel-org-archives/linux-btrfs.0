@@ -1,65 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:49527 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753622Ab3CSR3M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 13:29:12 -0400
-Date: Tue, 19 Mar 2013 10:29:11 -0700 (PDT)
-From: Sage Weil <sage@inktank.com>
-To: Chris Mason <clmason@fusionio.com>
-cc: Alexandre Oliva <oliva@gnu.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-In-Reply-To: <20130319120940.29898.80124@localhost.localdomain>
-Message-ID: <alpine.DEB.2.00.1303191027320.4850@cobra.newdream.net>
-References: <orhak8fm0u.fsf@livre.home> <20130318225245.25964.22219@localhost.localdomain> <orzjy0dkz9.fsf@livre.home> <20130319120940.29898.80124@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Received: from cantor2.suse.de ([195.135.220.15]:34601 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750778Ab3CSLvF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 07:51:05 -0400
+From: David Sterba <dsterba@suse.cz>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: update kconfig title
+Date: Tue, 19 Mar 2013 12:50:59 +0100
+Message-Id: <1363693859-26936-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 19 Mar 2013, Chris Mason wrote:
-> Quoting Alexandre Oliva (2013-03-19 01:20:10)
-> > On Mar 18, 2013, Chris Mason <chris.mason@fusionio.com> wrote:
-> > 
-> > > A few questions.  Does leveldb use O_DIRECT and mmap together?
-> > 
-> > No, it doesn't use O_DIRECT at all.  Its I/O interface is very
-> > simplified: it just opens each new file (database chunks limited to 2MB)
-> > with O_CREAT|O_RDWR|O_TRUNC, and then uses ftruncate, mmap, msync,
-> > munmap and fdatasync.  It doesn't seem to modify data once it's written;
-> > it only appends.  Reading data back from it uses a completely different
-> > class interface, using separate descriptors and using pread only.
-> > 
-> > > (the source of a write being pages that are mmap'd from somewhere
-> > > else)
-> > 
-> > AFAICT the source of the memcpy()s that append to the file are
-> > malloc()ed memory.
-> > 
-> > > That's the most likely place for this kind of problem.  Also, you
-> > > mention crc errors.  Are those reported by btrfs or are they application
-> > > level crcs.
-> > 
-> > These are CRCs leveldb computes and writes out after each db block.  No
-> > btrfs CRC errors are reported in this process.
-> 
-> Ok, so we have three moving pieces here.
-> 
-> 1) leveldb truncating the files
-> 2) leveldb using mmap to write
-> 3) btrfs snapshots
-> 
-> My guess is the truncate is creating a orphan item that is being
-> processed inside the snapshot.
-> 
-> Is it possible to create a smaller leveldb unit test that we might use
-> to exercise all of this?
+The Kconfig title does not make much sense after the cleanup of
+CONFIG_EXPERIMENTAL option, align the wording with other filesystems.
 
-There is a set of unit tests in the leveldb source tree that ought to do 
-the trick:
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-	git clone https://code.google.com/p/leveldb/
+Based on current linus/master and should to to 3.9-rc
 
-sage
+ fs/btrfs/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 9a8622a..4f749c7 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -1,5 +1,5 @@
+ config BTRFS_FS
+-	tristate "Btrfs filesystem Unstable disk format"
++	tristate "Btrfs filesystem support"
+ 	select LIBCRC32C
+ 	select ZLIB_INFLATE
+ 	select ZLIB_DEFLATE
+-- 
+1.8.1.4
+

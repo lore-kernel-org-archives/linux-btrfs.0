@@ -1,109 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f43.google.com ([74.125.83.43]:45018 "EHLO
-	mail-ee0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753409Ab3CRXjH convert rfc822-to-8bit (ORCPT
+Received: from mail-bk0-f45.google.com ([209.85.214.45]:32861 "EHLO
+	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750971Ab3CSLDI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Mar 2013 19:39:07 -0400
-Received: by mail-ee0-f43.google.com with SMTP id c50so2803337eek.30
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2013 16:39:05 -0700 (PDT)
+	Tue, 19 Mar 2013 07:03:08 -0400
+Received: by mail-bk0-f45.google.com with SMTP id i18so157802bkv.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2013 04:03:06 -0700 (PDT)
+Message-ID: <514845E7.5060605@yerf-it.nl>
+Date: Tue, 19 Mar 2013 12:03:03 +0100
+From: Remco Hosman - Yerf-IT <remco@yerf-it.nl>
 MIME-Version: 1.0
-In-Reply-To: <CABzOi+ea8fchPK82Xzm95BfS76cWvZ6pAR5m5txkFcjUZN9oJg@mail.gmail.com>
-References: <CABzOi+d9ku3xJwQLZanBsagWmcd54Uf-oUuApTqkwguFTaHyYg@mail.gmail.com>
-	<CAE5mzvi5nsTDw9ZX72hXt2EMsmxJUef3WmvArxxKhqJFJU-CLg@mail.gmail.com>
-	<CABzOi+c0e4Oq8=Y2gdRsh5=X=P6kVQubGS2qXE+vbodnzfeoMw@mail.gmail.com>
-	<CABzOi+ea8fchPK82Xzm95BfS76cWvZ6pAR5m5txkFcjUZN9oJg@mail.gmail.com>
-Date: Mon, 18 Mar 2013 16:39:05 -0700
-Message-ID: <CAHGunUkhUjhgzfsdt4y91MF_Wt7tN0xK+f3C+0CAyQgC39vVMQ@mail.gmail.com>
-Subject: Re: Btrfs in multiple different disc -d sigle -m raid1 one drive failure...
-From: Michael Johnson - MJ <mj@revmj.com>
-To: Jan Beranek <jan233321@gmail.com>
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: dsterba@suse.cz
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: converting to raid5
+References: <19DDB13F-E8EC-4751-A916-E83555347D7E@hosman.xs4all.nl> <20130315124744.GF7229@twin.jikos.cz>
+In-Reply-To: <20130315124744.GF7229@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While in specific use cases it may be preferable to fill up one disk
-and then move on to the next, that does not get you the best
-performance, so I suspect you will be hard pressed to find any "real"
-filesystem that behaves in such a way.  You may be able to do that
-with aufs, but if you you want to limit data loss in the event of a
-failure, you probably want to always write to the disk with the most
-free space which aufs can do.
-
-On Mon, Mar 18, 2013 at 1:04 PM, Jan Beranek <jan233321@gmail.com> wrote:
-> Thank you for the test.
+Op 15-3-2013 13:47, David Sterba schreef:
+> On Mon, Mar 11, 2013 at 09:15:44PM +0100, Remco Hosman wrote:
+>> first, i did the following: `btrfs val start -dconvert=raid5,usage=1` to convert the mostly empty chunks.
+>> This resulted in a lot of allocated space (10's of gigs), with only a few 100 meg used.
+> Matches my expectation, converting to the new profile needs to allocate
+> full 1G chunks, but the usage=1 filter allows to fill them partially.
 >
-> I will do some tests also (later as now I do not have a space for it)
-> - when you disconnected one disc (or deleted a file) did you try btrfs
-> fi balance? I wonder if missing files simply "disappears" or not,
-> because in the fact they are present as metadata information only. if
-> not, then would be necessary to  write a small script which will check
-> all the files and report missing/broken ones (or use aufs on top).
->
-> When I use "-d single" option, then preffered way is fill the disc
-> completelly and then continue with another disc. And you are right,
-> there is no guarantee that some files wil not be spread over all three
-> (or more) disc. (as I understand it from docs).
->
-> On Mon, Mar 18, 2013 at 9:03 PM, Jan Beranek <jan233321@gmail.com> wrote:
->> Thank you for your test.
+> After this step, several ~empty raid1 chunks should disappear.
+It did not only happen when i added the usage=1, but also without.
+>> i did `btrfs val start -dusage=75` to clean things up.
 >>
->> I will do some tests also (later as now I do not have a space for it) - when
->> you disconnected one disc (or deleted a file) did you try btrfs fi balance?
->> I wonder if missing files simply "disappears" or not, because in the fact
->> they are present as metadata information only. if not, then would be
->> necessary to  write a small script which will check all the files and report
->> missing/broken ones (or use aufs on top).
->>
->> When I use "-d single" option, then preffered way is fill the disc
->> completelly and then continue with another disc. And you are right, there is
->> no guarantee that some files wil not be spread over all three (or more)
->> disc. (as I understand it from docs).
->>
->>
->> On Mon, Mar 18, 2013 at 8:24 PM, cwillu <cwillu@cwillu.com> wrote:
->>>
->>> On Mon, Mar 18, 2013 at 12:32 PM, Jan Beranek <jan233321@gmail.com> wrote:
->>> > Hi all,
->>> > I'm preparing a strorage pool for large data with quite low importance
->>> > - there will be at least 3 hdd in "-d single" and "-m raid1"
->>> > configuration.
->>> >
->>> > mkfs.btrfs -d single -m raid1 /dev/sda /dev/sdb /dec/sdc
->>> >
->>> > What happen if one hdd fails? Do I lost everything from all three
->>> > discs or only data from one disc? (if from only one disc, then is it
->>> > acceptable otherwise not...)
->>>
->>> I just finished doing some testing to check:  It will work, kinda sorta.
->>>
->>> You'll be forced to mount read-only, and any reads of file extents
->>> that existed on the missing disk will return an io error.  As I
->>> understand it, single doesn't force files to be on a single disk,
->>> instead it _doesn't_ force them to be _several_ disks; the implication
->>> being that a large file (say, a 4gb movie) may still end up with
->>> pieces on each disk.
->>
->>
->>
->>
+>> then i ran `btrfs bal start -dconvert=raid5,soft`.
+>> I noticed how the difference between total and used for raid5 kept growing.
+> Do you remember if this was temporary or if the difference was
+> unexpectedly big after the whole operation finished?
+It did not finish, the filesystem did not have that much space free so i 
+canceled it (even before it ran out of space) and ran `btrfs bal start 
+-dusage=1` to cleanup the unused space
+>> My guess is that its taking 1 raid1 chunk (2x1 gig disk space, 1 gig
+>> data), and moving it to 1 raid5 chunk (4gig disk space, 3gig data),
+>> leaving all chunks 33% used.
+> Why 3G of data in raid5 case? I assume you talk about the actually used
+> data and this should be the same as in raid1 case, but spread over 3x
+> 1GB chunks and leaving them 33% utilized, that makes sense, but is not
+> clear from your description.
+I assumed that with raid5, btrfs allocated 1 gig on each disk and uses 1 
+for parity, giving 3 gig of data in 4gig diskspace.
+>> This is what 3 calls of `btrfs file df /` looks like a few minutes after each other, with the balance still running:
+>> Data, RAID1: total=807.00GB, used=805.70GB
+>> Data, RAID5: total=543.00GB, used=192.81GB
 >> --
->> S pozdravem
->>
->> Jan Beránek
+>> Data, RAID1: total=800.00GB, used=798.70GB
+>> Data, RAID5: total=564.00GB, used=199.30GB
+>> --
+>> Data, RAID1: total=795.00GB, used=793.70GB
+>> Data, RAID5: total=579.00GB, used=204.81GB
+> raid1 numbers going down, raid5 going up, all ok.
 >
->
->
-> --
-> S pozdravem
->
-> Jan Beránek
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> david
 
-
-
--- 
-Michael Johnson - MJ

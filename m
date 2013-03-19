@@ -1,55 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:57557 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756154Ab3CTB7B (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:53124 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932436Ab3CSQLE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 21:59:01 -0400
-From: Alexandre Oliva <oliva@gnu.org>
-To: Chris Mason <clmason@fusionio.com>
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel\@vger.kernel.org" <ceph-devel@vger.kernel.org>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-References: <orhak8fm0u.fsf@livre.home>
-	<20130318225245.25964.22219@localhost.localdomain>
-	<orzjy0dkz9.fsf@livre.home>
-	<20130319120940.29898.80124@localhost.localdomain>
-	<ora9pzdwdw.fsf@livre.home>
-Date: Tue, 19 Mar 2013 22:58:42 -0300
-In-Reply-To: <ora9pzdwdw.fsf@livre.home> (Alexandre Oliva's message of "Tue,
-	19 Mar 2013 16:26:03 -0300")
-Message-ID: <or1ubaesrx.fsf@livre.home>
+	Tue, 19 Mar 2013 12:11:04 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 0E8027C065C
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2013 10:11:04 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 12RwJvdtbl00NgVK (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2013 10:11:01 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: handle a bogus chunk tree nicely
+Date: Tue, 19 Mar 2013 12:18:20 -0400
+Message-ID: <1363709900-1431-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mar 19, 2013, Alexandre Oliva <oliva@gnu.org> wrote:
+If you restore a btrfs-image file system and try to mount that file system we'll
+panic.  That's because btrfs-image restores and just makes one big chunk to
+envelope the whole disk, since they are really only meant to be messed with by
+our btrfs-progs.  So fix up btrfs_rmap_block and the callers of it for mount so
+that we no longer panic but instead just return an error and fail to mount.
+Thanks,
 
->> that is being processed inside the snapshot.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent-tree.c |   35 ++++++++++++++++++++++++++++++-----
+ fs/btrfs/volumes.c     |   13 ++++++++++++-
+ 2 files changed, 42 insertions(+), 6 deletions(-)
 
-> This doesn't explain why the master database occasionally gets similarly
-> corrupted, does it?
-
-Actually, scratch this bit for now.  I don't really have proof that the
-master database actually gets corrupted while it's in use, rather than
-having inherited corruption on a server restart, that rolls back to the
-most recent snapshot and replays the osd journal on it.  It could be
-that the used snapshot is corrupted in a way that doesn't manifest
-itself immediately, or that that it gets corrupted afterwards with your
-delayed-orphan theory.
-
-I wrote a test that exercises leveldb's PosixMmapFile with highly
-compressible appends of varying sizes, as well as syncs and btrfs
-snapshots at random, but I haven't been able to trigger the problem with
-it (yet?).
-
-I'm now instrumenting the failing code to try to collect more data.  It
-looks like, even though ceph does use leveldb's sync option in some
-situations, the syncs don't seem to get all to the data files, only to
-the leveldb logs.
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a08d0fe..7e91583 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -257,7 +257,8 @@ static int exclude_super_stripes(struct btrfs_root *root,
+ 		cache->bytes_super += stripe_len;
+ 		ret = add_excluded_extent(root, cache->key.objectid,
+ 					  stripe_len);
+-		BUG_ON(ret); /* -ENOMEM */
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+@@ -265,13 +266,17 @@ static int exclude_super_stripes(struct btrfs_root *root,
+ 		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
+ 				       cache->key.objectid, bytenr,
+ 				       0, &logical, &nr, &stripe_len);
+-		BUG_ON(ret); /* -ENOMEM */
++		if (ret)
++			return ret;
+ 
+ 		while (nr--) {
+ 			cache->bytes_super += stripe_len;
+ 			ret = add_excluded_extent(root, logical[nr],
+ 						  stripe_len);
+-			BUG_ON(ret); /* -ENOMEM */
++			if (ret) {
++				kfree(logical);
++				return ret;
++			}
+ 		}
+ 
+ 		kfree(logical);
+@@ -8120,7 +8125,17 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		 * info has super bytes accounted for, otherwise we'll think
+ 		 * we have more space than we actually do.
+ 		 */
+-		exclude_super_stripes(root, cache);
++		ret = exclude_super_stripes(root, cache);
++		if (ret) {
++			/*
++			 * We may have excluded something, so call this just in
++			 * case.
++			 */
++			free_excluded_extents(root, cache);
++			kfree(cache->free_space_ctl);
++			kfree(cache);
++			goto error;
++		}
+ 
+ 		/*
+ 		 * check for two cases, either we are full, and therefore
+@@ -8262,7 +8277,17 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	cache->last_byte_to_unpin = (u64)-1;
+ 	cache->cached = BTRFS_CACHE_FINISHED;
+-	exclude_super_stripes(root, cache);
++	ret = exclude_super_stripes(root, cache);
++	if (ret) {
++		/*
++		 * We may have excluded something, so call this just in
++		 * case.
++		 */
++		free_excluded_extents(root, cache);
++		kfree(cache->free_space_ctl);
++		kfree(cache);
++		return ret;
++	}
+ 
+ 	add_new_free_space(cache, root->fs_info, chunk_offset,
+ 			   chunk_offset + size);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5989a92..2854c82 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4935,7 +4935,18 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 	em = lookup_extent_mapping(em_tree, chunk_start, 1);
+ 	read_unlock(&em_tree->lock);
+ 
+-	BUG_ON(!em || em->start != chunk_start);
++	if (!em) {
++		printk(KERN_ERR "btrfs: couldn't find em for chunk %Lu\n",
++		       chunk_start);
++		return -EIO;
++	}
++
++	if (em->start != chunk_start) {
++		printk(KERN_ERR "btrfs: bad chunk start, em=%Lu, wanted=%Lu\n",
++		       em->start, chunk_start);
++		free_extent_map(em);
++		return -EIO;
++	}
+ 	map = (struct map_lookup *)em->bdev;
+ 
+ 	length = em->len;
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+1.7.7.6
+

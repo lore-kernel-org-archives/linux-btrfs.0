@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay1.sgi.com ([192.48.179.29]:43845 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752706Ab3CRNaB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Mar 2013 09:30:01 -0400
-Message-ID: <514716F4.3080202@sgi.com>
-Date: Mon, 18 Mar 2013 08:30:28 -0500
+Received: from relay3.sgi.com ([192.48.152.1]:42001 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1755134Ab3CSOPL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 10:15:11 -0400
+Message-ID: <5148730B.6020402@sgi.com>
+Date: Tue, 19 Mar 2013 09:15:39 -0500
 From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
 To: Eric Sandeen <sandeen@sandeen.net>
@@ -20,14 +20,44 @@ Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave,
 
-Sorry for skipping test numbers,  I was going to revert, correct the 
-test number and resubmit this patch.
-Do you want me to rename btrfs.filter to common.filter.btrfs when I
-resubmit this patch?
+This has been reverted and recommitted as test 307.
 
-Regards
+Thanks
 --Rich
+
+commit 4f092a2e681c57394a0055a0735b8208bf83ec5f
+Author: Eric Sandeen <sandeen@sandeen.net>
+Date:   Wed Mar 13 19:01:58 2013 +0000
+
+     xfstests: btrfs tests for basic informational commands
+
+     Run basic btrfs information commands in various ways, performing
+     sanity tests of: filesystem show, label, sync, and device stats
+     (sync is included just because it's simple).  These are mostly
+     just smoke tests, although for example show by label & UUID
+     should verify that the correct fs was shown.
+
+     This also adds quite a few new filters to accommodate the output
+     of the new commands.
+
+     Cc: linux-btrfs@vger.kernel.org
+     Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+     Reviewed-by: Stefan Behrens <sbehrens@giantdisaster.de>
+     Signed-off-by: Rich Johnston <rjohnston@sgi.com>
+
+commit 609b6f18b87bc19c5251c45342e0678cfbf0618c
+Author: Rich Johnston <rjohnston@sgi.com>
+Date:   Tue Mar 19 08:13:12 2013 -0500
+
+     Revert "xfstests: btrfs tests for basic informational commands"
+
+     This reverts commit 2730c49a3e80426167e6f9984b070883dc51d4b6.
+
+     Test number was not sequential.
+
+     Conflicts:
+
+         group
 
 

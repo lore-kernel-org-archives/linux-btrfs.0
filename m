@@ -1,39 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34601 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750778Ab3CSLvF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 07:51:05 -0400
-From: David Sterba <dsterba@suse.cz>
-To: chris.mason@fusionio.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: update kconfig title
-Date: Tue, 19 Mar 2013 12:50:59 +0100
-Message-Id: <1363693859-26936-1-git-send-email-dsterba@suse.cz>
+Received: from linux-libre.fsfla.org ([208.118.235.54]:56901 "EHLO
+	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754563Ab3CST00 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 15:26:26 -0400
+From: Alexandre Oliva <oliva@gnu.org>
+To: Chris Mason <clmason@fusionio.com>
+Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ceph-devel\@vger.kernel.org" <ceph-devel@vger.kernel.org>
+Subject: Re: corruption of active mmapped files in btrfs snapshots
+References: <orhak8fm0u.fsf@livre.home>
+	<20130318225245.25964.22219@localhost.localdomain>
+	<orzjy0dkz9.fsf@livre.home>
+	<20130319120940.29898.80124@localhost.localdomain>
+Date: Tue, 19 Mar 2013 16:26:03 -0300
+In-Reply-To: <20130319120940.29898.80124@localhost.localdomain> (Chris Mason's
+	message of "Tue, 19 Mar 2013 08:09:40 -0400")
+Message-ID: <ora9pzdwdw.fsf@livre.home>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The Kconfig title does not make much sense after the cleanup of
-CONFIG_EXPERIMENTAL option, align the wording with other filesystems.
+On Mar 19, 2013, Chris Mason <clmason@fusionio.com> wrote:
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
+> My guess is the truncate is creating a orphan item
 
-Based on current linus/master and should to to 3.9-rc
+Would it, even though the truncate is used to grow rather than to shrink
+the file?
 
- fs/btrfs/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> that is being processed inside the snapshot.
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 9a8622a..4f749c7 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -1,5 +1,5 @@
- config BTRFS_FS
--	tristate "Btrfs filesystem Unstable disk format"
-+	tristate "Btrfs filesystem support"
- 	select LIBCRC32C
- 	select ZLIB_INFLATE
- 	select ZLIB_DEFLATE
+This doesn't explain why the master database occasionally gets similarly
+corrupted, does it?
+
+> Is it possible to create a smaller leveldb unit test that we might use
+> to exercise all of this?
+
+I suppose we can even do away with leveldb altogether, using only a
+PosixMmapFile object, as created by PosixEnv::NewWritableFile (all of
+this is defined in leveldb's util/env_posix.cc), to exercise the
+creation and growth of multiple files, one at a time, taking btrfs
+snapshots at random in between the writes.  This ought to suffice.
+
+One thing I'm yet to check is whether ceph uses the sync leveldb
+WriteOption, to determine whether or not to call the file object's Sync
+member function in the test; this would bring fdatasync and msync calls
+into the picture, that would otherwise be left entirely out of the test.
+
 -- 
-1.8.1.4
-
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer

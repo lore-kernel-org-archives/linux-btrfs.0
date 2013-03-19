@@ -1,63 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3.sgi.com ([192.48.152.1]:42001 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1755134Ab3CSOPL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 10:15:11 -0400
-Message-ID: <5148730B.6020402@sgi.com>
-Date: Tue, 19 Mar 2013 09:15:39 -0500
-From: Rich Johnston <rjohnston@sgi.com>
-MIME-Version: 1.0
-To: Eric Sandeen <sandeen@sandeen.net>
-CC: Eric Sandeen <esandeen@redhat.com>, Dave Chinner <david@fromorbit.com>,
-        Eric Sandeen <sandeen@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "xfs@oss.sgi.com" <xfs@oss.sgi.com>
-Subject: Re: [PATCH 3/3 V4] xfstests: btrfs tests for basic informational
- commands
-References: <1363186623-1378-1-git-send-email-sandeen@redhat.com> <1363186623-1378-4-git-send-email-sandeen@redhat.com> <5140AB9D.2070001@redhat.com> <5140CB3F.5010704@redhat.com> <5140CD26.7050201@sandeen.net> <20130315101625.GE6369@dastard> <737235E6-72C8-45F5-A6F4-EEEFD094706E@redhat.com> <51432EC5.5090208@sgi.com> <5F46F0D0-1C1D-4F53-A2DE-9D39A85D078F@sandeen.net>
-In-Reply-To: <5F46F0D0-1C1D-4F53-A2DE-9D39A85D078F@sandeen.net>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Received: from xp-ob.rzone.de ([81.169.146.140]:64167 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932503Ab3CSQYl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 12:24:41 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, alex.btrfs@zadarastorage.com
+Subject: [PATCH] xfstests: add background noise to test 276 (btrfs backref resolving)
+Date: Tue, 19 Mar 2013 17:24:20 +0100
+Message-Id: <1363710260-10225-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The backref resolver test for btrfs was run on a static file system so far.
+Resolving backrefs on a busy file system is what happens in reality and that
+is what should be checked by this test.
 
-This has been reverted and recommitted as test 307.
+I added a parameter such that the script can easily be changed to the former
+behavior for development purposes.
 
-Thanks
---Rich
+Furthermore, this increases two constants which make the test simply cycle a
+few seconds longer, increasing the chance to hit on something suspicious in
+case we broke something.
 
-commit 4f092a2e681c57394a0055a0735b8208bf83ec5f
-Author: Eric Sandeen <sandeen@sandeen.net>
-Date:   Wed Mar 13 19:01:58 2013 +0000
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ 276 |   29 ++++++++++++++++++++++++++---
+ 1 files changed, 26 insertions(+), 3 deletions(-)
 
-     xfstests: btrfs tests for basic informational commands
-
-     Run basic btrfs information commands in various ways, performing
-     sanity tests of: filesystem show, label, sync, and device stats
-     (sync is included just because it's simple).  These are mostly
-     just smoke tests, although for example show by label & UUID
-     should verify that the correct fs was shown.
-
-     This also adds quite a few new filters to accommodate the output
-     of the new commands.
-
-     Cc: linux-btrfs@vger.kernel.org
-     Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-     Reviewed-by: Stefan Behrens <sbehrens@giantdisaster.de>
-     Signed-off-by: Rich Johnston <rjohnston@sgi.com>
-
-commit 609b6f18b87bc19c5251c45342e0678cfbf0618c
-Author: Rich Johnston <rjohnston@sgi.com>
-Date:   Tue Mar 19 08:13:12 2013 -0500
-
-     Revert "xfstests: btrfs tests for basic informational commands"
-
-     This reverts commit 2730c49a3e80426167e6f9984b070883dc51d4b6.
-
-     Test number was not sequential.
-
-     Conflicts:
-
-         group
-
+diff --git a/276 b/276
+index 65da464..40b30cf 100755
+--- a/276
++++ b/276
+@@ -33,9 +33,16 @@ echo "QA output created by $seq"
+ here=`pwd`
+ tmp=/tmp/$$
+ status=1
++noise_pid=0
+ 
+ _cleanup()
+ {
++	if [ $noise_pid -ne 0 ]; then
++		echo "background noise kill $noise_pid" >>$seq.full
++		kill $noise_pid
++		noise_pid=0
++		wait
++	fi
+ 	echo "*** unmount"
+ 	umount $SCRATCH_MNT 2>/dev/null
+ 	rm -f $tmp.*
+@@ -171,6 +178,7 @@ workout()
+ 	nfiles=$2
+ 	procs=$3
+ 	snap_name=$4
++	do_bg_noise=$5
+ 
+ 	umount $SCRATCH_DEV >/dev/null 2>&1
+ 	echo "*** mkfs -dsize=$fsz"    >>$seq.full
+@@ -179,7 +187,7 @@ workout()
+ 		|| _fail "size=$fsz mkfs failed"
+ 	run_check _scratch_mount
+ 	# -w ensures that the only ops are ones which cause write I/O
+-	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p $procs -n 1000 \
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p $procs -n 2000 \
+ 		$FSSTRESS_AVOID
+ 
+ 	run_check $BTRFS_UTIL_PROG subvol snap $SCRATCH_MNT \
+@@ -190,9 +198,10 @@ workout()
+ 
+ 	# make some noise but ensure we're not touching existing data
+ 	# extents.
+-	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -p $procs -n 2000 \
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -p $procs -n 4000 \
+ 		-z -f chown=3 -f link=1 -f mkdir=2 -f mknod=2 \
+ 		-f rename=2 -f setxattr=1 -f symlink=2
++
+ 	clean_dir="$SCRATCH_MNT/next"
+ 	mkdir $clean_dir
+ 	# now make more files to get a higher tree
+@@ -201,6 +210,18 @@ workout()
+ 	run_check umount $SCRATCH_DEV >/dev/null 2>&1
+ 	run_check _scratch_mount "-o atime"
+ 
++	if [ $do_bg_noise -ne 0 ]; then
++		# make background noise while backrefs are being walked
++		while /bin/true; do
++			echo background fsstress >>$seq.full
++			run_check $FSSTRESS_PROG -d $SCRATCH_MNT/bgnoise -n 999
++			echo background rm >>$seq.full
++			rm -rf $SCRATCH_MNT/bgnoise/
++		done &
++		noise_pid=`jobs -p %1`
++		echo "background noise by $noise_pid" >>$seq.full
++	fi
++
+ 	cnt=0
+ 	errcnt=0
+ 	dir="$SCRATCH_MNT/$snap_name/"
+@@ -230,6 +251,7 @@ workout()
+ 			break
+ 		fi
+ 	done
++
+ 	if [ $errcnt -gt 0 ]; then
+ 		_fail "test failed: $errcnt error(s)"
+ 	fi
+@@ -241,8 +263,9 @@ snap_name="snap1"
+ filesize=`expr 2000 \* 1024 \* 1024`
+ nfiles=4
+ numprocs=1
++do_bg_noise=1
+ 
+-workout $filesize $nfiles $numprocs $snap_name
++workout $filesize $nfiles $numprocs $snap_name $do_bg_noise
+ 
+ echo "*** done"
+ status=0
+-- 
+1.7.2.2
 

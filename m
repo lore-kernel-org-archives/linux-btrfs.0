@@ -1,493 +1,651 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:34213 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755072Ab3C1JDM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 05:03:12 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r2S92mvK025847
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 17:03:09 +0800
-Message-ID: <51540778.3080602@cn.fujitsu.com>
-Date: Thu, 28 Mar 2013 17:03:52 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from peace.netnation.com ([204.174.223.2]:56940 "EHLO
+	peace.netnation.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933625Ab3CSWlY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Mar 2013 18:41:24 -0400
+Received: from sim by peace.netnation.com with local (Exim 4.80)
+	(envelope-from <sim@netnation.com>)
+	id 1UI5Df-0001Wq-N1
+	for linux-btrfs@vger.kernel.org; Tue, 19 Mar 2013 15:41:23 -0700
+Date: Tue, 19 Mar 2013 15:41:23 -0700
+From: Simon Kirby <sim@hostway.ca>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] Btrfs: Include the device in most error printk()s
+Message-ID: <20130319224123.GA4779@hostway.ca>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2 3/4] Btrfs: remove unnecessary variant in btrfs_sector_sum,
- structure
-References: <5153FB3A.10507@cn.fujitsu.com>
-In-Reply-To: <5153FB3A.10507@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-bytenr in btrfs_sector_sum is unnecessary, because the extents that
-btrfs_sector_sum points to are continuous, we can find out the expected
-checksums by btrfs_ordered_sum's bytenr and the offset, so we can
-remove btrfs_sector_sum's bytenr.
+With more than one btrfs volume mounted, it can be very difficult to find
+out which volume is hitting an error. btrfs_error() will print this, but
+it is currently rigged as more of a fatal error handler, while many of
+the printk()s are currently for debugging and yet-unhandled cases.
 
-After removing bytenr, we don't use the while loop to get the checksums
-one by one. Now, we can get several checksum value at one time. By this
-way, the performance of write is improved by ~74% on my SSD (31MB/s -> 54MB/s)
+This patch just changes the functions where the device information is
+already available. Some cases remain where the root or fs_info is not
+passed to the function emitting the error.
 
-test command:
- # dd if=/dev/zero of=/mnt/btrfs/file0 bs=1M count=1024 oflag=sync
+This may introduce some confusion with volumes backed by multiple devices
+emitting errors referring to the primary device in the set instead of the
+one on which the error occurred.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Use btrfs_printk(fs_info, format, ...) rather than writing the device
+string every time, and introduce macro wrappers ala XFS for brevity.
+Since the function already cannot be used for continuations, print a
+newline as part of the btrfs_printk() message rather than at each caller.
+
+Signed-off-by: Simon Kirby <sim@hostway.ca>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
-Changelog v1 -> v2:
-- fix messy code in the changelog.
----
- fs/btrfs/file-item.c    | 144 ++++++++++++++++++------------------------------
- fs/btrfs/ordered-data.c |  21 +++----
- fs/btrfs/ordered-data.h |  25 ++-------
- fs/btrfs/relocation.c   |  10 ----
- fs/btrfs/scrub.c        |  16 ++----
- 5 files changed, 72 insertions(+), 144 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 3e2f080..9a447bc 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -34,8 +34,7 @@
+v2:
+- Ported to btrfs-next
+- unsplit strings to improve searchability
+- Change "auto deleting" messages to btrfs_debug
+- Fix a typo
+
+ fs/btrfs/ctree.h            |   21 +++++++++++--
+ fs/btrfs/extent-tree.c      |   67 +++++++++++++++++++++--------------------
+ fs/btrfs/free-space-cache.c |   43 +++++++++++++++------------
+ fs/btrfs/inode.c            |   69 ++++++++++++++++++++++---------------------
+ fs/btrfs/print-tree.c       |    9 +++---
+ fs/btrfs/super.c            |   12 ++++----
+ fs/btrfs/transaction.c      |    2 +-
+ fs/btrfs/volumes.c          |   18 +++++------
+ 8 files changed, 132 insertions(+), 109 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 14d8f8d..6e81860 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3645,14 +3645,31 @@ int btrfs_sync_fs(struct super_block *sb, int wait);
  
- #define MAX_ORDERED_SUM_BYTES(r) ((PAGE_SIZE - \
- 				   sizeof(struct btrfs_ordered_sum)) / \
--				   sizeof(struct btrfs_sector_sum) * \
--				   (r)->sectorsize - (r)->sectorsize)
-+				   sizeof(u32) * (r)->sectorsize)
+ #ifdef CONFIG_PRINTK
+ __printf(2, 3)
+-void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...);
++void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
+ #else
+ static inline __printf(2, 3)
+-void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
++void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ {
+ }
+ #endif
  
- int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
-@@ -311,7 +310,6 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
- 	struct btrfs_ordered_sum *sums;
--	struct btrfs_sector_sum *sector_sum;
- 	struct btrfs_csum_item *item;
- 	LIST_HEAD(tmplist);
- 	unsigned long offset;
-@@ -385,34 +383,28 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 				      struct btrfs_csum_item);
- 		while (start < csum_end) {
- 			size = min_t(size_t, csum_end - start,
--					MAX_ORDERED_SUM_BYTES(root));
-+				     MAX_ORDERED_SUM_BYTES(root));
- 			sums = kzalloc(btrfs_ordered_sum_size(root, size),
--					GFP_NOFS);
-+				       GFP_NOFS);
- 			if (!sums) {
- 				ret = -ENOMEM;
- 				goto fail;
++#define btrfs_emerg(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_EMERG fmt, ##args)
++#define btrfs_alert(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_ALERT fmt, ##args)
++#define btrfs_crit(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_CRIT fmt, ##args)
++#define btrfs_err(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_ERR fmt, ##args)
++#define btrfs_warn(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_WARNING fmt, ##args)
++#define btrfs_notice(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_NOTICE fmt, ##args)
++#define btrfs_info(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_INFO fmt, ##args)
++#define btrfs_debug(fs_info, fmt, args...) \
++	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
++
+ __printf(5, 6)
+ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 		     unsigned int line, int errno, const char *fmt, ...);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a08d0fe..a03379a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2398,9 +2398,7 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 				btrfs_free_delayed_extent_op(extent_op);
+ 
+ 				if (ret) {
+-					printk(KERN_DEBUG
+-					       "btrfs: run_delayed_extent_op "
+-					       "returned %d\n", ret);
++					btrfs_debug(fs_info, "run_delayed_extent_op returned %d", ret);
+ 					spin_lock(&delayed_refs->lock);
+ 					btrfs_delayed_ref_unlock(locked_ref);
+ 					return ret;
+@@ -2439,8 +2437,7 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 		if (ret) {
+ 			btrfs_delayed_ref_unlock(locked_ref);
+ 			btrfs_put_delayed_ref(ref);
+-			printk(KERN_DEBUG
+-			       "btrfs: run_one_delayed_ref returned %d\n", ret);
++			btrfs_debug(fs_info, "run_one_delayed_ref returned %d", ret);
+ 			spin_lock(&delayed_refs->lock);
+ 			return ret;
+ 		}
+@@ -2517,7 +2514,8 @@ int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
+ 	if (list_empty(&trans->qgroup_ref_list) !=
+ 	    !trans->delayed_ref_elem.seq) {
+ 		/* list without seq or seq without list */
+-		printk(KERN_ERR "btrfs: qgroup accounting update error, list is%s empty, seq is %llu\n",
++		btrfs_err(fs_info,
++			"qgroup accounting update error, list is%s empty, seq is %llu",
+ 			list_empty(&trans->qgroup_ref_list) ? "" : " not",
+ 			trans->delayed_ref_elem.seq);
+ 		BUG();
+@@ -3718,8 +3716,8 @@ static void check_system_chunk(struct btrfs_trans_handle *trans,
+ 
+ 	thresh = get_system_chunk_thresh(root, type);
+ 	if (left < thresh && btrfs_test_opt(root, ENOSPC_DEBUG)) {
+-		printk(KERN_INFO "left=%llu, need=%llu, flags=%llu\n",
+-		       left, thresh, type);
++		btrfs_info(root->fs_info, "left=%llu, need=%llu, flags=%llu",
++			left, thresh, type);
+ 		dump_space_info(info, 0, 0);
+ 	}
+ 
+@@ -5478,9 +5476,8 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
  			}
  
--			sector_sum = sums->sums;
- 			sums->bytenr = start;
--			sums->len = size;
-+			sums->len = (int)size;
- 
- 			offset = (start - key.offset) >>
- 				root->fs_info->sb->s_blocksize_bits;
- 			offset *= csum_size;
-+			size >>= root->fs_info->sb->s_blocksize_bits;
- 
--			while (size > 0) {
--				read_extent_buffer(path->nodes[0],
--						&sector_sum->sum,
--						((unsigned long)item) +
--						offset, csum_size);
--				sector_sum->bytenr = start;
--
--				size -= root->sectorsize;
--				start += root->sectorsize;
--				offset += csum_size;
--				sector_sum++;
--			}
-+			read_extent_buffer(path->nodes[0],
-+					   sums->sums,
-+					   ((unsigned long)item) + offset,
-+					   csum_size * size);
-+
-+			start += root->sectorsize * size;
- 			list_add_tail(&sums->list, &tmplist);
+ 			if (ret) {
+-				printk(KERN_ERR "umm, got %d back from search"
+-				       ", was looking for %llu\n", ret,
+-				       (unsigned long long)bytenr);
++				btrfs_err(info, "umm, got %d back from search, was looking for %llu",
++					ret, (unsigned long long)bytenr);
+ 				if (ret > 0)
+ 					btrfs_print_leaf(extent_root,
+ 							 path->nodes[0]);
+@@ -5494,13 +5491,13 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	} else if (ret == -ENOENT) {
+ 		btrfs_print_leaf(extent_root, path->nodes[0]);
+ 		WARN_ON(1);
+-		printk(KERN_ERR "btrfs unable to find ref byte nr %llu "
+-		       "parent %llu root %llu  owner %llu offset %llu\n",
+-		       (unsigned long long)bytenr,
+-		       (unsigned long long)parent,
+-		       (unsigned long long)root_objectid,
+-		       (unsigned long long)owner_objectid,
+-		       (unsigned long long)owner_offset);
++		btrfs_err(info,
++			"unable to find ref byte nr %llu parent %llu root %llu  owner %llu offset %llu",
++			(unsigned long long)bytenr,
++			(unsigned long long)parent,
++			(unsigned long long)root_objectid,
++			(unsigned long long)owner_objectid,
++			(unsigned long long)owner_offset);
+ 	} else {
+ 		btrfs_abort_transaction(trans, extent_root, ret);
+ 		goto out;
+@@ -5528,9 +5525,8 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_search_slot(trans, extent_root, &key, path,
+ 					-1, 1);
+ 		if (ret) {
+-			printk(KERN_ERR "umm, got %d back from search"
+-			       ", was looking for %llu\n", ret,
+-			       (unsigned long long)bytenr);
++			btrfs_err(info, "umm, got %d back from search, was looking for %llu",
++				ret, (unsigned long long)bytenr);
+ 			btrfs_print_leaf(extent_root, path->nodes[0]);
  		}
- 		path->slots[0]++;
-@@ -434,23 +426,20 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 		       struct bio *bio, u64 file_start, int contig)
- {
- 	struct btrfs_ordered_sum *sums;
--	struct btrfs_sector_sum *sector_sum;
- 	struct btrfs_ordered_extent *ordered;
- 	char *data;
- 	struct bio_vec *bvec = bio->bi_io_vec;
- 	int bio_index = 0;
-+	int index;
- 	unsigned long total_bytes = 0;
- 	unsigned long this_sum_bytes = 0;
- 	u64 offset;
--	u64 disk_bytenr;
+ 		if (ret < 0) {
+@@ -5899,7 +5895,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
  
- 	WARN_ON(bio->bi_vcnt <= 0);
- 	sums = kzalloc(btrfs_ordered_sum_size(root, bio->bi_size), GFP_NOFS);
- 	if (!sums)
- 		return -ENOMEM;
- 
--	sector_sum = sums->sums;
--	disk_bytenr = (u64)bio->bi_sector << 9;
- 	sums->len = bio->bi_size;
- 	INIT_LIST_HEAD(&sums->list);
- 
-@@ -461,7 +450,8 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 
- 	ordered = btrfs_lookup_ordered_extent(inode, offset);
- 	BUG_ON(!ordered); /* Logic error */
--	sums->bytenr = ordered->start;
-+	sums->bytenr = (u64)bio->bi_sector << 9;
-+	index = 0;
- 
- 	while (bio_index < bio->bi_vcnt) {
- 		if (!contig)
-@@ -480,29 +470,28 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 			sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
- 				       GFP_NOFS);
- 			BUG_ON(!sums); /* -ENOMEM */
--			sector_sum = sums->sums;
- 			sums->len = bytes_left;
- 			ordered = btrfs_lookup_ordered_extent(inode, offset);
- 			BUG_ON(!ordered); /* Logic error */
--			sums->bytenr = ordered->start;
-+			sums->bytenr = ((u64)bio->bi_sector << 9) +
-+				       total_bytes;
-+			index = 0;
- 		}
- 
- 		data = kmap_atomic(bvec->bv_page);
--		sector_sum->sum = ~(u32)0;
--		sector_sum->sum = btrfs_csum_data(root,
--						  data + bvec->bv_offset,
--						  sector_sum->sum,
--						  bvec->bv_len);
-+		sums->sums[index] = ~(u32)0;
-+		sums->sums[index] = btrfs_csum_data(root,
-+						    data + bvec->bv_offset,
-+						    sums->sums[index],
-+						    bvec->bv_len);
- 		kunmap_atomic(data);
--		btrfs_csum_final(sector_sum->sum,
--				 (char *)&sector_sum->sum);
--		sector_sum->bytenr = disk_bytenr;
-+		btrfs_csum_final(sums->sums[index],
-+				 (char *)(sums->sums + index));
- 
--		sector_sum++;
- 		bio_index++;
-+		index++;
- 		total_bytes += bvec->bv_len;
- 		this_sum_bytes += bvec->bv_len;
--		disk_bytenr += bvec->bv_len;
- 		offset += bvec->bv_len;
- 		bvec++;
+ 	space_info = __find_space_info(root->fs_info, data);
+ 	if (!space_info) {
+-		printk(KERN_ERR "No space info for %llu\n", data);
++		btrfs_err(root->fs_info, "No space info for %llu", data);
+ 		return -ENOSPC;
  	}
-@@ -691,63 +680,42 @@ out:
+ 
+@@ -6323,9 +6319,9 @@ again:
+ 			struct btrfs_space_info *sinfo;
+ 
+ 			sinfo = __find_space_info(root->fs_info, data);
+-			printk(KERN_ERR "btrfs allocation failed flags %llu, "
+-			       "wanted %llu\n", (unsigned long long)data,
+-			       (unsigned long long)num_bytes);
++			btrfs_err(root->fs_info, "allocation failed flags %llu, wanted %llu",
++				(unsigned long long)data,
++				(unsigned long long)num_bytes);
+ 			if (sinfo)
+ 				dump_space_info(sinfo, num_bytes, 1);
+ 		}
+@@ -6344,8 +6340,8 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
+ 
+ 	cache = btrfs_lookup_block_group(root->fs_info, start);
+ 	if (!cache) {
+-		printk(KERN_ERR "Unable to find block group for %llu\n",
+-		       (unsigned long long)start);
++		btrfs_err(root->fs_info, "Unable to find block group for %llu",
++			(unsigned long long)start);
+ 		return -ENOSPC;
+ 	}
+ 
+@@ -6440,9 +6436,9 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 
+ 	ret = update_block_group(root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+-		printk(KERN_ERR "btrfs update block group failed for %llu "
+-		       "%llu\n", (unsigned long long)ins->objectid,
+-		       (unsigned long long)ins->offset);
++		btrfs_err(fs_info, "update block group failed for %llu %llu",
++			(unsigned long long)ins->objectid,
++			(unsigned long long)ins->offset);
+ 		BUG();
+ 	}
+ 	return ret;
+@@ -6513,9 +6509,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 	ret = update_block_group(root, ins->objectid, root->leafsize, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+-		printk(KERN_ERR "btrfs update block group failed for %llu "
+-		       "%llu\n", (unsigned long long)ins->objectid,
+-		       (unsigned long long)ins->offset);
++		btrfs_err(fs_info, "update block group failed for %llu %llu",
++			(unsigned long long)ins->objectid,
++			(unsigned long long)ins->offset);
+ 		BUG();
+ 	}
+ 	return ret;
+@@ -7004,7 +7000,10 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
+ 
+-	BUG_ON(wc->refs[level - 1] == 0);
++	if (unlikely(wc->refs[level - 1] == 0)) {
++		btrfs_err(root->fs_info, "Missing references.");
++		BUG();
++	}
+ 	*lookup_info = 0;
+ 
+ 	if (wc->stage == DROP_REFERENCE) {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 23012ac..153884e 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -104,7 +104,8 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (!((BTRFS_I(inode)->flags & flags) == flags)) {
+-		printk(KERN_INFO "Old style space inode found, converting.\n");
++		btrfs_info(root->fs_info,
++			"Old style space inode found, converting.");
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM |
+ 			BTRFS_INODE_NODATACOW;
+ 		block_group->disk_cache_state = BTRFS_DC_CLEAR;
+@@ -669,10 +670,11 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	btrfs_release_path(path);
+ 
+ 	if (BTRFS_I(inode)->generation != generation) {
+-		printk(KERN_ERR "btrfs: free space inode generation (%llu) did"
+-		       " not match free space cache generation (%llu)\n",
+-		       (unsigned long long)BTRFS_I(inode)->generation,
+-		       (unsigned long long)generation);
++		btrfs_err(root->fs_info,
++			"free space inode generation (%llu) "
++			"did not match free space cache generation (%llu)",
++			(unsigned long long)BTRFS_I(inode)->generation,
++			(unsigned long long)generation);
+ 		return 0;
+ 	}
+ 
+@@ -721,8 +723,8 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 			ret = link_free_space(ctl, e);
+ 			spin_unlock(&ctl->tree_lock);
+ 			if (ret) {
+-				printk(KERN_ERR "Duplicate entries in "
+-				       "free space cache, dumping\n");
++				btrfs_err(root->fs_info,
++					"Duplicate entries in free space cache, dumping");
+ 				kmem_cache_free(btrfs_free_space_cachep, e);
+ 				goto free_cache;
+ 			}
+@@ -741,8 +743,8 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 			ctl->op->recalc_thresholds(ctl);
+ 			spin_unlock(&ctl->tree_lock);
+ 			if (ret) {
+-				printk(KERN_ERR "Duplicate entries in "
+-				       "free space cache, dumping\n");
++				btrfs_err(root->fs_info,
++					"Duplicate entries in free space cache, dumping");
+ 				kmem_cache_free(btrfs_free_space_cachep, e);
+ 				goto free_cache;
+ 			}
+@@ -833,8 +835,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 
+ 	if (!matched) {
+ 		__btrfs_remove_free_space_cache(ctl);
+-		printk(KERN_ERR "block group %llu has an wrong amount of free "
+-		       "space\n", block_group->key.objectid);
++		btrfs_err(fs_info, "block group %llu has wrong amount of free space",
++			block_group->key.objectid);
+ 		ret = -1;
+ 	}
+ out:
+@@ -845,8 +847,8 @@ out:
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ 
+-		printk(KERN_ERR "btrfs: failed to load free space cache "
+-		       "for block group %llu\n", block_group->key.objectid);
++		btrfs_err(fs_info, "failed to load free space cache for block group %llu",
++			block_group->key.objectid);
+ 	}
+ 
+ 	iput(inode);
+@@ -1104,8 +1106,9 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ #ifdef DEBUG
+-		printk(KERN_ERR "btrfs: failed to write free space cache "
+-		       "for block group %llu\n", block_group->key.objectid);
++		btrfs_err(root->fs_info,
++			"failed to write free space cache for block group %llu",
++			block_group->key.objectid);
+ #endif
+ 	}
+ 
+@@ -2931,8 +2934,9 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 	ret = __load_free_space_cache(root, inode, ctl, path, 0);
+ 
+ 	if (ret < 0)
+-		printk(KERN_ERR "btrfs: failed to load free ino cache for "
+-		       "root %llu\n", root->root_key.objectid);
++		btrfs_err(fs_info,
++			"failed to load free ino cache for root %llu",
++			root->root_key.objectid);
+ out_put:
+ 	iput(inode);
+ out:
+@@ -2959,8 +2963,9 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	if (ret) {
+ 		btrfs_delalloc_release_metadata(inode, inode->i_size);
+ #ifdef DEBUG
+-		printk(KERN_ERR "btrfs: failed to write free ino cache "
+-		       "for root %llu\n", root->root_key.objectid);
++		btrfs_err(root->fs_info,
++			"failed to write free ino cache for root %llu",
++			root->root_key.objectid);
+ #endif
+ 	}
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 315a515..1ad2cc1 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2777,6 +2777,8 @@ static int btrfs_readpage_end_io_hook(struct page *page, u64 start, u64 end,
+ 	int ret;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u32 csum = ~(u32)0;
++	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
++	                              DEFAULT_RATELIMIT_BURST);
+ 
+ 	if (PageChecked(page)) {
+ 		ClearPageChecked(page);
+@@ -2813,11 +2815,11 @@ good:
+ 	return 0;
+ 
+ zeroit:
+-	printk_ratelimited(KERN_INFO "btrfs csum failed ino %llu off %llu csum %u "
+-		       "private %llu\n",
+-		       (unsigned long long)btrfs_ino(page->mapping->host),
+-		       (unsigned long long)start, csum,
+-		       (unsigned long long)private);
++	if (__ratelimit(&_rs))
++		btrfs_info(root->fs_info, "csum failed ino %llu off %llu csum %u private %llu",
++			(unsigned long long)btrfs_ino(page->mapping->host),
++			(unsigned long long)start, csum,
++			(unsigned long long)private);
+ 	memset(kaddr + offset, 1, end - start + 1);
+ 	flush_dcache_page(page);
+ 	kunmap_atomic(kaddr);
+@@ -3098,8 +3100,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		 */
+ 
+ 		if (found_key.offset == last_objectid) {
+-			printk(KERN_ERR "btrfs: Error removing orphan entry, "
+-			       "stopping orphan cleanup\n");
++			btrfs_err(root->fs_info,
++				"Error removing orphan entry, stopping orphan cleanup");
+ 			ret = -EINVAL;
+ 			goto out;
+ 		}
+@@ -3156,8 +3158,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				ret = PTR_ERR(trans);
+ 				goto out;
+ 			}
+-			printk(KERN_ERR "auto deleting %Lu\n",
+-			       found_key.objectid);
++			btrfs_debug(root->fs_info, "auto deleting %Lu",
++				found_key.objectid);
+ 			ret = btrfs_del_orphan_item(trans, root,
+ 						    found_key.objectid);
+ 			BUG_ON(ret); /* -ENOMEM or corruption (JDM: Recheck) */
+@@ -3221,13 +3223,14 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 	}
+ 
+ 	if (nr_unlink)
+-		printk(KERN_INFO "btrfs: unlinked %d orphans\n", nr_unlink);
++		btrfs_info(root->fs_info, "unlinked %d orphans", nr_unlink);
+ 	if (nr_truncate)
+-		printk(KERN_INFO "btrfs: truncated %d orphans\n", nr_truncate);
++		btrfs_info(root->fs_info, "truncated %d orphans", nr_truncate);
+ 
+ out:
+ 	if (ret)
+-		printk(KERN_CRIT "btrfs: could not do orphan cleanup %d\n", ret);
++		btrfs_crit(root->fs_info,
++			"could not do orphan cleanup %d", ret);
+ 	btrfs_free_path(path);
  	return ret;
  }
- 
--static u64 btrfs_sector_sum_left(struct btrfs_ordered_sum *sums,
--				 struct btrfs_sector_sum *sector_sum,
--				 u64 total_bytes, u64 sectorsize)
--{
--	u64 tmp = sectorsize;
--	u64 next_sector = sector_sum->bytenr;
--	struct btrfs_sector_sum *next = sector_sum + 1;
--
--	while ((tmp + total_bytes) < sums->len) {
--		if (next_sector + sectorsize != next->bytenr)
--			break;
--		tmp += sectorsize;
--		next_sector = next->bytenr;
--		next++;
--	}
--	return tmp;
--}
--
- int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct btrfs_ordered_sum *sums)
- {
--	u64 bytenr;
--	int ret;
- 	struct btrfs_key file_key;
- 	struct btrfs_key found_key;
--	u64 next_offset;
--	u64 total_bytes = 0;
--	int found_next;
- 	struct btrfs_path *path;
- 	struct btrfs_csum_item *item;
- 	struct btrfs_csum_item *item_end;
- 	struct extent_buffer *leaf = NULL;
-+	u64 next_offset;
-+	u64 total_bytes = 0;
- 	u64 csum_offset;
--	struct btrfs_sector_sum *sector_sum;
-+	u64 bytenr;
- 	u32 nritems;
- 	u32 ins_size;
-+	int index = 0;
-+	int found_next;
-+	int ret;
- 	u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--
--	sector_sum = sums->sums;
- again:
- 	next_offset = (u64)-1;
- 	found_next = 0;
-+	bytenr = sums->bytenr + total_bytes;
- 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
--	file_key.offset = sector_sum->bytenr;
--	bytenr = sector_sum->bytenr;
-+	file_key.offset = bytenr;
- 	btrfs_set_key_type(&file_key, BTRFS_EXTENT_CSUM_KEY);
- 
--	item = btrfs_lookup_csum(trans, root, path, sector_sum->bytenr, 1);
-+	item = btrfs_lookup_csum(trans, root, path, bytenr, 1);
- 	if (!IS_ERR(item)) {
--		leaf = path->nodes[0];
--		ret = 0;
--		goto found;
-+		csum_offset = 0;
-+		goto csum;
+@@ -3575,9 +3578,10 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_del_inode_ref(trans, root, name, name_len, ino,
+ 				  dir_ino, &index);
+ 	if (ret) {
+-		printk(KERN_INFO "btrfs failed to delete reference to %.*s, "
+-		       "inode %llu parent %llu\n", name_len, name,
+-		       (unsigned long long)ino, (unsigned long long)dir_ino);
++		btrfs_info(root->fs_info,
++			"failed to delete reference to %.*s, inode %llu parent %llu",
++			name_len, name,
++			(unsigned long long)ino, (unsigned long long)dir_ino);
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		goto err;
  	}
- 	ret = PTR_ERR(item);
- 	if (ret != -EFBIG && ret != -ENOENT)
-@@ -826,8 +794,7 @@ again:
+@@ -4656,8 +4660,9 @@ void btrfs_evict_inode(struct inode *inode)
+ 			ret = btrfs_block_rsv_migrate(global_rsv, rsv, min_size);
  
- 		free_space = btrfs_leaf_free_space(root, leaf) -
- 					 sizeof(struct btrfs_item) - csum_size;
--		tmp = btrfs_sector_sum_left(sums, sector_sum, total_bytes,
--					    root->sectorsize);
-+		tmp = sums->len - total_bytes;
- 		tmp >>= root->fs_info->sb->s_blocksize_bits;
- 		WARN_ON(tmp < 1);
- 
-@@ -850,8 +817,7 @@ insert:
- 	if (found_next) {
- 		u64 tmp;
- 
--		tmp = btrfs_sector_sum_left(sums, sector_sum, total_bytes,
--					    root->sectorsize);
-+		tmp = sums->len - total_bytes;
- 		tmp >>= root->fs_info->sb->s_blocksize_bits;
- 		tmp = min(tmp, (next_offset - file_key.offset) >>
- 					 root->fs_info->sb->s_blocksize_bits);
-@@ -873,30 +839,26 @@ insert:
- 		goto fail_unlock;
+ 		if (ret) {
+-			printk(KERN_WARNING "Could not get space for a "
+-			       "delete, will truncate on mount %d\n", ret);
++			btrfs_warn(root->fs_info,
++				"Could not get space for a delete, will truncate on mount %d",
++				ret);
+ 			btrfs_orphan_del(NULL, inode);
+ 			btrfs_free_block_rsv(root, rsv);
+ 			goto no_delete;
+@@ -6245,11 +6250,11 @@ not_found_em:
+ insert:
+ 	btrfs_release_path(path);
+ 	if (em->start > start || extent_map_end(em) <= start) {
+-		printk(KERN_ERR "Btrfs: bad extent! em: [%llu %llu] passed "
+-		       "[%llu %llu]\n", (unsigned long long)em->start,
+-		       (unsigned long long)em->len,
+-		       (unsigned long long)start,
+-		       (unsigned long long)len);
++		btrfs_err(root->fs_info, "bad extent! em: [%llu %llu] passed [%llu %llu]",
++			(unsigned long long)em->start,
++			(unsigned long long)em->len,
++			(unsigned long long)start,
++			(unsigned long long)len);
+ 		err = -EIO;
+ 		goto out;
  	}
- csum:
-+	ret = 0;
- 	leaf = path->nodes[0];
-+
- 	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
--	ret = 0;
-+	item_end = (struct btrfs_csum_item *)((unsigned char *)item +
-+				      btrfs_item_size_nr(leaf, path->slots[0]));
- 	item = (struct btrfs_csum_item *)((unsigned char *)item +
- 					  csum_offset * csum_size);
--found:
--	item_end = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
--	item_end = (struct btrfs_csum_item *)((unsigned char *)item_end +
--				      btrfs_item_size_nr(leaf, path->slots[0]));
--next_sector:
- 
--	write_extent_buffer(leaf, &sector_sum->sum, (unsigned long)item, csum_size);
--
--	total_bytes += root->sectorsize;
--	sector_sum++;
--	if (total_bytes < sums->len) {
--		item = (struct btrfs_csum_item *)((char *)item +
--						  csum_size);
--		if (item < item_end && bytenr + PAGE_CACHE_SIZE ==
--		    sector_sum->bytenr) {
--			bytenr = sector_sum->bytenr;
--			goto next_sector;
--		}
--	}
-+	ins_size = (u32)(sums->len - total_bytes) >>
-+		   root->fs_info->sb->s_blocksize_bits;
-+	ins_size *= csum_size;
-+	ins_size = min_t(u32, (unsigned long)item_end - (unsigned long)item,
-+			      ins_size);
-+	write_extent_buffer(leaf, sums->sums + index, (unsigned long)item,
-+			    ins_size);
-+
-+	ins_size /= csum_size;
-+	total_bytes += ins_size * root->sectorsize;
-+	index += ins_size;
- 
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- 	if (total_bytes < sums->len) {
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 2b959b6..23bb43a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -987,7 +987,6 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 			   u32 *sum, int len)
- {
- 	struct btrfs_ordered_sum *ordered_sum;
--	struct btrfs_sector_sum *sector_sums;
- 	struct btrfs_ordered_extent *ordered;
- 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
- 	unsigned long num_sectors;
-@@ -1004,17 +1003,15 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 		if (disk_bytenr >= ordered_sum->bytenr &&
- 		    disk_bytenr < ordered_sum->bytenr + ordered_sum->len) {
- 			i = (disk_bytenr - ordered_sum->bytenr) / sectorsize;
--			sector_sums = ordered_sum->sums + i;
--			num_sectors = ordered_sum->len / sectorsize;
--			for (; i < num_sectors; i++) {
--				if (sector_sums[i].bytenr == disk_bytenr) {
--					sum[index] = sector_sums[i].sum;
--					index++;
--					if (index == len)
--						goto out;
--					disk_bytenr += sectorsize;
--				}
--			}
-+			num_sectors = ordered_sum->len / sectorsize - i;
-+			num_sectors = min_t(int, len - index, num_sectors);
-+			memcpy(sum + index, ordered_sum->sums + i,
-+			       num_sectors);
-+
-+			index += (int)num_sectors;
-+			if (index == len)
-+				goto out;
-+			disk_bytenr += num_sectors * sectorsize;
+@@ -6930,11 +6935,10 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+ 			flush_dcache_page(bvec->bv_page);
+ 			if (csum != private) {
+ failed:
+-				printk(KERN_ERR "btrfs csum failed ino %llu off"
+-				      " %llu csum %u private %u\n",
+-				      (unsigned long long)btrfs_ino(inode),
+-				      (unsigned long long)start,
+-				      csum, (unsigned)private);
++				btrfs_err(root->fs_info, "csum failed ino %llu off %llu csum %u private %u",
++					(unsigned long long)btrfs_ino(inode),
++					(unsigned long long)start,
++					csum, (unsigned)private);
+ 				err = -EIO;
+ 			}
  		}
+@@ -7926,8 +7930,8 @@ void btrfs_destroy_inode(struct inode *inode)
+ 
+ 	if (test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 		     &BTRFS_I(inode)->runtime_flags)) {
+-		printk(KERN_INFO "BTRFS: inode %llu still on the orphan list\n",
+-		       (unsigned long long)btrfs_ino(inode));
++		btrfs_info(root->fs_info, "inode %llu still on the orphan list",
++			(unsigned long long)btrfs_ino(inode));
+ 		atomic_dec(&root->orphan_inodes);
  	}
- out:
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 58b0e3b..888bcbb 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -26,18 +26,6 @@ struct btrfs_ordered_inode_tree {
- 	struct rb_node *last;
+ 
+@@ -7936,10 +7940,9 @@ void btrfs_destroy_inode(struct inode *inode)
+ 		if (!ordered)
+ 			break;
+ 		else {
+-			printk(KERN_ERR "btrfs found ordered "
+-			       "extent %llu %llu on inode cleanup\n",
+-			       (unsigned long long)ordered->file_offset,
+-			       (unsigned long long)ordered->len);
++			btrfs_err(root->fs_info, "found ordered extent %llu %llu on inode cleanup",
++				(unsigned long long)ordered->file_offset,
++				(unsigned long long)ordered->len);
+ 			btrfs_remove_ordered_extent(inode, ordered);
+ 			btrfs_put_ordered_extent(ordered);
+ 			btrfs_put_ordered_extent(ordered);
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index 920957e..dc0024f 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -176,7 +176,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 
+ 	nr = btrfs_header_nritems(l);
+ 
+-	printk(KERN_INFO "leaf %llu total ptrs %d free space %d\n",
++	btrfs_info(root->fs_info, "leaf %llu total ptrs %d free space %d",
+ 		(unsigned long long)btrfs_header_bytenr(l), nr,
+ 		btrfs_leaf_free_space(root, l));
+ 	for (i = 0 ; i < nr ; i++) {
+@@ -319,10 +319,9 @@ void btrfs_print_tree(struct btrfs_root *root, struct extent_buffer *c)
+ 		btrfs_print_leaf(root, c);
+ 		return;
+ 	}
+-	printk(KERN_INFO "node %llu level %d total ptrs %d free spc %u\n",
+-	       (unsigned long long)btrfs_header_bytenr(c),
+-	      level, nr,
+-	       (u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr);
++	btrfs_info(root->fs_info, "node %llu level %d total ptrs %d free spc %u",
++		(unsigned long long)btrfs_header_bytenr(c),
++		level, nr, (u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr);
+ 	for (i = 0; i < nr; i++) {
+ 		btrfs_node_key_to_cpu(c, &key, i);
+ 		printk(KERN_INFO "\tkey %d (%llu %u %llu) block %llu\n",
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 5f21797..4ba5a1d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -105,7 +105,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ 
+ 	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+ 		sb->s_flags |= MS_RDONLY;
+-		printk(KERN_INFO "btrfs is forced readonly\n");
++		btrfs_info(fs_info, "forced readonly");
+ 		/*
+ 		 * Note that a running device replace operation is not
+ 		 * canceled here although there is no way to update
+@@ -172,7 +172,7 @@ static const char * const logtypes[] = {
+ 	"debug",
  };
  
--/*
-- * these are used to collect checksums done just before bios submission.
-- * They are attached via a list into the ordered extent, and
-- * checksum items are inserted into the tree after all the blocks in
-- * the ordered extent are on disk
-- */
--struct btrfs_sector_sum {
--	/* bytenr on disk */
--	u64 bytenr;
--	u32 sum;
--};
--
- struct btrfs_ordered_sum {
- 	/* bytenr is the start of this extent on disk */
- 	u64 bytenr;
-@@ -45,10 +33,10 @@ struct btrfs_ordered_sum {
- 	/*
- 	 * this is the length in bytes covered by the sums array below.
- 	 */
--	unsigned long len;
-+	int len;
- 	struct list_head list;
--	/* last field is a variable length array of btrfs_sector_sums */
--	struct btrfs_sector_sum sums[];
-+	/* last field is a variable length array of csums */
-+	u32 sums[];
- };
- 
- /*
-@@ -149,11 +137,8 @@ struct btrfs_ordered_extent {
- static inline int btrfs_ordered_sum_size(struct btrfs_root *root,
- 					 unsigned long bytes)
+-void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
++void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
  {
--	unsigned long num_sectors = (bytes + root->sectorsize - 1) /
--		root->sectorsize;
--	num_sectors++;
--	return sizeof(struct btrfs_ordered_sum) +
--		num_sectors * sizeof(struct btrfs_sector_sum);
-+	int num_sectors = (int)DIV_ROUND_UP(bytes, root->sectorsize);
-+	return sizeof(struct btrfs_ordered_sum) + num_sectors * sizeof(u32);
+ 	struct super_block *sb = fs_info->sb;
+ 	char lvl[4];
+@@ -196,7 +196,7 @@ void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	vaf.fmt = fmt;
+ 	vaf.va = &args;
+ 
+-	printk("%sBTRFS %s (device %s): %pV", lvl, type, sb->s_id, &vaf);
++	printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
+ 
+ 	va_end(args);
  }
+@@ -255,9 +255,9 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 		const char *errstr;
  
- static inline void
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3ebe879..5928142 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4335,10 +4335,8 @@ out:
- int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- {
- 	struct btrfs_ordered_sum *sums;
--	struct btrfs_sector_sum *sector_sum;
- 	struct btrfs_ordered_extent *ordered;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	size_t offset;
- 	int ret;
- 	u64 disk_bytenr;
- 	LIST_HEAD(list);
-@@ -4356,16 +4354,8 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
- 		list_del_init(&sums->list);
- 
--		sector_sum = sums->sums;
- 		sums->bytenr = ordered->start;
- 
--		offset = 0;
--		while (offset < sums->len) {
--			sector_sum->bytenr += ordered->start - disk_bytenr;
--			sector_sum++;
--			offset += root->sectorsize;
--		}
--
- 		btrfs_add_ordered_sum(inode, ordered, sums);
+ 		errstr = btrfs_decode_error(errno);
+-		btrfs_printk(root->fs_info,
+-			     "%s:%d: Aborting unused transaction (%s)\n",
+-			     function, line, errstr);
++		btrfs_warn(root->fs_info,
++		           "%s:%d: Aborting unused transaction(%s).",
++		           function, line, errstr);
+ 		return;
  	}
- out:
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 53c3501..6c292b1 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2128,8 +2128,7 @@ static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u64 len,
- 			   u8 *csum)
- {
- 	struct btrfs_ordered_sum *sum = NULL;
--	int ret = 0;
--	unsigned long i;
-+	unsigned long index;
- 	unsigned long num_sectors;
- 
- 	while (!list_empty(&sctx->csum_list)) {
-@@ -2148,19 +2147,14 @@ static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u64 len,
- 	if (!sum)
- 		return 0;
- 
-+	index = (logical - sum->bytenr) / sctx->sectorsize;
- 	num_sectors = sum->len / sctx->sectorsize;
--	for (i = 0; i < num_sectors; ++i) {
--		if (sum->sums[i].bytenr == logical) {
--			memcpy(csum, &sum->sums[i].sum, sctx->csum_size);
--			ret = 1;
--			break;
--		}
--	}
--	if (ret && i == num_sectors - 1) {
-+	memcpy(csum, sum->sums + index, sctx->csum_size);
-+	if (index == num_sectors - 1) {
- 		list_del(&sum->list);
- 		kfree(sum);
+ 	ACCESS_ONCE(trans->transaction->aborted) = errno;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 74cf8b0..37f509f 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1865,7 +1865,7 @@ cleanup_transaction:
+ 		btrfs_qgroup_free(root, trans->qgroup_reserved);
+ 		trans->qgroup_reserved = 0;
  	}
--	return ret;
-+	return 1;
- }
+-	btrfs_printk(root->fs_info, "Skipping commit of aborted transaction\n");
++	btrfs_warn(root->fs_info, "Skipping commit of aborted transaction.");
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+ 	cleanup_transaction(trans, root, ret);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5989a92..3705b90 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4411,9 +4411,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	read_unlock(&em_tree->lock);
  
- /* scrub extent tries to collect up to 64 kB for each bio */
+ 	if (!em) {
+-		printk(KERN_CRIT "btrfs: unable to find logical %llu len %llu\n",
+-		       (unsigned long long)logical,
+-		       (unsigned long long)*length);
++		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
++			(unsigned long long)logical,
++			(unsigned long long)*length);
+ 		BUG();
+ 	}
+ 
+@@ -5297,10 +5297,10 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 	}
+ 
+ 	if (map_length < length) {
+-		printk(KERN_CRIT "btrfs: mapping failed logical %llu bio len %llu "
+-		       "len %llu\n", (unsigned long long)logical,
+-		       (unsigned long long)length,
+-		       (unsigned long long)map_length);
++		btrfs_crit(root->fs_info, "mapping failed logical %llu bio len %llu len %llu",
++			(unsigned long long)logical,
++			(unsigned long long)length,
++			(unsigned long long)map_length);
+ 		BUG();
+ 	}
+ 
+@@ -5572,8 +5572,8 @@ static int read_one_dev(struct btrfs_root *root,
+ 			return -EIO;
+ 
+ 		if (!device) {
+-			printk(KERN_WARNING "warning devid %llu missing\n",
+-			       (unsigned long long)devid);
++			btrfs_warn(root->fs_info, "devid %llu missing",
++				(unsigned long long)devid);
+ 			device = add_missing_dev(root, devid, dev_uuid);
+ 			if (!device)
+ 				return -ENOMEM;
 -- 
-1.8.0.1
-
+1.7.10.4

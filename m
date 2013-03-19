@@ -1,51 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:55874 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754098Ab3CSFU1 (ORCPT
+Received: from mail-pb0-f42.google.com ([209.85.160.42]:55153 "EHLO
+	mail-pb0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750773Ab3CSK5T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Mar 2013 01:20:27 -0400
-From: Alexandre Oliva <oliva@gnu.org>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel\@vger.kernel.org" <ceph-devel@vger.kernel.org>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-References: <orhak8fm0u.fsf@livre.home>
-	<20130318225245.25964.22219@localhost.localdomain>
-Date: Tue, 19 Mar 2013 02:20:10 -0300
-In-Reply-To: <20130318225245.25964.22219@localhost.localdomain> (Chris Mason's
-	message of "Mon, 18 Mar 2013 18:52:45 -0400")
-Message-ID: <orzjy0dkz9.fsf@livre.home>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	Tue, 19 Mar 2013 06:57:19 -0400
+Received: by mail-pb0-f42.google.com with SMTP id xb4so333092pbc.29
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2013 03:57:19 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: wangshilong1991@gmail.com, sensille@gmx.net
+Subject: [PATCH] Btrfs: fix missing qgroup reservation before fallocating
+Date: Tue, 19 Mar 2013 18:57:14 +0800
+Message-Id: <1363690634-1622-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mar 18, 2013, Chris Mason <chris.mason@fusionio.com> wrote:
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-> A few questions.  Does leveldb use O_DIRECT and mmap together?
+Steps to reproduce:
+	mkfs.btrfs <disk>
+	mount <disk> <mnt>
+	btrfs quota enable <mnt>
+	btrfs sub create <mnt>/subv
+	btrfs qgroup limit 10M <mnt>/subv
+	fallocate --length 20M <mnt>/subv/data
 
-No, it doesn't use O_DIRECT at all.  Its I/O interface is very
-simplified: it just opens each new file (database chunks limited to 2MB)
-with O_CREAT|O_RDWR|O_TRUNC, and then uses ftruncate, mmap, msync,
-munmap and fdatasync.  It doesn't seem to modify data once it's written;
-it only appends.  Reading data back from it uses a completely different
-class interface, using separate descriptors and using pread only.
+For the above example, fallocating will return successfully which
+is not expected, we try to fix it by doing qgroup reservation before
+fallocating.
 
-> (the source of a write being pages that are mmap'd from somewhere
-> else)
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/file.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-AFAICT the source of the memcpy()s that append to the file are
-malloc()ed memory.
-
-> That's the most likely place for this kind of problem.  Also, you
-> mention crc errors.  Are those reported by btrfs or are they application
-> level crcs.
-
-These are CRCs leveldb computes and writes out after each db block.  No
-btrfs CRC errors are reported in this process.
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index af1d060..bdf5cd7 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2141,6 +2141,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ {
+ 	struct inode *inode = file_inode(file);
+ 	struct extent_state *cached_state = NULL;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 cur_offset;
+ 	u64 last_byte;
+ 	u64 alloc_start;
+@@ -2168,6 +2169,11 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
+ 	if (ret)
+ 		return ret;
++	if (root->fs_info->quota_enabled) {
++		ret = btrfs_qgroup_reserve(root, alloc_end - alloc_start);
++		if (ret)
++			goto out_reserve_fail;
++	}
+ 
+ 	/*
+ 	 * wait for ordered IO before we have any locks.  We'll loop again
+@@ -2271,6 +2277,9 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			     &cached_state, GFP_NOFS);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
++	if (root->fs_info->quota_enabled)
++		btrfs_qgroup_free(root, alloc_end - alloc_start);
++out_reserve_fail:
+ 	/* Let go of our reservation. */
+ 	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
+ 	return ret;
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+1.7.7.6
+

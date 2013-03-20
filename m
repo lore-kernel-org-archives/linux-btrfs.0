@@ -1,43 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f177.google.com ([209.85.128.177]:49743 "EHLO
-	mail-ve0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750902Ab3CTULP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 16:11:15 -0400
-Received: by mail-ve0-f177.google.com with SMTP id m1so1782892ves.22
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 13:11:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CADCGFBVwqqLc40TWn6cX_2y4bZGKMbW4hRAt6CmLTWfsxknPzg@mail.gmail.com>
-References: <CADCGFBVwqqLc40TWn6cX_2y4bZGKMbW4hRAt6CmLTWfsxknPzg@mail.gmail.com>
-Date: Wed, 20 Mar 2013 13:11:14 -0700
-Message-ID: <CAPkEcwhzp8btVw0_XJ=KuNQvLsqX-gGXvD8yT=d6tVPjzz7YZg@mail.gmail.com>
-Subject: Re: +1 for xz
-From: james northrup <northrup.james@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34246 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751054Ab3CTX35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Mar 2013 19:29:57 -0400
+Date: Thu, 21 Mar 2013 00:29:56 +0100
+From: David Sterba <dsterba@suse.cz>
 To: Roger Pack <rogerpack2005@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Fwd: +1 for xz
+Message-ID: <20130320232956.GD31559@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CADCGFBVwqqLc40TWn6cX_2y4bZGKMbW4hRAt6CmLTWfsxknPzg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CADCGFBVwqqLc40TWn6cX_2y4bZGKMbW4hRAt6CmLTWfsxknPzg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-received here.
-
-+1
-
-jffs2 has a lzma kernel compressor patch for 2.6 based on the lzma
-reference (7z?) source and lzo kernel compressor
-
-On Wed, Mar 20, 2013 at 12:27 PM, Roger Pack <rogerpack2005@gmail.com> wrote:
->
-> Looks like this message was initially viewed as spam because of an
-> HTML subpart...trying it again...
->
-> ---------- Forwarded message ----------
-> From: Roger Pack <rogerpack2005@gmail.com>
-> Date: Wed, Mar 20, 2013 at 1:25 PM
-> Subject: +1 for xz
-> To: linux-btrfs@vger.kernel.org
->
->
+On Wed, Mar 20, 2013 at 01:27:11PM -0600, Roger Pack wrote:
 > I see from https://btrfs.wiki.kernel.org/index.php/Compression#How_do_I_enable_compression.3F
 > "LZ4" support is currently being added.  Here's my +1 for also adding
 > something with "high" compression like xz or lzma, since they
@@ -45,9 +25,15 @@ On Wed, Mar 20, 2013 at 12:27 PM, Roger Pack <rogerpack2005@gmail.com> wrote:
 > users may want, like myself on a VPS with limited disk space, or users
 > who have a backup disk they want to sync only every so often, not read
 > from often, etc.)
-> Thanks and cheers!
-> -roger-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Somebody asked on irc about adding it some time ago, I'm half way
+through with lzma support. The compression infrastructure needs a few
+updates first, the on-disk format of the compressed chunks has to be
+extended to hold large contiguous chunks. (Other compressors would
+benefit from the changes, so it's not just because of lzma.)
+
+First tests showed that it was really slow for normal use, but for
+backup purposes it might be not that bad.
+
+
+david

@@ -1,50 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:34437 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751878Ab3CTUIy convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 16:08:54 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: Integration branch of btrfs-progs 2013-03-20
-Date: Wed, 20 Mar 2013 21:08:49 +0100
-References: <20130318173326.GO7229@twin.jikos.cz> <20130320174118.GC31559@twin.jikos.cz> (sfid-20130320_195608_306019_6672DED3)
-In-Reply-To: <20130320174118.GC31559@twin.jikos.cz>
-Cc: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201303202108.50024.Martin@lichtvoll.de>
+Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:37970 "EHLO
+	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756069Ab3CTURo convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Mar 2013 16:17:44 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: How to recover uncorrectable errors ?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130321012414.3b232660@natsu>
+Date: Wed, 20 Mar 2013 14:17:41 -0600
+Cc: =?iso-8859-1?Q?Fr=E9d=E9ric_COIFFIER?= <frederic.coiffier@free.fr>,
+        Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
+Message-Id: <2A1BFD02-9D60-4EBE-957A-C10AF9928DA7@colorremedies.com>
+References: <6033676.gK0GbPgrpE@athlonxp> <201303161916.55185.Martin@lichtvoll.de> <3160822.Hx5D6eTo7L@athlonxp> <4B672F76-FAF9-4198-988D-440B6326A275@colorremedies.com> <20130321012414.3b232660@natsu>
+To: Roman Mamedov <rm@romanrm.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 20. März 2013 schrieb David Sterba:
-> Hi,
+
+On Mar 20, 2013, at 1:24 PM, Roman Mamedov <rm@romanrm.ru> wrote:
+
+> On Wed, 20 Mar 2013 12:19:18 -0600
+> Chris Murphy <lists@colorremedies.com> wrote:
 > 
-> finally removing the obsolete utilities, adding the fragmentation
-> visualisation tool in exchange, setting of io priority for scrub, few
-> more fixes and updates to the build system.
+>>> 195 Hardware_ECC_Recovered  0x001a   057   055   000    Old_age   Always       -       63508940
+> 
+>> With such high ECC recovered events, I suspect SDC. 
+> 
+> If it's a Seagate drive, this is absolutely normal.
+> All Seagate drives have a high value in SMART Hardware_ECC_Recovered.
 
-The fragmentation visuation tool works nicely. Tried it on about 200 GiB
-/home, almost no fragmentation, some 3-4%, but mostly 0.something%,
-and on about 20 GiB root, were some chunks were fragmented upto 30-40%.
+http://forums.seagate.com/t5/Barracuda-XT-Barracuda-Barracuda/Seagate-s-Seek-Error-Rate-Raw-Read-Error-Rate-and-Hardware-ECC/td-p/122382
 
-What kind of fragmentation does the tool count? From what I understand
-by looking at the source, extent fragmentation?
+http://www.silentpcreview.com/forums/viewtopic.php?t=57212
 
- 82 static void
- 83 print_bg(FILE *html, char *name, u64 start, u64 len, u64 used, u64 flags,
- 84 »······· u64 areas)
- 85 {
- 86 »·······double frag = (double)areas / (len / 4096) * 2;
- 87                                                                                                                                                
- 88 »·······fprintf(html, "<p>%s chunk starts at %lld, size is %s, %.2f%% used, "
- 89 »·······»·······      "%.2f%% fragmented</p>\n", chunk_type(flags), start,
- 90 »·······»·······      pretty_sizes(len), 100.0 * used / len, 100.0 * frag);
- 91 »·······fprintf(html, "<img src=\"%s\" border=\"1\" />\n", name);
- 92 }
+If I read this correctly, the read error rate and hardware ECC recovered are sector counts, so they should be the same.
 
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Nevertheless, the file system isn't happy about checksums. It's not that it isn't finding the checksum data, it's finding errors with it.
+
+Chris Murphy

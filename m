@@ -1,40 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59525 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:32998 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758060Ab3CTJrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 05:47:39 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UIFcg-0000Yq-Ta
-	for linux-btrfs@vger.kernel.org; Wed, 20 Mar 2013 10:47:54 +0100
-Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 10:47:54 +0100
-Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 10:47:54 +0100
-To: linux-btrfs@vger.kernel.org
-From: Gabriel de Perthuis <g2p.code@gmail.com>
-Subject: Re: Problem with building instructions for btrfs-tools in
- =?us-ascii?q?https=3A=2F=2Fbtrfs=2Ewiki=2Ekernel=2Eorg=2Findex=2Eph?=
- =?us-ascii?q?p=2FBtrfs=5Fsource=5Frepositories?=
-Date: Wed, 20 Mar 2013 09:47:14 +0000 (UTC)
-Message-ID: <kic0j2$kbd$1@ger.gmane.org>
-References: <51497CE2.308@statystyka.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1757960Ab3CTMlm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Mar 2013 08:41:42 -0400
+Date: Wed, 20 Mar 2013 13:41:40 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "sensille@gmx.net" <sensille@gmx.net>,
+        "sbehrens@giantdisaster.de" <sbehrens@giantdisaster.de>
+Subject: Re: Scrub and raid10 (3.9-rc2+) transid verify failed
+Message-ID: <20130320124140.GT7229@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130312170312.GO7229@twin.jikos.cz>
+ <20130312180124.GB12725@shiny.masoncoding.com>
+ <20130315120708.GE7229@twin.jikos.cz>
+ <20130315131330.GE1980@localhost.localdomain>
+ <20130315191241.GG1980@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130315191241.GG1980@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> There is a missing dependency: liblzo2-dev
+On Fri, Mar 15, 2013 at 03:12:41PM -0400, Josef Bacik wrote:
+> I can't reproduce with btrfs-next or btrfs-next ontop of 3.9-rc2.  Can you just
+> patch out the skinny metadata patch and see if the problem still happens?
 
-> I suggest to make amendment to the wiki and add a "liblzo2-dev" to the 
-> apt-get line for Ubuntu/Debian.
+Quick test does not reproduce the problems with 3.9-rc3 + current next,
+scrub and fsck are clean. I take it as an OK, but will run the test
+during the 3.9 cycle anyway.
 
-Added. Other distros may need some additions too.
-
-Anyone can edit the wiki, as the spambots will attest; a ConfirmEdit 
-captcha at signup would be nice.
-
-
+david

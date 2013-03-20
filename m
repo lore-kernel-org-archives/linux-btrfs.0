@@ -1,69 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f49.google.com ([74.125.83.49]:46573 "EHLO
-	mail-ee0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754808Ab3CTJJ7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 05:09:59 -0400
-Received: by mail-ee0-f49.google.com with SMTP id d41so672713eek.22
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 02:09:57 -0700 (PDT)
-Message-ID: <51497CE2.308@statystyka.net>
-Date: Wed, 20 Mar 2013 10:09:54 +0100
-From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:59525 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758060Ab3CTJrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Mar 2013 05:47:39 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UIFcg-0000Yq-Ta
+	for linux-btrfs@vger.kernel.org; Wed, 20 Mar 2013 10:47:54 +0100
+Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 10:47:54 +0100
+Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 10:47:54 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: Problem with building instructions for btrfs-tools in https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Gabriel de Perthuis <g2p.code@gmail.com>
+Subject: Re: Problem with building instructions for btrfs-tools in
+ =?us-ascii?q?https=3A=2F=2Fbtrfs=2Ewiki=2Ekernel=2Eorg=2Findex=2Eph?=
+ =?us-ascii?q?p=2FBtrfs=5Fsource=5Frepositories?=
+Date: Wed, 20 Mar 2013 09:47:14 +0000 (UTC)
+Message-ID: <kic0j2$kbd$1@ger.gmane.org>
+References: <51497CE2.308@statystyka.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a missing dependency: liblzo2-dev
+> There is a missing dependency: liblzo2-dev
 
-Without it, the make fails with:
+> I suggest to make amendment to the wiki and add a "liblzo2-dev" to the 
+> apt-get line for Ubuntu/Debian.
 
-~/tmp$ git clone 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+Added. Other distros may need some additions too.
 
-~/tmp$ cd btrfs-progs
+Anyone can edit the wiki, as the spambots will attest; a ConfirmEdit 
+captcha at signup would be nice.
 
-~/tmp/btrfs-progs$ sudo apt-get install uuid-dev libattr1-dev zlib 
-1g-dev libacl1-dev e2fslibs-dev libblkid-dev
-
-~/tmp/btrfs-progs$ make
-     [CC]     ctree.o
-     [CC]     disk-io.o
-     [CC]     radix-tree.o
-     [CC]     extent-tree.o
-     [CC]     print-tree.o
-     [CC]     root-tree.o
-     [CC]     dir-item.o
-     [CC]     file-item.o
-     [CC]     inode-item.o
-     [CC]     inode-map.o
-     [CC]     extent-cache.o
-     [CC]     extent_io.o
-     [CC]     volumes.o
-     [CC]     utils.o
-     [CC]     btrfs-list.o
-     [CC]     repair.o
-     [CC]     send-stream.o
-     [CC]     send-utils.o
-     [CC]     qgroup.o
-     [CC]     raid6.o
-     [CC]     rbtree.o
-     [CC]     crc32c.o
-     [LN]     libbtrfs.so.0
-     [LN]     libbtrfs.so
-     [LD]     libbtrfs.so.0.1
-/usr/bin/ld: cannot find -llzo2
-collect2: error: ld returned 1 exit status
-make: *** [libbtrfs.so.0.1] Error 1
-
-I suggest to make amendment to the wiki and add a "liblzo2-dev" to the 
-apt-get line for Ubuntu/Debian.
-
--- 
-
-Adam Ryczkowski
-+48505919892 <callto:+48505919892>
-Skype:sisteczko <skype:sisteczko>
 

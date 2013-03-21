@@ -1,85 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e39.co.us.ibm.com ([32.97.110.160]:45219 "EHLO
-	e39.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757564Ab3CUIer (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Mar 2013 04:34:47 -0400
-Received: from /spool/local
-	by e39.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Thu, 21 Mar 2013 02:34:46 -0600
-From: zwu.kernel@gmail.com
+Received: from xp-ob.rzone.de ([81.169.146.136]:25290 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933903Ab3CUQCv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Mar 2013 12:02:51 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, sensille@gmx.net,
-        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [PATCH] btrfs-progs: add missing qgroup synopsis in btrfs
-Date: Thu, 21 Mar 2013 16:33:37 +0800
-Message-Id: <1363854817-22416-1-git-send-email-zwu.kernel@gmail.com>
+Cc: jbacik@fusionio.com
+Subject: [PATCH] Btrfs-progs: add btrfs-crc tool
+Date: Thu, 21 Mar 2013 17:02:40 +0100
+Message-Id: <1363881760-22108-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+This tool can be used to compute btrfs' style crc32c checksums for filenames
+as done by the kernel. Additionally, there is -c mode to do a brute force
+search for file names with a given checksum.
 
-Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- man/btrfs.8.in | 37 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
+ Makefile    |    4 ++
+ btrfs-crc.c |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 93 insertions(+), 0 deletions(-)
+ create mode 100644 btrfs-crc.c
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 94f4ffe..54de60e 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -60,6 +60,18 @@ btrfs \- control a btrfs filesystem
- \fBbtrfs\fP \fBinspect-internal logical-resolve\fP
- [-Pv] [-s size] \fI<logical>\fP \fI<path>\fP
- .PP
-+\fBbtrfs\fP \fBqgroup assign\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
-+.PP
-+\fBbtrfs\fP \fBqgroup remove\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
-+.PP
-+\fBbtrfs\fP \fBqgroup create\fP \fI<qgroupid>\fP \fI<path>\fP
-+.PP
-+\fBbtrfs\fP \fBqgroup destroy\fP \fI<qgroupid>\fP \fI<path>\fP
-+.PP
-+\fBbtrfs\fP \fBqgroup show\fP \fI<path>\fP
-+.PP
-+\fBbtrfs\fP \fBqgroup limit\fP [options] \fI<size>\fP|\fBnone\fP [\fI<qgroupid>\fP] \fI<path>\fP
-+.PP
- \fBbtrfs\fP \fBhelp|\-\-help \fP\fI\fP
- .PP
- \fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
-@@ -434,6 +446,31 @@ verbose mode. print count of returned paths and all ioctl() return values
- set inode container's size. This is used to increase inode container's size in case it is
- not enough to read all the resolved results. The max value one can set is 64k.
- .RE
-+.TP
-+
-+\fBbtrfs qgroup assign\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
-+Enable subvolume qgroup support for a filesystem.
-+.TP
-+
-+\fBbtrfs qgroup remove\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
-+Remove a subvol from a quota group.
-+.TP
-+
-+\fBbtrfs qgroup create\fP \fI<qgroupid>\fP \fI<path>\fP
-+Create a subvolume quota group.
-+.TP
-+
-+\fBbtrfs qgroup destroy\fP \fI<qgroupid>\fP \fI<path>\fP
-+Destroy a subvolume quota group.
-+.TP
-+
-+\fBbtrfs qgroup show\fP \fI<path>\fP
-+Show all subvolume quota groups.
-+.TP
-+
-+\fBbtrfs\fP \fBqgroup limit\fP [options] \fI<size>\fP|\fBnone\fP [\fI<qgroupid>\fP] \fI<path>\fP
-+Limit the size of a subvolume quota group.
-+.RE
+diff --git a/Makefile b/Makefile
+index 9c195b3..145e2ea 100644
+--- a/Makefile
++++ b/Makefile
+@@ -184,6 +184,10 @@ btrfs-image: $(objects) $(libs) btrfs-image.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o btrfs-image $(objects) btrfs-image.o -lpthread -lz $(LDFLAGS) $(LIBS)
  
- .SH EXIT STATUS
- \fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
++btrfs-crc: btrfs-crc.o $(libs)
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(CFLAGS) -o btrfs-crc btrfs-crc.o $(LDFLAGS) $(LIBS)
++
+ dir-test: $(objects) $(libs) dir-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o dir-test $(objects) dir-test.o $(LDFLAGS) $(LIBS)
+diff --git a/btrfs-crc.c b/btrfs-crc.c
+new file mode 100644
+index 0000000..6e21a0e
+--- /dev/null
++++ b/btrfs-crc.c
+@@ -0,0 +1,89 @@
++/*
++ * Copyright (C) 2013 STRATO.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include "crc32c.h"
++
++void usage(void)
++{
++	printf("usage: btrfs-crc filename\n");
++	printf("    print out the btrfs crc for \"filename\"\n");
++	printf("usage: btrfs-crc filename -c crc [-s seed] [-l length]\n");
++	printf("    brute force search for file names with the given crc\n");
++	printf("      -s seed    the random seed (default: random)\n");
++	printf("      -l length  the length of the file names (default: 10)\n");
++	exit(1);
++}
++
++int main(int argc, char **argv)
++{
++	char c;
++	unsigned long checksum = 0;
++	char *str;
++	char *buf;
++	int length = 10;
++	int seed = getpid() ^ getppid();
++	int loop = 0;
++	int i;
++
++	while ((c = getopt(argc, argv, "l:c:s:h")) != -1) {
++		switch (c) {
++		case 'l':
++			length = atol(optarg);
++			break;
++		case 'c':
++			checksum = atol(optarg);
++			loop = 1;
++			break;
++		case 's':
++			seed = atol(optarg);
++			break;
++		case 'h':
++			usage();
++		case '?':
++			return 255;
++		}
++	}
++
++	str = argv[optind];
++
++	if (!loop) {
++		if (optind >= argc) {
++			fprintf(stderr, "not enough arguments\n");
++			return 255;
++		}
++		printf("%12u - %s\n", crc32c(~1, str, strlen(str)), str);
++		return 0;
++	}
++
++	buf = malloc(length);
++	if (!buf)
++		return -ENOMEM;
++	srand(seed);
++
++	while (1) {
++		for (i = 0; i < length; i++)
++			buf[i] = rand() % 94 + 33;
++		if (crc32c(~1, buf, length) == checksum)
++			printf("%12lu - %.*s\n", checksum, length, buf);
++	}
++
++	return 0;
++}
 -- 
-1.7.11.7
+1.7.1
 

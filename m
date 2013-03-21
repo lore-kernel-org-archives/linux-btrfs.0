@@ -1,69 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54588 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751563Ab3CUVmV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Mar 2013 17:42:21 -0400
-Message-ID: <514B7EBA.7000205@redhat.com>
-Date: Thu, 21 Mar 2013 16:42:18 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Joseph Moore <japlha@gmail.com>
-CC: linux-btrfs@vger.kernel.org
+Received: from frost.carfax.org.uk ([85.119.82.111]:55392 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752581Ab3CUVny (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Mar 2013 17:43:54 -0400
+Date: Thu, 21 Mar 2013 21:43:53 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Joseph Moore <japlha@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: Problems with compiling btrfs
+Message-ID: <20130321214353.GK19395@carfax.org.uk>
 References: <CAGR7nwePCTCF0nz7rNqqS9x=UqLugtPL2wp7rA1SgU81R0mDcA@mail.gmail.com>
-In-Reply-To: <CAGR7nwePCTCF0nz7rNqqS9x=UqLugtPL2wp7rA1SgU81R0mDcA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+ <20130321214213.GJ19395@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="Tu8ztk+XgTAiG9Id"
+In-Reply-To: <20130321214213.GJ19395@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/21/13 4:11 PM, Joseph Moore wrote:
-> I'm trying to compile the btrfs source code but I'm getting an error.
-> Any suggestions?
 
-Older libblkid doesn't have that function.
+--Tu8ztk+XgTAiG9Id
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-This is where a configure script would really help :(
+On Thu, Mar 21, 2013 at 09:42:13PM +0000, Hugo Mills wrote:
+> On Thu, Mar 21, 2013 at 03:11:56PM -0600, Joseph Moore wrote:
+> > I'm trying to compile the btrfs source code but I'm getting an error.
+> > Any suggestions?
+[snip]
+>    You need libblkid-devel (or whatever your distribution calls the
+> development package for libblkid). You may also want to check out the
+> list of required build packages on the wiki at [1], just in case
+> you're missing any others.
 
-Locally I currently am keeping a patch around to just remove it;
-you could comment out the call to is_ssd() and put a giant #if 0
-around the function itself, for now, to get things going.
+   ... or what Eric said. Believe him for this bit.
 
-I keep threatening to add a -DHAVE_BLAHBLAH kind of switch
-to the Makefile but that seems a little ick.  Better than
-nothing I guess.
+>    Hugo.
 
--Eric
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Unix: For controlling fungal diseases in crops. ---         
 
-> Thanks
-> Joe
-> 
-> [root@ol6 btrfs-progs]# uname -a
-> Linux ol6.localdomain 2.6.39-400.17.2.el6uek.x86_64 #1 SMP Wed Mar 13
-> 12:31:05 PDT 2013 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> [root@ol6 src]# git clone
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-> Initialized empty Git repository in /usr/local/src/btrfs-progs/.git/
-> remote: Counting objects: 3539, done.
-> remote: Compressing objects: 100% (1289/1289), done.
-> remote: Total 3539 (delta 2633), reused 3015 (delta 2246)
-> Receiving objects: 100% (3539/3539), 1.02 MiB | 613 KiB/s, done.
-> Resolving deltas: 100% (2633/2633), done.
-> 
-> [root@ol6 src]# cd btrfs-progs
-> [root@ol6 btrfs-progs]# pwd
-> /usr/local/src/btrfs-progs
-> 
-> [root@ol6 btrfs-progs]# make
->     [LD]     mkfs.btrfs
-> mkfs.o: In function `is_ssd':
-> /usr/local/src/btrfs-progs/mkfs.c:1234: undefined reference to
-> `blkid_probe_get_wholedisk_devno'
-> collect2: ld returned 1 exit status
-> make: *** [mkfs.btrfs] Error 1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--Tu8ztk+XgTAiG9Id
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUUt/GL9z9OVl50rAAQIqIA//S22AmCmvDXBDtI79aLU0KJLHYJDAzW1T
+Z834btCe0R4ZcMC2TPbCRk6t+TpHGs2reaLeTZki739Cfp1XlWVEcppGLvFeATEU
+qj88CYOWi78fLYc+j0F0uZbqVyeI3LtQCD/OewN+u6k9rG4c6dOZ3P+tNtsSgs7j
+7daslxriIuMySfwRtiY8Fpm0BRbbFqylkckHiMAbNMTISjYDzC92zd6mljSJG4rR
+C4+LlJfgIWC7T5Ka2NkRo0SUDZtIJRBWcQ5iDbf/4Vmew+Xcx4YEFTLLZ4Ucs76C
+F3BHz8HHcSEj1puTCU8bzLE8fidrB5s4a5JP6nRi8nahlM/XxpCVnZeRuVKnkvQB
+On+GUmMk6Jxy/n3U+dgeNIxnASMHyzOf8jhD7jgbnW2yqxGXxd0NqhG3mIY/0gcw
+7ERxeEbJj3s06R4UkekqUHsXR/rH07Ws4oqbz5XXOlY6TlxIAqxNNlsLSPEVe4qM
+30mtrYT4mCKU0hA6cNzGaBxHpu23gBjieoNU/SCxImRjtzwYP0UtCU1r16fsUlS1
+jt8BQDSVhnk9Y6FHaPlDpUccUXq13F3jKJI0m5p/AlxvctMBFBqdg/Jdv+OWqT6i
+sbAGh+m7M3k9tAOCOCXCfnMgTseCcNhR8DkVRA2r+Wj4lKAgu4vJ+Gbx91TX8TB5
+wcBJ/4AwioA=
+=L+l3
+-----END PGP SIGNATURE-----
+
+--Tu8ztk+XgTAiG9Id--

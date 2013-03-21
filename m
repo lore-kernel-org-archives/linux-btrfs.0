@@ -1,35 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46897 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:17011 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751419Ab3CORwk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Mar 2013 13:52:40 -0400
-Date: Fri, 15 Mar 2013 18:52:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org, Hugo Mills <h.r.mills@reading.ac.uk>
-Subject: Re: [PATCH] btrfs-progs: add Makefile rule for static build of
- btrfs-find-root
-Message-ID: <20130315175236.GI7229@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1363103051-10207-1-git-send-email-hugo@carfax.org.uk>
- <20130312175325.GR7229@twin.jikos.cz>
+	id S1753937Ab3CUJI0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Mar 2013 05:08:26 -0400
+Message-ID: <514ACE06.7050001@redhat.com>
+Date: Thu, 21 Mar 2013 04:08:22 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130312175325.GR7229@twin.jikos.cz>
+To: zwu.kernel@gmail.com
+CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: Re: [PATCH] btrfs-progs: fix one bracket issue in mkfs.btrfs manpage
+References: <1363850237-21276-1-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1363850237-21276-1-git-send-email-zwu.kernel@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 12, 2013 at 06:53:25PM +0100, David Sterba wrote:
-> On Tue, Mar 12, 2013 at 03:44:11PM +0000, Hugo Mills wrote:
-> > +btrfs-find-root.static: $(static_objects) $(libs) find-root.static.o
+On 3/21/13 2:17 AM, zwu.kernel@gmail.com wrote:
+> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 > 
-> I've noticed that the (newly added) mkfs.btrfs.static target does not
-> depend on $(libs) and this is correct
+>   In "[ \fB\-f\fP\fI ]", the "\fI" will result in the front half "["of
+> "[ -f ]" doesn't the back half "]"; When you issue the command
+> "man mkfs.btrfs", you will see the difference.
+> 
+> Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-... well, it's partially correct, we don't need $(libs) but we need the
-object files and possibly built with the same cflags as the rest of the
-.static.o group. So far the build works if libbtrfs.a is built and the
-final binary is linked against it. I finally made it to compile and link
-the way it should IMHO be, patch will follow after cleaning.
+Whoops, yes. Thanks for spotting that.
 
-david
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+
+> ---
+>  man/mkfs.btrfs.8.in | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+> index cdccd6a..a3f1503 100644
+> --- a/man/mkfs.btrfs.8.in
+> +++ b/man/mkfs.btrfs.8.in
+> @@ -6,7 +6,7 @@ mkfs.btrfs \- create a btrfs filesystem
+>  [ \fB\-A\fP\fI alloc-start\fP ]
+>  [ \fB\-b\fP\fI byte-count\fP ]
+>  [ \fB\-d\fP\fI data-profile\fP ]
+> -[ \fB\-f\fP\fI ]
+> +[ \fB\-f\fP ]
+>  [ \fB\-l\fP\fI leafsize\fP ]
+>  [ \fB\-L\fP\fI label\fP ]
+>  [ \fB\-m\fP\fI metadata profile\fP ]
+> 
+

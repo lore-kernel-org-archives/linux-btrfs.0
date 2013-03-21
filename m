@@ -1,82 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:45689 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751406Ab3CUTm1 (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:49778 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753670Ab3CUXGY convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Mar 2013 15:42:27 -0400
-Message-ID: <514B62A4.1030201@profihost.ag>
-Date: Thu, 21 Mar 2013 20:42:28 +0100
-From: Stefan Priebe <s.priebe@profihost.ag>
+	Thu, 21 Mar 2013 19:06:24 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 585AA7C0446
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 17:06:24 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-To: Chris Mason <clmason@fusionio.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: No space left on device (28)
-References: <514ABEB8.3090104@profihost.ag> <20130321180020.30044.84729@localhost.localdomain> <967ED686-7E9C-4158-80A0-D58D18818BA2@profihost.ag> <20130321190249.30044.79438@localhost.localdomain>
-In-Reply-To: <20130321190249.30044.79438@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: Chris Mason <clmason@fusionio.com>, Alexandre Oliva <oliva@gnu.org>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <20130321180614.30044.29961@localhost.localdomain>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
+References: <orhak8fm0u.fsf@livre.home>
+ <20130318225245.25964.22219@localhost.localdomain>
+ <orzjy0dkz9.fsf@livre.home>
+ <20130319120940.29898.80124@localhost.localdomain>
+ <ora9pzdwdw.fsf@livre.home> <or1ubaesrx.fsf@livre.home>
+ <ord2utb4xx.fsf@livre.home>
+ <20130321180614.30044.29961@localhost.localdomain>
+Message-ID: <20130321230621.30044.80640@localhost.localdomain>
+Subject: Re: corruption of active mmapped files in btrfs snapshots
+Date: Thu, 21 Mar 2013 19:06:21 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes, i've now upgraded to 3.9-rc3 same result.
+Quoting Chris Mason (2013-03-21 14:06:14)
+> Quoting Alexandre Oliva (2013-03-21 03:14:02)
+> > On Mar 19, 2013, Alexandre Oliva <oliva@gnu.org> wrote:
+> > 
+> > > On Mar 19, 2013, Alexandre Oliva <oliva@gnu.org> wrote:
+> > >>> that is being processed inside the snapshot.
+> > 
+> > >> This doesn't explain why the master database occasionally gets similarly
+> > >> corrupted, does it?
+> > 
+> > > Actually, scratch this bit for now.  I don't really have proof that the
+> > > master database actually gets corrupted while it's in use
+> > 
+> > Scratch the “scratch this”.  The master database actually gets
+> > corrupted, and it's with recently-created files, created after earlier
+> > known-good snapshots.  So, it can't really be orphan processing, can it?
+> 
+> Right, it can't be orphan processing.
+> 
+> > 
+> > Some more info from the errors and instrumentation:
+> > 
+> > - no data syncing on the affected files is taking place.  it's just
+> >   memcpy()ing data in <4KiB-sized chunks onto mmap()ed areas,
+> >   munmap()ing it, growing the file with ftruncate and mapping a
+> >   subsequent chunk for further output
+> > 
+> > - the NULs at the end of pages do NOT occur at munmap/mmap boundaries as
+> >   I suspected at first, but they do coincide with the end of extents
+> >   that are smaller than the maximum compressed extent size.  So,
+> >   something's making btrfs flush pages to disk before the pages are
+> >   completely written (which is fine in principle), but apparently
+> >   failing to pick up subsequent changes to the pages (eek!)
+> 
+> With mmap the kernel can pick any given time to start writing out dirty
+> pages.  The idea is that if the application makes more changes the page
+> becomes dirty again and the kernel writes it again.
+> 
+> So the question is, can you trigger this without snapshots being done
+> at all?  I'll try to make an mmap tester here that hammers on the
+> related code.  We usually test this with fsx, which catches all kinds of
+> horrors.
 
-rsync: rename 
-"/mnt/.software/kernel/linux-3.9-rc3/drivers/infiniband/hw/amso1100/.c2_ae.h.WEhLGP" 
--> 
-".software/kernel/linux-3.9-rc3/drivers/infiniband/hw/amso1100/c2_ae.h": 
-No space left on device (28)
+So my test program creates an 8GB file in chunks of 1MB each.  Using
+truncate to extend the file and then mmap to write into the new hole.
+It is writing in 1MB chunks, ever so slightly not aligned.  After
+creating the whole file, it reads it back to look for errors.
 
-# btrfs filesystem df /mnt/
-Data: total=18.14TB, used=15.05TB
-System, DUP: total=8.00MB, used=1.94MB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=23.98GB, used=17.98GB
-Metadata: total=8.00MB, used=0.00
+I'm running this with heavy memory pressure, but no snapshots.  No
+corruptions yet, but I'll let it run a while long.
 
-Stefan
+-chris
 
-Am 21.03.2013 20:02, schrieb Chris Mason:
-> Quoting Stefan Priebe - Profihost AG (2013-03-21 14:35:59)
->> Hi Chris,
->>
->> Am 21.03.2013 um 19:00 schrieb Chris Mason <chris.mason@fusionio.com>:
->>
->>> Quoting Stefan Priebe - Profihost AG (2013-03-21 04:03:04)
->>>> Hi,
->>>>
->>>> while copying a 15GB file to my btrfs volume i'm getting "No space left
->>>> on device".
->>>>
->>>> Some information:
->>>>
->>>> # btrfs filesystem df /mnt/
->>>> Data: total=18.14TB, used=15.05TB
->>>> System, DUP: total=8.00MB, used=1.94MB
->>>> System: total=4.00MB, used=0.00
->>>> Metadata, DUP: total=23.98GB, used=17.97GB
->>>> Metadata: total=8.00MB, used=0.00
->>>>
->>>> # df -h
->>>> Filesystem             Size  Used Avail Use% Mounted on
->>>> /dev/mapper/raid54tb1   19T   16T  3,1T  84% /mnt
->>>>
->>>> # btrfs fi show
->>>> Label: none  uuid: fc23c4a8-a351-4c91-96a2-ee6abeffe59a
->>>>         Total devices 1 FS bytes used 15.07TB
->>>>         devid    1 size 18.19TB used 18.19TB path /dev/dm-3
->>>>
->>>> # btrfs fi balance start -dusage=5 /mnt/
->>>> Done, had to relocate 0 out of 18604 chunks
->>>>
->>>> What wrong here? What is about the last 3TB?
->>>
->>> Which kernel are you running?
->>>
->>> -chris
->>
->> vanilla 3.8.3.
->
-> Ok, with the 3.9 merge window Josef changed how we do the reservations.
-> Are you able to try a slightly more experimental kernel?
->
-> -chris
->

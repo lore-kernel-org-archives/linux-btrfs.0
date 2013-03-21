@@ -1,35 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f47.google.com ([209.85.212.47]:60832 "EHLO
-	mail-vb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754117Ab3CUGVD (ORCPT
+Received: from mail-da0-f47.google.com ([209.85.210.47]:53657 "EHLO
+	mail-da0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754080Ab3CUKxS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Mar 2013 02:21:03 -0400
-Received: by mail-vb0-f47.google.com with SMTP id e21so1646129vbm.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2013 23:21:01 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20130320232956.GD31559@twin.jikos.cz>
-References: <CADCGFBVwqqLc40TWn6cX_2y4bZGKMbW4hRAt6CmLTWfsxknPzg@mail.gmail.com>
-	<20130320232956.GD31559@twin.jikos.cz>
-Date: Wed, 20 Mar 2013 23:21:01 -0700
-Message-ID: <CAPkEcwhTvRAw4kDGMmA2Fa-K-w=QoAvQGu-tvpmhOY+NFe36QA@mail.gmail.com>
-Subject: Re: Fwd: +1 for xz
-From: james northrup <northrup.james@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 21 Mar 2013 06:53:18 -0400
+Received: by mail-da0-f47.google.com with SMTP id s35so1570999dak.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 03:53:17 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net, wangshilong1991@gmail.com
+Subject: [PATCH] Btrfs: creating the subvolume qgroup automatically when enabling quota
+Date: Thu, 21 Mar 2013 18:53:12 +0800
+Message-Id: <1363863192-1533-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-with lzo, and presumably lz4 the 128k extents of packed data are livable.
-on bootable thumbdrive images esp. with merged metadata I think
-favoring greater fragmentation vs. the current 128k would help, and
-giving larger files momentum to occupy more than 128k extents would
-also help.
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-On Wed, Mar 20, 2013 at 4:29 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Mar 20, 2013 at 01:27:11PM -0600, Roger Pack wrote:
->> I see from https://btrfs.wiki.kernel.org/index.php/Compression#How_do_I_enable_compression.3F
->> "LZ4" support is currently being added.  Here's my +1 for also adding
->> something with "high" compression like xz or lzma, since they
+Creating the subvolume/snapshots(including root subvolume) qgroup
+auotomatically when enabling quota.
 
-> First tests showed that it was really slow for normal use, but for
-> backup purposes it might be not that bad.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c  |    2 +
+ fs/btrfs/qgroup.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2c02310..222ce84 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3693,6 +3693,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 		goto drop_write;
+ 	}
+ 
++	down_read(&root->fs_info->subvol_sem);
+ 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
+ 		trans = btrfs_start_transaction(root, 2);
+ 		if (IS_ERR(trans)) {
+@@ -3726,6 +3727,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 	}
+ out:
+ 	kfree(sa);
++	up_read(&root->fs_info->subvol_sem);
+ drop_write:
+ 	mnt_drop_write_file(file);
+ 	return ret;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 5471e47..1aff3a8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -783,11 +783,15 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *tree_root = fs_info->tree_root;
+ 	struct btrfs_path *path = NULL;
+ 	struct btrfs_qgroup_status_item *ptr;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_qgroup *qgroup = NULL;
+ 	int ret = 0;
++	int slot;
+ 
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	if (fs_info->quota_root) {
+@@ -834,7 +838,58 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_mark_buffer_dirty(leaf);
+ 
++	key.objectid = 0;
++	key.type = BTRFS_ROOT_REF_KEY;
++	key.offset = 0;
++
++	btrfs_release_path(path);
++	ret = btrfs_search_slot_for_read(tree_root, &key, path, 1, 0);
++	if (ret > 0)
++		goto out_add_root;
++	if (ret < 0)
++		goto out_free_path;
++
++
++	while (1) {
++		slot = path->slots[0];
++		leaf = path->nodes[0];
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++
++		if (found_key.type == BTRFS_ROOT_REF_KEY) {
++			ret = add_qgroup_item(trans, quota_root,
++					      found_key.offset);
++			if (ret)
++				goto out_free_path;
++
++			spin_lock(&fs_info->qgroup_lock);
++			qgroup = add_qgroup_rb(fs_info, found_key.offset);
++			if (IS_ERR(qgroup)) {
++				spin_unlock(&fs_info->qgroup_lock);
++				ret = PTR_ERR(qgroup);
++				goto out_free_path;
++			}
++			spin_unlock(&fs_info->qgroup_lock);
++		}
++		ret = btrfs_next_item(tree_root, path);
++		if (ret < 0)
++			goto out_free_path;
++		if (ret)
++			break;
++	}
++
++out_add_root:
++	btrfs_release_path(path);
++	ret = add_qgroup_item(trans, quota_root, BTRFS_FS_TREE_OBJECTID);
++	if (ret)
++		goto out_free_path;
++
+ 	spin_lock(&fs_info->qgroup_lock);
++	qgroup = add_qgroup_rb(fs_info, BTRFS_FS_TREE_OBJECTID);
++	if (IS_ERR(qgroup)) {
++		spin_unlock(&fs_info->qgroup_lock);
++		ret = PTR_ERR(qgroup);
++		goto out_free_path;
++	}
+ 	fs_info->quota_root = quota_root;
+ 	fs_info->pending_quota_state = 1;
+ 	spin_unlock(&fs_info->qgroup_lock);
+-- 
+1.7.7.6
+

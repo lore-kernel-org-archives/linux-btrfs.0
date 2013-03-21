@@ -1,42 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:37970 "EHLO
-	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756069Ab3CTURo convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Mar 2013 16:17:44 -0400
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:47806 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753646Ab3CUEcw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Mar 2013 00:32:52 -0400
+Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 37EC53EE0BB
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:51 +0900 (JST)
+Received: from smail (m1 [127.0.0.1])
+	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 1FF5E45DE55
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:51 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0B2B945DE54
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:51 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id F3C24E08001
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:50 +0900 (JST)
+Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id ACF221DB803F
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:50 +0900 (JST)
+Received: from m1000.css.fujitsu.com (m1000 [127.0.0.1])
+	by m1000.s.css.fujitsu.com (Postfix) with ESMTP id 8661F614E3
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:50 +0900 (JST)
+Received: from FM-323941448.jp.fujitsu.com (unknown [10.124.101.132])
+	by m1000.s.css.fujitsu.com (Postfix) with SMTP id 4E010611C5
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2013 13:32:50 +0900 (JST)
+Message-Id: <201303210432.AA00023@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Thu, 21 Mar 2013 13:32:32 +0900
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix memory leak in btrfs_create_tree()
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: How to recover uncorrectable errors ?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130321012414.3b232660@natsu>
-Date: Wed, 20 Mar 2013 14:17:41 -0600
-Cc: =?iso-8859-1?Q?Fr=E9d=E9ric_COIFFIER?= <frederic.coiffier@free.fr>,
-        Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
-Message-Id: <2A1BFD02-9D60-4EBE-957A-C10AF9928DA7@colorremedies.com>
-References: <6033676.gK0GbPgrpE@athlonxp> <201303161916.55185.Martin@lichtvoll.de> <3160822.Hx5D6eTo7L@athlonxp> <4B672F76-FAF9-4198-988D-440B6326A275@colorremedies.com> <20130321012414.3b232660@natsu>
-To: Roman Mamedov <rm@romanrm.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We should free leaf and root before returning from the error
+handling code.
 
-On Mar 20, 2013, at 1:24 PM, Roman Mamedov <rm@romanrm.ru> wrote:
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/disk-io.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-> On Wed, 20 Mar 2013 12:19:18 -0600
-> Chris Murphy <lists@colorremedies.com> wrote:
-> 
->>> 195 Hardware_ECC_Recovered  0x001a   057   055   000    Old_age   Always       -       63508940
-> 
->> With such high ECC recovered events, I suspect SDC. 
-> 
-> If it's a Seagate drive, this is absolutely normal.
-> All Seagate drives have a high value in SMART Hardware_ECC_Recovered.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7d84651..b1b5baa 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1291,6 +1291,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 				      0, objectid, NULL, 0, 0, 0);
+ 	if (IS_ERR(leaf)) {
+ 		ret = PTR_ERR(leaf);
++		leaf = NULL;
+ 		goto fail;
+ 	}
+ 
+@@ -1334,11 +1335,16 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_tree_unlock(leaf);
+ 
++	return root;
++
+ fail:
+-	if (ret)
+-		return ERR_PTR(ret);
++	if (leaf) {
++		btrfs_tree_unlock(leaf);
++		free_extent_buffer(leaf);
++	}
++	kfree(root);
+ 
+-	return root;
++	return ERR_PTR(ret);
+ }
+ 
+ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
 
-http://forums.seagate.com/t5/Barracuda-XT-Barracuda-Barracuda/Seagate-s-Seek-Error-Rate-Raw-Read-Error-Rate-and-Hardware-ECC/td-p/122382
-
-http://www.silentpcreview.com/forums/viewtopic.php?t=57212
-
-If I read this correctly, the read error rate and hardware ECC recovered are sector counts, so they should be the same.
-
-Nevertheless, the file system isn't happy about checksums. It's not that it isn't finding the checksum data, it's finding errors with it.
-
-Chris Murphy

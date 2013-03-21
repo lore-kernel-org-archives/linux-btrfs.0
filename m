@@ -1,59 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp1-g21.free.fr ([212.27.42.1]:45768 "EHLO smtp1-g21.free.fr"
+Received: from smtp1-g21.free.fr ([212.27.42.1]:38980 "EHLO smtp1-g21.free.fr"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932461Ab3CUIgK convert rfc822-to-8bit (ORCPT
+	id S1752116Ab3CUI5i convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Mar 2013 04:36:10 -0400
+	Thu, 21 Mar 2013 04:57:38 -0400
 From: =?ISO-8859-1?Q?Fr=E9d=E9ric?= COIFFIER <frederic.coiffier@free.fr>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org
+To: Roman Mamedov <rm@romanrm.ru>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
 Subject: Re: How to recover uncorrectable errors ?
-Date: Thu, 21 Mar 2013 09:36 +0100
-Message-ID: <1380005.JyAIHqx6kZ@athlonxp>
-In-Reply-To: <201303201959.54969.Martin@lichtvoll.de>
-References: <6033676.gK0GbPgrpE@athlonxp> <3160822.Hx5D6eTo7L@athlonxp> <201303201959.54969.Martin@lichtvoll.de>
+Date: Thu, 21 Mar 2013 09:57:24 +0100
+Message-ID: <68196576.8us4kWVCD5@athlonxp>
+In-Reply-To: <20130321012414.3b232660@natsu>
+References: <6033676.gK0GbPgrpE@athlonxp> <4B672F76-FAF9-4198-988D-440B6326A275@colorremedies.com> <20130321012414.3b232660@natsu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Martin,
+Hi Roman,
 
-Le mercredi 20 mars 2013 19:59:54 Martin Steigerwald a écrit :
-> Am Mittwoch, 20. März 2013 schrieb Frédéric COIFFIER:
-> > > But I really think BTRFS displays the filename affected meanwhile. So
-> > > maybe if it does not, its some metadata being affected? So output of btrfsck
-> > > hints at that and that you can´t remove the file does as well. What happens
-> > > if you try to remove the file? Do you get an input/output error or
-> > > something like that?
-> > 
-> > # rm -rf *
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > rm: cannot remove 'drivers/misc/lis3lv02d/lis3lv02d.c': Stale NFS file handle
-> > ...
+Le jeudi 21 mars 2013 01:24:14 Roman Mamedov a écrit :
+> On Wed, 20 Mar 2013 12:19:18 -0600
+> Chris Murphy <lists@colorremedies.com> wrote:
 > 
-> You are trying to remove the files from an NFS client. Stale NFS file
-> handle just means that the NFS handle is no longer valid.
+> > > 195 Hardware_ECC_Recovered  0x001a   057   055   000    Old_age   Always       -       63508940
+> 
+> > With such high ECC recovered events, I suspect SDC. 
+> 
+> If it's a Seagate drive, this is absolutely normal.
+> All Seagate drives have a high value in SMART Hardware_ECC_Recovered.
 
-Absolutely not. I'm not using NFS and I try to remove the files locally.
-It seems that btrfs returns a strange ESTALE errno...
+You're right : it's a Seagate :
 
-grep -rsn ESTALE fs/btrfs/
-fs/btrfs/inode.c:2412:          if (ret && ret != -ESTALE)
-fs/btrfs/inode.c:2415:          if (ret == -ESTALE && root == root->fs_info->tree_root) {
-fs/btrfs/inode.c:2451:          if (ret == -ESTALE) {
-fs/btrfs/inode.c:4273:                  inode = ERR_PTR(-ESTALE);
-fs/btrfs/export.c:71:           return ERR_PTR(-ESTALE);
-fs/btrfs/export.c:104:          return ERR_PTR(-ESTALE);
-
-This error seems to be common (even if I can't see any recent reports) :
-http://www.google.fr/search?q=btrfs+Stale+NFS+file+handle
+Model Family:     Seagate Barracuda 7200.10
+Device Model:     ST3320620AS
 
 Regards,
 Frederic

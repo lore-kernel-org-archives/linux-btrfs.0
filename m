@@ -1,92 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f53.google.com ([209.85.219.53]:64368 "EHLO
-	mail-oa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751698Ab3CVOAH (ORCPT
+Received: from linux-libre.fsfla.org ([208.118.235.54]:38961 "EHLO
+	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932116Ab3CVORu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Mar 2013 10:00:07 -0400
-Received: by mail-oa0-f53.google.com with SMTP id m17so2900984oag.40
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2013 07:00:06 -0700 (PDT)
+	Fri, 22 Mar 2013 10:17:50 -0400
+From: Alexandre Oliva <oliva@gnu.org>
+To: Chris Mason <clmason@fusionio.com>
+Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ceph-devel\@vger.kernel.org" <ceph-devel@vger.kernel.org>
+Subject: Re: corruption of active mmapped files in btrfs snapshots
+References: <orhak8fm0u.fsf@livre.home>
+	<20130318225245.25964.22219@localhost.localdomain>
+	<orzjy0dkz9.fsf@livre.home>
+	<20130319120940.29898.80124@localhost.localdomain>
+	<ora9pzdwdw.fsf@livre.home> <or1ubaesrx.fsf@livre.home>
+	<ord2utb4xx.fsf@livre.home>
+	<20130321180614.30044.29961@localhost.localdomain>
+	<20130321230621.30044.80640@localhost.localdomain>
+	<orzjxw9f75.fsf@livre.home>
+	<20130322120754.27874.14389@localhost.localdomain>
+Date: Fri, 22 Mar 2013 11:17:30 -0300
+In-Reply-To: <20130322120754.27874.14389@localhost.localdomain> (Chris Mason's
+	message of "Fri, 22 Mar 2013 08:07:54 -0400")
+Message-ID: <orobeba58l.fsf@livre.home>
 MIME-Version: 1.0
-In-Reply-To: <514B346D.1010403@redhat.com>
-References: <CAKuK5J05iXaDd7Q4fLby9vJyPXBURx06xb0_--WmgTpJ0j2RoA@mail.gmail.com>
- <514B232E.2050705@redhat.com> <CAKuK5J3Fd+ya3SOwQPZohJArE+cPNZKchzH3UkvpvoAnK-6Hng@mail.gmail.com>
- <514B346D.1010403@redhat.com>
-From: Jon Nelson <jnelson@jamponi.net>
-Date: Fri, 22 Mar 2013 08:59:46 -0500
-Message-ID: <CAKuK5J3x7OQ6DS6-dyeXtd0fdnO-2z8zn27r-jDxxpKXcEdV_g@mail.gmail.com>
-Subject: Re: btrfs-show vs. btrfs different output
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 21, 2013 at 11:25 AM, Eric Sandeen <sandeen@redhat.com> wrote:
-> On 3/21/13 10:29 AM, Jon Nelson wrote:
->> On Thu, Mar 21, 2013 at 10:11 AM, Eric Sandeen <sandeen@redhat.com> wrote:
->>> On 3/21/13 10:04 AM, Jon Nelson wrote:
->> ...
->>>> 2. the current git btrfs-show and btrfs fi show both output
->>>> *different* devices for device with UUID
->>>> b5dc52bd-21bf-4173-8049-d54d88c82240, and they're both wrong.
->>>
->>> does blkid output find that uuid anywhere?
->>>
->>> Since you're working in git, can you maybe do a little bisecting
->>> to find out when it changed?  Should be a fairly quick test?
->>
->> blkid does /not/ report that uuid anywhere.
->>
->> git bisect, if I did it correctly, says:
->>
->>
->> 6eba9002956ac40db87d42fb653a0524dc568810 is the first bad commit
->> commit 6eba9002956ac40db87d42fb653a0524dc568810
->> Author: Goffredo Baroncelli <kreijack@inwind.it>
->> Date:   Tue Sep 4 19:59:26 2012 +0200
->>
->>     Correct un-initialized fsid variable
->>
->> :100644 100644 b21a87f827a6250da45f2fb6a1c3a6b651062243
->> 03952051b5e25e0b67f0f910c84d93eb90de8480 M      disk-io.c
->
-> Ok, I think this is another case of greedily scanning stale
-> backup superblocks (did you ever have btrfs on the whole sda
-> or sdb?)
->
-> btrfs_read_dev_super() currently tries to scan all 3 superblocks
-> (primary & 2 backups).  I'm guessing that you have some stale
-> backup superblocks on sda and/or sdb.
->
-> Before the above commit, if the first sb didn't look valid,
-> it'd skip to the 2nd.  If the 2nd (stale) one looked OK,
-> it'd compare its fsid to an uniniitialized variable (fsid)
-> which would fail (since the "fsid" contents were random.)
-> Same for the 3rd backup if found, and eventually it'd return
-> -1 as failure and not report the device.
->
-> After the commit, it'd skip the first invalid sb as well.
-> But this time, it takes the fsid from the 2nd superblock as
-> "good" and makes it through the loop thinking that it's found
-> something valid.  Hence the report of a device which you didn't
-> expect even though the first superblock is indeed wiped out.
->
-> There are some patches floating around to stop this
-> backup superblock scanning altogether.
->
-> This might fix it for you; it basically returns failure
-> if any superblock on the device is found to be bad.
->
-> What we really need is the right bits in the right places
-> to let the administrator know if a device looks like it might
-> be corrupt & in need of fixing, vs. ignoring it altogether.
->
-> Not sure if this is something we want upstream but you could
-> test if if you like.
+On Mar 22, 2013, Chris Mason <clmason@fusionio.com> wrote:
 
-I did test and it appears to resolve the issue for me.
-Thank you!
+> Are you using compression in btrfs or just in leveldb?
+
+btrfs lzo compression.
+
+> I'd like to take snapshots out of the picture for a minute.
+
+That's understandable, I guess, but I don't know that anyone has ever
+got the problem without snapshots.  I mean, even when the master copy of
+the database got corrupted, snapshots of the subvol containing it were
+being taken every now and again, because that's the way ceph works.
+Even back when I noticed corruption of firefox _CACHE_* files, snapshots
+taken for archival were involved.  So, unless the program happens to
+trigger the problem with the -DNOSNAPS option about as easily as it did
+without it, I guess we may not have a choice but to keep snapshots in
+the picture.
+
+> We need some way to synchronize the leveldb with snapshotting
+
+I purposefully refrained from doing that, because AFAICT ceph doesn't do
+that.  Once I failed to trigger the problem with Sync calls, and
+determined ceph only syncs the leveldb logs before taking its snapshots,
+I went without syncing and finally succeeded in triggering the bug in
+snapshots, by simulating very similar snapshotting and mmaping
+conditions to those generated by ceph.  I haven't managed to trigger the
+corruption of the master subvol yet with the test program, but I already
+knew its corruption didn't occur as often as that of the snapshots, and
+since it smells like two slightly different symptoms of the same bug, I
+decided to leave the test program at that.
 
 -- 
-Jon
-Software Blacksmith
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer

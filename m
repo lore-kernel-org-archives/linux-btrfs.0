@@ -1,47 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:35768 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751698Ab3CVN4v (ORCPT
+Received: from mail-oa0-f53.google.com ([209.85.219.53]:64368 "EHLO
+	mail-oa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751698Ab3CVOAH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Mar 2013 09:56:51 -0400
-Message-ID: <514C6319.7030400@profihost.ag>
-Date: Fri, 22 Mar 2013 14:56:41 +0100
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+	Fri, 22 Mar 2013 10:00:07 -0400
+Received: by mail-oa0-f53.google.com with SMTP id m17so2900984oag.40
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2013 07:00:06 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: No space left on device (28)
-References: <514ABEB8.3090104@profihost.ag> <20130321180020.30044.84729@localhost.localdomain> <967ED686-7E9C-4158-80A0-D58D18818BA2@profihost.ag> <20130321190249.30044.79438@localhost.localdomain> <514B62A4.1030201@profihost.ag> <5F36F35C-39BE-4244-B8FB-A80EC2B06D48@profihost.ag> <514C4A8C.90607@profihost.ag> <20130322135322.GB1955@localhost.localdomain>
-In-Reply-To: <20130322135322.GB1955@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <514B346D.1010403@redhat.com>
+References: <CAKuK5J05iXaDd7Q4fLby9vJyPXBURx06xb0_--WmgTpJ0j2RoA@mail.gmail.com>
+ <514B232E.2050705@redhat.com> <CAKuK5J3Fd+ya3SOwQPZohJArE+cPNZKchzH3UkvpvoAnK-6Hng@mail.gmail.com>
+ <514B346D.1010403@redhat.com>
+From: Jon Nelson <jnelson@jamponi.net>
+Date: Fri, 22 Mar 2013 08:59:46 -0500
+Message-ID: <CAKuK5J3x7OQ6DS6-dyeXtd0fdnO-2z8zn27r-jDxxpKXcEdV_g@mail.gmail.com>
+Subject: Re: btrfs-show vs. btrfs different output
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
-Am 22.03.2013 14:53, schrieb Josef Bacik:
-> On Fri, Mar 22, 2013 at 06:11:56AM -0600, Stefan Priebe - Profihost AG wrote:
->> Hi Chris,
+On Thu, Mar 21, 2013 at 11:25 AM, Eric Sandeen <sandeen@redhat.com> wrote:
+> On 3/21/13 10:29 AM, Jon Nelson wrote:
+>> On Thu, Mar 21, 2013 at 10:11 AM, Eric Sandeen <sandeen@redhat.com> wrote:
+>>> On 3/21/13 10:04 AM, Jon Nelson wrote:
+>> ...
+>>>> 2. the current git btrfs-show and btrfs fi show both output
+>>>> *different* devices for device with UUID
+>>>> b5dc52bd-21bf-4173-8049-d54d88c82240, and they're both wrong.
+>>>
+>>> does blkid output find that uuid anywhere?
+>>>
+>>> Since you're working in git, can you maybe do a little bisecting
+>>> to find out when it changed?  Should be a fairly quick test?
 >>
->>>>>>> Which kernel are you running?
->>>>>>>
->>>>>>> -chris
->>>>>>
->>>>>> vanilla 3.8.3.
->>>>>
->>>>> Ok, with the 3.9 merge window Josef changed how we do the reservations.
->>>>> Are you able to try a slightly more experimental kernel?
+>> blkid does /not/ report that uuid anywhere.
 >>
->> any ideas what i can check? 3.9-rc3 gives me same results.
+>> git bisect, if I did it correctly, says:
 >>
-> 
-> Sorry Stefan I'm almost done with what I'm working on and then I'll work up a
-> patch for you to run so I can narrow down what's going on.  Thanks,
+>>
+>> 6eba9002956ac40db87d42fb653a0524dc568810 is the first bad commit
+>> commit 6eba9002956ac40db87d42fb653a0524dc568810
+>> Author: Goffredo Baroncelli <kreijack@inwind.it>
+>> Date:   Tue Sep 4 19:59:26 2012 +0200
+>>
+>>     Correct un-initialized fsid variable
+>>
+>> :100644 100644 b21a87f827a6250da45f2fb6a1c3a6b651062243
+>> 03952051b5e25e0b67f0f910c84d93eb90de8480 M      disk-io.c
+>
+> Ok, I think this is another case of greedily scanning stale
+> backup superblocks (did you ever have btrfs on the whole sda
+> or sdb?)
+>
+> btrfs_read_dev_super() currently tries to scan all 3 superblocks
+> (primary & 2 backups).  I'm guessing that you have some stale
+> backup superblocks on sda and/or sdb.
+>
+> Before the above commit, if the first sb didn't look valid,
+> it'd skip to the 2nd.  If the 2nd (stale) one looked OK,
+> it'd compare its fsid to an uniniitialized variable (fsid)
+> which would fail (since the "fsid" contents were random.)
+> Same for the 3rd backup if found, and eventually it'd return
+> -1 as failure and not report the device.
+>
+> After the commit, it'd skip the first invalid sb as well.
+> But this time, it takes the fsid from the 2nd superblock as
+> "good" and makes it through the loop thinking that it's found
+> something valid.  Hence the report of a device which you didn't
+> expect even though the first superblock is indeed wiped out.
+>
+> There are some patches floating around to stop this
+> backup superblock scanning altogether.
+>
+> This might fix it for you; it basically returns failure
+> if any superblock on the device is found to be bad.
+>
+> What we really need is the right bits in the right places
+> to let the administrator know if a device looks like it might
+> be corrupt & in need of fixing, vs. ignoring it altogether.
+>
+> Not sure if this is something we want upstream but you could
+> test if if you like.
 
-Great!
+I did test and it appears to resolve the issue for me.
+Thank you!
 
-Thanks - just wanted to know that it's not my fault. I'm happy to test
-the patch and provide feedback.
-
-Stefan
-
+-- 
+Jon
+Software Blacksmith

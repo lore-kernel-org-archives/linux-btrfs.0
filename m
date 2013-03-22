@@ -1,46 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57729 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:57912 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1422920Ab3CVUbp convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1423002Ab3CVUtf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Mar 2013 16:31:45 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 8D3577C0643
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2013 14:31:44 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>, Alexandre Oliva <oliva@gnu.org>,
+	Fri, 22 Mar 2013 16:49:35 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 3325C7C0435
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2013 14:49:35 -0600 (MDT)
+Date: Fri, 22 Mar 2013 16:49:32 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Stefan Priebe <s.priebe@profihost.ag>
+CC: Josef Bacik <JBacik@fusionio.com>, Chris Mason <clmason@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <20130322180705.27874.96638@localhost.localdomain>
-CC: "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-References: <orhak8fm0u.fsf@livre.home>
- <20130322180705.27874.96638@localhost.localdomain>
-Message-ID: <20130322203142.27874.84834@localhost.localdomain>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-Date: Fri, 22 Mar 2013 16:31:42 -0400
+Subject: Re: No space left on device (28)
+Message-ID: <20130322204932.GE1955@localhost.localdomain>
+References: <20130321180020.30044.84729@localhost.localdomain>
+ <967ED686-7E9C-4158-80A0-D58D18818BA2@profihost.ag>
+ <20130321190249.30044.79438@localhost.localdomain>
+ <514B62A4.1030201@profihost.ag>
+ <5F36F35C-39BE-4244-B8FB-A80EC2B06D48@profihost.ag>
+ <514C4A8C.90607@profihost.ag>
+ <20130322135322.GB1955@localhost.localdomain>
+ <514C6319.7030400@profihost.ag>
+ <20130322155453.GD1955@localhost.localdomain>
+ <514CAC8D.7010409@profihost.ag>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <514CAC8D.7010409@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Chris Mason (2013-03-22 14:07:05)
-> [ mmap corruptions with leveldb and btrfs compression ]
+On Fri, Mar 22, 2013 at 01:10:05PM -0600, Stefan Priebe wrote:
+> Hi Josef,
+> Am 22.03.2013 16:54, schrieb Josef Bacik:
+> > On Fri, Mar 22, 2013 at 07:56:41AM -0600, Stefan Priebe - Profihost AG wrote:
+> >> Hi Josef,
+> >> Am 22.03.2013 14:53, schrieb Josef Bacik:
+> >>> On Fri, Mar 22, 2013 at 06:11:56AM -0600, Stefan Priebe - Profihost AG wrote:
+> >>>> Hi Chris,
+> >>>>
+> >>>>>>>>> Which kernel are you running?
+> >>>>>>>>>
+> >>>>>>>>> -chris
+> >>>>>>>>
+> >>>>>>>> vanilla 3.8.3.
+> >>>>>>>
+> >>>>>>> Ok, with the 3.9 merge window Josef changed how we do the reservations.
+> >>>>>>> Are you able to try a slightly more experimental kernel?
+> >>>>
+> >>>> any ideas what i can check? 3.9-rc3 gives me same results.
+> >>>>
+> >>>
+> >>> Sorry Stefan I'm almost done with what I'm working on and then I'll work up a
+> >>> patch for you to run so I can narrow down what's going on.  Thanks,
+> >>
+> >> Great!
+> >>
+> >> Thanks - just wanted to know that it's not my fault. I'm happy to test
+> >> the patch and provide feedback.
+> >>
+> > Ok I think we are way over-reserving for rename, can you give this patch a whirl
+> > and see what happens?  If it still fails can you capture dmesg and reply with
+> > that so I can see what's going on.  Thanks,
 > 
-> I ran this a number of times with compression off and wasn't able to
-> trigger problems.  With compress=lzo, I see errors on every run.
+> Thanks for the patch. I was able to copy some files and i'm still able 
+> put it copy some then fails on some then copies some then fails on some.
 > 
-> Compile: gcc -Wall -o mmap-trunc mmap-trunc.c
-> Run: ./mmap-trunc file_name
-> 
-> The basic idea is to create a 256MB file in steps.  Each step ftruncates
-> the file larger, and then mmaps a region for writing.  It dirties some
-> unaligned bytes (a little more than 8K), and then munmaps.
-> 
-> Then a verify stage goes back through the file to make sure the data we
-> wrote is really there.  I'm using a simple rotating pattern of chars
-> that compress very well.
 
-Going through the code here, when I change the test to truncate once in
-the very beginning, I still get errors.  So, it isn't an interaction
-between mmap and truncate.  It must be a problem between lzo and mmap.
+Ok so I've been working on another ENOSPC related problem that I think is
+affecting you as well.  So I'm going to nail that down and see if that helps you
+too, if not we'll poke around your problem some more and try and work out what's
+happening.  I'll get back to this fresh Monday morning.  Thanks,
 
--chris
+Josef

@@ -1,63 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:48619 "EHLO len.romanrm.net"
+Received: from cantor2.suse.de ([195.135.220.15]:35507 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1422788Ab3CVSMF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Mar 2013 14:12:05 -0400
-Date: Sat, 23 Mar 2013 00:12:01 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: Ask =?UTF-8?B?QmrDuHJu?= Hansen <ask@develooper.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs "stuck" on
-Message-ID: <20130323001201.2bbbb817@natsu>
-In-Reply-To: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
-References: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/6etw650yfhaW5NkBaozgSjS"; protocol="application/pgp-signature"
+	id S1422788Ab3CVSMy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Mar 2013 14:12:54 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0FC4AA51CB
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2013 19:12:53 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: make subvol creation/deletion killable in the early stages
+Date: Fri, 22 Mar 2013 19:12:51 +0100
+Message-Id: <1363975971-8779-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/6etw650yfhaW5NkBaozgSjS
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+The subvolume ioctls block on the parent directory mutex that can be
+held by other concurrent snapshot activity for a long time. Give the
+user at least some chance to get out of this situation by allowing
+to send a kill signal.
 
-On Thu, 21 Mar 2013 11:56:37 -0700
-Ask Bj=C3=B8rn Hansen <ask@develooper.com> wrote:
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ioctl.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-> Hello,
->=20
-> A few weeks ago I replaced a ZFS backup system with one backed by btrfs. =
-A script loops over a bunch of hosts rsyncing them to each their own subvol=
-ume.  After each rsync I snapshot the "host-specific" subvolume.
->=20
-> The "disk" is an iscsi disk that in my benchmarks performs roughly like a=
- local raid with 2-3 SATA disks.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 11c17a1..0911d01 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -723,7 +723,9 @@ static noinline int btrfs_mksubvol(struct path *parent,
+ 	struct dentry *dentry;
+ 	int error;
+ 
+-	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
++	error = mutex_lock_killable_nested(&dir->i_mutex, I_MUTEX_PARENT);
++	if (error == -EINTR)
++		return error;
+ 
+ 	dentry = lookup_one_len(name, parent->dentry, namelen);
+ 	error = PTR_ERR(dentry);
+@@ -2086,7 +2088,9 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	if (err)
+ 		goto out;
+ 
+-	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
++	err = mutex_lock_killable_nested(&dir->i_mutex, I_MUTEX_PARENT);
++	if (err == -EINTR)
++		goto out;
+ 	dentry = lookup_one_len(vol_args->name, parent, namelen);
+ 	if (IS_ERR(dentry)) {
+ 		err = PTR_ERR(dentry);
+-- 
+1.8.2
 
-I think you should re-verify if this is still the case. Maybe your block
-device performance suddenly plummeted for some other unrelated issue?
-
-The simplest test would be "hdparm -t /dev/sdc".
-
-Personally I use btrfs on top of an MD raid accessed over network via NBD (=
-and
-AoE before), without any major issues. Though my workload is perhaps somewh=
-at
-lighter than what you describe.
-
---=20
-With respect,
-Roman
-
---Sig_/6etw650yfhaW5NkBaozgSjS
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlFMnvEACgkQTLKSvz+PZwhsuwCeLwUj0CV1inEMODSPc3JhpbZ6
-WsgAnAnIbAAqvM6iADiLC2pEmIJZ22Tu
-=X8+7
------END PGP SIGNATURE-----
-
---Sig_/6etw650yfhaW5NkBaozgSjS--

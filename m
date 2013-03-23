@@ -1,85 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:29719 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751673Ab3CWSpj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Mar 2013 14:45:39 -0400
-Message-ID: <514DF850.5080906@redhat.com>
-Date: Sat, 23 Mar 2013 13:45:36 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-ea0-f175.google.com ([209.85.215.175]:59405 "EHLO
+	mail-ea0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751828Ab3CWUff (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Mar 2013 16:35:35 -0400
+Received: by mail-ea0-f175.google.com with SMTP id o10so1814598eaj.20
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Mar 2013 13:35:33 -0700 (PDT)
+Date: Sat, 23 Mar 2013 22:35:32 +0200
+From: Ilya Dryomov <idryomov@gmail.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: document mount options in
+ Documentation/fs/btrfs.txt
+Message-ID: <20130323203532.GA1920@zambezi.lan>
+References: <514DEB06.7000606@redhat.com>
 MIME-Version: 1.0
-To: Roman Mamedov <rm@romanrm.ru>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: document mount options in Documentation/fs/btrfs.txt
-References: <514DEB06.7000606@redhat.com> <20130324003321.7f119e91@natsu>
-In-Reply-To: <20130324003321.7f119e91@natsu>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <514DEB06.7000606@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 3/23/13 1:33 PM, Roman Mamedov wrote:
-> On Sat, 23 Mar 2013 12:48:54 -0500
-> Eric Sandeen <sandeen@redhat.com> wrote:
+On Sat, Mar 23, 2013 at 12:48:54PM -0500, Eric Sandeen wrote:
+> Document all current btrfs mount options.
 > 
->> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
->> index 7671352..02a19c8 100644
->> --- a/Documentation/filesystems/btrfs.txt
->> +++ b/Documentation/filesystems/btrfs.txt
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
 > 
-> Is anyone really going to look for them there?
+> please, Please, PLEASE review this and suggest improvements.
+> I'm no btrfs wizard but I've done my best to get this all right
+> based on commit logs, code reading, and wiki reading.  In cases where
+> any of those 3 disagreed, I've done my best to document reality, but I'm
+> sure it could use corrections, clarifications, etc.
 > 
-> People expect mount options to be in "man mount".
+> In particular, some of these mount options could really use more
+> description of why a user might want them, rather than simply stating
+> what they do.
+> 
+> "notreelog" is particularly egregious, as I have nothing but self-referential
+> documentation.
+> 
+> So this can use some iteration, I'm sure, but hopefully it's a decent
+> start.
+> 
+> Thanks,
+> -Eric
+> 
+> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+> index 7671352..02a19c8 100644
+> --- a/Documentation/filesystems/btrfs.txt
+> +++ b/Documentation/filesystems/btrfs.txt
+> @@ -1,6 +1,6 @@
+>  
+> -	BTRFS
+> -	=====
+> +BTRFS
+> +=====
+>  
+>  Btrfs is a new copy on write filesystem for Linux aimed at
+>  implementing advanced features while focusing on fault tolerance,
+> @@ -34,9 +34,173 @@ The main Btrfs features include:
+>      * Online filesystem defragmentation
+>  
+>  
+> -
+> -	MAILING LIST
+> -	============
+> +Mount Options
+> +=============
+> +
+> +When mounting a btrfs filesystem, the following option are accepted.
+> +Unless otherwise specified, all options default to off.
+> +
+> +  alloc_start=<bytes>
+> +	Debugging option to force all block allocations above a threshold.
+> +	The value is specified in bytes, optionally with a K, M, or G suffix,
+> +	case insensitive.  Default is 1MB.
+> +
+> +  autodefrag
+> +	Detect small random writes into files and queue them up for the
+> +	defrag process.  Works best for small files; Not well suited for
+> +	large database workloads.
+> +
+> +  check_int
+> +  check_int_data
+> +  check_int_print_mask=<value>
+> +	These debugging options control the behavior of the integrity checking
+> +	module (the BTRFS_FS_CHECK_INTEGRITY config option required).
+> +
+> +	check_int enables the integrity checker module, which examines all
+> +	block write requests to ensure on-disk consistency, at a large
+> +	memory and CPU cost.  
+> +
+> +	check_int_data includes extent data in the integrity checks, and
+> +	implies the check_int option.
+> +
+> +	check_int_print_mask takes a bitmask of BTRFSIC_PRINT_MASK_* values
+> +	as defined in fs/btrfs/check-integrity.c, to control the integrity
+> +	checker module behavior.
+> +
+> +	See comments at the top of fs/btrfs/check-integrity.c for more info.
+> +
+> +  compress
+> +  compress=<type>
+> +  compress-force
+> +  compress-force=<type>
+> +	Control BTRFS file data compression.  Type may be specified as "zlib"
+> +	"lzo" or "no" (for no compression, used for remounting).  If no type
+> +	is specified, zlib is used.  If compress-force is specified,
+> +	all files will be compressed, whether or not they compress well.
+> +	If compression is enabled, nodatacow and nodatasum are disabled.
+> +
+> +  degraded
+> +	Allow mounts to continue with missing devices.  A read-write mount may
+> +	fail with too many devices missing, for example if a stripe member
+> +	is completely missing.
+> +
+> +  device=<devicepath>
+> +	Specify a device during mount so that ioctls on the control device
+> +	can be avoided.  Especialy useful when trying to mount a multi-device
+> +	setup as root.  May be specified multiple times for multiple devices.
+> +
+> +  discard
+> +	Issue command to let the block device reclaim space freed by the
+> +	filesystem.  This is useful for SSD devices, thinly provisioned
+> +	LUNs and virtual machine images, but may have a performance
+> +	impact.
+> +
+> +  enospc_debug
+> +	Debugging option to be more verbose in some ENOSPC conditions.
+> +
+> +  fatal_errors=<action>
+> +	Action to take when encountering a fatal error: 
+> +	  "bug" - BUG() on a fatal error.  This is the default.
+> +	  "panic" - panic() on a fatal error.
+> +
+> +  flushoncommit
+> +	The 'flushoncommit' mount option forces any data dirtied by a write in a
+> +	prior transaction to commit as part of the current commit.  This makes
+> +	the committed state a fully consistent view of the file system from the
+> +	application's perspective (i.e., it includes all completed file system
+> +	operations).  This was previously the behavior only when a snapshot is
+> +	created.
+> +
+> +  inode_cache
+> +	Enable free inode number caching.   Defaults to off due to an overflow
+> +	problem when the free space crcs don't fit inside a single page.
+> +
+> +  max_inline=<bytes>
+> +	Specify the maximum amount of space, in bytes, that can be inlined in
+> +	a metadata B-tree leaf.  The value is specified in bytes, optionally 
+> +	with a K, M, or G suffix, case insensitive.  In practice, this value
+> +	is limited by the root sector size, with some space unavailable due
+> +	to leaf headers.  For a 4k sectorsize, max inline data is ~3900 bytes.
+> +
+> +  metadata_ratio=<value>
+> +	Specify that 1 metadata chunk should be allocated after every <value>
+> +	data chunks.  Off by default.
+> +
+> +  noacl
+> +	Disable support for Posix Access Control Lists (ACLs).  See the
+> +	acl(5) manual page for more information about ACLs.
+> +
+> +  nobarrier
+> +        Disables the use of block layer write barriers.  Write barriers ensure
+> +	that certain IOs make it through the device cache and are on persistent
+> +	storage.  If used on a device with a volatile (non-battery-backed)
+> +	write-back cache, this option will lead to filesystem corruption on a
+> +	system crash or power loss.
+> +
+> +  nodatacow
+> +	Disable data copy-on-write for newly created files.  Implies nodatasum,
+> +	and disables all compression.
+> +
+> +  nodatasum
+> +	Disable data checksumming for newly created files.
+> +
+> +  notreelog
+> +	Disable the tree logging used for fsync and O_SYNC writes.
+> +
+> +  recovery
+> +	Enable autorecovery attempts if a bad tree root is found at mount time.
+> +	Currently this scans a list of several previous tree roots and tries to 
+> +	use the first readable.
+> +
+> + skip_balance
+> +	Skip automatic restart of previous balance operation after mount.  May
+                       resume      interrupted
 
-It's traditional to document these options in the kernel docs:
+> +	be restarted with "btrfs device balance"
 
-# grep -il "mount options" Documentation/filesystems/*.txt
-Documentation/filesystems/adfs.txt
-Documentation/filesystems/affs.txt
-Documentation/filesystems/autofs4-mount-control.txt
-Documentation/filesystems/befs.txt
-Documentation/filesystems/ceph.txt
-Documentation/filesystems/devpts.txt
-Documentation/filesystems/dlmfs.txt
-...
-<big snip>
-...
-Documentation/filesystems/udf.txt
-Documentation/filesystems/vfat.txt
-Documentation/filesystems/vfs.txt
-Documentation/filesystems/xfs.txt
-
-
-The mount manpage is maintained in the util-linux pkg,
-but it's not kernel-version specific, and the util-linux
-maintainer does not have specific knowledge of all filesytem
-options.
-
-I think kernel docs are the right place for the developers
-to first document these things - it's easily updated as the code
-change,s and is under the maintainer's direct control.  From there
-the info can be periodically synced to the mount manpage
-as needed.
+May be resumed with "btrfs balance resume" or cancelled with "btrfs
+balance cancel".  skip_balance simply keeps balance in paused state.
+Feel free to word this appropriately ;)
 
 Thanks,
-- -Eric
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.17 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-iQIcBAEBAgAGBQJRTfhQAAoJECCuFpLhPd7gyk8P/iifHpQ8250Gisg9Oza64mC6
-YzluQA3XIYJr5xOnTu2ZWA/9znxlg0NWKWE2v7okDrL53nrAZNntWQESQ/PuoJsM
-G2V+rkjRm3ojPJ3VgycaaPrlEOXW9AWsZYrYwnD3ZNYJ5e5MOxGx5LcYu5/OGvuW
-lOi7jD9Q3OBFmu5vhRbXnZLgqBYbtMTUlESMZvUhrA4uxKnpPOLHrBwkZ1LzX26X
-DIuJKqRlkyhqoJotBt+cRo8PCoR1yeremDXaT32MwdeFSEkRIXVIp78BruPATrdi
-jt116adux7kP5NSa2odOQsSAmnESpXZvmDOaYUzNhUrM621c8LsNbkgC5twyaegd
-92+vNkwFu73BJ2sDtyfkEXc4FV9PLhf2KNBJDaIJkneX9BiuQ1WC5u1UUrrQD3lM
-j4j9PA2R35CTLfSTgu9bQ6Asy9YLgANtTZvKoEXrC8DGAHbaMK1d42NBg2b9mhxo
-AEacnQNw2dK+1O2Y5BrSBs7cKWacazd/UnGlFDze42dtXZC+J70LeRs26YeJnf6j
-xl6YSVY3kx62ttChMTYYzIKRh8RRQTrzVgrcflbedLhvZVchRSBIpRTUfQEXtiW+
-yY8nUa7w6TdnPYa7dJ4rluhK7HdQ75cb81WOJKL4smU3HmX3uxIIa6kI5KtlWqYw
-bYzRwrnSpQPLEdnOepI+
-=YHWK
------END PGP SIGNATURE-----
+		Ilya

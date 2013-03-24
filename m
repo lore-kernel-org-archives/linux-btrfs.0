@@ -1,67 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46682 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:37627 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752254Ab3CWWku (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Mar 2013 18:40:50 -0400
-Message-ID: <514E2F69.1030204@redhat.com>
-Date: Sat, 23 Mar 2013 17:40:41 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Roger Binns <rogerb@rogerbinns.com>
-CC: linux-btrfs@vger.kernel.org
+	id S1752329Ab3CXBLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Mar 2013 21:11:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UJZTf-0001QR-E1
+	for linux-btrfs@vger.kernel.org; Sun, 24 Mar 2013 02:12:03 +0100
+Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2013 02:12:03 +0100
+Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2013 02:12:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Roger Binns <rogerb@rogerbinns.com>
 Subject: Re: [PATCH] btrfs: document mount options in Documentation/fs/btrfs.txt
-References: <514DEB06.7000606@redhat.com> <kil9uq$210$1@ger.gmane.org>
-In-Reply-To: <kil9uq$210$1@ger.gmane.org>
+Date: Sat, 23 Mar 2013 18:11:26 -0700
+Message-ID: <kiljrq$efp$1@ger.gmane.org>
+References: <514DEB06.7000606@redhat.com> <kil9uq$210$1@ger.gmane.org> <514E2F69.1030204@redhat.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <514E2F69.1030204@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/23/13 5:22 PM, Roger Binns wrote:
-> On 23/03/13 10:48, Eric Sandeen wrote:
->> Btrfs is a new copy on write filesystem for Linux aimed at
-> 
-> How much longer does "new" get to be there as the filesystem has been
-> going for well over half a decade.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-;) well, I didn't write that.  Could remove it on the next round I suppose.
+On 23/03/13 15:40, Eric Sandeen wrote:
+> I imagine it depends on the details of the workload & storage as well.
 
->> +  autodefrag +	Detect small random writes into files and queue them up
->> for the +	defrag process.  Works best for small files; Not well suited
->> for +	large database workloads.
-> 
-> What is "large"?  One man's large database is another's trivial database!
->  Same applies to "small".  Virtual machines are also in the category of
-> large files with small random writes.
-> 
-> Quantification would help a lot.  Suggestions are "more than 10 random
-> writes an hour to files larger than a gigabyte".
+If the people who write btrfs can't come up with some measures to deem
+appropriateness, then how can the administrators who have even less
+information :-)
 
-Fair enough.  I was going by the original commitlog for that option:
+I suspect file size has nothing to do with it, and it is entirely about
+the volume of random writes.  (But as a correlator smaller files are
+unlikely to get many random writes because they contain less useful
+information than larger files.)
 
->     Btrfs: add mount -o auto_defrag
->     
->     This will detect small random writes into files and
->     queue the up for an auto defrag process.  It isn't well suited to
->     database workloads yet, but works for smaller files such as rpm, sqlite
->     or bdb databases.
+Roger
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-I imagine it depends on the details of the workload & storage as well.
-
-Quantifying it may be tough; it may be better to just add more description
-of what happens when it autodefrags, with some indication of how file size
-affects the process, and leave it up to the admin to determine whether
-it's appropriate for a given environment.
-
-Before I can do that I'll have to understand better how it works ;)
-
-Thanks,
--Eric
-
-> Roger
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+iEYEARECAAYFAlFOUr0ACgkQmOOfHg372QSIsgCg3D1k0dL/2bMQpzHRDdlMkUo2
+TT8AoI11eLAdAv6iQPweHaeVUiJNSRf6
+=OVVq
+-----END PGP SIGNATURE-----
 

@@ -1,71 +1,237 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailbackend.panix.com ([166.84.1.89]:64972 "EHLO
-	mailbackend.panix.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753387Ab3CXMMV (ORCPT
+Received: from cn.fujitsu.com ([222.73.24.84]:5653 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754831Ab3CYBuW convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Mar 2013 08:12:21 -0400
-Received: from panix2.panix.com (panix2.panix.com [166.84.1.2])
-	by mailbackend.panix.com (Postfix) with ESMTP id 9447234165
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2013 08:12:20 -0400 (EDT)
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs: block rsv returned -28 stack trace
-From: Brian Downing <bsd@panix.com>
-Date: 24 Mar 2013 08:12:20 -0400
-Message-ID: <yratxo1j8t7.fsf@panix2.panix.com>
+	Sun, 24 Mar 2013 21:50:22 -0400
+Message-ID: <514FAD96.7040002@cn.fujitsu.com>
+Date: Mon, 25 Mar 2013 09:51:18 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Re: [PATCH 2/3] Btrfs: fix the deadlock between the transaction start/attach
+ and commit
+References: <51249468.6010004@cn.fujitsu.com> <CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com> <512B3AE7.9090208@cn.fujitsu.com> <CAOcd+r2bKGSoyxSXtnDKH5d04kRT2qRpFAKX2Dz6As=Qc_fOtg@mail.gmail.com>
+In-Reply-To: <CAOcd+r2bKGSoyxSXtnDKH5d04kRT2qRpFAKX2Dz6As=Qc_fOtg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
- I don't know where I'm supposed to send this, so I'm taking a wild
-ass guess and sending it to this list.
-Please fwd if necessary
-THX
+On Sun, 24 Mar 2013 13:13:22 +0200, Alex Lyakas wrote:
+> Hi Miao,
+> I am seeing another issue. Your fix prevents from TRANS_START to get
+> in the way of a committing transaction. But it does not prevent from
+> TRANS_JOIN. On the other hand, btrfs_commit_transaction has the
+> following loop:
+> 
+> do {
+>     // attempt to do some useful stuff and/or sleep
+> } while (atomic_read(&cur_trans->num_writers) > 1 ||
+> 		 (should_grow && cur_trans->num_joined != joined));
+> 
+> What I see is basically that new writers join the transaction, while
+> btrfs_commit_transaction() does this loop. I see
+> cur_trans->num_writers decreasing, but then it increases, then
+> decreases etc. This can go for several seconds during heavy IO load.
+> There is nothing to prevent new TRANS_JOIN writers coming and joining
+> a transaction over and over, thus delaying transaction commit. The IO
+> path uses TRANS_JOIN; for example run_delalloc_nocow() does that.
+> 
+> Do you observe such behavior? Do you believe it's problematic?
 
-# uname -a
-Linux hostname 3.8.4-1-ARCH #1 SMP PREEMPT Wed Mar 20 22:10:25 CET
-2013 x86_64 GNU/Linux
+I know this behavior, there is no problem with it, the latter code
+will prevent from TRANS_JOIN.
 
-# btrfs --version
-Btrfs v0.20-rc1
+1672         spin_lock(&root->fs_info->trans_lock);
+1673         root->fs_info->trans_no_join = 1;
+1674         spin_unlock(&root->fs_info->trans_lock);
+1675         wait_event(cur_trans->writer_wait,
+1676                    atomic_read(&cur_trans->num_writers) == 1);
 
-btrfs filesystem was created on logical volume on an SSD
+And if we block the TRANS_JOIN at the place you point out, the deadlock
+will happen because we need deal with the ordered operations which will
+use TRANS_JOIN here.
 
-[83350.020435] ------------[ cut here ]------------
-[83350.020467] WARNING: at fs/btrfs/extent-tree.c:6337 btrfs_alloc_free_block+0x35a/0x370 [btrfs]()
-[83350.020469] Hardware name: To be filled by O.E.M.
-[83350.020471] btrfs: block rsv returned -28
-[83350.020472] Modules linked in: xfs nfsv4 auth_rpcgss fuse joydev hid_logitech ff_memless usbhid hid uvcvideo snd_usb_audio snd_usbmidi_lib videobuf2_vmalloc videobuf2_memops videobuf2_core
-snd_rawmidi videodev snd_seq_device media nls_cp437 vfat fat eeepc_wmi asus_wmi sparse_keymap rfkill video pci_hotplug usb_storage mxm_wmi evdev acpi_cpufreq mperf kvm_amd kvm cdc_acm microcode
-psmouse serio_raw pcspkr r8169 edac_core snd_hda_codec_hdmi edac_mce_amd mii k10temp i2c_piix4 snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_timer snd
-soundcore wmi button processor nfs lockd sunrpc fscache dm_mod btrfs crc32c libcrc32c zlib_deflate sr_mod cdrom sd_mod firewire_ohci ahci libahci firewire_core crc_itu_t libata ohci_hcd ehci_pci
-ehci_hcd usbcore usb_common scsi_mod
-[83350.020511]  radeon i2c_algo_bit drm_kms_helper ttm drm i2c_core
-[83350.020517] Pid: 11267, comm: mv Not tainted 3.8.4-1-ARCH #1
-[83350.020519] Call Trace:
-[83350.020525]  [<ffffffff8105750f>] warn_slowpath_common+0x7f/0xc0
-[83350.020528]  [<ffffffff81057606>] warn_slowpath_fmt+0x46/0x50
-[83350.020541]  [<ffffffffa040acda>] btrfs_alloc_free_block+0x35a/0x370 [btrfs]
-[83350.020553]  [<ffffffffa0413c80>] ? verify_parent_transid+0x170/0x170 [btrfs]
-[83350.020588]  [<ffffffffa043b7c3>] ? read_extent_buffer+0xc3/0x120 [btrfs]
-[83350.020599]  [<ffffffffa03f6e08>] __btrfs_cow_block+0x128/0x510 [btrfs]
-[83350.020614]  [<ffffffffa03f7394>] btrfs_cow_block+0x124/0x200 [btrfs]
-[83350.020624]  [<ffffffffa03fb59f>] btrfs_search_slot+0x1af/0x780 [btrfs]
-[83350.020629]  [<ffffffff810e67bd>] ? call_rcu+0x1d/0x20
-[83350.020641]  [<ffffffffa041146f>] btrfs_del_csums+0x12f/0x310 [btrfs]
-[83350.020651]  [<ffffffffa040467c>] __btrfs_free_extent+0x5fc/0x880 [btrfs]
-[83350.020663]  [<ffffffffa0408528>] run_clustered_refs+0x318/0xb40 [btrfs]
-[83350.020674]  [<ffffffffa045db83>] ? find_ref_head+0x83/0xf0 [btrfs]
-[83350.020686]  [<ffffffffa040c748>] btrfs_run_delayed_refs+0xc8/0x2f0 [btrfs]
-[83350.020698]  [<ffffffffa041cf5e>] __btrfs_end_transaction+0xee/0x3f0 [btrfs]
-[83350.020710]  [<ffffffffa041d2b0>] btrfs_end_transaction+0x10/0x20 [btrfs]
-[83350.020722]  [<ffffffffa0427c46>] btrfs_evict_inode+0x266/0x380 [btrfs]
-[83350.020728]  [<ffffffff811a6f88>] evict+0xb8/0x1b0
-[83350.020730]  [<ffffffff811a7755>] iput+0x105/0x1a0
-[83350.020734]  [<ffffffff8119a91e>] do_unlinkat+0x1de/0x240
-[83350.020738]  [<ffffffff81191f6a>] ? sys_newfstatat+0x2a/0x40
-[83350.020740]  [<ffffffff8119ceab>] sys_unlinkat+0x1b/0x40
-[83350.020744]  [<ffffffff814da81d>] system_call_fastpath+0x1a/0x1f
-[83350.020746] ---[ end trace 7f778ab5fc0a3f11 ]---
-[83350.020779] ------------[ cut here ]------------
+(I am dealing with the problem you said above by adding a new type of
+TRANS_* now)
+
+Thanks
+Miao
+
+> Thanks,
+> Alex.
+> 
+> 
+> On Mon, Feb 25, 2013 at 12:20 PM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>> On sun, 24 Feb 2013 21:49:55 +0200, Alex Lyakas wrote:
+>>> Hi Miao,
+>>> can you please explain your solution a bit more.
+>>>
+>>> On Wed, Feb 20, 2013 at 11:16 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>>>> Now btrfs_commit_transaction() does this
+>>>>
+>>>> ret = btrfs_run_ordered_operations(root, 0)
+>>>>
+>>>> which async flushes all inodes on the ordered operations list, it introduced
+>>>> a deadlock that transaction-start task, transaction-commit task and the flush
+>>>> workers waited for each other.
+>>>> (See the following URL to get the detail
+>>>>  http://marc.info/?l=linux-btrfs&m=136070705732646&w=2)
+>>>>
+>>>> As we know, if ->in_commit is set, it means someone is committing the
+>>>> current transaction, we should not try to join it if we are not JOIN
+>>>> or JOIN_NOLOCK, wait is the best choice for it. In this way, we can avoid
+>>>> the above problem. In this way, there is another benefit: there is no new
+>>>> transaction handle to block the transaction which is on the way of commit,
+>>>> once we set ->in_commit.
+>>>>
+>>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>>>> ---
+>>>>  fs/btrfs/transaction.c |   17 ++++++++++++++++-
+>>>>  1 files changed, 16 insertions(+), 1 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>>>> index bc2f2d1..71b7e2e 100644
+>>>> --- a/fs/btrfs/transaction.c
+>>>> +++ b/fs/btrfs/transaction.c
+>>>> @@ -51,6 +51,14 @@ static noinline void switch_commit_root(struct btrfs_root *root)
+>>>>         root->commit_root = btrfs_root_node(root);
+>>>>  }
+>>>>
+>>>> +static inline int can_join_transaction(struct btrfs_transaction *trans,
+>>>> +                                      int type)
+>>>> +{
+>>>> +       return !(trans->in_commit &&
+>>>> +                type != TRANS_JOIN &&
+>>>> +                type != TRANS_JOIN_NOLOCK);
+>>>> +}
+>>>> +
+>>>>  /*
+>>>>   * either allocate a new transaction or hop into the existing one
+>>>>   */
+>>>> @@ -86,6 +94,10 @@ loop:
+>>>>                         spin_unlock(&fs_info->trans_lock);
+>>>>                         return cur_trans->aborted;
+>>>>                 }
+>>>> +               if (!can_join_transaction(cur_trans, type)) {
+>>>> +                       spin_unlock(&fs_info->trans_lock);
+>>>> +                       return -EBUSY;
+>>>> +               }
+>>>>                 atomic_inc(&cur_trans->use_count);
+>>>>                 atomic_inc(&cur_trans->num_writers);
+>>>>                 cur_trans->num_joined++;
+>>>> @@ -360,8 +372,11 @@ again:
+>>>>
+>>>>         do {
+>>>>                 ret = join_transaction(root, type);
+>>>> -               if (ret == -EBUSY)
+>>>> +               if (ret == -EBUSY) {
+>>>>                         wait_current_trans(root);
+>>>> +                       if (unlikely(type == TRANS_ATTACH))
+>>>> +                               ret = -ENOENT;
+>>>> +               }
+>>>
+>>> So I understand that instead of incrementing num_writes and joining
+>>> the current transaction, you do not join and wait for the current
+>>> transaction to unblock.
+>>
+>> More specifically，TRANS_START、TRANS_USERSPACE and TRANS_ATTACH can not
+>> join and just wait for the current transaction to unblock if ->in_commit
+>> is set.
+>>
+>>> Which task in Josef's example
+>>> http://marc.info/?l=linux-btrfs&m=136070705732646&w=2
+>>> task 1, task 2 or task 3 is the one that will not join the
+>>> transaction, but instead wait?
+>>
+>> Task1 will not join the transaction, in this way, async inode flush
+>> won't run, and then task3 won't do anything.
+>>
+>> Before applying the patch:
+>> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
+>> (Task1)                                 (Task2)                         (Task3)         -- the name in Josef's example
+>> btrfs_start_transaction()
+>>  |->may_wait_transaction()
+>>  |  (return 0)
+>>  |                                      btrfs_commit_transaction()
+>>  |                                       |->set ->in_commit and
+>>  |                                       |  blocked to 1
+>>  |                                       |->wait writers to be 1
+>>  |                                       |  (writers is 1)
+>>  |->join_transaction()                   |
+>>  |  (writers is 2)                       |
+>>  |->btrfs_commit_transaction()           |
+>>      |                                   |->set trans_no_join to 1
+>>      |                                   |  (close join transaction)
+>>      |->btrfs_run_ordered_operations     |
+>>         (Those ordered operations        |
+>>          are added when releasing        |
+>>          file)                           |
+>>          |->async inode flush()          |
+>>          |->wait_flush_comlete()         |
+>>                                          |                              work_loop()
+>>                                          |                               |->run_work()
+>>                                          |                                   |->btrfs_join_transaction()
+>>                                          |                                       |->wait_current_trans()
+>>                                          |->wait writers to be 1
+>>
+>> This three tasks waited for each other.
+>>
+>> After applying this patch:
+>> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
+>> (Task1)                                 (Task2)                         (Task3)
+>> btrfs_start_transaction()
+>>  |->may_wait_transaction()
+>>  |  (return 0)
+>>  |                                      btrfs_commit_transaction()
+>>  |                                       |->set ->in_commit and
+>>  |                                       |  blocked to 1
+>>  |                                       |->wait writers to be 1
+>>  |                                       |  (writers is 1)
+>>  |->join_transaction() fail              |
+>>  |  (return -EBUSY, writers is still 1)  |
+>>  |->wait_current_trans()                 |
+>>                                          |->set trans_no_join to 1
+>>                                          |  (close join transaction)
+>>                                          |->wait writers to be 1
+>>                                          |->continue committing
+>>                                                                         (Task3 does nothing)
+>>> Also, I think I don't fully understand Josef's example. What is
+>>> preventing from async flushing to complete?
+>>> Is task 3 waiting because trans_no_join is set?
+>>> Is task 3 the one that actually does the delalloc flush?
+>>
+>> See above.
+>>
+>> Thanks
+>> Miao
+>>
+>>>
+>>> Thanks,
+>>> Alex.
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>>         } while (ret == -EBUSY);
+>>>>
+>>>>         if (ret < 0) {
+>>>> --
+>>>> 1.6.5.2
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+> 
 

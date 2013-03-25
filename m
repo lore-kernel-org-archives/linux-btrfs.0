@@ -1,70 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f45.google.com ([209.85.160.45]:55057 "EHLO
-	mail-pb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757065Ab3CYMR1 (ORCPT
+Received: from mail-la0-f54.google.com ([209.85.215.54]:52075 "EHLO
+	mail-la0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757443Ab3CYM71 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Mar 2013 08:17:27 -0400
-Received: by mail-pb0-f45.google.com with SMTP id ro8so4165751pbb.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 05:17:26 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wangshilong1991@gmail.com, sensille@gmx.net, list.btrfs@jan-o-sch.net
-Subject: [PATCH V2 2/2] Btrfs: kill some BUG_ONs() in the find_parent_nodes()
-Date: Mon, 25 Mar 2013 20:11:41 +0800
-Message-Id: <1364213501-2422-1-git-send-email-wangshilong1991@gmail.com>
+	Mon, 25 Mar 2013 08:59:27 -0400
+From: Emil Goode <emilgoode@gmail.com>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, Emil Goode <emilgoode@gmail.com>
+Subject: [PATCH] Btrfs: fix gcc warnings by adding third argument
+Date: Mon, 25 Mar 2013 14:02:11 +0100
+Message-Id: <1364216531-16467-1-git-send-email-emilgoode@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+The function pointer bi_end_io expects three arguments of the
+function it points to. This patch adds a struct batch_complete
+pointer as a third argument to the raid_write_end_io,
+raid_rmw_end_io and raid_recover_end_io functions.
 
-The reason that BUG_ON() happens in these places is just
-because of ENOMEM.
+GCC is warning about this:
+fs/btrfs/raid56.c: In function ‘finish_rmw’:
+fs/btrfs/raid56.c:1258:18: warning:
+	assignment from incompatible pointer type [enabled by default]
+fs/btrfs/raid56.c: In function ‘raid56_rmw_stripe’:
+fs/btrfs/raid56.c:1514:18: warning:
+	assignment from incompatible pointer type [enabled by default]
+fs/btrfs/raid56.c: In function ‘__raid56_parity_recover’:
+fs/btrfs/raid56.c:2013:18: warning:
+	assignment from incompatible pointer type [enabled by default]
 
-We try ro return ENOMEM rather than trigger BUG_ON(), the
-caller will abort the transaction thus avoiding the kernel panic.
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
-Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Signed-off-by: Emil Goode <emilgoode@gmail.com>
 ---
- fs/btrfs/backref.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/raid56.c |    9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index bd605c8..5ff46ee 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -900,7 +900,8 @@ again:
- 		if (ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
- 			ret = ulist_add(roots, ref->root_id, 0, GFP_NOFS);
--			BUG_ON(ret < 0);
-+			if (ret)
-+				goto out;
- 		}
- 		if (ref->count && ref->parent) {
- 			struct extent_inode_elem *eie = NULL;
-@@ -920,7 +921,9 @@ again:
- 			ret = ulist_add_merge(refs, ref->parent,
- 					      (uintptr_t)ref->inode_list,
- 					      (u64 *)&eie, GFP_NOFS);
--			if (!ret && extent_item_pos) {
-+			if (ret)
-+				goto out;
-+			if (extent_item_pos) {
- 				/*
- 				 * we've recorded that parent, so we must extend
- 				 * its inode list here
-@@ -930,7 +933,6 @@ again:
- 					eie = eie->next;
- 				eie->next = ref->inode_list;
- 			}
--			BUG_ON(ret < 0);
- 		}
- 		kfree(ref);
- 	}
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 9a79fb7..6df1ac8 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -850,7 +850,8 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, int err, int uptodate)
+  * end io function used by finish_rmw.  When we finally
+  * get here, we've written a full stripe
+  */
+-static void raid_write_end_io(struct bio *bio, int err)
++static void raid_write_end_io(struct bio *bio, int err,
++			      struct batch_complete *batch)
+ {
+ 	struct btrfs_raid_bio *rbio = bio->bi_private;
+ 
+@@ -1384,7 +1385,8 @@ static void set_bio_pages_uptodate(struct bio *bio)
+  * This will usually kick off finish_rmw once all the bios are read in, but it
+  * may trigger parity reconstruction if we had any errors along the way
+  */
+-static void raid_rmw_end_io(struct bio *bio, int err)
++static void raid_rmw_end_io(struct bio *bio, int err,
++			    struct batch_complete *batch)
+ {
+ 	struct btrfs_raid_bio *rbio = bio->bi_private;
+ 
+@@ -1905,7 +1907,8 @@ cleanup_io:
+  * This is called only for stripes we've read from disk to
+  * reconstruct the parity.
+  */
+-static void raid_recover_end_io(struct bio *bio, int err)
++static void raid_recover_end_io(struct bio *bio, int err,
++				struct batch_complete *batch)
+ {
+ 	struct btrfs_raid_bio *rbio = bio->bi_private;
+ 
 -- 
-1.7.11.7
+1.7.10.4
 

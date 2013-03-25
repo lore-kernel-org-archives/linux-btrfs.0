@@ -1,46 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:51113 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757826Ab3CYN7d (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Mar 2013 09:59:33 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 3E0B39A0645
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 07:59:33 -0600 (MDT)
-Date: Mon, 25 Mar 2013 09:59:30 -0400
-From: Josef Bacik <jbacik@fusionio.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59666 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758527Ab3CYP5s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Mar 2013 11:57:48 -0400
+Date: Mon, 25 Mar 2013 16:57:43 +0100
+From: David Sterba <dsterba@suse.cz>
 To: Roger Binns <rogerb@rogerbinns.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: document mount options in
  Documentation/fs/btrfs.txt
-Message-ID: <20130325135930.GF1955@localhost.localdomain>
+Message-ID: <20130325155743.GB12745@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <514DEB06.7000606@redhat.com>
  <kil9uq$210$1@ger.gmane.org>
+ <514E2F69.1030204@redhat.com>
+ <kiljrq$efp$1@ger.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <kil9uq$210$1@ger.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <kiljrq$efp$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 23, 2013 at 04:22:22PM -0600, Roger Binns wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
+On Sat, Mar 23, 2013 at 06:11:26PM -0700, Roger Binns wrote:
+> On 23/03/13 15:40, Eric Sandeen wrote:
+> > I imagine it depends on the details of the workload & storage as well.
 > 
-> On 23/03/13 10:48, Eric Sandeen wrote:
-> > Btrfs is a new copy on write filesystem for Linux aimed at
+> If the people who write btrfs can't come up with some measures to deem
+> appropriateness, then how can the administrators who have even less
+> information :-)
 > 
-> How much longer does "new" get to be there as the filesystem has been
-> going for well over half a decade.
-> 
-> > +  autodefrag +	Detect small random writes into files and queue them up
-> > for the +	defrag process.  Works best for small files; Not well suited
-> > for +	large database workloads.
-> 
-> What is "large"?  One man's large database is another's trivial database!
->  Same applies to "small".  Virtual machines are also in the category of
-> large files with small random writes.
-> 
+> I suspect file size has nothing to do with it, and it is entirely about
+> the volume of random writes.  (But as a correlator smaller files are
+> unlikely to get many random writes because they contain less useful
+> information than larger files.)
 
-Any write below i_size that is less than 64k.
+I'd say not the volume but the write pattern. A single 4k write may read
+and rewrite the surrounding 64k when autodefrag is on. So, several
+rewrites close to each other may actually benefit from autodefrag, while
+the same number of a completely random 4k rewrites may end up rewriting
+16x more data.
 
-Josef
+(http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg18926.html)
+
+david

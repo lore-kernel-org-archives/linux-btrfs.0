@@ -1,182 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:40376 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752321Ab3CWJs1 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:55627 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932801Ab3CYUO3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Mar 2013 05:48:27 -0400
-From: Alexandre Oliva <oliva@gnu.org>
-To: Chris Mason <clmason@fusionio.com>
-Cc: Samuel Just <sam.just@inktank.com>,
-        "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel\@vger.kernel.org" <ceph-devel@vger.kernel.org>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-References: <orhak8fm0u.fsf@livre.home> <or1ubaesrx.fsf@livre.home>
-	<ord2utb4xx.fsf@livre.home>
-	<20130321180614.30044.29961@localhost.localdomain>
-	<20130321230621.30044.80640@localhost.localdomain>
-	<orzjxw9f75.fsf@livre.home>
-	<20130322120754.27874.14389@localhost.localdomain>
-	<orobeba58l.fsf@livre.home>
-	<20130322142659.27874.81283@localhost.localdomain>
-	<CA+4uBUbyF-3yiBQ00xP4NHEX96CXa9HZo5-ZYdZ3Fjrfnm=Ssw@mail.gmail.com>
-	<20130322171214.27874.48118@localhost.localdomain>
-Date: Sat, 23 Mar 2013 06:47:26 -0300
-In-Reply-To: <20130322171214.27874.48118@localhost.localdomain> (Chris Mason's
-	message of "Fri, 22 Mar 2013 13:12:14 -0400")
-Message-ID: <or620ia1n5.fsf@livre.home>
+	Mon, 25 Mar 2013 16:14:29 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 50F9D9A068E
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 14:14:29 -0600 (MDT)
+Date: Mon, 25 Mar 2013 16:14:26 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Stefan Priebe <s.priebe@profihost.ag>
+CC: Josef Bacik <JBacik@fusionio.com>, Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: No space left on device (28)
+Message-ID: <20130325201426.GG1955@localhost.localdomain>
+References: <20130321190249.30044.79438@localhost.localdomain>
+ <514B62A4.1030201@profihost.ag>
+ <5F36F35C-39BE-4244-B8FB-A80EC2B06D48@profihost.ag>
+ <514C4A8C.90607@profihost.ag>
+ <20130322135322.GB1955@localhost.localdomain>
+ <514C6319.7030400@profihost.ag>
+ <20130322155453.GD1955@localhost.localdomain>
+ <514CAC8D.7010409@profihost.ag>
+ <20130322204932.GE1955@localhost.localdomain>
+ <514CC52B.1000201@profihost.ag>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-=-="
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <514CC52B.1000201@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
+On Fri, Mar 22, 2013 at 02:55:07PM -0600, Stefan Priebe wrote:
+> Hi Jsoef,
+> 
+> thanks!
 
-On Mar 22, 2013, Chris Mason <clmason@fusionio.com> wrote:
+Ok I don't think the thing I just fixed will make any difference for you so
+here's another debug patch, just apply it on top of what I've already sent you
+and re-run and give me the dmesg again.  Thanks,
 
-> Quoting Samuel Just (2013-03-22 13:06:41)
->> Incomplete writes for leveldb should just result in lost updates, not
->> corruption.
-
-> In this case, I think Alexandre is scanning for zeros in the file.
-
-Yup, the symptom is zeros at the end of a page, with nonzeros on the
-subsequent page, which indicates that the writes to the previous page
-were dropped.
-
-What I actually do is to iterate over the entire database, which will
-error out when the block header is found to be corrupted.  I use this
-program I wrote (also hereby provided under GNU GPLv3+) to check the
-database for corruption.
+Josef
 
 
---=-=-=
-Content-Type: text/x-c++src
-Content-Disposition: inline; filename=dbck.cc
-
-#include <assert.h>
-#include <iostream>
-#include "leveldb/db.h"
-
-int main(int argc, char *argv[]) {
-  bool paranoid = false;
-  bool dump = false;
-  bool repair = false;
-  bool quiet = false;
-  int i = 0;
-  int errors = 0;
-
-  if (argc == 1) {
-  usage:
-    std::cout << "usage: [flags] dbname [flags] ..." << std::endl
-	      << "-d --dump     dump database contents" << std::endl
-	      << "-r --repair   repair database" << std::endl
-	      << "-p --paranoid enable paranoid mode" << std::endl
-	      << "-l --lax      disable paranoid mode (default)" << std::endl
-	      << "-q --quiet    enable quiet mode" << std::endl
-	      << "-v --verbose  disable quiet mode (default)" << std::endl
-	      << "-h --help     show this message and exit" << std::endl
-	      << "dbname        check, dump and repair" << std::endl
-	      << std::endl
-	      << "exit status is the number of errors" << std::endl;
-    return errors;
-  }
-
-  for (i++; i < argc; i++) {
-    if (argv[i][0] == '-') {
-      if (strcmp (argv[i], "--dump") == 0
-	  || strcmp (argv[i], "-d") == 0)
-	dump = true;
-      else if (strcmp (argv[i], "--repair") == 0
-	       || strcmp (argv[i], "-r") == 0)
-	repair = true;
-      else if (strcmp (argv[i], "--paranoid") == 0
-	       || strcmp (argv[i], "-p") == 0)
-	paranoid = true;
-      else if (strcmp (argv[i], "--lax") == 0
-	       || strcmp (argv[i], "-l") == 0)
-	paranoid = false;
-      else if (strcmp (argv[i], "--quiet") == 0
-	       || strcmp (argv[i], "-q") == 0)
-	quiet = true;
-      else if (strcmp (argv[i], "--verbose") == 0
-	       || strcmp (argv[i], "-v") == 0)
-	quiet = false;
-      else if (strcmp (argv[i], "--help") == 0
-	       || strcmp (argv[i], "-h") == 0)
-	goto usage;
-      else {
-	std::cerr << "unrecognized option: " << argv[i] << std::endl;
-	goto usage;
-      }
-    } else {
-      if (!quiet)
-	std::cout << argv[i] << std::endl;
-
-      leveldb::DB* db;
-      leveldb::Options options;
-      options.paranoid_checks = paranoid;
-      leveldb::Status status = leveldb::DB::Open(options, argv[i], &db);
-      bool bad = false;
-
-      if (!status.ok()) {
-	std::cerr << status.ToString() << std::endl;
-	bad = true;
-      } else {
-	leveldb::ReadOptions rdopt;
-	rdopt.verify_checksums = paranoid;
-	rdopt.fill_cache = false;
-	leveldb::Iterator* it = db->NewIterator(rdopt);
-	int count = 0;
-	try {
-	  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-	    count++;
-	    if (dump)
-	      std::cout << it->key().ToString() << ": "
-			<< it->value().ToString() << std::endl;
-	    else if (!quiet && count % 1000 == 0)
-	      std::cout << count << " entries\r" << std::flush;
-	  }
-	  if (!it->status().ok()) {
-	    std::cerr << it->status().ToString() << std::endl;
-	    bad = true;
-	  }
-	} catch (...) {
-	  std::cerr << "caught an exception" << std::endl;
-	}
-	delete it;
-	if (!quiet)
-	  std::cout << count << " entries" << std::endl;
-      }
-
-      delete db;
-
-      if (bad) {
-	errors++;
-	if (repair) {
-	  if (!quiet)
-	    std::cout << "repairing..." << std::endl;
-	  status = RepairDB(argv[i], options);
-	  if (!status.ok()) {
-	    std::cerr << status.ToString() << std::endl;
-	    errors++;
-	  }
-	} else if (!quiet)
-	  std::cout << "use --repair to repair" << std::endl;
-      }
-    }
-  }
-
-  return errors;
-}
-
---=-=-=
-
-
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index aabaea6..bf6433f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4162,7 +4162,11 @@ out:
+ 	}
+ 	if (flushing) {
+ 		if (ret == -ENOSPC) {
+-			printk(KERN_ERR "returning enospc, dumping space info\n");
++			spin_lock(&block_rsv->lock);
++			printk(KERN_ERR "returning enospc, space_info %u, size %Lu reserved %Lu, "
++			       "flush %d, flush_state %d  dumping space info\n", block_rsv->type,
++			       block_rsv->size, block_rsv->reserved, flush, flush_state);
++			spin_unlock(&block_rsv->lock);
+ 			dump_space_info(space_info, 0, 0);
+ 		}
+ 
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+1.7.7.6
 
---=-=-=--

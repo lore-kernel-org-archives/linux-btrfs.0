@@ -1,52 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37627 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752329Ab3CXBLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Mar 2013 21:11:42 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UJZTf-0001QR-E1
-	for linux-btrfs@vger.kernel.org; Sun, 24 Mar 2013 02:12:03 +0100
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2013 02:12:03 +0100
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2013 02:12:03 +0100
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
-Subject: Re: [PATCH] btrfs: document mount options in Documentation/fs/btrfs.txt
-Date: Sat, 23 Mar 2013 18:11:26 -0700
-Message-ID: <kiljrq$efp$1@ger.gmane.org>
-References: <514DEB06.7000606@redhat.com> <kil9uq$210$1@ger.gmane.org> <514E2F69.1030204@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <514E2F69.1030204@redhat.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:51113 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757826Ab3CYN7d (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Mar 2013 09:59:33 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 3E0B39A0645
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 07:59:33 -0600 (MDT)
+Date: Mon, 25 Mar 2013 09:59:30 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Roger Binns <rogerb@rogerbinns.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: document mount options in
+ Documentation/fs/btrfs.txt
+Message-ID: <20130325135930.GF1955@localhost.localdomain>
+References: <514DEB06.7000606@redhat.com>
+ <kil9uq$210$1@ger.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <kil9uq$210$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Sat, Mar 23, 2013 at 04:22:22PM -0600, Roger Binns wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 23/03/13 10:48, Eric Sandeen wrote:
+> > Btrfs is a new copy on write filesystem for Linux aimed at
+> 
+> How much longer does "new" get to be there as the filesystem has been
+> going for well over half a decade.
+> 
+> > +  autodefrag +	Detect small random writes into files and queue them up
+> > for the +	defrag process.  Works best for small files; Not well suited
+> > for +	large database workloads.
+> 
+> What is "large"?  One man's large database is another's trivial database!
+>  Same applies to "small".  Virtual machines are also in the category of
+> large files with small random writes.
+> 
 
-On 23/03/13 15:40, Eric Sandeen wrote:
-> I imagine it depends on the details of the workload & storage as well.
+Any write below i_size that is less than 64k.
 
-If the people who write btrfs can't come up with some measures to deem
-appropriateness, then how can the administrators who have even less
-information :-)
-
-I suspect file size has nothing to do with it, and it is entirely about
-the volume of random writes.  (But as a correlator smaller files are
-unlikely to get many random writes because they contain less useful
-information than larger files.)
-
-Roger
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAlFOUr0ACgkQmOOfHg372QSIsgCg3D1k0dL/2bMQpzHRDdlMkUo2
-TT8AoI11eLAdAv6iQPweHaeVUiJNSRf6
-=OVVq
------END PGP SIGNATURE-----
-
+Josef

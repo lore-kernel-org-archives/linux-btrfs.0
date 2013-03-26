@@ -1,54 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f194.google.com ([209.85.223.194]:43764 "EHLO
-	mail-ie0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934519Ab3CZOdr convert rfc822-to-8bit (ORCPT
+Received: from mail-ph.de-nserver.de ([85.158.179.214]:52916 "EHLO
+	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934567Ab3CZPDQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 10:33:47 -0400
-Received: by mail-ie0-f194.google.com with SMTP id qd14so2591433ieb.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 07:33:47 -0700 (PDT)
+	Tue, 26 Mar 2013 11:03:16 -0400
+Message-ID: <5151B8AF.60900@profihost.ag>
+Date: Tue, 26 Mar 2013 16:03:11 +0100
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
 MIME-Version: 1.0
-From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Date: Tue, 26 Mar 2013 14:33:27 +0000
-Message-ID: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
-Subject: Kernel bug on mismatching generation_v2 in inode.c:835
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Josef Bacik <jbacik@fusionio.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: No space left on device (28)
+References: <20130322155453.GD1955@localhost.localdomain> <514CAC8D.7010409@profihost.ag> <20130322204932.GE1955@localhost.localdomain> <514CC52B.1000201@profihost.ag> <20130325201426.GG1955@localhost.localdomain> <51515226.9010509@profihost.ag> <20130326125319.GH1955@localhost.localdomain> <51519ABB.4030207@profihost.ag> <20130326133053.GK1955@localhost.localdomain> <5151A75C.6080703@profihost.ag> <20130326144426.GL1955@localhost.localdomain>
+In-Reply-To: <20130326144426.GL1955@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear list members,
+Hi,
+Am 26.03.2013 15:44, schrieb Josef Bacik:
+>>>> Am 26.03.2013 13:53, schrieb Josef Bacik:
+>>>> no - it's just mounted with mount -o noatime
+>>>>
+>>>> :~# cat /proc/mounts | grep btrfs
+>>>> /dev/mapper/raid54tb1 /mnt btrfs rw,noatime,space_cache 0 0
+>>>>
+>>>
+>>> Ok I think I see what's going on.  Can you try this patch and see if it fixes
+>>> it?  Thanks,
+>>
+>> It still does not fix the problem.
+>>
+>> The rsync output looks like this so it does not work for file a but then
+>> continues on c d e, ...
+>>
+>> sync -av --progress /backup/ /mnt/
+>> sending incremental file list
+>> .etc_openvpn/ipp.txt
+>>          229 100%    3.99kB/s    0:00:00 (xfer#2, to-check=1009/1196)
+>> .etc_openvpn/openvpn-status.log
+>>          360 100%    6.28kB/s    0:00:00 (xfer#3, to-check=1007/1196)
+>> rsync: rename "/mnt/.etc_openvpn/.ipp.txt.t9lucX" ->
+>> ".etc_openvpn/ipp.txt": No space left on device (28)
+>> .log/
+>> .log/UcliEvt.log
+>>       104188 100%  147.67kB/s    0:00:00 (xfer#4, to-check=1131/2700)
+>> .log/auth.log
+>>     15211522 100%    2.97MB/s    0:00:04 (xfer#5, to-check=1105/2700)
+>> .log/auth.log.1
+>>     19431424  61%    7.35MB/s    0:00:01
+>>
+>> the dmesg output looks like this:
+>> [  551.321576] returning enospc, space_info 3, size 0 reserved 0, flush
+>> 2, flush_state 7  dumping space info
+>> [  551.323694] space_info 4 has 6439526400 free, is full
+>> [  551.323696] space_info total=25748307968, used=19308666880, pinned=0,
+>> reserved=49152, may_use=6438453248, readonly=65536
+>>
+> 
+> Ok so then this is probably it, let me know if it helps.  Thanks,
 
-In my previous thread at
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg23333.html
-there was a space_cache kernel bug/panic on kernel 3.8. I could
-successfully "fix" that with rebuilding the cache. But some files were
-missing/corrupted. So I booted a rescue CD with kernel 3.7 and ran
-btrfsck --repair, which repaired quite a few things.
+OK it now has copied a lot of files (170) without an error all were very
+small.
 
-After a reboot I got the following message:
-[  469.457386] btrfs: disk space caching is enabled
-[  469.503612] btrfs: mismatching generation and generation_v2 found
-in root item. This root was probably mounted with an older kernel.
-Resetting all new fields.
+Then this again:
+rsync: rename
+"/mnt/.software/kernel/linux-3.9-rc3/.tmp_versions/.vhost_net.mod.GrhWet" ->
+".software/kernel/linux-3.9-rc3/.tmp_versions/vhost_net.mod": No space
+left on device (28)
+rsync: rename
+"/mnt/.software/kernel/linux-3.9-rc3/.tmp_versions/.via-rhine.mod.X2Ofhz" ->
+".software/kernel/linux-3.9-rc3/.tmp_versions/via-rhine.mod": No space
+left on device (28)
+rsync: rename
+"/mnt/.software/kernel/linux-3.9-rc3/.tmp_versions/.via-rng.mod.RAyxkF"
+-> ".software/kernel/linux-3.9-rc3/.tmp_versions/via-rng.mod": No space
+left on device (28)
+rsync: rename
+"/mnt/.software/kernel/linux-3.9-rc3/.tmp_versions/.virtio.mod.w7INoL"
+-> ".software/kernel/linux-3.9-rc3/.tmp_versions/virtio.mod": No space
+left on device (28)^C
 
-As soon as anything had wanted to read a bit from the file system, the
-hard drive went crazy and was working for 5-10 minutes. After I got a
-kernel panic which said there's an error in fs/btrfs/inode.c:835.
+[ 5012.468988] space_info total=25748307968, used=19308773376, pinned=0,
+reserved=69632, may_use=6438354944, readonly=65536
+[ 5012.472981] returning enospc, space_info 3, size 0 reserved 0, flush
+2, flush_state 7  dumping space info
+[ 5012.472982] space_info 4 has 6439399424 free, is full
+[ 5012.472982] space_info total=25748307968, used=19308773376, pinned=0,
+reserved=69632, may_use=6438354944, readonly=65536
+[ 5012.476974] returning enospc, space_info 3, size 0 reserved 0, flush
+2, flush_state 7  dumping space info
+[ 5012.476975] space_info 4 has 6439399424 free, is full
+[ 5012.476976] space_info total=25748307968, used=19308773376, pinned=0,
+reserved=69632, may_use=6438354944, readonly=65536
+[ 5012.480968] returning enospc, space_info 3, size 0 reserved 0, flush
+2, flush_state 7  dumping space info
+[ 5012.480969] space_info 4 has 6439399424 free, is full
 
-In the moment I don't just mount, but want to read something from the
-mounted file system under the rescue system, the same procedure
-happens.
-
-I made some pictures of it (since I cannot read anything from the
-logs, if there are any).
-You can find them here: www.morrohun.hu/temp/btrfs/v2/[123].jpg
-
-I wanted to create an image with the aforementined btrfs-image tool,
-but yet to have any success .
-
-Could you please give me an advice what can I do now? Living on a
-live-CD is not a life insurance :)
-
-Best regards,
-
-Ákos Szőts
+Stefan

@@ -1,41 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57777 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751513Ab3CZSRQ (ORCPT
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:35075 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753569Ab3CZS0F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 14:17:16 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 15A247C04E0
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 12:17:16 -0600 (MDT)
-Date: Tue, 26 Mar 2013 14:17:13 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
-Message-ID: <20130326181713.GD28030@localhost.localdomain>
-References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
- <20130326144855.GM1955@localhost.localdomain>
- <CAAr69zbBXr_c1_xroqueHG0Zobo8H94a2p6kB+GTsZVfkFCtGg@mail.gmail.com>
+	Tue, 26 Mar 2013 14:26:05 -0400
+Received: by mail-ie0-f176.google.com with SMTP id x14so9250583ief.21
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 11:26:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <CAAr69zbBXr_c1_xroqueHG0Zobo8H94a2p6kB+GTsZVfkFCtGg@mail.gmail.com>
+In-Reply-To: <20130326181713.GD28030@localhost.localdomain>
+References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
+ <20130326144855.GM1955@localhost.localdomain> <CAAr69zbBXr_c1_xroqueHG0Zobo8H94a2p6kB+GTsZVfkFCtGg@mail.gmail.com>
+ <20130326181713.GD28030@localhost.localdomain>
+From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+Date: Tue, 26 Mar 2013 19:25:44 +0100
+Message-ID: <CAAr69zbgQn4sTSXw+AF69Pr78EDXVq7VM5uj90uHmnN5xxH5_w@mail.gmail.com>
+Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 26, 2013 at 09:59:57AM -0600, Szőts Ákos wrote:
-> The error was just a silly "permission denied" one.
-> 
-> I uploaded the created image to www.morrohun.hu/temp/btrfs/btrfs.img
-> SHA1: 90ee61e0724700495d26678d58dc229e04a04cc4
-> Please, write me when you downloaded and I'll delete it.
-> 
-> I have the idea to run btrfsck from your tree on the file system
-> again, but I won't touch the fs until you said so :).
-> 
-
-You did take this image while the file system was unmounted right?  I'm seeing
-different weirdness with the restored image, trying to figure out if it's a
-problem with the restore or with the dump.  Thanks,
-
-Josef
+If my memory servers me well, it was taken in unmounted state. Do you
+want me to take an other one and compare the SHA1 values?

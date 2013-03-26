@@ -1,37 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f180.google.com ([209.85.223.180]:34077 "EHLO
-	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759782Ab3CZOKv convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:17355 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965480Ab3CZPYQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 10:10:51 -0400
-Received: by mail-ie0-f180.google.com with SMTP id a11so8533851iee.25
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 07:10:50 -0700 (PDT)
+	Tue, 26 Mar 2013 11:24:16 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2QFOEu8029967
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 15:24:15 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2QFODhX017367
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 15:24:14 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2QFOD8Z030247
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 10:24:13 -0500
+Message-ID: <5151BD92.2010802@oracle.com>
+Date: Tue, 26 Mar 2013 23:24:02 +0800
+From: anand jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20130326130111.GI1955@localhost.localdomain>
-References: <1420920.Yent3fKO0t@linux-suse> <20130326130111.GI1955@localhost.localdomain>
-From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Date: Tue, 26 Mar 2013 14:10:30 +0000
-Message-ID: <CAAr69zYBpeJw-faQjdEXTgrsp3p0AN7i8CU+FJnyEjTb8n1GKg@mail.gmail.com>
-Subject: Re: Kernel BUG on corrupted space cache under 3.7 and 3.8
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: [bug] mount and /proc/mounts disagrees
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I fixed my file system here, so I can't provide more details now.
 
-Anyway, I cloned your repository and successfully compiled the tree
-(except for the mkfs program). But when I try to issue the command
-"./btrfs-image -c9 /dev/sda7 /home/linux/image.img" I get the
-following:
+3.8.0+ #3
 
-Could not open /dev/sda7
-Open ctree failed
+This happened after 'umount /btrfs' was interrupted by ctl-C
 
-I tried when it was unmounted and also when was mounted.
+# mount | egrep btrfs
+/dev/mapper/mpathe on /btrfs type btrfs (rw,degraded)
 
-An other thing happened in the meantime, but I write it to an other
-thread, because that's an other bug :).
+# cat /etc/mtab | egrep btrfs
+/dev/mapper/mpathe /btrfs btrfs rw,degraded 0 0
 
-Ákos
+# cat /proc/mounts | egrep btrfs
+# umount /btrfs
+umount: /btrfs: not mounted
+#
+
+
+-Anand

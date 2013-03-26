@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57204 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:57777 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753563Ab3CZRe3 (ORCPT
+	with ESMTP id S1751513Ab3CZSRQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 13:34:29 -0400
+	Tue, 26 Mar 2013 14:17:16 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 9032D7C04E0
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 11:34:28 -0600 (MDT)
-Date: Tue, 26 Mar 2013 13:34:25 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 15A247C04E0
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 12:17:16 -0600 (MDT)
+Date: Tue, 26 Mar 2013 14:17:13 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
-Message-ID: <20130326173425.GA28030@localhost.localdomain>
+Message-ID: <20130326181713.GD28030@localhost.localdomain>
 References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
  <20130326144855.GM1955@localhost.localdomain>
  <CAAr69zbBXr_c1_xroqueHG0Zobo8H94a2p6kB+GTsZVfkFCtGg@mail.gmail.com>
@@ -34,7 +34,8 @@ On Tue, Mar 26, 2013 at 09:59:57AM -0600, Szőts Ákos wrote:
 > again, but I won't touch the fs until you said so :).
 > 
 
-Ok you can go ahead and delete it, I just pulled it down, I'm restoring it and
-then I'll see whats going on.  Thanks,
+You did take this image while the file system was unmounted right?  I'm seeing
+different weirdness with the restored image, trying to figure out if it's a
+problem with the restore or with the dump.  Thanks,
 
 Josef

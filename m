@@ -1,323 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:44783 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754489Ab3CEPkU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Mar 2013 10:40:20 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 284267C039C
-	for <linux-btrfs@vger.kernel.org>; Tue,  5 Mar 2013 08:40:20 -0700 (MST)
-Date: Tue, 5 Mar 2013 10:40:17 -0500
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
-        Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: improve the delayed inode throttling
-Message-ID: <20130305154017.GF30680@shiny.masoncoding.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail-da0-f52.google.com ([209.85.210.52]:62801 "EHLO
+	mail-da0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757801Ab3CZMB4 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Mar 2013 08:01:56 -0400
+Received: by mail-da0-f52.google.com with SMTP id f10so3657863dak.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 05:01:56 -0700 (PDT)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH 4/7] Btrfs: add a necessary check before assigning/removing qgroup relations
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <1364298930-4507-4-git-send-email-wangshilong1991@gmail.com>
+Date: Tue, 26 Mar 2013 20:01:49 +0800
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-Id: <547E410B-A99E-496E-B662-25DC36D4FA93@gmail.com>
+References: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com> <1364298930-4507-4-git-send-email-wangshilong1991@gmail.com>
+To: "sensille@gmx.net Jansen" <sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Hello Arne,
 
-While running fs_mark against raid5/6 I noticed the delayed inode
-insertions were creating a lot of latencies.  Reading through things, I
-think we need to move to a model where we fire off fewer work items and
-have the ones we do fire last longer.
+I have sent a patch-set about btrfs quota,
+would you please review them for me. Any comment is welcome.
 
-With this commit our average file creation rates goes from 130K
-files/sec up to 160K files/sec for my big fs_mark run.
+Thanks,
+Wang
 
-But before I toss it into git, I wanted to run it by everyone and see if
-there are workloads this doesn't fit well.
+> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> 
+> This is one of most important reason why we introduce a mutex here,
+> the previous code dosen't check 'src' and 'dst' before assigning/removing
+> a qgroup relations. Without the mutex lock, and checks may leads
+> a race conditon.
+> 
+> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> fs/btrfs/ioctl.c |   81 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+> 1 files changed, 80 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 8a01326..1cd96f6 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3735,6 +3735,82 @@ drop_write:
+> 	return ret;
+> }
+> 
+> +static int may_qgroup_assign(struct btrfs_root *root,
+> +			     struct btrfs_ioctl_qgroup_assign_args *sa)
+> +{
+> +	int ret = 0;
+> +	struct btrfs_key key;
+> +	struct btrfs_path *path;
+> +
+> +	if (!root->fs_info->quota_root)
+> +		return -EINVAL;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path) {
+> +		ret = -ENOMEM;
+> +		return ret;
+> +	}
+> +
+> +	key.objectid = 0;
+> +	key.type = BTRFS_QGROUP_INFO_KEY;
+> +	key.offset = sa->src;
+> +	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
+> +				&key, path, 0, 0);
+> +	if (ret > 0)
+> +		ret = -ENOENT;
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	btrfs_release_path(path);
+> +	key.objectid = 0;
+> +	key.type = BTRFS_QGROUP_INFO_KEY;
+> +	key.offset = sa->dst;
+> +	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
+> +				&key, path, 0, 0);
+> +	if (ret > 0)
+> +		ret = -ENOENT;
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	btrfs_release_path(path);
+> +	key.objectid = sa->src;
+> +	key.type = BTRFS_QGROUP_RELATION_KEY;
+> +	key.offset = sa->dst;
+> +	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
+> +				&key, path, 0, 0);
+> +	if (sa->assign) {
+> +		if (!ret)
+> +			ret = -EEXIST;
+> +		if (ret < 0)
+> +			goto out;
+> +	} else {
+> +		if (ret > 0)
+> +			ret = -ENOENT;
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +
+> +	btrfs_release_path(path);
+> +	key.objectid = sa->dst;
+> +	key.type = BTRFS_QGROUP_RELATION_KEY;
+> +	key.offset = sa->src;
+> +	if (sa->assign) {
+> +		if (!ret)
+> +			ret = -EEXIST;
+> +		if (ret < 0)
+> +			goto out;
+> +	} else {
+> +		if (ret > 0)
+> +			ret = -ENOENT;
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +	ret = 0;
+> +out:
+> +	btrfs_free_path(path);
+> +	return ret;
+> +}
+> +
+> static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+> {
+> 	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
+> @@ -3757,13 +3833,16 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+> 	}
+> 
+> 	mutex_lock(&root->fs_info->quota_lock);
+> +	ret = may_qgroup_assign(root, sa);
+> +	if (ret)
+> +		goto out;
+> +
+> 	trans = btrfs_join_transaction(root);
+> 	if (IS_ERR(trans)) {
+> 		ret = PTR_ERR(trans);
+> 		goto out;
+> 	}
+> 
+> -	/* FIXME: check if the IDs really exist */
+> 	if (sa->assign) {
+> 		ret = btrfs_add_qgroup_relation(trans, root->fs_info,
+> 						sa->src, sa->dst);
+> -- 
+> 1.7.7.6
+> 
 
---
-
-The delayed inode code batches up changes to the btree in hopes of doing
-them in bulk.  As the changes build up, processes kick off worker
-threads and wait for them to make progress.
-
-The current code kicks off an async work queue item for each delayed
-node, which creates a lot of churn.  It also uses a fixed 1 HZ waiting
-period for the throttle, which allows us to build a lot of pending
-work and can slow down the commit.
-
-This changes us to watch a sequence counter as it is bumped during the
-operations.  We kick off fewer work items and have each work item do
-more work.
-
-Signed-off-by: Chris Mason <chris.mason@fusionio.com>
-
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 0b278b1..460d1a8 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -22,8 +22,8 @@
- #include "disk-io.h"
- #include "transaction.h"
- 
--#define BTRFS_DELAYED_WRITEBACK		400
--#define BTRFS_DELAYED_BACKGROUND	100
-+#define BTRFS_DELAYED_WRITEBACK		512
-+#define BTRFS_DELAYED_BACKGROUND	128
- 
- static struct kmem_cache *delayed_node_cache;
- 
-@@ -494,6 +494,15 @@ static int __btrfs_add_delayed_deletion_item(struct btrfs_delayed_node *node,
- 					BTRFS_DELAYED_DELETION_ITEM);
- }
- 
-+static void finish_one_item(struct btrfs_delayed_root *delayed_root)
-+{
-+	int seq = atomic_inc_return(&delayed_root->items_seq);
-+	if ((atomic_dec_return(&delayed_root->items) <
-+	    BTRFS_DELAYED_BACKGROUND || seq % 16 == 0) &&
-+	    waitqueue_active(&delayed_root->wait))
-+		wake_up(&delayed_root->wait);
-+}
-+
- static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- {
- 	struct rb_root *root;
-@@ -512,10 +521,8 @@ static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- 
- 	rb_erase(&delayed_item->rb_node, root);
- 	delayed_item->delayed_node->count--;
--	if (atomic_dec_return(&delayed_root->items) <
--	    BTRFS_DELAYED_BACKGROUND &&
--	    waitqueue_active(&delayed_root->wait))
--		wake_up(&delayed_root->wait);
-+
-+	finish_one_item(delayed_root);
- }
- 
- static void btrfs_release_delayed_item(struct btrfs_delayed_item *item)
-@@ -1056,10 +1063,7 @@ static void btrfs_release_delayed_inode(struct btrfs_delayed_node *delayed_node)
- 		delayed_node->count--;
- 
- 		delayed_root = delayed_node->root->fs_info->delayed_root;
--		if (atomic_dec_return(&delayed_root->items) <
--		    BTRFS_DELAYED_BACKGROUND &&
--		    waitqueue_active(&delayed_root->wait))
--			wake_up(&delayed_root->wait);
-+		finish_one_item(delayed_root);
- 	}
- }
- 
-@@ -1304,35 +1308,55 @@ void btrfs_remove_delayed_node(struct inode *inode)
- 	btrfs_release_delayed_node(delayed_node);
- }
- 
-+#if 0
- struct btrfs_async_delayed_node {
- 	struct btrfs_root *root;
- 	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_work work;
- };
-+#endif
-+
-+struct btrfs_async_delayed_work {
-+	struct btrfs_delayed_root *delayed_root;
-+	int nr;
-+	struct btrfs_work work;
-+};
- 
--static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
-+static void btrfs_async_run_delayed_root(struct btrfs_work *work)
- {
--	struct btrfs_async_delayed_node *async_node;
-+	struct btrfs_async_delayed_work *async_work;
-+	struct btrfs_delayed_root *delayed_root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_path *path;
- 	struct btrfs_delayed_node *delayed_node = NULL;
- 	struct btrfs_root *root;
- 	struct btrfs_block_rsv *block_rsv;
- 	int need_requeue = 0;
-+	int total_done = 0;
- 
--	async_node = container_of(work, struct btrfs_async_delayed_node, work);
-+	async_work = container_of(work, struct btrfs_async_delayed_work, work);
-+	delayed_root = async_work->delayed_root;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		goto out;
--	path->leave_spinning = 1;
- 
--	delayed_node = async_node->delayed_node;
-+again:
-+	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND / 2)
-+		goto free_path;
-+
-+	delayed_node = btrfs_first_prepared_delayed_node(delayed_root);
-+	if (!delayed_node)
-+		goto free_path;
-+
-+requeue:
-+	path->leave_spinning = 1;
-+	need_requeue = 0;
- 	root = delayed_node->root;
- 
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans))
--		goto free_path;
-+		goto release_path;
- 
- 	block_rsv = trans->block_rsv;
- 	trans->block_rsv = &root->fs_info->delayed_block_rsv;
-@@ -1373,47 +1397,48 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
- 	trans->block_rsv = block_rsv;
- 	btrfs_end_transaction_dmeta(trans, root);
- 	btrfs_btree_balance_dirty_nodelay(root);
-+
-+release_path:
-+	btrfs_release_path(path);
-+	total_done++;
-+
-+	if (need_requeue) {
-+		goto requeue;
-+	} else {
-+		btrfs_release_prepared_delayed_node(delayed_node);
-+		if (async_work->nr == 0 || total_done < async_work->nr)
-+			goto again;
-+	}
-+
- free_path:
- 	btrfs_free_path(path);
- out:
--	if (need_requeue)
--		btrfs_requeue_work(&async_node->work);
--	else {
--		btrfs_release_prepared_delayed_node(delayed_node);
--		kfree(async_node);
--	}
-+	wake_up(&delayed_root->wait);
-+	kfree(async_work);
- }
- 
-+
- static int btrfs_wq_run_delayed_node(struct btrfs_delayed_root *delayed_root,
- 				     struct btrfs_root *root, int all)
- {
--	struct btrfs_async_delayed_node *async_node;
--	struct btrfs_delayed_node *curr;
--	int count = 0;
-+	struct btrfs_async_delayed_work *async_work;
- 
--again:
--	curr = btrfs_first_prepared_delayed_node(delayed_root);
--	if (!curr)
-+	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
- 		return 0;
- 
--	async_node = kmalloc(sizeof(*async_node), GFP_NOFS);
--	if (!async_node) {
--		btrfs_release_prepared_delayed_node(curr);
-+	async_work = kmalloc(sizeof(*async_work), GFP_NOFS);
-+	if (!async_work)
- 		return -ENOMEM;
--	}
--
--	async_node->root = root;
--	async_node->delayed_node = curr;
--
--	async_node->work.func = btrfs_async_run_delayed_node_done;
--	async_node->work.flags = 0;
--
--	btrfs_queue_worker(&root->fs_info->delayed_workers, &async_node->work);
--	count++;
- 
--	if (all || count < 4)
--		goto again;
-+	async_work->delayed_root = delayed_root;
-+	async_work->work.func = btrfs_async_run_delayed_root;
-+	async_work->work.flags = 0;
-+	if (all)
-+		async_work->nr = 0;
-+	else
-+		async_work->nr = 16;
- 
-+	btrfs_queue_worker(&root->fs_info->delayed_workers, &async_work->work);
- 	return 0;
- }
- 
-@@ -1424,30 +1449,52 @@ void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
- 	WARN_ON(btrfs_first_delayed_node(delayed_root));
- }
- 
-+static int refs_newer(struct btrfs_delayed_root *delayed_root,
-+		      int seq, int count)
-+{
-+	int val = atomic_read(&delayed_root->items_seq);
-+
-+	if (val < seq || val >= seq + count)
-+		return 1;
-+	return 0;
-+}
-+
- void btrfs_balance_delayed_items(struct btrfs_root *root)
- {
- 	struct btrfs_delayed_root *delayed_root;
-+	int seq;
- 
- 	delayed_root = btrfs_get_delayed_root(root);
- 
- 	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
- 		return;
- 
-+	seq = atomic_read(&delayed_root->items_seq);
-+
- 	if (atomic_read(&delayed_root->items) >= BTRFS_DELAYED_WRITEBACK) {
- 		int ret;
-+		DEFINE_WAIT(__wait);
-+
- 		ret = btrfs_wq_run_delayed_node(delayed_root, root, 1);
- 		if (ret)
- 			return;
- 
--		wait_event_interruptible_timeout(
--				delayed_root->wait,
--				(atomic_read(&delayed_root->items) <
--				 BTRFS_DELAYED_BACKGROUND),
--				HZ);
--		return;
-+		while (1) {
-+			prepare_to_wait(&delayed_root->wait, &__wait,
-+					TASK_INTERRUPTIBLE);
-+
-+			if (refs_newer(delayed_root, seq, 16) ||
-+			    atomic_read(&delayed_root->items) <
-+			    BTRFS_DELAYED_BACKGROUND) {
-+				break;
-+			}
-+			if (!signal_pending(current))
-+				schedule();
-+		}
-+		finish_wait(&delayed_root->wait, &__wait);
- 	}
- 
--	btrfs_wq_run_delayed_node(delayed_root, root, 0);
-+	btrfs_wq_run_delayed_node(delayed_root, root, 16);
- }
- 
- /* Will return 0 or -ENOMEM */
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index 78b6ad0..1d5c5f7 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -43,6 +43,7 @@ struct btrfs_delayed_root {
- 	 */
- 	struct list_head prepare_list;
- 	atomic_t items;		/* for delayed items */
-+	atomic_t items_seq;	/* for delayed items */
- 	int nodes;		/* for delayed nodes */
- 	wait_queue_head_t wait;
- };
-@@ -86,6 +87,7 @@ static inline void btrfs_init_delayed_root(
- 				struct btrfs_delayed_root *delayed_root)
- {
- 	atomic_set(&delayed_root->items, 0);
-+	atomic_set(&delayed_root->items_seq, 0);
- 	delayed_root->nodes = 0;
- 	spin_lock_init(&delayed_root->lock);
- 	init_waitqueue_head(&delayed_root->wait);

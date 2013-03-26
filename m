@@ -1,26 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f176.google.com ([209.85.223.176]:39002 "EHLO
-	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751391Ab3C0OAB (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:37692 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751656Ab3CZTXf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 10:00:01 -0400
-Received: by mail-ie0-f176.google.com with SMTP id x14so10221584ief.35
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 07:00:01 -0700 (PDT)
+	Tue, 26 Mar 2013 15:23:35 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 305B49A0370
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 13:23:35 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id iCsxZ2ifzuFxSJIM (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 13:23:34 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: hold the ordered operations mutex when waiting on ordered extents
+Date: Tue, 26 Mar 2013 15:30:59 -0400
+Message-ID: <1364326259-8199-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-In-Reply-To: <20130327135828.GI28030@localhost.localdomain>
-References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
- <20130326144855.GM1955@localhost.localdomain> <CAAr69zbBXr_c1_xroqueHG0Zobo8H94a2p6kB+GTsZVfkFCtGg@mail.gmail.com>
- <20130326181713.GD28030@localhost.localdomain> <CAAr69zbgQn4sTSXw+AF69Pr78EDXVq7VM5uj90uHmnN5xxH5_w@mail.gmail.com>
- <20130326184711.GE28030@localhost.localdomain> <CAAr69zaZNe7u1=MEmwYZBt20H8O9-Ybe-_CMjZ-2pnKsDUBcMg@mail.gmail.com>
- <20130327135828.GI28030@localhost.localdomain>
-From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Date: Wed, 27 Mar 2013 14:59:41 +0100
-Message-ID: <CAAr69zbJHgv6jw9Ce_vQwvLEpO7sbgWP6ANAcGdX4d3Y1-aRWA@mail.gmail.com>
-Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh, that's a very good news! Thank you very much :)
+We need to hold the ordered_operations mutex while waiting on ordered extents
+since we splice and run the ordered extents list.  We need to make sure anybody
+else who wants to wait on ordered extents does actually wait for them to be
+completed.  This will keep us from bailing out of flushing in case somebody is
+already waiting on ordered extents to complete.  Thanks,
+
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ordered-data.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index dc08d77..005c45d 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -557,6 +557,7 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
+ 	INIT_LIST_HEAD(&splice);
+ 	INIT_LIST_HEAD(&works);
+ 
++	mutex_lock(&root->fs_info->ordered_operations_mutex);
+ 	spin_lock(&root->fs_info->ordered_extent_lock);
+ 	list_splice_init(&root->fs_info->ordered_extents, &splice);
+ 	while (!list_empty(&splice)) {
+@@ -600,6 +601,7 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
+ 
+ 		cond_resched();
+ 	}
++	mutex_unlock(&root->fs_info->ordered_operations_mutex);
+ }
+ 
+ /*
+-- 
+1.7.7.6
+

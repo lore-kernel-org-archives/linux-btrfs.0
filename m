@@ -1,142 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:49755 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757614Ab3CZLzf (ORCPT
+Received: from mail-da0-f53.google.com ([209.85.210.53]:59926 "EHLO
+	mail-da0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757834Ab3CZLzi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 07:55:35 -0400
-Received: by mail-pa0-f47.google.com with SMTP id bj3so1108588pad.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 04:55:35 -0700 (PDT)
+	Tue, 26 Mar 2013 07:55:38 -0400
+Received: by mail-da0-f53.google.com with SMTP id n34so2517593dal.26
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 04:55:37 -0700 (PDT)
 From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net, miaox@cn.fujitsu.com, wangshilong1991@gmail.com
-Subject: [PATCH 1/7] Btrfs: introduce a mutex lock for btrfs quota operations
-Date: Tue, 26 Mar 2013 19:55:24 +0800
-Message-Id: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH 2/7] Btrfs: add a necessary check before updating qgroup limit
+Date: Tue, 26 Mar 2013 19:55:25 +0800
+Message-Id: <1364298930-4507-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com>
+References: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-The original code only has one spin_lock 'qgroup_lock' to protect
-quota configurations on memory, if we want to add a BTRFS_QGROUP_INFO_KEY,
-it will be added to Btree firstly and then update quota configuration
-on memory,this case works ok just because of Btrfs internal btree lock.
-However, if we want to add a BTRFS_QGROUP_RELATION_KEY, this will cause
-problems, in fact,we need to check 'src' and 'dst' before, without an extra lock,
-race conditions can not be avoided.
-
-Holding mutex_lock, we can have the check before operations in safety.
-Besides, we can remove some spin_lock usages and ease the burdern
-of the global spin_lock.
+Add a necessary check before updating qgroup limit,
+if the relative qgroup dosen't exsit, do not join transaction.
 
 Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/disk-io.c |    1 +
- fs/btrfs/ioctl.c   |   13 ++++++++++---
- 3 files changed, 12 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c |   43 ++++++++++++++++++++++++++++++++++++-------
+ 1 files changed, 36 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6e81860..a7fec8c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1582,6 +1582,7 @@ struct btrfs_fs_info {
- 
- 	/* holds configuration and tracking. Protected by qgroup_lock */
- 	struct rb_root qgroup_tree;
-+	struct mutex quota_lock;
- 	spinlock_t qgroup_lock;
- 
- 	/* list of dirty qgroups to be written at next commit */
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fe82d08..4552f14 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2250,6 +2250,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->dev_replace.lock);
- 
- 	spin_lock_init(&fs_info->qgroup_lock);
-+	mutex_init(&fs_info->quota_lock);
- 	fs_info->qgroup_tree = RB_ROOT;
- 	INIT_LIST_HEAD(&fs_info->dirty_qgroups);
- 	fs_info->qgroup_seq = 1;
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 222ce84..0b8ab81 100644
+index 0b8ab81..3c4fde0 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3693,6 +3693,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+@@ -3837,6 +3837,33 @@ drop_write:
+ 	return ret;
+ }
+ 
++static int may_qgroup_limit(struct btrfs_root *root, u64 qgroupid)
++{
++	int ret = 0;
++	struct btrfs_key key;
++	struct btrfs_path *path;
++
++	if (!root->fs_info->quota_root)
++		return -EINVAL;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		return ret;
++	}
++
++	key.objectid = 0;
++	key.type = BTRFS_QGROUP_INFO_KEY;
++	key.offset = qgroupid;
++
++	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
++				&key, path, 0, 0);
++	if (ret > 0)
++		ret = -ENOENT;
++	btrfs_free_path(path);
++	return ret;
++}
++
+ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ {
+ 	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
+@@ -3859,19 +3886,21 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
  		goto drop_write;
  	}
- 
-+	mutex_lock(&root->fs_info->quota_lock);
- 	down_read(&root->fs_info->subvol_sem);
- 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
- 		trans = btrfs_start_transaction(root, 2);
-@@ -3728,6 +3729,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- out:
- 	kfree(sa);
- 	up_read(&root->fs_info->subvol_sem);
-+	mutex_unlock(&root->fs_info->quota_lock);
- drop_write:
- 	mnt_drop_write_file(file);
- 	return ret;
-@@ -3754,6 +3756,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 		goto drop_write;
- 	}
- 
-+	mutex_lock(&root->fs_info->quota_lock);
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
-@@ -3775,6 +3778,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 
- out:
- 	kfree(sa);
-+	mutex_unlock(&root->fs_info->quota_lock);
- drop_write:
- 	mnt_drop_write_file(file);
- 	return ret;
-@@ -3805,11 +3809,11 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 		ret = -EINVAL;
- 		goto out;
- 	}
--
-+	mutex_lock(&root->fs_info->quota_lock);
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
+ 	mutex_lock(&root->fs_info->quota_lock);
+-	trans = btrfs_join_transaction(root);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
 -		goto out;
-+		goto out_unlock;
- 	}
- 
- 	/* FIXME: check if the IDs really exist */
-@@ -3824,6 +3828,8 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 	if (err && !ret)
- 		ret = err;
- 
-+out_unlock:
-+	mutex_unlock(&root->fs_info->quota_lock);
- out:
- 	kfree(sa);
- drop_write:
-@@ -3852,7 +3858,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
- 		ret = PTR_ERR(sa);
- 		goto drop_write;
- 	}
+-	}
 -
-+	mutex_lock(&root->fs_info->quota_lock);
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
-@@ -3874,6 +3880,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ 	qgroupid = sa->qgroupid;
+ 	if (!qgroupid) {
+ 		/* take the current subvol as qgroup */
+ 		qgroupid = root->root_key.objectid;
+ 	}
++	ret = may_qgroup_limit(root, qgroupid);
++	if (ret)
++		goto out;
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
  
- out:
- 	kfree(sa);
-+	mutex_unlock(&root->fs_info->quota_lock);
- drop_write:
- 	mnt_drop_write_file(file);
- 	return ret;
+-	/* FIXME: check if the IDs really exist */
+ 	ret = btrfs_limit_qgroup(trans, root->fs_info, qgroupid, &sa->lim);
+ 
+ 	err = btrfs_end_transaction(trans, root);
 -- 
 1.7.7.6
 

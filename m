@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f42.google.com ([209.85.210.42]:51369 "EHLO
-	mail-da0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757614Ab3CZLzm (ORCPT
+Received: from mail-da0-f47.google.com ([209.85.210.47]:56484 "EHLO
+	mail-da0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757614Ab3CZLzp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 07:55:42 -0400
-Received: by mail-da0-f42.google.com with SMTP id n15so3648697dad.29
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 04:55:42 -0700 (PDT)
+	Tue, 26 Mar 2013 07:55:45 -0400
+Received: by mail-da0-f47.google.com with SMTP id s35so3621413dak.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 04:55:44 -0700 (PDT)
 From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net, miaox@cn.fujitsu.com, wangshilong1991@gmail.com
-Subject: [PATCH 4/7] Btrfs: add a necessary check before assigning/removing qgroup relations
-Date: Tue, 26 Mar 2013 19:55:27 +0800
-Message-Id: <1364298930-4507-4-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH 5/7] Btrfs: fix missing check before btrfs_qgroup_inherit()
+Date: Tue, 26 Mar 2013 19:55:28 +0800
+Message-Id: <1364298930-4507-5-git-send-email-wangshilong1991@gmail.com>
 In-Reply-To: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com>
 References: <1364298930-4507-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,32 +19,35 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-This is one of most important reason why we introduce a mutex here,
-the previous code dosen't check 'src' and 'dst' before assigning/removing
-a qgroup relations. Without the mutex lock, and checks may leads
-a race conditon.
+The original code dosen't have necessary checks before
+doing qgroup_inherit. Fix it.
 
 Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |   81 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 80 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 50 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8a01326..1cd96f6 100644
+index 1cd96f6..86e7fb3 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3735,6 +3735,82 @@ drop_write:
- 	return ret;
+@@ -708,6 +708,49 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
+ 	return inode_permission(dir, MAY_WRITE | MAY_EXEC);
  }
  
-+static int may_qgroup_assign(struct btrfs_root *root,
-+			     struct btrfs_ioctl_qgroup_assign_args *sa)
++static int check_qgroup_inherit(struct btrfs_root *root,
++				struct btrfs_qgroup_inherit *inherit)
 +{
 +	int ret = 0;
-+	struct btrfs_key key;
++	u64 *i_qgroups;
++	u64 nums = 0;
++	u64 i = 0;
 +	struct btrfs_path *path;
++	struct btrfs_key key;
 +
++	if (!inherit)
++		return 0;
 +	if (!root->fs_info->quota_root)
 +		return -EINVAL;
 +
@@ -54,87 +57,52 @@ index 8a01326..1cd96f6 100644
 +		return ret;
 +	}
 +
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_INFO_KEY;
-+	key.offset = sa->src;
-+	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
-+				&key, path, 0, 0);
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
++	i_qgroups = (u64 *)(inherit + 1);
++	nums = inherit->num_qgroups + inherit->num_ref_copies +
++	       inherit->num_excl_copies;
++	for (i = 0; i < nums; ++i) {
++		btrfs_release_path(path);
++		key.objectid = 0;
++		key.type = BTRFS_QGROUP_INFO_KEY;
++		key.offset = *i_qgroups;
 +
-+	btrfs_release_path(path);
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_INFO_KEY;
-+	key.offset = sa->dst;
-+	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
-+				&key, path, 0, 0);
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+
-+	btrfs_release_path(path);
-+	key.objectid = sa->src;
-+	key.type = BTRFS_QGROUP_RELATION_KEY;
-+	key.offset = sa->dst;
-+	ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
-+				&key, path, 0, 0);
-+	if (sa->assign) {
-+		if (!ret)
-+			ret = -EEXIST;
-+		if (ret < 0)
-+			goto out;
-+	} else {
++		ret = btrfs_search_slot(NULL, root->fs_info->quota_root,
++					&key, path, 0, 0);
 +		if (ret > 0)
-+			ret = -ENOENT;
-+		if (ret < 0)
++			ret = -EINVAL;
++		if (ret)
 +			goto out;
++		++i_qgroups;
 +	}
-+
-+	btrfs_release_path(path);
-+	key.objectid = sa->dst;
-+	key.type = BTRFS_QGROUP_RELATION_KEY;
-+	key.offset = sa->src;
-+	if (sa->assign) {
-+		if (!ret)
-+			ret = -EEXIST;
-+		if (ret < 0)
-+			goto out;
-+	} else {
-+		if (ret > 0)
-+			ret = -ENOENT;
-+		if (ret < 0)
-+			goto out;
-+	}
-+	ret = 0;
 +out:
 +	btrfs_free_path(path);
 +	return ret;
 +}
 +
- static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- {
- 	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-@@ -3757,13 +3833,16 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 	}
+ /*
+  * Create a new subvolume below @parent.  This is largely modeled after
+  * sys_mkdirat and vfs_mkdir, but we only do a single component lookup
+@@ -753,6 +796,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
+ 	if (btrfs_root_refs(&BTRFS_I(dir)->root->root_item) == 0)
+ 		goto out_up_read;
  
- 	mutex_lock(&root->fs_info->quota_lock);
-+	ret = may_qgroup_assign(root, sa);
-+	if (ret)
-+		goto out;
++	mutex_lock(&BTRFS_I(dir)->root->fs_info->quota_lock);
++	error = check_qgroup_inherit(BTRFS_I(dir)->root, inherit);
++	if (error)
++		goto out_unlock_mutex;
 +
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		goto out;
+ 	if (snap_src) {
+ 		error = create_snapshot(snap_src, dir, dentry, name, namelen,
+ 					async_transid, readonly, inherit);
+@@ -762,6 +810,8 @@ static noinline int btrfs_mksubvol(struct path *parent,
  	}
- 
--	/* FIXME: check if the IDs really exist */
- 	if (sa->assign) {
- 		ret = btrfs_add_qgroup_relation(trans, root->fs_info,
- 						sa->src, sa->dst);
+ 	if (!error)
+ 		fsnotify_mkdir(dir, dentry);
++out_unlock_mutex:
++	mutex_unlock(&BTRFS_I(dir)->root->fs_info->quota_lock);
+ out_up_read:
+ 	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
+ out_dput:
 -- 
 1.7.7.6
 

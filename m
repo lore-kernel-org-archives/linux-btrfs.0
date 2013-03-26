@@ -1,100 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:55472 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:33414 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932989Ab3CYUC0 (ORCPT
+	with ESMTP id S1759406Ab3CZMxW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Mar 2013 16:02:26 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id CAF119A068E
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 14:02:25 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id OmwFDlfznvT04JBo (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 14:02:25 -0600 (MDT)
+	Tue, 26 Mar 2013 08:53:22 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 119AD9A0680
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 06:53:22 -0600 (MDT)
+Date: Tue, 26 Mar 2013 08:53:19 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix space leak when we fail to reserve metadata space
-Date: Mon, 25 Mar 2013 16:09:48 -0400
-Message-ID: <1364242188-17568-1-git-send-email-jbacik@fusionio.com>
+To: Stefan Priebe <s.priebe@profihost.ag>
+CC: Josef Bacik <JBacik@fusionio.com>, Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: No space left on device (28)
+Message-ID: <20130326125319.GH1955@localhost.localdomain>
+References: <5F36F35C-39BE-4244-B8FB-A80EC2B06D48@profihost.ag>
+ <514C4A8C.90607@profihost.ag>
+ <20130322135322.GB1955@localhost.localdomain>
+ <514C6319.7030400@profihost.ag>
+ <20130322155453.GD1955@localhost.localdomain>
+ <514CAC8D.7010409@profihost.ag>
+ <20130322204932.GE1955@localhost.localdomain>
+ <514CC52B.1000201@profihost.ag>
+ <20130325201426.GG1955@localhost.localdomain>
+ <51515226.9010509@profihost.ag>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <51515226.9010509@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave reported a warning when running xfstest 275.  We have been leaking delalloc
-metadata space when our reservations fail.  This is because we were improperly
-calculating how much space to free for our checksum reservations.  The problem
-is we would sometimes free up space that had already been freed in another
-thread and we would end up with negative usage for the delalloc space.  This
-patch fixes the problem by calculating how much space the other threads would
-have already freed, and then calculate how much space we need to free had we not
-done the reservation at all, and then freeing any excess space.  This makes
-xfstests 275 no longer have leaked space.  Thanks
+On Tue, Mar 26, 2013 at 01:45:42AM -0600, Stefan Priebe wrote:
+> Hi,
+> 
+> output here:
+> [  590.546162] returning enospc, space_info 3, size 0 reserved 0, flush 
+> 2, flush_state 7  dumping space info
+> [  590.548280] space_info 4 has 6439292928 free, is full
+> [  590.548283] space_info total=25748307968, used=19308916736, pinned=0, 
+> reserved=32768, may_use=6438354944, readonly=65536
+> [  590.550147] returning enospc, space_info 3, size 0 reserved 0, flush 
+> 2, flush_state 7  dumping space info
+> [  590.552264] space_info 4 has 6439284736 free, is full
+> [  590.552267] space_info total=25748307968, used=19308916736, pinned=0, 
+> reserved=40960, may_use=6438354944, readonly=65536
+> [  590.554141] returning enospc, space_info 3, size 0 reserved 0, flush 
+> 2, flush_state 7  dumping space info
+> [  590.556258] space_info 4 has 6439284736 free, is full
+> [  590.556261] space_info total=25748307968, used=19308916736, pinned=0, 
+> reserved=40960, may_use=6438354944, readonly=65536
+> [  591.145255] returning enospc, space_info 3, size 0 reserved 0, flush 
+> 2, flush_state 7  dumping space info
+> [  591.147373] space_info 4 has 6439235584 free, is full
+> [  591.147375] space_info total=25748307968, used=19308916736, pinned=0, 
+> reserved=90112, may_use=6438354944, readonly=65536
+> [  595.560257] returning enospc, space_info 3, size 0 reserved 0, flush 
+> 2, flush_state 7  dumping space info
+> [  595.562390] space_info 4 has 6439120896 free, is full
+> [  595.562393] space_info total=25748307968, used=19309047808, pinned=0, 
+> reserved=73728, may_use=6438297600, readonly=65536
+> 
 
-Cc: stable@vger.kernel.org
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |   47 +++++++++++++++++++++++++++++++++++++++++------
- 1 files changed, 41 insertions(+), 6 deletions(-)
+Weird, we have all the flushing stuff set and yet there is still a whole lot of
+outstanding reservations.  Do you have compression enabled?  Thanks,
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 26fc9fc..c08c7c8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4909,14 +4909,49 @@ out_fail:
- 	 * If the inodes csum_bytes is the same as the original
- 	 * csum_bytes then we know we haven't raced with any free()ers
- 	 * so we can just reduce our inodes csum bytes and carry on.
--	 * Otherwise we have to do the normal free thing to account for
--	 * the case that the free side didn't free up its reserve
--	 * because of this outstanding reservation.
- 	 */
--	if (BTRFS_I(inode)->csum_bytes == csum_bytes)
-+	if (BTRFS_I(inode)->csum_bytes == csum_bytes) {
- 		calc_csum_metadata_size(inode, num_bytes, 0);
--	else
--		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
-+	} else {
-+		u64 orig_csum_bytes = BTRFS_I(inode)->csum_bytes;
-+		u64 bytes;
-+
-+		/*
-+		 * This is tricky, but first we need to figure out how much we
-+		 * free'd from any free-ers that occured during this
-+		 * reservation, so we reset ->csum_bytes to the csum_bytes
-+		 * before we dropped our lock, and then call the free for the
-+		 * number of bytes that were freed while we were trying our
-+		 * reservation.
-+		 */
-+		bytes = csum_bytes - BTRFS_I(inode)->csum_bytes;
-+		BTRFS_I(inode)->csum_bytes = csum_bytes;
-+		to_free = calc_csum_metadata_size(inode, bytes, 0);
-+
-+
-+		/*
-+		 * Now we need to see how much we would have freed had we not
-+		 * been making this reservation and our ->csum_bytes were not
-+		 * artificially inflated.
-+		 */
-+		BTRFS_I(inode)->csum_bytes = csum_bytes - num_bytes;
-+		bytes = csum_bytes - orig_csum_bytes;
-+		bytes = calc_csum_metadata_size(inode, bytes, 0);
-+
-+		/*
-+		 * Now reset ->csum_bytes to what it should be.  If bytes is
-+		 * more than to_free then we would have free'd more space had we
-+		 * not had an artificially high ->csum_bytes, so we need to free
-+		 * the remainder.  If bytes is the same or less then we don't
-+		 * need to do anything, the other free-ers did the correct
-+		 * thing.
-+		 */
-+		BTRFS_I(inode)->csum_bytes = orig_csum_bytes - num_bytes;
-+		if (bytes > to_free)
-+			to_free = bytes - to_free;
-+		else
-+			to_free = 0;
-+	}
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 	if (dropped)
- 		to_free += btrfs_calc_trans_metadata_size(root, dropped);
--- 
-1.7.7.6
-
+Josef

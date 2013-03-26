@@ -1,95 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:45855 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964889Ab3CZQTP (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:34324 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756862Ab3CZOs7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 12:19:15 -0400
-Message-ID: <5151CA87.3050801@profihost.ag>
-Date: Tue, 26 Mar 2013 17:19:19 +0100
-From: Stefan Priebe <s.priebe@profihost.ag>
+	Tue, 26 Mar 2013 10:48:59 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id A17969A067F
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 08:48:59 -0600 (MDT)
+Date: Tue, 26 Mar 2013 10:48:55 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
+Message-ID: <20130326144855.GM1955@localhost.localdomain>
+References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: No space left on device (28)
-References: <20130322204932.GE1955@localhost.localdomain> <514CC52B.1000201@profihost.ag> <20130325201426.GG1955@localhost.localdomain> <51515226.9010509@profihost.ag> <20130326125319.GH1955@localhost.localdomain> <51519ABB.4030207@profihost.ag> <20130326133053.GK1955@localhost.localdomain> <5151A75C.6080703@profihost.ag> <20130326144426.GL1955@localhost.localdomain> <5151B8AF.60900@profihost.ag> <20130326152553.GN1955@localhost.localdomain>
-In-Reply-To: <20130326152553.GN1955@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-HI,
-
-
-Am 26.03.2013 16:25, schrieb Josef Bacik:
-> On Tue, Mar 26, 2013 at 09:03:11AM -0600, Stefan Priebe - Profihost AG wrote:
->> Hi,
->> Am 26.03.2013 15:44, schrieb Josef Bacik:
->>>>>> Am 26.03.2013 13:53, schrieb Josef Bacik:
->>>>>> no - it's just mounted with mount -o noatime
->>>>>>
->>>>>> :~# cat /proc/mounts | grep btrfs
->>>>>> /dev/mapper/raid54tb1 /mnt btrfs rw,noatime,space_cache 0 0
->>>>>>
->>>>>
->>>>> Ok I think I see what's going on.  Can you try this patch and see if it fixes
->>>>> it?  Thanks,
->>>>
->>>> It still does not fix the problem.
->>>>
->>>> The rsync output looks like this so it does not work for file a but then
->>>> continues on c d e, ...
->>>>
->>>> sync -av --progress /backup/ /mnt/
->>>> sending incremental file list
->>>> .etc_openvpn/ipp.txt
->>>>           229 100%    3.99kB/s    0:00:00 (xfer#2, to-check=1009/1196)
->>>> .etc_openvpn/openvpn-status.log
->>>>           360 100%    6.28kB/s    0:00:00 (xfer#3, to-check=1007/1196)
->>>> rsync: rename "/mnt/.etc_openvpn/.ipp.txt.t9lucX" ->
->>>> ".etc_openvpn/ipp.txt": No space left on device (28)
->>>> .log/
->>>> .log/UcliEvt.log
->>>>        104188 100%  147.67kB/s    0:00:00 (xfer#4, to-check=1131/2700)
->>>> .log/auth.log
->>>>      15211522 100%    2.97MB/s    0:00:04 (xfer#5, to-check=1105/2700)
->>>> .log/auth.log.1
->>>>      19431424  61%    7.35MB/s    0:00:01
->>>>
->>>> the dmesg output looks like this:
->>>> [  551.321576] returning enospc, space_info 3, size 0 reserved 0, flush
->>>> 2, flush_state 7  dumping space info
->>>> [  551.323694] space_info 4 has 6439526400 free, is full
->>>> [  551.323696] space_info total=25748307968, used=19308666880, pinned=0,
->>>> reserved=49152, may_use=6438453248, readonly=65536
->>>>
->>>
->>> Ok so then this is probably it, let me know if it helps.  Thanks,
->>
->> OK it now has copied a lot of files (170) without an error all were very
->> small.
->>
+On Tue, Mar 26, 2013 at 08:33:27AM -0600, Szőts Ákos wrote:
+> Dear list members,
+> 
+> In my previous thread at
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg23333.html
+> there was a space_cache kernel bug/panic on kernel 3.8. I could
+> successfully "fix" that with rebuilding the cache. But some files were
+> missing/corrupted. So I booted a rescue CD with kernel 3.7 and ran
+> btrfsck --repair, which repaired quite a few things.
+> 
+> After a reboot I got the following message:
+> [  469.457386] btrfs: disk space caching is enabled
+> [  469.503612] btrfs: mismatching generation and generation_v2 found
+> in root item. This root was probably mounted with an older kernel.
+> Resetting all new fields.
+> 
+> As soon as anything had wanted to read a bit from the file system, the
+> hard drive went crazy and was working for 5-10 minutes. After I got a
+> kernel panic which said there's an error in fs/btrfs/inode.c:835.
+> 
+> In the moment I don't just mount, but want to read something from the
+> mounted file system under the rescue system, the same procedure
+> happens.
+> 
+> I made some pictures of it (since I cannot read anything from the
+> logs, if there are any).
+> You can find them here: www.morrohun.hu/temp/btrfs/v2/[123].jpg
+> 
+> I wanted to create an image with the aforementined btrfs-image tool,
+> but yet to have any success .
+> 
+> Could you please give me an advice what can I do now? Living on a
+> live-CD is not a life insurance :)
+> 
+> Best regards,
 >
-> Welp progress is good.  Throw this into the mix and go again, it's just adding
-> some more debugging so I can make sure I'm going down the right rabbit hole.
-> Thanks,
 
-Output is now:
-[ 9587.445642] returning enospc, space_info 3, size 0 reserved 0, flush 
-2, flush_state 7  dumping space info
-[ 9587.527392] dumping block rsv 2, size 0 reserved 0
-[ 9587.567871] dumping block rsv 5, size 196608 reserved 196608
-[ 9587.607661] dumping block rsv 1, size 6438256640 reserved 6438256640
-[ 9587.646958] space_info 4 has 6439428096 free, is full
-[ 9587.646963] space_info total=25748307968, used=19308769280, pinned=0, 
-reserved=45056, may_use=6438453248, readonly=65536
-[ 9587.649410] returning enospc, space_info 3, size 0 reserved 0, flush 
-2, flush_state 7  dumping space info
-[ 9587.727000] dumping block rsv 2, size 0 reserved 0
-[ 9587.765284] dumping block rsv 5, size 98304 reserved 98304
-[ 9587.802849] dumping block rsv 1, size 6438256640 reserved 6438256640
-[ 9587.839935] space_info 4 has 6439428096 free, is full
-[ 9587.839936] space_info total=25748307968, used=19308769280, pinned=0, 
-reserved=45056, may_use=6438354944, readonly=65536
+Ok I'd like to get btrfs-image working so I can run fsck on it here locally and
+see what's wrong.  Can you apply this patch to my tree and rebuild and run
+btrfs-image again, it should tell us why it's having trouble opening the device.
+It also fixes that slight mkfs not compiling problem ;).  Thanks,
 
-Stefan
+Josef
+
+ 
+diff --git a/disk-io.c b/disk-io.c
+index 72b33da..6d879c5 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1047,7 +1047,8 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 
+ 	fp = open(filename, flags, 0600);
+ 	if (fp < 0) {
+-		fprintf (stderr, "Could not open %s\n", filename);
++		fprintf (stderr, "Could not open %s, %d (%s)\n", filename,
++			 errno, strerror(errno));
+ 		return NULL;
+ 	}
+ 	info = __open_ctree_fd(fp, filename, sb_bytenr, 0, writes, partial);
+diff --git a/mkfs.c b/mkfs.c
+index bc68350..003a8fa 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -296,7 +296,7 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
+ 
+ 	if (!mixed) {
+ 		u64 total_bytes =
+-			btrfs_super_total_bytes(root->fs_info->super_copy);
++			btrfs_super_total_bytes(&root->fs_info->super_copy);
+ 		u64 alloced_bytes = 0;
+ 		u64 alloc_flags = BTRFS_BLOCK_GROUP_ENOSPC |
+ 			(allowed & metadata_profile);

@@ -1,72 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33461 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:33530 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757894Ab3CZNBO (ORCPT
+	with ESMTP id S933869Ab3CZNOd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 09:01:14 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id A73189A067F
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 07:01:14 -0600 (MDT)
-Date: Tue, 26 Mar 2013 09:01:11 -0400
+	Tue, 26 Mar 2013 09:14:33 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 5BE1A9A067F
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 07:14:33 -0600 (MDT)
+Date: Tue, 26 Mar 2013 09:14:30 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+To: "lonat_front@163.com" <lonat_front@163.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel BUG on corrupted space cache under 3.7 and 3.8
-Message-ID: <20130326130111.GI1955@localhost.localdomain>
-References: <1420920.Yent3fKO0t@linux-suse>
+Subject: Re: compression btrfs
+Message-ID: <20130326131430.GJ1955@localhost.localdomain>
+References: <15c1f0b7.19e37.13da4dd5320.Coremail.lonat_front@163.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <1420920.Yent3fKO0t@linux-suse>
+Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <15c1f0b7.19e37.13da4dd5320.Coremail.lonat_front@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 26, 2013 at 05:37:35AM -0600, SzÅ‘ts Ãkos wrote:
-> Dear list members,
+On Mon, Mar 25, 2013 at 10:03:20PM -0600, lonat_front@163.com wrote:
+> Hi everyone,
 > 
-> Yesterday I was about to restart my computer and that's why I closed every 
-> opened applications: three Eclipse instances, two other Java applications, 2 
-> web browsers etc. It involved a lot of IO operations and before everything 
-> could settle down my system became unresponsive.
-> 
-> I mean X & co. worked fine, but anything related to IO (opening a new screen, a 
-> new application etc.) hung. My process explorer showed that nearly all of the 
-> applications which were shutting down have very high IO, but in fact there 
-> were no HDD head movement at all. I did a hard reset.
-> 
-> Today morning when I restarted Linux I got a kernel BUG from btrfs. I 
-> successfully started a recovery Linux (with kernel 3.7) and when I tried to 
-> mount this partition, the bug/panic appeared again. After I could rebuild the 
-> space cache with clear_cache option and my system was fixed.
-> 
-> Since all this logs are written only onto screen, I made some photographs :), 
-> and I uploaded them.
-> 
-> System parameters:
-> - openSUSE 12.3, Kernel 3.8, x86_64
-> - Linux linux-suse 3.8.0-5-desktop #1 SMP PREEMPT Tue Feb 26 20:55:05 UTC 2013 
-> (db497a6) x86_64 x86_64 x86_64 GNU/Linux
-> - Photos are made on Kernel 3.7
-> - Default mount options: compress=lzo,space_cache
-> - On 3.7, the problematic line: fs/btrfs/free-space-cache.c:1553
-> - Photos location: www.morrohun.hu/temp/btrfs/[123].jpeg
-> 
-> If you need any other information, ask me :).
+>   I have used btrfs as a work partition with compression=zlib. The compression ratio is not satisfied to me. 
 > 
 
-Ok so I've just made a bunch of changes to btrfs-image so I can capture your
-tree log and free space cache so I can reproduce exactly this issue :).  Can you
-clone this tree
+So you probably want compress-force=zlib.  With just compress we will bail out
+of the compression if the compressed pages are larger than the original size,
+which means if you wrote a particular file and then copmressed it with gzip
+you'd possibly see different results, but if you do compress-force=zlib then
+you'll see behavior more like gzip.
 
-git://github.com/josefbacik/btrfs-progs.git
+>    I tracked my workloads in btrfs. The zlib module (zlib.c) seems work well: write size of each write operation in writepage function can be compressed into about 20%. 
+> 
+>   I suspent the workloads may impact the btrfs behavior. My workloads include really a large number of overwrite operations. 
+> 
+>    I briefly reviewed the code about the space reclaim in btrfs, and found the btrfs kicks the defrag off when the overwritten range is smaller than 16KB, And this is the only method of reclaiming freed extents with compression. Am I right?
 
-and then build and run
+It's 64k, and what do you mean reclaiming freed extents?  The freed extents will
+be reclaimed once they are completely overwritten.
 
-btrfs-image -c9 /dev/whatever blah.img
+>    
+>    So my question is if btrfs can successfully reclaim the overwritten space when the cleaner thread can not be started, such as in the case that each overwrite operation is larger than 16KB? 
 
-and upload blah.img somewhere so I can pull it down?  If you've already fixed
-the file system so it mounts then I don't need the image, I need it only if it
-is still panicing.  So if you have already fixed it then still please clone that
-tree and next time it happens capture the fs image if you could so I can
-reproduce and fix the problem.  Thanks,
+Not sure what you mean by reclaim.  They won't be defragged if the overwrite is
+above 64k, but if any write is less than 64k then it will defrag the whole file.
+Thanks,
 
 Josef

@@ -1,33 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:40543 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753965Ab3C0GSx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 02:18:53 -0400
-Message-ID: <51528F4B.3030703@jan-o-sch.net>
-Date: Wed, 27 Mar 2013 07:18:51 +0100
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from cn.fujitsu.com ([222.73.24.84]:39529 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751416Ab3C0GlV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Mar 2013 02:41:21 -0400
+Message-ID: <5152956A.4000004@cn.fujitsu.com>
+Date: Wed, 27 Mar 2013 14:44:58 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Koen De Wit <koen.de.wit@oracle.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: The -c option of btrfs qgroup limit
-References: <5152311B.40908@oracle.com>
-In-Reply-To: <5152311B.40908@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: The -c option of btrfs qgroup limit
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Koen,
+Hello Koen,
 
-On 27.03.2013 00:36, Koen De Wit wrote:
-> The "btrfs qgroup limit" command has an option -c which means "limit amount
-> of data after compression". Whether this option is specified or not, I seem
-> to be able to write more well-compressible data than the specified limit. I
-> was expecting that omitting the -c option would never allow me to write
-> more data than specified by the limit. Am I missing something? Which
-> difference in behavior should I expect from the -c option?
+	Although we offer '-c' option for btrfs qgroup limit,
+it has been not implemented yet.
+	So until now, btrfs quota just limits the real space
+that writes to the space.
 
-Today: none. In the future: The one you describe. That option is planned
-but not implemented. We should have mentioned that in the qgroup usage,
-I agree.
+Thanks,
+Wang
 
--Jan

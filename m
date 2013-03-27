@@ -1,83 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37109 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752247Ab3C0Ia0 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50250 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750977Ab3C0N5i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 04:30:26 -0400
+	Wed, 27 Mar 2013 09:57:38 -0400
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2R8UNkm015426
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2RDvbw9025608
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 08:30:24 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2R8UNRG029285
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 13:57:37 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2RDvaoJ001037
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 08:30:23 GMT
-Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2R8UMWD023578
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 03:30:22 -0500
-From: Anand Jain <anand.jain@oracle.com>
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 13:57:36 GMT
+Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2RDvaaV006152
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 08:57:36 -0500
+Message-ID: <5152FA04.8080400@oracle.com>
+Date: Wed, 27 Mar 2013 14:54:12 +0100
+From: Koen De Wit <koen.de.wit@oracle.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: root_item generation_v2 is out of sync after btrfsck
-Date: Wed, 27 Mar 2013 16:31:22 +0800
-Message-Id: <1364373082-20033-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: add quota-related info to usage messages
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reproducing steps:
-mkfs.btrfs /dev/dm-2 -f
-mount /dev/dm-2 /btrfs
-umount /btrfs
-btrfs check /dev/dm-2 --repair
-mount /dev/dm-2 /btrfs
+Extending usage messages with some info on the quota functionality:
+     - The -i option of "subvol create" and "subvol snapshot" was not 
+documented
+     - The -c option of "qgroup limit" is the default option
+     - The "qouta rescan" command is not yet implemented, while it should be
+       executed after enabling quota on a non-empty filesystem.
 
-----
-btrfs: mismatching generation and generation_v2 found in root item. This root was probably mounted with an older kernel. Resetting all new fields.
-----
-
-btrfs-debug-tree shows change in uuid
-
-< 		root data bytenr 29425664 level 0 dirid 0 refs 1 gen 43
-< 		uuid 293596e8-7888-eb4c-9134-6df9db996fe5
+Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
 ---
-> 		root data bytenr 29417472 level 0 dirid 0 refs 1 gen 46
-> 		uuid 38d16308-fc48-0645-ac49-748f96634148
+  cmds-qgroup.c    |    3 ++-
+  cmds-quota.c     |    4 ++++
+  cmds-subvolume.c |   11 ++++++++---
+  3 files changed, 14 insertions(+), 4 deletions(-)
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- root-tree.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 275f00f..95aca9b 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -326,7 +326,8 @@ static const char * const cmd_qgroup_limit_usage[] = {
+      "btrfs qgroup limit [options] <size>|none [<qgroupid>] <path>",
+      "Limit the size of a subvolume quota group.",
+      "",
+-    "-c   limit amount of data after compression",
++    "-c   limit amount of data after compression. This is the default,",
++    "     it is currently not possible to turn off this option.",
+      "-e   limit space exclusively assigned to this qgroup",
+      NULL
+  };
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 8481514..71cd9f1 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -64,6 +64,9 @@ int quota_ctl(int cmd, int argc, char **argv)
+  static const char * const cmd_quota_enable_usage[] = {
+      "btrfs quota enable <path>",
+      "Enable subvolume quota support for a filesystem.",
++    "Any data already present on the filesystem will not count towards",
++    "the space usage numbers. It is recommended to enable quota for a",
++    "filesystem before writing any data to it.",
+      NULL
+  };
 
-diff --git a/root-tree.c b/root-tree.c
-index c10d068..4454147 100644
---- a/root-tree.c
-+++ b/root-tree.c
-@@ -69,6 +69,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	int ret;
- 	int slot;
- 	unsigned long ptr;
-+	u32 old_size;
- 
- 	path = btrfs_alloc_path();
- 	BUG_ON(!path);
-@@ -79,6 +80,18 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	l = path->nodes[0];
- 	slot = path->slots[0];
- 	ptr = btrfs_item_ptr_offset(l, slot);
-+	/*
-+	* If the btrfs-progs is newer and kernel is at
-+	* generation_v1 then we don't touch v2 items
-+	* otherwise when kernel is at same or greater
-+	* version compared with btrfs-progs then update
-+	* the needed
-+	*/
-+	old_size = btrfs_item_size_nr(l, slot);
-+	if (old_size >= sizeof(*item)) {
-+		btrfs_set_root_generation_v2(item,
-+			btrfs_root_generation(item));
-+	}
- 	write_extent_buffer(l, item, ptr, sizeof(*item));
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- out:
+@@ -92,6 +95,7 @@ static int cmd_quota_disable(int argc, char **argv)
+  static const char * const cmd_quota_rescan_usage[] = {
+      "btrfs quota rescan <path>",
+      "Rescan the subvolume for a changed quota setting.",
++    "Not yet implemented.",
+      NULL
+  };
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 74e2130..b762470 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -61,10 +61,13 @@ static int test_isdir(char *path)
+  }
+
+  static const char * const cmd_subvol_create_usage[] = {
+-    "btrfs subvolume create [<dest>/]<name>",
++    "btrfs subvolume create [-i <qgroupid>] [<dest>/]<name>",
+      "Create a subvolume",
+      "Create a subvolume <name> in <dest>.  If <dest> is not given",
+      "subvolume <name> will be created in the current directory.",
++    "",
++    "-i <qgroupid>  add the newly created subvolume to a qgroup. This",
++    "               option can be given multiple times.",
+      NULL
+  };
+
+@@ -480,12 +483,14 @@ out:
+  }
+
+  static const char * const cmd_snapshot_usage[] = {
+-    "btrfs subvolume snapshot [-r] <source> [<dest>/]<name>",
++    "btrfs subvolume snapshot [-r] [-i <qgroupid>] <source> [<dest>/]<name>",
+      "Create a snapshot of the subvolume",
+      "Create a writable/readonly snapshot of the subvolume <source> with",
+      "the name <name> in the <dest> directory",
+      "",
+-    "-r     create a readonly snapshot",
++    "-r             create a readonly snapshot",
++    "-i <qgroupid>  add the newly created snapshot to a qgroup. This",
++    "               option can be given multiple times.",
+      NULL
+  };
+
 -- 
-1.8.1.227.g44fe835
+1.7.2.5
 

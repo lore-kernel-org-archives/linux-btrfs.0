@@ -1,35 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay2.sgi.com ([192.48.179.30]:41650 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750977Ab3C0Oxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 10:53:39 -0400
-Message-ID: <515307F9.7050007@sgi.com>
-Date: Wed, 27 Mar 2013 09:53:45 -0500
+Received: from relay1.sgi.com ([192.48.179.29]:50834 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751463Ab3C0Qmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Mar 2013 12:42:32 -0400
+Message-ID: <5153217B.5070909@sgi.com>
+Date: Wed, 27 Mar 2013 11:42:35 -0500
 From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@sandeen.net>
-CC: <dsterba@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
-        xfs-oss <xfs@oss.sgi.com>,
-        ext4 development <linux-ext4@vger.kernel.org>,
+To: "Theodore Ts'o" <tytso@mit.edu>
+CC: xfs-oss <xfs@oss.sgi.com>, <linux-ext4@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: make defrag test 222 generic
-References: <513F5B0A.4030405@redhat.com> <20130315145540.GG7229@twin.jikos.cz> <51434653.40808@sgi.com> <514346B4.3040701@sandeen.net>
-In-Reply-To: <514346B4.3040701@sandeen.net>
+Subject: Re: Announce re-factor all current xfstests patches request
+References: <5152F2BB.4000709@sgi.com> <20130327134606.GJ5861@thunk.org>
+In-Reply-To: <20130327134606.GJ5861@thunk.org>
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/15/2013 11:05 AM, Eric Sandeen wrote:
-
+On 03/27/2013 08:46 AM, Theodore Ts'o wrote:
+> On Wed, Mar 27, 2013 at 08:23:07AM -0500, Rich Johnston wrote:
+>> All xfstest developers,
+>>
+>> Thanks again for all your time in submitting and reviewing patches
+>> for xfstests.  The latest patchset posted here:
+>>
+>> http://oss.sgi.com/archives/xfs/2013-03/msg00467.html
+>>
+>> requires all current patches to be re-factored.
 >
-> I think that's big enough change I should send a V2. and
-> make a btrfs-special case in _defrag_dir.
+> Given that we are now segregating patches into subdirectories, is it
+> correct in the future tests should be named descriptively, instead of
+> using 3 digit NNN numbers (which has been a major pain from a central
+> assignment perspective)?
+Yes
 >
-> -Eric
+> If so, is there a suggested naming convention that is being recommended?
+>
+> Thanks for getting this change merged in!!
+>
+> 					- Ted
+>
 
-Ping
+I suggest:
 
-Did I miss something, I know you are working on several things at once. :)
+1. They should also be descriptive of the test rather than a number.
+2. All lowercase letters separated by _
+
+i.e.
+something like
+tests/$FSTYP/break_my_filesystem
 
 Thanks
 --Rich
+
+

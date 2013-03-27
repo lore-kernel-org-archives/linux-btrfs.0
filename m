@@ -1,49 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from conan.mikedilger.com ([108.166.80.77]:34921 "EHLO
-	conan.mikedilger.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751984Ab3C0GOz convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 02:14:55 -0400
-Received: from hero.mikedilger.com (ip-118-90-115-226.xdsl.xnet.co.nz [118.90.115.226])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	by conan.mikedilger.com (Postfix) with ESMTPSA id 1D8FE7E08F
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 06:05:09 +0000 (UTC)
-Date: Wed, 27 Mar 2013 19:03:49 +1300
-From: Mike Dilger <mike@mikedilger.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs "stuck" on
-Message-ID: <20130327190349.3b79c13f@hero.mikedilger.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from brockman.in8.de ([85.214.220.56]:40543 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753965Ab3C0GSx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Mar 2013 02:18:53 -0400
+Message-ID: <51528F4B.3030703@jan-o-sch.net>
+Date: Wed, 27 Mar 2013 07:18:51 +0100
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: Koen De Wit <koen.de.wit@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: The -c option of btrfs qgroup limit
+References: <5152311B.40908@oracle.com>
+In-Reply-To: <5152311B.40908@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Koen,
 
-I have a remarkably similar problem as Ask Bjørn Hansen.
+On 27.03.2013 00:36, Koen De Wit wrote:
+> The "btrfs qgroup limit" command has an option -c which means "limit amount
+> of data after compression". Whether this option is specified or not, I seem
+> to be able to write more well-compressible data than the specified limit. I
+> was expecting that omitting the -c option would never allow me to write
+> more data than specified by the limit. Am I missing something? Which
+> difference in behavior should I expect from the -c option?
 
-I have a 2TB btrfs filesystem on a SATA drive, on top of an msdos partition table, partition 1, without any form of RAID.
+Today: none. In the future: The one you describe. That option is planned
+but not implemented. We should have mentioned that in the qgroup usage,
+I agree.
 
-I have been using it to make backups using rsync like this:
-1) snapshot the previous backup subvolume
-2) rsync into the new snapshot
-3) If we are overwriting a previous backup "level", drop that previous subvolume and rename this one into it's place.
-I keep 8 levels in tower-of-hanoi strategy.  It's the same backup script I've used for the last 5 years, except I removed the rsync --link-dest and added in the btrfs snapshotting, just because dropping a subvolume is so damn quick compared to deleting all the files.
-
-
-After about 400 GB of backups taken all in the same day, but having already dropped probably 12 or 13 subvolumes after snapshotting, I get the behavior.
-
-The behavior is:
-*) After mounting, things are usually ok for 20 seconds or so, then it starts
-*) The disk activity lite burns constantly
-*) btrfs-cleaner is fairly high up in 'top'
-*) Read/writes to the device are painfully slow
-*) I cannot unmount the device, nor cleanly shutdown.
-*) Once the system froze hard, no mouse cursor movement, not even the reset button worked.
-
-I'm running linux 3.8.3 pulled from git, so no distribution mods or patches.
-
-Happy to run any tests.
-
--Mike
-[not on this list, so need to be on the reply]
+-Jan

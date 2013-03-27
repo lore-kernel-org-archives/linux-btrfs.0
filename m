@@ -1,54 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55309 "EHLO
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55343 "EHLO
 	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751643Ab3C0I1U (ORCPT
+	with ESMTP id S1751324Ab3C0IbX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 04:27:20 -0400
+	Wed, 27 Mar 2013 04:31:23 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id E9832255484
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 19:31:22 +1100 (EST)
 From: Russell Coker <russell@coker.com.au>
 Reply-To: russell@coker.com.au
-To: cwillu <cwillu@cwillu.com>
-Subject: Re: multiple btrfsck runs
-Date: Wed, 27 Mar 2013 19:27:11 +1100
-Cc: linux-btrfs@vger.kernel.org
-References: <201303162302.14746.russell@coker.com.au> <201303162346.40534.russell@coker.com.au> <CAE5mzvgqkeB2qox4hi7JZ0cOQkwNA0WrMC2+k4bXDDGWuD+5OA@mail.gmail.com>
-In-Reply-To: <CAE5mzvgqkeB2qox4hi7JZ0cOQkwNA0WrMC2+k4bXDDGWuD+5OA@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfsck infinite loop
+Date: Wed, 27 Mar 2013 19:31:17 +1100
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201303271927.12379.russell@coker.com.au>
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201303271931.17861.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 17 Mar 2013, cwillu <cwillu@cwillu.com> wrote:
-> On Sat, Mar 16, 2013 at 6:46 AM, Russell Coker <russell@coker.com.au> wrote:
-> > On Sat, 16 Mar 2013, cwillu <cwillu@cwillu.com> wrote:
-> >> On Sat, Mar 16, 2013 at 6:02 AM, Russell Coker <russell@coker.com.au> 
-wrote:
-> >> > Is it expected that running btrfsck more than once will keep reporting
-> >> > errors?
-> >> 
-> >> Without options, btrfsck does not write to the disk.
-> > 
-> > The man page for the version in Debian doesn't document any options.
-> > 
-> > The source indicates that --repair might be the one that's desired, is
-> > that correct?
-> 
-> Yes.  However, unless something is actually broken, or you've been
-> advised by a developer, I'd stick with btrfs scrub.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=703474
 
-I've got a filesystem that causes a kernel panic and can't even get to the 
-scrub stage, so btrfsck is necessary.
+The above Debian bug report has the details of a btrfsck infinite loop problem 
+I'm having.  I initially reported it as an i386 bug because it didn't seem to 
+appear on AMD64.  But then I realised that on AMD64 it merely runs for longer 
+before looping.
 
-http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=703211
+git pull http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git
 
-While this is an upstream bug, I've filed the above Debian bug report about it.  
-Sometimes in such situations the DD will fix the bug and send the patch 
-upstream.
+I've just used the above command to get the latest btrfsck source, compiled it 
+and run it.  The resulting btrfsck has now used 97 minutes of CPU time which 
+is about 94 minutes since the last time it gave any output.
+
+Below is the last output of btrfsck before it entered the 100% CPU loop.
+
+leaf parent key incorrect 566530048
+bad block 566530048
+leaf parent key incorrect 566534144
+bad block 566534144
+leaf parent key incorrect 566538240
+bad block 566538240
+leaf parent key incorrect 566542336
+bad block 566542336
+leaf parent key incorrect 566546432
+bad block 566546432
+leaf parent key incorrect 566550528
+bad block 566550528
+leaf parent key incorrect 566554624
+bad block 566554624
+leaf parent key incorrect 566558720
+bad block 566558720
+leaf parent key incorrect 566579200
+bad block 566579200
+leaf parent key incorrect 567844864
+bad block 567844864
+leaf parent key incorrect 567853056
+bad block 567853056
 
 -- 
 My Main Blog         http://etbe.coker.com.au/

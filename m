@@ -1,51 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37720 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751753Ab3CZT0m (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:39782 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752971Ab3C0Sd3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 15:26:42 -0400
+	Wed, 27 Mar 2013 14:33:29 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id CC15E9A0370
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 13:26:41 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id g6zG6ex2dq6sCkze (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 13:26:41 -0600 (MDT)
+	by dkim1.fusionio.com (Postfix) with ESMTP id DE6EC7C0682
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 12:33:28 -0600 (MDT)
+Date: Wed, 27 Mar 2013 14:33:25 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: limit the global reserve to 512mb
-Date: Tue, 26 Mar 2013 15:34:06 -0400
-Message-ID: <1364326446-8584-1-git-send-email-jbacik@fusionio.com>
+To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
+Message-ID: <20130327183325.GK28030@localhost.localdomain>
+References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a problem where he was getting early ENOSPC with hundreds of
-gigs of free data space and 6 gigs of free metadata space.  This is because the
-global block reserve was taking up the entire free metadata space.  This is
-ridiculous, we have infrastructure in place to throttle if we start using too
-much of the global reserve, so instead of letting it get this huge just limit it
-to 512mb so that users can still get work done.  This allowed the user to
-complete his rsync without issues.  Thanks
+On Tue, Mar 26, 2013 at 08:33:27AM -0600, Szőts Ákos wrote:
+> Dear list members,
+> 
+> In my previous thread at
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg23333.html
+> there was a space_cache kernel bug/panic on kernel 3.8. I could
+> successfully "fix" that with rebuilding the cache. But some files were
+> missing/corrupted. So I booted a rescue CD with kernel 3.7 and ran
+> btrfsck --repair, which repaired quite a few things.
+> 
+> After a reboot I got the following message:
+> [  469.457386] btrfs: disk space caching is enabled
+> [  469.503612] btrfs: mismatching generation and generation_v2 found
+> in root item. This root was probably mounted with an older kernel.
+> Resetting all new fields.
+> 
+> As soon as anything had wanted to read a bit from the file system, the
+> hard drive went crazy and was working for 5-10 minutes. After I got a
+> kernel panic which said there's an error in fs/btrfs/inode.c:835.
+> 
+> In the moment I don't just mount, but want to read something from the
+> mounted file system under the rescue system, the same procedure
+> happens.
+> 
+> I made some pictures of it (since I cannot read anything from the
+> logs, if there are any).
+> You can find them here: www.morrohun.hu/temp/btrfs/v2/[123].jpg
+> 
+> I wanted to create an image with the aforementined btrfs-image tool,
+> but yet to have any success .
+> 
+> Could you please give me an advice what can I do now? Living on a
+> live-CD is not a life insurance :)
+> 
 
-Cc: stable@vger.kernel.org
-Reported-and-tested-by: Stefan Priebe <s.priebe@profihost.ag>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Can you run btrfsck without --repair and capture the output and upload it
+somewhere so I can make sure I've restored properly.  I can reproduce the
+problem but I'm worried that I'm reproducing it because I've restored badly and
+there's something else wrong, I want to make sure I'm seeing exactly what you
+are seeing.  Thanks,
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c08c7c8..5791da2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4554,7 +4554,7 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	spin_lock(&sinfo->lock);
- 	spin_lock(&block_rsv->lock);
- 
--	block_rsv->size = num_bytes;
-+	block_rsv->size = min_t(u64, num_bytes, 512 * 1024 * 1024);
- 
- 	num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
- 		    sinfo->bytes_reserved + sinfo->bytes_readonly +
--- 
-1.7.7.6
-
+Josef

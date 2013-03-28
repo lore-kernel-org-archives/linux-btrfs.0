@@ -1,60 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f52.google.com ([209.85.160.52]:62667 "EHLO
-	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751212Ab3C1KyV (ORCPT
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:38638 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754946Ab3C1LvW convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 06:54:21 -0400
-Received: by mail-pb0-f52.google.com with SMTP id ma3so5748953pbc.25
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 03:54:20 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sensille@gmx.net, miaox@cn.fujitsu.com, wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH V2 0/6] add a mutex lock to avoid race condition and  have all the ioctls check
-Date: Thu, 28 Mar 2013 18:54:15 +0800
-Message-Id: <1364468055-1669-1-git-send-email-wangshilong1991@gmail.com>
+	Thu, 28 Mar 2013 07:51:22 -0400
+Received: from mfilter25-d.gandi.net (mfilter25-d.gandi.net [217.70.178.153])
+	by relay4-d.mail.gandi.net (Postfix) with ESMTP id 9E38617208B
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 12:51:20 +0100 (CET)
+Received: from relay4-d.mail.gandi.net ([217.70.183.196])
+	by mfilter25-d.gandi.net (mfilter25-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id qtSDBB6X+66L for <linux-btrfs@vger.kernel.org>;
+	Thu, 28 Mar 2013 12:51:19 +0100 (CET)
+Received: from [192.168.1.66] (AMontpellier-256-1-45-60.w90-28.abo.wanadoo.fr [90.28.12.60])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 3F34F1720AC
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 12:51:19 +0100 (CET)
+Message-ID: <51542EB6.7030403@petaramesh.org>
+Date: Thu, 28 Mar 2013 12:51:18 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: This time HD LED doesn't come up at all :-(
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The original code has only one spin_lock 'qgroup_lock' to protect quota
-configurations on memory. If we want to add a BTRFS_QGROUP_INFO_KEY,
-it will be added to Btree firstly and then update quota configurations
-on memory, however,a race condition may happen between these operations.
-For example:
-	->add_qqroup_info_item()
-		->add_qgroup_rb()
+(Resending without the attachment which didn't seem to make it thru...)
 
-For the above case, del_qgroup_info_item() may happen before add_qgroup_rb().
+Hi folks,
 
-What's worse, when we want to add a qgroup relations:
-	->add_qgroup_relation_item()
-		->add_qgroup_relations()
+This time, at reboot, one of my machines won't come up.
 
-We don't have any checks whether 'src' and 'dst' exists before
-add_qgroup_relation_item(), a race condition can also happen for the above case.
+Starting it in "single and verbose" mode shows that BTRFS looks dead (or
+at least seriously wounded) :
 
-To avoid race conditions and have all the necessay checks, we introduce
-a mutex 'quota_lock', and we make all the user change operations protected by
-the mutex_lock.
+Kernel seems to mount BTRFS, then swap, then sits there doing nothing
+for quite a while (HD LED is OFF).
 
-The benefit of mutex_lock is more, with a mutex lock, we can remove
-some spin_lock usages thus easing the burden of spin_lock 'qgroup_lock'.
+Then it starts spitting ugly messages about init being blocked for more
+than 120 seconds, btrfs-cleaner (the same) etc. - please see attached
+screenshot.
 
-V1->V2:
-	use quota configurations on memory to speed up ioctl checks
-Wang Shilong (6):
-  Btrfs: introduce a mutex lock for btrfs quota operations
-  Btrfs: remove some unnecessary spin_lock usages
-  Btrfs: fix missing check before updating qgroup limit
-  Btrfs: fix missing check before creating/destroying a qgroup
-  Btrfs: fix missing check before assigning/removing qgroup relation
-  Btrfs: fix missing check before btrfs_qgroup_inherit()
+Any clue for getting out of this annoying situation without resorting to
+reinstall from backups ?
 
- fs/btrfs/ctree.h   |   10 +++
- fs/btrfs/disk-io.c |    1 +
- fs/btrfs/ioctl.c   |   43 ++++++++++----
- fs/btrfs/qgroup.c  |  167 +++++++++++++++++++++++++++++++++-------------------
- 4 files changed, 150 insertions(+), 71 deletions(-)
+TIA.
 
 -- 
-1.7.7.6
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+
+
 

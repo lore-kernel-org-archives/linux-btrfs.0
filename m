@@ -1,76 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f173.google.com ([209.85.220.173]:53314 "EHLO
-	mail-vc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753571Ab3C1Dim convert rfc822-to-8bit (ORCPT
+Received: from mail-la0-f52.google.com ([209.85.215.52]:51055 "EHLO
+	mail-la0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753115Ab3C1Hyv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 23:38:42 -0400
-Received: by mail-vc0-f173.google.com with SMTP id gd11so7280836vcb.32
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 20:38:42 -0700 (PDT)
+	Thu, 28 Mar 2013 03:54:51 -0400
+Received: by mail-la0-f52.google.com with SMTP id fs12so17241632lab.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 00:54:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <5152B451.8090100@petaramesh.org>
-References: <5152B451.8090100@petaramesh.org>
-Date: Wed, 27 Mar 2013 23:38:41 -0400
-Message-ID: <CALJXSJr9_s_c2Ah_Dpa_ha7WdZ=y8xftnk5BoXzAj+TfXv7fQg@mail.gmail.com>
-Subject: Re: BTRFS and the steadily lit LED
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Thu, 28 Mar 2013 08:54:49 +0100
+Message-ID: <CAPsrAuBg9Mv3Ai=ZPMMF413Jw0kqA9ET9e_jnBjrqPhmqoQY+A@mail.gmail.com>
+Subject: question about replacing a drive in raid10
+From: Joeri Vanthienen <mail@joerivanthienen.be>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 27, 2013 at 4:56 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
-> After having received strong advice from the people in this list to
-> upgrade my kernel to the latest one, I have installed 3.8.0-14-generic
-> #24-Ubuntu SMP x86_64 on several (4) machines.
->
-> In the hope of improving systems speed I had also removed all snapshots
-> then defragged the FSes - the snapshots have been recreated since, as I
-> use the excellent SuSE "Snapper" tool.
->
-> But well, all 4 machines are still slow like hell. All of them are used
-> for quite basic daily tasks - web browsing, email, typical LibreOffice
-> tasks, nothing very mysterious there, no specific heavy DB work.
->
-> All machines have 64-bits Linuxes (either Ubuntu 12.10 or 13.04ß), with
-> decent amounts of RAM - 2 GB to 4 GB - and disks filled less than 75%
->
-> With such a setup, I would expect any decent filesystem to deliver
-> excellent performance. Still, all of my machines are slow like hell and
-> I'm most of the time in mode « Working my patience while waiting for the
-> HD LED to go off ».
->
-> I haven't noticed any real-life noticeable improvement upgrading the
-> kernels from 3.5.x to 3.8.x
->
-> So I'm wondering...
+Hi all,
 
-I must say after having used BTRFS for quite some time on many
-different desktop systems that this pretty much summaries my though of
-BTRFS used on a desktop system.
+I have a question about replacing a drive in raid10 (and linux kernel 3.8.4).
+A bad disk was physical removed from the server. After this a new disk
+was added with "btrfs device add /dev/sdg /btrfs" to the raid10 btrfs
+FS.
+After this the server was rebooted and I mounted the filesystem in
+degraded mode. It seems that a previous started balance continued.
 
-I have been using it on my root filesystem for 5 consecutive systems
-and all of them were I/O bound most of the time after 2 months of
-normal usage with or *without* snapshots. Defragging or rebalancing
-doesn't help, growing leaf size helps push back the problem, but it
-eventually come back.
+At this point I want to remove the missing device from the pooI (btrfs
+device delete missing /btrfs). Is this safe to do ?
+The disk usage numbers look weird to me, also the limited amount of
+data written to the new disk after the balance.
+And I think the balance also failed.
+All data is still accessible and I hope this stays the case after
+removing the missing device :)
 
-The only way to get around the problem is to re-format the drive and
-restore from backups. I'm pretty sure I toasted 2 SSDs because of
-BTRFS, one in 4 months, the other in 6 months. 80 GB SSDs, I switched
-this system to NILFS2 for now, which isn't I/O bound and doesn't kill
-flash drives.
+"Mar 27 17:41:06 SANOS1 kernel: btrfs: allowing degraded mounts
+Mar 27 17:41:06 SANOS1 kernel: btrfs: disk space caching is enabled
+Mar 27 17:41:06 SANOS1 kernel: btrfs: bdev (null) errs: wr 3243008, rd
+2, flush 430, corrupt 0, gen 0
+Mar 27 17:41:06 SANOS1 kernel: btrfs: bdev /dev/sdl errs: wr 144, rd
+0, flush 48, corrupt 129, gen 41
+Mar 27 17:41:06 SANOS1 kernel: btrfs: bdev /dev/sdk errs: wr 0, rd 5,
+flush 0, corrupt 0, gen 0
+Mar 27 17:41:10 SANOS1 kernel: btrfs: continuing balance
+Mar 27 17:41:18 SANOS1 kernel: btrfs: relocating block group
+4541886169088 flags 65
+Mar 27 17:41:41 SANOS1 kernel: btrfs: found 1956 extents
+Mar 27 17:42:03 SANOS1 kernel: btrfs: found 1954 extents
+"
 
-A bigger system that I administer has 14 TB worth of data and has
-constant loads of 6 to 8 (4 CPUs), mostly because of I/O wait just
-because it unzips a file. This system never had a snapshot.
+# mount | grep btrfs
+/dev/sdd on /btrfs type btrfs (rw,relatime,degraded,space_cache)
 
-On the system I'm writing, watching a YouTube video will hang one
-second every 30 seconds because flash player writes the video to /tmp.
+ # btrfs filesystem df /btrfs/
+Data, RAID10: total=2.60TB, used=2.57TB
+System, RAID10: total=63.88MB, used=244.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID10: total=11.00GB, used=8.51GB
 
-I submitted some backtrace but lost hope, I used kernel from 3.0 to
-3.9-rc4 with the FS, features are great, it is great for a file
-server, but for desktop, it is really hard to use as root or /home
-because of this issue.
+ # btrfs filesystem show
+Label: 'firstpool'  uuid: 517e8cfa-4275-4589-8da4-6a46ad613daa
+        Total devices 15 FS bytes used 2.58TB
+        devid   13 size 931.51GB used 381.58GB path /dev/sdp
+        devid   14 size 931.51GB used 381.58GB path /dev/sdq
+        devid   12 size 931.51GB used 381.58GB path /dev/sdo
+        devid   11 size 931.51GB used 381.58GB path /dev/sdn
+        devid   10 size 931.51GB used 381.58GB path /dev/sdm
+        devid    9 size 931.51GB used 381.58GB path /dev/sdl
+        devid    8 size 931.51GB used 380.58GB path /dev/sdk
+        devid    7 size 931.51GB used 380.58GB path /dev/sdj
+        devid   16 size 931.51GB used 20.44GB path /dev/sdg
+        devid    6 size 931.51GB used 381.58GB path /dev/sdi
+        devid    5 size 931.51GB used 381.58GB path /dev/sdh
+        devid   15 size 931.51GB used 380.58GB path /dev/sdf
+        devid    2 size 931.51GB used 381.58GB path /dev/sde
+        devid    1 size 931.51GB used 380.58GB path /dev/sdd
+        *** Some devices missing
 
-Is there any data I can submit to help enhance performance on a desktop system?
+# btrfs filesystem balance status -v /btrfs/
+ERROR: balance status on '/btrfs/' failed - Not in progress
+
+Btrfs progs = v0.19+

@@ -1,57 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:64981 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753656Ab3C2PmQ (ORCPT
+Received: from mail-pb0-f54.google.com ([209.85.160.54]:55861 "EHLO
+	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753455Ab3C1Kxy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 11:42:16 -0400
-Received: by mail-oa0-f46.google.com with SMTP id k1so514615oag.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 08:42:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <092651F7-2FAF-42A2-A5B5-F4E4377A6A12@colorremedies.com>
-References: <221EE566-B039-426F-827D-AA20B5A2D86B@colorremedies.com>
-	<CAE5mzviUeSfT6X=hQfwCcRAhHhJDYRFhztOiEWKHSXfTcZ0r4w@mail.gmail.com>
-	<092651F7-2FAF-42A2-A5B5-F4E4377A6A12@colorremedies.com>
-Date: Fri, 29 Mar 2013 10:42:15 -0500
-Message-ID: <CAKcLGm8oNvQ7OO63TS389qDo3xo_41s1BO5POG8CR5=_nd2Z2g@mail.gmail.com>
-Subject: Re: minimum kernel version for btrfsprogs.0.20?
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: cwillu <cwillu@cwillu.com>,
-        "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Thu, 28 Mar 2013 06:53:54 -0400
+Received: by mail-pb0-f54.google.com with SMTP id rq13so1719400pbb.27
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 03:53:54 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net, miaox@cn.fujitsu.com, wangsl-fnst@cn.fujitsu.com
+Subject: [PATCH V2 1/6] Btrfs: introduce a mutex lock for btrfs quota operations
+Date: Thu, 28 Mar 2013 18:53:44 +0800
+Message-Id: <1364468024-1636-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <1364468055-1669-1-git-send-email-wangshilong1991@gmail.com>
 
-On Fri, Mar 29, 2013 at 1:21 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> Chris Murphy wrote:
->> On Mar 29, 2013, at 12:04 AM, cwillu <cwillu@cwillu.com> wrote:
->>
->>> commit 1a72afaa "btrfs-progs: mkfs support for extended inode refs"
->>> unconditionally enables extended irefs (which permits more than 4k
->>> links to the same inode).  It's the right default imo, but there
->>> probably should have been a mkfs option to disable it.
->>
->> mkfs.btrfs -l 8192
->>
->> That is not mountable by 3.8.5. I get:
->>
->> [  252.870733] btrfs: disk space caching is enabled
->> [  252.870740] btrfs flagging fs with big metadata feature
->> [  252.874944] btrfs: failed to recover relocation
->> [  252.885186] btrfs: open_ctree failed
->>
->> That's definitely not expected.
->
-> mkfs.btrfs -l 8192 with kernel 3.9.0 creates a file system mountable by 3.9.0 and only 3.9.0 (so far). And while there's no error making such a file system with other kernels, they won't mount the resulting file system.
->
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-I'm seeing something similar.
+This patch introduces mutex lock 'quota_lock', and makes
+all the user change for quota protected by quota_lock.
 
-Using the current master branch of btrfs-progs
-(https://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git,
-top commit 7854c8b667654502f69e05584729146a06827bc6 "Btrfs-progs: give
-restore a list roots option"), if I run 'mkfs.btrfs -f /dev/<device>'
-on a 3.7.x vintage kernel, the mkfs operation is successful, but I
-can't mount the partition.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h   |    3 +++
+ fs/btrfs/disk-io.c |    1 +
+ fs/btrfs/ioctl.c   |   16 ++++++++++++----
+ 3 files changed, 16 insertions(+), 4 deletions(-)
 
-I am successful on a 3.8.x vintage kernel or testing the _rc code for 3.9.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6e81860..a11a8ed 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1584,6 +1584,9 @@ struct btrfs_fs_info {
+ 	struct rb_root qgroup_tree;
+ 	spinlock_t qgroup_lock;
+ 
++	/* protect user change operations for quota */
++	struct mutex quota_lock;
++
+ 	/* list of dirty qgroups to be written at next commit */
+ 	struct list_head dirty_qgroups;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index fe82d08..4552f14 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2250,6 +2250,7 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->dev_replace.lock);
+ 
+ 	spin_lock_init(&fs_info->qgroup_lock);
++	mutex_init(&fs_info->quota_lock);
+ 	fs_info->qgroup_tree = RB_ROOT;
+ 	INIT_LIST_HEAD(&fs_info->dirty_qgroups);
+ 	fs_info->qgroup_seq = 1;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 222ce84..e2950f1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -752,7 +752,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+ 
+ 	if (btrfs_root_refs(&BTRFS_I(dir)->root->root_item) == 0)
+ 		goto out_up_read;
+-
++	mutex_lock(&BTRFS_I(dir)->root->fs_info->quota_lock);
+ 	if (snap_src) {
+ 		error = create_snapshot(snap_src, dir, dentry, name, namelen,
+ 					async_transid, readonly, inherit);
+@@ -762,6 +762,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+ 	}
+ 	if (!error)
+ 		fsnotify_mkdir(dir, dentry);
++	mutex_unlock(&BTRFS_I(dir)->root->fs_info->quota_lock);
+ out_up_read:
+ 	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
+ out_dput:
+@@ -3693,6 +3694,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 		goto drop_write;
+ 	}
+ 
++	mutex_lock(&root->fs_info->quota_lock);
+ 	down_read(&root->fs_info->subvol_sem);
+ 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
+ 		trans = btrfs_start_transaction(root, 2);
+@@ -3728,6 +3730,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ out:
+ 	kfree(sa);
+ 	up_read(&root->fs_info->subvol_sem);
++	mutex_unlock(&root->fs_info->quota_lock);
+ drop_write:
+ 	mnt_drop_write_file(file);
+ 	return ret;
+@@ -3754,6 +3757,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+ 		goto drop_write;
+ 	}
+ 
++	mutex_lock(&root->fs_info->quota_lock);
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+@@ -3775,6 +3779,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+ 
+ out:
+ 	kfree(sa);
++	mutex_unlock(&root->fs_info->quota_lock);
+ drop_write:
+ 	mnt_drop_write_file(file);
+ 	return ret;
+@@ -3805,11 +3810,11 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-
++	mutex_lock(&root->fs_info->quota_lock);
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+-		goto out;
++		goto out_unlock;
+ 	}
+ 
+ 	/* FIXME: check if the IDs really exist */
+@@ -3824,6 +3829,8 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+ 	if (err && !ret)
+ 		ret = err;
+ 
++out_unlock:
++	mutex_unlock(&root->fs_info->quota_lock);
+ out:
+ 	kfree(sa);
+ drop_write:
+@@ -3852,7 +3859,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ 		ret = PTR_ERR(sa);
+ 		goto drop_write;
+ 	}
+-
++	mutex_lock(&root->fs_info->quota_lock);
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+@@ -3874,6 +3881,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ 
+ out:
+ 	kfree(sa);
++	mutex_unlock(&root->fs_info->quota_lock);
+ drop_write:
+ 	mnt_drop_write_file(file);
+ 	return ret;
+-- 
+1.7.7.6
+

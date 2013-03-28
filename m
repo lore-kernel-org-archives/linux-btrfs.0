@@ -1,244 +1,264 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:41377 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754545Ab3CZTgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Mar 2013 15:36:14 -0400
-Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r2QJaDjX021262
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 15:36:14 -0400
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r2QJaC8E002316
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2013 15:36:13 -0400
-Message-ID: <5151F8AC.6060100@redhat.com>
-Date: Tue, 26 Mar 2013 14:36:12 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:27425 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751649Ab3C1OjX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Mar 2013 10:39:23 -0400
+Date: Thu, 28 Mar 2013 22:37:05 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/4] Btrfs: improve the performance of the csums lookup
+Message-ID: <20130328143704.GA3927@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <5153FB01.9030506@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2] btrfs: document mount options in Documentation/fs/btrfs.txt
-References: <514DEB06.7000606@redhat.com>
-In-Reply-To: <514DEB06.7000606@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5153FB01.9030506@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Document all current btrfs mount options.
+On Thu, Mar 28, 2013 at 04:10:41PM +0800, Miao Xie wrote:
+> It is very likely that there are several blocks in bio, it is very
+> inefficient if we get their csums one by one. This patch improves
+> this problem by getting the csums in batch.
+> 
+> According to the result of the following test, the execute time of
+> __btrfs_lookup_bio_sums() is down by ~28%(300us -> 217us).
+> 
+>  # dd if=<mnt>/file of=/dev/null bs=1M count=1024
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+Looks good to me.
 
-V2:
-* reflect that btrfs is no longer "new" ;)
-* make it clear that alloc_start is for each device
-* highlight potential perf impacts of -o discard
-* reword skip_balance docs to refer to "resume"
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 7671352..b349d57 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -1,8 +1,8 @@
- 
--	BTRFS
--	=====
-+BTRFS
-+=====
- 
--Btrfs is a new copy on write filesystem for Linux aimed at
-+Btrfs is a copy on write filesystem for Linux aimed at
- implementing advanced features while focusing on fault tolerance,
- repair and easy administration. Initially developed by Oracle, Btrfs
- is licensed under the GPL and open for contribution from anyone.
-@@ -34,9 +34,175 @@ The main Btrfs features include:
-     * Online filesystem defragmentation
- 
- 
-+Mount Options
-+=============
- 
--	MAILING LIST
--	============
-+When mounting a btrfs filesystem, the following option are accepted.
-+Unless otherwise specified, all options default to off.
-+
-+  alloc_start=<bytes>
-+	Debugging option to force all block allocations above a certain
-+	byte threshold on each block device.  The value is specified in
-+	bytes, optionally with a K, M, or G suffix, case insensitive.
-+	Default is 1MB.
-+
-+  autodefrag
-+	Detect small random writes into files and queue them up for the
-+	defrag process.  Works best for small files; Not well suited for
-+	large database workloads.
-+
-+  check_int
-+  check_int_data
-+  check_int_print_mask=<value>
-+	These debugging options control the behavior of the integrity checking
-+	module (the BTRFS_FS_CHECK_INTEGRITY config option required).
-+
-+	check_int enables the integrity checker module, which examines all
-+	block write requests to ensure on-disk consistency, at a large
-+	memory and CPU cost.  
-+
-+	check_int_data includes extent data in the integrity checks, and
-+	implies the check_int option.
-+
-+	check_int_print_mask takes a bitmask of BTRFSIC_PRINT_MASK_* values
-+	as defined in fs/btrfs/check-integrity.c, to control the integrity
-+	checker module behavior.
-+
-+	See comments at the top of fs/btrfs/check-integrity.c for more info.
-+
-+  compress
-+  compress=<type>
-+  compress-force
-+  compress-force=<type>
-+	Control BTRFS file data compression.  Type may be specified as "zlib"
-+	"lzo" or "no" (for no compression, used for remounting).  If no type
-+	is specified, zlib is used.  If compress-force is specified,
-+	all files will be compressed, whether or not they compress well.
-+	If compression is enabled, nodatacow and nodatasum are disabled.
-+
-+  degraded
-+	Allow mounts to continue with missing devices.  A read-write mount may
-+	fail with too many devices missing, for example if a stripe member
-+	is completely missing.
-+
-+  device=<devicepath>
-+	Specify a device during mount so that ioctls on the control device
-+	can be avoided.  Especialy useful when trying to mount a multi-device
-+	setup as root.  May be specified multiple times for multiple devices.
-+
-+  discard
-+	Issue frequent commands to let the block device reclaim space freed by
-+	the filesystem.  This is useful for SSD devices, thinly provisioned
-+	LUNs and virtual machine images, but may have a significant
-+	performance impact.  (The fstrim command is also available to
-+	initiate batch trims from userspace).
-+
-+  enospc_debug
-+	Debugging option to be more verbose in some ENOSPC conditions.
-+
-+  fatal_errors=<action>
-+	Action to take when encountering a fatal error: 
-+	  "bug" - BUG() on a fatal error.  This is the default.
-+	  "panic" - panic() on a fatal error.
-+
-+  flushoncommit
-+	The 'flushoncommit' mount option forces any data dirtied by a write in a
-+	prior transaction to commit as part of the current commit.  This makes
-+	the committed state a fully consistent view of the file system from the
-+	application's perspective (i.e., it includes all completed file system
-+	operations).  This was previously the behavior only when a snapshot is
-+	created.
-+
-+  inode_cache
-+	Enable free inode number caching.   Defaults to off due to an overflow
-+	problem when the free space crcs don't fit inside a single page.
-+
-+  max_inline=<bytes>
-+	Specify the maximum amount of space, in bytes, that can be inlined in
-+	a metadata B-tree leaf.  The value is specified in bytes, optionally 
-+	with a K, M, or G suffix, case insensitive.  In practice, this value
-+	is limited by the root sector size, with some space unavailable due
-+	to leaf headers.  For a 4k sectorsize, max inline data is ~3900 bytes.
-+
-+  metadata_ratio=<value>
-+	Specify that 1 metadata chunk should be allocated after every <value>
-+	data chunks.  Off by default.
-+
-+  noacl
-+	Disable support for Posix Access Control Lists (ACLs).  See the
-+	acl(5) manual page for more information about ACLs.
-+
-+  nobarrier
-+        Disables the use of block layer write barriers.  Write barriers ensure
-+	that certain IOs make it through the device cache and are on persistent
-+	storage.  If used on a device with a volatile (non-battery-backed)
-+	write-back cache, this option will lead to filesystem corruption on a
-+	system crash or power loss.
-+
-+  nodatacow
-+	Disable data copy-on-write for newly created files.  Implies nodatasum,
-+	and disables all compression.
-+
-+  nodatasum
-+	Disable data checksumming for newly created files.
-+
-+  notreelog
-+	Disable the tree logging used for fsync and O_SYNC writes.
-+
-+  recovery
-+	Enable autorecovery attempts if a bad tree root is found at mount time.
-+	Currently this scans a list of several previous tree roots and tries to 
-+	use the first readable.
-+
-+ skip_balance
-+	Skip automatic resume of interrupted balance operation after mount.
-+	May be resumed with "btrfs balance resume."
-+
-+  space_cache (*)
-+	Enable the on-disk freespace cache.
-+  nospace_cache
-+	Disable freespace cache loading without clearing the cache.
-+  clear_cache
-+	Force clearing and rebuilding of the disk space cache if something
-+	has gone wrong.
-+
-+  ssd
-+  nossd
-+  ssd_spread
-+	Options to control ssd allocation schemes.  By default, BTRFS will
-+	enable or disable ssd allocation heuristics depending on whether a
-+	rotational or nonrotational disk is in use.  The ssd and nossd options
-+	can override this autodetection.
-+
-+	The ssd_spread mount option attempts to allocate into big chunks
-+	of unused space, and may perform better on low-end ssds.  ssd_spread
-+	implies ssd, enabling all other ssd heuristics as well.
-+
-+  subvol=<path>
-+	Mount subvolume at <path> rather than the root subvolume.  <path> is
-+	relative to the top level subvolume.
-+
-+  subvolid=<ID>
-+	Mount subvolume specified by an ID number rather than the root subvolume.
-+	This allows mounting of subvolumes which are not in the root of the mounted
-+	filesystem.
-+	You can use "btrfs subvolume list" to see subvolume ID numbers.
-+
-+  subvolrootid=<objectid> (deprecated)
-+	Mount subvolume specified by <objectid> rather than the root subvolume.
-+	This allows mounting of subvolumes which are not in the root of the mounted
-+	filesystem.
-+	You can use "btrfs subvolume show " to see the object ID for a subvolume.
-+	
-+  thread_pool=<number>
-+	The number of worker threads to allocate.  The default number is equal
-+	to the number of CPUs + 2, or 8, whichever is smaller.
-+
-+  user_subvol_rm_allowed
-+	Allow subvolumes to be deleted by a non-root user. Use with caution. 
-+
-+MAILING LIST
-+============
- 
- There is a Btrfs mailing list hosted on vger.kernel.org. You can
- find details on how to subscribe here:
-@@ -49,8 +215,8 @@ http://dir.gmane.org/gmane.comp.file-systems.btrfs
- 
- 
- 
--	IRC
--	===
-+IRC
-+===
- 
- Discussion of Btrfs also occurs on the #btrfs channel of the Freenode
- IRC network.
-
-
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent_io.c    | 31 +++++++++++++++++++++++++++++++
+>  fs/btrfs/extent_io.h    |  2 ++
+>  fs/btrfs/file-item.c    | 45 ++++++++++++++++++++++++++-------------------
+>  fs/btrfs/ordered-data.c | 24 ++++++++++++++----------
+>  fs/btrfs/ordered-data.h |  3 ++-
+>  5 files changed, 75 insertions(+), 30 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index f173c5a..3da8da5 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1744,6 +1744,37 @@ out:
+>  	return ret;
+>  }
+>  
+> +void cache_csums(struct extent_io_tree *tree, u64 start, u32 csums[],
+> +		 int count, int sectorsize)
+> +{
+> +	struct rb_node *node;
+> +	struct extent_state *state, *next;
+> +
+> +	spin_lock(&tree->lock);
+> +	/*
+> +	 * this search will find all the extents that end after
+> +	 * our range starts.
+> +	 */
+> +	node = tree_search(tree, start);
+> +	BUG_ON(!node);
+> +
+> +	state = rb_entry(node, struct extent_state, rb_node);
+> +	BUG_ON(state->start != start);
+> +
+> +	while (count) {
+> +		BUG_ON(state->end + 1 - state->start != sectorsize);
+> +
+> +		state->private = *csums++;
+> +		count--;
+> +		next = next_state(state);
+> +
+> +		BUG_ON(count && (!next || next->start != state->end + 1));
+> +
+> +		state = next;
+> +	}
+> +	spin_unlock(&tree->lock);
+> +}
+> +
+>  int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
+>  {
+>  	struct rb_node *node;
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 6068a19..b95fb6a 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -261,6 +261,8 @@ int extent_readpages(struct extent_io_tree *tree,
+>  int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+>  		__u64 start, __u64 len, get_extent_t *get_extent);
+>  int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
+> +void cache_csums(struct extent_io_tree *tree, u64 start, u32 csums[],
+> +		 int count, int sectorsize);
+>  int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+>  void set_page_extent_mapped(struct page *page);
+>  
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index b7e529d..3e2f080 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -175,7 +175,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>  				   struct inode *inode, struct bio *bio,
+>  				   u64 logical_offset, u32 *dst, int dio)
+>  {
+> -	u32 sum;
+> +	u32 sum[16];
+> +	int len;
+>  	struct bio_vec *bvec = bio->bi_io_vec;
+>  	int bio_index = 0;
+>  	u64 offset = 0;
+> @@ -184,7 +185,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>  	u64 disk_bytenr;
+>  	u32 diff;
+>  	u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+> -	int ret;
+> +	int count;
+> +	int index;
+>  	struct btrfs_path *path;
+>  	struct btrfs_csum_item *item = NULL;
+>  	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+> @@ -212,10 +214,11 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>  	if (dio)
+>  		offset = logical_offset;
+>  	while (bio_index < bio->bi_vcnt) {
+> +		len = min_t(int, ARRAY_SIZE(sum), bio->bi_vcnt - bio_index);
+>  		if (!dio)
+>  			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+> -		ret = btrfs_find_ordered_sum(inode, offset, disk_bytenr, &sum);
+> -		if (ret == 0)
+> +		count = btrfs_find_ordered_sum(inode, offset, disk_bytenr, sum, len);
+> +		if (count)
+>  			goto found;
+>  
+>  		if (!item || disk_bytenr < item_start_offset ||
+> @@ -228,10 +231,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>  			item = btrfs_lookup_csum(NULL, root->fs_info->csum_root,
+>  						 path, disk_bytenr, 0);
+>  			if (IS_ERR(item)) {
+> -				ret = PTR_ERR(item);
+> -				if (ret == -ENOENT || ret == -EFBIG)
+> -					ret = 0;
+> -				sum = 0;
+> +				count = 1;
+> +				sum[0] = 0;
+>  				if (BTRFS_I(inode)->root->root_key.objectid ==
+>  				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+>  					set_extent_bits(io_tree, offset,
+> @@ -267,19 +268,25 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>  		diff = disk_bytenr - item_start_offset;
+>  		diff = diff / root->sectorsize;
+>  		diff = diff * csum_size;
+> -
+> -		read_extent_buffer(path->nodes[0], &sum,
+> +		count = min_t(int, len, (item_last_offset - disk_bytenr) /
+> +					root->sectorsize);
+> +		read_extent_buffer(path->nodes[0], sum,
+>  				   ((unsigned long)item) + diff,
+> -				   csum_size);
+> +				   csum_size * count);
+>  found:
+> -		if (dst)
+> -			*dst++ = sum;
+> -		else
+> -			set_state_private(io_tree, offset, sum);
+> -		disk_bytenr += bvec->bv_len;
+> -		offset += bvec->bv_len;
+> -		bio_index++;
+> -		bvec++;
+> +		if (dst) {
+> +			for (index = 0; index < count; index++)
+> +				*dst++ = sum[index];
+> +		} else {
+> +			cache_csums(io_tree, offset, sum, count,
+> +				    root->sectorsize);
+> +		}
+> +		while (count--) {
+> +			disk_bytenr += bvec->bv_len;
+> +			offset += bvec->bv_len;
+> +			bio_index++;
+> +			bvec++;
+> +		}
+>  	}
+>  	btrfs_free_path(path);
+>  	return 0;
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index dc08d77..2b959b6 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -984,7 +984,7 @@ out:
+>   * be reclaimed before their checksum is actually put into the btree
+>   */
+>  int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+> -			   u32 *sum)
+> +			   u32 *sum, int len)
+>  {
+>  	struct btrfs_ordered_sum *ordered_sum;
+>  	struct btrfs_sector_sum *sector_sums;
+> @@ -993,22 +993,26 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+>  	unsigned long num_sectors;
+>  	unsigned long i;
+>  	u32 sectorsize = BTRFS_I(inode)->root->sectorsize;
+> -	int ret = 1;
+> +	int index = 0;
+>  
+>  	ordered = btrfs_lookup_ordered_extent(inode, offset);
+>  	if (!ordered)
+> -		return 1;
+> +		return 0;
+>  
+>  	spin_lock_irq(&tree->lock);
+>  	list_for_each_entry_reverse(ordered_sum, &ordered->list, list) {
+> -		if (disk_bytenr >= ordered_sum->bytenr) {
+> +		if (disk_bytenr >= ordered_sum->bytenr &&
+> +		    disk_bytenr < ordered_sum->bytenr + ordered_sum->len) {
+> +			i = (disk_bytenr - ordered_sum->bytenr) / sectorsize;
+> +			sector_sums = ordered_sum->sums + i;
+>  			num_sectors = ordered_sum->len / sectorsize;
+> -			sector_sums = ordered_sum->sums;
+> -			for (i = 0; i < num_sectors; i++) {
+> +			for (; i < num_sectors; i++) {
+>  				if (sector_sums[i].bytenr == disk_bytenr) {
+> -					*sum = sector_sums[i].sum;
+> -					ret = 0;
+> -					goto out;
+> +					sum[index] = sector_sums[i].sum;
+> +					index++;
+> +					if (index == len)
+> +						goto out;
+> +					disk_bytenr += sectorsize;
+>  				}
+>  			}
+>  		}
+> @@ -1016,7 +1020,7 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+>  out:
+>  	spin_unlock_irq(&tree->lock);
+>  	btrfs_put_ordered_extent(ordered);
+> -	return ret;
+> +	return index;
+>  }
+>  
+>  
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index 8eadfe4..58b0e3b 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -196,7 +196,8 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
+>  							u64 len);
+>  int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+>  				struct btrfs_ordered_extent *ordered);
+> -int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
+> +int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+> +			   u32 *sum, int len);
+>  int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
+>  				 struct btrfs_root *root, int wait);
+>  void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+> -- 
+> 1.8.0.1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

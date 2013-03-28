@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:59574 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753414Ab3C1SBV (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:52000 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751528Ab3C1SFx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 14:01:21 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id B487E9A067C
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 12:01:20 -0600 (MDT)
-Date: Thu, 28 Mar 2013 14:01:13 -0400
+	Thu, 28 Mar 2013 14:05:53 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 6787F7C0645
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 12:05:53 -0600 (MDT)
+Date: Thu, 28 Mar 2013 14:05:48 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: This time HD LED doesn't come up at all :-(
-Message-ID: <20130328180113.GP28030@localhost.localdomain>
+Message-ID: <20130328180548.GQ28030@localhost.localdomain>
 References: <51542EB6.7030403@petaramesh.org>
  <20130328131939.GN28030@localhost.localdomain>
  <515467EE.1090105@petaramesh.org>
@@ -43,10 +43,7 @@ On Thu, Mar 28, 2013 at 09:55:26AM -0600, Swâmi Petaramesh wrote:
 > At least the FS doesn't look plain dead, but I have no clue...
 > 
 
-So can you try a livecd thats 3.8 based and mount manually, and when it hangs
-get sysrq+w?  The other option is to mount without -o inode_cache and see if
-that helps?  It looks like you may be hitting some weird deadlock with
-inode_cache, but I can't say for sure without sysrq+w so I can see what the
-caching thread is doing.  Thanks,
+Actually I see the deadlock now, sorry, I'll fix it up and send a patch.
+Thanks,
 
 Josef

@@ -1,114 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:42109 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751467Ab3C1LBm (ORCPT
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:53513 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755320Ab3C1Kyz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 07:01:42 -0400
-Received: by mail-pa0-f47.google.com with SMTP id bj3so2163555pad.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 04:01:42 -0700 (PDT)
+	Thu, 28 Mar 2013 06:54:55 -0400
+Received: by mail-pd0-f179.google.com with SMTP id x11so1121560pdj.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 03:54:55 -0700 (PDT)
 From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net, miaox@cn.fujitsu.com, wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH V2 6/6] Btrfs: fix missing check before btrfs_qgroup_inherit()
-Date: Thu, 28 Mar 2013 18:54:47 +0800
-Message-Id: <1364468087-1702-5-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH V2 3/6] Btrfs: fix missing check before updating qgroup limit
+Date: Thu, 28 Mar 2013 18:54:44 +0800
+Message-Id: <1364468087-1702-2-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <1364468055-1669-1-git-send-email-wangshilong1991@gmail.com>
 
 From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-The original code forgot to check 'inherit',we should gurantee
-that all the qgroups in the struct 'inherit' exist before
-btrfs_qgroup_inherit().
+We should check whether a qgroup exists before updating qgroup limit,
+if the relative qgroup dosen't exsit, return -EEXIST and do not join
+a transaction, fix it.
 
 Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h  |    2 ++
- fs/btrfs/ioctl.c  |    6 ++++++
- fs/btrfs/qgroup.c |   29 ++++++++++++++++++++++++++---
- 3 files changed, 34 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h  |    1 +
+ fs/btrfs/ioctl.c  |   18 ++++++++++--------
+ fs/btrfs/qgroup.c |   15 ++++++++++++---
+ 3 files changed, 23 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1ca1c63..0e73385 100644
+index a11a8ed..3fc393d 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3855,6 +3855,8 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
- 			     struct btrfs_delayed_extent_op *extent_op);
- int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
- 		      struct btrfs_fs_info *fs_info);
-+int btrfs_may_inherit_qgroup(struct btrfs_root *root,
-+			     struct btrfs_qgroup_inherit *inherit);
- int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
- 			 struct btrfs_qgroup_inherit *inherit);
+@@ -3094,6 +3094,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, u64 bytes_used,
+ 			   u64 type, u64 chunk_objectid, u64 chunk_offset,
+ 			   u64 size);
++int btrfs_may_limit_qgroup(struct btrfs_root *root, u64 qgroupid);
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 group_start);
+ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 701d812..96fda7e 100644
+index e2950f1..7c72b12 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -753,6 +753,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	if (btrfs_root_refs(&BTRFS_I(dir)->root->root_item) == 0)
- 		goto out_up_read;
- 	mutex_lock(&BTRFS_I(dir)->root->fs_info->quota_lock);
-+
-+	error = btrfs_may_inherit_qgroup(BTRFS_I(dir)->root, inherit);
-+	if (error)
-+		goto out_unlock_mutex;
-+
- 	if (snap_src) {
- 		error = create_snapshot(snap_src, dir, dentry, name, namelen,
- 					async_transid, readonly, inherit);
-@@ -762,6 +767,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+@@ -3859,20 +3859,22 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ 		ret = PTR_ERR(sa);
+ 		goto drop_write;
  	}
- 	if (!error)
- 		fsnotify_mkdir(dir, dentry);
-+out_unlock_mutex:
- 	mutex_unlock(&BTRFS_I(dir)->root->fs_info->quota_lock);
- out_up_read:
- 	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
+-	mutex_lock(&root->fs_info->quota_lock);
+-	trans = btrfs_join_transaction(root);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		goto out;
+-	}
+-
+ 	qgroupid = sa->qgroupid;
+ 	if (!qgroupid) {
+ 		/* take the current subvol as qgroup */
+ 		qgroupid = root->root_key.objectid;
+ 	}
+ 
+-	/* FIXME: check if the IDs really exist */
++	mutex_lock(&root->fs_info->quota_lock);
++	ret = btrfs_may_limit_qgroup(root, qgroupid);
++	if (ret)
++		goto out;
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
+ 	ret = btrfs_limit_qgroup(trans, root->fs_info, qgroupid, &sa->lim);
+ 
+ 	err = btrfs_end_transaction(trans, root);
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 0e09ac6..14fca77 100644
+index 7df372a..bed0e22 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1359,9 +1359,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 	if (!fs_info->quota_enabled)
- 		return 0;
+@@ -1059,9 +1059,6 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
+ 	struct btrfs_qgroup *qgroup;
+ 	int ret = 0;
  
 -	if (!quota_root)
 -		return -EINVAL;
 -
- 	/*
- 	 * create a tracking group for the subvol itself
- 	 */
-@@ -1701,3 +1698,29 @@ int btrfs_may_assign_qgroup(struct btrfs_root *root,
- 		return 0;
- 	return -ENOENT;
+ 	ret = update_qgroup_limit_item(trans, quota_root, qgroupid,
+ 				       limit->flags, limit->max_rfer,
+ 				       limit->max_excl, limit->rsv_rfer,
+@@ -1665,3 +1662,15 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
+ 		trans->delayed_ref_elem.seq);
+ 	BUG();
  }
 +
-+int btrfs_may_inherit_qgroup(struct btrfs_root *root,
-+			     struct btrfs_qgroup_inherit *inherit)
++int btrfs_may_limit_qgroup(struct btrfs_root *root, u64 qgroupid)
 +{
-+	u64 i = 0;
-+	u64 *i_qgroups = NULL;
-+	u64 nums = 0;
 +	struct btrfs_qgroup *qgroup = NULL;
 +
-+	if (!inherit)
-+		return 0;
 +	if (!root->fs_info->quota_root)
 +		return -EINVAL;
-+
-+	i_qgroups = (u64 *)(inherit + 1);
-+	nums = inherit->num_qgroups + 2 * inherit->num_ref_copies +
-+	       2 * inherit->num_excl_copies;
-+	for (i = 0; i < nums; ++i) {
-+		qgroup = find_qgroup_rb(root->fs_info, *i_qgroups);
-+		if (!qgroup)
-+			return -EINVAL;
-+
-+		++i_qgroups;
-+	}
++	qgroup = find_qgroup_rb(root->fs_info, qgroupid);
++	if (!qgroup)
++		return -ENOENT;
 +	return 0;
 +}
 -- 

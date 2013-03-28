@@ -1,43 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:58372 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753735Ab3C2Lff convert rfc822-to-8bit (ORCPT
+Received: from mail-pb0-f52.google.com ([209.85.160.52]:64513 "EHLO
+	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752589Ab3C1Les (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 07:35:35 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 1EAE17C042F
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 05:35:35 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Alexandre Oliva <oliva@gnu.org>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <orwqsqr0ll.fsf@livre.home>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-References: <orhak8fm0u.fsf@livre.home>
- <20130322180705.27874.96638@localhost.localdomain>
- <20130322203142.27874.84834@localhost.localdomain>
- <20130326000840.14340.30047@localhost.localdomain>
- <orwqsqr0ll.fsf@livre.home>
-Message-ID: <20130329113532.17260.20870@localhost.localdomain>
-Subject: Re: corruption of active mmapped files in btrfs snapshots
-Date: Fri, 29 Mar 2013 07:35:32 -0400
+	Thu, 28 Mar 2013 07:34:48 -0400
+Received: by mail-pb0-f52.google.com with SMTP id ma3so5762237pbc.25
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 04:34:48 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net, wangsl-fnst@cn.fujitsu.com, wangshilong1991@gmail.com
+Subject: [PATCH] Btrfs: fix a warning when disabling quota
+Date: Thu, 28 Mar 2013 19:34:41 +0800
+Message-Id: <1364470481-1952-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Alexandre Oliva (2013-03-29 05:56:06)
-> On Mar 25, 2013, Chris Mason <chris.mason@fusionio.com> wrote:
-> 
-> > This patch changes our compression code to call clear_page_dirty_for_io
-> > before we compress, and then redirty the pages if the compression fails.
-> 
-> > Alexandre, many thanks for tracking this down into a well defined use
-> > case. 
-> 
-> Thanks for the patch, it's run flawlessly since I started gradually
-> rolling it out onto my ceph OSDs on Monday!  Ship it! :-)
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-Awesome, it's in my for-linus and will go out to Linus today.
+Steps to reproduce:
+	mkfs.btrfs <disk>
+	mount <disk> <mnt>
+	btrfs quota enable <mnt>
+	btrfs sub create <mnt>/subv
 
--chris
+	i=1
+	while [ $i -le 10000 ]
+	do
+		dd if=/dev/zero of=<mnt>/subv/data_$i bs=1K count=1
+		i=$(($i+1))
+		if [ $i -eq 500 ]
+		then
+			btrfs quota disable $mnt
+		fi
+	done
+	dmesg
+Obviously, this warn_on() is unnecessary, and it will be easily triggered.
+Just remove it.
+
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 14fca77..0d37b1f 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -423,8 +423,6 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info)
+ 		qgroup = rb_entry(n, struct btrfs_qgroup, node);
+ 		rb_erase(n, &fs_info->qgroup_tree);
+ 
+-		WARN_ON(!list_empty(&qgroup->dirty));
+-
+ 		while (!list_empty(&qgroup->groups)) {
+ 			list = list_first_entry(&qgroup->groups,
+ 						struct btrfs_qgroup_list,
+-- 
+1.7.7.6
 

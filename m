@@ -1,43 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:51745 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756121Ab3C1Pza convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:59574 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753414Ab3C1SBV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 11:55:30 -0400
-Message-ID: <515467EE.1090105@petaramesh.org>
-Date: Thu, 28 Mar 2013 16:55:26 +0100
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	Thu, 28 Mar 2013 14:01:21 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id B487E9A067C
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 12:01:20 -0600 (MDT)
+Date: Thu, 28 Mar 2013 14:01:13 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: This time HD LED doesn't come up at all :-(
-References: <51542EB6.7030403@petaramesh.org> <20130328131939.GN28030@localhost.localdomain>
-In-Reply-To: <20130328131939.GN28030@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20130328180113.GP28030@localhost.localdomain>
+References: <51542EB6.7030403@petaramesh.org>
+ <20130328131939.GN28030@localhost.localdomain>
+ <515467EE.1090105@petaramesh.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <515467EE.1090105@petaramesh.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 28/03/2013 14:19, Josef Bacik a écrit :
-> Can you capture the output and post it somewhere so I can see it?  Thanks,
-Hi Josef,
+On Thu, Mar 28, 2013 at 09:55:26AM -0600, Swâmi Petaramesh wrote:
+> Le 28/03/2013 14:19, Josef Bacik a écrit :
+> > Can you capture the output and post it somewhere so I can see it?  Thanks,
+> Hi Josef,
+> 
+> I just uploaded the screenshot here: http://dl.free.fr/pRabNdCsf (You
+> will need to type in your email address or the list's one to retrieve it)
+> 
+> Meanwhile I did some more tests, and I'm puzzled :
+> 
+> - Booting the latest PartedMagic Live (I believe it's a 3.7.9 kernel), I
+> can mount the HD BTRFS filesystem wihtout problem (only tried with
+> subvolid=0), I can btrfsck it (unmounted), and it looks allright;
+> 
+> - Still, trying to boot the system the normal way (3.8.0 kernel) fails,
+> and I get these errors...
+> 
+> At least the FS doesn't look plain dead, but I have no clue...
+> 
 
-I just uploaded the screenshot here: http://dl.free.fr/pRabNdCsf (You
-will need to type in your email address or the list's one to retrieve it)
+So can you try a livecd thats 3.8 based and mount manually, and when it hangs
+get sysrq+w?  The other option is to mount without -o inode_cache and see if
+that helps?  It looks like you may be hitting some weird deadlock with
+inode_cache, but I can't say for sure without sysrq+w so I can see what the
+caching thread is doing.  Thanks,
 
-Meanwhile I did some more tests, and I'm puzzled :
-
-- Booting the latest PartedMagic Live (I believe it's a 3.7.9 kernel), I
-can mount the HD BTRFS filesystem wihtout problem (only tried with
-subvolid=0), I can btrfsck it (unmounted), and it looks allright;
-
-- Still, trying to boot the system the normal way (3.8.0 kernel) fails,
-and I get these errors...
-
-At least the FS doesn't look plain dead, but I have no clue...
-
-Kind regards.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
-
+Josef

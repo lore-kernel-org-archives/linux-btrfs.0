@@ -1,37 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f52.google.com ([74.125.83.52]:52342 "EHLO
-	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751128Ab3C0VnI convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:35595 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756179Ab3C1Icc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Mar 2013 17:43:08 -0400
-Received: by mail-ee0-f52.google.com with SMTP id d17so1026173eek.39
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2013 14:43:07 -0700 (PDT)
-From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel bug on mismatching generation_v2 in inode.c:835
-Date: Wed, 27 Mar 2013 22:42:50 +0100
-Message-ID: <1387808.en6n74oCv4@linux-suse>
-In-Reply-To: <20130327205212.GM28030@localhost.localdomain>
-References: <CAAr69zZ7OpGpT7qcKdWA0k_0MR-wbhd-+EFGBQ+TQ5CycM8GDg@mail.gmail.com> <CAAr69zaQ22_SLg4sfUkDE=NBNTAUaSr9ZgaL=sTPJ-kvXkFRug@mail.gmail.com> <20130327205212.GM28030@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+	Thu, 28 Mar 2013 04:32:32 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r2S8WVV0028496
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 08:32:32 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r2S8WVKK004042
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 08:32:31 GMT
+Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r2S8WVjr015168
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 03:32:31 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: pass NULL instead of 0
+Date: Thu, 28 Mar 2013 16:30:28 +0800
+Message-Id: <1364459428-5444-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I ran btrfsck three times and tried to restart the OS. After a generation_v2 
-resetting it booted and now it works! :)
+set_extent_bit()'s (u64 *failed_start) expects NULL not 0.
 
-Thank you very much for your help!
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f173c5a..f22243f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1189,7 +1189,7 @@ int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
+ int set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+ 			struct extent_state **cached_state, gfp_t mask)
+ {
+-	return set_extent_bit(tree, start, end, EXTENT_UPTODATE, 0,
++	return set_extent_bit(tree, start, end, EXTENT_UPTODATE, NULL,
+ 			      cached_state, mask);
+ }
+ 
+-- 
+1.7.7.6
 
-Two btrfsck run was needed for the complete cleanup, but interestingly the end 
-statistics were a little bit different each time.
-
-Specifically, the values of
-- total fs tree bytes: 2285948928
-- total extent tree bytes: 303124480
-- btree space waste bytes: 742282214
-lines varied with each run, even if there were no need of repairing.
-
-Ákos

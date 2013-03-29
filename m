@@ -1,45 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f52.google.com ([209.85.160.52]:65041 "EHLO
-	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754825Ab3C2NFg (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:38722 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755082Ab3C2OCL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 09:05:36 -0400
-Received: by mail-pb0-f52.google.com with SMTP id ma3so254498pbc.25
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 06:05:35 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: list.btrfs@jan-o-sch.net, wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH] Btrfs: fix double free in the iterate_extent_inodes()
-Date: Fri, 29 Mar 2013 21:05:30 +0800
-Message-Id: <1364562330-1606-1-git-send-email-wangshilong1991@gmail.com>
+	Fri, 29 Mar 2013 10:02:11 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id CC4919A0645
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 08:02:10 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id KH1wyPftLwchhVXY (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 08:02:10 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't drop path when printing out tree errors in scrub
+Date: Fri, 29 Mar 2013 10:09:34 -0400
+Message-ID: <1364566174-3962-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+A user reported a panic where we were panicing somewhere in
+tree_backref_for_extent from scrub_print_warning.  He only captured the trace
+but looking at scrub_print_warning we drop the path right before we mess with
+the extent buffer to print out a bunch of stuff, which isn't right.  So fix this
+by dropping the path after we use the eb if we need to.  Thanks,
 
-If btrfs_find_all_roots() fails, 'roots' has been freed or 'roots'
-fails to allocate. we don't need to free it outside btrfs_find_all_roots()
-again.Fix it.
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/backref.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/scrub.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 5ff46ee..3ca413bb 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1514,7 +1514,6 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 	}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index e4b6fbc..907497a 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -542,7 +542,6 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	eb = path->nodes[0];
+ 	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
+ 	item_size = btrfs_item_size_nr(eb, path->slots[0]);
+-	btrfs_release_path(path);
  
- 	free_leaf_list(refs);
--	ulist_free(roots);
- out:
- 	if (!search_commit_root) {
- 		btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+ 	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+ 		do {
+@@ -558,7 +557,9 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 				ret < 0 ? -1 : ref_level,
+ 				ret < 0 ? -1 : ref_root);
+ 		} while (ret != 1);
++		btrfs_release_path(path);
+ 	} else {
++		btrfs_release_path(path);
+ 		swarn.path = path;
+ 		swarn.dev = dev;
+ 		iterate_extent_inodes(fs_info, found_key.objectid,
 -- 
-1.7.11.7
+1.7.7.6
 

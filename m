@@ -1,61 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63392 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755294Ab3CaJWy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 Mar 2013 05:22:54 -0400
-Received: from mailout-de.gmx.net ([10.1.76.29]) by mrigmx.server.lan
- (mrigmx002) with ESMTP (Nemesis) id 0LiZta-1UuTtR1ZfQ-00ckZg for
- <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 11:22:53 +0200
-Message-ID: <515800BB.50102@gmx.net>
-Date: Sun, 31 Mar 2013 11:24:11 +0200
-From: Arne Jansen <sensille@gmx.net>
+Received: from mail-pd0-f176.google.com ([209.85.192.176]:61516 "EHLO
+	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750980Ab3CaKEf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 31 Mar 2013 06:04:35 -0400
+Received: by mail-pd0-f176.google.com with SMTP id r11so803801pdi.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 03:04:34 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: wangshilong1991@gmail.com, linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net, list.btrfs@jan-o-sch.net, wangsl-fnst@cn.fujitsu.com
+Subject: [PATCH V3] Btrfs: kill some BUG_ONs() in the find_parent_nodes()
+Date: Sat, 30 Mar 2013 07:03:21 +0800
+Message-Id: <1364598201-28723-1-git-send-email-wangshilong1991@gmail.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: "list.btrfs@jan-o-sch.net Schmidt" <list.btrfs@jan-o-sch.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG] btrfs quota
-References: <1DF9A68C-FBA2-460F-921F-CBF94A06CD6B@gmail.com>
-In-Reply-To: <1DF9A68C-FBA2-460F-921F-CBF94A06CD6B@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Wang,
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-On 03/31/13 03:44, Wang Shilong wrote:
-> Hello Arne, Jan,
-> 
->  When i run stresstest with quota enabled, i hit a panic where
-> btrfs_find_all_roots() is called. Would you please double check it.
-> 
+The reason that BUG_ON() happens in these places is just
+because of ENOMEM.
 
-On what kernel version do you hit this (git commit id preferred)?
-Can you send us the message from dmesg?
+We try ro return ENOMEM rather than trigger BUG_ON(), the
+caller will abort the transaction thus avoiding the kernel panic.
 
-Thanks,
-arne
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+Changelog:
+	V2->V3: correct wrong check about ulist_add()
+	and revert the check about ret=0
+---
+ fs/btrfs/backref.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
->  stresstest -n 10000  -t 4.
-> 
-> Maybe there is still race condition when walking backref  trees, Jan
-> would you please check the backref.c ..
-> btrfs_find_all_roots() is called in btrfs_qgroup_account_ref () to find
-> all roots that reference a extent. I think this is called because
-> 
-> we introduce referenced/exclusive concepts. The point is that i think
->  this concept's disadvantages outweigh the advantages:
->       <1>
-> walking backref  tree is really time-consuming.
-> <2> referenced/exclusive makes it really complex when snapshot happens.
-> <3> quota has a high coupling with other module.
->      I'd prefer to just keep referenced value, it is not be elegant, but
-> it helps more.
-> 
-> Thanks,
-> Wang
-> 
-> 
-> 
-> 
-> 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index bd605c8..3dd0693 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -900,7 +900,8 @@ again:
+ 		if (ref->count && ref->root_id && ref->parent == 0) {
+ 			/* no parent == root of tree */
+ 			ret = ulist_add(roots, ref->root_id, 0, GFP_NOFS);
+-			BUG_ON(ret < 0);
++			if (ret < 0)
++				goto out;
+ 		}
+ 		if (ref->count && ref->parent) {
+ 			struct extent_inode_elem *eie = NULL;
+@@ -920,6 +921,8 @@ again:
+ 			ret = ulist_add_merge(refs, ref->parent,
+ 					      (uintptr_t)ref->inode_list,
+ 					      (u64 *)&eie, GFP_NOFS);
++			if (ret < 0)
++				goto out;
+ 			if (!ret && extent_item_pos) {
+ 				/*
+ 				 * we've recorded that parent, so we must extend
+@@ -930,7 +933,6 @@ again:
+ 					eie = eie->next;
+ 				eie->next = ref->inode_list;
+ 			}
+-			BUG_ON(ret < 0);
+ 		}
+ 		kfree(ref);
+ 	}
+-- 
+1.7.11.7
 

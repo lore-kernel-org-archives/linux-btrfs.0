@@ -1,45 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:38375 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754942Ab3C2M6f (ORCPT
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:51315 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754777Ab3C2NGj convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 08:58:35 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 005899A068E
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 06:58:34 -0600 (MDT)
-Date: Fri, 29 Mar 2013 08:58:32 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+	Fri, 29 Mar 2013 09:06:39 -0400
+Message-ID: <515591D9.5010802@petaramesh.org>
+Date: Fri, 29 Mar 2013 14:06:33 +0100
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: scrub "correcting" tons of errors ?
-Message-ID: <20130329125832.GB1876@localhost.localdomain>
-References: <515563D7.3020706@petaramesh.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-In-Reply-To: <515563D7.3020706@petaramesh.org>
+References: <515563D7.3020706@petaramesh.org> <20130329125832.GB1876@localhost.localdomain>
+In-Reply-To: <20130329125832.GB1876@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 29, 2013 at 03:50:15AM -0600, Swâmi Petaramesh wrote:
-> Hi there,
-> 
-> I've started "btrfs scrub start /" on one of my machines (Kernel
-> 3.8.0-15 Ubuntu AMD64), which typically "behaves well" so I wasn't
-> suspected any disk issue.
-> 
-> After having ran for only 165 seconds, "scrub status" shows it pretends
-> having found and corrected 22926 CSUM errors ??!?!?!?!!???
-> 
-> This is a rather new HDD, in perfect shape (SMART all OK, never
-> reallocated a single sector, less than 200 hours total runtime...)
-> 
-> WTF ?!?
-> 
-> I've cancelled scrub for now, until I get further understanding of what
-> can be happening...
-> 
+Hi Josef,
 
-So this is probably because of the extent tree corruption you had, it's just
-cleaning things up and you should be fine once it finishes.  Thanks,
+Le 29/03/2013 13:58, Josef Bacik a écrit :
+> So this is probably because of the extent tree corruption you had, it's just
+> cleaning things up and you should be fine once it finishes.  Thanks,
 
-Josef
+Er... It's on a different machine !
+
+Current (at the time I write) status is :
+
+# btrfs scrub status /
+scrub status for 346b81b2-0735-4c4d-a137-1995bc78ad70
+        scrub resumed at Fri Mar 29 11:52:43 2013 and finished after
+7470 seconds
+        total bytes scrubbed: 231.96GB with 149691 errors
+        error details: csum=149691
+        corrected errors: 149691, uncorrectable errors: 0, unverified
+errors: 0
+
+I have to say that scrub completely froze the machine at least 4 times
+(disk had ceased activity and any command that would imply a disk access
+would hang forever), but at least after a (quite brutal) reboot it could
+be resumed...
+
+The only thing about this FS is that it had been imaged, then restored,
+using partclone.btrfs (which itself is supposed to use the BTRFS libraries).
+
+I have a screenshot of "last thing I saw when it hanged", I can upload
+it somewhere, should it be relevant...
+
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

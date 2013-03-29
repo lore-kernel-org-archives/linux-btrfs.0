@@ -1,58 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35856 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:36203 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754701Ab3C2RMI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 13:12:08 -0400
-Date: Fri, 29 Mar 2013 18:12:04 +0100
+	id S1754399Ab3C2RXU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Mar 2013 13:23:20 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id A6581A4C0E
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 18:23:19 +0100 (CET)
+Date: Fri, 29 Mar 2013 18:23:09 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Ask =?iso-8859-1?Q?Bj=F8rn?= Hansen <ask@develooper.com>
+To: Mike Dilger <mike@mikedilger.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs "stuck" on
-Message-ID: <20130329171204.GH29125@twin.jikos.cz>
+Message-ID: <20130329172309.GI29125@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
+References: <20130327190349.3b79c13f@hero.mikedilger.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130327190349.3b79c13f@hero.mikedilger.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 21, 2013 at 11:56:37AM -0700, Ask Bjørn Hansen wrote:
-> A few weeks ago I replaced a ZFS backup system with one backed by
-> btrfs. A script loops over a bunch of hosts rsyncing them to each
-> their own subvolume.  After each rsync I snapshot the "host-specific"
-> subvolume.
-> 
-> The "disk" is an iscsi disk that in my benchmarks performs roughly
-> like a local raid with 2-3 SATA disks.
-> 
-> It worked fine for about a week (~150 snapshots from ~20 sub volumes)
-> before it "suddenly" exploded in disk io wait. Doing anything (in
-> particular changes) on the file system is just insanely slow, rsync
-> basically can't complete (an rsync that should take 10-20 minutes
-> takes 24 hours; I have a directory of 60k files I tried deleting and
-> it's deleting one file every few minutes, that sort of thing).
+On Wed, Mar 27, 2013 at 07:03:49PM +1300, Mike Dilger wrote:
+> I have been using it to make backups using rsync like this:
+> 1) snapshot the previous backup subvolume
+> 2) rsync into the new snapshot
+> 3) If we are overwriting a previous backup "level", drop that previous subvolume and rename this one into it's place.
+> I keep 8 levels in tower-of-hanoi strategy.  It's the same backup
+> script I've used for the last 5 years, except I removed the rsync
+> --link-dest and added in the btrfs snapshotting, just because dropping
+> a subvolume is so damn quick compared to deleting all the files.
 
-I'm seeing similar problem after a test that produces tons of snapshots
-and snap deletions at the same time. Accessing the directory (eg. via
-ls) containing the snapshots blocks for a long time.
+It is very quick to mark the snapshot deleted (compare it to adding an
+item to todo vs actually doing it).
 
-The contention point is a mutex of the directory entry, used for lookups
-on the 'ls' side, and the snapshot deletion process holds the mutex as
-well with obvious consequences. The contention is multiplied by the
-number of snapshots waiting to be deleted and eagerly grabbing the
-mutex, making other waiters starve.
+> After about 400 GB of backups taken all in the same day, but having
+> already dropped probably 12 or 13 subvolumes after snapshotting, I get
+> the behavior.
 
-You've observed this as deletion progressing very slowly and rsync
-blocked. That's really annoying and I'm working towards fixing it.
+This implies lots of data to process during the cleaning phase.
 
-> I am using 3.8.2-206.fc18.x86_64 (Fedora 18). I tried rebooting, it
-> doesn't make a difference. As soon as I boot "[btrfs-cleaner]" and
-> "[btrfs-transacti]" gets really busy.
-> 
-> I wonder if it's because I deleted a few snapshots at some point? 
+> The behavior is:
+> *) After mounting, things are usually ok for 20 seconds or so, then it starts
 
-Yes. The progress or performance impact depends on amount of data shared
-among the snapshots and used / free space fragmentation.
+Unless cleaner was active, it kicks at most after 30 seconds when the
+the regular transaction commit kicks in.
+
+> *) The disk activity lite burns constantly
+> *) btrfs-cleaner is fairly high up in 'top'
+> *) Read/writes to the device are painfully slow
+
+Cleaner doing its work.
+
+> *) I cannot unmount the device, nor cleanly shutdown.
+
+Known problem, the umount should be a bit more responsive with
+https://patchwork.kernel.org/patch/2256801/
+
+> *) Once the system froze hard, no mouse cursor movement, not even the reset button worked.
+
+It could be the BUG_ON in btrfs_clean_old_snapshots that could happen
+when there a transaction abort occurs and the filesystem turns RO --
+also fixed by the patch above.
 
 david

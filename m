@@ -1,72 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f43.google.com ([209.85.210.43]:62017 "EHLO
-	mail-da0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754270Ab3CaKyG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 Mar 2013 06:54:06 -0400
-Received: by mail-da0-f43.google.com with SMTP id u36so725266dak.30
-        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 03:54:04 -0700 (PDT)
-Content-Type: text/plain; charset=iso-8859-1
+Received: from qmta01.emeryville.ca.mail.comcast.net ([76.96.30.16]:56498 "EHLO
+	qmta01.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754452Ab3C2Fl0 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Mar 2013 01:41:26 -0400
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: minimum kernel version for btrfsprogs.0.20?
+Message-Id: <221EE566-B039-426F-827D-AA20B5A2D86B@colorremedies.com>
+Date: Thu, 28 Mar 2013 23:41:02 -0600
+To: "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>
 Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [BUG] btrfs quota
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <515800BB.50102@gmx.net>
-Date: Sun, 31 Mar 2013 18:54:00 +0800
-Cc: "list.btrfs@jan-o-sch.net Schmidt" <list.btrfs@jan-o-sch.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <F31FCD5E-ADD7-4725-9D87-C2713306DBED@gmail.com>
-References: <1DF9A68C-FBA2-460F-921F-CBF94A06CD6B@gmail.com> <515800BB.50102@gmx.net>
-To: Arne Jansen <sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Arne,
+Creating a btrfs file system using btrfs-progs-0.20.rc1.20130308git704a08c-1.fc19, and either kernel 3.6.10-4.fc18 or 3.9.0-0.rc3.git0.3.fc19, makes a file system that cannot be mounted by kernel 3.6.10-4.fc18. It can be mounted by kernel 3.8.4. I haven't tested any other 3.8, or any 3.7 kernels.
 
-However, I remember that i have hit this panic in several kernel version.
-And i will double check it tomorrow when i am in the work..
+Is this expected?
 
-If possible, i will send you the message from dmesg.
+dmesg reports:
+[  300.014764] btrfs: disk space caching is enabled
+[  300.024137] BTRFS: couldn't mount because of unsupported optional features (40).
+[  300.034148] btrfs: open_ctree failed
 
-Thanks,
-Wang
 
-> Hello Wang,
-> 
-> On 03/31/13 03:44, Wang Shilong wrote:
->> Hello Arne, Jan,
->> 
->> When i run stresstest with quota enabled, i hit a panic where
->> btrfs_find_all_roots() is called. Would you please double check it.
->> 
-> 
-> On what kernel version do you hit this (git commit id preferred)?
-> Can you send us the message from dmesg?
-> 
-> Thanks,
-> arne
-> 
->> stresstest -n 10000  -t 4.
->> 
->> Maybe there is still race condition when walking backref  trees, Jan
->> would you please check the backref.c ..
->> btrfs_find_all_roots() is called in btrfs_qgroup_account_ref () to find
->> all roots that reference a extent. I think this is called because
->> 
->> we introduce referenced/exclusive concepts. The point is that i think
->> this concept's disadvantages outweigh the advantages:
->>      <1>
->> walking backref  tree is really time-consuming.
->> <2> referenced/exclusive makes it really complex when snapshot happens.
->> <3> quota has a high coupling with other module.
->>     I'd prefer to just keep referenced value, it is not be elegant, but
->> it helps more.
->> 
->> Thanks,
->> Wang
->> 
->> 
->> 
->> 
->> 
-> 
-
+Chris Murphy

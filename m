@@ -1,65 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:63767 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754922Ab3C1OGk convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Mar 2013 10:06:40 -0400
-Received: by mail-pd0-f178.google.com with SMTP id u10so4045950pdi.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2013 07:06:40 -0700 (PDT)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [PATCH V2 5/6] Btrfs: fix missing check before assigning/removing qgroup relation
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <20130328132153.GO28030@localhost.localdomain>
-Date: Thu, 28 Mar 2013 22:06:33 +0800
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "sensille@gmx.net" <sensille@gmx.net>,
-        "miaox@cn.fujitsu.com" <miaox@cn.fujitsu.com>,
-        "wangsl-fnst@cn.fujitsu.com" <wangsl-fnst@cn.fujitsu.com>
-Message-Id: <73320F50-8452-450B-9C1A-33D95FF388CB@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
+Received: from cantor2.suse.de ([195.135.220.15]:35856 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754701Ab3C2RMI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Mar 2013 13:12:08 -0400
+Date: Fri, 29 Mar 2013 18:12:04 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Ask =?iso-8859-1?Q?Bj=F8rn?= Hansen <ask@develooper.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs "stuck" on
+Message-ID: <20130329171204.GH29125@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <36071CA2-8A29-4526-8523-7EB40F1C86A6@develooper.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1364468087-1702-1-git-send-email-wangshilong1991@gmail.com>
 
-
-Hello,
-> On Thu, Mar 28, 2013 at 04:54:46AM -0600, Wang Shilong wrote:
->> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
->> 
->> If the specified qgroup relation dosen't exist, removing qgroup operations
->> will return -ENOENT;
->> 
->> If the specified qgroup relation exists, assigning qgroup relations will
->> return -EEXIST.
->> 
->> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
->> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+On Thu, Mar 21, 2013 at 11:56:37AM -0700, Ask Bjørn Hansen wrote:
+> A few weeks ago I replaced a ZFS backup system with one backed by
+> btrfs. A script loops over a bunch of hosts rsyncing them to each
+> their own subvolume.  After each rsync I snapshot the "host-specific"
+> subvolume.
 > 
-> Fails to compile with
+> The "disk" is an iscsi disk that in my benchmarks performs roughly
+> like a local raid with 2-3 SATA disks.
 > 
-> fs/btrfs/ioctl.c: In function ¡®btrfs_ioctl_qgroup_assign¡¯:
-> fs/btrfs/ioctl.c:3771:2: error: implicit declaration of function
-> ¡®btrfs_may_assign_qgroup¡¯ [-Werror=implicit-function-declaration]
-> cc1: some warnings being treated as errors
+> It worked fine for about a week (~150 snapshots from ~20 sub volumes)
+> before it "suddenly" exploded in disk io wait. Doing anything (in
+> particular changes) on the file system is just insanely slow, rsync
+> basically can't complete (an rsync that should take 10-20 minutes
+> takes 24 hours; I have a directory of 60k files I tried deleting and
+> it's deleting one file every few minutes, that sort of thing).
+
+I'm seeing similar problem after a test that produces tons of snapshots
+and snap deletions at the same time. Accessing the directory (eg. via
+ls) containing the snapshots blocks for a long time.
+
+The contention point is a mutex of the directory entry, used for lookups
+on the 'ls' side, and the snapshot deletion process holds the mutex as
+well with obvious consequences. The contention is multiplied by the
+number of snapshots waiting to be deleted and eagerly grabbing the
+mutex, making other waiters starve.
+
+You've observed this as deletion progressing very slowly and rsync
+blocked. That's really annoying and I'm working towards fixing it.
+
+> I am using 3.8.2-206.fc18.x86_64 (Fedora 18). I tried rebooting, it
+> doesn't make a difference. As soon as I boot "[btrfs-cleaner]" and
+> "[btrfs-transacti]" gets really busy.
 > 
-> Please fix and resubmit.  Thanks,
+> I wonder if it's because I deleted a few snapshots at some point? 
 
-Sorry for such stupid errors, i promise that i have compile and test patch-set.
+Yes. The progress or performance impact depends on amount of data shared
+among the snapshots and used / free space fragmentation.
 
-Things go like this, because when i compile kernel with patch-set , this errors happen,
-i just fix it but don't update commit.
-
-However, when i pass the test, i forget the compile errors¡­..
-
-Next time, i will take care of that¡­
-
-Thanks very much for your testing!
-
-
-Thanks,
-Wang
-
-> 
-> Josef
-
+david

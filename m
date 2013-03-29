@@ -1,65 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36203 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754399Ab3C2RXU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 13:23:20 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A6581A4C0E
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 18:23:19 +0100 (CET)
-Date: Fri, 29 Mar 2013 18:23:09 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Mike Dilger <mike@mikedilger.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs "stuck" on
-Message-ID: <20130329172309.GI29125@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130327190349.3b79c13f@hero.mikedilger.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:32927 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756038Ab3C2RrL convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Mar 2013 13:47:11 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 7F7087C0682
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 11:47:10 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130327190349.3b79c13f@hero.mikedilger.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Message-ID: <20130329174706.4227.39785@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Fri, 29 Mar 2013 13:47:06 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 27, 2013 at 07:03:49PM +1300, Mike Dilger wrote:
-> I have been using it to make backups using rsync like this:
-> 1) snapshot the previous backup subvolume
-> 2) rsync into the new snapshot
-> 3) If we are overwriting a previous backup "level", drop that previous subvolume and rename this one into it's place.
-> I keep 8 levels in tower-of-hanoi strategy.  It's the same backup
-> script I've used for the last 5 years, except I removed the rsync
-> --link-dest and added in the btrfs snapshotting, just because dropping
-> a subvolume is so damn quick compared to deleting all the files.
+Hi Linus,
 
-It is very quick to mark the snapshot deleted (compare it to adding an
-item to todo vs actually doing it).
+Please pull my for-linus branch:
 
-> After about 400 GB of backups taken all in the same day, but having
-> already dropped probably 12 or 13 subvolumes after snapshotting, I get
-> the behavior.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-This implies lots of data to process during the cleaning phase.
+We've had a busy two weeks of bug fixing.  The biggest patches in here
+are some long standing early-enospc problems (Josef) and a very old race
+where compression and mmap combine forces to lose writes (me).  I'm
+fairly sure the mmap bug goes all the way back to the introduction of
+the compression code, which is proof that fsx doesn't trigger every
+possible mmap corner after all.
 
-> The behavior is:
-> *) After mounting, things are usually ok for 20 seconds or so, then it starts
+I'm sure you'll notice one of these is from this morning, it's a small
+and isolated use-after-free fix in our scrub error reporting.  I double
+checked it here.
 
-Unless cleaner was active, it kicks at most after 30 seconds when the
-the regular transaction commit kicks in.
+Josef Bacik (6) commits (+90/-18):
+    Btrfs: hold the ordered operations mutex when waiting on ordered extents (+2/-0)
+    Btrfs: don't drop path when printing out tree errors in scrub (+2/-1)
+    Btrfs: fix space leak when we fail to reserve metadata space (+41/-6)
+    Btrfs: fix space accounting for unlink and rename (+2/-4)
+    Btrfs: limit the global reserve to 512mb (+1/-1)
+    Btrfs: handle a bogus chunk tree nicely (+42/-6)
 
-> *) The disk activity lite burns constantly
-> *) btrfs-cleaner is fairly high up in 'top'
-> *) Read/writes to the device are painfully slow
+Jan Schmidt (2) commits (+24/-16):
+    Btrfs: fix EIO from btrfs send in is_extent_unchanged for punched holes (+4/-6)
+    Btrfs: fix locking on ROOT_REPLACE operations in tree mod log (+20/-10)
 
-Cleaner doing its work.
+Wang Shilong (2) commits (+10/-2):
+    Btrfs: fix double free in the btrfs_qgroup_account_ref() (+1/-2)
+    Btrfs: fix missing qgroup reservation before fallocating (+9/-0)
 
-> *) I cannot unmount the device, nor cleanly shutdown.
+Miao Xie (2) commits (+5/-3):
+    Btrfs: fix wrong return value of btrfs_lookup_csum() (+3/-1)
+    Btrfs: fix wrong reservation of csums (+2/-2)
 
-Known problem, the umount should be a bit more responsive with
-https://patchwork.kernel.org/patch/2256801/
+Chris Mason (1) commits (+49/-0):
+    Btrfs: fix race between mmap writes and compression
 
-> *) Once the system froze hard, no mouse cursor movement, not even the reset button worked.
+Liu Bo (1) commits (+1/-1):
+    Btrfs: update to use fs_state bit
 
-It could be the BUG_ON in btrfs_clean_old_snapshots that could happen
-when there a transaction abort occurs and the filesystem turns RO --
-also fixed by the patch above.
+Tsutomu Itoh (1) commits (+9/-3):
+    Btrfs: fix memory leak in btrfs_create_tree()
 
-david
+Total: (15) commits
+
+ fs/btrfs/ctree.c        | 30 ++++++++++++------
+ fs/btrfs/disk-io.c      | 14 ++++++---
+ fs/btrfs/extent-tree.c  | 84 ++++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/extent_io.c    | 33 +++++++++++++++++++
+ fs/btrfs/extent_io.h    |  2 ++
+ fs/btrfs/file-item.c    |  6 ++--
+ fs/btrfs/file.c         |  9 ++++++
+ fs/btrfs/inode.c        | 22 ++++++++++---
+ fs/btrfs/ordered-data.c |  2 ++
+ fs/btrfs/qgroup.c       |  3 +-
+ fs/btrfs/scrub.c        |  3 +-
+ fs/btrfs/send.c         | 10 +++---
+ fs/btrfs/volumes.c      | 13 +++++++-
+ 13 files changed, 188 insertions(+), 43 deletions(-)

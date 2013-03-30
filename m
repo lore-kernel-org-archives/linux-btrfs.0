@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f50.google.com ([209.85.160.50]:49566 "EHLO
-	mail-pb0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755261Ab3C3LrR convert rfc822-to-8bit (ORCPT
+Received: from mail-pb0-f43.google.com ([209.85.160.43]:63532 "EHLO
+	mail-pb0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754155Ab3C3MDg convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Mar 2013 07:47:17 -0400
-Received: by mail-pb0-f50.google.com with SMTP id jt11so560982pbb.37
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Mar 2013 04:47:16 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
+	Sat, 30 Mar 2013 08:03:36 -0400
+Received: by mail-pb0-f43.google.com with SMTP id md4so567036pbc.30
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Mar 2013 05:03:36 -0700 (PDT)
+Content-Type: text/plain; charset=GB2312
 Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [PATCH] Btrfs: cleanup to remove reduplicate code in iterate_extent_inode()
 From: Wang Shilong <wangshilong1991@gmail.com>
 In-Reply-To: <5156B985.8060506@gmx.net>
-Date: Sat, 30 Mar 2013 19:47:09 +0800
+Date: Sat, 30 Mar 2013 19:55:07 +0800
 Cc: linux-btrfs@vger.kernel.org, list.btrfs@jan-o-sch.net,
         wangsl-fnst@cn.fujitsu.com
-Message-Id: <4F1E76BA-E722-42CA-9BC1-F211753A80D2@gmail.com>
+Message-Id: <C94A0D89-18E9-447B-A08E-2D0A4E3CAD18@gmail.com>
 References: <1364564554-1848-1-git-send-email-wangshilong1991@gmail.com> <5156B985.8060506@gmx.net>
 To: Arne Jansen <sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Hello,
+<snip>
 
 > On 03/29/13 14:42, Wang Shilong wrote:
 >> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
@@ -46,8 +45,6 @@ Hello,
 > 
 > It doesn't look unnecessary at all to me. ret is set in the loop and
 > only checked in the while condition.
-
-Yeah, you are right..
 > 
 >> 			pr_debug("root %llu references leaf %llu, data list "
 >> 				 "%#llx\n", root_node->val, ref_node->val,
@@ -61,13 +58,13 @@ Yeah, you are right..
 > roots gets freed again later on. If you don't set it to NULL, it will
 > result in a double free.
 
-If we are in the loop, 'roots' will be reallocated again, if relocation in the find_all_roots()
-fails,  'roots' has been dealt in the find_all_roots(), and we have breaked out the loop.
+Maybe you mean this?
 
-I don't know where a double may happen? Am i missing something?
+http://marc.info/?l=linux-btrfs&m=136456233929528&w=2
+ulist_free() here is unnecessary and may cause a double free¡­
+So we don't need to set it to NULL again..
 
-Thanks,
-Wang
+
 
 > 
 > -Arne

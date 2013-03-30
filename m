@@ -1,82 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:32927 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756038Ab3C2RrL convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Mar 2013 13:47:11 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 7F7087C0682
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2013 11:47:10 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+Received: from mout.gmx.net ([212.227.17.22]:54375 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754412Ab3C3Xj6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 Mar 2013 19:39:58 -0400
+Received: from mailout-de.gmx.net ([10.1.76.28]) by mrigmx.server.lan
+ (mrigmx001) with ESMTP (Nemesis) id 0Lflzw-1V1QPv1Bhi-00pKnd for
+ <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 00:39:57 +0100
+Message-ID: <5157781A.5000507@gmx.net>
+Date: Sun, 31 Mar 2013 00:41:14 +0100
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Message-ID: <20130329174706.4227.39785@localhost.localdomain>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Fri, 29 Mar 2013 13:47:06 -0400
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com,
+        wangsl-fnst@cn.fujitsu.com
+Subject: Re: [PATCH V2 1/6] Btrfs: introduce a mutex lock for btrfs quota
+ operations
+References: <1364468024-1636-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1364468024-1636-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On 03/28/13 11:53, Wang Shilong wrote:
+> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> 
+> This patch introduces mutex lock 'quota_lock', and makes
+> all the user change for quota protected by quota_lock.
+> 
+> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h   |    3 +++
+>  fs/btrfs/disk-io.c |    1 +
+>  fs/btrfs/ioctl.c   |   16 ++++++++++++----
+>  3 files changed, 16 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 6e81860..a11a8ed 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1584,6 +1584,9 @@ struct btrfs_fs_info {
+>  	struct rb_root qgroup_tree;
+>  	spinlock_t qgroup_lock;
+>  
+> +	/* protect user change operations for quota */
+> +	struct mutex quota_lock;
+> +
+>  	/* list of dirty qgroups to be written at next commit */
+>  	struct list_head dirty_qgroups;
+>  
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index fe82d08..4552f14 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2250,6 +2250,7 @@ int open_ctree(struct super_block *sb,
+>  	mutex_init(&fs_info->dev_replace.lock);
+>  
+>  	spin_lock_init(&fs_info->qgroup_lock);
+> +	mutex_init(&fs_info->quota_lock);
+>  	fs_info->qgroup_tree = RB_ROOT;
+>  	INIT_LIST_HEAD(&fs_info->dirty_qgroups);
+>  	fs_info->qgroup_seq = 1;
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 222ce84..e2950f1 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -752,7 +752,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+>  
+>  	if (btrfs_root_refs(&BTRFS_I(dir)->root->root_item) == 0)
+>  		goto out_up_read;
+> -
+> +	mutex_lock(&BTRFS_I(dir)->root->fs_info->quota_lock);
+>  	if (snap_src) {
+>  		error = create_snapshot(snap_src, dir, dentry, name, namelen,
+>  					async_transid, readonly, inherit);
+> @@ -762,6 +762,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
+>  	}
+>  	if (!error)
+>  		fsnotify_mkdir(dir, dentry);
+> +	mutex_unlock(&BTRFS_I(dir)->root->fs_info->quota_lock);
 
-Please pull my for-linus branch:
+You are completely serializing subvolume operations here. I'd prefer if
+you'd move the lock to a lower level to only protect the quota
+operations. Can't you move the lock completely to qgroup.c?
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+>  out_up_read:
+>  	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
+>  out_dput:
+> @@ -3693,6 +3694,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+>  		goto drop_write;
+>  	}
+>  
+> +	mutex_lock(&root->fs_info->quota_lock);
+>  	down_read(&root->fs_info->subvol_sem);
+>  	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
+>  		trans = btrfs_start_transaction(root, 2);
+> @@ -3728,6 +3730,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+>  out:
+>  	kfree(sa);
+>  	up_read(&root->fs_info->subvol_sem);
+> +	mutex_unlock(&root->fs_info->quota_lock);
+>  drop_write:
+>  	mnt_drop_write_file(file);
+>  	return ret;
+> @@ -3754,6 +3757,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+>  		goto drop_write;
+>  	}
+>  
+> +	mutex_lock(&root->fs_info->quota_lock);
+>  	trans = btrfs_join_transaction(root);
+>  	if (IS_ERR(trans)) {
+>  		ret = PTR_ERR(trans);
+> @@ -3775,6 +3779,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+>  
+>  out:
+>  	kfree(sa);
+> +	mutex_unlock(&root->fs_info->quota_lock);
+>  drop_write:
+>  	mnt_drop_write_file(file);
+>  	return ret;
+> @@ -3805,11 +3810,11 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+>  		ret = -EINVAL;
+>  		goto out;
+>  	}
+> -
+> +	mutex_lock(&root->fs_info->quota_lock);
+>  	trans = btrfs_join_transaction(root);
+>  	if (IS_ERR(trans)) {
+>  		ret = PTR_ERR(trans);
+> -		goto out;
+> +		goto out_unlock;
+>  	}
+>  
+>  	/* FIXME: check if the IDs really exist */
+> @@ -3824,6 +3829,8 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+>  	if (err && !ret)
+>  		ret = err;
+>  
+> +out_unlock:
+> +	mutex_unlock(&root->fs_info->quota_lock);
+>  out:
+>  	kfree(sa);
+>  drop_write:
+> @@ -3852,7 +3859,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+>  		ret = PTR_ERR(sa);
+>  		goto drop_write;
+>  	}
+> -
+> +	mutex_lock(&root->fs_info->quota_lock);
+>  	trans = btrfs_join_transaction(root);
+>  	if (IS_ERR(trans)) {
+>  		ret = PTR_ERR(trans);
+> @@ -3874,6 +3881,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+>  
+>  out:
+>  	kfree(sa);
+> +	mutex_unlock(&root->fs_info->quota_lock);
+>  drop_write:
+>  	mnt_drop_write_file(file);
+>  	return ret;
+> 
 
-We've had a busy two weeks of bug fixing.  The biggest patches in here
-are some long standing early-enospc problems (Josef) and a very old race
-where compression and mmap combine forces to lose writes (me).  I'm
-fairly sure the mmap bug goes all the way back to the introduction of
-the compression code, which is proof that fsx doesn't trigger every
-possible mmap corner after all.
-
-I'm sure you'll notice one of these is from this morning, it's a small
-and isolated use-after-free fix in our scrub error reporting.  I double
-checked it here.
-
-Josef Bacik (6) commits (+90/-18):
-    Btrfs: hold the ordered operations mutex when waiting on ordered extents (+2/-0)
-    Btrfs: don't drop path when printing out tree errors in scrub (+2/-1)
-    Btrfs: fix space leak when we fail to reserve metadata space (+41/-6)
-    Btrfs: fix space accounting for unlink and rename (+2/-4)
-    Btrfs: limit the global reserve to 512mb (+1/-1)
-    Btrfs: handle a bogus chunk tree nicely (+42/-6)
-
-Jan Schmidt (2) commits (+24/-16):
-    Btrfs: fix EIO from btrfs send in is_extent_unchanged for punched holes (+4/-6)
-    Btrfs: fix locking on ROOT_REPLACE operations in tree mod log (+20/-10)
-
-Wang Shilong (2) commits (+10/-2):
-    Btrfs: fix double free in the btrfs_qgroup_account_ref() (+1/-2)
-    Btrfs: fix missing qgroup reservation before fallocating (+9/-0)
-
-Miao Xie (2) commits (+5/-3):
-    Btrfs: fix wrong return value of btrfs_lookup_csum() (+3/-1)
-    Btrfs: fix wrong reservation of csums (+2/-2)
-
-Chris Mason (1) commits (+49/-0):
-    Btrfs: fix race between mmap writes and compression
-
-Liu Bo (1) commits (+1/-1):
-    Btrfs: update to use fs_state bit
-
-Tsutomu Itoh (1) commits (+9/-3):
-    Btrfs: fix memory leak in btrfs_create_tree()
-
-Total: (15) commits
-
- fs/btrfs/ctree.c        | 30 ++++++++++++------
- fs/btrfs/disk-io.c      | 14 ++++++---
- fs/btrfs/extent-tree.c  | 84 ++++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/extent_io.c    | 33 +++++++++++++++++++
- fs/btrfs/extent_io.h    |  2 ++
- fs/btrfs/file-item.c    |  6 ++--
- fs/btrfs/file.c         |  9 ++++++
- fs/btrfs/inode.c        | 22 ++++++++++---
- fs/btrfs/ordered-data.c |  2 ++
- fs/btrfs/qgroup.c       |  3 +-
- fs/btrfs/scrub.c        |  3 +-
- fs/btrfs/send.c         | 10 +++---
- fs/btrfs/volumes.c      | 13 +++++++-
- 13 files changed, 188 insertions(+), 43 deletions(-)

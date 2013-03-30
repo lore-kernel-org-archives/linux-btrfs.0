@@ -1,65 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:33428 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756602Ab3CYLJM (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:40782 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755183Ab3C3KND (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Mar 2013 07:09:12 -0400
-Received: by mail-pa0-f48.google.com with SMTP id hz10so971841pad.21
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2013 04:09:12 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wangshilong1991@gmail.com, sensille@gmx.net
-Subject: [PATCH 2/2] Btrfs: kill some BUG_ONs() in the find_parent_nodes()
-Date: Mon, 25 Mar 2013 19:09:07 +0800
-Message-Id: <1364209747-1623-1-git-send-email-wangshilong1991@gmail.com>
+	Sat, 30 Mar 2013 06:13:03 -0400
+Message-ID: <5156B985.8060506@gmx.net>
+Date: Sat, 30 Mar 2013 11:08:05 +0100
+From: Arne Jansen <sensille@gmx.net>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs@vger.kernel.org, list.btrfs@jan-o-sch.net,
+        wangsl-fnst@cn.fujitsu.com
+Subject: Re: [PATCH] Btrfs: cleanup to remove reduplicate code in iterate_extent_inode()
+References: <1364564554-1848-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1364564554-1848-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+On 03/29/13 14:42, Wang Shilong wrote:
+> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> 
+> Just remove the unnecessary check and assignment.
+> 
+> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/backref.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 3ca413bb..e102b48 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -1499,7 +1499,7 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+>  		if (ret)
+>  			break;
+>  		ULIST_ITER_INIT(&root_uiter);
+> -		while (!ret && (root_node = ulist_next(roots, &root_uiter))) {
+> +		while ((root_node = ulist_next(roots, &root_uiter))) {
 
-The reason that BUG_ON() happens in these places is just
-because of ENOMEM. 
+It doesn't look unnecessary at all to me. ret is set in the loop and
+only checked in the while condition.
 
-We try ro return ENOMEM rather than trigger BUG_ON(), the
-caller will abort the transaction thus avoiding the kernel panic.
+>  			pr_debug("root %llu references leaf %llu, data list "
+>  				 "%#llx\n", root_node->val, ref_node->val,
+>  				 (long long)ref_node->aux);
+> @@ -1510,7 +1510,6 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+>  						iterate, ctx);
+>  		}
+>  		ulist_free(roots);
+> -		roots = NULL;
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/backref.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+roots gets freed again later on. If you don't set it to NULL, it will
+result in a double free.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index bd605c8..a5e2beb 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -900,7 +900,8 @@ again:
- 		if (ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
- 			ret = ulist_add(roots, ref->root_id, 0, GFP_NOFS);
--			BUG_ON(ret < 0);
-+			if (ret)
-+				goto out;
- 		}
- 		if (ref->count && ref->parent) {
- 			struct extent_inode_elem *eie = NULL;
-@@ -920,6 +921,8 @@ again:
- 			ret = ulist_add_merge(refs, ref->parent,
- 					      (uintptr_t)ref->inode_list,
- 					      (u64 *)&eie, GFP_NOFS);
-+			if (ret)
-+				goto out;
- 			if (!ret && extent_item_pos) {
- 				/*
- 				 * we've recorded that parent, so we must extend
-@@ -930,7 +933,6 @@ again:
- 					eie = eie->next;
- 				eie->next = ref->inode_list;
- 			}
--			BUG_ON(ret < 0);
- 		}
- 		kfree(ref);
- 	}
--- 
-1.7.7.6
+-Arne
+
+>  	}
+>  
+>  	free_leaf_list(refs);
+> 
 

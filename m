@@ -1,72 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f176.google.com ([209.85.192.176]:61516 "EHLO
-	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750980Ab3CaKEf (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:39559 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750980Ab3CaKHk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 Mar 2013 06:04:35 -0400
-Received: by mail-pd0-f176.google.com with SMTP id r11so803801pdi.7
-        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 03:04:34 -0700 (PDT)
+	Sun, 31 Mar 2013 06:07:40 -0400
+Received: by mail-pa0-f46.google.com with SMTP id rl6so901882pac.5
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2013 03:07:40 -0700 (PDT)
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [BUG] btrfs quota
 From: Wang Shilong <wangshilong1991@gmail.com>
-To: wangshilong1991@gmail.com, linux-btrfs@vger.kernel.org
-Cc: sensille@gmx.net, list.btrfs@jan-o-sch.net, wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH V3] Btrfs: kill some BUG_ONs() in the find_parent_nodes()
-Date: Sat, 30 Mar 2013 07:03:21 +0800
-Message-Id: <1364598201-28723-1-git-send-email-wangshilong1991@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <515800BB.50102@gmx.net>
+Date: Sun, 31 Mar 2013 18:07:35 +0800
+Cc: "list.btrfs@jan-o-sch.net Schmidt" <list.btrfs@jan-o-sch.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-Id: <71FF9EDF-9722-4204-86DF-28FA7A8D1C2C@gmail.com>
+References: <1DF9A68C-FBA2-460F-921F-CBF94A06CD6B@gmail.com> <515800BB.50102@gmx.net>
+To: Arne Jansen <sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Hello Arne,
 
-The reason that BUG_ON() happens in these places is just
-because of ENOMEM.
+> Hello Wang,
+> 
+> On 03/31/13 03:44, Wang Shilong wrote:
+>> Hello Arne, Jan,
+>> 
+>> When i run stresstest with quota enabled, i hit a panic where
+>> btrfs_find_all_roots() is called. Would you please double check it.
+>> 
+> 
+> On what kernel version do you hit this (git commit id preferred)?
+> Can you send us the message from dmesg?
+> 
 
-We try ro return ENOMEM rather than trigger BUG_ON(), the
-caller will abort the transaction thus avoiding the kernel panic.
+Maybe it is because my patch
+[Btrfs: kill some BUG_ONs() in the find_parent_nodes()]
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
-Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
-Changelog:
-	V2->V3: correct wrong check about ulist_add()
-	and revert the check about ret=0
----
- fs/btrfs/backref.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+would you please review the patch V3 for me?
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index bd605c8..3dd0693 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -900,7 +900,8 @@ again:
- 		if (ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
- 			ret = ulist_add(roots, ref->root_id, 0, GFP_NOFS);
--			BUG_ON(ret < 0);
-+			if (ret < 0)
-+				goto out;
- 		}
- 		if (ref->count && ref->parent) {
- 			struct extent_inode_elem *eie = NULL;
-@@ -920,6 +921,8 @@ again:
- 			ret = ulist_add_merge(refs, ref->parent,
- 					      (uintptr_t)ref->inode_list,
- 					      (u64 *)&eie, GFP_NOFS);
-+			if (ret < 0)
-+				goto out;
- 			if (!ret && extent_item_pos) {
- 				/*
- 				 * we've recorded that parent, so we must extend
-@@ -930,7 +933,6 @@ again:
- 					eie = eie->next;
- 				eie->next = ref->inode_list;
- 			}
--			BUG_ON(ret < 0);
- 		}
- 		kfree(ref);
- 	}
--- 
-1.7.11.7
+Thanks,
+Wang
+ 
+> Thanks,
+> arne
+> 
+>> stresstest -n 10000  -t 4.
+>> 
+>> Maybe there is still race condition when walking backref  trees, Jan
+>> would you please check the backref.c ..
+>> btrfs_find_all_roots() is called in btrfs_qgroup_account_ref () to find
+>> all roots that reference a extent. I think this is called because
+>> 
+>> we introduce referenced/exclusive concepts. The point is that i think
+>> this concept's disadvantages outweigh the advantages:
+>>      <1>
+>> walking backref  tree is really time-consuming.
+>> <2> referenced/exclusive makes it really complex when snapshot happens.
+>> <3> quota has a high coupling with other module.
+>>     I'd prefer to just keep referenced value, it is not be elegant, but
+>> it helps more.
+>> 
+>> Thanks,
+>> Wang
+>> 
+>> 
+>> 
+>> 
+>> 
+> 
 

@@ -1,84 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:43719 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757762Ab3DAIML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Apr 2013 04:12:11 -0400
-Received: from natsu (unknown [IPv6:fd39::1e6f:65ff:fea1:3ea6])
-	by len.romanrm.net (Postfix) with ESMTPS id 38AD32046C
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 08:12:09 +0000 (UTC)
-Date: Mon, 1 Apr 2013 14:12:07 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS error in __btrfs_inc_extent_ref:1935: Object already
- exists
-Message-ID: <20130401141207.533886a2@natsu>
-In-Reply-To: <20130401043605.2eb250a7@natsu>
-References: <20130401041540.4b8a4ab3@natsu>
-	<20130401043605.2eb250a7@natsu>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/7dBjxAW1veMdY7fPs8KNqBU"; protocol="application/pgp-signature"
+Received: from dkim2.fusionio.com ([66.114.96.54]:55248 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756658Ab3DAMui (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 08:50:38 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 812CB9A0691
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 06:50:38 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Kj8PdUA99cK1HxP6 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 06:50:36 -0600 (MDT)
+Date: Mon, 1 Apr 2013 08:50:34 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [RFC] Online dedup for Btrfs
+Message-ID: <20130401125034.GG1876@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/7dBjxAW1veMdY7fPs8KNqBU
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
-On Mon, 1 Apr 2013 04:36:05 +0600
-Roman Mamedov <rm@romanrm.ru> wrote:
+I was bored this weekend so I hacked up online dedup for Btrfs.  It's working
+quite well so I think it can be more widely tested.  There are two ways to use
+it
 
-> Hello,
->=20
-> After a reboot the filesystem now does not mount at all, with similar mes=
-sages.
+1) Compatible mode - this is a bit slower but will handle being used by older
+kernels.  We use the csum tree to find duplicate blocks.  Since it is relatively
+easy to have crc32c collisions this also involves reading the block from disk
+and doing a memcmp with the block we want to write to verify it has the same
+data.  This is way slow but hey, no incompat flag!
 
-So thinking this was an isolated incident, I foolishly continued setting up
-scheduled balance on other systems with btrfs that I have.
+2) Incompatible mode - so this is the way you probably want to use it if you
+don't care about being able to go back to older kernels.  You select your
+hashing function (at the momement I only support sha1 but there is room in the
+format to have different functions).  This creates a btree indexed by the hash
+and the bytenr.  Then we lookup the hash and just link the extent in if it
+matches the hash.  You can use -o paranoid-dedup if you are paranoid about hash
+collisions and this will force it to do the memcmp() dance to make sure that the
+extent we are deduping really matches the extent.
 
-And got into exactly the same situation on another machine!!
+So performance wise obviously the compat mode sucks.  It's about 50% slower on
+disk and about 20% slower on my Fusion card.  We get pretty good space savings,
+about 10% in my horrible test (just copy a git tree onto the fs), but IMHO not
+worth the performance hit.
 
-Trying to balance this with -dusage=3D5, on kernel 3.8.5:
+The incompat mode is a bit better, only 15% drop on disk and about 10% on my
+fusion card.  Closer to the crc numbers if we have -o paranoid-dedup.  The space
+savings is better since it uses the original extent sizes, we get about 15%
+space savings.  Please feel free to pull and try it, you can get it here
 
-Data: total=3D215.01GB, used=3D141.76GB
-System, DUP: total=3D32.00MB, used=3D32.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, DUP: total=3D9.38GB, used=3D1.09GB
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git dedup
 
-Same messages, "Object already exists".
+Thanks!
 
-While I currently left the previously mentioned 2TB FS in an unmounted brok=
-en
-state, still waiting for any response from you on how to properly recover f=
-rom
-this problem, in this new case I needed to restore the machine as soon as
-possible.
-
-I tried btrfsck --repair, it corrected a lot of errors, but in the end gave=
- up
-with a message saying that it can't repair the filesystem; then I did
-btrfs-zero-log. After this the FS started mounting successfully again.
-
-Not sure if I got any data corruption as a result, but this is the root FS
-and /home, and the machine successfully booted up with no data lost in any =
-of
-the apps that were active just before the crash (e.g browser, IM and IRC
-clients), so probably not.
-
---=20
-With respect,
-Roman
-
---Sig_/7dBjxAW1veMdY7fPs8KNqBU
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlFZQVcACgkQTLKSvz+PZwgM+wCfUDOuHFFTUnzyWI/HVQwuWesT
-BXoAnjaCFcyRHtqEdoJY99UmvaVrsPFd
-=Gu4J
------END PGP SIGNATURE-----
-
---Sig_/7dBjxAW1veMdY7fPs8KNqBU--
+Josef

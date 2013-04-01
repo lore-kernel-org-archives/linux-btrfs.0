@@ -1,73 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48444 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:48563 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751552Ab3DAP1T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 11:27:19 -0400
+	with ESMTP id S1756795Ab3DAPjB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 11:39:01 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 644697C0425
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 09:27:19 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id pU5u3pSeA5PxI5Kb (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 09:27:18 -0600 (MDT)
+	by dkim1.fusionio.com (Postfix) with ESMTP id 80A9F7C0425
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 09:39:01 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id rpkhECUCKMnkzvoz (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 09:39:00 -0600 (MDT)
+Date: Mon, 1 Apr 2013 11:38:59 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix infinite loop when we abort on mount
-Date: Mon, 1 Apr 2013 11:27:16 -0400
-Message-ID: <1364830036-1939-1-git-send-email-jbacik@fusionio.com>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC] Online dedup for Btrfs
+Message-ID: <20130401153859.GJ1876@localhost.localdomain>
+References: <20130401125034.GG1876@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130401125034.GG1876@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Testing my enospc log code I managed to abort a transaction during mount, which
-put me into an infinite loop.  This is because of two things, first we don't
-reset trans_no_join if we abort during transaction commit, which will force
-anybody trying to start a transaction to just loop endlessly waiting for it to
-be set to 0.  But this is still just a symptom, the second issue is we don't set
-the fs state to error during errors on mount.  This is because we don't want to
-do the flip read only thing during mount, but we still really want to set the fs
-state to an error to keep us from even getting to the trans_no_join check.  So
-fix both of these things, make sure to reset trans_no_join if we abort during a
-commit, and make sure we set the fs state to error no matter if we're mounting
-or not.  This should keep us from getting into this infinite loop again.
-Thanks,
+On Mon, Apr 01, 2013 at 08:50:34AM -0400, Josef Bacik wrote:
+> Hello,
+> 
+> I was bored this weekend so I hacked up online dedup for Btrfs.  It's working
+> quite well so I think it can be more widely tested.  There are two ways to use
+> it
+> 
+> 1) Compatible mode - this is a bit slower but will handle being used by older
+> kernels.  We use the csum tree to find duplicate blocks.  Since it is relatively
+> easy to have crc32c collisions this also involves reading the block from disk
+> and doing a memcmp with the block we want to write to verify it has the same
+> data.  This is way slow but hey, no incompat flag!
+> 
+> 2) Incompatible mode - so this is the way you probably want to use it if you
+> don't care about being able to go back to older kernels.  You select your
+> hashing function (at the momement I only support sha1 but there is room in the
+> format to have different functions).  This creates a btree indexed by the hash
+> and the bytenr.  Then we lookup the hash and just link the extent in if it
+> matches the hash.  You can use -o paranoid-dedup if you are paranoid about hash
+> collisions and this will force it to do the memcmp() dance to make sure that the
+> extent we are deduping really matches the extent.
+> 
+> So performance wise obviously the compat mode sucks.  It's about 50% slower on
+> disk and about 20% slower on my Fusion card.  We get pretty good space savings,
+> about 10% in my horrible test (just copy a git tree onto the fs), but IMHO not
+> worth the performance hit.
+> 
+> The incompat mode is a bit better, only 15% drop on disk and about 10% on my
+> fusion card.  Closer to the crc numbers if we have -o paranoid-dedup.  The space
+> savings is better since it uses the original extent sizes, we get about 15%
+> space savings.  Please feel free to pull and try it, you can get it here
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git dedup
+> 
+> Thanks!
+> 
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/super.c       |    5 ++---
- fs/btrfs/transaction.c |    4 ++++
- 2 files changed, 6 insertions(+), 3 deletions(-)
+It's been pointed out to me that this is probably too serious, so just FYI it's
+April 1st where I am.  Thanks,
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 984816f..d13d6b2 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -161,10 +161,9 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 	}
- 
- 	/* Don't go through full error handling during mount */
--	if (sb->s_flags & MS_BORN) {
--		save_error_info(fs_info);
-+	save_error_info(fs_info);
-+	if (sb->s_flags & MS_BORN)
- 		btrfs_handle_error(fs_info);
--	}
- }
- 
- static const char * const logtypes[] = {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 37f509f..e660ac0b 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1488,6 +1488,10 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 		current->journal_info = NULL;
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
-+
-+	spin_lock(&root->fs_info->trans_lock);
-+	root->fs_info->trans_no_join = 0;
-+	spin_unlock(&root->fs_info->trans_lock);
- }
- 
- static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
--- 
-1.7.7.6
-
+Josef

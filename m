@@ -1,36 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:37321 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752935Ab3DZVGO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 17:06:14 -0400
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:29881 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750880Ab3DAFJU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 01:09:20 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3159IKT015117
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Apr 2013 05:09:19 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3159I9O024021
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Apr 2013 05:09:18 GMT
+Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r3159H67027571
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Apr 2013 00:09:17 -0500
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/9] Btrfs-progs: start at kernel/userspace syncup
-Date: Fri, 26 Apr 2013 16:06:01 -0500
-Message-Id: <1367010370-21571-1-git-send-email-sandeen@redhat.com>
+Subject: [PATCH] btrfs-progs: delete unused function get_mountpt
+Date: Mon,  1 Apr 2013 13:10:27 +0800
+Message-Id: <1364793027-9665-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A first round of small, hopefully obviously-correct and/or no-op
-patches that start to make the userspace copies of kernelspace code
-look a bit more similar.
+and get_btrfs_mount has replaced it
 
-Many of these are direct ports from userspace, a couple others
-are just my cleanups of various bits here and there.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
-There'll be a fair bit more after this, but I'll do it in chunks.
+diff --git a/utils.c b/utils.c
+index b9b675d..0a4a971 100644
+--- a/utils.c
++++ b/utils.c
+@@ -976,41 +976,6 @@ out_mntloop_err:
+ 	return ret;
+ }
+ 
+-/* Gets the mount point of btrfs filesystem that is using the specified device.
+- * Returns 0 is everything is good, <0 if we have an error.
+- * TODO: Fix this fucntion and check_mounted to work with multiple drive BTRFS
+- * setups.
+- */
+-int get_mountpt(char *dev, char *mntpt, size_t size)
+-{
+-       struct mntent *mnt;
+-       FILE *f;
+-       int ret = 0;
+-
+-       f = setmntent("/proc/mounts", "r");
+-       if (f == NULL)
+-               return -errno;
+-
+-       while ((mnt = getmntent(f)) != NULL )
+-       {
+-               if (strcmp(dev, mnt->mnt_fsname) == 0)
+-               {
+-                       strncpy(mntpt, mnt->mnt_dir, size);
+-                       if (size)
+-                                mntpt[size-1] = 0;
+-                       break;
+-               }
+-       }
+-
+-       if (mnt == NULL)
+-       {
+-               /* We didn't find an entry so lets report an error */
+-               ret = -1;
+-       }
+-
+-       return ret;
+-}
+-
+ struct pending_dir {
+ 	struct list_head list;
+ 	char name[PATH_MAX];
+-- 
+1.8.1.227.g44fe835
 
-(Thanks David!) :)
-
-Thanks,
--Eric
-
-[PATCH 1/9] Btrfs-progs: remove dead btrfs-defrag.c
-[PATCH 2/9] Btrfs-progs: remove cut & paste btrfs_next_leaf from restore
-[PATCH 3/9] Btrfs-progs: fix array bound checking
-[PATCH 4/9] Btrfs-progs: move btrfs_fsck_reinit_root to cmds-check.c
-[PATCH 5/9] Btrfs-progs: remove some dead/unbuilt code
-[PATCH 6/9] Btrfs-progs: cleanup duplicated division functions
-[PATCH 7/9] Btrfs-progs: make extent_ref_type() match kernelspace
-[PATCH 8/9] Btrfs-progs: remove the unnecessary 'return -1;' at the end of bin_search
-[PATCH 9/9] Btrfs-progs: remove btrfs_init_path calls from ctree.c

@@ -1,26 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f173.google.com ([209.85.217.173]:32960 "EHLO
-	mail-lb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756924Ab3DAPvC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 11:51:02 -0400
-Received: by mail-lb0-f173.google.com with SMTP id w20so2079201lbh.32
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 08:51:00 -0700 (PDT)
+Received: from mail-bk0-f45.google.com ([209.85.214.45]:48123 "EHLO
+	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758918Ab3DAQQv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 12:16:51 -0400
+Received: by mail-bk0-f45.google.com with SMTP id j10so976474bkw.32
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 09:16:50 -0700 (PDT)
+Message-ID: <5159B2F0.9060704@gmail.com>
+Date: Mon, 01 Apr 2013 19:16:48 +0300
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20130401153859.GJ1876@localhost.localdomain>
-References: <20130401125034.GG1876@localhost.localdomain> <20130401153859.GJ1876@localhost.localdomain>
-From: Harald Glatt <mail@hachre.de>
-Date: Mon, 1 Apr 2013 17:50:40 +0200
-Message-ID: <CAFWF=akuVKaiaWYSAWkKTDh1ygdpC7nTk8HV9i3Yjh2OJnQm1A@mail.gmail.com>
-Subject: Re: [RFC] Online dedup for Btrfs
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] Online dedup for Btrfs
+References: <20130401125034.GG1876@localhost.localdomain> <20130401153859.GJ1876@localhost.localdomain>
+In-Reply-To: <20130401153859.GJ1876@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh man :D It was so elaborate that I really believed it.... :P
-
-On Mon, Apr 1, 2013 at 5:38 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+On 1/4/2013 6:38 μμ, Josef Bacik wrote:
 > On Mon, Apr 01, 2013 at 08:50:34AM -0400, Josef Bacik wrote:
 >> Hello,
 >>
@@ -57,12 +55,17 @@ On Mon, Apr 1, 2013 at 5:38 PM, Josef Bacik <jbacik@fusionio.com> wrote:
 >>
 >> Thanks!
 >>
->
 > It's been pointed out to me that this is probably too serious, so just FYI it's
 > April 1st where I am.  Thanks,
+Well I believed it too, and was writing an email with questions etc. I 
+almost sent it, but then I saw git was downloading hundreds and hundreds 
+of MB of data :)
+
+Well done anyway!
 >
 > Josef
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

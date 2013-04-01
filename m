@@ -1,52 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cpsmtpb-ews06.kpnxchange.com ([213.75.39.9]:64856 "EHLO
+Received: from cpsmtpb-ews06.kpnxchange.com ([213.75.39.9]:65422 "EHLO
 	cpsmtpb-ews06.kpnxchange.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757475Ab3DASA5 (ORCPT
+	by vger.kernel.org with ESMTP id S1757060Ab3DASBc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Apr 2013 14:00:57 -0400
-Message-ID: <1364838943.21627.60.camel@x61.thuisdomein>
-Subject: [PATCH 0/8] do not export kernel integer types to userspace
+	Mon, 1 Apr 2013 14:01:32 -0400
+Message-ID: <1364839290.21627.67.camel@x61.thuisdomein>
+Subject: [PATCH 5/8] btrfs: do not export "u64" to userspace
 From: Paul Bolle <pebolle@tiscali.nl>
-To: Jason Wang <jasowang@redhat.com>, Krishna Kumar <krkumar2@in.ibm.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Rusty Russell <rusty@rustcorp.com.au>,
-        "Michael S. Tsirkin" <mst@redhat.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Trond Myklebust <Trond.Myklebust@netapp.com>,
-        Amit Shah <amit.shah@redhat.com>, Mikael Starvik <starvik@axis.com>,
-        Jesper Nilsson <jesper.nilsson@axis.com>
-Cc: virtualization@lists.linux-foundation.org, linux-btrfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-cris-kernel@axis.com,
-        linux-kernel@vger.kernel.org
-Date: Mon, 01 Apr 2013 19:55:43 +0200
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Mon, 01 Apr 2013 20:01:30 +0200
 Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This short series was triggered by a compile error I ran into when trying to
-build the lguest tool (see PATCH 1/8). After fixing that error I decided to attempt to
-solve all related problems.
+btrfs.h exports "u64" to userspace. Use "__u64" instead.
 
-Paul Bolle (8):
-  virtio_net: do not export "u16" to userspace
-  headers_check: add check for kernel integer types
-  virtio: do not export "u16" and "u64" to userspace
-  headers_check: check kernel types inside #define
-  btrfs: do not export "u64" to userspace
-  nfsd4: do not export "u64" to userspace
-  virtio: do not export "u32" to userspace
-  cris: do not export "u8" and friends to userspace
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+---
+Tested with a kernel build. I'm not familiar with userspace code using
+btrfs.h.
 
- arch/cris/include/uapi/arch-v10/arch/sv_addr_ag.h | 20 ++++++++++----------
- include/uapi/linux/btrfs.h                        |  2 +-
- include/uapi/linux/nfs4.h                         |  2 +-
- include/uapi/linux/virtio_balloon.h               |  4 ++--
- include/uapi/linux/virtio_console.h               |  2 +-
- include/uapi/linux/virtio_net.h                   |  2 +-
- scripts/headers_check.pl                          | 21 +++++++++++++++++++++
- 7 files changed, 37 insertions(+), 16 deletions(-)
+ include/uapi/linux/btrfs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index fa3a5f9..3ee970b 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -460,7 +460,7 @@ struct btrfs_ioctl_send_args {
+ 				   struct btrfs_ioctl_search_args)
+ #define BTRFS_IOC_INO_LOOKUP _IOWR(BTRFS_IOCTL_MAGIC, 18, \
+ 				   struct btrfs_ioctl_ino_lookup_args)
+-#define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
++#define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+ 				    struct btrfs_ioctl_space_args)
+ #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
 -- 
 1.7.11.7
 

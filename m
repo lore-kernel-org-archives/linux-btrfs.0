@@ -1,55 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:55248 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756658Ab3DAMui (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 08:50:38 -0400
+Received: from dkim1.fusionio.com ([66.114.96.53]:47507 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757448Ab3DANbN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2013 09:31:13 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 812CB9A0691
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 06:50:38 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Kj8PdUA99cK1HxP6 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 01 Apr 2013 06:50:36 -0600 (MDT)
-Date: Mon, 1 Apr 2013 08:50:34 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 946FE7C04FA
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2013 07:31:12 -0600 (MDT)
+Date: Mon, 1 Apr 2013 09:31:10 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC] Online dedup for Btrfs
-Message-ID: <20130401125034.GG1876@localhost.localdomain>
+To: Roman Mamedov <rm@romanrm.ru>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS error in __btrfs_inc_extent_ref:1935: Object already exists
+Message-ID: <20130401133110.GH1876@localhost.localdomain>
+References: <20130401041540.4b8a4ab3@natsu>
+ <20130401043605.2eb250a7@natsu>
+ <20130401141207.533886a2@natsu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130401141207.533886a2@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Mon, Apr 01, 2013 at 02:12:07AM -0600, Roman Mamedov wrote:
+> On Mon, 1 Apr 2013 04:36:05 +0600
+> Roman Mamedov <rm@romanrm.ru> wrote:
+> 
+> > Hello,
+> > 
+> > After a reboot the filesystem now does not mount at all, with similar messages.
+> 
+> So thinking this was an isolated incident, I foolishly continued setting up
+> scheduled balance on other systems with btrfs that I have.
+> 
+> And got into exactly the same situation on another machine!!
+> 
+> Trying to balance this with -dusage=5, on kernel 3.8.5:
+> 
+> Data: total=215.01GB, used=141.76GB
+> System, DUP: total=32.00MB, used=32.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=9.38GB, used=1.09GB
+> 
+> Same messages, "Object already exists".
+> 
+> While I currently left the previously mentioned 2TB FS in an unmounted broken
+> state, still waiting for any response from you on how to properly recover from
+> this problem, in this new case I needed to restore the machine as soon as
+> possible.
+> 
+> I tried btrfsck --repair, it corrected a lot of errors, but in the end gave up
+> with a message saying that it can't repair the filesystem; then I did
+> btrfs-zero-log. After this the FS started mounting successfully again.
+> 
+> Not sure if I got any data corruption as a result, but this is the root FS
+> and /home, and the machine successfully booted up with no data lost in any of
+> the apps that were active just before the crash (e.g browser, IM and IRC
+> clients), so probably not.
+> 
 
-I was bored this weekend so I hacked up online dedup for Btrfs.  It's working
-quite well so I think it can be more widely tested.  There are two ways to use
-it
+Can you capture an image of these broken file systems the next time it happens?
+You'll need to clone the progs here
 
-1) Compatible mode - this is a bit slower but will handle being used by older
-kernels.  We use the csum tree to find duplicate blocks.  Since it is relatively
-easy to have crc32c collisions this also involves reading the block from disk
-and doing a memcmp with the block we want to write to verify it has the same
-data.  This is way slow but hey, no incompat flag!
+git://github.com/josefbacik/btrfs-progs.git
 
-2) Incompatible mode - so this is the way you probably want to use it if you
-don't care about being able to go back to older kernels.  You select your
-hashing function (at the momement I only support sha1 but there is room in the
-format to have different functions).  This creates a btree indexed by the hash
-and the bytenr.  Then we lookup the hash and just link the extent in if it
-matches the hash.  You can use -o paranoid-dedup if you are paranoid about hash
-collisions and this will force it to do the memcmp() dance to make sure that the
-extent we are deduping really matches the extent.
+and build and then run
 
-So performance wise obviously the compat mode sucks.  It's about 50% slower on
-disk and about 20% slower on my Fusion card.  We get pretty good space savings,
-about 10% in my horrible test (just copy a git tree onto the fs), but IMHO not
-worth the performance hit.
+btrfs-image -w /dev/whatever blah.img
 
-The incompat mode is a bit better, only 15% drop on disk and about 10% on my
-fusion card.  Closer to the crc numbers if we have -o paranoid-dedup.  The space
-savings is better since it uses the original extent sizes, we get about 15%
-space savings.  Please feel free to pull and try it, you can get it here
-
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git dedup
-
-Thanks!
+and then upload blah.img up somewhere I can pull it down.  You can use the -t
+and -c options too, but the -w is the most important since you have extent tree
+corruption.  Thanks,
 
 Josef

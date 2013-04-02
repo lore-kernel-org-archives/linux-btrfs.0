@@ -1,52 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:36494 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755384Ab3DBFVq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Apr 2013 01:21:46 -0400
-Date: Tue, 2 Apr 2013 11:21:41 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS error in __btrfs_inc_extent_ref:1935: Object already
- exists
-Message-ID: <20130402112141.0792aa72@natsu>
-In-Reply-To: <20130402004645.GM1876@localhost.localdomain>
-References: <20130401041540.4b8a4ab3@natsu>
-	<20130402004645.GM1876@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/fn/VVZ7CY/RyQKBSKm/b4Mm"; protocol="application/pgp-signature"
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:36067 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932171Ab3DBIYn convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2013 04:24:43 -0400
+Message-ID: <515A95C7.5090607@petaramesh.org>
+Date: Tue, 02 Apr 2013 10:24:39 +0200
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: zfs-discuss@zfsonlinux.org, "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Subject: Moving...
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/fn/VVZ7CY/RyQKBSKm/b4Mm
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Goodbye BTRFS, hello ZFS :-)
 
-On Mon, 1 Apr 2013 20:46:45 -0400
-Josef Bacik <jbacik@fusionio.com> wrote:
+I'm finally making the move, I couldn't stand the terrible BTRFS
+performance anymore, and spending 2 long minutes waiting for the HD LED
+to come off everytime I clicked anywhere.
 
-> I just posted a patch for this bug, I can mount your image now without it
-> panicing and it passes fsck on either side of the mount.  Let me know if =
-it
-> doesn't work for you.  Thanks,
+Did what I could, got the latest kernels, defragged, removed BTRFS
+snapshots, to no avail...
 
-Thank you, it now mounted and works without issues.
+So I'm in process of moving the 3 main laptops in here from BTRFS to ZFS...
 
---=20
-With respect,
-Roman
+Kind regards to all.
 
---Sig_/fn/VVZ7CY/RyQKBSKm/b4Mm
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlFaauUACgkQTLKSvz+PZwicKgCeMfG3aIXRYcQdqQDSVQLrtav1
-P3UAnA7YFdVyRsZN8FuxV2J49PJVEJ2U
-=RXPe
------END PGP SIGNATURE-----
-
---Sig_/fn/VVZ7CY/RyQKBSKm/b4Mm--

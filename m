@@ -1,82 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([176.31.121.172]:35262 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760790Ab3DBREZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Apr 2013 13:04:25 -0400
-Date: Tue, 2 Apr 2013 23:04:21 +0600
-From: Roman Mamedov <rm@romanrm.ru>
-To: =?UTF-8?B?U3fDom1p?= Petaramesh <swami@petaramesh.org>
-Cc: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:52569 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1761123Ab3DBRPD convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2013 13:15:03 -0400
+Message-ID: <515B120F.6000004@petaramesh.org>
+Date: Tue, 02 Apr 2013 19:14:55 +0200
+From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: Roman Mamedov <rm@romanrm.ru>,
+        "BTRFS, Linux" <linux-btrfs@vger.kernel.org>,
+        zfs-discuss@zfsonlinux.org
 Subject: Re: Moving...
-Message-ID: <20130402230421.016afe58@natsu>
-In-Reply-To: <515A95C7.5090607@petaramesh.org>
-References: <515A95C7.5090607@petaramesh.org>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/KifHl6Z_tfnJevexKDG7lnr"; protocol="application/pgp-signature"
+References: <515A95C7.5090607@petaramesh.org> <20130402230421.016afe58@natsu>
+In-Reply-To: <20130402230421.016afe58@natsu>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/KifHl6Z_tfnJevexKDG7lnr
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Le 02/04/2013 19:04, Roman Mamedov a écrit :
+> but at this point I trust my data to BTRFS more, than I would trust ZFS.
 
-On Tue, 02 Apr 2013 10:24:39 +0200
-Sw=C3=A2mi Petaramesh <swami@petaramesh.org> wrote:
+My experience with ZFS on Linux is still somewhat limited, the only
+thing that I can say is that I've used it for about 2 years and a half
+on my (quite loaded) home server without ever encoutering a single issue
+(besides some tricky Ubuntu version upgrades, only due to the fact that
+ZFS is "not in the standard kernel" by opposition to BTRFS).
 
-> Goodbye BTRFS, hello ZFS :-)
->=20
-> I'm finally making the move, I couldn't stand the terrible BTRFS
-> performance anymore, and spending 2 long minutes waiting for the HD LED
-> to come off everytime I clicked anywhere.
->=20
-> Did what I could, got the latest kernels, defragged, removed BTRFS
-> snapshots, to no avail...
->=20
-> So I'm in process of moving the 3 main laptops in here from BTRFS to ZFS.=
-..
+On the BTRFS side, I've used it on 5 machine for about a year on a daily
+basis ; I've completely lost a filesystem, beyond repair, twice ; I
+found myself with a machine that wouldn't boot anymore and would
+necessitate serious and tricky FS maintenance, 3 times, I had to
+completely reinstall the FS because of extremely degraded performance, 4
+times.
 
+Add to this that the FS management tools and properly working FS
+features are an order of magnitude better in ZFS than in BTRFS...
 
-Whatever works for you --
+That's enough for me...
 
-but at this point I trust my data to BTRFS more, than I would trust ZFS.
+I've already converted 2 machines from BTRFS to ZFS since yesterday.
 
-(of course having current backups etc).
+My netbook (now ZFS) boots to GDM in less than 30 seconds. My son's same
+machine (except for the FS) takes 75 MORE seconds.
 
-The following may not sound like a compliment to BTRFS; but on my filesyste=
-ms
-with heavy snapshotting, recently I am trialling a practice to run major ap=
-ps
-like a mail client and a browser via "eatmydata", which overrides and NOOPs
-fsync. Since in any case I have "sync; btrfs sub snap...." on those machines
-set to every 30 minutes in crontab, the potential of data loss due to
-"eatmydata" is never too great.
+You get it.
 
-I noticed the general experience is a lot snappier this way. You could try =
-at
-least to verify whether or not your HD LED issues (:D) are indeed caused by
-slow fsyncs, or by something else.
+Kind regards.
 
-I should note that I currently use a 3.7 series kernel, and haven't upgraded
-to 3.8 and 3.9 yet, AFAIK those had some fsync improvements which might ren=
-der
-this trick useless. But this still doesn't change the fact that apps in
-general seem to over-use fsync.
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 
---=20
-With respect,
-Roman
-
---Sig_/KifHl6Z_tfnJevexKDG7lnr
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlFbD5UACgkQTLKSvz+PZwjFSACfbP1ZiWzsOoB8s2Fkm7vj7ffw
-XQEAn3cLoUMLhUF6UV6WZTe2Nha5CYbT
-=959x
------END PGP SIGNATURE-----
-
---Sig_/KifHl6Z_tfnJevexKDG7lnr--

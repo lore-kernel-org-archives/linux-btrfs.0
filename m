@@ -1,86 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:34690 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:59943 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1763432Ab3DDUFw convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Apr 2013 16:05:52 -0400
+	with ESMTP id S1762698Ab3DDQEJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Apr 2013 12:04:09 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 0D48A9A040D
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Apr 2013 14:05:52 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	by dkim2.fusionio.com (Postfix) with ESMTP id 0FBA09A067F
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Apr 2013 10:04:09 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id cs97C0eINLD4N1Kx (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 04 Apr 2013 10:04:08 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure nbytes are right after log replay
+Date: Thu, 4 Apr 2013 12:04:06 -0400
+Message-ID: <1365091446-1689-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>, Zach Brown <zab@redhat.com>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <515DD858.4000102@redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Jan Safranek <jsafrane@redhat.com>
-References: <515D9DDE.5040306@redhat.com> <515DAB1F.2050308@redhat.com>
- <20130404184632.GA23636@lenny.home.zabbo.net> <515DD858.4000102@redhat.com>
-Message-ID: <20130404200549.27335.7058@localhost.localdomain>
-Subject: Re: [PATCH V2] btrfs: close any open devices if btrfs_mount fails
-Date: Thu, 4 Apr 2013 16:05:49 -0400
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Eric Sandeen (2013-04-04 15:45:28)
-> On 4/4/13 1:46 PM, Zach Brown wrote:
-> >> It's because btrfs_open_devices() may open some devices, and still
-> >> return failure.  So the error unwinding needs to close any open
-> >> devices in fs_devices before returning.
-> > 
-> > Yeah, looks like.
-> > 
-> >> Note, __btrfs_open_devices is weird; it seems to return success or
-> >> failure based on the outcome of the result of the last call
-> >> to btrfs_get_bdev_and_sb().  But that's a different bug...
-> > 
-> > I disagree that this is a different bug, I think it's the root cause of
-> > this bug.
-> > 
-> >> @@ -1125,7 +1125,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
-> >>  
-> >>      error = btrfs_open_devices(fs_devices, mode, fs_type);
-> >>      if (error)
-> >> -            goto error_fs_info;
-> >> +            goto error_close_devices;
-> > 
-> > Wouldn't open_seed_devices() also need a change like this?
-> > 
-> > I'd just rework __btrfs_open_devices to clean up after itself when it
-> > returns an error.
-> > 
-> >>  error_close_devices:
-> >> -    btrfs_close_devices(fs_devices);
-> >> +    if (fs_devices->open_devices)
-> >> +            btrfs_close_devices(fs_devices);
-> > 
-> > I guess that ->open_devices is supposed to be protected by the
-> > uuid_mutex so it shouldn't be tested out here.  In any case, it wouldn't
-> > be needed if btrfs_open_devices() cleaned up as it failed.
-> 
-> I guess I had a feeling that in something like a degraded mount scenario
-> you might live with failures.  But I guess that is initiated on the mount
-> commandline, i.e. "mount this subset; it's degraded" not "mount these devices,
-> and if some fail that's cool."
+While trying to track down a tree log replay bug I noticed that fsck was always
+complaining about nbytes not being right for our fsynced file.  That is because
+the new fsync stuff doesn't wait for ordered extents to complete, so the inodes
+nbytes are not necessarily updated properly when we log it.  So to fix this we
+need to set nbytes to whatever it is on the inode that is on disk, so when we
+replay the extents we can just add the bytes that are being added as we replay
+the extent.  This makes it work for the case that we have the wrong nbytes or
+the case that we logged everything and nbytes is actually correct.  With this
+I'm no longer getting nbytes errors out of btrfsck.  Thanks,
 
-btrfs_open_devices just means: go off and open every bdev you can from
-this uuid.  It should return success if we opened any of them at all.
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/tree-log.c |   41 +++++++++++++++++++++++++++++++++++------
+ 1 files changed, 35 insertions(+), 6 deletions(-)
 
-__btrfs_open_devices() already ignores failures, and this is the
-only place it is explicitly setting ret.  It should only happen if there
-are no devices to close.
-
-        if (fs_devices->open_devices == 0) {
-                ret = -EINVAL;
-                goto out;
-        }
-
-Unless of course we happen to fail to open the last device in the list:
-
-	ret = btrfs_get_bdev_and_sb(device->name->str, flags, holder, 1, &bdev, &bh);
-	if (ret)
-		continue;
-
-This is two curlies and a ret = 0 away from correct.
-
--chris
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 83d4e1d..241daf7 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -317,6 +317,7 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
+ 	unsigned long src_ptr;
+ 	unsigned long dst_ptr;
+ 	int overwrite_root = 0;
++	bool inode_item = key->type == BTRFS_INODE_ITEM_KEY;
+ 
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
+ 		overwrite_root = 1;
+@@ -326,6 +327,9 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
+ 
+ 	/* look for the key in the destination tree */
+ 	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
++	if (ret < 0)
++		return ret;
++
+ 	if (ret == 0) {
+ 		char *src_copy;
+ 		char *dst_copy;
+@@ -367,6 +371,30 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
+ 			return 0;
+ 		}
+ 
++		/*
++		 * We need to load the old nbytes into the inode so when we
++		 * replay the extents we've logged we get the right nbytes.
++		 */
++		if (inode_item) {
++			struct btrfs_inode_item *item;
++			u64 nbytes;
++
++			item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++					      struct btrfs_inode_item);
++			nbytes = btrfs_inode_nbytes(path->nodes[0], item);
++			item = btrfs_item_ptr(eb, slot,
++					      struct btrfs_inode_item);
++			btrfs_set_inode_nbytes(eb, item, nbytes);
++		}
++	} else if (inode_item) {
++		struct btrfs_inode_item *item;
++
++		/*
++		 * New inode, set nbytes to 0 so that the nbytes comes out
++		 * properly when we replay the extents.
++		 */
++		item = btrfs_item_ptr(eb, slot, struct btrfs_inode_item);
++		btrfs_set_inode_nbytes(eb, item, 0);
+ 	}
+ insert:
+ 	btrfs_release_path(path);
+@@ -486,7 +514,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 	int found_type;
+ 	u64 extent_end;
+ 	u64 start = key->offset;
+-	u64 saved_nbytes;
++	u64 nbytes;
+ 	struct btrfs_file_extent_item *item;
+ 	struct inode *inode = NULL;
+ 	unsigned long size;
+@@ -496,10 +524,12 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 	found_type = btrfs_file_extent_type(eb, item);
+ 
+ 	if (found_type == BTRFS_FILE_EXTENT_REG ||
+-	    found_type == BTRFS_FILE_EXTENT_PREALLOC)
+-		extent_end = start + btrfs_file_extent_num_bytes(eb, item);
+-	else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
++	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
++		nbytes = btrfs_file_extent_num_bytes(eb, item);
++		extent_end = start + nbytes;
++	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		size = btrfs_file_extent_inline_len(eb, item);
++		nbytes = btrfs_file_extent_ram_bytes(eb, item);
+ 		extent_end = ALIGN(start + size, root->sectorsize);
+ 	} else {
+ 		ret = 0;
+@@ -548,7 +578,6 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 	}
+ 	btrfs_release_path(path);
+ 
+-	saved_nbytes = inode_get_bytes(inode);
+ 	/* drop any overlapping extents */
+ 	ret = btrfs_drop_extents(trans, root, inode, start, extent_end, 1);
+ 	BUG_ON(ret);
+@@ -635,7 +664,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 		BUG_ON(ret);
+ 	}
+ 
+-	inode_set_bytes(inode, saved_nbytes);
++	inode_add_bytes(inode, nbytes);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ out:
+ 	if (inode)
+-- 
+1.7.7.6
 

@@ -1,125 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47695 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753267Ab3DLQX1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Apr 2013 12:23:27 -0400
-Date: Fri, 12 Apr 2013 18:23:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 4/9 v2] btrfs-progs: check if btrfs kernel module is
- loaded
-Message-ID: <20130412162325.GA18193@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1365141303-10571-5-git-send-email-anand.jain@oracle.com>
- <1365582201-20835-1-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1365582201-20835-1-git-send-email-anand.jain@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:25810 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751366Ab3DEFxp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:45 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355ri7T032385
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:45 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355ric8001371
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:44 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355riwd017062
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:53:44 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/9] a bunch of miscellaneous bug fixes
+Date: Fri,  5 Apr 2013 13:54:54 +0800
+Message-Id: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 10, 2013 at 04:23:21PM +0800, Anand Jain wrote:
-> diff --git a/cmds-device.c b/cmds-device.c
-> index a90fb67..0e1e6de 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -185,9 +185,10 @@ static const char * const cmd_scan_dev_usage[] = {
->  
->  static int cmd_scan_dev(int argc, char **argv)
->  {
-> -	int	i, fd, e;
-> +	int	i, fd = -1, e, ret = 0;
->  	int	checklist = 1;
->  	int	devstart = 1;
-> +	u64	flag_reg = 0ull;
+Hi David, all
 
-Do you need it to be u64? I see it's used only as a bool flag.
+        kindly review/accept this patch set to fix various
+	bugs as in the patch.
+	This patch set is on top David's integration-20130321
+	branch and would apply nicely on top the backup sb
+	fixes which was sent separately.
 
-> +	if (is_btrfs_kernel_loaded())
-> +		flag_reg = BTRFS_SCAN_REGISTER;
+Thanks
+Anand
 
-		flag_reg = 1;
+Anand Jain (9):
+  btrfs-progs: root_item generation_v2 is out of sync after btrfsck
+  btrfs-progs: no pending balance is not an error
+  btrfs-progs: mkfs should first check all disks before writing to a
+    disk
+  btrfs-progs: check if btrfs kernel module is loaded
+  btrfs-progs: delete unused function get_mountpt
+  btrfs-progs: mkfs stdout print to match chronology
+  btrfs-progs: cmd replace should check target-dev fully
+  btrfs-progs: btrfs-select-super output is confusing when it fails
+  btrfs-progs: fix btrfs scrub start help
 
-would work the same, so it should be fine with int.
+ btrfs-select-super.c |   6 +-
+ cmds-balance.c       |   6 +-
+ cmds-device.c        |  56 +++++++++----
+ cmds-replace.c       |  24 +-----
+ cmds-scrub.c         |   2 +-
+ mkfs.c               | 216 +++++++++++----------------------------------------
+ root-tree.c          |  13 ++++
+ utils.c              | 178 +++++++++++++++++++++++++++++++++---------
+ utils.h              |   2 +
+ 9 files changed, 260 insertions(+), 243 deletions(-)
 
->  	}
->  
-> +	printf("Scanning for Btrfs in\n");
-...
-> -		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
+-- 
+1.8.1.227.g44fe835
 
-Please keep the word 'filesystem' in the message
-
-> @@ -261,6 +287,10 @@ static int cmd_ready_dev(int argc, char **argv)
->  	if (check_argc_min(argc, 2))
->  		usage(cmd_ready_dev_usage);
->  
-> +	if (!is_btrfs_kernel_loaded()) {
-> +		fprintf(stderr, "btrfs kernel module is not loaded\n");
-> +		return 10;
-
-return 1 or -1
-
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -1420,6 +1420,7 @@ int main(int ac, char **av)
->  	u64 flags;
->  	int dev_cnt=0;
->  	int saved_optind;
-> +	int flag_reg=1;
-
-ah, here it is an 'int'
-
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1016,6 +1016,33 @@ struct pending_dir {
-> +/*
-> + * return 1 if btrfs kernel is present
-> + * return 0 for not
-> + */
-> +int is_btrfs_kernel_loaded()
-> +{
-> +	FILE *pfs;
-> +	char fsname[100];
-> +	int ret = -1;
-> +	char line[100];
-> +
-> +	pfs = fopen("/proc/filesystems", "r");
-> +	if (pfs) {
-> +		ret = 0;
-> +		while (fgets(line, sizeof(line), pfs)) {
-> +			if (sscanf(line, "nodev %[^#\n]\n", fsname) == 1) continue;
-
-			if (!strncmp("nodev", line, 5))
-				continue;
-
-> +			if (sscanf(line, " %[^# \n]\n", fsname) != 1) continue;
-> +			if (!strcmp(fsname, "btrfs")) {
-> +				ret = 1;
-> +				break;
-> +			}
-> +		}
-> +		fclose(pfs);
-> +	}
-> +	return ret;
-> +}
-> +
->  void btrfs_register_one_device(char *fname)
->  {
->  	struct btrfs_ioctl_vol_args args;
-> @@ -1023,6 +1050,11 @@ void btrfs_register_one_device(char *fname)
->  	int ret;
->  	int e;
->  
-> +	if (!is_btrfs_kernel_loaded()) {
-> +		fprintf(stderr, "btrfs kernel module is not loaded, "
-> +			"skipping device registration\n");
-> +		return;
-> +	}
->  	fd = open("/dev/btrfs-control", O_RDONLY);
->  	if (fd < 0) {
->  		fprintf(stderr, "failed to open /dev/btrfs-control "
-
-Otherwise ok.
-david

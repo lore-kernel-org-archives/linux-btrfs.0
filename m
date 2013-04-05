@@ -1,58 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37868 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:38571 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934706Ab3DHCIK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2013 22:08:10 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r382888o008667
+	with ESMTP id S1751366Ab3DEFxr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:47 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355rkQG001764
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 02:08:09 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r38287aC019084
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 02:08:08 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:47 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355rjtO005028
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:46 GMT
 Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r38287KR026016
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 02:08:07 GMT
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355rjfv017065
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:53:45 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 9/9 v2] btrfs-progs: fix btrfs scrub start help
-Date: Mon,  8 Apr 2013 10:09:30 +0800
-Message-Id: <1365386970-16435-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1365141303-10571-10-git-send-email-anand.jain@oracle.com>
-References: <1365141303-10571-10-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/9] [RESEND] btrfs-progs: root_item generation_v2 is out of sync after btrfsck
+Date: Fri,  5 Apr 2013 13:54:55 +0800
+Message-Id: <1365141303-10571-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
+References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-a very trivial fix
+reproducing steps:
+mkfs.btrfs /dev/dm-2 -f
+mount /dev/dm-2 /btrfs
+umount /btrfs
+btrfs check /dev/dm-2 --repair
+mount /dev/dm-2 /btrfs
+
+----
+btrfs: mismatching generation and generation_v2 found in root item. This root was probably mounted with an older kernel. Resetting all new fields.
+----
+
+btrfs-debug-tree shows change in uuid
+
+< 		root data bytenr 29425664 level 0 dirid 0 refs 1 gen 43
+< 		uuid 293596e8-7888-eb4c-9134-6df9db996fe5
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-scrub.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ root-tree.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 5922361..32fcc20 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1465,7 +1465,7 @@ out:
- }
+diff --git a/root-tree.c b/root-tree.c
+index c10d068..4454147 100644
+--- a/root-tree.c
++++ b/root-tree.c
+@@ -69,6 +69,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	int ret;
+ 	int slot;
+ 	unsigned long ptr;
++	u32 old_size;
  
- static const char * const cmd_scrub_start_usage[] = {
--	"btrfs scrub start Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
-+	"btrfs scrub start [Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
- 	"Start a new scrub",
- 	"",
- 	"-B     do not background",
-@@ -1526,7 +1526,7 @@ out:
- }
- 
- static const char * const cmd_scrub_resume_usage[] = {
--	"btrfs scrub resume [-Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
-+	"btrfs scrub resume [-Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
- 	"Resume previously canceled or interrupted scrub",
- 	"",
- 	"-B     do not background",
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
+@@ -79,6 +80,18 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	l = path->nodes[0];
+ 	slot = path->slots[0];
+ 	ptr = btrfs_item_ptr_offset(l, slot);
++	/*
++	* If the btrfs-progs is newer and kernel is at
++	* generation_v1 then we don't touch v2 items
++	* otherwise when kernel is at same or greater
++	* version compared with btrfs-progs then update
++	* the needed
++	*/
++	old_size = btrfs_item_size_nr(l, slot);
++	if (old_size >= sizeof(*item)) {
++		btrfs_set_root_generation_v2(item,
++			btrfs_root_generation(item));
++	}
+ 	write_extent_buffer(l, item, ptr, sizeof(*item));
+ 	btrfs_mark_buffer_dirty(path->nodes[0]);
+ out:
 -- 
 1.8.1.227.g44fe835
 

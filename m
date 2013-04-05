@@ -1,710 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:44648 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1162176Ab3DEU4T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 16:56:19 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 2F81C9A03E9
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2013 14:56:19 -0600 (MDT)
-Received: from mail1.int.fusionio.com ([10.101.1.21]) by mx2.fusionio.com with ESMTP id DvGdYTXaGFAzgKZG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Apr 2013 14:56:17 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix bad extent logging
-Date: Fri, 5 Apr 2013 16:56:15 -0400
-Message-ID: <1365195375-2911-1-git-send-email-jbacik@fusionio.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:29967 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1162241Ab3DEVGo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 17:06:44 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r35L6h7X013992
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 21:06:43 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r35L6ga2014520
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 21:06:43 GMT
+Received: from abhmt107.oracle.com (abhmt107.oracle.com [141.146.116.59])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r35L6gFC025312
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 16:06:42 -0500
+Message-ID: <515F3C0A.8080603@oracle.com>
+Date: Fri, 05 Apr 2013 23:03:06 +0200
+From: Koen De Wit <koen.de.wit@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: [BUG?] Btrfs quota: overwritten space is counted twice
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user sent me a btrfs-image of a file system that was panicing on mount during
-the log recovery.  I had originally thought these problems were from a bug in
-the free space cache code, but that was just a symptom of the problem.  The
-problem is if your application does something like this
+When data in a file is overwritten, starting somewhere in the middle of 
+the file, the overwritten space is counted twice against the space usage 
+numbers. Is this a bug, or did I something wrong?
 
-[prealloc][prealloc][prealloc]
+This is what I did:
 
-the internal extent maps will merge those all together into one extent map, even
-though on disk they are 3 separate extents.  So if you go to write into one of
-these ranges the extent map will be right since we use the physical extent when
-doing the write, but when we log the extents they will use the wrong sizes for
-the remainder prealloc space.  If this doesn't happen to trip up the free space
-cache (which it won't in a lot of cases) then you will get bogus entries in your
-extent tree which will screw stuff up later.  The data and such will still work,
-but everything else is broken.  This patch fixes this by not allowing extents
-that are on the modified list to be merged.  This has the side effect that we
-are no longer adding everything to the modified list all the time, which means
-we now have to call btrfs_drop_extents every time we log an extent into the
-tree.  So this allows me to drop all this speciality code I was using to get
-around calling btrfs_drop_extents.  With this patch the testcase I've created no
-longer creates a bogus file system after replaying the log.  Thanks,
+I create a subvolume and limit it to 4 MB, and create a 1000 KB file in 
+the subvol:
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/ctree.c      |  140 +----------------------------------------------
- fs/btrfs/ctree.h      |    4 --
- fs/btrfs/disk-io.c    |    2 +-
- fs/btrfs/extent_map.c |   18 +++++--
- fs/btrfs/extent_map.h |    2 +-
- fs/btrfs/file.c       |   14 ++---
- fs/btrfs/inode.c      |   35 +++---------
- fs/btrfs/relocation.c |    2 +-
- fs/btrfs/tree-log.c   |  144 ++----------------------------------------------
- fs/btrfs/volumes.c    |    4 +-
- 10 files changed, 41 insertions(+), 324 deletions(-)
+     # btrfs subvol create s
+       Create subvolume './s'
+     # btrfs qgroup limit 4m s
+     # btrfs qgroup show ./ | grep 260
+       0/260 4096 4096
+     # dd if=/dev/zero of=s/file bs=1024 count=1000; sync
+     # ls -lah s/file
+       -rw-r--r--. 1 root root 1000K Apr  6 00:13 s/file
+     # btrfs qgroup show ./ | grep 260
+       0/260 1028096 1028096
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index fe032ab..9ca0f6a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2211,9 +2211,6 @@ static noinline void unlock_up(struct btrfs_path *path, int level,
- 	int no_skips = 0;
- 	struct extent_buffer *t;
- 
--	if (path->really_keep_locks)
--		return;
--
- 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
- 		if (!path->nodes[i])
- 			break;
-@@ -2261,7 +2258,7 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
- {
- 	int i;
- 
--	if (path->keep_locks || path->really_keep_locks)
-+	if (path->keep_locks)
- 		return;
- 
- 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
-@@ -2494,7 +2491,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 	if (!cow)
- 		write_lock_level = -1;
- 
--	if (cow && (p->really_keep_locks || p->keep_locks || p->lowest_level))
-+	if (cow && (p->keep_locks || p->lowest_level))
- 		write_lock_level = BTRFS_MAX_LEVEL;
- 
- 	min_write_lock_level = write_lock_level;
-@@ -5465,139 +5462,6 @@ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path)
- 	return btrfs_next_old_leaf(root, path, 0);
- }
- 
--/* Release the path up to but not including the given level */
--static void btrfs_release_level(struct btrfs_path *path, int level)
--{
--	int i;
--
--	for (i = 0; i < level; i++) {
--		path->slots[i] = 0;
--		if (!path->nodes[i])
--			continue;
--		if (path->locks[i]) {
--			btrfs_tree_unlock_rw(path->nodes[i], path->locks[i]);
--			path->locks[i] = 0;
--		}
--		free_extent_buffer(path->nodes[i]);
--		path->nodes[i] = NULL;
--	}
--}
--
--/*
-- * This function assumes 2 things
-- *
-- * 1) You are using path->keep_locks
-- * 2) You are not inserting items.
-- *
-- * If either of these are not true do not use this function. If you need a next
-- * leaf with either of these not being true then this function can be easily
-- * adapted to do that, but at the moment these are the limitations.
-- */
--int btrfs_next_leaf_write(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct btrfs_path *path,
--			  int del)
--{
--	struct extent_buffer *b;
--	struct btrfs_key key;
--	u32 nritems;
--	int level = 1;
--	int slot;
--	int ret = 1;
--	int write_lock_level = BTRFS_MAX_LEVEL;
--	int ins_len = del ? -1 : 0;
--
--	WARN_ON(!(path->keep_locks || path->really_keep_locks));
--
--	nritems = btrfs_header_nritems(path->nodes[0]);
--	btrfs_item_key_to_cpu(path->nodes[0], &key, nritems - 1);
--
--	while (path->nodes[level]) {
--		nritems = btrfs_header_nritems(path->nodes[level]);
--		if (!(path->locks[level] & BTRFS_WRITE_LOCK)) {
--search:
--			btrfs_release_path(path);
--			ret = btrfs_search_slot(trans, root, &key, path,
--						ins_len, 1);
--			if (ret < 0)
--				goto out;
--			level = 1;
--			continue;
--		}
--
--		if (path->slots[level] >= nritems - 1) {
--			level++;
--			continue;
--		}
--
--		btrfs_release_level(path, level);
--		break;
--	}
--
--	if (!path->nodes[level]) {
--		ret = 1;
--		goto out;
--	}
--
--	path->slots[level]++;
--	b = path->nodes[level];
--
--	while (b) {
--		level = btrfs_header_level(b);
--
--		if (!should_cow_block(trans, root, b))
--			goto cow_done;
--
--		btrfs_set_path_blocking(path);
--		ret = btrfs_cow_block(trans, root, b,
--				      path->nodes[level + 1],
--				      path->slots[level + 1], &b);
--		if (ret)
--			goto out;
--cow_done:
--		path->nodes[level] = b;
--		btrfs_clear_path_blocking(path, NULL, 0);
--		if (level != 0) {
--			ret = setup_nodes_for_search(trans, root, path, b,
--						     level, ins_len,
--						     &write_lock_level);
--			if (ret == -EAGAIN)
--				goto search;
--			if (ret)
--				goto out;
--
--			b = path->nodes[level];
--			slot = path->slots[level];
--
--			ret = read_block_for_search(trans, root, path,
--						    &b, level, slot, &key, 0);
--			if (ret == -EAGAIN)
--				goto search;
--			if (ret)
--				goto out;
--			level = btrfs_header_level(b);
--			if (!btrfs_try_tree_write_lock(b)) {
--				btrfs_set_path_blocking(path);
--				btrfs_tree_lock(b);
--				btrfs_clear_path_blocking(path, b,
--							  BTRFS_WRITE_LOCK);
--			}
--			path->locks[level] = BTRFS_WRITE_LOCK;
--			path->nodes[level] = b;
--			path->slots[level] = 0;
--		} else {
--			path->slots[level] = 0;
--			ret = 0;
--			break;
--		}
--	}
--
--out:
--	if (ret)
--		btrfs_release_path(path);
--
--	return ret;
--}
--
- int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			u64 time_seq)
- {
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ce0ac37..01e5c3d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -586,7 +586,6 @@ struct btrfs_path {
- 	unsigned int skip_locking:1;
- 	unsigned int leave_spinning:1;
- 	unsigned int search_commit_root:1;
--	unsigned int really_keep_locks:1;
- };
- 
- /*
-@@ -3279,9 +3278,6 @@ static inline int btrfs_insert_empty_item(struct btrfs_trans_handle *trans,
- }
- 
- int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
--int btrfs_next_leaf_write(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct btrfs_path *path,
--			  int del);
- int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			u64 time_seq);
- static inline int btrfs_next_old_item(struct btrfs_root *root,
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ffd4ce7..2f14bd2 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -222,7 +222,7 @@ static struct extent_map *btree_get_extent(struct inode *inode,
- 	em->bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
- 
- 	write_lock(&em_tree->lock);
--	ret = add_extent_mapping(em_tree, em);
-+	ret = add_extent_mapping(em_tree, em, 0);
- 	if (ret == -EEXIST) {
- 		free_extent_map(em);
- 		em = lookup_extent_mapping(em_tree, start, len);
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 2834ca5..ca96874 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -174,6 +174,14 @@ static int mergable_maps(struct extent_map *prev, struct extent_map *next)
- 	    test_bit(EXTENT_FLAG_LOGGING, &next->flags))
- 		return 0;
- 
-+	/*
-+	 * We don't want to merge stuff that hasn't been written to the log yet
-+	 * since it may not reflect exactly what is on disk, and that would be
-+	 * bad.
-+	 */
-+	if (!list_empty(&prev->list) || !list_empty(&next->list))
-+		return 0;
-+
- 	if (extent_map_end(prev) == next->start &&
- 	    prev->flags == next->flags &&
- 	    prev->bdev == next->bdev &&
-@@ -209,9 +217,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 			em->mod_len = (em->mod_len + em->mod_start) - merge->mod_start;
- 			em->mod_start = merge->mod_start;
- 			em->generation = max(em->generation, merge->generation);
--			list_move(&em->list, &tree->modified_extents);
- 
--			list_del_init(&merge->list);
- 			rb_erase(&merge->rb_node, &tree->map);
- 			free_extent_map(merge);
- 		}
-@@ -227,7 +233,6 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 		merge->in_tree = 0;
- 		em->mod_len = (merge->mod_start + merge->mod_len) - em->mod_start;
- 		em->generation = max(em->generation, merge->generation);
--		list_del_init(&merge->list);
- 		free_extent_map(merge);
- 	}
- }
-@@ -302,7 +307,7 @@ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
-  * reference dropped if the merge attempt was successful.
-  */
- int add_extent_mapping(struct extent_map_tree *tree,
--		       struct extent_map *em)
-+		       struct extent_map *em, int modified)
- {
- 	int ret = 0;
- 	struct rb_node *rb;
-@@ -324,7 +329,10 @@ int add_extent_mapping(struct extent_map_tree *tree,
- 	em->mod_start = em->start;
- 	em->mod_len = em->len;
- 
--	try_merge_map(tree, em);
-+	if (modified)
-+		list_move(&em->list, &tree->modified_extents);
-+	else
-+		try_merge_map(tree, em);
- out:
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index b18314b..61adc44 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -62,7 +62,7 @@ void extent_map_tree_init(struct extent_map_tree *tree);
- struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
- 					 u64 start, u64 len);
- int add_extent_mapping(struct extent_map_tree *tree,
--		       struct extent_map *em);
-+		       struct extent_map *em, int modified);
- int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
- 
- struct extent_map *alloc_extent_map(void);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 17f52a3..c99942b 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -552,6 +552,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 	int testend = 1;
- 	unsigned long flags;
- 	int compressed = 0;
-+	bool modified;
- 
- 	WARN_ON(end < start);
- 	if (end == (u64)-1) {
-@@ -561,6 +562,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 	while (1) {
- 		int no_splits = 0;
- 
-+		modified = false;
- 		if (!split)
- 			split = alloc_extent_map();
- 		if (!split2)
-@@ -592,6 +594,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
- 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
- 		clear_bit(EXTENT_FLAG_LOGGING, &flags);
-+		modified = !list_empty(&em->list);
- 		remove_extent_mapping(em_tree, em);
- 		if (no_splits)
- 			goto next;
-@@ -614,9 +617,8 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 			split->bdev = em->bdev;
- 			split->flags = flags;
- 			split->compress_type = em->compress_type;
--			ret = add_extent_mapping(em_tree, split);
-+			ret = add_extent_mapping(em_tree, split, modified);
- 			BUG_ON(ret); /* Logic error */
--			list_move(&split->list, &em_tree->modified_extents);
- 			free_extent_map(split);
- 			split = split2;
- 			split2 = NULL;
-@@ -645,9 +647,8 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 				split->orig_start = em->orig_start;
- 			}
- 
--			ret = add_extent_mapping(em_tree, split);
-+			ret = add_extent_mapping(em_tree, split, modified);
- 			BUG_ON(ret); /* Logic error */
--			list_move(&split->list, &em_tree->modified_extents);
- 			free_extent_map(split);
- 			split = NULL;
- 		}
-@@ -1930,10 +1931,7 @@ out:
- 		do {
- 			btrfs_drop_extent_cache(inode, offset, end - 1, 0);
- 			write_lock(&em_tree->lock);
--			ret = add_extent_mapping(em_tree, hole_em);
--			if (!ret)
--				list_move(&hole_em->list,
--					  &em_tree->modified_extents);
-+			ret = add_extent_mapping(em_tree, hole_em, 1);
- 			write_unlock(&em_tree->lock);
- 		} while (ret == -EEXIST);
- 		free_extent_map(hole_em);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0dd3ac4..cca1f81 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -732,10 +732,7 @@ retry:
- 
- 		while (1) {
- 			write_lock(&em_tree->lock);
--			ret = add_extent_mapping(em_tree, em);
--			if (!ret)
--				list_move(&em->list,
--					  &em_tree->modified_extents);
-+			ret = add_extent_mapping(em_tree, em, 1);
- 			write_unlock(&em_tree->lock);
- 			if (ret != -EEXIST) {
- 				free_extent_map(em);
-@@ -941,10 +938,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 
- 		while (1) {
- 			write_lock(&em_tree->lock);
--			ret = add_extent_mapping(em_tree, em);
--			if (!ret)
--				list_move(&em->list,
--					  &em_tree->modified_extents);
-+			ret = add_extent_mapping(em_tree, em, 1);
- 			write_unlock(&em_tree->lock);
- 			if (ret != -EEXIST) {
- 				free_extent_map(em);
-@@ -1387,10 +1381,7 @@ out_check:
- 			em->generation = -1;
- 			while (1) {
- 				write_lock(&em_tree->lock);
--				ret = add_extent_mapping(em_tree, em);
--				if (!ret)
--					list_move(&em->list,
--						  &em_tree->modified_extents);
-+				ret = add_extent_mapping(em_tree, em, 1);
- 				write_unlock(&em_tree->lock);
- 				if (ret != -EEXIST) {
- 					free_extent_map(em);
-@@ -4467,10 +4458,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 
- 			while (1) {
- 				write_lock(&em_tree->lock);
--				err = add_extent_mapping(em_tree, hole_em);
--				if (!err)
--					list_move(&hole_em->list,
--						  &em_tree->modified_extents);
-+				err = add_extent_mapping(em_tree, hole_em, 1);
- 				write_unlock(&em_tree->lock);
- 				if (err != -EEXIST)
- 					break;
-@@ -5989,7 +5977,8 @@ static int merge_extent_mapping(struct extent_map_tree *em_tree,
- 		em->block_start += start_diff;
- 		em->block_len -= start_diff;
- 	}
--	return add_extent_mapping(em_tree, em);
-+	printk(KERN_ERR "merging here for %Lu\n", em->orig_start);
-+	return add_extent_mapping(em_tree, em, 0);
- }
- 
- static noinline int uncompress_inline(struct btrfs_path *path,
-@@ -6283,7 +6272,7 @@ insert:
- 
- 	err = 0;
- 	write_lock(&em_tree->lock);
--	ret = add_extent_mapping(em_tree, em);
-+	ret = add_extent_mapping(em_tree, em, 0);
- 	/* it is possible that someone inserted the extent into the tree
- 	 * while we had the lock dropped.  It is also possible that
- 	 * an overlapping map exists in the tree
-@@ -6706,10 +6695,7 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 		btrfs_drop_extent_cache(inode, em->start,
- 				em->start + em->len - 1, 0);
- 		write_lock(&em_tree->lock);
--		ret = add_extent_mapping(em_tree, em);
--		if (!ret)
--			list_move(&em->list,
--				  &em_tree->modified_extents);
-+		ret = add_extent_mapping(em_tree, em, 1);
- 		write_unlock(&em_tree->lock);
- 	} while (ret == -EEXIST);
- 
-@@ -8593,10 +8579,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 
- 		while (1) {
- 			write_lock(&em_tree->lock);
--			ret = add_extent_mapping(em_tree, em);
--			if (!ret)
--				list_move(&em->list,
--					  &em_tree->modified_extents);
-+			ret = add_extent_mapping(em_tree, em, 1);
- 			write_unlock(&em_tree->lock);
- 			if (ret != -EEXIST)
- 				break;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 50deb9ed..1329f91 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2979,7 +2979,7 @@ int setup_extent_mapping(struct inode *inode, u64 start, u64 end,
- 	lock_extent(&BTRFS_I(inode)->io_tree, start, end);
- 	while (1) {
- 		write_lock(&em_tree->lock);
--		ret = add_extent_mapping(em_tree, em);
-+		ret = add_extent_mapping(em_tree, em, 0);
- 		write_unlock(&em_tree->lock);
- 		if (ret != -EEXIST) {
- 			free_extent_map(em);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 592aa65..b069faf 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3209,115 +3209,6 @@ static int extent_cmp(void *priv, struct list_head *a, struct list_head *b)
- 	return 0;
- }
- 
--static int drop_adjacent_extents(struct btrfs_trans_handle *trans,
--				 struct btrfs_root *root, struct inode *inode,
--				 struct extent_map *em,
--				 struct btrfs_path *path)
--{
--	struct btrfs_file_extent_item *fi;
--	struct extent_buffer *leaf;
--	struct btrfs_key key, new_key;
--	struct btrfs_map_token token;
--	u64 extent_end;
--	u64 extent_offset = 0;
--	int extent_type;
--	int del_slot = 0;
--	int del_nr = 0;
--	int ret = 0;
--
--	while (1) {
--		btrfs_init_map_token(&token);
--		leaf = path->nodes[0];
--		path->slots[0]++;
--		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
--			if (del_nr) {
--				ret = btrfs_del_items(trans, root, path,
--						      del_slot, del_nr);
--				if (ret)
--					return ret;
--				del_nr = 0;
--			}
--
--			ret = btrfs_next_leaf_write(trans, root, path, 1);
--			if (ret < 0)
--				return ret;
--			if (ret > 0)
--				return 0;
--			leaf = path->nodes[0];
--		}
--
--		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--		if (key.objectid != btrfs_ino(inode) ||
--		    key.type != BTRFS_EXTENT_DATA_KEY ||
--		    key.offset >= em->start + em->len)
--			break;
--
--		fi = btrfs_item_ptr(leaf, path->slots[0],
--				    struct btrfs_file_extent_item);
--		extent_type = btrfs_token_file_extent_type(leaf, fi, &token);
--		if (extent_type == BTRFS_FILE_EXTENT_REG ||
--		    extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
--			extent_offset = btrfs_token_file_extent_offset(leaf,
--								fi, &token);
--			extent_end = key.offset +
--				btrfs_token_file_extent_num_bytes(leaf, fi,
--								  &token);
--		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
--			extent_end = key.offset +
--				btrfs_file_extent_inline_len(leaf, fi);
--		} else {
--			BUG();
--		}
--
--		if (extent_end <= em->len + em->start) {
--			if (!del_nr) {
--				del_slot = path->slots[0];
--			}
--			del_nr++;
--			continue;
--		}
--
--		/*
--		 * Ok so we'll ignore previous items if we log a new extent,
--		 * which can lead to overlapping extents, so if we have an
--		 * existing extent we want to adjust we _have_ to check the next
--		 * guy to make sure we even need this extent anymore, this keeps
--		 * us from panicing in set_item_key_safe.
--		 */
--		if (path->slots[0] < btrfs_header_nritems(leaf) - 1) {
--			struct btrfs_key tmp_key;
--
--			btrfs_item_key_to_cpu(leaf, &tmp_key,
--					      path->slots[0] + 1);
--			if (tmp_key.objectid == btrfs_ino(inode) &&
--			    tmp_key.type == BTRFS_EXTENT_DATA_KEY &&
--			    tmp_key.offset <= em->start + em->len) {
--				if (!del_nr)
--					del_slot = path->slots[0];
--				del_nr++;
--				continue;
--			}
--		}
--
--		BUG_ON(extent_type == BTRFS_FILE_EXTENT_INLINE);
--		memcpy(&new_key, &key, sizeof(new_key));
--		new_key.offset = em->start + em->len;
--		btrfs_set_item_key_safe(trans, root, path, &new_key);
--		extent_offset += em->start + em->len - key.offset;
--		btrfs_set_token_file_extent_offset(leaf, fi, extent_offset,
--						   &token);
--		btrfs_set_token_file_extent_num_bytes(leaf, fi, extent_end -
--						      (em->start + em->len),
--						      &token);
--		btrfs_mark_buffer_dirty(leaf);
--	}
--
--	if (del_nr)
--		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
--
--	return ret;
--}
--
- static int log_one_extent(struct btrfs_trans_handle *trans,
- 			  struct inode *inode, struct btrfs_root *root,
- 			  struct extent_map *em, struct btrfs_path *path)
-@@ -3339,39 +3230,24 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	int index = log->log_transid % 2;
- 	bool skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 
--insert:
-+	ret = __btrfs_drop_extents(trans, log, inode, path, em->start,
-+				   em->start + em->len, NULL, 0);
-+	if (ret)
-+		return ret;
-+
- 	INIT_LIST_HEAD(&ordered_sums);
- 	btrfs_init_map_token(&token);
- 	key.objectid = btrfs_ino(inode);
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = em->start;
--	path->really_keep_locks = 1;
- 
- 	ret = btrfs_insert_empty_item(trans, log, path, &key, sizeof(*fi));
--	if (ret && ret != -EEXIST) {
--		path->really_keep_locks = 0;
-+	if (ret)
- 		return ret;
--	}
- 	leaf = path->nodes[0];
- 	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
- 
--	/*
--	 * If we are overwriting an inline extent with a real one then we need
--	 * to just delete the inline extent as it may not be large enough to
--	 * have the entire file_extent_item.
--	 */
--	if (ret && btrfs_token_file_extent_type(leaf, fi, &token) ==
--	    BTRFS_FILE_EXTENT_INLINE) {
--		ret = btrfs_del_item(trans, log, path);
--		btrfs_release_path(path);
--		if (ret) {
--			path->really_keep_locks = 0;
--			return ret;
--		}
--		goto insert;
--	}
--
- 	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
- 					       &token);
- 	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
-@@ -3417,15 +3293,7 @@ insert:
- 	btrfs_set_token_file_extent_other_encoding(leaf, fi, 0, &token);
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	/*
--	 * Have to check the extent to the right of us to make sure it doesn't
--	 * fall in our current range.  We're ok if the previous extent is in our
--	 * range since the recovery stuff will run us in key order and thus just
--	 * drop the part we overwrote.
--	 */
--	ret = drop_adjacent_extents(trans, log, inode, em, path);
- 	btrfs_release_path(path);
--	path->really_keep_locks = 0;
- 	if (ret) {
- 		return ret;
- 	}
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3994767..0d7ab7e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3932,7 +3932,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 
- 	em_tree = &extent_root->fs_info->mapping_tree.map_tree;
- 	write_lock(&em_tree->lock);
--	ret = add_extent_mapping(em_tree, em);
-+	ret = add_extent_mapping(em_tree, em, 0);
- 	write_unlock(&em_tree->lock);
- 	if (ret) {
- 		free_extent_map(em);
-@@ -5476,7 +5476,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	}
- 
- 	write_lock(&map_tree->map_tree.lock);
--	ret = add_extent_mapping(&map_tree->map_tree, em);
-+	ret = add_extent_mapping(&map_tree->map_tree, em, 0);
- 	write_unlock(&map_tree->map_tree.lock);
- 	BUG_ON(ret); /* Tree corruption */
- 	free_extent_map(em);
--- 
-1.7.7.6
+Then I overwrite the last 900 KB of the file, and add 100 KB of data, 
+resulting in a 1.1 MB file. The space usage numbers shows 2 MB however:
 
+     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=100; sync
+     # ls -lah s/file
+       -rw-r--r--. 1 root root 1.1M Apr  6 00:13 s/file
+     # btrfs qgroup show ./ | grep 260
+       0/260 2052096 2052096
+
+I repeat this twice, the file becomes 1.3 MB but the usage number goes 
+to almost 4 MB:
+
+     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=200; sync
+     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=300; sync
+     # ls -lah s/file
+       -rw-r--r--. 1 root root 1.3M Apr  6 00:14 s/file
+     # btrfs qgroup show ./ | grep 260
+       0/260 4100096 4100096
+
+Doing the same again results in "quota exceeded" errors:
+
+     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=400; sync
+       dd: writing `s/file': Disk quota exceeded
+       78+0 records in
+       77+0 records out
+       78848 bytes (79 kB) copied, 0.00138135 s, 57.1 MB/s
+     # ls -lah s/file
+       -rw-r--r--. 1 root root 477K Apr  6 00:15 s/file
+     # btrfs qgroup show ./ | grep 260
+       0/260 4182016 4182016
+     # touch s/emptyfile
+       touch: cannot touch `s/emptyfile': Disk quota exceeded
+
+Koen.

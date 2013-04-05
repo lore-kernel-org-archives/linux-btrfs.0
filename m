@@ -1,84 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:7762 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752792Ab3DUXJz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Apr 2013 19:09:55 -0400
-Message-ID: <51747196.9090501@redhat.com>
-Date: Sun, 21 Apr 2013 18:09:10 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 01/11, RESEND] btrfs-progs: root_item generation_v2 is
- out of sync after btrfsck
-References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com> <1366007897-26567-1-git-send-email-anand.jain@oracle.com> <1366007897-26567-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1366007897-26567-2-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from aserp1040.oracle.com ([141.146.126.69]:25844 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161346Ab3DEFxw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:52 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355rpEd032435
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:51 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355roQR012035
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:51 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355roF5021531
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:53:50 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 5/9] [RESEND] btrfs-progs: delete unused function get_mountpt
+Date: Fri,  5 Apr 2013 13:54:59 +0800
+Message-Id: <1365141303-10571-6-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
+References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/15/13 1:38 AM, Anand Jain wrote:
-> reproducing steps:
-> mkfs.btrfs /dev/dm-2 -f
-> mount /dev/dm-2 /btrfs
-> umount /btrfs
-> btrfs check /dev/dm-2 --repair
-> mount /dev/dm-2 /btrfs
-> 
-> ----
-> btrfs: mismatching generation and generation_v2 found in root item. This root was probably mounted with an older kernel. Resetting all new fields.
-> ----
+and get_btrfs_mount has replaced it
 
-After this patch (on the integration branch), I'm getting:
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
-[61371.570449] btrfs: mismatching generation and generation_v2 found in root item. This root was probably mounted with an older kernel. Resetting all new fields.
-
-when I run xfstests on my box...
-
-Reverting to an older mkfs.btrfs makes it go away.
-
--Eric
-
-> btrfs-debug-tree shows change in uuid
-> 
-> < 		root data bytenr 29425664 level 0 dirid 0 refs 1 gen 43
-> < 		uuid 293596e8-7888-eb4c-9134-6df9db996fe5
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  root-tree.c | 13 +++++++++++++
->  1 file changed, 13 insertions(+)
-> 
-> diff --git a/root-tree.c b/root-tree.c
-> index c10d068..4454147 100644
-> --- a/root-tree.c
-> +++ b/root-tree.c
-> @@ -69,6 +69,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
->  	int ret;
->  	int slot;
->  	unsigned long ptr;
-> +	u32 old_size;
->  
->  	path = btrfs_alloc_path();
->  	BUG_ON(!path);
-> @@ -79,6 +80,18 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
->  	l = path->nodes[0];
->  	slot = path->slots[0];
->  	ptr = btrfs_item_ptr_offset(l, slot);
-> +	/*
-> +	* If the btrfs-progs is newer and kernel is at
-> +	* generation_v1 then we don't touch v2 items
-> +	* otherwise when kernel is at same or greater
-> +	* version compared with btrfs-progs then update
-> +	* the needed
-> +	*/
-> +	old_size = btrfs_item_size_nr(l, slot);
-> +	if (old_size >= sizeof(*item)) {
-> +		btrfs_set_root_generation_v2(item,
-> +			btrfs_root_generation(item));
-> +	}
->  	write_extent_buffer(l, item, ptr, sizeof(*item));
->  	btrfs_mark_buffer_dirty(path->nodes[0]);
->  out:
-> 
+diff --git a/utils.c b/utils.c
+index 21483b8..9c5dbf4 100644
+--- a/utils.c
++++ b/utils.c
+@@ -976,41 +976,6 @@ out_mntloop_err:
+ 	return ret;
+ }
+ 
+-/* Gets the mount point of btrfs filesystem that is using the specified device.
+- * Returns 0 is everything is good, <0 if we have an error.
+- * TODO: Fix this fucntion and check_mounted to work with multiple drive BTRFS
+- * setups.
+- */
+-int get_mountpt(char *dev, char *mntpt, size_t size)
+-{
+-       struct mntent *mnt;
+-       FILE *f;
+-       int ret = 0;
+-
+-       f = setmntent("/proc/mounts", "r");
+-       if (f == NULL)
+-               return -errno;
+-
+-       while ((mnt = getmntent(f)) != NULL )
+-       {
+-               if (strcmp(dev, mnt->mnt_fsname) == 0)
+-               {
+-                       strncpy(mntpt, mnt->mnt_dir, size);
+-                       if (size)
+-                                mntpt[size-1] = 0;
+-                       break;
+-               }
+-       }
+-
+-       if (mnt == NULL)
+-       {
+-               /* We didn't find an entry so lets report an error */
+-               ret = -1;
+-       }
+-
+-       return ret;
+-}
+-
+ struct pending_dir {
+ 	struct list_head list;
+ 	char name[PATH_MAX];
+-- 
+1.8.1.227.g44fe835
 

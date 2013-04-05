@@ -1,42 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34069 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161741Ab3DEOfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Apr 2013 10:35:34 -0400
-Date: Fri, 5 Apr 2013 16:35:32 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: Re: [PATCH V3 1/2] Btrfs: improve the performance of the csums lookup
-Message-ID: <20130405143532.GA9152@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5153FB01.9030506@cn.fujitsu.com>
- <515BF138.90309@cn.fujitsu.com>
- <20130404131204.GQ1876@localhost.localdomain>
- <515E7B58.7050904@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <515E7B58.7050904@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:25881 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752241Ab3DEFx5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:57 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355ruiH032483
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:57 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355rtUR012172
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:56 GMT
+Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355rtvW021592
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:53:55 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 9/9] btrfs-progs: fix btrfs scrub start help
+Date: Fri,  5 Apr 2013 13:55:03 +0800
+Message-Id: <1365141303-10571-10-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
+References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 05, 2013 at 03:20:56PM +0800, Miao Xie wrote:
-> It is very likely that there are several blocks in bio, it is very
-> inefficient if we get their csums one by one. This patch improves
-> this problem by getting the csums in batch.
-> 
-> According to the result of the following test, the execute time of
-> __btrfs_lookup_bio_sums() is down by ~28%(300us -> 217us).
-> 
->  # dd if=<mnt>/file of=/dev/null bs=1M count=1024
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
-> Changelog v2 -> v3:
-> - address the problem that the logical offset of the pages in the same bio is
->   not contiguous.
+a very trivial fix
 
-Does not crash at 091 anymore (it's btrfs-next based on 3.9-rc5 + v3).
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-david
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 5922361..ebb0dc9 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -1465,7 +1465,7 @@ out:
+ }
+ 
+ static const char * const cmd_scrub_start_usage[] = {
+-	"btrfs scrub start Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
++	"btrfs scrub start [Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
+ 	"Start a new scrub",
+ 	"",
+ 	"-B     do not background",
+-- 
+1.8.1.227.g44fe835
+

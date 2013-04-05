@@ -1,226 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48288 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750731Ab3DKJ4D (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Apr 2013 05:56:03 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3B9u1Bm009960
+Received: from aserp1040.oracle.com ([141.146.126.69]:25572 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750768Ab3DEFxB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:01 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355qxg2031694
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 09:56:02 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3B9u1jb023393
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:00 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355qx2F000144
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 09:56:01 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r3B9u0Ss028174
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 04:56:00 -0500
-Message-ID: <51668911.4090609@oracle.com>
-Date: Thu, 11 Apr 2013 17:57:37 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:52:59 GMT
+Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355qxfo014661
+	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:52:59 -0500
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [obsoleted] [PATCH 1/5 v5] btrfs-progs: make btrfs dev scan multi
- path aware
-References: <1362132800-29563-1-git-send-email-anand.jain@oracle.com> <1364378856-21053-1-git-send-email-anand.jain@oracle.com> <1364378856-21053-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1364378856-21053-2-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: v6: access to backup superblock
+Date: Fri,  5 Apr 2013 13:54:14 +0800
+Message-Id: <1365141259-10529-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <5127022B.6070200@oracle.com>
+References: <5127022B.6070200@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We need a mechanism to tell when to use the backup super_block.
+To do this it needs a frame-work, and the patch #1 and #2 below
+provides the same without change in the logic.
 
-  This patch is replaced By:
+Its been found and posted to the list that check_mounted
+needs access to the backup-sb and find-root as well. so
+patch #3 provides frame work so that threads which need
+the access to the backup sb can set the flag.
+further,
+patch#4 disables backup-sb access except for check_mounted
+patch#5 provides backup-sb access to find-root
 
-btrfs-progs: avoid ioctl for multipath-dev with its non-multipath path
+v5->v6:
+	Dropped patch 
+		btrfs-progs: make btrfs dev scan multi path aware
+	sorry its a wrong patch, further this branch does not find
+	the problem this patch was trying to address
+	Added patch#5 
 
-  which is also sent to this mailing list.
+-----------------
+v4->v5:
+	Rebase with integration-20130321 and with my own changes (patch #1)
+	Allow check_mounted thread-path to use backup-sb
 
-thanks, Anand
+v3->v4:
+	Fixed some warnings introduced by patch #3 below,
+	sorry my mistake.
 
+v2->v3:
+        Accepts David and Eric review, which would result in disabled
+          access to backup-superblock by default.
+        Dropped the patch
+                [PATCH 3/3] btrfs-progs: use BTRFS_SCAN_BACKUP_SB flag in btrfs_scan_one_device
+        Introduced a new patch
+                [PATCH 3/3] btrfs-progs: disable using backup superblock by default
 
-On 03/27/2013 06:07 PM, Anand Jain wrote:
->   We should avoid using non multi-path (mp) path for mp disks
->   As of now there is no good way (like api) to check that.
->   A workaround way is to check if the O_EXCL open is unsuccessful.
->   This is safe since otherwise the BTRFS_IOC_SCAN_DEV ioctl would
->   fail if the disk-path can not be opened with the flag O_EXCL set.
->
->   This patch also includes some (error) print format changes related
->   to the btrfs dev scan..
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   cmds-device.c | 53 +++++++++++++++++++++++++++++++++++++++--------------
->   utils.c       | 31 ++++++++++++++++++++++++-------
->   2 files changed, 63 insertions(+), 21 deletions(-)
->
-> diff --git a/cmds-device.c b/cmds-device.c
-> index 41e79d3..b8d05fd 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -185,7 +185,7 @@ static const char * const cmd_scan_dev_usage[] = {
->
->   static int cmd_scan_dev(int argc, char **argv)
->   {
-> -	int	i, fd, e;
-> +	int	i, fd, e, ret = 0;
->   	int	checklist = 1;
->   	int	devstart = 1;
->
-> @@ -197,6 +197,21 @@ static int cmd_scan_dev(int argc, char **argv)
->   		devstart += 1;
->   	}
->
-> +	fd = open("/dev/btrfs-control", O_RDWR);
-> +	e = errno;
-> +	if (fd < 0) {
-> +		FILE *mfd = popen("lsmod | grep btrfs", "r");
-> +		char buf[16];
-> +
-> +		if (fread (buf, 1, sizeof (buf), mfd) > 0)
-> +			fprintf(stderr, "ERROR: failed to open "\
-> +				"/dev/btrfs-control - %s\n", strerror(e));
-> +		else
-> +			fprintf(stderr, "ERROR: btrfs kernel module "\
-> +				"is not loaded\n");
-> +		return 10;
-> +	}
-> +
->   	if(argc<=devstart){
->
->   		int ret;
-> @@ -210,20 +225,30 @@ static int cmd_scan_dev(int argc, char **argv)
->   			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
->   			return 18;
->   		}
-> +		printf("done\n");
->   		return 0;
->   	}
->
-> -	fd = open("/dev/btrfs-control", O_RDWR);
-> -	if (fd < 0) {
-> -		perror("failed to open /dev/btrfs-control");
-> -		return 10;
-> -	}
-> -
-> +	printf("Scanning for Btrfs in\n");
->   	for( i = devstart ; i < argc ; i++ ){
-> +		int fdt;
->   		struct btrfs_ioctl_vol_args args;
-> -		int ret;
-> +		printf("  %s ", argv[i]);
-> +		fflush(stdout);
->
-> -		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
-> +		/*
-> +		 * If for a multipath (mp) disk user provides the
-> +		 * non-mp path then open with flag O_EXCL will fail,
-> +		 * (also ioctl opens with O_EXCL), So test it before
-> +		 * calling ioctl.
-> +		 */
-> +		fdt = open(argv[i], O_RDONLY|O_EXCL);
-> +		if (fdt < 0) {
-> +			perror("ERROR");
-> +			ret = -1;
-> +			continue;
-> +		}
-> +		close(fdt);
->
->   		strncpy_null(args.name, argv[i]);
->   		/*
-> @@ -235,15 +260,15 @@ static int cmd_scan_dev(int argc, char **argv)
->   		e = errno;
->
->   		if( ret < 0 ){
-> -			close(fd);
-> -			fprintf(stderr, "ERROR: unable to scan the device '%s' - %s\n",
-> -				argv[i], strerror(e));
-> -			return 11;
-> +			fprintf(stderr, "ERROR: unable to scan - %s\n",
-> +				strerror(e));
-> +			ret = -1;
->   		}
-> +		printf("found\n");
->   	}
->
->   	close(fd);
-> -	return 0;
-> +	return ret;
->   }
->
->   static const char * const cmd_ready_dev_usage[] = {
-> diff --git a/utils.c b/utils.c
-> index a4f7b06..3a0d444 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1105,25 +1105,32 @@ again:
->   		if (!S_ISBLK(st.st_mode)) {
->   			continue;
->   		}
-> -		fd = open(fullpath, O_RDONLY);
-> +		fd = open(fullpath, O_RDONLY|O_EXCL);
->   		if (fd < 0) {
->   			/* ignore the following errors:
->   				ENXIO (device don't exists)
->   				ENOMEDIUM (No medium found ->
->   					like a cd tray empty)
-> +				EBUSY (when mp disk is opened
-> +					using non-mp path).
->   			*/
-> -			if(errno != ENXIO && errno != ENOMEDIUM)
-> +			if(errno != ENXIO && errno != ENOMEDIUM &&
-> +				errno != EBUSY)
->   				fprintf(stderr, "failed to read %s: %s\n",
->   					fullpath, strerror(errno));
->   			continue;
->   		}
-> +		close(fd);
-> +
-> +		fd = open(fullpath, O_RDONLY);
->   		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
->   					    &num_devices,
->   					    BTRFS_SUPER_INFO_OFFSET);
-> +		close(fd);
-> +
->   		if (ret == 0 && run_ioctl > 0) {
->   			btrfs_register_one_device(fullpath);
->   		}
-> -		close(fd);
->   	}
->   	if (!list_empty(&pending_list)) {
->   		free(pending);
-> @@ -1442,19 +1449,29 @@ scan_again:
->   			continue;
->   		}
->
-> -		fd = open(fullpath, O_RDONLY);
-> +		/* This will fail for the multi path devices
-> +		* when non multipath path is used. So we avoid
-> +		* sending it to the kernel which eventually will
-> +		* fail.
-> +		*/
-> +		fd = open(fullpath, O_RDONLY|O_EXCL);
->   		if (fd < 0) {
-> -			fprintf(stderr, "failed to open %s: %s\n",
-> -				fullpath, strerror(errno));
-> +			if (errno != EBUSY) {
-> +				fprintf(stderr, "failed to open %s: %s\n",
-> +					fullpath, strerror(errno));
-> +			}
->   			continue;
->   		}
-> +		close(fd);
-> +
-> +		fd = open(fullpath, O_RDONLY);
->   		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
->   					    &num_devices,
->   					    BTRFS_SUPER_INFO_OFFSET);
-> +		close(fd);
->   		if (ret == 0 && run_ioctl > 0) {
->   			btrfs_register_one_device(fullpath);
->   		}
-> -		close(fd);
->   	}
->
->   	fclose(proc_partitions);
->
+v1->v2:
+        Accepts Eric and Zach review.
+        Separates fix into 3 patches for easy logical understanding
+
+Anand Jain (5):
+  btrfs-progs: Introduce flag BTRFS_SCAN_REGISTER to replace run_ioctl
+  btrfs-progs: Introduce flag BTRFS_SCAN_BACKUP_SB for
+    btrfs_read_dev_super
+  btrfs-progs: introduce passing flags to btrfs_scan_one_device
+  btrfs-progs: disable using backup superblock by default
+  btrfs-progs: btrfs-find-root should scan backup-sb
+
+ cmds-device.c  |  4 ++--
+ cmds-replace.c |  2 +-
+ disk-io.c      | 15 ++++++++++-----
+ disk-io.h      |  3 ++-
+ find-root.c    |  9 ++++++---
+ utils.c        | 29 +++++++++++++++++------------
+ utils.h        |  8 +++++---
+ volumes.c      |  6 ++++--
+ volumes.h      |  2 +-
+ 9 files changed, 48 insertions(+), 30 deletions(-)
+
+-- 
+1.8.1.227.g44fe835
+

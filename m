@@ -1,177 +1,515 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:22186 "EHLO xp-ob.rzone.de"
+Received: from mx1.redhat.com ([209.132.183.28]:33344 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751669Ab3DELoL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Apr 2013 07:44:11 -0400
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: quota rescan
-Date: Fri,  5 Apr 2013 13:44:06 +0200
-Message-Id: <1365162246-21830-1-git-send-email-list.btrfs@jan-o-sch.net>
+	id S932205Ab3DFTYp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 6 Apr 2013 15:24:45 -0400
+Message-ID: <516069AC.7030900@redhat.com>
+Date: Sat, 06 Apr 2013 13:30:04 -0500
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Mark Fasheh <mfasheh@suse.de>
+Subject: btrfs-progs: re-add send-test
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds the quota rescan command to be used if qgroup tracking should get
-out of sync. Can also be used to query the status of a running rescan
-operation.
+From: Mark Fasheh <mfasheh@suse.de>
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+btrfs-progs: re-add send-test
+
+send-test.c links against libbtrfs and uses the send functionality provided
+to decode and print a send stream to the console.
+
+66819df "btrfs-progs: add send-test" contained this file when
+submitted, but somehow got lost on commit.
+
+[sandeen@redhat.com: Resurrect lost send-test.c from original commit]
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- cmds-quota.c |   63 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
- ioctl.h      |   46 ++++++++++++++++++++++++-----------------
- 2 files changed, 85 insertions(+), 24 deletions(-)
 
-diff --git a/cmds-quota.c b/cmds-quota.c
-index 8481514..1169772 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -90,17 +90,70 @@ static int cmd_quota_disable(int argc, char **argv)
- }
+TBH I've not tested this, just bringing it back verbatim from the
+original patch on the list.  We had the make target but not the C file!
+
+-Eric
+
+diff --git a/Makefile b/Makefile
+index a270e9c..2275b97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -194,7 +194,7 @@ ioctl-test: $(objects) $(libs) ioctl-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o ioctl-test $(objects) ioctl-test.o $(LDFLAGS) $(LIBS)
  
- static const char * const cmd_quota_rescan_usage[] = {
--	"btrfs quota rescan <path>",
--	"Rescan the subvolume for a changed quota setting.",
-+	"btrfs quota rescan [-s] <path>",
-+	"Trash all qgroup numbers and scan the metadata again with the current config.",
-+	"",
-+	"-s   show status of a running rescan operation",
- 	NULL
- };
+-send-test: $(objects) send-test.o
++send-test: $(objects) $(libs) send-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o send-test $(objects) send-test.o $(LDFLAGS) $(LIBS) -lpthread
  
- static int cmd_quota_rescan(int argc, char **argv)
- {
--	int ret = quota_ctl(BTRFS_QUOTA_CTL_RESCAN, argc, argv);
--	if (ret < 0)
-+	int ret = 0;
-+	int fd;
-+	int e;
-+	char *path = NULL;
-+	struct btrfs_ioctl_quota_rescan_args args;
-+	int ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
+diff --git a/send-test.c b/send-test.c
+new file mode 100644
+index 0000000..8c14718
+--- /dev/null
++++ b/send-test.c
+@@ -0,0 +1,458 @@
++/*
++ * Copyright (C) 2013 SUSE.  All rights reserved.
++ *
++ * This code is adapted from cmds-send.c and cmds-receive.c,
++ * Both of which are:
++ *
++ * Copyright (C) 2012 Alexander Block.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
-+	optind = 1;
-+	while (1) {
-+		int c = getopt(argc, argv, "s");
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 's':
-+			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
-+			break;
-+		default:
-+			usage(cmd_quota_rescan_usage);
-+		}
-+	}
++#define _GNU_SOURCE
 +
-+	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_quota_rescan_usage);
--	return ret;
++#include <unistd.h>
++#include <stdint.h>
++#include <dirent.h>
++#include <pthread.h>
++#include <math.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <libgen.h>
++#include <mntent.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <asm/types.h>
++#include <uuid/uuid.h>
 +
-+	memset(&args, 0, sizeof(args));
++/*
++ * This should be compilable without the rest of the btrfs-progs
++ * source distribution.
++ */
++#if BTRFS_FLAT_INCLUDES
++#include "send-utils.h"
++#include "send-stream.h"
++#else
++#include <btrfs/send-utils.h>
++#include <btrfs/send-stream.h>
++#endif /* BTRFS_FLAT_INCLUDES */
 +
-+	path = argv[optind];
-+	fd = open_file_or_dir(path);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", path);
-+		return 12;
-+	}
++static int pipefd[2];
++struct btrfs_ioctl_send_args io_send = {0, };
++static char *subvol_path;
++static char *root_path;
 +
-+	ret = ioctl(fd, ioctlnum, &args);
-+	e = errno;
-+	close(fd);
++struct recv_args {
++	char *full_subvol_path;
++	char *root_path;
++};
 +
-+	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN) {
-+		if (ret < 0) {
-+			fprintf(stderr, "ERROR: quota rescan failed: "
-+				"%s\n", strerror(e));
-+			return 30;
-+		}  else {
-+			printf("quota rescan started\n");
-+		}
-+	} else {
-+		if (!args.flags) {
-+			printf("no rescan operation in progress\n");
-+		} else {
-+			printf("rescan operation running (current key %lld)\n",
-+				args.progress);
-+		}
-+	}
++void usage(int error)
++{
++	printf("send-test <btrfs root> <subvol>\n");
++	if (error)
++		exit(error);
++}
++
++static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
++			void *user)
++{
++	struct recv_args *r = user;
++	char uuid_str[128];
++
++	r->full_subvol_path = path_cat(r->root_path, path);
++	uuid_unparse(uuid, uuid_str);
++
++	printf("subvol\t%s\t%llu\t%s\n", uuid_str,
++	       (unsigned long long)ctransid, r->full_subvol_path);
 +
 +	return 0;
- }
- 
- const struct cmd_group quota_cmd_group = {
-diff --git a/ioctl.h b/ioctl.h
-index e841913..1ee631a 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -384,25 +384,6 @@ struct btrfs_ioctl_send_args {
- 	__u64 reserved[4];		/* in */
- };
- 
--#define BTRFS_QUOTA_CTL_ENABLE	1
--#define BTRFS_QUOTA_CTL_DISABLE	2
--#define BTRFS_QUOTA_CTL_RESCAN	3
--struct btrfs_ioctl_quota_ctl_args {
--	__u64 cmd;
--	__u64 status;
--};
--
--struct btrfs_ioctl_qgroup_assign_args {
--	__u64 assign;
--	__u64 src;
--	__u64 dst;
--};
--
--struct btrfs_ioctl_qgroup_create_args {
--	__u64 create;
--	__u64 qgroupid;
--};
--
- enum btrfs_dev_stat_values {
- 	/* disk I/O failure stats */
- 	BTRFS_DEV_STAT_WRITE_ERRS, /* EIO or EREMOTEIO from lower layers */
-@@ -437,6 +418,29 @@ struct btrfs_ioctl_get_dev_stats {
- };
- 
- /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
-+#define BTRFS_QUOTA_CTL_ENABLE	1
-+#define BTRFS_QUOTA_CTL_DISABLE	2
-+/* 3 has formerly been reserved for BTRFS_QUOTA_CTL_RESCAN */
-+struct btrfs_ioctl_quota_ctl_args {
-+	__u64 cmd;
-+	__u64 status;
++}
++
++static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
++			  const u8 *parent_uuid, u64 parent_ctransid,
++			  void *user)
++{
++	struct recv_args *r = user;
++	char uuid_str[128];
++	char parent_uuid_str[128];
++
++	r->full_subvol_path = path_cat(r->root_path, path);
++	uuid_unparse(uuid, uuid_str);
++	uuid_unparse(parent_uuid, parent_uuid_str);
++
++	printf("snapshot\t%s\t%llu\t%s\t%llu\t%s\n", uuid_str,
++	       (unsigned long long)ctransid, parent_uuid_str,
++	       (unsigned long long)parent_ctransid, r->full_subvol_path);
++
++	return 0;
++}
++
++static int print_mkfile(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("mkfile\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_mkdir(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("mkdir\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("mknod\t%llo\t0x%llx\t%s\n", (unsigned long long)mode,
++	       (unsigned long long)dev, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_mkfifo(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("mkfifo\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_mksock(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("mksock\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_symlink(const char *path, const char *lnk, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("symlink\t%s\t%s\n", lnk, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_rename(const char *from, const char *to, void *user)
++{
++	struct recv_args *r = user;
++	char *full_from = path_cat(r->full_subvol_path, from);
++	char *full_to = path_cat(r->full_subvol_path, to);
++
++	printf("rename\t%s\t%s\n", from, to);
++
++	free(full_from);
++	free(full_to);
++	return 0;
++}
++
++static int print_link(const char *path, const char *lnk, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("link\t%s\t%s\n", lnk, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_unlink(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("unlink\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_rmdir(const char *path, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("rmdir\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_write(const char *path, const void *data, u64 offset,
++		       u64 len, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("write\t%llu\t%llu\t%s\n", (unsigned long long)offset,
++	       (unsigned long long)len, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_clone(const char *path, u64 offset, u64 len,
++		       const u8 *clone_uuid, u64 clone_ctransid,
++		       const char *clone_path, u64 clone_offset,
++		       void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("clone\t%s\t%s\n", full_path, clone_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_set_xattr(const char *path, const char *name,
++			   const void *data, int len, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("set_xattr\t%s\t%s\t%d\n", full_path,
++	       name, len);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_remove_xattr(const char *path, const char *name, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("remove_xattr\t%s\t%s\n", full_path, name);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_truncate(const char *path, u64 size, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("truncate\t%llu\t%s\n", (unsigned long long)size, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_chmod(const char *path, u64 mode, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("chmod\t%llo\t%s\n", (unsigned long long)mode, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_chown(const char *path, u64 uid, u64 gid, void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("chown\t%llu\t%llu\t%s\n", (unsigned long long)uid,
++	       (unsigned long long)gid, full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_utimes(const char *path, struct timespec *at,
++			struct timespec *mt, struct timespec *ct,
++			void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("utimes\t%s\n", full_path);
++
++	free(full_path);
++	return 0;
++}
++
++static int print_update_extent(const char *path, u64 offset, u64 len,
++			       void *user)
++{
++	struct recv_args *r = user;
++	char *full_path = path_cat(r->full_subvol_path, path);
++
++	printf("update_extent\t%s\t%llu\t%llu\n", full_path, offset, len);
++
++	free(full_path);
++	return 0;
++}
++
++struct btrfs_send_ops send_ops_print = {
++	.subvol = print_subvol,
++	.snapshot = print_snapshot,
++	.mkfile = print_mkfile,
++	.mkdir = print_mkdir,
++	.mknod = print_mknod,
++	.mkfifo = print_mkfifo,
++	.mksock = print_mksock,
++	.symlink = print_symlink,
++	.rename = print_rename,
++	.link = print_link,
++	.unlink = print_unlink,
++	.rmdir = print_rmdir,
++	.write = print_write,
++	.clone = print_clone,
++	.set_xattr = print_set_xattr,
++	.remove_xattr = print_remove_xattr,
++	.truncate = print_truncate,
++	.chmod = print_chmod,
++	.chown = print_chown,
++	.utimes = print_utimes,
++	.update_extent = print_update_extent,
 +};
 +
-+struct btrfs_ioctl_quota_rescan_args {
-+	__u64	flags;
-+	__u64   progress;
-+};
++static void *process_thread(void *arg_)
++{
++	int ret;
 +
-+struct btrfs_ioctl_qgroup_assign_args {
-+	__u64 assign;
-+	__u64 src;
-+	__u64 dst;
-+};
++	while (1) {
++		ret = btrfs_read_and_process_send_stream(pipefd[0],
++							 &send_ops_print, arg_);
++		if (ret)
++			break;
++	}
 +
-+struct btrfs_ioctl_qgroup_create_args {
-+	__u64 create;
-+	__u64 qgroupid;
-+};
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -520,6 +524,10 @@ struct btrfs_ioctl_clone_range_args {
- 					struct btrfs_ioctl_qgroup_create_args)
- #define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
- 					struct btrfs_ioctl_qgroup_limit_args)
-+#define BTRFS_IOC_QUOTA_RESCAN _IOW(BTRFS_IOCTL_MAGIC, 44, \
-+			       struct btrfs_ioctl_quota_rescan_args)
-+#define BTRFS_IOC_QUOTA_RESCAN_STATUS _IOR(BTRFS_IOCTL_MAGIC, 45, \
-+			       struct btrfs_ioctl_quota_rescan_args)
- #define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
- 				   char[BTRFS_LABEL_SIZE])
- #define BTRFS_IOC_SET_FSLABEL _IOW(BTRFS_IOCTL_MAGIC, 50, \
--- 
-1.7.1
++	if (ret > 0)
++		ret = 0;
++
++	return ERR_PTR(ret);
++}
++
++int main(int argc, char **argv)
++{
++	int ret = 0;
++	int subvol_fd;
++	pthread_t t_read;
++	pthread_attr_t t_attr;
++	void *t_err = NULL;
++	struct recv_args r;
++
++	if (argc != 3)
++		usage(EINVAL);
++
++	root_path = realpath(argv[1], NULL);
++	if (!root_path) {
++		ret = errno;
++		usage(ret);
++	}
++
++	subvol_path = realpath(argv[2], NULL);
++	if (!subvol_path) {
++		ret = errno;
++		usage(ret);
++	}
++
++	r.full_subvol_path = subvol_path;
++	r.root_path = root_path;
++
++	subvol_fd = open(subvol_path, O_RDONLY|O_NOATIME);
++	if (subvol_fd < 0) {
++		ret = errno;
++		fprintf(stderr, "ERROR: Subvolume open failed. %s\n",
++			strerror(ret));
++		goto out;
++	}
++
++	ret = pthread_attr_init(&t_attr);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: pthread init failed. %s\n",
++			strerror(ret));
++		goto out;
++	}
++
++	ret = pipe(pipefd);
++	if (ret < 0) {
++		ret = errno;
++		fprintf(stderr, "ERROR: pipe failed. %s\n", strerror(ret));
++		goto out;
++	}
++
++	ret = pthread_create(&t_read, &t_attr, process_thread, &r);
++	if (ret < 0) {
++		ret = errno;
++		fprintf(stderr, "ERROR: pthread create failed. %s\n",
++			strerror(ret));
++		goto out;
++	}
++
++	io_send.send_fd = pipefd[1];
++	io_send.clone_sources_count = 0;
++	io_send.clone_sources = NULL;
++	io_send.parent_root = 0;
++	io_send.flags = BTRFS_SEND_FLAG_NO_FILE_DATA;
++
++	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
++	if (ret) {
++		ret = errno;
++		fprintf(stderr, "ERROR: send ioctl failed with %d: %s\n", ret,
++			strerror(ret));
++		goto out;
++	}
++
++	close(pipefd[1]);
++
++	ret = pthread_join(t_read, &t_err);
++	if (ret) {
++		fprintf(stderr, "ERROR: pthread_join failed: %s\n",
++			strerror(ret));
++		goto out;
++	}
++	if (t_err) {
++		ret = (long int)t_err;
++		fprintf(stderr, "ERROR: failed to process send stream, ret=%ld "
++			"(%s)\n", (long int)t_err, strerror(ret));
++		goto out;
++	}
++
++	pthread_attr_destroy(&t_attr);
++out:
++	return ret;
++}
 

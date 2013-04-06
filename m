@@ -1,48 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:58632 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754799Ab3DFGUR convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2013 02:20:17 -0400
-Received: by mail-pa0-f48.google.com with SMTP id lj1so2370871pab.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Apr 2013 23:20:16 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [PATCH 0/2] Btrfs: quota rescan for 3.10
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <1365161897-19448-1-git-send-email-list.btrfs@jan-o-sch.net>
-Date: Sat, 6 Apr 2013 14:20:12 +0800
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Message-Id: <372DEC00-3109-4B46-84DD-9D19FC34F98B@gmail.com>
-References: <1365161897-19448-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:58939 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756396Ab3DFHc6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2013 03:32:58 -0400
+Message-ID: <515FCE82.1030309@gmx.net>
+Date: Sat, 06 Apr 2013 09:28:02 +0200
+From: Arne Jansen <sensille@gmx.net>
+MIME-Version: 1.0
+To: Koen De Wit <koen.de.wit@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [BUG?] Btrfs quota: overwritten space is counted twice
+References: <515F3C0A.8080603@oracle.com>
+In-Reply-To: <515F3C0A.8080603@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Jan,
+On 04/05/13 23:03, Koen De Wit wrote:
+> When data in a file is overwritten, starting somewhere in the middle of
+> the file, the overwritten space is counted twice against the space usage
+> numbers. Is this a bug, or did I something wrong?
 
-	Would you please add more lines to the changelog(Just as what you have taught me~~)
-It will be easier for us to review and test the patch before it comes into 3.10.
+Neither. This is a result of how btrfs allocates and overwrites extents.
+Your file is firstly allocated in one extent of 1000kB. When you
+overwrite parts of it, the original extent is kept, and a new extent for
+the overwritten part is allocated, resulting in another allocation of
+1000kB. Once you overwrite the first 100kB (the part that is still in
+use from the first extent), it should be freed.
+So your file really allocates 2000kB on disk, and qgroups accounts
+it correctly. You can verify it with btrfs-debug-tree.
 
+-Arne
 
-Thanks,
-Wang
-> The kernel side for rescan, which is needed if you want to enable qgroup
-> tracking on a non-empty volume.
 > 
-> User space patches to come.
+> This is what I did:
 > 
-> Jan Schmidt (2):
->  Btrfs: rescan for qgroups
->  Btrfs: automatic rescan after "quota enable" command
+> I create a subvolume and limit it to 4 MB, and create a 1000 KB file in
+> the subvol:
 > 
-> fs/btrfs/ctree.h           |   17 ++-
-> fs/btrfs/disk-io.c         |    6 +
-> fs/btrfs/ioctl.c           |   83 +++++++++++--
-> fs/btrfs/qgroup.c          |  281 ++++++++++++++++++++++++++++++++++++++++++--
-> include/uapi/linux/btrfs.h |   11 ++-
-> 5 files changed, 364 insertions(+), 34 deletions(-)
+>     # btrfs subvol create s
+>       Create subvolume './s'
+>     # btrfs qgroup limit 4m s
+>     # btrfs qgroup show ./ | grep 260
+>       0/260 4096 4096
+>     # dd if=/dev/zero of=s/file bs=1024 count=1000; sync
+>     # ls -lah s/file
+>       -rw-r--r--. 1 root root 1000K Apr  6 00:13 s/file
+>     # btrfs qgroup show ./ | grep 260
+>       0/260 1028096 1028096
 > 
-> --
+> Then I overwrite the last 900 KB of the file, and add 100 KB of data,
+> resulting in a 1.1 MB file. The space usage numbers shows 2 MB however:
+> 
+>     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=100; sync
+>     # ls -lah s/file
+>       -rw-r--r--. 1 root root 1.1M Apr  6 00:13 s/file
+>     # btrfs qgroup show ./ | grep 260
+>       0/260 2052096 2052096
+> 
+> I repeat this twice, the file becomes 1.3 MB but the usage number goes
+> to almost 4 MB:
+> 
+>     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=200; sync
+>     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=300; sync
+>     # ls -lah s/file
+>       -rw-r--r--. 1 root root 1.3M Apr  6 00:14 s/file
+>     # btrfs qgroup show ./ | grep 260
+>       0/260 4100096 4100096
+> 
+> Doing the same again results in "quota exceeded" errors:
+> 
+>     # dd if=/dev/zero of=s/file bs=1024 count=1000 seek=400; sync
+>       dd: writing `s/file': Disk quota exceeded
+>       78+0 records in
+>       77+0 records out
+>       78848 bytes (79 kB) copied, 0.00138135 s, 57.1 MB/s
+>     # ls -lah s/file
+>       -rw-r--r--. 1 root root 477K Apr  6 00:15 s/file
+>     # btrfs qgroup show ./ | grep 260
+>       0/260 4182016 4182016
+>     # touch s/emptyfile
+>       touch: cannot touch `s/emptyfile': Disk quota exceeded
+> 
+> Koen.
+> -- 
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,50 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:45685 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161173Ab3DGB7l convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2013 21:59:41 -0400
-Received: by mail-pa0-f49.google.com with SMTP id kp14so2660510pab.36
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Apr 2013 18:59:41 -0700 (PDT)
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: btrfs-progs: undefined reference to `blkid_probe_get_wholedisk_devno'
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <CAF1ivSYuWd0F5C=vMMBpdB1YhSY0Z319+UB8nqA7_5pqNdfT=g@mail.gmail.com>
-Date: Sun, 7 Apr 2013 09:59:34 +0800
-Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
-Message-Id: <4754110E-8C1E-40DC-B910-31F9BFC4F2CC@gmail.com>
-References: <CAF1ivSbyGNjk1rqY_0Jc_1mWJdUZN2-YcUVK4y=2jpZG9SqRSQ@mail.gmail.com> <CAF1ivSYuWd0F5C=vMMBpdB1YhSY0Z319+UB8nqA7_5pqNdfT=g@mail.gmail.com>
-To: Lin Ming <minggr@gmail.com>
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:37349 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161178Ab3DGCCu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2013 22:02:50 -0400
+Received: by mail-wi0-f172.google.com with SMTP id hr17so1622043wib.5
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Apr 2013 19:02:49 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CANu+oN1q-r2ti+uZs2_2Mg4_4J8gdNdtLedPAC3u5WZa=+jjFA@mail.gmail.com>
+References: <CANu+oN1szXCzLDqeT8UMCz660dO47dDTa8PTL1KFUoG6z-u_rQ@mail.gmail.com>
+ <CANu+oN1q-r2ti+uZs2_2Mg4_4J8gdNdtLedPAC3u5WZa=+jjFA@mail.gmail.com>
+From: Harald Glatt <mail@hachre.de>
+Date: Sun, 7 Apr 2013 04:02:19 +0200
+Message-ID: <CAFWF=am8-swZ7-uBr4KQmHYHvwAfpKBwrudFu_LqgUEARWYE3A@mail.gmail.com>
+Subject: Re: [BUG] btrfs.fsck failing to fix corrupted block
+To: Shripad Ratnaparkhi <shripad.ratnaparkhi@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Lin,
-
-Before compiling you'll need to get some dependencies:
-Maybe this url will help:
-https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
-
-
-Thanks,
-Wang
-
-> On Sun, Apr 7, 2013 at 9:38 AM, Lin Ming <minggr@gmail.com> wrote:
->> 
->> Hi,
->> 
->> Build latest git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->> 
->> ~/btrfs-progs$ make
->>    [LD]     mkfs.btrfs
->> mkfs.o: In function `is_ssd':
->> /home/mlin/btrfs-progs/mkfs.c:1234: undefined reference to `blkid_probe_get_wholedisk_devno'
->> 
->> any fix?
->> 
->> Thanks,
->> Lin Ming
+On Sun, Apr 7, 2013 at 3:56 AM, Shripad Ratnaparkhi
+<shripad.ratnaparkhi@gmail.com> wrote:
+> [Replying to my own email]
+>
+> Found a patch which seems to be discusses the fix in a patch provided here:
+> https://patchwork.kernel.org/patch/1946561/
+>
+> Still now sure whether that is already there in v0.20-rc1 or
+> applicable to fix my issue.
+>
+> thanks,
+> ~shripadr
+>
+> PS: BCC'ing the patch provider.
+>
+> On Sun, Apr 7, 2013 at 7:16 AM, Shripad Ratnaparkhi
+> <shripad.ratnaparkhi@gmail.com> wrote:
+>> Hi there,
+>> I am newbie and recently started using btrfs. Now facing a weird problem.
+>>
+>> FWIW, I am on archlinux, kenel v3.8.0, having Btrfs v0.20-rc1.
+>> After an abnormal reboot, getting these errors while boot:
+>>
+>> systemd.fsck[289]: checking extents
+>> systemd.fsck[289]: checking fs roots
+>> systemd.fsck[289]: checking root refs
+>> systemd.fsck[289]: found 23728128 bytes used err is 0
+>> systemd.fsck[289]: total csum bytes: 23092
+>> systemd.fsck[289]: total tree bytes: 81920
+>> systemd.fsck[289]: total fs tree bytes: 24576
+>> systemd.fsck[289]: btree space waste bytes: 38038
+>> systemd.fsck[289]: file data blocks allocated: 23646208
+>> systemd.fsck[289]: referenced 23646208
+>> systemd.fsck[289]: Btrfs v0.20-rc1
+>> [   OK   ]  Started File System Check on /dev/sda1.
+>>                Mounting /boot...
+>> systemd.fsck[289]: checking extents
+>> [   OK   ] Mounted /boot.
+>> [   OK   ] Reached target Sound Card.
+>> systemd.fsck[289]: checking fs roots
+>> systemd.fsck[289]: checking root refs
+>> systemd.fsck[289]: extent buffer leak: start 206893056 len 4096
+>> systemd.fsck[289]: *** Error in `fsck.btrfs`: corrupted double-linked
+>> list: 0x0000000002081d80 ***
+>>
+>> and its not proceeding and stuck here.
+>> I have the rescue disk handy, but not sure how can I fix this issue.
+>> Any help please.
+>>
+>> thanks,
+>>
+>> --
+>> ~shripadr
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+The version that you can get from btrfs doesn't say a whole lot sadly.
+You can build the newest tools from git and try with the btrfsck
+there.
+
+Now this might not be entirely correct, but as far as I know the
+btrfsck tool isn't ready to be used in the traditional fsck capacity
+(automatically at bootup, etc). They don't symlink the tool on arch
+and per default arch builds it's initrd without a fsck for btrfs
+available. If you manually symlinked the tool to get rid of that error
+message during initrd creation I'd suggestion removing that symlink
+again and rebuilding your initrd without a btrfsck in place. As far as
+I know the best and most reliable way at the moment to confirm or
+repair errors is by btrfs scrub. Once you removed the startup fsck it
+might boot normally. You can then start a scrub with 'btrfs scrub
+start /' and see its status and progress via 'btrfs scrub status /'.
+If the scrub reports no errors, or finds some but repairs them, that
+is (as far as I know) a more reliable message than whatever btrfsck
+thinks.

@@ -1,36 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59184 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:36460 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752110Ab3DJPwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Apr 2013 11:52:54 -0400
-Date: Wed, 10 Apr 2013 17:52:50 +0200
+	id S935977Ab3DHPWk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Apr 2013 11:22:40 -0400
+Date: Mon, 8 Apr 2013 17:22:38 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org, martin.krizek@gmail.com
-Subject: Re: [PATCH 1/2] Btrfs: online data deduplication
-Message-ID: <20130410155250.GQ18193@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: make btrfs dev scan multi path aware
+Message-ID: <20130408152238.GE18193@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1365340369-23537-1-git-send-email-bo.li.liu@oracle.com>
- <1365340369-23537-2-git-send-email-bo.li.liu@oracle.com>
- <20130408134726.GD18193@twin.jikos.cz>
- <5163746A.50902@cn.fujitsu.com>
+References: <1363867004-22912-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5163746A.50902@cn.fujitsu.com>
+In-Reply-To: <1363867004-22912-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 09, 2013 at 09:52:42AM +0800, Miao Xie wrote:
-> On 	mon, 8 Apr 2013 15:47:27 +0200, David Sterba wrote:
-> > This also depends on file data type and access patterns, fixing the dedup
-> > basic chunk size to one block does not IMHO fit most usecases.
-> 
-> Maybe we can make btrfs(including dedup) support the bigalloc just like ext4.
+On Thu, Mar 21, 2013 at 07:56:44PM +0800, Anand Jain wrote:
+>  We should avoid using non multi-path (mp) path for mp disks
+>  As of now there is no good way (like api) to check that.
+>  A workaround way is to check if the O_EXCL open is unsuccessful.
+>  This is safe since otherwise the BTRFS_IOC_SCAN_DEV ioctl would
+>  fail if the disk-path can not be opened with the flag O_EXCL set.
 
-dedup does not strictly need this, I agree it could make a few things
-easier to implement. But I think it removes some flexibility once the
-bigalloc cluster size is set, what if I want to change the dedup chunk
-size because the structure of my data changed?
+Agreed. Alternatively we could try to parse the /sys entries.
 
+> --- a/cmds-device.c
+> +++ b/cmds-device.c
+> @@ -185,7 +185,7 @@ static const char * const cmd_scan_dev_usage[] = {
+>  
+>  static int cmd_scan_dev(int argc, char **argv)
+>  {
+> -	int	i, fd, e;
+> +	int	i, fd, e, ret = 0;
+>  	int	checklist = 1;
+>  	int	devstart = 1;
+>  
+> @@ -197,6 +197,21 @@ static int cmd_scan_dev(int argc, char **argv)
+>  		devstart += 1;
+>  	}
+>  
+> +	fd = open("/dev/btrfs-control", O_RDWR);
+> +	e = errno;
+> +	if (fd < 0) {
+> +		FILE *mfd = popen("lsmod | grep btrfs", "r");
+
+Please transform this into C.
+
+> +		char buf[16];
+> +
+> +		if (fread (buf, 1, sizeof (buf), mfd) > 0)
+> +			fprintf(stderr, "ERROR: failed to open "\
+> +				"/dev/btrfs-control - %s\n", strerror(e));
+> +		else
+> +			fprintf(stderr, "ERROR: btrfs kernel module "\
+> +				"is not loaded\n");
+> +		return 10;
+
+We should not be using the old style of error codes in new code, other
+paths in this functions return -1 .
+
+> +	}
+
+
+thanks,
 david

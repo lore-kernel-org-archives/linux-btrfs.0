@@ -1,61 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17443 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933584Ab3DGNPc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2013 09:15:32 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r37DFUKB018747
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 7 Apr 2013 13:15:31 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r37DFU4K011318
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 7 Apr 2013 13:15:30 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r37DFTA8005896
-	for <linux-btrfs@vger.kernel.org>; Sun, 7 Apr 2013 08:15:29 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: skip merge part for delayed data refs
-Date: Sun,  7 Apr 2013 21:12:49 +0800
-Message-Id: <1365340369-23537-3-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1365340369-23537-1-git-send-email-bo.li.liu@oracle.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:51084 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935703Ab3DHMyx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2013 08:54:53 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D37837C0423
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Apr 2013 06:54:52 -0600 (MDT)
+Date: Mon, 8 Apr 2013 08:54:50 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] Btrfs: online data deduplication
+Message-ID: <20130408125450.GA2010@localhost.localdomain>
 References: <1365340369-23537-1-git-send-email-bo.li.liu@oracle.com>
+ <1365340369-23537-2-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1365340369-23537-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we have data deduplication on, we'll hang on the merge part
-because it needs to verify every queued delayed data refs related to
-this disk offset.
+On Sun, Apr 07, 2013 at 07:12:48AM -0600, Liu Bo wrote:
+> (NOTE: This leads to a FORMAT CHANGE, DO NOT use it on real data.)
+> 
+> This introduce the online data deduplication feature for btrfs.
+> 
+> (1) WHY do we need deduplication?
+>     To improve our storage effiency.
+> 
+> (2) WHAT is deduplication?
+>     Two key ways for practical deduplication implementations,
+>     *  When the data is deduplicated
+>        (inband vs background)
+>     *  The granularity of the deduplication.
+>        (block level vs file level)
+> 
+>     For btrfs, we choose
+>     *  inband(synchronous)
+>     *  block level
+> 
+>     We choose them because of the same reason as how zfs does.
+>     a)  To get an immediate benefit.
+>     b)  To remove redundant parts within a file.
+> 
+>     So we have an inband, block level data deduplication here.
+> 
+> (3) HOW does deduplication works?
+>     This makes full use of file extent back reference, the same way as
+>     IOCTL_CLONE, which lets us easily store multiple copies of a set of
+>     data as a single copy along with an index of references to the copy.
+> 
+>     Here we have
+>     a)  a new dedicated tree(DEDUP tree) and
+>     b)  a new key(BTRFS_DEDUP_ITEM_KEY), which consists of
+>         (stop 64bits of hash, type, disk offset),
+>         *  stop 64bits of hash
+>            It comes from sha256, which is very helpful on avoiding collision.
+>            And we take the stop 64bits as the index.
+>         *  disk offset
+>            It helps to find where the data is stored.
+> 
+>     So the whole deduplication process works as,
+>     1) write something,
+>     2) calculate the hash of this "something",
+>     3) try to find the match of hash value by searching DEDUP keys in
+>        a dedicated tree, DEDUP tree.
+>     4) if found, skip real IO and link to the existing copy
+>        if not, do real IO and insert a DEDUP key to the DEDUP tree.
+> 
+>     For now, we limit the deduplication unit to PAGESIZE, 4096, and we're
+>     going to increase this unit dynamically in the future.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/ctree.h        |   53 ++++++++
+>  fs/btrfs/disk-io.c      |   33 +++++-
+>  fs/btrfs/extent-tree.c  |   22 +++-
+>  fs/btrfs/extent_io.c    |    8 +-
+>  fs/btrfs/extent_io.h    |   11 ++
+>  fs/btrfs/file-item.c    |  186 ++++++++++++++++++++++++++
+>  fs/btrfs/file.c         |    6 +-
+>  fs/btrfs/inode.c        |  330 +++++++++++++++++++++++++++++++++++++++++++----
+>  fs/btrfs/ioctl.c        |   34 +++++-
+>  fs/btrfs/ordered-data.c |   25 +++-
+>  fs/btrfs/ordered-data.h |    9 ++
+>  fs/btrfs/print-tree.c   |    6 +-
+>  fs/btrfs/super.c        |    7 +-
+>  13 files changed, 685 insertions(+), 45 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 0d82922..59339bc 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -32,6 +32,7 @@
+>  #include <asm/kmap_types.h>
+>  #include <linux/pagemap.h>
+>  #include <linux/btrfs.h>
+> +#include <crypto/hash.h>
+>  #include "extent_io.h"
+>  #include "extent_map.h"
+>  #include "async-thread.h"
+> @@ -94,6 +95,9 @@ struct btrfs_ordered_sum;
+>  /* holds quota configuration and tracking */
+>  #define BTRFS_QUOTA_TREE_OBJECTID 8ULL
+> 
+> +/* dedup tree(experimental) */
+> +#define BTRFS_DEDUP_TREE_OBJECTID 9ULL
+> +
+>  /* orhpan objectid for tracking unlinked/truncated files */
+>  #define BTRFS_ORPHAN_OBJECTID -5ULL
+> 
+> @@ -884,12 +888,31 @@ struct btrfs_file_extent_item {
+>          */
+>         __le64 num_bytes;
+> 
+> +       /*
+> +        * the stop 64bits of sha256 hash value, this helps us find the
+> +        * corresponding item in dedup tree.
+> +        */
+> +       __le64 dedup_hash;
+> +
+>  } __attribute__ ((__packed__));
+> 
 
-And in the case of delayed data refs, we don't usually have too much
-data refs to merge.
+Please don't do this, do like what we do with the crc tree, just lookup based on
+the disk bytenr when we free the extent and drop refs that way.  Don't further
+bloat the file extent item, we want it smaller not larger.  Thanks,
 
-So it's safe to shut it down for data refs.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/delayed-ref.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index b7a0641..34670c8 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -316,6 +316,13 @@ void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
- 	struct rb_node *node;
- 	u64 seq = 0;
- 
-+	/*
-+	 * We don't have too much refs to merge in the case of delayed data
-+	 * refs.
-+	 */
-+	if (head->is_data)
-+		return;
-+
- 	spin_lock(&fs_info->tree_mod_seq_lock);
- 	if (!list_empty(&fs_info->tree_mod_seq_list)) {
- 		struct seq_list *elem;
--- 
-1.7.7
-
+Josef

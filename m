@@ -1,60 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53538 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S935332Ab3DHMBM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Apr 2013 08:01:12 -0400
-Date: Mon, 8 Apr 2013 14:01:09 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Alex Elsayed <eternaleye@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: lvm volume like support
-Message-ID: <20130408120109.GA18193@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com>
- <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com>
- <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com>
- <201302261130.31494.Martin@lichtvoll.de>
- <CAG1y0sfYqcZTyHffV=t95R09qyJc911ZE-F-YPM1rKmV1wj7CA@mail.gmail.com>
- <20130227100558.37d86d82@natsu>
- <kgkhcp$dfg$1@ger.gmane.org>
- <kgklb0$g6a$1@ger.gmane.org>
- <kgkm75$p2g$1@ger.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <kgkm75$p2g$1@ger.gmane.org>
+Received: from mail-da0-f49.google.com ([209.85.210.49]:40203 "EHLO
+	mail-da0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759346Ab3DHK4v (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2013 06:56:51 -0400
+Received: by mail-da0-f49.google.com with SMTP id t11so2531765daj.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Apr 2013 03:56:50 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sensille@gmx.net, wangsl-fnst@cn.fujitsu.com
+Subject: [PATCH] Btrfs: use tree_root to avoid edquot when disabling quota
+Date: Mon,  8 Apr 2013 18:56:22 +0800
+Message-Id: <1365418582-1590-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
+Steps to reproduce:
+	mkfs.btrfs <disk>
+	mount <disk> <mnt>
+	btrfs quota enable <mnt>
+	btrfs sub create <mnt>/subv
+	btrfs qgroup limit 10K <mnt>/subv
+	btrfs quota disable <mnt>/subv
 
-On Wed, Feb 27, 2013 at 02:12:56AM -0800, Alex Elsayed wrote:
-> Alex Elsayed wrote:
-> 
-> ...and a second version, because I forgot to actually remove the calls to
-> tcm_node in favor of poking configfs like I said.
+It is wrong for qgroup to reserve when disabling quota,
+so just use tree_root to avoid edquot when disabling quota.
 
-I'd like to use your script to setup scsi devices for testing, however
-I've encountered 2 things did not work with the scsi emulation.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Setup:
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 898c572..180e486 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3694,7 +3694,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 	}
+ 
+ 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
+-		trans = btrfs_start_transaction(root, 2);
++		trans = btrfs_start_transaction(root->fs_info->tree_root, 2);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+ 			goto out;
+@@ -3720,7 +3720,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 		ret = -EFAULT;
+ 
+ 	if (trans) {
+-		err = btrfs_commit_transaction(trans, root);
++		err = btrfs_commit_transaction(trans, root->fs_info->tree_root);
+ 		if (err && !ret)
+ 			ret = err;
+ 	}
+-- 
+1.7.7.6
 
-There's a 10G file image created by dd and exported via your script as
-/dev/sdl.
-
-$ df -h
-/dev/sdl                      10G  312K  8.0G   1% /mnt/sdl
-
-mkfs is ok, mount is ok.
-
-Testing:
-
-$ cat /dev/zero > file
-^C
-
-problem 1: size of 'file' was 77 GB
-problem 2: umount was fine, remounted again and now size of 'file' is 0
-
-Both of them look quite serious to me :)
-
-david

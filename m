@@ -1,59 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f49.google.com ([209.85.210.49]:40203 "EHLO
-	mail-da0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759346Ab3DHK4v (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2013 06:56:51 -0400
-Received: by mail-da0-f49.google.com with SMTP id t11so2531765daj.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Apr 2013 03:56:50 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sensille@gmx.net, wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH] Btrfs: use tree_root to avoid edquot when disabling quota
-Date: Mon,  8 Apr 2013 18:56:22 +0800
-Message-Id: <1365418582-1590-1-git-send-email-wangshilong1991@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:23004 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934790Ab3DHDi3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2013 23:38:29 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r383cSOU006445
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 03:38:29 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r383cRVk000119
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 03:38:28 GMT
+Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r383cQUa011605
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Apr 2013 03:38:26 GMT
+Message-ID: <51623C0C.4060709@oracle.com>
+Date: Mon, 08 Apr 2013 11:39:56 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [bug] error communication from kernel to userland
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-Steps to reproduce:
-	mkfs.btrfs <disk>
-	mount <disk> <mnt>
-	btrfs quota enable <mnt>
-	btrfs sub create <mnt>/subv
-	btrfs qgroup limit 10K <mnt>/subv
-	btrfs quota disable <mnt>/subv
+Hi,
 
-It is wrong for qgroup to reserve when disabling quota,
-so just use tree_root to avoid edquot when disabling quota.
+  the below example tells a problem..
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+  ----
+  # btrfs dev del missing /btrfs
+  ERROR: error removing the device 'missing' - Invalid argument
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 898c572..180e486 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3694,7 +3694,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 	}
- 
- 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
--		trans = btrfs_start_transaction(root, 2);
-+		trans = btrfs_start_transaction(root->fs_info->tree_root, 2);
- 		if (IS_ERR(trans)) {
- 			ret = PTR_ERR(trans);
- 			goto out;
-@@ -3720,7 +3720,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 		ret = -EFAULT;
- 
- 	if (trans) {
--		err = btrfs_commit_transaction(trans, root);
-+		err = btrfs_commit_transaction(trans, root->fs_info->tree_root);
- 		if (err && !ret)
- 			ret = err;
- 	}
--- 
-1.7.7.6
+  # dmesg | tail
+  ::
+  [ 4295.258686] btrfs: unable to go below two devices on raid1
+  #
+  -----
+  as of now the more accurate errors are being logged to dmesg,
+  which a normal user might not notice and there are few other
+  btrfs cli cases similar to this.
 
+  We need to get the kernel errors to the useland as part the
+  cli being used.
+
+  However the btrfs is relaying on the limited set of errno
+  defines which is insufficient / inappropriate in the
+  btrfs context.
+
+  As a solution we have 2 choices broadly.. as of now
+
+  - Update the errno with more FS and RAID related defines
+
+  - Get the error string as part of ioctl arg.
+
+  - ?
+
+
+  any comments / questions / views / ideas are welcome..
+
+
+Thanks, Anand

@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f172.google.com ([209.85.217.172]:53594 "EHLO
-	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934384Ab3DHLXh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2013 07:23:37 -0400
-Received: by mail-lb0-f172.google.com with SMTP id u10so5614916lbi.31
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Apr 2013 04:23:35 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:56315 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S935075Ab3DHMtV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Apr 2013 08:49:21 -0400
+Date: Mon, 8 Apr 2013 14:49:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: allow file data clone within a file
+Message-ID: <20130408124918.GB18193@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1365344298-23917-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20130408172200.19f003ca@natsu>
-References: <CAFWF=ameE9p4W5XT-yLoU2H=by0Y4yp3VUmiLOXSOtOzBHaYwQ@mail.gmail.com>
- <20130408171443.5339e82f@natsu> <CAFWF=am5sBw+APOu6yAUBnjvpt+vbr_7vw0F8o1ZAGk-JDbhmg@mail.gmail.com>
- <20130408172200.19f003ca@natsu>
-From: Harald Glatt <mail@hachre.de>
-Date: Mon, 8 Apr 2013 13:23:15 +0200
-Message-ID: <CAFWF=an8JH+=mFPAPfg_kfyPop_AWG0aNdSPX0MOZ9XO9Gs0EA@mail.gmail.com>
-Subject: Re: btrfs can't complete balance
-To: Roman Mamedov <rm@romanrm.ru>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=KOI8-R
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1365344298-23917-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-That's not gonna be a problem, I'm always running on the most recent
-final kernel - in the case of my panic it was 3.8.6. Thanks!
+On Sun, Apr 07, 2013 at 10:18:18PM +0800, Liu Bo wrote:
+> We did not allow file data clone within the same file because of
+> deadlock issues.
+>
+> However, we now use nested lock to avoid deadlock between the
+> parent directory and the child file.
+> 
+> So it's safe to do file clone at different offset within the
+> same file.
 
-On Mon, Apr 8, 2013 at 1:22 PM, Roman Mamedov <rm@romanrm.ru> wrote:
-> On Mon, 8 Apr 2013 13:19:13 +0200
-> Harald Glatt <mail@hachre.de> wrote:
->
->> You're right, I'm seeing this 'object already exists' message in my
->> dmesg log. Nice catch!!
->
-> See this thread:
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg23514.html
->
-> This patch fixes the problem:
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg23534.html
->
-> But it is / will be only in the very latest kernels (including 'stable'
-> updates), because it was posted only like a week ago.
->
-> --
-> With respect,
-> Roman
+There's a todo comment inside the function saying that cloning within
+the same file is possible but with an exception of overlapping ranges.
+How does your patch prevent that? With current code + your patch it's
+possible to call 
+
+2583         /* truncate page cache pages from target inode range */
+2584         truncate_inode_pages_range(&inode->i_data, destoff,
+2585                                    PAGE_CACHE_ALIGN(destoff + len) - 1);
+
+where [destoff, destoff+len) intersects with the source [off, off+len)
+thus destroying the data to be cloned.
+
+david

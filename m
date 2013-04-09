@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:37241 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:51077 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933071Ab3DIRIs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1759921Ab3DIRIs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 9 Apr 2013 13:08:48 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp4) (RZmta 31.24 OK)
-	with ESMTP id 60630ap39GfxKn for <linux-btrfs@vger.kernel.org>;
+	by jorabe.store (jorabe xp2) (RZmta 31.24 OK)
+	with ESMTP id g070f0p39GGG8M for <linux-btrfs@vger.kernel.org>;
 	Tue, 9 Apr 2013 19:08:46 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/17] Btrfs-progs: Fix that BTRFS_FSID_SIZE is used instead of BTRFS_UUID_SIZE
-Date: Tue,  9 Apr 2013 19:08:42 +0200
-Message-Id: <11a938fbe224c95918815a4758cf07292930f55f.1365524492.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 15/17] Btrfs-progs: remove some unused code
+Date: Tue,  9 Apr 2013 19:08:43 +0200
+Message-Id: <1f7d2465ba97630b0b0f48e9df4c2cf15a23bc50.1365524492.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1365524492.git.sbehrens@giantdisaster.de>
 References: <cover.1365524492.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1365524492.git.sbehrens@giantdisaster.de>
@@ -19,26 +19,25 @@ References: <cover.1365524492.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Both are 16 but it's wrong anyway to use FSID_SIZE for UUIDs.
-
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- cmds-receive.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ send-stream.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 50c1b97..f937366 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -565,7 +565,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
- 			subvol_search_by_received_uuid);
- 	if (!si) {
- 		if (memcmp(clone_uuid, r->cur_subvol->received_uuid,
--				BTRFS_FSID_SIZE) == 0) {
-+				BTRFS_UUID_SIZE) == 0) {
- 			/* TODO check generation of extent */
- 			subvol_path = strdup(r->cur_subvol->path);
- 		} else {
+diff --git a/send-stream.c b/send-stream.c
+index 1a498f3..88e18e2 100644
+--- a/send-stream.c
++++ b/send-stream.c
+@@ -410,9 +410,6 @@ static int read_and_process_cmd(struct btrfs_send_stream *s)
+ 		break;
+ 	case BTRFS_SEND_C_UTIMES:
+ 		TLV_GET_STRING(s, BTRFS_SEND_A_PATH, &path);
+-		if (strstr(path, ".bak_1.log")) {
+-			ret = 0;
+-		}
+ 		TLV_GET_TIMESPEC(s, BTRFS_SEND_A_ATIME, &at);
+ 		TLV_GET_TIMESPEC(s, BTRFS_SEND_A_MTIME, &mt);
+ 		TLV_GET_TIMESPEC(s, BTRFS_SEND_A_CTIME, &ct);
 -- 
 1.8.2.1
 

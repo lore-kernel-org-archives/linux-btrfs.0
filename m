@@ -1,46 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f49.google.com ([209.85.219.49]:52609 "EHLO
-	mail-oa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752841Ab3DJJJ0 (ORCPT
+Received: from mail-da0-f47.google.com ([209.85.210.47]:52450 "EHLO
+	mail-da0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934576Ab3DJLXV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Apr 2013 05:09:26 -0400
-Received: by mail-oa0-f49.google.com with SMTP id j6so214169oag.22
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2013 02:09:26 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <5165291C.7050704@jan-o-sch.net>
-References: <CAFDW0j+XvnX4ZmP2Y=wpLen+pezAXxPL+ubigRfD-Yt_a=5c=g@mail.gmail.com>
-	<5165291C.7050704@jan-o-sch.net>
-Date: Wed, 10 Apr 2013 11:09:25 +0200
-Message-ID: <CAFDW0jJMgJsWXb5TW0vvesca4HOX8FVcmmqBvc0Dw3WJzOJYMw@mail.gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/ctree.c:1144!
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Wed, 10 Apr 2013 07:23:21 -0400
+Received: by mail-da0-f47.google.com with SMTP id s35so173171dak.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2013 04:23:20 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: wangsl-fnst@cn.fujitsu.com, list.btrfs@jan-o-sch.net
+Subject: [PATCH 1/2] Btrfs: remove some BUG_ONs() when walking backref tree
+Date: Wed, 10 Apr 2013 19:22:50 +0800
+Message-Id: <1365592971-1535-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1365592971-1535-1-git-send-email-wangshilong1991@gmail.com>
+References: <1365592971-1535-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> The real problem, however, is not caused by that commit but by a tree mod log
-> bug. I expect that fs/btrfs/ctree.c:1144 is this BUG_ON in your kernel from
-> __tree_mod_log_rewind (my line numbers don't match):
->
-> 1138                 switch (tm->op) {
-> 1139                 case MOD_LOG_KEY_REMOVE_WHILE_FREEING:
-> 1140                         BUG_ON(tm->slot < n);
->
-> I've got a fix for that I'm currently testing, expect it on the list soon.
-Yea, thats the line.
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-> For the meantime I recommend to not defrag your filesystem.
-Ok, already disabled and rebooted.
-Will come back to You if i still get that Problem.
+The only error return value of __add_prelim_ref() is -ENOMEM,
+just return errors rather than trigger BUG_ON().
 
-> As a general remark, please send your stack traces inline, not as attachment if
-> possible.
-Google mail always screws longer than 80 lines in plain text mode and
-non plain text is not what You want.
-Maybe i should go back to using mutt.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+---
+ fs/btrfs/backref.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
 
-Thank You,
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index bd605c8..dc200f6 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -582,7 +582,8 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+ 		default:
+ 			WARN_ON(1);
+ 		}
+-		BUG_ON(ret);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	return 0;
+@@ -680,7 +681,8 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 		default:
+ 			WARN_ON(1);
+ 		}
+-		BUG_ON(ret);
++		if (ret)
++			return ret;
+ 		ptr += btrfs_extent_inline_ref_size(type);
+ 	}
+ 
+@@ -762,7 +764,9 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 		default:
+ 			WARN_ON(1);
+ 		}
+-		BUG_ON(ret);
++		if (ret)
++			return ret;
++
+ 	}
+ 
+ 	return ret;
+-- 
+1.7.7.6
 
-Ahmet

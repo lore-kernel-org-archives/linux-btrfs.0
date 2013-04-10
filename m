@@ -1,85 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.137]:58535 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:30522 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030615Ab3DSPlJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Apr 2013 11:41:09 -0400
+	id S1756388Ab3DJRK4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Apr 2013 13:10:56 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp2) (RZmta 31.27 OK)
-	with ESMTP id g04953p3JEkqKq for <linux-btrfs@vger.kernel.org>;
-	Fri, 19 Apr 2013 17:41:06 +0200 (CEST)
+	by josoe.store (josoe xp4) (RZmta 31.26 OK)
+	with ESMTP id 6028d5p3AEEcMo for <linux-btrfs@vger.kernel.org>;
+	Wed, 10 Apr 2013 19:10:52 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] Btrfs: introduce a tree for UUID to subvol ID mapping
-Date: Fri, 19 Apr 2013 17:41:01 +0200
-Message-Id: <cover.1366384796.git.sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs: allow omitting stream header and end-cmd for btrfs send
+Date: Wed, 10 Apr 2013 19:10:52 +0200
+Message-Id: <1365613852-12389-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mapping UUIDs to subvolume IDs is an operation with a high effort
-today. Today, the algorithm even has quadratic effort (based on the
-number of existing subvolumes), which means, that it takes minutes
-to send/receive a single subvolume if 10,000 subvolumes exist. But
-even linear effort would be too much since it is a waste. And these
-data structures to allow mapping UUIDs to subvolume IDs are created
-every time a btrfs send/receive instance is started.
+Two new flags are added to allow omitting the stream header and the
+end command for btrfs send streams. This is used in cases where you
+send multiple snapshots back-to-back in one stream.
 
-It is much more efficient to maintain a searchable persistent data
-structure in the filesystem, one that is updated whenever a
-subvolume/snapshot is created and deleted, and when the received
-subvolume UUID is set by the btrfs-receive tool.
+This used to be encoded like this (with 2 snapshots in this example):
+<stream header> + <sequence of commands> + <end cmd> +
+<stream header> + <sequence of commands> + <end cmd> + EOF
 
-Therefore kernel code is added that is able to maintain data
-structures in the filesystem that allow to quickly search for a
-given UUID and to retrieve the subvol ID.
+The new format (if the two new flags are used) is this one:
+<stream header> + <sequence of commands> +
+                  <sequence of commands> + <end cmd>
 
-Now follows the lengthy justification, why a new tree was added
-instead of using the existing root tree:
+Note that the currently existing receivers treat <end cmd> only as
+an indication that a new <stream header> is following. This means,
+you can just skip the sequence <end cmd> <stream header> without
+loosing compatibility. As long as an EOF is following, the currently
+existing receivers handle the new format (if the two new flags are
+used) exactly as the old one.
 
-The first approach was to not create another tree that holds UUID
-items. Instead, the items should just go into the top root tree.
-Unfortunately this confused the algorithm to assign the objectid
-of subvolumes and snapshots. The reason is that
-btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
-the first created subvol or snapshot after mounting a filesystem,
-and this function simply searches for the largest used objectid in
-the root tree keys to pick the next objectid to assign. Of course,
-the UUID keys have always been the ones with the highest offset
-value, and the next assigned subvol ID was wastefully huge.
+So what is the benefit of this change? The goal is to be able to use
+a single stream (one TCP connection) to multiplex a request/response
+handshake plus Btrfs send streams, all in the same stream. In this
+case you cannot evaluate an EOF condition as an end of the Btrfs send
+stream. You need something else, and the <end cmd> is just perfect
+for this purpose.
 
-To use any other existing tree did not look proper. To apply a
-workaround such as setting the objectid to zero in the UUID item
-key and to implement collision handling would either add
-limitations (in case of a btrfs_extend_item() approach to handle
-the collisions) or a lot of complexity and source code (in case a
-key would be looked up that is free of collisions). Adding new code
-that introduces limitations is not good, and adding code that is
-complex and lengthy for no good reason is also not good. That's the
-justification why a completely new tree was introduced.
+The summary is:
+The format change is driven by the need to send several Btrfs send
+streams over a single TCP connections, with the ability for a repeated
+request/response handshake in the middle. And this format change does
+not break any existing tool, it is completely compatible.
 
+You could compare the old behaviour of the Btrfs send stream to the
+one of ftp where you need a seperate request/response channel and
+newly opened data transfer channels for each file, while the new
+behaviour is more like http using a single stream for everything.
 
-Stefan Behrens (5):
-  Btrfs: introduce a tree for items that map UUIDs to something
-  Btrfs: support printing UUID tree elements
-  Btrfs: create UUID tree if required
-  Btrfs: maintain subvolume items in the UUID tree
-  Btrfs: fill UUID tree initially
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/send.c            | 24 ++++++++++++++----------
+ include/uapi/linux/btrfs.h | 20 +++++++++++++++++++-
+ 2 files changed, 33 insertions(+), 11 deletions(-)
 
- fs/btrfs/Makefile      |   3 +-
- fs/btrfs/ctree.h       |  54 ++++++
- fs/btrfs/disk-io.c     |  43 ++++-
- fs/btrfs/ioctl.c       |  65 ++++++-
- fs/btrfs/print-tree.c  |  73 ++++++++
- fs/btrfs/transaction.c |  21 ++-
- fs/btrfs/uuid-tree.c   | 497 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c     | 170 +++++++++++++++++
- fs/btrfs/volumes.h     |   2 +
- 9 files changed, 915 insertions(+), 13 deletions(-)
- create mode 100644 fs/btrfs/uuid-tree.c
-
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index ed897dc..3b5fa17 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4529,9 +4529,11 @@ static int send_subvol(struct send_ctx *sctx)
+ {
+ 	int ret;
+ 
+-	ret = send_header(sctx);
+-	if (ret < 0)
+-		goto out;
++	if (!(sctx->flags & BTRFS_SEND_FLAG_OMIT_STREAM_HEADER)) {
++		ret = send_header(sctx);
++		if (ret < 0)
++			goto out;
++	}
+ 
+ 	ret = send_subvol_begin(sctx);
+ 	if (ret < 0)
+@@ -4593,7 +4595,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 		goto out;
+ 	}
+ 
+-	if (arg->flags & ~BTRFS_SEND_FLAG_NO_FILE_DATA) {
++	if (arg->flags & ~BTRFS_SEND_FLAG_MASK) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+@@ -4704,12 +4706,14 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	ret = begin_cmd(sctx, BTRFS_SEND_C_END);
+-	if (ret < 0)
+-		goto out;
+-	ret = send_cmd(sctx);
+-	if (ret < 0)
+-		goto out;
++	if (!(sctx->flags & BTRFS_SEND_FLAG_OMIT_END_CMD)) {
++		ret = begin_cmd(sctx, BTRFS_SEND_C_END);
++		if (ret < 0)
++			goto out;
++		ret = send_cmd(sctx);
++		if (ret < 0)
++			goto out;
++	}
+ 
+ out:
+ 	kfree(arg);
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index fa3a5f9..5e39e85 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -412,7 +412,25 @@ struct btrfs_ioctl_received_subvol_args {
+  * search of clone sources doesn't find an extent. UPDATE_EXTENT
+  * commands will be sent instead of WRITE commands.
+  */
+-#define BTRFS_SEND_FLAG_NO_FILE_DATA     0x1
++#define BTRFS_SEND_FLAG_NO_FILE_DATA		0x1
++
++/*
++ * Do not add the leading stream header. Used when multiple snapshots
++ * are sent back to back.
++ */
++#define BTRFS_SEND_FLAG_OMIT_STREAM_HEADER	0x2
++
++/*
++ * Omit the command at the end of the stream that indicated the end
++ * of the stream. This option is used when multiple snapshots are
++ * sent back to back.
++ */
++#define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
++
++#define BTRFS_SEND_FLAG_MASK \
++	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
++	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
++	 BTRFS_SEND_FLAG_OMIT_END_CMD)
+ 
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
 -- 
 1.8.2.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

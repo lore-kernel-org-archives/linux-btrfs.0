@@ -1,42 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50443 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1761010Ab3DIWKm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Apr 2013 18:10:42 -0400
-Date: Wed, 10 Apr 2013 00:10:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: Chris Murphy <lists@colorremedies.com>, cwillu <cwillu@cwillu.com>,
-        "linux-btrfs@vger.kernel.org BTRFS" <linux-btrfs@vger.kernel.org>
-Subject: Re: minimum kernel version for btrfsprogs.0.20?
-Message-ID: <20130409221038.GJ18193@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <221EE566-B039-426F-827D-AA20B5A2D86B@colorremedies.com>
- <CAE5mzviUeSfT6X=hQfwCcRAhHhJDYRFhztOiEWKHSXfTcZ0r4w@mail.gmail.com>
- <092651F7-2FAF-42A2-A5B5-F4E4377A6A12@colorremedies.com>
- <CAKcLGm8oNvQ7OO63TS389qDo3xo_41s1BO5POG8CR5=_nd2Z2g@mail.gmail.com>
- <DE18F344-65F0-4398-BD5D-B197C858D889@colorremedies.com>
- <CAKcLGm9EXpKp6w+6MrYQzLgNYEFjP6KTS7GBjZP_dXoH3on8sQ@mail.gmail.com>
+Received: from mail-oa0-f41.google.com ([209.85.219.41]:45027 "EHLO
+	mail-oa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752150Ab3DJH6i (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Apr 2013 03:58:38 -0400
+Received: by mail-oa0-f41.google.com with SMTP id f4so171669oah.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2013 00:58:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAKcLGm9EXpKp6w+6MrYQzLgNYEFjP6KTS7GBjZP_dXoH3on8sQ@mail.gmail.com>
+Date: Wed, 10 Apr 2013 09:58:38 +0200
+Message-ID: <CAFDW0j+XvnX4ZmP2Y=wpLen+pezAXxPL+ubigRfD-Yt_a=5c=g@mail.gmail.com>
+Subject: kernel BUG at fs/btrfs/ctree.c:1144!
+From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary=14dae93b5936a0b2b604d9fd09db
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 04, 2013 at 12:00:02PM -0500, Mitch Harder wrote:
-> I disagree with cwillu regarding the default setting for extended inode refs.
-> 
-> While the extended inode refs are a great addition and solve a long
-> standing problem, it appears only the 3.9.0_rc kernel consistently
-> works with extended inode refs.
-> 
-> There should be at least a few working kernel versions out there
-> before this becomes the default.  Options like this that will make
-> btrfs unmountable on older kernel versions need "buy-in" by the users.
-> 
-> There is still the capability to enable extended inode refs with btrfstune.
+--14dae93b5936a0b2b604d9fd09db
+Content-Type: text/plain; charset=UTF-8
 
-I agree with you. It's my mistake that I left it enabled by default in
-mkfs. It'll be fixed in next integration branch.
+I got this problem since 3.8.5 + for-linus (from that time).
+Have just tried 3.8.6 + for-linus with "git merge -X theirs
+btrfs/for-linus" but still same problem.
+Going back to 3.7.4 + for-linus (from that time) doesn't give me the problem.
+This is an production nfs server with 2x2TB raid1, so cant reboot it that often.
+Have seen this same problem on another system (also raid1) once, but
+rebooting helped, no problems since.
+Both systems use autodefrag, maybe that sometimes triggers it?
+I really would like to help, so i can stay on the latest kernels.
+What should i do?
 
-david
+Ahmet
+
+--14dae93b5936a0b2b604d9fd09db
+Content-Type: text/plain; charset=US-ASCII; name="dmesg.txt"
+Content-Disposition: attachment; filename="dmesg.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hfc7c9uu0
+
+WzM1MTAzLjk3NzYwNF0gLS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tClszNTEw
+My45Nzc2MzNdIGtlcm5lbCBCVUcgYXQgZnMvYnRyZnMvY3RyZWUuYzoxMTQ0IQpbMzUxMDMuOTc3
+NjUzXSBpbnZhbGlkIG9wY29kZTogMDAwMCBbIzFdIFNNUCAKWzM1MTAzLjk3NzY3NF0gTW9kdWxl
+cyBsaW5rZWQgaW46IGRtX21vZCBmdXNlIHNuZF9oZGFfY29kZWNfYW5hbG9nIHNuZF9oZGFfaW50
+ZWwgc25kX2hkYV9jb2RlYyBzbmRfcGNtIHNuZF9wYWdlX2FsbG9jIHNuZF90aW1lciBzbmQgc291
+bmRjb3JlIHBwZGV2IGlUQ09fd2R0IGxwY19pY2ggbWZkX2NvcmUgcGFycG9ydF9wYyBwYXJwb3J0
+IGt2bQpbMzUxMDMuOTc3NzcxXSBDUFUgMSAKWzM1MTAzLjk3Nzc4M10gUGlkOiAyOTg5LCBjb21t
+OiBidHJmcy1lbmRpby13cmkgTm90IHRhaW50ZWQgMy44LjYtYWluYW4gIzExOSBEZWxsIEluYy4g
+T3B0aVBsZXggNzU1ICAgICAgICAgICAgICAgICAvMEdNODE5ClszNTEwMy45Nzc4MjVdIFJJUDog
+MDAxMDpbPGZmZmZmZmZmODEyYWUxZWI+XSAgWzxmZmZmZmZmZjgxMmFlMWViPl0gX190cmVlX21v
+ZF9sb2dfcmV3aW5kKzB4MjViLzB4MjYwClszNTEwMy45Nzc4NjRdIFJTUDogMDAxODpmZmZmODgw
+MTA3YThmN2I4ICBFRkxBR1M6IDAwMDEwMjk3ClszNTEwMy45Nzc4ODVdIFJBWDogMDAwMDAwMDAw
+MDAwMDAwMCBSQlg6IGZmZmY4ODAwNmE5MDk0ZDAgUkNYOiBmZmZmODgwMTEyNjEyNGMwClszNTEw
+My45Nzc5MTJdIFJEWDogMDAwMDAwMDAwYjYzOThlZSBSU0k6IDAwMDAwMDAwMDAwMDA2NmMgUkRJ
+OiBmZmZmODgwMTgyOTUzYTQwClszNTEwMy45Nzc5MzldIFJCUDogZmZmZjg4MDEwN2E4ZjdlOCBS
+MDg6IDAwMDAwMDAwMDAwMDEwMDAgUjA5OiBmZmZmODgwMTA3YThmNzYwClszNTEwMy45Nzc5NjVd
+IFIxMDogMDAwMDAwMDAwMDE2ZWQwNSBSMTE6IDAwMDAwMDAwMDAwMDAwMDAgUjEyOiBmZmZmODgw
+MjIyZmI3NmMwClszNTEwMy45Nzc5OTNdIFIxMzogMDAwMDAwMDAwMDAwMDAyZiBSMTQ6IGZmZmY4
+ODAxMTI2MTI0YzAgUjE1OiAwMDAwMDAwMDAwMDAwY2QyClszNTEwMy45NzgwMTldIEZTOiAgMDAw
+MDAwMDAwMDAwMDAwMCgwMDAwKSBHUzpmZmZmODgwMjM3YzQwMDAwKDAwMDApIGtubEdTOjAwMDAw
+MDAwMDAwMDAwMDAKWzM1MTAzLjk3ODA0OV0gQ1M6ICAwMDEwIERTOiAwMDAwIEVTOiAwMDAwIENS
+MDogMDAwMDAwMDA4MDA1MDAzYgpbMzUxMDMuOTc4MDcxXSBDUjI6IDAwMDAwMDAwMDBiODkzMDgg
+Q1IzOiAwMDAwMDAwMWI1YjJmMDAwIENSNDogMDAwMDAwMDAwMDAwMDdlMApbMzUxMDMuOTc4MDk3
+XSBEUjA6IDAwMDAwMDAwMDAwMDAwMDAgRFIxOiAwMDAwMDAwMDAwMDAwMDAwIERSMjogMDAwMDAw
+MDAwMDAwMDAwMApbMzUxMDMuOTc4MTIzXSBEUjM6IDAwMDAwMDAwMDAwMDAwMDAgRFI2OiAwMDAw
+MDAwMGZmZmYwZmYwIERSNzogMDAwMDAwMDAwMDAwMDQwMApbMzUxMDMuOTc4MTUwXSBQcm9jZXNz
+IGJ0cmZzLWVuZGlvLXdyaSAocGlkOiAyOTg5LCB0aHJlYWRpbmZvIGZmZmY4ODAxMDdhOGUwMDAs
+IHRhc2sgZmZmZjg4MDE0NTE2YzBjMCkKWzM1MTAzLjk3ODE4Ml0gU3RhY2s6ClszNTEwMy45Nzgx
+OTJdICBmZmZmODgwMDZhOTA5YTQ0IDAwMDAwMDAwMDAwMDAwMDIgZmZmZjg4MDA2YTkwOTRkMCBm
+ZmZmODgwMDZhOTA5YTEwClszNTEwMy45NzgyMjddICBmZmZmODgwMTM1NWJkNDAwIDAwMDAxNjAw
+MDAwMDAwMDAgZmZmZjg4MDEwN2E4Zjg4OCBmZmZmZmZmZjgxMmI2MjY2ClszNTEwMy45NzgyNjFd
+ICBmZmZmODgwMTA3YThmODI4IGZmZmY4ODAyMjJmYjc2YzAgZmZmZjg4MDIyZGVhODAwMCAwMDAw
+MDAwMTAwMDAwY2QyClszNTEwMy45NzgyOTVdIENhbGwgVHJhY2U6ClszNTEwMy45NzgzMDldICBb
+PGZmZmZmZmZmODEyYjYyNjY+XSBidHJmc19zZWFyY2hfb2xkX3Nsb3QrMHg2NDYvMHg5OTAKWzM1
+MTAzLjk3ODMzNl0gIFs8ZmZmZmZmZmY4MTMyZjhlZj5dIF9fcmVzb2x2ZV9pbmRpcmVjdF9yZWZz
+KzB4MTZmLzB4NjEwClszNTEwMy45NzgzNjNdICBbPGZmZmZmZmZmODEyZjVlMjg+XSA/IGZyZWVf
+ZXh0ZW50X2J1ZmZlcisweDU4LzB4YjAKWzM1MTAzLjk3ODM4N10gIFs8ZmZmZmZmZmY4MTMyZmUx
+OT5dID8gX19hZGRfbWlzc2luZ19rZXlzLmNsb25lLjEzKzB4ODkvMHgxMzAKWzM1MTAzLjk3ODQx
+NV0gIFs8ZmZmZmZmZmY4MTJmNWUyOD5dID8gZnJlZV9leHRlbnRfYnVmZmVyKzB4NTgvMHhiMApb
+MzUxMDMuOTc4NDM5XSAgWzxmZmZmZmZmZjgxMzMwNDQ2Pl0gZmluZF9wYXJlbnRfbm9kZXMrMHg1
+ODYvMHg5YTAKWzM1MTAzLjk3ODQ2Ml0gIFs8ZmZmZmZmZmY4MTJhZmNjMT5dID8gYnRyZnNfc2V0
+X3BhdGhfYmxvY2tpbmcrMHgzMS8weDcwClszNTEwMy45Nzg0ODhdICBbPGZmZmZmZmZmODEzMzA5
+MDE+XSBidHJmc19maW5kX2FsbF9yb290cysweGExLzB4MTAwClszNTEwMy45Nzg1MTNdICBbPGZm
+ZmZmZmZmODEyZDk4MTA+XSA/IHJlY29yZF9leHRlbnRfYmFja3JlZnMrMHhmMC8weGYwClszNTEw
+My45Nzg1MzhdICBbPGZmZmZmZmZmODEzMzEyNzM+XSBpdGVyYXRlX2V4dGVudF9pbm9kZXMrMHgx
+ODMvMHgyZDAKWzM1MTAzLjk3ODU2Ml0gIFs8ZmZmZmZmZmY4MTJlZDg5Zj5dID8gYnRyZnNfZ2V0
+X3Rva2VuXzY0KzB4NWYvMHhmMApbMzUxMDMuOTc4NTg3XSAgWzxmZmZmZmZmZjgxMmY1ZTI4Pl0g
+PyBmcmVlX2V4dGVudF9idWZmZXIrMHg1OC8weGIwClszNTEwMy45Nzg2MTJdICBbPGZmZmZmZmZm
+ODEzMzE0Njc+XSBpdGVyYXRlX2lub2Rlc19mcm9tX2xvZ2ljYWwrMHhhNy8weGIwClszNTEwMy45
+Nzg2MzhdICBbPGZmZmZmZmZmODEyZDk4MTA+XSA/IHJlY29yZF9leHRlbnRfYmFja3JlZnMrMHhm
+MC8weGYwClszNTEwMy45Nzg2NjRdICBbPGZmZmZmZmZmODEyZDk3OTg+XSByZWNvcmRfZXh0ZW50
+X2JhY2tyZWZzKzB4NzgvMHhmMApbMzUxMDMuOTc4Njg5XSAgWzxmZmZmZmZmZjgxMmUzNzM2Pl0g
+YnRyZnNfZmluaXNoX29yZGVyZWRfaW8rMHgxODYvMHhhNzAKWzM1MTAzLjk3ODcxNV0gIFs8ZmZm
+ZmZmZmY4MTA0Mzk0Nj5dID8gdHJ5X3RvX2RlbF90aW1lcl9zeW5jKzB4NzYvMHhhMApbMzUxMDMu
+OTc4NzQwXSAgWzxmZmZmZmZmZjgxMDQzMjAwPl0gPyBjYXNjYWRlKzB4ZjAvMHgxOTAKWzM1MTAz
+Ljk3ODc2Ml0gIFs8ZmZmZmZmZmY4MTJlNDAzMD5dIGZpbmlzaF9vcmRlcmVkX2ZuKzB4MTAvMHgy
+MApbMzUxMDMuOTc4Nzg1XSAgWzxmZmZmZmZmZjgxMzAzOWE4Pl0gd29ya2VyX2xvb3ArMHhiOC8w
+eDU0MApbMzUxMDMuOTc4ODA3XSAgWzxmZmZmZmZmZjgxMzAzOGYwPl0gPyBidHJmc19xdWV1ZV93
+b3JrZXIrMHgzMTAvMHgzMTAKWzM1MTAzLjk3ODgzMl0gIFs8ZmZmZmZmZmY4MTMwMzhmMD5dID8g
+YnRyZnNfcXVldWVfd29ya2VyKzB4MzEwLzB4MzEwClszNTEwMy45Nzg4NTddICBbPGZmZmZmZmZm
+ODEwNTQ3OTY+XSBrdGhyZWFkKzB4YzYvMHhkMApbMzUxMDMuOTc4ODc3XSAgWzxmZmZmZmZmZjgx
+MDU0NmQwPl0gPyBrdGhyZWFkX2ZyZWV6YWJsZV9zaG91bGRfc3RvcCsweDcwLzB4NzAKWzM1MTAz
+Ljk3ODkwNV0gIFs8ZmZmZmZmZmY4MWIxY2FhYz5dIHJldF9mcm9tX2ZvcmsrMHg3Yy8weGIwClsz
+NTEwMy45Nzg5MjddICBbPGZmZmZmZmZmODEwNTQ2ZDA+XSA/IGt0aHJlYWRfZnJlZXphYmxlX3No
+b3VsZF9zdG9wKzB4NzAvMHg3MApbMzUxMDMuOTc4OTUyXSBDb2RlOiBjMSA0OSA2MyA0NiA1OCA0
+OCA4OSBjMiA0OCBjMSBlMiAwNSA0OCA4ZCA1NCAxMCA2NSA0OSA2MyA0NiAyYyA0OCA4OSBjNiA0
+OCBjMSBlNiAwNSA0OCA4ZCA3NCAzMCA2NSBlOCBmYSA5YiAwNCAwMCBlOSBhZCBmZSBmZiBmZiA8
+MGY+IDBiIDBmIDBiIDkwIDU1IDQ4IDg5IGU1IDQxIDU2IDQ5IDg5IGQ2IDQxIDU1IDQ5IDg5IGY1
+IDQxIDU0IApbMzUxMDMuOTc5MTQ5XSBSSVAgIFs8ZmZmZmZmZmY4MTJhZTFlYj5dIF9fdHJlZV9t
+b2RfbG9nX3Jld2luZCsweDI1Yi8weDI2MApbMzUxMDMuOTc5MTc4XSAgUlNQIDxmZmZmODgwMTA3
+YThmN2I4PgpbMzUxMDMuOTkxMTMxXSAtLS1bIGVuZCB0cmFjZSAzYTQ3N2JmYjg2ZTVjYTRhIF0t
+LS0K
+--14dae93b5936a0b2b604d9fd09db--

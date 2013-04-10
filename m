@@ -1,37 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57262 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57347 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S935753Ab3DJPPP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Apr 2013 11:15:15 -0400
-Date: Wed, 10 Apr 2013 17:15:13 +0200
+	id S934984Ab3DJPRS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Apr 2013 11:17:18 -0400
+Date: Wed, 10 Apr 2013 17:17:16 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Lockdep warning on for-linus branch (umount vs. evict_inode)
-Message-ID: <20130410151513.GN18193@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: allow file data clone within a file
+Message-ID: <20130410151716.GO18193@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <5165785B.7030407@jan-o-sch.net>
+References: <1365344298-23917-1-git-send-email-bo.li.liu@oracle.com>
+ <20130408124918.GB18193@twin.jikos.cz>
+ <20130408135643.GA27988@liubo.jp.oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5165785B.7030407@jan-o-sch.net>
+In-Reply-To: <20130408135643.GA27988@liubo.jp.oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 10, 2013 at 04:34:03PM +0200, Jan Schmidt wrote:
-> I was running fsstress to trigger a tree mod log problem on a current kernel
-> with some custom debug patches applied, so if anyone looking at this needs any
-> line numbers let me know:
-> 
-> <4>[ 1221.749586] [ INFO: possible circular locking dependency detected ]
-> <4>[ 1221.749589] 3.8.0+ #9 Not tainted
-> <4>[ 1221.749590] -------------------------------------------------------
-> <4>[ 1221.749591] fsstress/3108 is trying to acquire lock:
-> <4>[ 1221.749592]  (sb_internal){.+.+..}, at: [<ffffffffa0183cde>] start_transaction+0x2de/0x4f0 [btrfs]
-> <4>[ 1221.749614] 
-> <4>[ 1221.749614] but task is already holding lock:
-> <4>[ 1221.749616]  (&fs_info->ordered_operations_mutex){+.+...}, at: [<ffffffffa019c089>] btrfs_wait_ordered_extents+0x49/0x270 [btrfs]
+On Mon, Apr 08, 2013 at 09:56:44PM +0800, Liu Bo wrote:
+> Yeah, that's right, I missed this, what about another sanity check for
+> overlapping ranges, of course in the case of the same file?
 
-I've seen and reported this warning a few days ago on IRC, Josef sent me
-some patches to test, but it's not fixed yet.
+Yes of course, I can't work right without it.
 
 david

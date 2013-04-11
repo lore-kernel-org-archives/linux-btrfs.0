@@ -1,68 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:37030 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751132Ab3DLISn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Apr 2013 04:18:43 -0400
-Message-ID: <5167C361.8030508@giantdisaster.de>
-Date: Fri, 12 Apr 2013 10:18:41 +0200
+Received: from xp-ob.rzone.de ([81.169.146.138]:26411 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752270Ab3DKQWK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Apr 2013 12:22:10 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by josoe.store (josoe xp3) (RZmta 31.26 OK)
+	with ESMTP id p028b3p3BDBwyR for <linux-btrfs@vger.kernel.org>;
+	Thu, 11 Apr 2013 18:22:08 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 3/4] Btrfs-progs: add more subvol fields to btrfs-list
-References: <cover.1365696891.git.sbehrens@giantdisaster.de> <97d6694fd9f0b7c14156934fc2215a50bb83a8bc.1365696891.git.sbehrens@giantdisaster.de> <51676693.8080506@cn.fujitsu.com>
-In-Reply-To: <51676693.8080506@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/4] Btrfs-progs: cleanup in btrfs-list.c
+Date: Thu, 11 Apr 2013 18:22:05 +0200
+Message-Id: <4e2f2a9be577bf8d141a3111c113f28a86fce29b.1365696891.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1365696891.git.sbehrens@giantdisaster.de>
+References: <cover.1365696891.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1365696891.git.sbehrens@giantdisaster.de>
+References: <cover.1365696891.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 12 Apr 2013 09:42:43 +0800, Wang Shilong wrote:
->> +	if (ritem && !is_v0) {
->> +		rinfo->cgen = btrfs_root_ctransid(ritem);
->> +		rinfo->ogen = btrfs_root_otransid(ritem);
->> +		rinfo->sgen = btrfs_root_stransid(ritem);
->> +		rinfo->rgen = btrfs_root_rtransid(ritem);
->> +		rinfo->ctime = btrfs_stack_timespec_sec(&ritem->ctime);
->> +		rinfo->otime = btrfs_stack_timespec_sec(&ritem->otime);
->> +		rinfo->stime = btrfs_stack_timespec_sec(&ritem->stime);
->> +		rinfo->rtime = btrfs_stack_timespec_sec(&ritem->rtime);
->> +		memcpy(rinfo->uuid, ritem->uuid, BTRFS_UUID_SIZE);
->> +		memcpy(rinfo->puuid, ritem->parent_uuid, BTRFS_UUID_SIZE);
->> +		memcpy(rinfo->ruuid, ritem->received_uuid, BTRFS_UUID_SIZE);
->> +	}
->> +
->> +	/* TODO: this is copied from the old code, what is it good for? */
->> +	if ((!ritem || !btrfs_root_otransid(ritem)) && root_offset)
->> +		rinfo->ogen = root_offset;
-> 
-> 
-> For the older kernel:
-> 		subvolume's original generation is always 0, but
-> 		for snapshot, root_offset equals to its original generation.
-> 		so we set it here.
-> 
+Since someone modified the code to initialize all need_print with zero,
+these lines can be removed entirely.
 
-Thanks for this hint! So it's for old style (v0) root_item entries.
-My code above is not correct since it accesses a field that is not available
-for v0 root items.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ btrfs-list.c | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
 
-I changed it like this:
-
-@@ -502,11 +502,14 @@ static int set_root_info(struct root_info *rinfo, u64 ref_
-                memcpy(rinfo->uuid, ritem->uuid, BTRFS_UUID_SIZE);
-                memcpy(rinfo->puuid, ritem->parent_uuid, BTRFS_UUID_SIZE);
-                memcpy(rinfo->ruuid, ritem->received_uuid, BTRFS_UUID_SIZE);
--       }
--
--       /* TODO: this is copied from the old code, what is it good for? */
--       if ((!ritem || !btrfs_root_otransid(ritem)) && root_offset)
-+       } else if (ritem && is_v0 && root_offset) {
-+               /*
-+                * old style (v0) root items don't contain an otransid field.
-+                * But for snapshots, root_offset equals to its original
-+                * generation.
-+                */
-                rinfo->ogen = root_offset;
-+       }
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 1246a25..a5d6e9b 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -46,7 +46,7 @@ struct root_lookup {
+ 	struct rb_root root;
+ };
+ 
+-struct {
++static struct {
+ 	char	*name;
+ 	char	*column_name;
+ 	int	need_print;
+@@ -54,52 +54,42 @@ struct {
+ 	{
+ 		.name		= "ID",
+ 		.column_name	= "ID",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "gen",
+ 		.column_name	= "Gen",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "cgen",
+ 		.column_name	= "CGen",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "parent",
+ 		.column_name	= "Parent",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "top level",
+ 		.column_name	= "Top Level",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "otime",
+ 		.column_name	= "OTime",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "parent_uuid",
+ 		.column_name	= "Parent UUID",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "uuid",
+ 		.column_name	= "UUID",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= "path",
+ 		.column_name	= "Path",
+-		.need_print	= 0,
+ 	},
+ 	{
+ 		.name		= NULL,
+ 		.column_name	= NULL,
+-		.need_print	= 0,
+ 	},
+ };
+ 
+-- 
+1.8.2.1
 

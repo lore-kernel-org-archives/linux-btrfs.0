@@ -1,102 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:35952 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S934786Ab3DJBAR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Apr 2013 21:00:17 -0400
-Message-ID: <5164BA8F.7040802@cn.fujitsu.com>
-Date: Wed, 10 Apr 2013 09:04:15 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:15671 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935155Ab3DKO25 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Apr 2013 10:28:57 -0400
+Message-ID: <5166C87B.6040305@jan-o-sch.net>
+Date: Thu, 11 Apr 2013 16:28:11 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 08/17] Btrfs-progs: Set the root-id for received subvols
- in btrfs receive
-References: <cover.1365524492.git.sbehrens@giantdisaster.de> <68d8e4735895de4f99a49484a14d34b69962ae17.1365524492.git.sbehrens@giantdisaster.de>
-In-Reply-To: <68d8e4735895de4f99a49484a14d34b69962ae17.1365524492.git.sbehrens@giantdisaster.de>
-Content-Type: text/plain; charset=GB2312
+To: miaox@cn.fujitsu.com
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>, mfasheh@suse.de
+Subject: Re: [PATCH] Btrfs-progs: don't set INCOMPAT_EXTENDED_IREF flag when
+ making a new fs
+References: <51669069.50207@cn.fujitsu.com>
+In-Reply-To: <51669069.50207@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-> When an entry was added to the subvol search tree, the root_id was
-> always 0 (not set at all) and therefore only the first one was
-> added, all the others had been ignored. This commit adds a function
-> to retrieve the root_id for a given fd, and this function is used
-> to set the root_id before the entry is added.
+On Thu, April 11, 2013 at 12:28 (+0200), Miao Xie wrote:
+> There is no extended irefs in the new fs, and we can mount it on
+> the old kernel without extended iref function safely. So we needn't
+> set INCOMPAT_EXTENDED_IREF flag when making a new fs, and just set
+> it when we actually insert a extended iref.
 > 
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> Cc: Mark Fasheh <mfasheh@suse.de>
 > ---
->  cmds-receive.c |  3 +++
->  send-utils.c   | 20 ++++++++++++++++++++
->  send-utils.h   |  1 +
->  3 files changed, 24 insertions(+)
+>  mkfs.c | 2 --
+>  1 file changed, 2 deletions(-)
 > 
-> diff --git a/cmds-receive.c b/cmds-receive.c
-> index dc72e9e..eedff13 100644
-> --- a/cmds-receive.c
-> +++ b/cmds-receive.c
-> @@ -125,6 +125,9 @@ static int finish_subvol(struct btrfs_receive *r)
->  		goto out;
->  	}
+> diff --git a/mkfs.c b/mkfs.c
+> index c8cb395..aca6e46 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1654,8 +1654,6 @@ raid_groups:
 >  
-> +	ret = btrfs_get_root_id(subvol_fd, &r->cur_subvol->root_id);
-
-
-There has been a function in btrfs-list.c named 'btrfs_list_get_path_rootid'
-which does the same things as 'btrfs_get_root_id'.I think you can reuse it.
-
-Thanks,
-Wang
-
-> +	if (ret < 0)
-> +		goto out;
->  	subvol_uuid_search_add(&r->sus, r->cur_subvol);
->  	r->cur_subvol = NULL;
->  	ret = 0;
-> diff --git a/send-utils.c b/send-utils.c
-> index 182778a..b2d544c 100644
-> --- a/send-utils.c
-> +++ b/send-utils.c
-> @@ -23,6 +23,26 @@
->  #include "ioctl.h"
->  #include "btrfs-list.h"
+>  	super = root->fs_info->super_copy;
+>  	flags = btrfs_super_incompat_flags(super);
+> -	flags |= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF;
+> -
+>  	if (mixed)
+>  		flags |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
 >  
-> +int btrfs_get_root_id(int fd, u64 *root_id)
-> +{
-> +	struct btrfs_ioctl_ino_lookup_args ino_args;
-> +	int ret;
-> +
-> +	memset(&ino_args, 0, sizeof(ino_args));
-> +	ino_args.objectid = BTRFS_FIRST_FREE_OBJECTID;
-> +
-> +	/* this ioctl fills in ino_args->treeid */
-> +	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &ino_args);
-> +	if (ret) {
-> +		fprintf(stderr, "ERROR: Failed to lookup root_id - %s\n",
-> +			strerror(errno));
-> +		return ret;
-> +	}
-> +
-> +	*root_id = ino_args.treeid;
-> +	return 0;
-> +}
-> +
->  static struct rb_node *tree_insert(struct rb_root *root,
->  				   struct subvol_info *si,
->  				   enum subvol_search_type type)
-> diff --git a/send-utils.h b/send-utils.h
-> index 78abf94..3c8b7b7 100644
-> --- a/send-utils.h
-> +++ b/send-utils.h
-> @@ -61,6 +61,7 @@ struct subvol_uuid_search {
->  	struct rb_root path_subvols;
->  };
->  
-> +int btrfs_get_root_id(int fd, u64 *root_id);
->  int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s);
->  void subvol_uuid_search_finit(struct subvol_uuid_search *s);
->  struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
+> 
 
+This one should have a large
 
+*** do not apply until kernel patches from "[PATCH 0/2] do not open the extend
+*** inode reference at the beginning" have been merged.
 
+tag. Otherwise, extended irefs are disabled entirely for all new file systems in
+environments where they have been working so far.
+
+-Jan

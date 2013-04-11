@@ -1,324 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:53078 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:32004 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S935674Ab3DKCS1 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Apr 2013 22:18:27 -0400
-Message-ID: <51661DC0.30205@cn.fujitsu.com>
-Date: Thu, 11 Apr 2013 10:19:44 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+	id S1751514Ab3DKFVk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Apr 2013 01:21:40 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r3B5LbUL015343
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 13:21:37 +0800
+Message-ID: <5166495E.8030107@cn.fujitsu.com>
+Date: Thu, 11 Apr 2013 13:25:50 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/3] Btrfs: fix the deadlock between the transaction start/attach
- and commit
-References: <51249468.6010004@cn.fujitsu.com> <CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com> <512B3AE7.9090208@cn.fujitsu.com> <CAOcd+r2bKGSoyxSXtnDKH5d04kRT2qRpFAKX2Dz6As=Qc_fOtg@mail.gmail.com> <514FAD96.7040002@cn.fujitsu.com> <CAOcd+r1i+neaAb+3o6CSVboKK_P0WPrSoiPLGC8t0QeqFM-uAQ@mail.gmail.com> <CAOcd+r16WyKxpDchERq+cGcq1oaEk21BvDSKWBtLge6s3GU=xg@mail.gmail.com>
-In-Reply-To: <CAOcd+r16WyKxpDchERq+cGcq1oaEk21BvDSKWBtLge6s3GU=xg@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+CC: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: add a rb_tree to improve performance of ulist search
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On wed, 10 Apr 2013 21:45:43 +0300, Alex Lyakas wrote:
-> Hi Miao,
-> I attempted to fix the issue by not joining a transaction that has
-> trans->in_commit set. I did something similar to what
-> wait_current_trans() does, but I did:
-> 
-> smp_rmb();
-> if (cur_trans && cur_trans->in_commit) {
-> ...
-> wait_event(root->fs_info->transaction_wait,  !cur_trans->blocked);
-> ...
+Walking backref tree and btrfs quota rely on ulist very much.
+This patch tries to use rb_tree to speed up search time.
 
-But it will introduce deadlock if we need flush some dirty pages, for
-example: run ordered operation.
+The original code always checks whether an element
+exists before adding a new element, however it costs O(n).
 
-> 
-> I also had to change the order of setting in_commit and blocked in
-> btrfs_commit_transaction:
-> 	trans->transaction->blocked = 1;
-> 	trans->transaction->in_commit = 1;
-> 	smp_wmb();
-> to make sure that if in_commit is set, then blocked cannot be 0,
-> because btrfs_commit_transaction haven't set it yet to 1.
+I try to add a rb_tree in the ulist,this is only used to speed up
+search. I also do some measurements with quota enabled.
 
-we need smp_wmb() between 
-	trans->transaction->blocked = 1;
-and
-	trans->transaction->in_commit = 1;
+fsstress -p 4 -n 10000
 
-Or the cpu may set blocked after in_commmit.
+Without this path:
+real    0m51.058s       2m4.745s        1m28.222s       1m5.137s
+user    0m0.035s        0m0.041s        0m0.105s        0m0.100s
+sys     0m12.009s       0m11.246s       0m10.901s       0m10.999s       0m11.287s
 
-> However, with this fix I observe two issues:
-> # With large trees and heavy commits, join_transaction() is delayed
-> sometimes by 1-3 seconds. This delays the host IO by too much.
-> # With this fix, I think too many transactions happen. Basically with
-> this fix, once transaction->in_commit is set, then I insist to open a
-> new transaction and not to join the current one. It has some bad
-> influence on host response times pattern, but I cannot exactly tell
-> why is that.
-> 
-> Did you have other fix in mind?
-> 
-> Without the fix, I observe sometimes commits that take like 80
-> seconds, out of which like 50 seconds are spent in the do-while loop
-> of btrfs_commit_transaction.
+With this path:
+real    0m55.295s       0m50.960s       1m2.214s        0m48.273s
+user    0m0.053s        0m0.095s        0m0.135s        0m0.107s
+sys     0m7.766s        0m6.013s        0m6.319s        0m6.030s        0m6.532s
 
-I'm making the patch to fix this problem, my fix is:
-- don't flush the dirty page during the commit if we create a snapshot
-- introduce a new counter to count the external writers(TRANS_USERSPACE/TRANS_START)
-  and if this counter is zero, we will break the while loop.
-- if flushoncommit is set, we start delalloc flush before the while loop, not in the
-  loop, so we don't flush the dirty pages again and again.
-- introduce a new transaction handle type named TRANS_JOIN_ENDIO, which is used in the endio
-  process.
-- introduce a new state for transaction commit, at this state, we block TRANS_JOIN, but
-  don't block TRANS_JOIN_ENDIO.
+After applying the patch,the execute time is down by ~42%.(11.287s->6.532s)
 
-Thanks
-Miao
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ulist.c |   58 ++++++++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/ulist.h |    6 +++++
+ 2 files changed, 56 insertions(+), 8 deletions(-)
 
-> 
-> Thanks,
-> Alex.
-> 
-> 
-> 
-> On Mon, Mar 25, 2013 at 11:11 AM, Alex Lyakas
-> <alex.btrfs@zadarastorage.com> wrote:
->> Hi Miao,
->>
->> On Mon, Mar 25, 2013 at 3:51 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->>> On Sun, 24 Mar 2013 13:13:22 +0200, Alex Lyakas wrote:
->>>> Hi Miao,
->>>> I am seeing another issue. Your fix prevents from TRANS_START to get
->>>> in the way of a committing transaction. But it does not prevent from
->>>> TRANS_JOIN. On the other hand, btrfs_commit_transaction has the
->>>> following loop:
->>>>
->>>> do {
->>>>     // attempt to do some useful stuff and/or sleep
->>>> } while (atomic_read(&cur_trans->num_writers) > 1 ||
->>>>                (should_grow && cur_trans->num_joined != joined));
->>>>
->>>> What I see is basically that new writers join the transaction, while
->>>> btrfs_commit_transaction() does this loop. I see
->>>> cur_trans->num_writers decreasing, but then it increases, then
->>>> decreases etc. This can go for several seconds during heavy IO load.
->>>> There is nothing to prevent new TRANS_JOIN writers coming and joining
->>>> a transaction over and over, thus delaying transaction commit. The IO
->>>> path uses TRANS_JOIN; for example run_delalloc_nocow() does that.
->>>>
->>>> Do you observe such behavior? Do you believe it's problematic?
->>>
->>> I know this behavior, there is no problem with it, the latter code
->>> will prevent from TRANS_JOIN.
->>>
->>> 1672         spin_lock(&root->fs_info->trans_lock);
->>> 1673         root->fs_info->trans_no_join = 1;
->>> 1674         spin_unlock(&root->fs_info->trans_lock);
->>> 1675         wait_event(cur_trans->writer_wait,
->>> 1676                    atomic_read(&cur_trans->num_writers) == 1);
->>>
->> Yes, this code prevents anybody from joining, but before
->> btrfs_commit_transaction() gets to this code, it may spend sometimes
->> 10 seconds (in my tests) in the do-while loop, while new writers come
->> and go. Basically, it is not deterministic when the do-while loop will
->> exit, it depends on the IO pattern.
->>
->>> And if we block the TRANS_JOIN at the place you point out, the deadlock
->>> will happen because we need deal with the ordered operations which will
->>> use TRANS_JOIN here.
->>>
->>> (I am dealing with the problem you said above by adding a new type of
->>> TRANS_* now)
->>
->> Thanks.
->> Alex.
->>
->>
->>>
->>> Thanks
->>> Miao
->>>
->>>> Thanks,
->>>> Alex.
->>>>
->>>>
->>>> On Mon, Feb 25, 2013 at 12:20 PM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->>>>> On sun, 24 Feb 2013 21:49:55 +0200, Alex Lyakas wrote:
->>>>>> Hi Miao,
->>>>>> can you please explain your solution a bit more.
->>>>>>
->>>>>> On Wed, Feb 20, 2013 at 11:16 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->>>>>>> Now btrfs_commit_transaction() does this
->>>>>>>
->>>>>>> ret = btrfs_run_ordered_operations(root, 0)
->>>>>>>
->>>>>>> which async flushes all inodes on the ordered operations list, it introduced
->>>>>>> a deadlock that transaction-start task, transaction-commit task and the flush
->>>>>>> workers waited for each other.
->>>>>>> (See the following URL to get the detail
->>>>>>>  http://marc.info/?l=linux-btrfs&m=136070705732646&w=2)
->>>>>>>
->>>>>>> As we know, if ->in_commit is set, it means someone is committing the
->>>>>>> current transaction, we should not try to join it if we are not JOIN
->>>>>>> or JOIN_NOLOCK, wait is the best choice for it. In this way, we can avoid
->>>>>>> the above problem. In this way, there is another benefit: there is no new
->>>>>>> transaction handle to block the transaction which is on the way of commit,
->>>>>>> once we set ->in_commit.
->>>>>>>
->>>>>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->>>>>>> ---
->>>>>>>  fs/btrfs/transaction.c |   17 ++++++++++++++++-
->>>>>>>  1 files changed, 16 insertions(+), 1 deletions(-)
->>>>>>>
->>>>>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->>>>>>> index bc2f2d1..71b7e2e 100644
->>>>>>> --- a/fs/btrfs/transaction.c
->>>>>>> +++ b/fs/btrfs/transaction.c
->>>>>>> @@ -51,6 +51,14 @@ static noinline void switch_commit_root(struct btrfs_root *root)
->>>>>>>         root->commit_root = btrfs_root_node(root);
->>>>>>>  }
->>>>>>>
->>>>>>> +static inline int can_join_transaction(struct btrfs_transaction *trans,
->>>>>>> +                                      int type)
->>>>>>> +{
->>>>>>> +       return !(trans->in_commit &&
->>>>>>> +                type != TRANS_JOIN &&
->>>>>>> +                type != TRANS_JOIN_NOLOCK);
->>>>>>> +}
->>>>>>> +
->>>>>>>  /*
->>>>>>>   * either allocate a new transaction or hop into the existing one
->>>>>>>   */
->>>>>>> @@ -86,6 +94,10 @@ loop:
->>>>>>>                         spin_unlock(&fs_info->trans_lock);
->>>>>>>                         return cur_trans->aborted;
->>>>>>>                 }
->>>>>>> +               if (!can_join_transaction(cur_trans, type)) {
->>>>>>> +                       spin_unlock(&fs_info->trans_lock);
->>>>>>> +                       return -EBUSY;
->>>>>>> +               }
->>>>>>>                 atomic_inc(&cur_trans->use_count);
->>>>>>>                 atomic_inc(&cur_trans->num_writers);
->>>>>>>                 cur_trans->num_joined++;
->>>>>>> @@ -360,8 +372,11 @@ again:
->>>>>>>
->>>>>>>         do {
->>>>>>>                 ret = join_transaction(root, type);
->>>>>>> -               if (ret == -EBUSY)
->>>>>>> +               if (ret == -EBUSY) {
->>>>>>>                         wait_current_trans(root);
->>>>>>> +                       if (unlikely(type == TRANS_ATTACH))
->>>>>>> +                               ret = -ENOENT;
->>>>>>> +               }
->>>>>>
->>>>>> So I understand that instead of incrementing num_writes and joining
->>>>>> the current transaction, you do not join and wait for the current
->>>>>> transaction to unblock.
->>>>>
->>>>> More specifically，TRANS_START、TRANS_USERSPACE and TRANS_ATTACH can not
->>>>> join and just wait for the current transaction to unblock if ->in_commit
->>>>> is set.
->>>>>
->>>>>> Which task in Josef's example
->>>>>> http://marc.info/?l=linux-btrfs&m=136070705732646&w=2
->>>>>> task 1, task 2 or task 3 is the one that will not join the
->>>>>> transaction, but instead wait?
->>>>>
->>>>> Task1 will not join the transaction, in this way, async inode flush
->>>>> won't run, and then task3 won't do anything.
->>>>>
->>>>> Before applying the patch:
->>>>> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
->>>>> (Task1)                                 (Task2)                         (Task3)         -- the name in Josef's example
->>>>> btrfs_start_transaction()
->>>>>  |->may_wait_transaction()
->>>>>  |  (return 0)
->>>>>  |                                      btrfs_commit_transaction()
->>>>>  |                                       |->set ->in_commit and
->>>>>  |                                       |  blocked to 1
->>>>>  |                                       |->wait writers to be 1
->>>>>  |                                       |  (writers is 1)
->>>>>  |->join_transaction()                   |
->>>>>  |  (writers is 2)                       |
->>>>>  |->btrfs_commit_transaction()           |
->>>>>      |                                   |->set trans_no_join to 1
->>>>>      |                                   |  (close join transaction)
->>>>>      |->btrfs_run_ordered_operations     |
->>>>>         (Those ordered operations        |
->>>>>          are added when releasing        |
->>>>>          file)                           |
->>>>>          |->async inode flush()          |
->>>>>          |->wait_flush_comlete()         |
->>>>>                                          |                              work_loop()
->>>>>                                          |                               |->run_work()
->>>>>                                          |                                   |->btrfs_join_transaction()
->>>>>                                          |                                       |->wait_current_trans()
->>>>>                                          |->wait writers to be 1
->>>>>
->>>>> This three tasks waited for each other.
->>>>>
->>>>> After applying this patch:
->>>>> Start/Attach_Trans_Task                 Commit_Task                     Flush_Worker
->>>>> (Task1)                                 (Task2)                         (Task3)
->>>>> btrfs_start_transaction()
->>>>>  |->may_wait_transaction()
->>>>>  |  (return 0)
->>>>>  |                                      btrfs_commit_transaction()
->>>>>  |                                       |->set ->in_commit and
->>>>>  |                                       |  blocked to 1
->>>>>  |                                       |->wait writers to be 1
->>>>>  |                                       |  (writers is 1)
->>>>>  |->join_transaction() fail              |
->>>>>  |  (return -EBUSY, writers is still 1)  |
->>>>>  |->wait_current_trans()                 |
->>>>>                                          |->set trans_no_join to 1
->>>>>                                          |  (close join transaction)
->>>>>                                          |->wait writers to be 1
->>>>>                                          |->continue committing
->>>>>                                                                         (Task3 does nothing)
->>>>>> Also, I think I don't fully understand Josef's example. What is
->>>>>> preventing from async flushing to complete?
->>>>>> Is task 3 waiting because trans_no_join is set?
->>>>>> Is task 3 the one that actually does the delalloc flush?
->>>>>
->>>>> See above.
->>>>>
->>>>> Thanks
->>>>> Miao
->>>>>
->>>>>>
->>>>>> Thanks,
->>>>>> Alex.
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>>>         } while (ret == -EBUSY);
->>>>>>>
->>>>>>>         if (ret < 0) {
->>>>>>> --
->>>>>>> 1.6.5.2
->>>>>>> --
->>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>
->>>>>
->>>>
->>>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
+index ddc61ca..7b417e2 100644
+--- a/fs/btrfs/ulist.c
++++ b/fs/btrfs/ulist.c
+@@ -53,6 +53,7 @@ void ulist_init(struct ulist *ulist)
+ 	ulist->nnodes = 0;
+ 	ulist->nodes = ulist->int_nodes;
+ 	ulist->nodes_alloced = ULIST_SIZE;
++	ulist->root = RB_ROOT;
+ }
+ EXPORT_SYMBOL(ulist_init);
+ 
+@@ -72,6 +73,7 @@ void ulist_fini(struct ulist *ulist)
+ 	if (ulist->nodes_alloced > ULIST_SIZE)
+ 		kfree(ulist->nodes);
+ 	ulist->nodes_alloced = 0;	/* in case ulist_fini is called twice */
++	ulist->root = RB_ROOT;
+ }
+ EXPORT_SYMBOL(ulist_fini);
+ 
+@@ -123,6 +125,45 @@ void ulist_free(struct ulist *ulist)
+ }
+ EXPORT_SYMBOL(ulist_free);
+ 
++static struct ulist_node *ulist_rbtree_search(struct ulist *ulist, u64 val)
++{
++	struct rb_node *n = ulist->root.rb_node;
++	struct ulist_node *u = NULL;
++
++	while (n) {
++		u = rb_entry(n, struct ulist_node, rb_node);
++		if (u->val < val)
++			n = n->rb_right;
++		else if (u->val > val)
++			n = n->rb_left;
++		else
++			return u;
++	}
++	return NULL;
++}
++
++static int ulist_rbtree_insert(struct ulist *ulist, struct ulist_node *ins)
++{
++	struct rb_node **p = &ulist->root.rb_node;
++	struct rb_node *parent = NULL;
++	struct ulist_node *cur = NULL;
++
++	while (*p) {
++		parent = *p;
++		cur = rb_entry(parent, struct ulist_node, rb_node);
++
++		if (cur->val < ins->val)
++			p = &(*p)->rb_right;
++		else if (cur->val > ins->val)
++			p = &(*p)->rb_left;
++		else
++			return -EEXIST;
++	}
++	rb_link_node(&ins->rb_node, parent, p);
++	rb_insert_color(&ins->rb_node, &ulist->root);
++	return 0;
++}
++
+ /**
+  * ulist_add - add an element to the ulist
+  * @ulist:	ulist to add the element to
+@@ -151,14 +192,13 @@ int ulist_add(struct ulist *ulist, u64 val, u64 aux, gfp_t gfp_mask)
+ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 		    u64 *old_aux, gfp_t gfp_mask)
+ {
+-	int i;
+-
+-	for (i = 0; i < ulist->nnodes; ++i) {
+-		if (ulist->nodes[i].val == val) {
+-			if (old_aux)
+-				*old_aux = ulist->nodes[i].aux;
+-			return 0;
+-		}
++	int ret = 0;
++	struct ulist_node *node = NULL;
++	node = ulist_rbtree_search(ulist, val);
++	if (node) {
++		if (old_aux)
++			*old_aux = node->aux;
++		return 0;
+ 	}
+ 
+ 	if (ulist->nnodes >= ulist->nodes_alloced) {
+@@ -187,6 +227,8 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 	}
+ 	ulist->nodes[ulist->nnodes].val = val;
+ 	ulist->nodes[ulist->nnodes].aux = aux;
++	ret = ulist_rbtree_insert(ulist, &ulist->nodes[ulist->nnodes]);
++	BUG_ON(ret);
+ 	++ulist->nnodes;
+ 
+ 	return 1;
+diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
+index 21a1963..cb5f89d 100644
+--- a/fs/btrfs/ulist.h
++++ b/fs/btrfs/ulist.h
+@@ -8,6 +8,9 @@
+ #ifndef __ULIST__
+ #define __ULIST__
+ 
++#include<linux/list.h>
++#include<linux/rbtree.h>
++
+ /*
+  * ulist is a generic data structure to hold a collection of unique u64
+  * values. The only operations it supports is adding to the list and
+@@ -34,6 +37,7 @@ struct ulist_iterator {
+ struct ulist_node {
+ 	u64 val;		/* value to store */
+ 	u64 aux;		/* auxiliary value saved along with the val */
++	struct rb_node rb_node;	/* used to speed up search */
+ };
+ 
+ struct ulist {
+@@ -54,6 +58,8 @@ struct ulist {
+ 	 */
+ 	struct ulist_node *nodes;
+ 
++	struct rb_root root;
++
+ 	/*
+ 	 * inline storage space for the first ULIST_SIZE entries
+ 	 */
+-- 
+1.7.7.6
+
+
+
 

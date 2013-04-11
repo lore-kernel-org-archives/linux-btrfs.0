@@ -1,61 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:25810 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:17256 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751366Ab3DEFxp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 01:53:45 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r355ri7T032385
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:45 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r355ric8001371
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 05:53:44 GMT
-Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id r355riwd017062
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Apr 2013 00:53:44 -0500
+	with ESMTP id S1753703Ab3DKJ5q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Apr 2013 05:57:46 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/9] a bunch of miscellaneous bug fixes
-Date: Fri,  5 Apr 2013 13:54:54 +0800
-Message-Id: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: avoid ioctl for multipath-dev with its non-multipath path
+Date: Thu, 11 Apr 2013 17:58:33 +0800
+Message-Id: <1365674313-4482-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
+References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David, all
+We should avoid using non multi-path (mp) path for mp disks
+As of now there is no good way (like api) to check that.
+A workaround way is to check if the O_EXCL open is unsuccessful.
+This is safe since otherwise the BTRFS_IOC_SCAN_DEV ioctl would
+fail if the disk-path can not be opened with the flag O_EXCL set.
 
-        kindly review/accept this patch set to fix various
-	bugs as in the patch.
-	This patch set is on top David's integration-20130321
-	branch and would apply nicely on top the backup sb
-	fixes which was sent separately.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c | 30 +++++++++++++++++++++++++++++-
+ 1 file changed, 29 insertions(+), 1 deletion(-)
 
-Thanks
-Anand
-
-Anand Jain (9):
-  btrfs-progs: root_item generation_v2 is out of sync after btrfsck
-  btrfs-progs: no pending balance is not an error
-  btrfs-progs: mkfs should first check all disks before writing to a
-    disk
-  btrfs-progs: check if btrfs kernel module is loaded
-  btrfs-progs: delete unused function get_mountpt
-  btrfs-progs: mkfs stdout print to match chronology
-  btrfs-progs: cmd replace should check target-dev fully
-  btrfs-progs: btrfs-select-super output is confusing when it fails
-  btrfs-progs: fix btrfs scrub start help
-
- btrfs-select-super.c |   6 +-
- cmds-balance.c       |   6 +-
- cmds-device.c        |  56 +++++++++----
- cmds-replace.c       |  24 +-----
- cmds-scrub.c         |   2 +-
- mkfs.c               | 216 +++++++++++----------------------------------------
- root-tree.c          |  13 ++++
- utils.c              | 178 +++++++++++++++++++++++++++++++++---------
- utils.h              |   2 +
- 9 files changed, 260 insertions(+), 243 deletions(-)
-
+diff --git a/utils.c b/utils.c
+index 3308668..0231677 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1105,6 +1105,13 @@ again:
+ 		if (!S_ISBLK(st.st_mode)) {
+ 			continue;
+ 		}
++
++		/* Do not test for O_EXCL here since btrfs when
++		* mounted will open with O_EXCL, and if we don't
++		* allow btrfs_scan_one_device pass thru 
++		* btrfs fi show will not show the btrfs fs which
++		* are mounted
++		*/
+ 		fd = open(fullpath, O_RDONLY);
+ 		if (fd < 0) {
+ 			/* ignore the following errors:
+@@ -1122,10 +1129,18 @@ again:
+ 					    &num_devices,
+ 					    BTRFS_SUPER_INFO_OFFSET,
+ 					    0ull);
++		close(fd);
++
+ 		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
++			/* Test if the dev is already opened with O_EXCL flag
++			*  if yes then no need to call ioctl since the
++			*  ioctl will anyway fail.
++			*/
++			fd = open(fullpath, O_RDONLY|O_EXCL);
++			if (fd < 0) continue; 
++			close(fd);
+ 			btrfs_register_one_device(fullpath);
+ 		}
+-		close(fd);
+ 	}
+ 	if (!list_empty(&pending_list)) {
+ 		free(pending);
+@@ -1444,6 +1459,12 @@ scan_again:
+ 			continue;
+ 		}
+ 
++		/* Do not test for O_EXCL here since btrfs when
++		* mounted will open with O_EXCL, and if we don't
++		* allow btrfs_scan_one_device pass thru 
++		* btrfs fi show will not show the btrfs fs which
++		* are mounted
++		*/
+ 		fd = open(fullpath, O_RDONLY);
+ 		if (fd < 0) {
+ 			fprintf(stderr, "failed to open %s: %s\n",
+@@ -1455,6 +1476,13 @@ scan_again:
+ 					    BTRFS_SUPER_INFO_OFFSET,
+ 					    0ull);
+ 		if (ret == 0 && flags & BTRFS_SCAN_REGISTER) {
++			/* Test if the dev is already opened with O_EXCL flag
++			*  if yes then no need to call ioctl since the
++			*  ioctl will anyway fail.
++			*/
++			fd = open(fullpath, O_RDONLY|O_EXCL);
++			if (fd < 0) continue; 
++			close(fd);
+ 			btrfs_register_one_device(fullpath);
+ 		}
+ 		close(fd);
 -- 
 1.8.1.227.g44fe835
 

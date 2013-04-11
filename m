@@ -1,134 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f180.google.com ([209.85.192.180]:35803 "EHLO
-	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933051Ab3DGKZ0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2013 06:25:26 -0400
-Received: by mail-pd0-f180.google.com with SMTP id q11so2710713pdj.25
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Apr 2013 03:25:25 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sensille@gmx.net, wangsl-fnst@cn.fujitsu.com, miaox@cn.fujitsu.com
-Subject: [PATCH V2] Btrfs: creating the subvolume qgroup automatically when enabling quota
-Date: Sun,  7 Apr 2013 18:24:57 +0800
-Message-Id: <1365330297-9066-1-git-send-email-wangshilong1991@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:35023 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753716Ab3DKKcA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Apr 2013 06:32:00 -0400
+Message-ID: <51669144.20107@cn.fujitsu.com>
+Date: Thu, 11 Apr 2013 18:32:36 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 0/2] do not open the extend inode reference at the beginning
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+In most cases, we do not insert so many inode references, so it is
+better that we don't set incompat flag -- EXTEND_IREF -- when we
+make a fs. Otherwise we can not mount the fs on the old kernel
+though there is no extend iref in fact.
 
-Creating the subvolume/snapshots(including root subvolume) qgroup
-auotomatically when enabling quota.
+And some users may not hope to inserting the extend inode reference
+because of the incompatible problem. In this case, we introduce a
+mount option named noextiref.
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog:
-	V1->V2: Holding [down/up]_write() rather than [down/up]_read()
-	when creating qgroup automatically.
----
- fs/btrfs/ioctl.c  |  2 ++
- fs/btrfs/qgroup.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 57 insertions(+)
+Note, if the extend inode reference function is enabled, we will
+fail to mount a fs with this option because there might be some
+extend irefs in the fs, we should not close this function.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 898c572..306fb0c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3693,6 +3693,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 		goto drop_write;
- 	}
- 
-+	down_write(&root->fs_info->subvol_sem);
- 	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
- 		trans = btrfs_start_transaction(root, 2);
- 		if (IS_ERR(trans)) {
-@@ -3726,6 +3727,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 	}
- out:
- 	kfree(sa);
-+	up_write(&root->fs_info->subvol_sem);
- drop_write:
- 	mnt_drop_write_file(file);
- 	return ret;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b44124d..e3598fa 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -783,11 +783,15 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *quota_root;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_path *path = NULL;
- 	struct btrfs_qgroup_status_item *ptr;
- 	struct extent_buffer *leaf;
- 	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_qgroup *qgroup = NULL;
- 	int ret = 0;
-+	int slot;
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	if (fs_info->quota_root) {
-@@ -834,7 +838,58 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
- 
- 	btrfs_mark_buffer_dirty(leaf);
- 
-+	key.objectid = 0;
-+	key.type = BTRFS_ROOT_REF_KEY;
-+	key.offset = 0;
-+
-+	btrfs_release_path(path);
-+	ret = btrfs_search_slot_for_read(tree_root, &key, path, 1, 0);
-+	if (ret > 0)
-+		goto out_add_root;
-+	if (ret < 0)
-+		goto out_free_path;
-+
-+
-+	while (1) {
-+		slot = path->slots[0];
-+		leaf = path->nodes[0];
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+
-+		if (found_key.type == BTRFS_ROOT_REF_KEY) {
-+			ret = add_qgroup_item(trans, quota_root,
-+					      found_key.offset);
-+			if (ret)
-+				goto out_free_path;
-+
-+			spin_lock(&fs_info->qgroup_lock);
-+			qgroup = add_qgroup_rb(fs_info, found_key.offset);
-+			if (IS_ERR(qgroup)) {
-+				spin_unlock(&fs_info->qgroup_lock);
-+				ret = PTR_ERR(qgroup);
-+				goto out_free_path;
-+			}
-+			spin_unlock(&fs_info->qgroup_lock);
-+		}
-+		ret = btrfs_next_item(tree_root, path);
-+		if (ret < 0)
-+			goto out_free_path;
-+		if (ret)
-+			break;
-+	}
-+
-+out_add_root:
-+	btrfs_release_path(path);
-+	ret = add_qgroup_item(trans, quota_root, BTRFS_FS_TREE_OBJECTID);
-+	if (ret)
-+		goto out_free_path;
-+
- 	spin_lock(&fs_info->qgroup_lock);
-+	qgroup = add_qgroup_rb(fs_info, BTRFS_FS_TREE_OBJECTID);
-+	if (IS_ERR(qgroup)) {
-+		spin_unlock(&fs_info->qgroup_lock);
-+		ret = PTR_ERR(qgroup);
-+		goto out_free_path;
-+	}
- 	fs_info->quota_root = quota_root;
- 	fs_info->pending_quota_state = 1;
- 	spin_unlock(&fs_info->qgroup_lock);
+This patchset is against:
+[PATCH 1/2] Btrfs: fix unblocked autodefraggers when remount
+[PATCH 2/2] Btrfs: use a lock to protect incompat/compat flag of the super block
+
+Miao Xie (2):
+  Btrfs: set the INCOMPAT_EXTENDED_IREF when the extended iref is inserted
+  Btrfs: introduce noextiref mount option
+
+ fs/btrfs/ctree.h      |  1 +
+ fs/btrfs/disk-io.c    |  9 +++++++++
+ fs/btrfs/inode-item.c | 20 ++++++++++----------
+ fs/btrfs/super.c      | 41 ++++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 60 insertions(+), 11 deletions(-)
+
 -- 
-1.7.11.7
-
+1.8.0.1

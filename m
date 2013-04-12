@@ -1,130 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19459 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750806Ab3DLIf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Apr 2013 04:35:57 -0400
-Message-ID: <5167C85B.50106@cn.fujitsu.com>
-Date: Fri, 12 Apr 2013 16:39:55 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.161]:55272 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754197Ab3DLJF1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Apr 2013 05:05:27 -0400
+Message-ID: <5167CE55.6040309@giantdisaster.de>
+Date: Fri, 12 Apr 2013 11:05:25 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
+To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 CC: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v3 3/4] Btrfs-progs: add more subvol fields to btrfs-list
-In-Reply-To: <140ca9fdec9d22e8841bc0309ba2e70fff7539bd.1365754038.git.sbehrens@giantdisaster.de>
-Content-Type: text/plain; charset=GB2312
+In-Reply-To: <5167C85B.50106@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <140ca9fdec9d22e8841bc0309ba2e70fff7539bd.1365754038.git.sbehrens@giantdisaster.de>
+ <5167C85B.50106@cn.fujitsu.com>
 
-Hello Stefan,
+On Fri, 12 Apr 2013 16:39:55 +0800, Wang Shilong wrote:
+[...]
+>> +	if (ritem && !is_v0) {
+>> +		rinfo->cgen = btrfs_root_ctransid(ritem);
+>> +		rinfo->ogen = btrfs_root_otransid(ritem);
+>> +		rinfo->sgen = btrfs_root_stransid(ritem);
+>> +		rinfo->rgen = btrfs_root_rtransid(ritem);
+>> +		rinfo->ctime = btrfs_stack_timespec_sec(&ritem->ctime);
+>> +		rinfo->otime = btrfs_stack_timespec_sec(&ritem->otime);
+>> +		rinfo->stime = btrfs_stack_timespec_sec(&ritem->stime);
+>> +		rinfo->rtime = btrfs_stack_timespec_sec(&ritem->rtime);
+>> +		memcpy(rinfo->uuid, ritem->uuid, BTRFS_UUID_SIZE);
+>> +		memcpy(rinfo->puuid, ritem->parent_uuid, BTRFS_UUID_SIZE);
+>> +		memcpy(rinfo->ruuid, ritem->received_uuid, BTRFS_UUID_SIZE);
+> 
+>> +	} else if (ritem && is_v0 && root_offset) {
+>> +		/*
+>> +		 * old style (v0) root items don't contain an otransid field.
+>> +		 * But for snapshots, root_offset equals to its original
+>> +		 * generation.
+>> +		 */
+>> +		rinfo->ogen = root_offset;
+>> +	}
+> 
+> 
+> 	We set it rinfo->ogen = root_offset only if:
+> 	1> for root_item_v0
+> 	2> it is a snapshot.
+> 
+> 	Besides for a snapshot it's root_offset is always none zero.
+> 	so we do not need (is_v0 && root_offset) both.
+> 	Actually, Patch V2 doses the correct thing.
+> 
 
-[snip]
+Patch V2 was accessing the otransid field also for root_item_v0 which
+does not have this field. This was not correct.
 
-..
-> -static int update_root(struct root_lookup *root_lookup,
-> -		       u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
-> -		       u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
-> -		       time_t ot, void *uuid, void *puuid)
-> +static int set_root_info(struct root_info *rinfo, u64 ref_tree, u64 root_offset,
-> +			 u64 dir_id, char *name, int name_len,
-> +			 struct btrfs_root_item *ritem, u32 ritem_len)
->  {
-> -	struct root_info *ri;
-> +	int is_v0 = (ritem_len <= sizeof(struct btrfs_root_item_v0));
->  
-> -	ri = root_tree_search(root_lookup, root_id);
-> -	if (!ri || ri->root_id != root_id)
-> -		return -ENOENT;
-> -	if (name && name_len > 0) {
-> -		if (ri->name)
-> -			free(ri->name);
-> +	if (root_offset)
-> +		rinfo->root_offset = root_offset;
-> +	if (ref_tree)
-> +		rinfo->ref_tree = ref_tree;
-> +	if (dir_id)
-> +		rinfo->dir_id = dir_id;
-> +
-> +	if (ritem) {
-> +		rinfo->gen = btrfs_root_generation(ritem);
-> +		rinfo->flags = btrfs_root_flags(ritem);
-> +	}
->  
-> -		ri->name = malloc(name_len + 1);
-> -		if (!ri->name) {
-> +	if (ritem && !is_v0) {
-> +		rinfo->cgen = btrfs_root_ctransid(ritem);
-> +		rinfo->ogen = btrfs_root_otransid(ritem);
-> +		rinfo->sgen = btrfs_root_stransid(ritem);
-> +		rinfo->rgen = btrfs_root_rtransid(ritem);
-> +		rinfo->ctime = btrfs_stack_timespec_sec(&ritem->ctime);
-> +		rinfo->otime = btrfs_stack_timespec_sec(&ritem->otime);
-> +		rinfo->stime = btrfs_stack_timespec_sec(&ritem->stime);
-> +		rinfo->rtime = btrfs_stack_timespec_sec(&ritem->rtime);
-> +		memcpy(rinfo->uuid, ritem->uuid, BTRFS_UUID_SIZE);
-> +		memcpy(rinfo->puuid, ritem->parent_uuid, BTRFS_UUID_SIZE);
-> +		memcpy(rinfo->ruuid, ritem->received_uuid, BTRFS_UUID_SIZE);
+That root_offset != 0 thing is because add_root() and therefore
+set_root_info() is called twice, once for BTRFS_ROOT_BACKREF_KEY and
+once for BTRFS_ROOT_ITEM_KEY. In both cases, the arguments to add_root()
+are only partially supplied and those values that are not available are
+set to zero. The old code everywhere had this ... != 0 else don't set
+the value, to handle this double call to add_root(), and I replaced most
+of it by passing a root_item pointer of NULL in the BACKREF case (where
+the old code just set gen=0, time=0, uuid=0 ...), and reading the values
+of the root_item down in set_root_info() in the ROOT_ITEM case. Only
+root_offset remains which is set to 0 in the BACKREF case and to the
+key's offset value in the ROOT_ITEM case. One could now argue that in
+the first case where root_offset is not valid, ritem is set to NULL and
+therefore the equation (ritem && is_v0 && root_offset) is equal to
+(ritem && is_v0), but IMHO a deep subfunction should not make use of too
+much information that is part of the functions that call the subfunction.
 
-> +	} else if (ritem && is_v0 && root_offset) {
-> +		/*
-> +		 * old style (v0) root items don't contain an otransid field.
-> +		 * But for snapshots, root_offset equals to its original
-> +		 * generation.
-> +		 */
-> +		rinfo->ogen = root_offset;
-> +	}
-
-
-	We set it rinfo->ogen = root_offset only if:
-	1> for root_item_v0
-	2> it is a snapshot.
-
-	Besides for a snapshot it's root_offset is always none zero.
-	so we do not need (is_v0 && root_offset) both.
-	Actually, Patch V2 doses the correct thing.
-
-Thanks,
-Wang
-
-> +
-> +	if (name && name_len > 0) {
-> +		rinfo->name = malloc(name_len + 1);
-> +		if (!rinfo->name) {
->  			fprintf(stderr, "memory allocation failed\n");
-> -			exit(1);
-> +			return -1;
->  		}
-> -		strncpy(ri->name, name, name_len);
-> -		ri->name[name_len] = 0;
-> +		strncpy(rinfo->name, name, name_len);
-> +		rinfo->name[name_len] = 0;
->  	}
-> -	if (ref_tree)
-> -		ri->ref_tree = ref_tree;
-> -	if (root_offset)
-> -		ri->root_offset = root_offset;
-> -	if (flags)
-> -		ri->flags = flags;
-> -	if (dir_id)
-> -		ri->dir_id = dir_id;
-> -	if (gen)
-> -		ri->gen = gen;
-> -	if (ogen)
-> -		ri->ogen = ogen;
-> -	if (!ri->ogen && root_offset)
-> -		ri->ogen = root_offset;
-> -	if (ot)
-> -		ri->otime = ot;
-> -	if (uuid)
-> -		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
-> -	if (puuid)
-> -		memcpy(&ri->puuid, puuid, BTRFS_UUID_SIZE);
->  
->  	return 0;
->  }
->  
-
-[snpi]
-....
-
+Summary: Patch V3 does the correct thing.
 

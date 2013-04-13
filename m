@@ -1,33 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48121 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752441Ab3DLQc5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Apr 2013 12:32:57 -0400
-Date: Fri, 12 Apr 2013 18:32:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Shripad Ratnaparkhi <shripad.ratnaparkhi@gmail.com>
-Cc: Harald Glatt <mail@hachre.de>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG] btrfs.fsck failing to fix corrupted block
-Message-ID: <20130412163255.GB18193@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CANu+oN1szXCzLDqeT8UMCz660dO47dDTa8PTL1KFUoG6z-u_rQ@mail.gmail.com>
- <CANu+oN1q-r2ti+uZs2_2Mg4_4J8gdNdtLedPAC3u5WZa=+jjFA@mail.gmail.com>
- <CAFWF=am8-swZ7-uBr4KQmHYHvwAfpKBwrudFu_LqgUEARWYE3A@mail.gmail.com>
- <CANu+oN3bfDfkzZ32y=fPu6s=xJOaPJc_F2we517kBNqXvd2o7A@mail.gmail.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:46041 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753664Ab3DMOSo convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Apr 2013 10:18:44 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 206A47C068B
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Apr 2013 08:18:44 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANu+oN3bfDfkzZ32y=fPu6s=xJOaPJc_F2we517kBNqXvd2o7A@mail.gmail.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
+Message-ID: <20130413141841.12886.91603@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] One more btrfs
+Date: Sat, 13 Apr 2013 10:18:41 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 07, 2013 at 07:41:04AM +0530, Shripad Ratnaparkhi wrote:
-> Yup, that is exactly the case.
-> I got to know about no support of fsck.btrfs at boot up, so symlinked
-> btrfsck and built the initrd.
+Hi Linus
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#What.27s_the_difference_between_btrfsck_and_fsck.btrfs
+My for-linus branch:
 
-btrfsck is not supposed to be run at boot time, therefore fsck.btrfs is
-only a stub.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-david
+Has a recent fix from Josef for our tree log replay code.  It fixes
+problems where the inode counter for the number of bytes in the file
+wasn't getting updated properly during fsync replay.
+
+The commit did get rebased this morning, but it was only to clean up the
+subject line.  The code hasn't changed.
+
+Josef Bacik (1) commits (+42/-6):
+    Btrfs: make sure nbytes are right after log replay
+
+Total: (1) commits (+42/-6)
+
+ fs/btrfs/tree-log.c | 48 ++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 42 insertions(+), 6 deletions(-)

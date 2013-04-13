@@ -1,139 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:27533 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.139]:34334 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753142Ab3DMNUN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753185Ab3DMNUN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Sat, 13 Apr 2013 09:20:13 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] Btrfs: fix accessing the root pointer in tree mod log functions
-Date: Sat, 13 Apr 2013 15:19:54 +0200
-Message-Id: <1365859195-8620-3-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: [PATCH 3/3] Btrfs: fix unlock after free on rewinded tree blocks
+Date: Sat, 13 Apr 2013 15:19:55 +0200
+Message-Id: <1365859195-8620-4-git-send-email-list.btrfs@jan-o-sch.net>
 In-Reply-To: <1365859195-8620-1-git-send-email-list.btrfs@jan-o-sch.net>
 References: <1365859195-8620-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The tree mod log functions were accessing root->node->... directly, without
-use of btrfs_root_node() or explicit rcu locking. This could lead to an
-extent buffer reference being leaked and another reference being freed too
-early when preemtion was enabled.
+When tree_mod_log_rewind decides to make a copy of the current tree buffer
+for its modifications, it subsequently freed the buffer before unlocking it.
+Obviously, those operations are required in reverse order.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/ctree.c |   38 +++++++++++++++++++-------------------
- 1 files changed, 19 insertions(+), 19 deletions(-)
+ fs/btrfs/ctree.c |   18 +++++++++++-------
+ 1 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 4439cb7..0260795 100644
+index 0260795..0b40336 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1068,11 +1068,11 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
-  */
- static struct tree_mod_elem *
- __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
--			   struct btrfs_root *root, u64 time_seq)
-+			   struct extent_buffer *eb_root, u64 time_seq)
- {
- 	struct tree_mod_elem *tm;
- 	struct tree_mod_elem *found = NULL;
--	u64 root_logical = root->node->start;
-+	u64 root_logical = eb_root->start;
- 	int looped = 0;
- 
- 	if (!time_seq)
-@@ -1106,7 +1106,6 @@ __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
- 
- 		found = tm;
- 		root_logical = tm->old_root.logical;
--		BUG_ON(root_logical == root->node->start);
- 		looped = 1;
- 	}
- 
-@@ -1245,29 +1244,30 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- {
- 	struct tree_mod_elem *tm;
- 	struct extent_buffer *eb;
-+	struct extent_buffer *eb_root;
- 	struct extent_buffer *old;
- 	struct tree_mod_root *old_root = NULL;
- 	u64 old_generation = 0;
- 	u64 logical;
- 	u32 blocksize;
- 
--	eb = btrfs_read_lock_root_node(root);
--	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-+	eb_root = btrfs_read_lock_root_node(root);
-+	tm = __tree_mod_log_oldest_root(root->fs_info, eb_root, time_seq);
- 	if (!tm)
--		return root->node;
-+		return eb_root;
- 
- 	if (tm->op == MOD_LOG_ROOT_REPLACE) {
- 		old_root = &tm->old_root;
- 		old_generation = tm->generation;
- 		logical = old_root->logical;
- 	} else {
--		logical = root->node->start;
-+		logical = eb_root->start;
- 	}
- 
- 	tm = tree_mod_log_search(root->fs_info, logical, time_seq);
- 	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
--		btrfs_tree_read_unlock(root->node);
--		free_extent_buffer(root->node);
-+		btrfs_tree_read_unlock(eb_root);
-+		free_extent_buffer(eb_root);
- 		blocksize = btrfs_level_size(root, old_root->level);
- 		old = read_tree_block(root, logical, blocksize, 0);
- 		if (!old) {
-@@ -1279,13 +1279,13 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 			free_extent_buffer(old);
- 		}
- 	} else if (old_root) {
--		btrfs_tree_read_unlock(root->node);
--		free_extent_buffer(root->node);
-+		btrfs_tree_read_unlock(eb_root);
-+		free_extent_buffer(eb_root);
- 		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
- 	} else {
--		eb = btrfs_clone_extent_buffer(root->node);
--		btrfs_tree_read_unlock(root->node);
--		free_extent_buffer(root->node);
-+		eb = btrfs_clone_extent_buffer(eb_root);
-+		btrfs_tree_read_unlock(eb_root);
-+		free_extent_buffer(eb_root);
- 	}
- 
- 	if (!eb)
-@@ -1295,7 +1295,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	if (old_root) {
- 		btrfs_set_header_bytenr(eb, eb->start);
- 		btrfs_set_header_backref_rev(eb, BTRFS_MIXED_BACKREF_REV);
--		btrfs_set_header_owner(eb, root->root_key.objectid);
-+		btrfs_set_header_owner(eb, btrfs_header_owner(eb_root));
- 		btrfs_set_header_level(eb, old_root->level);
- 		btrfs_set_header_generation(eb, old_generation);
- 	}
-@@ -1312,15 +1312,15 @@ int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq)
- {
- 	struct tree_mod_elem *tm;
- 	int level;
-+	struct extent_buffer *eb_root = btrfs_root_node(root);
- 
--	tm = __tree_mod_log_oldest_root(root->fs_info, root, time_seq);
-+	tm = __tree_mod_log_oldest_root(root->fs_info, eb_root, time_seq);
- 	if (tm && tm->op == MOD_LOG_ROOT_REPLACE) {
- 		level = tm->old_root.level;
- 	} else {
--		rcu_read_lock();
--		level = btrfs_header_level(root->node);
--		rcu_read_unlock();
-+		level = btrfs_header_level(eb_root);
- 	}
-+	free_extent_buffer(eb_root);
- 
- 	return level;
+@@ -1190,6 +1190,13 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 	btrfs_set_header_nritems(eb, n);
  }
+ 
++/*
++ * Called with eb read locked. If the buffer cannot be rewinded, the same buffer
++ * is returned. If rewind operations happen, a fresh buffer is returned. The
++ * returned buffer is always read-locked. If the returned buffer is not the
++ * input buffer, the lock on the input buffer is released and the input buffer
++ * is freed (its refcount is decremented).
++ */
+ static struct extent_buffer *
+ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 		    u64 time_seq)
+@@ -1223,8 +1230,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 	}
+ 
+ 	extent_buffer_get(eb_rewin);
++	btrfs_tree_read_unlock(eb);
+ 	free_extent_buffer(eb);
+ 
++	extent_buffer_get(eb_rewin);
++	btrfs_tree_read_lock(eb_rewin);
+ 	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
+ 	WARN_ON(btrfs_header_nritems(eb_rewin) >
+ 		BTRFS_NODEPTRS_PER_BLOCK(fs_info->tree_root));
+@@ -2796,15 +2806,9 @@ again:
+ 				btrfs_clear_path_blocking(p, b,
+ 							  BTRFS_READ_LOCK);
+ 			}
++			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
+ 			p->locks[level] = BTRFS_READ_LOCK;
+ 			p->nodes[level] = b;
+-			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
+-			if (b != p->nodes[level]) {
+-				btrfs_tree_unlock_rw(p->nodes[level],
+-						     p->locks[level]);
+-				p->locks[level] = 0;
+-				p->nodes[level] = b;
+-			}
+ 		} else {
+ 			p->slots[level] = slot;
+ 			unlock_up(p, level, lowest_unlock, 0, NULL);
 -- 
 1.7.1
 

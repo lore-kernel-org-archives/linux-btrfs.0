@@ -1,69 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f41.google.com ([209.85.160.41]:36651 "EHLO
-	mail-pb0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751086Ab3DOM5W (ORCPT
+Received: from mail-ve0-f169.google.com ([209.85.128.169]:42675 "EHLO
+	mail-ve0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751139Ab3DNFSk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 08:57:22 -0400
-Received: by mail-pb0-f41.google.com with SMTP id mc17so2509055pbc.14
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 05:57:22 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
+	Sun, 14 Apr 2013 01:18:40 -0400
+Received: by mail-ve0-f169.google.com with SMTP id d10so3464929vea.28
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Apr 2013 22:18:39 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 14 Apr 2013 01:18:39 -0400
+Message-ID: <CABF9=8jnQQCuDGeZ0pAmFujtaDtLNs3GdFO0DFXq1Nn4yTZAmg@mail.gmail.com>
+Subject: btrfs scrubber: clarification on scrub_chunk
+From: George Amvrosiadis <gamvrosi@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Subject: [PATCH V2 RESEND] Btrfs: fix confusing edquot happening case
-Date: Mon, 15 Apr 2013 20:56:49 +0800
-Message-Id: <1366030609-9245-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Hi!
 
-Step to reproduce:
-	mkfs.btrfs <disk>
-	mount <disk> <mnt>
-	dd if=/dev/zero of=/<mnt>/data bs=1M count=10
-	sync
-	btrfs quota enable <mnt>
-	btrfs qgroup create 0/5 <mnt>
-	btrfs qgroup limit 5M 0/5 <mnt>
-	rm -f /<mnt>/data
-	sync
-	btrfs qgroup show <mnt>
-	dd if=/dev/zero of=data bs=1M count=1
+In scrub_chunk() of scrub.c, the following snippet appears:
 
->From the perspective of users, qgroup's referenced or exclusive
-is negative,but user can not continue to write data! a workaround
-way is to cast u64 to s64 when doing qgroup reservation.
+2531         for (i = 0; i < map->num_stripes; ++i) {
+2532                 if (map->stripes[i].dev->bdev == scrub_dev->bdev &&
+2533                     map->stripes[i].physical == dev_offset) {
+2534                         ret = scrub_stripe(sctx, map, scrub_dev, i,
+2535                                            chunk_offset, length,
+2536                                            is_dev_replace);
+2537                         if (ret)
+2538                                 goto out;
+2539                 }
+2540         }
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Arne Jansen <sensille@gmx.net>
----
-Changelog v1->v2:
--use s64 instead of signed long long
----
- fs/btrfs/qgroup.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Could someone please clarify line 2533? My intuition from the code so
+far was that
+this should be "map->stripes[i].physical == dev_offset + i *
+stripe_size", otherwise
+the condition would fail for all but the first stripe of every chunk
+(effectively scrubbing
+only that).
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b44124d..ab364a2 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1523,14 +1523,14 @@ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
- 		qg = (struct btrfs_qgroup *)(uintptr_t)unode->aux;
- 
- 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
--		    qg->reserved + qg->rfer + num_bytes >
-+		    qg->reserved + (s64)qg->rfer + num_bytes >
- 		    qg->max_rfer) {
- 			ret = -EDQUOT;
- 			goto out;
- 		}
- 
- 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
--		    qg->reserved + qg->excl + num_bytes >
-+		    qg->reserved + (s64)qg->excl + num_bytes >
- 		    qg->max_excl) {
- 			ret = -EDQUOT;
- 			goto out;
--- 
-1.7.11.7
+Thanks,
 
+--
+George Amvrosiadis, B.Sc., Ph.D. Student
+Graduate Students' Union Representative
+Computer Science, University of Toronto

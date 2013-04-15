@@ -1,100 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17769 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754678Ab3DOC4N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Apr 2013 22:56:13 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] Btrfs: allow file data clone within a file
-Date: Mon, 15 Apr 2013 10:55:45 +0800
-Message-Id: <1365994545-19083-1-git-send-email-bo.li.liu@oracle.com>
+Received: from brockman.in8.de ([85.214.220.56]:52360 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751550Ab3DOFoh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 01:44:37 -0400
+Message-ID: <516B93C3.4080306@jan-o-sch.net>
+Date: Mon, 15 Apr 2013 07:44:35 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: dsterba@suse.cz, chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: rescan for qgroups
+References: <1365161897-19448-1-git-send-email-list.btrfs@jan-o-sch.net> <1365161897-19448-2-git-send-email-list.btrfs@jan-o-sch.net> <20130410164741.GS18193@twin.jikos.cz>
+In-Reply-To: <20130410164741.GS18193@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We did not allow file data clone within the same file because of
-deadlock issues.
+On Wed, April 10, 2013 at 18:47 (+0200), David Sterba wrote:
+> On Fri, Apr 05, 2013 at 01:38:16PM +0200, Jan Schmidt wrote:
+>> +	if (root->fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
+> 
+> I was wondering if merging qgroup_flags with fs_state would make sense
+> to you. There are currently 3 bits for qgroups, and it's a whole
+> filesystem state anyway.
 
-However, we now use nested lock to avoid deadlock between the
-parent directory and the child file.
+Well, yes, it can be done. I don't think it saves enough to justify the effort,
+but feel free if you like. It's definitely not the purpose of this patch set :-)
 
-So it's safe to do file clone within the same file when the two
-ranges are not overlapped.
+> 
+>> +	pr_debug("current progress key (%llu %u %llu), search_slot ret %d\n",
+>> +		 fs_info->qgroup_rescan_progress.objectid,
+>> +		 fs_info->qgroup_rescan_progress.type,
+>> +		 fs_info->qgroup_rescan_progress.offset, ret);
+> 
+> Please use (unsigned long long) for u64 types (objectid, offset).
+> 
+>> --- a/include/uapi/linux/btrfs.h
+>> +++ b/include/uapi/linux/btrfs.h
+>> @@ -376,12 +376,17 @@ struct btrfs_ioctl_get_dev_stats {
+>>  
+>>  #define BTRFS_QUOTA_CTL_ENABLE	1
+>>  #define BTRFS_QUOTA_CTL_DISABLE	2
+>> -#define BTRFS_QUOTA_CTL_RESCAN	3
+>> +/* 3 has formerly been reserved for BTRFS_QUOTA_CTL_RESCAN */
+> 
+> It's not clear if 3 can be reused or not. If yes, there's no need for
+> the comment, if not, a #define should be left in place to capture the
+> value.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: add sanity check for overlapping range.
+It shouldn't. I just wanted to
 
- fs/btrfs/ioctl.c |   26 +++++++++++++++++++-------
- 1 files changed, 19 insertions(+), 7 deletions(-)
+1) make sure there are no users left and
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 898c572..69cd80d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2473,6 +2473,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	int ret;
- 	u64 len = olen;
- 	u64 bs = root->fs_info->sb->s_blocksize;
-+	int same_inode = 0;
- 
- 	/*
- 	 * TODO:
-@@ -2509,7 +2510,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 
- 	ret = -EINVAL;
- 	if (src == inode)
--		goto out_fput;
-+		same_inode = 1;
- 
- 	/* the src must be open for reading */
- 	if (!(src_file.file->f_mode & FMODE_READ))
-@@ -2540,12 +2541,16 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	}
- 	path->reada = 2;
- 
--	if (inode < src) {
--		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
--		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
-+	if (!same_inode) {
-+		if (inode < src) {
-+			mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
-+			mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
-+		} else {
-+			mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
-+			mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
-+		}
- 	} else {
--		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
--		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
-+		mutex_lock(&src->i_mutex);
- 	}
- 
- 	/* determine range to clone */
-@@ -2563,6 +2568,12 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	    !IS_ALIGNED(destoff, bs))
- 		goto out_unlock;
- 
-+	/* verify if ranges are overlapped within the same file */
-+	if (same_inode) {
-+		if (destoff + len > off && destoff < off + len)
-+			goto out_unlock;
-+	}
-+
- 	if (destoff > inode->i_size) {
- 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
- 		if (ret)
-@@ -2839,7 +2850,8 @@ out:
- 	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
- out_unlock:
- 	mutex_unlock(&src->i_mutex);
--	mutex_unlock(&inode->i_mutex);
-+	if (!same_inode)
-+		mutex_unlock(&inode->i_mutex);
- 	vfree(buf);
- 	btrfs_free_path(path);
- out_fput:
--- 
-1.7.7
+2) point out to the next rescan code editor that this is not the flag he should
+be looking for.
 
+My new approach to satisfy both goals now is to leave the #define in there and
+add __UNUSED to the end of the name.
+
+>>  struct btrfs_ioctl_quota_ctl_args {
+>>  	__u64 cmd;
+>>  	__u64 status;
+>>  };
+>>  
+>> +struct btrfs_ioctl_quota_rescan_args {
+>> +	__u64	flags;
+>> +	__u64   progress;
+> 
+> Like I'm always worried about future etensions, adding a few reserved[]
+> does not hurt.
+
+Thanks, v2 to come.
+-Jan

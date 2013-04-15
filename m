@@ -1,36 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f65.google.com ([209.85.212.65]:34191 "EHLO
-	mail-vb0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754603Ab3DOBwP (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:17769 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754678Ab3DOC4N (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Apr 2013 21:52:15 -0400
-MIME-Version: 1.0
-Date: Sun, 14 Apr 2013 17:44:02 -0700
-Message-ID: <CAJ3m7BpZkbGS6+Qhn_KMN1z0bA+8Czf3D6cbC1B8_0fdFjcPvA@mail.gmail.com>
-Subject: [PATCH mainline] btrfs: fix minor typo in comment
-From: Nathaniel Yazdani <n1ght.4nd.d4y@gmail.com>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Cc: Nathaniel Yazdani <n1ght.4nd.d4y@gmail.com>, linux-kernel@vger.kernel.org,
-        trivial@kernel.org, torvalds@linux-foundation.org
-Content-Type: text/plain; charset=ISO-8859-1
+	Sun, 14 Apr 2013 22:56:13 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] Btrfs: allow file data clone within a file
+Date: Mon, 15 Apr 2013 10:55:45 +0800
+Message-Id: <1365994545-19083-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the comment describing the sync_writers field of the btrfs_inode
-struct, "fsyncing" was misspelled "fsycing."
+We did not allow file data clone within the same file because of
+deadlock issues.
 
-Signed-off-by: Nathaniel Yazdani <n1ght.4nd.d4y@gmail.com>
+However, we now use nested lock to avoid deadlock between the
+parent directory and the child file.
+
+So it's safe to do file clone within the same file when the two
+ranges are not overlapped.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index d9b97d4..08b286b 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -93,7 +93,7 @@ struct btrfs_inode {
+v2: add sanity check for overlapping range.
 
-  unsigned long runtime_flags;
+ fs/btrfs/ioctl.c |   26 +++++++++++++++++++-------
+ 1 files changed, 19 insertions(+), 7 deletions(-)
 
-- /* Keep track of who's O_SYNC/fsycing currently */
-+ /* Keep track of who's O_SYNC/fsyncing currently */
-  atomic_t sync_writers;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 898c572..69cd80d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2473,6 +2473,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	int ret;
+ 	u64 len = olen;
+ 	u64 bs = root->fs_info->sb->s_blocksize;
++	int same_inode = 0;
+ 
+ 	/*
+ 	 * TODO:
+@@ -2509,7 +2510,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 
+ 	ret = -EINVAL;
+ 	if (src == inode)
+-		goto out_fput;
++		same_inode = 1;
+ 
+ 	/* the src must be open for reading */
+ 	if (!(src_file.file->f_mode & FMODE_READ))
+@@ -2540,12 +2541,16 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	}
+ 	path->reada = 2;
+ 
+-	if (inode < src) {
+-		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+-		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
++	if (!same_inode) {
++		if (inode < src) {
++			mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
++			mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
++		} else {
++			mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
++			mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
++		}
+ 	} else {
+-		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+-		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
++		mutex_lock(&src->i_mutex);
+ 	}
+ 
+ 	/* determine range to clone */
+@@ -2563,6 +2568,12 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	    !IS_ALIGNED(destoff, bs))
+ 		goto out_unlock;
+ 
++	/* verify if ranges are overlapped within the same file */
++	if (same_inode) {
++		if (destoff + len > off && destoff < off + len)
++			goto out_unlock;
++	}
++
+ 	if (destoff > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+ 		if (ret)
+@@ -2839,7 +2850,8 @@ out:
+ 	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+ out_unlock:
+ 	mutex_unlock(&src->i_mutex);
+-	mutex_unlock(&inode->i_mutex);
++	if (!same_inode)
++		mutex_unlock(&inode->i_mutex);
+ 	vfree(buf);
+ 	btrfs_free_path(path);
+ out_fput:
+-- 
+1.7.7
 
-  /* full 64 bit generation number, struct vfs_inode doesn't have a big

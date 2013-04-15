@@ -1,136 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f182.google.com ([209.85.214.182]:57010 "EHLO
-	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933629Ab3DORXl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 13:23:41 -0400
-Received: by mail-ob0-f182.google.com with SMTP id dn14so197599obc.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 10:23:41 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <516C324D.30200@redhat.com>
-References: <1366033629-25121-1-git-send-email-danmcgrath.ca@gmail.com>
-	<1366033629-25121-2-git-send-email-danmcgrath.ca@gmail.com>
-	<CAMQ-g0eYL7Ab0cETWJW66-9e_qzgRR+Kyd++kk4fzD1m464aZg@mail.gmail.com>
-	<CAK82gMGSGaNywR=RkEQcNbQiMW5-z2O3ZqkMwKtamEdRH+A7aQ@mail.gmail.com>
-	<516C324D.30200@redhat.com>
-Date: Mon, 15 Apr 2013 13:23:40 -0400
-Message-ID: <CAK82gMGPwJ462VAjg+5S25PccHAqkL29EVR2kXHx7X0haLBB4Q@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: No-op when called as fsck.btrfsck
-From: Dan McGrath <danmcgrath.ca@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
+Received: from mx1.redhat.com ([209.132.183.28]:18456 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754116Ab3DOS7c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 14:59:32 -0400
+Date: Mon, 15 Apr 2013 11:59:26 -0700
+From: Zach Brown <zab@redhat.com>
+To: Dan McGrath <danmcgrath.ca@gmail.com>
 Cc: Jan Alexander Steffens <jan.steffens@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+        Eric Sandeen <sandeen@redhat.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: No-op when called as fsck.btrfsck
+Message-ID: <20130415185926.GD16091@lenny.home.zabbo.net>
+References: <1366033629-25121-1-git-send-email-danmcgrath.ca@gmail.com>
+ <1366033629-25121-2-git-send-email-danmcgrath.ca@gmail.com>
+ <CAMQ-g0eYL7Ab0cETWJW66-9e_qzgRR+Kyd++kk4fzD1m464aZg@mail.gmail.com>
+ <CAK82gMGSGaNywR=RkEQcNbQiMW5-z2O3ZqkMwKtamEdRH+A7aQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAK82gMGSGaNywR=RkEQcNbQiMW5-z2O3ZqkMwKtamEdRH+A7aQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan,
+> Anyways, thought I would reply back with some insight on the matter
+> and see what others had to say, since I am in no position to dictate
+> the direction that brtfsck/fsck.btrfs should take as far as wrapper
+> script or no is concerned. Look forward to your replies! o/
 
-It would appear that:
+FWIW: debian has been carrying a patch to ignore fsck args to help it
+run as fsck.btrfs.  I think modern versions of their btrfs-tools package
+that are based on more recent btrfs-progs also include the hunk to
+recognize being called as fsck.btrfs.
 
-  # fsck -- --repair /dev/storage/lv_btrfs
+It might be worth finding someone who knows the history of the debian
+package.  I'm certainly not that person :).  Here's the result of some
+light googling:
 
-doesn't work, but if I put the fs-specific-options at the end:
+  http://ftp.de.debian.org/debian/pool/main/b/btrfs-tools/btrfs-tools_0.19+20130131-3+really20121004-1.debian.tar.xz
 
-  # fsck /dev/storage/lv_btrfs -- --repair
+debian/patches/08-fsck.patch:
 
-it works fine. As we were/are discussing on irc, I also have no idea
-where the ext4 lines come from. *scratcheshead*
+Author: Sten Heinze <shze@gmx.de>
+Description:
+ Ignore all arguments starting with -a in btrfsck for the time being
+ (Closes: #567681, #571300, #612809, #668832).
 
-And to save you guys some testing, here is the script I used and some
-sample output:
+diff -Naurp btrfs-tools.orig/btrfsck.c btrfs-tools/btrfsck.c
+--- btrfs-tools.orig/btrfsck.c	2012-12-10 10:44:57.283351955 +0100
++++ btrfs-tools/btrfsck.c	2012-12-10 10:56:20.971516720 +0100
+@@ -3477,6 +3477,12 @@ static void print_usage(void)
+ 	exit(1);
+ }
+ 
++static void print_info(void)
++{
++	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
++	exit(0);
++}
++
+ static struct option long_options[] = {
+ 	{ "super", 1, NULL, 's' },
+ 	{ "repair", 0, NULL, 0 },
+@@ -3501,7 +3507,7 @@ int main(int ac, char **av)
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(ac, av, "s:", long_options,
++		c = getopt_long(ac, av, "s:anry", long_options,
+ 				&option_index);
+ 		if (c < 0)
+ 			break;
+@@ -3514,6 +3520,12 @@ int main(int ac, char **av)
+ 				break;
+ 			case '?':
+ 				print_usage();
++				break;
++			case 'a':
++			case 'n':
++			case 'r':
++			case 'y':
++				print_info();
+ 		}
+ 		if (option_index == 1) {
+ 			printf("enabling repair mode\n");
 
-fsck.btrfs:
-========
-#!/bin/sh -f
-
-# fsck exit codes for convenience
-# 0    - No errors
-# 1    - Filesystem errors corrected
-# 2    - System should be rebooted
-# 4    - Filesystem errors left uncorrected
-# 8    - Operational error
-# 16   - Usage or syntax error
-# 32   - Fsck canceled by user request
-# 128  - Shared-library error
-
-AUTO=false
-while getopts ":aApy" c
-do
-        case $c in
-        a|A|p|y)        AUTO=true; echo "DEBUG: $c";;
-        esac
-done
-eval DEV=\${$#}
-if [ ! -e $DEV ]; then
-        echo "$0: $DEV does not exist"
-        exit 8
-fi
-if $AUTO; then
-        echo "$0: BTRFS file system."
-else
-        echo "If you wish to check the consistency of an BTRFS filesystem or"
-        echo "repair a damaged filesystem, see btrfsck(8)."
-fi
-exit 0
-========
-
-Output:
-======
-# fsck /dev/storage/lv_btrfs -- --repair
-fsck from util-linux 2.20.1
-DEBUG: p
-DEBUG: a
-/sbin/fsck.btrfs: BTRFS file system.
-
-# fsck /dev/storage/lv_btrfs
-fsck from util-linux 2.20.1
-If you wish to check the consistency of an BTRFS filesystem or
-repair a damaged filesystem, see btrfsck(8).
-
-Note the "p" and "a" switches when called with custom fs switches, but
-not when called standalone.
-
-
-On Mon, Apr 15, 2013 at 1:01 PM, Eric Sandeen <sandeen@redhat.com> wrote:
-> On 4/15/13 11:45 AM, Dan McGrath wrote:
->> Jan,
->>
->> I got a chance to sit down and dig a little bit deeper into
->> `fsck.xfs`. Here is what I discovered.
->>
->> The "(a|A|y|p)" options in the XFS script appear to be nothing more
->> than the expected `fsck` options that imply automated checks (as is
->> clearly implied by the use of AUTO). While I have yet to specifically
->> test the capitalized "A", my guess is that it matches the "-A" options
->> from fsck(8) for when the system is going through the fstab. The
->> syntax itself appears to assume that the dev name is the last param
->> (as indicated by the argc/$#, which gets eval'd into the DEV
->> variable).
->>
->> After doing some tests with a hacked up version of the `fsck.xfs`
->> script, it would appear that the generic `fsck` script calls each
->> script in order and passes it some parameters to test, since if I pass
->> `fsck` some random/btrfsck switches:
->>
->>   # fsck --repair /dev/storage/lv_btrfs
->>
->> I get an error back from `fsck.ext4`:
->>
->>   fsck from util-linux 2.20.1
->>   fsck.ext4: invalid option -- 'e'
->
-> 2 things; from the fsck manpage:
->
->        fsck [-sAVRTMNP] [-C [fd]] [-t fstype] [filesys...]  [--] [fs-specific-options]
->
-> so I think you need:
->
-> fsck -- --repair /dev/storage/lv_btrfs
->
-> But the other issues seems to be that fsck & blkid are autodetecting
-> the device as ext4, not btrfs; a separate issue.
->
-> -Eric
->
->

@@ -1,56 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53311 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751661Ab3D1I3Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Apr 2013 04:29:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UWMz2-0001DQ-E6
-	for linux-btrfs@vger.kernel.org; Sun, 28 Apr 2013 10:29:20 +0200
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Apr 2013 10:29:20 +0200
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Apr 2013 10:29:20 +0200
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
-Subject: Re: data DUP
-Date: Sun, 28 Apr 2013 01:29:13 -0700
-Message-ID: <klimkl$smn$1@ger.gmane.org>
-References: <kkut3u$lp1$1@ger.gmane.org> <20130420204814.GN7639@carfax.org.uk> <kkv0gv$jpo$1@ger.gmane.org> <20130420212311.GO7639@carfax.org.uk> <kkv6o8$9f0$1@ger.gmane.org> <1367098836.14073.5.camel@ayu> <klhn0u$vcr$1@ger.gmane.org> <kli302$pit$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <kli302$pit$1@ger.gmane.org>
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:64077 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752852Ab3DOODK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 10:03:10 -0400
+Received: by mail-wi0-f176.google.com with SMTP id hm14so1581725wib.15
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 07:03:08 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1366033629-25121-2-git-send-email-danmcgrath.ca@gmail.com>
+References: <1366033629-25121-1-git-send-email-danmcgrath.ca@gmail.com>
+	<1366033629-25121-2-git-send-email-danmcgrath.ca@gmail.com>
+Date: Mon, 15 Apr 2013 16:03:08 +0200
+Message-ID: <CAMQ-g0eYL7Ab0cETWJW66-9e_qzgRR+Kyd++kk4fzD1m464aZg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: No-op when called as fsck.btrfsck
+From: Jan Alexander Steffens <jan.steffens@gmail.com>
+To: Dan McGrath <danmcgrath.ca@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Mon, Apr 15, 2013 at 3:47 PM, Dan McGrath <danmcgrath.ca@gmail.com> wrote:
+> As per FAQ: It is safe to and recommended to turn fsck.btrfs into a no-op
+>
+> Signed-off-by: Dan McGrath <danmcgrath.ca@gmail.com>
+> ---
+>  btrfs.c |    2 ++
+>  1 file changed, 2 insertions(+)
+>
+> diff --git a/btrfs.c b/btrfs.c
+> index 691adef..78161a9 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -272,6 +272,8 @@ int main(int argc, char **argv)
+>
+>         if (!strcmp(bname, "btrfsck")) {
+>                 argv[0] = "check";
+> +       } else if (!strcmp(bname, "fsck.btrfsck")) {
+> +               exit(0);
+>         } else {
+>                 argc--;
+>                 argv++;
+> --
+> 1.7.9.5
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-On 27/04/13 19:53, Alex Elsayed wrote:
-> When using btrfs, run a recent kernel :P.
+Shouldn't it be fsck.btrfs, not fsck.btrfsck?
 
-Every software developer says that of what they produce.  Newer is almost
-always better in many different axes.
-
-> Honestly, even leaving aside the lack of backporting, there are other 
-> benefits to a recent kernel - things like cross-subvolume reflinks,
-> btrfs device replace support being far more efficient than 
-> add/balance/remove/balance, and a bunch more.
-
-Those are all "features", none of which I use or have had to use yet.
-
-If it will make you feel better I did upgrade some systems today to the
-most recent Ubuntu release which meant going from kernel 3.5 to 3.8.
-
-Roger
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlF83dUACgkQmOOfHg372QQeDACgz0oBnrYeg6fO5tFxUy9qonE9
-HYIAoJWjT8z2sJ356YAph1NAyLKhcEBz
-=ySAg
------END PGP SIGNATURE-----
-
+Also, fsck.xfs does a bit more than just an exit(0), maybe there's
+some merit to what it does. It's a simple shellscript, so check it
+out.

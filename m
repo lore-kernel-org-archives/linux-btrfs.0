@@ -1,59 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61062 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:56656 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752125Ab3DOK14 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 06:27:56 -0400
-Message-ID: <516BD5DE.70904@cn.fujitsu.com>
-Date: Mon, 15 Apr 2013 18:26:38 +0800
+	id S1751717Ab3DOKdI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 06:33:08 -0400
+Message-ID: <516BD85B.3050508@cn.fujitsu.com>
+Date: Mon, 15 Apr 2013 18:37:15 +0800
 From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: wangshilong1991@gmail.com
-Subject: [PATCH] Btrfs: do not continue if out of memory happens
-Content-Type: text/plain; charset=UTF-8
+CC: Arne Jansen <sensille@gmx.net>, Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH RFC] Btrfs: fix confusing edquot happening case
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If out of memory happens, we should return -ENOMEM directly to the caller
-rather than continue the work.
+Step to reproduce:
+	mkfs.btrfs <disk>
+	mount <disk> <mnt>
+	dd if=/dev/zero of=/<mnt>/data bs=1M count=10
+	sync
+	btrfs quota enable <mnt>
+	btrfs qgroup create 0/5 <mnt>
+	btrfs qgroup limit 5M 0/5 <mnt>
+	rm -f /<mnt>/data
+	sync
+	btrfs qgroup show <mnt>
+	dd if=/dev/zero of=data bs=1M count=1
+
+>From the perspective of users, qgroup's referenced or referenced
+
+is negative,But user can not continue to write data! a workaround
+way is to cast u64 to int64 when doing qgroup reservation.
 
 Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 ---
- fs/btrfs/backref.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+This confusing edquot may also happen after Jan's qgroup
+rescan has been implemented.
+---
+ fs/btrfs/qgroup.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index bd605c8..2fd5703 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -352,6 +352,8 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 		err = __resolve_indirect_ref(fs_info, search_commit_root,
- 					     time_seq, ref, parents,
- 					     extent_item_pos);
-+		if (err == -ENOMEM)
-+			goto out;
- 		if (err)
- 			continue;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index b44124d..0178223 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1523,14 +1523,14 @@ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 		qg = (struct btrfs_qgroup *)(uintptr_t)unode->aux;
  
-@@ -367,7 +369,7 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 			new_ref = kmalloc(sizeof(*new_ref), GFP_NOFS);
- 			if (!new_ref) {
- 				ret = -ENOMEM;
--				break;
-+				goto out;
- 			}
- 			memcpy(new_ref, ref, sizeof(*ref));
- 			new_ref->parent = node->val;
-@@ -377,7 +379,7 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+-		    qg->reserved + qg->rfer + num_bytes >
++		    qg->reserved + (signed long long)qg->rfer + num_bytes >
+ 		    qg->max_rfer) {
+ 			ret = -EDQUOT;
+ 			goto out;
  		}
- 		ulist_reinit(parents);
- 	}
--
-+out:
- 	ulist_free(parents);
- 	return ret;
- }
--- 1.7.7.6 
+ 
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
+-		    qg->reserved + qg->excl + num_bytes >
++		    qg->reserved + (signed long long)qg->excl + num_bytes >
+ 		    qg->max_excl) {
+ 			ret = -EDQUOT;
+ 			goto out;
+-- 
+1.7.7.6
+
 
 
 

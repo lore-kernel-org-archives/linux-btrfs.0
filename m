@@ -1,39 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f177.google.com ([209.85.223.177]:39797 "EHLO
-	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752213Ab3DONre (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 09:47:34 -0400
-Received: by mail-ie0-f177.google.com with SMTP id 9so5472360iec.22
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 06:47:33 -0700 (PDT)
-From: Dan McGrath <danmcgrath.ca@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Dan McGrath <danmcgrath.ca@gmail.com>
-Subject: [PATCH] btrfs-progs: No-op when called as fsck.btrfsck
-Date: Mon, 15 Apr 2013 09:47:08 -0400
-Message-Id: <1366033629-25121-1-git-send-email-danmcgrath.ca@gmail.com>
+Received: from mx1.redhat.com ([209.132.183.28]:24980 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753521Ab3DOQis (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 12:38:48 -0400
+Message-ID: <516C2D15.5010407@redhat.com>
+Date: Mon, 15 Apr 2013 11:38:45 -0500
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: Jan Alexander Steffens <jan.steffens@gmail.com>
+CC: Dan McGrath <danmcgrath.ca@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: No-op when called as fsck.btrfsck
+References: <1366033629-25121-1-git-send-email-danmcgrath.ca@gmail.com> <1366033629-25121-2-git-send-email-danmcgrath.ca@gmail.com> <CAMQ-g0eYL7Ab0cETWJW66-9e_qzgRR+Kyd++kk4fzD1m464aZg@mail.gmail.com>
+In-Reply-To: <CAMQ-g0eYL7Ab0cETWJW66-9e_qzgRR+Kyd++kk4fzD1m464aZg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 4/15/13 9:03 AM, Jan Alexander Steffens wrote:
+> On Mon, Apr 15, 2013 at 3:47 PM, Dan McGrath <danmcgrath.ca@gmail.com> wrote:
+>> As per FAQ: It is safe to and recommended to turn fsck.btrfs into a no-op
+>>
+>> Signed-off-by: Dan McGrath <danmcgrath.ca@gmail.com>
+>> ---
+>>  btrfs.c |    2 ++
+>>  1 file changed, 2 insertions(+)
+>>
+>> diff --git a/btrfs.c b/btrfs.c
+>> index 691adef..78161a9 100644
+>> --- a/btrfs.c
+>> +++ b/btrfs.c
+>> @@ -272,6 +272,8 @@ int main(int argc, char **argv)
+>>
+>>         if (!strcmp(bname, "btrfsck")) {
+>>                 argv[0] = "check";
+>> +       } else if (!strcmp(bname, "fsck.btrfsck")) {
+>> +               exit(0);
+>>         } else {
+>>                 argc--;
+>>                 argv++;
+>> --
+>> 1.7.9.5
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> Shouldn't it be fsck.btrfs, not fsck.btrfsck?
+> 
+> Also, fsck.xfs does a bit more than just an exit(0), maybe there's
+> some merit to what it does. It's a simple shellscript, so check it
+> out.
 
-I thought that I would attempt a quick little patch that will make btrfsck into
-a No-op when called as fsck.btrfsck.
+Yup I think the idea for xfs was that if called by initscripts w/ common
+initscript options, be nice and quiet, but if it looks like it was invoked
+by someone expecting something to happen, be more informative.
 
-The reasoning is that the FAQ states that it is recommended and safe to do so,
-and the current 12.04 version of Ubuntu just symlinks fsck.btrfsck to btrfsck
-instead of /bin/true.
+Git blame of the shell script is at 
+http://oss.sgi.com/cgi-bin/gitweb.cgi?p=xfs/cmds/xfsprogs.git;a=blame;f=fsck/xfs_fsck.sh;h=c5a96e688b994c36d9ab1b0206225f2f5e7b12e8;hb=HEAD
+- it hasn't changed in forever but you might get some hints at why
+it does what it does.
 
-PS - Apologies if I mess this git send-email up!
+Expecting fsck.$FS in initscripts is just a leftover from pre-journaling-fs
+days, I think.
 
-
-
-Dan McGrath (1):
-  btrfs-progs: No-op when called as fsck.btrfsck
-
- btrfs.c |    2 ++
- 1 file changed, 2 insertions(+)
-
--- 
-1.7.9.5
+-Eric
 

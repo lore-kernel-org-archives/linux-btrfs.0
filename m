@@ -1,98 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.180]:32288 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753417Ab3DOKx6 (ORCPT
+Received: from mail-pb0-f42.google.com ([209.85.160.42]:64582 "EHLO
+	mail-pb0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933036Ab3DOMtb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 06:53:58 -0400
-Message-ID: <516BDC15.8010001@gmx.net>
-Date: Mon, 15 Apr 2013 12:53:09 +0200
-From: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH 1/2] Btrfs: rescan for qgroups
-References: <1365161897-19448-1-git-send-email-list.btrfs@jan-o-sch.net> <1365161897-19448-2-git-send-email-list.btrfs@jan-o-sch.net> <20130410164741.GS18193@twin.jikos.cz> <516B93C3.4080306@jan-o-sch.net> <516B9701.9040409@jan-o-sch.net> <516B9968.90701@cn.fujitsu.com> <516BA498.8090807@jan-o-sch.net> <516BAA07.3070702@cn.fujitsu.com>
-In-Reply-To: <516BAA07.3070702@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	Mon, 15 Apr 2013 08:49:31 -0400
+Received: by mail-pb0-f42.google.com with SMTP id up7so2484294pbc.29
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 05:49:31 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Wang Shilong <wangsl-fnst@fujitsu.com>,
+        Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Subject: [PATCH V2] Btrfs: fix confusing edquot happening case
+Date: Mon, 15 Apr 2013 20:48:36 +0800
+Message-Id: <1366030116-9019-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 15.04.2013 09:19, Wang Shilong wrote:
-> Hello Jan,
-> 
->> On Mon, April 15, 2013 at 08:08 (+0200), Wang Shilong wrote:
-> 
->>> Hello Jan,
->>>
->>>> On Mon, April 15, 2013 at 07:44 (+0200), Jan Schmidt wrote:
->>>>> Thanks, v2 to come.
->>>> Uh, but not immediately. I didn't get tracking of "exclusive" right. That will
->>>> need some time to fix and test.
->>>
->>> 'exclusive' adds the complexity of btrfs qgroup.
->>> So if you send V2. I'd like you add more lines in changelog.
->>
->> Yes, the commit message will be longer as you requested previously. This does
->> not include a complete description on how "exclusive" works. The qgroup pdf
->> explains that.
-> 
-> 
-> Yeah, changelog really helps for newbies(like me ^_^)
-> 
->>
->>> Besides, i have a question in my mind.(I have not seen you code)..
->>> When qgroup rescan  will happen?
->>>
->>> 1> when quota is enabled
->>
->> That's what the second patch does, yes. Your patches should be merged in a way
->> that we first create the level 0 qgroups for all subvolumes and then start the
->> rescan, obviously.
->>
->>> 2> if a new qgroup relations is created, rescan should happen?
->>
->> With your patches, there will be no subvolume qgroups missing. For the higher
->> level groups, one needs expert knowledge anyway. I think it's best to leave that
->> decision to the administrator configuring those qgroups.
-> 
-> 
-> IMO, it is better that qgroup rescan automatically if a qgroup relation
-> is added.
+From: Wang Shilong <wangsl-fnst@fujitsu.com>
 
-I think we should leave it as it is, for several reasons:
+Step to reproduce:
+	mkfs.btrfs <disk>
+	mount <disk> <mnt>
+	dd if=/dev/zero of=/<mnt>/data bs=1M count=10
+	sync
+	btrfs quota enable <mnt>
+	btrfs qgroup create 0/5 <mnt>
+	btrfs qgroup limit 5M 0/5 <mnt>
+	rm -f /<mnt>/data
+	sync
+	btrfs qgroup show <mnt>
+	dd if=/dev/zero of=data bs=1M count=1
 
-a) the administrator might want to add multiple configurations. Only after
-   the last one a rescan makes sense.
-b) the config changes might not make a rescan necessary. For example, you
-   could prepare a configuration for newly created or not-yet-existent
-   qgroups. In this case, a rescan of the complete filesystem might be
-   unnecessary. A rescan might even be harmful, as during the rescan the
-   quota is wrong and users can go over quota. Also, a rescan adds significant
-   load to the system.
+>From the perspective of users, qgroup's referenced or exclusive
+is negative,but user can not continue to write data! a workaround
+way is to cast u64 to s64 when doing qgroup reservation.
 
--Arne
-> 
-> Thank,
-> Wang
-> 
->>
->>> 2> user call qgroup rescan..
->>
->> Of course, yes.
->>
->> -Jan
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Arne Jansen <sensille@gmx.net>
+---
+Changelog v1->v2:
+-use s64 instead of signed long long
+---
+ fs/btrfs/qgroup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index b44124d..ab364a2 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1523,14 +1523,14 @@ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 		qg = (struct btrfs_qgroup *)(uintptr_t)unode->aux;
+ 
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+-		    qg->reserved + qg->rfer + num_bytes >
++		    qg->reserved + (s64)qg->rfer + num_bytes >
+ 		    qg->max_rfer) {
+ 			ret = -EDQUOT;
+ 			goto out;
+ 		}
+ 
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
+-		    qg->reserved + qg->excl + num_bytes >
++		    qg->reserved + (s64)qg->excl + num_bytes >
+ 		    qg->max_excl) {
+ 			ret = -EDQUOT;
+ 			goto out;
+-- 
+1.7.11.7
 

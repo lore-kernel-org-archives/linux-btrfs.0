@@ -1,91 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:16912 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750911Ab3DOGmj (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47782 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751189Ab3DOGqT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 02:42:39 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3F6gc5S008035
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 06:42:38 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3F6gb9I022048
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 06:42:38 GMT
-Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3F6gbdj025336
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2013 06:42:37 GMT
-Message-ID: <516BA1C6.2040003@oracle.com>
-Date: Mon, 15 Apr 2013 14:44:22 +0800
+	Mon, 15 Apr 2013 02:46:19 -0400
+Message-ID: <516BA278.6000400@oracle.com>
+Date: Mon, 15 Apr 2013 14:47:20 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 02/11, v2] btrfs-progs: no pending balance is not an error
-References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com> <1366007897-26567-1-git-send-email-anand.jain@oracle.com> <1366007897-26567-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1366007897-26567-3-git-send-email-anand.jain@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/9] btrfs-progs: mkfs should first check all disks before
+ writing to a disk
+References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com> <1365141303-10571-4-git-send-email-anand.jain@oracle.com> <20130412160619.GZ18193@twin.jikos.cz>
+In-Reply-To: <20130412160619.GZ18193@twin.jikos.cz>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Oh. this title prefix should be v2 not RESEND.
+On 04/13/2013 12:06 AM, David Sterba wrote:
+> On Fri, Apr 05, 2013 at 01:54:57PM +0800, Anand Jain wrote:
+>> In the cases where one of the disk is not suitable for
+>> btrfs, then we would fail the mkfs, however we determine
+>> that after we have written btrfs to the preceding disks.
+>> At this time if user changes mind for not to use btrfs
+>> will left with no choice.
+>>
+>> So this patch will check if all the provided disks are
+>> suitable for the btrfs at once before proceeding to
+>> create btrfs on a disk.
+>
+> Good fix and cleanup.
+>
+>> +void __test_dev_for_mkfs(char *file, int force_overwrite)
+>> +{
+>> +	int ret, fd;
+>> +
+>> +	ret = is_swap_device(file);
+>> +	if (ret < 0) {
+>> +		fprintf(stderr, "error checking %s status: %s\n", file,
+>> +			strerror(-ret));
+>> +		exit(1);
+>
+> The exit()s were ok when this code was in main(), but should be
+> converted to return for a helper function.
 
-v1->v2
-  Accepts David review comments
+  I got this integrated in v2.
 
-Thanks,  Anand
 
-On 04/15/2013 02:38 PM, Anand Jain wrote:
-> Having no balance running/ paused/completed is a normal
-> situation, so the current output message should be positive
-> with return val zero.
+>> +	}
+>>   int main(int ac, char **av)
+>>   {
+>>   	char *file;
+>> @@ -1378,6 +1418,8 @@ int main(int ac, char **av)
+>>   	char *pretty_buf;
+>>   	struct btrfs_super_block *super;
+>>   	u64 flags;
+>> +	int dev_cnt=0;
 >
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   cmds-balance.c | 16 +++++++++++++---
->   1 file changed, 13 insertions(+), 3 deletions(-)
+> 	int dev_cnt = 0;
 >
-> diff --git a/cmds-balance.c b/cmds-balance.c
-> index f5dc317..a968e0d 100644
-> --- a/cmds-balance.c
-> +++ b/cmds-balance.c
-> @@ -616,6 +616,12 @@ static const char * const cmd_balance_status_usage[] = {
->   	NULL
->   };
+>> +	int saved_optind;
+>>
+>>   	while(1) {
+>>   		int c;
+>> +	dev_cnt = ac - optind;
+>> +	if (dev_cnt == 0)
+>>   		print_usage();
+>>
+>> +	if (source_dir_set && dev_cnt > 1) {
+>> +		fprintf(stderr,
+>> +			"The -r option is limited to a single device\n");
+>> +		exit(1);
+>> +	}
+>> +	while (dev_cnt-- > 0) {
+>> +		file = av[optind++];
+>> +		/* following func would exit on error */
+>> +		if (is_block_device(file))
+>> +			__test_dev_for_mkfs(file, force_overwrite);
 >
-> +/* Checks the status of the balance if any
-> + * return codes:
-> + *  -1 : Error failed to know if there is any pending balance
-> + *   1 : Successful to know status of a pending balance
-> + *   0 : When there is no pending balance or completed
-> + */
->   static int cmd_balance_status(int argc, char **argv)
->   {
->   	struct btrfs_ioctl_balance_args args;
-> @@ -662,9 +668,13 @@ static int cmd_balance_status(int argc, char **argv)
->   	close(fd);
+> Catch errors here and exit() eventually.
 >
->   	if (ret < 0) {
-> +		if (e == ENOTCONN) {
-> +			printf("No balance found on '%s'\n", path);
-> +			return 0;
-> +		}
->   		fprintf(stderr, "ERROR: balance status on '%s' failed - %s\n",
-> -			path, (e == ENOTCONN) ? "Not in progress" : strerror(e));
-> -		return 19;
-> +			path, strerror(e));
-> +		return -1;
->   	}
->
->   	if (args.state & BTRFS_BALANCE_STATE_RUNNING) {
-> @@ -688,7 +698,7 @@ static int cmd_balance_status(int argc, char **argv)
->   	if (verbose)
->   		dump_ioctl_balance_args(&args);
->
-> -	return 0;
-> +	return 1;
->   }
->
->   const struct cmd_group balance_cmd_group = {
+>> +	}
+>> +
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >

@@ -1,74 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:34334 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753185Ab3DMNUN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Apr 2013 09:20:13 -0400
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] Btrfs: fix unlock after free on rewinded tree blocks
-Date: Sat, 13 Apr 2013 15:19:55 +0200
-Message-Id: <1365859195-8620-4-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1365859195-8620-1-git-send-email-list.btrfs@jan-o-sch.net>
-References: <1365859195-8620-1-git-send-email-list.btrfs@jan-o-sch.net>
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:55548 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751014Ab3DOMDS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Apr 2013 08:03:18 -0400
+Message-ID: <516BEC83.5080102@gmx.net>
+Date: Mon, 15 Apr 2013 14:03:15 +0200
+From: Arne Jansen <sensille@gmx.net>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: Wang Shilong <wangsl-fnst@cn.fujitsu.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH RFC] Btrfs: fix confusing edquot happening case
+References: <516BD85B.3050508@cn.fujitsu.com> <516BDA62.5080008@gmx.net> <2F495469-54F5-40B9-8C4F-91C4E549A42A@gmail.com>
+In-Reply-To: <2F495469-54F5-40B9-8C4F-91C4E549A42A@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When tree_mod_log_rewind decides to make a copy of the current tree buffer
-for its modifications, it subsequently freed the buffer before unlocking it.
-Obviously, those operations are required in reverse order.
+On 15.04.2013 13:43, Wang Shilong wrote:
+> Hello Arne,
+> 
+>> On 15.04.2013 12:37, Wang Shilong wrote:
+>>> Step to reproduce:
+>>> 	mkfs.btrfs <disk>
+>>> 	mount <disk> <mnt>
+>>> 	dd if=/dev/zero of=/<mnt>/data bs=1M count=10
+>>> 	sync
+>>> 	btrfs quota enable <mnt>
+>>> 	btrfs qgroup create 0/5 <mnt>
+>>> 	btrfs qgroup limit 5M 0/5 <mnt>
+>>> 	rm -f /<mnt>/data
+>>> 	sync
+>>> 	btrfs qgroup show <mnt>
+>>> 	dd if=/dev/zero of=data bs=1M count=1
+>>>
+>>> From the perspective of users, qgroup's referenced or referenced
+>>>
+>>> is negative,But user can not continue to write data! a workaround
+>>> way is to cast u64 to int64 when doing qgroup reservation.
+>>>
+>>> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+>>> ---
+>>> This confusing edquot may also happen after Jan's qgroup
+>>> rescan has been implemented.
+>>> ---
+>>> fs/btrfs/qgroup.c |    4 ++--
+>>> 1 files changed, 2 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>>> index b44124d..0178223 100644
+>>> --- a/fs/btrfs/qgroup.c
+>>> +++ b/fs/btrfs/qgroup.c
+>>> @@ -1523,14 +1523,14 @@ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+>>> 		qg = (struct btrfs_qgroup *)(uintptr_t)unode->aux;
+>>>
+>>> 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+>>> -		    qg->reserved + qg->rfer + num_bytes >
+>>> +		    qg->reserved + (signed long long)qg->rfer + num_bytes >
+>>
+>> why not use s64 instead of signed long long? Otherwise this is the right way to
+>> solve this.
+> 
+> Yeah,V2 is coming. By the way, do you mind that i add Acked-by: Arne Jasen <sensille@gmx.net>?
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/ctree.c |   18 +++++++++++-------
- 1 files changed, 11 insertions(+), 7 deletions(-)
+You can add a Reviewed-by: Arne Jansen <sensille@gmx.net>
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0260795..0b40336 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1190,6 +1190,13 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
- 	btrfs_set_header_nritems(eb, n);
- }
- 
-+/*
-+ * Called with eb read locked. If the buffer cannot be rewinded, the same buffer
-+ * is returned. If rewind operations happen, a fresh buffer is returned. The
-+ * returned buffer is always read-locked. If the returned buffer is not the
-+ * input buffer, the lock on the input buffer is released and the input buffer
-+ * is freed (its refcount is decremented).
-+ */
- static struct extent_buffer *
- tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
- 		    u64 time_seq)
-@@ -1223,8 +1230,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
- 	}
- 
- 	extent_buffer_get(eb_rewin);
-+	btrfs_tree_read_unlock(eb);
- 	free_extent_buffer(eb);
- 
-+	extent_buffer_get(eb_rewin);
-+	btrfs_tree_read_lock(eb_rewin);
- 	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
- 	WARN_ON(btrfs_header_nritems(eb_rewin) >
- 		BTRFS_NODEPTRS_PER_BLOCK(fs_info->tree_root));
-@@ -2796,15 +2806,9 @@ again:
- 				btrfs_clear_path_blocking(p, b,
- 							  BTRFS_READ_LOCK);
- 			}
-+			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
- 			p->locks[level] = BTRFS_READ_LOCK;
- 			p->nodes[level] = b;
--			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
--			if (b != p->nodes[level]) {
--				btrfs_tree_unlock_rw(p->nodes[level],
--						     p->locks[level]);
--				p->locks[level] = 0;
--				p->nodes[level] = b;
--			}
- 		} else {
- 			p->slots[level] = slot;
- 			unlock_up(p, level, lowest_unlock, 0, NULL);
--- 
-1.7.1
+Thanks,
+Arne
+
+> 
+> Thanks,
+> Wang
+>>
+>> Thanks,
+>> Arne
+>>
+>>> 		    qg->max_rfer) {
+>>> 			ret = -EDQUOT;
+>>> 			goto out;
+>>> 		}
+>>>
+>>> 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
+>>> -		    qg->reserved + qg->excl + num_bytes >
+>>> +		    qg->reserved + (signed long long)qg->excl + num_bytes >
+>>> 		    qg->max_excl) {
+>>> 			ret = -EDQUOT;
+>>> 			goto out;
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

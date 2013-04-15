@@ -1,83 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50478 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751831Ab3DOGhb (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:44374 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751831Ab3DOGhd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Apr 2013 02:37:31 -0400
+	Mon, 15 Apr 2013 02:37:33 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 04/11 v2] btrfs-progs: cmd replace should check target-dev fully
-Date: Mon, 15 Apr 2013 14:38:10 +0800
-Message-Id: <1366007897-26567-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/11, RESEND] btrfs-progs: mkfs stdout print to match chronology
+Date: Mon, 15 Apr 2013 14:38:11 +0800
+Message-Id: <1366007897-26567-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1366007897-26567-1-git-send-email-anand.jain@oracle.com>
 References: <1365141303-10571-1-git-send-email-anand.jain@oracle.com>
  <1366007897-26567-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-as of now in replace command target dev is being checked
-for mounted and for existing fs, however there is newly
-introduced test_dev_for_mkfs in mkfs.c which is suitable
-for this job, and further it also checks if dev can be
-opened for with O_EXCL. Its better to use test_dev_for_mkfs
+A trivial fix: To match the events inside to what
+being printed out
+
+before:
+----
+::
+adding device /dev/dm-3 id 2
+adding device /dev/dm-4 id 3
+adding device /dev/dm-5 id 4
+fs created label (null) on /dev/dm-2
+nodesize 4096 leafsize 4096 sectorsize 4096 size 213.20GB
+Btrfs v0.20-rc1-235-gdd21bc1
+----
+
+After:
+----
+::
+fs created label (null) on /dev/dm-2 id 1
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 59.99GB
+adding device /dev/dm-3 id 2
+adding device /dev/dm-4 id 3
+adding device /dev/dm-5 id 4
+
+Btrfs v0.20-rc1-235-gdd21bc1
+----
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-replace.c | 23 ++++-------------------
- 1 file changed, 4 insertions(+), 19 deletions(-)
+ mkfs.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index ab34388..4e881b7 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -137,12 +137,11 @@ static int cmd_start_replace(int argc, char **argv)
- 	char *dstdev;
- 	int avoid_reading_from_srcdev = 0;
- 	int force_using_targetdev = 0;
--	u64 total_devs = 1;
--	struct btrfs_fs_devices *fs_devices_mnt = NULL;
- 	struct stat st;
- 	u64 dstdev_block_count;
- 	int do_not_background = 0;
- 	int mixed = 0;
-+	char estr[100];
- 
- 	while ((c = getopt(argc, argv, "Brf")) != -1) {
- 		switch (c) {
-@@ -263,30 +262,16 @@ static int cmd_start_replace(int argc, char **argv)
- 		start_args.start.srcdevid = 0;
+diff --git a/mkfs.c b/mkfs.c
+index a58b313..2eb3087 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1472,6 +1472,12 @@ int main(int ac, char **av)
+ 		exit(1);
  	}
  
--	ret = check_mounted(dstdev);
--	if (ret < 0) {
--		fprintf(stderr, "Error checking %s mount status\n", dstdev);
--		goto leave_with_error;
--	}
--	if (ret == 1) {
--		fprintf(stderr,
--			"Error, target device %s is in use and currently mounted!\n",
--			dstdev);
-+	if (test_dev_for_mkfs(dstdev, force_using_targetdev, estr)) {
-+		fprintf(stderr, "Error: %s", estr);
- 		goto leave_with_error;
- 	}
++	printf("fs created label %s on %s id 1\n\tnodesize %u leafsize %u "
++	    "sectorsize %u size %s\n",
++	    label, first_file, nodesize, leafsize, sectorsize,
++	    pretty_buf = pretty_sizes(btrfs_super_total_bytes(root->fs_info->super_copy)));
++	free(pretty_buf);
 +
- 	fddstdev = open(dstdev, O_RDWR);
- 	if (fddstdev < 0) {
- 		fprintf(stderr, "Unable to open %s\n", dstdev);
- 		goto leave_with_error;
+ 	trans = btrfs_start_transaction(root, 1);
+ 
+ 	if (dev_cnt == 0)
+@@ -1545,13 +1551,7 @@ raid_groups:
+ 		printf("Setting RAID5/6 feature flag\n");
  	}
--	ret = btrfs_scan_one_device(fddstdev, dstdev, &fs_devices_mnt,
--				    &total_devs, BTRFS_SUPER_INFO_OFFSET, 0ull);
--	if (ret >= 0 && !force_using_targetdev) {
--		fprintf(stderr,
--			"Error, target device %s contains filesystem, use '-f' to force overwriting.\n",
--			dstdev);
--		goto leave_with_error;
--	}
- 	ret = fstat(fddstdev, &st);
- 	if (ret) {
- 		fprintf(stderr, "Error: Unable to stat '%s'\n", dstdev);
+ 
+-	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+-	    "sectorsize %u size %s\n",
+-	    label, first_file, nodesize, leafsize, sectorsize,
+-	    pretty_buf = pretty_sizes(btrfs_super_total_bytes(root->fs_info->super_copy)));
+-	free(pretty_buf);
+-
+-	printf("%s\n", BTRFS_BUILD_VERSION);
++	printf("\n%s\n", BTRFS_BUILD_VERSION);
+ 	btrfs_commit_transaction(trans, root);
+ 
+ 	if (source_dir_set) {
 -- 
 1.8.1.227.g44fe835
 

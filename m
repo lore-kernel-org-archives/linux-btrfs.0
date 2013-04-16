@@ -1,167 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:65488 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755152Ab3DQPU2 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:20884 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752669Ab3DPIkR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 11:20:28 -0400
-Message-ID: <516EBDB8.8050603@jan-o-sch.net>
-Date: Wed, 17 Apr 2013 17:20:24 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/3] Btrfs: rescan for qgroups
-References: <1366101920-13083-1-git-send-email-list.btrfs@jan-o-sch.net> <1366101920-13083-3-git-send-email-list.btrfs@jan-o-sch.net> <B9EA5CB8-2AD5-4939-8290-4043F6ED9664@gmail.com>
-In-Reply-To: <B9EA5CB8-2AD5-4939-8290-4043F6ED9664@gmail.com>
-Content-Type: text/plain; charset=GB2312
+	Tue, 16 Apr 2013 04:40:17 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G8eFZn015655
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:16 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eFrb007768
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:15 GMT
+Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eFqg007755
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:15 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: return error when we specify wrong start
+Date: Tue, 16 Apr 2013 16:40:36 +0800
+Message-Id: <1366101636-26536-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, April 16, 2013 at 14:22 (+0200), Wang Shilong wrote:
-> 
-> Hello Jan, more comments below..
-> 
-> [...snip..]
-> 
->>  
->> +
->> +static long btrfs_ioctl_quota_rescan_status(struct file *file, void __user *arg)
->> +{
->> +	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
->> +	struct btrfs_ioctl_quota_rescan_args *qsa;
->> +	int ret = 0;
->> +
->> +	if (!capable(CAP_SYS_ADMIN))
->> +		return -EPERM;
->> +
->> +	qsa = kzalloc(sizeof(*qsa), GFP_NOFS);
->> +	if (!qsa)
->> +		return -ENOMEM;
->> +
-> 
-> 	Here, i think we should hold qgroup_rescan_lock and group_lock:
-> 
-> 	1> qgroup_rescan protect BTRFS_QGROUP_STATUS_RESCAN  
-> 	2>quota disabling may happen this time..so group_lock should also be held here.
+We need such a sanity check for wrong start, otherwise, even with
+a wrong start that's larger than file size, we can end up not only
+changing inode's force compress flag but also FS's incompat flags.
 
-It's just a status call for user space, I don't really care about exact
-synchronization here. *If* we wanted to do that, I would have moved the code
-into qgroup.c, because all the code that requires any qgroup locks is there. But
-I'd really want to keep it simple. You cannot get completely garbage information
-that way, you only could race with someone just starting off or finishing a
-rescan operation. I don't think that really matters in the end.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ioctl.c |   11 +++++++----
+ 1 files changed, 7 insertions(+), 4 deletions(-)
 
-> 
-> 
->> +	if (root->fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
->> +		qsa->flags = 1;
->> +		qsa->progress = root->fs_info->qgroup_rescan_progress.objectid;
->> +	}
->> +
->> +	if (copy_to_user(arg, qsa, sizeof(*qsa)))
->> +		ret = -EFAULT;
->> +
->> +	kfree(qsa);
->> +	return ret;
->> +}
->> +
->>  
-> [бн.snip...]
->>
->> +
->> +/*
->> + * returns < 0 on error, 0 when more leafs are to be scanned.
->> + * returns 1 when done, 2 when done and FLAG_INCONSISTENT was cleared.
->> + */
->> +static int
->> +qgroup_rescan_leaf(struct qgroup_rescan *qscan, struct btrfs_path *path,
->> +		   struct btrfs_trans_handle *trans, struct ulist *tmp,
->> +		   struct extent_buffer *scratch_leaf)
->> +{
->> +	struct btrfs_key found;
->> +	struct btrfs_fs_info *fs_info = qscan->fs_info;
->> +	struct ulist *roots = NULL;
->> +	struct ulist_node *unode;
->> +	struct ulist_iterator uiter;
->> +	struct seq_list tree_mod_seq_elem = {};
->> +	u64 seq;
->> +	int slot;
->> +	int ret;
->> +
->> +	path->leave_spinning = 1;
->> +	mutex_lock(&fs_info->qgroup_rescan_lock);
-> 
-> Here in qgroup_rescan_leaf(), we don't need hold group_rescan_lock.
-> Because qgroup_rescan_lock is used to protect qgroup_flag, in group_rescan_leaf().
-> we don't change qgroup_flag.. So we don't need hold the group_rescan_lock.
-> 
-> Maybe we can just remove the lock qgroup_rescan_lock,  and i think what qgroup_rscan_lock
-> does that qgroup_lock can replace.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 69cd80d..262d9db 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1152,8 +1152,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	u64 new_align = ~((u64)128 * 1024 - 1);
+ 	struct page **pages = NULL;
+ 
+-	if (extent_thresh == 0)
+-		extent_thresh = 256 * 1024;
++	if (isize == 0)
++		return 0;
++
++	if (range->start >= isize)
++		return -EINVAL;
+ 
+ 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
+ 		if (range->compress_type > BTRFS_COMPRESS_TYPES)
+@@ -1162,8 +1165,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			compress_type = range->compress_type;
+ 	}
+ 
+-	if (isize == 0)
+-		return 0;
++	if (extent_thresh == 0)
++		extent_thresh = 256 * 1024;
+ 
+ 	/*
+ 	 * if we were not given a file, allocate a readahead
+-- 
+1.7.7
 
-No, we cannot. We need the mutex for the following tree search and tie it to the
-following update of the qgroup_rescan_progress. In fact, that's the only reason
-I introduced it, but I don't want to hold a spin lock for a whole tree search.
-If we do not make sure the search operation and the progress update happen under
-the same lock, we can end up with a tree block being found by thread A, then
-thread B checks the rescan_progress, then thread A updates the rescan_progress
-according to the found block and doing the rescan. That would result in wrong
-tracking information.
-
-> 
-> 
->> +	ret = btrfs_search_slot_for_read(fs_info->extent_root,
->> +					 &fs_info->qgroup_rescan_progress,
->> +					 path, 1, 0);
->> +
->> +	pr_debug("current progress key (%llu %u %llu), search_slot ret %d\n",
->> +		 (unsigned long long)fs_info->qgroup_rescan_progress.objectid,
->> +		 fs_info->qgroup_rescan_progress.type,
->> +		 (unsigned long long)fs_info->qgroup_rescan_progress.offset,
->> +		 ret);
->> +
->> +	if (ret) {
->> +		/*
->> +		 * The rescan is about to end, we will not be scanning any
->> +		 * further blocks. We cannot unset the RESCAN flag here, because
->> +		 * we want to commit the transaction if everything went well.
->> +		 * To make the live accounting work in this phase, we set our
->> +		 * scan progress pointer such that every real extent objectid
->> +		 * will be smaller.
->> +		 */
->> +		fs_info->qgroup_rescan_progress.objectid = (u64)-1;
->> +		btrfs_release_path(path);
->> +		mutex_unlock(&fs_info->qgroup_rescan_lock);
->> +		return ret;
->> +	}
->> +
->> +	btrfs_item_key_to_cpu(path->nodes[0], &found,
->> +			      btrfs_header_nritems(path->nodes[0]) - 1);
->> +	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
->> +
->> +	btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
->> +	memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
->> +	slot = path->slots[0];
->> +	btrfs_release_path(path);
->> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
->> +
->> +	for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
->> +		btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
->> +		if (found.type != BTRFS_EXTENT_ITEM_KEY)
->> +			continue;
->> +		ret = btrfs_find_all_roots(trans, fs_info, found.objectid,
->> +					   tree_mod_seq_elem.seq, &roots);
->> +		if (ret < 0)
->> +			break;
->> +		spin_lock(&fs_info->qgroup_lock);
-> 
-> Quota may has been disabled now, so please adds the check, otherwise
-> we may get a NULL pointer panic here.
-
-Quota cannot be disabled without a transaction commit, and we're holding a
-transaction open here.
-
-What is in fact missing is stopping the rescan worker thread when quota is
-disabled, though. I'll put that into v3.
-
-Thanks,
--Jan

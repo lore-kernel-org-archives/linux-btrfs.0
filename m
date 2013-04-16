@@ -1,82 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:40340 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S935982Ab3DPRA7 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:47854 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965014Ab3DPRNl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 13:00:59 -0400
+	Tue, 16 Apr 2013 13:13:41 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id EED2A7C064D
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:00:58 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Pr0DOrIGDlvhlazK (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:00:58 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id 35A759A04F8
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:13:41 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 9n7ZNYyTocyZoiUh (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:13:40 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix csum check when extent lands on block group
-Date: Tue, 16 Apr 2013 13:00:56 -0400
-Message-ID: <1366131656-8429-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs-progs: make restore deal with really broken file systems V2
+Date: Tue, 16 Apr 2013 13:13:38 -0400
+Message-ID: <1366132418-8602-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was running fsync() tests and noticed that occasionally I was getting a bunch
-of errors from fsck complaining about csums not having corresponding extents.
-Thankfully after a few days of debugging this it turned out to be a bug with
-fsck.  The csums were for an extent that started at the same offset as a block
-group, and were offset within the extent.  So the search put us out at the block
-group item and we just walked forward from there, never finding the actual
-extent.  This is because the block group item key is higher than the extent item
-key, so it comes first.  In order to fix this we need to check and see if we
-landed on a block group item and take another step backwards to make sure we end
-up at the extent item.  With this patch my reproducer no longer finds csums that
-don't have matching extent records.  Thanks,
+All we need for restore to work is the chunk root, the tree root and the fs root
+we want to restore from.  So to do this we need to make a few adjustments
+
+1) Make open_ctree_fs_info fail completely if it can't read the chunk tree.
+There is no sense in continuing if we can't read the chunk tree since we won't
+be able to translate logical to physical blocks.
+
+2) Use open_ctree_fs_info in restore, and if we didn't load a tree root or
+fs root go ahead and try to set those up manually ourselves.
+
+This is related to work I did last year on restore, but it uses the
+open_ctree_fs_info instead of my open coded open_ctree.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- cmds-check.c |   24 ++++++++++++++++++++++--
- 1 files changed, 22 insertions(+), 2 deletions(-)
+V1->V2: fix possible invalid pointer dereference pointed out by kdave.
+
+ cmds-check.c   |    2 +-
+ cmds-restore.c |   51 ++++++++++++++++++++++++++++++++++++++++++++-------
+ debug-tree.c   |    2 +-
+ disk-io.c      |   37 ++++++++++---------------------------
+ disk-io.h      |    6 ++----
+ 5 files changed, 58 insertions(+), 40 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 9a7696f..030ab77 100644
+index 12192fa..bdf74ba 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -2624,6 +2624,7 @@ static int check_extent_exists(struct btrfs_root *root, u64 bytenr,
- 	key.type = BTRFS_EXTENT_ITEM_KEY;
- 	key.offset = 0;
- 
-+
- again:
- 	ret = btrfs_search_slot(NULL, root->fs_info->extent_root, &key, path,
- 				0, 0);
-@@ -2631,8 +2632,27 @@ again:
- 		fprintf(stderr, "Error looking up extent record %d\n", ret);
- 		btrfs_free_path(path);
- 		return ret;
--	} else if (ret && path->slots[0]) {
--		path->slots[0]--;
-+	} else if (ret) {
-+		if (path->slots[0])
-+			path->slots[0]--;
-+		else
-+			btrfs_prev_leaf(root, path);
-+	}
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+
-+	/*
-+	 * Block group items come before extent items if they have the same
-+	 * bytenr, so walk back one more just in case.  Dear future traveler,
-+	 * first congrats on mastering time travel.  Now if it's not too much
-+	 * trouble could you go back to 2006 and tell Chris to make the
-+	 * BLOCK_GROUP_ITEM_KEY lower than the EXTENT_ITEM_KEY please?
-+	 */
-+	if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-+		if (path->slots[0])
-+			path->slots[0]--;
-+		else
-+			btrfs_prev_leaf(root, path);
+@@ -3609,7 +3609,7 @@ int cmd_check(int argc, char **argv)
+ 		return -EBUSY;
  	}
  
- 	while (num_bytes) {
+-	info = open_ctree_fs_info(argv[optind], bytenr, rw, 1);
++	info = open_ctree_fs_info(argv[optind], bytenr, 0, rw, 1);
+ 	if (info == NULL)
+ 		return 1;
+ 
+diff --git a/cmds-restore.c b/cmds-restore.c
+index f4e75cf..681672a 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -839,27 +839,64 @@ static int do_list_roots(struct btrfs_root *root)
+ static struct btrfs_root *open_fs(const char *dev, u64 root_location,
+ 				  int super_mirror, int list_roots)
+ {
++	struct btrfs_fs_info *fs_info = NULL;
+ 	struct btrfs_root *root = NULL;
+ 	u64 bytenr;
+ 	int i;
+ 
+ 	for (i = super_mirror; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+-		root = open_ctree_recovery(dev, bytenr, root_location);
+-		if (root)
++		fs_info = open_ctree_fs_info(dev, bytenr, root_location, 0, 1);
++		if (fs_info)
+ 			break;
+ 		fprintf(stderr, "Could not open root, trying backup super\n");
+ 	}
+ 
+-	if (root && list_roots) {
+-		int ret = do_list_roots(root);
+-		if (ret) {
++	if (!fs_info)
++		return NULL;
++
++	/*
++	 * All we really need to succeed is reading the chunk tree, everything
++	 * else we can do by hand, since we only need to read the tree root and
++	 * the fs_root.
++	 */
++	if (!extent_buffer_uptodate(fs_info->tree_root->node)) {
++		u64 generation;
++
++		root = fs_info->tree_root;
++		if (!root_location)
++			root_location = btrfs_super_root(fs_info->super_copy);
++		generation = btrfs_super_generation(fs_info->super_copy);
++		root->node = read_tree_block(root, root_location,
++					     root->leafsize, generation);
++		if (!extent_buffer_uptodate(root->node)) {
++			fprintf(stderr, "Error opening tree root\n");
+ 			close_ctree(root);
+-			root = NULL;
++			return NULL;
+ 		}
+ 	}
+ 
+-	return root;
++	if (!list_roots && !fs_info->fs_root) {
++		struct btrfs_key key;
++
++		key.objectid = BTRFS_FS_TREE_OBJECTID;
++		key.type = BTRFS_ROOT_ITEM_KEY;
++		key.offset = (u64)-1;
++		fs_info->fs_root = btrfs_read_fs_root_no_cache(fs_info, &key);
++		if (IS_ERR(fs_info->fs_root)) {
++			fprintf(stderr, "Couldn't read fs root: %ld\n",
++				PTR_ERR(fs_info->fs_root));
++			close_ctree(fs_info->tree_root);
++			return NULL;
++		}
++	}
++
++	if (list_roots && do_list_roots(fs_info->tree_root)) {
++		close_ctree(fs_info->tree_root);
++		return NULL;
++	}
++
++	return fs_info->fs_root;
+ }
+ 
+ static int find_first_dir(struct btrfs_root *root, u64 *objectid)
+diff --git a/debug-tree.c b/debug-tree.c
+index 0fc0ecd..bae7f94 100644
+--- a/debug-tree.c
++++ b/debug-tree.c
+@@ -166,7 +166,7 @@ int main(int ac, char **av)
+ 	if (ac != 1)
+ 		print_usage();
+ 
+-	info = open_ctree_fs_info(av[optind], 0, 0, 1);
++	info = open_ctree_fs_info(av[optind], 0, 0, 0, 1);
+ 	if (!info) {
+ 		fprintf(stderr, "unable to open %s\n", av[optind]);
+ 		exit(1);
+diff --git a/disk-io.c b/disk-io.c
+index a9fd374..5265c3c 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -944,8 +944,10 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 
+ 	if (!(btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)) {
+ 		ret = btrfs_read_chunk_tree(chunk_root);
+-		if (ret)
+-			goto out_failed;
++		if (ret) {
++			printk("Couldn't read chunk tree\n");
++			goto out_chunk;
++		}
+ 	}
+ 
+ 	blocksize = btrfs_level_size(tree_root,
+@@ -1018,6 +1020,7 @@ out_failed:
+ 		free_extent_buffer(fs_info->extent_root->node);
+ 	if (fs_info->tree_root)
+ 		free_extent_buffer(fs_info->tree_root->node);
++out_chunk:
+ 	if (fs_info->chunk_root)
+ 		free_extent_buffer(fs_info->chunk_root->node);
+ out_devices:
+@@ -1040,8 +1043,8 @@ out:
+ }
+ 
+ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+-					 u64 sb_bytenr, int writes,
+-					 int partial)
++					 u64 sb_bytenr, u64 root_tree_bytenr,
++					 int writes, int partial)
+ {
+ 	int fp;
+ 	struct btrfs_fs_info *info;
+@@ -1055,7 +1058,8 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 		fprintf (stderr, "Could not open %s\n", filename);
+ 		return NULL;
+ 	}
+-	info = __open_ctree_fd(fp, filename, sb_bytenr, 0, writes, partial);
++	info = __open_ctree_fd(fp, filename, sb_bytenr, root_tree_bytenr,
++			       writes, partial);
+ 	close(fp);
+ 	return info;
+ }
+@@ -1064,28 +1068,7 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes)
+ {
+ 	struct btrfs_fs_info *info;
+ 
+-	info = open_ctree_fs_info(filename, sb_bytenr, writes, 0);
+-	if (!info)
+-		return NULL;
+-	return info->fs_root;
+-}
+-
+-struct btrfs_root *open_ctree_recovery(const char *filename, u64 sb_bytenr,
+-				       u64 root_tree_bytenr)
+-{
+-	int fp;
+-	struct btrfs_fs_info *info;
+-
+-
+-	fp = open(filename, O_RDONLY);
+-	if (fp < 0) {
+-		fprintf (stderr, "Could not open %s\n", filename);
+-		return NULL;
+-	}
+-	info = __open_ctree_fd(fp, filename, sb_bytenr,
+-			       root_tree_bytenr, 0, 0);
+-	close(fp);
+-
++	info = open_ctree_fs_info(filename, sb_bytenr, 0, writes, 0);
+ 	if (!info)
+ 		return NULL;
+ 	return info->fs_root;
+diff --git a/disk-io.h b/disk-io.h
+index ff87958..c29ee8e 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -50,11 +50,9 @@ int clean_tree_block(struct btrfs_trans_handle *trans,
+ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes);
+ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+ 				 int writes);
+-struct btrfs_root *open_ctree_recovery(const char *filename, u64 sb_bytenr,
+-				       u64 root_tree_bytenr);
+ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+-					 u64 sb_bytenr, int writes,
+-					 int partial);
++					 u64 sb_bytenr, u64 root_tree_bytenr,
++					 int writes, int partial);
+ int close_ctree(struct btrfs_root *root);
+ int write_all_supers(struct btrfs_root *root);
+ int write_ctree_super(struct btrfs_trans_handle *trans,
 -- 
 1.7.7.6
 

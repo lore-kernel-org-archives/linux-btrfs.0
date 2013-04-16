@@ -1,66 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20884 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752669Ab3DPIkR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 04:40:17 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G8eFZn015655
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:16 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eFrb007768
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:15 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eFqg007755
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:15 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: return error when we specify wrong start
-Date: Tue, 16 Apr 2013 16:40:36 +0800
-Message-Id: <1366101636-26536-1-git-send-email-bo.li.liu@oracle.com>
+Received: from xp-ob.rzone.de ([81.169.146.139]:13723 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754390Ab3DPIpc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 04:45:32 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/3] Btrfs: quota rescan for 3.10
+Date: Tue, 16 Apr 2013 10:45:17 +0200
+Message-Id: <1366101920-13083-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need such a sanity check for wrong start, otherwise, even with
-a wrong start that's larger than file size, we can end up not only
-changing inode's force compress flag but also FS's incompat flags.
+The kernel side for rescan, which is needed if you want to enable qgroup
+tracking on a non-empty volume. The first patch splits
+btrfs_qgroup_account_ref into readable ans reusable units. The second
+patch adds the rescan implementation (refer to its commit message for a
+description of the algorithm). The third  patch starts an automatic
+rescan when qgroups are enabled. It is only separated to potentially
+help bisecting things in case of a problem.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ioctl.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
+The required user space patch was sent at 2013-04-05, subject "[PATCH]
+Btrfs-progs: quota rescan".
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 69cd80d..262d9db 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1152,8 +1152,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 	u64 new_align = ~((u64)128 * 1024 - 1);
- 	struct page **pages = NULL;
- 
--	if (extent_thresh == 0)
--		extent_thresh = 256 * 1024;
-+	if (isize == 0)
-+		return 0;
-+
-+	if (range->start >= isize)
-+		return -EINVAL;
- 
- 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
- 		if (range->compress_type > BTRFS_COMPRESS_TYPES)
-@@ -1162,8 +1165,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			compress_type = range->compress_type;
- 	}
- 
--	if (isize == 0)
--		return 0;
-+	if (extent_thresh == 0)
-+		extent_thresh = 256 * 1024;
- 
- 	/*
- 	 * if we were not given a file, allocate a readahead
--- 
-1.7.7
+--
+Changes v1->v2:
+- fix calculation of the "exclusive" field for qgroups in level != 0
+- split btrfs_qgroup_account_ref
+- take into account that mutex_unlock might schedule
+- fix kzalloc error checking
+- add some reserved ints to struct btrfs_ioctl_quota_rescan_args
+- changed modification to unused #define BTRFS_QUOTA_CTL_RESCAN
+- added missing (unsigned long long) casts for pr_debug
+- more detailed commit messages
+
+Jan Schmidt (3):
+  Btrfs: split btrfs_qgroup_account_ref into four functions
+  Btrfs: rescan for qgroups
+  Btrfs: automatic rescan after "quota enable" command
+
+ fs/btrfs/ctree.h           |   17 +-
+ fs/btrfs/disk-io.c         |    6 +
+ fs/btrfs/ioctl.c           |   83 ++++++--
+ fs/btrfs/qgroup.c          |  517 +++++++++++++++++++++++++++++++++++---------
+ include/uapi/linux/btrfs.h |   12 +-
+ 5 files changed, 509 insertions(+), 126 deletions(-)
 

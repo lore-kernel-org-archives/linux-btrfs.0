@@ -1,31 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34000 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:34380 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755194Ab3DPN2h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 09:28:37 -0400
-Date: Tue, 16 Apr 2013 15:28:34 +0200
+	id S1757160Ab3DPNi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 09:38:29 -0400
+Date: Tue, 16 Apr 2013 15:38:28 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Vincent <vincent.stehle@laposte.net>
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix reada debug code compilation
-Message-ID: <20130416132834.GM18193@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: return error when we specify wrong start to
+ defrag
+Message-ID: <20130416133827.GN18193@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1366100125-13043-1-git-send-email-vincent.stehle@laposte.net>
+References: <1366104028-26830-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1366100125-13043-1-git-send-email-vincent.stehle@laposte.net>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1366104028-26830-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 16, 2013 at 10:15:25AM +0200, Vincent wrote:
-> This fixes the following errors:
-> 
->   fs/btrfs/reada.c: In function ‘btrfs_reada_wait’:
->   fs/btrfs/reada.c:958:42: error: invalid operands to binary < (have ‘atomic_t’ and ‘int’)
->   fs/btrfs/reada.c:961:41: error: invalid operands to binary < (have ‘atomic_t’ and ‘int’)
-> 
-> Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
-> Cc: Chris Mason <chris.mason@fusionio.com>
-> Cc: linux-btrfs@vger.kernel.org
+On Tue, Apr 16, 2013 at 05:20:28PM +0800, Liu Bo wrote:
+> We need such a sanity check for wrong start when we defrag a file, otherwise,
+> even with a wrong start that's larger than file size, we can end up changing
+> not only inode's force compress flag but also FS's incompat flags.
+
+The range->start check is good, but why are you worried about the
+incompat flag? LZO support has been around for more than 2 years.
+
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1152,8 +1152,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>  	u64 new_align = ~((u64)128 * 1024 - 1);
+>  	struct page **pages = NULL;
+>  
+> -	if (extent_thresh == 0)
+> -		extent_thresh = 256 * 1024;
+> +	if (isize == 0)
+> +		return 0;
+> +
+> +	if (range->start >= isize)
+> +		return -EINVAL;
+...
+> -	if (isize == 0)
+> -		return 0;
+> +	if (extent_thresh == 0)
+> +		extent_thresh = 256 * 1024;
+
+That's a more logical order of the checks, good.
 
 Reviewed-by: David Sterba <dsterba@suse.cz>

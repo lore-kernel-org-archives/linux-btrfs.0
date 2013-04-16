@@ -1,142 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36886 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1162302Ab3DEUuM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2013 16:50:12 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 16AE87C0694
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2013 14:50:12 -0600 (MDT)
-Received: from mail1.int.fusionio.com ([10.101.1.21]) by mx2.fusionio.com with ESMTP id T5fgKVuUn9naTTMV (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Apr 2013 14:50:11 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: make sure nbytes are right after log replay V2
-Date: Fri, 5 Apr 2013 16:50:09 -0400
-Message-ID: <1365195009-2156-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from aserp1040.oracle.com ([141.146.126.69]:33587 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751493Ab3DPJUK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 05:20:10 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G9K9DF031558
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:10 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9K8nR019059
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:09 GMT
+Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9K8NV027337
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:08 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] Btrfs: return error when we specify wrong start to defrag
+Date: Tue, 16 Apr 2013 17:20:28 +0800
+Message-Id: <1366104028-26830-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While trying to track down a tree log replay bug I noticed that fsck was always
-complaining about nbytes not being right for our fsynced file.  That is because
-the new fsync stuff doesn't wait for ordered extents to complete, so the inodes
-nbytes are not necessarily updated properly when we log it.  So to fix this we
-need to set nbytes to whatever it is on the inode that is on disk, so when we
-replay the extents we can just add the bytes that are being added as we replay
-the extent.  This makes it work for the case that we have the wrong nbytes or
-the case that we logged everything and nbytes is actually correct.  With this
-I'm no longer getting nbytes errors out of btrfsck.  Thanks,
+We need such a sanity check for wrong start when we defrag a file, otherwise,
+even with a wrong start that's larger than file size, we can end up changing
+not only inode's force compress flag but also FS's incompat flags.
 
-Cc: stable@vger.kernel.org
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-V1->V2: Only set nbytes if the extent isn't a hole.
+v2: make changelog more clearly.
 
- fs/btrfs/tree-log.c |   48 ++++++++++++++++++++++++++++++++++++++++++------
- 1 files changed, 42 insertions(+), 6 deletions(-)
+ fs/btrfs/ioctl.c |   11 +++++++----
+ 1 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 83d4e1d..f728eeb 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -317,6 +317,7 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
- 	unsigned long src_ptr;
- 	unsigned long dst_ptr;
- 	int overwrite_root = 0;
-+	bool inode_item = key->type == BTRFS_INODE_ITEM_KEY;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 69cd80d..262d9db 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1152,8 +1152,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	u64 new_align = ~((u64)128 * 1024 - 1);
+ 	struct page **pages = NULL;
  
- 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
- 		overwrite_root = 1;
-@@ -326,6 +327,9 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
- 
- 	/* look for the key in the destination tree */
- 	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
-+	if (ret < 0)
-+		return ret;
+-	if (extent_thresh == 0)
+-		extent_thresh = 256 * 1024;
++	if (isize == 0)
++		return 0;
 +
- 	if (ret == 0) {
- 		char *src_copy;
- 		char *dst_copy;
-@@ -367,6 +371,30 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
- 			return 0;
- 		}
++	if (range->start >= isize)
++		return -EINVAL;
  
-+		/*
-+		 * We need to load the old nbytes into the inode so when we
-+		 * replay the extents we've logged we get the right nbytes.
-+		 */
-+		if (inode_item) {
-+			struct btrfs_inode_item *item;
-+			u64 nbytes;
-+
-+			item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+					      struct btrfs_inode_item);
-+			nbytes = btrfs_inode_nbytes(path->nodes[0], item);
-+			item = btrfs_item_ptr(eb, slot,
-+					      struct btrfs_inode_item);
-+			btrfs_set_inode_nbytes(eb, item, nbytes);
-+		}
-+	} else if (inode_item) {
-+		struct btrfs_inode_item *item;
-+
-+		/*
-+		 * New inode, set nbytes to 0 so that the nbytes comes out
-+		 * properly when we replay the extents.
-+		 */
-+		item = btrfs_item_ptr(eb, slot, struct btrfs_inode_item);
-+		btrfs_set_inode_nbytes(eb, item, 0);
- 	}
- insert:
- 	btrfs_release_path(path);
-@@ -486,7 +514,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 	int found_type;
- 	u64 extent_end;
- 	u64 start = key->offset;
--	u64 saved_nbytes;
-+	u64 nbytes = 0;
- 	struct btrfs_file_extent_item *item;
- 	struct inode *inode = NULL;
- 	unsigned long size;
-@@ -496,10 +524,19 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 	found_type = btrfs_file_extent_type(eb, item);
- 
- 	if (found_type == BTRFS_FILE_EXTENT_REG ||
--	    found_type == BTRFS_FILE_EXTENT_PREALLOC)
--		extent_end = start + btrfs_file_extent_num_bytes(eb, item);
--	else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
-+	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+		nbytes = btrfs_file_extent_num_bytes(eb, item);
-+		extent_end = start + nbytes;
-+
-+		/*
-+		 * We don't add to the inodes nbytes if we are prealloc or a
-+		 * hole.
-+		 */
-+		if (btrfs_file_extent_disk_bytenr(eb, item) == 0)
-+			nbytes = 0;
-+	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
- 		size = btrfs_file_extent_inline_len(eb, item);
-+		nbytes = btrfs_file_extent_ram_bytes(eb, item);
- 		extent_end = ALIGN(start + size, root->sectorsize);
- 	} else {
- 		ret = 0;
-@@ -548,7 +585,6 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 	}
- 	btrfs_release_path(path);
- 
--	saved_nbytes = inode_get_bytes(inode);
- 	/* drop any overlapping extents */
- 	ret = btrfs_drop_extents(trans, root, inode, start, extent_end, 1);
- 	BUG_ON(ret);
-@@ -635,7 +671,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 		BUG_ON(ret);
+ 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
+ 		if (range->compress_type > BTRFS_COMPRESS_TYPES)
+@@ -1162,8 +1165,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			compress_type = range->compress_type;
  	}
  
--	inode_set_bytes(inode, saved_nbytes);
-+	inode_add_bytes(inode, nbytes);
- 	ret = btrfs_update_inode(trans, root, inode);
- out:
- 	if (inode)
+-	if (isize == 0)
+-		return 0;
++	if (extent_thresh == 0)
++		extent_thresh = 256 * 1024;
+ 
+ 	/*
+ 	 * if we were not given a file, allocate a readahead
 -- 
-1.7.7.6
+1.7.7
 

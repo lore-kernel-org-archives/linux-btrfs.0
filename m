@@ -1,51 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:12526 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S934017Ab3DPKm7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 06:42:59 -0400
-Message-ID: <516D2C33.1010601@cn.fujitsu.com>
-Date: Tue, 16 Apr 2013 18:47:15 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from brockman.in8.de ([85.214.220.56]:58102 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S934017Ab3DPKoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 06:44:12 -0400
+Message-ID: <516D293A.10502@jan-o-sch.net>
+Date: Tue, 16 Apr 2013 12:34:34 +0200
+From: Jan Schmidt <mail@jan-o-sch.net>
 MIME-Version: 1.0
-To: dsterba@suse.cz, Wang Shilong <wangsl-fnst@cn.fujitsu.com>,
-        Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org, Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v2 1/3] Btrfs: split btrfs_qgroup_account_ref into four
- functions
-References: <1366101920-13083-1-git-send-email-list.btrfs@jan-o-sch.net> <1366101920-13083-2-git-send-email-list.btrfs@jan-o-sch.net> <516D17F1.4070208@cn.fujitsu.com> <516D1C25.5060103@jan-o-sch.net> <516D2035.6010800@cn.fujitsu.com> <20130416103228.GG18193@twin.jikos.cz>
-In-Reply-To: <20130416103228.GG18193@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/3] Btrfs: rescan for qgroups
+References: <1366101920-13083-1-git-send-email-list.btrfs@jan-o-sch.net> <1366101920-13083-3-git-send-email-list.btrfs@jan-o-sch.net> <516D2313.6050004@cn.fujitsu.com>
+In-Reply-To: <516D2313.6050004@cn.fujitsu.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
-
-> On Tue, Apr 16, 2013 at 05:56:05PM +0800, Wang Shilong wrote:
->> But static checker may want to know what is 3 steps
->> just by the function name but not to read the pdf.
+On Tue, April 16, 2013 at 12:08 (+0200), Wang Shilong wrote:
+> Hello Jan,
+>  
 > 
-> I'm curious what static checker you mean and how a function name helps
-> there.
+>>  	slot = path->slots[0];
+>>  	ptr = btrfs_item_ptr(l, slot, struct btrfs_qgroup_status_item);
+>> +	spin_lock(&fs_info->qgroup_lock);
+> 
+> 
+> Why we need hold qgroup_lock here? would you please explain...
 
+It would have been easier for me if you had left the relevant context in there,
+but I finally found it.
 
-I mean that other developers will get more information by the function name.
-In fact, the tree steps they do more things.So maybe
-the function name of mine is not good enough.
-But i really hope that a meaningful function name gives more information. I don't
-insist on this anyway ^_^
+Thinking again about it, as update_qgroup_status_item is only called from
+transaction commit context, we can do without a spinlock here. I meant to
+protect fs_info->qgroup_flags and fs_info->qgroup_rescan_progress, but it seems
+not required.
 
 Thanks,
-Wang
-
-> 
-> thanks,
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
-
-
+-Jan

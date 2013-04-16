@@ -1,85 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:55923 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S936298Ab3DKPoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Apr 2013 11:44:19 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r3BFiJCO031783
+Received: from userp1040.oracle.com ([156.151.31.81]:21039 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754274Ab3DPIkd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 04:40:33 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G8eVTf015886
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 11:44:19 -0400
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r3BFiIcs020016
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2013 11:44:18 -0400
-Message-ID: <5166DA52.7000809@redhat.com>
-Date: Thu, 11 Apr 2013 10:44:18 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs-progs: use clearer var names in is_ssd()
-References: <5166D932.5010105@redhat.com>
-In-Reply-To: <5166D932.5010105@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:32 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eVq0008343
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:31 GMT
+Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G8eVSK019629
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 08:40:31 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: record errno for ioctl DEFRAG_RANGE
+Date: Tue, 16 Apr 2013 16:40:52 +0800
+Message-Id: <1366101652-26571-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-is_ssd() uses nondescript variable names; path - to what?
-disk - it's a dev_t not a disk name, unlike dev, which is
-a name not a dev_t!
+In order to sparse exact error message, we need to record errno here.
 
-Rename some vars to make things hopefully clearer:
-
- wholedisk - the name of the node for the entire disk
- devno - the dev_t of the device we're mkfs'ing
- sysfs_path - the path in sysfs we ultimately check
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+ cmds-filesystem.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Hopefully that's slightly clearer; if not, this patch is
-just cleanup, so it's not at all critical.
-
-diff --git a/mkfs.c b/mkfs.c
-index 7df78fc..d735d65 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1216,9 +1216,9 @@ static int check_leaf_or_node_size(u32 size, u32 sectorsize)
- static int is_ssd(const char *file)
- {
- 	blkid_probe probe;
--	char dev[32];
--	char path[PATH_MAX];
--	dev_t disk;
-+	char wholedisk[32];
-+	char sysfs_path[PATH_MAX];
-+	dev_t devno;
- 	int fd;
- 	char rotational;
- 
-@@ -1227,18 +1227,19 @@ static int is_ssd(const char *file)
- 		return 0;
- 
- 	/* Device number of this disk (possibly a partition) */
--	disk = blkid_probe_get_devno(probe);
--	if (!disk)
-+	devno= blkid_probe_get_devno(probe);
-+	if (!devno)
- 		return 0;
- 
- 	/* Get whole disk name (not full path) for this devno */
--	blkid_devno_to_wholedisk(disk, dev, sizeof(dev), NULL);
-+	blkid_devno_to_wholedisk(devno, wholedisk, sizeof(wholedisk), NULL);
- 
--	snprintf(path, PATH_MAX, "/sys/block/%s/queue/rotational", dev);
-+	snprintf(sysfs_path, PATH_MAX, "/sys/block/%s/queue/rotational",
-+		 wholedisk);
- 
- 	blkid_free_probe(probe);
- 
--	fd = open(path, O_RDONLY);
-+	fd = open(sysfs_path, O_RDONLY);
- 	if (fd < 0) {
- 		return 0;
- 	}
-
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 2210020..3f386e2 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -431,6 +431,7 @@ static int cmd_defrag(int argc, char **argv)
+ 				close(fd);
+ 				break;
+ 			}
++			e = errno;
+ 		}
+ 		if (ret) {
+ 			fprintf(stderr, "ERROR: defrag failed on %s - %s\n",
+-- 
+1.7.7
 

@@ -1,68 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33587 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751493Ab3DPJUK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 05:20:10 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G9K9DF031558
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:10 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9K8nR019059
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:09 GMT
-Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9K8NV027337
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:20:08 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: return error when we specify wrong start to defrag
-Date: Tue, 16 Apr 2013 17:20:28 +0800
-Message-Id: <1366104028-26830-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:49401 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753695Ab3DPKTM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 06:19:12 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r3GAJ59n030997
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 18:19:09 +0800
+Message-ID: <516D265F.4020806@cn.fujitsu.com>
+Date: Tue, 16 Apr 2013 18:22:23 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: remove unused variable in the iterate_extent_inodes()
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need such a sanity check for wrong start when we defrag a file, otherwise,
-even with a wrong start that's larger than file size, we can end up changing
-not only inode's force compress flag but also FS's incompat flags.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 ---
-v2: make changelog more clearly.
+ fs/btrfs/backref.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
- fs/btrfs/ioctl.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 69cd80d..262d9db 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1152,8 +1152,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 	u64 new_align = ~((u64)128 * 1024 - 1);
- 	struct page **pages = NULL;
- 
--	if (extent_thresh == 0)
--		extent_thresh = 256 * 1024;
-+	if (isize == 0)
-+		return 0;
-+
-+	if (range->start >= isize)
-+		return -EINVAL;
- 
- 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
- 		if (range->compress_type > BTRFS_COMPRESS_TYPES)
-@@ -1162,8 +1165,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			compress_type = range->compress_type;
- 	}
- 
--	if (isize == 0)
--		return 0;
-+	if (extent_thresh == 0)
-+		extent_thresh = 256 * 1024;
- 
- 	/*
- 	 * if we were not given a file, allocate a readahead
--- 
-1.7.7
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index bd605c8..fa531e8 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1461,8 +1461,6 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+ 				iterate_extent_inodes_t *iterate, void *ctx)
+ {
+ 	int ret;
+-	struct list_head data_refs = LIST_HEAD_INIT(data_refs);
+-	struct list_head shared_refs = LIST_HEAD_INIT(shared_refs);
+ 	struct btrfs_trans_handle *trans;
+ 	struct ulist *refs = NULL;
+ 	struct ulist *roots = NULL;
+-- 1.7.7.6
 

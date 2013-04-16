@@ -1,38 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40993 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S967698Ab3DSDGJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Apr 2013 23:06:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UT1eI-0002nl-4I
-	for linux-btrfs@vger.kernel.org; Fri, 19 Apr 2013 05:06:06 +0200
-Received: from rain.gmane.org ([80.91.229.7])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 05:06:06 +0200
-Received: from eternaleye by rain.gmane.org with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 05:06:06 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: RAID device nomination (Feature request)
-Date: Thu, 18 Apr 2013 20:05:58 -0700
-Message-ID: <kkqcaj$9o2$1@ger.gmane.org>
-References: <kkotdg$o1e$1@ger.gmane.org> <20130418140604.GL7639@carfax.org.uk> <kkpilp$kdd$1@ger.gmane.org> <kkq3qu$t2q$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:27104 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753508Ab3DPIoh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 04:44:37 -0400
+Message-ID: <516D0F71.90601@jan-o-sch.net>
+Date: Tue, 16 Apr 2013 10:44:33 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: return error when we specify wrong start
+References: <1366101636-26536-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1366101636-26536-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin wrote:
+On Tue, April 16, 2013 at 10:40 (+0200), Liu Bo wrote:
+> We need such a sanity check for wrong start, otherwise, even with
+> a wrong start that's larger than file size, we can end up not only
+> changing inode's force compress flag but also FS's incompat flags.
 
-<snip>
+That reads out very cryptic. Can you please add something hinting at "defrag" to
+the title or at least the description?
 
-> Or perhaps include the same Ceph code routines into btrfs?...
-
-That's actually what I was thinking. The CRUSH code is actually already 
-pretty well factored out - it lives in net/ceph/crush/ in the kernel source 
-tree, and is treated as part of 'libceph' (which is used by both the Ceph 
-filesystem in fs/ceph/ and the RBD block device in drivers/block/rbd.c).
-
+Thanks,
+-Jan

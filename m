@@ -1,103 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54156 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54158 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965255Ab3DPWOU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 18:14:20 -0400
+	id S965473Ab3DPWOV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Apr 2013 18:14:21 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <josef@redhat.com>, chris.mason@fusionio.com
-Subject: [PATCH 0/4] [RFC] btrfs: offline dedupe
-Date: Tue, 16 Apr 2013 15:15:31 -0700
-Message-Id: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
+Cc: Josef Bacik <josef@redhat.com>, chris.mason@fusionio.com,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 1/4] btrfs: abtract out range locking in clone ioctl()
+Date: Tue, 16 Apr 2013 15:15:32 -0700
+Message-Id: <1366150535-18750-2-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
+References: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+The range locking in btrfs_ioctl_clone is trivially broken out into it's own
+function. This reduces the complexity of btrfs_ioctl_clone() by a small bit
+and makes that locking code available to future functions in
+fs/btrfs/ioctl.c
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/ioctl.c |   36 +++++++++++++++++++++---------------
+ 1 file changed, 21 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 338f259..7c80738 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2412,6 +2412,26 @@ out:
+ 	return ret;
+ }
  
-The following series of patches implements in btrfs an ioctl to do
-offline deduplication of file extents.
++static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
++{
++	/* do any pending delalloc/csum calc on src, one way or
++	   another, and lock file content */
++	while (1) {
++		struct btrfs_ordered_extent *ordered;
++		lock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
++		ordered = btrfs_lookup_first_ordered_extent(inode,
++							    off + len - 1);
++		if (!ordered &&
++		    !test_range_bit(&BTRFS_I(inode)->io_tree, off,
++				    off + len - 1, EXTENT_DELALLOC, 0, NULL))
++			break;
++		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
++		if (ordered)
++			btrfs_put_ordered_extent(ordered);
++		btrfs_wait_ordered_range(inode, off, len);
++	}
++}
++
+ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 				       u64 off, u64 olen, u64 destoff)
+ {
+@@ -2529,21 +2549,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	truncate_inode_pages_range(&inode->i_data, destoff,
+ 				   PAGE_CACHE_ALIGN(destoff + len) - 1);
+ 
+-	/* do any pending delalloc/csum calc on src, one way or
+-	   another, and lock file content */
+-	while (1) {
+-		struct btrfs_ordered_extent *ordered;
+-		lock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+-		ordered = btrfs_lookup_first_ordered_extent(src, off + len - 1);
+-		if (!ordered &&
+-		    !test_range_bit(&BTRFS_I(src)->io_tree, off, off + len - 1,
+-				    EXTENT_DELALLOC, 0, NULL))
+-			break;
+-		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+-		if (ordered)
+-			btrfs_put_ordered_extent(ordered);
+-		btrfs_wait_ordered_range(src, off, len);
+-	}
++	lock_extent_range(src, off, len);
+ 
+ 	/* clone data */
+ 	key.objectid = btrfs_ino(src);
+-- 
+1.7.10.4
 
-To be clear, "offline" in this sense means that the file system is
-mounted and running, but the dedupe is not done during file writes,
-but after the fact when some userspace software initiates a dedupe.
-
-The primary patch is loosely based off of one sent by Josef Bacik back
-in January, 2011.
-
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/8508
-
-I've made significant updates and changes from the original. In
-particular the structure passed is more fleshed out, this series has a
-high degree of code sharing between itself and the clone code, and the
-locking has been updated.
-
-
-The ioctl accepts a struct:
-
-struct btrfs_ioctl_same_args {
-	__u64 logical_offset;	/* in - start of extent in source */
-	__u64 length;		/* in - length of extent */
-	__u16 total_files;	/* in - total elements in info array */
-	__u16 files_deduped;	/* out - number of files that got deduped */
-	__u32 reserved;
-	struct btrfs_ioctl_same_extent_info info[0];
-};
-
-Userspace puts each duplicate extent (other than the source) in an
-item in the info array. As there can be multiple dedupes in one
-operation, each info item has it's own status and 'bytes_deduped'
-member. This provides a number of benefits:
-
-- We don't have to fail the entire ioctl because one of the dedupes failed.
-
-- Userspace will always know how much progress was made on a file as we always
-  return the number of bytes deduped.
-
-
-#define BTRFS_SAME_DATA_DIFFERS	1
-/* For extent-same ioctl */
-struct btrfs_ioctl_same_extent_info {
-	__s64 fd;		/* in - destination file */
-	__u64 logical_offset;	/* in - start of extent in destination */
-	__u64 bytes_deduped;	/* out - total # of bytes we were able
-				 * to dedupe from this file */
-	/* status of this dedupe operation:
-	 * 0 if dedup succeeds
-	 * < 0 for error
-	 * == BTRFS_SAME_DATA_DIFFERS if data differs
-	 */
-	__s32 status;		/* out - see above description */
-	__u32 reserved;
-};
-
-
-The kernel patches are based off Linux v3.8. The ioctl has been tested
-in the most basic sense, and should not be trusted to keep your data
-safe. There are bugs.
-
-A git tree for the kernel changes can be found at:
-
-https://github.com/markfasheh/btrfs-extent-same
-
-
-I have a userspace project, duperemove available at:
-
-https://github.com/markfasheh/duperemove
-
-Hopefully this can serve as an example of one possible usage of the ioctl.
-
-duperemove takes a list of files as argument and will search them for
-duplicated extents. My most recent changes have been to integrate it
-with btrfs_extent_same so that the '-D' switch will have it fire off
-dedupe requests once processing of data is complete. Integration with
-extent_same has *not* been tested yet so don't expect that to work
-flawlessly.
-
-Within the duperemove repo is a file, btrfs-extent-same.c that acts as
-a test wrapper around the ioctl. It can be compiled completely
-seperately from the rest of the project via "make
-btrfs-extent-same". This makes direct testing of the ioctl more
-convenient.
-
-Code review is very much appreciated. Thanks,
-     --Mark

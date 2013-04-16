@@ -1,53 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37916 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753574Ab3DPJ1C (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:40340 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935982Ab3DPRA7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Apr 2013 05:27:02 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3G9R1qO007096
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:27:01 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9R0rH013431
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:27:00 GMT
-Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3G9R0tq013428
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 09:27:00 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: delete unused function btrfs_read_super_device
-Date: Tue, 16 Apr 2013 17:28:44 +0800
-Message-Id: <1366104524-10710-1-git-send-email-anand.jain@oracle.com>
+	Tue, 16 Apr 2013 13:00:59 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id EED2A7C064D
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:00:58 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Pr0DOrIGDlvhlazK (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2013 11:00:58 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: fix csum check when extent lands on block group
+Date: Tue, 16 Apr 2013 13:00:56 -0400
+Message-ID: <1366131656-8429-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- volumes.c | 9 ---------
- 1 file changed, 9 deletions(-)
+I was running fsync() tests and noticed that occasionally I was getting a bunch
+of errors from fsck complaining about csums not having corresponding extents.
+Thankfully after a few days of debugging this it turned out to be a bug with
+fsck.  The csums were for an extent that started at the same offset as a block
+group, and were offset within the extent.  So the search put us out at the block
+group item and we just walked forward from there, never finding the actual
+extent.  This is because the block group item key is higher than the extent item
+key, so it comes first.  In order to fix this we need to check and see if we
+landed on a block group item and take another step backwards to make sure we end
+up at the extent item.  With this patch my reproducer no longer finds csums that
+don't have matching extent records.  Thanks,
 
-diff --git a/volumes.c b/volumes.c
-index b555ded..7a9b6f0 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1643,15 +1643,6 @@ static int read_one_dev(struct btrfs_root *root,
- 	return ret;
- }
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ cmds-check.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 9a7696f..030ab77 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -2624,6 +2624,7 @@ static int check_extent_exists(struct btrfs_root *root, u64 bytenr,
+ 	key.type = BTRFS_EXTENT_ITEM_KEY;
+ 	key.offset = 0;
  
--int btrfs_read_super_device(struct btrfs_root *root, struct extent_buffer *buf)
--{
--	struct btrfs_dev_item *dev_item;
--
--	dev_item = (struct btrfs_dev_item *)offsetof(struct btrfs_super_block,
--						     dev_item);
--	return read_one_dev(root, buf, dev_item);
--}
--
- int btrfs_read_sys_array(struct btrfs_root *root)
- {
- 	struct btrfs_super_block *super_copy = root->fs_info->super_copy;
++
+ again:
+ 	ret = btrfs_search_slot(NULL, root->fs_info->extent_root, &key, path,
+ 				0, 0);
+@@ -2631,8 +2632,27 @@ again:
+ 		fprintf(stderr, "Error looking up extent record %d\n", ret);
+ 		btrfs_free_path(path);
+ 		return ret;
+-	} else if (ret && path->slots[0]) {
+-		path->slots[0]--;
++	} else if (ret) {
++		if (path->slots[0])
++			path->slots[0]--;
++		else
++			btrfs_prev_leaf(root, path);
++	}
++
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++
++	/*
++	 * Block group items come before extent items if they have the same
++	 * bytenr, so walk back one more just in case.  Dear future traveler,
++	 * first congrats on mastering time travel.  Now if it's not too much
++	 * trouble could you go back to 2006 and tell Chris to make the
++	 * BLOCK_GROUP_ITEM_KEY lower than the EXTENT_ITEM_KEY please?
++	 */
++	if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
++		if (path->slots[0])
++			path->slots[0]--;
++		else
++			btrfs_prev_leaf(root, path);
+ 	}
+ 
+ 	while (num_bytes) {
 -- 
-1.8.1.227.g44fe835
+1.7.7.6
 

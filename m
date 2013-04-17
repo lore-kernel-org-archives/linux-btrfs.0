@@ -1,30 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47039 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50281 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966338Ab3DQUuj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 16:50:39 -0400
-Date: Wed, 17 Apr 2013 22:50:37 +0200
+	id S965775Ab3DQWWA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Apr 2013 18:22:00 -0400
+Date: Thu, 18 Apr 2013 00:21:57 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Vincent <vincent.stehle@laposte.net>
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <chris.mason@fusionio.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix reada debug code compilation
-Message-ID: <20130417205037.GC16427@twin.jikos.cz>
+To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, wangshilong1991@gmail.com
+Subject: Re: [PATCH] Btrfs: do not continue if out of memory happens
+Message-ID: <20130417222157.GE16427@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20130416132834.GM18193@twin.jikos.cz>
- <1366231518-15243-1-git-send-email-vincent.stehle@laposte.net>
+References: <516BD5DE.70904@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366231518-15243-1-git-send-email-vincent.stehle@laposte.net>
+In-Reply-To: <516BD5DE.70904@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 17, 2013 at 10:45:18PM +0200, Vincent wrote:
-> Thanks for your review; here is a resend with your 'Reviewed-by'.
+On Mon, Apr 15, 2013 at 06:26:38PM +0800, Wang Shilong wrote:
+> If out of memory happens, we should return -ENOMEM directly to the caller
+> rather than continue the work.
 
-No need to do that, reviewed-by or the other tags are picked by
-maintainers, see
-
-http://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=086d51b3022700b2641f22749558b0708f9fa6b9
-
-david
+Reviewed-by: David Sterba <dsterba@suse.cz>

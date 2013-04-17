@@ -1,52 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:58892 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965222Ab3DQQTU (ORCPT
+Received: from mail-ob0-f181.google.com ([209.85.214.181]:51811 "EHLO
+	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935915Ab3DQRao (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 12:19:20 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 9D1569A033F
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 10:19:19 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 0XIP91giuBLmgfaL (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 10:19:18 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix lockdep warning
-Date: Wed, 17 Apr 2013 12:19:16 -0400
-Message-ID: <1366215556-8586-1-git-send-email-jbacik@fusionio.com>
+	Wed, 17 Apr 2013 13:30:44 -0400
+Received: by mail-ob0-f181.google.com with SMTP id wo10so1662944obc.26
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 10:30:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20130417065506.GA21083@panda>
+References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
+ <20130417065506.GA21083@panda>
+From: Matt Pursley <mpursley@gmail.com>
+Date: Wed, 17 Apr 2013 10:30:02 -0700
+Message-ID: <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
+Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
+ are slower (~750MB/s)?
+To: sander@humilis.net
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The locking order for stuff is
+On Tue, Apr 16, 2013 at 11:55 PM, Sander <sander@humilis.net> wrote:
+> Matt Pursley wrote (ao):
+>> I have an LSI HBA card (LSI SAS 9207-8i) with 12 7200rpm SAS drives
+>> attached.  When it's formated with mdraid6+ext4 I get about 1200MB/s
+>> for multiple streaming random reads with iozone.  With btrfs in
+>> 3.9.0-rc4 I can also get about 1200MB/s, but only with one stream at a
+>> time.
+>
+> Just curious, is that btrfs on top of mdraid6, or is this experimental
+> btrfs raid6 without md?
 
-__sb_start_write
-ordered_mutex
 
-but with sync() we don't do __sb_start_write for some strange reason, which
-means that our iput in wait_ordered_extents could start a transaction which does
-the __sb_start_write while we're holding the ordered_mutex.  Fix this by using
-delayed iput in sync.  Thanks,
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/super.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+This is the "experimental btrfs raid6 without md".
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index bb60fe5..2a0bece 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -866,7 +866,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 		return 0;
- 	}
- 
--	btrfs_wait_ordered_extents(root, 0);
-+	btrfs_wait_ordered_extents(root, 1);
- 
- 	trans = btrfs_attach_transaction_barrier(root);
- 	if (IS_ERR(trans)) {
--- 
-1.7.7.6
+But, I did do a "mdraid6 with btrfs" test last night... and with that
+setup I only get the ~750MB/s result.. even with just one
+thread/stream...
 
+I will flip the system back to "btrfsraid6+btrfs" today to verify that
+I still get the full 1200MB/s with one stream/thread and ~750MB/s with
+two or more streams/threads with that setup...
+
+
+Thanks,
+Matt
+
+
+
+___
+mdraid6+btrfs_64GBRam_80files # sysctl vm.drop_caches=1 ; dd
+of=/dev/null if=/var/data/persist/testfile bs=640k
+vm.drop_caches = 1
+20000+0 records in
+20000+0 records out
+13107200000 bytes (13 GB) copied, 18.2109 s, 720 MB/s
+___

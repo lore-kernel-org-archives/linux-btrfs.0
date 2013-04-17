@@ -1,150 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:62912 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966531Ab3DQOuh (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:58892 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965222Ab3DQQTU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 10:50:37 -0400
-Received: by mail-pd0-f178.google.com with SMTP id w11so902571pde.23
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 07:50:36 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: add all ioctl checks before user change for quota operations
-Date: Wed, 17 Apr 2013 22:49:51 +0800
-Message-Id: <1366210191-7456-1-git-send-email-wangshilong1991@gmail.com>
+	Wed, 17 Apr 2013 12:19:20 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 9D1569A033F
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 10:19:19 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 0XIP91giuBLmgfaL (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 10:19:18 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix lockdep warning
+Date: Wed, 17 Apr 2013 12:19:16 -0400
+Message-ID: <1366215556-8586-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+The locking order for stuff is
 
-Since all the quota configurations are loaded in memory, and we can
-have ioctl checks before operating in the disk. It is safe to do such
-things because qgroup_ioctl_lock is held outside.
+__sb_start_write
+ordered_mutex
 
-Without these extra checks firstly, it should be ok to do user change
-for quota operations. For example:
+but with sync() we don't do __sb_start_write for some strange reason, which
+means that our iput in wait_ordered_extents could start a transaction which does
+the __sb_start_write while we're holding the ordered_mutex.  Fix this by using
+delayed iput in sync.  Thanks,
 
-if we want to add an existed qgroup, we will do:
-	->add_qgroup_item()
-		->add_qgroup_rb()
-
-add_qgroup_item() will return -EEXIST to us, however, qgroups are all
-in memory, why not check them in memory firstly.
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-Since this patch relies on my previous patchset, so it
-is based on the latest btrfs-next branch.
----
- fs/btrfs/qgroup.c | 46 +++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 41 insertions(+), 5 deletions(-)
+ fs/btrfs/super.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index f9fb52e..f175471 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -956,6 +956,7 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *parent;
- 	struct btrfs_qgroup *member;
-+	struct btrfs_qgroup_list *list;
- 	int ret = 0;
- 
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
-@@ -971,6 +972,14 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 		goto out;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index bb60fe5..2a0bece 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -866,7 +866,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 		return 0;
  	}
  
-+	/* check if such qgroup relation exist firstly */
-+	list_for_each_entry(list, &member->groups, next_group) {
-+		if (list->group == parent) {
-+			ret = -EEXIST;
-+			goto out;
-+		}
-+	}
-+
- 	ret = add_qgroup_relation_item(trans, quota_root, src, dst);
- 	if (ret)
- 		goto out;
-@@ -993,6 +1002,9 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 			      struct btrfs_fs_info *fs_info, u64 src, u64 dst)
- {
- 	struct btrfs_root *quota_root;
-+	struct btrfs_qgroup *parent;
-+	struct btrfs_qgroup *member;
-+	struct btrfs_qgroup_list *list;
- 	int ret = 0;
- 	int err;
+-	btrfs_wait_ordered_extents(root, 0);
++	btrfs_wait_ordered_extents(root, 1);
  
-@@ -1003,6 +1015,21 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
-+	member = find_qgroup_rb(fs_info, src);
-+	parent = find_qgroup_rb(fs_info, dst);
-+	if (!member || !parent) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	/* check if such qgroup relation exist firstly */
-+	list_for_each_entry(list, &member->groups, next_group) {
-+		if (list->group == parent)
-+			goto exist;
-+	}
-+	ret = -ENOENT;
-+	goto out;
-+exist:
- 	ret = del_qgroup_relation_item(trans, quota_root, src, dst);
- 	err = del_qgroup_relation_item(trans, quota_root, dst, src);
- 	if (err && !ret)
-@@ -1010,7 +1037,6 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	del_relation_rb(fs_info, src, dst);
--
- 	spin_unlock(&fs_info->qgroup_lock);
- out:
- 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-@@ -1030,8 +1056,15 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
- 		ret = -EINVAL;
- 		goto out;
- 	}
-+	qgroup = find_qgroup_rb(fs_info, qgroupid);
-+	if (qgroup) {
-+		ret = -EEXIST;
-+		goto out;
-+	}
- 
- 	ret = add_qgroup_item(trans, quota_root, qgroupid);
-+	if (ret)
-+		goto out;
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	qgroup = add_qgroup_rb(fs_info, qgroupid);
-@@ -1058,15 +1091,18 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	/* check if there are no relations to this qgroup */
- 	qgroup = find_qgroup_rb(fs_info, qgroupid);
--	if (qgroup) {
--		if (!list_empty(&qgroup->groups) || !list_empty(&qgroup->members)) {
-+	if (!qgroup) {
-+		ret = -ENOENT;
-+		goto out;
-+	} else {
-+		/* check if there are no relations to this qgroup */
-+		if (!list_empty(&qgroup->groups) ||
-+		    !list_empty(&qgroup->members)) {
- 			ret = -EBUSY;
- 			goto out;
- 		}
- 	}
--
- 	ret = del_qgroup_item(trans, quota_root, qgroupid);
- 
- 	spin_lock(&fs_info->qgroup_lock);
+ 	trans = btrfs_attach_transaction_barrier(root);
+ 	if (IS_ERR(trans)) {
 -- 
-1.7.11.7
+1.7.7.6
 

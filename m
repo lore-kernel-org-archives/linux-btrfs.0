@@ -1,29 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([82.95.169.224]:54637 "EHLO panda.humilis.net"
+Received: from cantor2.suse.de ([195.135.220.15]:39353 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754644Ab3DQGzI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 02:55:08 -0400
-Date: Wed, 17 Apr 2013 08:55:06 +0200
-From: Sander <sander@humilis.net>
-To: Matt Pursley <mpursley@gmail.com>
+	id S1752281Ab3DQQ5E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Apr 2013 12:57:04 -0400
+Date: Wed, 17 Apr 2013 18:57:01 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
- are slower (~750MB/s)?
-Message-ID: <20130417065506.GA21083@panda>
-Reply-To: sander@humilis.net
-References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix lockdep warning
+Message-ID: <20130417165701.GA16427@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1366215556-8586-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
+In-Reply-To: <1366215556-8586-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Matt Pursley wrote (ao):
-> I have an LSI HBA card (LSI SAS 9207-8i) with 12 7200rpm SAS drives
-> attached.  When it's formated with mdraid6+ext4 I get about 1200MB/s
-> for multiple streaming random reads with iozone.  With btrfs in
-> 3.9.0-rc4 I can also get about 1200MB/s, but only with one stream at a
-> time.
+On Wed, Apr 17, 2013 at 12:19:16PM -0400, Josef Bacik wrote:
+> The locking order for stuff is
+> 
+> __sb_start_write
+> ordered_mutex
+> 
+> but with sync() we don't do __sb_start_write for some strange reason, which
+> means that our iput in wait_ordered_extents could start a transaction which does
+> the __sb_start_write while we're holding the ordered_mutex.  Fix this by using
+> delayed iput in sync.  Thanks,
 
-Just curious, is that btrfs on top of mdraid6, or is this experimental
-btrfs raid6 without md?
+No lockdep warning anymore.
+
+david

@@ -1,79 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:9690 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752954Ab3DLHo4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Apr 2013 03:44:56 -0400
-Message-ID: <5167BB75.9080604@giantdisaster.de>
-Date: Fri, 12 Apr 2013 09:44:53 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 4/4] Btrfs-progs: enhance 'btrfs subvolume list'
-References: <cover.1365696891.git.sbehrens@giantdisaster.de> <8c3c7c8ec1747e9fe96ccf17ccc2b6669e1d1fb8.1365696891.git.sbehrens@giantdisaster.de> <51675C33.30704@cn.fujitsu.com>
-In-Reply-To: <51675C33.30704@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:41687 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965366Ab3DRNpd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Apr 2013 09:45:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1USp9W-0008GP-CO
+	for linux-btrfs@vger.kernel.org; Thu, 18 Apr 2013 15:45:30 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 15:45:30 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 15:45:30 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: RAID device nomination (Feature request)
+Date: Thu, 18 Apr 2013 14:45:24 +0100
+Message-ID: <kkotdg$o1e$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 12 Apr 2013 08:58:27 +0800, Wang Shilong wrote:
->> "btrfs subvolume list" gets a new option "--fields=..." which allows
->> to specify which pieces of information about subvolumes shall be
->> printed. This is necessary because this commit also adds all the so
->> far missing items from the root_item like the received UUID, all
->> generation values and all time values.
->>
->> The parameters to the "--fields" option is a list of items to print:
->> --fields=gen,dirid,uuid,puuid,ruuid,cgen,ogen,sgen,rgen,ctime,otime,
->>          stime,rtime,path,rootid,parent,topid,all
->>
-> 
-> 
-> The new option '--fields' is helpful, however, i am wondering
-> whether we should remove the old options '-g', '-c'...etc. These
-> options has been there for a period of time,some shell script may use
-> it.
-> 
-> IMO, to ensure compatibility, we'd better keep it.
+Dear Devs,
 
-What do other people on the list think about maintaining compatibility
-in this case?
+I have a number of esata disk packs holding 4 physical disks each where
+I wish to use the disk packs aggregated for 16TB and up to 64TB backups...
 
-IMO it is acceptable to break compatibility for such a change. It would
-confuse everybody who reads the man page that there are 1 1/2 ways to
-configure the printed columns.
+Can btrfs...?
+
+1:
+
+Mirror data such that there is a copy of data on each *disk pack* ?
+
+Note that esata shows just the disks as individual physical disks, 4 per
+disk pack. Can physical disks be grouped together to force the RAID data
+to be mirrored across all the nominated groups?
 
 
-[...]
->>  static const char * const cmd_subvol_list_usage[] = {
->> -	"btrfs subvolume list [-agopurts] [-G [+|-]value] [-C [+|-]value] "
->> -	"[--sort=gen,ogen,rootid,path] <path>",
->> +	"btrfs subvolume list [-roast] [-G [+|-]value] [-C [+|-]value] "
->> +	"[--sort=gen,ogen,rootid,path] "
->> +	"[--fields=gen,dirid,uuid,puuid,ruuid,cgen,ogen,sgen,rgen,ctime,"
->> +	"otime,stime,rtime,path,rootid,parent,topid,all] <path>",
->>  	"List subvolumes (and snapshots)",
->>  	"",
->> -	"-p           print parent ID",
->>  	"-a           print all the subvolumes in the filesystem and",
->>  	"             distinguish absolute and relative path with respect",
->>  	"             to the given <path>",
->> -	"-c           print the ogeneration of the subvolume",
->> -	"-g           print the generation of the subvolume",
->>  	"-o           print only subvolumes bellow specified path",
->> -	"-u           print the uuid of subvolumes (and snapshots)",
->> -	"-q           print the parent uuid of the snapshots",
->>  	"-t           print the result as a table",
->>  	"-s           list snapshots only in the filesystem",
->>  	"-r           list readonly subvolumes (including snapshots)",
->> @@ -308,6 +305,9 @@ static const char * const cmd_subvol_list_usage[] = {
->>  	"             list the subvolume in order of gen, ogen, rootid or path",
->>  	"             you also can add '+' or '-' in front of each items.",
->>  	"             (+:ascending, -:descending, ascending default)",
->> +	"--fields=gen,dirid,uuid,puuid,ruuid,cgen,ogen,sgen,rgen,ctime,otime,",
->> +	"         stime,rtime,path,rootid,parent,topid,all",
->> +	"             explicitly specify the fields to print",
->>  	NULL,
->>  };
-[...]
+2:
+
+Similarly for a mix of different storage technologies such as
+manufacturer or type (SSD/HDD), can the disks be grouped to ensure a
+copy of the data is replicated across all the groups?
+
+For example, I deliberately buy HDDs from different
+batches/manufacturers to try to avoid common mode or similarly timed
+failures. Can btrfs be guided to safely spread the RAID data across the
+*different* hardware types/batches?
+
+
+3:
+
+Also, for different speeds of disks, can btrfs tune itself to balance
+the read/writes accordingly?
+
+
+4:
+
+Further thought: For SSDs, is the "minimise heads movement" 'staircase'
+code bypassed so as to speed up allocation for the "don't care"
+addressing (near zero seek time) of SSDs?
+
+
+
+And then again: Is 64TBytes of btrfs a good idea in the first place?!
+
+(There's more than one physical set of backups but I'd rather not suffer
+weeks to recover from one hiccup in the filesystem... Should I partition
+btrfs down to smaller gulps, or does the structure of btrfs in effect
+already do that?)
+
+Thanks,
+Martin
+

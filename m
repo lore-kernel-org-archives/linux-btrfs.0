@@ -1,53 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:49837 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966435Ab3DQOU5 (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:45326 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755213Ab3DRHLG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Apr 2013 10:20:57 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 41E437C068F
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 08:20:57 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id o5AkCRxUGskWQon7 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2013 08:20:56 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't force pages under writeback to finish when aborting
-Date: Wed, 17 Apr 2013 10:20:54 -0400
-Message-ID: <1366208454-5893-1-git-send-email-jbacik@fusionio.com>
+	Thu, 18 Apr 2013 03:11:06 -0400
+Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id DF6A13EE0AE
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from smail (m4 [127.0.0.1])
+	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id C4D3B45DE50
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id ABB9445DE4F
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 9BBBF1DB803E
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 4B043E08007
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
+	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id 1D4389F7D15
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:02 +0900 (JST)
+Received: from FM-323941448.jp.fujitsu.com (unknown [10.124.101.132])
+	by ml14.s.css.fujitsu.com (Postfix) with SMTP id A95009F7D48
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:11:01 +0900 (JST)
+Message-Id: <201304180710.AA00028@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Thu, 18 Apr 2013 16:10:44 +0900
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: remove unused variable in __process_changed_new_xattr()
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave reported a BUG_ON() that happened in end_page_writeback() after an abort.
-This happened because we unconditionally call end_page_writeback() in the endio
-case, which is right.  However when we abort the transaction we will call
-end_page_writeback() on any writeback pages we find, which is wrong.  We need to
-lock the page and wait on page writeback to complete if it is.  There is nothing
-unsafe about this since we are discarding the transaction anyway.  Thanks,
+Variable 'p' is not used any more. So, remove it.
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/disk-io.c |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 66d036b..fa8438f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3815,10 +3815,9 @@ static int btrfs_destroy_marked_extents(struct btrfs_root *root,
- 			if (eb)
- 				ret = test_and_clear_bit(EXTENT_BUFFER_DIRTY,
- 							 &eb->bflags);
--			if (PageWriteback(page))
--				end_page_writeback(page);
--
- 			lock_page(page);
-+
-+			wait_on_page_writeback(page);
- 			if (PageDirty(page)) {
- 				clear_page_dirty_for_io(page);
- 				spin_lock_irq(&page->mapping->tree_lock);
--- 
-1.7.7.6
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index ed897dc..96a826a 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3479,7 +3479,6 @@ static int __process_changed_new_xattr(int num, struct btrfs_key *di_key,
+ 	struct send_ctx *sctx = ctx;
+ 	char *found_data = NULL;
+ 	int found_data_len  = 0;
+-	struct fs_path *p = NULL;
+ 
+ 	ret = find_xattr(sctx, sctx->parent_root, sctx->right_path,
+ 			sctx->cmp_key, name, name_len, &found_data,
+@@ -3498,7 +3497,6 @@ static int __process_changed_new_xattr(int num, struct btrfs_key *di_key,
+ 	}
+ 
+ 	kfree(found_data);
+-	fs_path_free(sctx, p);
+ 	return ret;
+ }
+ 
 

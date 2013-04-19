@@ -1,228 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28766 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S967171Ab3DRQy5 (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:60609 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966825Ab3DSBFJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Apr 2013 12:54:57 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3IGst4t018445
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:54:56 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3IGssDE018592
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:54:55 GMT
-Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3IGssOr001282
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 16:54:54 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+	Thu, 18 Apr 2013 21:05:09 -0400
+Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 9125D3EE0C1
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
+Received: from smail (m1 [127.0.0.1])
+	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 79D9845DE55
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 6197845DE58
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 52FEE1DB8032
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0BD551DB8049
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
+Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
+	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id D61059F7DA0
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:05 +0900 (JST)
+Received: from FM-323941448.jp.fujitsu.com (unknown [10.124.101.132])
+	by ml14.s.css.fujitsu.com (Postfix) with SMTP id 694399F7DC4
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:05 +0900 (JST)
+Message-Id: <201304190104.AA00029@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Fri, 19 Apr 2013 10:04:46 +0900
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: improve the loop of scrub_stripe
-Date: Fri, 19 Apr 2013 00:54:55 +0800
-Message-Id: <1366304095-3206-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs: fix error handling in btrfs_ioctl_send()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1) Right now scrub_stripe() is looping in some unnecessary cases:
-* when the found extent item's objectid has been out of the dev extent's range
-  but we haven't finish scanning all the range within the dev extent
-* when all the items has been processed but we haven't finish scanning all the
-  range within the dev extent
+fget() returns NULL if error. So, we should check NULL or not.
 
-In both cases, we can just finish the loop to save costs.
-
-2) Besides, when the found extent item's length is larger than the stripe len(64k),
-we don't have to release the path and search again as it'll get at the same key
-used in the last loop, we can instead increase the logical cursor in place till
-all space of the extent is scanned.
-
-3) And we use 0 as the key's offset to search btree, then get to previous item
-to find a smaller item, and again have to move to the next one to get the right
-item.  Setting offset=-1 and previous_item() is the correct way.
-
-4) As we won't find any checksum at offset unless this 'offset' is in a data
-extent, we can just find checksum when we're really going to scrub an extent.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/scrub.c |   79 +++++++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 54 insertions(+), 25 deletions(-)
+ fs/btrfs/send.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 85e072b..091b57b 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2236,12 +2236,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 flags;
- 	int ret;
- 	int slot;
--	int i;
- 	u64 nstripes;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	u64 physical;
- 	u64 logical;
-+	u64 logic_end;
- 	u64 generation;
- 	int mirror_num;
- 	struct reada_control *reada1;
-@@ -2255,6 +2255,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 extent_len;
- 	struct btrfs_device *extent_dev;
- 	int extent_mirror_num;
-+	int stop_loop;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 96a826a..f892e0e 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4610,8 +4610,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	sctx->flags = arg->flags;
  
- 	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
- 			 BTRFS_BLOCK_GROUP_RAID6)) {
-@@ -2354,8 +2355,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 */
- 	logical = base + offset;
- 	physical = map->stripes[num].physical;
-+	logic_end = logical + increment * nstripes;
- 	ret = 0;
--	for (i = 0; i < nstripes; ++i) {
-+	while (logical < logic_end) {
- 		/*
- 		 * canceled?
- 		 */
-@@ -2391,15 +2393,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			wake_up(&fs_info->scrub_pause_wait);
- 		}
- 
--		ret = btrfs_lookup_csums_range(csum_root, logical,
--					       logical + map->stripe_len - 1,
--					       &sctx->csum_list, 1);
--		if (ret)
--			goto out;
--
- 		key.objectid = logical;
- 		key.type = BTRFS_EXTENT_ITEM_KEY;
--		key.offset = (u64)0;
-+		key.offset = (u64)-1;
- 
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0)
-@@ -2420,6 +2416,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			}
- 		}
- 
-+		stop_loop = 0;
- 		while (1) {
- 			l = path->nodes[0];
- 			slot = path->slots[0];
-@@ -2430,18 +2427,21 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 				if (ret < 0)
- 					goto out;
- 
-+				stop_loop = 1;
- 				break;
- 			}
- 			btrfs_item_key_to_cpu(l, &key, slot);
- 
--			if (key.objectid + key.offset <= logical)
-+			if (key.objectid + key.offset <= logical ||
-+			    btrfs_key_type(&key) != BTRFS_EXTENT_ITEM_KEY)
- 				goto next;
- 
--			if (key.objectid >= logical + map->stripe_len)
-+			if (key.objectid >= logical + map->stripe_len) {
-+				/* out of this device extent */
-+				if (key.objectid >= logic_end)
-+					stop_loop = 1;
- 				break;
--
--			if (btrfs_key_type(&key) != BTRFS_EXTENT_ITEM_KEY)
--				goto next;
-+			}
- 
- 			extent = btrfs_item_ptr(l, slot,
- 						struct btrfs_extent_item);
-@@ -2458,22 +2458,23 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 				goto next;
- 			}
- 
-+again:
-+			extent_logical = key.objectid;
-+			extent_len = key.offset;
- 			/*
- 			 * trim extent to this stripe
- 			 */
--			if (key.objectid < logical) {
--				key.offset -= logical - key.objectid;
--				key.objectid = logical;
-+			if (extent_logical < logical) {
-+				extent_len -= logical - extent_logical;
-+				extent_logical = logical;
- 			}
--			if (key.objectid + key.offset >
-+			if (extent_logical + extent_len >
- 			    logical + map->stripe_len) {
--				key.offset = logical + map->stripe_len -
--					     key.objectid;
-+				extent_len = logical + map->stripe_len -
-+					     extent_logical;
- 			}
- 
--			extent_logical = key.objectid;
--			extent_physical = key.objectid - logical + physical;
--			extent_len = key.offset;
-+			extent_physical = extent_logical - logical + physical;
- 			extent_dev = scrub_dev;
- 			extent_mirror_num = mirror_num;
- 			if (is_dev_replace)
-@@ -2481,13 +2482,35 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 						   extent_len, &extent_physical,
- 						   &extent_dev,
- 						   &extent_mirror_num);
-+
-+			ret = btrfs_lookup_csums_range(csum_root, logical,
-+						logical + map->stripe_len - 1,
-+						&sctx->csum_list, 1);
-+			if (ret)
-+				goto out;
-+
- 			ret = scrub_extent(sctx, extent_logical, extent_len,
- 					   extent_physical, extent_dev, flags,
- 					   generation, extent_mirror_num,
--					   key.objectid - logical + physical);
-+					   extent_physical);
- 			if (ret)
- 				goto out;
- 
-+			if (extent_logical + extent_len <
-+			    key.objectid + key.offset) {
-+				logical += increment;
-+				physical += map->stripe_len;
-+
-+				if (logical < key.objectid + key.offset) {
-+					cond_resched();
-+					goto again;
-+				}
-+
-+				if (logical >= logic_end) {
-+					stop_loop = 1;
-+					break;
-+				}
-+			}
- next:
- 			path->slots[0]++;
- 		}
-@@ -2495,8 +2518,14 @@ next:
- 		logical += increment;
- 		physical += map->stripe_len;
- 		spin_lock(&sctx->stat_lock);
--		sctx->stat.last_physical = physical;
-+		if (stop_loop)
-+			sctx->stat.last_physical = map->stripes[num].physical +
-+						   length;
-+		else
-+			sctx->stat.last_physical = physical;
- 		spin_unlock(&sctx->stat_lock);
-+		if (stop_loop)
-+			break;
+ 	sctx->send_filp = fget(arg->send_fd);
+-	if (IS_ERR(sctx->send_filp)) {
+-		ret = PTR_ERR(sctx->send_filp);
++	if (!sctx->send_filp) {
++		ret = -EBADF;
+ 		goto out;
  	}
- out:
- 	/* push queued extents */
--- 
-1.7.7
+ 
 

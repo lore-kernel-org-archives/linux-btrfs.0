@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:40642 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.139]:19635 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030746Ab3DSPlK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1030692Ab3DSPlK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 19 Apr 2013 11:41:10 -0400
 Received: from pizpot.store ([192.168.43.236])
 	by jorabe.store (jorabe xp4) (RZmta 31.27 OK)
-	with ESMTP id 600dd1p3JEL4tT for <linux-btrfs@vger.kernel.org>;
+	with ESMTP id 600dd1p3JEL4tS for <linux-btrfs@vger.kernel.org>;
 	Fri, 19 Apr 2013 17:41:06 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/5] Btrfs: maintain subvolume items in the UUID tree
-Date: Fri, 19 Apr 2013 17:41:05 +0200
-Message-Id: <a1d5f4c0cad1e70800a8b678df684f03c8251cf9.1366384796.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 3/5] Btrfs: create UUID tree if required
+Date: Fri, 19 Apr 2013 17:41:04 +0200
+Message-Id: <5d01d8b14f6a8046f32ec887ab92da4f57a742a1.1366384796.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
 References: <cover.1366384796.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
@@ -19,216 +19,177 @@ References: <cover.1366384796.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a new subvolume or snapshot is created, a new UUID item is added
-to the UUID tree. Such items are removed when the subvolume is deleted.
-The ioctl to set the received subvolume UUID is also touched and will
-now also add this received UUID into the UUID tree together with the
-ID of the subvolume. The latter is also done when read-only snapshots
-are created which inherit all the send/receive information from the
-parent subvolume.
-
-User mode programs use the BTRFS_IOC_TREE_SEARCH ioctl to search and
-read in the UUID tree.
+This tree is not created by mkfs.btrfs. Therefore when a filesystem
+is mounted writable and the UUID tree does not exist, this tree is
+created if required. The tree is also added to the fs_info structure
+and initialized, but this commit does not yet read or write UUID tree
+elements.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ioctl.c       | 65 ++++++++++++++++++++++++++++++++++++++++++--------
- fs/btrfs/transaction.c | 21 +++++++++++++++-
- 2 files changed, 75 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/disk-io.c | 38 +++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c | 23 +++++++++++++++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 4 files changed, 63 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d0af96a..9bd423e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -57,6 +57,8 @@
- #include "send.h"
- #include "dev-replace.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0439570..c9baf55 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1305,6 +1305,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *fs_root;
+ 	struct btrfs_root *csum_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
  
-+static char empty_uuid[BTRFS_UUID_SIZE] = {0};
-+
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
- {
-@@ -396,7 +398,7 @@ static noinline int create_subvol(struct inode *dir,
- 	 * of create_snapshot().
- 	 */
- 	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
--					       7, &qgroup_reserved);
-+					       8, &qgroup_reserved);
- 	if (ret)
- 		return ret;
+ 	/* the log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 94d499a..75d196b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1563,6 +1563,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
+ 	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
+ 		return fs_info->quota_root ? fs_info->quota_root :
+ 					     ERR_PTR(-ENOENT);
++	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
++		return fs_info->uuid_root ? fs_info->uuid_root :
++					    ERR_PTR(-ENOENT);
+ again:
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+ 	root = radix_tree_lookup(&fs_info->fs_roots_radix,
+@@ -2018,6 +2021,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 		free_extent_buffer(info->quota_root->node);
+ 		free_extent_buffer(info->quota_root->commit_root);
+ 	}
++	if (info->uuid_root) {
++		free_extent_buffer(info->uuid_root->node);
++		free_extent_buffer(info->uuid_root->commit_root);
++	}
  
-@@ -518,9 +520,13 @@ static noinline int create_subvol(struct inode *dir,
- 	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
- 				 objectid, root->root_key.objectid,
- 				 btrfs_ino(dir), index, name, namelen);
--
- 	BUG_ON(ret);
+ 	info->tree_root->node = NULL;
+ 	info->tree_root->commit_root = NULL;
+@@ -2031,6 +2038,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 		info->quota_root->node = NULL;
+ 		info->quota_root->commit_root = NULL;
+ 	}
++	if (info->uuid_root) {
++		info->uuid_root->node = NULL;
++		info->uuid_root->commit_root = NULL;
++	}
  
-+	ret = btrfs_insert_uuid_subvol_item(trans, root->fs_info->uuid_root,
-+					    root_item.uuid, objectid);
-+	if (ret)
-+		btrfs_abort_transaction(trans, root, ret);
-+
- fail:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-@@ -567,9 +573,10 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	 * 1 - root item
- 	 * 2 - root ref/backref
- 	 * 1 - root of snapshot
-+	 * 1 - UUID item
- 	 */
- 	ret = btrfs_subvolume_reserve_metadata(BTRFS_I(dir)->root,
--					&pending_snapshot->block_rsv, 7,
-+					&pending_snapshot->block_rsv, 8,
- 					&pending_snapshot->qgroup_reserved);
- 	if (ret)
- 		goto out;
-@@ -580,7 +587,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	pending_snapshot->dir = dir;
- 	pending_snapshot->inherit = inherit;
+ 	if (chunk_root) {
+ 		free_extent_buffer(info->chunk_root->node);
+@@ -2062,11 +2073,13 @@ int open_ctree(struct super_block *sb,
+ 	struct btrfs_root *chunk_root;
+ 	struct btrfs_root *dev_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
+ 	struct btrfs_root *log_tree_root;
+ 	int ret;
+ 	int err = -EINVAL;
+ 	int num_backups_tried = 0;
+ 	int backup_index = 0;
++	bool need_to_create_uuid_tree = false;
  
--	trans = btrfs_start_transaction(root, 0);
-+	trans = btrfs_start_transaction(root->fs_info->extent_root, 8);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
+ 	extent_root = fs_info->extent_root = btrfs_alloc_root(fs_info);
+@@ -2074,9 +2087,10 @@ int open_ctree(struct super_block *sb,
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+ 	dev_root = fs_info->dev_root = btrfs_alloc_root(fs_info);
+ 	quota_root = fs_info->quota_root = btrfs_alloc_root(fs_info);
++	uuid_root = fs_info->uuid_root = btrfs_alloc_root(fs_info);
+ 
+ 	if (!tree_root || !extent_root || !csum_root ||
+-	    !chunk_root || !dev_root || !quota_root) {
++	    !chunk_root || !dev_root || !quota_root || !uuid_root) {
+ 		err = -ENOMEM;
  		goto fail;
-@@ -2207,6 +2214,28 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 			goto out_end_trans;
- 		}
  	}
-+
-+	ret = btrfs_del_uuid_subvol_item(trans, root->fs_info->uuid_root,
-+					 dest->root_item.uuid,
-+					 dest->root_key.objectid);
-+	if (ret && ret != -ENOENT) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		err = ret;
-+		goto out_end_trans;
-+	}
-+	if (memcmp(dest->root_item.received_uuid, empty_uuid,
-+		   BTRFS_UUID_SIZE)) {
-+		ret = btrfs_del_uuid_received_subvol_item(trans,
-+				root->fs_info->uuid_root,
-+				dest->root_item.received_uuid,
-+				dest->root_key.objectid);
-+		if (ret && ret != -ENOENT) {
-+			btrfs_abort_transaction(trans, root, ret);
-+			err = ret;
-+			goto out_end_trans;
-+		}
-+	}
-+
- out_end_trans:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-@@ -2418,7 +2447,6 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	int ret = 0;
- 	char *s_uuid = NULL;
--	char empty_uuid[BTRFS_UUID_SIZE] = {0};
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -3896,6 +3924,7 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 	struct btrfs_trans_handle *trans;
- 	struct timespec ct = CURRENT_TIME;
- 	int ret = 0;
-+	int received_uuid_changed;
- 
- 	ret = mnt_want_write_file(file);
- 	if (ret < 0)
-@@ -3925,7 +3954,7 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 		goto out;
+@@ -2651,6 +2665,19 @@ retry_root_backup:
+ 		fs_info->pending_quota_state = 1;
  	}
  
--	trans = btrfs_start_transaction(root, 1);
-+	trans = btrfs_start_transaction(root, 3);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		trans = NULL;
-@@ -3936,6 +3965,14 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 	sa->rtime.sec = ct.tv_sec;
- 	sa->rtime.nsec = ct.tv_nsec;
- 
-+	received_uuid_changed = memcmp(root_item->received_uuid, sa->uuid,
-+				       BTRFS_UUID_SIZE);
-+	if (received_uuid_changed &&
-+	    memcmp(root_item->received_uuid, empty_uuid, BTRFS_UUID_SIZE))
-+		btrfs_del_uuid_received_subvol_item(trans,
-+						    root->fs_info->uuid_root,
-+						    root_item->received_uuid,
-+						    root->root_key.objectid);
- 	memcpy(root_item->received_uuid, sa->uuid, BTRFS_UUID_SIZE);
- 	btrfs_set_root_stransid(root_item, sa->stransid);
- 	btrfs_set_root_rtransid(root_item, sa->rtransid);
-@@ -3948,13 +3985,21 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 				&root->root_key, &root->root_item);
- 	if (ret < 0) {
- 		btrfs_end_transaction(trans, root);
--		trans = NULL;
- 		goto out;
--	} else {
--		ret = btrfs_commit_transaction(trans, root);
--		if (ret < 0)
-+	}
-+	if (received_uuid_changed &&
-+	    memcmp(sa->uuid, empty_uuid, BTRFS_UUID_SIZE)) {
-+		ret = btrfs_insert_uuid_received_subvol_item(
-+			trans, root->fs_info->uuid_root, sa->uuid,
-+			root->root_key.objectid);
-+		if (ret < 0 && ret != -EEXIST) {
-+			btrfs_abort_transaction(trans, root, ret);
- 			goto out;
-+		}
- 	}
-+	ret = btrfs_commit_transaction(trans, root);
-+	if (ret < 0)
-+		goto out;
- 
- 	ret = copy_to_user(arg, sa, sizeof(*sa));
- 	if (ret)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 94cbd10..dadbdca 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -34,6 +34,8 @@
- 
- #define BTRFS_ROOT_TRANS_TAG 0
- 
-+static char empty_uuid[BTRFS_UUID_SIZE] = {0};
-+
- void put_transaction(struct btrfs_transaction *transaction)
- {
- 	WARN_ON(atomic_read(&transaction->use_count) == 0);
-@@ -1264,8 +1266,25 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 					 dentry->d_name.len * 2);
- 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
- 	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
--	if (ret)
++	ret = find_and_setup_root(tree_root, fs_info,
++				  BTRFS_UUID_TREE_OBJECTID, uuid_root);
 +	if (ret) {
- 		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
++		if (ret != -ENOENT)
++			goto recovery_tree_root;
++
++		kfree(uuid_root);
++		uuid_root = fs_info->uuid_root = NULL;
++		need_to_create_uuid_tree = true;
++	} else {
++		uuid_root->track_dirty = 1;
 +	}
-+	ret = btrfs_insert_uuid_subvol_item(trans, fs_info->uuid_root,
-+					    new_uuid.b, objectid);
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
-+	if (memcmp(new_root_item->received_uuid, empty_uuid, BTRFS_UUID_SIZE)) {
-+		ret = btrfs_insert_uuid_received_subvol_item(
-+			trans, fs_info->uuid_root, new_root_item->received_uuid,
-+			objectid);
-+		if (ret && ret != -EEXIST) {
-+			btrfs_abort_transaction(trans, root, ret);
-+			goto fail;
++
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 
+@@ -2830,6 +2857,15 @@ retry_root_backup:
+ 		return ret;
+ 	}
+ 
++	if (need_to_create_uuid_tree) {
++		ret = btrfs_create_uuid_tree(fs_info, tree_root);
++		if (ret) {
++			pr_warn("btrfs: failed to create the UUID tree\n");
++			close_ctree(tree_root);
++			return ret;
 +		}
 +	}
- fail:
- 	pending->error = ret;
- dir_item_existed:
++
+ 	return 0;
+ 
+ fail_qgroup:
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 76ded9e..5466aae 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3426,6 +3426,29 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ }
+ 
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info,
++			   struct btrfs_root *tree_root)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *uuid_root;
++
++	trans = btrfs_start_transaction(tree_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	uuid_root = btrfs_create_tree(trans, fs_info,
++				      BTRFS_UUID_TREE_OBJECTID);
++	if (IS_ERR(uuid_root)) {
++		btrfs_abort_transaction(trans, tree_root,
++					PTR_ERR(uuid_root));
++		return PTR_ERR(uuid_root);
++	}
++
++	fs_info->uuid_root = uuid_root;
++	uuid_root->track_dirty = 1;
++
++	return btrfs_commit_transaction(trans, tree_root);
++}
+ /*
+  * shrinking a device means finding all of the device extents past
+  * the new size, and then following the back refs to the chunks.
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 062d860..81dade3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -304,6 +304,8 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
+ int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info,
++			   struct btrfs_root *tree_root);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
 -- 
 1.8.2.1
 

@@ -1,81 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:45101 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:8648 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030529Ab3DSPIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1030512Ab3DSPIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 19 Apr 2013 11:08:10 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jorabe.store (jorabe xp2) (RZmta 31.27 OK)
-	with ESMTP id g00d5bp3JExacH for <linux-btrfs@vger.kernel.org>;
+	by jored.store (jored xp3) (RZmta 31.27 OK)
+	with ESMTP id p0498cp3JEKjFp for <linux-btrfs@vger.kernel.org>;
 	Fri, 19 Apr 2013 17:08:05 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: delete unused parameter to btrfs_read_root_item()
-Date: Fri, 19 Apr 2013 17:08:04 +0200
-Message-Id: <1366384085-26890-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs: set UUID in root_item for created trees
+Date: Fri, 19 Apr 2013 17:08:05 +0200
+Message-Id: <1366384085-26890-2-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1366384085-26890-1-git-send-email-sbehrens@giantdisaster.de>
+References: <1366384085-26890-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+It is a rare exception that a new tree is created, like the qgroups
+tree. So far these new trees have an all-zero UUID in their root
+items. All trees that mkfs.btrfs has created get an UUID during the
+first mount when btrfs_read_root_item() rewrites the root_item to
+the v2 structure style. These UUID are never used so far, but
+anyway, since it is better to have it uniform for all trees, this
+commit adds some lines that generate and write an UUID for newly
+created trees.
+
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h     | 5 ++---
- fs/btrfs/disk-io.c   | 2 +-
- fs/btrfs/root-tree.c | 7 +++----
- 3 files changed, 6 insertions(+), 8 deletions(-)
+ fs/btrfs/disk-io.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 412c306..84be717 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3361,9 +3361,8 @@ int __must_check btrfs_update_root(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct btrfs_key *key,
- 				   struct btrfs_root_item *item);
--void btrfs_read_root_item(struct btrfs_root *root,
--			 struct extent_buffer *eb, int slot,
--			 struct btrfs_root_item *item);
-+void btrfs_read_root_item(struct extent_buffer *eb, int slot,
-+			  struct btrfs_root_item *item);
- int btrfs_find_last_root(struct btrfs_root *root, u64 objectid, struct
- 			 btrfs_root_item *item, struct btrfs_key *key);
- int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fa8438f..a284421 100644
+index a284421..9d61fff 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1514,7 +1514,7 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
- 	if (ret == 0) {
- 		l = path->nodes[0];
- 		slot = path->slots[0];
--		btrfs_read_root_item(tree_root, l, slot, &root->root_item);
-+		btrfs_read_root_item(l, slot, &root->root_item);
- 		memcpy(&root->root_key, location, sizeof(*location));
- 	}
- 	btrfs_free_path(path);
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 668af53..5bf1ed5 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -29,9 +29,8 @@
-  * generation numbers as then we know the root was once mounted with an older
-  * kernel that was not aware of the root item structure change.
-  */
--void btrfs_read_root_item(struct btrfs_root *root,
--			 struct extent_buffer *eb, int slot,
--			 struct btrfs_root_item *item)
-+void btrfs_read_root_item(struct extent_buffer *eb, int slot,
-+			  struct btrfs_root_item *item)
- {
- 	uuid_le uuid;
- 	int len;
-@@ -104,7 +103,7 @@ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid,
- 		goto out;
- 	}
- 	if (item)
--		btrfs_read_root_item(root, l, slot, item);
-+		btrfs_read_root_item(l, slot, item);
- 	if (key)
- 		memcpy(key, &found_key, sizeof(found_key));
+@@ -30,6 +30,7 @@
+ #include <linux/slab.h>
+ #include <linux/migrate.h>
+ #include <linux/ratelimit.h>
++#include <linux/uuid.h>
+ #include <asm/unaligned.h>
+ #include "compat.h"
+ #include "ctree.h"
+@@ -1313,6 +1314,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	int ret = 0;
+ 	u64 bytenr;
++	uuid_le uuid;
  
+ 	root = btrfs_alloc_root(fs_info);
+ 	if (!root)
+@@ -1362,6 +1364,8 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	btrfs_set_root_used(&root->root_item, leaf->len);
+ 	btrfs_set_root_last_snapshot(&root->root_item, 0);
+ 	btrfs_set_root_dirid(&root->root_item, 0);
++	uuid_le_gen(&uuid);
++	memcpy(root->root_item.uuid, uuid.b, BTRFS_UUID_SIZE);
+ 	root->root_item.drop_level = 0;
+ 
+ 	key.objectid = objectid;
 -- 
 1.8.2.1
 

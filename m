@@ -1,64 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17326 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S968297Ab3DSLvd (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:49238 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S968273Ab3DSMPf convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Apr 2013 07:51:33 -0400
-Date: Fri, 19 Apr 2013 19:51:46 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs scrub gives unable to find logical $hugenum len 16384
-Message-ID: <20130419115145.GB4949@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <5157386.Pre7jntDtG@merkaba>
- <1622455.ObqXlP9ZKX@merkaba>
- <201304191115.30452.Martin@lichtvoll.de>
+	Fri, 19 Apr 2013 08:15:35 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 712369A068F
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 06:15:35 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201304191115.30452.Martin@lichtvoll.de>
+To: Tejun Heo <tj@kernel.org>, Wanlong Gao <gaowanlong@cn.fujitsu.com>
+From: Chris Mason <clmason@fusionio.com>
+In-Reply-To: <20130419055754.GA9691@mtj.dyndns.org>
+CC: Jens Axboe <axboe@kernel.dk>, Steven Rostedt <rostedt@goodmis.org>,
+        "namhyung@gmail.com" <namhyung@gmail.com>,
+        "agk@redhat.com" <agk@redhat.com>,
+        "dm-devel@redhat.com" <dm-devel@redhat.com>,
+        "neilb@suse.de" <neilb@suse.de>, LKML <linux-kernel@vger.kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <516E5EF8.9090507@cn.fujitsu.com>
+ <1366209997.8817.12.camel@pippen.local.home>
+ <20130418123738.GV4816@kernel.dk> <516FED09.1040008@cn.fujitsu.com>
+ <20130418133546.GX4816@kernel.dk> <516FFFAC.8040103@cn.fujitsu.com>
+ <20130418143014.GZ4816@kernel.dk> <5170BB00.8080200@cn.fujitsu.com>
+ <20130419055754.GA9691@mtj.dyndns.org>
+Message-ID: <20130419121532.30947.69296@localhost.localdomain>
+Subject: Re: [BUG REPORT] Kernel panic on 3.9.0-rc7-4-gbb33db7
+Date: Fri, 19 Apr 2013 08:15:32 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 19, 2013 at 11:15:30AM +0200, Martin Steigerwald wrote:
-> Am Dienstag, 16. April 2013 schrieb Martin Steigerwald:
-> > On Saturday 13 April 2013 17:48:31 Martin Steigerwald wrote:
-> > > Hi!
-> > > 
-> > > Please answer soon whether it would be a good idea to replay a backup
-> > > right now as I am leaving to Berlin tomorrow for a week without my
-> > > backup drive with me. Well, I made space on an external 2,5 inch
-> > > drive, that I can take with me. I am taking that one with me, after
-> > > having made sure it has a consistent backup. :)
-> > 
-> > Ping.
-> > 
-> > Any hints on this one? I am going to recreate the filesystem next weekend
-> > at latest.
-> > 
-> > I did not see any I/O or BTRFS errors in logs so far, so filesystem
-> > appears to be good.
+Quoting Tejun Heo (2013-04-19 01:57:54)
 > 
-> Last chance to let me dig out some more information about this.
+> Ewweeeeeeeeeeeeeeeeeehh........
 > 
-> Even with lack of any other oddities I am not going to tolerate a non 
-> scrubbing BTRFS filesystem for longer than a week and will redo it during the 
-> weekend.
+> No wonder this thing crashes.  Chris, can't the original bio carry
+> bbio in bi_private and let end_bio_extent_readpage() free the bbio
+> instead of abusing bi_bdev like this?
 
-Hi Martin,
+Yes, we can definitely carry bbio up higher in the stack.  I'll patch it
+up right now.  I do agree that it'll be too big for -final, but we'll
+have it either way.
 
-I think the bug is hidden back in the backtrace, any chance to get a
-btrfs-debug-tree output?
+-chris
 
-thanks,
-liubo
-
-> 
-> Thanks,
-> -- 
-> Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-> GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

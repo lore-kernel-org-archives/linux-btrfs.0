@@ -1,57 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:44868 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932207Ab3DRV67 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Apr 2013 17:58:59 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id B74759A0420
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2013 15:58:58 -0600 (MDT)
-Date: Thu, 18 Apr 2013 17:58:56 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Matt Pursley <mpursley@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
- are slower (~750MB/s)?
-Message-ID: <20130418215856.GA2305@localhost.localdomain>
-References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
- <20130417065506.GA21083@panda>
- <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
- <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com>
+Received: from xp-ob.rzone.de ([81.169.146.137]:41878 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1030732Ab3DSPlK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Apr 2013 11:41:10 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jored.store (jored xp4) (RZmta 31.27 OK)
+	with ESMTP id 6049b1p3JEl7LW for <linux-btrfs@vger.kernel.org>;
+	Fri, 19 Apr 2013 17:41:06 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/5] Btrfs: support printing UUID tree elements
+Date: Fri, 19 Apr 2013 17:41:03 +0200
+Message-Id: <85b4a097a36353848383d0ac0339cb644a1cf2bb.1366384796.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
+References: <cover.1366384796.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
+References: <cover.1366384796.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 17, 2013 at 07:50:09PM -0600, Matt Pursley wrote:
-> Hey All,
-> 
-> Here are the results of making and reading back a 13GB file on
-> "mdraid6 + ext4",  "mdraid6 + btrfs", and "btrfsraid6 + btrfs".
-> 
-> Seems to show that:
-> 1) "mdraid6 + ext4" can do ~1100 MB/s for these sequential reads with
-> either one or two files at once.
-> 2) "btrfsraid6 + btrfs" can do ~1100 MB/s for sequential reads with
-> one file at a time, but only ~750 MB/s with two (or more).
-> 3) "mdraid6 + btrfs" can only do ~750 MB/s for these sequential reads
-> with either one or two files at once.
-> 
-> 
-> So, seems like the speed drop is related more to the btrfs files
-> system, then the experimental raid.
-> Although it is interesting that btrfs can only do the full ~1100 MB/s
-> with a single file on the btrfsraid6, but not mdraid6.
-> 
-> 
-> Anyway, just some more info and reproducible results.
-> 
-> I have also opened a ticket in bugzilla.kernel.org for this issue here...
-> https://bugzilla.kernel.org/show_bug.cgi?id=56771
->
+This commit adds support to print UUID tree elements to print-tree.c.
 
-This is strange, and I can't see any reason why this would happen.  I'll try and
-reproduce next week when I'm back from LSF.  Thanks,
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/print-tree.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
 
-Josef 
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index dc0024f..6e204ee 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -155,6 +155,73 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
+ }
+ #endif
+ 
++static void print_uuid_item(struct extent_buffer *l,
++			    struct btrfs_uuid_item *ptr,
++			    u64 item_size)
++{
++	do {
++		u64 sub_item_type;
++		u64 sub_item_len;
++		u64 subvol_id;
++
++		if (item_size < sizeof(*ptr)) {
++			printk(KERN_INFO "btrfs: uuid item too short!\n");
++			return;
++		}
++		sub_item_type = btrfs_uuid_type(l, ptr);
++		sub_item_len = btrfs_uuid_len(l, ptr);
++		ptr++;
++		item_size -= sizeof(*ptr);
++		if (sub_item_len * 8 > item_size) {
++			printk(KERN_INFO "btrfs: uuid item too short (2)!\n");
++			return;
++		}
++
++		item_size -= sub_item_len * 8;
++		switch (sub_item_type) {
++		case BTRFS_UUID_ITEM_TYPE_SUBVOL:
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id,
++						   (unsigned long)ptr, 8);
++				printk(KERN_INFO "\t\tsubvol_id %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				ptr = (struct btrfs_uuid_item *)
++					(((char *)ptr) + 8);
++			}
++			break;
++		case BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL:
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id,
++						   (unsigned long)ptr, 8);
++				printk(KERN_INFO "\t\treceived_subvol_id %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				ptr = (struct btrfs_uuid_item *)
++					(((char *)ptr) + 8);
++			}
++			break;
++		default:
++			printk(KERN_INFO "\t\tunknown type=%llu, len=8*%llu\n",
++			       (unsigned long long)sub_item_type,
++			       (unsigned long long)sub_item_len);
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id,
++						   (unsigned long)ptr, 8);
++				printk(KERN_INFO "\t\tid %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				ptr = (struct btrfs_uuid_item *)
++					(((char *)ptr) + 8);
++			}
++			break;
++		}
++	} while (item_size);
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -168,6 +235,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	struct btrfs_extent_data_ref *dref;
+ 	struct btrfs_shared_data_ref *sref;
+ 	struct btrfs_dev_extent *dev_extent;
++	struct btrfs_uuid_item *uuid_item;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 
+@@ -301,6 +369,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_REPLACE_KEY:
+ 			printk(KERN_INFO "\t\tdev replace\n");
+ 			break;
++		case BTRFS_UUID_KEY:
++			uuid_item = btrfs_item_ptr(l, i,
++						   struct btrfs_uuid_item);
++			print_uuid_item(l, uuid_item, btrfs_item_size_nr(l, i));
++			break;
+ 		};
+ 	}
+ }
+-- 
+1.8.2.1
+

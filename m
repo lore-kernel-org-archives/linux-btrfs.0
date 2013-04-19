@@ -1,60 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:60609 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966825Ab3DSBFJ (ORCPT
+Received: from mail-pd0-f171.google.com ([209.85.192.171]:37006 "EHLO
+	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754575Ab3DSF57 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Apr 2013 21:05:09 -0400
-Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 9125D3EE0C1
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
-Received: from smail (m1 [127.0.0.1])
-	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 79D9845DE55
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 6197845DE58
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 52FEE1DB8032
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0BD551DB8049
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:06 +0900 (JST)
-Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id D61059F7DA0
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:05 +0900 (JST)
-Received: from FM-323941448.jp.fujitsu.com (unknown [10.124.101.132])
-	by ml14.s.css.fujitsu.com (Postfix) with SMTP id 694399F7DC4
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 10:05:05 +0900 (JST)
-Message-Id: <201304190104.AA00029@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Fri, 19 Apr 2013 10:04:46 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix error handling in btrfs_ioctl_send()
+	Fri, 19 Apr 2013 01:57:59 -0400
+Date: Thu, 18 Apr 2013 22:57:54 -0700
+From: Tejun Heo <tj@kernel.org>
+To: Wanlong Gao <gaowanlong@cn.fujitsu.com>
+Cc: Jens Axboe <axboe@kernel.dk>, Steven Rostedt <rostedt@goodmis.org>,
+        namhyung@gmail.com, agk@redhat.com, dm-devel@redhat.com, neilb@suse.de,
+        LKML <linux-kernel@vger.kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [BUG REPORT] Kernel panic on 3.9.0-rc7-4-gbb33db7
+Message-ID: <20130419055754.GA9691@mtj.dyndns.org>
+References: <516E5EF8.9090507@cn.fujitsu.com>
+ <1366209997.8817.12.camel@pippen.local.home>
+ <20130418123738.GV4816@kernel.dk>
+ <516FED09.1040008@cn.fujitsu.com>
+ <20130418133546.GX4816@kernel.dk>
+ <516FFFAC.8040103@cn.fujitsu.com>
+ <20130418143014.GZ4816@kernel.dk>
+ <5170BB00.8080200@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5170BB00.8080200@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fget() returns NULL if error. So, we should check NULL or not.
+(cc'ing btrfs people)
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/send.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+On Fri, Apr 19, 2013 at 11:33:20AM +0800, Wanlong Gao wrote:
+> RIP: 0010:[<ffffffff812484d3>]  [<ffffffff812484d3>] ftrace_raw_event_block_bio_complete+0x73/0xf0
+...
+>  [<ffffffff811b6c10>] bio_endio+0x80/0x90
+>  [<ffffffffa0790d26>] btrfs_end_bio+0xf6/0x190 [btrfs]
+>  [<ffffffff811b6bcd>] bio_endio+0x3d/0x90
+>  [<ffffffff81249873>] req_bio_endio+0xa3/0xe0
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 96a826a..f892e0e 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4610,8 +4610,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	sctx->flags = arg->flags;
- 
- 	sctx->send_filp = fget(arg->send_fd);
--	if (IS_ERR(sctx->send_filp)) {
--		ret = PTR_ERR(sctx->send_filp);
-+	if (!sctx->send_filp) {
-+		ret = -EBADF;
- 		goto out;
- 	}
- 
+Ugh....
 
+In fs/btrfs/volumes.c
+
+  static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+  {
+	...
+		bio->bi_bdev = (struct block_device *)
+			       	       (unsigned long)bbio->mirror_num;
+	...
+  }
+
+  static void btrfs_end_bio(struct bio *bio, int err)
+  {
+	...
+		bio->bi_bdev = (struct block_device *)
+					(unsigned long)bbio->mirror_num;
+									
+	...
+  }
+
+In fs/btrfs/extent_io.c
+
+  static void end_bio_extent_readpage(struct bio *bio, int err)
+  {
+	int mirror;
+	...
+		mirror = (int)(unsigned long)bio->bi_bdev;
+	...
+  }
+
+Ewweeeeeeeeeeeeeeeeeehh........
+
+No wonder this thing crashes.  Chris, can't the original bio carry
+bbio in bi_private and let end_bio_extent_readpage() free the bbio
+instead of abusing bi_bdev like this?
+
+-- 
+tejun

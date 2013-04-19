@@ -1,276 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:10437 "EHLO xp-ob.rzone.de"
+Received: from mx1.redhat.com ([209.132.183.28]:13988 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030745Ab3DSPlK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Apr 2013 11:41:10 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (josoe xp4) (RZmta 31.27 OK)
-	with ESMTP id 607663p3IKO1Io for <linux-btrfs@vger.kernel.org>;
-	Fri, 19 Apr 2013 17:41:06 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] Btrfs: fill UUID tree initially
-Date: Fri, 19 Apr 2013 17:41:06 +0200
-Message-Id: <4199ee363b2c956e7ebdfcc9733546f3e8b88bdd.1366384796.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
-References: <cover.1366384796.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1366384796.git.sbehrens@giantdisaster.de>
-References: <cover.1366384796.git.sbehrens@giantdisaster.de>
+	id S1751310Ab3DSSNV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Apr 2013 14:13:21 -0400
+Message-ID: <51718941.2010800@redhat.com>
+Date: Fri, 19 Apr 2013 11:13:21 -0700
+From: Andy Grover <agrover@redhat.com>
+MIME-Version: 1.0
+To: Suman C <schakrava@gmail.com>
+CC: Roman Mamedov <rm@romanrm.ru>, "Fajar A. Nugraha" <list@fajar.net>,
+        Mike Fleetwood <mike.fleetwood@googlemail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: lvm volume like support
+References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <CAPF83mvfLrDvBvbP5Oe_R94BM7Lr5pZD=gpnDrr4TquBq88q5Q@mail.gmail.com> <20130226115704.50102196@natsu> <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com>
+In-Reply-To: <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the UUID tree is initially created, a task is spawned that
-walks through the root tree. For each found subvolume root_item,
-the uuid and received_uuid entries in the UUID tree are added.
-This is such a quick operation so that in case somebody wants
-to unmount the filesystem while the task is still running, the
-unmount is delayed until the UUID tree building task is finished.
+On 02/25/2013 10:25 PM, Suman C wrote:
+> Thanks for the sparse file idea, I am actually using that solution
+> already. I am not sure if its the best way, however.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/ctree.h   |   3 ++
- fs/btrfs/disk-io.c |   5 ++
- fs/btrfs/volumes.c | 149 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 156 insertions(+), 1 deletion(-)
+(Sorry to respond to such an old thread.)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c9baf55..e35268e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -23,6 +23,7 @@
- #include <linux/highmem.h>
- #include <linux/fs.h>
- #include <linux/rwsem.h>
-+#include <linux/semaphore.h>
- #include <linux/completion.h>
- #include <linux/backing-dev.h>
- #include <linux/wait.h>
-@@ -1637,6 +1638,8 @@ struct btrfs_fs_info {
- 	struct btrfs_dev_replace dev_replace;
- 
- 	atomic_t mutually_exclusive_operation_running;
-+
-+	struct semaphore uuid_scan_sem;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 75d196b..cbda829 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -31,6 +31,7 @@
- #include <linux/migrate.h>
- #include <linux/ratelimit.h>
- #include <linux/uuid.h>
-+#include <linux/semaphore.h>
- #include <asm/unaligned.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -2263,6 +2264,7 @@ int open_ctree(struct super_block *sb,
- 	init_rwsem(&fs_info->extent_commit_sem);
- 	init_rwsem(&fs_info->cleanup_work_sem);
- 	init_rwsem(&fs_info->subvol_sem);
-+	sema_init(&fs_info->uuid_scan_sem, 1);
- 	fs_info->dev_replace.lock_owner = 0;
- 	atomic_set(&fs_info->dev_replace.nesting_level, 0);
- 	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
-@@ -3505,6 +3507,9 @@ int close_ctree(struct btrfs_root *root)
- 	fs_info->closing = 1;
- 	smp_mb();
- 
-+	/* wait for the uuid_scan task to finish */
-+	down(&fs_info->uuid_scan_sem);
-+
- 	/* pause restriper - we want to resume on mount */
- 	btrfs_pause_balance(fs_info);
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5466aae..0cddd0c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -26,6 +26,7 @@
- #include <linux/ratelimit.h>
- #include <linux/kthread.h>
- #include <linux/raid/pq.h>
-+#include <linux/semaphore.h>
- #include <asm/div64.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -50,6 +51,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
- 
- static DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
-+static char empty_uuid[BTRFS_UUID_SIZE] = {0};
- 
- static void lock_chunks(struct btrfs_root *root)
- {
-@@ -3426,11 +3428,136 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
- 	return 0;
- }
- 
-+static int btrfs_uuid_scan_kthread(void *data)
-+{
-+	struct btrfs_fs_info *fs_info = data;
-+	struct btrfs_root *root = fs_info->tree_root;
-+	struct btrfs_key key;
-+	struct btrfs_key max_key;
-+	struct btrfs_path *path = NULL;
-+	int ret = 0;
-+	struct extent_buffer *eb;
-+	int slot;
-+	struct btrfs_root_item root_item;
-+	u32 item_size;
-+	struct btrfs_trans_handle *trans;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		pr_warn("btrfs: UUID scan failed, ENOMEM\n");
-+		goto out;
-+	}
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = 0;
-+
-+	max_key.objectid = (u64)-1;
-+	max_key.type = BTRFS_ROOT_ITEM_KEY;
-+	max_key.offset = (u64)-1;
-+
-+	path->keep_locks = 1;
-+
-+	while (1) {
-+		ret = btrfs_search_forward(root, &key, &max_key, path, 0);
-+		if (ret) {
-+			if (ret < 0)
-+				pr_warn("btrfs: UUID scan failed, %d\n", ret);
-+			else
-+				ret = 0;
-+			break;
-+		}
-+
-+		if (key.type != BTRFS_ROOT_ITEM_KEY ||
-+		    (key.objectid < BTRFS_FIRST_FREE_OBJECTID &&
-+		     key.objectid != BTRFS_FS_TREE_OBJECTID) ||
-+		    key.objectid > BTRFS_LAST_FREE_OBJECTID)
-+			goto skip;
-+
-+		eb = path->nodes[0];
-+		slot = path->slots[0];
-+		item_size = btrfs_item_size_nr(eb, slot);
-+		if (item_size < sizeof(root_item))
-+			goto skip;
-+
-+		trans = NULL;
-+		read_extent_buffer(eb, &root_item,
-+				   btrfs_item_ptr_offset(eb, slot),
-+				   (int)sizeof(root_item));
-+		if (memcmp(root_item.uuid, empty_uuid, BTRFS_UUID_SIZE)) {
-+			trans = btrfs_start_transaction(fs_info->uuid_root, 2);
-+			if (IS_ERR(trans)) {
-+				ret = PTR_ERR(trans);
-+				break;
-+			}
-+			ret = btrfs_insert_uuid_subvol_item(trans,
-+							    fs_info->uuid_root,
-+							    root_item.uuid,
-+							    key.objectid);
-+			if (ret < 0) {
-+				pr_warn("btrfs: insert_uuid_received_subvol_item failed %d\n",
-+					ret);
-+				break;
-+			}
-+		}
-+
-+		if (memcmp(root_item.received_uuid, empty_uuid,
-+			   BTRFS_UUID_SIZE)) {
-+			if (!trans) {
-+				trans = btrfs_start_transaction(
-+						fs_info->uuid_root, 2);
-+				if (IS_ERR(trans)) {
-+					ret = PTR_ERR(trans);
-+					break;
-+				}
-+			}
-+			ret = btrfs_insert_uuid_received_subvol_item(
-+				trans, fs_info->uuid_root,
-+				root_item.received_uuid, key.objectid);
-+			if (ret < 0) {
-+				pr_warn("btrfs: insert_uuid_received_subvol_item failed %d\n",
-+					ret);
-+				break;
-+			}
-+		}
-+
-+		if (trans) {
-+			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
-+			if (ret)
-+				break;
-+		}
-+
-+skip:
-+		btrfs_release_path(path);
-+		if (key.offset < (u64)-1) {
-+			key.offset++;
-+		} else if (key.type < BTRFS_ROOT_ITEM_KEY) {
-+			key.offset = 0;
-+			key.type++;
-+		} else if (key.objectid < (u64)-1) {
-+			key.offset = 0;
-+			key.type = 0;
-+			key.objectid++;
-+		} else {
-+			break;
-+		}
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	if (ret)
-+		pr_warn("btrfs: start_transaction failed %d\n", ret);
-+	up(&fs_info->uuid_scan_sem);
-+	return 0;
-+}
-+
- int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_root *tree_root)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *uuid_root;
-+	struct task_struct *task;
-+	int ret;
- 
- 	trans = btrfs_start_transaction(tree_root, 2);
- 	if (IS_ERR(trans))
-@@ -3447,8 +3574,28 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info,
- 	fs_info->uuid_root = uuid_root;
- 	uuid_root->track_dirty = 1;
- 
--	return btrfs_commit_transaction(trans, tree_root);
-+	ret = btrfs_commit_transaction(trans, tree_root);
-+	if (ret)
-+		return ret;
-+
-+	down(&fs_info->uuid_scan_sem);
-+	task = kthread_run(btrfs_uuid_scan_kthread, fs_info,
-+			   "btrfs-uuid");
-+	if (IS_ERR(task)) {
-+		/*
-+		 * It is not implemented to retry the scanning
-+		 * on next mount. It's just not worth the effort
-+		 * to implement it, UUID tree entries are not
-+		 * mission critical.
-+		 */
-+		pr_warn("btrfs: failed to start uuid_scan task\n");
-+		up(&fs_info->uuid_scan_sem);
-+		return PTR_ERR(task);
-+	}
-+
-+	return 0;
- }
-+
- /*
-  * shrinking a device means finding all of the device extents past
-  * the new size, and then following the back refs to the chunks.
--- 
-1.8.2.1
+Hi Suman,
+
+I think zvol-like functionality would be very nice for btrfs to have. It 
+would be more natural to manage btrvols than looped-back files I think, 
+and removing those sw layers may also increase performance, but who 
+knows by how much. It would let btrfs really act as "just" the LVM, if 
+desired.
+
+Do we have any sense for how much work adding this would be?
+
+Regards -- Andy
+
+p.s. some interesting stuff on zvols 
+http://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/
 

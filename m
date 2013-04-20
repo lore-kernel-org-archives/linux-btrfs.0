@@ -1,94 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:56894 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754565Ab3DTInR convert rfc822-to-8bit (ORCPT
+Received: from mail-we0-f181.google.com ([74.125.82.181]:60398 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932082Ab3DTMlM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Apr 2013 04:43:17 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Josef Bacik <jbacik@fusionio.com>
-Subject: Re: btrfs scrub gives unable to find logical $hugenum len 16384
-Date: Sat, 20 Apr 2013 10:43:11 +0200
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <5157386.Pre7jntDtG@merkaba> <201304191115.30452.Martin@lichtvoll.de> <20130420034938.GA2631@localhost.localdomain> (sfid-20130420_102140_219259_4FA13707)
-In-Reply-To: <20130420034938.GA2631@localhost.localdomain>
+	Sat, 20 Apr 2013 08:41:12 -0400
+Received: by mail-we0-f181.google.com with SMTP id r6so4503573wey.26
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2013 05:41:11 -0700 (PDT)
+Received: from ?IPv6:2a01:e35:8af6:5340:7df1:1b4f:d273:622b? ([2a01:e35:8af6:5340:7df1:1b4f:d273:622b])
+        by mx.google.com with ESMTPSA id t14sm9190856wib.0.2013.04.20.05.41.09
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 20 Apr 2013 05:41:10 -0700 (PDT)
+Message-ID: <51728CE3.9040804@gmail.com>
+Date: Sat, 20 Apr 2013 14:41:07 +0200
+From: Chris Hoffmann <chrmhoffmann@gmail.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201304201043.11645.Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: stale NFS file handle and corrupted btrfs
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 20. April 2013 schrieb Josef Bacik:
-> On Fri, Apr 19, 2013 at 03:15:30AM -0600, Martin Steigerwald wrote:
-> > Am Dienstag, 16. April 2013 schrieb Martin Steigerwald:
-> > > On Saturday 13 April 2013 17:48:31 Martin Steigerwald wrote:
-> > > > Hi!
-> > > > 
-> > > > Please answer soon whether it would be a good idea to replay a
-> > > > backup right now as I am leaving to Berlin tomorrow for a week
-> > > > without my backup drive with me. Well, I made space on an external
-> > > > 2,5 inch drive, that I can take with me. I am taking that one with
-> > > > me, after having made sure it has a consistent backup. :)
-> > > 
-> > > Ping.
-> > > 
-> > > Any hints on this one? I am going to recreate the filesystem next
-> > > weekend at latest.
-> > > 
-> > > I did not see any I/O or BTRFS errors in logs so far, so filesystem
-> > > appears to be good.
-> > 
-> > Last chance to let me dig out some more information about this.
-> > 
-> > Even with lack of any other oddities I am not going to tolerate a non
-> > scrubbing BTRFS filesystem for longer than a week and will redo it
-> > during the weekend.
-> 
-> Can you get a btrfs-image of the file system as it is and upload it
-> somewhere for me to pull down so I can try and reproduce?  Thanks,
+Hi,
 
-Hmmm, this doesn´t seem to work:
+I have experienced an error message about stale NFS files when looking 
+into a directory.
 
-merkaba:~#134> btrfs-image -c9 -t4 /dev/merkaba/home /mnt/zeit/home.img
-checksum verify failed on 65536 wanted E79F04C2 found 73
-checksum verify failed on 65536 wanted E79F04C2 found 73
-Csum didn't match
-btrfs-image: btrfs-image.c:394: flush_pending: Assertion `!(!eb)' failed.
-zsh: abort      btrfs-image -c9 -t4 /dev/merkaba/home /mnt/zeit/home.img
-merkaba:~#134> btrfs-image /dev/merkaba/home /mnt/zeit/home.img
-checksum verify failed on 65536 wanted E79F04C2 found 73
-checksum verify failed on 65536 wanted E79F04C2 found 73
-Csum didn't match
-btrfs-image: btrfs-image.c:394: flush_pending: Assertion `!(!eb)' failed.
-zsh: abort      btrfs-image /dev/merkaba/home /mnt/zeit/home.img
-merkaba:~#134>
+ls -la manpages-dev.md5sums
+ls: cannot access manpages-dev.md5sums: Stale NFS file handle
+root@c3po:/media/revo/@/var/lib/dpkg/info# rm manpages-dev.md5sums
+rm: cannot remove ‘manpages-dev.md5sums’: Stale NFS file handle
 
+Running btrfsck I see:
 
-merkaba:~> ls -l /mnt/zeit/home.img
--rw-r--r-- 1 root root 0 Apr 20 10:32 /mnt/zeit/home.img
+btrfsck --repair /dev/revo/root
+enabling repair mode
+checking extents
+checking fs roots
+root 256 inode 117209 errors 2001
+	unresolved ref dir 11094 index 2862 namelen 20 name 
+manpages-dev.md5sums filetype 1 error 4
+root 319 inode 117209 errors 2001
+	unresolved ref dir 11094 index 2862 namelen 20 name 
+manpages-dev.md5sums filetype 1 error 4
+root 320 inode 117209 errors 2001
+	unresolved ref dir 11094 index 2862 namelen 20 name 
+manpages-dev.md5sums filetype 1 error 4
+found 28530659328 bytes used err is 0
+total csum bytes: 27246928
+total tree bytes: 629264384
+total fs tree bytes: 552144896
+btree space waste bytes: 160285807
+file data blocks allocated: 57135325184
+  referenced 28486983680
+Btrfs v0.20-rc1
 
+Scrubbing and btrfsck do not fix the issue.
 
-In order to be able to restore to a sane setup, I will do the following now:
+I tried with 3.9.0rc6 and otherwise with 3.8.8 (and 3.8.0-19-generic 
+#29-Ubuntu)
 
-- make another rsync backup without deleting older backup snapshots in case 
-the BTRFS filesystem got corrupted and cannot retrieve some files which seems 
-so from above and btrfs-debug-tree outputs.
+I have uploaded the btrfs-image to
+http://ubuntuone.com/3tIHcUdfGEdmrSY1oxGCL3
 
-- make a dd backup of the home partition to my backup harddisk for further 
-investigation
+The drive is an 64GB crucial M4 SSD. Smartinfo can be found here:
+http://pastebin.com/raw.php?i=BJvcB31H
 
-- recreate the home filesystem as BTRFS or Ext4/XFS. But I think I will try 
-BTRFS again, but I will put all the KDE Akonadi / Nepomuk related stuff onto 
-another Ext4 partition as asked by a KDE developer to see whether the mail 
-data loss issue is somehow related to using BTRFS, cause the developer as 
-well as the main KMail developer also use KMail 2 with POP3 and they have no 
-data losses.
+Any help appreciated.
 
-
-I can try some stuff on the dd image then, maybe its still possible to get an 
-btrfs-image somehow.
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Rgds,
+Chris

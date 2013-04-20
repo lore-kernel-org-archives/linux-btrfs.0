@@ -1,54 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48742 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965681Ab3DTDtn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Apr 2013 23:49:43 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4B03C7C041B
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Apr 2013 21:49:41 -0600 (MDT)
-Date: Fri, 19 Apr 2013 23:49:38 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs scrub gives unable to find logical $hugenum len 16384
-Message-ID: <20130420034938.GA2631@localhost.localdomain>
-References: <5157386.Pre7jntDtG@merkaba>
- <1622455.ObqXlP9ZKX@merkaba>
- <201304191115.30452.Martin@lichtvoll.de>
+Received: from mx1.redhat.com ([209.132.183.28]:48150 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751621Ab3DTEs6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 20 Apr 2013 00:48:58 -0400
+Message-ID: <51721E3B.20905@redhat.com>
+Date: Fri, 19 Apr 2013 21:48:59 -0700
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <201304191115.30452.Martin@lichtvoll.de>
+To: Jon Nelson <jnelson@jamponi.net>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: minor patch to cmds-restore.c
+References: <CAKuK5J3LnB41=qKdDFrpQ2jPU+=fE2jPT-Da+NP3iBy8Xx8hmQ@mail.gmail.com>
+In-Reply-To: <CAKuK5J3LnB41=qKdDFrpQ2jPU+=fE2jPT-Da+NP3iBy8Xx8hmQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 19, 2013 at 03:15:30AM -0600, Martin Steigerwald wrote:
-> Am Dienstag, 16. April 2013 schrieb Martin Steigerwald:
-> > On Saturday 13 April 2013 17:48:31 Martin Steigerwald wrote:
-> > > Hi!
-> > > 
-> > > Please answer soon whether it would be a good idea to replay a backup
-> > > right now as I am leaving to Berlin tomorrow for a week without my
-> > > backup drive with me. Well, I made space on an external 2,5 inch
-> > > drive, that I can take with me. I am taking that one with me, after
-> > > having made sure it has a consistent backup. :)
-> > 
-> > Ping.
-> > 
-> > Any hints on this one? I am going to recreate the filesystem next weekend
-> > at latest.
-> > 
-> > I did not see any I/O or BTRFS errors in logs so far, so filesystem
-> > appears to be good.
+On 4/19/13 7:11 PM, Jon Nelson wrote:
+> The following is a minor patch to cmds-restore.c
 > 
-> Last chance to let me dig out some more information about this.
+
+Hi Jon - just a note -
+
+When sending a patch like this, it's best to follow the standard
+patch format, which closely mimics the kernel patch submission
+guidelines:
+
+Subject: [PATCH] btrfs-progs: <descriptive summary>
+
+<longer description of change, if needed>
+
+Signed-off-by: <you> <you@your.email.com>
+---
+
+<patch itself>
+
+i.e. like:
+
+Subject: [PATCH] btrfs-progs: fix btrfs restore command usage text
+
+The built-in command help for btrfs restore was incorrect;
+some options were missing and/or incorrect, and the destination
+argument was not shown.
+
+Signed-off-by: Jon Nelson <jnelson@jamponi.net>
+---
+
+That way it's clear to the reviewer as well as making the source
+control history more descriptive.
+
+Hum, it'd be nice to have it in the manpage too...
+
+Thanks,
+-Eric
+
+> diff --git a/cmds-restore.c b/cmds-restore.c
+> index c75e187..273c813 100644
+> --- a/cmds-restore.c
+> +++ b/cmds-restore.c
+> @@ -917,14 +917,16 @@ out:
+>  }
 > 
-> Even with lack of any other oddities I am not going to tolerate a non 
-> scrubbing BTRFS filesystem for longer than a week and will redo it during the 
-> weekend.
->
+>  const char * const cmd_restore_usage[] = {
+> -       "btrfs restore [options] <device>",
+> +       "btrfs restore [options] <device> [destination]",
+>         "Try to restore files from a damaged filesystem (unmounted)",
+>         "",
+> +       "-l              list roots",
+>         "-s              get snapshots",
+>         "-v              verbose",
+>         "-i              ignore errors",
+>         "-o              overwrite",
+> -       "-t              tree location",
+> +       "-r <rootid>     root location",
+> +       "-t <treeid>     tree location",
+>         "-f <offset>     filesystem location",
+>         "-u <block>      super mirror",
+>         "-d              find dir",
+> 
+> 
+> --
+> Jon
+> Software Blacksmith
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Can you get a btrfs-image of the file system as it is and upload it somewhere
-for me to pull down so I can try and reproduce?  Thanks,
-
-Josef 

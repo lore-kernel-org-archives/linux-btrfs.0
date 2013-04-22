@@ -1,277 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33823 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:35822 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752262Ab3DVQMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 12:12:32 -0400
-Received: from int-mx12.intmail.prod.int.phx2.redhat.com (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r3MGCW43008108
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 12:12:32 -0400
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx12.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r3MGCV91025983
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 12:12:31 -0400
-Message-ID: <5175616F.1010007@redhat.com>
-Date: Mon, 22 Apr 2013 11:12:31 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V3] btrfs: move leak debug code to functions
-References: <517387F8.506@redhat.com>
-In-Reply-To: <517387F8.506@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1754742Ab3DVTbA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 15:31:00 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UUMRz-00058x-5T
+	for linux-btrfs@vger.kernel.org; Mon, 22 Apr 2013 21:30:55 +0200
+Received: from 88-104-247-93.dynamic.dsl.as9105.com ([88.104.247.93])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:30:55 +0200
+Received: from mark by 88-104-247-93.dynamic.dsl.as9105.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:30:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: Mark Ridley <mark@backupsystems.co.uk>
+Subject: 3.8.8 fc18 kernel crash when editing a file
+Date: Mon, 22 Apr 2013 19:30:43 +0000 (UTC)
+Message-ID: <loom.20130422T212837-865@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Clean up the leak debugging in extent_io.c by moving
-the debug code into functions.  This also removes the
-list_heads used for debugging from the extent_buffer
-and extent_state structures when debug is not enabled.
+kernel: [13453.678952] ------------[ cut here ]------------
+kernel: [13453
+.679136] kernel BUG at fs/btrfs/file.c:861!
+kernel: [13453.679380] invalid
+ opcode: 0000 [#1] SMP
+kernel: [13453.679612] Modules linked in: coretemp 
+shpchp ppdev vmw_balloon i2c_piix4 microcode vmxnet3 parport_pc parport btr
+fs zlib_deflate libcrc32c vmwgfx ttm drm vmw_pvscsi i2c_core
+kernel: [1345
+3.680251] CPU 0
+kernel: [13453.680439] Pid: 11307, comm: btrfs-endio-wri N
+ot tainted 3.8.8-202.fc18.x86_64 #1 VMware, Inc. VMware Virtual Platform/44
+0BX Desktop Reference Platform
+kernel: [13453.680949] RIP: 0010:[<ffffffff
+a00e728d>]  [<ffffffffa00e728d>] __btrfs_drop_extents+0xb9d/0xbc0 [btrfs]
 
-Since we need a global debug config to do that last
-part, implement CONFIG_BTRFS_DEBUG to accommodate.
+kernel: [13453.681440] RSP: 0018:ffff88010e657b58  EFLAGS: 00010297
+kernel
+: [13453.681687] RAX: 0000000000000010 RBX: ffff8802ce925428 RCX: 000000000
+0000001
+kernel: [13453.681940] RDX: 0000000000000000 RSI: 0000000000000c73
+ RDI: ffff8802ce925428
+kernel: [13453.682043] RBP: ffff88010e657c68 R08: 0
+000000000000001 R09: ffff88010e657b08
+kernel: [13453.682145] R10: 00000023
+08979000 R11: 00000000ffffffff R12: ffff880100f7ad80
+kernel: [13453.682247
+] R13: 0000000000000c46 R14: 0000002308974000 R15: 0000002308974000
+kernel
+: [13453.682377] FS:  0000000000000000(0000) GS:ffff8803bfc00000(0000) knlG
+S:0000000000000000
+kernel: [13453.682498] CS:  0010 DS: 0000 ES: 0000 CR0:
+ 000000008005003bApr 22 17:26:57 bk577 kernel: [13453.683089] CR2: 00007fff
+f1d900d8 CR3: 0000000383e9b000 CR4: 00000000000007f0
+kernel: [13453.683906
+] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+kernel
+: [13453.684640] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 000000000
+0000400
+kernel: [13453.685454] Process btrfs-endio-wri (pid: 11307, thread
+info ffff88010e656000, task ffff8803a83cc620)
+kernel: [13453.686793] Stack
+:
+kernel: [13453.687439]  0000000000004b66 0000002308954000 00000000000000
+00 0000000000000400
+kernel: [13453.688160]  ffff880100000000 0000002300000
+001 000000000000112e ffffffff8101b8e3
+kernel: [13453.688885]  000000000001
+5000 0000000f01010082 0000000000000000 ffff8803a97c8000
+kernel: [13453.689
+640] Call Trace:
+kernel: [13453.690319]  [<ffffffff8101b8e3>] ? native_sch
+ed_clock+0x13/0x80
+kernel: [13453.691220]  [<ffffffffa00ec40e>] ? alloc_ex
+tent_state+0x2e/0xc0 [btrfs]
+kernel: [13453.692107]  [<ffffffffa00aee8a>] 
+? btrfs_alloc_path+0x1a/0x20 [btrfs]
+kernel: [13453.692981]  [<ffffffffa00
+e7d2b>] btrfs_drop_extents+0x6b/0xa0 [btrfs]
+kernel: [13453.693562]  [<fff
+fffffa00d81ab>] insert_reserved_file_extent.constprop.58+0x7b/0x2c0 [btrfs]
 
-Thanks to Dave Sterba for the Kconfig bit.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
-
-Now we can move other #ifdef DEBUG under this same
-config, but not all of them; some look like they
-would be way too chatty.  I'll need to review those
-before ending another patch to add any of them
-under CONFIG_BTRFS_DEBUG.
-
-Thanks,
--Eric
-
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 9a8622a..42dc602 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -52,3 +52,13 @@ config BTRFS_FS_CHECK_INTEGRITY
- 	  In most cases, unless you are a btrfs developer who needs
- 	  to verify the integrity of (super)-block write requests
- 	  during the run of a regression test, say N
-+
-+config BTRFS_DEBUG
-+	bool "Btrfs debugging support"
-+	depends on BTRFS_FS
-+	help
-+	  Enable run-time debugging support for the btrfs filesystem. This may
-+	  enable additional and expensive checks with negative impact on
-+	  performance, or export extra information via sysfs.
-+
-+	  If unsure, say N.
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 223aa6a..6f5eda8 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -24,12 +24,62 @@
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
- 
-+#ifdef CONFIG_BTRFS_DEBUG
- static LIST_HEAD(buffers);
- static LIST_HEAD(states);
- 
--#define LEAK_DEBUG 0
--#if LEAK_DEBUG
- static DEFINE_SPINLOCK(leak_lock);
-+
-+static inline
-+void btrfs_leak_debug_add(struct list_head *new, struct list_head *head)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_add(new, head);
-+	spin_unlock_irqrestore(&leak_lock, flags);
-+}
-+
-+static inline
-+void btrfs_leak_debug_del(struct list_head *entry)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_del(entry);
-+	spin_unlock_irqrestore(&leak_lock, flags);
-+}
-+
-+static inline
-+void btrfs_leak_debug_check()
-+{
-+	struct extent_state *state;
-+	struct extent_buffer *eb;
-+
-+	while (!list_empty(&states)) {
-+		state = list_entry(states.next, struct extent_state, leak_list);
-+		printk(KERN_ERR "btrfs state leak: start %llu end %llu "
-+		       "state %lu in tree %p refs %d\n",
-+		       (unsigned long long)state->start,
-+		       (unsigned long long)state->end,
-+		       state->state, state->tree, atomic_read(&state->refs));
-+		list_del(&state->leak_list);
-+		kmem_cache_free(extent_state_cache, state);
-+	}
-+
-+	while (!list_empty(&buffers)) {
-+		eb = list_entry(buffers.next, struct extent_buffer, leak_list);
-+		printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
-+		       "refs %d\n", (unsigned long long)eb->start,
-+		       eb->len, atomic_read(&eb->refs));
-+		list_del(&eb->leak_list);
-+		kmem_cache_free(extent_buffer_cache, eb);
-+	}
-+}
-+#else
-+#define btrfs_leak_debug_add(new, head)	do {} while (0)
-+#define btrfs_leak_debug_del(entry)	do {} while (0)
-+#define btrfs_leak_debug_check(entry)	do {} while (0)
- #endif
- 
- #define BUFFER_LRU_MAX 64
-@@ -84,29 +134,7 @@ free_state_cache:
- 
- void extent_io_exit(void)
- {
--	struct extent_state *state;
--	struct extent_buffer *eb;
--
--	while (!list_empty(&states)) {
--		state = list_entry(states.next, struct extent_state, leak_list);
--		printk(KERN_ERR "btrfs state leak: start %llu end %llu "
--		       "state %lu in tree %p refs %d\n",
--		       (unsigned long long)state->start,
--		       (unsigned long long)state->end,
--		       state->state, state->tree, atomic_read(&state->refs));
--		list_del(&state->leak_list);
--		kmem_cache_free(extent_state_cache, state);
--
--	}
--
--	while (!list_empty(&buffers)) {
--		eb = list_entry(buffers.next, struct extent_buffer, leak_list);
--		printk(KERN_ERR "btrfs buffer leak start %llu len %lu "
--		       "refs %d\n", (unsigned long long)eb->start,
--		       eb->len, atomic_read(&eb->refs));
--		list_del(&eb->leak_list);
--		kmem_cache_free(extent_buffer_cache, eb);
--	}
-+	btrfs_leak_debug_check();
- 
- 	/*
- 	 * Make sure all delayed rcu free are flushed before we
-@@ -134,9 +162,6 @@ void extent_io_tree_init(struct extent_io_tree *tree,
- static struct extent_state *alloc_extent_state(gfp_t mask)
- {
- 	struct extent_state *state;
--#if LEAK_DEBUG
--	unsigned long flags;
--#endif
- 
- 	state = kmem_cache_alloc(extent_state_cache, mask);
- 	if (!state)
-@@ -144,11 +169,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- 	state->state = 0;
- 	state->private = 0;
- 	state->tree = NULL;
--#if LEAK_DEBUG
--	spin_lock_irqsave(&leak_lock, flags);
--	list_add(&state->leak_list, &states);
--	spin_unlock_irqrestore(&leak_lock, flags);
--#endif
-+	btrfs_leak_debug_add(&state->leak_list, &states);
- 	atomic_set(&state->refs, 1);
- 	init_waitqueue_head(&state->wq);
- 	trace_alloc_extent_state(state, mask, _RET_IP_);
-@@ -160,15 +181,8 @@ void free_extent_state(struct extent_state *state)
- 	if (!state)
- 		return;
- 	if (atomic_dec_and_test(&state->refs)) {
--#if LEAK_DEBUG
--		unsigned long flags;
--#endif
- 		WARN_ON(state->tree);
--#if LEAK_DEBUG
--		spin_lock_irqsave(&leak_lock, flags);
--		list_del(&state->leak_list);
--		spin_unlock_irqrestore(&leak_lock, flags);
--#endif
-+		btrfs_leak_debug_del(&state->leak_list);
- 		trace_free_extent_state(state, _RET_IP_);
- 		kmem_cache_free(extent_state_cache, state);
- 	}
-@@ -4010,12 +4024,7 @@ out:
- 
- static void __free_extent_buffer(struct extent_buffer *eb)
- {
--#if LEAK_DEBUG
--	unsigned long flags;
--	spin_lock_irqsave(&leak_lock, flags);
--	list_del(&eb->leak_list);
--	spin_unlock_irqrestore(&leak_lock, flags);
--#endif
-+	btrfs_leak_debug_del(&eb->leak_list);
- 	kmem_cache_free(extent_buffer_cache, eb);
- }
- 
-@@ -4025,9 +4034,6 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
- 						   gfp_t mask)
- {
- 	struct extent_buffer *eb = NULL;
--#if LEAK_DEBUG
--	unsigned long flags;
--#endif
- 
- 	eb = kmem_cache_zalloc(extent_buffer_cache, mask);
- 	if (eb == NULL)
-@@ -4047,11 +4053,8 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
- 	init_waitqueue_head(&eb->write_lock_wq);
- 	init_waitqueue_head(&eb->read_lock_wq);
- 
--#if LEAK_DEBUG
--	spin_lock_irqsave(&leak_lock, flags);
--	list_add(&eb->leak_list, &buffers);
--	spin_unlock_irqrestore(&leak_lock, flags);
--#endif
-+	btrfs_leak_debug_add(&eb->leak_list, &buffers);
-+
- 	spin_lock_init(&eb->refs_lock);
- 	atomic_set(&eb->refs, 1);
- 	atomic_set(&eb->io_pages, 0);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 295c888..a478250 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -116,7 +116,9 @@ struct extent_state {
- 	/* for use by the FS */
- 	u64 private;
- 
-+#ifdef CONFIG_BTRFS_DEBUG
- 	struct list_head leak_list;
-+#endif
- };
- 
- #define INLINE_EXTENT_BUFFER_PAGES 16
-@@ -132,7 +134,6 @@ struct extent_buffer {
- 	atomic_t refs;
- 	atomic_t io_pages;
- 	int read_mirror;
--	struct list_head leak_list;
- 	struct rcu_head rcu_head;
- 	pid_t lock_owner;
- 
-@@ -159,6 +160,9 @@ struct extent_buffer {
- 	wait_queue_head_t read_lock_wq;
- 	wait_queue_head_t lock_wq;
- 	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
-+#ifdef CONFIG_BTRFS_DEBUG
-+	struct list_head leak_list;
-+#endif
- };
- 
- static inline void extent_set_compress_type(unsigned long *bio_flags,
-
+kernel: [13453.696394]  [<ffffffffa00d56b5>] ? start_transaction+0x95/0x4
+60 [btrfs]
+kernel: [13453.697236]  [<ffffffffa00de004>] btrfs_finish_order
+ed_io+0x364/0x3f0 [btrfs]
+kernel: [13453.697935]  [<ffffffffa00de0a5>] fin
+ish_ordered_fn+0x15/0x20 [btrfs]
+kernel: [13453.698595]  [<ffffffffa00fee5
+6>] worker_loop+0x136/0x580 [btrfs]
+kernel: [13453.699264]  [<ffffffffa00f
+ed20>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+kernel: [13453.699893]  [<
+ffffffff81081f30>] kthread+0xc0/0xd0
+kernel: [13453.700517]  [<ffffffff810
+10000>] ? perf_trace_xen_cpu_write_gdt_entry+0xa0/0x100
+kernel: [13453.701
+116]  [<ffffffff81081e70>] ? kthread_create_on_node+0x120/0x120
+kernel: [1
+3453.701717]  [<ffffffff8165baac>] ret_from_fork+0x7c/0xb0
+kernel: [13453.
+702293]  [<ffffffff81081e70>] ? kthread_create_on_node+0x120/0x120
+kernel:
+ [13453.702857] Code: 85 7c ff ff ff 00 00 00 00 4d 89 d6 e9 76 fa ff ff 4d
+ 89 d5 c7 85 64 ff ff ff 01 00 00 00 e9 21 fc ff ff 0f 0b 0f 0b 0f 0b 0f 0b
+ <0f> 0b 0f 0b 0f 0b 45 85 c0 75 02 0f 0b 48 8d 55 ae 45 31 f6 48
+kernel: 
+[13453.704595] RIP  [<ffffffffa00e728d>] __btrfs_drop_extents+0xb9d/0xbc0 [
+btrfs]
+kernel: [13453.705176]  RSP <ffff88010e657b58>
+kernel: [13453.7074
+60] ---[ end trace 730a8ff23116a46b ]-
 

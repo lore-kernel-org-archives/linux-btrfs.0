@@ -1,58 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:57991 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752683Ab3DVOBt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 10:01:49 -0400
-Message-ID: <517542C9.9010900@redhat.com>
-Date: Mon, 22 Apr 2013 09:01:45 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:31767 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751624Ab3DVJ2W (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 05:28:22 -0400
+Message-ID: <51750326.9080905@oracle.com>
+Date: Mon, 22 Apr 2013 17:30:14 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
+To: Eric Sandeen <sandeen@redhat.com>
 CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
         Alexander Block <ablock84@googlemail.com>
-Subject: Re: [PATCH 2/2 V2] btrfs-progs: update generation_v2 in btrfs_update_root
-In-Reply-To: <51750363.5020604@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: [PATCH 1/2] btrfs-progs: set generation_v2 any time we write
+ a new root
+In-Reply-To: <5174C426.3030204@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <5174C426.3030204@redhat.com>
- <5174C704.7040603@redhat.com>
- <5174C7B9.8000802@redhat.com>
- <51750363.5020604@oracle.com>
 
-On 4/22/13 4:31 AM, Anand Jain wrote:
-> 
->>       /*
->> -    * If the btrfs-progs is newer and kernel is at
->> -    * generation_v1 then we don't touch v2 items
->> -    * otherwise when kernel is at same or greater
->> -    * version compared with btrfs-progs then update
->> -    * the needed
->> -    */
->> -    old_size = btrfs_item_size_nr(l, slot);
->> -    if (old_size >= sizeof(*item)) {
->> -        btrfs_set_root_generation_v2(item,
->> -            btrfs_root_generation(item));
->> +     * If this is the first time we update the root item which originated
->> +     * from an older kernel, we need to enlarge the item size to make room
->> +     * for the added fields.
->> +     */
->> +    if (old_len < sizeof(*item)) {
-> 
->  With this fix. when kernel is using v1 and btrfs-progs is
->  using v2, the disk structure will be changed to v2 after
->  running btrfs check. I would rather take a conservative
->  approach, by maintaining kernel intended version.
 
-If the kernel can do it, it should be safe for userspace to do it
-as well.  An old kernel will have a smaller btrfs_root_item size,
-and won't even see the new fields when it reads the roots, I think.
 
-And this has the advantage of not further diverging userspace
-from kernelspace which, as we've seen, leads to bugs.  :)
+  yeah we should set the v2 parameter at all the place where
+  we call btrfs_set_root_generation. Sorry it slipped my mind.
+  Thanks for the fix.
 
-Thanks,
--Eric
+Thanks, Anand
 
->  Thanks, Anand
 
+On 04/22/2013 01:01 PM, Eric Sandeen wrote:
+> With this integration branch commit in place:
+>
+> 2bd1169 btrfs-progs: root_item generation_v2 is out of sync after btrfsck
+>
+> I started seeing generation mismatch messages from the kernel
+> at mount time, after a fresh mkfs(!):
+>
+>    btrfs: mismatching generation and generation_v2 found in root item...
+>
+> This is because the code which emits the warning does not do so if
+> there is a mismatch but generation_v2 is 0; the above commit began
+> setting generation_v2 to something non-zero, so the warning was emitted.
+>
+> The reason there is a mismatch at all is because mkfs.btrfs calls
+> create_data_reloc_tree(), which copies a root, and then calls
+> btrfs_set_root_generation(), bumping the original copied generation.
+> But nothing updated generation_v2 to match on the way to disk.
+>
+> Fix this by updating generation_v2 in btrfs_insert_root(),
+> as is done in the kernel.
+>
+> This is safe because it's a new root created by userspace, so
+> the btrfs_root_item is guaranteed to be big enough to contain
+> generation_v2.
+>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+>
+> Another example of why we need to get userspace in sync with kernelspace...
+>
+> diff --git a/root-tree.c b/root-tree.c
+> index 4454147..1823918 100644
+> --- a/root-tree.c
+> +++ b/root-tree.c
+> @@ -105,6 +105,11 @@ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
+>   		      *item)
+>   {
+>   	int ret;
+> +
+> +	/*
+> +	 * Make sure generation v1 and v2 match. See update_root for details.
+> +	 */
+> +	btrfs_set_root_generation_v2(item, btrfs_root_generation(item));
+>   	ret = btrfs_insert_item(trans, root, key, item, sizeof(*item));
+>   	return ret;
+>   }
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

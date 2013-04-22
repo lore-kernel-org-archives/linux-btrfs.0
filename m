@@ -1,49 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60371 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752307Ab3DVO0S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 10:26:18 -0400
-Date: Mon, 22 Apr 2013 16:26:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: deal with bad mappings in btrfs_map_block
-Message-ID: <20130422142616.GO16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1366636451-2151-1-git-send-email-jbacik@fusionio.com>
+Received: from mail2.jellyfishnet.co.uk ([93.91.20.10]:54655 "EHLO
+	mail2.jellyfishnet.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755761Ab3DVOj7 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 10:39:59 -0400
+From: Mark Ridley <mark@backupsystems.co.uk>
+To: Harald Glatt <mail@hachre.de>
+CC: "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Mon, 22 Apr 2013 15:40:00 +0100
+Subject: Re: BTRFS 3.8.7 Kernel Crash Report
+Message-ID: <CD9B0A1F.3861B%mark@backupsystems.co.uk>
+In-Reply-To: <CAFWF=anspo2rMkrgFfjaooUhWprsOsPWz-j7eGME5DxzNi=Opw@mail.gmail.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366636451-2151-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 22, 2013 at 09:14:11AM -0400, Josef Bacik wrote:
-> Martin Steigerwald reported a BUG_ON() in btrfs_map_block where we didn't find
-> a chunk for a particular block we were trying to map.  This happened because the
-> block was bogus.  We shouldn't be BUG_ON()'ing in this case, just print a
-> message and return an error.  This came from reada_add_block and it appears to
-> deal with an error fine so we should be good there.  Thanks,
+Any idea when the 3.9 kernel will be out.
 
-There are various call paths that lead to __btrfs_map_block, via
-btrfs_map_block (and btrfs_map_bio).
+I see there are lots of btrfs fixes going into it.
 
-Lots of the retval checks are still marked with /* ENOMEM */ so it does
-not seem that all the paths were verified to be safe wrt EIO. After a
-quick skim I think that most of the callsites are doing proper error
-handling (and some of them continue to BUG_ON(ret < 0)) namely after the
-btrfs_map_bio handling that Stefan did. Remains to make sure that
-btrfs_map_block are also ok, sofar I don't see major problems right now.
+I'm currently running FC18 on 3.8.7, although 10 minutes ago it got
+updated to 3.8.8.
 
-As you're extending the set of return values please remove all the
-ENOMEM comments like
+On 22/04/2013 15:28, "Harald Glatt" <mail@hachre.de> wrote:
 
-btrfs_map_bio():
+>I think it won't... That would just be the goal eventually. If scrub
+>sees no errors all the data should be in tact and your best bet to get
+>things working perfectly again is to create a new filesystem and
+>transfer the data into it.
+>
+>I'm not a dev and I can't say if a btrfs-image for debugging purposes
+>would be helpful in this case or not, maybe this kind of corrution has
+>been fixed a long time ago and wouldn't happen again in up-to-date
+>versions of btrfs anyway.
+>
+>On Mon, Apr 22, 2013 at 4:24 PM, Mark Ridley <mark@backupsystems.co.uk>
+>wrote:
+>> Thanks for getting back to me.
+>>
+>> Do you think remount fixes the keys reverted problem?
+>>
+>> On 22/04/2013 15:18, "Harald Glatt" <mail@hachre.de> wrote:
+>>
+>>>Only data errors (from CRC checks), maybe also some structure errors -
+>>>I'm not sure. A remount should fix all errors. If it doesn't I think
+>>>it's considered a bug - ultimately the goal is that no --repair should
+>>>ever be required... Scrub is generally safe though, unlike btrfsck
+>>>--repair.
+>>>
+>>>On Mon, Apr 22, 2013 at 4:16 PM, Mark Ridley <mark@backupsystems.co.uk>
+>>>wrote:
+>>>> What does btrfs scrub do?
+>>>>
+>>>> Is that meant to detect and fix problems?
+>>>>
+>>>> Thanks,
+>>>>
+>>>> Mark
+>>>>
+>>>> On 22/04/2013 15:13, "Harald Glatt" <mail@hachre.de> wrote:
+>>>>
+>>>>>Yeah, --repair is not recommended as of now. Maybe posting the btrfsck
+>>>>>output just from checking would be helpful in this case.
+>>>>>
+>>>>>On Mon, Apr 22, 2013 at 4:04 PM, Mark Ridley
+>>>>><mark@backupsystems.co.uk>
+>>>>>wrote:
+>>>>>> No.
+>>>>>>
+>>>>>> Without --repair pointed out some problems, but whats the point of
+>>>>>>knowing
+>>>>>> about the problems if they can't be fixed so I ran with --repair and
+>>>>>>it
+>>>>>> broke the volume.
+>>>>>>
+>>>>>> On 22/04/2013 15:02, "Harald Glatt" <mail@hachre.de> wrote:
+>>>>>>
+>>>>>>>On Mon, Apr 22, 2013 at 4:01 PM, Mark Ridley
+>>>>>>><mark@backupsystems.co.uk>
+>>>>>>>wrote:
+>>>>>>>> Thanks, David.
+>>>>>>>>
+>>>>>>>> What causes this corruption and how can I fix it?
+>>>>>>>>
+>>>>>>>> I'm very worried about running btrfs.fsck as last time it made a
+>>>>>>>>slight
+>>>>>>>> corruption like this worse and the whole volume had to be trashed.
+>>>>>>>>
+>>>>>>>> After fsck the "available space" on df ended up being negative so
+>>>>>>>>nothing
+>>>>>>>> could be written to the volume.
+>>>>>>>>
+>>>>>>>> Mark
+>>>>>>>>
+>>>>>>>> On 22/04/2013 14:42, "David Sterba" <dsterba@suse.cz> wrote:
+>>>>>>>>
+>>>>>>>>>On Mon, Apr 22, 2013 at 01:19:41PM +0000, Mark Ridley wrote:
+>>>>>>>>>> If I then use rsync --inplace to update the images, I get a
+>>>>>>>>>>btrfs
+>>>>>>>>>>stack
+>>>>>>>>>>trace
+>>>>>>>>>> and btrfs hangs:
+>>>>>>>>>>
+>>>>>>>>>> This happens every night.
+>>>>>>>>>
+>>>>>>>>>> [<ffffffffa00bd5c1>] btrfs_set_item_key_safe+0x141/0x150 [btrfs]
+>>>>>>>>>
+>>>>>>>>>The check fails because it finds keys in reverted order. Given the
+>>>>>>>>>conditions under which it happens I think it's an on-disk
+>>>>>>>>>corruption
+>>>>>>>>>and
+>>>>>>>>>fsck should be able to at least detect it.
+>>>>>>>>>
+>>>>>>>>>david
+>>>>>>>>
+>>>>>>>> --
+>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>linux-btrfs"
+>>>>>>>>in
+>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>>
+>>>>>>>This happened without --repair?
+>>>>>>
+>>>>
+>>
 
-5278         ret = __btrfs_map_block(root->fs_info, rw, logical, &map_length, &bbio,
-5279                               mirror_num, &raid_map);
-5280         if (ret) /* -ENOMEM */
-
-so comments and code match.
-
-
-david

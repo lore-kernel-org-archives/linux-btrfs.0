@@ -1,28 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35822 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:42311 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754742Ab3DVTbA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 15:31:00 -0400
+	id S1754753Ab3DVTfF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 15:35:05 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UUMRz-00058x-5T
-	for linux-btrfs@vger.kernel.org; Mon, 22 Apr 2013 21:30:55 +0200
+	id 1UUMVz-0002i7-9O
+	for linux-btrfs@vger.kernel.org; Mon, 22 Apr 2013 21:35:03 +0200
 Received: from 88-104-247-93.dynamic.dsl.as9105.com ([88.104.247.93])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:30:55 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:35:03 +0200
 Received: from mark by 88-104-247-93.dynamic.dsl.as9105.com with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:30:55 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 21:35:03 +0200
 To: linux-btrfs@vger.kernel.org
 From: Mark Ridley <mark@backupsystems.co.uk>
-Subject: 3.8.8 fc18 kernel crash when editing a file
-Date: Mon, 22 Apr 2013 19:30:43 +0000 (UTC)
-Message-ID: <loom.20130422T212837-865@post.gmane.org>
+Subject: 3.8.8 kernel crash while editing a file
+Date: Mon, 22 Apr 2013 19:33:12 +0000 (UTC)
+Message-ID: <loom.20130422T213104-840@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Hi,
+
+This stack trace came out earlier today when I edited a file in perl
+that had a btrfs snapshot.
+
+Any idea why? or what I can do to get you more info.
+
+3.8.8-202.fc18.x86_64 
+
+The device has 21TB of used data on it.
+
+Thanks
 
 kernel: [13453.678952] ------------[ cut here ]------------
 kernel: [13453

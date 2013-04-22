@@ -1,87 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42127 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751241Ab3DVKxf (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:60135 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751435Ab3DVNNw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 06:53:35 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3MArX3j002418
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:34 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3MArXMd014959
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:33 GMT
-Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3MArWPJ005383
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:32 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: return free space in cow error path
-Date: Mon, 22 Apr 2013 18:53:47 +0800
-Message-Id: <1366628027-12682-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 22 Apr 2013 09:13:52 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 226FF7C067C
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 07:13:52 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id jZfo05p7UQSgxOQP (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 07:13:24 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix possible infinite loop in slow caching
+Date: Mon, 22 Apr 2013 09:13:21 -0400
+Message-ID: <1366636401-2066-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace some BUG_ONs with proper handling and take allocated space back to
-free space cache for later use.
+So I noticed there is an infinite loop in the slow caching code.  If we return 1
+when we hit the end of the tree, so we could end up caching the last block group
+the slow way and suddenly we're looping forever because we just keep
+re-searching and trying again.  Fix this by only doing btrfs_next_leaf() if we
+don't need_resched().  Thanks,
 
-We don't have to worry about extent maps since they'd be freed in releasepage
-path.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/inode.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b883815..f8b4efa 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -921,7 +921,8 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 		}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 12c32f9..b441be3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -419,8 +419,7 @@ again:
+ 			if (ret)
+ 				break;
  
- 		em = alloc_extent_map();
--		BUG_ON(!em); /* -ENOMEM */
-+		if (!em)
-+			goto out_reserve;
- 		em->start = start;
- 		em->orig_start = em->start;
- 		ram_size = ins.offset;
-@@ -950,11 +951,14 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 			btrfs_drop_extent_cache(inode, start,
- 						start + ram_size - 1, 0);
- 		}
-+		if (ret)
-+			goto out_reserve;
- 
- 		cur_alloc_size = ins.offset;
- 		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
- 					       ram_size, cur_alloc_size, 0);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret)
-+			goto out_reserve;
- 
- 		if (root->root_key.objectid ==
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
-@@ -962,7 +966,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 						      cur_alloc_size);
- 			if (ret) {
- 				btrfs_abort_transaction(trans, root, ret);
--				goto out_unlock;
-+				goto out_reserve;
+-			if (need_resched() ||
+-			    btrfs_next_leaf(extent_root, path)) {
++			if (need_resched()) {
+ 				caching_ctl->progress = last;
+ 				btrfs_release_path(path);
+ 				up_read(&fs_info->extent_commit_sem);
+@@ -428,6 +427,12 @@ again:
+ 				cond_resched();
+ 				goto again;
  			}
- 		}
- 
-@@ -991,6 +995,8 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- out:
- 	return ret;
- 
-+out_reserve:
-+	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
- out_unlock:
- 	extent_clear_unlock_delalloc(inode,
- 		     &BTRFS_I(inode)->io_tree,
++
++			ret = btrfs_next_leaf(extent_root, path);
++			if (ret < 0)
++				goto err;
++			if (ret)
++				break;
+ 			leaf = path->nodes[0];
+ 			nritems = btrfs_header_nritems(leaf);
+ 			continue;
 -- 
 1.7.7.6
 

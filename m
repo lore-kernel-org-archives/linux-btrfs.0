@@ -1,41 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:13988 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751310Ab3DSSNV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Apr 2013 14:13:21 -0400
-Message-ID: <51718941.2010800@redhat.com>
-Date: Fri, 19 Apr 2013 11:13:21 -0700
-From: Andy Grover <agrover@redhat.com>
-MIME-Version: 1.0
-To: Suman C <schakrava@gmail.com>
-CC: Roman Mamedov <rm@romanrm.ru>, "Fajar A. Nugraha" <list@fajar.net>,
-        Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: lvm volume like support
-References: <CAPF83msjTJWjWJgJOAWsQ2GoxAC-cZ4GkK_+H11tAyA689KD_w@mail.gmail.com> <CAMU1PDhQqm6s5FUbVJa5nwOD4Ewf-6Cr2gx2khHHwrBxUqsQDA@mail.gmail.com> <CAG1y0scOg2QGCZdCTkKHBn5xxNh5GGmdXTcS8rOesup4r1JsXQ@mail.gmail.com> <CAPF83mvfLrDvBvbP5Oe_R94BM7Lr5pZD=gpnDrr4TquBq88q5Q@mail.gmail.com> <20130226115704.50102196@natsu> <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com>
-In-Reply-To: <CAPF83mv2qVqE5HnXVr9P8JHqs4+DKjt0hWaR8UG6Kk4reyPsAw@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from userp1040.oracle.com ([156.151.31.81]:42127 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751241Ab3DVKxf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 06:53:35 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3MArX3j002418
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:34 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3MArXMd014959
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:33 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3MArWPJ005383
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 10:53:32 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: return free space in cow error path
+Date: Mon, 22 Apr 2013 18:53:47 +0800
+Message-Id: <1366628027-12682-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/25/2013 10:25 PM, Suman C wrote:
-> Thanks for the sparse file idea, I am actually using that solution
-> already. I am not sure if its the best way, however.
+Replace some BUG_ONs with proper handling and take allocated space back to
+free space cache for later use.
 
-(Sorry to respond to such an old thread.)
+We don't have to worry about extent maps since they'd be freed in releasepage
+path.
 
-Hi Suman,
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
-I think zvol-like functionality would be very nice for btrfs to have. It 
-would be more natural to manage btrvols than looped-back files I think, 
-and removing those sw layers may also increase performance, but who 
-knows by how much. It would let btrfs really act as "just" the LVM, if 
-desired.
-
-Do we have any sense for how much work adding this would be?
-
-Regards -- Andy
-
-p.s. some interesting stuff on zvols 
-http://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b883815..f8b4efa 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -921,7 +921,8 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		em = alloc_extent_map();
+-		BUG_ON(!em); /* -ENOMEM */
++		if (!em)
++			goto out_reserve;
+ 		em->start = start;
+ 		em->orig_start = em->start;
+ 		ram_size = ins.offset;
+@@ -950,11 +951,14 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ 			btrfs_drop_extent_cache(inode, start,
+ 						start + ram_size - 1, 0);
+ 		}
++		if (ret)
++			goto out_reserve;
+ 
+ 		cur_alloc_size = ins.offset;
+ 		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
+ 					       ram_size, cur_alloc_size, 0);
+-		BUG_ON(ret); /* -ENOMEM */
++		if (ret)
++			goto out_reserve;
+ 
+ 		if (root->root_key.objectid ==
+ 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+@@ -962,7 +966,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ 						      cur_alloc_size);
+ 			if (ret) {
+ 				btrfs_abort_transaction(trans, root, ret);
+-				goto out_unlock;
++				goto out_reserve;
+ 			}
+ 		}
+ 
+@@ -991,6 +995,8 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ out:
+ 	return ret;
+ 
++out_reserve:
++	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
+ out_unlock:
+ 	extent_clear_unlock_delalloc(inode,
+ 		     &BTRFS_I(inode)->io_tree,
+-- 
+1.7.7.6
 

@@ -1,49 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46893 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752396Ab3DUWKq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Apr 2013 18:10:46 -0400
-Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r3LMAk3K001531
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Apr 2013 18:10:46 -0400
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r3LMAikH027970
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Apr 2013 18:10:45 -0400
-Message-ID: <517463E4.7040400@redhat.com>
-Date: Sun, 21 Apr 2013 17:10:44 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:32325 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754721Ab3DVJ3S (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 05:29:18 -0400
+Message-ID: <51750363.5020604@oracle.com>
+Date: Mon, 22 Apr 2013 17:31:15 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/2] btrfs-progs: standardize utility filenames and add default
- rules to Makefile
-Content-Type: text/plain; charset=ISO-8859-1
+To: Eric Sandeen <sandeen@redhat.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Alexander Block <ablock84@googlemail.com>
+Subject: Re: [PATCH 2/2 V2] btrfs-progs: update generation_v2 in btrfs_update_root
+In-Reply-To: <5174C7B9.8000802@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <5174C426.3030204@redhat.com>
+ <5174C704.7040603@redhat.com>
+ <5174C7B9.8000802@redhat.com>
 
-2 patches here.
 
-The first renames the single .c files which are built into btrfs-$FOO
-commands - previously we built i.e. btrfs-calc-size from calc-size.c
+>   	/*
+> -	* If the btrfs-progs is newer and kernel is at
+> -	* generation_v1 then we don't touch v2 items
+> -	* otherwise when kernel is at same or greater
+> -	* version compared with btrfs-progs then update
+> -	* the needed
+> -	*/
+> -	old_size = btrfs_item_size_nr(l, slot);
+> -	if (old_size >= sizeof(*item)) {
+> -		btrfs_set_root_generation_v2(item,
+> -			btrfs_root_generation(item));
+> +	 * If this is the first time we update the root item which originated
+> +	 * from an older kernel, we need to enlarge the item size to make room
+> +	 * for the added fields.
+> +	 */
+> +	if (old_len < sizeof(*item)) {
 
-IMHO this helps separate out which files are main command-type
-files, and which are not.  (Eventually I hope to move things
-into subdirs to organize a bit more).
+  With this fix. when kernel is using v1 and btrfs-progs is
+  using v2, the disk structure will be changed to v2 after
+  running btrfs check. I would rather take a conservative
+  approach, by maintaining kernel intended version.
 
-Then, after renaming i.e. calc-size.c to  btrfs-calc-size.c we can
-write a simpler default rule for these utilities (patch 2/2).
-
-The default static rule is handy because it'll automatically build
-i.e. "make btrfs-image.static" or "make btrfs-calc-size.static"
-if you need them.
-
-I think this is a net win, with a bit less Makefile code
-duplication, but if people don't like it, no big deal.  I was hoping
-to clean up & re-organize the userspace build a little, and this
-seems like a decent first step along the way.
-
-Comments welcome, especially from people who are better at Make than
-I am.  ;)  And if this is two clever by half I'm not wedded to it.
-
--Eric
+  Thanks, Anand

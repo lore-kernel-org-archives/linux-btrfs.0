@@ -1,76 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:31211 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753602Ab3DVChD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Apr 2013 22:37:03 -0400
-Message-ID: <5174A2A9.9060709@cn.fujitsu.com>
-Date: Mon, 22 Apr 2013 10:38:33 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from cantor2.suse.de ([195.135.220.15]:34375 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752194Ab3DVPFN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 11:05:13 -0400
+Date: Mon, 22 Apr 2013 17:05:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: make static code static & remove dead code
+Message-ID: <20130422150511.GP16427@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <51719932.6010406@redhat.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Btrfs: use a lock to protect incompat/compat flag
- of the super block
-References: <516690B8.8020904@cn.fujitsu.com> <20130417221710.GD16427@twin.jikos.cz>
-In-Reply-To: <20130417221710.GD16427@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <51719932.6010406@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	thu, 18 Apr 2013 00:17:11 +0200, David Sterba wrote:
-> On Thu, Apr 11, 2013 at 06:30:16PM +0800, Miao Xie wrote:
->> In order to avoid this problem, we introduce a lock named super_lock into
->> the btrfs_fs_info structure. If we want to update incompat/compat flags
->> of the super block, we must hold it.
->>
->> +	/*
->> +	 * Used to protect the incompat_flags, compat_flags, compat_ro_flags
->> +	 * when they are updated.
-> 
->> +	spinlock_t super_lock;
-> 
-> The lock name is too general for protecting just *_flags, do you have
-> plans to add more items from superblock under this lock?  If no, I
-> suggest to pick a different name.
+On Fri, Apr 19, 2013 at 12:21:22PM -0700, Eric Sandeen wrote:
+> Big patch, but all it does is add statics to functions which
+> are in fact static, then remove the associated dead-code fallout.
 
-Yes, I want to add more items from super block under this lock.
+I support removing dead code, though nearly all of the functions make me
+wonder why they're not used. A few samples I see immediatelly:
 
-> 
->> @@ -3663,8 +3674,15 @@ static inline void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info,
->>  	disk_super = fs_info->super_copy;
->>  	features = btrfs_super_incompat_flags(disk_super);
->>  	if (!(features & flag)) {
->> -		features |= flag;
->> -		btrfs_set_super_incompat_flags(disk_super, features);
->> +		spin_lock(&fs_info->super_lock);
->> +		features = btrfs_super_incompat_flags(disk_super);
->> +		if (!(features & flag)) {
->> +			features |= flag;
->> +			btrfs_set_super_incompat_flags(disk_super, features);
->> +			printk(KERN_INFO "btrfs: setting %llu feature flag\n",
->> +					 flag);
-> 
-> flag is u64, please use (unsigned long long)flag and possibly the new
-> btrfs_info replacement of printks.
+> btrfs_iref_to_path()
 
-OK, I'll modify my patch.
+The removed comment looks useful, I'd rather see it transferred to a
+function with similar goal (that probably got a different name during
+time).
 
-Thanks for your view.
+> __btrfs_lookup_delayed_deletion_item()
+> __btrfs_search_delayed_insertion_item()
+> __btrfs_search_delayed_deletion_item()
+> find_eb_for_page()
+> btrfs_find_block_group()
+> range_straddles_pages()
+> extent_range_uptodate()
+> btrfs_file_extent_length()
+> btrfs_reada_detach()
 
-Miao
+That's an API for readahead, thhugh maybe not used now as RA is not used
+and at all scenarios where it could.
 
-> 
->> +		}
->> +		spin_unlock(&fs_info->super_lock);
->>  	}
->>  }
-> 
-> otherwise ok.
-> 
-> Reviewed-by: David Sterba <dsterba@suse.cz>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> btrfs_scrub_cancel_devid()
 
+Looks like there's a missing userspace counterpart, cancelling scrub by
+device is possible by design.
+
+> btrfs_start_transaction_lflush()
+
+Transcaction API, removing the func does not make sense without removing
+BTRFS_RESERVE_FLUSH_LIMIT at the same time.
+
+david

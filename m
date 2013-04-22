@@ -1,110 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:19399 "EHLO mx1.redhat.com"
+Received: from xp-ob.rzone.de ([81.169.146.137]:28152 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750867Ab3DVFQp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 01:16:45 -0400
-Message-ID: <5174C7B9.8000802@redhat.com>
-Date: Mon, 22 Apr 2013 00:16:41 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Anand Jain <anand.jain@oracle.com>,
-        Alexander Block <ablock84@googlemail.com>
-Subject: [PATCH 2/2 V2] btrfs-progs: update generation_v2 in btrfs_update_root
-In-Reply-To: <5174C704.7040603@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1751264Ab3DVKRy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Apr 2013 06:17:54 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by josoe.store (josoe xp1) (RZmta 31.27 OK)
+	with ESMTP id X075dfp3LHquVV for <linux-btrfs@vger.kernel.org>;
+	Mon, 22 Apr 2013 12:17:51 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: btrfs-crc: support specifying checksum in hex
+Date: Mon, 22 Apr 2013 12:17:51 +0200
+Message-Id: <1366625871-7228-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <5174C426.3030204@redhat.com>
- <5174C704.7040603@redhat.com>
 
-This addresses the same issue as did:
-
-2bd1169 btrfs-progs: root_item generation_v2 is out of sync after btrfsck
-
-but rather than optionally updating generation_v2 based
-on the size of the existing item, increase the size of the
-item as needed, and unconditionally set generation_v2.
-This matches the kernel code, and keeping things in sync is a
-Good Thing.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
+ btrfs-crc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-V2: give it a better, more descriptive subject/summary
-
-kdave - since you already had Anand's patch on the integration
-branch, I dunno if you want to add this on top, or just replace
-it with a similar patch to this, up to you.
-
-Thanks!
--Eric
-
-diff --git a/root-tree.c b/root-tree.c
-index 1823918..902d75d 100644
---- a/root-tree.c
-+++ b/root-tree.c
-@@ -69,7 +69,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	int ret;
- 	int slot;
- 	unsigned long ptr;
--	u32 old_size;
-+	u32 old_len;
- 
- 	path = btrfs_alloc_path();
- 	BUG_ON(!path);
-@@ -80,18 +80,42 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	l = path->nodes[0];
- 	slot = path->slots[0];
- 	ptr = btrfs_item_ptr_offset(l, slot);
-+	old_len = btrfs_item_size_nr(l, slot);
-+
- 	/*
--	* If the btrfs-progs is newer and kernel is at
--	* generation_v1 then we don't touch v2 items
--	* otherwise when kernel is at same or greater
--	* version compared with btrfs-progs then update
--	* the needed
--	*/
--	old_size = btrfs_item_size_nr(l, slot);
--	if (old_size >= sizeof(*item)) {
--		btrfs_set_root_generation_v2(item,
--			btrfs_root_generation(item));
-+	 * If this is the first time we update the root item which originated
-+	 * from an older kernel, we need to enlarge the item size to make room
-+	 * for the added fields.
-+	 */
-+	if (old_len < sizeof(*item)) {
-+		btrfs_release_path(root, path);
-+		ret = btrfs_search_slot(trans, root, key, path,
-+				-1, 1);
-+		if (ret < 0) {
-+			goto out;
-+		}
-+
-+		ret = btrfs_del_item(trans, root, path);
-+		if (ret < 0) {
-+			goto out;
-+		}
-+		btrfs_release_path(root, path);
-+		ret = btrfs_insert_empty_item(trans, root, path,
-+				key, sizeof(*item));
-+		if (ret < 0) {
-+			goto out;
-+		}
-+		l = path->nodes[0];
-+		slot = path->slots[0];
-+		ptr = btrfs_item_ptr_offset(l, slot);
- 	}
-+
-+	/*
-+	 * Update generation_v2 so at the next mount we know the new root
-+	 * fields are valid.
-+	 */
-+	btrfs_set_root_generation_v2(item, btrfs_root_generation(item));
-+
- 	write_extent_buffer(l, item, ptr, sizeof(*item));
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- out:
-
+diff --git a/btrfs-crc.c b/btrfs-crc.c
+index 6e21a0e..e4cda43 100644
+--- a/btrfs-crc.c
++++ b/btrfs-crc.c
+@@ -49,7 +49,7 @@ int main(int argc, char **argv)
+ 			length = atol(optarg);
+ 			break;
+ 		case 'c':
+-			checksum = atol(optarg);
++			sscanf(optarg, "%li", &checksum);
+ 			loop = 1;
+ 			break;
+ 		case 's':
+-- 
+1.8.2.1
 

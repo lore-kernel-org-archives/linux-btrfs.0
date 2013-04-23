@@ -1,66 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:51290 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:51478 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754898Ab3DWOy7 (ORCPT
+	with ESMTP id S1755856Ab3DWPJ5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Apr 2013 10:54:59 -0400
+	Tue, 23 Apr 2013 11:09:57 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 206359A033F
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2013 08:54:56 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id SRCgqvKeItvm0CXS (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2013 08:54:55 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id CCFAA9A041C
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2013 09:09:56 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id M7Lpeia0qkCXnL7W (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2013 09:09:56 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't BUG_ON() in btrfs_num_copies
-Date: Tue, 23 Apr 2013 10:54:53 -0400
-Message-ID: <1366728893-1529-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: don't try and free ebs twice in log replay
+Date: Tue, 23 Apr 2013 11:09:54 -0400
+Message-ID: <1366729794-1542-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user sent me a btrfs-image that was panicing because of some corruption.  This
-is because we pass in a bogus value to btrfs_num_copies, and it panics.  Instead
-just return 1.  We only call btrfs_num_copies to see if there are other copies
-to try and read for things, so if we just return 1 it will make the callers exit
-out with an appropriate error value.  Thanks,
+This work is done by btrfs_free_path() anyway so there's no need for this
+duplicate work.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/volumes.c |   20 ++++++++++++++++++--
- 1 files changed, 18 insertions(+), 2 deletions(-)
+ fs/btrfs/tree-log.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c8a315d..c1a2217 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4232,9 +4232,25 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	read_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, logical, len);
- 	read_unlock(&em_tree->lock);
--	BUG_ON(!em);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 52287ec..1fdc221 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2161,7 +2161,6 @@ static int walk_log_tree(struct btrfs_trans_handle *trans,
+ 	int wret;
+ 	int level;
+ 	struct btrfs_path *path;
+-	int i;
+ 	int orig_level;
  
--	BUG_ON(em->start > logical || em->start + em->len < logical);
-+	/*
-+	 * We could return errors for these cases, but that could get ugly and
-+	 * we'd probably do the same thing which is just not do anything else
-+	 * and exit, so return 1 so the callers don't try to use other copies.
-+	 */
-+	if (!em) {
-+		btrfs_emerg(fs_info, "No mapping for %Lu-%Lu\n", logical,
-+			    logical+len);
-+		return 1;
-+	}
-+
-+	if (em->start > logical || em->start + em->len < logical) {
-+		btrfs_emerg(fs_info, "Invalid mapping for %Lu-%Lu, got "
-+			    "%Lu-%Lu\n", logical, logical+len, em->start,
-+			    em->start + em->len);
-+		return 1;
-+	}
-+
- 	map = (struct map_lookup *)em->bdev;
- 	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
- 		ret = map->num_stripes;
+ 	path = btrfs_alloc_path();
+@@ -2218,12 +2217,6 @@ static int walk_log_tree(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ out:
+-	for (i = 0; i <= orig_level; i++) {
+-		if (path->nodes[i]) {
+-			free_extent_buffer(path->nodes[i]);
+-			path->nodes[i] = NULL;
+-		}
+-	}
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
 1.7.7.6
 

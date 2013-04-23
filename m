@@ -1,44 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60562 "EHLO mx2.suse.de"
+Received: from brockman.in8.de ([85.214.220.56]:43322 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752214Ab3DWRFQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Apr 2013 13:05:16 -0400
-Date: Tue, 23 Apr 2013 19:05:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V3] btrfs: move leak debug code to functions
-Message-ID: <20130423170513.GX16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <517387F8.506@redhat.com>
- <5175616F.1010007@redhat.com>
+	id S1756695Ab3DWR2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Apr 2013 13:28:40 -0400
+Message-ID: <5176C4C4.3050500@jan-o-sch.net>
+Date: Tue, 23 Apr 2013 19:28:36 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5175616F.1010007@redhat.com>
+To: dsterba@suse.cz, chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        wangshilong1991@gmail.com
+Subject: Re: [PATCH v3 3/3] Btrfs: automatic rescan after "quota enable" command
+References: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net> <1366716411-9750-4-git-send-email-list.btrfs@jan-o-sch.net> <20130423153623.GT16427@twin.jikos.cz>
+In-Reply-To: <20130423153623.GT16427@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 22, 2013 at 11:12:31AM -0500, Eric Sandeen wrote:
-> Clean up the leak debugging in extent_io.c by moving
-> the debug code into functions.  This also removes the
-> list_heads used for debugging from the extent_buffer
-> and extent_state structures when debug is not enabled.
+On Tue, April 23, 2013 at 17:36 (+0200), David Sterba wrote:
+> On Tue, Apr 23, 2013 at 01:26:51PM +0200, Jan Schmidt wrote:
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -1494,10 +1494,14 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+>>  {
+>>  	struct btrfs_root *quota_root = fs_info->quota_root;
+>>  	int ret = 0;
+>> +	int start_rescan_worker = 0;
+>>  
+>>  	if (!quota_root)
+>>  		goto out;
+>>  
+>> +	if (!fs_info->quota_enabled && fs_info->pending_quota_state)
+>> +		start_rescan_worker = 1;
+>> +
+>>  	fs_info->quota_enabled = fs_info->pending_quota_state;
+>>  
+>>  	spin_lock(&fs_info->qgroup_lock);
+>> @@ -1523,6 +1527,12 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+>>  	if (ret)
+>>  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+>>  
+>> +	if (start_rescan_worker) {
+>> +		ret = btrfs_qgroup_rescan(fs_info);
 > 
-> Since we need a global debug config to do that last
-> part, implement CONFIG_BTRFS_DEBUG to accommodate.
+> btrfs_run_qgroups() is called from transaction commit and does BUG_ON
+> the return value.
 > 
-> Thanks to Dave Sterba for the Kconfig bit.
+> btrfs_qgroup_rescan can return -EINPROGRESS if the rescan is in progress
+> and this is propagated back to trans commit. So the rescan triggered by
+> ioctl may cause a crash, unless I'm missing something.
+
+You're right, doesn't seem like a good idea to propagate that return value to
+the caller. I'll leave in the printk following the quoted line and reset ret to
+zero afterwards. (As already mentioned, v4 to come)
+
+Thanks,
+Jan
+
+
+> The original question I've had is what sort of work does rescan do
+> because it's on the commit path and we don't want to add more work and
+> delay commit.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
-
-> Now we can move other #ifdef DEBUG under this same
-> config, but not all of them; some look like they
-> would be way too chatty.  I'll need to review those
-> before ending another patch to add any of them
-> under CONFIG_BTRFS_DEBUG.
-
-Agreed. The number of extra checks should be reasonable so the fs is still
-usable.
-
-david

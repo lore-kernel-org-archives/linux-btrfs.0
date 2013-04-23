@@ -1,50 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx4-phx2.redhat.com ([209.132.183.25]:57942 "EHLO
-	mx4-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756928Ab3DWQtg convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Apr 2013 12:49:36 -0400
-Content-Type: text/plain;
-	charset=us-ascii
-Subject: Re: [PATCH 0/2] btrfs-progs: standardize utility filenames and add default rules to Makefile
-References: <517463E4.7040400@redhat.com> <20130423160930.GV16427@twin.jikos.cz>
-From: Eric Sandeen <esandeen@redhat.com>
+Received: from cantor2.suse.de ([195.135.220.15]:33101 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756542Ab3DWRZH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Apr 2013 13:25:07 -0400
+Date: Tue, 23 Apr 2013 19:25:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: add function to map subvol ID to path
+Message-ID: <20130423172505.GY16427@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1366712335-13322-1-git-send-email-sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-In-Reply-To: <20130423160930.GV16427@twin.jikos.cz>
-Message-Id: <A4CB3585-D6EC-4FB2-BD7B-8A844FE1C583@redhat.com>
-Date: Tue, 23 Apr 2013 12:48:54 -0400 (EDT)
-To: "dsterba@suse.cz" <dsterba@suse.cz>
-Cc: Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1366712335-13322-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Apr 23, 2013, at 11:09 AM, David Sterba <dsterba@suse.cz> wrote:
+On Tue, Apr 23, 2013 at 12:18:55PM +0200, Stefan Behrens wrote:
+> Several tools like btrfs-send and btrfs-receive need to map a
+> subvolume ID to a filesystem path. The so far existing methods
+> in btrfs-list.c cause a horrible effort when performing this
+> operation (and the effort is dependent on the number of
+> existing subvolumes with quadratic effort). This commit adds a
+> function that is able to map a subvolume ID to a filesystem path
+> with an effort that is independent of the number of existing
+> subvolumes.
+> 
+> In addition to this function, a command line frontend is added as well:
+> btrfs inspect-internal subvolid-resolve <subvolid> <path>
 
-> On Sun, Apr 21, 2013 at 05:10:44PM -0500, Eric Sandeen wrote:
->> 2 patches here.
-> 
-> I see only
-> 
-> [PATCH 2/2] btrfs-progs: Add default rules to Makefile
-> 
-> in my mbox that's threaded under the 0/2 cover mail.
-> 
-I must have run into a size limit on the server... Let me double check on the rename behavior which should make it smaller, I think?
+Nice. The 'inspect' section is imo right for such simple lookup.
 
-Eric
+We could possibly extend it to print the path relative to the current
+default or currently mounted subvol, or teach 'subvol show' to accept
+subvol ids as well.
 
-
->> I think this is a net win, with a bit less Makefile code
->> duplication, but if people don't like it, no big deal.  I was hoping
->> to clean up & re-organize the userspace build a little, and this
->> seems like a decent first step along the way.
-> 
-> Looks ok to me, the rule duplication was obvious and asking for a
-> cleanup.
-> 
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+david

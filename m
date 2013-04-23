@@ -1,38 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36906 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755223Ab3DVUiG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 16:38:06 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id EBE067C04D8
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2013 14:38:05 -0600 (MDT)
-Date: Mon, 22 Apr 2013 16:37:40 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Mark Ridley <mark@backupsystems.co.uk>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: 3.8.8 kernel crash while editing a file
-Message-ID: <20130422203740.GC2631@localhost.localdomain>
-References: <loom.20130422T213104-840@post.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <loom.20130422T213104-840@post.gmane.org>
+Received: from xp-ob.rzone.de ([81.169.146.141]:47386 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754522Ab3DWL1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Apr 2013 07:27:05 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Cc: wangshilong1991@gmail.com, dsterba@suse.cz
+Subject: [PATCH v3 3/3] Btrfs: automatic rescan after "quota enable" command
+Date: Tue, 23 Apr 2013 13:26:51 +0200
+Message-Id: <1366716411-9750-4-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 22, 2013 at 01:33:12PM -0600, Mark Ridley wrote:
-> Hi,
-> 
-> This stack trace came out earlier today when I edited a file in perl
-> that had a btrfs snapshot.
-> 
-> Any idea why? or what I can do to get you more info.
-> 
-> 3.8.8-202.fc18.x86_64 
-> 
-> The device has 21TB of used data on it.
-> 
+When qgroup tracking is enabled, we do an automatic cycle of the new rescan
+mechanism.
 
-Can you run btrfsck on the fs and see if it complains about anything?  Thanks,
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/qgroup.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 249dd64..b1ae0ab 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1494,10 +1494,14 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_root *quota_root = fs_info->quota_root;
+ 	int ret = 0;
++	int start_rescan_worker = 0;
+ 
+ 	if (!quota_root)
+ 		goto out;
+ 
++	if (!fs_info->quota_enabled && fs_info->pending_quota_state)
++		start_rescan_worker = 1;
++
+ 	fs_info->quota_enabled = fs_info->pending_quota_state;
+ 
+ 	spin_lock(&fs_info->qgroup_lock);
+@@ -1523,6 +1527,12 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 
++	if (start_rescan_worker) {
++		ret = btrfs_qgroup_rescan(fs_info);
++		if (ret)
++			pr_err("btrfs: start rescan quota failed: %d\n", ret);
++	}
++
+ out:
+ 
+ 	return ret;
+-- 
+1.7.1
+

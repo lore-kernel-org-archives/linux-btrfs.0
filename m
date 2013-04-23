@@ -1,67 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:43322 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756695Ab3DWR2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Apr 2013 13:28:40 -0400
-Message-ID: <5176C4C4.3050500@jan-o-sch.net>
-Date: Tue, 23 Apr 2013 19:28:36 +0200
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:43654 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756762Ab3DWReW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Apr 2013 13:34:22 -0400
+Message-ID: <5176C5EC.5020209@jan-o-sch.net>
+Date: Tue, 23 Apr 2013 19:33:32 +0200
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: dsterba@suse.cz, chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        wangshilong1991@gmail.com
-Subject: Re: [PATCH v3 3/3] Btrfs: automatic rescan after "quota enable" command
-References: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net> <1366716411-9750-4-git-send-email-list.btrfs@jan-o-sch.net> <20130423153623.GT16427@twin.jikos.cz>
-In-Reply-To: <20130423153623.GT16427@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+        Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Subject: Re: [PATCH v3 2/3] Btrfs: rescan for qgroups
+References: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net> <1366716411-9750-3-git-send-email-list.btrfs@jan-o-sch.net> <28CF59DE-A74D-4CC4-BBA1-FCD0503EE7BD@gmail.com>
+In-Reply-To: <28CF59DE-A74D-4CC4-BBA1-FCD0503EE7BD@gmail.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, April 23, 2013 at 17:36 (+0200), David Sterba wrote:
-> On Tue, Apr 23, 2013 at 01:26:51PM +0200, Jan Schmidt wrote:
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -1494,10 +1494,14 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
->>  {
->>  	struct btrfs_root *quota_root = fs_info->quota_root;
->>  	int ret = 0;
->> +	int start_rescan_worker = 0;
+On Tue, April 23, 2013 at 16:54 (+0200), Wang Shilong wrote:
+> 
+> Hello Jan,
+> 
 >>  
->>  	if (!quota_root)
->>  		goto out;
->>  
->> +	if (!fs_info->quota_enabled && fs_info->pending_quota_state)
->> +		start_rescan_worker = 1;
+>> +static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+>> +{
+>> +	struct qgroup_rescan *qscan = container_of(work, struct qgroup_rescan,
+>> +						   work);
+>> +	struct btrfs_path *path;
+>> +	struct btrfs_trans_handle *trans = NULL;
+>> +	struct btrfs_fs_info *fs_info = qscan->fs_info;
+>> +	struct ulist *tmp = NULL;
+>> +	struct extent_buffer *scratch_leaf = NULL;
+>> +	int err = -ENOMEM;
 >> +
->>  	fs_info->quota_enabled = fs_info->pending_quota_state;
->>  
->>  	spin_lock(&fs_info->qgroup_lock);
->> @@ -1523,6 +1527,12 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
->>  	if (ret)
->>  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
->>  
->> +	if (start_rescan_worker) {
->> +		ret = btrfs_qgroup_rescan(fs_info);
-> 
-> btrfs_run_qgroups() is called from transaction commit and does BUG_ON
-> the return value.
-> 
-> btrfs_qgroup_rescan can return -EINPROGRESS if the rescan is in progress
-> and this is propagated back to trans commit. So the rescan triggered by
-> ioctl may cause a crash, unless I'm missing something.
+>> +	path = btrfs_alloc_path();
+>> +	if (!path)
+>> +		goto out;
+>> +	tmp = ulist_alloc(GFP_NOFS);
+>> +	if (!tmp)
+>> +		goto out;
+>> +	scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
+>> +	if (!scratch_leaf)
+>> +		goto out;
+>> +
+>> +	err = 0;
+>> +	while (!err) {
+>> +		trans = btrfs_start_transaction(fs_info->fs_root, 0);
+>> +		if (IS_ERR(trans)) {
+>> +			err = PTR_ERR(trans);
+>> +			break;
+>> +		}
+>> +		if (!fs_info->quota_enabled) {
+>> +			err = EINTR;'
+> 				Why not -EINTR?
 
-You're right, doesn't seem like a good idea to propagate that return value to
-the caller. I'll leave in the printk following the quoted line and reset ret to
-zero afterwards. (As already mentioned, v4 to come)
+Makes sense, will change that.
+
+>> +		} else {
+>> +			err = qgroup_rescan_leaf(qscan, path, trans,
+>> +						 tmp, scratch_leaf);
+>> +		}
+>> +		if (err > 0)
+>> +			btrfs_commit_transaction(trans, fs_info->fs_root);
+>> +		else
+>> +			btrfs_end_transaction(trans, fs_info->fs_root);
+>> +	}
+>> +
+>> +out:
+>> +	kfree(scratch_leaf);
+>> +	ulist_free(tmp);
+>> +	btrfs_free_path(path);
+>> +	kfree(qscan);
+>> +
+>> +	mutex_lock(&fs_info->qgroup_rescan_lock);
+>> +	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+>> +
+>> +	if (err == 2 &&
+>> +	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
+>> +		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+>> +	} else if (err < 0) {
+> 
+> It -EINTR happens, quota has been disabled, i don't think we should set INCONSISTENT flag¡­
+
+Debatable. Quota information is in fact inconsistent on disk, and only because
+we can conclude that also from the fact that it is currently disabled, it
+doesn't hurt to set that flag. In fact, whenever quota is enabled, we're setting
+the flag, too:
+
+ 802 int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 803                        struct btrfs_fs_info *fs_info)
+...
+ 852         fs_info->qgroup_flags = BTRFS_QGROUP_STATUS_FLAG_ON |
+ 853                                 BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+
+So I don't think it's worth another comparison here.
 
 Thanks,
-Jan
+-Jan
 
-
-> The original question I've had is what sort of work does rescan do
-> because it's on the commit path and we don't want to add more work and
-> delay commit.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Thanks,
+> Wang
+> 
+>> +		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+>> +	}
+>> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
+>> +
+>> +	if (err >= 0) {
+>> +		pr_info("btrfs: qgroup scan completed%s\n",
+>> +			err == 2 ? " (inconsistency flag cleared)" : "");
+>> +	} else {
+>> +		pr_err("btrfs: qgroup scan failed with %d\n", err);
+>> +	}
+>> +}
+>> +
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 

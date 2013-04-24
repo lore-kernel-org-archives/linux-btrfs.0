@@ -1,244 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29505 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757682Ab3DXIRg (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.180]:52698 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757781Ab3DXI0Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 04:17:36 -0400
-Date: Wed, 24 Apr 2013 16:17:48 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix all callers of read_tree_block
-Message-ID: <20130424081747.GF19283@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
+	Wed, 24 Apr 2013 04:26:24 -0400
+Message-ID: <5177972C.8040009@jan-o-sch.net>
+Date: Wed, 24 Apr 2013 10:26:20 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
+To: bo.li.liu@oracle.com
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: separate sequence numbers for delayed ref tracking
+ and tree mod log
+References: <1366740027-27627-1-git-send-email-list.btrfs@jan-o-sch.net> <20130424081236.GE19283@liubo.jp.oracle.com>
+In-Reply-To: <20130424081236.GE19283@liubo.jp.oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 23, 2013 at 02:20:22PM -0400, Josef Bacik wrote:
-> We kept leaking extent buffers when mounting a broken file system and it turns
-> out it's because not everybody uses read_tree_block properly.  You need to check
-> and make sure the extent_buffer is uptodate before you use it.  This patch fixes
-> everybody who calls read_tree_block directly to make sure they check that it is
-> uptodate and free it and return an error if it is not.  With this we no longer
-> leak EB's when things go horribly wrong.  Thanks,
-
-What about hook the check into read_tree_block()?
-
-That way we can save much efforts.
-
-thanks,
-liubo
-
+On Wed, April 24, 2013 at 10:12 (+0200), Liu Bo wrote:
+> On Tue, Apr 23, 2013 at 08:00:27PM +0200, Jan Schmidt wrote:
+>> Sequence numbers for delayed refs have been introduced in the first version
+>> of the qgroup patch set. To solve the problem of find_all_roots on a busy
+>> file system, the tree mod log was introduced. The sequence numbers for that
+>> were simply shared between those two users.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/backref.c     |   10 ++++++++--
->  fs/btrfs/ctree.c       |   21 ++++++++++++++++-----
->  fs/btrfs/disk-io.c     |   19 +++++++++++++++++--
->  fs/btrfs/extent-tree.c |    4 +++-
->  fs/btrfs/relocation.c  |   18 +++++++++++++++---
->  5 files changed, 59 insertions(+), 13 deletions(-)
+> Can't we just separate them with two vars?
+
+My reasoning comes a few lines below ...
+
+> thanks,
+> liubo
 > 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 23e927b..04b5b30 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -423,7 +423,10 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
->  		BUG_ON(!ref->wanted_disk_byte);
->  		eb = read_tree_block(fs_info->tree_root, ref->wanted_disk_byte,
->  				     fs_info->tree_root->leafsize, 0);
-> -		BUG_ON(!eb);
-> +		if (!eb || !extent_buffer_uptodate(eb)) {
-> +			free_extent_buffer(eb);
-> +			return -EIO;
-> +		}
->  		btrfs_tree_read_lock(eb);
->  		if (btrfs_header_level(eb) == 0)
->  			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
-> @@ -913,7 +916,10 @@ again:
->  							info_level);
->  				eb = read_tree_block(fs_info->extent_root,
->  							   ref->parent, bsz, 0);
-> -				BUG_ON(!eb);
-> +				if (!eb || !extent_buffer_uptodate(eb)) {
-> +					free_extent_buffer(eb);
-> +					return -EIO;
-> +				}
->  				ret = find_extent_in_eb(eb, bytenr,
->  							*extent_item_pos, &eie);
->  				ref->inode_list = eie;
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 566d99b..2bc3440 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1281,7 +1281,8 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
->  		free_extent_buffer(eb_root);
->  		blocksize = btrfs_level_size(root, old_root->level);
->  		old = read_tree_block(root, logical, blocksize, 0);
-> -		if (!old) {
-> +		if (!old || !extent_buffer_uptodate(old)) {
-> +			free_extent_buffer(old);
->  			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
->  				logical);
->  			WARN_ON(1);
-> @@ -1526,8 +1527,10 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
->  			if (!cur) {
->  				cur = read_tree_block(root, blocknr,
->  							 blocksize, gen);
-> -				if (!cur)
-> +				if (!cur || !extent_buffer_uptodate(cur)) {
-> +					free_extent_buffer(cur);
->  					return -EIO;
-> +				}
->  			} else if (!uptodate) {
->  				err = btrfs_read_buffer(cur, gen);
->  				if (err) {
-> @@ -1692,6 +1695,8 @@ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
->  				   struct extent_buffer *parent, int slot)
->  {
->  	int level = btrfs_header_level(parent);
-> +	struct extent_buffer *eb;
-> +
->  	if (slot < 0)
->  		return NULL;
->  	if (slot >= btrfs_header_nritems(parent))
-> @@ -1699,9 +1704,15 @@ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
->  
->  	BUG_ON(level == 0);
->  
-> -	return read_tree_block(root, btrfs_node_blockptr(parent, slot),
-> -		       btrfs_level_size(root, level - 1),
-> -		       btrfs_node_ptr_generation(parent, slot));
-> +	eb = read_tree_block(root, btrfs_node_blockptr(parent, slot),
-> +			     btrfs_level_size(root, level - 1),
-> +			     btrfs_node_ptr_generation(parent, slot));
-> +	if (eb && !extent_buffer_uptodate(eb)) {
-> +		free_extent_buffer(eb);
-> +		eb = NULL;
-> +	}
-> +
-> +	return eb;
->  }
->  
->  /*
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index fb0e5c2..4605cc7 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1534,6 +1534,14 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
->  	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
->  	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
->  				     blocksize, generation);
-> +	if (!root->node || !extent_buffer_uptodate(root->node)) {
-> +		ret = (!root->node) ? -ENOMEM : -EIO;
-> +
-> +		free_extent_buffer(root->node);
-> +		kfree(root);
-> +		return ERR_PTR(ret);
-> +	}
-> +
->  	root->commit_root = btrfs_root_node(root);
->  	BUG_ON(!root->node); /* -ENOMEM */
->  out:
-> @@ -2572,8 +2580,8 @@ int open_ctree(struct super_block *sb,
->  	chunk_root->node = read_tree_block(chunk_root,
->  					   btrfs_super_chunk_root(disk_super),
->  					   blocksize, generation);
-> -	BUG_ON(!chunk_root->node); /* -ENOMEM */
-> -	if (!test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
-> +	if (!chunk_root->node ||
-> +	    !test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
->  		printk(KERN_WARNING "btrfs: failed to read chunk root on %s\n",
->  		       sb->s_id);
->  		goto fail_tree_roots;
-> @@ -2758,6 +2766,13 @@ retry_root_backup:
->  		log_tree_root->node = read_tree_block(tree_root, bytenr,
->  						      blocksize,
->  						      generation + 1);
-> +		if (!log_tree_root->node ||
-> +		    !extent_buffer_uptodate(log_tree_root->node)) {
-> +			printk(KERN_ERR "btrfs: failed to read log tree\n");
-> +			free_extent_buffer(log_tree_root->node);
-> +			kfree(log_tree_root);
-> +			goto fail_trans_kthread;
-> +		}
->  		/* returns with log_tree_root freed on success */
->  		ret = btrfs_recover_log_trees(log_tree_root);
->  		if (ret) {
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 10a980c..ea92671 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -7103,8 +7103,10 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
->  		if (reada && level == 1)
->  			reada_walk_down(trans, root, wc, path);
->  		next = read_tree_block(root, bytenr, blocksize, generation);
-> -		if (!next)
-> +		if (!next || !extent_buffer_uptodate(next)) {
-> +			free_extent_buffer(next);
->  			return -EIO;
-> +		}
->  		btrfs_tree_lock(next);
->  		btrfs_set_lock_blocking(next);
->  	}
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index a5955e8..ed568e3 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1771,7 +1771,11 @@ again:
->  
->  			eb = read_tree_block(dest, old_bytenr, blocksize,
->  					     old_ptr_gen);
-> -			BUG_ON(!eb);
-> +			if (!eb || !extent_buffer_uptodate(eb)) {
-> +				ret = (!eb) ? -ENOMEM : -EIO;
-> +				free_extent_buffer(eb);
-> +				return ret;
-> +			}
->  			btrfs_tree_lock(eb);
->  			if (cow) {
->  				ret = btrfs_cow_block(trans, dest, eb, parent,
-> @@ -1924,6 +1928,10 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
->  		bytenr = btrfs_node_blockptr(eb, path->slots[i]);
->  		blocksize = btrfs_level_size(root, i - 1);
->  		eb = read_tree_block(root, bytenr, blocksize, ptr_gen);
-> +		if (!eb || !extent_buffer_uptodate(eb)) {
-> +			free_extent_buffer(eb);
-> +			return -EIO;
-> +		}
->  		BUG_ON(btrfs_header_level(eb) != i - 1);
->  		path->nodes[i - 1] = eb;
->  		path->slots[i - 1] = 0;
-> @@ -2601,7 +2609,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
->  		blocksize = btrfs_level_size(root, node->level);
->  		generation = btrfs_node_ptr_generation(upper->eb, slot);
->  		eb = read_tree_block(root, bytenr, blocksize, generation);
-> -		if (!eb) {
-> +		if (!eb || !extent_buffer_uptodate(eb)) {
-> +			free_extent_buffer(eb);
->  			err = -EIO;
->  			goto next;
->  		}
-> @@ -2762,7 +2771,10 @@ static int get_tree_block_key(struct reloc_control *rc,
->  	BUG_ON(block->key_ready);
->  	eb = read_tree_block(rc->extent_root, block->bytenr,
->  			     block->key.objectid, block->key.offset);
-> -	BUG_ON(!eb);
-> +	if (!eb || !extent_buffer_uptodate(eb)) {
-> +		free_extent_buffer(eb);
-> +		return -EIO;
-> +	}
->  	WARN_ON(btrfs_header_level(eb) != block->level);
->  	if (block->level == 0)
->  		btrfs_item_key_to_cpu(eb, &block->key, 0);
-> -- 
-> 1.7.7.6
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>> However, at one point in qgroup's quota accounting, there's a statement
+>> accessing the previous sequence number, that's still just doing (seq - 1)
+>> just as it had to in the very first version.
+>>
+>> To satisfy that requirement, this patch makes the sequence number counter 64
+>> bit and splits it into a major part (used for qgroup sequence number
+>> counting) and a minor part (incremented for each tree modification in the
+>> log). This enables us to go exactly one major step backwards, as required
+>> for qgroups, while still incrementing the sequence counter for tree mod log
+>> insertions to keep track of their order. Keeping them in a single variable
+>> means there's no need to change all the code dealing with comparisons of two
+>> sequence numbers.
+
+See the previous sentence :-)
+
+And, it doesn't add too much complexity, setting and incrementing remains in
+fact quite easy, even though we use the upper 32 bit and the lower 32 bit of
+that integer independently.
+
+Thanks,
+-Jan
+
+>>
+>> The sequence number is reset to 0 on commit (not new in this patch), which
+>> ensures we won't overflow the two 32 bit counters.
+>>
+>> Without this fix, the qgroup tracking can occasionally go wrong and WARN_ONs
+>> from the tree mod log code may happen.
+>>
+>> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+>> ---
+>> [snip]

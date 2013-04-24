@@ -1,100 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32402 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757962Ab3DYDsT (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:58343 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757854Ab3DXUt2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 23:48:19 -0400
-Date: Thu, 25 Apr 2013 11:48:27 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
- group V2
-Message-ID: <20130425034826.GA24053@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
- <20130424085739.GG19283@liubo.jp.oracle.com>
- <20130424130016.GE2631@localhost.localdomain>
- <20130424144321.GI19283@liubo.jp.oracle.com>
- <20130424144809.GI2631@localhost.localdomain>
+	Wed, 24 Apr 2013 16:49:28 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 98F3C7C0423
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:49:27 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id nZxAitPKwAm3XpmA (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:49:26 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix extent logging with O_DIRECT into prealloc
+Date: Wed, 24 Apr 2013 16:49:25 -0400
+Message-ID: <1366836565-1936-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130424144809.GI2631@localhost.localdomain>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 24, 2013 at 10:48:09AM -0400, Josef Bacik wrote:
-> On Wed, Apr 24, 2013 at 08:43:21AM -0600, Liu Bo wrote:
-> > On Wed, Apr 24, 2013 at 09:00:16AM -0400, Josef Bacik wrote:
-> > > On Wed, Apr 24, 2013 at 02:57:40AM -0600, Liu Bo wrote:
-> > > > On Tue, Apr 23, 2013 at 02:48:54PM -0400, Josef Bacik wrote:
-> > > > > If we fail to load block groups halfway through we can leave extent_state's on
-> > > > > the excluded tree.  This is because we just lookup the supers and add them to
-> > > > > the excluded tree regardless of which block group we are looking at currently.
-> > > > > This is a problem because we remove the excluded extents for the range of the
-> > > > > block group only, so if we don't ever load a block group for one of the excluded
-> > > > > extents we won't ever free it.  This fixes the problem by only adding excluded
-> > > > > extents if it falls in the block group range we care about.  With this patch
-> > > > > we're no longer leaking space when we fail to read all of the block groups.
-> > > > > Thanks,
-> > > > > 
-> > > > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> > > > > ---
-> > > > > V1->V2: fixed a slight problem where i should have been comparing to the end of
-> > > > > hte block group not the begining.
-> > > > > 
-> > > > >  fs/btrfs/extent-tree.c |   24 +++++++++++++++++++++---
-> > > > >  1 files changed, 21 insertions(+), 3 deletions(-)
-> > > > > 
-> > > > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > > > index b441be3..a81f689 100644
-> > > > > --- a/fs/btrfs/extent-tree.c
-> > > > > +++ b/fs/btrfs/extent-tree.c
-> > > > > @@ -270,9 +270,27 @@ static int exclude_super_stripes(struct btrfs_root *root,
-> > > > >  			return ret;
-> > > > >  
-> > > > >  		while (nr--) {
-> > > > > -			cache->bytes_super += stripe_len;
-> > > > > -			ret = add_excluded_extent(root, logical[nr],
-> > > > > -						  stripe_len);
-> > > > > +			u64 start, len;
-> > > > > +
-> > > > > +			if (logical[nr] > cache->key.objectid +
-> > > > > +			    cache->key.offset)
-> > > > > +				continue;
-> > > > > +
-> > > > > +			if (logical[nr] + stripe_len <= cache->key.objectid)
-> > > > > +				continue;
-> > > > 
-> > > > hmm...I just doubt that these two cases can happen.
-> > > > 
-> > > > btrfs_rmap_block() ensures that logical[nr] will be larger than
-> > > > cache->key.objectid.
-> > > > 
-> > > > Am I missing something?
-> > > 
-> > > Yeah, we can still get ranges that are past the end of the cache, just put a
-> > > printk in there and you'll see it happen.  Now it's not likely that a logical
-> > > will be less than the start but better safe than sorry.  Thanks,
-> > > 
-> > 
-> > But if it's really past the end of the cache, there might be something wrong in
-> > btrfs_rmap_block() IMO.
-> > 
-> > Ok, I'll dig it somehow.
-> > 
-> 
-> It's doing it right, we just loop through all of the supers, which we have no
-> idea where they show up logically.  It's not a problem with rmap, it's doing the
-> right thing, we just need to add this extra check because rmap is not bounded in
-> its logical search.  Thanks,
+This is the same as the fix from commit
 
-Sorry, I still didn't get how this happens...
+Btrfs: fix bad extent logging
 
-I'll try to create new btrfs with raid0, raid1, raid10, raid5, raid6...
+but for O_DIRECT.  I missed this when I fixed the problem originally, we were
+still using the em for the orig_start and orig_block_len, which would be the
+merged extent.  We need to use the actual extent from the on disk file extent
+item, which we have to lookup to make sure it's ok to nocow anyway so just pass
+in some pointers to hold this info.  Thanks,
 
-Could you please show me the testcase or something so that I can persuade
-myself?
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |   17 ++++++++++-------
+ 1 files changed, 10 insertions(+), 7 deletions(-)
 
-thanks,
-liubo
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e24e1a5..9b2df0b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6504,7 +6504,9 @@ out:
+  * block must be cow'd
+  */
+ static noinline int can_nocow_odirect(struct btrfs_trans_handle *trans,
+-				      struct inode *inode, u64 offset, u64 len)
++				      struct inode *inode, u64 offset, u64 len,
++				      u64 *orig_start, u64 *orig_block_len,
++				      u64 *ram_bytes)
+ {
+ 	struct btrfs_path *path;
+ 	int ret;
+@@ -6561,6 +6563,10 @@ static noinline int can_nocow_odirect(struct btrfs_trans_handle *trans,
+ 	disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
+ 	backref_offset = btrfs_file_extent_offset(leaf, fi);
+ 
++	*orig_start = disk_bytenr;
++	*orig_block_len = btrfs_file_extent_disk_num_bytes(leaf, fi);
++	*ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
++
+ 	extent_end = key.offset + btrfs_file_extent_num_bytes(leaf, fi);
+ 	if (extent_end < offset + len) {
+ 		/* extent doesn't include our full range, must cow */
+@@ -6790,7 +6796,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	     em->block_start != EXTENT_MAP_HOLE)) {
+ 		int type;
+ 		int ret;
+-		u64 block_start;
++		u64 block_start, orig_start, orig_block_len, ram_bytes;
+ 
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 			type = BTRFS_ORDERED_PREALLOC;
+@@ -6808,11 +6814,8 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		if (IS_ERR(trans))
+ 			goto must_cow;
+ 
+-		if (can_nocow_odirect(trans, inode, start, len) == 1) {
+-			u64 orig_start = em->orig_start;
+-			u64 orig_block_len = em->orig_block_len;
+-			u64 ram_bytes = em->ram_bytes;
+-
++		if (can_nocow_odirect(trans, inode, start, len, &orig_start,
++				      &orig_block_len, &ram_bytes) == 1) {
+ 			if (type == BTRFS_ORDERED_PREALLOC) {
+ 				free_extent_map(em);
+ 				em = create_pinned_em(inode, start, len,
+-- 
+1.7.7.6
+

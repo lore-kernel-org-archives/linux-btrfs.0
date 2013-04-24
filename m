@@ -1,67 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.180]:52698 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757781Ab3DXI0Y (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:50308 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756653Ab3DXI52 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 04:26:24 -0400
-Message-ID: <5177972C.8040009@jan-o-sch.net>
-Date: Wed, 24 Apr 2013 10:26:20 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	Wed, 24 Apr 2013 04:57:28 -0400
+Date: Wed, 24 Apr 2013 16:57:40 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
+ group V2
+Message-ID: <20130424085739.GG19283@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: separate sequence numbers for delayed ref tracking
- and tree mod log
-References: <1366740027-27627-1-git-send-email-list.btrfs@jan-o-sch.net> <20130424081236.GE19283@liubo.jp.oracle.com>
-In-Reply-To: <20130424081236.GE19283@liubo.jp.oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, April 24, 2013 at 10:12 (+0200), Liu Bo wrote:
-> On Tue, Apr 23, 2013 at 08:00:27PM +0200, Jan Schmidt wrote:
->> Sequence numbers for delayed refs have been introduced in the first version
->> of the qgroup patch set. To solve the problem of find_all_roots on a busy
->> file system, the tree mod log was introduced. The sequence numbers for that
->> were simply shared between those two users.
+On Tue, Apr 23, 2013 at 02:48:54PM -0400, Josef Bacik wrote:
+> If we fail to load block groups halfway through we can leave extent_state's on
+> the excluded tree.  This is because we just lookup the supers and add them to
+> the excluded tree regardless of which block group we are looking at currently.
+> This is a problem because we remove the excluded extents for the range of the
+> block group only, so if we don't ever load a block group for one of the excluded
+> extents we won't ever free it.  This fixes the problem by only adding excluded
+> extents if it falls in the block group range we care about.  With this patch
+> we're no longer leaking space when we fail to read all of the block groups.
+> Thanks,
 > 
-> Can't we just separate them with two vars?
-
-My reasoning comes a few lines below ...
-
-> thanks,
-> liubo
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+> V1->V2: fixed a slight problem where i should have been comparing to the end of
+> hte block group not the begining.
 > 
->>
->> However, at one point in qgroup's quota accounting, there's a statement
->> accessing the previous sequence number, that's still just doing (seq - 1)
->> just as it had to in the very first version.
->>
->> To satisfy that requirement, this patch makes the sequence number counter 64
->> bit and splits it into a major part (used for qgroup sequence number
->> counting) and a minor part (incremented for each tree modification in the
->> log). This enables us to go exactly one major step backwards, as required
->> for qgroups, while still incrementing the sequence counter for tree mod log
->> insertions to keep track of their order. Keeping them in a single variable
->> means there's no need to change all the code dealing with comparisons of two
->> sequence numbers.
+>  fs/btrfs/extent-tree.c |   24 +++++++++++++++++++++---
+>  1 files changed, 21 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index b441be3..a81f689 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -270,9 +270,27 @@ static int exclude_super_stripes(struct btrfs_root *root,
+>  			return ret;
+>  
+>  		while (nr--) {
+> -			cache->bytes_super += stripe_len;
+> -			ret = add_excluded_extent(root, logical[nr],
+> -						  stripe_len);
+> +			u64 start, len;
+> +
+> +			if (logical[nr] > cache->key.objectid +
+> +			    cache->key.offset)
+> +				continue;
+> +
+> +			if (logical[nr] + stripe_len <= cache->key.objectid)
+> +				continue;
 
-See the previous sentence :-)
+hmm...I just doubt that these two cases can happen.
 
-And, it doesn't add too much complexity, setting and incrementing remains in
-fact quite easy, even though we use the upper 32 bit and the lower 32 bit of
-that integer independently.
+btrfs_rmap_block() ensures that logical[nr] will be larger than
+cache->key.objectid.
 
-Thanks,
--Jan
+Am I missing something?
 
->>
->> The sequence number is reset to 0 on commit (not new in this patch), which
->> ensures we won't overflow the two 32 bit counters.
->>
->> Without this fix, the qgroup tracking can occasionally go wrong and WARN_ONs
->> from the tree mod log code may happen.
->>
->> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
->> ---
->> [snip]
+thanks,
+liubo
+
+> +
+> +			start = logical[nr];
+> +			if (start < cache->key.objectid) {
+> +				start = cache->key.objectid;
+> +				len = (logical[nr] + stripe_len) - start;
+> +			} else {
+> +				len = min_t(u64, stripe_len,
+> +					    cache->key.objectid +
+> +					    cache->key.offset - start);
+> +			}
+> +
+> +			cache->bytes_super += len;
+> +			ret = add_excluded_extent(root, start, len);
+>  			if (ret) {
+>  				kfree(logical);
+>  				return ret;
+> -- 
+> 1.7.7.6
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

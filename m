@@ -1,41 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:60792 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751949Ab3DXNHF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 09:07:05 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 112C89A0689
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 07:07:04 -0600 (MDT)
-Date: Wed, 24 Apr 2013 09:07:01 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix all callers of read_tree_block
-Message-ID: <20130424130701.GG2631@localhost.localdomain>
-References: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
- <20130424081747.GF19283@liubo.jp.oracle.com>
+Received: from brockman.in8.de ([85.214.220.56]:54225 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754141Ab3DXNZM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Apr 2013 09:25:12 -0400
+Message-ID: <5177DD35.8080802@jan-o-sch.net>
+Date: Wed, 24 Apr 2013 15:25:09 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130424081747.GF19283@liubo.jp.oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: separate sequence numbers for delayed ref tracking
+ and tree mod log
+References: <1366740027-27627-1-git-send-email-list.btrfs@jan-o-sch.net> <20130424130453.GF2631@localhost.localdomain>
+In-Reply-To: <20130424130453.GF2631@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 24, 2013 at 02:17:48AM -0600, Liu Bo wrote:
-> On Tue, Apr 23, 2013 at 02:20:22PM -0400, Josef Bacik wrote:
-> > We kept leaking extent buffers when mounting a broken file system and it turns
-> > out it's because not everybody uses read_tree_block properly.  You need to check
-> > and make sure the extent_buffer is uptodate before you use it.  This patch fixes
-> > everybody who calls read_tree_block directly to make sure they check that it is
-> > uptodate and free it and return an error if it is not.  With this we no longer
-> > leak EB's when things go horribly wrong.  Thanks,
+On Wed, April 24, 2013 at 15:04 (+0200), Josef Bacik wrote:
+> On Tue, Apr 23, 2013 at 12:00:27PM -0600, Jan Schmidt wrote:
+>> Sequence numbers for delayed refs have been introduced in the first version
+>> of the qgroup patch set. To solve the problem of find_all_roots on a busy
+>> file system, the tree mod log was introduced. The sequence numbers for that
+>> were simply shared between those two users.
+>>
+>> However, at one point in qgroup's quota accounting, there's a statement
+>> accessing the previous sequence number, that's still just doing (seq - 1)
+>> just as it had to in the very first version.
+>>
+>> To satisfy that requirement, this patch makes the sequence number counter 64
+>> bit and splits it into a major part (used for qgroup sequence number
+>> counting) and a minor part (incremented for each tree modification in the
+>> log). This enables us to go exactly one major step backwards, as required
+>> for qgroups, while still incrementing the sequence counter for tree mod log
+>> insertions to keep track of their order. Keeping them in a single variable
+>> means there's no need to change all the code dealing with comparisons of two
+>> sequence numbers.
+>>
+>> The sequence number is reset to 0 on commit (not new in this patch), which
+>> ensures we won't overflow the two 32 bit counters.
+>>
+>> Without this fix, the qgroup tracking can occasionally go wrong and WARN_ONs
+>> from the tree mod log code may happen.
+>>
+>> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+>> ---
+>>  fs/btrfs/ctree.c       |   36 +++++++++++++++++++++++++++++++++---
+>>  fs/btrfs/ctree.h       |    7 ++-----
+>>  fs/btrfs/delayed-ref.c |    6 ++++--
+>>  fs/btrfs/disk-io.c     |    2 +-
+>>  fs/btrfs/extent-tree.c |    5 +++--
+>>  fs/btrfs/qgroup.c      |   13 ++++++++-----
+>>  fs/btrfs/transaction.c |    2 +-
+>>  7 files changed, 52 insertions(+), 19 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+>> index 566d99b..b74136e 100644
+>> --- a/fs/btrfs/ctree.c
+>> +++ b/fs/btrfs/ctree.c
+>> @@ -361,6 +361,36 @@ static inline void tree_mod_log_write_unlock(struct btrfs_fs_info *fs_info)
+>>  }
+>>  
+>>  /*
+>> + * increment the upper half of tree_mod_seq, set lower half zero
+>> + *
+>> + * must be called with fs_info->tree_mod_seq_lock held
+>> + */
+>> +static inline u64 btrfs_inc_tree_mod_seq_major(struct btrfs_fs_info *fs_info)
+>> +{
+>> +	u64 seq = atomic64_read(&fs_info->tree_mod_seq);
+>> +	seq &= 0xffffffff00000000ull;
+>> +	seq += 1ull << 32;
+>> +	atomic64_set(&fs_info->tree_mod_seq, seq);
+>> +	return seq;
+>> +}
 > 
-> What about hook the check into read_tree_block()?
-> 
-> That way we can save much efforts.
+> This isn't going to work, you read in the value, inc it and then set the new
+> value.  If somebody comes in and inc's in between the read and the sync, like
+> btrfs_inc_tree_mod_seq_minor could do when you call tree_mod_alloc, you'll end
+> up losing the minor update.  Thanks,
 
-Because other people do other things when it gets back from read_tree_block(),
-the readahead code and the search ahead code to name a few.  Thanks,
+I don't think I'll lose it. The minor update is made and returned to the one who
+needs it, that number can still be used. There is no guarantee for two
+concurrent modifications to which major a minor number belongs, though.
 
-Josef
+Thanks,
+-Jan

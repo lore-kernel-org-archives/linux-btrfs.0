@@ -1,123 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:58361 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758174Ab3DXUun (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:37789 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758059Ab3DXUu4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 16:50:43 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 2F07B7C0423
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:50:43 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id gDGiRpwc2S9qGRIE (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:50:42 -0600 (MDT)
+	Wed, 24 Apr 2013 16:50:56 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 958E39A068E
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:50:56 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 4ZNwrxRP31E3TW9x (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 14:50:55 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: cleanup destroy_marked_extents
-Date: Wed, 24 Apr 2013 16:50:40 -0400
-Message-ID: <1366836640-2024-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: check return value of commit when recovering log
+Date: Wed, 24 Apr 2013 16:50:54 -0400
+Message-ID: <1366836654-2065-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can just look up the extent_buffers for the range and free stuff that way.
-This makes the cleanup a bit cleaner and we can make sure to evict the
-extent_buffers pretty quickly by marking them as stale.  Thanks,
+We need to check the return value of the commit in case something goes wrong,
+otherwise we could end up going down the line and doing more stuff (like orphan
+cleanup) before we notice we should have errored out.  We need to do this before
+we free up the log_tree_root since the caller will handle all of that.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/disk-io.c   |   41 ++++++++++-------------------------------
- fs/btrfs/extent_io.c |    2 +-
- fs/btrfs/extent_io.h |    1 +
- 3 files changed, 12 insertions(+), 32 deletions(-)
+ fs/btrfs/tree-log.c |   11 ++++++-----
+ 1 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8be8d5e..7717363 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3804,13 +3804,9 @@ static int btrfs_destroy_marked_extents(struct btrfs_root *root,
- 					int mark)
- {
- 	int ret;
--	struct page *page;
--	struct inode *btree_inode = root->fs_info->btree_inode;
- 	struct extent_buffer *eb;
- 	u64 start = 0;
- 	u64 end;
--	u64 offset;
--	unsigned long index;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1fdc221..f50137a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4012,16 +4012,17 @@ again:
  
- 	while (1) {
- 		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
-@@ -3820,35 +3816,18 @@ static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ 	btrfs_free_path(path);
  
- 		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
- 		while (start <= end) {
--			index = start >> PAGE_CACHE_SHIFT;
--			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
--			page = find_get_page(btree_inode->i_mapping, index);
--			if (!page)
-+			eb = btrfs_find_tree_block(root, start,
-+						   root->leafsize);
-+			if (!eb)
- 				continue;
--			offset = page_offset(page);
--
--			spin_lock(&dirty_pages->buffer_lock);
--			eb = radix_tree_lookup(
--			     &(&BTRFS_I(page->mapping->host)->io_tree)->buffer,
--					       offset >> PAGE_CACHE_SHIFT);
--			spin_unlock(&dirty_pages->buffer_lock);
--			if (eb)
--				ret = test_and_clear_bit(EXTENT_BUFFER_DIRTY,
--							 &eb->bflags);
--			lock_page(page);
--
--			wait_on_page_writeback(page);
--			if (PageDirty(page)) {
--				clear_page_dirty_for_io(page);
--				spin_lock_irq(&page->mapping->tree_lock);
--				radix_tree_tag_clear(&page->mapping->page_tree,
--							page_index(page),
--							PAGECACHE_TAG_DIRTY);
--				spin_unlock_irq(&page->mapping->tree_lock);
--			}
-+			wait_on_extent_buffer_writeback(eb);
++	/* step 4: commit the transaction, which also unpins the blocks */
++	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	if (ret)
++		return ret;
 +
-+			if (test_and_clear_bit(EXTENT_BUFFER_DIRTY,
-+					       &eb->bflags))
-+				clear_extent_buffer_dirty(eb);
+ 	free_extent_buffer(log_root_tree->node);
+ 	log_root_tree->log_root = NULL;
+ 	fs_info->log_root_recovering = 0;
+-
+-	/* step 4: commit the transaction, which also unpins the blocks */
+-	btrfs_commit_transaction(trans, fs_info->tree_root);
+-
+ 	kfree(log_root_tree);
+-	return 0;
  
--			unlock_page(page);
--			page_cache_release(page);
-+			start += eb->len;
-+			free_extent_buffer_stale(eb);
- 		}
- 	}
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2107a06..d9a82f2 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3162,7 +3162,7 @@ static int eb_wait(void *word)
- 	return 0;
- }
- 
--static void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
-+void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
- {
- 	wait_on_bit(&eb->bflags, EXTENT_BUFFER_WRITEBACK, eb_wait,
- 		    TASK_UNINTERRUPTIBLE);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index db009d8..fa86861 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -282,6 +282,7 @@ void free_extent_buffer_stale(struct extent_buffer *eb);
- int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			     struct extent_buffer *eb, u64 start, int wait,
- 			     get_extent_t *get_extent, int mirror_num);
-+void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
- 
- static inline unsigned long num_extent_pages(u64 start, u64 len)
- {
++	return 0;
+ error:
+ 	btrfs_free_path(path);
+ 	return ret;
 -- 
 1.7.7.6
 

@@ -1,190 +1,210 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f171.google.com ([209.85.217.171]:63514 "EHLO
-	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753503Ab3DXOFk (ORCPT
+Received: from mo-p05-ob.rzone.de ([81.169.146.180]:46812 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754174Ab3DXPUz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 10:05:40 -0400
-Received: by mail-lb0-f171.google.com with SMTP id v10so1765806lbd.16
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2013 07:05:38 -0700 (PDT)
+	Wed, 24 Apr 2013 11:20:55 -0400
+Message-ID: <5177F83E.20003@jan-o-sch.net>
+Date: Wed, 24 Apr 2013 17:20:30 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <CAG-2HqV6F1ifawsjAUHN3e+C8eo+wQwSLmbH3z=2dcqWeyb+uA@mail.gmail.com>
-References: <CAG-2HqV6F1ifawsjAUHN3e+C8eo+wQwSLmbH3z=2dcqWeyb+uA@mail.gmail.com>
-From: Harald Glatt <mail@hachre.de>
-Date: Wed, 24 Apr 2013 16:05:18 +0200
-Message-ID: <CAFWF=a=2y=atAG3sgzgmZy9S3h8yzXX7z2d79b3hZXYeQrUd+A@mail.gmail.com>
-Subject: Re: [BUG] "btrfs csum failed" on v3.9.0-rc7
-To: Tom Gundersen <teg@jklm.no>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        wangshilong1991@gmail.com, dsterba@suse.cz
+Subject: Re: [PATCH v3 2/3] Btrfs: rescan for qgroups
+References: <1366716411-9750-1-git-send-email-list.btrfs@jan-o-sch.net> <1366716411-9750-3-git-send-email-list.btrfs@jan-o-sch.net> <5177BB51.8030400@cn.fujitsu.com>
+In-Reply-To: <5177BB51.8030400@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 24, 2013 at 1:24 PM, Tom Gundersen <teg@jklm.no> wrote:
-> I'm having lots of problems with wrong checksums on the most recent
-> kernels. Note that this is not a regression as far as I know, just
-> more pronounced now than before (the increase in severity might be due
-> to changes in my setup).
->
-> I see that this was discussed on the ML a few months back, but it was
-> not clear to me if the problem is still open or if a solution should
-> have landed upstream.
->
->
->
-> This is what I'm seeing:
->
-> Pretty much on every reboot some (but not all) of the files written to
-> or created before the reboot are broken. If the offending files are
-> deleted / overwritten the problem goes away (at least until next
-> reboot when other files are affected). A random selection of "dmesg |
-> grep btrfs" is attached below.
->
-> As I can easily reproduce, please let me know how I can help debugging
-> further. For instance, how can I tell btrfs to ignore the checksum
-> error and give me the file it has anyway (to see if the file is
-> garbled, or just the checksum is wrong)?
->
-> My btrfs volume is made up of two partitions, and is split into three
-> subvolumes. When mounting the rootfs I see this in dmesg:
->
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 1 transid 141284 /dev/sda4
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 2 transid 141284 /dev/sda2
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 2 transid 141284 /dev/sda2
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 1 transid 141284 /dev/sda4
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 2 transid 141284 /dev/sda2
-> Apr 24 01:31:47 toms-air kernel: btrfs: use ssd allocation scheme
-> Apr 24 01:31:47 toms-air kernel: btrfs: use lzo compression
-> Apr 24 01:31:47 toms-air kernel: btrfs: disk space caching is enabled
-> Apr 24 01:31:47 toms-air kernel: btrfs: bdev /dev/sda2 errs: wr 0, rd
-> 0, flush 0, corrupt 2056270, gen 6
-> Apr 24 01:31:47 toms-air kernel: btrfs: bdev /dev/sda4 errs: wr 0, rd
-> 0, flush 0, corrupt 2049061, gen 6
-> Apr 24 01:31:47 toms-air kernel: device fsid
-> 0d7a2474-3523-413e-8611-1f489b8a9891 devid 2 transid 141284 /dev/sda2
->
-> And the output of findmnt is:
->
-> TARGET SOURCE                                    FSTYPE OPTIONS
-> /home  UUID=0d7a2474-3523-413e-8611-1f489b8a9891 btrfs
-> subvol=home,ssd,compress=lzo,x-systemd.automount,nofail
-> /var   UUID=0d7a2474-3523-413e-8611-1f489b8a9891 btrfs
-> subvol=var,ssd,compress=lzo
-> /usr   UUID=0d7a2474-3523-413e-8611-1f489b8a9891 btrfs
-> subvol=usr,ssd,compress=lzo
->
->
->
-> Errors reported in dmesg:
->
-> [10520.530437] btrfs csum failed ino 1988603 off 1277952 csum
-> 2566472073 private 2887162790
-> [10520.535299] btrfs csum failed ino 1988542 off 172032 csum
-> 1032373158 private 2555710917
-> [10520.535489] btrfs csum failed ino 1988542 off 172032 csum
-> 1032373158 private 2555710917
-> [10520.536448] btrfs csum failed ino 1988542 off 307200 csum
-> 2566472073 private 4189934277
-> [10521.404738] btrfs csum failed ino 1988603 off 1277952 csum
-> 2566472073 private 2887162790
-> [10521.406514] btrfs csum failed ino 1988542 off 192512 csum
-> 2359321615 private 259683409
-> [10521.407797] btrfs csum failed ino 1988542 off 372736 csum
-> 2566472073 private 1399566794
-> [10521.620012] btrfs csum failed ino 1988603 off 1277952 csum
-> 2566472073 private 2887162790
-> [10521.621371] btrfs csum failed ino 1988542 off 192512 csum
-> 2359321615 private 259683409
-> [10521.622048] btrfs csum failed ino 1988542 off 372736 csum
-> 2566472073 private 1399566794
-> [10546.115794] btrfs_readpage_end_io_hook: 26 callbacks suppressed
-> [10546.115806] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.116811] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.117847] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.118527] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.118910] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.119436] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.119856] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.120292] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.120683] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10546.121086] btrfs csum failed ino 1988548 off 28672 csum 2066685480
-> private 49363816
-> [10553.246253] btrfs_readpage_end_io_hook: 2 callbacks suppressed
-> [10553.246269] btrfs csum failed ino 114348 off 45056 csum 1787155441
-> private 2298707641
-> [10553.246541] btrfs csum failed ino 114348 off 45056 csum 1787155441
-> private 2298707641
-> [10554.761105] btrfs csum failed ino 1988542 off 372736 csum
-> 2566472073 private 1399566794
-> [10554.762052] btrfs csum failed ino 1988603 off 1204224 csum
-> 4217002373 private 516821494
-> [10605.966575] btrfs csum failed ino 1988548 off 28672 csum 1496083883
-> private 49363816
-> [10681.761222] btrfs csum failed ino 1988542 off 217088 csum 652086749
-> private 371373290
-> [10707.199412] btrfs csum failed ino 1988548 off 28672 csum 1496083883
-> private 49363816
-> [10711.777982] btrfs csum failed ino 1988542 off 217088 csum 652086749
-> private 371373290
-> [10711.778511] btrfs csum failed ino 1988543 off 4096 csum 1242025980
-> private 1116748566
-> [10711.778786] btrfs csum failed ino 1988543 off 4096 csum 1242025980
-> private 1116748566
-> [10743.754821] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10743.755264] btrfs csum failed ino 1988542 off 569344 csum
-> 1587824662 private 1165253717
-> [10743.755549] btrfs csum failed ino 1988543 off 4096 csum 1242025980
-> private 1116748566
-> [10743.755660] btrfs csum failed ino 1988543 off 4096 csum 1242025980
-> private 1116748566
-> [10743.761723] btrfs csum failed ino 1988542 off 569344 csum
-> 1587824662 private 1165253717
-> [10743.761968] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10743.877909] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10743.878433] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10743.878824] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10743.879210] btrfs csum failed ino 1988547 off 12288 csum 1555062722
-> private 1166323098
-> [10773.121616] btrfs_readpage_end_io_hook: 2 callbacks suppressed
-> [10773.121628] btrfs csum failed ino 1988548 off 28672 csum 1496083883
-> private 49363816
-> [10774.871002] btrfs csum failed ino 1988603 off 1204224 csum
-> 4217002373 private 516821494
->
->
->
->
-> Cheers,
->
-> Tom
+On Wed, April 24, 2013 at 13:00 (+0200), Wang Shilong wrote:
+> Hello Jan,
+> 
+> [snip]
+> 
+>> +/*
+>> + * returns < 0 on error, 0 when more leafs are to be scanned.
+>> + * returns 1 when done, 2 when done and FLAG_INCONSISTENT was cleared.
+>> + */
+>> +static int
+>> +qgroup_rescan_leaf(struct qgroup_rescan *qscan, struct btrfs_path *path,
+>> +		   struct btrfs_trans_handle *trans, struct ulist *tmp,
+>> +		   struct extent_buffer *scratch_leaf)
+>> +{
+>> +	struct btrfs_key found;
+>> +	struct btrfs_fs_info *fs_info = qscan->fs_info;
+>> +	struct ulist *roots = NULL;
+>> +	struct ulist_node *unode;
+>> +	struct ulist_iterator uiter;
+>> +	struct seq_list tree_mod_seq_elem = {};
+>> +	u64 seq;
+>> +	int slot;
+>> +	int ret;
+>> +
+>> +	path->leave_spinning = 1;
+>> +	mutex_lock(&fs_info->qgroup_rescan_lock);
+>> +	ret = btrfs_search_slot_for_read(fs_info->extent_root,
+>> +					 &fs_info->qgroup_rescan_progress,
+>> +					 path, 1, 0);
+>> +
+>> +	pr_debug("current progress key (%llu %u %llu), search_slot ret %d\n",
+>> +		 (unsigned long long)fs_info->qgroup_rescan_progress.objectid,
+>> +		 fs_info->qgroup_rescan_progress.type,
+>> +		 (unsigned long long)fs_info->qgroup_rescan_progress.offset,
+>> +		 ret);
+>> +
+>> +	if (ret) {
+>> +		/*
+>> +		 * The rescan is about to end, we will not be scanning any
+>> +		 * further blocks. We cannot unset the RESCAN flag here, because
+>> +		 * we want to commit the transaction if everything went well.
+>> +		 * To make the live accounting work in this phase, we set our
+>> +		 * scan progress pointer such that every real extent objectid
+>> +		 * will be smaller.
+>> +		 */
+>> +		fs_info->qgroup_rescan_progress.objectid = (u64)-1;
+>> +		btrfs_release_path(path);
+>> +		mutex_unlock(&fs_info->qgroup_rescan_lock);
+>> +		return ret;
+>> +	}
+>> +
+>> +	btrfs_item_key_to_cpu(path->nodes[0], &found,
+>> +			      btrfs_header_nritems(path->nodes[0]) - 1);
+>> +	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+>> +
+>> +	btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+>> +	memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
+>> +	slot = path->slots[0];
+>> +	btrfs_release_path(path);
+>> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
+>> +
+>> +	for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
+>> +		btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
+>> +		if (found.type != BTRFS_EXTENT_ITEM_KEY)
+>> +			continue;
+>> +		ret = btrfs_find_all_roots(trans, fs_info, found.objectid,
+>> +					   tree_mod_seq_elem.seq, &roots);
+>> +		if (ret < 0)
+>> +			break;
+>> +		spin_lock(&fs_info->qgroup_lock);
+>> +		seq = fs_info->qgroup_seq;
+>> +		fs_info->qgroup_seq += roots->nnodes + 1; /* max refcnt */
+>> +
+>> +		ulist_reinit(tmp);
+>> +		ULIST_ITER_INIT(&uiter);
+>> +		while ((unode = ulist_next(roots, &uiter))) {
+>> +			struct btrfs_qgroup *qg;
+>> +
+>> +			qg = find_qgroup_rb(fs_info, unode->val);
+>> +			if (!qg)
+>> +				continue;
+>> +
+>> +			ret = ulist_add(tmp, qg->qgroupid, (uintptr_t)qg,
+>> +					GFP_ATOMIC);
+>> +			if (ret < 0) {
+>> +				spin_unlock(&fs_info->qgroup_lock);
+>> +				goto out;
+>> +			}
+>> +		}
+>> +
+>> +		/* this is similar to step 2 of btrfs_qgroup_account_ref */
+>> +		ULIST_ITER_INIT(&uiter);
+>> +		while ((unode = ulist_next(tmp, &uiter))) {
+>> +			struct btrfs_qgroup *qg;
+>> +			struct btrfs_qgroup_list *glist;
+>> +
+>> +			qg = (struct btrfs_qgroup *)(uintptr_t) unode->aux;
+>> +			qg->rfer += found.offset;
+>> +			qg->rfer_cmpr += found.offset;
+>> +			WARN_ON(qg->tag >= seq);
+>> +			WARN_ON(qg->refcnt >= seq);
+>> +			if (qg->refcnt < seq)
+>> +				qg->refcnt = seq + 1;
+>> +			else
+>> +				qg->refcnt = qg->refcnt + 1;
+>> +			qgroup_dirty(fs_info, qg);
+>> +
+>> +			list_for_each_entry(glist, &qg->groups, next_group) {
+>> +				ret = ulist_add(tmp, glist->group->qgroupid,
+>> +						(uintptr_t)glist->group,
+>> +						GFP_ATOMIC);
+>> +				if (ret < 0) {
+>> +					spin_unlock(&fs_info->qgroup_lock);
+>> +					goto out;
+>> +				}
+>> +			}
+>> +		}
+> 
+> 
+> Here i think we can resue arne's 3 steps algorithm to make qgroup accounting correct.
+> However, your first step just find all the root qgroups and their parent qgroups.
+> And in second step, you walk these qgroups, and change every qgroup's referenced,
+> and update qgroup->refcnt. However, i don't think this is right.
+> 
+> Considering in your second step: ulist_add() can gurantee thant we only update
+> every qgroup's refcnt only once..
+> 
+> So if there are several roots found, i am wondering your codes still can work well?
+> Are there any reasons that you change arne's tree steps?
+> Or am i missing something...
+
+We cannot blindly reuse the three steps without modification. They were made for
+tracking on non-empty volumes and we would do a lot of pointless work because
+rescan always starts from an empty starting point.
+
+Step 1 is: "for each old ref, visit all nodes once and inc refcnt" - we can skip
+that, because we don't have any old refs.
+
+Step 2 is: "walk from the new root" - we do that and treat every block as "not
+visited by step 1", so we treat all references as added references. Note that
+there are some differences which is why we cannot just call the step2 function:
+- The original version only has a single qgroup, because it only adds a single
+new reference, referencing only a single root. Instead, in the rescan algorithm,
+we've got the loop building the "tmp" ulist before we're getting to the rescan
+step 2.
+- We don't increment qg->excl in the rescan step 2 because we get that part for
+free in our third step.
+- We set qg->refcnt along the way such that the original step 3 code will do the
+right thing.
+
+Step 3 is: "walk again from old refs" - we need that step unchanged, although
+technically we don't walk from the old refs, that's why we had to fake
+qg->refcnt in our modified step 2.
+
+I admit, it's not obvious at first sight. But when you just put the code side by
+side and draw some extents, roots and qgroups on a sheet of paper, everything
+looks good (to me) :-)
+
+I hope this explanation helps you to come to the same conclusion (or instead
+gives you something to show me where I'm wrong).
+
+Thanks,
+-Jan
+
+> Thanks,
+> Wang
+> 
+>> +
+>> +		qgroup_account_ref_step3(fs_info, roots, tmp, seq, -1,
+>> +					 found.offset);
+>> +
+>> +		spin_unlock(&fs_info->qgroup_lock);
+>> +		ulist_free(roots);
+>> +		ret = 0;
+>> +	}
+>> +
+>> +out:
+>> +	btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+>> +
+>> +	return ret;
+>> +}
+>> +
+> 
+> [snip]
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-This is definitely not normal... Are you sure your hardware is okay?
-Both disks as well as RAM? Also: The filesystem looks corrupted to me,
-you can check it (but don't attempt repair) with btrfsck /dev/sdX. If
-it's corrupt then you should recreate it, copy the files back into the
-new filesystem and see if it starts to corrupt again...
-
-Keep a copy of the old fs in any case if someone wants a btrfs-image
-for debugging!
+> 

@@ -1,262 +1,242 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38891 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757446Ab3DXIM3 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:29505 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757682Ab3DXIRg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 04:12:29 -0400
-Date: Wed, 24 Apr 2013 16:12:36 +0800
+	Wed, 24 Apr 2013 04:17:36 -0400
+Date: Wed, 24 Apr 2013 16:17:48 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: separate sequence numbers for delayed ref
- tracking and tree mod log
-Message-ID: <20130424081236.GE19283@liubo.jp.oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix all callers of read_tree_block
+Message-ID: <20130424081747.GF19283@liubo.jp.oracle.com>
 Reply-To: bo.li.liu@oracle.com
-References: <1366740027-27627-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366740027-27627-1-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 23, 2013 at 08:00:27PM +0200, Jan Schmidt wrote:
-> Sequence numbers for delayed refs have been introduced in the first version
-> of the qgroup patch set. To solve the problem of find_all_roots on a busy
-> file system, the tree mod log was introduced. The sequence numbers for that
-> were simply shared between those two users.
+On Tue, Apr 23, 2013 at 02:20:22PM -0400, Josef Bacik wrote:
+> We kept leaking extent buffers when mounting a broken file system and it turns
+> out it's because not everybody uses read_tree_block properly.  You need to check
+> and make sure the extent_buffer is uptodate before you use it.  This patch fixes
+> everybody who calls read_tree_block directly to make sure they check that it is
+> uptodate and free it and return an error if it is not.  With this we no longer
+> leak EB's when things go horribly wrong.  Thanks,
 
-Can't we just separate them with two vars?
+What about hook the check into read_tree_block()?
+
+That way we can save much efforts.
 
 thanks,
 liubo
 
 > 
-> However, at one point in qgroup's quota accounting, there's a statement
-> accessing the previous sequence number, that's still just doing (seq - 1)
-> just as it had to in the very first version.
-> 
-> To satisfy that requirement, this patch makes the sequence number counter 64
-> bit and splits it into a major part (used for qgroup sequence number
-> counting) and a minor part (incremented for each tree modification in the
-> log). This enables us to go exactly one major step backwards, as required
-> for qgroups, while still incrementing the sequence counter for tree mod log
-> insertions to keep track of their order. Keeping them in a single variable
-> means there's no need to change all the code dealing with comparisons of two
-> sequence numbers.
-> 
-> The sequence number is reset to 0 on commit (not new in this patch), which
-> ensures we won't overflow the two 32 bit counters.
-> 
-> Without this fix, the qgroup tracking can occasionally go wrong and WARN_ONs
-> from the tree mod log code may happen.
-> 
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 > ---
->  fs/btrfs/ctree.c       |   36 +++++++++++++++++++++++++++++++++---
->  fs/btrfs/ctree.h       |    7 ++-----
->  fs/btrfs/delayed-ref.c |    6 ++++--
->  fs/btrfs/disk-io.c     |    2 +-
->  fs/btrfs/extent-tree.c |    5 +++--
->  fs/btrfs/qgroup.c      |   13 ++++++++-----
->  fs/btrfs/transaction.c |    2 +-
->  7 files changed, 52 insertions(+), 19 deletions(-)
+>  fs/btrfs/backref.c     |   10 ++++++++--
+>  fs/btrfs/ctree.c       |   21 ++++++++++++++++-----
+>  fs/btrfs/disk-io.c     |   19 +++++++++++++++++--
+>  fs/btrfs/extent-tree.c |    4 +++-
+>  fs/btrfs/relocation.c  |   18 +++++++++++++++---
+>  5 files changed, 59 insertions(+), 13 deletions(-)
 > 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 23e927b..04b5b30 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -423,7 +423,10 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
+>  		BUG_ON(!ref->wanted_disk_byte);
+>  		eb = read_tree_block(fs_info->tree_root, ref->wanted_disk_byte,
+>  				     fs_info->tree_root->leafsize, 0);
+> -		BUG_ON(!eb);
+> +		if (!eb || !extent_buffer_uptodate(eb)) {
+> +			free_extent_buffer(eb);
+> +			return -EIO;
+> +		}
+>  		btrfs_tree_read_lock(eb);
+>  		if (btrfs_header_level(eb) == 0)
+>  			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
+> @@ -913,7 +916,10 @@ again:
+>  							info_level);
+>  				eb = read_tree_block(fs_info->extent_root,
+>  							   ref->parent, bsz, 0);
+> -				BUG_ON(!eb);
+> +				if (!eb || !extent_buffer_uptodate(eb)) {
+> +					free_extent_buffer(eb);
+> +					return -EIO;
+> +				}
+>  				ret = find_extent_in_eb(eb, bytenr,
+>  							*extent_item_pos, &eie);
+>  				ref->inode_list = eie;
 > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 566d99b..b74136e 100644
+> index 566d99b..2bc3440 100644
 > --- a/fs/btrfs/ctree.c
 > +++ b/fs/btrfs/ctree.c
-> @@ -361,6 +361,36 @@ static inline void tree_mod_log_write_unlock(struct btrfs_fs_info *fs_info)
+> @@ -1281,7 +1281,8 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+>  		free_extent_buffer(eb_root);
+>  		blocksize = btrfs_level_size(root, old_root->level);
+>  		old = read_tree_block(root, logical, blocksize, 0);
+> -		if (!old) {
+> +		if (!old || !extent_buffer_uptodate(old)) {
+> +			free_extent_buffer(old);
+>  			pr_warn("btrfs: failed to read tree block %llu from get_old_root\n",
+>  				logical);
+>  			WARN_ON(1);
+> @@ -1526,8 +1527,10 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+>  			if (!cur) {
+>  				cur = read_tree_block(root, blocknr,
+>  							 blocksize, gen);
+> -				if (!cur)
+> +				if (!cur || !extent_buffer_uptodate(cur)) {
+> +					free_extent_buffer(cur);
+>  					return -EIO;
+> +				}
+>  			} else if (!uptodate) {
+>  				err = btrfs_read_buffer(cur, gen);
+>  				if (err) {
+> @@ -1692,6 +1695,8 @@ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
+>  				   struct extent_buffer *parent, int slot)
+>  {
+>  	int level = btrfs_header_level(parent);
+> +	struct extent_buffer *eb;
+> +
+>  	if (slot < 0)
+>  		return NULL;
+>  	if (slot >= btrfs_header_nritems(parent))
+> @@ -1699,9 +1704,15 @@ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
+>  
+>  	BUG_ON(level == 0);
+>  
+> -	return read_tree_block(root, btrfs_node_blockptr(parent, slot),
+> -		       btrfs_level_size(root, level - 1),
+> -		       btrfs_node_ptr_generation(parent, slot));
+> +	eb = read_tree_block(root, btrfs_node_blockptr(parent, slot),
+> +			     btrfs_level_size(root, level - 1),
+> +			     btrfs_node_ptr_generation(parent, slot));
+> +	if (eb && !extent_buffer_uptodate(eb)) {
+> +		free_extent_buffer(eb);
+> +		eb = NULL;
+> +	}
+> +
+> +	return eb;
 >  }
 >  
 >  /*
-> + * increment the upper half of tree_mod_seq, set lower half zero
-> + *
-> + * must be called with fs_info->tree_mod_seq_lock held
-> + */
-> +static inline u64 btrfs_inc_tree_mod_seq_major(struct btrfs_fs_info *fs_info)
-> +{
-> +	u64 seq = atomic64_read(&fs_info->tree_mod_seq);
-> +	seq &= 0xffffffff00000000ull;
-> +	seq += 1ull << 32;
-> +	atomic64_set(&fs_info->tree_mod_seq, seq);
-> +	return seq;
-> +}
-> +
-> +/*
-> + * increment the lower half of tree_mod_seq
-> + */
-> +static inline u64 btrfs_inc_tree_mod_seq_minor(struct btrfs_fs_info *fs_info)
-> +{
-> +	return atomic64_inc_return(&fs_info->tree_mod_seq);
-> +}
-> +
-> +/*
-> + * return the last minor in the previous major tree_mod_seq number
-> + */
-> +u64 btrfs_tree_mod_seq_prev(u64 seq)
-> +{
-> +	return (seq & 0xffffffff00000000ull) - 1ull;
-> +}
-> +
-> +/*
->   * This adds a new blocker to the tree mod log's blocker list if the @elem
->   * passed does not already have a sequence number set. So when a caller expects
->   * to record tree modifications, it should ensure to set elem->seq to zero
-> @@ -376,10 +406,10 @@ u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
->  	tree_mod_log_write_lock(fs_info);
->  	spin_lock(&fs_info->tree_mod_seq_lock);
->  	if (!elem->seq) {
-> -		elem->seq = btrfs_inc_tree_mod_seq(fs_info);
-> +		elem->seq = btrfs_inc_tree_mod_seq_major(fs_info);
->  		list_add_tail(&elem->list, &fs_info->tree_mod_seq_list);
->  	}
-> -	seq = btrfs_inc_tree_mod_seq(fs_info);
-> +	seq = btrfs_inc_tree_mod_seq_minor(fs_info);
->  	spin_unlock(&fs_info->tree_mod_seq_lock);
->  	tree_mod_log_write_unlock(fs_info);
->  
-> @@ -524,7 +554,7 @@ static inline int tree_mod_alloc(struct btrfs_fs_info *fs_info, gfp_t flags,
->  	if (!tm)
->  		return -ENOMEM;
->  
-> -	tm->seq = btrfs_inc_tree_mod_seq(fs_info);
-> +	tm->seq = btrfs_inc_tree_mod_seq_minor(fs_info);
->  	return tm->seq;
->  }
->  
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 412c306..5f34f89 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1422,7 +1422,7 @@ struct btrfs_fs_info {
->  
->  	/* this protects tree_mod_seq_list */
->  	spinlock_t tree_mod_seq_lock;
-> -	atomic_t tree_mod_seq;
-> +	atomic64_t tree_mod_seq;
->  	struct list_head tree_mod_seq_list;
->  	struct seq_list tree_mod_seq_elem;
->  
-> @@ -3334,10 +3334,7 @@ u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
->  			   struct seq_list *elem);
->  void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
->  			    struct seq_list *elem);
-> -static inline u64 btrfs_inc_tree_mod_seq(struct btrfs_fs_info *fs_info)
-> -{
-> -	return atomic_inc_return(&fs_info->tree_mod_seq);
-> -}
-> +u64 btrfs_tree_mod_seq_prev(u64 seq);
->  int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq);
->  
->  /* root-item.c */
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 116abec..c219463 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -361,8 +361,10 @@ int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
->  		elem = list_first_entry(&fs_info->tree_mod_seq_list,
->  					struct seq_list, list);
->  		if (seq >= elem->seq) {
-> -			pr_debug("holding back delayed_ref %llu, lowest is "
-> -				 "%llu (%p)\n", seq, elem->seq, delayed_refs);
-> +			pr_debug("holding back delayed_ref %#x.%x, lowest is %#x.%x (%p)\n",
-> +				 (u32)(seq >> 32), (u32)seq,
-> +				 (u32)(elem->seq >> 32), (u32)elem->seq,
-> +				 delayed_refs);
->  			ret = 1;
->  		}
->  	}
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index f4628c7..0207132 100644
+> index fb0e5c2..4605cc7 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
-> @@ -2147,7 +2147,7 @@ int open_ctree(struct super_block *sb,
->  	atomic_set(&fs_info->async_submit_draining, 0);
->  	atomic_set(&fs_info->nr_async_bios, 0);
->  	atomic_set(&fs_info->defrag_running, 0);
-> -	atomic_set(&fs_info->tree_mod_seq, 0);
-> +	atomic64_set(&fs_info->tree_mod_seq, 0);
->  	fs_info->sb = sb;
->  	fs_info->max_inline = 8192 * 1024;
->  	fs_info->metadata_ratio = 0;
+> @@ -1534,6 +1534,14 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
+>  	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
+>  	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
+>  				     blocksize, generation);
+> +	if (!root->node || !extent_buffer_uptodate(root->node)) {
+> +		ret = (!root->node) ? -ENOMEM : -EIO;
+> +
+> +		free_extent_buffer(root->node);
+> +		kfree(root);
+> +		return ERR_PTR(ret);
+> +	}
+> +
+>  	root->commit_root = btrfs_root_node(root);
+>  	BUG_ON(!root->node); /* -ENOMEM */
+>  out:
+> @@ -2572,8 +2580,8 @@ int open_ctree(struct super_block *sb,
+>  	chunk_root->node = read_tree_block(chunk_root,
+>  					   btrfs_super_chunk_root(disk_super),
+>  					   blocksize, generation);
+> -	BUG_ON(!chunk_root->node); /* -ENOMEM */
+> -	if (!test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
+> +	if (!chunk_root->node ||
+> +	    !test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
+>  		printk(KERN_WARNING "btrfs: failed to read chunk root on %s\n",
+>  		       sb->s_id);
+>  		goto fail_tree_roots;
+> @@ -2758,6 +2766,13 @@ retry_root_backup:
+>  		log_tree_root->node = read_tree_block(tree_root, bytenr,
+>  						      blocksize,
+>  						      generation + 1);
+> +		if (!log_tree_root->node ||
+> +		    !extent_buffer_uptodate(log_tree_root->node)) {
+> +			printk(KERN_ERR "btrfs: failed to read log tree\n");
+> +			free_extent_buffer(log_tree_root->node);
+> +			kfree(log_tree_root);
+> +			goto fail_trans_kthread;
+> +		}
+>  		/* returns with log_tree_root freed on success */
+>  		ret = btrfs_recover_log_trees(log_tree_root);
+>  		if (ret) {
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index b441be3..f2f1654 100644
+> index 10a980c..ea92671 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2523,9 +2523,10 @@ int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
->  	    !trans->delayed_ref_elem.seq) {
->  		/* list without seq or seq without list */
->  		btrfs_err(fs_info,
-> -			"qgroup accounting update error, list is%s empty, seq is %llu",
-> +			"qgroup accounting update error, list is%s empty, seq is %#x.%x",
->  			list_empty(&trans->qgroup_ref_list) ? "" : " not",
-> -			trans->delayed_ref_elem.seq);
-> +			(u32)(trans->delayed_ref_elem.seq >> 32),
-> +			(u32)trans->delayed_ref_elem.seq);
->  		BUG();
+> @@ -7103,8 +7103,10 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+>  		if (reada && level == 1)
+>  			reada_walk_down(trans, root, wc, path);
+>  		next = read_tree_block(root, bytenr, blocksize, generation);
+> -		if (!next)
+> +		if (!next || !extent_buffer_uptodate(next)) {
+> +			free_extent_buffer(next);
+>  			return -EIO;
+> +		}
+>  		btrfs_tree_lock(next);
+>  		btrfs_set_lock_blocking(next);
 >  	}
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index a5955e8..ed568e3 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1771,7 +1771,11 @@ again:
 >  
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index f175471..e5c5623 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1242,9 +1242,11 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->  	case BTRFS_ADD_DELAYED_REF:
->  	case BTRFS_ADD_DELAYED_EXTENT:
->  		sgn = 1;
-> +		seq = btrfs_tree_mod_seq_prev(node->seq);
->  		break;
->  	case BTRFS_DROP_DELAYED_REF:
->  		sgn = -1;
-> +		seq = node->seq;
->  		break;
->  	case BTRFS_UPDATE_DELAYED_HEAD:
->  		return 0;
-> @@ -1254,14 +1256,14 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->  
->  	/*
->  	 * the delayed ref sequence number we pass depends on the direction of
-> -	 * the operation. for add operations, we pass (node->seq - 1) to skip
-> +	 * the operation. for add operations, we pass
-> +	 * tree_mod_log_prev_seq(node->seq) to skip
->  	 * the delayed ref's current sequence number, because we need the state
->  	 * of the tree before the add operation. for delete operations, we pass
->  	 * (node->seq) to include the delayed ref's current sequence number,
->  	 * because we need the state of the tree after the delete operation.
->  	 */
-> -	ret = btrfs_find_all_roots(trans, fs_info, node->bytenr,
-> -				   sgn > 0 ? node->seq - 1 : node->seq, &roots);
-> +	ret = btrfs_find_all_roots(trans, fs_info, node->bytenr, seq, &roots);
->  	if (ret < 0)
->  		return ret;
->  
-> @@ -1772,8 +1774,9 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
->  {
->  	if (list_empty(&trans->qgroup_ref_list) && !trans->delayed_ref_elem.seq)
->  		return;
-> -	printk(KERN_ERR "btrfs: qgroups not uptodate in trans handle %p: list is%s empty, seq is %llu\n",
-> +	pr_err("btrfs: qgroups not uptodate in trans handle %p: list is%s empty, seq is %#x.%x\n",
->  		trans, list_empty(&trans->qgroup_ref_list) ? "" : " not",
-> -		trans->delayed_ref_elem.seq);
-> +		(u32)(trans->delayed_ref_elem.seq >> 32),
-> +		(u32)trans->delayed_ref_elem.seq);
->  	BUG();
->  }
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 94cbd10..d9edff7 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -163,7 +163,7 @@ loop:
->  	if (!RB_EMPTY_ROOT(&fs_info->tree_mod_log))
->  		WARN(1, KERN_ERR "btrfs: tree_mod_log rb tree not empty when "
->  			"creating a fresh transaction\n");
-> -	atomic_set(&fs_info->tree_mod_seq, 0);
-> +	atomic64_set(&fs_info->tree_mod_seq, 0);
->  
->  	spin_lock_init(&cur_trans->commit_lock);
->  	spin_lock_init(&cur_trans->delayed_refs.lock);
+>  			eb = read_tree_block(dest, old_bytenr, blocksize,
+>  					     old_ptr_gen);
+> -			BUG_ON(!eb);
+> +			if (!eb || !extent_buffer_uptodate(eb)) {
+> +				ret = (!eb) ? -ENOMEM : -EIO;
+> +				free_extent_buffer(eb);
+> +				return ret;
+> +			}
+>  			btrfs_tree_lock(eb);
+>  			if (cow) {
+>  				ret = btrfs_cow_block(trans, dest, eb, parent,
+> @@ -1924,6 +1928,10 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
+>  		bytenr = btrfs_node_blockptr(eb, path->slots[i]);
+>  		blocksize = btrfs_level_size(root, i - 1);
+>  		eb = read_tree_block(root, bytenr, blocksize, ptr_gen);
+> +		if (!eb || !extent_buffer_uptodate(eb)) {
+> +			free_extent_buffer(eb);
+> +			return -EIO;
+> +		}
+>  		BUG_ON(btrfs_header_level(eb) != i - 1);
+>  		path->nodes[i - 1] = eb;
+>  		path->slots[i - 1] = 0;
+> @@ -2601,7 +2609,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+>  		blocksize = btrfs_level_size(root, node->level);
+>  		generation = btrfs_node_ptr_generation(upper->eb, slot);
+>  		eb = read_tree_block(root, bytenr, blocksize, generation);
+> -		if (!eb) {
+> +		if (!eb || !extent_buffer_uptodate(eb)) {
+> +			free_extent_buffer(eb);
+>  			err = -EIO;
+>  			goto next;
+>  		}
+> @@ -2762,7 +2771,10 @@ static int get_tree_block_key(struct reloc_control *rc,
+>  	BUG_ON(block->key_ready);
+>  	eb = read_tree_block(rc->extent_root, block->bytenr,
+>  			     block->key.objectid, block->key.offset);
+> -	BUG_ON(!eb);
+> +	if (!eb || !extent_buffer_uptodate(eb)) {
+> +		free_extent_buffer(eb);
+> +		return -EIO;
+> +	}
+>  	WARN_ON(btrfs_header_level(eb) != block->level);
+>  	if (block->level == 0)
+>  		btrfs_item_key_to_cpu(eb, &block->key, 0);
 > -- 
-> 1.7.1
+> 1.7.7.6
 > 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

@@ -1,83 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42069 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753491Ab3DXOnM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 10:43:12 -0400
-Date: Wed, 24 Apr 2013 22:43:21 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46338 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756100Ab3DXOpt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Apr 2013 10:45:49 -0400
+Date: Wed, 24 Apr 2013 16:45:47 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
- group V2
-Message-ID: <20130424144321.GI19283@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
- <20130424085739.GG19283@liubo.jp.oracle.com>
- <20130424130016.GE2631@localhost.localdomain>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: don't BUG_ON() in btrfs_num_copies
+Message-ID: <20130424144547.GD16427@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1366728893-1529-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130424130016.GE2631@localhost.localdomain>
+In-Reply-To: <1366728893-1529-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 24, 2013 at 09:00:16AM -0400, Josef Bacik wrote:
-> On Wed, Apr 24, 2013 at 02:57:40AM -0600, Liu Bo wrote:
-> > On Tue, Apr 23, 2013 at 02:48:54PM -0400, Josef Bacik wrote:
-> > > If we fail to load block groups halfway through we can leave extent_state's on
-> > > the excluded tree.  This is because we just lookup the supers and add them to
-> > > the excluded tree regardless of which block group we are looking at currently.
-> > > This is a problem because we remove the excluded extents for the range of the
-> > > block group only, so if we don't ever load a block group for one of the excluded
-> > > extents we won't ever free it.  This fixes the problem by only adding excluded
-> > > extents if it falls in the block group range we care about.  With this patch
-> > > we're no longer leaking space when we fail to read all of the block groups.
-> > > Thanks,
-> > > 
-> > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> > > ---
-> > > V1->V2: fixed a slight problem where i should have been comparing to the end of
-> > > hte block group not the begining.
-> > > 
-> > >  fs/btrfs/extent-tree.c |   24 +++++++++++++++++++++---
-> > >  1 files changed, 21 insertions(+), 3 deletions(-)
-> > > 
-> > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > index b441be3..a81f689 100644
-> > > --- a/fs/btrfs/extent-tree.c
-> > > +++ b/fs/btrfs/extent-tree.c
-> > > @@ -270,9 +270,27 @@ static int exclude_super_stripes(struct btrfs_root *root,
-> > >  			return ret;
-> > >  
-> > >  		while (nr--) {
-> > > -			cache->bytes_super += stripe_len;
-> > > -			ret = add_excluded_extent(root, logical[nr],
-> > > -						  stripe_len);
-> > > +			u64 start, len;
-> > > +
-> > > +			if (logical[nr] > cache->key.objectid +
-> > > +			    cache->key.offset)
-> > > +				continue;
-> > > +
-> > > +			if (logical[nr] + stripe_len <= cache->key.objectid)
-> > > +				continue;
-> > 
-> > hmm...I just doubt that these two cases can happen.
-> > 
-> > btrfs_rmap_block() ensures that logical[nr] will be larger than
-> > cache->key.objectid.
-> > 
-> > Am I missing something?
+On Tue, Apr 23, 2013 at 10:54:53AM -0400, Josef Bacik wrote:
+> A user sent me a btrfs-image that was panicing because of some corruption.  This
+> is because we pass in a bogus value to btrfs_num_copies, and it panics.  Instead
+> just return 1.  We only call btrfs_num_copies to see if there are other copies
+> to try and read for things, so if we just return 1 it will make the callers exit
+> out with an appropriate error value.  Thanks,
 > 
-> Yeah, we can still get ranges that are past the end of the cache, just put a
-> printk in there and you'll see it happen.  Now it's not likely that a logical
-> will be less than the start but better safe than sorry.  Thanks,
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/volumes.c |   20 ++++++++++++++++++--
+>  1 files changed, 18 insertions(+), 2 deletions(-)
 > 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index c8a315d..c1a2217 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4232,9 +4232,25 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+>  	read_lock(&em_tree->lock);
+>  	em = lookup_extent_mapping(em_tree, logical, len);
+>  	read_unlock(&em_tree->lock);
+> -	BUG_ON(!em);
+>  
+> -	BUG_ON(em->start > logical || em->start + em->len < logical);
+> +	/*
+> +	 * We could return errors for these cases, but that could get ugly and
+> +	 * we'd probably do the same thing which is just not do anything else
+> +	 * and exit, so return 1 so the callers don't try to use other copies.
+> +	 */
 
-But if it's really past the end of the cache, there might be something wrong in
-btrfs_rmap_block() IMO.
+This is safe on all the repair paths, they bail out if there's only one
+copy. In the integrity checker btrfs_num_copies value is used to process
+all copies, btrfs(ic)_map_block is called afterwards and bails out
+eventually. Both functions fail on the same call to
+lookup_extent_mapping(), so it adds only some minor extra work but we're
+interested if it's safe to return 1, I think it is.
 
-Ok, I'll dig it somehow.
 
-thanks,
-liubo
+> +	if (!em) {
+> +		btrfs_emerg(fs_info, "No mapping for %Lu-%Lu\n", logical,
+> +			    logical+len);
+
+				(unsigned long long)logical,
+				(unsigned long long)(logical + len)
+
+> +		return 1;
+> +	}
+> +
+> +	if (em->start > logical || em->start + em->len < logical) {
+> +		btrfs_emerg(fs_info, "Invalid mapping for %Lu-%Lu, got "
+> +			    "%Lu-%Lu\n", logical, logical+len, em->start,
+> +			    em->start + em->len);
+
+dtto
+
+> +		return 1;
+> +	}
+> +
+>  	map = (struct map_lookup *)em->bdev;
+>  	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
+>  		ret = map->num_stripes;
+
+Reviewed-by: David Sterba <dsterba@suse.cz>

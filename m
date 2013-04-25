@@ -1,46 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34566 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757313Ab3DYN1J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Apr 2013 09:27:09 -0400
-Date: Thu, 25 Apr 2013 15:27:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
- group V2
-Message-ID: <20130425132705.GJ16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
- <20130424085739.GG19283@liubo.jp.oracle.com>
- <20130424130016.GE2631@localhost.localdomain>
- <20130424144321.GI19283@liubo.jp.oracle.com>
- <20130424144809.GI2631@localhost.localdomain>
- <20130425034826.GA24053@liubo>
- <20130425130413.GJ2631@localhost.localdomain>
+Received: from mail-ob0-f175.google.com ([209.85.214.175]:42248 "EHLO
+	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759156Ab3DYTxZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Apr 2013 15:53:25 -0400
+Received: by mail-ob0-f175.google.com with SMTP id wp18so2841164obc.20
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2013 12:53:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130425130413.GJ2631@localhost.localdomain>
+In-Reply-To: <20130418215856.GA2305@localhost.localdomain>
+References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
+ <20130417065506.GA21083@panda> <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
+ <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com> <20130418215856.GA2305@localhost.localdomain>
+From: Matt Pursley <mpursley@gmail.com>
+Date: Thu, 25 Apr 2013 12:52:44 -0700
+Message-ID: <CAG42Uxeajo=RESm531A7WWtFzKsFVDRJXuve1BRQXFPceFTMgw@mail.gmail.com>
+Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
+ are slower (~750MB/s)?
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 25, 2013 at 09:04:13AM -0400, Josef Bacik wrote:
-> > Sorry, I still didn't get how this happens...
-> > 
-> > I'll try to create new btrfs with raid0, raid1, raid10, raid5, raid6...
-> > 
-> > Could you please show me the testcase or something so that I can persuade
-> > myself?
-> > 
-> 
-> Ok I see what happened, I was using an old btrfs-image which makes one big chunk
-> to cover the entire file system, so that is how I was getting logical values
-> higher than the cache.  So not a normal case for sure, but since it is possible
-> for it to happen in a bad file system situation we should still leave it.
+Hey Josef,
 
-I agree, various versions of btrfs-progs are scattered among distros,
-kernel would be more robust when mounting a fs image created by an
-unknown btrfs-image versoin.
+Were you able to look into this any further?
+It's still pretty reproducible on my machine...
 
-david
+
+Thanks,
+Matt
+
+
+
+
+
+On Thu, Apr 18, 2013 at 2:58 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+
+> This is strange, and I can't see any reason why this would happen.  I'll try and
+> reproduce next week when I'm back from LSF.  Thanks,
+>
+> Josef

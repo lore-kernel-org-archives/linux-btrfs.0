@@ -1,103 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18213 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755155Ab3DYKNy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Apr 2013 06:13:54 -0400
-Message-ID: <51790196.6040606@cn.fujitsu.com>
-Date: Thu, 25 Apr 2013 18:12:38 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from dkim2.fusionio.com ([66.114.96.54]:43487 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757780Ab3DYNEQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Apr 2013 09:04:16 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id A26799A0694
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2013 07:04:15 -0600 (MDT)
+Date: Thu, 25 Apr 2013 09:04:13 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
+ group V2
+Message-ID: <20130425130413.GJ2631@localhost.localdomain>
+References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
+ <20130424085739.GG19283@liubo.jp.oracle.com>
+ <20130424130016.GE2631@localhost.localdomain>
+ <20130424144321.GI19283@liubo.jp.oracle.com>
+ <20130424144809.GI2631@localhost.localdomain>
+ <20130425034826.GA24053@liubo>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Josef Bacik <jbacik@fusionio.com>, Jim Schutt <jaschut@sandia.gov>
-Subject: [PATCH] Btrfs: allocate new chunks if the space is not enough for
- global rsv
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130425034826.GA24053@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running the 208th of xfstests, the fs returned the enospc
-error when there was lots of free space in the disk.
+On Wed, Apr 24, 2013 at 09:48:27PM -0600, Liu Bo wrote:
+> On Wed, Apr 24, 2013 at 10:48:09AM -0400, Josef Bacik wrote:
+> > On Wed, Apr 24, 2013 at 08:43:21AM -0600, Liu Bo wrote:
+> > > On Wed, Apr 24, 2013 at 09:00:16AM -0400, Josef Bacik wrote:
+> > > > On Wed, Apr 24, 2013 at 02:57:40AM -0600, Liu Bo wrote:
+> > > > > On Tue, Apr 23, 2013 at 02:48:54PM -0400, Josef Bacik wrote:
+> > > > > > If we fail to load block groups halfway through we can leave extent_state's on
+> > > > > > the excluded tree.  This is because we just lookup the supers and add them to
+> > > > > > the excluded tree regardless of which block group we are looking at currently.
+> > > > > > This is a problem because we remove the excluded extents for the range of the
+> > > > > > block group only, so if we don't ever load a block group for one of the excluded
+> > > > > > extents we won't ever free it.  This fixes the problem by only adding excluded
+> > > > > > extents if it falls in the block group range we care about.  With this patch
+> > > > > > we're no longer leaking space when we fail to read all of the block groups.
+> > > > > > Thanks,
+> > > > > > 
+> > > > > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> > > > > > ---
+> > > > > > V1->V2: fixed a slight problem where i should have been comparing to the end of
+> > > > > > hte block group not the begining.
+> > > > > > 
+> > > > > >  fs/btrfs/extent-tree.c |   24 +++++++++++++++++++++---
+> > > > > >  1 files changed, 21 insertions(+), 3 deletions(-)
+> > > > > > 
+> > > > > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > > > > > index b441be3..a81f689 100644
+> > > > > > --- a/fs/btrfs/extent-tree.c
+> > > > > > +++ b/fs/btrfs/extent-tree.c
+> > > > > > @@ -270,9 +270,27 @@ static int exclude_super_stripes(struct btrfs_root *root,
+> > > > > >  			return ret;
+> > > > > >  
+> > > > > >  		while (nr--) {
+> > > > > > -			cache->bytes_super += stripe_len;
+> > > > > > -			ret = add_excluded_extent(root, logical[nr],
+> > > > > > -						  stripe_len);
+> > > > > > +			u64 start, len;
+> > > > > > +
+> > > > > > +			if (logical[nr] > cache->key.objectid +
+> > > > > > +			    cache->key.offset)
+> > > > > > +				continue;
+> > > > > > +
+> > > > > > +			if (logical[nr] + stripe_len <= cache->key.objectid)
+> > > > > > +				continue;
+> > > > > 
+> > > > > hmm...I just doubt that these two cases can happen.
+> > > > > 
+> > > > > btrfs_rmap_block() ensures that logical[nr] will be larger than
+> > > > > cache->key.objectid.
+> > > > > 
+> > > > > Am I missing something?
+> > > > 
+> > > > Yeah, we can still get ranges that are past the end of the cache, just put a
+> > > > printk in there and you'll see it happen.  Now it's not likely that a logical
+> > > > will be less than the start but better safe than sorry.  Thanks,
+> > > > 
+> > > 
+> > > But if it's really past the end of the cache, there might be something wrong in
+> > > btrfs_rmap_block() IMO.
+> > > 
+> > > Ok, I'll dig it somehow.
+> > > 
+> > 
+> > It's doing it right, we just loop through all of the supers, which we have no
+> > idea where they show up logically.  It's not a problem with rmap, it's doing the
+> > right thing, we just need to add this extra check because rmap is not bounded in
+> > its logical search.  Thanks,
+> 
+> Sorry, I still didn't get how this happens...
+> 
+> I'll try to create new btrfs with raid0, raid1, raid10, raid5, raid6...
+> 
+> Could you please show me the testcase or something so that I can persuade
+> myself?
+> 
 
-By bisect debug, we found it was introduced by commit 96f1bb5777.
-This commit makes the space check for the global reservation in
-can_overcommit() be inconsistent with should_alloc_chunk().
-can_overcommit() requires that the free space is 2 times the size
-of the global reservation, or we can't do overcommit. And instead,
-we need reclaim some reserved space, and if we still don't have
-enough free space, we need allocate a new chunk. But unfortunately,
-should_alloc_chunk() just requires that the free space is 1 time
-the size of the global reservation, that is we would not try to
-allocate a new chunk if the free space size is in the middle of
-these two requires, and just return the enospc error. Fix it.
+Ok I see what happened, I was using an old btrfs-image which makes one big chunk
+to cover the entire file system, so that is how I was getting logical values
+higher than the cache.  So not a normal case for sure, but since it is possible
+for it to happen in a bad file system situation we should still leave it.
+Thanks,
 
-Cc: Jim Schutt <jaschut@sandia.gov>
-Cc: Josef Bacik <jbacik@fusionio.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 19 +++++++++++--------
- 1 file changed, 11 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0d84787..4976f93 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3557,6 +3557,11 @@ static void force_metadata_allocation(struct btrfs_fs_info *info)
- 	rcu_read_unlock();
- }
- 
-+static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
-+{
-+	return (global->size << 1);
-+}
-+
- static int should_alloc_chunk(struct btrfs_root *root,
- 			      struct btrfs_space_info *sinfo, int force)
- {
-@@ -3574,7 +3579,7 @@ static int should_alloc_chunk(struct btrfs_root *root,
- 	 * global_rsv, it doesn't change except when the transaction commits.
- 	 */
- 	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
--		num_allocated += global_rsv->size;
-+		num_allocated += calc_global_rsv_need_space(global_rsv);
- 
- 	/*
- 	 * in limited mode, we want to have some free space up to
-@@ -3746,7 +3751,7 @@ static int can_overcommit(struct btrfs_root *root,
- {
- 	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
- 	u64 profile = btrfs_get_alloc_profile(root, 0);
--	u64 rsv_size = 0;
-+	u64 space_size;
- 	u64 avail;
- 	u64 used;
- 	u64 to_add;
-@@ -3754,18 +3759,16 @@ static int can_overcommit(struct btrfs_root *root,
- 	used = space_info->bytes_used + space_info->bytes_reserved +
- 		space_info->bytes_pinned + space_info->bytes_readonly;
- 
--	spin_lock(&global_rsv->lock);
--	rsv_size = global_rsv->size;
--	spin_unlock(&global_rsv->lock);
--
- 	/*
- 	 * We only want to allow over committing if we have lots of actual space
- 	 * free, but if we don't have enough space to handle the global reserve
- 	 * space then we could end up having a real enospc problem when trying
- 	 * to allocate a chunk or some other such important allocation.
- 	 */
--	rsv_size <<= 1;
--	if (used + rsv_size >= space_info->total_bytes)
-+	spin_lock(&global_rsv->lock);
-+	space_size = calc_global_rsv_need_space(global_rsv);
-+	spin_unlock(&global_rsv->lock);
-+	if (used + space_size >= space_info->total_bytes)
- 		return 0;
- 
- 	used += space_info->bytes_may_use;
--- 
-1.8.0.1
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+Josef

@@ -1,77 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48895 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754647Ab3DXPuR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Apr 2013 11:50:17 -0400
-Date: Wed, 24 Apr 2013 17:50:11 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:32402 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757962Ab3DYDsT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Apr 2013 23:48:19 -0400
+Date: Thu, 25 Apr 2013 11:48:27 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix all callers of read_tree_block
-Message-ID: <20130424155011.GG16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: only exclude supers in the range of our block
+ group V2
+Message-ID: <20130425034826.GA24053@liubo>
+Reply-To: bo.li.liu@oracle.com
+References: <1366742934-4214-1-git-send-email-jbacik@fusionio.com>
+ <20130424085739.GG19283@liubo.jp.oracle.com>
+ <20130424130016.GE2631@localhost.localdomain>
+ <20130424144321.GI19283@liubo.jp.oracle.com>
+ <20130424144809.GI2631@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366741222-1825-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <20130424144809.GI2631@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 23, 2013 at 02:20:22PM -0400, Josef Bacik wrote:
-> We kept leaking extent buffers when mounting a broken file system and it turns
-> out it's because not everybody uses read_tree_block properly.  You need to check
-> and make sure the extent_buffer is uptodate before you use it.  This patch fixes
-> everybody who calls read_tree_block directly to make sure they check that it is
-> uptodate and free it and return an error if it is not.  With this we no longer
-> leak EB's when things go horribly wrong.  Thanks,
+On Wed, Apr 24, 2013 at 10:48:09AM -0400, Josef Bacik wrote:
+> On Wed, Apr 24, 2013 at 08:43:21AM -0600, Liu Bo wrote:
+> > On Wed, Apr 24, 2013 at 09:00:16AM -0400, Josef Bacik wrote:
+> > > On Wed, Apr 24, 2013 at 02:57:40AM -0600, Liu Bo wrote:
+> > > > On Tue, Apr 23, 2013 at 02:48:54PM -0400, Josef Bacik wrote:
+> > > > > If we fail to load block groups halfway through we can leave extent_state's on
+> > > > > the excluded tree.  This is because we just lookup the supers and add them to
+> > > > > the excluded tree regardless of which block group we are looking at currently.
+> > > > > This is a problem because we remove the excluded extents for the range of the
+> > > > > block group only, so if we don't ever load a block group for one of the excluded
+> > > > > extents we won't ever free it.  This fixes the problem by only adding excluded
+> > > > > extents if it falls in the block group range we care about.  With this patch
+> > > > > we're no longer leaking space when we fail to read all of the block groups.
+> > > > > Thanks,
+> > > > > 
+> > > > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> > > > > ---
+> > > > > V1->V2: fixed a slight problem where i should have been comparing to the end of
+> > > > > hte block group not the begining.
+> > > > > 
+> > > > >  fs/btrfs/extent-tree.c |   24 +++++++++++++++++++++---
+> > > > >  1 files changed, 21 insertions(+), 3 deletions(-)
+> > > > > 
+> > > > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > > > > index b441be3..a81f689 100644
+> > > > > --- a/fs/btrfs/extent-tree.c
+> > > > > +++ b/fs/btrfs/extent-tree.c
+> > > > > @@ -270,9 +270,27 @@ static int exclude_super_stripes(struct btrfs_root *root,
+> > > > >  			return ret;
+> > > > >  
+> > > > >  		while (nr--) {
+> > > > > -			cache->bytes_super += stripe_len;
+> > > > > -			ret = add_excluded_extent(root, logical[nr],
+> > > > > -						  stripe_len);
+> > > > > +			u64 start, len;
+> > > > > +
+> > > > > +			if (logical[nr] > cache->key.objectid +
+> > > > > +			    cache->key.offset)
+> > > > > +				continue;
+> > > > > +
+> > > > > +			if (logical[nr] + stripe_len <= cache->key.objectid)
+> > > > > +				continue;
+> > > > 
+> > > > hmm...I just doubt that these two cases can happen.
+> > > > 
+> > > > btrfs_rmap_block() ensures that logical[nr] will be larger than
+> > > > cache->key.objectid.
+> > > > 
+> > > > Am I missing something?
+> > > 
+> > > Yeah, we can still get ranges that are past the end of the cache, just put a
+> > > printk in there and you'll see it happen.  Now it's not likely that a logical
+> > > will be less than the start but better safe than sorry.  Thanks,
+> > > 
+> > 
+> > But if it's really past the end of the cache, there might be something wrong in
+> > btrfs_rmap_block() IMO.
+> > 
+> > Ok, I'll dig it somehow.
+> > 
 > 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> It's doing it right, we just loop through all of the supers, which we have no
+> idea where they show up logically.  It's not a problem with rmap, it's doing the
+> right thing, we just need to add this extra check because rmap is not bounded in
+> its logical search.  Thanks,
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Sorry, I still didn't get how this happens...
 
-> @@ -2762,7 +2771,10 @@ static int get_tree_block_key(struct reloc_control *rc,
->  	BUG_ON(block->key_ready);
->  	eb = read_tree_block(rc->extent_root, block->bytenr,
->  			     block->key.objectid, block->key.offset);
-> -	BUG_ON(!eb);
-> +	if (!eb || !extent_buffer_uptodate(eb)) {
-> +		free_extent_buffer(eb);
-> +		return -EIO;
+I'll try to create new btrfs with raid0, raid1, raid10, raid5, raid6...
 
-The error code is not checked when called from relocate_tree_blocks:
+Could you please show me the testcase or something so that I can persuade
+myself?
 
-2878         rb_node = rb_first(blocks);
-2879         while (rb_node) {
-2880                 block = rb_entry(rb_node, struct tree_block, rb_node);
-2881                 if (!block->key_ready)
-2882                         get_tree_block_key(rc, block);
-2883                 rb_node = rb_next(rb_node);
-2884         }
-
-but the function is ready to return errors, I'll send this as a followup:
-
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2878,8 +2878,11 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
-        rb_node = rb_first(blocks);
-        while (rb_node) {
-                block = rb_entry(rb_node, struct tree_block, rb_node);
--               if (!block->key_ready)
--                       get_tree_block_key(rc, block);
-+               if (!block->key_ready) {
-+                       ret = get_tree_block_key(rc, block);
-+                       if (ret)
-+                               goto out_free_path;
-+               }
-                rb_node = rb_next(rb_node);
-        }
-
-@@ -2906,6 +2909,7 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- out:
-        err = finish_pending_nodes(trans, rc, path, err);
-
-+out_free_path:
-        btrfs_free_path(path);
- out_path:
-        free_block_list(blocks);
-
+thanks,
+liubo

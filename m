@@ -1,41 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33152 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:20256 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756516Ab3DZP3J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 11:29:09 -0400
-Date: Fri, 26 Apr 2013 17:29:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        wangshilong1991@gmail.com, dsterba@suse.cz
-Subject: Re: [PATCH v4 3/3] Btrfs: automatic rescan after "quota enable"
- command
-Message-ID: <20130426152906.GO16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1366905892-7880-1-git-send-email-list.btrfs@jan-o-sch.net>
- <1366905892-7880-4-git-send-email-list.btrfs@jan-o-sch.net>
+	id S1754571Ab3DZQIr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Apr 2013 12:08:47 -0400
+Message-ID: <517AA68B.9060600@redhat.com>
+Date: Fri, 26 Apr 2013 11:08:43 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366905892-7880-4-git-send-email-list.btrfs@jan-o-sch.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Question on btrfs filesystem defragment args
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 25, 2013 at 06:04:52PM +0200, Jan Schmidt wrote:
-> @@ -1520,6 +1524,13 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
->  	if (ret)
->  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
->  
-> +	if (!ret && start_rescan_worker) {
-> +		ret = btrfs_qgroup_rescan(fs_info);
-> +		if (ret)
-> +			pr_err("btrfs: start rescan quota failed: %d\n", ret);
+Liu Bo created test 284 for xfstests to exercise btrfs defragmentation.
 
-This will print the error even in the -EINPROGRESS case, that's not IMO
-an error or worth reporting iff rescan is in progress.
+One test sends an argument including "-s -1" meaning "start at negative one"
 
-It's probably a rare event, but even then, an ERROR syslog message
-causes only false alerts.
+That's failing today, because parse_size now rejects negative numbers.
+(that might be something to fix on its own, since length = (u64)-1
+might imply the whole file, per kernel comments).
 
-> +		ret = 0;
-> +	}
-> +
+But has "start at -1" ever had an expected meaning?  That doesn't make
+sense to me, but the test does it:
+
++echo "a single file | start < 0 && 0 < len < file size | off"
++_rundefrag 1 2 1
+
+...
+
++_btrfs_online_defrag()
++{
++       str=""
++       if [ "$2" = "2" ];then
++               str="$str -s -1 -l $((filesize / 2)) "
+
+and expects a silent result:
+
+...
++a single file | default |  on
++a single file | start < 0 && 0 < len < file size | off
++a single file | start > file size && 0 < len < file size | off
+...
+
+What was this test intended to do when it was written?
+
+Thanks,
+-Eric

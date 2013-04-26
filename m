@@ -1,63 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43726 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756751Ab3DYMNn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Apr 2013 08:13:43 -0400
-From: Anand Jain <anand.jain@oracle.com>
+Received: from sandeen.net ([63.231.237.45]:37321 "EHLO sandeen.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752935Ab3DZVGO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Apr 2013 17:06:14 -0400
+From: Eric Sandeen <sandeen@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com
-Subject: [PATCH] btrfs-progs: mkfs seg fault for wrong free
-Date: Thu, 25 Apr 2013 20:15:42 +0800
-Message-Id: <1366892142-21920-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 0/9] Btrfs-progs: start at kernel/userspace syncup
+Date: Fri, 26 Apr 2013 16:06:01 -0500
+Message-Id: <1367010370-21571-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With commit
-        87c09f7 Btrfs-progs: fix memory leaks on cleanup
+A first round of small, hopefully obviously-correct and/or no-op
+patches that start to make the userspace copies of kernelspace code
+look a bit more similar.
 
-mkfs on multiple dev is ending with segfault at
-close_all_devices() during kfree(device->name)
+Many of these are direct ports from userspace, a couple others
+are just my cleanups of various bits here and there.
 
-because mkfs calls btrfs_add_to_fsid, which does not initialize
-name when dev is added to the list.
+There'll be a fair bit more after this, but I'll do it in chunks.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- disk-io.c | 6 ++++--
- utils.c   | 2 ++
- 2 files changed, 6 insertions(+), 2 deletions(-)
+(Thanks David!) :)
 
-diff --git a/disk-io.c b/disk-io.c
-index be4abb8..15c90fe 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1290,8 +1290,10 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
- 				fprintf(stderr, "Warning, could not drop caches\n");
- 		}
- 		close(device->fd);
--		kfree(device->name);
--		kfree(device->label);
-+		if (device->name)
-+			kfree(device->name);
-+		if (device->label)
-+			kfree(device->label);
- 		kfree(device);
- 	}
- 	kfree(fs_info->fs_devices);
-diff --git a/utils.c b/utils.c
-index 7b028a7..8104465 100644
---- a/utils.c
-+++ b/utils.c
-@@ -484,6 +484,8 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	device = kmalloc(sizeof(*device), GFP_NOFS);
- 	if (!device)
- 		return -ENOMEM;
-+	memset(device, 0, sizeof(*device));
-+	
- 	buf = kmalloc(sectorsize, GFP_NOFS);
- 	if (!buf) {
- 		kfree(device);
--- 
-1.8.1.227.g44fe835
+Thanks,
+-Eric
 
+[PATCH 1/9] Btrfs-progs: remove dead btrfs-defrag.c
+[PATCH 2/9] Btrfs-progs: remove cut & paste btrfs_next_leaf from restore
+[PATCH 3/9] Btrfs-progs: fix array bound checking
+[PATCH 4/9] Btrfs-progs: move btrfs_fsck_reinit_root to cmds-check.c
+[PATCH 5/9] Btrfs-progs: remove some dead/unbuilt code
+[PATCH 6/9] Btrfs-progs: cleanup duplicated division functions
+[PATCH 7/9] Btrfs-progs: make extent_ref_type() match kernelspace
+[PATCH 8/9] Btrfs-progs: remove the unnecessary 'return -1;' at the end of bin_search
+[PATCH 9/9] Btrfs-progs: remove btrfs_init_path calls from ctree.c

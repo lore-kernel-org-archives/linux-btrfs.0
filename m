@@ -1,43 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:40925 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756916Ab3DYVKW (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18851 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754221Ab3DZJhJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Apr 2013 17:10:22 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id C687A7C0425
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2013 15:10:21 -0600 (MDT)
-Date: Thu, 25 Apr 2013 17:10:19 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Matt Pursley <mpursley@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
- are slower (~750MB/s)?
-Message-ID: <20130425211019.GM2631@localhost.localdomain>
-References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
- <20130417065506.GA21083@panda>
- <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
- <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com>
- <20130418215856.GA2305@localhost.localdomain>
- <CAG42Uxeajo=RESm531A7WWtFzKsFVDRJXuve1BRQXFPceFTMgw@mail.gmail.com>
- <20130425203900.GL2631@localhost.localdomain>
- <CAG42UxcVhXT5=kgUedAWDbSnPuW_Nu---PsG+WRuNCFn9Kdeng@mail.gmail.com>
+	Fri, 26 Apr 2013 05:37:09 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r3Q9b7re027795
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2013 09:37:08 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3Q9b7U8002551
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2013 09:37:07 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r3Q9b7j9002546
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2013 09:37:07 GMT
+Message-ID: <517A4B44.5060608@oracle.com>
+Date: Fri, 26 Apr 2013 17:39:16 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAG42UxcVhXT5=kgUedAWDbSnPuW_Nu---PsG+WRuNCFn9Kdeng@mail.gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: device delete to get errors from the kernel
+References: <51623C0C.4060709@oracle.com>
+In-Reply-To: <51623C0C.4060709@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 25, 2013 at 03:01:18PM -0600, Matt Pursley wrote:
-> Ok, awesome, let me know how it goes..  I don't have the raid
-> formatted to btrfs right now, but I could probably do that in about 30
-> minutes or so.
-> 
 
-Huh so I'm getting the full bandwidth, 120 mb/s with one thread and 60 mb/s with
-two threads.  These are just cheap sata drives tho, I'll try and dig up a box
-with 3 fusion cards for something a little closer to the speeds you are seeing
-and see if that makes a difference.  Thanks,
+  As showed in the previous email in this thread, we need to get
+  the error string from the kernel to the cli to improve the
+  usability of the product.
+  As also said, I was looking at two way which I think we could
+  do this, here I take the 2nd approach which is to pass the error
+  string though the ioctl args. Which leads to change in the
+  ioctl-structure. But..
 
-Josef
+  This comes with a caveat that both btrfs-progs and btrfs-kernel
+  patch together either must be applied or removed.
+
+   [PATCH] btrfs-progs: device delete to get errors from the kernel
+   [PATCH] btrfs: device delete to get errors from the kernel
+
+  Which is not a developer/integrator friendly rule. If there
+  is anything I could do to help on this pls do let me know.
+
+  There are quite a number of cli which needs passing of the
+  the error string from the kernel to cli. Which I plan to work
+  once we finalize the approach to address this issue.
+
+  Thanks for your time to review this.
+
+Anand

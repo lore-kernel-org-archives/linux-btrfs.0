@@ -1,106 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx4-phx2.redhat.com ([209.132.183.25]:57981 "EHLO
-	mx4-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752769Ab3DZNKT convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 09:10:19 -0400
-Content-Type: text/plain;
-	charset=us-ascii
-Subject: Re: [PATCH] xfstests: btrfs/276 - stop all fsstress before exiting
-References: <517A10B1.7040107@redhat.com> <517A3C49.9090703@jan-o-sch.net>
-From: Eric Sandeen <esandeen@redhat.com>
+Received: from mx1.redhat.com ([209.132.183.28]:56398 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754361Ab3DZSpa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Apr 2013 14:45:30 -0400
+Message-ID: <517ACB41.2030002@redhat.com>
+Date: Fri, 26 Apr 2013 13:45:21 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <517A3C49.9090703@jan-o-sch.net>
-Message-Id: <7DC41D7F-396D-4769-B573-816E80372456@redhat.com>
-Date: Fri, 26 Apr 2013 09:10:14 -0400 (EDT)
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: Eric Sandeen <sandeen@redhat.com>, xfs-oss <xfs@oss.sgi.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To: xfs-oss <xfs@oss.sgi.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] xfstests btrfs/284: shorten duration, fix output
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Apr 26, 2013, at 3:35 AM, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
+test 284 had... some issues.
 
-> On Fri, April 26, 2013 at 07:29 (+0200), Eric Sandeen wrote:
->> Tests after 276 were failing because the background fsstress
->> hadn't quit prior to exit, devices couldn't be unmounted, etc.
-> 
-> I don't see how that would happen. Any further insight?
-> 
-Yes, sorry for not including it.  The parent process was killed, but the fsstress processes just got reparented to init.  
+First, it took so long nobody ran it; so shorten the extent
+count by a factor of about 100.
 
-I tried for a while to use pkill to knock them of first but this seems simpler, actually.
+Having fixed that, we see failures in 2 cases; when start or
+len is -1, but the golden output file didn't have error
+output, as if they should pass.
 
-Eric
+I'm going to argue that these *should* both fail; start = -1
+has no real meaning.  length = -1 might mean "the rest
+of the file" but if that's what you really want, just
+don't specify -l.
 
->> Just use the same trick as generic/068 does, and use
->> a tmpfile to control whether the background loop keeps
->> running.
-> 
-> I like that trick :-)
-> 
-> Thanks,
-> -Jan
-> 
->> Also, no need to umount scratch at cleanup time, the scripts
->> do that for us.
->> 
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->> 
->> (nobody else ran into this?  really?)
->> 
->> diff --git a/tests/btrfs/276 b/tests/btrfs/276
->> index 0a5ce36..9d68b54 100755
->> --- a/tests/btrfs/276
->> +++ b/tests/btrfs/276
->> @@ -36,14 +36,8 @@ noise_pid=0
->> 
->> _cleanup()
->> {
->> -    if [ $noise_pid -ne 0 ]; then
->> -        echo "background noise kill $noise_pid" >>$seqres.full
->> -        kill $noise_pid
->> -        noise_pid=0
->> -        wait
->> -    fi
->> -    echo "*** unmount"
->> -    umount $SCRATCH_MNT 2>/dev/null
->> +    rm $tmp.running
->> +    wait
->>    rm -f $tmp.*
->> }
->> trap "_cleanup; exit \$status" 0 1 2 3 15
->> @@ -210,7 +204,7 @@ workout()
->> 
->>    if [ $do_bg_noise -ne 0 ]; then
->>        # make background noise while backrefs are being walked
->> -        while /bin/true; do
->> +        while [ -f "$tmp.running" ]; do
->>            echo background fsstress >>$seqres.full
->>            run_check $FSSTRESS_PROG -d $SCRATCH_MNT/bgnoise -n 999
->>            echo background rm >>$seqres.full
->> @@ -263,6 +257,8 @@ nfiles=4
->> numprocs=1
->> do_bg_noise=1
->> 
->> +touch $tmp.running
->> +
->> workout $filesize $nfiles $numprocs $snap_name $do_bg_noise
->> 
->> echo "*** done"
->> diff --git a/tests/btrfs/276.out b/tests/btrfs/276.out
->> index 2032dea..5113164 100644
->> --- a/tests/btrfs/276.out
->> +++ b/tests/btrfs/276.out
->> @@ -1,4 +1,3 @@
->> QA output created by 276
->> *** test backref walking
->> *** done
->> -*** unmount
->> 
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> 
+So add failure output for those cases.
+
+Send all command output to $seq.full, in case that changes
+in the future; just capture the return value.
+
+Then remove the return value echo on failure (50?) because
+who knows when that might change to some other magic value.
+
+Ok, then when defrag actually works, old defrag returned
+"20" (because?) but a recent commit changed it to 0.
+So accommodate that too.
+
+And remove a stray "HAVE_DEFRAG=1" while we're at it.
+That variable is never used.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
+
+diff --git a/tests/btrfs/284 b/tests/btrfs/284
+old mode 100644
+new mode 100755
+index d952977..67161a3
+--- a/tests/btrfs/284
++++ b/tests/btrfs/284
+@@ -26,7 +26,7 @@ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ here="`pwd`"
+ tmp=/tmp/$$
+-cnt=11999
++cnt=119
+ filesize=48000
+ 
+ status=1	# failure is the default!
+@@ -58,11 +58,12 @@ _create_file()
+ _btrfs_online_defrag()
+ {
+ 	str=""
++	# start = -1 is invalid, should fail
+ 	if [ "$2" = "2" ];then
+ 		str="$str -s -1 -l $((filesize / 2)) "
+ 	elif [ "$2" = "3" ];then
+ 		str="$str -s $((filesize + 1)) -l $((filesize / 2)) "
+-		HAVE_DEFRAG=1
++	# len = -1 is invalid, should fail
+ 	elif [ "$2" = "4" ];then
+ 		str="$str -l -1 "
+ 	elif [ "$2" = "5" ];then
+@@ -76,20 +77,22 @@ _btrfs_online_defrag()
+ 	fi
+ 
+ 	if [ "$str" != "" ]; then
+-		$BTRFS_UTIL_PROG filesystem defragment $str $SCRATCH_MNT/tmp_file
++		$BTRFS_UTIL_PROG filesystem defragment $str $SCRATCH_MNT/tmp_file >> $seq.full 2>&1
+ 	else
+ 		if [ "$1" = "1" ];then
+-			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_file
++			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_file >> $seq.full 2>&1
+ 		elif [ "$1" = "2" ];then
+-			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_dir
++			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_dir >> $seq.full 2>&1
+ 		elif [ "$1" = "3" ];then
+-			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT
++			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT >> $seq.full 2>&1
+ 		fi
+ 	fi
+ 	ret_val=$?
+ 	_scratch_remount
+-	if [ $ret_val -ne 20 ];then
+-		echo "btrfs filesystem defragment failed! err is $ret_val"
++	# Older defrag returned "20" for success
++	# e9393c2 btrfs-progs: defrag return zero on success
++	if [ $ret_val -ne 0 -a $ret_val -ne 20 ]; then
++		echo "btrfs filesystem defragment failed!"
+ 	fi
+ }
+ 
+@@ -140,19 +143,19 @@ _scratch_mount
+ _require_defrag
+ 
+ echo "defrag object | defragment range | defragment compress"
+-echo "a single file |  default | off"
++echo "a single file | default | off"
+ _rundefrag 1 1 1
+ 
+ echo "a single file | default |  on"
+ _rundefrag 1 1 2
+ 
+-echo "a single file | start < 0 && 0 < len < file size | off"
++echo "a single file | start < 0 && 0 < len < file size | off (should fail)"
+ _rundefrag 1 2 1
+ 
+ echo "a single file | start > file size && 0 < len < file size | off"
+ _rundefrag 1 3 1
+ 
+-echo "a single file | start = 0 && len < 0 | off"
++echo "a single file | start = 0 && len < 0 | off (should fail)"
+ _rundefrag 1 4 1
+ 
+ echo "a single file | start = 0 && len > file size | off"
+diff --git a/tests/btrfs/284.out b/tests/btrfs/284.out
+index 4a69f82..c942271 100644
+--- a/tests/btrfs/284.out
++++ b/tests/btrfs/284.out
+@@ -1,10 +1,12 @@
+ QA output created by 284
+ defrag object | defragment range | defragment compress
+-a single file |  default | off
++a single file | default | off
+ a single file | default |  on
+-a single file | start < 0 && 0 < len < file size | off
++a single file | start < 0 && 0 < len < file size | off (should fail)
++btrfs filesystem defragment failed!
+ a single file | start > file size && 0 < len < file size | off
+-a single file | start = 0 && len < 0 | off
++a single file | start = 0 && len < 0 | off (should fail)
++btrfs filesystem defragment failed!
+ a single file | start = 0 && len > file size | off
+ a single file | start = 0 && 0 < len < file size | off
+ a directory | default | off
+
+

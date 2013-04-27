@@ -1,33 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57997 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751203Ab3DVNhc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Apr 2013 09:37:32 -0400
-Date: Mon, 22 Apr 2013 15:37:29 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-qc0-f181.google.com ([209.85.216.181]:36910 "EHLO
+	mail-qc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751201Ab3D0Vkk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 27 Apr 2013 17:40:40 -0400
+Received: by mail-qc0-f181.google.com with SMTP id a22so2612830qcs.40
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Apr 2013 14:40:40 -0700 (PDT)
+Message-ID: <1367098836.14073.5.camel@ayu>
+Subject: Re: data DUP
+From: Calvin Walton <calvin.walton@kepstin.ca>
 To: Roger Binns <rogerb@rogerbinns.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: data DUP
-Message-ID: <20130422133729.GM16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Date: Sat, 27 Apr 2013 17:40:36 -0400
+In-Reply-To: <kkv6o8$9f0$1@ger.gmane.org>
 References: <kkut3u$lp1$1@ger.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <kkut3u$lp1$1@ger.gmane.org>
+	 <20130420204814.GN7639@carfax.org.uk> <kkv0gv$jpo$1@ger.gmane.org>
+	 <20130420212311.GO7639@carfax.org.uk> <kkv6o8$9f0$1@ger.gmane.org>
+Content-Type: multipart/signed; micalg="sha-1"; protocol="application/x-pkcs7-signature";
+	boundary="=-Fq8wlYoypj2WSe5MN9aN"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 20, 2013 at 01:17:06PM -0700, Roger Binns wrote:
-> Is there any particular reason why I can't use DUP for data?
 
-IIRC separate DUP for metadata and data is not possible due to some
-technical reason (I don't remember nor can find the mail where this was
-mentioned).
+--=-Fq8wlYoypj2WSe5MN9aN
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-DUP data is possible only in the --mixed mode so this
+On Sat, 2013-04-20 at 16:01 -0700, Roger Binns wrote:
+> On 20/04/13 14:23, Hugo Mills wrote:
+> > You should upgrade anyway -- there's been a number of serious bugs in
+> > btrfs fixed since then.
+>=20
+> 13.04 is imminent so I'll pick up a newer kernel as part of that anyway.
+> (Also Tanglu which I hope to move to intends to use the Ubuntu kernel any=
+way.)
+>=20
+> In any event I am not worried.  Bug fixes get backported. The probability
+> of hitting any serious bug is low (others would likely be victims first)
+> and worst case I have backups (snapshots, other machines, Google/Dropbox,
+> DVDs & hard drives at other people's houses etc).
 
- mkfs.btrfs --mixed -d dup -m dup /dev/ice
+Unfortunately, bugfixes in btrfs have tended to be *not* backported;
+aside from a few special cases, btrfs changes only go into new kernel
+3.x releases. A few of the Linux distributions that officially support
+btrfs (Possibly Oracle, Red Hat, Suse? You would have to contact them
+for details...) may be backporting fixes themselves.
 
-works.
+As a result, we recommend that btrfs users should generally run whatever
+the latest upstream kernel release is - in particular, you should try
+the latest kernel before reporting bugs in btrfs.
 
-david
+--=20
+Calvin Walton <calvin.walton@kepstin.ca>
+
+--=-Fq8wlYoypj2WSe5MN9aN
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIINYjCCBjQw
+ggQcoAMCAQICAR4wDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0
+Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxKTAn
+BgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTA3MTAyNDIxMDE1NVoX
+DTE3MTAyNDIxMDE1NVowgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSsw
+KQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFy
+dENvbSBDbGFzcyAxIFByaW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQTCCASIwDQYJKoZIhvcN
+AQEBBQADggEPADCCAQoCggEBAMcJg8zOLdgasSmkLhOrlr6KMoOMpohBllVHrdRvEg/q6r8jR+EK
+75xCGhR8ToREoqe7zM9/UnC6TS2y9UKTpT1v7RSMzR0t6ndl0TWBuUr/UXBhPk+Kmy7bI4yW4urC
++y7P3/1/X7U8ocb8VpH/Clt+4iq7nirMcNh6qJR+xjOhV+VHzQMALuGYn5KZmc1NbJQYclsGkDxD
+z2UbFqE2+6vIZoL+jb9x4Pa5gNf1TwSDkOkikZB1xtB4ZqtXThaABSONdfmv/Z1pua3FYxnCFmdr
+/+N2JLKutIxMYqQOJebr/f/h5t95m4JgrM3Y/w7YX9d7YAL9jvN4SydHsU6n65cCAwEAAaOCAa0w
+ggGpMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBRTcu2SnODaywFc
+fH6WNU7y1LhRgjAfBgNVHSMEGDAWgBROC+8apEBbpRdphzDKNGhD0EGu8jBmBggrBgEFBQcBAQRa
+MFgwJwYIKwYBBQUHMAGGG2h0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9jYTAtBggrBgEFBQcwAoYh
+aHR0cDovL3d3dy5zdGFydHNzbC5jb20vc2ZzY2EuY3J0MFsGA1UdHwRUMFIwJ6AloCOGIWh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tL3Nmc2NhLmNybDAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5j
+b20vc2ZzY2EuY3JsMIGABgNVHSAEeTB3MHUGCysGAQQBgbU3AQIBMGYwLgYIKwYBBQUHAgEWImh0
+dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUHAgEWKGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwDQYJKoZIhvcNAQEFBQADggIBAAqDCH14qywG
+XLhjjF6uHLkjd02hcdh9hrw+VUsv+q1eeQWB21jWj3kJ96AUlPCoEGZ/ynJNScWy6QMVQjbbMXlt
+UfO4n4bGGdKo3awPWp61tjAFgraLJgDk+DsSvUD6EowjMTNx25GQgyYJ5RPIzKKR9tQW8gGK+2+R
+HxkUCTbYFnL6kl8Ch507rUdPPipJ9CgJFws3kDS3gOS5WFMxcjO5DwKfKSETEPrHh7p5shuuNktv
+sv6hxHTLhiMKX893gxdT3XLS9OKmCv87vkINQcNEcIIoFWbP9HORz9v3vQwR4e3ksLc2JZOAFK+s
+sS5XMEoznzpihEP0PLc4dCBYjbvSD7kxgDwZ+Aj8Q9PkbvE9sIPP7ON0fz095HdThKjiVJe6vofq
++n6b1NBc8XdrQvBmunwxD5nvtTW4vtN6VY7mUCmxsCieuoBJ9OlqmsVWQvifIYf40dJPZkk9YgGT
+zWLpXDSfLSplbY2LL9C9U0ptvjcDjefLTvqSFc7tw1sEhF0n/qpA2r0GpvkLRDmcSwVyPvmjFBGq
+Up/pNy8ZuPGQmHwFi2/14+xeSUDG2bwnsYJQG2EdJCB6luQ57GEnTA/yKZSTKI8dDQa8Sd3zfXb1
+9mOgSF0bBdXbuKhEpuP9wirslFe6fQ1t5j5R0xi72MZ8ikMu1RQZKCyDbMwazlHiMIIHJjCCBg6g
+AwIBAgIDBQIzMA0GCSqGSIb3DQEBBQUAMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
+b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYG
+A1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcN
+MTIwOTI4MTQyMDU5WhcNMTMwOTI5MDIzNTUxWjBnMRkwFwYDVQQNExA2eEJWMWhST2tBdk5ENFBy
+MSEwHwYDVQQDDBhjYWx2aW4ud2FsdG9uQGtlcHN0aW4uY2ExJzAlBgkqhkiG9w0BCQEWGGNhbHZp
+bi53YWx0b25Aa2Vwc3Rpbi5jYTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMTJC+ZQ
+ME3qUS/IW4RLaiR8YFulvIJ/VEuNwOWMuem/MJEWhwFYaFbfrGuSULThGZSR4bGQxbaRiYZTKvqT
+ctBviGJ8A/+vBAD0b61uVQi3/mUIN2ZX5SLxmE7K+xGFE5NpCeEoekMFRHcDt7vncfw2hPNYShfT
+SdajrQo5wTjroGACwnXPTu1TysMNbKFfb393vwFc+llzMBQvWhO2zczyxeca/AG2lPQvB6S+zRfQ
+W79IvOp/2x2EHy8WnXS9svgffrVrwdcu6IiUIDEP27lOoOkiE+2FX7O8OGqex9QfnOq5mX1HoUm0
+ovMop1jmlQF2v2QpFWY7dYmIzihWok0CAwEAAaOCA7MwggOvMAkGA1UdEwQCMAAwCwYDVR0PBAQD
+AgSwMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAdBgNVHQ4EFgQU91SUkj1PegqzagVX
+F7dCetgrLpwwHwYDVR0jBBgwFoAUU3Ltkpzg2ssBXHx+ljVO8tS4UYIwIwYDVR0RBBwwGoEYY2Fs
+dmluLndhbHRvbkBrZXBzdGluLmNhMIICIQYDVR0gBIICGDCCAhQwggIQBgsrBgEEAYG1NwECAjCC
+Af8wLgYIKwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYB
+BQUHAgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgfcGCCsGAQUF
+BwICMIHqMCcWIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MAMCAQEagb5UaGlzIGNl
+cnRpZmljYXRlIHdhcyBpc3N1ZWQgYWNjb3JkaW5nIHRvIHRoZSBDbGFzcyAxIFZhbGlkYXRpb24g
+cmVxdWlyZW1lbnRzIG9mIHRoZSBTdGFydENvbSBDQSBwb2xpY3ksIHJlbGlhbmNlIG9ubHkgZm9y
+IHRoZSBpbnRlbmRlZCBwdXJwb3NlIGluIGNvbXBsaWFuY2Ugb2YgdGhlIHJlbHlpbmcgcGFydHkg
+b2JsaWdhdGlvbnMuMIGcBggrBgEFBQcCAjCBjzAnFiBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1
+dGhvcml0eTADAgECGmRMaWFiaWxpdHkgYW5kIHdhcnJhbnRpZXMgYXJlIGxpbWl0ZWQhIFNlZSBz
+ZWN0aW9uICJMZWdhbCBhbmQgTGltaXRhdGlvbnMiIG9mIHRoZSBTdGFydENvbSBDQSBwb2xpY3ku
+MDYGA1UdHwQvMC0wK6ApoCeGJWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL2NydHUxLWNybC5jcmww
+gY4GCCsGAQUFBwEBBIGBMH8wOQYIKwYBBQUHMAGGLWh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9z
+dWIvY2xhc3MxL2NsaWVudC9jYTBCBggrBgEFBQcwAoY2aHR0cDovL2FpYS5zdGFydHNzbC5jb20v
+Y2VydHMvc3ViLmNsYXNzMS5jbGllbnQuY2EuY3J0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cuc3Rh
+cnRzc2wuY29tLzANBgkqhkiG9w0BAQUFAAOCAQEArES0JRo1fLc3xTkqyKHzgdmfey5QcLD6nOPN
+qcl3C2hb9ZLynAKKKfLUPZE0jGIeoosTCusniHDfqg9uw/LyFFBOTRODW4SlC4J+mHIumqSTsVDk
+WzT8lIOQflBSTtKpDQQo13Y7H2BaNd7AEvFafUFtE3w5aPHtiOQjr/O1HEcNGeJ0KCEjHlwUumNb
+l0PF/dTqms4OlHeTm6ymDwfpyGr44doaenQg92Styx5yY2xq7IR6D/CtHUe+FkzfubTRVTc6KPtk
+pK6C6mcN8fzki2ZVmPcXysfGc1rwLkEywIHYPlgvIAqdNFimGNzzLTLshBR9X6g0yy6y1klysuZ2
+gjGCAhswggIXAgEBMIGUMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEr
+MCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3Rh
+cnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0ECAwUCMzAJBgUrDgMC
+GgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTMwNDI3MjE0
+MDM2WjAjBgkqhkiG9w0BCQQxFgQUpXw1tAlmncLW+uMkRvDqfZ/fZr0wDQYJKoZIhvcNAQEBBQAE
+ggEABzk1WGXTdmBePUg/3myFi0M10lPa5Ym+2qDKRZNfRSPxUS0GFfhLaS5KHr2FA4+bNtMWLrMJ
+uWzj4yc+hDtdkQjCxirvlCMyTN5vSTX3sajNAD27s9SlBQnH3HfnT1aCSYqpkpE3IfGIWweFLy+M
+uMHJg3uD9rhYo/oD4F4+uCNSHbnd9hYIVYiZEgxkWN+qhGBT+fcQ8ONX16OVnDB1rOVa916ouUSG
+OVq6tdVOxZIlIEicQ8a2XtiEIKU9v8+wPjCg0G3H7JSekR0Uf6mfRyuotLFq1wOJAmApIJKxBcs4
+MNZC+SNWnNNbauky51GJhGx0GpvAP56AKGlJwiHW8AAAAAAAAA==
+
+
+--=-Fq8wlYoypj2WSe5MN9aN--
+

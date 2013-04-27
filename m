@@ -1,58 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f43.google.com ([209.85.219.43]:56693 "EHLO
-	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753672Ab3DZXWG (ORCPT
+Received: from mail-qc0-f175.google.com ([209.85.216.175]:43479 "EHLO
+	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754684Ab3D0Jtx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 19:22:06 -0400
-Received: by mail-oa0-f43.google.com with SMTP id k7so4499677oag.30
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2013 16:22:05 -0700 (PDT)
+	Sat, 27 Apr 2013 05:49:53 -0400
+Received: by mail-qc0-f175.google.com with SMTP id j3so2487680qcs.34
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Apr 2013 02:49:53 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20130425211019.GM2631@localhost.localdomain>
-References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
- <20130417065506.GA21083@panda> <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
- <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com>
- <20130418215856.GA2305@localhost.localdomain> <CAG42Uxeajo=RESm531A7WWtFzKsFVDRJXuve1BRQXFPceFTMgw@mail.gmail.com>
- <20130425203900.GL2631@localhost.localdomain> <CAG42UxcVhXT5=kgUedAWDbSnPuW_Nu---PsG+WRuNCFn9Kdeng@mail.gmail.com>
- <20130425211019.GM2631@localhost.localdomain>
-From: Matt Pursley <mpursley@gmail.com>
-Date: Fri, 26 Apr 2013 16:21:24 -0700
-Message-ID: <CAG42UxfctrmBK_rgVSusjQX8ur_6u_QgA1LGhRV-UW=WT8gTsA@mail.gmail.com>
-Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
- are slower (~750MB/s)?
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sat, 27 Apr 2013 11:42:07 +0200
+Message-ID: <CABNez5RD9qzZ7-hM7u0-mwUx5MFCMOOCsqW-LBxQx-vcmoKcdg@mail.gmail.com>
+Subject: 
+From: =?UTF-8?B?UGV0ZXIgV8O8cnR6?= <pwuertz@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Josef,
+Hi!
 
-Thanks for looking into this further!    That is about the same
-results that I was seeing, though I didn't test it with just one
-drive.. only with all 12 drives in my jbod.  I will do a test with
-just one disk, and see if I also get the same results.
+I recently had some trouble with my root and home btrfs filesystems.
+My system (Ubuntu 13.04, Kernel 3.8) started freezing when copying
+larger numbers of files around (hard freeze, no logs about what
+happened).
 
-Let me know if you also see the same results with multiple drives in
-your raid...
+At some time booting up wasn't possible anymore due to a kernel bug
+while mounting the homefs. Btrfsck built from git wasn't able to
+repair the fs and segfaulted. Btrfs-zero-log was able to make home
+mountable again and the fs is clean since then according to btrfsck.
 
+The system appeared ok, but then I ran into trouble performing an
+apt-get upgrade, which was unable to access some of its files due to a
+"stale NFS lock". I found no kernel messages in dmesg concerning that
+matter, just this user-space error message. An offline check of the
+root file system (booting from USB live system) showed up some errors.
+Btrfsck wasn't able to repair them and segfaulted. I reinstalled the
+system now.
 
-Thanks,
-Matt
+Btrfsck on the root fs:
+https://docs.google.com/file/d/0B7RIDdXgzUrqTUczWHZYejUzMWM/edit?usp=sharing
+Btrfs-image of the root fs:
+https://docs.google.com/file/d/0B7RIDdXgzUrqV3hEZ1BZX0lhbVk/edit?usp=sharing
 
+Kernel-bug when mounting the home fs:
+https://docs.google.com/file/d/0B7RIDdXgzUrqTGFneGdCM0FBYzg/edit?usp=sharing
+Btrfsck on the home fs:
+https://docs.google.com/file/d/0B7RIDdXgzUrqODVhUUhqa2Q4c0k/edit?usp=sharing
+Btrfs-zero-log on home fs:
+https://docs.google.com/file/d/0B7RIDdXgzUrqM3ltTnBUVWMzdjg/edit?usp=sharing
 
+I still have an image (dd and btrfs-image) of the broken homefs. If
+this is of any use to you feel free to contact me via email.
 
-
-
-On Thu, Apr 25, 2013 at 2:10 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Thu, Apr 25, 2013 at 03:01:18PM -0600, Matt Pursley wrote:
->> Ok, awesome, let me know how it goes..  I don't have the raid
->> formatted to btrfs right now, but I could probably do that in about 30
->> minutes or so.
->>
->
-> Huh so I'm getting the full bandwidth, 120 mb/s with one thread and 60 mb/s with
-> two threads.  These are just cheap sata drives tho, I'll try and dig up a box
-> with 3 fusion cards for something a little closer to the speeds you are seeing
-> and see if that makes a difference.  Thanks,
->
-> Josef
+Best regards,
+Peter

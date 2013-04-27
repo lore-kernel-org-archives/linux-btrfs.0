@@ -1,168 +1,231 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27160 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752166Ab3D0Cui (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:39408 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750839Ab3D0C4y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 22:50:38 -0400
-Date: Sat, 27 Apr 2013 10:50:43 +0800
+	Fri, 26 Apr 2013 22:56:54 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [bug] 3.9-rc7+next: NULL deref in
- btrfs_next_old_leaf/btrfs_search_slot
-Message-ID: <20130427025042.GB999@liubo>
-Reply-To: bo.li.liu@oracle.com
-References: <20130418144218.GH16427@twin.jikos.cz>
- <20130425171858.GM16427@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130425171858.GM16427@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com
+Subject: [PATCH v2] Btrfs: improve the loop of scrub_stripe
+Date: Sat, 27 Apr 2013 10:56:57 +0800
+Message-Id: <1367031417-1385-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 25, 2013 at 07:18:59PM +0200, David Sterba wrote:
-> On Thu, Apr 18, 2013 at 04:42:18PM +0200, David Sterba wrote:
-> > [64394.422743] BUG: unable to handle kernel NULL pointer dereference at 0000000000000078
-> > [64394.426716] RIP: 0010:[<ffffffffa0010e0f>]  [<ffffffffa0010e0f>] btrfs_search_slot+0xbf/0x9e0 [btrfs]
-> > [64394.426716]  [<ffffffffa0014977>] btrfs_next_old_leaf+0x247/0x4e0 [btrfs]
-> > [64394.426716]  [<ffffffffa0014c20>] btrfs_next_leaf+0x10/0x20 [btrfs]
-> 
-> The bisection set was reduced to these patches (on top of
-> cmason/for-linus 4bc4bee45):
-> 
-> 1  Btrfs: cleanup unused function				Liu Bo
-> 2  btrfs: enhance superblock checks				David Sterba
-> 3  Btrfs: add some free space cache tests			Josef Bacik
-> 4  btrfs: merge save_error_info helpers into one		David Sterba
-> 5  btrfs: clean up transaction abort messages			David Sterba
-> 6  Btrfs: cleanup unused arguments of btrfs_csum_data		Liu Bo
-> 7  Btrfs: use helper to cleanup tree roots			Liu Bo
-> 8  Btrfs: add a incompatible format change for smaller metadata extent ref  Josef Bacik
-> 
-> The bisecting process points to patch 8, ie the 'first bad', but the
-> reproducer has proved to be unreliable and I think it's very sensitive
-> to scheduling timing.
-> 
-> Reproducer is to simply run 273 in a loop on a single/single filesystem,
-> the null deref happens during umount. The tricky part is that it does not
-> happen every time, I must not touch the testbox nor let any process run
-> except 'dstat'. It usually crashed on first or second test run, but I've
-> left it up to 10 to be sure.
-> 
-> I don't think it's caused by the skinny metadata, because it does not
-> touch the affected functions, but somehow helps to make it visible.
-> 
-> Although the test never crashed when patch 7
->   Btrfs: use helper to cleanup tree roots
->   http://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=3fa215686c574d26f43f1bcf6c9f69658e02908f
-> was on top (I once left it running overnight, all fine), that's my main
-> suspect:
-> 
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3483,20 +3483,7 @@ int close_ctree(struct btrfs_root *root)
->  		       percpu_counter_sum(&fs_info->delalloc_bytes));
->  	}
->  
-> -	free_extent_buffer(fs_info->extent_root->node);
-> -	free_extent_buffer(fs_info->extent_root->commit_root);
-> -	free_extent_buffer(fs_info->tree_root->node);
-> -	free_extent_buffer(fs_info->tree_root->commit_root);
-> -	free_extent_buffer(fs_info->chunk_root->node);
-> -	free_extent_buffer(fs_info->chunk_root->commit_root);
-> -	free_extent_buffer(fs_info->dev_root->node);
-> -	free_extent_buffer(fs_info->dev_root->commit_root);
-> -	free_extent_buffer(fs_info->csum_root->node);
-> -	free_extent_buffer(fs_info->csum_root->commit_root);
-> -	if (fs_info->quota_root) {
-> -		free_extent_buffer(fs_info->quota_root->node);
-> -		free_extent_buffer(fs_info->quota_root->commit_root);
-> -	}
-> +	free_root_pointers(fs_info, 1);
-> 
-> and if you look what free_root_pointers does, sets all the pointers to NULL.
-> 
-> The crash site:
-> 
-> gdb) l *(btrfs_search_slot+0xb6)
-> 0x11076 is in btrfs_search_slot (/home/dsterba/linux-2.6/arch/x86/include/asm/atomic.h:95).
-> 90       *
-> 91       * Atomically increments @v by 1.
-> 92       */
-> 93      static inline void atomic_inc(atomic_t *v)
-> 94      {
-> 95              asm volatile(LOCK_PREFIX "incl %0"
-> 96                           : "+m" (v->counter));
-> 97      }
-> 
-> (gdb) l *(btrfs_search_slot+0xb5)
-> 0x11075 is in btrfs_search_slot (fs/btrfs/ctree.c:2513).
-> 2508            if (p->search_commit_root) {
-> 2509                    /*
-> 2510                     * the commit roots are read only
-> 2511                     * so we always do read locks
-> 2512                     */
-> 2513                    b = root->commit_root;
-> 2514                    extent_buffer_get(b);
-> 2515                    level = btrfs_header_level(b);
-> 2516                    if (!p->skip_locking)
-> 2517                            btrfs_tree_read_lock(b);
-> 
-> so it's the extent_buffer_get() call, the offset of ->refs field is 120 = 0x78,
-> matches "NULL pointer dereference at 0000000000000078". So root->commit_root
-> is NULL.
-> 
-> If we look what happens in disk-io.c::close_ctree:
-> 
-> 3476         fs_info->closing = 2;
-> 3477         smp_mb();
-> ...
-> 3486         free_root_pointers(fs_info, 1);
-> 3487
-> 3488         btrfs_free_block_groups(fs_info);
-> 3489
-> 3490         del_fs_roots(fs_info);
-> 3491
-> 3492         iput(fs_info->btree_inode);
-> 3493
-> 3494         btrfs_stop_workers(&fs_info->generic_worker);
-> ...
-> 3507         btrfs_stop_workers(&fs_info->caching_workers);
-> 
-> Line 3477 assures that caching thread will exit the main loop when it sees
-> fs_closing > 1, but if it's past this check yet has to do some work, and
-> close_tree() calls free_root_pointers(), bang. As we can see the caching thread
-> goes down later.
-> 
-> What I see here is a use-after-free that has been undetected so far and only
-> exposed by patch 7.
-> 
-> This diff looks like the fix (on top of patch 8):
-> 
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3486,14 +3486,14 @@ int close_ctree(struct btrfs_root *root)
->                        percpu_counter_sum(&fs_info->delalloc_bytes));
->         }
-> 
-> -       free_root_pointers(fs_info, 1);
-> -
->         btrfs_free_block_groups(fs_info);
-> 
->         del_fs_roots(fs_info);
-> 
->         iput(fs_info->btree_inode);
-> 
-> +       free_root_pointers(fs_info, 1);
-> +
->         btrfs_stop_workers(&fs_info->generic_worker);
->         btrfs_stop_workers(&fs_info->fixup_workers);
->         btrfs_stop_workers(&fs_info->delalloc_workers);
-> ---
-> 
-> 
-> david
+1) Right now scrub_stripe() is looping in some unnecessary cases:
+* when the found extent item's objectid has been out of the dev extent's range
+  but we haven't finish scanning all the range within the dev extent
+* when all the items has been processed but we haven't finish scanning all the
+  range within the dev extent
 
-Thanks for tracking it Dave, I'm trying to reproduce it here.
+In both cases, we can just finish the loop to save costs.
 
-thanks,
-liubo
+2) Besides, when the found extent item's length is larger than the stripe
+len(64k), we don't have to release the path and search again as it'll get at the
+same key used in the last loop, we can instead increase the logical cursor in
+place till all space of the extent is scanned.
+
+3) And we use 0 as the key's offset to search btree, then get to previous item
+to find a smaller item, and again have to move to the next one to get the right
+item.  Setting offset=-1 and previous_item() is the correct way.
+
+4) As we won't find any checksum at offset unless this 'offset' is in a data
+extent, we can just find checksum when we're really going to scrub an extent.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v3: revise commit author.
+v2: rebase onto btrfs-next.
+
+
+ fs/btrfs/scrub.c |   83 +++++++++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 57 insertions(+), 26 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 28db5dc..738c3f6 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2233,12 +2233,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	u64 flags;
+ 	int ret;
+ 	int slot;
+-	int i;
+ 	u64 nstripes;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+ 	u64 physical;
+ 	u64 logical;
++	u64 logic_end;
+ 	u64 generation;
+ 	int mirror_num;
+ 	struct reada_control *reada1;
+@@ -2252,6 +2252,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	u64 extent_len;
+ 	struct btrfs_device *extent_dev;
+ 	int extent_mirror_num;
++	int stop_loop;
+ 
+ 	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+ 			 BTRFS_BLOCK_GROUP_RAID6)) {
+@@ -2351,8 +2352,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	 */
+ 	logical = base + offset;
+ 	physical = map->stripes[num].physical;
++	logic_end = logical + increment * nstripes;
+ 	ret = 0;
+-	for (i = 0; i < nstripes; ++i) {
++	while (logical < logic_end) {
+ 		/*
+ 		 * canceled?
+ 		 */
+@@ -2388,15 +2390,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			wake_up(&fs_info->scrub_pause_wait);
+ 		}
+ 
+-		ret = btrfs_lookup_csums_range(csum_root, logical,
+-					       logical + map->stripe_len - 1,
+-					       &sctx->csum_list, 1);
+-		if (ret)
+-			goto out;
+-
+ 		key.objectid = logical;
+ 		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = (u64)0;
++		key.offset = (u64)-1;
+ 
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+@@ -2418,6 +2414,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			}
+ 		}
+ 
++		stop_loop = 0;
+ 		while (1) {
+ 			u64 bytes;
+ 
+@@ -2430,14 +2427,11 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 				if (ret < 0)
+ 					goto out;
+ 
++				stop_loop = 1;
+ 				break;
+ 			}
+ 			btrfs_item_key_to_cpu(l, &key, slot);
+ 
+-			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
+-			    key.type != BTRFS_METADATA_ITEM_KEY)
+-				goto next;
+-
+ 			if (key.type == BTRFS_METADATA_ITEM_KEY)
+ 				bytes = root->leafsize;
+ 			else
+@@ -2446,9 +2440,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			if (key.objectid + bytes <= logical)
+ 				goto next;
+ 
+-			if (key.objectid >= logical + map->stripe_len)
+-				break;
++			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
++			    key.type != BTRFS_METADATA_ITEM_KEY)
++				goto next;
+ 
++			if (key.objectid >= logical + map->stripe_len) {
++				/* out of this device extent */
++				if (key.objectid >= logic_end)
++					stop_loop = 1;
++				break;
++			}
+ 
+ 			extent = btrfs_item_ptr(l, slot,
+ 						struct btrfs_extent_item);
+@@ -2465,22 +2466,24 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 				goto next;
+ 			}
+ 
++again:
++			extent_logical = key.objectid;
++			extent_len = bytes;
++
+ 			/*
+ 			 * trim extent to this stripe
+ 			 */
+-			if (key.objectid < logical) {
+-				bytes -= logical - key.objectid;
+-				key.objectid = logical;
++			if (extent_logical < logical) {
++				extent_len -= logical - extent_logical;
++				extent_logical = logical;
+ 			}
+-			if (key.objectid + bytes >
++			if (extent_logical + extent_len >
+ 			    logical + map->stripe_len) {
+-				bytes = logical + map->stripe_len -
+-					key.objectid;
++				extent_len = logical + map->stripe_len -
++					     extent_logical;
+ 			}
+ 
+-			extent_logical = key.objectid;
+-			extent_physical = key.objectid - logical + physical;
+-			extent_len = bytes;
++			extent_physical = extent_logical - logical + physical;
+ 			extent_dev = scrub_dev;
+ 			extent_mirror_num = mirror_num;
+ 			if (is_dev_replace)
+@@ -2488,13 +2491,35 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 						   extent_len, &extent_physical,
+ 						   &extent_dev,
+ 						   &extent_mirror_num);
++
++			ret = btrfs_lookup_csums_range(csum_root, logical,
++						logical + map->stripe_len - 1,
++						&sctx->csum_list, 1);
++			if (ret)
++				goto out;
++
+ 			ret = scrub_extent(sctx, extent_logical, extent_len,
+ 					   extent_physical, extent_dev, flags,
+ 					   generation, extent_mirror_num,
+-					   key.objectid - logical + physical);
++					   extent_physical);
+ 			if (ret)
+ 				goto out;
+ 
++			if (extent_logical + extent_len <
++			    key.objectid + bytes) {
++				logical += increment;
++				physical += map->stripe_len;
++
++				if (logical < key.objectid + bytes) {
++					cond_resched();
++					goto again;
++				}
++
++				if (logical >= logic_end) {
++					stop_loop = 1;
++					break;
++				}
++			}
+ next:
+ 			path->slots[0]++;
+ 		}
+@@ -2502,8 +2527,14 @@ next:
+ 		logical += increment;
+ 		physical += map->stripe_len;
+ 		spin_lock(&sctx->stat_lock);
+-		sctx->stat.last_physical = physical;
++		if (stop_loop)
++			sctx->stat.last_physical = map->stripes[num].physical +
++						   length;
++		else
++			sctx->stat.last_physical = physical;
+ 		spin_unlock(&sctx->stat_lock);
++		if (stop_loop)
++			break;
+ 	}
+ out:
+ 	/* push queued extents */
+-- 
+1.7.7.6
+

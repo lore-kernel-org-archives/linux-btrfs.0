@@ -1,67 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:36438 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756262Ab3DWNWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Apr 2013 09:22:03 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp3) (RZmta 31.27 OK)
-	with ESMTP id p003c4p3NAm89Y for <linux-btrfs@vger.kernel.org>;
-	Tue, 23 Apr 2013 15:21:59 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mail-da0-f50.google.com ([209.85.210.50]:56325 "EHLO
+	mail-da0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755413Ab3D1Kjw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 28 Apr 2013 06:39:52 -0400
+Received: by mail-da0-f50.google.com with SMTP id a4so2506008dad.23
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Apr 2013 03:39:52 -0700 (PDT)
+From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] speedup btrfs send/receive
-Date: Tue, 23 Apr 2013 15:21:56 +0200
-Message-Id: <cover.1366722651.git.sbehrens@giantdisaster.de>
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH RFC] btrfs-progs: don't allow to delete default subvolume
+Date: Sun, 28 Apr 2013 18:39:28 +0800
+Message-Id: <1367145568-3813-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit changes the btrfs send/receive commands to use the
-UUID tree to map UUIDs to subvolumes, and to use the root tree
-to map subvolume IDs to paths. Now these tools start fast and are
-independent on the number of subvolumes/snapshots that exist.
+Default subvolume set via 'set-default' command can be deleted now
 
-Before this commit, mapping UUIDs to subvolume IDs was an operation
-with a high effort. The algorithm even had quadratic effort (based
-on the number of existing subvolumes). E.g. with 15,000 subvolumes
-it took much more than 5 minutes on a state of the art XEON CPU to
-start btrfs send or receive before these tools were able to send or
-receive the first byte).
-Even linear effort instead of the current quadratic effort would be
-too much since it would be a waste. And these data structures to
-allow mapping UUIDs to subvolume IDs had been created every time a
-btrfs send/receive instance was started.
+    # Create btrfs and a subvolume
+    [root@localhost ~]# mkfs -t btrfs /dev/sda5
+    [root@localhost ~]# mount /dev/sda5 /mnt/btrfs
+    [root@localhost ~]# btrfs sub create /mnt/btrfs/vol_1
+    Create subvolume '/mnt/btrfs/vol_1'
+    [root@localhost ~]# btrfs sub list -a /mnt/btrfs
+    ID 256 gen 7 top level 5 path vol_1
 
-It is much more efficient to maintain a searchable persistent data
-structure in the filesystem, one that is updated whenever a
-subvolume/snapshot is created and deleted, and when the received
-subvolume UUID is set by the btrfs-receive tool. The user mode
-tools can then just use the tree-search ioctl to quickly retrieve
-all information.
+    # Set subvolid 256 as default volume
+    [root@localhost ~]# btrfs sub set-default 256 /mnt/btrfs
+    [root@localhost ~]# btrfs sub get-default /mnt/btrfs/
+    ID 256 gen 5 top level 5 path vol_1
 
-With a recent commit, kernel code was added that is able to maintain
-data structures in the filesystem that allow to quickly search for a
-given UUID and to retrieve data that is assigned to this UUID, like
-which subvolume ID is related to this UUID.
+    # Delete it
+    [root@localhost ~]# btrfs sub delete /mnt/btrfs/vol_1/
+    Delete subvolume '/mnt/btrfs/vol_1'
+    # list shows nothing
+    [root@localhost ~]# btrfs sub list -a /mnt/btrfs
 
-This commit series adds support for the UUID tree to Btrfs-progs
-and changes the send/receive tools to use it.
+    # mount default subvolume failed, it's been deleted
+    [root@localhost ~]# umount /mnt/btrfs
+    [root@localhost ~]# mount /dev/sda5 /mnt/btrfs
+    mount: mount(2) failed: No such file or directory
 
-Stefan Behrens (3):
-  Btrfs-progs: Support UUID tree and UUID items in btrfs-debug-tree
-  Btrfs-progs: add uuid-tree lookup methods
-  Btrfs-progs: use UUID tree for send/receive
+    # Have to specify which subvolume to mount
+    [root@localhost ~]# mount -o subvol=/ /dev/sda5 /mnt/btrfs
 
- Makefile       |   2 +-
- cmds-receive.c |  23 ++-
- cmds-send.c    |  53 +++++--
- ctree.h        |  34 ++++
- print-tree.c   |  91 ++++++++++-
- send-utils.c   | 477 +++++++++++++++++++++++----------------------------------
- send-utils.h   |   9 +-
- uuid-tree.c    | 196 ++++++++++++++++++++++++
- 8 files changed, 572 insertions(+), 313 deletions(-)
- create mode 100644 uuid-tree.c
+It makes more sense to prevent deleting default subvolume.
 
+Also fix some code style issues and magical return values.
+
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+---
+ cmds-subvolume.c | 58 +++++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 41 insertions(+), 17 deletions(-)
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 74e2130..00712c3 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -198,10 +198,11 @@ static const char * const cmd_subvol_delete_usage[] = {
+ 
+ static int cmd_subvol_delete(int argc, char **argv)
+ {
+-	int	res, fd, len, e, cnt = 1, ret = 0;
++	int	res, fd, vol_fd, len, e, cnt = 1, ret = 1;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
+ 	char	*path;
++	u64	default_id, root_id;
+ 
+ 	if (argc < 2)
+ 		usage(cmd_subvol_delete_usage);
+@@ -210,29 +211,25 @@ again:
+ 	path = argv[cnt];
+ 
+ 	res = test_issubvolume(path);
+-	if(res<0){
++	if (res < 0) {
+ 		fprintf(stderr, "ERROR: error accessing '%s'\n", path);
+-		ret = 12;
+ 		goto out;
+ 	}
+-	if(!res){
++	if (!res) {
+ 		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", path);
+-		ret = 13;
+ 		goto out;
+ 	}
+ 
+-	cpath = realpath(path, 0);
++	cpath = realpath(path, NULL);
+ 	dname = strdup(cpath);
+ 	dname = dirname(dname);
+ 	vname = strdup(cpath);
+ 	vname = basename(vname);
+ 	free(cpath);
+ 
+-	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
+-	     strchr(vname, '/') ){
++	if (!strcmp(vname, ".") || !strcmp(vname, "..") || strchr(vname, '/')) {
+ 		fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
+ 			vname);
+-		ret = 14;
+ 		goto out;
+ 	}
+ 
+@@ -240,31 +237,58 @@ again:
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+ 		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+ 			vname);
+-		ret = 14;
+ 		goto out;
+ 	}
+ 
+ 	fd = open_file_or_dir(dname);
+ 	if (fd < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", dname);
+-		ret = 12;
+ 		goto out;
+ 	}
+ 
++	res = btrfs_list_get_default_subvolume(fd, &default_id);
++	if (res) {
++		fprintf(stderr, "ERROR: can't perform the search - %s\n",
++			strerror(errno));
++		goto out_close;
++	}
++	if (default_id == 0) {
++		fprintf(stderr, "ERROR: 'default' dir item not found\n");
++		goto out_close;
++	}
++
++	vol_fd = open_file_or_dir(path);
++	if (vol_fd < 0) {
++		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
++		goto out_close;
++	}
++	res = btrfs_list_get_path_rootid(vol_fd, &root_id);
++	close(vol_fd);
++	if (res)
++		goto out_close;
++
++	if (root_id == default_id) {
++		fprintf(stderr,
++			"Unable to delete current default subvolume '%s/%s'\n",
++			dname, vname);
++		goto out_close;
++	}
++
+ 	printf("Delete subvolume '%s/%s'\n", dname, vname);
+ 	strncpy_null(args.name, vname);
+ 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+ 	e = errno;
+ 
+-	close(fd);
+-
+-	if(res < 0 ){
+-		fprintf( stderr, "ERROR: cannot delete '%s/%s' - %s\n",
++	if (res < 0) {
++		fprintf(stderr, "ERROR: cannot delete '%s/%s' - %s\n",
+ 			dname, vname, strerror(e));
+-		ret = 11;
+-		goto out;
++		ret = 1;
++		goto out_close;
+ 	}
+ 
++	ret = 0;
++out_close:
++	close(fd);
+ out:
+ 	cnt++;
+ 	if (cnt < argc)
 -- 
 1.8.2.1
 

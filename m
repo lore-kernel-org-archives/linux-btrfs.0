@@ -1,231 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39408 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750839Ab3D0C4y (ORCPT
+Received: from mail-pa0-f68.google.com ([209.85.220.68]:43594 "EHLO
+	mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751707Ab3D1TEp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 22:56:54 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+	Sun, 28 Apr 2013 15:04:45 -0400
+Received: by mail-pa0-f68.google.com with SMTP id hk2so467362pac.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Apr 2013 12:04:45 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 28 Apr 2013 21:04:45 +0200
+Message-ID: <CAHgo1RLE6RuSvHsBrGUvmMv6f1kE12oNdMgAVtZ3mJMu+U-5fw@mail.gmail.com>
+Subject: Btrfs performance problem; metadata size to blame?
+From: "John ." <btrfsprob@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com
-Subject: [PATCH v2] Btrfs: improve the loop of scrub_stripe
-Date: Sat, 27 Apr 2013 10:56:57 +0800
-Message-Id: <1367031417-1385-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1) Right now scrub_stripe() is looping in some unnecessary cases:
-* when the found extent item's objectid has been out of the dev extent's range
-  but we haven't finish scanning all the range within the dev extent
-* when all the items has been processed but we haven't finish scanning all the
-  range within the dev extent
+Hi guys,
 
-In both cases, we can just finish the loop to save costs.
+My Btrfs fs has a performance problem which I hope you can help me
+solve. I have a dataset of around 3.15 TiB, that has lived on a ZFS
+volume for almost two years (ZRAID1, 4 2TiB disks). In order to move
+to Btrfs I bought myself a 4TiB disk with the idea of buying a new one
+next week and balance it to a RAID1 of 2 4TiB disks.
 
-2) Besides, when the found extent item's length is larger than the stripe
-len(64k), we don't have to release the path and search again as it'll get at the
-same key used in the last loop, we can instead increase the logical cursor in
-place till all space of the extent is scanned.
+I created a single disk Btrfs volume with the default mkfs options (no
+data duplication, metadata duplication on). Next I transferred my
+dataset to this disk (no problems there). Today when I tried to create
+a directory and I noticed the Btrfs volume was awefully slow; it took
+a few seconds to create the directory and a few to delete it (which
+should be milliseconds as you know). In fact each and every operation
+on the volume grinded the fs down to a halt.
 
-3) And we use 0 as the key's offset to search btree, then get to previous item
-to find a smaller item, and again have to move to the next one to get the right
-item.  Setting offset=-1 and previous_item() is the correct way.
+FS information:
 
-4) As we won't find any checksum at offset unless this 'offset' is in a data
-extent, we can just find checksum when we're really going to scrub an extent.
+# btrfs fi df /storage
+Data: total=3.29TB, used=3.15TB
+System, DUP: total=8.00MB, used=360.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=4.00GB, used=3.88GB
+Metadata: total=8.00MB, used=0.00
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v3: revise commit author.
-v2: rebase onto btrfs-next.
+# btrfs fi show
+Label: 'storage'  uuid: 3fa262cd-baa9-46dc-92a8-318c87166186
+        Total devices 1 FS bytes used 3.16TB
+        devid    1 size 3.64TB used 3.30TB path /dev/sdb
 
+I suspect my performance blow has everything to do with the abysmally
+low amount of space for metadata that is left, but since I am not a
+Btrfs guru I don't now whether this is truly the case and/or how to
+solve it. btrfs fi balance start -dusage=5 did not help.
 
- fs/btrfs/scrub.c |   83 +++++++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 57 insertions(+), 26 deletions(-)
+Yours,
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 28db5dc..738c3f6 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2233,12 +2233,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 flags;
- 	int ret;
- 	int slot;
--	int i;
- 	u64 nstripes;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	u64 physical;
- 	u64 logical;
-+	u64 logic_end;
- 	u64 generation;
- 	int mirror_num;
- 	struct reada_control *reada1;
-@@ -2252,6 +2252,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 extent_len;
- 	struct btrfs_device *extent_dev;
- 	int extent_mirror_num;
-+	int stop_loop;
- 
- 	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
- 			 BTRFS_BLOCK_GROUP_RAID6)) {
-@@ -2351,8 +2352,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 */
- 	logical = base + offset;
- 	physical = map->stripes[num].physical;
-+	logic_end = logical + increment * nstripes;
- 	ret = 0;
--	for (i = 0; i < nstripes; ++i) {
-+	while (logical < logic_end) {
- 		/*
- 		 * canceled?
- 		 */
-@@ -2388,15 +2390,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			wake_up(&fs_info->scrub_pause_wait);
- 		}
- 
--		ret = btrfs_lookup_csums_range(csum_root, logical,
--					       logical + map->stripe_len - 1,
--					       &sctx->csum_list, 1);
--		if (ret)
--			goto out;
--
- 		key.objectid = logical;
- 		key.type = BTRFS_EXTENT_ITEM_KEY;
--		key.offset = (u64)0;
-+		key.offset = (u64)-1;
- 
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0)
-@@ -2418,6 +2414,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			}
- 		}
- 
-+		stop_loop = 0;
- 		while (1) {
- 			u64 bytes;
- 
-@@ -2430,14 +2427,11 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 				if (ret < 0)
- 					goto out;
- 
-+				stop_loop = 1;
- 				break;
- 			}
- 			btrfs_item_key_to_cpu(l, &key, slot);
- 
--			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
--			    key.type != BTRFS_METADATA_ITEM_KEY)
--				goto next;
--
- 			if (key.type == BTRFS_METADATA_ITEM_KEY)
- 				bytes = root->leafsize;
- 			else
-@@ -2446,9 +2440,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			if (key.objectid + bytes <= logical)
- 				goto next;
- 
--			if (key.objectid >= logical + map->stripe_len)
--				break;
-+			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
-+			    key.type != BTRFS_METADATA_ITEM_KEY)
-+				goto next;
- 
-+			if (key.objectid >= logical + map->stripe_len) {
-+				/* out of this device extent */
-+				if (key.objectid >= logic_end)
-+					stop_loop = 1;
-+				break;
-+			}
- 
- 			extent = btrfs_item_ptr(l, slot,
- 						struct btrfs_extent_item);
-@@ -2465,22 +2466,24 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 				goto next;
- 			}
- 
-+again:
-+			extent_logical = key.objectid;
-+			extent_len = bytes;
-+
- 			/*
- 			 * trim extent to this stripe
- 			 */
--			if (key.objectid < logical) {
--				bytes -= logical - key.objectid;
--				key.objectid = logical;
-+			if (extent_logical < logical) {
-+				extent_len -= logical - extent_logical;
-+				extent_logical = logical;
- 			}
--			if (key.objectid + bytes >
-+			if (extent_logical + extent_len >
- 			    logical + map->stripe_len) {
--				bytes = logical + map->stripe_len -
--					key.objectid;
-+				extent_len = logical + map->stripe_len -
-+					     extent_logical;
- 			}
- 
--			extent_logical = key.objectid;
--			extent_physical = key.objectid - logical + physical;
--			extent_len = bytes;
-+			extent_physical = extent_logical - logical + physical;
- 			extent_dev = scrub_dev;
- 			extent_mirror_num = mirror_num;
- 			if (is_dev_replace)
-@@ -2488,13 +2491,35 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 						   extent_len, &extent_physical,
- 						   &extent_dev,
- 						   &extent_mirror_num);
-+
-+			ret = btrfs_lookup_csums_range(csum_root, logical,
-+						logical + map->stripe_len - 1,
-+						&sctx->csum_list, 1);
-+			if (ret)
-+				goto out;
-+
- 			ret = scrub_extent(sctx, extent_logical, extent_len,
- 					   extent_physical, extent_dev, flags,
- 					   generation, extent_mirror_num,
--					   key.objectid - logical + physical);
-+					   extent_physical);
- 			if (ret)
- 				goto out;
- 
-+			if (extent_logical + extent_len <
-+			    key.objectid + bytes) {
-+				logical += increment;
-+				physical += map->stripe_len;
-+
-+				if (logical < key.objectid + bytes) {
-+					cond_resched();
-+					goto again;
-+				}
-+
-+				if (logical >= logic_end) {
-+					stop_loop = 1;
-+					break;
-+				}
-+			}
- next:
- 			path->slots[0]++;
- 		}
-@@ -2502,8 +2527,14 @@ next:
- 		logical += increment;
- 		physical += map->stripe_len;
- 		spin_lock(&sctx->stat_lock);
--		sctx->stat.last_physical = physical;
-+		if (stop_loop)
-+			sctx->stat.last_physical = map->stripes[num].physical +
-+						   length;
-+		else
-+			sctx->stat.last_physical = physical;
- 		spin_unlock(&sctx->stat_lock);
-+		if (stop_loop)
-+			break;
- 	}
- out:
- 	/* push queued extents */
--- 
-1.7.7.6
-
+John

@@ -1,153 +1,308 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46130 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46177 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752168Ab3D2NiK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Apr 2013 09:38:10 -0400
+	id S1752168Ab3D2Niv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Apr 2013 09:38:51 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 56B35A55F4
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Apr 2013 15:38:09 +0200 (CEST)
+	by mx2.suse.de (Postfix) with ESMTP id 5E9B1A5623
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Apr 2013 15:38:50 +0200 (CEST)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: use only memmove_extent_buffer and simplify the helpers
-Date: Mon, 29 Apr 2013 15:38:01 +0200
-Message-Id: <1367242681-8835-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH] btrfs: use unsigned long type for extent state bits
+Date: Mon, 29 Apr 2013 15:38:46 +0200
+Message-Id: <1367242726-8893-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After commit a65917156e34594 ("Btrfs: stop using highmem for
-extent_buffers") we don't need to call kmap_atomic anymore and can
-reduce the move_pages helper to a simple memmove.
-
-There's only one caller of memcpy_extent_buffer, we can use the
-memmove_ variant here.
-
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ctree.c     |    2 +-
- fs/btrfs/extent_io.c |   88 +------------------------------------------------
- 2 files changed, 3 insertions(+), 87 deletions(-)
+ fs/btrfs/extent_io.c |   48 +++++++++++++++++++++++++-----------------------
+ fs/btrfs/extent_io.h |   28 +++++++++++++++-------------
+ fs/btrfs/inode.c     |    5 +++--
+ 3 files changed, 43 insertions(+), 38 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 566d99b..154573e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4270,7 +4270,7 @@ int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
- 			       item_size, item_size +
- 			       sizeof(struct btrfs_item), 1);
- 	leaf = path->nodes[0];
--	memcpy_extent_buffer(leaf,
-+	memmove_extent_buffer(leaf,
- 			     btrfs_item_ptr_offset(leaf, path->slots[0]),
- 			     btrfs_item_ptr_offset(leaf, path->slots[0] - 1),
- 			     item_size);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dbb2bde..e1abebd 100644
+index e1abebd..718c431 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4943,89 +4943,9 @@ static void move_pages(struct page *dst_page, struct page *src_page,
- 		       unsigned long len)
- {
- 	char *dst_kaddr = page_address(dst_page);
--	if (dst_page == src_page) {
--		memmove(dst_kaddr + dst_off, dst_kaddr + src_off, len);
--	} else {
--		char *src_kaddr = page_address(src_page);
--		char *p = dst_kaddr + dst_off + len;
--		char *s = src_kaddr + src_off + len;
-+	char *src_kaddr = page_address(src_page);
- 
--		while (len--)
--			*--p = *--s;
--	}
--}
--
--static inline bool areas_overlap(unsigned long src, unsigned long dst, unsigned long len)
--{
--	unsigned long distance = (src > dst) ? src - dst : dst - src;
--	return distance < len;
--}
--
--static void copy_pages(struct page *dst_page, struct page *src_page,
--		       unsigned long dst_off, unsigned long src_off,
--		       unsigned long len)
--{
--	char *dst_kaddr = page_address(dst_page);
--	char *src_kaddr;
--	int must_memmove = 0;
--
--	if (dst_page != src_page) {
--		src_kaddr = page_address(src_page);
--	} else {
--		src_kaddr = dst_kaddr;
--		if (areas_overlap(src_off, dst_off, len))
--			must_memmove = 1;
--	}
--
--	if (must_memmove)
--		memmove(dst_kaddr + dst_off, src_kaddr + src_off, len);
--	else
--		memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
--}
--
--void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
--			   unsigned long src_offset, unsigned long len)
--{
--	size_t cur;
--	size_t dst_off_in_page;
--	size_t src_off_in_page;
--	size_t start_offset = dst->start & ((u64)PAGE_CACHE_SIZE - 1);
--	unsigned long dst_i;
--	unsigned long src_i;
--
--	if (src_offset + len > dst->len) {
--		printk(KERN_ERR "btrfs memmove bogus src_offset %lu move "
--		       "len %lu dst len %lu\n", src_offset, len, dst->len);
--		BUG_ON(1);
--	}
--	if (dst_offset + len > dst->len) {
--		printk(KERN_ERR "btrfs memmove bogus dst_offset %lu move "
--		       "len %lu dst len %lu\n", dst_offset, len, dst->len);
--		BUG_ON(1);
--	}
--
--	while (len > 0) {
--		dst_off_in_page = (start_offset + dst_offset) &
--			((unsigned long)PAGE_CACHE_SIZE - 1);
--		src_off_in_page = (start_offset + src_offset) &
--			((unsigned long)PAGE_CACHE_SIZE - 1);
--
--		dst_i = (start_offset + dst_offset) >> PAGE_CACHE_SHIFT;
--		src_i = (start_offset + src_offset) >> PAGE_CACHE_SHIFT;
--
--		cur = min(len, (unsigned long)(PAGE_CACHE_SIZE -
--					       src_off_in_page));
--		cur = min_t(unsigned long, cur,
--			(unsigned long)(PAGE_CACHE_SIZE - dst_off_in_page));
--
--		copy_pages(extent_buffer_page(dst, dst_i),
--			   extent_buffer_page(dst, src_i),
--			   dst_off_in_page, src_off_in_page, cur);
--
--		src_offset += cur;
--		dst_offset += cur;
--		len -= cur;
--	}
-+	memmove(dst_kaddr + dst_off, src_kaddr + src_off, len);
+@@ -308,21 +308,21 @@ static void merge_state(struct extent_io_tree *tree,
  }
  
- void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-@@ -5050,10 +4970,6 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 		       "len %lu len %lu\n", dst_offset, len, dst->len);
- 		BUG_ON(1);
- 	}
--	if (dst_offset < src_offset) {
--		memcpy_extent_buffer(dst, dst_offset, src_offset, len);
--		return;
--	}
- 	while (len > 0) {
- 		dst_i = (start_offset + dst_end) >> PAGE_CACHE_SHIFT;
- 		src_i = (start_offset + src_end) >> PAGE_CACHE_SHIFT;
+ static void set_state_cb(struct extent_io_tree *tree,
+-			 struct extent_state *state, int *bits)
++			 struct extent_state *state, unsigned long *bits)
+ {
+ 	if (tree->ops && tree->ops->set_bit_hook)
+ 		tree->ops->set_bit_hook(tree->mapping->host, state, bits);
+ }
+ 
+ static void clear_state_cb(struct extent_io_tree *tree,
+-			   struct extent_state *state, int *bits)
++			   struct extent_state *state, unsigned long *bits)
+ {
+ 	if (tree->ops && tree->ops->clear_bit_hook)
+ 		tree->ops->clear_bit_hook(tree->mapping->host, state, bits);
+ }
+ 
+ static void set_state_bits(struct extent_io_tree *tree,
+-			   struct extent_state *state, int *bits);
++			   struct extent_state *state, unsigned long *bits);
+ 
+ /*
+  * insert an extent_state struct into the tree.  'bits' are set on the
+@@ -336,7 +336,7 @@ static void set_state_bits(struct extent_io_tree *tree,
+  */
+ static int insert_state(struct extent_io_tree *tree,
+ 			struct extent_state *state, u64 start, u64 end,
+-			int *bits)
++			unsigned long *bits)
+ {
+ 	struct rb_node *node;
+ 
+@@ -424,10 +424,10 @@ static struct extent_state *next_state(struct extent_state *state)
+  */
+ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 					    struct extent_state *state,
+-					    int *bits, int wake)
++					    unsigned long *bits, int wake)
+ {
+ 	struct extent_state *next;
+-	int bits_to_clear = *bits & ~EXTENT_CTLBITS;
++	unsigned long bits_to_clear = *bits & ~EXTENT_CTLBITS;
+ 
+ 	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
+ 		u64 range = state->end - state->start + 1;
+@@ -483,7 +483,7 @@ void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+  * This takes the tree lock, and returns 0 on success and < 0 on error.
+  */
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, int wake, int delete,
++		     unsigned long bits, int wake, int delete,
+ 		     struct extent_state **cached_state,
+ 		     gfp_t mask)
+ {
+@@ -644,7 +644,8 @@ static void wait_on_state(struct extent_io_tree *tree,
+  * The range [start, end] is inclusive.
+  * The tree lock is taken by this function
+  */
+-void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits)
++void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
++		     unsigned long bits)
+ {
+ 	struct extent_state *state;
+ 	struct rb_node *node;
+@@ -685,9 +686,9 @@ out:
+ 
+ static void set_state_bits(struct extent_io_tree *tree,
+ 			   struct extent_state *state,
+-			   int *bits)
++			   unsigned long *bits)
+ {
+-	int bits_to_set = *bits & ~EXTENT_CTLBITS;
++	unsigned long bits_to_set = *bits & ~EXTENT_CTLBITS;
+ 
+ 	set_state_cb(tree, state, bits);
+ 	if ((bits_to_set & EXTENT_DIRTY) && !(state->state & EXTENT_DIRTY)) {
+@@ -730,8 +731,9 @@ static void uncache_state(struct extent_state **cached_ptr)
+ 
+ static int __must_check
+ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		 int bits, int exclusive_bits, u64 *failed_start,
+-		 struct extent_state **cached_state, gfp_t mask)
++		 unsigned long bits, unsigned long exclusive_bits,
++		 u64 *failed_start, struct extent_state **cached_state,
++		 gfp_t mask)
+ {
+ 	struct extent_state *state;
+ 	struct extent_state *prealloc = NULL;
+@@ -923,9 +925,9 @@ search_again:
+ 	goto again;
+ }
+ 
+-int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits,
+-		   u64 *failed_start, struct extent_state **cached_state,
+-		   gfp_t mask)
++int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
++		   unsigned long bits, u64 * failed_start,
++		   struct extent_state **cached_state, gfp_t mask)
+ {
+ 	return __set_extent_bit(tree, start, end, bits, 0, failed_start,
+ 				cached_state, mask);
+@@ -950,7 +952,7 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits,
+  * boundary bits like LOCK.
+  */
+ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		       int bits, int clear_bits,
++		       unsigned long bits, unsigned long clear_bits,
+ 		       struct extent_state **cached_state, gfp_t mask)
+ {
+ 	struct extent_state *state;
+@@ -1143,14 +1145,14 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+ }
+ 
+ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		    int bits, gfp_t mask)
++		    unsigned long bits, gfp_t mask)
+ {
+ 	return set_extent_bit(tree, start, end, bits, NULL,
+ 			      NULL, mask);
+ }
+ 
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		      int bits, gfp_t mask)
++		      unsigned long bits, gfp_t mask)
+ {
+ 	return clear_extent_bit(tree, start, end, bits, 0, 0, NULL, mask);
+ }
+@@ -1205,7 +1207,7 @@ int clear_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+  * us if waiting is desired.
+  */
+ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, struct extent_state **cached_state)
++		     unsigned long bits, struct extent_state **cached_state)
+ {
+ 	int err;
+ 	u64 failed_start;
+@@ -1314,7 +1316,7 @@ static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+  * nothing was found after 'start'
+  */
+ struct extent_state *find_first_extent_bit_state(struct extent_io_tree *tree,
+-						 u64 start, int bits)
++						 u64 start, unsigned long bits)
+ {
+ 	struct rb_node *node;
+ 	struct extent_state *state;
+@@ -1348,7 +1350,7 @@ out:
+  * If nothing was found, 1 is returned. If found something, return 0.
+  */
+ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+-			  u64 *start_ret, u64 *end_ret, int bits,
++			  u64 *start_ret, u64 *end_ret, unsigned long bits,
+ 			  struct extent_state **cached_state)
+ {
+ 	struct extent_state *state;
+@@ -1638,7 +1640,7 @@ int extent_clear_unlock_delalloc(struct inode *inode,
+ 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
+ 	unsigned long nr_pages = end_index - index + 1;
+ 	int i;
+-	int clear_bits = 0;
++	unsigned long clear_bits = 0;
+ 
+ 	if (op & EXTENT_CLEAR_UNLOCK)
+ 		clear_bits |= EXTENT_LOCKED;
+@@ -1869,7 +1871,7 @@ out:
+  * range is found set.
+  */
+ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		   int bits, int filled, struct extent_state *cached)
++		   unsigned long bits, int filled, struct extent_state *cached)
+ {
+ 	struct extent_state *state = NULL;
+ 	struct rb_node *node;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 5e409ea..81ad141 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -81,9 +81,9 @@ struct extent_io_ops {
+ 	int (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
+ 				      struct extent_state *state, int uptodate);
+ 	void (*set_bit_hook)(struct inode *inode, struct extent_state *state,
+-			     int *bits);
++			     unsigned long *bits);
+ 	void (*clear_bit_hook)(struct inode *inode, struct extent_state *state,
+-			       int *bits);
++			       unsigned long *bits);
+ 	void (*merge_extent_hook)(struct inode *inode,
+ 				  struct extent_state *new,
+ 				  struct extent_state *other);
+@@ -191,7 +191,7 @@ int try_release_extent_state(struct extent_map_tree *map,
+ 			     gfp_t mask);
+ int lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
+ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, struct extent_state **cached);
++		     unsigned long bits, struct extent_state **cached);
+ int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end);
+ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
+ 			 struct extent_state **cached, gfp_t mask);
+@@ -207,16 +207,17 @@ u64 count_range_bits(struct extent_io_tree *tree,
+ 
+ void free_extent_state(struct extent_state *state);
+ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		   int bits, int filled, struct extent_state *cached_state);
++		   unsigned long bits, int filled,
++		   struct extent_state *cached_state);
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		      int bits, gfp_t mask);
++		      unsigned long bits, gfp_t mask);
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, int wake, int delete, struct extent_state **cached,
+-		     gfp_t mask);
++		     unsigned long bits, int wake, int delete,
++		     struct extent_state **cached, gfp_t mask);
+ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		    int bits, gfp_t mask);
++		    unsigned long bits, gfp_t mask);
+ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		   int bits, u64 *failed_start,
++		   unsigned long bits, u64 *failed_start,
+ 		   struct extent_state **cached_state, gfp_t mask);
+ int set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+ 			struct extent_state **cached_state, gfp_t mask);
+@@ -229,17 +230,17 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+ int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+ 		       gfp_t mask);
+ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		       int bits, int clear_bits,
++		       unsigned long bits, unsigned long clear_bits,
+ 		       struct extent_state **cached_state, gfp_t mask);
+ int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
+ 			struct extent_state **cached_state, gfp_t mask);
+ int set_extent_defrag(struct extent_io_tree *tree, u64 start, u64 end,
+ 		      struct extent_state **cached_state, gfp_t mask);
+ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+-			  u64 *start_ret, u64 *end_ret, int bits,
++			  u64 *start_ret, u64 *end_ret, unsigned long bits,
+ 			  struct extent_state **cached_state);
+ struct extent_state *find_first_extent_bit_state(struct extent_io_tree *tree,
+-						 u64 start, int bits);
++						 u64 start, unsigned long bits);
+ int extent_invalidatepage(struct extent_io_tree *tree,
+ 			  struct page *page, unsigned long offset);
+ int extent_write_full_page(struct extent_io_tree *tree, struct page *page,
+@@ -317,7 +318,8 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+ 			   unsigned long src_offset, unsigned long len);
+ void memset_extent_buffer(struct extent_buffer *eb, char c,
+ 			  unsigned long start, unsigned long len);
+-void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits);
++void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
++		     unsigned long bits);
+ void clear_extent_buffer_dirty(struct extent_buffer *eb);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+ int set_extent_buffer_uptodate(struct extent_buffer *eb);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d65a55c..11623f4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1522,7 +1522,7 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+  * have pending delalloc work to be done.
+  */
+ static void btrfs_set_bit_hook(struct inode *inode,
+-			       struct extent_state *state, int *bits)
++			       struct extent_state *state, unsigned long *bits)
+ {
+ 
+ 	/*
+@@ -1566,7 +1566,8 @@ static void btrfs_set_bit_hook(struct inode *inode,
+  * extent_io.c clear_bit_hook, see set_bit_hook for why
+  */
+ static void btrfs_clear_bit_hook(struct inode *inode,
+-				 struct extent_state *state, int *bits)
++				 struct extent_state *state,
++				 unsigned long *bits)
+ {
+ 	/*
+ 	 * set_bit and clear bit hooks normally require _irqsave/restore
 -- 
 1.7.9
 

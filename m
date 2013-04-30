@@ -1,83 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:56260 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753024Ab3D3Jlf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Apr 2013 05:41:35 -0400
-Date: Tue, 30 Apr 2013 10:41:31 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: helmut@hullen.de
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921
- __btrfs_write_out_cache+0x6b9/0x9a0 [btrfs]()
-Message-ID: <20130430094131.GA8274@carfax.org.uk>
-References: <CADn-QaMao+mtnJVuwjbnqHgFzKhqUfn2uiDgN5hFw_fHP+mGcQ@mail.gmail.com>
- <CVrGRAreCXB@helmut.hullen.de>
+Received: from mout.perfora.net ([74.208.4.194]:64504 "EHLO mout.perfora.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758244Ab3D3DUT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Apr 2013 23:20:19 -0400
+Message-ID: <517F386B.8050308@q5comm.com>
+Date: Mon, 29 Apr 2013 20:20:11 -0700
+From: Stephen Weinberg <stephen@q5comm.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="xHFwDpU9dbj6ez1V"
-In-Reply-To: <CVrGRAreCXB@helmut.hullen.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Panic while running defrag
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I ran into a panic while running find -xdev | xargs brtfs fi defrag 
+'{}'. I don't remember the exact command because the history was not 
+saved. I also started and stopped it a few times however.
 
---xHFwDpU9dbj6ez1V
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The kernel logs were on a different filesystem. Here is the 
+kern.log:http://fpaste.org/9383/36729191/
 
-On Tue, Apr 30, 2013 at 08:55:00AM +0200, Helmut Hullen wrote:
-> Hallo, Alexander,
-> 
-> Du meintest am 30.04.13:
-> 
-> > On my HP Compaq dc5800 with Ubuntu 13.04 and their
-> > 3.8.0-19-lowlatency kernel, I've got quite some kernel traces in the
-> > syslog.
-> 
-> It's a very good idea to use the newest kernel for btrfs. 3.8.0 is  
-> really old.
-> 
-> Just try kernel 3.8.10.
+My setup is two 2TB hard drives in raid 1. They are both sata drives so 
+as far as I know the USB disconnect line isn't referring to btrfs.
 
-   The differences in btrfs between the two are very small, and even
-I(*) wouldn't call 3.8.0 "very old" quite yet, given that 3.9 was only
-released yesterday. From memory, there's one btrfs patch in the 3.8
-stable series.
+output of df -h:
+/dev/sdb1 3.7T 3.2T 371G 90% /mount/point
 
-   Your problem is "just" a warning, and appears to be something to do
-with running out of space, or having too many CRCs... I don't really
-know the free space cache code at all well, so I'm mostly guessing
-here, from looking at the WARN_ON in __btrfs_write_out_cache.
+I haven't figured out how to reproduce the bug.
 
-   Hugo.
-
-(*) High Priest of the Kernel Upgrade.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                       ---   __(_'>  Squeak!   ---                       
-
---xHFwDpU9dbj6ez1V
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUX+Ry1heFHXiqx3kAQIwxQ//Qrso6GvJ5ZlC4lBzkTWpfEYVCq+wJXtA
-Hrze8HuJGRnvh+IFN9yow9o1evH0gjoogVN8xlV1VB/Cy4EmWDk5BSoftWNH1pwW
-CKmMGZBsAc9bi3zAtUiMLRn7x99F0jSPg9HQVBaPCckAt+brtkLgp39Xks9dPH+1
-hbD5+zvr9+iGiEl7MUoLm5H81tfywgw5nSS80LjySGlFXPVvJ/oQdad1vGDMg+hA
-kSHXXOZSHSd2w3zWYGi1kIY0GEU3U5ZJGzB3PYDhy2QSLLaM9cVuaGxMzW8ybDfG
-/EXgN5gpNGqHPwJXHWtWk+Vo0QlJuWU1M6nxJQxNqK6NLUJ1s1GmoAXKDmMOSSgH
-QlTtbF8kHxrpoLMGzFY7pOYCRTfiMhD423ZE2gi5zKazTBUXJeVGMX/Wa4NaqBLe
-0SvlpaW/TJXyyR7i9+WTmz0vOvmz+vhBIEmEMIXaZqo0jLNf7dfYE/Aw09EC5Xdf
-L9b5ZU3eRCq+PsJFwZ5i/rTv/pIHrKy56qPzX+JdSvgoXxSI/y7KB2X8oBm3DjDl
-mFcfCkrB2jB/isgHKjarxXGWI23f3Hx5/WMRxM6jtduaR2qOWMeqsnZIGaFVMJtb
-gYbsK64sLnBfhF+PkB4cQ/ouJPPY+Ni74Swit08L/9XBTwpIzchMbfjuDZtSnOID
-EYfioQzGKUs=
-=o365
------END PGP SIGNATURE-----
-
---xHFwDpU9dbj6ez1V--
+-- Stephen

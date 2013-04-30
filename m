@@ -1,19 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47027 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44703 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932595Ab3D3PW2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Apr 2013 11:22:28 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 7FC46A52BF
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 17:22:27 +0200 (CEST)
+	id S932192Ab3D3O3r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Apr 2013 10:29:47 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0BF14A52BF
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 16:29:47 +0200 (CEST)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs: add debug check for extent_io range alignment
-Date: Tue, 30 Apr 2013 17:22:23 +0200
-Message-Id: <1367335343-14842-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1367332184-13367-1-git-send-email-dsterba@suse.cz>
-References: <1367332184-13367-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH] btrfs: add debug check for extent_io range alignment
+Date: Tue, 30 Apr 2013 16:29:44 +0200
+Message-Id: <1367332184-13367-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -23,9 +21,6 @@ smaller than one block, one byte less than the inode size.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-
-v1->v2: denote that range is inclusive [...]
-
  fs/btrfs/extent_io.c |   27 +++++++++++++++++++++++++++
  1 files changed, 27 insertions(+), 0 deletions(-)
 
@@ -47,7 +42,7 @@ index c4949f1..6f6beda 100644
 +
 +	if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
 +		printk_ratelimited(KERN_DEBUG
-+		    "btrfs: %s: ino %llu isize %llu odd range [%llu,%llu]\n",
++		    "btrfs: %s: ino %llu isize %llu odd range [%llu,%llu)\n",
 +				caller,
 +				(unsigned long long)btrfs_ino(inode),
 +				(unsigned long long)isize,

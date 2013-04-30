@@ -1,52 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:37327 "EHLO sandeen.net"
+Received: from cantor2.suse.de ([195.135.220.15]:44626 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753898Ab3DZVGP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Apr 2013 17:06:15 -0400
-From: Eric Sandeen <sandeen@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 9/9] Btrfs-progs: remove btrfs_init_path calls from ctree.c
-Date: Fri, 26 Apr 2013 16:06:10 -0500
-Message-Id: <1367010370-21571-10-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1367010370-21571-1-git-send-email-sandeen@redhat.com>
-References: <1367010370-21571-1-git-send-email-sandeen@redhat.com>
+	id S932192Ab3D3O2Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Apr 2013 10:28:16 -0400
+Date: Tue, 30 Apr 2013 16:28:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix off-by-one in lseek
+Message-ID: <20130430142811.GV16427@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1357530788-5790-1-git-send-email-bo.li.liu@oracle.com>
+ <20130107162050.GJ20089@twin.jikos.cz>
+ <20130108024637.GA1916@liubo>
+ <20130108083053.GD3763@twin.jikos.cz>
+ <20130108172627.GP20089@twin.jikos.cz>
+ <20130109043443.GA4527@liubo>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130109043443.GA4527@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_init_path was initially used when the path objects were on the
-stack.  Now all the work is done by btrfs_alloc_path and btrfs_init_path
-isn't required.
+On Wed, Jan 09, 2013 at 12:34:45PM +0800, Liu Bo wrote:
+> Thanks for coding this up, I've checked the code, these messages can
+> be fixed by the following, please check if it works on your side :)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 1b319df..1688669 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3895,7 +3913,7 @@ int extent_fiemap(struct inode *inode, struct
+> fiemap_extent_info *fieinfo,
+>  		last_for_get_extent = isize;
+>  	}
+>  
+> -	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len, 0,
+> +	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len - 1, 0,
+>  			 &cached_state);
+>  
+>  	em = get_extent_skip_holes(inode, start, last_for_get_extent,
+> @@ -3982,7 +4000,7 @@ int extent_fiemap(struct inode *inode, struct
+> fiemap_extent_info *fieinfo,
+>  out_free:
+>  	free_extent_map(em);
+>  out:
+> -	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len,
+> +	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+>  			     &cached_state, GFP_NOFS);
+>  	return ret;
+>  }
 
-This patch removes it, and just uses kmem_cache_zalloc to zero out the object.
+can you please resend this as a proper patch? I'm sending the debugging
+helper and found out that this is still not fixed. You can add my
 
-[Eric Sandeen: port kernel commit e00f730 to userspace]
-
-(Note, the rest of userspace has an on-path stack, so the actual
-function remains for now).
-
-Signed-off-by: Chris Mason <chris.mason@oracle.com>
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
- ctree.c |    6 +-----
- 1 files changed, 1 insertions(+), 5 deletions(-)
-
-diff --git a/ctree.c b/ctree.c
-index 7257e6f..24ca6f3 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -42,11 +42,7 @@ inline void btrfs_init_path(struct btrfs_path *p)
- struct btrfs_path *btrfs_alloc_path(void)
- {
- 	struct btrfs_path *path;
--	path = kmalloc(sizeof(struct btrfs_path), GFP_NOFS);
--	if (path) {
--		btrfs_init_path(path);
--		path->reada = 0;
--	}
-+	path = kzalloc(sizeof(struct btrfs_path), GFP_NOFS);
- 	return path;
- }
- 
--- 
-1.7.1
-
+Tested-by: David Sterba <dsterba@suse.cz>

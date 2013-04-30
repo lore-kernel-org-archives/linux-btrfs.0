@@ -1,59 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40216 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50762 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757730Ab3D2WRw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Apr 2013 18:17:52 -0400
-Date: Tue, 30 Apr 2013 00:17:50 +0200
+	id S1760826Ab3D3QwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Apr 2013 12:52:15 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 3BFFBA5359
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 18:52:14 +0200 (CEST)
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [bug] 3.9-rc7+next: NULL deref in
- btrfs_next_old_leaf/btrfs_search_slot
-Message-ID: <20130429221750.GT16427@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130418144218.GH16427@twin.jikos.cz>
- <20130425171858.GM16427@twin.jikos.cz>
- <20130427025042.GB999@liubo>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130427025042.GB999@liubo>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/3] A few message cleanups
+Date: Tue, 30 Apr 2013 18:51:56 +0200
+Message-Id: <cover.1367339998.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 27, 2013 at 10:50:43AM +0800, Liu Bo wrote:
-> > @@ -3486,14 +3486,14 @@ int close_ctree(struct btrfs_root *root)
-> >                        percpu_counter_sum(&fs_info->delalloc_bytes));
-> >         }
-> > 
-> > -       free_root_pointers(fs_info, 1);
-> > -
-> >         btrfs_free_block_groups(fs_info);
-> > 
-> >         del_fs_roots(fs_info);
-> > 
-> >         iput(fs_info->btree_inode);
-> > 
-> > +       free_root_pointers(fs_info, 1);
-> > +
-> >         btrfs_stop_workers(&fs_info->generic_worker);
-> >         btrfs_stop_workers(&fs_info->fixup_workers);
-> >         btrfs_stop_workers(&fs_info->delalloc_workers);
-> > ---
-> 
-> Thanks for tracking it Dave, I'm trying to reproduce it here.
+I'm running tests with SANITY_CHECKS enabled and saw that the messages
+were not printed with a prefix, fixed. And updated a some lines along
+the way. Patches are interdependent.
 
-Adding sleeps between free_root_pointers and stopping workers should
-leave enough space for the threads to work and touch the freed data.
+David Sterba (3):
+  btrfs: add prefix to sanity tests messages
+  btrfs: move ifdef around sanity checks out of init_btrfs_fs
+  btrfs: show compiled-in config features at module load time
 
-The proposed fix is not entirely correct, it just reduces the race
-window. Freeing roots must come after stopping the workers, same holds
-for any of the other cleanup functions that may access released
-resources. But for example the free block groups need the caching thread
-alive so it cannot be trivially fixed by moving everything after
-stop_workers and must be decided case by case.
+ fs/btrfs/free-space-cache.c |  101 ++++++++++++++++++++++---------------------
+ fs/btrfs/free-space-cache.h |    2 -
+ fs/btrfs/super.c            |   17 ++++++--
+ fs/btrfs/version.h          |    4 --
+ 4 files changed, 65 insertions(+), 59 deletions(-)
+ delete mode 100644 fs/btrfs/version.h
 
-There is another instance of a similar sequence that is mis-ordered and
-has to be fixed as well.
+-- 
+1.7.9
 
-
-david

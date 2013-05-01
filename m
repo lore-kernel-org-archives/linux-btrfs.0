@@ -1,90 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:37502 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755550Ab3EGLRO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 07:17:14 -0400
-Message-ID: <5188E3EF.3000807@cn.fujitsu.com>
-Date: Tue, 07 May 2013 19:22:23 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:60741 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756299Ab3EAS5F (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 14:57:05 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 46F947C042F
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 May 2013 12:57:04 -0600 (MDT)
+Date: Wed, 1 May 2013 14:57:01 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921
+ __btrfs_write_out_cache+0x6b9/0x9a0 [btrfs]()
+Message-ID: <20130501185701.GA12414@localhost.localdomain>
+References: <CADn-QaMao+mtnJVuwjbnqHgFzKhqUfn2uiDgN5hFw_fHP+mGcQ@mail.gmail.com>
+ <CVrGRAreCXB@helmut.hullen.de>
+ <20130430094131.GA8274@carfax.org.uk>
+ <loom.20130430T133556-803@post.gmane.org>
+ <20130430135816.GD2580@localhost.localdomain>
+ <CADn-QaMFct-5XgMbqiWMG_pa-AzgOQOZLUc-CNTrAPpG7633Aw@mail.gmail.com>
+ <20130430175351.GF2580@localhost.localdomain>
+ <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Russell Coker <russell@coker.com.au>
-Subject: [PATCH] Btrfs: fix compile warnings in i386 machine
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-See the warnings below:
+On Wed, May 01, 2013 at 12:39:47AM -0600, Alexander Skwar wrote:
+> Hello Josef
+> 
+> On Tue, Apr 30, 2013 at 7:53 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> 
+> > Can you run this patch and capture the output when you get the warning?  You
+> > should see some mesages before the -- [ cut here ] -- part, make sure to capture
+> > those.  Thanks,
+> 
+> Sure.
+> 
+> There you go (also on http://pastebin.com/7MHmgpPU):
+> 
+>  num_pages is 10000, blockgroup? yes
+>  block group offset=83999326208, size=167959920640
 
-   [CC]     btrfs-list.o
-btrfs-list.c: In function 'filter_by_parent':
-btrfs-list.c:1183:34: warning: cast to pointer from integer of different size
-[-Wint-to-pointer-cast]
-     [CC]     cmds-subvolume.o
-cmds-subvolume.c: In function 'cmd_subvol_show':
-cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size
-[-Wpointer-to-int-cast]
-     [CC]     cmds-restore.o
-cmds-restore.c: In function 'decompress_lzo':
-cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe'
-from incompatible pointer type [enabled by default]
-In file included from cmds-restore.c:31:0:
-/usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of
-type 'size_t *'
+Ok well that's not good, I'm not sure how you got a 156 gigabyte block group,
+but thats why that warning is going off.  Can you pull btrfs-image down from
+here
 
-Reported-by: Russell Coker <russell@coker.com.au>
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
----
- btrfs-list.c     |    2 +-
- cmds-restore.c   |    3 ++-
- cmds-subvolume.c |    2 +-
- 3 files changed, 4 insertions(+), 3 deletions(-)
+git://github.com/josefbacik/btrfs-progs.git
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index a748d5e..e4fc994 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1180,7 +1180,7 @@ static int filter_full_path(struct root_info *ri, u64 data)
- 
- static int filter_by_parent(struct root_info *ri, u64 data)
- {
--	return !uuid_compare(ri->puuid, (u8 *)data);
-+	return !uuid_compare(ri->puuid, (u8 *)(unsigned long)data);
- }
- 
- static btrfs_list_filter_func all_filter_funcs[] = {
-diff --git a/cmds-restore.c b/cmds-restore.c
-index c75e187..3098f8d 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -113,7 +113,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
- 
- 		new_len = lzo1x_worst_compress(PAGE_CACHE_SIZE);
- 		ret = lzo1x_decompress_safe((const unsigned char *)inbuf, in_len,
--					    (unsigned char *)outbuf, &new_len, NULL);
-+					    (unsigned char *)outbuf,
-+					    (void *)&new_len, NULL);
- 		if (ret != LZO_E_OK) {
- 			fprintf(stderr, "failed to inflate: %d\n", ret);
- 			return -1;
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 74e2130..1bc7867 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -914,7 +914,7 @@ static int cmd_subvol_show(int argc, char **argv)
- 	printf("\tSnapshot(s):\n");
- 	filter_set = btrfs_list_alloc_filter_set();
- 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
--				(u64)get_ri.uuid);
-+				(u64)(unsigned long)get_ri.uuid);
- 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
- 	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
- 			1, raw_prefix);
--- 
-1.7.7.6
+and build that and then run
 
+./btrfs-image -c 9 -t 4 /dev/whatever somefile.img
 
+and upload the image somewhere so I can take a look at it.  Thanks,
 
-
-
-
+Josef

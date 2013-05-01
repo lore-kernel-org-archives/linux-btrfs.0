@@ -1,41 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50387 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751219Ab3EAIhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 May 2013 04:37:45 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UXSXo-0003cL-MK
-	for linux-btrfs@vger.kernel.org; Wed, 01 May 2013 10:37:44 +0200
-Received: from 212.71.117.90 ([212.71.117.90])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 10:37:44 +0200
-Received: from alexanders.mailinglists+nospam by 212.71.117.90 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 10:37:44 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51861 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753925Ab3EAIoM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 04:44:12 -0400
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: dima <dolenin@parallels.com>
 Subject: Re: Best Practice - Partition, or not?
-Date: Wed, 1 May 2013 08:37:30 +0000 (UTC)
-Message-ID: <loom.20130501T103631-501@post.gmane.org>
+Date: Wed, 1 May 2013 18:44:06 +1000
+Cc: linux-btrfs@vger.kernel.org
 References: <loom.20130501T094600-451@post.gmane.org> <5180CB66.9030803@parallels.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5180CB66.9030803@parallels.com>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201305011844.07087.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello dima
+On Wed, 1 May 2013, dima <dolenin@parallels.com> wrote:
+> > If I want to manage a complete disk with btrfs, what's the "Best
+> > Practice"? Would it be best to create the btrfs filesystem on
+> > "/dev/sdb", or would it be better to create just one partition from
+> > start to end and then do "mkfs.btrfs /dev/sdb1"?
+> > 
+> > Would the same recomendation hold true, if we're talking about huge
+> > disks, like 4TB or so?
 
-dima <dolenin <at> parallels.com> writes:
+My biggest BTRFS array is a RAID-1 of 2*3TB disks.  The system in question 
+boots from an Intel SSD so I have no need of boot support on the hard disks.
 
 > (NB: grub will not boot from "/dev/sdb", selinux will)
 
-Fair point :)
-I don't plan to boot from the disk, though. It's a data disk, if you will.
+Not sure what you mean here, but SE Linux isn't a boot loader.  Did you mean 
+syslinux?  That's a boot loader but I don't know if it works in such a 
+configuration.
 
-But, yeah, for a "best practice", that's certainly something to keep in mind.
-
-BR,
-Alexander
-
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

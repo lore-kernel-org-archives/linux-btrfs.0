@@ -1,41 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51861 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753925Ab3EAIoM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 04:44:12 -0400
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: dima <dolenin@parallels.com>
+Received: from mailout06.t-online.de ([194.25.134.19]:35732 "EHLO
+	mailout06.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755334Ab3EAIrL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 04:47:11 -0400
+Date: 01 May 2013 10:46:00 +0200
+From: Hullen@t-online.de (Helmut Hullen)
+To: linux-btrfs@vger.kernel.org
+Message-ID: <CW2IaniPCXB@helmut.hullen.de>
+In-Reply-To: <loom.20130501T094600-451@post.gmane.org>
 Subject: Re: Best Practice - Partition, or not?
-Date: Wed, 1 May 2013 18:44:06 +1000
-Cc: linux-btrfs@vger.kernel.org
-References: <loom.20130501T094600-451@post.gmane.org> <5180CB66.9030803@parallels.com>
-In-Reply-To: <5180CB66.9030803@parallels.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201305011844.07087.russell@coker.com.au>
+Content-Type: text/plain; charset=US-ASCII
+Reply-To: helmut@hullen.de
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 1 May 2013, dima <dolenin@parallels.com> wrote:
-> > If I want to manage a complete disk with btrfs, what's the "Best
-> > Practice"? Would it be best to create the btrfs filesystem on
-> > "/dev/sdb", or would it be better to create just one partition from
-> > start to end and then do "mkfs.btrfs /dev/sdb1"?
-> > 
-> > Would the same recomendation hold true, if we're talking about huge
-> > disks, like 4TB or so?
+Hallo, Alexander,
 
-My biggest BTRFS array is a RAID-1 of 2*3TB disks.  The system in question 
-boots from an Intel SSD so I have no need of boot support on the hard disks.
+Du meintest am 01.05.13:
 
-> (NB: grub will not boot from "/dev/sdb", selinux will)
+> If I want to manage a complete disk with btrfs, what's the "Best
+> Practice"? Would it be best to create the btrfs filesystem on
+> "/dev/sdb", or would it be better to create just one partition from
+> start to end and then do "mkfs.btrfs /dev/sdb1"?
 
-Not sure what you mean here, but SE Linux isn't a boot loader.  Did you mean 
-syslinux?  That's a boot loader but I don't know if it works in such a 
-configuration.
+> Would the same recomendation hold true, if we're talking about huge
+> disks, like 4TB or so?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+I've tested both versions on a 3 disk bundle of 3 TByte disks (data  
+raid0, meta raid1).
+
+  mkfs.btrfs ... /dev/sdb /dev/sdc /dev/sdd
+
+made some more problems, especially when recognizing or deleting the  
+disk(s). Maybe that's a problem more related to "util-linux" (especially  
+"wipefs" and "blkid").
+
+Partitioning first with gdisk and then
+
+  mkfs.btrfs ... /dev/sdb1 /dev/sdc1 /dev/sdd1
+
+runs better (perhaps without problems).
+
+Viele Gruesse!
+Helmut

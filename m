@@ -1,110 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19275 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:37946 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752642Ab3ENA3z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 May 2013 20:29:55 -0400
-Date: Tue, 14 May 2013 08:29:34 +0800
+	with ESMTP id S1751966Ab3EAQ1n (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 12:27:43 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r41GRfM3028180
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 1 May 2013 16:27:42 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r41GRfUk000634
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 1 May 2013 16:27:41 GMT
+Received: from abhmt103.oracle.com (abhmt103.oracle.com [141.146.116.55])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r41GRfh5001161
+	for <linux-btrfs@vger.kernel.org>; Wed, 1 May 2013 16:27:41 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add dedup register
-Message-ID: <20130514002933.GA15127@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1367425659-10803-1-git-send-email-bo.li.liu@oracle.com>
- <1367425659-10803-4-git-send-email-bo.li.liu@oracle.com>
- <20130513155510.GP16456@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130513155510.GP16456@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH v3 0/2] Online data deduplication
+Date: Thu,  2 May 2013 00:27:36 +0800
+Message-Id: <1367425659-10803-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 13, 2013 at 05:55:10PM +0200, David Sterba wrote:
-> On Thu, May 02, 2013 at 12:27:39AM +0800, Liu Bo wrote:
-> > +static int cmd_dedup(int argc, char **argv)
-> > +{
-> > +	int 	fd, res, e;
-> > +	char	*path;
-> > +
-> > +	if (check_argc_exact(argc, 2))
-> > +		usage(cmd_dedup_usage);
-> > +
-> > +	path = argv[1];
-> > +
-> > +	fd = open_file_or_dir(path);
-> > +	if (fd < 0) {
-> > +		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-> > +		return 12;
-> 
-> Please do not introduce the strange return values in new code.
+NOTE: This leads to a FORMAT CHANGE, DO NOT use it on real data!
 
-Okay, actually I was hesitating if it's right at that time..
+Data deduplication is a specialized data compression technique for eliminating
+duplicate copies of repeating data.[1]
 
-> 
-> > +	}
-> > +
-> > +	printf("register dedup on '%s'\n", path);
-> > +	res = ioctl(fd, BTRFS_IOC_DEDUP_REGISTER);
-> > +	e = errno;
-> > +	close(fd);
-> > +	if( res < 0 ){
-> > +		fprintf(stderr, "ERROR: unable to register dedup '%s' - %s\n", 
-> > +			path, strerror(e));
-> > +		return 32;
-> 
-> dtto
-> 
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> >  const struct cmd_group filesystem_cmd_group = {
-> >  	filesystem_cmd_group_usage, NULL, {
-> >  		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
-> > @@ -524,6 +559,7 @@ const struct cmd_group filesystem_cmd_group = {
-> >  		{ "balance", cmd_balance, NULL, &balance_cmd_group, 1 },
-> >  		{ "resize", cmd_resize, cmd_resize_usage, NULL, 0 },
-> >  		{ "label", cmd_label, cmd_label_usage, NULL, 0 },
-> > +		{ "dedup-register", cmd_dedup, cmd_dedup_usage, NULL, 0 },
-> 
-> By this you effectively capture the 'dedup*' namespace by a single
-> command. I thinkg dedup is a bigger beast and should use subcommands
-> rather than bunch of 1st level subcommands, ie. something like balance
-> or scrub.
-> 
-> If you don't want to spend time on polishing the UI of progs right now,
-> fine, just add the commands as you like, this can be fixed later. With a
-> warning.
+This patch set is also related to "Content based storage" in project ideas[2].
 
-Thanks David, yeah, I'm shipping the code to balance subcommand style,
-even though I just have two command "register/unregister" right now ;)
+PATCH 1 is a hang fix when deduplication is on, but it's also useful with no
+deduplication in practice use.
 
-> 
-> >  		{ 0, 0, 0, 0, 0 },
-> >  	}
-> >  };
-> > diff --git a/ioctl.h b/ioctl.h
-> > index e841913..1bea98a 100644
-> > --- a/ioctl.h
-> > +++ b/ioctl.h
-> > @@ -528,6 +528,7 @@ struct btrfs_ioctl_clone_range_args {
-> >  				      struct btrfs_ioctl_get_dev_stats)
-> >  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
-> >  				    struct btrfs_ioctl_dev_replace_args)
-> > +#define BTRFS_IOC_DEDUP_REGISTER	 _IO(BTRFS_IOCTL_MAGIC, 54)
-> 
-> The interface to dedup should be imho similar to what's established with
-> scrub/balance and so should be the ioctls.
-> 
-> (Same as before, if you're focused on the actual dedup implementation,
-> add a comment that it's not finalized.)
-> 
-> 
-> david
+For more implementation details, please refer to PATCH 2.
+
+TODO:
+* a bit-to-bit comparison callback.
+
+All comments are welcome!
+
+[1]: http://en.wikipedia.org/wiki/Data_deduplication
+[2]: https://btrfs.wiki.kernel.org/index.php/Project_ideas#Content_based_storage
 
 
-Thanks a lot for the advice!
+v3:
+  * add COMPRESS support
+  * add a real ioctl to enable dedup feature
+  * change the maximum allowed dedup blocksize to 128k because of compressed
+    range limit
+v2:
+  * To avoid enlarging the file extent item's size, add another index key used
+    for freeing dedup extent.
+  * Freeing dedup extent is now like how we delete checksum.
+  * Add support for alternative deduplicatin blocksize larger than PAGESIZE.
+  * Add a mount option to set deduplication blocksize.
+  * Add support for those writes that are smaller than deduplication blocksize.
 
-thanks,
-liubo
+=====================
+HOW To turn deduplication on:
+
+There are 2 steps you need to do before using it,
+1) mount /dev/disk /mnt_of_your_btrfs -o dedup
+   (or mount /dev/disk /mnt_of_your_btrfs -o dedup_bs=128K)
+2) btrfs filesystem dedup-register /mnt_of_your_btrfs
+=====================
+
+Liu Bo (2):
+  Btrfs: skip merge part for delayed data refs
+  Btrfs: online data deduplication
+
+ fs/btrfs/ctree.h           |   54 ++++
+ fs/btrfs/delayed-ref.c     |    7 +
+ fs/btrfs/disk-io.c         |   34 +++-
+ fs/btrfs/extent-tree.c     |    7 +
+ fs/btrfs/extent_io.c       |   27 ++-
+ fs/btrfs/extent_io.h       |   15 ++
+ fs/btrfs/file-item.c       |  242 ++++++++++++++++++
+ fs/btrfs/inode.c           |  583 ++++++++++++++++++++++++++++++++++++++------
+ fs/btrfs/ioctl.c           |   38 +++
+ fs/btrfs/ordered-data.c    |   30 ++-
+ fs/btrfs/ordered-data.h    |   11 +-
+ fs/btrfs/super.c           |   27 ++-
+ include/uapi/linux/btrfs.h |    1 +
+ 13 files changed, 990 insertions(+), 86 deletions(-)
+
+-- 
+1.7.7
+

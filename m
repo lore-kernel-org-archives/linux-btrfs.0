@@ -1,45 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from y235201.ppp.asahi-net.or.jp ([118.243.235.201]:57896 "EHLO
-	mactop" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1754410Ab3EAIuj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 May 2013 04:50:39 -0400
-Received: from [10.81.1.3] (mydomain.com [10.81.1.3])
-	by mactop (Postfix) with ESMTP id 87CF55FFFB
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 May 2013 17:50:38 +0900 (JST)
-Message-ID: <5180D75E.4030605@parallels.com>
-Date: Wed, 01 May 2013 17:50:38 +0900
-From: dima <dolenin@parallels.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:56911 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757850Ab3EAJRH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 May 2013 05:17:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UXT9p-0001lt-8O
+	for linux-btrfs@vger.kernel.org; Wed, 01 May 2013 11:17:01 +0200
+Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 11:17:01 +0200
+Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 11:17:01 +0200
 To: linux-btrfs@vger.kernel.org
+From: Gabriel de Perthuis <g2p.code@gmail.com>
 Subject: Re: Best Practice - Partition, or not?
-References: <loom.20130501T094600-451@post.gmane.org> <5180CB66.9030803@parallels.com> <201305011844.07087.russell@coker.com.au>
-In-Reply-To: <201305011844.07087.russell@coker.com.au>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Date: Wed, 1 May 2013 09:16:45 +0000 (UTC)
+Message-ID: <klqmht$gt7$1@ger.gmane.org>
+References: <loom.20130501T094600-451@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/01/2013 05:44 PM, Russell Coker wrote:
-> On Wed, 1 May 2013, dima <dolenin@parallels.com> wrote:
->>> If I want to manage a complete disk with btrfs, what's the "Best
->>> Practice"? Would it be best to create the btrfs filesystem on
->>> "/dev/sdb", or would it be better to create just one partition from
->>> start to end and then do "mkfs.btrfs /dev/sdb1"?
->>>
->>> Would the same recomendation hold true, if we're talking about huge
->>> disks, like 4TB or so?
->
-> My biggest BTRFS array is a RAID-1 of 2*3TB disks.  The system in question
-> boots from an Intel SSD so I have no need of boot support on the hard disks.
->
->> (NB: grub will not boot from "/dev/sdb", selinux will)
->
-> Not sure what you mean here, but SE Linux isn't a boot loader.  Did you mean
-> syslinux?  That's a boot loader but I don't know if it works in such a
-> configuration.
->
+> Hello
+> 
+> If I want to manage a complete disk with btrfs, what's the "Best
+> Practice"? Would it be best to create the btrfs filesystem on
+> "/dev/sdb", or would it be better to create just one partition from
+> start to end and then do "mkfs.btrfs /dev/sdb1"?
 
-gosh! of course, SYSLINUX. Sorry guys.
-(i am working with selinux just now that is why....)
+Partitions (GPT) are always more flexible and future-proof.  If you ever
+need to shrink the btrfs filesystem and give the space to another
+partition, or do a conversion to lvm/bcache/luks (shameless plug:
+https://github.com/g2p/blocks ), it'd be stupid to be locked into your
+current setup for want of a few megabytes of space before your
+filesystem.
 
-Yes, syslinux will work, I had an install with root btrfs with syslinux 
-as a bootloader (at the time when grub2 did not support booting from btrfs)
+> Would the same recomendation hold true, if we're talking about huge
+> disks, like 4TB or so?
+
+More so, since it can be infeasible to move this much data.
+
+

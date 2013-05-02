@@ -1,88 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f170.google.com ([209.85.214.170]:52048 "EHLO
-	mail-ob0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753007Ab3EAGkI convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 02:40:08 -0400
-Received: by mail-ob0-f170.google.com with SMTP id eh20so1102843obb.29
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 23:40:07 -0700 (PDT)
+Received: from mail-ob0-f177.google.com ([209.85.214.177]:52656 "EHLO
+	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760451Ab3EBSwJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 May 2013 14:52:09 -0400
+Received: by mail-ob0-f177.google.com with SMTP id un3so761092obb.22
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2013 11:52:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20130430175351.GF2580@localhost.localdomain>
-References: <CADn-QaMao+mtnJVuwjbnqHgFzKhqUfn2uiDgN5hFw_fHP+mGcQ@mail.gmail.com>
- <CVrGRAreCXB@helmut.hullen.de> <20130430094131.GA8274@carfax.org.uk>
- <loom.20130430T133556-803@post.gmane.org> <20130430135816.GD2580@localhost.localdomain>
- <CADn-QaMFct-5XgMbqiWMG_pa-AzgOQOZLUc-CNTrAPpG7633Aw@mail.gmail.com> <20130430175351.GF2580@localhost.localdomain>
-From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
-Date: Wed, 1 May 2013 08:39:47 +0200
-Message-ID: <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921 __btrfs_write_out_cache+0x6b9/0x9a0
- [btrfs]()
+In-Reply-To: <CAG42UxfctrmBK_rgVSusjQX8ur_6u_QgA1LGhRV-UW=WT8gTsA@mail.gmail.com>
+References: <CAG42UxdVpz7a0FPEc7Ajm+jHHrqG7zT2=JaPZcFzMQT18eqzww@mail.gmail.com>
+ <20130417065506.GA21083@panda> <CAG42Uxcjk-T9e-9uO6L+dLzqo3N7c+RMvUyaS2WE_aFWK9niJA@mail.gmail.com>
+ <CAG42Uxccx7NzJN2oyyAqU9mWN8q-6==V2zg1OQ2mOfvBZtbs1w@mail.gmail.com>
+ <20130418215856.GA2305@localhost.localdomain> <CAG42Uxeajo=RESm531A7WWtFzKsFVDRJXuve1BRQXFPceFTMgw@mail.gmail.com>
+ <20130425203900.GL2631@localhost.localdomain> <CAG42UxcVhXT5=kgUedAWDbSnPuW_Nu---PsG+WRuNCFn9Kdeng@mail.gmail.com>
+ <20130425211019.GM2631@localhost.localdomain> <CAG42UxfctrmBK_rgVSusjQX8ur_6u_QgA1LGhRV-UW=WT8gTsA@mail.gmail.com>
+From: Matt Pursley <mpursley@gmail.com>
+Date: Thu, 2 May 2013 11:51:27 -0700
+Message-ID: <CAG42UxcPiXYpngEyOfCmRJan1kc6N2WyvGT+6rFu2QQTBE7CyA@mail.gmail.com>
+Subject: Re: One random read streaming is fast (~1200MB/s), but two or more
+ are slower (~750MB/s)?
 To: Josef Bacik <jbacik@fusionio.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef
+Hey Josef,
 
-On Tue, Apr 30, 2013 at 7:53 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+Were you able to try this multi-thread test on any more drives?
 
-> Can you run this patch and capture the output when you get the warning?  You
-> should see some mesages before the -- [ cut here ] -- part, make sure to capture
-> those.  Thanks,
 
-Sure.
+I did a test with 12, 6, 3, and 1 drive.  And, it looks like I see the
+multi-thread speed reduces, as the number of drives in the raid goes
+up.
 
-There you go (also on http://pastebin.com/7MHmgpPU):
+Like this:
+- 50% speed reduction with 2 threads on 12 drives
+- 25% speed reduction with 2 threads on 6 drives
+- 10% speed reduction with 2 threads on 3 drives
+- 5% speed reduction with 2 threads on 1 drive
 
- num_pages is 10000, blockgroup? yes
- block group offset=83999326208, size=167959920640
- ------------[ cut here ]------------
- WARNING: at fs/btrfs/free-space-cache.c:925
-__btrfs_write_out_cache+0x9e2/0xa10 [btrfs]()
- Hardware name: HP Compaq dc5800 Microtower
- Modules linked in: arc4 md4 parport_pc ppdev rfcomm bnep bluetooth
-nls_utf8 cifs fscache ext2 tpm_infineon snd_hda_codec_analog coretemp
-kvm_intel kvm hp_wmi sparse_keymap gpio_ich snd_hda_intel
-snd_hda_codec snd_hwdep snd_pcm snd_page_alloc dm_multipath
-snd_seq_midi scsi_dh tpm_tis wmi snd_seq_midi_event snd_rawmidi
-snd_seq snd_seq_device snd_timer nvidia(POF) mac_hid snd psmouse
-microcode serio_raw lpc_ich mei soundcore lp parport btrfs
-zlib_deflate libcrc32c hid_generic usbhid hid floppy e1000e
-usb_storage
- Pid: 2803, comm: sync Tainted: PF          O 3.8.0-19-lowlatency #13
- Call Trace:
-  [<ffffffff8105a8df>] warn_slowpath_common+0x7f/0xc0
-  [<ffffffff8105a93a>] warn_slowpath_null+0x1a/0x20
-  [<ffffffffa0103f52>] __btrfs_write_out_cache+0x9e2/0xa10 [btrfs]
-  [<ffffffff81094065>] ? cpuacct_charge+0x75/0x80
-  [<ffffffff810145d1>] ? __switch_to+0x181/0x4d0
-  [<ffffffffa0104015>] btrfs_write_out_cache+0x95/0xf0 [btrfs]
-  [<ffffffffa00b8c07>] btrfs_write_dirty_block_groups+0x527/0x620 [btrfs]
-  [<ffffffffa012adc2>] commit_cowonly_roots+0x15a/0x22c [btrfs]
-  [<ffffffffa00c84ec>] btrfs_commit_transaction+0x62c/0xb00 [btrfs]
-  [<ffffffff81080070>] ? finish_wait+0x80/0x80
-  [<ffffffff811ca3a0>] ? fdatawait_one_bdev+0x20/0x20
-  [<ffffffffa009a9f2>] btrfs_sync_fs+0x62/0x110 [btrfs]
-  [<ffffffff811ca3c0>] sync_fs_one_sb+0x20/0x30
-  [<ffffffff8119db59>] iterate_supers+0xe9/0xf0
-  [<ffffffff811ca555>] sys_sync+0x55/0x90
-  [<ffffffff816dfe9d>] system_call_fastpath+0x1a/0x1f
- ---[ end trace 88dd9bc54a43ce1a ]---
 
-I don't think it has to do with how much data I write at that time.
-I also get this error, when I copy a 6kb file and then invoke "sync"
-to force a write.
 
-But… Hm… No, I think it IS size related. As I said, I get this error
-even with a file which is 6520 bytes "big". BUT I do NOT get this
-error when I copy a file which is just 1129 bytes "small".
+I only have 12 slots on my HBA card, but I wonder if 24 drives would
+reduce the speed to 25% with 2 threads?
 
-Some more tests - I start to get these errors with
-filesizes > 3916 bytes. Filesizes <= 3916 bytes -> no error.
+Matt
 
-Does that make sense to you?
 
-Alexander
---
-=>        Google+ => http://plus.skwar.me         <==
-=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==
+
+
+
+
+
+
+
+
+make btrfs fs...
+___
+
+12 drives...
+mkfs.btrfs -f -d raid6 /dev/sda /dev/sdb /dev/sdc /dev/sdd /dev/sde
+/dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl
+
+6 drives...
+mkfs.btrfs -f -d raid6 /dev/sda /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf
+
+3 drives...
+mkfs.btrfs -f -d raid5 /dev/sda /dev/sdb /dev/sdc
+
+1 drive...
+mkfs.btrfs -f /dev/sda
+
+mount /dev/sda /tmp/btrfs_test/
+
+___
+
+
+make zero files...
+___
+kura1 ~ # for j in {1..2} ; do dd if=/dev/zero
+of=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M count=10000
+conv=fdatasync & done
+___
+
+
+===================
+
+btrfs raid6 on 12 drives with 2 threads = ~650MB/s
+___
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+vm.drop_caches = 1
+10485760000 bytes (10 GB) copied, 31.0431 s, 338 MB/s
+10485760000 bytes (10 GB) copied, 31.2235 s, 336 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 29.869 s, 351 MB/s
+10485760000 bytes (10 GB) copied, 30.5561 s, 343 MB/s
+
+___
+
+
+btrfs raid6 on 12 drives with 1 thread = ~1100MB/s
+___
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 9.69881 s, 1.1 GB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 9.56475 s, 1.1 GB/s
+___
+
+
+==================
+
+btrfs raid6 on 6 drives with 2 thread =  ~500MB/s
+___
+ kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 41.3899 s, 253 MB/s
+10485760000 bytes (10 GB) copied, 41.6916 s, 252 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 40.3178 s, 260 MB/s
+10485760000 bytes (10 GB) copied, 41.4087 s, 253 MB/s
+
+___
+
+
+
+btrfs raid6 on 6 drives with 1 thread =  ~600MB/s
+___
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 17.5686 s, 597 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 17.5396 s, 598 MB/s
+___
+
+
+==================
+
+btrfs raid5 on 3 drives with 2 thread = ~300MB/s
+___
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 67.636 s, 155 MB/s
+10485760000 bytes (10 GB) copied, 70.1783 s, 149 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 69.4945 s, 151 MB/s
+10485760000 bytes (10 GB) copied, 70.8279 s, 148 MB/s
+
+___
+
+
+
+btrfs raid5 on 3 drives with 1 thread = ~319MB/s
+___
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 32.8559 s, 319 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 32.8483 s, 319 MB/s
+
+___
+
+
+==================
+
+
+btrfs (no raid) on 1 drive with 2 thread =  ~155MB/s
+___
+ kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 134.982 s, 77.7 MB/s
+10485760000 bytes (10 GB) copied, 135.237 s, 77.5 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..2} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 134.549 s, 77.9 MB/s
+10485760000 bytes (10 GB) copied, 135.293 s, 77.5 MB/s
+
+
+___
+
+
+btrfs (no raid) on 1 drive with 1 thread =  ~162MB/s
+___
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 64.5931 s, 162 MB/s
+
+kura1 btrfs_test # sysctl vm.drop_caches=1 ; for j in {1..1} ; do dd
+of=/dev/null if=/tmp/btrfs_test/testfile_bs1m_size10GB_${j} bs=1M &
+done
+10485760000 bytes (10 GB) copied, 64.6299 s, 162 MB/s
+
+___
+
+
+
+==================
+
+
+
+
+
+
+
+On Fri, Apr 26, 2013 at 4:21 PM, Matt Pursley <mpursley@gmail.com> wrote:
+> Hey Josef,
+>
+> Thanks for looking into this further!    That is about the same
+> results that I was seeing, though I didn't test it with just one
+> drive.. only with all 12 drives in my jbod.  I will do a test with
+> just one disk, and see if I also get the same results.
+>
+> Let me know if you also see the same results with multiple drives in
+> your raid...
+>
+>
+> Thanks,
+> Matt
+>
+>
+>
+>
+>
+> On Thu, Apr 25, 2013 at 2:10 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+>> On Thu, Apr 25, 2013 at 03:01:18PM -0600, Matt Pursley wrote:
+>>> Ok, awesome, let me know how it goes..  I don't have the raid
+>>> formatted to btrfs right now, but I could probably do that in about 30
+>>> minutes or so.
+>>>
+>>
+>> Huh so I'm getting the full bandwidth, 120 mb/s with one thread and 60 mb/s with
+>> two threads.  These are just cheap sata drives tho, I'll try and dig up a box
+>> with 3 fusion cards for something a little closer to the speeds you are seeing
+>> and see if that makes a difference.  Thanks,
+>>
+>> Josef

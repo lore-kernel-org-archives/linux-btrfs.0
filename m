@@ -1,41 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f48.google.com ([209.85.215.48]:53489 "EHLO
-	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759996Ab3EBDA7 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 23:00:59 -0400
-Received: by mail-la0-f48.google.com with SMTP id eg20so106979lab.21
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 20:00:58 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CABNez5RD9qzZ7-hM7u0-mwUx5MFCMOOCsqW-LBxQx-vcmoKcdg@mail.gmail.com>
-References: <CABNez5RD9qzZ7-hM7u0-mwUx5MFCMOOCsqW-LBxQx-vcmoKcdg@mail.gmail.com>
-Date: Thu, 2 May 2013 11:00:57 +0800
-Message-ID: <CAF1ivSashGu_yYge1wxMqzfA-5uh+af=11nzj5=VSU=_gqbF8w@mail.gmail.com>
-Subject: Re:
-From: Lin Ming <mlin@kernel.org>
-To: =?ISO-8859-1?Q?Peter_W=FCrtz?= <pwuertz@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:50391 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1761743Ab3EBSdk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 May 2013 14:33:40 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UXyK2-00030c-T1
+	for linux-btrfs@vger.kernel.org; Thu, 02 May 2013 20:33:39 +0200
+Received: from 84-72-179-110.dclient.hispeed.ch ([84.72.179.110])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2013 20:33:38 +0200
+Received: from alexanders.mailinglists+nospam by 84-72-179-110.dclient.hispeed.ch with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2013 20:33:38 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+Subject: Listing EVERYTHING BUT read only snapshots; and what are snapshots if compared with ZFS?
+Date: Thu, 2 May 2013 18:33:21 +0000 (UTC)
+Message-ID: <loom.20130502T194637-612@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 27, 2013 at 5:42 PM, Peter Würtz <pwuertz@gmail.com> wrote:
-> Hi!
->
-> I recently had some trouble with my root and home btrfs filesystems.
-> My system (Ubuntu 13.04, Kernel 3.8) started freezing when copying
-> larger numbers of files around (hard freeze, no logs about what
-> happened).
->
-> At some time booting up wasn't possible anymore due to a kernel bug
-> while mounting the homefs. Btrfsck built from git wasn't able to
-> repair the fs and segfaulted. Btrfs-zero-log was able to make home
+Hello once more...
 
-Hi,
+I'm on Ubuntu 13.04 with Ubuntu kernel 3.8.0-19-lowlatency and
+Btrfs v0.20-rc1.
 
-Here is the patch to fix the segfault.
-https://patchwork.kernel.org/patch/2509881/
+First a clarification question - if I compare btrfs with zfs (which I know
+better...), how do snapshots compare? A read only snapshot is what ZFS calls
+snapshots, and a read/write snapshot would be a clone. Is that about right?
 
-Could you also report the bug onto bugzilla.kernel.org?
-http://marc.info/?l=linux-btrfs&m=136733749808576&w=2
+Now to the real question - how can I *easily* list everything but the read
+only snapshots? Is there command which does that? With "btrfs subv list -r
+/home", I can list all read only snapshots under /home. It lists just the
+read only snapshots.
 
-Lin Ming
+But with "btrfs subv list /home", I see all subvolumes; not only the
+read/write snaphots. Here's what I get:
+
+
+root@ask-home:~# btrfs subv list /home
+ID 257 gen 28776 top level 256 path a
+root@ask-home:~# btrfs subv list -r /home
+
+root@ask-home:~# btrfs subv snaps -r /home /home/foo
+Create a readonly snapshot of '/home' in '/home/foo'
+
+root@ask-home:~# btrfs subv list /home
+ID 257 gen 28778 top level 256 path a
+ID 347 gen 28778 top level 256 path foo
+root@ask-home:~# btrfs subv list -r /home
+ID 347 gen 28778 top level 256 path foo
+
+
+Now I'd like to have a command which only shows me the "real" subvolumes.
+How would I do that?
+
+For a script, I came up with this:
+
+( btrfs subv list -r "$mp" ; btrfs subv list "$mp" ) | sort | uniq -u
+
+Eg:
+
+( btrfs subv list -r /home ; btrfs subv list /home ) | sort | uniq -u
+ID 257 gen 28788 top level 256 path a
+
+Works, but is "somewhat" complicated (logic behind that - list only read
+only subvolumes + list all subvolumes and then show only those, which appear
+just once)...
+
+Is there an easier, more straight forward way?
+
+Thanks,
+Alexander
+

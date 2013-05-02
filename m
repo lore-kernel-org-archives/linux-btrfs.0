@@ -1,47 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f54.google.com ([209.85.219.54]:54612 "EHLO
-	mail-oa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755701Ab3EAUIn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 16:08:43 -0400
-Received: by mail-oa0-f54.google.com with SMTP id l20so1767645oag.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 13:08:43 -0700 (PDT)
+Received: from mail-oa0-f46.google.com ([209.85.219.46]:58243 "EHLO
+	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932940Ab3EBUmU convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 May 2013 16:42:20 -0400
+Received: by mail-oa0-f46.google.com with SMTP id j6so1002264oag.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2013 13:42:19 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20130501185701.GA12414@localhost.localdomain>
-References: <CADn-QaMao+mtnJVuwjbnqHgFzKhqUfn2uiDgN5hFw_fHP+mGcQ@mail.gmail.com>
- <CVrGRAreCXB@helmut.hullen.de> <20130430094131.GA8274@carfax.org.uk>
- <loom.20130430T133556-803@post.gmane.org> <20130430135816.GD2580@localhost.localdomain>
- <CADn-QaMFct-5XgMbqiWMG_pa-AzgOQOZLUc-CNTrAPpG7633Aw@mail.gmail.com>
- <20130430175351.GF2580@localhost.localdomain> <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
- <20130501185701.GA12414@localhost.localdomain>
 From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
-Date: Wed, 1 May 2013 22:08:22 +0200
-Message-ID: <CADn-QaNeo2pnu1a94HEWWjaXtdRb2C38JJXrUMy6xBmp+MpCVw@mail.gmail.com>
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921 __btrfs_write_out_cache+0x6b9/0x9a0
- [btrfs]()
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Thu, 2 May 2013 22:41:59 +0200
+Message-ID: <CADn-QaPQ0aH1rb3rG3bE87Ka3XaLzHHeA6nwNLbQJsbB_BiXkw@mail.gmail.com>
+Subject: Creating recursive snapshots for all filesystems
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef
+Hello once more...
 
-On Wed, May 1, 2013 at 8:57 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+I'm on Ubuntu 13.04 with Ubuntu kernel 3.8.0-19-lowlatency and
+Btrfs v0.20-rc1.
 
-> and build that and then run
->
-> ./btrfs-image -c 9 -t 4 /dev/whatever somefile.img
->
-> and upload the image somewhere so I can take a look at it.  Thanks,
+(Did I say that before...? *G*)
 
-Sure thing ;)
+Okay, ATM I'm writing a script for creating snapshots for "backups" of
+all my btrfs filesystems. I come from a FreeBSD / Solaris background
+with heavy use of ZFS.
 
-You can download it from my Copy share:
+In ZFS, it's very easy to create snapshots of all "zpools"
+("filesystems") of the system, like so:
 
-https://copy.com/6UUFqWdalibY
+SnapName=backup.`date +%Y%m%d--%H%M%S`
+zpool list -Ho name | while read zpool; do
+  zfs snapshot -r $zpool@$SnapName &
+done ; wait
 
-I gpg encrypted it symmetrically; I'll send you the password in private
-mail.
+Well… How to do something like this with btrfs? I do _not_ want to
+have to manually list the filesystems/subvolumes I've got in some
+script or configuration file.
+
+Where I'm hanging right now, is that I can't seem to figure out a
+"bullet proof" way to find all the subvolumes of the filesystems I
+might have.
+
+I've got this:
+
+root@ask-home:~# btrfs fi show
+failed to read /dev/sr0
+Label: 'Data'  uuid: 7d2eb10f-aced-4d41-bb7f-7badbf075b6a
+Total devices 1 FS bytes used 27.96GB
+devid    1 size 35.00GB used 35.00GB path /dev/dm-0
+
+Label: 'KernBtrfs'  uuid: 8b16bc2a-43e3-40da-89f5-7b333c6682f3
+Total devices 1 FS bytes used 655.05MB
+devid    1 size 11.85GB used 6.04GB path /dev/sda11
+
+Btrfs v0.20-rc1
+
+root@ask-home:~# mount -t btrfs
+/dev/mapper/ssd-Data on /data type btrfs (rw,noatime,ssd,discard)
+/dev/mapper/ssd-Data on /home type btrfs (rw,noatime,ssd,discard,subvol=home)
+/dev/sda11 on /data/Kernel/KernBtrfs type btrfs (rw,noatime)
+
+Now, how would I find all the subvolumes of the btrfs with the label
+"Data" (or uuid 7d...) or /dev/dm-0? "btrfs subvolume list" only seems
+to operate on where a btrfs is mounted. It works on "path".
+
+I could do "btrfs subv list -a /data", but how would I figure out,
+that "/data" is the "root" of the filesystem with uuid 7d...?
+
+For now, I do something like this (-> http://pastebin.com/u08ub1i8):
+
+SnapName=backup.`date +%Y%m%d--%H%M%S`
+btrfs fi show 2>/dev/null | awk '/ path / {print $NF}' | while read path; do
+  SafePath=`echo "$path" | tr / .`
+  TmpMountDir=`mktemp -d /tmp/.btrfs.mount.$SafePath.XXXXXX`
+  mount -t btrfs $path $TmpMountDir
+  (btrfs subv list -ar $TmpMountDir; btrfs subv list -a $TmpMountDir)
+| sort | uniq -u | while read _id Id _gen Gen _top _level Toplevel
+_path Path; do
+    btrfs subv snaps -r "$TmpMountDir/$Path" "$TmpMountDir/$Path.$SnapName"
+  done
+  umount $TmpMountDir
+  rmdir $TmpMountDir
+done
+
+Now, this works, but seems "somewhat" complicated... But
+maybe I'm just spoiled by ZFS ;)
+
+Is there an easier way to achieve what I want? I want to achieve:
+
+Creating recursive snapshots for all filesystems
+
+;)
+
+Thanks,
 
 Alexander
 --

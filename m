@@ -1,40 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37595 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934091Ab3ECUhn convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 May 2013 16:37:43 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 6D1369A0420
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2013 14:37:43 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, David Sterba <dsterba@suse.cz>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <20130503203344.GE12414@localhost.localdomain>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1367242681-8835-1-git-send-email-dsterba@suse.cz>
- <20130503203344.GE12414@localhost.localdomain>
-Message-ID: <20130503203741.5844.76366@localhost.localdomain>
-Subject: Re: [PATCH] btrfs: use only memmove_extent_buffer and simplify the helpers
-Date: Fri, 3 May 2013 16:37:41 -0400
+Received: from plane.gmane.org ([80.91.229.3]:54272 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1763479Ab3ECUmv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 May 2013 16:42:51 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UYMoc-00072f-Bo
+	for linux-btrfs@vger.kernel.org; Fri, 03 May 2013 22:42:50 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 May 2013 22:42:50 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 May 2013 22:42:50 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: grub/grub2 boot into btrfs raid root and with no initrd
+Date: Fri, 03 May 2013 21:42:38 +0100
+Message-ID: <km17fq$4k0$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Josef Bacik (2013-05-03 16:33:44)
-> On Mon, Apr 29, 2013 at 07:38:01AM -0600, David Sterba wrote:
-> > After commit a65917156e34594 ("Btrfs: stop using highmem for
-> > extent_buffers") we don't need to call kmap_atomic anymore and can
-> > reduce the move_pages helper to a simple memmove.
-> > 
-> > There's only one caller of memcpy_extent_buffer, we can use the
-> > memmove_ variant here.
-> > 
-> 
-> This makes -l 64k blow the hell up, just try generic/001.  I'm kicking this
-> patch out.  Thanks,
+I've made a few attempts to boot into a root filesystem created using:
 
-Sorry Dave, I only now remember having this same problem the last time I
-tried to get rid of memcpy.
+mkfs.btrfs -d raid1 -m raid1 -L btrfs_root_3 /dev/sda3 /dev/sdb3
 
--chris
+Both grub and grub2 pick up a kernel image fine from an ext4 /boot on
+/dev/sda1 for exaample, but then fail to find or assemble the btrfs root.
+
+Setting up an initrd and grub operates fine for the btrfs raid.
+
+
+What is the special magic to do this without the need for an initrd?
+
+Is the comment/patch below from last year languishing unknown? Or is
+there some problem with that kernel approach?
+
+
+Thanks,
+Martin
+
+
+See:
+
+http://forums.gentoo.org/viewtopic-t-923554-start-0.html
+
+
+Below is my patch, which is working fine for me with 3.8.2.
+Code:
+
+$ cat /etc/portage/patches/sys-kernel/gentoo-sources/earlydevtmpfs.patch
+--- init/do_mounts.c.orig   2013-03-24 20:49:53.446971127 +0100
++++ init/do_mounts.c   2013-03-24 20:51:46.408237541 +0100
+@@ -529,6 +529,7 @@
+    create_dev("/dev/root", ROOT_DEV);
+    if (saved_root_name[0]) {
+       create_dev(saved_root_name, ROOT_DEV);
++      devtmpfs_mount("dev");
+       mount_block_root(saved_root_name, root_mountflags);
+    } else {
+       create_dev("/dev/root", ROOT_DEV);
+
 

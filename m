@@ -1,42 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3.sgi.com ([192.48.152.1]:49036 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1756459Ab3ECM2v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 May 2013 08:28:51 -0400
-Message-ID: <5183AD53.7030403@sgi.com>
-Date: Fri, 3 May 2013 07:28:03 -0500
+Received: from relay1.sgi.com ([192.48.179.29]:60366 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1761934Ab3ECNGT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 May 2013 09:06:19 -0400
+Message-ID: <5183B652.8020300@sgi.com>
+Date: Fri, 3 May 2013 08:06:26 -0500
 From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: Re: [PATCH] xfstests 311: test fsync with dm flakey V3
-References: <1367003639-17621-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1367003639-17621-1-git-send-email-jbacik@fusionio.com>
+To: Eric Sandeen <esandeen@redhat.com>
+CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, xfs-oss <xfs@oss.sgi.com>
+Subject: Re: [PATCH] xfstests: btrfs/276 - stop all fsstress before exiting
+References: <517A10B1.7040107@redhat.com> <517A3C49.9090703@jan-o-sch.net> <7DC41D7F-396D-4769-B573-816E80372456@redhat.com>
+In-Reply-To: <7DC41D7F-396D-4769-B573-816E80372456@redhat.com>
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef,
+On 04/26/2013 08:10 AM, Eric Sandeen wrote:
+> On Apr 26, 2013, at 3:35 AM, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
+>
+>> On Fri, April 26, 2013 at 07:29 (+0200), Eric Sandeen wrote:
+>>> Tests after 276 were failing because the background fsstress
+>>> hadn't quit prior to exit, devices couldn't be unmounted, etc.
+>>
+>> I don't see how that would happen. Any further insight?
+>>
+> Yes, sorry for not including it.  The parent process was killed, but the fsstress processes just got reparented to init.
+>
+> I tried for a while to use pkill to knock them of first but this seems simpler, actually.
+>
+> Eric
+>
 
-The patch does not compile on older kernels (i.e. SLES11 SP2).
-
-fsync-tester.c: In function 'test_three':
-fsync-tester.c:133: warning: implicit declaration of function 'syncfs'
-/tmp/cciHR6Gb.o: In function `test_three':
-/data/lwork/gulag1c/rjohnston/xfstests/src/fsync-tester.c:133: undefined 
-reference to `syncfs'
-collect2: ld returned 1 exit status
-gmake[3]: *** [fsync-tester] Error 1
-gmake[2]: *** [src] Error 2
-make[1]: *** [default] Error 2
-make: *** [default] Error 2
-
-
-src/fsync-tester.c
-133                                 syncfs(test_fd);
-Typo ?????                          ^^^^^^
-Did you mean fsync?
-
-Regards,
---Rich
+Jan, with Eric's explanation, may I put your Reviewed-by: on this patch?
 

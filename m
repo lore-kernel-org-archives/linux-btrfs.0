@@ -1,34 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48918 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752505Ab3EASIO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 May 2013 14:08:14 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UXbRo-0000TW-3s
-	for linux-btrfs@vger.kernel.org; Wed, 01 May 2013 20:08:10 +0200
-Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 20:08:08 +0200
-Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 20:08:08 +0200
-To: linux-btrfs@vger.kernel.org
-From: Gabriel de Perthuis <g2p.code@gmail.com>
-Subject: Re: [PATCH v3 2/2] Btrfs: online data deduplication
-Date: Wed, 1 May 2013 18:07:57 +0000 (UTC)
-Message-ID: <klrlls$l60$1@ger.gmane.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:18177 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932934Ab3ECHy7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 May 2013 03:54:59 -0400
+Date: Fri, 3 May 2013 15:54:52 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC PATCH v3 0/2] Online data deduplication
+Message-ID: <20130503075451.GC16411@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
 References: <1367425659-10803-1-git-send-email-bo.li.liu@oracle.com>
-	<1367425659-10803-3-git-send-email-bo.li.liu@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <20130501173729.GJ2580@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130501173729.GJ2580@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
->  				    struct btrfs_ioctl_dev_replace_args)
-> +#define BTRFS_IOC_DEDUP_REGISTER	_IO(BTRFS_IOCTL_MAGIC, 54)
+> You didn't use an INCOPMAT option for this so you need to deal with a user
+> mounting the file system with an older kernel or even forgetting to use mount -o
+> dedup.  Otherwise your dedup tree will become out of date and you could corrupt
+> peoples data.  So if you aren't going to use an INCOMPAT flag you need to at
+> least use a COMPAT flag so we know the option has been used at all and then you
+> need to have a mechanism to know if you need to invalidate the hash tree.
+> 
+> Users are also going to make the mistake of thinking dedup will make their
+> workload awesome, and when it doesn't they need a way to turn it off.  If you do
+> an INCOMPAT option then you need to have a way to delete the hash tree and unset
+> the INCOMPAT flag.  If you do the COMPAT route then you get this for free since
+> the user just needs to stop using -o dedup, but you'll probably also want to
+> provide a mechanism to delete the tree to free up space.  Thanks,
+> 
+> Josef
 
-This number has already been used by the offline dedup patches.
+I made a few mistakes on this, yeah I should also provide a dedup disable way
+and I'm going to use INCOMPAT.
 
+But forgetting to use mount -o dedup will not get dedup tree to be out of date,
+because dedup tree is loaded if we have it, no matter whether using 'mount -o
+dedup'.
+
+Thanks for the nice reminder, Josef :)
+
+thanks,
+liubo

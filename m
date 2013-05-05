@@ -1,54 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f51.google.com ([209.85.160.51]:34145 "EHLO
-	mail-pb0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751230Ab3EEN6d convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 09:58:33 -0400
-Received: by mail-pb0-f51.google.com with SMTP id wy7so1571472pbc.24
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 06:58:32 -0700 (PDT)
+Received: from pipebreaker.pl ([109.107.25.67]:38001 "EHLO
+	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751318Ab3EEOFe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 10:05:34 -0400
+Date: Sun, 5 May 2013 15:57:09 +0200
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: exploit preload daemon to defragment most needed files
+Message-ID: <20130505135708.GA24548@mother.pipebreaker.pl>
+References: <05mh5a-iqe.ln1@hurikhan.ath.cx>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [PATCH] Btrfs: use arg gfp_mask to decide how to allocate tree mod
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <1367730320-7660-1-git-send-email-wangshilong1991@gmail.com>
-Date: Sun, 5 May 2013 21:58:26 +0800
-Cc: Wang Shilong <wangsl-fnst@fujitsu.com>
-Message-Id: <5F1F1D90-E9EC-41AC-9DDB-6A91C5292C83@gmail.com>
-References: <1367730320-7660-1-git-send-email-wangshilong1991@gmail.com>
-To: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <05mh5a-iqe.ln1@hurikhan.ath.cx>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, May 05, 2013 at 11:42:24AM +0200, Kai Krakow wrote:
+> Hey list,
+> 
+> Although this is about the preload daemon, my intended audience for this 
+> matter is the btrfs community. So I'm posting this here.
+> 
+> I've created a small script here[1] to read the preload daemon state file 
+> and use this to run the btrfs defragmenter/compressor on these files. The 
+> idea was to have some proof-of-concept to maybe integrate defragmentation 
+> capabilities directly into preload.
 
-It seems the original code doesn't pass the right arg gfp_t to decide how to allocate.
-Just applying this patch, fsstress will fail. So please ignore this patch, will resend later..
+  In similar spirit, systemd's readhead defrag files on btrfs. Here's the commit:
+http://cgit.freedesktop.org/systemd/systemd/commit/?id=746f89063666be8c4d538271c646585ac4fc4353
 
-Thanks,
-Wang
 
-> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> 
-> We have passed arg gfp_mask to tree_mod_alloc(), so
-> just use it rather than always use GFP_ATOMIC.
-> 
-> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> ---
-> fs/btrfs/ctree.c | 2 +-
-> 1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index de6de8e..0e3514f 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -553,7 +553,7 @@ static inline int tree_mod_alloc(struct btrfs_fs_info *fs_info, gfp_t flags,
-> 	 * once we switch from spin locks to something different, we should
-> 	 * honor the flags parameter here.
-> 	 */
-> -	tm = *tm_ret = kzalloc(sizeof(*tm), GFP_ATOMIC);
-> +	tm = *tm_ret = kzalloc(sizeof(*tm), flags);
-> 	if (!tm)
-> 		return -ENOMEM;
-> 
-> -- 
-> 1.7.11.7
-> 
+-- 
+Tomasz Torcz               "Never underestimate the bandwidth of a station
+xmpp: zdzichubg@chrome.pl    wagon filled with backup tapes." -- Jim Gray
 

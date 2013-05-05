@@ -1,42 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:38120 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751597Ab3EEJWj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 05:22:39 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: george@chinilu.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Scrub CPU usage ...
-Date: Sun, 05 May 2013 11:22:36 +0200
-Message-ID: <2221106.SQ983GtkxQ@merkaba>
-In-Reply-To: <518555FF.4020704@chinilu.com>
-References: <518555FF.4020704@chinilu.com>
+Received: from mailout07.t-online.de ([194.25.134.83]:47770 "EHLO
+	mailout07.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751725Ab3EEJm7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 05:42:59 -0400
+Date: 05 May 2013 11:42:00 +0200
+From: Hullen@t-online.de (Helmut Hullen)
+To: linux-btrfs@vger.kernel.org
+Message-ID: <CWIRQXl9CXB@helmut.hullen.de>
+Subject: ENOSPC during balance
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
+Reply-To: helmut@hullen.de
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi George!
+Hallo,
 
-Am Samstag, 4. Mai 2013, 11:39:59 schrieb George Mitchell:
-> the next update.  I am using btrfs raid 1 across five 500GB Seagate 
-> nearline drives and btrfs single on a Seagate 4TB backup drive.  I am 
-> absolutely delighted with how this system is working.  This is my 
-> primary day in and day out system.  I have to date hard crashed this 
-> system at least three times without sustaining any apparent damage to 
-> the filesystems.  Perhaps I have just been extremely lucky, but it seems 
-> like most of the major holes have been closed at this point.  Actually I 
-> have only two significant issues currently with btrfs.
+I've added a fourth device (/dev/sdf1; connected via USB) to my 3-disks- 
+btrfs bundle (data raid0, metadata raid1), and then I run "balance".
 
-Are you aware that BTRFS RAID-1 works differently than block based RAID? BTRFS 
-will only be holding two copies of every data or metadata chunk on two 
-different drives, regardless how many drives you use. So only one drive may 
-fail.
+That needed (for about 6 TByte data) about 17 hours.
 
-Well, I think you will have notices with df output for the filesystem, but I 
-thought I mention it, just in case.
+It finished with
 
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+ERROR: error during balancing '/srv/MM' - No space left on device
+There may be more info in syslog - try dmesg | tail
+
+The last lines of "dmesg":
+
+btrfs: found 227973 extents
+btrfs: relocating block group 26872905728 flags 20
+btrfs: found 217765 extents
+btrfs: relocating block group 22577938432 flags 20
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+usb 1-1: reset high-speed USB device number 3 using ehci-pci
+btrfs: found 226454 extents
+btrfs: relocating block group 21504196608 flags 20
+btrfs: found 229068 extents
+btrfs: relocating block group 4324327424 flags 20
+btrfs: found 214531 extents
+btrfs: relocating block group 20971520 flags 18
+btrfs: found 92 extents
+btrfs: relocating block group 4194304 flags 4
+btrfs: 1 enospc errors during balance
+
+What does the last line mean? Is there 1 error during the 17 hours of  
+balancing? Or has balance ended with "enospc"?
+
+The actual state:
+
+Commands
+
+        btrfs fi show
+        df
+
+
+Label: 'MM'  uuid: 7e94022a-76e7-47f8-954d-1ad69a872bef
+	Total devices 4 FS bytes used 6.10TB
+	devid    4 size 1.82TB used 650.03GB path /dev/sdf1
+	devid    3 size 2.73TB used 1.91TB path /dev/sdd
+	devid    2 size 1.82TB used 1.68TB path /dev/sdc
+	devid    1 size 2.73TB used 1.91TB path /dev/sdb
+
+Btrfs Btrfs v0.19
+
+Filesystem             1K-blocks       Used  Available Use% Mounted on
+[...]
+/dev/sdb              9767561292 6554878088 2815565072  70% /srv/MM
+
+
+Viele Gruesse!
+Helmut

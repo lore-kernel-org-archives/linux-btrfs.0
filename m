@@ -1,78 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout07.t-online.de ([194.25.134.83]:47770 "EHLO
-	mailout07.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751725Ab3EEJm7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 05:42:59 -0400
-Date: 05 May 2013 11:42:00 +0200
-From: Hullen@t-online.de (Helmut Hullen)
+Received: from plane.gmane.org ([80.91.229.3]:38867 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751290Ab3EEJsU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 May 2013 05:48:20 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UYvYJ-0005wv-2Q
+	for linux-btrfs@vger.kernel.org; Sun, 05 May 2013 11:48:19 +0200
+Received: from dyndsl-080-228-187-077.ewe-ip-backbone.de ([80.228.187.77])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 11:48:19 +0200
+Received: from hurikhan77+btrfs by dyndsl-080-228-187-077.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 11:48:19 +0200
 To: linux-btrfs@vger.kernel.org
-Message-ID: <CWIRQXl9CXB@helmut.hullen.de>
-Subject: ENOSPC during balance
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: exploit preload daemon to defragment most needed files
+Date: Sun, 05 May 2013 11:42:24 +0200
+Message-ID: <05mh5a-iqe.ln1@hurikhan.ath.cx>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="nextPart5351348.zuBQ37VPXV"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo,
 
-I've added a fourth device (/dev/sdf1; connected via USB) to my 3-disks- 
-btrfs bundle (data raid0, metadata raid1), and then I run "balance".
+--nextPart5351348.zuBQ37VPXV
+Content-Type: text/plain; charset="ISO-8859-1"
+Content-Transfer-Encoding: 7Bit
 
-That needed (for about 6 TByte data) about 17 hours.
+Hey list,
 
-It finished with
+Although this is about the preload daemon, my intended audience for this 
+matter is the btrfs community. So I'm posting this here.
 
-ERROR: error during balancing '/srv/MM' - No space left on device
-There may be more info in syslog - try dmesg | tail
+I've created a small script here[1] to read the preload daemon state file 
+and use this to run the btrfs defragmenter/compressor on these files. The 
+idea was to have some proof-of-concept to maybe integrate defragmentation 
+capabilities directly into preload.
 
-The last lines of "dmesg":
+While I'd like to read some feedback from the community, maybe collect some 
+more ideas, I already discovered one drawback which is a show-stopper: btrfs 
+won't defragment files currently in use (probably memory-mapped files only 
+but these are a lot while a desktop env is running). I didn't look into it 
+any closer yet. And I didn't run benchmarks. But my first impressions are 
+that preloading is a bit faster and less io-intensive.
 
-btrfs: found 227973 extents
-btrfs: relocating block group 26872905728 flags 20
-btrfs: found 217765 extents
-btrfs: relocating block group 22577938432 flags 20
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-usb 1-1: reset high-speed USB device number 3 using ehci-pci
-btrfs: found 226454 extents
-btrfs: relocating block group 21504196608 flags 20
-btrfs: found 229068 extents
-btrfs: relocating block group 4324327424 flags 20
-btrfs: found 214531 extents
-btrfs: relocating block group 20971520 flags 18
-btrfs: found 92 extents
-btrfs: relocating block group 4194304 flags 4
-btrfs: 1 enospc errors during balance
+Regards,
+Kai
 
-What does the last line mean? Is there 1 error during the 17 hours of  
-balancing? Or has balance ended with "enospc"?
+[1]: https://gist.github.com/kakra/5520200
+--nextPart5351348.zuBQ37VPXV
+Content-Type: application/x-ruby; name="defrag-preloaded.rb"
+Content-Disposition: attachment; filename="defrag-preloaded.rb"
+Content-Transfer-Encoding: base64
 
-The actual state:
+IyEvYmluL2VudiBydWJ5CiMKIyBiYXNpYyBjb25jZXB0IHNjcmlwdCBmb3IgZGVmcmFnbWVudGlu
+ZyBmaWxlcyBvbiBidHJmcyBsb2FkZWQgYnkgcHJlbG9hZCBkYWVtb24KIwojIEF1dGhvcjogS2Fp
+IEtyYWtvdyA8aHVyaWtoYW43N0BnbWFpbC5jb20+CiMgTGljZW5zZTogR1BMMwoKZmlsZV9hbHJl
+YWR5X3F1ZXVlZCA9IHt9CgpJTy5wb3BlbigneGFyZ3MgLS1uby1ydW4taWYtZW1wdHkgLS1tYXgt
+YXJncz0yMCAtLW1heC1wcm9jcz0zIC0tbnVsbCBidHJmcyBmaWxlc3lzdGVtIGRlZnJhZ21lbnQg
+LXYgLWNsem8nLCAndycpIGRvIHx4YXJnc3wKCiAgRmlsZS5mb3JlYWNoKCcvdmFyL2xpYi9wcmVs
+b2FkL3ByZWxvYWQuc3RhdGUnKSBkbyB8bGluZXwKICAgIG5leHQgdW5sZXNzICVye14oRVhFfE1B
+UClccy4qP2ZpbGU6Ly8oLiopfSA9fiBsaW5lCiAgICBuZXh0IGlmIGZpbGVfYWxyZWFkeV9xdWV1
+ZWRbbmFtZSA9ICQyXQoKICAgIGlmIEZpbGUuZXhpc3RzPyhuYW1lKQogICAgICB4YXJncy5wcmlu
+dCAiI3tuYW1lfVwwIgogICAgICBmaWxlX2FscmVhZHlfcXVldWVkW25hbWVdID0gdHJ1ZQogICAg
+ZW5kCiAgZW5kCgogIHhhcmdzLmZsdXNoCgplbmQK
 
-Commands
-
-        btrfs fi show
-        df
-
-
-Label: 'MM'  uuid: 7e94022a-76e7-47f8-954d-1ad69a872bef
-	Total devices 4 FS bytes used 6.10TB
-	devid    4 size 1.82TB used 650.03GB path /dev/sdf1
-	devid    3 size 2.73TB used 1.91TB path /dev/sdd
-	devid    2 size 1.82TB used 1.68TB path /dev/sdc
-	devid    1 size 2.73TB used 1.91TB path /dev/sdb
-
-Btrfs Btrfs v0.19
-
-Filesystem             1K-blocks       Used  Available Use% Mounted on
-[...]
-/dev/sdb              9767561292 6554878088 2815565072  70% /srv/MM
+--nextPart5351348.zuBQ37VPXV--
 
 
-Viele Gruesse!
-Helmut

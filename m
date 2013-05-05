@@ -1,64 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:51160 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750956Ab3EEBpo (ORCPT
+Received: from atl4mhob05.myregisteredsite.com ([209.17.115.43]:52151 "EHLO
+	atl4mhob05.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751035Ab3EEB6w (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 May 2013 21:45:44 -0400
-Date: Sun, 5 May 2013 11:45:40 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [3.9] parallel fsmark perf is real bad on sparse devices
-Message-ID: <20130505014540.GF19978@dastard>
-References: <20130504011547.GB19978@dastard>
- <20130504112005.5844.26279@localhost.localdomain>
+	Sat, 4 May 2013 21:58:52 -0400
+Received: from mailpod1.hostingplatform.com ([10.30.71.113])
+	by atl4mhob05.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r451wp2x025940
+	for <linux-btrfs@vger.kernel.org>; Sat, 4 May 2013 21:58:51 -0400
+Message-ID: <5185BCDF.8070805@chinilu.com>
+Date: Sat, 04 May 2013 18:58:55 -0700
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130504112005.5844.26279@localhost.localdomain>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Scrub CPU usage ...
+References: <518555FF.4020704@chinilu.com> <dpog5a-t12.ln1@hurikhan.ath.cx>
+In-Reply-To: <dpog5a-t12.ln1@hurikhan.ath.cx>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 04, 2013 at 07:20:05AM -0400, Chris Mason wrote:
-> Quoting Dave Chinner (2013-05-03 21:15:47)
-> > Hi folks,
-> > 
-> > It's that time again - I ran fsmark on btrfs and found performance
-> > was awful.
-> > 
-> > tl;dr: memory pressure causes random writeback of metadata ("bad"),
-> > fragmenting the underlying sparse storage. This causes a downward
-> > spiral as btrfs cycles through "good" IO patterns that get
-> > fragmented at the device level due to the "bad" IO patterns
-> > fragmenting the underlying sparse device.
-> > 
-> 
-> Really interesting Dave, thanks for all this analysis.
-> 
-> We're going to have hard time matching xfs fragmentation just because
-> the files are zero size and we don't have the inode tables.  But, I'll
-> take a look at the metadata memory pressure based writeback, sounds like
-> we need to push a bigger burst.
+On 05/04/2013 06:21 PM, Kai Krakow wrote:
+> George Mitchell <george@chinilu.com> schrieb:
+>
+>> 1)  The system fails to boot intermittently due to dracut/initrd issues
+>> (btrfs: open_ctree failed).  This is being worked on upstream and I am
+>> seeing a continual flow of patches addressing it, but so far no fix.
+>> This will take time to fix and it usually leaps to life in 3 attempts or
+>> less.
+> Try rootdelay=1 or a higher number. This solved exactly that problem for me.
+> It will delay mounting the rootfs by the given number of seconds. You need
+> to pass this on the kernel command line, probably using grub. This seems to
+> only be needed with multi-device btrfs as rootfs.
+>
+> Greetings,
+> Kai
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
-Yeah, I wouldn't expect it to behave like XFS does given all the
-metadata writeback ordering optimisation XFS has, but the level of
-fragmentation was a surprise. Fragmentation by itself isn't so much
-of a problem - ext4 is just as bad as btrfs in terms of the amount of
-image fragmentation, but it doesn't have the 100:1 IOPS explosion in
-the backing device.
-
-Run the test and have a look at the iowatcher movies - they
-are quite instructive as they show the two separate phases
-that write alternately over the same sections of the disk. A
-picture^Wmovie is worth a thousand words ;)
-
-FWIW, the main reason I thought it is important enough to report
-because if the filesystem is being unfriendly to sparse files, then
-it is almost certainly being unfriendly to the internal mapping
-tables in modern SSDs....
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Thanks immensely for that tip.  I will give it a try.  - George

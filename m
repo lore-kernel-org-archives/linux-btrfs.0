@@ -1,30 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f178.google.com ([209.85.210.178]:34888 "EHLO
-	mail-ia0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751910Ab3EESxt convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 14:53:49 -0400
-Received: by mail-ia0-f178.google.com with SMTP id t29so2710964iag.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 11:53:48 -0700 (PDT)
+Received: from mail-ie0-f170.google.com ([209.85.223.170]:65418 "EHLO
+	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751796Ab3EETQs convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 May 2013 15:16:48 -0400
+Received: by mail-ie0-f170.google.com with SMTP id aq17so3475221iec.29
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 12:16:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAAr69zYBpeJw-faQjdEXTgrsp3p0AN7i8CU+FJnyEjTb8n1GKg@mail.gmail.com>
-References: <1420920.Yent3fKO0t@linux-suse> <20130326130111.GI1955@localhost.localdomain>
- <CAAr69zYBpeJw-faQjdEXTgrsp3p0AN7i8CU+FJnyEjTb8n1GKg@mail.gmail.com>
 From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Date: Sun, 5 May 2013 18:53:28 +0000
-Message-ID: <CAAr69zZYJbc7yt_2wbN1VmUgPPqvh+2bXm+_A+yQUNSgRC9VMA@mail.gmail.com>
-Subject: Re: Kernel BUG on corrupted space cache under 3.7 and 3.8
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sun, 5 May 2013 19:16:27 +0000
+Message-ID: <CAAr69zaPjT=yez5FbHYd8JdieuQS9e9-EE4N-u0HkfLKU2yQpg@mail.gmail.com>
+Subject: Kernel bug at extent-tree.c:5446
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I could "successfully" reproduce this issue while I was upgrading from
-3.8 to 3.9. All the symptoms are exactly the same as I've written a
-month ago, nothing changed.
-I'll send you the link to the corrupted image file in a private mail.
+Dear list members,
 
-Btw, under Gentoo (SystemRescueCD to be precise) there are three
-warning in the btrfs-progs: http://pastebin.com/rYam2jWb
+When I tried to recover my partition from the space cache bug (see
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg24360.html
+), I issued the command `mount -o clear_cache -t btrfs /dev/sda7
+/aaa/aaa`. After 10 minutes the mount command segfaulted. I cloned the
+latest btrfs-progs from Josef's Github account and ran the `btrfsck
+--repair` twice on the partition.
 
-�kos
+Then I tried to mount under my normal openSUSE system (with kernel
+3.9) and the following BUG appeared during the boot-up process: Kernel
+bug at extent-tree.c:5446
+The picture I've taken: www.morrohun.hu/temp/btrfs/IMG_1770.JPG
+
+I tried to boot in an openSUSE Rescue CD, an Ubuntu Live CD, but just
+a SystemRescueCD was actually working, but I can't reach my partition.
+Even though I was able to make an image by `btrfs-image -c9 -t8` and
+I'll send you the link if it's requested.
+
+Best regards,
+
+Ákos Szőts

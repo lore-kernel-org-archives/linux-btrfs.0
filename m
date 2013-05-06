@@ -1,30 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53369 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752666Ab3EFMiv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 May 2013 08:38:51 -0400
-Date: Mon, 6 May 2013 14:38:49 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>,
-        chris.mason@fusionio.com
-Subject: Re: [PATCH 3/4] btrfs: Introduce extent_read_full_page_nolock()
-Message-ID: <20130506123849.GC16456@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
- <1366150535-18750-4-git-send-email-mfasheh@suse.de>
+Received: from mail-vc0-f169.google.com ([209.85.220.169]:60167 "EHLO
+	mail-vc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752908Ab3EFOfm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 10:35:42 -0400
+Received: by mail-vc0-f169.google.com with SMTP id gd11so3073182vcb.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 May 2013 07:35:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1366150535-18750-4-git-send-email-mfasheh@suse.de>
+In-Reply-To: <lj3k5a-6dh.ln1@hurikhan.ath.cx>
+References: <mjnh5a-mcf.ln1@hurikhan.ath.cx>
+	<51874A85.1050608@jan-o-sch.net>
+	<lj3k5a-6dh.ln1@hurikhan.ath.cx>
+Date: Mon, 6 May 2013 07:35:41 -0700
+Message-ID: <CAPkEcwgAH=w7q5JdsJB+YLxDgysOwTUg7boyZFMmfB1v3fmwCw@mail.gmail.com>
+Subject: Re: Possible to dedpulicate read-only snapshots for space-efficient backups
+From: james northrup <northrup.james@gmail.com>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 16, 2013 at 03:15:34PM -0700, Mark Fasheh wrote:
-> @@ -2625,7 +2625,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
->  	}
->  
->  	end = page_end;
-> -	while (1) {
-> +	while (1 && !parent_locked) {
+tried a git based backup? sounds spot-on as a compromise prior to
+applying btrfs tweaks.  snapshotting the git binaries would have the
+dedupe characteristics.
 
-the patch is ok, just this caught my eye :)
+On Mon, May 6, 2013 at 12:44 AM, Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+> Jan Schmidt <list.btrfs@jan-o-sch.net> schrieb:
+>
+>>> I'm using an bash/rsync script[1] to backup my whole system on a nightly
+>>> basis to an attached USB3 drive into a scratch area, then take a snapshot
+>>> of this area. I'd like to have these snapshots immutable, so they should
+>>> be read-only.
+>>
+>> Have you considered using btrfs send / receive for that purpose? You would
+>> just save the dedup step.
+>
+> This is planned for later. In the first step I want to stay as file system
+> agnostic for the source as possible. But I've put it on my todo list in the
+> gist.
+>
+> Regards,
+> Kai
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,35 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:54965 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755889Ab3EFTjM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 15:39:12 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id F38679A0414
-	for <linux-btrfs@vger.kernel.org>; Mon,  6 May 2013 13:39:11 -0600 (MDT)
-Date: Mon, 6 May 2013 15:39:09 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Anand Jain <anand.jain@oracle.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: device delete to get errors from the kernel
-Message-ID: <20130506193909.GK12414@localhost.localdomain>
-References: <517FC485.3080208@oracle.com>
- <1367327981-28000-1-git-send-email-anand.jain@oracle.com>
+Received: from mail-wg0-f54.google.com ([74.125.82.54]:39514 "EHLO
+	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756580Ab3EFVjm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 17:39:42 -0400
+Received: by mail-wg0-f54.google.com with SMTP id x12so4145408wgg.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 May 2013 14:39:41 -0700 (PDT)
+Message-ID: <51882319.1040307@gmail.com>
+Date: Mon, 06 May 2013 23:39:37 +0200
+From: Gabriel de Perthuis <g2p.code@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1367327981-28000-1-git-send-email-anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>
+Subject: [PATCH] btrfs: don't stop searching after encountering the wrong
+ item
+References: <5187EB02.8030207@gmail.com>
+In-Reply-To: <5187EB02.8030207@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 30, 2013 at 07:19:40AM -0600, Anand Jain wrote:
-> v1->v2:
-> introduce error codes for the device mgmt usage
-> 
-> v1:
-> adds a parameter in the ioctl arg struct to carry the error string
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
+The search ioctl skips items that are too large for a result buffer, but
+inline items of a certain size occuring before any search result is
+found would trigger an overflow and stop the search entirely.
 
-I need a proper log for this patch.  Thanks,
+Cc: stable@vger.kernel.org
+Bug: https://bugzilla.kernel.org/show_bug.cgi?id=57641
 
-Josef
+Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+---
+(resent, with the correct header to have stable copied)
+
+ fs/btrfs/ioctl.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2c02310..f49b62f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1794,23 +1794,23 @@ static noinline int copy_to_sk(struct btrfs_root *root,
+ 
+ 	for (i = slot; i < nritems; i++) {
+ 		item_off = btrfs_item_ptr_offset(leaf, i);
+ 		item_len = btrfs_item_size_nr(leaf, i);
+ 
+-		if (item_len > BTRFS_SEARCH_ARGS_BUFSIZE)
++		btrfs_item_key_to_cpu(leaf, key, i);
++		if (!key_in_sk(key, sk))
++			continue;
++
++		if (sizeof(sh) + item_len > BTRFS_SEARCH_ARGS_BUFSIZE)
+ 			item_len = 0;
+ 
+ 		if (sizeof(sh) + item_len + *sk_offset >
+ 		    BTRFS_SEARCH_ARGS_BUFSIZE) {
+ 			ret = 1;
+ 			goto overflow;
+ 		}
+ 
+-		btrfs_item_key_to_cpu(leaf, key, i);
+-		if (!key_in_sk(key, sk))
+-			continue;
+-
+ 		sh.objectid = key->objectid;
+ 		sh.offset = key->offset;
+ 		sh.type = key->type;
+ 		sh.len = item_len;
+ 		sh.transid = found_transid;
+-- 
+1.8.2.1.419.ga0b97c6
+

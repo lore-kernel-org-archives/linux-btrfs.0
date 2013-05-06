@@ -1,34 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ia0-f170.google.com ([209.85.210.170]:34119 "EHLO
-	mail-ia0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752355Ab3EFFf4 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 01:35:56 -0400
-Received: by mail-ia0-f170.google.com with SMTP id k20so2922837iak.15
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 May 2013 22:35:55 -0700 (PDT)
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:10829 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752497Ab3EFGIl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 02:08:41 -0400
+Message-ID: <518748E1.4030209@jan-o-sch.net>
+Date: Mon, 06 May 2013 08:08:33 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <20130506003857.GG12414@localhost.localdomain>
-References: <CAAr69zaPjT=yez5FbHYd8JdieuQS9e9-EE4N-u0HkfLKU2yQpg@mail.gmail.com>
- <20130506003857.GG12414@localhost.localdomain>
-From: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Date: Mon, 6 May 2013 07:35:35 +0200
-Message-ID: <CAAr69zZ_OgUpNir6YPQVPQ11oM3RDFev8brHJY+=dGCfXL-9KA@mail.gmail.com>
-Subject: Re: Kernel bug at extent-tree.c:5446
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>,
+        Wang Shilong <wangsl-fnst@fujitsu.com>
+Subject: Re: [PATCH] Btrfs: use arg gfp_mask to decide how to allocate tree
+ mod
+References: <1367730320-7660-1-git-send-email-wangshilong1991@gmail.com> <5F1F1D90-E9EC-41AC-9DDB-6A91C5292C83@gmail.com>
+In-Reply-To: <5F1F1D90-E9EC-41AC-9DDB-6A91C5292C83@gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for the fast response. I'll send the link to the image in a
-private mail.
+On Sun, May 05, 2013 at 15:58 (+0200), Wang Shilong wrote:
+> It seems the original code doesn't pass the right arg gfp_t to decide how to allocate.
+> Just applying this patch, fsstress will fail. So please ignore this patch, will resend later..
 
-I filed a ticket here: https://bugzilla.kernel.org/show_bug.cgi?id=57631
+That's in fact what the comment above the line you changed implies :-)
 
-Ákos
+-Jan
 
-2013/5/6 Josef Bacik <jbacik@fusionio.com>:
-> I'd like to see the image and can you file a bug at bugzilla.kernel.org so I
-> don't lose track of this issue?  Make sure the component is set to Btrfs.
 > Thanks,
->
-> Josef
+> Wang
+> 
+>> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+>>
+>> We have passed arg gfp_mask to tree_mod_alloc(), so
+>> just use it rather than always use GFP_ATOMIC.
+>>
+>> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+>> ---
+>> fs/btrfs/ctree.c | 2 +-
+>> 1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+>> index de6de8e..0e3514f 100644
+>> --- a/fs/btrfs/ctree.c
+>> +++ b/fs/btrfs/ctree.c
+>> @@ -553,7 +553,7 @@ static inline int tree_mod_alloc(struct btrfs_fs_info *fs_info, gfp_t flags,
+>> 	 * once we switch from spin locks to something different, we should
+>> 	 * honor the flags parameter here.
+>> 	 */
+>> -	tm = *tm_ret = kzalloc(sizeof(*tm), GFP_ATOMIC);
+>> +	tm = *tm_ret = kzalloc(sizeof(*tm), flags);
+>> 	if (!tm)
+>> 		return -ENOMEM;
+>>
+>> -- 
+>> 1.7.11.7
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

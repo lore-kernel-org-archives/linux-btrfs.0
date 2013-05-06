@@ -1,35 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:55464 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753454Ab3EJPIL convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 May 2013 11:08:11 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 8C3BC7C067C
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 09:08:10 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <1367874680-9502-1-git-send-email-dsterba@suse.cz>
-CC: David Sterba <dsterba@suse.cz>
-References: <1367874680-9502-1-git-send-email-dsterba@suse.cz>
-Message-ID: <20130510150808.12615.77419@localhost.localdomain>
-Subject: Re: [PATCH] btrfs-progs: image: handle superblocks correctly on fs with big
- blocks
-Date: Fri, 10 May 2013 11:08:08 -0400
+Received: from cantor2.suse.de ([195.135.220.15]:50174 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757516Ab3EFVLY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 May 2013 17:11:24 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 26A17A50DD
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 May 2013 23:11:23 +0200 (CEST)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: image: handle superblocks correctly on fs with big blocks
+Date: Mon,  6 May 2013 23:11:20 +0200
+Message-Id: <1367874680-9502-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting David Sterba (2013-05-06 17:11:20)
-> Superblock is always 4k, but metadata blocks may be larger. We have to
-> use the appropriate block size when doing checksums, otherwise they're
-> wrong.
+Superblock is always 4k, but metadata blocks may be larger. We have to
+use the appropriate block size when doing checksums, otherwise they're
+wrong.
 
-The size coming in from the md should be correct.  See this commit from
-my integration branch
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ btrfs-image.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
 
-https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/commit/?h=integration&id=9c821327408803229e93a788e032e8e9caf11686
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 188291c..dca7a28 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -469,6 +469,16 @@ static int read_data_extent(struct metadump_struct *md,
+ 	return 0;
+ }
+ 
++static int is_sb_offset(u64 offset) {
++	switch (offset) {
++		case 65536:
++		case 67108864:
++		case 274877906944:
++			return 1;
++	}
++	return 0;
++}
++
+ static int flush_pending(struct metadump_struct *md, int done)
+ {
+ 	struct async_work *async = NULL;
+@@ -506,7 +516,16 @@ static int flush_pending(struct metadump_struct *md, int done)
+ 		}
+ 
+ 		while (!md->data && size > 0) {
+-			eb = read_tree_block(md->root, start, blocksize, 0);
++			/*
++			 * We must differentiate between superblock and
++			 * metadata on filesystems with blocksize > 4k,
++			 * otherwise the checksum fails for superblock
++			 */
++			int bs = blocksize;
++
++			if (is_sb_offset(start))
++				bs = BTRFS_SUPER_INFO_SIZE;
++			eb = read_tree_block(md->root, start, bs, 0);
+ 			if (!eb) {
+ 				free(async->buffer);
+ 				free(async);
+@@ -516,9 +535,9 @@ static int flush_pending(struct metadump_struct *md, int done)
+ 			}
+ 			copy_buffer(async->buffer + offset, eb);
+ 			free_extent_buffer(eb);
+-			start += blocksize;
+-			offset += blocksize;
+-			size -= blocksize;
++			start += bs;
++			offset += bs;
++			size -= bs;
+ 		}
+ 
+ 		md->pending_start = (u64)-1;
+-- 
+1.8.2
 
--chris

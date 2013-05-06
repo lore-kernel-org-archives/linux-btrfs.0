@@ -1,39 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:57680 "EHLO
-	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754511Ab3EFSiW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 14:38:22 -0400
-Date: Mon, 6 May 2013 11:38:21 -0700
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Gabriel de Perthuis <g2p.code@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>,
-        stable@vger.kernel.org, Tristan Seligmann <mithrandi@mithrandi.net>
-Subject: Re: [PATCH] btrfs: don't stop searching after encountering the wrong
- item
-Message-ID: <20130506183821.GA13827@kroah.com>
-References: <5187EB02.8030207@gmail.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:54965 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755889Ab3EFTjM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 May 2013 15:39:12 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id F38679A0414
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 May 2013 13:39:11 -0600 (MDT)
+Date: Mon, 6 May 2013 15:39:09 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Anand Jain <anand.jain@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs: device delete to get errors from the kernel
+Message-ID: <20130506193909.GK12414@localhost.localdomain>
+References: <517FC485.3080208@oracle.com>
+ <1367327981-28000-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5187EB02.8030207@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1367327981-28000-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 06, 2013 at 07:40:18PM +0200, Gabriel de Perthuis wrote:
-> The search ioctl skips items that are too large for a result buffer, but
-> inline items of a certain size occuring before any search result is
-> found would trigger an overflow and stop the search entirely.
+On Tue, Apr 30, 2013 at 07:19:40AM -0600, Anand Jain wrote:
+> v1->v2:
+> introduce error codes for the device mgmt usage
 > 
-> Bug: https://bugzilla.kernel.org/show_bug.cgi?id=57641
+> v1:
+> adds a parameter in the ioctl arg struct to carry the error string
 > 
-> Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/ioctl.c | 10 +++++-----
->  1 file changed, 5 insertions(+), 5 deletions(-)
 
-<formletter>
+I need a proper log for this patch.  Thanks,
 
-This is not the correct way to submit patches for inclusion in the
-stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
-for how to do this properly.
-
-</formletter>
+Josef

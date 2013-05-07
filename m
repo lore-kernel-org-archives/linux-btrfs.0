@@ -1,79 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:46299 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757107Ab3EGHEU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 03:04:20 -0400
-Message-ID: <5188A772.2090007@jan-o-sch.net>
-Date: Tue, 07 May 2013 09:04:18 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:35550 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756347Ab3EGHe4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 03:34:56 -0400
+Received: by mail-wi0-f170.google.com with SMTP id hq12so3586032wib.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2013 00:34:55 -0700 (PDT)
+Received: from ?IPv6:2a01:e35:8a2c:b230:dcc3:7504:611c:64fc? ([2a01:e35:8a2c:b230:dcc3:7504:611c:64fc])
+        by mx.google.com with ESMTPSA id i4sm911235wix.10.2013.05.07.00.34.53
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Tue, 07 May 2013 00:34:54 -0700 (PDT)
+Message-ID: <5188AE40.4030602@gmail.com>
+Date: Tue, 07 May 2013 09:33:20 +0200
+From: Gabriel de Perthuis <g2p.code@gmail.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: save us a mutex_lock usage when doing quota rescan
-References: <51889BF1.1000300@cn.fujitsu.com>
-In-Reply-To: <51889BF1.1000300@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+To: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@kernel.org
+Subject: Re: [PATCH 3/4] btrfs: Introduce extent_read_full_page_nolock()
+References: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 07, 2013 at 08:15 (+0200), Wang Shilong wrote:
-> If qgroup_rescan worker is in progress, we should ignore
-> the extent that has not been dealt with qgroup_rescan worker,just
-> let them dealt later otherwise we may get wrong qgroup accounting.
-> 
-> However, we have checked this before find_all_roots() without spin_lock.
-> When doing qgroup accounting, we don't have to check it again, because
-> during this period,qgroup_rescan worker can deal with more extents and
-> qgroup_rescan_extent->objectid can only go larger, so here the check
-> is unnecessary.
-> 
-> Just remove this check, so that we don't need hold qgroup_rescan_lock
-> when doing qgroup accounting.
+> We want this for btrfs_extent_same. Basically readpage and friends do their
+> own extent locking but for the purposes of dedupe, we want to have both
+> files locked down across a set of readpage operations (so that we can
+> compare data). Introduce this variant and a flag which can be set for
+> extent_read_full_page() to indicate that we are already locked.
 
-NAK.
+This one can get stuck in TASK_UNINTERRUPTIBLE:
 
-After a discussion on that lock the last thing in this thread I see is ...
+[32129.522257] SysRq : Show Blocked State
+[32129.524337]   task                        PC stack   pid father
+[32129.526515] python          D ffff88021f394280     0 16281      1 0x00000004
+[32129.528656]  ffff88020e079a48 0000000000000082 ffff88013d3cdd40 ffff88020e079fd8
+[32129.530840]  ffff88020e079fd8 ffff88020e079fd8 ffff8802138dc5f0 ffff88013d3cdd40
+[32129.533044]  0000000000000000 0000000000001fff ffff88015286f440 0000000000000008
+[32129.535285] Call Trace:
+[32129.537522]  [<ffffffff816dcca9>] schedule+0x29/0x70
+[32129.539829]  [<ffffffffa02b4908>] wait_extent_bit+0xf8/0x150 [btrfs]
+[32129.542130]  [<ffffffff8107ea00>] ? finish_wait+0x80/0x80
+[32129.544463]  [<ffffffffa02b4f84>] lock_extent_bits+0x44/0xa0 [btrfs]
+[32129.546824]  [<ffffffffa02b4ff3>] lock_extent+0x13/0x20 [btrfs]
+[32129.549198]  [<ffffffffa02dc0cf>] add_ra_bio_pages.isra.8+0x17f/0x2d0 [btrfs]
+[32129.551602]  [<ffffffffa02dccfc>] btrfs_submit_compressed_read+0x25c/0x4c0 [btrfs]
+[32129.554028]  [<ffffffffa029d131>] btrfs_submit_bio_hook+0x1d1/0x1e0 [btrfs]
+[32129.556457]  [<ffffffffa02b2d07>] submit_one_bio+0x67/0xa0 [btrfs]
+[32129.558899]  [<ffffffffa02b7ecd>] extent_read_full_page_nolock+0x4d/0x60 [btrfs]
+[32129.561290]  [<ffffffffa02c8052>] fill_data+0xb2/0x230 [btrfs]
+[32129.563623]  [<ffffffffa02cd57e>] btrfs_ioctl+0x1f7e/0x2560 [btrfs]
+[32129.565924]  [<ffffffff816ddbae>] ? _raw_spin_lock+0xe/0x20
+[32129.568207]  [<ffffffff8119b907>] ? inode_get_bytes+0x47/0x60
+[32129.570472]  [<ffffffff811a8297>] do_vfs_ioctl+0x97/0x560
+[32129.572700]  [<ffffffff8119bb5a>] ? sys_newfstat+0x2a/0x40
+[32129.574882]  [<ffffffff811a87f1>] sys_ioctl+0x91/0xb0
+[32129.577008]  [<ffffffff816e64dd>] system_call_fastpath+0x1a/0x1f
 
-On Wed, May 01, 2013 at 13:57 (+0200), Jan Schmidt wrote:
-> Now I see what you mean. The second check is only required when we start
-> a rescan operation after the initial check in btrfs_qgroup_account_ref.
+Side note, I wish btrfs used TASK_KILLABLE[1] instead.
 
-Please continue on that argument, your commit message doesn't explain at all why
-we should be safe to remove this check.
+[1]: https://lwn.net/Articles/288056/
 
--Jan
-
-> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/qgroup.c |    9 ---------
->  1 files changed, 0 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index d059d86..2710784 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1445,15 +1445,7 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->  	if (ret < 0)
->  		return ret;
->  
-> -	mutex_lock(&fs_info->qgroup_rescan_lock);
->  	spin_lock(&fs_info->qgroup_lock);
-> -	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
-> -		if (fs_info->qgroup_rescan_progress.objectid <= node->bytenr) {
-> -			ret = 0;
-> -			goto unlock;
-> -		}
-> -	}
-> -
->  	quota_root = fs_info->quota_root;
->  	if (!quota_root)
->  		goto unlock;
-> @@ -1492,7 +1484,6 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->  
->  unlock:
->  	spin_unlock(&fs_info->qgroup_lock);
-> -	mutex_unlock(&fs_info->qgroup_rescan_lock);
->  	ulist_free(roots);
->  
->  	return ret;
-> 

@@ -1,46 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:38810 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756339Ab3EHUsC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 16:48:02 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4934F7C0690
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 May 2013 14:48:01 -0600 (MDT)
-Date: Wed, 8 May 2013 16:47:58 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Alexander Skwar <a@skwar.me>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921
- __btrfs_write_out_cache+0x6b9/0x9a0 [btrfs]()
-Message-ID: <20130508204758.GU12414@localhost.localdomain>
-References: <CVrGRAreCXB@helmut.hullen.de>
- <20130430094131.GA8274@carfax.org.uk>
- <loom.20130430T133556-803@post.gmane.org>
- <20130430135816.GD2580@localhost.localdomain>
- <CADn-QaMFct-5XgMbqiWMG_pa-AzgOQOZLUc-CNTrAPpG7633Aw@mail.gmail.com>
- <20130430175351.GF2580@localhost.localdomain>
- <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
- <20130501185701.GA12414@localhost.localdomain>
- <CADn-QaNeo2pnu1a94HEWWjaXtdRb2C38JJXrUMy6xBmp+MpCVw@mail.gmail.com>
- <CADn-QaPh9EZjnbr9HoRKTMi8OUgnvfRdD7riEDZ0hpkcNRN93Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CADn-QaPh9EZjnbr9HoRKTMi8OUgnvfRdD7riEDZ0hpkcNRN93Q@mail.gmail.com>
+Received: from xp-ob.rzone.de ([81.169.146.136]:22614 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753594Ab3EGR2F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 13:28:05 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (joses xp4) (RZmta 31.27 OK)
+	with ESMTP id 601f81p479KFeT for <linux-btrfs@vger.kernel.org>;
+	Tue, 7 May 2013 19:28:03 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: don't allow device replace on RAID5/RAID6
+Date: Tue,  7 May 2013 19:28:03 +0200
+Message-Id: <1367947683-11693-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 08, 2013 at 11:34:40AM -0600, Alexander Skwar wrote:
-> Hello Josef
-> 
-> Did you have a chance to look at that image? Did you find anything?
-> 
-> Or should I simply create a new filesystem and forget about the issue?
-> 
+This is not yet supported and causes crashes. One sad user reported
+that it destroyed his filesystem.
 
-So the file system isn't corrupt, you just got a giant block group for some
-reason.  I've sent a patch to remove the WARN_ON() so that won't bother you
-anymore.  You should probably rebalance to try and trim that block group down to
-a reasonable size, but other than that your fs is a-ok.  Thanks,
+One failure is in __btrfs_map_block+0xc1f calling kmalloc(0).
 
-Josef
+0x5f21f is in __btrfs_map_block (fs/btrfs/volumes.c:4923).
+4918                            num_stripes = map->num_stripes;
+4919                            max_errors = nr_parity_stripes(map);
+4920
+4921                            raid_map = kmalloc(sizeof(u64) * num_stripes,
+4922                                               GFP_NOFS);
+4923                            if (!raid_map) {
+4924                                    ret = -ENOMEM;
+4925                                    goto out;
+4926                            }
+4927
+
+There might be more issues. Until this is really tested, don't allow
+users to start the procedure on RAID5/RAID6 filesystems.
+
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/dev-replace.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 7ba7b39..65241f3 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -313,6 +313,11 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 	struct btrfs_device *tgt_device = NULL;
+ 	struct btrfs_device *src_device = NULL;
+ 
++	if (btrfs_fs_incompat(fs_info, RAID56)) {
++		pr_warn("btrfs: dev_replace cannot yet handle RAID5/RAID6\n");
++		return -EINVAL;
++	}
++
+ 	switch (args->start.cont_reading_from_srcdev_mode) {
+ 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS:
+ 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID:
+-- 
+1.8.2.2
+

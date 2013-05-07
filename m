@@ -1,67 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54633 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:54932 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751297Ab3EGW2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 18:28:11 -0400
+	id S1752615Ab3EGXGZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 19:06:25 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UZqMj-00027G-Ji
-	for linux-btrfs@vger.kernel.org; Wed, 08 May 2013 00:28:09 +0200
-Received: from pro75-5-88-162-203-35.fbx.proxad.net ([88.162.203.35])
+	id 1UZqxk-0001rd-1f
+	for linux-btrfs@vger.kernel.org; Wed, 08 May 2013 01:06:24 +0200
+Received: from dyndsl-178-142-088-157.ewe-ip-backbone.de ([178.142.88.157])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 00:28:09 +0200
-Received: from g2p.code by pro75-5-88-162-203-35.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 01:06:24 +0200
+Received: from hurikhan77+btrfs by dyndsl-178-142-088-157.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 00:28:09 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 01:06:24 +0200
 To: linux-btrfs@vger.kernel.org
-From: Gabriel de Perthuis <g2p.code@gmail.com>
-Subject: Re: [RFC 0/5] BTRFS hot relocation support
-Date: Tue, 7 May 2013 22:27:54 +0000 (UTC)
-Message-ID: <kmbv5a$all$2@ger.gmane.org>
-References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
-	<518973B2.4070308@gmail.com> <b0ao5a-81c.ln1@hurikhan.ath.cx>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Possible to dedpulicate read-only snapshots for space-efficient backups
+Date: Wed, 08 May 2013 01:04:38 +0200
+Message-ID: <9tdo5a-hde.ln1@hurikhan.ath.cx>
+References: <mjnh5a-mcf.ln1@hurikhan.ath.cx> <km5ksq$p15$1@ger.gmane.org> <64hi5a-9rq.ln1@hurikhan.ath.cx> <kmbtvb$all$1@ger.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 07 May 2013 23:58:08 +0200, Kai Krakow wrote:
-> Gabriel de Perthuis <g2p.code@gmail.com> schrieb:
->>>   On the side note: dm-cache, which is already in-kernel, do not need to
->>> reformat backing storage.
->> 
->> On the other hand dm-cache is somewhat complex to assemble, and letting
->> the system automount the unsynchronised backing device is a recipe for
->> data loss.
+Gabriel de Perthuis <g2p.code@gmail.com> schrieb:
+
+> It sounds simple, and was sort-of prompted by the new syscall taking
+> short ranges, but it is tricky figuring out a sane heuristic (when to
+> hash, when to bail, when to submit without comparing, what should be the
+> source in the last case), and it's not something I have an immediate
+> need for.  It is also possible to use 9p (with standard cow and/or
+> small-file dedup) and trade a bit of configuration for much more
+> space-efficient VMs.
 > 
-> Yes, that was my first impression, too, after reading of how it works. How 
-> safe is bcache on that matter?
+> Finer-grained tracking of which ranges have changed, and maybe some
+> caching of range hashes, would be a good first step before doing any
+> crazy large-file heuristics.  The hash caching would actually benefit
+> all use cases.
 
-The bcache superblock is there just to prevent the naked backing device
-from becoming available.  So it's safe in that respect.  LVM has
-something similar with hidden volumes.
+Looking back to good old peer-2-peer days (I think we all got in touch with 
+that the one or the other way), one title pops back into my mind: tiger-
+tree-hash...
 
->> Anyway, here's a shameless plug for a tool that converts to bcache
->> in-place:  https://github.com/g2p/blocks#bcache-conversion
-> 
-> Did I say: I love your shameless plugs? ;-)
-> 
-> I've read the docs for this tool with interest. Still I do not feel very 
-> comfortable with converting my storage for some unknown outcome. Sure, I can 
-> take backups (and by any means: I will). But it takes time: backup, try, 
-> restore, try again, maybe restore... I don't want to find out that it was 
-> all useless because it's just not ready to boot a multi-device btrfs through 
-> dracut. So you see, the point is: Will that work? I didn't see any docs 
-> answering my questions.
+I'm not really into it, but would it be possible to use tiger-tree-hashes to 
+find identical blocks? Even accross different sized files...
 
-Try it with a throwaway filesystem inside a VM.  The bcache list will
-appreciate the feedback on Dracut, even if you don't make the switch
-for real.
+Regards,
+Kai
 
-> Of course, if it would work I'd happily contribute documentation to your 
-> project.
-
-That would be very welcome.
 
 

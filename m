@@ -1,44 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57110 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759576Ab3EGVUF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 17:20:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UZpIq-0008Hm-35
-	for linux-btrfs@vger.kernel.org; Tue, 07 May 2013 23:20:04 +0200
-Received: from dyndsl-178-142-088-157.ewe-ip-backbone.de ([178.142.88.157])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2013 23:20:04 +0200
-Received: from hurikhan77+btrfs by dyndsl-178-142-088-157.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2013 23:20:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:56068 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752615Ab3EGVfw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 17:35:52 -0400
+Received: by mail-wi0-f177.google.com with SMTP id hq12so1183398wib.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2013 14:35:50 -0700 (PDT)
+Message-ID: <518973B2.4070308@gmail.com>
+Date: Tue, 07 May 2013 23:35:46 +0200
+From: Gabriel de Perthuis <g2p.code@gmail.com>
+MIME-Version: 1.0
+To: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
 Subject: Re: [RFC 0/5] BTRFS hot relocation support
-Date: Tue, 07 May 2013 23:17:53 +0200
-Message-ID: <qk7o5a-g0b.ln1@hurikhan.ath.cx>
-References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com> <gqgl5a-4s5.ln1@hurikhan.ath.cx> <20130507051741.GB24548@mother.pipebreaker.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Torcz <tomek@pipebreaker.pl> schrieb:
+>> How will it compare to bcache? I'm currently thinking about buying an SSD 
+>> but bcache requires some efforts in migrating the storage to use. And after 
+>> all those hassles I am even not sure if it would work easily with a dracut 
+>> generated initramfs.
 
->> How will it compare to bcache? I'm currently thinking about buying an SSD
->> but bcache requires some efforts in migrating the storage to use. And
->> after all those hassles I am even not sure if it would work easily with a
->> dracut generated initramfs.
-> 
 >   On the side note: dm-cache, which is already in-kernel, do not need to
 > reformat backing storage.
 
-Oh thanks, good pointer. I haven't looked so much into dm-cache yet because 
-it seemed to have come "out of nowhere" while I was tracking news around 
-bcache development for a while now.
+On the other hand dm-cache is somewhat complex to assemble, and letting
+the system automount the unsynchronised backing device is a recipe for
+data loss.
 
-Regards,
-Kai
+It will need lvm integration to become really convenient to use.
+
+Anyway, here's a shameless plug for a tool that converts to bcache
+in-place:  https://github.com/g2p/blocks#bcache-conversion
 

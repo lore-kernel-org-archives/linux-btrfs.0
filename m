@@ -1,93 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60806 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758482Ab3EGIQ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 04:16:56 -0400
-Message-ID: <5188B3BD.8090807@cn.fujitsu.com>
-Date: Tue, 07 May 2013 15:56:45 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from 110-174-82-20.static.tpgi.com.au ([110.174.82.20]:46983 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753821Ab3EGJrU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 05:47:20 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 6A42081713
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2013 19:38:09 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfs-progs compile warnings on i386
+Date: Tue, 7 May 2013 19:38:03 +1000
 MIME-Version: 1.0
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: save us a mutex_lock usage when doing quota rescan
-References: <51889BF1.1000300@cn.fujitsu.com> <5188A772.2090007@jan-o-sch.net>
-In-Reply-To: <5188A772.2090007@jan-o-sch.net>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201305071938.03938.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Jan,
+https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/
 
-> On Tue, May 07, 2013 at 08:15 (+0200), Wang Shilong wrote:
->> If qgroup_rescan worker is in progress, we should ignore
->> the extent that has not been dealt with qgroup_rescan worker,just
->> let them dealt later otherwise we may get wrong qgroup accounting.
->>
->> However, we have checked this before find_all_roots() without spin_lock.
->> When doing qgroup accounting, we don't have to check it again, because
->> during this period,qgroup_rescan worker can deal with more extents and
->> qgroup_rescan_extent->objectid can only go larger, so here the check
->> is unnecessary.
->>
->> Just remove this check, so that we don't need hold qgroup_rescan_lock
->> when doing qgroup accounting.
-> 
-> NAK.
-> 
-> After a discussion on that lock the last thing in this thread I see is ...
-> 
-> On Wed, May 01, 2013 at 13:57 (+0200), Jan Schmidt wrote:
->> Now I see what you mean. The second check is only required when we start
->> a rescan operation after the initial check in btrfs_qgroup_account_ref.
-> 
-> Please continue on that argument, your commit message doesn't explain at all why
-> we should be safe to remove this check.
+I've just tried building btrfs-progs on i386 with a git pull from a few 
+minutes ago and I got the following warnings:
 
+    [CC]     btrfs-list.o
+btrfs-list.c: In function 'filter_by_parent':
+btrfs-list.c:1183:34: warning: cast to pointer from integer of different size 
+[-Wint-to-pointer-cast]
+    [CC]     cmds-subvolume.o
+cmds-subvolume.c: In function 'cmd_subvol_show':
+cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size 
+[-Wpointer-to-int-cast]
+    [CC]     cmds-restore.o
+cmds-restore.c: In function 'decompress_lzo':
+cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe' 
+from incompatible pointer type [enabled by default]
+In file included from cmds-restore.c:31:0:
+/usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of 
+type 'size_t *'
 
-You are right! 
+I've compiled it on Debian/Wheezy on i386 and AMD64.  On AMD64 there are no 
+warnings but the above warnings appear on i386.
 
-Thanks,
-Wang
-
-> 
-> -Jan
-> 
->> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
->> ---
->>  fs/btrfs/qgroup.c |    9 ---------
->>  1 files changed, 0 insertions(+), 9 deletions(-)
->>
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index d059d86..2710784 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -1445,15 +1445,7 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->>  	if (ret < 0)
->>  		return ret;
->>  
->> -	mutex_lock(&fs_info->qgroup_rescan_lock);
->>  	spin_lock(&fs_info->qgroup_lock);
->> -	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
->> -		if (fs_info->qgroup_rescan_progress.objectid <= node->bytenr) {
->> -			ret = 0;
->> -			goto unlock;
->> -		}
->> -	}
->> -
->>  	quota_root = fs_info->quota_root;
->>  	if (!quota_root)
->>  		goto unlock;
->> @@ -1492,7 +1484,6 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
->>  
->>  unlock:
->>  	spin_unlock(&fs_info->qgroup_lock);
->> -	mutex_unlock(&fs_info->qgroup_rescan_lock);
->>  	ulist_free(roots);
->>  
->>  	return ret;
->>
-> 
-> 
-
-
-
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

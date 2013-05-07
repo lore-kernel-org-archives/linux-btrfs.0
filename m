@@ -1,196 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1039 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:37502 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755999Ab3EGG1y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 02:27:54 -0400
-Message-ID: <51889D15.9050308@cn.fujitsu.com>
-Date: Tue, 07 May 2013 14:20:05 +0800
+	id S1755550Ab3EGLRO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 07:17:14 -0400
+Message-ID: <5188E3EF.3000807@cn.fujitsu.com>
+Date: Tue, 07 May 2013 19:22:23 +0800
 From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] Btrfs: fix passing wrong arg gfp_t to decide the correct
- allocation mode
+CC: Russell Coker <russell@coker.com.au>
+Subject: [PATCH] Btrfs: fix compile warnings in i386 machine
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you look the code carefully, you will see all the tree_mod_alloc()
-has to use GFP_ATOMIC. However, the original code pass the wrong arg
-gfp_t in some places, this dosen't cause any problems, because in the
-tree_mod_alloc(), it ignores arg gfp_t and just use GFP_ATOMIC directly,
-this is not good.
+See the warnings below:
 
-However, i think we should try best not to allocate with GFP_ATOMIC, so
-i keep the gfp_t there in the hope we can change allocation mode in the
-future.
+   [CC]     btrfs-list.o
+btrfs-list.c: In function 'filter_by_parent':
+btrfs-list.c:1183:34: warning: cast to pointer from integer of different size
+[-Wint-to-pointer-cast]
+     [CC]     cmds-subvolume.o
+cmds-subvolume.c: In function 'cmd_subvol_show':
+cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size
+[-Wpointer-to-int-cast]
+     [CC]     cmds-restore.o
+cmds-restore.c: In function 'decompress_lzo':
+cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe'
+from incompatible pointer type [enabled by default]
+In file included from cmds-restore.c:31:0:
+/usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of
+type 'size_t *'
 
+Reported-by: Russell Coker <russell@coker.com.au>
 Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.c |   37 ++++++++++++++++++-------------------
- 1 files changed, 18 insertions(+), 19 deletions(-)
+ btrfs-list.c     |    2 +-
+ cmds-restore.c   |    3 ++-
+ cmds-subvolume.c |    2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index de6de8e..33c9061 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -553,7 +553,7 @@ static inline int tree_mod_alloc(struct btrfs_fs_info *fs_info, gfp_t flags,
- 	 * once we switch from spin locks to something different, we should
- 	 * honor the flags parameter here.
- 	 */
--	tm = *tm_ret = kzalloc(sizeof(*tm), GFP_ATOMIC);
-+	tm = *tm_ret = kzalloc(sizeof(*tm), flags);
- 	if (!tm)
- 		return -ENOMEM;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index a748d5e..e4fc994 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1180,7 +1180,7 @@ static int filter_full_path(struct root_info *ri, u64 data)
  
-@@ -591,14 +591,14 @@ __tree_mod_log_insert_key(struct btrfs_fs_info *fs_info,
- static noinline int
- tree_mod_log_insert_key_mask(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *eb, int slot,
--			     enum mod_log_op op, gfp_t flags)
-+			     enum mod_log_op op)
+ static int filter_by_parent(struct root_info *ri, u64 data)
  {
- 	int ret;
- 
- 	if (tree_mod_dont_log(fs_info, eb))
- 		return 0;
- 
--	ret = __tree_mod_log_insert_key(fs_info, eb, slot, op, flags);
-+	ret = __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_ATOMIC);
- 
- 	tree_mod_log_write_unlock(fs_info);
- 	return ret;
-@@ -608,7 +608,7 @@ static noinline int
- tree_mod_log_insert_key(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
- 			int slot, enum mod_log_op op)
- {
--	return tree_mod_log_insert_key_mask(fs_info, eb, slot, op, GFP_NOFS);
-+	return tree_mod_log_insert_key_mask(fs_info, eb, slot, op);
+-	return !uuid_compare(ri->puuid, (u8 *)data);
++	return !uuid_compare(ri->puuid, (u8 *)(unsigned long)data);
  }
  
- static noinline int
-@@ -616,13 +616,13 @@ tree_mod_log_insert_key_locked(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *eb, int slot,
- 			     enum mod_log_op op)
- {
--	return __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_NOFS);
-+	return __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_ATOMIC);
- }
+ static btrfs_list_filter_func all_filter_funcs[] = {
+diff --git a/cmds-restore.c b/cmds-restore.c
+index c75e187..3098f8d 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -113,7 +113,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
  
- static noinline int
- tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
- 			 struct extent_buffer *eb, int dst_slot, int src_slot,
--			 int nr_items, gfp_t flags)
-+			 int nr_items)
- {
- 	struct tree_mod_elem *tm;
- 	int ret;
-@@ -642,7 +642,7 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
- 		BUG_ON(ret < 0);
- 	}
- 
--	ret = tree_mod_alloc(fs_info, flags, &tm);
-+	ret = tree_mod_alloc(fs_info, GFP_ATOMIC, &tm);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -679,7 +679,7 @@ __tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
- static noinline int
- tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
- 			 struct extent_buffer *old_root,
--			 struct extent_buffer *new_root, gfp_t flags,
-+			 struct extent_buffer *new_root,
- 			 int log_removal)
- {
- 	struct tree_mod_elem *tm;
-@@ -691,7 +691,7 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
- 	if (log_removal)
- 		__tree_mod_log_free_eb(fs_info, old_root);
- 
--	ret = tree_mod_alloc(fs_info, flags, &tm);
-+	ret = tree_mod_alloc(fs_info, GFP_ATOMIC, &tm);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -809,19 +809,18 @@ tree_mod_log_eb_move(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
- {
- 	int ret;
- 	ret = tree_mod_log_insert_move(fs_info, dst, dst_offset, src_offset,
--				       nr_items, GFP_NOFS);
-+				       nr_items);
- 	BUG_ON(ret < 0);
- }
- 
- static noinline void
- tree_mod_log_set_node_key(struct btrfs_fs_info *fs_info,
--			  struct extent_buffer *eb, int slot, int atomic)
-+			  struct extent_buffer *eb, int slot)
- {
- 	int ret;
- 
- 	ret = tree_mod_log_insert_key_mask(fs_info, eb, slot,
--					   MOD_LOG_KEY_REPLACE,
--					   atomic ? GFP_ATOMIC : GFP_NOFS);
-+					   MOD_LOG_KEY_REPLACE);
- 	BUG_ON(ret < 0);
- }
- 
-@@ -843,7 +842,7 @@ tree_mod_log_set_root_pointer(struct btrfs_root *root,
- {
- 	int ret;
- 	ret = tree_mod_log_insert_root(root->fs_info, root->node,
--				       new_root_node, GFP_NOFS, log_removal);
-+				       new_root_node, log_removal);
- 	BUG_ON(ret < 0);
- }
- 
-@@ -1886,7 +1885,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 			struct btrfs_disk_key right_key;
- 			btrfs_node_key(right, &right_key, 0);
- 			tree_mod_log_set_node_key(root->fs_info, parent,
--						  pslot + 1, 0);
-+						  pslot + 1);
- 			btrfs_set_node_key(parent, &right_key, pslot + 1);
- 			btrfs_mark_buffer_dirty(parent);
- 		}
-@@ -1931,7 +1930,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		struct btrfs_disk_key mid_key;
- 		btrfs_node_key(mid, &mid_key, 0);
- 		tree_mod_log_set_node_key(root->fs_info, parent,
--					  pslot, 0);
-+					  pslot);
- 		btrfs_set_node_key(parent, &mid_key, pslot);
- 		btrfs_mark_buffer_dirty(parent);
- 	}
-@@ -2030,7 +2029,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 			orig_slot += left_nr;
- 			btrfs_node_key(mid, &disk_key, 0);
- 			tree_mod_log_set_node_key(root->fs_info, parent,
--						  pslot, 0);
-+						  pslot);
- 			btrfs_set_node_key(parent, &disk_key, pslot);
- 			btrfs_mark_buffer_dirty(parent);
- 			if (btrfs_header_nritems(left) > orig_slot) {
-@@ -2083,7 +2082,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 
- 			btrfs_node_key(right, &disk_key, 0);
- 			tree_mod_log_set_node_key(root->fs_info, parent,
--						  pslot + 1, 0);
-+						  pslot + 1);
- 			btrfs_set_node_key(parent, &disk_key, pslot + 1);
- 			btrfs_mark_buffer_dirty(parent);
- 
-@@ -2963,7 +2962,7 @@ static void fixup_low_keys(struct btrfs_root *root, struct btrfs_path *path,
- 		if (!path->nodes[i])
- 			break;
- 		t = path->nodes[i];
--		tree_mod_log_set_node_key(root->fs_info, t, tslot, 1);
-+		tree_mod_log_set_node_key(root->fs_info, t, tslot);
- 		btrfs_set_node_key(t, key, tslot);
- 		btrfs_mark_buffer_dirty(path->nodes[i]);
- 		if (tslot != 0)
+ 		new_len = lzo1x_worst_compress(PAGE_CACHE_SIZE);
+ 		ret = lzo1x_decompress_safe((const unsigned char *)inbuf, in_len,
+-					    (unsigned char *)outbuf, &new_len, NULL);
++					    (unsigned char *)outbuf,
++					    (void *)&new_len, NULL);
+ 		if (ret != LZO_E_OK) {
+ 			fprintf(stderr, "failed to inflate: %d\n", ret);
+ 			return -1;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 74e2130..1bc7867 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -914,7 +914,7 @@ static int cmd_subvol_show(int argc, char **argv)
+ 	printf("\tSnapshot(s):\n");
+ 	filter_set = btrfs_list_alloc_filter_set();
+ 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
+-				(u64)get_ri.uuid);
++				(u64)(unsigned long)get_ri.uuid);
+ 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+ 	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
+ 			1, raw_prefix);
 -- 
 1.7.7.6
+
 
 
 

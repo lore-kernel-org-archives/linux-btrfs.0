@@ -1,53 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62216 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754354Ab3EGKBO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 06:01:14 -0400
-Message-ID: <5188D21B.6010008@cn.fujitsu.com>
-Date: Tue, 07 May 2013 18:06:19 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:34257 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755346Ab3EGKxG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 06:53:06 -0400
+Date: Tue, 7 May 2013 18:52:49 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: fix off-by-one in fiemap
+Message-ID: <20130507105248.GA27500@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1367425421-10598-1-git-send-email-bo.li.liu@oracle.com>
+ <20130506194516.GL12414@localhost.localdomain>
 MIME-Version: 1.0
-To: russell@coker.com.au
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs compile warnings on i386
-References: <201305071938.03938.russell@coker.com.au>
-In-Reply-To: <201305071938.03938.russell@coker.com.au>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130506194516.GL12414@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-Thanks for reporting,
-i will deal with this issue.
-
-Thanks,
-Wang
-
-> https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/
+On Mon, May 06, 2013 at 03:45:16PM -0400, Josef Bacik wrote:
+> On Wed, May 01, 2013 at 10:23:41AM -0600, Liu Bo wrote:
+> > lock_extent/unlock_extent expect an exclusive end.
+> > 
 > 
-> I've just tried building btrfs-progs on i386 with a git pull from a few 
-> minutes ago and I got the following warnings:
-> 
->     [CC]     btrfs-list.o
-> btrfs-list.c: In function 'filter_by_parent':
-> btrfs-list.c:1183:34: warning: cast to pointer from integer of different size 
-> [-Wint-to-pointer-cast]
->     [CC]     cmds-subvolume.o
-> cmds-subvolume.c: In function 'cmd_subvol_show':
-> cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size 
-> [-Wpointer-to-int-cast]
->     [CC]     cmds-restore.o
-> cmds-restore.c: In function 'decompress_lzo':
-> cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe' 
-> from incompatible pointer type [enabled by default]
-> In file included from cmds-restore.c:31:0:
-> /usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of 
-> type 'size_t *'
-> 
-> I've compiled it on Debian/Wheezy on i386 and AMD64.  On AMD64 there are no 
-> warnings but the above warnings appear on i386.
-> 
+> Can you make an xfstest for this so we can make sure we don't screw this up in
+> the future?  Thanks,
 
+Hi Josef,
 
+I wish I could, but I don't know how to test this in a xfstest case...
+David has made a debug checker in kernel to cover this.
 
+thanks,
+liubo

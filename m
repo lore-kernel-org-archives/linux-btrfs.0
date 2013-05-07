@@ -1,131 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:46987 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751980Ab3EIRvu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 May 2013 13:51:50 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 11B227C0302
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2013 11:51:50 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id YlXNV76T1zSyIeZg (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 09 May 2013 11:51:49 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: handle running extent ops with skinny metadata
-Date: Thu, 9 May 2013 13:51:46 -0400
-Message-ID: <1368121906-2293-1-git-send-email-jbacik@fusionio.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:1039 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755999Ab3EGG1y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 02:27:54 -0400
+Message-ID: <51889D15.9050308@cn.fujitsu.com>
+Date: Tue, 07 May 2013 14:20:05 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] Btrfs: fix passing wrong arg gfp_t to decide the correct
+ allocation mode
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris hit a bug where we weren't finding extent records when running extent ops.
-This is because we use the delayed_ref_head when running the extent op, which
-means we can't use the ->type checks to see if we are metadata.  We also lose
-the level of the metadata we are working on.  So to fix this we need to make
-sure we save the level of the block we are working with when we run the other
-delayed refs and pass this in.  Then secondly we need to check the ->is_data
-flag in the delayed ref head to see if it is a metadata op.  With this patch we
-no longer fail to find our extent ref when running the extent_op.  Thanks,
+If you look the code carefully, you will see all the tree_mod_alloc()
+has to use GFP_ATOMIC. However, the original code pass the wrong arg
+gfp_t in some places, this dosen't cause any problems, because in the
+tree_mod_alloc(), it ignores arg gfp_t and just use GFP_ATOMIC directly,
+this is not good.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+However, i think we should try best not to allocate with GFP_ATOMIC, so
+i keep the gfp_t there in the hope we can change allocation mode in the
+future.
+
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |   37 +++++++++++++++++++++++++++++--------
- 1 files changed, 29 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.c |   37 ++++++++++++++++++-------------------
+ 1 files changed, 18 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2305b5c..d39d69e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -135,6 +135,19 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
- 	}
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index de6de8e..33c9061 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -553,7 +553,7 @@ static inline int tree_mod_alloc(struct btrfs_fs_info *fs_info, gfp_t flags,
+ 	 * once we switch from spin locks to something different, we should
+ 	 * honor the flags parameter here.
+ 	 */
+-	tm = *tm_ret = kzalloc(sizeof(*tm), GFP_ATOMIC);
++	tm = *tm_ret = kzalloc(sizeof(*tm), flags);
+ 	if (!tm)
+ 		return -ENOMEM;
+ 
+@@ -591,14 +591,14 @@ __tree_mod_log_insert_key(struct btrfs_fs_info *fs_info,
+ static noinline int
+ tree_mod_log_insert_key_mask(struct btrfs_fs_info *fs_info,
+ 			     struct extent_buffer *eb, int slot,
+-			     enum mod_log_op op, gfp_t flags)
++			     enum mod_log_op op)
+ {
+ 	int ret;
+ 
+ 	if (tree_mod_dont_log(fs_info, eb))
+ 		return 0;
+ 
+-	ret = __tree_mod_log_insert_key(fs_info, eb, slot, op, flags);
++	ret = __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_ATOMIC);
+ 
+ 	tree_mod_log_write_unlock(fs_info);
+ 	return ret;
+@@ -608,7 +608,7 @@ static noinline int
+ tree_mod_log_insert_key(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 			int slot, enum mod_log_op op)
+ {
+-	return tree_mod_log_insert_key_mask(fs_info, eb, slot, op, GFP_NOFS);
++	return tree_mod_log_insert_key_mask(fs_info, eb, slot, op);
  }
  
-+static inline int delayed_ref_is_metadata(struct btrfs_delayed_ref_node *node)
-+{
-+	if (btrfs_delayed_ref_is_head(node)) {
-+		struct btrfs_delayed_ref_head *head;
-+
-+		head = btrfs_delayed_node_to_head(node);
-+		return !head->is_data;
-+	}
-+
-+	return (node->type == BTRFS_TREE_BLOCK_REF_KEY ||
-+		node->type == BTRFS_SHARED_BLOCK_REF_KEY);
-+}
-+
- /*
-  * this adds the block group to the fs_info rb tree for the block group
-  * cache
-@@ -2061,7 +2074,8 @@ static void __run_delayed_extent_op(struct btrfs_delayed_extent_op *extent_op,
- static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
- 				 struct btrfs_delayed_ref_node *node,
--				 struct btrfs_delayed_extent_op *extent_op)
-+				 struct btrfs_delayed_extent_op *extent_op,
-+				 int level)
+ static noinline int
+@@ -616,13 +616,13 @@ tree_mod_log_insert_key_locked(struct btrfs_fs_info *fs_info,
+ 			     struct extent_buffer *eb, int slot,
+ 			     enum mod_log_op op)
  {
- 	struct btrfs_key key;
- 	struct btrfs_path *path;
-@@ -2070,8 +2084,7 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
- 	u32 item_size;
+-	return __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_NOFS);
++	return __tree_mod_log_insert_key(fs_info, eb, slot, op, GFP_ATOMIC);
+ }
+ 
+ static noinline int
+ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 			 struct extent_buffer *eb, int dst_slot, int src_slot,
+-			 int nr_items, gfp_t flags)
++			 int nr_items)
+ {
+ 	struct tree_mod_elem *tm;
  	int ret;
- 	int err = 0;
--	int metadata = (node->type == BTRFS_TREE_BLOCK_REF_KEY ||
--			node->type == BTRFS_SHARED_BLOCK_REF_KEY);
-+	int metadata = delayed_ref_is_metadata(node);
+@@ -642,7 +642,7 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 		BUG_ON(ret < 0);
+ 	}
  
- 	if (trans->aborted)
- 		return 0;
-@@ -2086,11 +2099,9 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
- 	key.objectid = node->bytenr;
+-	ret = tree_mod_alloc(fs_info, flags, &tm);
++	ret = tree_mod_alloc(fs_info, GFP_ATOMIC, &tm);
+ 	if (ret < 0)
+ 		goto out;
  
- 	if (metadata) {
--		struct btrfs_delayed_tree_ref *tree_ref;
--
--		tree_ref = btrfs_delayed_node_to_tree_ref(node);
-+		WARN_ON(level == -1);
- 		key.type = BTRFS_METADATA_ITEM_KEY;
--		key.offset = tree_ref->level;
-+		key.offset = level;
- 	} else {
- 		key.type = BTRFS_EXTENT_ITEM_KEY;
- 		key.offset = node->num_bytes;
-@@ -2287,10 +2298,12 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+@@ -679,7 +679,7 @@ __tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
+ static noinline int
+ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
+ 			 struct extent_buffer *old_root,
+-			 struct extent_buffer *new_root, gfp_t flags,
++			 struct extent_buffer *new_root,
+ 			 int log_removal)
+ {
+ 	struct tree_mod_elem *tm;
+@@ -691,7 +691,7 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
+ 	if (log_removal)
+ 		__tree_mod_log_free_eb(fs_info, old_root);
+ 
+-	ret = tree_mod_alloc(fs_info, flags, &tm);
++	ret = tree_mod_alloc(fs_info, GFP_ATOMIC, &tm);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -809,19 +809,18 @@ tree_mod_log_eb_move(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
+ {
  	int ret;
- 	int count = 0;
- 	int must_insert_reserved = 0;
-+	int level = -1;
+ 	ret = tree_mod_log_insert_move(fs_info, dst, dst_offset, src_offset,
+-				       nr_items, GFP_NOFS);
++				       nr_items);
+ 	BUG_ON(ret < 0);
+ }
  
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	while (1) {
- 		if (!locked_ref) {
-+			level = -1;
- 			/* pick a new head ref from the cluster list */
- 			if (list_empty(cluster))
- 				break;
-@@ -2373,7 +2386,8 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
- 				spin_unlock(&delayed_refs->lock);
+ static noinline void
+ tree_mod_log_set_node_key(struct btrfs_fs_info *fs_info,
+-			  struct extent_buffer *eb, int slot, int atomic)
++			  struct extent_buffer *eb, int slot)
+ {
+ 	int ret;
  
- 				ret = run_delayed_extent_op(trans, root,
--							    ref, extent_op);
-+							    ref, extent_op,
-+							    level);
- 				btrfs_free_delayed_extent_op(extent_op);
+ 	ret = tree_mod_log_insert_key_mask(fs_info, eb, slot,
+-					   MOD_LOG_KEY_REPLACE,
+-					   atomic ? GFP_ATOMIC : GFP_NOFS);
++					   MOD_LOG_KEY_REPLACE);
+ 	BUG_ON(ret < 0);
+ }
  
- 				if (ret) {
-@@ -2391,6 +2405,13 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
- 		rb_erase(&ref->rb_node, &delayed_refs->root);
- 		delayed_refs->num_entries--;
- 		if (!btrfs_delayed_ref_is_head(ref)) {
-+			if (level < 0 && delayed_ref_is_metadata(ref)) {
-+				struct btrfs_delayed_tree_ref *tree_ref;
-+
-+				tree_ref = btrfs_delayed_node_to_tree_ref(ref);
-+				level = tree_ref->level;
-+			}
-+
- 			/*
- 			 * when we play the delayed ref, also correct the
- 			 * ref_mod on head
+@@ -843,7 +842,7 @@ tree_mod_log_set_root_pointer(struct btrfs_root *root,
+ {
+ 	int ret;
+ 	ret = tree_mod_log_insert_root(root->fs_info, root->node,
+-				       new_root_node, GFP_NOFS, log_removal);
++				       new_root_node, log_removal);
+ 	BUG_ON(ret < 0);
+ }
+ 
+@@ -1886,7 +1885,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 			struct btrfs_disk_key right_key;
+ 			btrfs_node_key(right, &right_key, 0);
+ 			tree_mod_log_set_node_key(root->fs_info, parent,
+-						  pslot + 1, 0);
++						  pslot + 1);
+ 			btrfs_set_node_key(parent, &right_key, pslot + 1);
+ 			btrfs_mark_buffer_dirty(parent);
+ 		}
+@@ -1931,7 +1930,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		struct btrfs_disk_key mid_key;
+ 		btrfs_node_key(mid, &mid_key, 0);
+ 		tree_mod_log_set_node_key(root->fs_info, parent,
+-					  pslot, 0);
++					  pslot);
+ 		btrfs_set_node_key(parent, &mid_key, pslot);
+ 		btrfs_mark_buffer_dirty(parent);
+ 	}
+@@ -2030,7 +2029,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 			orig_slot += left_nr;
+ 			btrfs_node_key(mid, &disk_key, 0);
+ 			tree_mod_log_set_node_key(root->fs_info, parent,
+-						  pslot, 0);
++						  pslot);
+ 			btrfs_set_node_key(parent, &disk_key, pslot);
+ 			btrfs_mark_buffer_dirty(parent);
+ 			if (btrfs_header_nritems(left) > orig_slot) {
+@@ -2083,7 +2082,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 
+ 			btrfs_node_key(right, &disk_key, 0);
+ 			tree_mod_log_set_node_key(root->fs_info, parent,
+-						  pslot + 1, 0);
++						  pslot + 1);
+ 			btrfs_set_node_key(parent, &disk_key, pslot + 1);
+ 			btrfs_mark_buffer_dirty(parent);
+ 
+@@ -2963,7 +2962,7 @@ static void fixup_low_keys(struct btrfs_root *root, struct btrfs_path *path,
+ 		if (!path->nodes[i])
+ 			break;
+ 		t = path->nodes[i];
+-		tree_mod_log_set_node_key(root->fs_info, t, tslot, 1);
++		tree_mod_log_set_node_key(root->fs_info, t, tslot);
+ 		btrfs_set_node_key(t, key, tslot);
+ 		btrfs_mark_buffer_dirty(path->nodes[i]);
+ 		if (tslot != 0)
 -- 
 1.7.7.6
+
+
+
+
 

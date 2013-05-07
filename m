@@ -1,86 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ares.seblu.net ([91.121.71.23]:40737 "EHLO ares.seblu.net"
+Received: from cantor2.suse.de ([195.135.220.15]:34031 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755278Ab3EGLoo convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 May 2013 07:44:44 -0400
-Received: from mail-bk0-x22f.google.com (mail-bk0-x22f.google.com [IPv6:2a00:1450:4008:c01::22f])
-	by ares.seblu.net (Postfix) with ESMTPSA id 411D91800001
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2013 13:35:05 +0200 (CEST)
-Received: by mail-bk0-f47.google.com with SMTP id jg9so225993bkc.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2013 04:35:06 -0700 (PDT)
+	id S1756739Ab3EGLy4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 07:54:56 -0400
+Date: Tue, 7 May 2013 13:54:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: David Sterba <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "alex.btrfs@zadarastorage.com" <alex.btrfs@zadarastorage.com>
+Subject: Re: [PATCH v3] btrfs: clean snapshots one by one
+Message-ID: <20130507115449.GE16456@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1363101208-30184-1-git-send-email-dsterba@suse.cz>
+ <20130507004106.5844.39433@localhost.localdomain>
 MIME-Version: 1.0
-From: =?UTF-8?Q?S=C3=A9bastien_Luttringer?= <seblu@seblu.net>
-Date: Tue, 7 May 2013 13:34:36 +0200
-Message-ID: <CAJSTwE7vbx8eKyVetrXjEXFcpCeFbcCpfKjfutbnt5N6QUpF1g@mail.gmail.com>
-Subject: No free space troubleshooting
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130507004106.5844.39433@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Mon, May 06, 2013 at 08:41:06PM -0400, Chris Mason wrote:
+> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> > index 988b860..4de2351 100644
+> > --- a/fs/btrfs/disk-io.c
+> > +++ b/fs/btrfs/disk-io.c
+> > @@ -1690,15 +1690,19 @@ static int cleaner_kthread(void *arg)
+> >         struct btrfs_root *root = arg;
+> >  
+> >         do {
+> > +               int again = 0;
+> > +
+> >                 if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+> > +                   down_read_trylock(&root->fs_info->sb->s_umount) &&
+> >                     mutex_trylock(&root->fs_info->cleaner_mutex)) {
+> >                         btrfs_run_delayed_iputs(root);
+> > -                       btrfs_clean_old_snapshots(root);
+> > +                       again = btrfs_clean_one_deleted_snapshot(root);
+> >                         mutex_unlock(&root->fs_info->cleaner_mutex);
+> >                         btrfs_run_defrag_inodes(root->fs_info);
+> > +                       up_read(&root->fs_info->sb->s_umount);
+> 
+> Can we use just the cleaner mutex for this?  We're deadlocking during
+> 068 with autodefrag on because the cleaner is holding s_umount while
+> autodefrag is trying to bump the writer count.
 
-I'm testing btrfs on two 2TB drives with RAID1 on linux 3.9. So I have
-virtually a space of 2TB.
+I have now reproduced the deadlock and see where it's stuck.  It did not
+happen with running 068 in a loop, but after interrupting the test.
 
-I use iozone, bonnie++ and a lot of untaring linux kernel on fs to
-load it and see what's happen.
+> If unmount takes the cleaner mutex once it should wait long enough for
+> the cleaner to stop.
 
-After some hours, I got ENOSPC and some daemon start crashing. I read
-wiki FAQ[1], and balance fix the issue (for few times). But running it
-again issue come back.
+You mean removing s_umount from here completely? I'm not sure about
+other mis-interaction, eg with remount + autodefrag. Miao sent a patch
+for that case http://www.spinics.net/lists/linux-btrfs/msg16634.html
+(but it would not fix this deadlock).
 
-The following is the output of untarnig linux kernel.
-# while true; do for i in *.tar.xz; do d=${i%.tar.xz}; echo $d; [[ -e
-"$d" ]] && rm -r "$d"; tar xf "$i"; done; done
-...
-tar: linux-3.3/arch/sh: Cannot mkdir: No space left on device
-tar: linux-3.3/arch/sh/drivers/pci/fixups-sdk7786.c: Cannot open: No
-such file or directory
-tar: linux-3.3/arch/sh: Cannot mkdir: No space left on device
-tar: linux-3.3/arch/sh/drivers/pci/fixups-se7751.c: Cannot open: No
-such file or directory
-tar: linux-3.3/arch/sh: Cannot mkdir: No space left on device
-tar: linux-3.3/arch/sh/drivers/pci/fixups-sh03.c: Cannot open: No such
-file or directory
+I'm for keeping the clean-by-one patch for 3.10, we can fix other
+regressions during rc cycle.
 
-# df
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda2       3,7T  122G  3,6T   4% /
-
-# btrfs fi sh
-Label: 'achille.root'  uuid: 2ab5010c-e8fe-4b8a-a895-3e58552ed791
-        Total devices 2 FS bytes used 60.85GB
-        devid    1 size 1.82TB used 65.02GB path /dev/sda2
-        devid    2 size 1.82TB used 65.01GB path /dev/sdb2
-Btrfs v0.20-rc1
-
-The first time ENOSPC happen on my FS, the previous command show each
-disk as full. Not like now (after the first run of "btrfs balance
-start / -dusage=5").
-
-# btrfs fi df /
-Data, RAID1: total=61.00GB, used=59.99GB
-System, RAID1: total=8.00MB, used=16.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=4.00GB, used=882.61MB
-Metadata: total=8.00MB, used=0.00
-
-The following page[2] suggest me to enable enospc_debug.
-
-# mount -o remout,enospc_debug /
-# mount -t btrfs /
-/dev/sda2 on / type btrfs (rw,relatime,space_cache,enospc_debug)
-
-But I see nothing in dmesg. Where I can find the debug messages?
-
-So, I'm currently able to easily make the btrfs fs dirty without any
-way of seeing if there is a ENOPSC in some directory.
-
-[1] https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
-[2] https://btrfs.wiki.kernel.org/index.php/Mount_options
-
---
-Sébastien "Seblu" Luttringer
-https://www.seblu.net
-GPG: 0x2072D77A
+david

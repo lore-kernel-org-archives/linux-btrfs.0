@@ -1,49 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52343 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756080Ab3EFWCA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 May 2013 18:02:00 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 8E559A4EB7
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2013 00:01:59 +0200 (CEST)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: fix typecast when printing csum value
-Date: Tue,  7 May 2013 00:01:51 +0200
-Message-Id: <1367877711-21341-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:61860 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1757968Ab3EGMTa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 08:19:30 -0400
+Message-ID: <5188F288.6010504@cn.fujitsu.com>
+Date: Tue, 07 May 2013 20:24:40 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Russell Coker <russell@coker.com.au>
+Subject: [PATCH RESEND] Btrfs-progs: fix compile warnings in i386 machine
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Only the first byte of the wanted csum is printed:
+See the warnings below:
 
-checksum verify failed on 65536 found DA97CF61 wanted 6B
-checksum verify failed on 65536 found DA97CF61 wanted 6BC3870D
+   [CC]     btrfs-list.o
+btrfs-list.c: In function 'filter_by_parent':
+btrfs-list.c:1183:34: warning: cast to pointer from integer of different size
+[-Wint-to-pointer-cast]
+     [CC]     cmds-subvolume.o
+cmds-subvolume.c: In function 'cmd_subvol_show':
+cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size
+[-Wpointer-to-int-cast]
+     [CC]     cmds-restore.o
+cmds-restore.c: In function 'decompress_lzo':
+cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe'
+from incompatible pointer type [enabled by default]
+In file included from cmds-restore.c:31:0:
+/usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of
+type 'size_t *'
 
-Also add leading zeros to the format.
-
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Reported-by: Russell Coker <russell@coker.com.au>
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 ---
- disk-io.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ btrfs-list.c     |    2 +-
+ cmds-restore.c   |    3 ++-
+ cmds-subvolume.c |    2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index b001e35..21b410d 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -89,9 +89,9 @@ int csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+diff --git a/btrfs-list.c b/btrfs-list.c
+index a748d5e..e4fc994 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1180,7 +1180,7 @@ static int filter_full_path(struct root_info *ri, u64 data)
  
- 	if (verify) {
- 		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
--			printk("checksum verify failed on %llu found %X "
--			       "wanted %X\n", (unsigned long long)buf->start,
--			       *((int *)result), *((char *)buf->data));
-+			printk("checksum verify failed on %llu found %08X "
-+			       "wanted %08X\n", (unsigned long long)buf->start,
-+			       *((u32 *)result), *((u32*)(char *)buf->data));
- 			free(result);
- 			return 1;
- 		}
+ static int filter_by_parent(struct root_info *ri, u64 data)
+ {
+-	return !uuid_compare(ri->puuid, (u8 *)data);
++	return !uuid_compare(ri->puuid, (u8 *)(unsigned long)data);
+ }
+ 
+ static btrfs_list_filter_func all_filter_funcs[] = {
+diff --git a/cmds-restore.c b/cmds-restore.c
+index c75e187..3098f8d 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -113,7 +113,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+ 
+ 		new_len = lzo1x_worst_compress(PAGE_CACHE_SIZE);
+ 		ret = lzo1x_decompress_safe((const unsigned char *)inbuf, in_len,
+-					    (unsigned char *)outbuf, &new_len, NULL);
++					    (unsigned char *)outbuf,
++					    (void *)&new_len, NULL);
+ 		if (ret != LZO_E_OK) {
+ 			fprintf(stderr, "failed to inflate: %d\n", ret);
+ 			return -1;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 74e2130..1bc7867 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -914,7 +914,7 @@ static int cmd_subvol_show(int argc, char **argv)
+ 	printf("\tSnapshot(s):\n");
+ 	filter_set = btrfs_list_alloc_filter_set();
+ 	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
+-				(u64)get_ri.uuid);
++				(u64)(unsigned long)get_ri.uuid);
+ 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+ 	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
+ 			1, raw_prefix);
 -- 
-1.8.2
+1.7.7.6
+
+
+
+
+
+
 

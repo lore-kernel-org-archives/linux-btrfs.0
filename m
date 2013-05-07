@@ -1,43 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:46881 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754175Ab3EGGIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 02:08:15 -0400
-Message-ID: <51889A4D.8000201@jan-o-sch.net>
-Date: Tue, 07 May 2013 08:08:13 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from cn.fujitsu.com ([222.73.24.84]:1039 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1756621Ab3EGG14 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 May 2013 02:27:56 -0400
+Message-ID: <51889BF1.1000300@cn.fujitsu.com>
+Date: Tue, 07 May 2013 14:15:13 +0800
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: hard freezes with 3.9.0 during io-intensive loads
-References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx>
-In-Reply-To: <3egl5a-al5.ln1@hurikhan.ath.cx>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] Btrfs: save us a mutex_lock usage when doing quota rescan
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 06, 2013 at 22:29 (+0200), Kai Krakow wrote:
-> Jan Schmidt <list.btrfs@jan-o-sch.net> schrieb:
-> 
->> That one should be fixed in btrfs-next. If you can reliably reproduce the
->> bug I'd be glad to get a confirmation - you can probably even save putting
->> it on bugzilla then ;-)
-> 
-> I can reliably reproduce it from two different approaches. I'd like to only 
-> apply the commits fixing it. Can you name them here?
+If qgroup_rescan worker is in progress, we should ignore
+the extent that has not been dealt with qgroup_rescan worker,just
+let them dealt later otherwise we may get wrong qgroup accounting.
 
-In git log order:
+However, we have checked this before find_all_roots() without spin_lock.
+When doing qgroup accounting, we don't have to check it again, because
+during this period,qgroup_rescan worker can deal with more extents and
+qgroup_rescan_extent->objectid can only go larger, so here the check
+is unnecessary.
 
-6ced2666 Btrfs: separate sequence numbers for delayed ref tracking and tree mod log
-ef9120b1 Btrfs: fix tree mod log regression on root split operations
-2ed098ca Btrfs: fix accessing the root pointer in tree mod log functions
-50723551 Btrfs: fix unlock after free on rewinded tree blocks
+Just remove this check, so that we don't need hold qgroup_rescan_lock
+when doing qgroup accounting.
 
-The commit ids are from josef's master branch
-(git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git) which is
-known not to be very stable regarding commit ids.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c |    9 ---------
+ 1 files changed, 0 insertions(+), 9 deletions(-)
 
-Thanks,
--Jan
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index d059d86..2710784 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1445,15 +1445,7 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	mutex_lock(&fs_info->qgroup_rescan_lock);
+ 	spin_lock(&fs_info->qgroup_lock);
+-	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
+-		if (fs_info->qgroup_rescan_progress.objectid <= node->bytenr) {
+-			ret = 0;
+-			goto unlock;
+-		}
+-	}
+-
+ 	quota_root = fs_info->quota_root;
+ 	if (!quota_root)
+ 		goto unlock;
+@@ -1492,7 +1484,6 @@ int btrfs_qgroup_account_ref(struct btrfs_trans_handle *trans,
+ 
+ unlock:
+ 	spin_unlock(&fs_info->qgroup_lock);
+-	mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 	ulist_free(roots);
+ 
+ 	return ret;
+-- 
+1.7.7.6
 
->>> [snip]
+
+
+

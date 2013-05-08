@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:49270 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756467Ab3EHUkE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 16:40:04 -0400
+Received: from dkim1.fusionio.com ([66.114.96.53]:38810 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756339Ab3EHUsC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 16:48:02 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 5C2349A06A4
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 May 2013 14:40:04 -0600 (MDT)
-Date: Wed, 8 May 2013 16:40:01 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 4934F7C0690
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 May 2013 14:48:01 -0600 (MDT)
+Date: Wed, 8 May 2013 16:47:58 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Alexander Skwar <a@skwar.me>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921
  __btrfs_write_out_cache+0x6b9/0x9a0 [btrfs]()
-Message-ID: <20130508204001.GT12414@localhost.localdomain>
+Message-ID: <20130508204758.GU12414@localhost.localdomain>
 References: <CVrGRAreCXB@helmut.hullen.de>
  <20130430094131.GA8274@carfax.org.uk>
  <loom.20130430T133556-803@post.gmane.org>
@@ -38,7 +38,9 @@ On Wed, May 08, 2013 at 11:34:40AM -0600, Alexander Skwar wrote:
 > Or should I simply create a new filesystem and forget about the issue?
 > 
 
-I haven't looked at it yet, let me run it right now and see if it's something I
-can fix quickly.  Thanks,
+So the file system isn't corrupt, you just got a giant block group for some
+reason.  I've sent a patch to remove the WARN_ON() so that won't bother you
+anymore.  You should probably rebalance to try and trim that block group down to
+a reasonable size, but other than that your fs is a-ok.  Thanks,
 
 Josef

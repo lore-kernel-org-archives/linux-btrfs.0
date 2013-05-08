@@ -1,52 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19404 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751863Ab3EHIJ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 May 2013 04:09:58 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r4889rTD019759
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 May 2013 16:09:53 +0800
-Message-ID: <518A0871.5090907@cn.fujitsu.com>
-Date: Wed, 08 May 2013 16:10:25 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:47077 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756924Ab3EHRbV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 13:31:21 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 1EA9F9A069F
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 May 2013 11:31:20 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 08DblkqtIo3jCAzF (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 11:31:19 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't null pointer deref on abort
+Date: Wed, 8 May 2013 13:31:17 -0400
+Message-ID: <1368034277-5016-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix possible memory leak in the find_parent_nodes()
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the find_parent_nodes(), if read_tree_block() fails, we can
-not return directly, we should free some allocated memory otherwise
-memory leak happens.
+I'm sorry, theres no excuse for this sort of work.  We need to use
+root->leafsize since eb may be NULL.  Thanks,
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-Since Chris has already setup his pull, we'd like to send
-another patch.
----
- fs/btrfs/backref.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ fs/btrfs/disk-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index b4fb415..290e347 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -918,7 +918,8 @@ again:
- 							   ref->parent, bsz, 0);
- 				if (!eb || !extent_buffer_uptodate(eb)) {
- 					free_extent_buffer(eb);
--					return -EIO;
-+					ret = -EIO;
-+					goto out;
- 				}
- 				ret = find_extent_in_eb(eb, bytenr,
- 							*extent_item_pos, &eie);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e8b5027..19d7e63 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3752,7 +3752,7 @@ static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ 		while (start <= end) {
+ 			eb = btrfs_find_tree_block(root, start,
+ 						   root->leafsize);
+-			start += eb->len;
++			start += root->leafsize;
+ 			if (!eb)
+ 				continue;
+ 			wait_on_extent_buffer_writeback(eb);
 -- 
 1.7.7.6
-
-
-
-
-
 

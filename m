@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f195.google.com ([209.85.217.195]:36322 "EHLO
+Received: from mail-lb0-f195.google.com ([209.85.217.195]:35652 "EHLO
 	mail-lb0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752402Ab3EHVbc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 17:31:32 -0400
-Received: by mail-lb0-f195.google.com with SMTP id 13so593935lba.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 14:31:30 -0700 (PDT)
+	with ESMTP id S1753964Ab3EHVeG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 May 2013 17:34:06 -0400
+Received: by mail-lb0-f195.google.com with SMTP id 13so594339lba.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 May 2013 14:34:04 -0700 (PDT)
 MIME-Version: 1.0
-Date: Wed, 8 May 2013 23:31:30 +0200
-Message-ID: <CAHgo1RLxWEyiOzJwJY-P8ZHgD3XqDM2xTJjAcv9o0WBfg6xN8g@mail.gmail.com>
+Date: Wed, 8 May 2013 23:34:04 +0200
+Message-ID: <CAHgo1R+ogsyLvMEmxkzmSZf7Zdbdze6KqysR_pM-a_dE_23V2A@mail.gmail.com>
 Subject: Dup System chunks: is this the way to go?
 From: "John ." <btrfsprob@gmail.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -28,3 +28,14 @@ Done, had to relocate 1 out of 5 chunks
 
 I noticed the system chunks were not in duplication mode, which would
 be solved by running
+
+root@host:~# btrfs balance start -sconvert=dup /
+
+but that returns "Pass --force if you really want to do that."
+
+Is there any reason I would not want to perform this command? Is there
+any innate danger to convert the system chunks to dup mode?
+
+Thanks,
+
+John

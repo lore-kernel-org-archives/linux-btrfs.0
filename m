@@ -1,94 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:43158 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756225Ab3EGLsQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 07:48:16 -0400
-Message-ID: <5188EB37.5030501@cn.fujitsu.com>
-Date: Tue, 07 May 2013 19:53:27 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:46987 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751980Ab3EIRvu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 May 2013 13:51:50 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 11B227C0302
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2013 11:51:50 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id YlXNV76T1zSyIeZg (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 09 May 2013 11:51:49 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: handle running extent ops with skinny metadata
+Date: Thu, 9 May 2013 13:51:46 -0400
+Message-ID: <1368121906-2293-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Russell Coker <russell@coker.com.au>
-Subject: Re: [PATCH] Btrfs: fix compile warnings in i386 machine
-References: <5188E3EF.3000807@cn.fujitsu.com>
-In-Reply-To: <5188E3EF.3000807@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-oops, i miswrite the patch titile Btrfs-progs to Btrfs..
+Chris hit a bug where we weren't finding extent records when running extent ops.
+This is because we use the delayed_ref_head when running the extent op, which
+means we can't use the ->type checks to see if we are metadata.  We also lose
+the level of the metadata we are working on.  So to fix this we need to make
+sure we save the level of the block we are working with when we run the other
+delayed refs and pass this in.  Then secondly we need to check the ->is_data
+flag in the delayed ref head to see if it is a metadata op.  With this patch we
+no longer fail to find our extent ref when running the extent_op.  Thanks,
 
-Sorry my bad, will resend.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent-tree.c |   37 +++++++++++++++++++++++++++++--------
+ 1 files changed, 29 insertions(+), 8 deletions(-)
 
-Thanks,
-Wang
-
-> See the warnings below:
-> 
->    [CC]     btrfs-list.o
-> btrfs-list.c: In function 'filter_by_parent':
-> btrfs-list.c:1183:34: warning: cast to pointer from integer of different size
-> [-Wint-to-pointer-cast]
->      [CC]     cmds-subvolume.o
-> cmds-subvolume.c: In function 'cmd_subvol_show':
-> cmds-subvolume.c:917:5: warning: cast from pointer to integer of different size
-> [-Wpointer-to-int-cast]
->      [CC]     cmds-restore.o
-> cmds-restore.c: In function 'decompress_lzo':
-> cmds-restore.c:116:10: warning: passing argument 4 of 'lzo1x_decompress_safe'
-> from incompatible pointer type [enabled by default]
-> In file included from cmds-restore.c:31:0:
-> /usr/include/lzo/lzo1x.h:77:1: note: expected 'lzo_uint *' but argument is of
-> type 'size_t *'
-> 
-> Reported-by: Russell Coker <russell@coker.com.au>
-> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> ---
->  btrfs-list.c     |    2 +-
->  cmds-restore.c   |    3 ++-
->  cmds-subvolume.c |    2 +-
->  3 files changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/btrfs-list.c b/btrfs-list.c
-> index a748d5e..e4fc994 100644
-> --- a/btrfs-list.c
-> +++ b/btrfs-list.c
-> @@ -1180,7 +1180,7 @@ static int filter_full_path(struct root_info *ri, u64 data)
->  
->  static int filter_by_parent(struct root_info *ri, u64 data)
->  {
-> -	return !uuid_compare(ri->puuid, (u8 *)data);
-> +	return !uuid_compare(ri->puuid, (u8 *)(unsigned long)data);
->  }
->  
->  static btrfs_list_filter_func all_filter_funcs[] = {
-> diff --git a/cmds-restore.c b/cmds-restore.c
-> index c75e187..3098f8d 100644
-> --- a/cmds-restore.c
-> +++ b/cmds-restore.c
-> @@ -113,7 +113,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
->  
->  		new_len = lzo1x_worst_compress(PAGE_CACHE_SIZE);
->  		ret = lzo1x_decompress_safe((const unsigned char *)inbuf, in_len,
-> -					    (unsigned char *)outbuf, &new_len, NULL);
-> +					    (unsigned char *)outbuf,
-> +					    (void *)&new_len, NULL);
->  		if (ret != LZO_E_OK) {
->  			fprintf(stderr, "failed to inflate: %d\n", ret);
->  			return -1;
-> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-> index 74e2130..1bc7867 100644
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -914,7 +914,7 @@ static int cmd_subvol_show(int argc, char **argv)
->  	printf("\tSnapshot(s):\n");
->  	filter_set = btrfs_list_alloc_filter_set();
->  	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
-> -				(u64)get_ri.uuid);
-> +				(u64)(unsigned long)get_ri.uuid);
->  	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
->  	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,
->  			1, raw_prefix);
-
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2305b5c..d39d69e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -135,6 +135,19 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
+ 	}
+ }
+ 
++static inline int delayed_ref_is_metadata(struct btrfs_delayed_ref_node *node)
++{
++	if (btrfs_delayed_ref_is_head(node)) {
++		struct btrfs_delayed_ref_head *head;
++
++		head = btrfs_delayed_node_to_head(node);
++		return !head->is_data;
++	}
++
++	return (node->type == BTRFS_TREE_BLOCK_REF_KEY ||
++		node->type == BTRFS_SHARED_BLOCK_REF_KEY);
++}
++
+ /*
+  * this adds the block group to the fs_info rb tree for the block group
+  * cache
+@@ -2061,7 +2074,8 @@ static void __run_delayed_extent_op(struct btrfs_delayed_extent_op *extent_op,
+ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root,
+ 				 struct btrfs_delayed_ref_node *node,
+-				 struct btrfs_delayed_extent_op *extent_op)
++				 struct btrfs_delayed_extent_op *extent_op,
++				 int level)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -2070,8 +2084,7 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+ 	u32 item_size;
+ 	int ret;
+ 	int err = 0;
+-	int metadata = (node->type == BTRFS_TREE_BLOCK_REF_KEY ||
+-			node->type == BTRFS_SHARED_BLOCK_REF_KEY);
++	int metadata = delayed_ref_is_metadata(node);
+ 
+ 	if (trans->aborted)
+ 		return 0;
+@@ -2086,11 +2099,9 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+ 	key.objectid = node->bytenr;
+ 
+ 	if (metadata) {
+-		struct btrfs_delayed_tree_ref *tree_ref;
+-
+-		tree_ref = btrfs_delayed_node_to_tree_ref(node);
++		WARN_ON(level == -1);
+ 		key.type = BTRFS_METADATA_ITEM_KEY;
+-		key.offset = tree_ref->level;
++		key.offset = level;
+ 	} else {
+ 		key.type = BTRFS_EXTENT_ITEM_KEY;
+ 		key.offset = node->num_bytes;
+@@ -2287,10 +2298,12 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	int count = 0;
+ 	int must_insert_reserved = 0;
++	int level = -1;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	while (1) {
+ 		if (!locked_ref) {
++			level = -1;
+ 			/* pick a new head ref from the cluster list */
+ 			if (list_empty(cluster))
+ 				break;
+@@ -2373,7 +2386,8 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 				spin_unlock(&delayed_refs->lock);
+ 
+ 				ret = run_delayed_extent_op(trans, root,
+-							    ref, extent_op);
++							    ref, extent_op,
++							    level);
+ 				btrfs_free_delayed_extent_op(extent_op);
+ 
+ 				if (ret) {
+@@ -2391,6 +2405,13 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 		rb_erase(&ref->rb_node, &delayed_refs->root);
+ 		delayed_refs->num_entries--;
+ 		if (!btrfs_delayed_ref_is_head(ref)) {
++			if (level < 0 && delayed_ref_is_metadata(ref)) {
++				struct btrfs_delayed_tree_ref *tree_ref;
++
++				tree_ref = btrfs_delayed_node_to_tree_ref(ref);
++				level = tree_ref->level;
++			}
++
+ 			/*
+ 			 * when we play the delayed ref, also correct the
+ 			 * ref_mod on head
+-- 
+1.7.7.6
 

@@ -1,61 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:63479 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751729Ab3EIVbR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 May 2013 17:31:17 -0400
-Received: by mail-wg0-f49.google.com with SMTP id j13so3374367wgh.28
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 May 2013 14:31:16 -0700 (PDT)
-Received: from ?IPv6:2a01:e35:8a2c:b230:7d7c:5d77:6fe1:1d71? ([2a01:e35:8a2c:b230:7d7c:5d77:6fe1:1d71])
-        by mx.google.com with ESMTPSA id ed20sm12856wic.0.2013.05.09.14.31.14
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Thu, 09 May 2013 14:31:15 -0700 (PDT)
-Message-ID: <518C15A0.2000006@gmail.com>
-Date: Thu, 09 May 2013 23:31:12 +0200
-From: Gabriel de Perthuis <g2p.code@gmail.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:40267 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754398Ab3EIXg2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 May 2013 19:36:28 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UaaNt-0003Oq-7F
+	for linux-btrfs@vger.kernel.org; Fri, 10 May 2013 01:36:25 +0200
+Received: from dyndsl-178-142-090-237.ewe-ip-backbone.de ([178.142.90.237])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 01:36:25 +0200
+Received: from hurikhan77+btrfs by dyndsl-178-142-090-237.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 01:36:25 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] btrfs: Introduce extent_read_full_page_nolock()
-References: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1366150535-18750-1-git-send-email-mfasheh@suse.de>
-Content-Type: text/plain; charset=ISO-8859-1
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: hard freezes with 3.9.0 during io-intensive loads
+Date: Fri, 10 May 2013 01:30:14 +0200
+Message-ID: <15ot5a-f1m.ln1@hurikhan.ath.cx>
+References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx> <51889A4D.8000201@jan-o-sch.net> <ch7o5a-g0b.ln1@hurikhan.ath.cx> <7jio5a-b5g.ln1@hurikhan.ath.cx> <518A318A.7060105@jan-o-sch.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> We want this for btrfs_extent_same. Basically readpage and friends do their
->> own extent locking but for the purposes of dedupe, we want to have both
->> files locked down across a set of readpage operations (so that we can
->> compare data). Introduce this variant and a flag which can be set for
->> extent_read_full_page() to indicate that we are already locked.
-> 
-> This one can get stuck in TASK_UNINTERRUPTIBLE:
-> 
-> [32129.522257] SysRq : Show Blocked State
-> [32129.524337]   task                        PC stack   pid father
-> [32129.526515] python          D ffff88021f394280     0 16281      1 0x00000004
-> [32129.528656]  ffff88020e079a48 0000000000000082 ffff88013d3cdd40 ffff88020e079fd8
-> [32129.530840]  ffff88020e079fd8 ffff88020e079fd8 ffff8802138dc5f0 ffff88013d3cdd40
-> [32129.533044]  0000000000000000 0000000000001fff ffff88015286f440 0000000000000008
-> [32129.535285] Call Trace:
-> [32129.537522]  [<ffffffff816dcca9>] schedule+0x29/0x70
-> [32129.539829]  [<ffffffffa02b4908>] wait_extent_bit+0xf8/0x150 [btrfs]
-> [32129.542130]  [<ffffffff8107ea00>] ? finish_wait+0x80/0x80
-> [32129.544463]  [<ffffffffa02b4f84>] lock_extent_bits+0x44/0xa0 [btrfs]
-> [32129.546824]  [<ffffffffa02b4ff3>] lock_extent+0x13/0x20 [btrfs]
-> [32129.549198]  [<ffffffffa02dc0cf>] add_ra_bio_pages.isra.8+0x17f/0x2d0 [btrfs]
-> [32129.551602]  [<ffffffffa02dccfc>] btrfs_submit_compressed_read+0x25c/0x4c0 [btrfs]
-> [32129.554028]  [<ffffffffa029d131>] btrfs_submit_bio_hook+0x1d1/0x1e0 [btrfs]
-> [32129.556457]  [<ffffffffa02b2d07>] submit_one_bio+0x67/0xa0 [btrfs]
-> [32129.558899]  [<ffffffffa02b7ecd>] extent_read_full_page_nolock+0x4d/0x60 [btrfs]
-> [32129.561290]  [<ffffffffa02c8052>] fill_data+0xb2/0x230 [btrfs]
-> [32129.563623]  [<ffffffffa02cd57e>] btrfs_ioctl+0x1f7e/0x2560 [btrfs]
-> [32129.565924]  [<ffffffff816ddbae>] ? _raw_spin_lock+0xe/0x20
-> [32129.568207]  [<ffffffff8119b907>] ? inode_get_bytes+0x47/0x60
-> [32129.570472]  [<ffffffff811a8297>] do_vfs_ioctl+0x97/0x560
-> [32129.572700]  [<ffffffff8119bb5a>] ? sys_newfstat+0x2a/0x40
-> [32129.574882]  [<ffffffff811a87f1>] sys_ioctl+0x91/0xb0
-> [32129.577008]  [<ffffffff816e64dd>] system_call_fastpath+0x1a/0x1f
+Jan Schmidt <list.btrfs@jan-o-sch.net> schrieb:
 
-For anyone trying those patches, there's a fix here:
-https://github.com/g2p/linux/tree/v3.9%2Bbtrfs-extent-same
+>> Apparently, it's not fixed. The system does not freeze now but it threw
+>> multiple backtraces right in front of my Xorg session. The backtraces
+>> look a little bit different now. Here's what I got:
+>> 
+>> https://gist.github.com/kakra/8a340f006d01e146865d
+>> 
+>> Occurence while running "bedup dedup --defrag --size-cutoff
+>> $((1024*1024))" which was currently dedup'ing my backup volume with daily
+>> snapshots filled by "rsync --inplace" - so I suppose some file contents
+>> are pretty scattered.
+> 
+> At least that looks different for now. I'm not certain about all the fixes
+> in btrfs-next. Can you give it a try and bisect if btrfs-next is good?
+> That would be really helpful.
+
+I'd prefer to not bisect my production system kernel... That will probably 
+take ages as running the "reproducable test" takes about 30-60 minutes 
+before the problem hits my system. At least unless you had a suggestion how 
+to speed up the process... ;-)
+
+I saw the pull request with those fixes, so I supsect it didn't go into 
+3.9.1 but rather will go into 3.9.2?
+
+I probably wait and just do not run the dedup process until I have 3.9.2 
+installed. The backup works with occassional hiccups, the system very very 
+sometimes freezes but I almost always see the backtraces in dmesg after 
+backup. Let's see if it's all gone in 3.9.2.
+
+Regards,
+Kai
 

@@ -1,61 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:22614 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753594Ab3EGR2F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 May 2013 13:28:05 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp4) (RZmta 31.27 OK)
-	with ESMTP id 601f81p479KFeT for <linux-btrfs@vger.kernel.org>;
-	Tue, 7 May 2013 19:28:03 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: don't allow device replace on RAID5/RAID6
-Date: Tue,  7 May 2013 19:28:03 +0200
-Message-Id: <1367947683-11693-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from bay0-omc1-s5.bay0.hotmail.com ([65.54.190.16]:21503 "EHLO
+	bay0-omc1-s5.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753794Ab3EIUrh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 May 2013 16:47:37 -0400
+Message-ID: <BAY172-DS142AB5E40D200CC3946388B0A40@phx.gbl>
+From: "Kyle Gates" <kylegates@hotmail.com>
+To: <linux-btrfs@vger.kernel.org>
+References: <CADn-QaPQ0aH1rb3rG3bE87Ka3XaLzHHeA6nwNLbQJsbB_BiXkw@mail.gmail.com> <h1rh5a-1lg.ln1@hurikhan.ath.cx> <CADn-QaNEdWiyKaniOhzAmaGb6p=PuZ4=FxPPPiVLZZJ3zB7xpQ@mail.gmail.com>
+In-Reply-To: <CADn-QaNEdWiyKaniOhzAmaGb6p=PuZ4=FxPPPiVLZZJ3zB7xpQ@mail.gmail.com>
+Subject: nocow 'C' flag ignored after balance
+Date: Thu, 9 May 2013 15:41:49 -0500
+MIME-Version: 1.0
+Content-Type: text/plain;
+	format=flowed;
+	charset="UTF-8";
+	reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is not yet supported and causes crashes. One sad user reported
-that it destroyed his filesystem.
+I'll preface that I'm running Ubuntu 13.04 with the standard 3.8 series 
+kernel so please disregard if this has been fixed in higher versions. This 
+is on a btrfs RAID1 with 3 then 4 disks.
 
-One failure is in __btrfs_map_block+0xc1f calling kmalloc(0).
+My use case is to set the nocow 'C' flag on a directory and copy in some 
+files, then make lots of writes (same file sizes) and note that the number 
+of extents stays the same, good.
+Then run a balance (I added a disk) and start making writes again, now the 
+number of extents starts climbing, boo.
+Is this standard behavior? I realize a balance will cow the files. Are they 
+also being checksummed thereby breaking the nocow flag?
 
-0x5f21f is in __btrfs_map_block (fs/btrfs/volumes.c:4923).
-4918                            num_stripes = map->num_stripes;
-4919                            max_errors = nr_parity_stripes(map);
-4920
-4921                            raid_map = kmalloc(sizeof(u64) * num_stripes,
-4922                                               GFP_NOFS);
-4923                            if (!raid_map) {
-4924                                    ret = -ENOMEM;
-4925                                    goto out;
-4926                            }
-4927
+I have made no snapshots and made no writes to said files while the balance 
+was running.
 
-There might be more issues. Until this is really tested, don't allow
-users to start the procedure on RAID5/RAID6 filesystems.
-
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/dev-replace.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 7ba7b39..65241f3 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -313,6 +313,11 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	struct btrfs_device *tgt_device = NULL;
- 	struct btrfs_device *src_device = NULL;
- 
-+	if (btrfs_fs_incompat(fs_info, RAID56)) {
-+		pr_warn("btrfs: dev_replace cannot yet handle RAID5/RAID6\n");
-+		return -EINVAL;
-+	}
-+
- 	switch (args->start.cont_reading_from_srcdev_mode) {
- 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS:
- 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID:
--- 
-1.8.2.2
+Thanks,
+Kyle 
 

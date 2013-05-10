@@ -1,299 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41189 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752204Ab3EJLAM (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47377 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752136Ab3EJLAO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 May 2013 07:00:12 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4AB0A4S029090
+	Fri, 10 May 2013 07:00:14 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4AB0DnE017136
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:11 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4AB0Blh016776
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:14 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4AB0CE4002128
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:11 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:12 GMT
 Received: from abhmt119.oracle.com (abhmt119.oracle.com [141.146.116.71])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4AB0AD9001961
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:10 GMT
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4AB0BjX010801
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2013 11:00:11 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: add framework to read fs info and dev info from the kernel
-Date: Fri, 10 May 2013 19:02:43 +0800
-Message-Id: <1368183764-7865-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: add framework to read fs info and dev info from the kernel
+Date: Fri, 10 May 2013 19:02:44 +0800
+Message-Id: <1368183764-7865-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1368183764-7865-1-git-send-email-anand.jain@oracle.com>
 References: <1368183764-7865-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds two ioctl BTRFS_IOC_GET_FSIDS and BTRFS_IOC_GET_DEVS
-which reads the btrfs_fs_devices and btrfs_device structure
-from the kernel respectively.
+ As of now btrfs fi show reads the disks directly to report
+ the list of fsids and its disks and the output can be
+ inconsistent with the kernel dev changes, mainly after the
+ dev del / add.
 
-The information in these structure are useful to report the
-device/fs information in line with the kernel operations and
-thus immediately addresses the problem that 'btrfs fi show'
-command reports the stale information after device device add
-remove operation is performed. That is because btrfs fi show
-reads the disks directly.
+ This patch adds -k|-K option to the btrfs fi show command
+ so that it reads from the kernel instead of from the
+ disks directly.
 
-Further the frame-work provided here would help to enhance
-the btrfs-progs/library to read the other fs information and
-its device information. Also the frame work provided here is
-easily extensible to retrieve any other structure as future
-needs.
+ This is done by adding new ioctl BTRFS_IOC_GET_FSIDS and
+ BTRFS_IOC_GET_DEVS to read the fs info and dev info from
+ the kernel.
+
+ This btrfs-progs changes are inline with the kernel
+ changes as in the patch
+    btrfs: add framework to read fs info and dev info from the kernel
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/super.c           | 87 ++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/volumes.c         | 86 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h         |  2 ++
- include/uapi/linux/btrfs.h | 58 ++++++++++++++++++++++++++++++-
- 4 files changed, 225 insertions(+), 8 deletions(-)
+ cmds-filesystem.c |  92 ++++++++++++++++++++++++++++++--
+ ioctl.h           |  60 ++++++++++++++++++++-
+ utils.c           | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h           |   2 +
+ 4 files changed, 303 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 68a29a1..582fa17 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1559,22 +1559,85 @@ static struct file_system_type btrfs_fs_type = {
- 	.fs_flags	= FS_REQUIRES_DEV,
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index f41a72a..d720ce6 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -22,6 +22,7 @@
+ #include <errno.h>
+ #include <uuid/uuid.h>
+ #include <ctype.h>
++#include <getopt.h>
+ 
+ #include "kerncompat.h"
+ #include "ctree.h"
+@@ -232,9 +233,11 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+ }
+ 
+ static const char * const cmd_show_usage[] = {
+-	"btrfs filesystem show [--all-devices] [<uuid>|<label>]",
++	"btrfs filesystem show [-k|K] [--all-devices] [<uuid>|<label>]",
+ 	"Show the structure of a filesystem",
+-	"If no argument is given, structure of all present filesystems is shown.",
++	"\tIf no argument is given, structure of all present filesystems is shown\n"
++	"\t-K would list both mounted and unmounted/stale btrfs as per kernel\n"
++	"\t-k would list mounted only btrfs as known to the kernel.\n",
+ 	NULL
  };
  
-+static size_t get_ioctl_sz(size_t pl_sz, u64 mul, u64 alloc_cnt)
-+{
-+	if (!alloc_cnt)
-+		return (sizeof(struct btrfs_ioctl_header) + pl_sz);
-+
-+	/* alloc_cnt which is set by the user must be
-+	 * multiple of mul
-+	 */
-+	if (alloc_cnt % mul)
-+		return -ENOTTY;
-+
-+	return (sizeof(struct btrfs_ioctl_header) + pl_sz * alloc_cnt/mul);
-+}
- /*
-  * used by btrfsctl to scan devices when no FS is mounted
-  */
- static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 				unsigned long arg)
- {
--	struct btrfs_ioctl_vol_args *vol;
-+	struct btrfs_ioctl_vol_args *vol = NULL;
+@@ -243,14 +246,97 @@ static int cmd_show(int argc, char **argv)
+ 	struct list_head *all_uuids;
  	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_ioctl_header *argp = NULL;
-+	struct btrfs_ioctl_fs_list *fslist;
-+	u64 cnt = 0;
- 	int ret = -ENOTTY;
-+	u64 sz = 0;
+ 	struct list_head *cur_uuid;
++
+ 	char *search = 0;
+-	int ret;
++	int ret, e;
+ 	int checklist = 1;
+ 	int searchstart = 1;
++	int dev_cnt;
++	int fsid_cnt;
++	int i, j, c;
++	int all = 0;
++	int kernel = 0;
++	char uuidparse[37];
++
  
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	vol = memdup_user((void __user *)arg, sizeof(*vol));
--	if (IS_ERR(vol))
--		return PTR_ERR(vol);
-+	switch (cmd) {
-+	case BTRFS_IOC_SCAN_DEV:
-+	case BTRFS_IOC_DEVICES_READY:
-+		vol = memdup_user((void __user *)arg, sizeof(*vol));
-+		if (IS_ERR(vol))
-+			return PTR_ERR(vol);
-+		break;
-+	case BTRFS_IOC_GET_FSIDS:
-+		sz = get_ioctl_sz(sizeof(struct btrfs_ioctl_fs_list), BTRFS_FSIDS_LEN, cnt);
-+		argp = memdup_user((void __user *)arg, sz);
-+
-+		if (IS_ERR(argp))
-+			return PTR_ERR(argp);
-+
-+		cnt = argp->count;
-+		if (cnt > BTRFS_FSIDS_LEN) {
-+			/* user has allocated more, so re-read
-+			 * by using the recomupted size
-+			*/
-+			kfree(argp);
-+			sz = get_ioctl_sz(sizeof(*fslist), BTRFS_FSIDS_LEN, cnt);
-+			argp = memdup_user((void __user *)arg, sz);
-+			if (IS_ERR(argp))
-+				return PTR_ERR(argp);
-+		}
-+		break;
-+	case BTRFS_IOC_GET_DEVS:
-+		sz = get_ioctl_sz(sizeof(struct btrfs_ioctl_dev_list), BTRFS_DEVS_LEN, cnt);
-+		argp = memdup_user((void __user *)arg, sz);
-+
-+		if (IS_ERR(argp))
-+			return PTR_ERR(argp);
-+
-+		cnt = argp->count;
-+		if (cnt > BTRFS_DEVS_LEN) {
-+			/* user has allocated more, so re-read
-+			 * by using the recomupted size
-+			*/
-+			sz = get_ioctl_sz(sizeof(struct btrfs_ioctl_dev_list),
-+					BTRFS_DEVS_LEN, cnt);
-+			kfree(argp);
-+			argp = memdup_user((void __user *)arg, sz);
-+			if (IS_ERR(argp))
-+				return PTR_ERR(argp);
-+		}
-+		break;
-+	default:
-+		return ret;
-+	}
- 
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
-@@ -1588,9 +1651,21 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 			break;
- 		ret = !(fs_devices->num_devices == fs_devices->total_devices);
- 		break;
-+	case BTRFS_IOC_GET_FSIDS:
-+		ret = btrfs_get_fsids(argp);
-+		if (ret == 0 && copy_to_user((void __user *)arg, argp, sz))
-+			ret = -EFAULT;
-+		break;
-+	case BTRFS_IOC_GET_DEVS:
-+		ret = btrfs_get_devs(argp);
-+		if (ret == 0 && copy_to_user((void __user *)arg, argp, sz))
-+			ret = -EFAULT;
-+		break;
- 	}
--
--	kfree(vol);
-+	if (cmd == BTRFS_IOC_GET_FSIDS)
-+		kfree(argp);
-+	else
-+		kfree(vol);
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5989a92..e15cb37 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1830,7 +1830,7 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
- }
- 
- /*
-- * strore the expected generation for seed devices in device items.
-+ * store the expected generation for seed devices in device items.
-  */
- static int btrfs_finish_sprout(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
-@@ -6004,3 +6004,87 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
- 
- 	return 0;
- }
-+
-+int btrfs_get_fsids(struct btrfs_ioctl_header *argp)
-+{
-+	u64 cnt = 0;
-+	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_ioctl_fs_list *fslist;
-+	struct btrfs_ioctl_fsinfo *fsinfo;
-+
-+	fslist = (struct btrfs_ioctl_fs_list *)((u8 *)argp + sizeof(*argp));
-+
-+	list_for_each_entry(fs_devices, &fs_uuids, list) {
-+		if (!fslist->all && !fs_devices->opened)
-+			continue;
-+		fsinfo = &fslist->fsinfo[cnt];
-+		if (cnt < argp->count) {
-+			memcpy(fsinfo->fsid, fs_devices->fsid,
-+					BTRFS_FSID_SIZE);
-+			fsinfo->num_devices = fs_devices->num_devices;
-+			fsinfo->missing_devices = fs_devices->missing_devices;
-+			fsinfo->total_rw_bytes = fs_devices->total_rw_bytes;
-+			fsinfo->total_devices = fs_devices->total_devices;
-+			if (fs_devices->opened)
-+				fsinfo->flags = BTRFS_FS_MOUNTED;
-+		}
-+		cnt++;
-+	}
-+	argp->count = cnt;
-+	return 0;
-+}
-+
-+int btrfs_get_devs(struct btrfs_ioctl_header *argp)
-+{
-+	u64 cnt = 0;
-+	u64 alloc_cnt = argp->count;
-+	struct btrfs_device *device;
-+	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_ioctl_dev_list *devlist;
-+	struct btrfs_ioctl_devinfo *dev;
-+
-+	devlist = (struct btrfs_ioctl_dev_list *)
-+					((u8 *)argp + sizeof(*argp));
-+
-+	/* Todo: optimize. there must be better way of doing this*/
-+	list_for_each_entry(fs_devices, &fs_uuids, list) {
-+		if (memcmp(devlist->fsid, fs_devices->fsid, BTRFS_FSID_SIZE))
-+			continue;
-+
-+		list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+			if (cnt < alloc_cnt) {
-+				dev = &devlist->dev[cnt];
-+				if (device->writeable)
-+					dev->flags = BTRFS_DEV_WRITEABLE;
-+				if (device->in_fs_metadata)
-+					dev->flags = dev->flags |
-+						BTRFS_DEV_IN_FS_MD;
-+				if (device->missing)
-+					dev->flags = dev->flags |
-+						BTRFS_DEV_MISSING;
-+				if (device->can_discard)
-+					dev->flags = dev->flags |
-+							BTRFS_DEV_CAN_DISCARD;
-+				if (device->is_tgtdev_for_dev_replace)
-+					dev->flags = dev->flags |
-+						BTRFS_DEV_SUBSTITUTED;
-+
-+				dev->devid = device->devid;
-+				dev->total_bytes = device->total_bytes;
-+				dev->disk_total_bytes = device->disk_total_bytes;
-+				dev->bytes_used = device->bytes_used;
-+				dev->type = device->type;
-+				dev->io_align = device->io_align;
-+				dev->io_width = device->io_width;
-+				dev->sector_size = device->sector_size;
-+				memcpy(dev->uuid, device->uuid, BTRFS_UUID_SIZE);
-+				memcpy(dev->name, rcu_str_deref(device->name),
-+						BTRFS_PATH_NAME_MAX);
+ 	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
+ 		checklist = 0;
+ 		searchstart += 1;
++	} else {
++		while (1) {
++			c = getopt(argc, argv, "kK");
++			if (c < 0)
++				break;
++			switch(c) {
++			case 'k':
++				kernel = 1;
++				all = 0;
++				break;
++			case 'K':
++				kernel = 1;
++				all = 1;
++				break;
++			default:
++				usage(cmd_show_usage);
 +			}
-+			cnt++;
 +		}
-+		break;
 +	}
-+	argp->count = cnt;
-+	return 0;
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 062d860..39422d0 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -364,4 +364,6 @@ static inline void btrfs_dev_stat_reset(struct btrfs_device *dev,
- {
- 	btrfs_dev_stat_set(dev, index, 0);
- }
-+int btrfs_get_fsids(struct btrfs_ioctl_header *fsid);
-+int btrfs_get_devs(struct btrfs_ioctl_header *argp);
- #endif
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index fa3a5f9..ce65e59 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -423,6 +423,59 @@ struct btrfs_ioctl_send_args {
- 	__u64 reserved[4];		/* in */
- };
++
++	if (kernel) {
++		struct btrfs_ioctl_devinfo *dev;
++		struct btrfs_ioctl_fs_list *fslist = NULL;
++		struct btrfs_ioctl_fsinfo *fsinfo;
++		struct btrfs_ioctl_dev_list *devlist = NULL;
++
++		fsid_cnt = scan_fsid(&fslist, all);
++		e = errno;
++		if (fsid_cnt < 0) {
++			printf("ERROR: scan for fs failed %d, - %s\n",
++				fsid_cnt, strerror(e));
++			exit(1);
++		}
++
++		if (!fsid_cnt) {
++			BUG_ON(fslist);
++			return 0;
++		}
++		for (i = 0; i < fsid_cnt; i++) {
++			fsinfo = &fslist->fsinfo[i];
++			dev_cnt = get_devs(&devlist, fsinfo->fsid);
++			e = errno;
++			if (dev_cnt < 0) {
++				free(fslist);
++				printf("Error: get_devs failed %d, - %s\n",
++					dev_cnt, strerror(e));
++				exit(1);
++			}
++			if (!dev_cnt)
++				continue;
++
++			uuid_unparse(fsinfo->fsid, uuidparse);
++			printf("\nfsid: %s ", uuidparse);
++			if (fsinfo->flags & BTRFS_FS_MOUNTED)
++				printf("(mounted)\n");
++			else
++				printf("(unmounted/stale)\n");
++
++			for (j = 0; j < dev_cnt; j++) {
++				dev = &devlist->dev[j];
++				uuid_unparse(dev->uuid, uuidparse);
++				printf("\t%llu %s %s", dev->devid, uuidparse, dev->name);
++				if (dev->flags & BTRFS_DEV_MISSING)
++					printf(" (missing)\n");
++				else
++					printf("\n");
++			}
++			if (devlist)
++				free(devlist);
++		}
++
++		if (fslist)
++			free(fslist);
++
++		return 0;
+ 	}
  
+ 	if (check_argc_max(argc, searchstart + 1))
+diff --git a/ioctl.h b/ioctl.h
+index 1ee631a..3908dac 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -441,6 +441,61 @@ struct btrfs_ioctl_qgroup_create_args {
+ 	__u64 create;
+ 	__u64 qgroupid;
+ };
++
 +/* ioctl header */
 +struct btrfs_ioctl_header {
 +	__u64 sz_self;	/* in/out */
 +	__u64 sz;	/* in/out */
 +	__u64 count;	/* in/out */
-+}__attribute__ ((__packed__));
++} __attribute__ ((__packed__));
 +
 +/* ioctl payloads */
 +#define BTRFS_FSIDS_LEN	16
@@ -307,13 +203,14 @@ index fa3a5f9..ce65e59 100644
 +	__u64 total_rw_bytes;
 +	__u64 total_devices;
 +	__u64 flags;
-+}__attribute__ ((__packed__));
++} __attribute__ ((__packed__));
 +
 +struct btrfs_ioctl_fs_list {
 +	__u64 all; /* in */
 +	struct btrfs_ioctl_fsinfo fsinfo[BTRFS_FSIDS_LEN]; /* out */
-+}__attribute__ ((__packed__));
++} __attribute__ ((__packed__));
 +
++/* flags below */
 +#define BTRFS_DEVS_LEN	16
 +#define BTRFS_DEV_WRITEABLE	(1LLU << 0)
 +#define BTRFS_DEV_IN_FS_MD	(1LLU << 1)
@@ -334,17 +231,17 @@ index fa3a5f9..ce65e59 100644
 +	__u32 sector_size;
 +	__u8 uuid[BTRFS_UUID_SIZE];
 +	__u8 name[BTRFS_PATH_NAME_MAX + 1];
-+}__attribute__ ((__packed__));
++} __attribute__ ((__packed__));
 +
 +struct btrfs_ioctl_dev_list {
 +	__u8 fsid[BTRFS_FSID_SIZE]; /* in */
 +	struct btrfs_ioctl_devinfo dev[BTRFS_DEVS_LEN]; /* out */
-+}__attribute__ ((__packed__));
++} __attribute__ ((__packed__));
 +
  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -510,5 +563,8 @@ struct btrfs_ioctl_send_args {
+@@ -536,7 +591,10 @@ struct btrfs_ioctl_clone_range_args {
  				      struct btrfs_ioctl_get_dev_stats)
  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
  				    struct btrfs_ioctl_dev_replace_args)
@@ -353,7 +250,182 @@ index fa3a5f9..ce65e59 100644
 +				     struct btrfs_ioctl_header)
 +#define BTRFS_IOC_GET_DEVS _IOWR(BTRFS_IOCTL_MAGIC, 55, \
 +				     struct btrfs_ioctl_header)
- #endif /* _UAPI_LINUX_BTRFS_H */
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/utils.c b/utils.c
+index 7b4cd74..aaebc60 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1807,3 +1807,156 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
+ 	close(fd);
+ 	return 0;
+ }
++
++static struct btrfs_ioctl_header * alloc_ioctl_payload(void **plp,
++		size_t *sz_pl, __u64 mul, __u64 rq_len)
++{
++	struct btrfs_ioctl_header *header;
++	size_t sz;
++	__u64 cnt = 1;
++
++	if (rq_len)
++		cnt = rq_len/mul + ((rq_len % mul) ? 1 : 0);
++
++	*sz_pl = *sz_pl * cnt;
++	sz = sizeof(*header) + *sz_pl;
++	header = malloc(sz);
++	if (!header)
++		return NULL;
++
++	memset(header, 0, sz);
++	header->count = mul * cnt;
++	*plp = ((__u8 *)header) + sizeof(*header);
++
++	return header;
++}
++
++/* scans for fsid(s) in the kernel using the btrfs-control
++ * interface.
++ * returns:
++ * > 0 : Success, and number indicates number of fsid(s) found,
++ *       out_fslist points to the fsid(s)
++ *       the caller must free out_fslist when it is not null
++ * 0   : when no fsid is found, but successful
++ * < 0 : upon error
++ */
++int scan_fsid(struct btrfs_ioctl_fs_list **out_fslist, int all)
++{
++	int res, fd, e;
++	struct btrfs_ioctl_header *argp;
++	struct btrfs_ioctl_fs_list *fslist;
++	__u64 alloc_cnt;
++	size_t pl_sz;
++	__u64 req_cnt = 1;
++
++	*out_fslist = NULL;
++	fd = open("/dev/btrfs-control", O_RDWR);
++	e = errno;
++	if (fd < 0) {
++		perror("failed to open /dev/btrfs-control");
++		return -e;
++	}
++
++	pl_sz = sizeof(*fslist);
++again:
++	argp = alloc_ioctl_payload((void **)&fslist, &pl_sz, BTRFS_FSIDS_LEN, req_cnt);
++	if (!argp) {
++		close(fd);
++		return -ENOMEM;
++	}
++	fslist->all = all;
++	alloc_cnt = argp->count;
++	res = ioctl(fd, BTRFS_IOC_GET_FSIDS, argp);
++	e = errno;
++	if (res) {
++		printf("ERROR: scan_fsid ioctl failed %d - %s\n",
++			res, strerror(e));
++		goto out;
++	}
++	/* ioctl returns fsid count in count parameter*/
++	req_cnt = argp->count;
++	if (req_cnt > alloc_cnt) {
++		/* if kernel has more than initially alloc-ed count
++		 * then alloc more chunk then call ioctl again
++		*/
++		free(argp);
++		goto again;
++	}
++	if (!req_cnt)
++		goto out;
++	*out_fslist = malloc(pl_sz);
++	if (!*out_fslist) {
++		res = -ENOMEM;
++		goto out;
++	}
++	memcpy(*out_fslist, fslist, pl_sz);
++out:
++	free(argp);
++	close(fd);
++	return req_cnt;
++}
++
++/* scans for devs for a given fsid in the kernel using the
++ * btrfs-control interface.
++ * returns:
++ * > 0 : for success, and number indicates number of devs found,
++ *       out_devlist points to the devs
++ *       the caller must free out_devlist when it is not null
++ * 0   : when no dev is found, but successful
++ * < 0 : upon error
++ */
++int get_devs(struct btrfs_ioctl_dev_list **out_devlist, __u8 *fsid)
++{
++	int res, fd, e;
++	struct btrfs_ioctl_header *argp;
++	struct btrfs_ioctl_dev_list *devlist;
++	__u64 alloc_cnt;
++	size_t pl_sz = 0;
++	__u64 req_cnt = 1;
++
++	*out_devlist = NULL;
++	fd = open("/dev/btrfs-control", O_RDWR);
++	e = errno;
++	if (fd < 0) {
++		perror("failed to open /dev/btrfs-control");
++		return -e;
++	}
++
++	pl_sz = sizeof(*devlist);
++again:
++	argp = alloc_ioctl_payload((void **)&devlist, &pl_sz, BTRFS_DEVS_LEN, req_cnt);
++	if (!argp) {
++		close(fd);
++		return -ENOMEM;
++	}
++	memcpy(&devlist->fsid, fsid, BTRFS_FSID_SIZE);
++	alloc_cnt = argp->count;
++	res = ioctl(fd, BTRFS_IOC_GET_DEVS, argp);
++	e = errno;
++	if (res) {
++		printf("ERROR: scan_fsid ioctl failed %d - %s\n",
++			res, strerror(e));
++		goto out;
++	}
++	/* ioctl returns fsid count in count parameter*/
++	req_cnt = argp->count;
++	if (req_cnt > alloc_cnt) {
++		/* if kernel has more than initially alloc-ed count
++		 * then alloc more chunk then call ioctl again
++		*/
++		free(argp);
++		goto again;
++	}
++	if (!req_cnt)
++		goto out;
++	*out_devlist = malloc(pl_sz);
++	if (!*out_devlist) {
++		res = -ENOMEM;
++		goto out;
++	}
++	memcpy(*out_devlist, devlist, pl_sz);
++out:
++	free(argp);
++	close(fd);
++	return req_cnt;
++}
+diff --git a/utils.h b/utils.h
+index 3c17e14..6cb1acf 100644
+--- a/utils.h
++++ b/utils.h
+@@ -65,5 +65,7 @@ u64 btrfs_device_size(int fd, struct stat *st);
+ /* Helper to always get proper size of the destination string */
+ #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
+ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr);
++int scan_fsid(struct btrfs_ioctl_fs_list **fslist, int all);
++int get_devs(struct btrfs_ioctl_dev_list **devlist, __u8 *fsid);
+ 
+ #endif
 -- 
 1.8.1.227.g44fe835
 

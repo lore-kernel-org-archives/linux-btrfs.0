@@ -1,69 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:56813 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750893Ab3EJHBn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 May 2013 03:01:43 -0400
-Message-ID: <518C9B55.3050008@jan-o-sch.net>
-Date: Fri, 10 May 2013 09:01:41 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:27867 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751343Ab3EJH1T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 May 2013 03:27:19 -0400
+Message-ID: <518CA154.20603@gmx.net>
+Date: Fri, 10 May 2013 09:27:16 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: hard freezes with 3.9.0 during io-intensive loads
-References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx> <51889A4D.8000201@jan-o-sch.net> <ch7o5a-g0b.ln1@hurikhan.ath.cx> <7jio5a-b5g.ln1@hurikhan.ath.cx> <518A318A.7060105@jan-o-sch.net> <15ot5a-f1m.ln1@hurikhan.ath.cx>
-In-Reply-To: <15ot5a-f1m.ln1@hurikhan.ath.cx>
+To: Remco Hosman - Yerf IT <remco@yerf-it.nl>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: `btrfs receive` almost coming to a halt
+References: <01E9FDE0-15C1-429C-AE54-B3A6CAFD7C3B@yerf-it.nl>
+In-Reply-To: <01E9FDE0-15C1-429C-AE54-B3A6CAFD7C3B@yerf-it.nl>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 10, 2013 at 01:30 (+0200), Kai Krakow wrote:
-> Jan Schmidt <list.btrfs@jan-o-sch.net> schrieb:
+On 09.05.2013 17:14, Remco Hosman - Yerf IT wrote:
+> kernel: 3.9.0
+> btrfs-progs: pulled from git this morning
 > 
->>> Apparently, it's not fixed. The system does not freeze now but it threw
->>> multiple backtraces right in front of my Xorg session. The backtraces
->>> look a little bit different now. Here's what I got:
->>>
->>> https://gist.github.com/kakra/8a340f006d01e146865d
->>>
->>> Occurence while running "bedup dedup --defrag --size-cutoff
->>> $((1024*1024))" which was currently dedup'ing my backup volume with daily
->>> snapshots filled by "rsync --inplace" - so I suppose some file contents
->>> are pretty scattered.
->>
->> At least that looks different for now. I'm not certain about all the fixes
->> in btrfs-next. Can you give it a try and bisect if btrfs-next is good?
->> That would be really helpful.
+> Trying to receive a 5gig send file. the first bit is fast, doing 10 - 50MB/sec.
+> then it slows down. cpu usage is 50% (dual core machine).
+> when i do a strace, it looks like this, repeating over an over, about 1 piece each second:
+> --
+> read(3, "q\0\0\0\20\0008\352\327o", 10) = 10
+> read(3, "\22\0\10\0\0\0$~\0\0\0\0\30\0\10\0\0\0\2\0\0\0\0\0\17\0\24\0DB2/"..., 113) = 113
+> open("/media/snaps/yerf-2013-05-02-03:15:01/DB2/DB2-flat.vmdk", O_RDONLY|O_NOATIME) = 6
+> ioctl(5, 0x4020940d, 0x7fffc6d41c60)    = 0
+> close(6)                                = 0
+> read(3, "q\0\0\0\20\0\242>\357\263", 10) = 10
+> read(3, "\22\0\10\0\0\0&~\0\0\0\0\30\0\10\0\0\0\2\0\0\0\0\0\17\0\24\0DB2/"..., 113) = 113
+> open("/media/snaps/yerf-2013-05-02-03:15:01/DB2/DB2-flat.vmdk", O_RDONLY|O_NOATIME) = 6
+> ioctl(5, 0x4020940d, 0x7fffc6d41c60)    = 0
+> close(6)                                = 0
+> --
 > 
-> I'd prefer to not bisect my production system kernel... That will probably 
-> take ages as running the "reproducable test" takes about 30-60 minutes 
-> before the problem hits my system. At least unless you had a suggestion how 
-> to speed up the process... ;-)
 
-I see, hoped it would be something quicker.
+Is this the receive side?
+Where does the data come from, a local file or via network?
 
-> I saw the pull request with those fixes, so I supsect it didn't go into 
-> 3.9.1 but rather will go into 3.9.2?
+-Arne
 
-Probably. However, those patches obviously weren't enough to solve your problem.
-We don't submit a lot of things to stable, so they are likely to remain the only
-btrfs related changes in there, which would mean it is unlikely to help with
-your problem.
+> it pauses for a second after "ioctl(5, 0x4020940d"
+> it has been running like that for 3 hours now.
+> the file its working is large (80gig) and filefrag reports 648862 extends.
+> filesystem is mounted with rw,relatime,compress-force=lzo,space_cache
+> 
+> anything i can do to see what the problem is?
+> 
+> Remco--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-We can try to debug that further, you can send me / upload the output of
-
-   btrfs-image -c9 /dev/whatever blah.img
-
-built from Josef's repository
-
-   git://github.com/josefbacik/btrfs-progs.git
-
-It contains all your metadata (like file names), data is omitted from the dump.
-
-> I probably wait and just do not run the dedup process until I have 3.9.2 
-> installed. The backup works with occassional hiccups, the system very very 
-> sometimes freezes but I almost always see the backtraces in dmesg after 
-> backup. Let's see if it's all gone in 3.9.2.
-
-It's always an alternative to hope for the best :-)
-
--Jan

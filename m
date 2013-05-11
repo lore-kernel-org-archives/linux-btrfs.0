@@ -1,123 +1,244 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:41770 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755881Ab3EJVqV (ORCPT
+Received: from linux-libre.fsfla.org ([208.118.235.54]:48532 "EHLO
+	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752593Ab3EKHZ0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 May 2013 17:46:21 -0400
-Date: Fri, 10 May 2013 22:46:18 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Marcus =?iso-8859-1?Q?L=F6vgren?= <marcuslvgrn@gmail.com>
-Cc: Remco Hosman - Yerf IT <remco@yerf-it.nl>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs balance invalid argument error
-Message-ID: <20130510214618.GG26072@carfax.org.uk>
-References: <CAB_++mrnzWd9BNHMEK=k7rVdV1x+VjX7JW2ANnEaJ_i1PG-rUA@mail.gmail.com>
- <20130510202126.GE26072@carfax.org.uk>
- <2549B5BE-9254-4E57-A7F1-82CAD2EE0E30@yerf-it.nl>
- <CAB_++moSXQVBq=dLKHiUk3acL6Rhn9r1BAdPAFb+FphrzjHD2Q@mail.gmail.com>
+	Sat, 11 May 2013 03:25:26 -0400
+From: Alexandre Oliva <oliva@gnu.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: I/O errors block the entire filesystem
+References: <orhajmb7kc.fsf@livre.home>
+Date: Sat, 11 May 2013 04:16:38 -0300
+In-Reply-To: <orhajmb7kc.fsf@livre.home> (Alexandre Oliva's message of "Thu,
+	04 Apr 2013 13:10:27 -0300")
+Message-ID: <orhaiax9yh.fsf@livre.home>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="RMedoP2+Pr6Rq0N2"
-In-Reply-To: <CAB_++moSXQVBq=dLKHiUk3acL6Rhn9r1BAdPAFb+FphrzjHD2Q@mail.gmail.com>
+Content-Type: multipart/mixed; boundary="=-=-="
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--=-=-=
 
---RMedoP2+Pr6Rq0N2
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Apr  4, 2013, Alexandre Oliva <oliva@gnu.org> wrote:
 
-On Fri, May 10, 2013 at 11:43:34PM +0200, Marcus L=F6vgren wrote:
-> Yes, you were right! Adding another drive to the array made it continue
-> without errors. Is this already reported as a bug?
+> I've been trying to figure out the btrfs I/O stack to try to understand
+> why, sometimes (but not always), after a failure to read a (data
+> non-replicated) block from the disk, the file being accessed becomes
+> permanently locked, and the filesystem, unmountable.
 
-   I believe it has been, yes. I think we've even had a patch out for
-it. I haven't looked to see if it's got into 3.10.
+So, after some further investigation, we could determine that the
+problem was that end_bio_extent_readpage would unlock_extent_cached only
+part of the page, because it had previously computed whole_page as zero
+because of the nonzero bv_offset.
 
-   Hugo.
+So I started hunting for some place that would set up the bio with
+partial pages, and I failed.
 
-> Thanks for the help,
-> Marcus
->=20
->=20
-> 2013/5/10 Remco Hosman - Yerf IT <remco@yerf-it.nl>
->=20
-> > On May 10, 2013, at 10:21 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> >
-> > > On Fri, May 10, 2013 at 10:07:56PM +0200, Marcus L=F6vgren wrote:
-> > >> Hi list,
-> > >>
-> > >> I am using kernel 3.9.0, btrfs-progs 0.20-rc1-253-g7854c8b.
-> > >>
-> > >> I have a three disk array of level single:
-> > >>
-> > >> # btrfs fi sh
-> > >> Label: none  uuid: 2e905f8f-e525-4114-afa6-cce48f77b629
-> > >>        Total devices 3 FS bytes used 3.80TB
-> > >>        devid    1 size 2.73TB used 2.25TB path /dev/sdd
-> > >>        devid    2 size 2.73TB used 1.55TB path /dev/sdc
-> > >>        devid    3 size 2.73TB used 0.00 path /dev/sdb
-> > >>
-> > >> Btrfs v0.20-rc1-253-g7854c8b
-> > >>
-> > >> # btrfs fi df /mnt/data
-> > >> Data: total=3D3.79TB, used=3D3.79TB
-> > >> System: total=3D4.00MB, used=3D420.00KB
-> > >> Metadata: total=3D6.01GB, used=3D4.87GB
-> > >>
-> > >>
-> > >> When running
-> > >> # btrfs balance start -dconvert=3Draid5 -mconvert=3Draid5 /mnt/data
-> > >>
-> > >> I get
-> > >>
-> > >> ERROR: error during balancing '/mnt/data' - Invalid argument
-> > >> There may be more info in syslog - try dmesg | tail
-> > >>
-> > >> dmesg | tail says:
-> > >>
-> > >> btrfs: unable to start balance with target data profile 128
-> > >>
-> > >> Isn't it possible to convert raid level to raid5?
-> > >
-> > >   Yes, it should be possible. It looks like the kernel's got a
-> > > problem with it, which is odd because 3.9 should know about RAID-5.
-> > >
-> >
-> > Wasn't there some issues that the kernel or tools wanted 4 disks when
-> > converting to raid5?
-> >
-> > Remco
-> >
-> > >   Hugo.
-> > >
+I was already suspecting some race condition or other form of corruption
+of the bvec before it got to end_bio_extent_readpage when I realized
+that the bv_offset was always a multiple of 512 bytes, and it
+represented the offset into the 4KiB page that the sector that failed to
+read was going to occupy.
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                       --- Strive for apathy! ---                       =20
+So I started hunting for places that modified bv_offset, and I found
+blk_update_request in fs/blk-core.c, where the very error message
+reporting the failed sector was output.
 
---RMedoP2+Pr6Rq0N2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+The conclusion is that we cannot assume bvec is unmodified between our
+submitting the bio and our getting an error back.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+OTOH, I don't see that we ever set up bvecs that do not correspond to
+whole pages.  Indeed, my attempts to catch such situations with a
+wrapper around bio_add_page got no hits whatsoever, which suggests we
+could just do away with the whole_page computation, and take
+bv_offset+bv_len == PAGE_CACHE_SIZE as the requested read size.
 
-iQIVAwUBUY1qqlheFHXiqx3kAQKxYRAAj4EKUiICdawSuzozOE7PwSVVvf7CH9HH
-iUSFAF4gNK2dXyenbNMG6Pon1lUMGjN62Ot3KUKvabFc6+93QW8dN2YYOQEuIZZT
-nKvwaCgs/t+2iz2i4piXqupWXQWBbD2iVEWY9P7OlMMObc0IGha72oZMwJyQalc4
-X5wPkFrebLYfqb4OOJxqd1VGAjH5CwJSTsIIMPwAeFiicaBJ0kidXCF1TrupTY4P
-bawQIf255l+B8HCJ2IdF4PEX616q1pHxY5ee8/BrhgvRGPx02RTF8x+br/2PxZC8
-ceExP4877XjgHYIeNFSWptZtYGB20HL7saCjvbfn4Jj3maywR0dz893HyNgWBDGX
-shHaUKmmrNbsc3Iz7q/5eVqEJKx7fRbfbNbQwG/uuLwOHEvTUh5wXazgiKe1s5jd
-gOIhkJQTyJd7mp8USliGWRCIlALFLNNIAHP39k5JpWQWVoRFQb5OupkqxBLGoSsV
-xbI0Xiridm4rTOvKYhNuS5ClluHkS0UAj136nSQNQs57tMfSfeL8f3KfkrTAHdUs
-Lpt4wO9B6kyU9+HIsdn5JGDLcwdvWzzFOhMs4SMP3IIb4P1d077p5epFbJBAuxWM
-7TniDP6/7tMEnf3cJ/C+ELOu1dUktwbpy+vqDrDKCZpvhBL6xiQysBuif7RsU2pP
-WwTGCHj1Jpo=
-=pj34
------END PGP SIGNATURE-----
+With this patch, after a read error, I get an EIO rather than a process
+hang that causes further attempts to access the file to hang, generally
+in a non-interruptible way.  Yay!
 
---RMedoP2+Pr6Rq0N2--
+
+
+--=-=-=
+Content-Type: text/x-diff
+Content-Disposition: inline; filename=always-whole-pages.patch
+
+btrfs: do away with non-whole_page extent I/O
+
+From: Alexandre Oliva <oliva@gnu.org>
+
+end_bio_extent_readpage computes whole_page based on bv_offset and
+bv_len, without taking into account that blk_update_request may modify
+them when some of the blocks to be read into a page produce a read
+error.  This would cause the read to unlock only part of the file
+range associated with the page, which would in turn leave the entire
+page locked, which would not only keep the process blocked instead of
+returning -EIO to it, but also prevent any further access to the file.
+
+It turns out that btrfs always issues whole-page reads and writes.
+The special handling of non-whole_page appears to be a mistake or a
+left-over from a time when this wasn't the case.  Indeed,
+end_bio_extent_writepage distinguished between whole_page and
+non-whole_page writes but behaved identically in both cases!
+
+I've replaced the whole_page computations with warnings, just to be
+sure that we're not issuing partial page reads or writes.  The
+warnings should probably just go away some time.
+
+Signed-off-by: Alexandre Oliva <oliva@gnu.org>
+---
+ fs/btrfs/extent_io.c |   85 ++++++++++++++++++--------------------------------
+ 1 file changed, 30 insertions(+), 55 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index cdee391..f44b033 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1873,28 +1873,6 @@ static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
+ }
+ 
+ /*
+- * helper function to unlock a page if all the extents in the tree
+- * for that page are unlocked
+- */
+-static void check_page_locked(struct extent_io_tree *tree, struct page *page)
+-{
+-	u64 start = page_offset(page);
+-	u64 end = start + PAGE_CACHE_SIZE - 1;
+-	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL))
+-		unlock_page(page);
+-}
+-
+-/*
+- * helper function to end page writeback if all the extents
+- * in the tree for that page are done with writeback
+- */
+-static void check_page_writeback(struct extent_io_tree *tree,
+-				 struct page *page)
+-{
+-	end_page_writeback(page);
+-}
+-
+-/*
+  * When IO fails, either with EIO or csum verification fails, we
+  * try other mirrors that might have a good copy of the data.  This
+  * io_failure_record is used to record state as we go through all the
+@@ -2323,19 +2301,24 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+-	int whole_page;
+ 
+ 	do {
+ 		struct page *page = bvec->bv_page;
+ 		tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+-		start = page_offset(page) + bvec->bv_offset;
+-		end = start + bvec->bv_len - 1;
++		/* We always issue full-page reads, but if some block
++		 * in a page fails to read, blk_update_request() will
++		 * advance bv_offset and adjust bv_len to compensate.
++		 * Print a warning for nonzero offsets, and an error
++		 * if they don't add up to a full page.  */
++		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE)
++			printk("%s page write in btrfs with offset %u and length %u\n",
++			       bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE
++			       ? KERN_ERR "partial" : KERN_INFO "incomplete",
++			       bvec->bv_offset, bvec->bv_len);
+ 
+-		if (bvec->bv_offset == 0 && bvec->bv_len == PAGE_CACHE_SIZE)
+-			whole_page = 1;
+-		else
+-			whole_page = 0;
++		start = page_offset(page);
++		end = start + bvec->bv_offset + bvec->bv_len - 1;
+ 
+ 		if (--bvec >= bio->bi_io_vec)
+ 			prefetchw(&bvec->bv_page->flags);
+@@ -2343,10 +2326,7 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 		if (end_extent_writepage(page, err, start, end))
+ 			continue;
+ 
+-		if (whole_page)
+-			end_page_writeback(page);
+-		else
+-			check_page_writeback(tree, page);
++		end_page_writeback(page);
+ 	} while (bvec >= bio->bi_io_vec);
+ 
+ 	bio_put(bio);
+@@ -2371,7 +2351,6 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+-	int whole_page;
+ 	int mirror;
+ 	int ret;
+ 
+@@ -2388,13 +2367,19 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			 (long int)bio->bi_bdev);
+ 		tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+-		start = page_offset(page) + bvec->bv_offset;
+-		end = start + bvec->bv_len - 1;
++		/* We always issue full-page reads, but if some block
++		 * in a page fails to read, blk_update_request() will
++		 * advance bv_offset and adjust bv_len to compensate.
++		 * Print a warning for nonzero offsets, and an error
++		 * if they don't add up to a full page.  */
++		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE)
++			printk("%s page read in btrfs with offset %u and length %u\n",
++			       bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE
++			       ? KERN_ERR "partial" : KERN_INFO "incomplete",
++			       bvec->bv_offset, bvec->bv_len);
+ 
+-		if (bvec->bv_offset == 0 && bvec->bv_len == PAGE_CACHE_SIZE)
+-			whole_page = 1;
+-		else
+-			whole_page = 0;
++		start = page_offset(page);
++		end = start + bvec->bv_offset + bvec->bv_len - 1;
+ 
+ 		if (++bvec <= bvec_end)
+ 			prefetchw(&bvec->bv_page->flags);
+@@ -2453,23 +2438,13 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 		}
+ 		unlock_extent_cached(tree, start, end, &cached, GFP_ATOMIC);
+ 
+-		if (whole_page) {
+-			if (uptodate) {
+-				SetPageUptodate(page);
+-			} else {
+-				ClearPageUptodate(page);
+-				SetPageError(page);
+-			}
+-			unlock_page(page);
++		if (uptodate) {
++			SetPageUptodate(page);
+ 		} else {
+-			if (uptodate) {
+-				check_page_uptodate(tree, page);
+-			} else {
+-				ClearPageUptodate(page);
+-				SetPageError(page);
+-			}
+-			check_page_locked(tree, page);
++			ClearPageUptodate(page);
++			SetPageError(page);
+ 		}
++		unlock_page(page);
+ 	} while (bvec <= bvec_end);
+ 
+ 	bio_put(bio);
+
+--=-=-=
+
+
+-- 
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer
+
+--=-=-=--

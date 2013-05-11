@@ -1,44 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.39.gs ([212.13.216.70]:41202 "EHLO mail.39.gs"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750924Ab3EKLhs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 May 2013 07:37:48 -0400
-Received: from mail.39.gs (unknown [212.13.216.70])
-	by mail.39.gs (Postfix) with ESMTPA id CB119813E2
-	for <linux-btrfs@vger.kernel.org>; Sat, 11 May 2013 12:27:09 +0100 (BST)
+Received: from mail-vb0-f51.google.com ([209.85.212.51]:61040 "EHLO
+	mail-vb0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751921Ab3EKM12 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 May 2013 08:27:28 -0400
+Received: by mail-vb0-f51.google.com with SMTP id x16so4067271vbf.24
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 May 2013 05:27:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Sat, 11 May 2013 12:27:09 +0100
-From: Tim Eggleston <lists@timeggleston.co.uk>
+Date: Sat, 11 May 2013 14:27:27 +0200
+Message-ID: <CAFvQSYSQGiw74PV0HRHw4zoYre1qwOQ0DnMRwWB1e69tcXd1OQ@mail.gmail.com>
+Subject: "unlinked 10 orphans" - something to worry about?
+From: Clemens Eisserer <linuxhippy@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Defragmentation of large files
-Message-ID: <7f41ae131c619b653da281429fcead79@mail.39.gs>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list,
+Hi,
 
-I have a few large image files (VMware workstation VMDKs and TrueCrypt 
-containers) which I routinely back up over the network to a btrfs raid10 
-volume via bigsync (https://code.google.com/p/bigsync/).
+I frequently get messages like "unlinked 10 orphans" in syslog
+(running linux 3.9.1), although I have never had a power outage nor a
+kernel crash.
+Is this something to worry about, or just a usual clean-up information?
 
-The VM images in particular get really fragmented due to CoW, which is 
-expected. I haven't yet switched off CoW on the backups directory mainly 
-to experiment and see what would happen. So doing that would be an 
-acceptable solution to my issue below, but I'm curious as to what's 
-happening.
-
-Filefrag reports that a VM image file has 4744 extents. If I run btrfs 
-fi defrag -v /path/to/file.vmdk, it returns immediately with no messages 
-but an exit status of 20, and running filefrag again shows that no 
-defragmentation has taken place.
-
-This is on Ubuntu 13.04, kernel 3.9.0-rc8 and v0.20-rc1 of the tools, 
-and the file in the example is 34GB.
-
-Any ideas what's happening here?
-
-Cheers,
-
-  ---tim
+Thank you in advance, Clemens

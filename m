@@ -1,47 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35160 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754149Ab3EKKIV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 May 2013 06:08:21 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ub6iw-0000rb-Am
-	for linux-btrfs@vger.kernel.org; Sat, 11 May 2013 12:08:18 +0200
-Received: from dyndsl-080-228-191-017.ewe-ip-backbone.de ([80.228.191.17])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 May 2013 12:08:18 +0200
-Received: from hurikhan77+btrfs by dyndsl-080-228-191-017.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 May 2013 12:08:18 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: hard freezes with 3.9.0 during io-intensive loads
-Date: Sat, 11 May 2013 12:01:55 +0200
-Message-ID: <khh16a-3ja.ln1@hurikhan.ath.cx>
-References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx> <51889A4D.8000201@jan-o-sch.net> <ch7o5a-g0b.ln1@hurikhan.ath.cx> <7jio5a-b5g.ln1@hurikhan.ath.cx> <518A318A.7060105@jan-o-sch.net> <15ot5a-f1m.ln1@hurikhan.ath.cx> <518C9B55.3050008@jan-o-sch.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mail-ea0-f171.google.com ([209.85.215.171]:46786 "EHLO
+	mail-ea0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751369Ab3EKKOa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 May 2013 06:14:30 -0400
+Received: by mail-ea0-f171.google.com with SMTP id b15so839850eae.30
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 May 2013 03:14:29 -0700 (PDT)
+Message-ID: <518E1A00.8000401@gmail.com>
+Date: Sat, 11 May 2013 12:14:24 +0200
+From: Andreas Philipp <philipp.andreas@gmail.com>
+MIME-Version: 1.0
+To: Hugo Mills <hugo@carfax.org.uk>,
+        =?ISO-8859-1?Q?Marcus_L=F6vgren?= <marcuslvgrn@gmail.com>,
+        Remco Hosman - Yerf IT <remco@yerf-it.nl>, linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs balance invalid argument error
+References: <CAB_++mrnzWd9BNHMEK=k7rVdV1x+VjX7JW2ANnEaJ_i1PG-rUA@mail.gmail.com> <20130510202126.GE26072@carfax.org.uk> <2549B5BE-9254-4E57-A7F1-82CAD2EE0E30@yerf-it.nl> <CAB_++moSXQVBq=dLKHiUk3acL6Rhn9r1BAdPAFb+FphrzjHD2Q@mail.gmail.com> <20130510214618.GG26072@carfax.org.uk>
+In-Reply-To: <20130510214618.GG26072@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Schmidt <list.btrfs@jan-o-sch.net> schrieb:
 
-> We can try to debug that further, you can send me / upload the output of
-> 
->    btrfs-image -c9 /dev/whatever blah.img
-> 
-> built from Josef's repository
-> 
->    git://github.com/josefbacik/btrfs-progs.git
-> 
-> It contains all your metadata (like file names), data is omitted from the
-> dump.
+On 05/10/2013 11:46 PM, Hugo Mills wrote:
+> On Fri, May 10, 2013 at 11:43:34PM +0200, Marcus Lövgren wrote:
+>> Yes, you were right! Adding another drive to the array made it continue
+>> without errors. Is this already reported as a bug?
+>
+>    I believe it has been, yes. I think we've even had a patch out for
+> it. I haven't looked to see if it's got into 3.10.
+>
+Yes, there is a patch but as far as I've seen it didn't hit 3.10 (yet).
+I'll repost it immediately.
 
-How do I create that image? Is it possible to use it on mounted volumes? If 
-yes, is it possible to write the image to the volume I'm creating the image 
-of?
+Thanks for reminding me on that,
+Andreas
 
-Thanks,
-Kai
+>    Hugo.
+>
+>> Thanks for the help,
+>> Marcus
+>>
+>>
+>> 2013/5/10 Remco Hosman - Yerf IT <remco@yerf-it.nl>
+>>
+>>> On May 10, 2013, at 10:21 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>>>
+>>>> On Fri, May 10, 2013 at 10:07:56PM +0200, Marcus Lövgren wrote:
+>>>>> Hi list,
+>>>>>
+>>>>> I am using kernel 3.9.0, btrfs-progs 0.20-rc1-253-g7854c8b.
+>>>>>
+>>>>> I have a three disk array of level single:
+>>>>>
+>>>>> # btrfs fi sh
+>>>>> Label: none  uuid: 2e905f8f-e525-4114-afa6-cce48f77b629
+>>>>>        Total devices 3 FS bytes used 3.80TB
+>>>>>        devid    1 size 2.73TB used 2.25TB path /dev/sdd
+>>>>>        devid    2 size 2.73TB used 1.55TB path /dev/sdc
+>>>>>        devid    3 size 2.73TB used 0.00 path /dev/sdb
+>>>>>
+>>>>> Btrfs v0.20-rc1-253-g7854c8b
+>>>>>
+>>>>> # btrfs fi df /mnt/data
+>>>>> Data: total=3.79TB, used=3.79TB
+>>>>> System: total=4.00MB, used=420.00KB
+>>>>> Metadata: total=6.01GB, used=4.87GB
+>>>>>
+>>>>>
+>>>>> When running
+>>>>> # btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/data
+>>>>>
+>>>>> I get
+>>>>>
+>>>>> ERROR: error during balancing '/mnt/data' - Invalid argument
+>>>>> There may be more info in syslog - try dmesg | tail
+>>>>>
+>>>>> dmesg | tail says:
+>>>>>
+>>>>> btrfs: unable to start balance with target data profile 128
+>>>>>
+>>>>> Isn't it possible to convert raid level to raid5?
+>>>>
+>>>>   Yes, it should be possible. It looks like the kernel's got a
+>>>> problem with it, which is odd because 3.9 should know about RAID-5.
+>>>>
+>>>
+>>> Wasn't there some issues that the kernel or tools wanted 4 disks when
+>>> converting to raid5?
+>>>
+>>> Remco
+>>>
+>>>>   Hugo.
+>>>>
+>
+
 

@@ -1,81 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f176.google.com ([209.85.214.176]:46251 "EHLO
-	mail-ob0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754238Ab3EMIeE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 May 2013 04:34:04 -0400
-Received: by mail-ob0-f176.google.com with SMTP id wc20so6253747obb.21
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2013 01:34:04 -0700 (PDT)
-Received: from mail-oa0-f45.google.com (mail-oa0-f45.google.com [209.85.219.45])
-        by mx.google.com with ESMTPSA id eq4sm15350254obb.5.2013.05.13.01.34.02
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Mon, 13 May 2013 01:34:02 -0700 (PDT)
-Received: by mail-oa0-f45.google.com with SMTP id j6so6193314oag.18
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2013 01:34:02 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20130508204758.GU12414@localhost.localdomain>
-References: <CVrGRAreCXB@helmut.hullen.de> <20130430094131.GA8274@carfax.org.uk>
- <loom.20130430T133556-803@post.gmane.org> <20130430135816.GD2580@localhost.localdomain>
- <CADn-QaMFct-5XgMbqiWMG_pa-AzgOQOZLUc-CNTrAPpG7633Aw@mail.gmail.com>
- <20130430175351.GF2580@localhost.localdomain> <CADn-QaO_YqroR=EnrD1+tfRNRvLiLkhAMMAUxrbA_4s5-b5rxQ@mail.gmail.com>
- <20130501185701.GA12414@localhost.localdomain> <CADn-QaNeo2pnu1a94HEWWjaXtdRb2C38JJXrUMy6xBmp+MpCVw@mail.gmail.com>
- <CADn-QaPh9EZjnbr9HoRKTMi8OUgnvfRdD7riEDZ0hpkcNRN93Q@mail.gmail.com> <20130508204758.GU12414@localhost.localdomain>
-From: Alexander Skwar <a@skwar.me>
-Date: Mon, 13 May 2013 10:33:42 +0200
-Message-ID: <CADn-QaOtusn2jUuXJDT-X0c3+hhx1_6Y969wqOnd_epHVW74eA@mail.gmail.com>
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:921 __btrfs_write_out_cache+0x6b9/0x9a0
- [btrfs]()
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from xp-ob.rzone.de ([81.169.146.136]:23141 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751205Ab3EMOm7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 May 2013 10:42:59 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (joses xp1) (RZmta 31.27 OK)
+	with ESMTP id X01ee0p4D7UIcp for <linux-btrfs@vger.kernel.org>;
+	Mon, 13 May 2013 16:42:57 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 2/3] Btrfs: cleanup, btrfs_read_fs_root_no_name() doesn't return NULL
+Date: Mon, 13 May 2013 16:42:57 +0200
+Message-Id: <ccd02993e73d688c0292ee8ea77c77490b709fb2.1368455876.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368455876.git.sbehrens@giantdisaster.de>
+References: <cover.1368455876.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef
+No need to check for NULL in send.c and disk-io.c.
 
-On Wed, May 8, 2013 at 10:47 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Wed, May 08, 2013 at 11:34:40AM -0600, Alexander Skwar wrote:
->> Hello Josef
->>
->> Did you have a chance to look at that image? Did you find anything?
->>
->> Or should I simply create a new filesystem and forget about the issue?
->>
->
-> So the file system isn't corrupt, you just got a giant block group for some
-> reason.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+v1 -> v2:
+One more place where the check for NULL can be deleted.
 
-Hmm...
+ fs/btrfs/disk-io.c | 2 --
+ fs/btrfs/send.c    | 8 ++------
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
-Sure?
-
-I did start a "btrfs balance" and it consistently fails. See my dmesg
-output at http://pastebin.com/7XgAhZ1s
-
-At first, there are a few WARNING messages:
-
-[  300.422702] WARNING: at
-/build/buildd/linux-3.8.0/fs/btrfs/delayed-ref.c:454
-update_existing_ref+0x119/0x150 [btrfs]()
-
-[  300.422960] WARNING: at
-/build/buildd/linux-3.8.0/fs/btrfs/delayed-ref.c:454
-update_existing_ref+0x119/0x150 [btrfs]()
-…
-
-But there's also an error:
-
-[  300.425633] BTRFS error (device dm-5) in
-__btrfs_inc_extent_ref:1935: Object already exists
-[  300.425634] btrfs is forced readonly
-
-
-What can I do? Other than destroying that filesystem?
-
-Regards,
-
-Alexander
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e8b5027..4904d7f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2757,8 +2757,6 @@ retry_root_backup:
+ 	location.offset = (u64)-1;
+ 
+ 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+-	if (!fs_info->fs_root)
+-		goto fail_qgroup;
+ 	if (IS_ERR(fs_info->fs_root)) {
+ 		err = PTR_ERR(fs_info->fs_root);
+ 		goto fail_qgroup;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index ff40f1c..f075c82 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4663,10 +4663,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			key.type = BTRFS_ROOT_ITEM_KEY;
+ 			key.offset = (u64)-1;
+ 			clone_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-			if (!clone_root) {
+-				ret = -EINVAL;
+-				goto out;
+-			}
+ 			if (IS_ERR(clone_root)) {
+ 				ret = PTR_ERR(clone_root);
+ 				goto out;
+@@ -4682,8 +4678,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 		key.type = BTRFS_ROOT_ITEM_KEY;
+ 		key.offset = (u64)-1;
+ 		sctx->parent_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-		if (!sctx->parent_root) {
+-			ret = -EINVAL;
++		if (IS_ERR(sctx->parent_root)) {
++			ret = PTR_ERR(sctx->parent_root);
+ 			goto out;
+ 		}
+ 	}
 -- 
-=>        Google+ => http://plus.skwar.me         <==
-=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==
+1.8.2.2
+

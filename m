@@ -1,69 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:38195 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965896Ab3E2NJ6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 May 2013 09:09:58 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 8781D7C041B
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 May 2013 07:09:58 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id E5xo4VH5dtP9xsYu (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 29 May 2013 07:09:58 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix free space cache checks
-Date: Wed, 29 May 2013 09:09:55 -0400
-Message-ID: <1369832995-2935-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cn.fujitsu.com ([222.73.24.84]:28138 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751368Ab3EMPMa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 May 2013 11:12:30 -0400
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Miao Xie <miaox@cn.fujitsu.com>, Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH 4/5] Btrfs: don't steal the reserved space from the global reserve if their space type is different
+Date: Mon, 13 May 2013 21:55:11 +0800
+Message-Id: <1368453312-7027-4-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1368453312-7027-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1368453312-7027-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes two bugs with the free space cache checker.  First is we apparently
-always use root->sectorsize for our unit in the kernel so we have to do that in
-progs otherwise bitmaps turn out to not look right if we have leafsize !=
-sectorsize.  The second is a small issue if we had skinny metadata extents set,
-we wouldn't advance last properly because we unconditionally use key.offset
-instead of root->leafsize.  Thanks,
+If the type of the space we need is different with the global reserve, we
+can not steal the space from the global reserve, because we can not allocate
+the space from the free space cache that the global reserve points to.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- cmds-check.c |   16 ++++++----------
- 1 files changed, 6 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-tree.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 7bb68ce..288b36e 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2853,7 +2853,10 @@ static int verify_space_cache(struct btrfs_root *root,
- 		}
- 
- 		if (last == key.objectid) {
--			last = key.objectid + key.offset;
-+			if (key.type == BTRFS_EXTENT_ITEM_KEY)
-+				last = key.objectid + key.offset;
-+			else
-+				last = key.objectid + root->leafsize;
- 			path->slots[0]++;
- 			continue;
- 		}
-@@ -2906,15 +2909,8 @@ static int check_space_cache(struct btrfs_root *root)
- 
- 		start = cache->key.objectid + cache->key.offset;
- 		if (!cache->free_space_ctl) {
--			int sectorsize;
--
--			if (cache->flags & (BTRFS_BLOCK_GROUP_METADATA |
--					    BTRFS_BLOCK_GROUP_SYSTEM))
--				sectorsize = root->leafsize;
--			else
--				sectorsize = root->sectorsize;
--
--			if (btrfs_init_free_space_ctl(cache, sectorsize)) {
-+			if (btrfs_init_free_space_ctl(cache,
-+						      root->sectorsize)) {
- 				ret = -ENOMEM;
- 				break;
- 			}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e34e268..c48e1bd 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6684,9 +6684,11 @@ try_reserve:
+ 		return block_rsv;
+ 	/*
+ 	 * If we couldn't reserve metadata bytes try and use some from
+-	 * the global reserve.
++	 * the global reserve if its space type is the same as the global
++	 * reservation.
+ 	 */
+-	if (block_rsv->type != BTRFS_BLOCK_RSV_GLOBAL) {
++	if (block_rsv->type != BTRFS_BLOCK_RSV_GLOBAL &&
++	    block_rsv->space_info == global_rsv->space_info) {
+ 		ret = block_rsv_use_bytes(global_rsv, blocksize);
+ 		if (!ret)
+ 			return global_rsv;
 -- 
-1.7.7.6
+1.8.0.1
 

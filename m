@@ -1,42 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:48694 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:61753 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753375Ab3EMNxi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753429Ab3EMNxi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 13 May 2013 09:53:38 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp2) (RZmta 31.27 OK)
-	with ESMTP id g01efep4D8Qh95 for <linux-btrfs@vger.kernel.org>;
+	by joses.store (joses xp1) (RZmta 31.27 OK)
+	with ESMTP id X01ee0p4D7UIYZ for <linux-btrfs@vger.kernel.org>;
 	Mon, 13 May 2013 15:53:35 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] Btrfs: some cleanups around btrfs_read_fs_root_no_name()
-Date: Mon, 13 May 2013 15:53:32 +0200
-Message-Id: <cover.1368450252.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 2/3] Btrfs: cleanup, btrfs_read_fs_root_no_name() doesn't return NULL
+Date: Mon, 13 May 2013 15:53:34 +0200
+Message-Id: <16dae9cd346b615871ad8de11df166dd4ce4d682.1368450252.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368450252.git.sbehrens@giantdisaster.de>
+References: <cover.1368450252.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368450252.git.sbehrens@giantdisaster.de>
+References: <cover.1368450252.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just some line deletions for callers of btrfs_read_fs_root_no_name().
-They repeat the check for btrfs_root_refs() after calling
-btrfs_read_fs_root_no_name() and map the error to ENOENT in this case,
-and btrfs_read_fs_root_no_name() already does the same for you.
-send.c even checked the result for NULL which cannot happen.
-And one static inline function in delayed-inode.c that called
-btrfs_read_fs_root_no_name() was not at all used anymore.
+No need to check for NULL in send.c.
 
-Stefan Behrens (3):
-  Btrfs: delete unused function
-  Btrfs: cleanup, btrfs_read_fs_root_no_name() doesn't return NULL
-  Btrfs: cleanup: don't check the same thing twice
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/send.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
- fs/btrfs/delayed-inode.c | 14 --------------
- fs/btrfs/export.c        |  5 -----
- fs/btrfs/file.c          |  4 ----
- fs/btrfs/inode.c         | 10 ----------
- fs/btrfs/ioctl.c         |  5 -----
- fs/btrfs/send.c          |  8 ++------
- fs/btrfs/super.c         |  3 ---
- 7 files changed, 2 insertions(+), 47 deletions(-)
-
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index ff40f1c..f075c82 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4663,10 +4663,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			key.type = BTRFS_ROOT_ITEM_KEY;
+ 			key.offset = (u64)-1;
+ 			clone_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-			if (!clone_root) {
+-				ret = -EINVAL;
+-				goto out;
+-			}
+ 			if (IS_ERR(clone_root)) {
+ 				ret = PTR_ERR(clone_root);
+ 				goto out;
+@@ -4682,8 +4678,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 		key.type = BTRFS_ROOT_ITEM_KEY;
+ 		key.offset = (u64)-1;
+ 		sctx->parent_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-		if (!sctx->parent_root) {
+-			ret = -EINVAL;
++		if (IS_ERR(sctx->parent_root)) {
++			ret = PTR_ERR(sctx->parent_root);
+ 			goto out;
+ 		}
+ 	}
 -- 
 1.8.2.2
 

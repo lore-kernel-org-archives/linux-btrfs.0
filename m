@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:19473 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.139]:54943 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753716Ab3EMNxi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753753Ab3EMNxi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 13 May 2013 09:53:38 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (josoe xp2) (RZmta 31.27 OK)
-	with ESMTP id g030d0p4D7wWBc for <linux-btrfs@vger.kernel.org>;
+	by jored.store (jored xp1) (RZmta 31.27 OK)
+	with ESMTP id X02f08p4D7BpT1 for <linux-btrfs@vger.kernel.org>;
 	Mon, 13 May 2013 15:53:35 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] Btrfs: delete unused function
-Date: Mon, 13 May 2013 15:53:33 +0200
-Message-Id: <676d20ba0e8d57c6070014b301445038be5dd768.1368450252.git.sbehrens@giantdisaster.de>
+Subject: [PATCH 3/3] Btrfs: cleanup: don't check the same thing twice
+Date: Mon, 13 May 2013 15:53:35 +0200
+Message-Id: <3d9ca988fc244d8ce11302cdfb3a55ff085524f8.1368450252.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1368450252.git.sbehrens@giantdisaster.de>
 References: <cover.1368450252.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1368450252.git.sbehrens@giantdisaster.de>
@@ -19,36 +19,108 @@ References: <cover.1368450252.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_read_fs_root_no_name() already checks if btrfs_root_refs()
+is zero and returns ENOENT in this case. There is no need to do
+it again in six places.
+
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/delayed-inode.c | 14 --------------
- 1 file changed, 14 deletions(-)
+ fs/btrfs/export.c |  5 -----
+ fs/btrfs/file.c   |  4 ----
+ fs/btrfs/inode.c  | 10 ----------
+ fs/btrfs/ioctl.c  |  5 -----
+ fs/btrfs/super.c  |  3 ---
+ 5 files changed, 27 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index f26f38c..5615eac 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -535,20 +535,6 @@ static struct btrfs_delayed_item *__btrfs_next_delayed_item(
- 	return next;
- }
+diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+index 81ee29e..4b86916 100644
+--- a/fs/btrfs/export.c
++++ b/fs/btrfs/export.c
+@@ -82,11 +82,6 @@ static struct dentry *btrfs_get_dentry(struct super_block *sb, u64 objectid,
+ 		goto fail;
+ 	}
  
--static inline struct btrfs_root *btrfs_get_fs_root(struct btrfs_root *root,
--						   u64 root_id)
--{
--	struct btrfs_key root_key;
+-	if (btrfs_root_refs(&root->root_item) == 0) {
+-		err = -ENOENT;
+-		goto fail;
+-	}
 -
--	if (root->objectid == root_id)
--		return root;
+ 	key.objectid = objectid;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+ 	key.offset = 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b3e359b..185af15 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -308,10 +308,6 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 		ret = PTR_ERR(inode_root);
+ 		goto cleanup;
+ 	}
+-	if (btrfs_root_refs(&inode_root->root_item) == 0) {
+-		ret = -ENOENT;
+-		goto cleanup;
+-	}
+ 
+ 	key.objectid = defrag->ino;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1669c3b..0457347 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2258,11 +2258,6 @@ static noinline int relink_extent_backref(struct btrfs_path *path,
+ 			return 0;
+ 		return PTR_ERR(root);
+ 	}
+-	if (btrfs_root_refs(&root->root_item) == 0) {
+-		srcu_read_unlock(&fs_info->subvol_srcu, index);
+-		/* parse ENOENT to 0 */
+-		return 0;
+-	}
+ 
+ 	/* step 2: get inode */
+ 	key.objectid = backref->inum;
+@@ -4816,11 +4811,6 @@ static int fixup_tree_root_location(struct btrfs_root *root,
+ 		goto out;
+ 	}
+ 
+-	if (btrfs_root_refs(&new_root->root_item) == 0) {
+-		err = -ENOENT;
+-		goto out;
+-	}
 -
--	root_key.objectid = root_id;
--	root_key.type = BTRFS_ROOT_ITEM_KEY;
--	root_key.offset = (u64)-1;
--	return btrfs_read_fs_root_no_name(root->fs_info, &root_key);
--}
+ 	*sub_root = new_root;
+ 	location->objectid = btrfs_root_dirid(&new_root->root_item);
+ 	location->type = BTRFS_INODE_ITEM_KEY;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1e0dda1..b2537c7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2951,11 +2951,6 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
+ 		goto out;
+ 	}
+ 
+-	if (btrfs_root_refs(&new_root->root_item) == 0) {
+-		ret = -ENOENT;
+-		goto out;
+-	}
 -
- static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 					       struct btrfs_root *root,
- 					       struct btrfs_delayed_item *item)
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+ 		ret = -ENOMEM;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c02c59a..b6af7d3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -775,9 +775,6 @@ find_root:
+ 	if (IS_ERR(new_root))
+ 		return ERR_CAST(new_root);
+ 
+-	if (btrfs_root_refs(&new_root->root_item) == 0)
+-		return ERR_PTR(-ENOENT);
+-
+ 	dir_id = btrfs_root_dirid(&new_root->root_item);
+ setup_root:
+ 	location.objectid = dir_id;
 -- 
 1.8.2.2
 

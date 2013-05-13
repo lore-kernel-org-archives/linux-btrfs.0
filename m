@@ -1,47 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18177 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932934Ab3ECHy7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 May 2013 03:54:59 -0400
-Date: Fri, 3 May 2013 15:54:52 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH v3 0/2] Online data deduplication
-Message-ID: <20130503075451.GC16411@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
+Received: from cantor2.suse.de ([195.135.220.15]:56641 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751547Ab3EMPzN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 May 2013 11:55:13 -0400
+Date: Mon, 13 May 2013 17:55:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: add dedup register
+Message-ID: <20130513155510.GP16456@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1367425659-10803-1-git-send-email-bo.li.liu@oracle.com>
- <20130501173729.GJ2580@localhost.localdomain>
+ <1367425659-10803-4-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130501173729.GJ2580@localhost.localdomain>
+In-Reply-To: <1367425659-10803-4-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> You didn't use an INCOPMAT option for this so you need to deal with a user
-> mounting the file system with an older kernel or even forgetting to use mount -o
-> dedup.  Otherwise your dedup tree will become out of date and you could corrupt
-> peoples data.  So if you aren't going to use an INCOMPAT flag you need to at
-> least use a COMPAT flag so we know the option has been used at all and then you
-> need to have a mechanism to know if you need to invalidate the hash tree.
-> 
-> Users are also going to make the mistake of thinking dedup will make their
-> workload awesome, and when it doesn't they need a way to turn it off.  If you do
-> an INCOMPAT option then you need to have a way to delete the hash tree and unset
-> the INCOMPAT flag.  If you do the COMPAT route then you get this for free since
-> the user just needs to stop using -o dedup, but you'll probably also want to
-> provide a mechanism to delete the tree to free up space.  Thanks,
-> 
-> Josef
+On Thu, May 02, 2013 at 12:27:39AM +0800, Liu Bo wrote:
+> +static int cmd_dedup(int argc, char **argv)
+> +{
+> +	int 	fd, res, e;
+> +	char	*path;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_dedup_usage);
+> +
+> +	path = argv[1];
+> +
+> +	fd = open_file_or_dir(path);
+> +	if (fd < 0) {
+> +		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+> +		return 12;
 
-I made a few mistakes on this, yeah I should also provide a dedup disable way
-and I'm going to use INCOMPAT.
+Please do not introduce the strange return values in new code.
 
-But forgetting to use mount -o dedup will not get dedup tree to be out of date,
-because dedup tree is loaded if we have it, no matter whether using 'mount -o
-dedup'.
+> +	}
+> +
+> +	printf("register dedup on '%s'\n", path);
+> +	res = ioctl(fd, BTRFS_IOC_DEDUP_REGISTER);
+> +	e = errno;
+> +	close(fd);
+> +	if( res < 0 ){
+> +		fprintf(stderr, "ERROR: unable to register dedup '%s' - %s\n", 
+> +			path, strerror(e));
+> +		return 32;
 
-Thanks for the nice reminder, Josef :)
+dtto
 
-thanks,
-liubo
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+>  const struct cmd_group filesystem_cmd_group = {
+>  	filesystem_cmd_group_usage, NULL, {
+>  		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
+> @@ -524,6 +559,7 @@ const struct cmd_group filesystem_cmd_group = {
+>  		{ "balance", cmd_balance, NULL, &balance_cmd_group, 1 },
+>  		{ "resize", cmd_resize, cmd_resize_usage, NULL, 0 },
+>  		{ "label", cmd_label, cmd_label_usage, NULL, 0 },
+> +		{ "dedup-register", cmd_dedup, cmd_dedup_usage, NULL, 0 },
+
+By this you effectively capture the 'dedup*' namespace by a single
+command. I thinkg dedup is a bigger beast and should use subcommands
+rather than bunch of 1st level subcommands, ie. something like balance
+or scrub.
+
+If you don't want to spend time on polishing the UI of progs right now,
+fine, just add the commands as you like, this can be fixed later. With a
+warning.
+
+>  		{ 0, 0, 0, 0, 0 },
+>  	}
+>  };
+> diff --git a/ioctl.h b/ioctl.h
+> index e841913..1bea98a 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -528,6 +528,7 @@ struct btrfs_ioctl_clone_range_args {
+>  				      struct btrfs_ioctl_get_dev_stats)
+>  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+>  				    struct btrfs_ioctl_dev_replace_args)
+> +#define BTRFS_IOC_DEDUP_REGISTER	 _IO(BTRFS_IOCTL_MAGIC, 54)
+
+The interface to dedup should be imho similar to what's established with
+scrub/balance and so should be the ioctls.
+
+(Same as before, if you're focused on the actual dedup implementation,
+add a comment that it's not finalized.)
+
+
+david

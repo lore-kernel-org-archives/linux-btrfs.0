@@ -1,129 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e39.co.us.ibm.com ([32.97.110.160]:45555 "EHLO
-	e39.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755423Ab3ENA6w (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:50400 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755578Ab3ENCMd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 May 2013 20:58:52 -0400
-Received: from /spool/local
-	by e39.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Mon, 13 May 2013 18:58:51 -0600
-From: zwu.kernel@gmail.com
-To: viro@zeniv.linux.org.uk
-Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, sekharan@us.ibm.com, linuxram@us.ibm.com,
-        david@fromorbit.com, dsterba@suse.cz, gregkh@linuxfoundation.org,
-        paulmck@linux.vnet.ibm.com, chris.mason@fusionio.com,
-        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [PATCH v2 00/12] VFS hot tracking
-Date: Tue, 14 May 2013 08:59:32 +0800
-Message-Id: <1368493184-5939-1-git-send-email-zwu.kernel@gmail.com>
+	Mon, 13 May 2013 22:12:33 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4E2CV9H032048
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 02:12:32 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4E2CUtO003078
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 02:12:31 GMT
+Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4E2CUYG003069
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 02:12:30 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: return errno if possible when we fail to allocate memory
+Date: Tue, 14 May 2013 10:12:15 +0800
+Message-Id: <1368497535-15534-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+We need to set return value explicitly, otherwise we'll lose the error
+value.
 
-  The patchset is trying to introduce hot tracking function in
-VFS layer, which will keep track of real disk I/O in memory.
-By it, you will easily know more details about disk I/O, and
-then detect where disk I/O hot spots are. Also, specific FS
-can take use of it to do accurate defragment, and hot relocation
-support, etc.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-  After V1 was sent out, Chandra Seetharaman has reviewed and
-made a lot of comments, thanks a lot to him. Not it's time to
-send out its V2 for external review, any comments or ideas are
-appreciated, thanks.
-
-NOTE:
-
-  The patchset can be obtained via my kernel dev git on github:
-git://github.com/wuzhy/kernel.git hot_tracking
-  If you're interested, you can also review them via
-https://github.com/wuzhy/kernel/commits/hot_tracking
-
-  For how to use and more other info and performance report,
-please check hot_tracking.txt in Documentation and following
-links:
-  1.) http://lwn.net/Articles/525651/
-  2.) https://lkml.org/lkml/2012/12/20/199
-
-Changelog from v1:
- - Refactored to be under RCU [Chandra Seetharaman]
- - Merged some code changes [Chandra Seetharaman]
- - Fixed some issues [Chandra Seetharaman]
-
-v1:
- - Solved 64 bits inode number issue. [David Sterba]
- - Embed struct hot_type in struct file_system_type [Darrick J. Wong]
- - Cleanup Some issues [David Sterba]
- - Use a static hot debugfs root [Greg KH]
-
-rfcv4:
- - Introduce hot func registering framework [Zhiyong]
- - Remove global variable for hot tracking [Zhiyong]
- - Add btrfs hot tracking support [Zhiyong]
-
-rfcv3:
- 1.) Rewritten debugfs support based seq_file operation. [Dave Chinner]
- 2.) Refactored workqueue support. [Dave Chinner]
- 3.) Turn some Micro into be tunable [Zhiyong, Liu Zheng]
-       TIME_TO_KICK, and HEAT_UPDATE_DELAY
- 4.) Cleanedup a lot of other issues [Dave Chinner]
-
-rfcv2:
- 1.) Converted to Radix trees, not RB-tree [Zhiyong, Dave Chinner]
- 2.) Added memory shrinker [Dave Chinner]
- 3.) Converted to one workqueue to update map info periodically [Dave Chinner]
- 4.) Cleanedup a lot of other issues [Dave Chinner]
-
-rfcv1:
- 1.) Reduce new files and put all in fs/hot_tracking.[ch] [Dave Chinner]
- 2.) The first three patches can probably just be flattened into one.
-                                        [Marco Stornelli , Dave Chinner]
-
-Zhi Yong Wu (12):
-  VFS hot tracking: introduce some data structures
-  VFS hot tracking: add i/o freq tracking hooks
-  VFS hot tracking: add one workqueue to update hot map
-  VFS hot tracking: register one shrinker
-  VFS hot tracking, rcu: introduce one rcu macro for list
-  VFS hot tracking, seq_file: introduce one set of rcu seq_list
-    interfaces
-  VFS hot tracking: add debugfs support
-  VFS hot tracking: add one ioctl interface
-  VFS hot tracking, procfs: add two proc interfaces
-  VFS hot tracking, btrfs: add hot tracking support
-  VFS hot tracking: add documentation
-  VFS hot tracking: add fs hot type support
-
- Documentation/filesystems/00-INDEX         |    2 +
- Documentation/filesystems/hot_tracking.txt |  256 ++++++
- fs/Makefile                                |    2 +-
- fs/btrfs/ctree.h                           |    1 +
- fs/btrfs/super.c                           |   22 +-
- fs/compat_ioctl.c                          |    5 +
- fs/dcache.c                                |    2 +
- fs/direct-io.c                             |    5 +
- fs/hot_tracking.c                          | 1320 ++++++++++++++++++++++++++++
- fs/hot_tracking.h                          |   67 ++
- fs/ioctl.c                                 |   70 ++
- fs/namei.c                                 |    2 +
- fs/seq_file.c                              |   37 +
- include/linux/fs.h                         |    5 +
- include/linux/hot_tracking.h               |  175 ++++
- include/linux/rculist.h                    |    5 +
- include/linux/seq_file.h                   |    7 +
- kernel/sysctl.c                            |   14 +
- mm/filemap.c                               |    6 +
- mm/page-writeback.c                        |   12 +
- mm/readahead.c                             |    6 +
- 21 files changed, 2019 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/filesystems/hot_tracking.txt
- create mode 100644 fs/hot_tracking.c
- create mode 100644 fs/hot_tracking.h
- create mode 100644 include/linux/hot_tracking.h
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1669c3b..99a9c25 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -714,8 +714,10 @@ retry:
+ 					async_extent->ram_size - 1, 0);
+ 
+ 		em = alloc_extent_map();
+-		if (!em)
++		if (!em) {
++			ret = -ENOMEM;
+ 			goto out_free_reserve;
++		}
+ 		em->start = async_extent->start;
+ 		em->len = async_extent->ram_size;
+ 		em->orig_start = em->start;
+@@ -922,8 +924,10 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		em = alloc_extent_map();
+-		if (!em)
++		if (!em) {
++			ret = -ENOMEM;
+ 			goto out_reserve;
++		}
+ 		em->start = start;
+ 		em->orig_start = em->start;
+ 		ram_size = ins.offset;
 -- 
-1.7.11.7
+1.7.7.6
 

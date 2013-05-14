@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:33083 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:52447 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756679Ab3ENJhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756769Ab3ENJhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 14 May 2013 05:37:03 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (josoe xp1) (RZmta 31.27 OK)
-	with ESMTP id X02fd6p4E0F12w for <linux-btrfs@vger.kernel.org>;
+	by jored.store (jored xp3) (RZmta 31.27 OK)
+	with ESMTP id p03042p4DL65JG for <linux-btrfs@vger.kernel.org>;
 	Tue, 14 May 2013 11:37:01 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 6/8] Btrfs: introduce uuid-tree-gen field
-Date: Tue, 14 May 2013 11:36:58 +0200
-Message-Id: <e220122c5325be5d86cebefe2e0f68956511059a.1368523154.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v2 8/8] Btrfs: add mount option to force UUID tree checking
+Date: Tue, 14 May 2013 11:37:00 +0200
+Message-Id: <a87dfbc934e6f330358fb89ebb28012d96e9b017.1368523154.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
 References: <cover.1368523154.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
@@ -19,54 +19,83 @@ References: <cover.1368523154.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to be able to detect the case that a filesystem is mounted
-with an old kernel, add a uuid-tree-gen field like the free space
-cache is doing it. It is part of the super block and written with
-each commit. Old kernels do not know this field and don't update it.
+This should never be needed, but since all functions are there
+to check and rebuild the UUID tree, a mount option is added that
+allows to force this check and rebuild procedure.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h       | 5 ++++-
- fs/btrfs/transaction.c | 1 +
- 2 files changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   | 1 +
+ fs/btrfs/disk-io.c | 3 ++-
+ fs/btrfs/super.c   | 8 +++++++-
+ 3 files changed, 10 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ee347d6..63fd4ff 100644
+index bdfa18e..fd1d2fb 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -482,9 +482,10 @@ struct btrfs_super_block {
- 	char label[BTRFS_LABEL_SIZE];
+@@ -1966,6 +1966,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
  
- 	__le64 cache_generation;
-+	__le64 uuid_tree_generation;
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 30513c1..2e94b1a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2831,7 +2831,8 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
+ 		}
+-	} else if (check_uuid_tree) {
++	} else if (check_uuid_tree ||
++		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
+ 		pr_info("btrfs: checking UUID tree\n");
+ 		ret = btrfs_check_uuid_tree(fs_info);
+ 		if (ret) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b6af7d3..4602c6a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -317,7 +317,7 @@ enum {
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+-	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_err,
+ };
  
- 	/* future expansion */
--	__le64 reserved[31];
-+	__le64 reserved[30];
- 	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
- 	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
- } __attribute__ ((__packed__));
-@@ -2827,6 +2828,8 @@ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
- 			 csum_type, 16);
- BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
- 			 cache_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_uuid_tree_generation, struct btrfs_super_block,
-+			 uuid_tree_generation, 64);
- 
- static inline int btrfs_super_csum_size(struct btrfs_super_block *s)
- {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a3d92b3..eed52bb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1331,6 +1331,7 @@ static void update_super_roots(struct btrfs_root *root)
- 	super->root_level = root_item->level;
- 	if (btrfs_test_opt(root, SPACE_CACHE))
- 		super->cache_generation = root_item->generation;
-+	super->uuid_tree_generation = root_item->generation;
- }
- 
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info)
+@@ -357,6 +357,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity, "check_int"},
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
++	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
+@@ -551,6 +552,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_space_cache:
+ 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+ 			break;
++		case Opt_rescan_uuid_tree:
++			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
++			break;
+ 		case Opt_no_space_cache:
+ 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
+ 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
+@@ -925,6 +929,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",space_cache");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
++	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
++		seq_puts(seq, ",rescan_uuid_tree");
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		seq_puts(seq, ",clear_cache");
+ 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
 -- 
 1.8.2.2
 

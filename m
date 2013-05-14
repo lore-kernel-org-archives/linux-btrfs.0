@@ -1,78 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:46675 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751976Ab3ENGbj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 02:31:39 -0400
-Message-ID: <5191DA8D.9060209@cn.fujitsu.com>
-Date: Tue, 14 May 2013 14:32:45 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-ob0-f171.google.com ([209.85.214.171]:52500 "EHLO
+	mail-ob0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932067Ab3ENGsV convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 May 2013 02:48:21 -0400
+Received: by mail-ob0-f171.google.com with SMTP id ef5so175403obb.30
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2013 23:48:20 -0700 (PDT)
 MIME-Version: 1.0
-To: dsterba@suse.cz, Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "alex.btrfs@zadarastorage.com" <alex.btrfs@zadarastorage.com>
-Subject: Re: [PATCH v3] btrfs: clean snapshots one by one
-References: <1363101208-30184-1-git-send-email-dsterba@suse.cz> <20130507004106.5844.39433@localhost.localdomain> <20130507115449.GE16456@twin.jikos.cz>
-In-Reply-To: <20130507115449.GE16456@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+Date: Tue, 14 May 2013 08:47:59 +0200
+Message-ID: <CADn-QaPnKj1uxTURyv65NUoduZZN4G-1dXuN5G+677yW=_ujJg@mail.gmail.com>
+Subject: Determining size of subvolumes
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	tue, 7 May 2013 13:54:49 +0200, David Sterba wrote:
-> On Mon, May 06, 2013 at 08:41:06PM -0400, Chris Mason wrote:
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 988b860..4de2351 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -1690,15 +1690,19 @@ static int cleaner_kthread(void *arg)
->>>         struct btrfs_root *root = arg;
->>>  
->>>         do {
->>> +               int again = 0;
->>> +
->>>                 if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
->>> +                   down_read_trylock(&root->fs_info->sb->s_umount) &&
->>>                     mutex_trylock(&root->fs_info->cleaner_mutex)) {
->>>                         btrfs_run_delayed_iputs(root);
->>> -                       btrfs_clean_old_snapshots(root);
->>> +                       again = btrfs_clean_one_deleted_snapshot(root);
->>>                         mutex_unlock(&root->fs_info->cleaner_mutex);
->>>                         btrfs_run_defrag_inodes(root->fs_info);
->>> +                       up_read(&root->fs_info->sb->s_umount);
->>
->> Can we use just the cleaner mutex for this?  We're deadlocking during
->> 068 with autodefrag on because the cleaner is holding s_umount while
->> autodefrag is trying to bump the writer count.
-> 
-> I have now reproduced the deadlock and see where it's stuck.  It did not
-> happen with running 068 in a loop, but after interrupting the test.
-> 
->> If unmount takes the cleaner mutex once it should wait long enough for
->> the cleaner to stop.
-> 
-> You mean removing s_umount from here completely? I'm not sure about
-> other mis-interaction, eg with remount + autodefrag. Miao sent a patch
-> for that case http://www.spinics.net/lists/linux-btrfs/msg16634.html
-> (but it would not fix this deadlock).
+Hello
 
-I have given up this patch and fix this problem by the other way.
-http://marc.info/?l=linux-btrfs&m=136142833013628&w=2
+What's the easiest way to determine the size of snapshots/subvolumes?
 
-I think we need use s_umount here, all things we need do is to check R/O
-in cleaner_mutex. Or we may continue to delete the dead tree after the fs
-is remounted to be R/O.
+As I come from a Solaris/FreeBSD background with ZFS, I compare the
+feature sets and in ZFS I can easily do this:
 
-Thanks
-Miao
 
-> 
-> I'm for keeping the clean-by-one patch for 3.10, we can fix other
-> regressions during rc cycle.
-> 
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+# zfs list -t snapshot,filesystem -r datapool/home/ftp_example
+NAME                        USED  AVAIL  REFER  MOUNTPOINT
+datapool/home/ftp_example       442M  4.66G   346M  /home/ftp_example/
+datapool/home/ftp_example@Tue  11.7M      -   344M  -
+datapool/home/ftp_example@Wed  6.94M      -   345M  -
+datapool/home/ftp_example@Thu  5.00M      -   344M  -
+datapool/home/ftp_example@Fri  6.87M      -   345M  -
+datapool/home/ftp_example@Sat  7.47M      -   346M  -
+datapool/home/ftp_example@Sun  5.14M      -   346M  -
+datapool/home/ftp_example@Mon  5.02M      -   346M  -
 
+
+This shows me, that in the "ftp_example" filesystem, there are 346 MB
+and in the "Wed"nesday snapshot, 6.94 MB got changed (or so…).
+
+How could I do something like this with btrfs?
+
+PS: On Ubuntu Linux 13.04 with their 3.8.0-20-generic kernel. Btrfs
+v0.20-rc1-253-g7854c8b-dirty tools (from Git).
+
+Thanks a lot,
+
+Alexander
+-- 
+=>        Google+ => http://plus.skwar.me         <==
+=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==

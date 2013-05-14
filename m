@@ -1,52 +1,231 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49577 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753375Ab3ENMJ2 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:19402 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751840Ab3ENMJ1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 08:09:28 -0400
+	Tue, 14 May 2013 08:09:27 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jbacik@fusionio.com, g2p.code@gmail.com
-Subject: [RFC PATCH V4 1/2] Btrfs: skip merge part for delayed data refs
-Date: Tue, 14 May 2013 20:08:53 +0800
-Message-Id: <1368533335-19381-2-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs-progs: add dedup subcommand
+Date: Tue, 14 May 2013 20:08:55 +0800
+Message-Id: <1368533335-19381-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1368533335-19381-1-git-send-email-bo.li.liu@oracle.com>
 References: <1368533335-19381-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we have data deduplication on, we'll hang on the merge part
-because it needs to verify every queued delayed data refs related to
-this disk offset.
+This aims to add deduplication subcommand, 'btrfs dedup command <path>',
+ie. register/unregister'.
 
-And in the case of delayed data refs, we don't usually have too much
-data refs to merge.
-
-So it's safe to shut it down for data refs.
+It can be used to enable or disable dedup support for a filesystem.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/delayed-ref.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+ Makefile     |    2 +-
+ btrfs.c      |    1 +
+ cmds-dedup.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ commands.h   |    2 +
+ ctree.h      |    2 +
+ ioctl.h      |    5 +++
+ 6 files changed, 112 insertions(+), 1 deletions(-)
+ create mode 100644 cmds-dedup.c
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index c219463..be8d5cb 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -320,6 +320,13 @@ void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
- 	struct rb_node *node;
- 	u64 seq = 0;
- 
-+	/*
-+	 * We don't have too much refs to merge in the case of delayed data
-+	 * refs.
-+	 */
-+	if (head->is_data)
-+		return;
+diff --git a/Makefile b/Makefile
+index 9c195b3..c423184 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,7 +11,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+-	       cmds-restore.o
++	       cmds-restore.o cmds-dedup.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
+diff --git a/btrfs.c b/btrfs.c
+index 691adef..956905c 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -254,6 +254,7 @@ const struct cmd_group btrfs_cmd_group = {
+ 		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
+ 		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
+ 		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
++		{ "dedup", cmd_dedup, NULL, &dedup_cmd_group, 0 },
+ 		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+ 		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 }
+diff --git a/cmds-dedup.c b/cmds-dedup.c
+new file mode 100644
+index 0000000..a977585
+--- /dev/null
++++ b/cmds-dedup.c
+@@ -0,0 +1,101 @@
++/*
++ * Copyright (C) 2013 Oracle.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
- 	spin_lock(&fs_info->tree_mod_seq_lock);
- 	if (!list_empty(&fs_info->tree_mod_seq_list)) {
- 		struct seq_list *elem;
++#include <sys/ioctl.h>
++#include <unistd.h>
++
++#include "ctree.h"
++#include "ioctl.h"
++
++#include "commands.h"
++#include "utils.h"
++
++static const char * const dedup_cmd_group_usage[] = {
++	"btrfs dedup <command> [options] <path>",
++	NULL
++};
++
++int dedup_ctl(int cmd, int argc, char **argv)
++{
++	int ret = 0;
++	int fd;
++	int e;
++	char *path = argv[1];
++
++	if (check_argc_exact(argc, 2))
++		return -1;
++
++	fd = open_file_or_dir(path);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", path);
++		return -EACCES;
++	}
++
++	ret = ioctl(fd, BTRFS_IOC_DEDUP_CTL, cmd);
++	e = errno;
++	close(fd);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: dedup command failed: %s\n",
++			strerror(e));
++		if (cmd == BTRFS_DEDUP_CTL_UNREG)
++			fprintf(stderr, "please refer to 'dmesg | tail' for more info\n");
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static const char * const cmd_dedup_reg_usage[] = {
++	"btrfs dedup register <path>",
++	"Enable data deduplication support for a filesystem.",
++	NULL
++};
++
++static int cmd_dedup_reg(int argc, char **argv)
++{
++	int ret = dedup_ctl(BTRFS_DEDUP_CTL_REG, argc, argv);
++	if (ret < 0)
++		usage(cmd_dedup_reg_usage);
++	return ret;
++}
++
++static const char * const cmd_dedup_unreg_usage[] = {
++	"btrfs dedup unregister <path>",
++	"Disable data deduplication support for a filesystem.",
++	NULL
++};
++
++static int cmd_dedup_unreg(int argc, char **argv)
++{
++	int ret = dedup_ctl(BTRFS_DEDUP_CTL_UNREG, argc, argv);
++	if (ret < 0)
++		usage(cmd_dedup_unreg_usage);
++	return ret;
++}
++
++const struct cmd_group dedup_cmd_group = {
++	dedup_cmd_group_usage, NULL, {
++		{ "register", cmd_dedup_reg, cmd_dedup_reg_usage, NULL, 0 },
++		{ "unregister", cmd_dedup_unreg, cmd_dedup_unreg_usage, 0, 0 },
++		{ 0, 0, 0, 0, 0 }
++	}
++};
++
++int cmd_dedup(int argc, char **argv)
++{
++	return handle_command_group(&dedup_cmd_group, argc, argv);
++}
+diff --git a/commands.h b/commands.h
+index 15c616d..d31afa4 100644
+--- a/commands.h
++++ b/commands.h
+@@ -90,6 +90,7 @@ extern const struct cmd_group receive_cmd_group;
+ extern const struct cmd_group quota_cmd_group;
+ extern const struct cmd_group qgroup_cmd_group;
+ extern const struct cmd_group replace_cmd_group;
++extern const struct cmd_group dedup_cmd_group;
+ 
+ extern const char * const cmd_send_usage[];
+ extern const char * const cmd_receive_usage[];
+@@ -112,6 +113,7 @@ int cmd_restore(int argc, char **argv);
+ int cmd_select_super(int argc, char **argv);
+ int cmd_dump_super(int argc, char **argv);
+ int cmd_debug_tree(int argc, char **argv);
++int cmd_dedup(int argc, char **argv);
+ 
+ /* subvolume exported functions */
+ int test_issubvolume(char *path);
+diff --git a/ctree.h b/ctree.h
+index 9442e03..903969d 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -455,6 +455,7 @@ struct btrfs_super_block {
+  */
+ #define BTRFS_FEATURE_INCOMPAT_BIG_METADATA     (1ULL << 5)
+ #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
++#define BTRFS_FEATURE_INCOMPAT_DEDUP		(1ULL << 9)
+ 
+ #define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF   (1ULL << 6)
+ 
+@@ -467,6 +468,7 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_BIG_METADATA |		\
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
++	 BTRFS_FEATURE_INCOMPAT_DEDUP |			\
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+ 
+ /*
+diff --git a/ioctl.h b/ioctl.h
+index e841913..106901f 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -384,6 +384,10 @@ struct btrfs_ioctl_send_args {
+ 	__u64 reserved[4];		/* in */
+ };
+ 
++/* deduplication control ioctl modes */
++#define BTRFS_DEDUP_CTL_REG 1
++#define BTRFS_DEDUP_CTL_UNREG 2
++
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN	3
+@@ -528,6 +532,7 @@ struct btrfs_ioctl_clone_range_args {
+ 				      struct btrfs_ioctl_get_dev_stats)
+ #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+ 				    struct btrfs_ioctl_dev_replace_args)
++#define BTRFS_IOC_DEDUP_CTL _IOW(BTRFS_IOCTL_MAGIC, 55, int)
+ 
+ #ifdef __cplusplus
+ }
 -- 
 1.7.7
 

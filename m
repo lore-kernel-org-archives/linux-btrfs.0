@@ -1,101 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.137]:52447 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756769Ab3ENJhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 05:37:03 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp3) (RZmta 31.27 OK)
-	with ESMTP id p03042p4DL65JG for <linux-btrfs@vger.kernel.org>;
-	Tue, 14 May 2013 11:37:01 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:64127 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751103Ab3ENKUw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 May 2013 06:20:52 -0400
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 8/8] Btrfs: add mount option to force UUID tree checking
-Date: Tue, 14 May 2013 11:37:00 +0200
-Message-Id: <a87dfbc934e6f330358fb89ebb28012d96e9b017.1368523154.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
-References: <cover.1368523154.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
-References: <cover.1368523154.git.sbehrens@giantdisaster.de>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/4] Btrfs: remove unnecessary ->s_umount in cleaner_kthread()
+Date: Tue, 14 May 2013 18:20:40 +0800
+Message-Id: <1368526843-18000-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This should never be needed, but since all functions are there
-to check and rebuild the UUID tree, a mount option is added that
-allows to force this check and rebuild procedure.
+In order to avoid the R/O remount, we acquired ->s_umount lock during
+we deleted the dead snapshots and subvolumes. But it is unnecessary,
+because we have cleaner_mutex.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+We use cleaner_mutex to protect the process of the dead snapshots/subvolumes
+deletion. And when we remount the fs to be R/O, we also acquire this mutex to
+do cleanup after we change the status of the fs. That is this lock can serialize
+the above operations, the cleaner can be aware of the status of the fs, and if
+the cleaner is deleting the dead snapshots/subvolumes, the remount task will
+wait for it. So it is safe to remove ->s_umount in cleaner_kthread().
+
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   | 1 +
- fs/btrfs/disk-io.c | 3 ++-
- fs/btrfs/super.c   | 8 +++++++-
- 3 files changed, 10 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 40 ++++++++++++++++++++++++++++------------
+ 1 file changed, 28 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index bdfa18e..fd1d2fb 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1966,6 +1966,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
-+#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
- 
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 30513c1..2e94b1a 100644
+index a9df562..cb2bfd1 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2831,7 +2831,8 @@ retry_root_backup:
- 			close_ctree(tree_root);
- 			return ret;
- 		}
--	} else if (check_uuid_tree) {
-+	} else if (check_uuid_tree ||
-+		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
- 		pr_info("btrfs: checking UUID tree\n");
- 		ret = btrfs_check_uuid_tree(fs_info);
- 		if (ret) {
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b6af7d3..4602c6a 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -317,7 +317,7 @@ enum {
- 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
--	Opt_check_integrity_print_mask, Opt_fatal_errors,
-+	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
- 	Opt_err,
- };
+@@ -1676,24 +1676,40 @@ static void end_workqueue_fn(struct btrfs_work *work)
+ 	bio_endio(bio, error);
+ }
  
-@@ -357,6 +357,7 @@ static match_table_t tokens = {
- 	{Opt_check_integrity, "check_int"},
- 	{Opt_check_integrity_including_extent_data, "check_int_data"},
- 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
-+	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
- 	{Opt_fatal_errors, "fatal_errors=%s"},
- 	{Opt_err, NULL},
- };
-@@ -551,6 +552,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_space_cache:
- 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 			break;
-+		case Opt_rescan_uuid_tree:
-+			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
-+			break;
- 		case Opt_no_space_cache:
- 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
- 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
-@@ -925,6 +929,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",space_cache");
- 	else
- 		seq_puts(seq, ",nospace_cache");
-+	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
-+		seq_puts(seq, ",rescan_uuid_tree");
- 	if (btrfs_test_opt(root, CLEAR_CACHE))
- 		seq_puts(seq, ",clear_cache");
- 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
++/*
++ * If we remount the fs to be R/O, the cleaner needn't do anything except
++ * sleeping. This function is used to check the status of the fs.
++ */
++static inline int need_cleaner_sleep(struct btrfs_root *root)
++{
++	return root->fs_info->sb->s_flags & MS_RDONLY;
++}
++
+ static int cleaner_kthread(void *arg)
+ {
+ 	struct btrfs_root *root = arg;
++	int again;
+ 
+ 	do {
+-		int again = 0;
+-
+-		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+-		    down_read_trylock(&root->fs_info->sb->s_umount)) {
+-			if (mutex_trylock(&root->fs_info->cleaner_mutex)) {
+-				btrfs_run_delayed_iputs(root);
+-				again = btrfs_clean_one_deleted_snapshot(root);
+-				mutex_unlock(&root->fs_info->cleaner_mutex);
+-			}
+-			btrfs_run_defrag_inodes(root->fs_info);
+-			up_read(&root->fs_info->sb->s_umount);
+-		}
++		again = 0;
+ 
++		/* Make the cleaner go to sleep early. */
++		if (need_cleaner_sleep(root))
++			goto sleep;
++
++		if (!mutex_trylock(&root->fs_info->cleaner_mutex))
++			goto sleep;
++
++		btrfs_run_delayed_iputs(root);
++		again = btrfs_clean_one_deleted_snapshot(root);
++		mutex_unlock(&root->fs_info->cleaner_mutex);
++
++		/*
++		 * The defragger has dealt with the R/O remount, needn't
++		 * do anything special here.
++		 */
++		btrfs_run_defrag_inodes(root->fs_info);
++sleep:
+ 		if (!try_to_freeze() && !again) {
+ 			set_current_state(TASK_INTERRUPTIBLE);
+ 			if (!kthread_should_stop())
 -- 
-1.8.2.2
+1.8.1.4
 

@@ -1,36 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41552 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751263Ab3ENNXO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 09:23:14 -0400
-Date: Tue, 14 May 2013 15:23:12 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS in laptop-mode
-Message-ID: <20130514132312.GU16456@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5191F6AB.6020106@statystyka.net>
+Received: from mail-qa0-f46.google.com ([209.85.216.46]:57097 "EHLO
+	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756872Ab3ENPYq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 May 2013 11:24:46 -0400
+Received: by mail-qa0-f46.google.com with SMTP id g10so2169818qah.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 08:24:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5191F6AB.6020106@statystyka.net>
+In-Reply-To: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
+References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
+Date: Tue, 14 May 2013 23:24:45 +0800
+Message-ID: <CAEH94LgEAcOHJKpuY+fY4cscxJ+QbynC0H9WbSGiV0fKp+-Ajw@mail.gmail.com>
+Subject: Re: [RFC 0/5] BTRFS hot relocation support
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sekharan@us.ibm.com, chris.mason@fusionio.com,
+        Ilya Dryomov <idryomov@gmail.com>,
+        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 14, 2013 at 10:32:43AM +0200, Adam Ryczkowski wrote:
-> What are perspectives on BTRFS complying with laptop-mode and stop writing
-> to disk every 30 sec?
+HI,
 
-> Is there any tunable switch, that can delay such writes to, say, 15 minutes,
-> or better yet: until the disk started spinning anyway?
-
-30 seconds is the regular transaction commit interval. Tweaking the
-value is easy (via a mount option to make it clearly visible):
-
-http://lxr.free-electrons.com/source/fs/btrfs/disk-io.c#L1691
-
-but has implications about data safety in case of a long delay in
-combination with a crash.
+   What do you think if its design approach goes correctly? Do you
+have any comments or better design idea for BTRFS hot relocation
+support? any comments are appreciated, thanks.
 
 
-david
+On Mon, May 6, 2013 at 4:53 PM,  <zwu.kernel@gmail.com> wrote:
+> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>
+>   The patchset as RFC is sent out mainly to see if it goes in the
+> correct development direction.
+>
+>   The patchset is trying to introduce hot relocation support
+> for BTRFS. In hybrid storage environment, when the data in
+> HDD disk get hot, it can be relocated to SSD disk by BTRFS
+> hot relocation support automatically; also, if SSD disk ratio
+> exceed its upper threshold, the data which get cold can be
+> looked up and relocated to HDD disk to make more space in SSD
+> disk at first, and then the data which get hot will be relocated
+> to SSD disk automatically.
+>
+>   BTRFS hot relocation mainly reserve block space from SSD disk
+> at first, load the hot data to page cache from HDD, allocate
+> block space from SSD disk, and finally write the data to SSD disk.
+>
+>   If you'd like to play with it, pls pull the patchset from
+> my git on github:
+>   https://github.com/wuzhy/kernel.git hot_reloc
+>
+> For how to use, please refer too the example below:
+>
+> root@debian-i386:~# echo 0 > /sys/block/vdc/queue/rotational
+> ^^^ Above command will hack /dev/vdc to be one SSD disk
+> root@debian-i386:~# echo 999999 > /proc/sys/fs/hot-age-interval
+> root@debian-i386:~# echo 10 > /proc/sys/fs/hot-update-interval
+> root@debian-i386:~# echo 10 > /proc/sys/fs/hot-reloc-interval
+> root@debian-i386:~# mkfs.btrfs -d single -m single -h /dev/vdb /dev/vdc -f
+>
+> WARNING! - Btrfs v0.20-rc1-254-gb0136aa-dirty IS EXPERIMENTAL
+> WARNING! - see http://btrfs.wiki.kernel.org before using
+>
+> [ 140.279011] device fsid c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 1 transid 16 /dev/vdb
+> [ 140.283650] device fsid c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 2 transid 16 /dev/vdc
+> [ 140.517089] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1 transid 3 /dev/vdb
+> [ 140.550759] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1 transid 3 /dev/vdb
+> [ 140.552473] device fsid c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 2 transid 16 /dev/vdc
+> adding device /dev/vdc id 2
+> [ 140.636215] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 2 transid 3 /dev/vdc
+> fs created label (null) on /dev/vdb
+> nodesize 4096 leafsize 4096 sectorsize 4096 size 14.65GB
+> Btrfs v0.20-rc1-254-gb0136aa-dirty
+> root@debian-i386:~# mount -o hot_move /dev/vdb /data2
+> [ 144.855471] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1 transid 6 /dev/vdb
+> [ 144.870444] btrfs: disk space caching is enabled
+> [ 144.904214] VFS: Turning on hot data tracking
+> root@debian-i386:~# dd if=/dev/zero of=/data2/test1 bs=1M count=2048
+> 2048+0 records in
+> 2048+0 records out
+> 2147483648 bytes (2.1 GB) copied, 23.4948 s, 91.4 MB/s
+> root@debian-i386:~# df -h
+> Filesystem Size Used Avail Use% Mounted on
+> /dev/vda1 16G 13G 2.2G 86% /
+> tmpfs 4.8G 0 4.8G 0% /lib/init/rw
+> udev 10M 176K 9.9M 2% /dev
+> tmpfs 4.8G 0 4.8G 0% /dev/shm
+> /dev/vdb 15G 2.0G 13G 14% /data2
+> root@debian-i386:~# btrfs fi df /data2
+> Data: total=3.01GB, used=2.00GB
+> System: total=4.00MB, used=4.00KB
+> Metadata: total=8.00MB, used=2.19MB
+> Data_SSD: total=8.00MB, used=0.00
+> root@debian-i386:~# echo 108 > /proc/sys/fs/hot-reloc-threshold
+> ^^^ Above command will start HOT RLEOCATE, because The data temperature is currently 109
+> root@debian-i386:~# df -h
+> Filesystem Size Used Avail Use% Mounted on
+> /dev/vda1 16G 13G 2.2G 86% /
+> tmpfs 4.8G 0 4.8G 0% /lib/init/rw
+> udev 10M 176K 9.9M 2% /dev
+> tmpfs 4.8G 0 4.8G 0% /dev/shm
+> /dev/vdb 15G 2.1G 13G 14% /data2
+> root@debian-i386:~# btrfs fi df /data2
+> Data: total=3.01GB, used=6.25MB
+> System: total=4.00MB, used=4.00KB
+> Metadata: total=8.00MB, used=2.26MB
+> Data_SSD: total=2.01GB, used=2.00GB
+> root@debian-i386:~#
+>
+> Zhi Yong Wu (5):
+>   vfs: add one list_head field
+>   btrfs: add one new block group
+>   btrfs: add one hot relocation kthread
+>   procfs: add three proc interfaces
+>   btrfs: add hot relocation support
+>
+>  fs/btrfs/Makefile            |   3 +-
+>  fs/btrfs/ctree.h             |  26 +-
+>  fs/btrfs/extent-tree.c       | 107 +++++-
+>  fs/btrfs/extent_io.c         |  31 +-
+>  fs/btrfs/extent_io.h         |   4 +
+>  fs/btrfs/file.c              |  36 +-
+>  fs/btrfs/hot_relocate.c      | 802 +++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/hot_relocate.h      |  48 +++
+>  fs/btrfs/inode-map.c         |  13 +-
+>  fs/btrfs/inode.c             |  92 ++++-
+>  fs/btrfs/ioctl.c             |  23 +-
+>  fs/btrfs/relocation.c        |  14 +-
+>  fs/btrfs/super.c             |  30 +-
+>  fs/btrfs/volumes.c           |  28 +-
+>  fs/hot_tracking.c            |   1 +
+>  include/linux/btrfs.h        |   4 +
+>  include/linux/hot_tracking.h |   1 +
+>  kernel/sysctl.c              |  22 ++
+>  18 files changed, 1234 insertions(+), 51 deletions(-)
+>  create mode 100644 fs/btrfs/hot_relocate.c
+>  create mode 100644 fs/btrfs/hot_relocate.h
+>
+> --
+> 1.7.11.7
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Regards,
+
+Zhi Yong Wu

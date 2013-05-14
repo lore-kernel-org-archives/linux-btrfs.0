@@ -1,207 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44662 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752272Ab3ENKpf (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:19129 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751141Ab3ENKzk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 06:45:35 -0400
-Date: Tue, 14 May 2013 18:45:19 +0800
+	Tue, 14 May 2013 06:55:40 -0400
+Date: Tue, 14 May 2013 18:55:23 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Stefan Behrens <sbehrens@giantdisaster.de>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 3/8] Btrfs: create UUID tree if required
-Message-ID: <20130514104518.GC15127@liubo.jp.oracle.com>
+Subject: Re: [PATCH v2 0/8] Btrfs: introduce a tree for UUID to subvol ID
+ mapping
+Message-ID: <20130514105523.GD15127@liubo.jp.oracle.com>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1368523154.git.sbehrens@giantdisaster.de>
- <d2451984515c20274ceb953c95a6964589912f47.1368523154.git.sbehrens@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d2451984515c20274ceb953c95a6964589912f47.1368523154.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 14, 2013 at 11:36:55AM +0200, Stefan Behrens wrote:
-> This tree is not created by mkfs.btrfs. Therefore when a filesystem
-> is mounted writable and the UUID tree does not exist, this tree is
-> created if required. The tree is also added to the fs_info structure
-> and initialized, but this commit does not yet read or write UUID tree
-> elements.
+On Tue, May 14, 2013 at 11:36:52AM +0200, Stefan Behrens wrote:
+> Mapping UUIDs to subvolume IDs is an operation with a high effort
+> today. Today, the algorithm even has quadratic effort (based on the
+> number of existing subvolumes), which means, that it takes minutes
+> to send/receive a single subvolume if 10,000 subvolumes exist. But
+> even linear effort would be too much since it is a waste. And these
+> data structures to allow mapping UUIDs to subvolume IDs are created
+> every time a btrfs send/receive instance is started.
 > 
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> ---
->  fs/btrfs/ctree.h   |  1 +
->  fs/btrfs/disk-io.c | 40 +++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.c | 27 +++++++++++++++++++++++++++
->  fs/btrfs/volumes.h |  1 +
->  4 files changed, 68 insertions(+), 1 deletion(-)
+> So the issue to address is that Btrfs send / receive does not work
+> as it is today when a high number of subvolumes exist.
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index ca9149a..6f9d760 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1305,6 +1305,7 @@ struct btrfs_fs_info {
->  	struct btrfs_root *fs_root;
->  	struct btrfs_root *csum_root;
->  	struct btrfs_root *quota_root;
-> +	struct btrfs_root *uuid_root;
->  
->  	/* the log root tree is a directory of all the other log roots */
->  	struct btrfs_root *log_root_tree;
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 4904d7f..3c2bf74 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1499,6 +1499,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
->  	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
->  		return fs_info->quota_root ? fs_info->quota_root :
->  					     ERR_PTR(-ENOENT);
-> +	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
-> +		return fs_info->uuid_root ? fs_info->uuid_root :
-> +					    ERR_PTR(-ENOENT);
->  again:
->  	spin_lock(&fs_info->fs_roots_radix_lock);
->  	root = radix_tree_lookup(&fs_info->fs_roots_radix,
-> @@ -1955,6 +1958,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
->  		free_extent_buffer(info->quota_root->node);
->  		free_extent_buffer(info->quota_root->commit_root);
->  	}
-> +	if (info->uuid_root) {
-> +		free_extent_buffer(info->uuid_root->node);
-> +		free_extent_buffer(info->uuid_root->commit_root);
-> +	}
->  
->  	info->tree_root->node = NULL;
->  	info->tree_root->commit_root = NULL;
-> @@ -1968,6 +1975,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
->  		info->quota_root->node = NULL;
->  		info->quota_root->commit_root = NULL;
->  	}
-> +	if (info->uuid_root) {
-> +		info->uuid_root->node = NULL;
-> +		info->uuid_root->commit_root = NULL;
-> +	}
->  
->  	if (chunk_root) {
->  		free_extent_buffer(info->chunk_root->node);
-> @@ -2029,11 +2040,13 @@ int open_ctree(struct super_block *sb,
->  	struct btrfs_root *chunk_root;
->  	struct btrfs_root *dev_root;
->  	struct btrfs_root *quota_root;
-> +	struct btrfs_root *uuid_root;
->  	struct btrfs_root *log_tree_root;
->  	int ret;
->  	int err = -EINVAL;
->  	int num_backups_tried = 0;
->  	int backup_index = 0;
-> +	bool create_uuid_tree = false;
->  
->  	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
->  	extent_root = fs_info->extent_root = btrfs_alloc_root(fs_info);
-> @@ -2041,9 +2054,10 @@ int open_ctree(struct super_block *sb,
->  	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
->  	dev_root = fs_info->dev_root = btrfs_alloc_root(fs_info);
->  	quota_root = fs_info->quota_root = btrfs_alloc_root(fs_info);
-> +	uuid_root = fs_info->uuid_root = btrfs_alloc_root(fs_info);
->  
->  	if (!tree_root || !extent_root || !csum_root ||
-> -	    !chunk_root || !dev_root || !quota_root) {
-> +	    !chunk_root || !dev_root || !quota_root || !uuid_root) {
->  		err = -ENOMEM;
->  		goto fail;
->  	}
-> @@ -2604,6 +2618,19 @@ retry_root_backup:
->  		fs_info->pending_quota_state = 1;
->  	}
->  
-> +	ret = find_and_setup_root(tree_root, fs_info,
-> +				  BTRFS_UUID_TREE_OBJECTID, uuid_root);
-> +	if (ret) {
-> +		if (ret != -ENOENT)
-> +			goto recovery_tree_root;
-> +
-> +		kfree(uuid_root);
-> +		uuid_root = fs_info->uuid_root = NULL;
-> +		create_uuid_tree = true;
-> +	} else {
-> +		uuid_root->track_dirty = 1;
-> +	}
-> +
->  	fs_info->generation = generation;
->  	fs_info->last_trans_committed = generation;
->  
-> @@ -2788,6 +2815,17 @@ retry_root_backup:
->  		return ret;
->  	}
->  
-> +	if (create_uuid_tree) {
-> +		pr_info("btrfs: creating UUID tree\n");
-> +		ret = btrfs_create_uuid_tree(fs_info);
-> +		if (ret) {
-> +			pr_warn("btrfs: failed to create the UUID tree %d\n",
-> +				ret);
-> +			close_ctree(tree_root);
-> +			return ret;
-> +		}
-> +	}
-> +
->  	return 0;
->  
->  fail_qgroup:
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index a191bac..e6f5b88 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3427,6 +3427,33 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
->  	return 0;
->  }
->  
-> +int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_root *tree_root = fs_info->tree_root;
-> +	struct btrfs_root *uuid_root;
-> +
-> +	/*
-> +	 * 1 - root node
-> +	 * 1 - root item
-> +	 */
-> +	trans = btrfs_start_transaction(tree_root, 2);
-> +	if (IS_ERR(trans))
-> +		return PTR_ERR(trans);
-> +
-> +	uuid_root = btrfs_create_tree(trans, fs_info,
-> +				      BTRFS_UUID_TREE_OBJECTID);
-> +	if (IS_ERR(uuid_root)) {
-> +		btrfs_abort_transaction(trans, tree_root,
-> +					PTR_ERR(uuid_root));
-> +		return PTR_ERR(uuid_root);
-> +	}
-> +
-> +	fs_info->uuid_root = uuid_root;
-> +	uuid_root->track_dirty = 1;
+> It is much more efficient to maintain a searchable persistent data
+> structure in the filesystem, one that is updated whenever a
+> subvolume/snapshot is created and deleted, and when the received
+> subvolume UUID is set by the btrfs-receive tool.
+> 
+> Therefore kernel code is added that is able to maintain data
+> structures in the filesystem that allow to quickly search for a
+> given UUID and to retrieve the subvol ID.
+> 
+> Now follows the lengthy justification, why a new tree was added
+> instead of using the existing root tree:
+> 
+> The first approach was to not create another tree that holds UUID
+> items. Instead, the items should just go into the top root tree.
+> Unfortunately this confused the algorithm to assign the objectid
+> of subvolumes and snapshots. The reason is that
+> btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
+> the first created subvol or snapshot after mounting a filesystem,
+> and this function simply searches for the largest used objectid in
+> the root tree keys to pick the next objectid to assign. Of course,
+> the UUID keys have always been the ones with the highest offset
+> value, and the next assigned subvol ID was wastefully huge.
+> 
+> To use any other existing tree did not look proper. To apply a
+> workaround such as setting the objectid to zero in the UUID item
+> key and to implement collision handling would either add
+> limitations (in case of a btrfs_extend_item() approach to handle
+> the collisions) or a lot of complexity and source code (in case a
+> key would be looked up that is free of collisions). Adding new code
+> that introduces limitations is not good, and adding code that is
+> complex and lengthy for no good reason is also not good. That's the
+> justification why a completely new tree was introduced.
 
-btrfs_create_tree() has already set track_dirty.
+I'd appreciate if some performance number appear here since it's a speedup.
 
 thanks,
 liubo
 
-> +
-> +	return btrfs_commit_transaction(trans, tree_root);
-> +}
->  /*
->   * shrinking a device means finding all of the device extents past
->   * the new size, and then following the back refs to the chunks.
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 845ccbb..3479532 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -295,6 +295,7 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
->  int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
->  int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
->  int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
-> +int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
->  int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
->  int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
->  			 u64 *start, u64 *max_avail);
+
+> 
+> v1 -> v2:
+> - All review comments from David Sterba, Josef Bacik and Jan Schmidt
+>   are addressed.
+>   The hugest change was to add a mechanism that handles the case that
+>   the filesystem is mounted with an older kernel. Now that case is
+>   detected when the filesystem is mounted with a newer kernel again,
+>   and the UUID tree is updated in the background.
+> 
+> Stefan Behrens (8):
+>   Btrfs: introduce a tree for items that map UUIDs to something
+>   Btrfs: support printing UUID tree elements
+>   Btrfs: create UUID tree if required
+>   Btrfs: maintain subvolume items in the UUID tree
+>   Btrfs: fill UUID tree initially
+>   Btrfs: introduce uuid-tree-gen field
+>   Btrfs: check UUID tree during mount if required
+>   Btrfs: add mount option to force UUID tree checking
+> 
+>  fs/btrfs/Makefile      |   3 +-
+>  fs/btrfs/ctree.h       |  65 ++++-
+>  fs/btrfs/disk-io.c     |  62 ++++-
+>  fs/btrfs/ioctl.c       |  74 +++++-
+>  fs/btrfs/print-tree.c  |  82 +++++++
+>  fs/btrfs/super.c       |   8 +-
+>  fs/btrfs/transaction.c |  21 +-
+>  fs/btrfs/uuid-tree.c   | 637 +++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.c     | 258 ++++++++++++++++++++
+>  fs/btrfs/volumes.h     |   2 +
+>  10 files changed, 1197 insertions(+), 15 deletions(-)
+>  create mode 100644 fs/btrfs/uuid-tree.c
+> 
 > -- 
 > 1.8.2.2
 > 

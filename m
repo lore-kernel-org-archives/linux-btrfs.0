@@ -1,44 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f182.google.com ([209.85.215.182]:48051 "EHLO
-	mail-ea0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756592Ab3ENIcs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 04:32:48 -0400
-Received: by mail-ea0-f182.google.com with SMTP id r16so153870ead.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 01:32:46 -0700 (PDT)
-Received: from [192.168.3.130] ([194.9.67.191])
-        by mx.google.com with ESMTPSA id w52sm27884274eev.12.2013.05.14.01.32.45
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Tue, 14 May 2013 01:32:45 -0700 (PDT)
-Message-ID: <5191F6AB.6020106@statystyka.net>
-Date: Tue, 14 May 2013 10:32:43 +0200
-From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-MIME-Version: 1.0
+Received: from xp-ob.rzone.de ([81.169.146.139]:58715 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756637Ab3ENJhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 May 2013 05:37:03 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (joses xp2) (RZmta 31.27 OK)
+	with ESMTP id g01efep4E2rVzR for <linux-btrfs@vger.kernel.org>;
+	Tue, 14 May 2013 11:37:01 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: BTRFS in laptop-mode
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: [PATCH v2 2/8] Btrfs: support printing UUID tree elements
+Date: Tue, 14 May 2013 11:36:54 +0200
+Message-Id: <15106df00474149f4fda9676be46f468b6345f13.1368523154.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
+References: <cover.1368523154.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1368523154.git.sbehrens@giantdisaster.de>
+References: <cover.1368523154.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Welcome,
+This commit adds support to print UUID tree elements to print-tree.c.
 
-What are perspectives on BTRFS complying with laptop-mode and stop 
-writing to disk every 30 sec?
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/print-tree.c | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
-The thread was asked several years before 
-(http://mailman.samwel.tk/pipermail/laptop-mode/2012-February/000520.html), 
-but time went by and maybe the situation became a little more on the 
-bright side...? With kernel 3.8.11 I can still see with lm-profiler a 
-lot of "btrfs-transacti" and ""btrfs-submit-1" events, roughly once 
-every 30 sec.
-
-Is there any tunable switch, that can delay such writes to, say, 15 
-minutes, or better yet: until the disk started spinning anyway?
-
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index dc0024f..121cf64 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -155,6 +155,82 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
+ }
+ #endif
+ 
++static void print_uuid_item(struct extent_buffer *l,
++			    struct btrfs_uuid_item *ptr,
++			    u32 item_size)
++{
++	do {
++		u64 sub_item_type;
++		u64 sub_item_len;
++		u64 subvol_id;
++		unsigned long offset;
++
++		if (item_size < sizeof(*ptr)) {
++			printk(KERN_INFO
++			       "btrfs: uuid item too short (%llu < %d)!\n",
++			       (unsigned long long)item_size,
++			       (int)sizeof(*ptr));
++			return;
++		}
++		sub_item_type = btrfs_uuid_type(l, ptr);
++		sub_item_len = btrfs_uuid_len(l, ptr);
++		ptr++;
++		item_size -= sizeof(*ptr);
++
++		if (sub_item_len * sizeof(u64) > item_size) {
++			printk(KERN_INFO
++			       "btrfs: uuid item too short (%llu > %llu)!\n",
++			       (unsigned long long)(sub_item_len * 8),
++			       (unsigned long long)item_size);
++			return;
++		}
++
++		offset = (unsigned long)ptr;
++		ptr = (struct btrfs_uuid_item *)
++			(((char *)ptr) + sub_item_len * sizeof(u64));
++		item_size -= sub_item_len * sizeof(u64);
++		switch (sub_item_type) {
++		case BTRFS_UUID_ITEM_TYPE_SUBVOL:
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id, offset,
++						   sizeof(u64));
++				printk(KERN_INFO "\t\tsubvol_id %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				offset += sizeof(u64);
++			}
++			break;
++		case BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL:
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id, offset,
++						   sizeof(u64));
++				printk(KERN_INFO
++				       "\t\treceived_subvol_id %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				offset += sizeof(u64);
++			}
++			break;
++		default:
++			printk(KERN_INFO "\t\tunknown type=%llu, len=8*%llu\n",
++			       (unsigned long long)sub_item_type,
++			       (unsigned long long)sub_item_len);
++			while (sub_item_len) {
++				read_extent_buffer(l, &subvol_id, offset,
++						   sizeof(u64));
++				printk(KERN_INFO "\t\tid %llu\n",
++				       (unsigned long long)
++					le64_to_cpu(subvol_id));
++				sub_item_len--;
++				offset += sizeof(u64);
++			}
++			break;
++		}
++	} while (item_size);
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -168,6 +244,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	struct btrfs_extent_data_ref *dref;
+ 	struct btrfs_shared_data_ref *sref;
+ 	struct btrfs_dev_extent *dev_extent;
++	struct btrfs_uuid_item *uuid_item;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 
+@@ -301,6 +378,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_REPLACE_KEY:
+ 			printk(KERN_INFO "\t\tdev replace\n");
+ 			break;
++		case BTRFS_UUID_KEY:
++			uuid_item = btrfs_item_ptr(l, i,
++						   struct btrfs_uuid_item);
++			print_uuid_item(l, uuid_item, btrfs_item_size_nr(l, i));
++			break;
+ 		};
+ 	}
+ }
 -- 
-
-Adam Ryczkowski
-+48505919892 <callto:+48505919892>
-Skype:sisteczko <skype:sisteczko>
+1.8.2.2
 

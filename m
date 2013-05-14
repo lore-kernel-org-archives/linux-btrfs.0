@@ -1,13 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e34.co.us.ibm.com ([32.97.110.152]:53497 "EHLO
-	e34.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755864Ab3ENA7N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 May 2013 20:59:13 -0400
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:48317 "EHLO e9.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755862Ab3ENA7G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 May 2013 20:59:06 -0400
 Received: from /spool/local
-	by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Mon, 13 May 2013 18:59:13 -0600
+	Mon, 13 May 2013 20:59:05 -0400
 From: zwu.kernel@gmail.com
 To: viro@zeniv.linux.org.uk
 Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
@@ -15,9 +14,9 @@ Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         david@fromorbit.com, dsterba@suse.cz, gregkh@linuxfoundation.org,
         paulmck@linux.vnet.ibm.com, chris.mason@fusionio.com,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [PATCH v2 03/12] VFS hot tracking: add one workqueue to update hot map
-Date: Tue, 14 May 2013 08:59:35 +0800
-Message-Id: <1368493184-5939-4-git-send-email-zwu.kernel@gmail.com>
+Subject: [PATCH v2 02/12] VFS hot tracking: add i/o freq tracking hooks
+Date: Tue, 14 May 2013 08:59:34 +0800
+Message-Id: <1368493184-5939-3-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1368493184-5939-1-git-send-email-zwu.kernel@gmail.com>
 References: <1368493184-5939-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,436 +24,546 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Add a workqueue per superblock and a delayed_work
-to run periodic work to update map info on each superblock.
-  Two arrays of map list are defined, one is for hot inode
-items, and the other is for hot extent items.
-  The hot items in the RB-tree will be at first distilled
-into one temperature in the range [0, 255]. If it is old,
-it will be not linked or aged out, otherwise then it will
-be linked to its corresponding array of map list which use
-the temperature as its index.
+  Add i/o freq tracking hooks in real read/write code paths
+which include read_pages(), do_writepages(), do_generic_file_read(),
+and __blockdev_direct_IO().
+  Currently whole FS has one RB tree to track i/o freqs for
+all inodes which had real disk i/o, while every inode has its
+own one RB tree to track i/o freqs for all of its extents.
+  When real disk i/o for the inode are done, its own i/o freq will
+be created or updated in the RB tree per FS, and the i/o freq for
+all of its extents will also be done in the RB-tree per inode.
+  Also, Each of the two structures hot_inode_item and hot_range_item
+contains a hot_freq_data struct with its frequency of access metrics
+(number of {reads, writes}, last {read,write} time, frequency of
+{reads,writes}).
+  Also, each hot_inode_item contains one hot_range_tree
+struct which is keyed by {inode, offset, length}
+and used to keep track of all the ranges in this file.
 
 Signed-off-by: Chandra Seetharaman <sekharan@us.ibm.com>
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c            | 298 ++++++++++++++++++++++++++++++++++++++++++-
- fs/hot_tracking.h            |  25 ++++
- include/linux/hot_tracking.h |   4 +
- 3 files changed, 326 insertions(+), 1 deletion(-)
+ fs/direct-io.c               |   5 +
+ fs/hot_tracking.c            | 284 +++++++++++++++++++++++++++++++++++++++++++
+ fs/hot_tracking.h            |   4 +
+ fs/namei.c                   |   2 +
+ include/linux/hot_tracking.h |  17 +++
+ mm/filemap.c                 |   6 +
+ mm/page-writeback.c          |  12 ++
+ mm/readahead.c               |   6 +
+ 8 files changed, 336 insertions(+)
 
-diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index cc899f4..2742d9e 100644
---- a/fs/hot_tracking.c
-+++ b/fs/hot_tracking.c
-@@ -29,7 +29,9 @@ static void hot_inode_item_free(struct kref *kref);
- static void hot_comm_item_init(struct hot_comm_item *ci, int type)
- {
- 	kref_init(&ci->refs);
-+	clear_bit(HOT_IN_LIST, &ci->delete_flag);
- 	clear_bit(HOT_DELETING, &ci->delete_flag);
-+	INIT_LIST_HEAD(&ci->track_list);
- 	memset(&ci->hot_freq_data, 0, sizeof(struct hot_freq_data));
- 	ci->hot_freq_data.avg_delta_reads = (u64) -1;
- 	ci->hot_freq_data.avg_delta_writes = (u64) -1;
-@@ -86,12 +88,21 @@ void hot_comm_item_put(struct hot_comm_item *ci)
- EXPORT_SYMBOL_GPL(hot_comm_item_put);
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 7ab90f5..6cb0598 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -38,6 +38,7 @@
+ #include <linux/atomic.h>
+ #include <linux/prefetch.h>
+ #include <linux/aio.h>
++#include "hot_tracking.h"
  
  /*
-- * root->t_lock or he->i_lock is acquired in this function
-+ * root->t_lock or he->i_lock, and root->m_lock
-+ * are acquired in this function
-  */
+  * How many user pages to map in one call to get_user_pages().  This determines
+@@ -1295,6 +1296,10 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	prefetch(bdev->bd_queue);
+ 	prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
+ 
++	/* Hot data tracking */
++	hot_update_freqs(inode, offset, iov_length(iov, nr_segs),
++			rw & WRITE);
++
+ 	return do_blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
+ 				     nr_segs, get_block, end_io,
+ 				     submit_io, flags);
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+index 6bf4229..cc899f4 100644
+--- a/fs/hot_tracking.c
++++ b/fs/hot_tracking.c
+@@ -26,6 +26,26 @@ static struct kmem_cache *hot_range_item_cachep __read_mostly;
+ 
+ static void hot_inode_item_free(struct kref *kref);
+ 
++static void hot_comm_item_init(struct hot_comm_item *ci, int type)
++{
++	kref_init(&ci->refs);
++	clear_bit(HOT_DELETING, &ci->delete_flag);
++	memset(&ci->hot_freq_data, 0, sizeof(struct hot_freq_data));
++	ci->hot_freq_data.avg_delta_reads = (u64) -1;
++	ci->hot_freq_data.avg_delta_writes = (u64) -1;
++	ci->hot_freq_data.flags = type;
++}
++
++static void hot_range_item_init(struct hot_range_item *hr,
++			struct hot_inode_item *he, loff_t start)
++{
++	hr->start = start;
++	hr->len = hot_shift(1, RANGE_BITS, true);
++	hr->hot_inode = he;
++	hr->storage_type = -1;
++	hot_comm_item_init(&hr->hot_range, TYPE_RANGE);
++}
++
+ static void hot_comm_item_free_cb(struct rcu_head *head)
+ {
+ 	struct hot_comm_item *ci = container_of(head,
+@@ -65,10 +85,27 @@ void hot_comm_item_put(struct hot_comm_item *ci)
+ }
+ EXPORT_SYMBOL_GPL(hot_comm_item_put);
+ 
++/*
++ * root->t_lock or he->i_lock is acquired in this function
++ */
  static void hot_comm_item_unlink(struct hot_info *root,
  				struct hot_comm_item *ci)
  {
  	if (!test_and_set_bit(HOT_DELETING, &ci->delete_flag)) {
-+		if (test_and_clear_bit(HOT_IN_LIST, &ci->delete_flag)) {
-+			spin_lock(&root->m_lock);
-+			list_del_rcu(&ci->track_list);
-+			spin_unlock(&root->m_lock);
++		if (ci->hot_freq_data.flags == TYPE_RANGE) {
++			struct hot_range_item *hr = container_of(ci,
++					struct hot_range_item, hot_range);
++			struct hot_inode_item *he = hr->hot_inode;
 +
-+			hot_comm_item_put(ci);
++			spin_lock(&he->i_lock);
++			rb_erase(&ci->rb_node, &he->hot_range_tree);
++			spin_unlock(&he->i_lock);
++		} else {
++			spin_lock(&root->t_lock);
++			rb_erase(&ci->rb_node, &root->hot_inode_tree);
++			spin_unlock(&root->t_lock);
 +		}
 +
- 		if (ci->hot_freq_data.flags == TYPE_RANGE) {
- 			struct hot_range_item *hr = container_of(ci,
- 					struct hot_range_item, hot_range);
-@@ -343,6 +354,274 @@ static void hot_freq_update(struct hot_info *root,
+ 		hot_comm_item_put(ci);
+ 	}
+ }
+@@ -94,6 +131,15 @@ static void hot_range_tree_free(struct hot_inode_item *he)
+ 
  }
  
- /*
-+ * hot_temp_calc() is responsible for distilling the six heat
-+ * criteria down into a single temperature value for the data,
-+ * which is an integer between 0 and HEAT_MAX_VALUE.
-+ *
-+ * With the six values, we first do some very rudimentary
-+ * "normalizations" to each metric such that they affect the
-+ * final temperature calculation exactly the right way. It's
-+ * important to note that we still weren't really sure that
-+ * these six adjustments were exactly right.
-+ * They could definitely use more tweaking and adjustment,
-+ * especially in terms of the memory footprint they consume.
-+ *
-+ * Next, we take the adjusted values and shift them down to
-+ * a manageable size, whereafter they are weighted using the
-+ * the *_COEFF_POWER values and combined to a single temperature
-+ * value.
-+ */
-+static u32 hot_temp_calc(struct hot_comm_item *ci)
++static void hot_inode_item_init(struct hot_inode_item *he,
++			struct hot_info *hot_root, u64 ino)
 +{
-+	u32 result = 0;
-+	struct hot_freq_data *freq_data = &ci->hot_freq_data;
-+
-+	struct timespec ckt = current_kernel_time();
-+	u64 cur_time = timespec_to_ns(&ckt);
-+	u32 nrr_heat, nrw_heat;
-+	u64 ltr_heat, ltw_heat, avr_heat, avw_heat;
-+
-+	nrr_heat = (u32)hot_shift((u64)freq_data->nr_reads,
-+					NRR_MULTIPLIER_POWER, true);
-+	nrw_heat = (u32)hot_shift((u64)freq_data->nr_writes,
-+					NRW_MULTIPLIER_POWER, true);
-+
-+	ltr_heat =
-+	hot_shift((cur_time - timespec_to_ns(&freq_data->last_read_time)),
-+			LTR_DIVIDER_POWER, false);
-+	ltw_heat =
-+	hot_shift((cur_time - timespec_to_ns(&freq_data->last_write_time)),
-+			LTW_DIVIDER_POWER, false);
-+
-+	avr_heat =
-+	hot_shift((((u64) -1) - freq_data->avg_delta_reads),
-+			AVR_DIVIDER_POWER, false);
-+	avw_heat =
-+	hot_shift((((u64) -1) - freq_data->avg_delta_writes),
-+			AVW_DIVIDER_POWER, false);
-+
-+	/* ltr_heat is now guaranteed to be u32 safe */
-+	if (ltr_heat >= hot_shift((u64) 1, 32, true))
-+		ltr_heat = 0;
-+	else
-+		ltr_heat = hot_shift((u64) 1, 32, true) - ltr_heat;
-+
-+	/* ltw_heat is now guaranteed to be u32 safe */
-+	if (ltw_heat >= hot_shift((u64) 1, 32, true))
-+		ltw_heat = 0;
-+	else
-+		ltw_heat = hot_shift((u64) 1, 32, true) - ltw_heat;
-+
-+	/* avr_heat is now guaranteed to be u32 safe */
-+	if (avr_heat >= hot_shift((u64) 1, 32, true))
-+		avr_heat = (u32) -1;
-+
-+	/* avw_heat is now guaranteed to be u32 safe */
-+	if (avw_heat >= hot_shift((u64) 1, 32, true))
-+		avw_heat = (u32) -1;
-+
-+	nrr_heat = (u32)hot_shift((u64)nrr_heat,
-+		(3 - NRR_COEFF_POWER), false);
-+	nrw_heat = (u32)hot_shift((u64)nrw_heat,
-+		(3 - NRW_COEFF_POWER), false);
-+	ltr_heat = hot_shift(ltr_heat, (3 - LTR_COEFF_POWER), false);
-+	ltw_heat = hot_shift(ltw_heat, (3 - LTW_COEFF_POWER), false);
-+	avr_heat = hot_shift(avr_heat, (3 - AVR_COEFF_POWER), false);
-+	avw_heat = hot_shift(avw_heat, (3 - AVW_COEFF_POWER), false);
-+
-+	result = nrr_heat + nrw_heat + (u32) ltr_heat +
-+		(u32) ltw_heat + (u32) avr_heat + (u32) avw_heat;
-+
-+	return result;
++	he->i_ino = ino;
++	he->hot_root = hot_root;
++	spin_lock_init(&he->i_lock);
++	hot_comm_item_init(&he->hot_inode, TYPE_INODE);
 +}
 +
-+static bool hot_is_obsolete(struct hot_comm_item *ci)
+ static void hot_inode_item_free(struct kref *kref)
+ {
+ 	struct hot_comm_item *ci = container_of(kref,
+@@ -107,6 +153,195 @@ static void hot_inode_item_free(struct kref *kref)
+ 	call_rcu(&he->hot_inode.c_rcu, hot_comm_item_free_cb);
+ }
+ 
++/* root->t_lock is acquired in this function. */
++struct hot_inode_item
++*hot_inode_item_lookup(struct hot_info *root, u64 ino, int alloc)
 +{
-+	int ret = 0;
-+	struct timespec ckt = current_kernel_time();
-+	struct hot_freq_data *freq_data = &ci->hot_freq_data;
-+	u64 last_read_ns, last_write_ns;
-+	u64 cur_time = timespec_to_ns(&ckt);
-+	u64 kick_ns =  HOT_AGE_INTERVAL * NSEC_PER_SEC;
++	struct rb_node **p;
++	struct rb_node *parent = NULL;
++	struct hot_comm_item *ci;
++	struct hot_inode_item *he, *he_new = NULL;
 +
-+	last_read_ns =
-+		(cur_time - timespec_to_ns(&freq_data->last_read_time));
-+	last_write_ns =
-+		(cur_time - timespec_to_ns(&freq_data->last_write_time));
-+
-+	if ((last_read_ns > kick_ns) && (last_write_ns > kick_ns))
-+		ret = 1;
-+
-+	return ret;
-+}
-+
-+static void hot_comm_item_link_cb(struct rcu_head *head)
-+{
-+	struct hot_comm_item *ci = container_of(head,
-+				struct hot_comm_item, c_rcu);
-+	struct hot_info *root;
-+	u32 cur_temp = ci->hot_freq_data.last_temp;
-+
-+	if (ci->hot_freq_data.flags == TYPE_RANGE) {
-+		struct hot_range_item *hr = container_of(ci,
-+				struct hot_range_item, hot_range);
-+		root = hr->hot_inode->hot_root;
-+	} else {
-+		struct hot_inode_item *he = container_of(ci,
-+				struct hot_inode_item, hot_inode);
-+		root = he->hot_root;
-+
-+	}
-+
-+	spin_lock(&root->m_lock);
-+	if (test_bit(HOT_DELETING, &ci->delete_flag)) {
-+		spin_unlock(&root->m_lock);
-+		return;
-+	}
-+	list_add_tail_rcu(&ci->track_list,
-+		&root->hot_map[ci->hot_freq_data.flags][cur_temp]);
-+	spin_unlock(&root->m_lock);
-+}
-+
-+/*
-+ * Calculate a new temperature and, if necessary,
-+ * move the list_head corresponding to this inode or range
-+ * to the proper list with the new temperature.
-+ */
-+static int hot_map_update(struct hot_info *root,
-+			struct hot_comm_item *ci)
-+{
-+	u32 temp = hot_temp_calc(ci);
-+	u8 cur_temp, prev_temp;
-+	int flag = false;
-+
-+	cur_temp = (u8)hot_shift((u64)temp,
-+				(32 - MAP_BITS), false);
-+	prev_temp = (u8)hot_shift((u64)ci->hot_freq_data.last_temp,
-+				(32 - MAP_BITS), false);
-+
-+	if (cur_temp != prev_temp) {
-+		if (test_and_set_bit(HOT_IN_LIST, &ci->delete_flag)) {
-+			spin_lock(&root->m_lock);
-+			list_del_rcu(&ci->track_list);
-+			spin_unlock(&root->m_lock);
-+			flag = true;
-+		}
-+
-+		ci->hot_freq_data.last_temp = temp;
-+
-+		if (flag)
-+			call_rcu(&ci->c_rcu, hot_comm_item_link_cb);
-+			if (test_bit(HOT_DELETING, &ci->delete_flag))
-+				return 1;
++	/* walk tree to find insertion point */
++redo:
++	spin_lock(&root->t_lock);
++	p = &root->hot_inode_tree.rb_node;
++	while (*p) {
++		parent = *p;
++		ci = rb_entry(parent, struct hot_comm_item, rb_node);
++		he = container_of(ci, struct hot_inode_item, hot_inode);
++		if (ino < he->i_ino)
++			p = &(*p)->rb_left;
++		else if (ino > he->i_ino)
++			p = &(*p)->rb_right;
 +		else {
-+			u32 flags = ci->hot_freq_data.flags;
++			hot_comm_item_get(&he->hot_inode);
++			spin_unlock(&root->t_lock);
++			if (he_new)
++				/*
++				 * Lost the race. Somebody else inserted
++				 * the item for the inode. Free the
++				 * newly allocated item.
++				 */
++				kmem_cache_free(hot_inode_item_cachep, he_new);
 +
-+			hot_comm_item_get(ci);
++			if (test_bit(HOT_DELETING, &he->hot_inode.delete_flag))
++				return ERR_PTR(-ENOENT);
 +
-+			spin_lock(&root->m_lock);
-+			if (test_bit(HOT_DELETING, &ci->delete_flag)) {
-+				spin_unlock(&root->m_lock);
-+				return 1;
-+			}
-+			list_add_tail_rcu(&ci->track_list,
-+					&root->hot_map[flags][cur_temp]);
-+			spin_unlock(&root->m_lock);
++			return he;
 +		}
 +	}
 +
-+	return 0;
-+}
-+
-+/*
-+ * Update temperatures for each range item for aging purposes.
-+ * If one hot range item is old, it will be aged out.
-+ */
-+static void hot_range_update(struct hot_inode_item *he,
-+				struct hot_info *root)
-+{
-+	struct rb_node *node;
-+	struct hot_comm_item *ci;
-+	bool obsolete;
-+
-+	rcu_read_lock();
-+	node = rb_first(&he->hot_range_tree);
-+	while (node) {
-+		ci = rb_entry(node, struct hot_comm_item, rb_node);
-+		node = rb_next(node);
-+		if (test_bit(HOT_DELETING, &ci->delete_flag) ||
-+			hot_map_update(root, ci)) {
-+			continue;
-+		}
-+		obsolete = hot_is_obsolete(ci);
-+		if (obsolete)
-+			hot_comm_item_unlink(root, ci);
++	if (he_new) {
++		rb_link_node(&he_new->hot_inode.rb_node, parent, p);
++		rb_insert_color(&he_new->hot_inode.rb_node,
++				&root->hot_inode_tree);
++		hot_comm_item_get(&he_new->hot_inode);
++		spin_unlock(&root->t_lock);
++		return he_new;
 +	}
-+	rcu_read_unlock();
++	spin_unlock(&root->t_lock);
++
++	if (!alloc)
++		return ERR_PTR(-ENOENT);
++
++	he_new = kmem_cache_zalloc(hot_inode_item_cachep, GFP_NOFS);
++	if (!he_new)
++		return ERR_PTR(-ENOMEM);
++
++	hot_inode_item_init(he_new, root, ino);
++
++	goto redo;
 +}
++EXPORT_SYMBOL_GPL(hot_inode_item_lookup);
 +
-+/* Temperature compare function*/
-+static int hot_temp_cmp(void *priv, struct list_head *a,
-+				struct list_head *b)
++void hot_inode_item_delete(struct inode *inode)
 +{
-+	struct hot_comm_item *ap = container_of(a,
-+			struct hot_comm_item, track_list);
-+	struct hot_comm_item *bp = container_of(b,
-+			struct hot_comm_item, track_list);
-+
-+	int diff = ap->hot_freq_data.last_temp
-+			- bp->hot_freq_data.last_temp;
-+	if (diff > 0)
-+		return -1;
-+	if (diff < 0)
-+		return 1;
-+	return 0;
-+}
-+
-+/*
-+ * Every sync period we update temperatures for
-+ * each hot inode item and hot range item for aging
-+ * purposes.
-+ */
-+static void hot_update_worker(struct work_struct *work)
-+{
-+	struct hot_info *root = container_of(to_delayed_work(work),
-+					struct hot_info, update_work);
-+	struct rb_node *node;
-+	struct hot_comm_item *ci;
++	struct hot_info *root = inode->i_sb->s_hot_root;
 +	struct hot_inode_item *he;
-+	int i, j;
 +
-+	rcu_read_lock();
-+	node = rb_first(&root->hot_inode_tree);
-+	while (node) {
-+		ci = rb_entry(node, struct hot_comm_item, rb_node);
-+		node = rb_next(node);
-+		if (test_bit(HOT_DELETING, &ci->delete_flag) ||
-+			hot_map_update(root, ci)) {
-+			continue;
-+		}
-+		he = container_of(ci,
-+			struct hot_inode_item, hot_inode);
-+		hot_range_update(he, root);
-+	}
-+	rcu_read_unlock();
++	if (!root || !S_ISREG(inode->i_mode))
++		return;
 +
-+	/* Sort temperature map info based on last temperature*/
-+	for (i = 0; i < MAP_SIZE; i++) {
-+		for (j = 0; j < MAX_TYPES; j++) {
-+			spin_lock(&root->m_lock);
-+			list_sort(NULL, &root->hot_map[j][i], hot_temp_cmp);
-+			spin_unlock(&root->m_lock);
-+		}
-+	}
++	he = hot_inode_item_lookup(root, inode->i_ino, 0);
++	if (IS_ERR(he))
++		return;
 +
-+	/* Instert next delayed work */
-+	queue_delayed_work(root->update_wq, &root->update_work,
-+		msecs_to_jiffies(HOT_UPDATE_INTERVAL * MSEC_PER_SEC));
++	hot_comm_item_put(&he->hot_inode); /* for lookup */
++	hot_comm_item_unlink(root, &he->hot_inode);
 +}
++EXPORT_SYMBOL_GPL(hot_inode_item_delete);
++
++/* he->i_lock is acquired in this function. */
++struct hot_range_item
++*hot_range_item_lookup(struct hot_inode_item *he, loff_t start, int alloc)
++{
++	struct rb_node **p;
++	struct rb_node *parent = NULL;
++	struct hot_comm_item *ci;
++	struct hot_range_item *hr, *hr_new = NULL;
++
++	start = hot_shift(start, RANGE_BITS, true);
++
++	/* walk tree to find insertion point */
++redo:
++	spin_lock(&he->i_lock);
++	p = &he->hot_range_tree.rb_node;
++	while (*p) {
++		parent = *p;
++		ci = rb_entry(parent, struct hot_comm_item, rb_node);
++		hr = container_of(ci, struct hot_range_item, hot_range);
++		if (start < hr->start)
++			p = &(*p)->rb_left;
++		else if (start > (hr->start + hr->len - 1))
++			p = &(*p)->rb_right;
++		else {
++			hot_comm_item_get(&hr->hot_range);
++			spin_unlock(&he->i_lock);
++			if(hr_new)
++				/*
++				 * Lost the race. Somebody else inserted
++				 * the item for the range. Free the
++				 * newly allocated item.
++				 */
++				kmem_cache_free(hot_range_item_cachep, hr_new);
++
++			if (test_bit(HOT_DELETING, &hr->hot_range.delete_flag))
++				return ERR_PTR(-ENOENT);
++
++			return hr;
++		}
++	}
++
++	if (hr_new) {
++		rb_link_node(&hr_new->hot_range.rb_node, parent, p);
++		rb_insert_color(&hr_new->hot_range.rb_node,
++				&he->hot_range_tree);
++		hot_comm_item_get(&hr_new->hot_range);
++		spin_unlock(&he->i_lock);
++		return hr_new;
++	}
++	spin_unlock(&he->i_lock);
++
++	if (!alloc)
++		return ERR_PTR(-ENOENT);
++
++	hr_new = kmem_cache_zalloc(hot_range_item_cachep, GFP_NOFS);
++	if (!hr_new)
++		return ERR_PTR(-ENOMEM);
++
++	hot_range_item_init(hr_new, he, start);
++
++	goto redo;
++}
++EXPORT_SYMBOL_GPL(hot_range_item_lookup);
 +
 +/*
++ * This function does the actual work of updating
++ * the frequency numbers.
++ *
++ * avg_delta_{reads,writes} are indeed a kind of simple moving
++ * average of the time difference between each of the last
++ * 2^(FREQ_POWER) reads/writes. If there have not yet been that
++ * many reads or writes, it's likely that the values will be very
++ * large; They are initialized to the largest possible value for the
++ * data type. Simply, we don't want a few fast access to a file to
++ * automatically make it appear very hot.
++ */
++static void hot_freq_calc(struct timespec old_atime,
++		struct timespec cur_time, u64 *avg)
++{
++	struct timespec delta_ts;
++	u64 new_delta;
++
++	delta_ts = timespec_sub(cur_time, old_atime);
++	new_delta = timespec_to_ns(&delta_ts) >> FREQ_POWER;
++
++	*avg = (*avg << FREQ_POWER) - *avg + new_delta;
++	*avg = *avg >> FREQ_POWER;
++}
++
++static void hot_freq_update(struct hot_info *root,
++		struct hot_comm_item *ci, bool write)
++{
++	struct timespec cur_time = current_kernel_time();
++	struct hot_freq_data *freq_data = &ci->hot_freq_data;
++
++	if (write) {
++		freq_data->nr_writes += 1;
++		hot_freq_calc(freq_data->last_write_time,
++				cur_time,
++				&freq_data->avg_delta_writes);
++		freq_data->last_write_time = cur_time;
++	} else {
++		freq_data->nr_reads += 1;
++		hot_freq_calc(freq_data->last_read_time,
++				cur_time,
++				&freq_data->avg_delta_reads);
++		freq_data->last_read_time = cur_time;
++	}
++}
++
+ /*
   * Initialize kmem cache for hot_inode_item and hot_range_item.
   */
- void __init hot_cache_init(void)
-@@ -433,6 +712,20 @@ static struct hot_info *hot_tree_init(struct super_block *sb)
- 			INIT_LIST_HEAD(&root->hot_map[j][i]);
- 	}
+@@ -128,6 +363,55 @@ void __init hot_cache_init(void)
+ }
+ EXPORT_SYMBOL_GPL(hot_cache_init);
  
-+	root->update_wq = alloc_workqueue(
-+			"hot_update_wq", WQ_NON_REENTRANT, 0);
-+	if (!root->update_wq) {
-+		printk(KERN_ERR "%s: Failed to create "
-+				"hot update workqueue\n", __func__);
-+		kfree(root);
-+		return ERR_PTR(-ENOMEM);
++/*
++ * Main function to update i/o access frequencies, and it will be called
++ * from read/writepages() hooks, which are read_pages(), do_writepages(),
++ * do_generic_file_read(), and __blockdev_direct_IO().
++ */
++void hot_update_freqs(struct inode *inode, loff_t start,
++			size_t len, int rw)
++{
++	struct hot_info *root = inode->i_sb->s_hot_root;
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++	u64 range_size;
++	loff_t cur, end;
++
++	if (!root || (len == 0) || !S_ISREG(inode->i_mode))
++		return;
++
++	he = hot_inode_item_lookup(root, inode->i_ino, 1);
++	if (IS_ERR(he))
++		return;
++
++	hot_freq_update(root, &he->hot_inode, rw);
++
++	/*
++	 * Align ranges on range size boundary
++	 * to prevent proliferation of range structs
++	 */
++	range_size  = hot_shift(1, RANGE_BITS, true);
++	end = hot_shift((start + len + range_size - 1),
++			RANGE_BITS, false);
++	cur = hot_shift(start, RANGE_BITS, false);
++	for (; cur < end; cur++) {
++		hr = hot_range_item_lookup(he, cur, 1);
++		if (IS_ERR(hr)) {
++			WARN(1, "hot_range_item_lookup returns %ld\n",
++				PTR_ERR(hr));
++			hot_comm_item_put(&he->hot_inode);
++			return;
++		}
++
++		hot_freq_update(root, &hr->hot_range, rw);
++
++		hot_comm_item_put(&hr->hot_range);
 +	}
 +
-+	/* Initialize hot tracking wq and arm one delayed work */
-+	INIT_DELAYED_WORK(&root->update_work, hot_update_worker);
-+	queue_delayed_work(root->update_wq, &root->update_work,
-+		msecs_to_jiffies(HOT_UPDATE_INTERVAL * MSEC_PER_SEC));
++	hot_comm_item_put(&he->hot_inode);
++}
++EXPORT_SYMBOL_GPL(hot_update_freqs);
 +
- 	return root;
- }
- 
-@@ -444,6 +737,9 @@ static void hot_tree_exit(struct hot_info *root)
- 	struct rb_node *node;
- 	struct hot_comm_item *ci;
- 
-+	cancel_delayed_work_sync(&root->update_work);
-+	destroy_workqueue(root->update_wq);
-+
- 	rcu_read_lock();
- 	node = rb_first(&root->hot_inode_tree);
- 	while (node) {
+ static struct hot_info *hot_tree_init(struct super_block *sb)
+ {
+ 	struct hot_info *root;
 diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index bb4cb16..8a53c2d 100644
+index a2ee95f..bb4cb16 100644
 --- a/fs/hot_tracking.h
 +++ b/fs/hot_tracking.h
-@@ -12,10 +12,35 @@
- #ifndef __HOT_TRACKING__
- #define __HOT_TRACKING__
+@@ -14,4 +14,8 @@
  
-+#include <linux/workqueue.h>
  #include <linux/hot_tracking.h>
  
-+#define HOT_UPDATE_INTERVAL 150
-+#define HOT_AGE_INTERVAL 300
-+
- /* size of sub-file ranges */
- #define RANGE_BITS 20
- #define FREQ_POWER 4
- 
-+/* NRR/NRW heat unit = 2^X accesses */
-+#define NRR_MULTIPLIER_POWER 20 /* NRR - number of reads since mount */
-+#define NRR_COEFF_POWER 0
-+#define NRW_MULTIPLIER_POWER 20 /* NRW - number of writes since mount */
-+#define NRW_COEFF_POWER 0
-+
-+/* LTR/LTW heat unit = 2^X ns of age */
-+#define LTR_DIVIDER_POWER 30 /* LTR - time elapsed since last read(ns) */
-+#define LTR_COEFF_POWER 1
-+#define LTW_DIVIDER_POWER 30 /* LTW - time elapsed since last write(ns) */
-+#define LTW_COEFF_POWER 1
-+
-+/*
-+ * AVR/AVW cold unit = 2^X ns of average delta
-+ * AVR/AVW heat unit = HEAT_MAX_VALUE - cold unit
-+ */
-+#define AVR_DIVIDER_POWER 40 /* AVR - average delta between recent reads(ns) */
-+#define AVR_COEFF_POWER 0
-+#define AVW_DIVIDER_POWER 40 /* AVW - average delta between recent writes(ns) */
-+#define AVW_COEFF_POWER 0
++/* size of sub-file ranges */
++#define RANGE_BITS 20
++#define FREQ_POWER 4
 +
  #endif /* __HOT_TRACKING__ */
+diff --git a/fs/namei.c b/fs/namei.c
+index 85e40d1..2eec542 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -3394,6 +3394,8 @@ int vfs_unlink(struct inode *dir, struct dentry *dentry)
+ 	if (!dir->i_op->unlink)
+ 		return -EPERM;
+ 
++	hot_inode_item_delete(dentry->d_inode);
++
+ 	mutex_lock(&dentry->d_inode->i_mutex);
+ 	if (d_mountpoint(dentry))
+ 		error = -EBUSY;
 diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index 3c0cf57..c32197b 100644
+index fa99439..3c0cf57 100644
 --- a/include/linux/hot_tracking.h
 +++ b/include/linux/hot_tracking.h
-@@ -35,6 +35,7 @@ enum {
- 
- enum {
- 	HOT_DELETING,
-+	HOT_IN_LIST,
+@@ -67,6 +67,8 @@ struct hot_inode_item {
+ 	struct hot_comm_item hot_inode; /* node in hot_inode_tree */
+ 	struct rb_root hot_range_tree;	/* tree of ranges */
+ 	spinlock_t i_lock;		/* protect above tree */
++	struct hot_info *hot_root;	/* associated hot_info */
++	u64 i_ino;			/* inode number from inode */
  };
  
  /*
-@@ -60,6 +61,7 @@ struct hot_comm_item {
- 	struct rb_node rb_node;			/* rbtree index */
- 	unsigned long delete_flag;
- 	struct rcu_head c_rcu;
-+	struct list_head track_list;		/* link to *_map[] */
+@@ -76,6 +78,9 @@ struct hot_inode_item {
+ struct hot_range_item {
+ 	struct hot_comm_item hot_range;
+ 	struct hot_inode_item *hot_inode;	/* associated hot_inode_item */
++	loff_t start;				/* offset in bytes */
++	size_t len;				/* length in bytes */
++	int storage_type;			/* type of storage */
  };
  
- /* An item representing an inode and its access frequency */
-@@ -88,6 +90,8 @@ struct hot_info {
- 	spinlock_t t_lock;				/* protect above tree */
- 	struct list_head hot_map[MAX_TYPES][MAP_SIZE];	/* map of inode temp */
- 	spinlock_t m_lock;
-+	struct workqueue_struct *update_wq;
-+	struct delayed_work update_work;
- };
+ struct hot_info {
+@@ -89,6 +94,13 @@ extern void __init hot_cache_init(void);
+ extern int hot_track_init(struct super_block *sb);
+ extern void hot_track_exit(struct super_block *sb);
+ extern void hot_comm_item_put(struct hot_comm_item *ci);
++extern void hot_update_freqs(struct inode *inode, loff_t start,
++				size_t len, int rw);
++extern struct hot_inode_item *hot_inode_item_lookup(struct hot_info *root,
++						u64 ino, int alloc);
++extern struct hot_range_item *hot_range_item_lookup(struct hot_inode_item *he,
++						loff_t start, int alloc);
++extern void hot_inode_item_delete(struct inode *inode);
  
- extern void __init hot_cache_init(void);
+ static inline u64 hot_shift(u64 counter, u32 bits, bool dir)
+ {
+@@ -98,6 +110,11 @@ static inline u64 hot_shift(u64 counter, u32 bits, bool dir)
+ 		return counter >> bits;
+ }
+ 
++static inline void hot_comm_item_get(struct hot_comm_item *ci)
++{
++	kref_get(&ci->refs);
++}
++
+ #endif /* __KERNEL__ */
+ 
+ #endif  /* _LINUX_HOTTRACK_H */
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 7905fe7..eb64c49 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -33,6 +33,7 @@
+ #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
+ #include <linux/memcontrol.h>
+ #include <linux/cleancache.h>
++#include <linux/hot_tracking.h>
+ #include "internal.h"
+ 
+ #define CREATE_TRACE_POINTS
+@@ -1242,6 +1243,11 @@ readpage:
+ 		 * PG_error will be set again if readpage fails.
+ 		 */
+ 		ClearPageError(page);
++
++		/* Hot data tracking */
++		hot_update_freqs(inode, (loff_t)page->index << PAGE_CACHE_SHIFT,
++				PAGE_CACHE_SIZE, 0);
++
+ 		/* Start the actual read. The read will unlock the page. */
+ 		error = mapping->a_ops->readpage(filp, page);
+ 
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 4514ad7..4bbca3a 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -36,6 +36,7 @@
+ #include <linux/pagevec.h>
+ #include <linux/timer.h>
+ #include <linux/sched/rt.h>
++#include <linux/hot_tracking.h>
+ #include <trace/events/writeback.h>
+ 
+ /*
+@@ -1921,13 +1922,24 @@ EXPORT_SYMBOL(generic_writepages);
+ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
+ {
+ 	int ret;
++	loff_t start = 0;
++	size_t count = 0;
+ 
+ 	if (wbc->nr_to_write <= 0)
+ 		return 0;
++
++	start = mapping->writeback_index << PAGE_CACHE_SHIFT;
++	count = wbc->nr_to_write;
++
+ 	if (mapping->a_ops->writepages)
+ 		ret = mapping->a_ops->writepages(mapping, wbc);
+ 	else
+ 		ret = generic_writepages(mapping, wbc);
++
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host, start,
++			(count - wbc->nr_to_write) * PAGE_CACHE_SIZE, 1);
++
+ 	return ret;
+ }
+ 
+diff --git a/mm/readahead.c b/mm/readahead.c
+index daed28d..901396b 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -19,6 +19,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/syscalls.h>
+ #include <linux/file.h>
++#include <linux/hot_tracking.h>
+ 
+ /*
+  * Initialise a struct file's readahead state.  Assumes that the caller has
+@@ -115,6 +116,11 @@ static int read_pages(struct address_space *mapping, struct file *filp,
+ 	unsigned page_idx;
+ 	int ret;
+ 
++	/* Hot data tracking */
++	hot_update_freqs(mapping->host,
++			list_to_page(pages)->index << PAGE_CACHE_SHIFT,
++			(size_t)nr_pages * PAGE_CACHE_SIZE, 0);
++
+ 	blk_start_plug(&plug);
+ 
+ 	if (mapping->a_ops->readpages) {
 -- 
 1.7.11.7
 

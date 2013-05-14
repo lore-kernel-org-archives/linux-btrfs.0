@@ -1,121 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:57472 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751567Ab3ENRL4 (ORCPT
+Received: from mail-ve0-f171.google.com ([209.85.128.171]:41252 "EHLO
+	mail-ve0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756630Ab3ENT1J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 13:11:56 -0400
-Message-ID: <5192705A.6030708@giantdisaster.de>
-Date: Tue, 14 May 2013 19:11:54 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Tue, 14 May 2013 15:27:09 -0400
+Received: by mail-ve0-f171.google.com with SMTP id m1so1108553ves.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 12:27:08 -0700 (PDT)
+Received: from wepa.arachnorican.com (rrcs-208-105-151-74.nys.biz.rr.com. [208.105.151.74])
+        by mx.google.com with ESMTPSA id xe6sm17761146vec.6.2013.05.14.12.27.08
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
+        Tue, 14 May 2013 12:27:08 -0700 (PDT)
+From: dose <orlando.cruz@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: soft lockup btrfs
+Date: Tue, 14 May 2013 15:27:07 -0400
+Message-ID: <23200321.jz1jcOnznO@wepa.arachnorican.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/8] Btrfs: introduce a tree for UUID to subvol ID
- mapping
-References: <cover.1368523154.git.sbehrens@giantdisaster.de> <20130514105523.GD15127@liubo.jp.oracle.com>
-In-Reply-To: <20130514105523.GD15127@liubo.jp.oracle.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 14 May 2013 18:55:23 +0800, Liu Bo wrote:
-> On Tue, May 14, 2013 at 11:36:52AM +0200, Stefan Behrens wrote:
->> Mapping UUIDs to subvolume IDs is an operation with a high effort
->> today. Today, the algorithm even has quadratic effort (based on the
->> number of existing subvolumes), which means, that it takes minutes
->> to send/receive a single subvolume if 10,000 subvolumes exist. But
->> even linear effort would be too much since it is a waste. And these
->> data structures to allow mapping UUIDs to subvolume IDs are created
->> every time a btrfs send/receive instance is started.
->>
->> So the issue to address is that Btrfs send / receive does not work
->> as it is today when a high number of subvolumes exist.
->>
->> It is much more efficient to maintain a searchable persistent data
->> structure in the filesystem, one that is updated whenever a
->> subvolume/snapshot is created and deleted, and when the received
->> subvolume UUID is set by the btrfs-receive tool.
->>
->> Therefore kernel code is added that is able to maintain data
->> structures in the filesystem that allow to quickly search for a
->> given UUID and to retrieve the subvol ID.
->>
->> Now follows the lengthy justification, why a new tree was added
->> instead of using the existing root tree:
->>
->> The first approach was to not create another tree that holds UUID
->> items. Instead, the items should just go into the top root tree.
->> Unfortunately this confused the algorithm to assign the objectid
->> of subvolumes and snapshots. The reason is that
->> btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
->> the first created subvol or snapshot after mounting a filesystem,
->> and this function simply searches for the largest used objectid in
->> the root tree keys to pick the next objectid to assign. Of course,
->> the UUID keys have always been the ones with the highest offset
->> value, and the next assigned subvol ID was wastefully huge.
->>
->> To use any other existing tree did not look proper. To apply a
->> workaround such as setting the objectid to zero in the UUID item
->> key and to implement collision handling would either add
->> limitations (in case of a btrfs_extend_item() approach to handle
->> the collisions) or a lot of complexity and source code (in case a
->> key would be looked up that is free of collisions). Adding new code
->> that introduces limitations is not good, and adding code that is
->> complex and lengthy for no good reason is also not good. That's the
->> justification why a completely new tree was introduced.
-> 
-> I'd appreciate if some performance number appear here since it's a speedup.
+Hello,
+I created a btrfs volume adding drive by drive and after ran a convert and 
+balance to raid0. After 3 or 4 hours it seg faulted. I issued a reboot but it 
+would took about an hour. Now it will not mount. This is what i see in my 
+error log. Any ideas?
 
-That's a good idea. The numbers are below in the table and there's also a link to a chart.
-
-I stopped the measurement with the old version after 10000 subvolumes because it already took almost 13 minutes to send a single, empty subvolume. All the time is spent building a database, and this is done each time the btrfs send or receive tool is started to send or receive a single subvolume.
-
-The table shows the time it takes to send a single, empty subvolume depending on the number of subvolume that exist in the filesystem.
-
-# of subvols  | without    | with
-in filesystem | UUID tree  | UUID tree
---------------+------------+----------
-            2 |  0m00.004s | 0m00.003s
-         1000 |  0m07.010s | 0m00.004s
-         2000 |  0m28.210s | 0m00.004s
-         3000 |  1m04.872s | 0m00.004s
-         4000 |  1m56.059s | 0m00.004s
-         5000 |  3m00.489s | 0m00.004s
-         6000 |  4m27.376s | 0m00.004s
-         7000 |  6m08.938s | 0m00.004s
-         8000 |  7m54.020s | 0m00.004s
-         9000 | 10m05.108s | 0m00.004s
-        10000 | 12m47.406s | 0m00.004s
-
-Or as a chart:
-http://btrfs.giantdisaster.de/Btrfs-send-recv-perf.pdf
-
-The Hardware:
-Intel(R) Xeon(R) CPU X3450 @ 2.67GHz
-8 GB RAM
-6 high performance SSDs
-
-The script:
-#!/bin/bash
-set -e
-MOUNT=/mnt2
-umount $MOUNT || true
-mkfs.btrfs -f -m raid0 -d raid0 -n 32768 /dev/sdc /dev/sdj /dev/sds /dev/sdt /dev/sdu /dev/sdv
-mount /dev/sdc $MOUNT
-btrfs subv create $MOUNT/0
-btrfs subv snapshot -r $MOUNT/0 $MOUNT/0ro > /dev/null
-echo '2 subvols'
-time btrfs send $MOUNT/0ro > /dev/null
-umount $MOUNT
-mkfs.btrfs -f -m raid0 -d raid0 -n 32768 /dev/sdc /dev/sdj /dev/sds /dev/sdt /dev/sdu /dev/sdv
-mount /dev/sdc $MOUNT
-for i in `seq 1000`; do
-        btrfs subv create $MOUNT/$i
-        for j in `seq 500`; do
-                btrfs subv create $MOUNT/$i/$j > /dev/null
-                btrfs subv snapshot -r $MOUNT/$i/$j $MOUNT/$i/${j}ro > /dev/null
-        done
-        echo $i 'k subvols'
-        time btrfs send $MOUNT/$i/1ro > /dev/null
-done
+Thanks
+Orlando Cruz
+ 
+[  115.510395] ------------[ cut here ]------------
+[  115.510426] WARNING: at fs/btrfs/delayed-ref.c:454 
+update_existing_ref+0x119/0x150 [btrfs]()
+[  115.510428] Hardware name: MS-7666
+[  115.510429] Modules linked in: tda18271 s5h1411 ip6table_filter ip6_tables 
+ebtable_nat ebtables bnep bluetooth rfkill be2iscsi iscsi_boot_sysfs bnx2i 
+cnic uio cxgb4i cxgb4 cxgb3i cxgb3 mdio libcxgbi ib_iser rdma_cm ib_addr iw_cm 
+ib_cm ib_sa ib_mad ib_core iscsi_tcp libiscsi_tcp libiscsi 
+scsi_transport_iscsi snd_hda_codec_hdmi nvidia(POF) coretemp iTCO_wdt 
+iTCO_vendor_support snd_hda_codec_realtek microcode uvcvideo snd_hda_intel 
+snd_usb_audio serio_raw videobuf2_vmalloc snd_hda_codec videobuf2_memops 
+snd_usbmidi_lib i2c_i801 videobuf2_core snd_rawmidi snd_hwdep saa7164 snd_seq 
+tveeprom snd_seq_device dvb_core vhost_net snd_pcm lpc_ich v4l2_common 
+mfd_core tun videodev macvtap macvlan media snd_page_alloc kvm_intel 
+i7core_edac snd_timer r8169 snd edac_core mii soundcore i2c_core kvm uinput 
+binfmt_misc btrfs zlib_deflate libcrc32c mxm_wmi crc32c_intel firewire_ohci 
+firewire_core crc_itu_t wmi
+[  115.510461] Pid: 2313, comm: mount Tainted: PF          O 
+3.8.11-200.fc18.x86_64 #1
+[  115.510462] Call Trace:
+[  115.510468]  [<ffffffff8105e675>] warn_slowpath_common+0x75/0xa0
+[  115.510470]  [<ffffffff8105e6ba>] warn_slowpath_null+0x1a/0x20
+[  115.510481]  [<ffffffffa00f5a79>] update_existing_ref+0x119/0x150 [btrfs]
+[  115.510492]  [<ffffffffa00f5d0f>] add_delayed_tree_ref+0xcf/0x190 [btrfs]
+[  115.510503]  [<ffffffffa00f58cf>] ? add_delayed_ref_head.isra.7+0xcf/0x160 
+[btrfs]
+[  115.510515]  [<ffffffffa00f6519>] btrfs_add_delayed_tree_ref+0x109/0x1a0 
+[btrfs]
+[  115.510523]  [<ffffffffa00a0591>] btrfs_free_extent+0xa1/0xf0 [btrfs]
+[  115.510534]  [<ffffffffa00fa2d2>] replace_path+0x782/0x7f0 [btrfs]
+[  115.510546]  [<ffffffffa00fced8>] merge_reloc_root+0x1f8/0x510 [btrfs]
+[  115.510553]  [<ffffffffa008f2da>] ? btrfs_free_path+0x2a/0x40 [btrfs]
+[  115.510564]  [<ffffffffa00fd2bc>] merge_reloc_roots+0xcc/0x150 [btrfs]
+[  115.510575]  [<ffffffffa00fe268>] btrfs_recover_relocation+0x398/0x410 [btrfs]
+[  115.510585]  [<ffffffffa00b2d97>] open_ctree+0x1b07/0x1cf0 [btrfs]
+[  115.510589]  [<ffffffff812e328a>] ? disk_name+0xba/0xc0
+[  115.510595]  [<ffffffffa008bafc>] btrfs_mount+0x62c/0x770 [btrfs]
+[  115.510601]  [<ffffffff811a15d3>] mount_fs+0x43/0x1b0
+[  115.510605]  [<ffffffff811bacef>] vfs_kern_mount+0x6f/0x100
+[  115.510607]  [<ffffffff811bd10f>] do_mount+0x21f/0xab0
+[  115.510609]  [<ffffffff811bcd5a>] ? copy_mount_options+0x3a/0x180
+[  115.510611]  [<ffffffff811bda2e>] sys_mount+0x8e/0xe0
+[  115.510615]  [<ffffffff8165be19>] system_call_fastpath+0x16/0x1b
+[  115.510616] ---[ end trace 09e1d738feb203b9 ]---
+[  115.510773] ------------[ cut here ]------------
 

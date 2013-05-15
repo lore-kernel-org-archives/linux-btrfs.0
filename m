@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53927 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58298 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755975Ab3EOLKA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 07:10:00 -0400
-Date: Wed, 15 May 2013 13:09:57 +0200
+	id S1756602Ab3EONMZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 09:12:25 -0400
+Date: Wed, 15 May 2013 15:12:23 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: increase the max global reserve size to 1gig
-Message-ID: <20130515110957.GW16456@twin.jikos.cz>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/8] Btrfs: introduce a tree for UUID to subvol ID
+ mapping
+Message-ID: <20130515131223.GX16456@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1367585814-18076-1-git-send-email-jbacik@fusionio.com>
- <20130503152834.GE16411@liubo.jp.oracle.com>
+References: <cover.1368523154.git.sbehrens@giantdisaster.de>
+ <20130514105523.GD15127@liubo.jp.oracle.com>
+ <5192705A.6030708@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130503152834.GE16411@liubo.jp.oracle.com>
+In-Reply-To: <5192705A.6030708@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 03, 2013 at 11:28:35PM +0800, Liu Bo wrote:
-> On Fri, May 03, 2013 at 08:56:54AM -0400, Josef Bacik wrote:
-> > Apparently 512mb was too small, with a fs_mark command we could get so much
-> > delayed work built up that we'd never trip the "lets commit the transaction"
-> > logic until we'd gotten too much delayed refs built up.  Increasing this to 1
-> > gig makes us much safer and we no longer abort with Dave's fs_mark tester.
-> > Thanks,
-> 
-> I remember that last time I made a similar commit, but users complains that
-> they cannot boot their system on root btrfs partition due to lacking space and
-> Chris eventually got to revert that one...
+On Tue, May 14, 2013 at 07:11:54PM +0200, Stefan Behrens wrote:
+> # of subvols  | without    | with
+> in filesystem | UUID tree  | UUID tree
+> --------------+------------+----------
+>             2 |  0m00.004s | 0m00.003s
+>          1000 |  0m07.010s | 0m00.004s
+>          2000 |  0m28.210s | 0m00.004s
+>          3000 |  1m04.872s | 0m00.004s
+>          4000 |  1m56.059s | 0m00.004s
+>          5000 |  3m00.489s | 0m00.004s
+>          6000 |  4m27.376s | 0m00.004s
+>          7000 |  6m08.938s | 0m00.004s
+>          8000 |  7m54.020s | 0m00.004s
+>          9000 | 10m05.108s | 0m00.004s
+>         10000 | 12m47.406s | 0m00.004s
 
-That was long time ago (3.5) and enospc has been updated since, so this
-needs re-evaluation if it still leads to early enospc.
-
-This patch is not in next queue, i wonder if your concern is the reason
-of that.
+It looks like a copy paste error in the 3rd column. No really, this
+is a great improvement!
 
 david

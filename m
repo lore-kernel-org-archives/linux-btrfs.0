@@ -1,127 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.138]:28469 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757009Ab3EONyw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 09:54:52 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp1) (RZmta 31.27 OK)
-	with ESMTP id X02f08p4EHbUuY for <linux-btrfs@vger.kernel.org>;
-	Wed, 15 May 2013 15:54:49 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: detect when scrub is started twice
-Date: Wed, 15 May 2013 15:54:49 +0200
-Message-Id: <1368626089-20710-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from dkim2.fusionio.com ([66.114.96.54]:51751 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759840Ab3EOR5T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 13:57:19 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 7391A9A0320
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 May 2013 11:57:19 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id Gm7EkN7WsELzKmTG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 15 May 2013 11:57:18 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: add a newline to a free space cache message
+Date: Wed, 15 May 2013 13:57:16 -0400
+Message-ID: <1368640636-16884-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check whether any involved device is already busy running a
-scrub. This would cause damaged status messages and the state
-"aborted" without the explanation that a scrub was already
-running. Therefore check it first, prevent it and give some
-feedback to the user if scrub is already running.
-Note that if scrub is started with a block device as the
-parameter, only that particular block device is checked. It
-is a normal mode of operation to start scrub on multiple
-single devices, there is no reason to prevent this.
+Left out a newline in the generation check printf.
 
-Here is an example:
-/mnt2 is the mountpoint of a filesystem.
-/dev/sdk and /dev/sdl are the block devices for that filesystem.
-
-case 1:
-btrfs scrub start /mnt2
-btrfs scrub start /mnt2
--> complain
-
-case 1:
-btrfs scrub start /dev/sdk
-btrfs scrub start /dev/sdk
--> complain
-
-case 3:
-btrfs scrub start /dev/sdk
-btrfs scrub start /dev/sdl
--> don't complain
-
-case 4:
-btrfs scrub start /dev/sdk
-btrfs scrub start /mnt2
--> complain
-
-case 5:
-btrfs scrub start /mnt2
-btrfs scrub start /dev/sdk
--> complain if the scrub on /dev/sdk is still running.
--> don't complain if the scrub on /dev/sdk is finished, the
-   status messages will be fine.
-
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- cmds-scrub.c | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+ free-space-cache.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index c0dc584..95dfee3 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1025,6 +1025,27 @@ int mkdir_p(char *path)
- 	return 0;
- }
- 
-+static int is_scrub_running_on_fs(struct btrfs_ioctl_fs_info_args *fi_args,
-+				  struct btrfs_ioctl_dev_info_args *di_args,
-+				  struct scrub_file_record **past_scrubs)
-+{
-+	int i;
-+
-+	if (!fi_args || !di_args || !past_scrubs)
-+		return 0;
-+
-+	for (i = 0; i < fi_args->num_devices; i++) {
-+		struct scrub_file_record *sfr =
-+			last_dev_scrub(past_scrubs, di_args[i].devid);
-+
-+		if (!sfr)
-+			continue;
-+		if (!(sfr->stats.finished || sfr->stats.canceled))
-+			return 1;
-+	}
-+	return 0;
-+}
-+
- static const char * const cmd_scrub_start_usage[];
- static const char * const cmd_scrub_resume_usage[];
- 
-@@ -1162,6 +1183,27 @@ static int scrub_start(int argc, char **argv, int resume)
- 		close(fdres);
- 	}
- 
-+	/*
-+	 * check whether any involved device is already busy running a
-+	 * scrub. This would cause damaged status messages and the state
-+	 * "aborted" without the explanation that a scrub was already
-+	 * running. Therefore check it first, prevent it and give some
-+	 * feedback to the user if scrub is already running.
-+	 * Note that if scrub is started with a block device as the
-+	 * parameter, only that particular block device is checked. It
-+	 * is a normal mode of operation to start scrub on multiple
-+	 * single devices, there is no reason to prevent this.
-+	 */
-+	if (is_scrub_running_on_fs(&fi_args, di_args, past_scrubs)) {
-+		ERR(!do_quiet,
-+		    "ERROR: scrub is already running.\n"
-+		    "To cancel use 'btrfs scrub cancel %s'.\n"
-+		    "To see the status use 'btrfs scrub status [-d] %s'.\n",
-+		    path, path);
-+		err = 1;
-+		goto out;
-+	}
-+
- 	t_devs = malloc(fi_args.num_devices * sizeof(*t_devs));
- 	sp = calloc(fi_args.num_devices, sizeof(*sp));
- 	spc.progress = calloc(fi_args.num_devices * 2, sizeof(*spc.progress));
+diff --git a/free-space-cache.c b/free-space-cache.c
+index 5fb8ece..a30438b 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -314,7 +314,7 @@ int __load_free_space_cache(struct btrfs_root *root,
+ 				    struct btrfs_inode_item);
+ 	if (btrfs_inode_generation(leaf, inode_item) != generation) {
+ 		printf("free space inode generation (%llu) did not match "
+-		       "free space cache generation (%llu)",
++		       "free space cache generation (%llu)\n",
+ 		       (unsigned long long)btrfs_inode_generation(leaf,
+ 								  inode_item),
+ 		       (unsigned long long)generation);
 -- 
-1.8.2.3
+1.7.7.6
 

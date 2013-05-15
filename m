@@ -1,66 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62621 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756677Ab3EOHsk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 03:48:40 -0400
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: alex.btrfs@zadarastorage.com
-Subject: [PATCH 00/17] improve the block time during the transaction commit
-Date: Wed, 15 May 2013 15:48:14 +0800
-Message-Id: <1368604111-25073-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.161]:31816 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757066Ab3EOIwM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 04:52:12 -0400
+Message-ID: <51934CBD.4080006@giantdisaster.de>
+Date: Wed, 15 May 2013 10:52:13 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/8] Btrfs: introduce a tree for UUID to subvol ID
+ mapping
+References: <cover.1368523154.git.sbehrens@giantdisaster.de> <20130514105523.GD15127@liubo.jp.oracle.com> <5192705A.6030708@giantdisaster.de>
+In-Reply-To: <5192705A.6030708@giantdisaster.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset improve the problem that the transaction may be blocked for a
-long time when it is being committed if there is heavy I/O.
+On Tue, 14 May 2013 19:11:54 +0200, Stefan Behrens wrote:
+> On Tue, 14 May 2013 18:55:23 +0800, Liu Bo wrote:
+>> On Tue, May 14, 2013 at 11:36:52AM +0200, Stefan Behrens wrote:
+>>> Mapping UUIDs to subvolume IDs is an operation with a high effort
+>>> today. Today, the algorithm even has quadratic effort (based on the
+>>> number of existing subvolumes), which means, that it takes minutes
+>>> to send/receive a single subvolume if 10,000 subvolumes exist. But
+>>> even linear effort would be too much since it is a waste. And these
+>>> data structures to allow mapping UUIDs to subvolume IDs are created
+>>> every time a btrfs send/receive instance is started.
+>>>
+>>> So the issue to address is that Btrfs send / receive does not work
+>>> as it is today when a high number of subvolumes exist.
+>>>
+>>> It is much more efficient to maintain a searchable persistent data
+>>> structure in the filesystem, one that is updated whenever a
+>>> subvolume/snapshot is created and deleted, and when the received
+>>> subvolume UUID is set by the btrfs-receive tool.
+>>>
+>>> Therefore kernel code is added that is able to maintain data
+>>> structures in the filesystem that allow to quickly search for a
+>>> given UUID and to retrieve the subvol ID.
+>>>
+>>> Now follows the lengthy justification, why a new tree was added
+>>> instead of using the existing root tree:
+>>>
+>>> The first approach was to not create another tree that holds UUID
+>>> items. Instead, the items should just go into the top root tree.
+>>> Unfortunately this confused the algorithm to assign the objectid
+>>> of subvolumes and snapshots. The reason is that
+>>> btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
+>>> the first created subvol or snapshot after mounting a filesystem,
+>>> and this function simply searches for the largest used objectid in
+>>> the root tree keys to pick the next objectid to assign. Of course,
+>>> the UUID keys have always been the ones with the highest offset
+>>> value, and the next assigned subvol ID was wastefully huge.
+>>>
+>>> To use any other existing tree did not look proper. To apply a
+>>> workaround such as setting the objectid to zero in the UUID item
+>>> key and to implement collision handling would either add
+>>> limitations (in case of a btrfs_extend_item() approach to handle
+>>> the collisions) or a lot of complexity and source code (in case a
+>>> key would be looked up that is free of collisions). Adding new code
+>>> that introduces limitations is not good, and adding code that is
+>>> complex and lengthy for no good reason is also not good. That's the
+>>> justification why a completely new tree was introduced.
+>>
+>> I'd appreciate if some performance number appear here since it's a speedup.
+> 
+> That's a good idea. The numbers are below in the table and there's also a link to a chart.
+> 
+> I stopped the measurement with the old version after 10000 subvolumes because it already took almost 13 minutes to send a single, empty subvolume. All the time is spent building a database, and this is done each time the btrfs send or receive tool is started to send or receive a single subvolume.
+> 
+> The table shows the time it takes to send a single, empty subvolume depending on the number of subvolume that exist in the filesystem.
+> 
+> # of subvols  | without    | with
+> in filesystem | UUID tree  | UUID tree
+> --------------+------------+----------
+>             2 |  0m00.004s | 0m00.003s
+>          1000 |  0m07.010s | 0m00.004s
+>          2000 |  0m28.210s | 0m00.004s
+>          3000 |  1m04.872s | 0m00.004s
+>          4000 |  1m56.059s | 0m00.004s
+>          5000 |  3m00.489s | 0m00.004s
+>          6000 |  4m27.376s | 0m00.004s
+>          7000 |  6m08.938s | 0m00.004s
+>          8000 |  7m54.020s | 0m00.004s
+>          9000 | 10m05.108s | 0m00.004s
+>         10000 | 12m47.406s | 0m00.004s
+> 
+> Or as a chart:
+> http://btrfs.giantdisaster.de/Btrfs-send-recv-perf.pdf
 
-In this patchset,
-- 0001-0005, 0007, 0011-0012 are random fix or code cleanup patch.
-- 0006, 0008-0010 introduce per-subvolume delalloc inode list and ordered
-  extent list, which can reduce the flush time when we create snapshots.
-- 0013-0016 improve the block time during the transaction commit by removing
-  the while loop at the beginning of the transaction commit.
-- 0017 improves the readability of the code.
+The table goes on like this for larger number of subvolumes (and the time value is always the time to transfer just _one_ of the subvolumes):
 
-Miao Xie (17):
-  Btrfs: fix accessing a freed tree root
-  Btrfs: fix unprotected root node of the subvolume's inode rb-tree
-  Btrfs: pause the space balance when remounting to R/O
-  Btrfs: remove BUG_ON() in btrfs_read_fs_tree_no_radix()
-  Btrfs: cleanup the similar code of the fs root read
-  Btrfs: introduce grab/put functions for the root of the fs/file tree
-  Btrfs: don't invoke btrfs_invalidate_inodes() in the spin lock context
-  Btrfs: introduce per-subvolume delalloc inode list
-  Btrfs: introduce per-subvolume ordered extent list
-  Btrfs: just flush the delalloc inodes in the source tree before snapshot creation
-  Btrfs: cleanup unnecessary assignment when cleaning up all the residual transaction
-  Btrfs: remove the code for the impossible case in cleanup_transaction()
-  Btrfs: don't wait for all the writers circularly during the transaction commit
-  Btrfs: don't flush the delalloc inodes in the while loop if flushoncommit is set
-  Btrfs: remove unnecessary varient ->num_joined in btrfs_transaction structure
-  Btrfs: remove the time check in btrfs_commit_transaction()
-  Btrfs: make the state of the transaction more readable
+# of subvols  | without    | with
+in filesystem | UUID tree  | UUID tree
+--------------+------------+----------
+            2 |  0m00.004s | 0m00.003s
+         1000 |  0m07.010s | 0m00.004s
+         2000 |  0m28.210s | 0m00.004s
+         3000 |  1m04.872s | 0m00.004s
+         4000 |  1m56.059s | 0m00.004s
+         5000 |  3m00.489s | 0m00.004s
+         6000 |  4m27.376s | 0m00.004s
+         7000 |  6m08.938s | 0m00.004s
+         8000 |  7m54.020s | 0m00.004s
+         9000 | 10m05.108s | 0m00.004s
+        10000 | 12m47.406s | 0m00.004s
+        11000 | 15m05.800s | 0m00.004s
+        12000 | 18m00.170s | 0m00.004s
+        13000 | 21m39.438s | 0m00.004s
+        14000 | 24m54.681s | 0m00.004s
+        15000 | 28m09.096s | 0m00.004s
+        16000 | 33m08.856s | 0m00.004s
+        17000 | 37m10.562s | 0m00.004s
+        18000 | 41m44.727s | 0m00.004s
+        19000 | 46m14.335s | 0m00.004s
+        20000 | 51m55.100s | 0m00.004s
+        21000 | 56m54.346s | 0m00.004s
+        22000 | 62m53.466s | 0m00.004s
+        23000 | 66m57.328s | 0m00.004s
+        24000 | 73m59.687s | 0m00.004s
+        25000 | 81m24.476s | 0m00.004s
+        26000 | 87m11.478s | 0m00.004s
+        27000 | 92m59.225s | 0m00.004s
 
- fs/btrfs/ctree.h        |  55 +++++--
- fs/btrfs/dev-replace.c  |   6 +-
- fs/btrfs/disk-io.c      | 425 +++++++++++++++++++++++++++---------------------
- fs/btrfs/disk-io.h      |  32 +++-
- fs/btrfs/extent-tree.c  |  20 +--
- fs/btrfs/inode.c        | 180 ++++++++++++++------
- fs/btrfs/ioctl.c        |   6 +
- fs/btrfs/ordered-data.c | 109 +++++++++----
- fs/btrfs/ordered-data.h |   2 +
- fs/btrfs/relocation.c   |   9 +-
- fs/btrfs/root-tree.c    | 170 ++++++-------------
- fs/btrfs/super.c        |   3 +-
- fs/btrfs/transaction.c  | 271 ++++++++++++++++--------------
- fs/btrfs/transaction.h  |  49 ++++--
- fs/btrfs/tree-log.c     |   3 +-
- fs/btrfs/volumes.c      |  13 +-
- fs/btrfs/volumes.h      |   1 +
- 17 files changed, 791 insertions(+), 563 deletions(-)
+For 100,000 existing subvolumes, the calculated value is 22 hours 25 minutes 19 seconds to start btrfs send/receive to transfer a single subvolume.
+For 1,000,000 existing subvolumes, it would take 102 days.
+30 years for 10 million existing subvolumes. And 30 years is unacceptable.
 
--- 
-1.8.1.4
+
+> The Hardware:
+> Intel(R) Xeon(R) CPU X3450 @ 2.67GHz
+> 8 GB RAM
+> 6 high performance SSDs
+> 
+> The script:
+> #!/bin/bash
+> set -e
+> MOUNT=/mnt2
+> umount $MOUNT || true
+> mkfs.btrfs -f -m raid0 -d raid0 -n 32768 /dev/sdc /dev/sdj /dev/sds /dev/sdt /dev/sdu /dev/sdv
+> mount /dev/sdc $MOUNT
+> btrfs subv create $MOUNT/0
+> btrfs subv snapshot -r $MOUNT/0 $MOUNT/0ro > /dev/null
+> echo '2 subvols'
+> time btrfs send $MOUNT/0ro > /dev/null
+> umount $MOUNT
+> mkfs.btrfs -f -m raid0 -d raid0 -n 32768 /dev/sdc /dev/sdj /dev/sds /dev/sdt /dev/sdu /dev/sdv
+> mount /dev/sdc $MOUNT
+> for i in `seq 1000`; do
+>         btrfs subv create $MOUNT/$i
+>         for j in `seq 500`; do
+>                 btrfs subv create $MOUNT/$i/$j > /dev/null
+>                 btrfs subv snapshot -r $MOUNT/$i/$j $MOUNT/$i/${j}ro > /dev/null
+>         done
+>         echo $i 'k subvols'
+>         time btrfs send $MOUNT/$i/1ro > /dev/null
+> done
+
 

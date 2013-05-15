@@ -1,57 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:30304 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932093Ab3EOC42 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 22:56:28 -0400
-Date: Wed, 15 May 2013 10:56:04 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Tim Eggleston <lists@timeggleston.co.uk>
-Cc: Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
-Subject: Re: Defragmentation of large files
-Message-ID: <20130515025603.GC20202@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <7f41ae131c619b653da281429fcead79@mail.39.gs>
- <2041896.zZaOgtZsWg@merkaba>
- <fa5698cdba14a3164f014a8c386bc837@mail.39.gs>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <fa5698cdba14a3164f014a8c386bc837@mail.39.gs>
+Received: from cn.fujitsu.com ([222.73.24.84]:48578 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755108Ab3EOHsh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 03:48:37 -0400
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: alex.btrfs@zadarastorage.com
+Subject: [PATCH 01/17] Btrfs: fix accessing a freed tree root
+Date: Wed, 15 May 2013 15:48:15 +0800
+Message-Id: <1368604111-25073-2-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1368604111-25073-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1368604111-25073-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 11, 2013 at 05:57:11PM +0100, Tim Eggleston wrote:
-> 
-> >Yes. The command just triggers the defragmentation which takes
-> >place in the
-> >background. Try a "sync" afterwards :)
-> 
-> Sorry Martin, I should have specified that I wondered if it was like
-> the scrub operation in that respect, so I left it several hours
-> before running filefrag again (and seeing that the number of extents
-> was unchanged). Top and iostat also don't report any particular
-> activity immediately after running the defrag command, so it doesn't
-> look like much if anything is happening.
-> 
-> By the way, this is on a filesystem mounted with -o autodefrag,
-> although per the docs I wasn't expecting the auto defragmentation to
-> work with the big VM images.
+inode_tree_del() will move the tree root into the dead root list, and
+then the tree will be destroyed by the cleaner. So if we remove the
+delayed node which is cached in the inode after inode_tree_del(),
+we may access a freed tree root. Fix it.
 
-Hi Tim,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Btrfs defrag tries to merge small extents in overall, so maybe the
-extents in your big VM images are large enough although there are 4000+
-extents.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1669c3b..7f6e78a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4723,6 +4723,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root);
+ no_delete:
++	btrfs_remove_delayed_node(inode);
+ 	clear_inode(inode);
+ 	return;
+ }
+@@ -7978,7 +7979,6 @@ void btrfs_destroy_inode(struct inode *inode)
+ 	inode_tree_del(inode);
+ 	btrfs_drop_extent_cache(inode, 0, (u64)-1, 0);
+ free:
+-	btrfs_remove_delayed_node(inode);
+ 	call_rcu(&inode->i_rcu, btrfs_i_callback);
+ }
+ 
+-- 
+1.8.1.4
 
-And autodefrag is also only for small extents(like a write less then
-16k).
-
-So, you may check if those extents are already big enough :)
-
-thanks,
-liubo
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

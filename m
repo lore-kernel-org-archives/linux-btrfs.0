@@ -1,29 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60459 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754751Ab3EOOCq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 10:02:46 -0400
-Date: Wed, 15 May 2013 16:02:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: increase the max global reserve size to 1gig
-Message-ID: <20130515140243.GY16456@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1367585814-18076-1-git-send-email-jbacik@fusionio.com>
+Received: from ssl.serverraum.org ([88.198.40.39]:55339 "EHLO
+	ssl.serverraum.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759141Ab3EOO2x (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 10:28:53 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by ssl.serverraum.org (Postfix) with ESMTP id 9E4973F073
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 May 2013 16:19:32 +0200 (CEST)
+Received: from ssl.serverraum.org ([127.0.0.1])
+	by localhost (ssl.serverraum.org [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id QBTdMIHRJxcU for <linux-btrfs@vger.kernel.org>;
+	Wed, 15 May 2013 16:19:32 +0200 (CEST)
+Received: from mail-ob0-x22c.google.com (mail-ob0-x22c.google.com [IPv6:2607:f8b0:4003:c01::22c])
+	(using TLSv1 with cipher RC4-SHA (128/128 bits))
+	(No client certificate requested)
+	by ssl.serverraum.org (Postfix) with ESMTPSA id 2DD013F071
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 May 2013 16:19:32 +0200 (CEST)
+Received: by mail-ob0-f172.google.com with SMTP id tb18so2044466obb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 May 2013 07:19:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1367585814-18076-1-git-send-email-jbacik@fusionio.com>
+Date: Wed, 15 May 2013 16:19:30 +0200
+Message-ID: <CADYPuQ5ESOPv_zymxAkCzKyMGDAy9Bh8Nu8UQyb161a=Jb+a8w@mail.gmail.com>
+Subject: kernel BUG at fs/btrfs/free-space-cache.c:1567!, Kernel 3.9.1
+From: Philipp Dreimann <philipp@dreimann.net>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 03, 2013 at 08:56:54AM -0400, Josef Bacik wrote:
-> Apparently 512mb was too small, with a fs_mark command we could get so much
-> delayed work built up that we'd never trip the "lets commit the transaction"
-> logic until we'd gotten too much delayed refs built up.  Increasing this to 1
-> gig makes us much safer and we no longer abort with Dave's fs_mark tester.
+Hello,
 
-With this patch on top of today's next I still hit the abort and will
-file a bug.
+my btrfs filesystem was not mountable anymore after a loss of power:
 
-david
+kernel BUG at fs/btrfs/free-space-cache.c:1567!
+invalid opcode: 0000 [#1] SMP
+Modules linked in: btrfs libcrc32c xor zlib_deflate raid6_pq i915(+)
+i2c_algo_bit drm_kms_helper drm i2c_core video uinput
+CPU 3
+Pid: 147, comm: mount Not tainted 3.9.1-301.fc19.x86_64 #1 LENOVO
+4290W4H/4290W4H
+RIP: 0010:[<ffffffffa01c5984>]  [<ffffffffa01c5984>]
+remove_from_bitmap+0x1f4/0x210 [btrfs]
+RSP: 0018:ffff88020fddd698  EFLAGS: 00010287
+RAX: 0000001454248000 RBX: ffff880211399180 RCX: 0000001454253000
+RDX: 0000000000013000 RSI: 00000000000051c0 RDI: 0000000000002e40
+RBP: ffff88020fddd6e8 R08: ffff88020fecf5c8 R09: 0000001459400000
+R10: ffff8802124ce240 R11: ffff880211399198 R12: ffff880210025240
+R13: ffff88020fddd708 R14: ffff88020fddd700 R15: ffff8802113991a8
+FS:  00007f019f213880(0000) GS:ffff88021e2c0000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f4cdd4223f0 CR3: 000000020ff03000 CR4: 00000000000407e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process mount (pid: 147, threadinfo ffff88020fddc000, task ffff8802100b4650)
+Stack:
+ ffff88020fddd6e8 0000001459400000 ffff880210025264 0000001454253000
+ 0000000000013000 ffff880210025240 ffff880210025264 0000000000000000
+ ffff880210025248 ffff88020ff4ec00 ffff88020fddd738 ffffffffa01c714b
+Call Trace:
+ [<ffffffffa01c714b>] btrfs_remove_free_space+0x5b/0x290 [btrfs]
+ [<ffffffff810810e0>] ? wake_up_bit+0x30/0x30
+ [<ffffffffa0176bff>] btrfs_alloc_logged_file_extent+0x1af/0x1d0 [btrfs]
+ [<ffffffffa0162e86>] ? btrfs_free_path+0x26/0x30 [btrfs]
+ [<ffffffffa01c1ef7>] replay_one_extent+0x607/0x690 [btrfs]
+ [<ffffffffa01c224b>] replay_one_buffer+0x2cb/0x390 [btrfs]
+ [<ffffffffa01a77b4>] ? alloc_extent_buffer+0x94/0x3f0 [btrfs]
+ [<ffffffffa01bd484>] walk_down_log_tree+0x224/0x410 [btrfs]
+ [<ffffffffa01bd95f>] walk_log_tree+0xbf/0x1f0 [btrfs]
+ [<ffffffffa01c43c1>] btrfs_recover_log_trees+0x1f1/0x360 [btrfs]
+ [<ffffffffa01c1f80>] ? replay_one_extent+0x690/0x690 [btrfs]
+ [<ffffffffa0186a1b>] open_ctree+0x18eb/0x1f90 [btrfs]
+ [<ffffffff812dac54>] ? disk_name+0x54/0xb0
+ [<ffffffffa015f94e>] btrfs_mount+0x5ce/0x6c0 [btrfs]
+ [<ffffffff8129525d>] ? selinux_sb_copy_data+0x14d/0x220
+ [<ffffffff8119d1a9>] mount_fs+0x39/0x1b0
+ [<ffffffff811b635f>] vfs_kern_mount+0x5f/0xf0
+ [<ffffffffa015f4fc>] btrfs_mount+0x17c/0x6c0 [btrfs]
+ [<ffffffff8129525d>] ? selinux_sb_copy_data+0x14d/0x220
+ [<ffffffff8119d1a9>] mount_fs+0x39/0x1b0
+ [<ffffffff811b635f>] vfs_kern_mount+0x5f/0xf0
+ [<ffffffff811b862e>] do_mount+0x23e/0xa20
+ [<ffffffff811b8276>] ? copy_mount_options+0x36/0x170
+ [<ffffffff811b8e93>] sys_mount+0x83/0xc0
+ [<ffffffff8164db19>] system_call_fastpath+0x16/0x1b
+ Code: 5b 41 5c 41 5d 41 5e 41 5f 5d c3 0f 1f 40 00 31 c0 48 83 7b 20
+00 75 e4 48 89 de 4c 89 e7 89 45 c0 e8 b1 ed ff ff 8b 45 c0 eb d1 <0f>
+0b e8 69 a4 02 00 0f 1f 44 00 00 e8 59 a4 02 00 66 66 2e 0f
+ RIP  [<ffffffffa01c5984>] remove_from_bitmap+0x1f4/0x210 [btrfs]
+ RSP <ffff88020fddd698>
+
+Mounting the fs with "-o recovery,ro", and using btrfsck did not work.
+btrfsck segfaulted, but I can not provide the error message.
+btrfs-zero-log allowed me to mount the fs again.
+
+BR,
+ Philipp Dreimann

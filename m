@@ -1,43 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:55978 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933061Ab3EOS5j convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 14:57:39 -0400
-From: Alexandre Oliva <oliva@gnu.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <axboe@kernel.dk>
-Subject: Re: I/O errors block the entire filesystem
-References: <orhajmb7kc.fsf@livre.home> <orhaiax9yh.fsf@livre.home>
-	<20130515135326.GD1765@localhost.localdomain>
-Date: Wed, 15 May 2013 15:56:48 -0300
-In-Reply-To: <20130515135326.GD1765@localhost.localdomain> (Josef Bacik's
-	message of "Wed, 15 May 2013 09:53:26 -0400")
-Message-ID: <or61ykqdfz.fsf@livre.home>
+Received: from dcvr.yhbt.net ([64.71.152.64]:53361 "EHLO dcvr.yhbt.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753854Ab3EOToH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 15:44:07 -0400
+Date: Wed, 15 May 2013 19:44:05 +0000
+From: Eric Wong <normalperson@yhbt.net>
+To: Zach Brown <zab@redhat.com>
+Cc: "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Trond Myklebust <Trond.Myklebust@netapp.com>,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org
+Subject: Re: [RFC v0 1/4] vfs: add copy_range syscall and vfs entry point
+Message-ID: <20130515194405.GA28720@dcvr.yhbt.net>
+References: <1368566126-17610-1-git-send-email-zab@redhat.com>
+ <1368566126-17610-2-git-send-email-zab@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1368566126-17610-2-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 15, 2013, Josef Bacik <jbacik@fusionio.com> wrote:
+Zach Brown <zab@redhat.com> wrote:
+> This adds a syscall and vfs entry point for clone_range which offloads
+> data copying between existing files.
+> 
+> The syscall is a thin wrapper around the vfs entry point.  Its arguments
+> are inspired by sys_splice().
 
-> So this should only happen in the case that you are on a dm device it looks
-> like, is that how you are running?
+Why introduce a new syscall instead of extending sys_splice?
 
-That was my first thought, but no, I'm using partitions out of the SATA
-disks directly.  I even checked for stray dm out of fake raid or
-somesuch, but the dm modules were not even loaded, and perusing
-/sys/block confirms the “scsi” devices are actual ATA disks.
+Perhaps adding a new SPLICE_F_COPYRANGE flag to avoid compatibility
+problems with userspace which may expect ESPIPE when given two non-pipes
+would be useful.
 
-Further investigation suggested that when individual 512-byte blocks are
-read from a disk (that's the block size reported by the kernel), the
-underlying disk driver is supposed to inform the upper layer about what
-it could read by updating the bio_vec bits in precisely the observed
-way.
-
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+If the user doesn't need a out offset, then sendfile() should also be
+able to transparently utilize COPY/CLONE_RANGE, too.

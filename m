@@ -1,43 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:34540 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757234Ab3EBCsT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 May 2013 22:48:19 -0400
-Received: by mail-pd0-f173.google.com with SMTP id v10so90034pde.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 May 2013 19:48:19 -0700 (PDT)
-Received: from localhost.localdomain ([220.248.17.187])
-        by mx.google.com with ESMTPSA id be7sm6101800pad.20.2013.05.01.19.48.16
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=RC4-SHA bits=128/128);
-        Wed, 01 May 2013 19:48:18 -0700 (PDT)
-From: Lin Ming <mlin@kernel.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fix segfault in walk_down_tree
-Date: Thu,  2 May 2013 10:46:43 +0800
-Message-Id: <1367462803-6630-1-git-send-email-mlin@kernel.org>
+Received: from cantor2.suse.de ([195.135.220.15]:34246 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758992Ab3EOOtP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 10:49:15 -0400
+Date: Wed, 15 May 2013 16:49:12 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs-progs: fix missing recow roots when making btrfs
+ filesystem
+Message-ID: <20130515144912.GZ16456@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <51922504.4020505@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <51922504.4020505@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-walk_down_tree will fault when read_tree_block fails with NULL returned.
+On Tue, May 14, 2013 at 07:50:28PM +0800, Wang Shilong wrote:
+> When making btrfs filesystem. we firstly write root leaf to
+> specified filed, and then we recow the root. If we don't recow,
+> some trees are not in the correct block group.
+> 
+> Steps to reproduce:
+> 	dd if=/dev/zero of=test.img bs=1M count=100
+> 	mkfs.btrfs -f test.img
+> 	btrfs-debug-tree test.img
 
-Signed-off-by: Lin Ming <mlin@kernel.org>
----
- cmds-check.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Very simple reproducer, I guess that it gets fixed with first update of
+the misplaced blocks.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 12192fa..e4435d5 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -1256,6 +1256,8 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 			reada_walk_down(root, cur, path->slots[*level]);
- 			next = read_tree_block(root, bytenr, blocksize,
- 					       ptr_gen);
-+			if (!next)
-+				goto out;
- 		}
- 
- 		*level = *level - 1;
--- 
-1.7.2.5
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -151,37 +151,55 @@ static int recow_roots(struct btrfs_trans_handle *trans,
+>  	int ret;
+>  	struct extent_buffer *tmp;
+>  	struct btrfs_fs_info *info = root->fs_info;
+> +	u64 generation;
+>  
+> -	ret = __btrfs_cow_block(trans, info->fs_root, info->fs_root->node,
+> -				NULL, 0, &tmp, 0, 0);
+> -	BUG_ON(ret);
+> -	free_extent_buffer(tmp);
+> +	generation = btrfs_root_generation(&info->fs_root->root_item);
+> +	if (generation != trans->transid) {
+> +		ret = __btrfs_cow_block(trans, info->fs_root,
+> +				info->fs_root->node, NULL, 0, &tmp, 0, 0);
+> +		BUG_ON(ret);
+> +		free_extent_buffer(tmp);
+> +	}
 
+This gets repeated, please use wrapper for that.
+
+david

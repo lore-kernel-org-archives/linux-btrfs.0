@@ -1,87 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40916 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751435Ab3EPBu7 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25167 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753315Ab3EPDVE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 21:50:59 -0400
-Date: Thu, 16 May 2013 09:50:37 +0800
+	Wed, 15 May 2013 23:21:04 -0400
+Date: Thu, 16 May 2013 11:20:39 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 4/8] Btrfs: maintain subvolume items in the UUID tree
-Message-ID: <20130516015031.GD20202@liubo.jp.oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, alex.btrfs@zadarastorage.com
+Subject: Re: [PATCH 10/17] Btrfs: just flush the delalloc inodes in the
+ source tree before snapshot creation
+Message-ID: <20130516032034.GE20202@liubo.jp.oracle.com>
 Reply-To: bo.li.liu@oracle.com
-References: <cover.1368523154.git.sbehrens@giantdisaster.de>
- <c68d2db7aa4ed6455645cf788e305b1a9ebb88bc.1368523154.git.sbehrens@giantdisaster.de>
- <20130514104410.GB15127@liubo.jp.oracle.com>
- <5193AC37.6080609@giantdisaster.de>
+References: <1368604111-25073-1-git-send-email-miaox@cn.fujitsu.com>
+ <1368604111-25073-11-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5193AC37.6080609@giantdisaster.de>
+In-Reply-To: <1368604111-25073-11-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 15, 2013 at 05:39:35PM +0200, Stefan Behrens wrote:
-> On Tue, 14 May 2013 18:44:11 +0800, Liu Bo wrote:
-> > On Tue, May 14, 2013 at 11:36:56AM +0200, Stefan Behrens wrote:
-> >> @@ -396,7 +403,7 @@ static noinline int create_subvol(struct inode *dir,
-> >>  	 * of create_snapshot().
-> >>  	 */
-> >>  	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
-> >> -					       7, &qgroup_reserved);
-> >> +					       8, &qgroup_reserved);
-> >>  	if (ret)
-> >>  		return ret;
-> > 
-> > This uuid_root will not use trans->block_rsv but empty_rsv since it does not set
-> > ref_cow, so you don't need to add one more to block_rsv, and same for
-> > the below cases.
+On Wed, May 15, 2013 at 03:48:24PM +0800, Miao Xie wrote:
+> Before applying this patch, we need flush all the delalloc inodes in
+> the fs when we want to create a snapshot, it wastes time, and make
+> the transaction commit be blocked for a long time. It means some other
+> user operation would also be blocked for a long time.
 > 
-> Hi Liu Bo,
+> This patch improves this problem, we just flush the delalloc inodes that
+> in the source trees before snapshot creation, so the transaction commit
+> will complete quickly.
 > 
-> Thanks for your review comments!
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c       |  6 ++++++
+>  fs/btrfs/transaction.c | 10 +---------
+>  2 files changed, 7 insertions(+), 9 deletions(-)
 > 
-> You are right, this won't work because the empty_block_rsv is used for
-> the UUID tree as it is now.
-> 
-> I need to avoid ENOSPC in the middle of the transaction. Can you please
-> acknowledge or comment the following addition to get_block_rsv()? And
-> the "plus 1" that I have added to the transaction reservations for
-> subvolume/snapshot creation/destruction will work correctly afterwards.
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0de4a2f..2677dcc 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -555,6 +555,12 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+>  	if (!root->ref_cows)
+>  		return -EINVAL;
+>  
+> +	ret = btrfs_start_delalloc_inodes(root, 0);
+> +	if (ret)
+> +		return ret;
+> +
+> +	btrfs_wait_ordered_extents(root, 0);
+> +
 
-Looks good.
-
-(Although I'm more looking forward to Josef's metadata enospc killer
-patch, that way we won't ever need to deal with all of this buggy stuff ;))
+Does this look too radical?  Does this snapshot creation ioctl block all
+writes on its src root?
+No, we can only be sure that there is no ordered extents being added until
+setting trans_no_join, and then it's safe to create pending snapshots.
 
 thanks,
 liubo
 
+>  	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
+>  	if (!pending_snapshot)
+>  		return -ENOMEM;
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 2b17213..bc22be9 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1491,17 +1491,9 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
+>  					  struct btrfs_root *root)
+>  {
+>  	int flush_on_commit = btrfs_test_opt(root, FLUSHONCOMMIT);
+> -	int snap_pending = 0;
+>  	int ret;
+>  
+> -	if (!flush_on_commit) {
+> -		spin_lock(&root->fs_info->trans_lock);
+> -		if (!list_empty(&trans->transaction->pending_snapshots))
+> -			snap_pending = 1;
+> -		spin_unlock(&root->fs_info->trans_lock);
+> -	}
+> -
+> -	if (flush_on_commit || snap_pending) {
+> +	if (flush_on_commit) {
+>  		ret = btrfs_start_all_delalloc_inodes(root->fs_info, 1);
+>  		if (ret)
+>  			return ret;
+> -- 
+> 1.8.1.4
 > 
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4259,6 +4259,9 @@ static struct btrfs_block_rsv *get_block_rsv(
->         if (root == root->fs_info->csum_root && trans->adding_csums)
->                 block_rsv = trans->block_rsv;
-> 
-> +       if (root == root->fs_info->uuid_root)
-> +               block_rsv = trans->block_rsv;
-> +
->         if (!block_rsv)
->                 block_rsv = root->block_rsv;
-> 
-> 
-> 
-> >> @@ -567,9 +578,10 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
-> >>  	 * 1 - root item
-> >>  	 * 2 - root ref/backref
-> >>  	 * 1 - root of snapshot
-> >> +	 * 1 - UUID item
-> >>  	 */
-> >>  	ret = btrfs_subvolume_reserve_metadata(BTRFS_I(dir)->root,
-> >> -					&pending_snapshot->block_rsv, 7,
-> >> +					&pending_snapshot->block_rsv, 8,
-> >>  					&pending_snapshot->qgroup_reserved);
-> >>  	if (ret)
-> >>  		goto out;
-> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

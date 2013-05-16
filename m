@@ -1,59 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47067 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752265Ab3EPO5d (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:50030 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752074Ab3EPPP7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 May 2013 10:57:33 -0400
-Date: Thu, 16 May 2013 22:57:07 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Mason <clmason@fusionio.com>
-Cc: "miaox@cn.fujitsu.com" <miaox@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "alex.btrfs@zadarastorage.com" <alex.btrfs@zadarastorage.com>
-Subject: Re: [PATCH 06/17] Btrfs: introduce grab/put functions for the root
- of the fs/file tree
-Message-ID: <20130516145706.GM20202@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1368604111-25073-7-git-send-email-miaox@cn.fujitsu.com>
- <20130516033645.GF20202@liubo.jp.oracle.com>
- <5194610F.1000603@cn.fujitsu.com>
- <20130516051556.GH20202@liubo.jp.oracle.com>
- <51946FD3.5000008@cn.fujitsu.com>
- <20130516061552.GI20202@liubo.jp.oracle.com>
- <5194893D.90505@cn.fujitsu.com>
- <20130516115417.24668.98321@localhost.localdomain>
- <20130516143138.GL20202@liubo.jp.oracle.com>
- <20130516143455.24668.84660@localhost.localdomain>
+	Thu, 16 May 2013 11:15:59 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 04CD97C0423
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 May 2013 09:15:59 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id zggfI8unasw2cU59 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 16 May 2013 09:15:58 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do delay iput in sync_fs
+Date: Thu, 16 May 2013 11:15:56 -0400
+Message-ID: <1368717356-2299-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130516143455.24668.84660@localhost.localdomain>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 16, 2013 at 10:34:55AM -0400, Chris Mason wrote:
-> Quoting Liu Bo (2013-05-16 10:31:39)
-> > On Thu, May 16, 2013 at 07:54:17AM -0400, Chris Mason wrote:
-> > > Quoting Miao Xie (2013-05-16 03:22:37)
-> > > > > I must say that the patch itself looks harmless, the reason is not good enough.
-> > > > 
-> > > > I don't agree with you.
-> > > > It is perishing that The memory reclaim task is blocked for a long time. We should avoid
-> > > > this problem.
-> > > 
-> > > synchronize_rcu and friends can take a very very long time.  I like this
-> > > patch as a way to avoid them, it's just keeps the whole kernel moving.
-> > > 
-> > > -chris
-> > 
-> > Okay, that teaches me another lesson, thanks Miao :)
-> 
-> Actually using the rcu api isn't a huge impact.  It's just the
-> synchronize_rcu variants that should be avoided ;)
-> 
-> -chris
-> 
+We get lock inversion with umount if we allow iputs from sync_fs, so use the
+delay iput flag to keep this from happening.  Thanks,
 
-Now that it's so slow, I wonder why not use call_srcu() instead?
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/super.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-thanks,
-liubo
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 41d81be..14d2be0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -862,7 +862,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 		return 0;
+ 	}
+ 
+-	btrfs_wait_all_ordered_extents(fs_info, 0);
++	btrfs_wait_all_ordered_extents(fs_info, 1);
+ 
+ 	trans = btrfs_attach_transaction_barrier(root);
+ 	if (IS_ERR(trans)) {
+-- 
+1.7.7.6
+

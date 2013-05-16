@@ -1,66 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:60878 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752682Ab3EPPk2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 May 2013 11:40:28 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
-	id 1Uczny-0000KB-BW
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 May 2013 08:09:18 -0700
-Date: Thu, 16 May 2013 08:09:18 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: kernel 3.8.8: btrfs still crashes on boot when it can't replay a log
-Message-ID: <20130516150918.GB26762@merlins.org>
+Received: from mx1.redhat.com ([209.132.183.28]:63863 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753215Ab3EPVQs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 May 2013 17:16:48 -0400
+Message-ID: <51954CBC.7070308@redhat.com>
+Date: Thu, 16 May 2013 17:16:44 -0400
+From: Ric Wheeler <rwheeler@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Zach Brown <zab@redhat.com>
+CC: Eric Wong <normalperson@yhbt.net>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Trond Myklebust <Trond.Myklebust@netapp.com>,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org
+Subject: Re: [RFC v0 1/4] vfs: add copy_range syscall and vfs entry point
+References: <1368566126-17610-1-git-send-email-zab@redhat.com> <1368566126-17610-2-git-send-email-zab@redhat.com> <20130515194405.GA28720@dcvr.yhbt.net> <20130515200307.GD318@lenny.home.zabbo.net>
+In-Reply-To: <20130515200307.GD318@lenny.home.zabbo.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've reported this bug a few times over different kernel versions over the
-last year now, and unfortunately it's still not fixed as of 3.8 (yes, I know
-3.9 is out, I'm just about to switch).
+On 05/15/2013 04:03 PM, Zach Brown wrote:
+> On Wed, May 15, 2013 at 07:44:05PM +0000, Eric Wong wrote:
+>> Why introduce a new syscall instead of extending sys_splice?
+> Personally, I think it's ugly to have different operations use the same
+> syscall just because their arguments match.
 
-What happens as far as I know:
-I have btrfs on top of dmcrypt on an SDD.
+I agree with Zach - having a system call called "splice" do copy offloads is not 
+intuitive.
 
-The SSD on occasion seems to just hang, so I have to power cycle my laptop.
-I can't say how much the SSD did and did not write before stopping to work.
+This is a very reasonable name for something that battled its way through 
+several standards bodies (for NFS and SCSI :)), so we should give it a 
+reasonable name
 
-Then, maybe one time out of 2 or 3, btrfs crashes when I reboot and it tries 
-to replay the log.
+thanks!
 
-I'm then forced to do this from emergency boot media:
+Ric
 
-gandalfthegreat:~# btrfs-zero-log /dev/mapper/root                                                        
-Check tree block failed, want=64855564288, have=14954667565421255623                                      
-Check tree block failed, want=64855564288, have=14954667565421255623                                      
-Check tree block failed, want=64855564288, have=7474503720151340134                                       
-Check tree block failed, want=64855564288, have=14954667565421255623                                      
-Check tree block failed, want=64855564288, have=14954667565421255623                                      
-read block failed check_tree_block   
+>
+> But that preference aside, sure, if the consensus is that we'd rather
+> use the splice() entry point then I can duck tape the pieces together to
+> make it work.
+>
+>> If the user doesn't need a out offset, then sendfile() should also be
+>> able to transparently utilize COPY/CLONE_RANGE, too.
+> Perhaps, yeah.
+>
+> - z
 
-The last bits of the crash before I zero the log:
-http://marc.merlins.org/tmp/btrfs-3.8.8.jpg
-
-Still issues with btrfs_numb_copies.
-
-This has been going on for over a year now, not very pleasant :)
-
-Is there no way you can corrupt logs in a test lab and reproduce this?
-
-Or is it still known to happen due to missing code that decides whether a log is corrupt 
-and whether to discard it before the code reads it and crashes?
-
-If so, could you add this to the list of things to fix to make btrfs a bit
-less scary to others? :)
-(and of course more production ready, this repeated problem would kill any
-server it happens on)
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  

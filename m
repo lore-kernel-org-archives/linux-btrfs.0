@@ -1,56 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([174.143.236.118]:44856 "EHLO fieldses.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756613Ab3EOUYE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 16:24:04 -0400
-Date: Wed, 15 May 2013 16:24:01 -0400
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: "Myklebust, Trond" <Trond.Myklebust@netapp.com>
-Cc: Zach Brown <zab@redhat.com>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>
-Subject: Re: [RFC v0 4/4] nfs, nfsd: rough sys_copy_range and COPY support
-Message-ID: <20130515202401.GE25994@fieldses.org>
-References: <1368566126-17610-1-git-send-email-zab@redhat.com>
- <1368566126-17610-5-git-send-email-zab@redhat.com>
- <20130515201949.GD25994@fieldses.org>
- <1368649314.3568.19.camel@leira.trondhjem.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:40916 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751435Ab3EPBu7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 May 2013 21:50:59 -0400
+Date: Thu, 16 May 2013 09:50:37 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 4/8] Btrfs: maintain subvolume items in the UUID tree
+Message-ID: <20130516015031.GD20202@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <cover.1368523154.git.sbehrens@giantdisaster.de>
+ <c68d2db7aa4ed6455645cf788e305b1a9ebb88bc.1368523154.git.sbehrens@giantdisaster.de>
+ <20130514104410.GB15127@liubo.jp.oracle.com>
+ <5193AC37.6080609@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1368649314.3568.19.camel@leira.trondhjem.org>
+In-Reply-To: <5193AC37.6080609@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 15, 2013 at 08:21:54PM +0000, Myklebust, Trond wrote:
-> On Wed, 2013-05-15 at 16:19 -0400, J. Bruce Fields wrote:
-> > On Tue, May 14, 2013 at 02:15:26PM -0700, Zach Brown wrote:
-> > > This crude patch illustrates the simplest plumbing involved in
-> > > supporting sys_call_range with the NFS COPY operation that's pending in
-> > > the 4.2 draft spec.
-> > > 
-> > > The patch is based on a previous prototype that used the COPY op to
-> > > implement sys_copyfileat which created a new file (based on the ocfs2
-> > > reflink ioctl).  By contrast, this copies file contents between existing
-> > > files.
-> > > 
-> > > There's still a lot of implementation and testing to do, but this can
-> > > get discussion going.
+On Wed, May 15, 2013 at 05:39:35PM +0200, Stefan Behrens wrote:
+> On Tue, 14 May 2013 18:44:11 +0800, Liu Bo wrote:
+> > On Tue, May 14, 2013 at 11:36:56AM +0200, Stefan Behrens wrote:
+> >> @@ -396,7 +403,7 @@ static noinline int create_subvol(struct inode *dir,
+> >>  	 * of create_snapshot().
+> >>  	 */
+> >>  	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
+> >> -					       7, &qgroup_reserved);
+> >> +					       8, &qgroup_reserved);
+> >>  	if (ret)
+> >>  		return ret;
 > > 
-> > I'm using:
-> > 
-> > 	git://github.com/loghyr/NFSv4.2
-> > 
-> > as my reference for the draft protocol.
-> > 
-> > On a quick skim, one thing this is missing before it complies is a
-> > client implementation of CB_OFFLOAD: "If a client desires an
-> > intra-server file copy, then it MUST support the COPY and CB_OFFLOAD
-> > operations."
+> > This uuid_root will not use trans->block_rsv but empty_rsv since it does not set
+> > ref_cow, so you don't need to add one more to block_rsv, and same for
+> > the below cases.
 > 
-> Note that Bryan is currently working on updating the NFS implementation
-> to match the draft protocol.
+> Hi Liu Bo,
+> 
+> Thanks for your review comments!
+> 
+> You are right, this won't work because the empty_block_rsv is used for
+> the UUID tree as it is now.
+> 
+> I need to avoid ENOSPC in the middle of the transaction. Can you please
+> acknowledge or comment the following addition to get_block_rsv()? And
+> the "plus 1" that I have added to the transaction reservations for
+> subvolume/snapshot creation/destruction will work correctly afterwards.
 
-OK, good.--b.
+Looks good.
+
+(Although I'm more looking forward to Josef's metadata enospc killer
+patch, that way we won't ever need to deal with all of this buggy stuff ;))
+
+thanks,
+liubo
+
+> 
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4259,6 +4259,9 @@ static struct btrfs_block_rsv *get_block_rsv(
+>         if (root == root->fs_info->csum_root && trans->adding_csums)
+>                 block_rsv = trans->block_rsv;
+> 
+> +       if (root == root->fs_info->uuid_root)
+> +               block_rsv = trans->block_rsv;
+> +
+>         if (!block_rsv)
+>                 block_rsv = root->block_rsv;
+> 
+> 
+> 
+> >> @@ -567,9 +578,10 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+> >>  	 * 1 - root item
+> >>  	 * 2 - root ref/backref
+> >>  	 * 1 - root of snapshot
+> >> +	 * 1 - UUID item
+> >>  	 */
+> >>  	ret = btrfs_subvolume_reserve_metadata(BTRFS_I(dir)->root,
+> >> -					&pending_snapshot->block_rsv, 7,
+> >> +					&pending_snapshot->block_rsv, 8,
+> >>  					&pending_snapshot->qgroup_reserved);
+> >>  	if (ret)
+> >>  		goto out;
+> 

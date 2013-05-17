@@ -1,68 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:60988 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755575Ab3EQQz0 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:43808 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751665Ab3EQSI0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 12:55:26 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 45AAB7C04F9
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:55:26 -0600 (MDT)
-Date: Fri, 17 May 2013 12:54:56 -0400
+	Fri, 17 May 2013 14:08:26 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 7AF879A068E
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 12:08:25 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id fkYH79mmtVKZKc8x (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 12:08:24 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel 3.8.8: btrfs still crashes on boot when it can't replay a
- log
-Message-ID: <20130517165456.GH1765@localhost.localdomain>
-References: <20130516150918.GB26762@merlins.org>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure roots are assigned before freeing their nodes
+Date: Fri, 17 May 2013 14:08:22 -0400
+Message-ID: <1368814102-1414-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130516150918.GB26762@merlins.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 16, 2013 at 09:09:18AM -0600, Marc MERLIN wrote:
-> I've reported this bug a few times over different kernel versions over the
-> last year now, and unfortunately it's still not fixed as of 3.8 (yes, I know
-> 3.9 is out, I'm just about to switch).
-> 
-> What happens as far as I know:
-> I have btrfs on top of dmcrypt on an SDD.
-> 
-> The SSD on occasion seems to just hang, so I have to power cycle my laptop.
-> I can't say how much the SSD did and did not write before stopping to work.
-> 
-> Then, maybe one time out of 2 or 3, btrfs crashes when I reboot and it tries 
-> to replay the log.
-> 
-> I'm then forced to do this from emergency boot media:
-> 
-> gandalfthegreat:~# btrfs-zero-log /dev/mapper/root                                                        
-> Check tree block failed, want=64855564288, have=14954667565421255623                                      
-> Check tree block failed, want=64855564288, have=14954667565421255623                                      
-> Check tree block failed, want=64855564288, have=7474503720151340134                                       
-> Check tree block failed, want=64855564288, have=14954667565421255623                                      
-> Check tree block failed, want=64855564288, have=14954667565421255623                                      
-> read block failed check_tree_block   
-> 
-> The last bits of the crash before I zero the log:
-> http://marc.merlins.org/tmp/btrfs-3.8.8.jpg
-> 
-> Still issues with btrfs_numb_copies.
-> 
-> This has been going on for over a year now, not very pleasant :)
-> 
-> Is there no way you can corrupt logs in a test lab and reproduce this?
-> 
-> Or is it still known to happen due to missing code that decides whether a log is corrupt 
-> and whether to discard it before the code reads it and crashes?
-> 
-> If so, could you add this to the list of things to fix to make btrfs a bit
-> less scary to others? :)
-> (and of course more production ready, this repeated problem would kill any
-> server it happens on)
-> 
+If we fail to load the chunk tree we'll call free_root_pointers, except we may
+not have assigned the roots for the dev_root/extent_root/csum_root yet, so we
+could NULL pointer deref at this point.  Just add checks to make sure these
+roots are set to keep us from panicing.  Thanks,
 
-This has been all fixed in 3.10.  Thanks,
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/disk-io.c |   39 +++++++++++++++++++++------------------
+ 1 files changed, 21 insertions(+), 18 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1341247..84c4426 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1967,30 +1967,33 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ {
+ 	free_extent_buffer(info->tree_root->node);
+ 	free_extent_buffer(info->tree_root->commit_root);
+-	free_extent_buffer(info->dev_root->node);
+-	free_extent_buffer(info->dev_root->commit_root);
+-	free_extent_buffer(info->extent_root->node);
+-	free_extent_buffer(info->extent_root->commit_root);
+-	free_extent_buffer(info->csum_root->node);
+-	free_extent_buffer(info->csum_root->commit_root);
+-	if (info->quota_root) {
+-		free_extent_buffer(info->quota_root->node);
+-		free_extent_buffer(info->quota_root->commit_root);
+-	}
+-
+ 	info->tree_root->node = NULL;
+ 	info->tree_root->commit_root = NULL;
+-	info->dev_root->node = NULL;
+-	info->dev_root->commit_root = NULL;
+-	info->extent_root->node = NULL;
+-	info->extent_root->commit_root = NULL;
+-	info->csum_root->node = NULL;
+-	info->csum_root->commit_root = NULL;
++
++	if (info->dev_root) {
++		free_extent_buffer(info->dev_root->node);
++		free_extent_buffer(info->dev_root->commit_root);
++		info->dev_root->node = NULL;
++		info->dev_root->commit_root = NULL;
++	}
++	if (info->extent_root) {
++		free_extent_buffer(info->extent_root->node);
++		free_extent_buffer(info->extent_root->commit_root);
++		info->extent_root->node = NULL;
++		info->extent_root->commit_root = NULL;
++	}
++	if (info->csum_root) {
++		free_extent_buffer(info->csum_root->node);
++		free_extent_buffer(info->csum_root->commit_root);
++		info->csum_root->node = NULL;
++		info->csum_root->commit_root = NULL;
++	}
+ 	if (info->quota_root) {
++		free_extent_buffer(info->quota_root->node);
++		free_extent_buffer(info->quota_root->commit_root);
+ 		info->quota_root->node = NULL;
+ 		info->quota_root->commit_root = NULL;
+ 	}
+-
+ 	if (chunk_root) {
+ 		free_extent_buffer(info->chunk_root->node);
+ 		free_extent_buffer(info->chunk_root->commit_root);
+-- 
+1.7.7.6
+

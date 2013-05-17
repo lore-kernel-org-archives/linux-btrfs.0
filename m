@@ -1,139 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26652 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754168Ab3EQKul (ORCPT
+Received: from bay0-omc2-s5.bay0.hotmail.com ([65.54.190.80]:13775 "EHLO
+	bay0-omc2-s5.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756191Ab3EQOid (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 06:50:41 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4HAoc43022462
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:50:39 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HAodqe002703
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:50:39 GMT
-Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HAociF004071
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:50:39 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] btrfs-progs: device delete to get errors from the kernel
-Date: Fri, 17 May 2013 18:53:31 +0800
-Message-Id: <1368788011-12006-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1367327981-28000-2-git-send-email-anand.jain@oracle.com>
-References: <1367327981-28000-2-git-send-email-anand.jain@oracle.com>
+	Fri, 17 May 2013 10:38:33 -0400
+Message-ID: <BAY172-DS1691344C45A69E61326E56B0AC0@phx.gbl>
+From: "Kyle Gates" <kylegates@hotmail.com>
+To: <bo.li.liu@oracle.com>
+Cc: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <CADn-QaPQ0aH1rb3rG3bE87Ka3XaLzHHeA6nwNLbQJsbB_BiXkw@mail.gmail.com> <h1rh5a-1lg.ln1@hurikhan.ath.cx> <CADn-QaNEdWiyKaniOhzAmaGb6p=PuZ4=FxPPPiVLZZJ3zB7xpQ@mail.gmail.com> <BAY172-DS142AB5E40D200CC3946388B0A40@phx.gbl> <20130510051500.GB5615@liubo.jp.oracle.com> <BAY172-DS77BDBEADA4D3971B47F29B0A50@phx.gbl> <BAY172-DS3707AF83BC83C3B48502DB0A30@phx.gbl> <20130517070443.GN20202@liubo.jp.oracle.com>
+In-Reply-To: <20130517070443.GN20202@liubo.jp.oracle.com>
+Subject: Re: nocow 'C' flag ignored after balance
+Date: Fri, 17 May 2013 09:38:53 -0500
+MIME-Version: 1.0
+Content-Type: text/plain;
+	format=flowed;
+	charset="iso-8859-1";
+	reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-when user runs command btrfs dev del the raid requisite error if any
-goes to the /var/log/messages, its not good idea to clutter messages
-with these user (knowledge) errors, further user don't have to review
-the system messages to know problem with the cli it should be dropped
-to the user as part of the cli return.
-
-to bring this feature created a set of the ERROR defined
-BTRFS_ERROR_DEV* error codes and created their error string.
-
-I expect this enum to be added with other error which we might
-want to communicate to the user land
-
-v3:
-moved the code with in the file no logical change
-
-v1->v2:
-introduce error codes for the device mgmt usage
-
-v1:
-add another parameter to the ioctl arg structure to carry the error string
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-device.c | 10 ++++++++--
- ioctl.h       | 43 ++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 50 insertions(+), 3 deletions(-)
-
-diff --git a/cmds-device.c b/cmds-device.c
-index 41e79d3..bc81937 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -163,8 +163,14 @@ static int cmd_rm_dev(int argc, char **argv)
- 		strncpy_null(arg.name, argv[i]);
- 		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
- 		e = errno;
--		if(res<0){
--			fprintf(stderr, "ERROR: error removing the device '%s' - %s\n",
-+		if (res > 0) {
-+			fprintf(stderr,
-+				"ERROR: error removing the device '%s' - %s\n",
-+				argv[i], btrfs_err_str(res));
-+			ret++;
-+		} else if (res < 0) {
-+			fprintf(stderr,
-+				"ERROR: error removing the device '%s' - %s\n",
- 				argv[i], strerror(e));
- 			ret++;
- 		}
-diff --git a/ioctl.h b/ioctl.h
-index 1ee631a..897dd26 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -441,6 +441,48 @@ struct btrfs_ioctl_qgroup_create_args {
- 	__u64 create;
- 	__u64 qgroupid;
- };
-+
-+/* Error codes as returned by the kernel */
-+enum btrfs_err_code {
-+	notused,
-+	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_TGT_REPLACE,
-+	BTRFS_ERROR_DEV_MISSING_NOT_FOUND,
-+	BTRFS_ERROR_DEV_ONLY_WRITABLE,
-+	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
-+};
-+
-+/* An error code to error string mapping for the kernel
-+*  error codes
-+*/
-+static inline char *btrfs_err_str(enum btrfs_err_code err_code)
-+{
-+	switch (err_code) {
-+		case BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET:
-+			return "unable to go below two devices on raid1";
-+		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
-+			return "unable to go below four devices on raid10";
-+		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
-+			return "unable to go below two devices on raid5";
-+		case BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET:
-+			return "unable to go below three devices on raid6";
-+		case BTRFS_ERROR_DEV_TGT_REPLACE:
-+			return "unable to remove the dev_replace target dev";
-+		case BTRFS_ERROR_DEV_MISSING_NOT_FOUND:
-+			return "no missing devices found to remove";
-+		case BTRFS_ERROR_DEV_ONLY_WRITABLE:
-+			return "unable to remove the only writeable device";
-+		case BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS:
-+			return "add/delete/balance/replace/resize operation "\
-+				"in progress";
-+		default:
-+			return NULL;
-+	}
-+}
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -536,7 +578,6 @@ struct btrfs_ioctl_clone_range_args {
- 				      struct btrfs_ioctl_get_dev_stats)
- #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
- 				    struct btrfs_ioctl_dev_replace_args)
--
- #ifdef __cplusplus
- }
- #endif
--- 
-1.8.1.227.g44fe835
+On Fri, 17 May 2013 15:04:45 +0800, Liu Bo wrote:
+> On Thu, May 16, 2013 at 02:11:41PM -0500, Kyle Gates wrote:
+>> and mounted with autodefrag
+>> Am I actually just seeing large ranges getting split while remaining
+>> contiguous on disk? This would imply crc calculation on the two
+>> outside ranges. Or perhaps there is some data being inlined for each
+>> write. I believe writes on this file are 32KiB each.
+>> Does the balance produce persistent crc values in the metadata even
+>> though the files are nocow which implies nocrc?
+>> ...
+>> I ran this test again and here's filefrag -v after about a day of use:
+>>
+>>[...]
+>> As you can see the 32KiB writes fit in the extents of size 9 and 55.
+>> Are those 9 block extents inlined?
+>> If I understand correctly, new extents are created for these nocow
+>> writes, then the old extents are basically hole punched producing
+>> three (four? because of inlining) separate extents.
+>> Something here begs for optimization. Perhaps balance should treat
+>> nocow files a little differently. That would be the time to remove
+>> the extra bits that prevent inplace overwrites. After the fact it
+>> becomes much more difficult, although removing a crc for the extent
+>> being written seems a little easier then iterating over the entire
+>> file.
+>>
+>> Thanks for taking the time to read,
+>> Kyle
+>>
+>> P.S. I'm CCing David as I believe he wrote the patch to get the 'C'
+>> flag working on empty files and directories.
+>
+> Hi Kyle,
+>
+> Can you please apply this patch and see if it helps?
+>
+> thanks,
+> liubo
+>
+>
+> From: Liu Bo <bo.li.liu@oracle.com>
+>
+> Subject: [PATCH] Btrfs: fix broken nocow after a normal balance
+>
+> Balance will create reloc_root for each fs root, and it's going to
+> record last_snapshot to filter shared blocks.  The side effect of
+> setting last_snapshot is to break nocow attributes of files.
+>
+> So here we update file extent's generation while walking relocated
+> file extents in data reloc root, and use file extent's generation
+> instead for checking if we have cross refs for the file extent.
+>
+> That way we can make nocow happy again and have no impact on others.
+>
+> Reported-by: Kyle Gates <kylegates@hotmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> fs/btrfs/ctree.h       |    2 +-
+> fs/btrfs/extent-tree.c |   18 +++++++++++++-----
+> fs/btrfs/inode.c       |   10 ++++++++--
+> fs/btrfs/relocation.c  |    1 +
+> 4 files changed, 23 insertions(+), 8 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 4560052..eb2e782 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3090,7 +3090,7 @@ int btrfs_pin_extent_for_log_replay(struct 
+> btrfs_root *root,
+>      u64 bytenr, u64 num_bytes);
+> int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
+>    struct btrfs_root *root,
+> -   u64 objectid, u64 offset, u64 bytenr);
+> +   u64 objectid, u64 offset, u64 bytenr, u64 gen);
+> struct btrfs_block_group_cache *btrfs_lookup_block_group(
+>  struct btrfs_fs_info *info,
+>  u64 bytenr);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 1e84c74..f3b3616 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2816,7 +2816,8 @@ out:
+> static noinline int check_committed_ref(struct btrfs_trans_handle *trans,
+>  struct btrfs_root *root,
+>  struct btrfs_path *path,
+> - u64 objectid, u64 offset, u64 bytenr)
+> + u64 objectid, u64 offset, u64 bytenr,
+> + u64 fi_gen)
+> {
+>  struct btrfs_root *extent_root = root->fs_info->extent_root;
+>  struct extent_buffer *leaf;
+> @@ -2861,8 +2862,15 @@ static noinline int check_committed_ref(struct 
+> btrfs_trans_handle
+> *trans,
+>      btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
+>  goto out;
+>
+> - if (btrfs_extent_generation(leaf, ei) <=
+> -     btrfs_root_last_snapshot(&root->root_item))
+> + /*
+> + * Usually generation in extent item is larger than that in file extent
+> + * item because of delay refs.  But we don't want balance to break
+> + * file's nocow behaviour, so use file_extent's generation which has
+> + * been updates when we update fs root to point to relocated file
+> + * extents in data reloc root.
+> + */
+> + fi_gen = max_t(u64, btrfs_extent_generation(leaf, ei), fi_gen);
+> + if (fi_gen <= btrfs_root_last_snapshot(&root->root_item))
+>  goto out;
+>
+>  iref = (struct btrfs_extent_inline_ref *)(ei + 1);
+> @@ -2886,7 +2894,7 @@ out:
+>
+> int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
+>    struct btrfs_root *root,
+> -   u64 objectid, u64 offset, u64 bytenr)
+> +   u64 objectid, u64 offset, u64 bytenr, u64 gen)
+> {
+>  struct btrfs_path *path;
+>  int ret;
+> @@ -2898,7 +2906,7 @@ int btrfs_cross_ref_exist(struct btrfs_trans_handle 
+> *trans,
+>
+>  do {
+>  ret = check_committed_ref(trans, root, path, objectid,
+> -   offset, bytenr);
+> +   offset, bytenr, gen);
+>  if (ret && ret != -ENOENT)
+>  goto out;
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 2cfdd33..976b045 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1727,6 +1727,8 @@ next_slot:
+>  ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
+>  if (extent_type == BTRFS_FILE_EXTENT_REG ||
+>      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+> + u64 gen;
+> + gen = btrfs_file_extent_generation(leaf, fi);
+>  disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
+>  extent_offset = btrfs_file_extent_offset(leaf, fi);
+>  extent_end = found_key.offset +
+> @@ -1749,7 +1751,8 @@ next_slot:
+>  goto out_check;
+>  if (btrfs_cross_ref_exist(trans, root, ino,
+>    found_key.offset -
+> -   extent_offset, disk_bytenr))
+> +   extent_offset, disk_bytenr,
+> +   gen))
+>  goto out_check;
+>  disk_bytenr += extent_offset;
+>  disk_bytenr += cur_offset - found_key.offset;
+> @@ -7002,6 +7005,7 @@ static noinline int can_nocow_odirect(struct 
+> btrfs_trans_handle
+> *trans,
+>  struct btrfs_key key;
+>  u64 disk_bytenr;
+>  u64 backref_offset;
+> + u64 fi_gen;
+>  u64 extent_end;
+>  u64 num_bytes;
+>  int slot;
+> @@ -7048,6 +7052,7 @@ static noinline int can_nocow_odirect(struct 
+> btrfs_trans_handle
+> *trans,
+>  }
+>  disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
+>  backref_offset = btrfs_file_extent_offset(leaf, fi);
+> + fi_gen = btrfs_file_extent_generation(leaf, fi);
+>
+>  *orig_start = key.offset - backref_offset;
+>  *orig_block_len = btrfs_file_extent_disk_num_bytes(leaf, fi);
+> @@ -7067,7 +7072,8 @@ static noinline int can_nocow_odirect(struct 
+> btrfs_trans_handle
+> *trans,
+>  * find any we must cow
+>  */
+>  if (btrfs_cross_ref_exist(trans, root, btrfs_ino(inode),
+> -   key.offset - backref_offset, disk_bytenr))
+> +   key.offset - backref_offset, disk_bytenr,
+> +   fi_gen))
+>  goto out;
+>
+>  /*
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 704a1b8..07faabf 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1637,6 +1637,7 @@ int replace_file_extents(struct btrfs_trans_handle 
+> *trans,
+>  BUG_ON(ret < 0);
+>
+>  btrfs_set_file_extent_disk_bytenr(leaf, fi, new_bytenr);
+> + btrfs_set_file_extent_generation(leaf, fi, trans->transid);
+>  dirty = 1;
+>
+>  key.offset -= btrfs_file_extent_offset(leaf, fi);
+> -- 
+> 1.7.7
+>
+Liu Bo,
+Thank you for taking the time to produce this patch. I'm not in a position 
+to try a kernel compile and will be on vacation next week. I hope someone 
+else would like to give it a try and use a little dd magic to test it.
+Thanks,
+Kyle 
 

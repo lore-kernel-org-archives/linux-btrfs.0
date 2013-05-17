@@ -1,56 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34246 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758992Ab3EOOtP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 10:49:15 -0400
-Date: Wed, 15 May 2013 16:49:12 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs-progs: fix missing recow roots when making btrfs
- filesystem
-Message-ID: <20130515144912.GZ16456@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <51922504.4020505@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51922504.4020505@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:25480 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754093Ab3EQKvx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 May 2013 06:51:53 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4HAppeW011732
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:52 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HApowr009282
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:51 GMT
+Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HApobC018580
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:50 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] a structure for the disks scan for btrfs
+Date: Fri, 17 May 2013 18:54:38 +0800
+Message-Id: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 14, 2013 at 07:50:28PM +0800, Wang Shilong wrote:
-> When making btrfs filesystem. we firstly write root leaf to
-> specified filed, and then we recow the root. If we don't recow,
-> some trees are not in the correct block group.
-> 
-> Steps to reproduce:
-> 	dd if=/dev/zero of=test.img bs=1M count=100
-> 	mkfs.btrfs -f test.img
-> 	btrfs-debug-tree test.img
+The idea was to introduce /dev/mapper to find for btrfs disk, 
+However I found first we need to congregate the disk scan
+procedure at a function so it would help to consistently tune
+it across the btrfs-progs. As of now both fi show and
+dev scan use the disks scan they do it on their own.
 
-Very simple reproducer, I guess that it gets fixed with first update of
-the misplaced blocks.
+So here it would congregate btrfs-disk scans at the function
+scan_devs_for_btrfs, adds /dev/mapper to be used to scan
+for btrfs, and updates its calling functions and few bug fixes.
 
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -151,37 +151,55 @@ static int recow_roots(struct btrfs_trans_handle *trans,
->  	int ret;
->  	struct extent_buffer *tmp;
->  	struct btrfs_fs_info *info = root->fs_info;
-> +	u64 generation;
->  
-> -	ret = __btrfs_cow_block(trans, info->fs_root, info->fs_root->node,
-> -				NULL, 0, &tmp, 0, 0);
-> -	BUG_ON(ret);
-> -	free_extent_buffer(tmp);
-> +	generation = btrfs_root_generation(&info->fs_root->root_item);
-> +	if (generation != trans->transid) {
-> +		ret = __btrfs_cow_block(trans, info->fs_root,
-> +				info->fs_root->node, NULL, 0, &tmp, 0, 0);
-> +		BUG_ON(ret);
-> +		free_extent_buffer(tmp);
-> +	}
+Anand Jain (4):
+  btrfs-progs: replace filesystem show --all-devices with -d option
+  btrfs-progs: label option in btrfs filesystem show is not coded
+  btrfs-progs: use /dev/mapper to find the btrfs disks
+  btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
 
-This gets repeated, please use wrapper for that.
+ btrfs-find-root.c |  2 +-
+ cmds-device.c     | 50 ++++++++++++++++++++++++++++----------------------
+ cmds-filesystem.c | 38 ++++++++++++++++++++++++--------------
+ disk-io.c         |  2 +-
+ man/btrfs.8.in    | 13 +++++++------
+ utils.c           | 45 +++++++++++++++++++++++++++++++++++++--------
+ utils.h           |  4 ++--
+ 7 files changed, 100 insertions(+), 54 deletions(-)
 
-david
+-- 
+1.8.1.227.g44fe835
+

@@ -1,50 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:63863 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753215Ab3EPVQs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 May 2013 17:16:48 -0400
-Message-ID: <51954CBC.7070308@redhat.com>
-Date: Thu, 16 May 2013 17:16:44 -0400
-From: Ric Wheeler <rwheeler@redhat.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:55677 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751475Ab3EQBtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 May 2013 21:49:46 -0400
+Message-ID: <51958CFB.5040402@cn.fujitsu.com>
+Date: Fri, 17 May 2013 09:50:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Zach Brown <zab@redhat.com>
-CC: Eric Wong <normalperson@yhbt.net>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Trond Myklebust <Trond.Myklebust@netapp.com>,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org
-Subject: Re: [RFC v0 1/4] vfs: add copy_range syscall and vfs entry point
-References: <1368566126-17610-1-git-send-email-zab@redhat.com> <1368566126-17610-2-git-send-email-zab@redhat.com> <20130515194405.GA28720@dcvr.yhbt.net> <20130515200307.GD318@lenny.home.zabbo.net>
-In-Reply-To: <20130515200307.GD318@lenny.home.zabbo.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: bo.li.liu@oracle.com
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "alex.btrfs@zadarastorage.com" <alex.btrfs@zadarastorage.com>
+Subject: Re: [PATCH 06/17] Btrfs: introduce grab/put functions for the root
+ of the fs/file tree
+References: <1368604111-25073-7-git-send-email-miaox@cn.fujitsu.com> <20130516033645.GF20202@liubo.jp.oracle.com> <5194610F.1000603@cn.fujitsu.com> <20130516051556.GH20202@liubo.jp.oracle.com> <51946FD3.5000008@cn.fujitsu.com> <20130516061552.GI20202@liubo.jp.oracle.com> <5194893D.90505@cn.fujitsu.com> <20130516115417.24668.98321@localhost.localdomain> <20130516143138.GL20202@liubo.jp.oracle.com> <20130516143455.24668.84660@localhost.localdomain> <20130516145706.GM20202@liubo.jp.oracle.com>
+In-Reply-To: <20130516145706.GM20202@liubo.jp.oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/15/2013 04:03 PM, Zach Brown wrote:
-> On Wed, May 15, 2013 at 07:44:05PM +0000, Eric Wong wrote:
->> Why introduce a new syscall instead of extending sys_splice?
-> Personally, I think it's ugly to have different operations use the same
-> syscall just because their arguments match.
+On 	thu, 16 May 2013 22:57:07 +0800, Liu Bo wrote:
+> On Thu, May 16, 2013 at 10:34:55AM -0400, Chris Mason wrote:
+>> Quoting Liu Bo (2013-05-16 10:31:39)
+>>> On Thu, May 16, 2013 at 07:54:17AM -0400, Chris Mason wrote:
+>>>> Quoting Miao Xie (2013-05-16 03:22:37)
+>>>>>> I must say that the patch itself looks harmless, the reason is not good enough.
+>>>>>
+>>>>> I don't agree with you.
+>>>>> It is perishing that The memory reclaim task is blocked for a long time. We should avoid
+>>>>> this problem.
+>>>>
+>>>> synchronize_rcu and friends can take a very very long time.  I like this
+>>>> patch as a way to avoid them, it's just keeps the whole kernel moving.
+>>>>
+>>>> -chris
+>>>
+>>> Okay, that teaches me another lesson, thanks Miao :)
+>>
+>> Actually using the rcu api isn't a huge impact.  It's just the
+>> synchronize_rcu variants that should be avoided ;)
+>>
+>> -chris
+>>
+> 
+> Now that it's so slow, I wonder why not use call_srcu() instead?
 
-I agree with Zach - having a system call called "splice" do copy offloads is not 
-intuitive.
+I have considered this approach, but there is a problem that someone may insert
+a new inode after we call call_srcu(). So I had to make this patch as a interim
+solution. My next work is to remove synchronize_srcu() from tree_del_inode().
 
-This is a very reasonable name for something that battled its way through 
-several standards bodies (for NFS and SCSI :)), so we should give it a 
-reasonable name
-
-thanks!
-
-Ric
-
->
-> But that preference aside, sure, if the consensus is that we'd rather
-> use the splice() entry point then I can duck tape the pieces together to
-> make it work.
->
->> If the user doesn't need a out offset, then sendfile() should also be
->> able to transparently utilize COPY/CLONE_RANGE, too.
-> Perhaps, yeah.
->
-> - z
-
+Thanks
+Miao

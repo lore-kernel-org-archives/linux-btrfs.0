@@ -1,608 +1,239 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3158 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750973Ab3EQEMd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 00:12:33 -0400
-Message-ID: <5195A9C7.1050609@cn.fujitsu.com>
-Date: Fri, 17 May 2013 11:53:43 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-qc0-f171.google.com ([209.85.216.171]:51303 "EHLO
+	mail-qc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754689Ab3EQHXL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 May 2013 03:23:11 -0400
+Received: by mail-qc0-f171.google.com with SMTP id n1so116079qcx.30
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 00:23:10 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: alex.btrfs@zadarastorage.com
-Subject: [PATCH V2 17/17] Btrfs: make the state of the transaction more readable
-References: <1368604111-25073-1-git-send-email-miaox@cn.fujitsu.com> <1368604111-25073-18-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1368604111-25073-18-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <mgde6a-75n.ln1@hurikhan.ath.cx>
+References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
+	<CAEH94LgEAcOHJKpuY+fY4cscxJ+QbynC0H9WbSGiV0fKp+-Ajw@mail.gmail.com>
+	<mgde6a-75n.ln1@hurikhan.ath.cx>
+Date: Fri, 17 May 2013 15:23:10 +0800
+Message-ID: <CAEH94LiAWjNxYi-+rMPUtheE0xiMofJ=pmA=XmvURt-kfnmP6Q@mail.gmail.com>
+Subject: Re: [RFC 0/5] BTRFS hot relocation support
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We used 3 variants to track the state of the transaction, it was complex
-and wasted the memory space. Besides that, it was hard to understand that
-which types of the transaction handles should be blocked in each transaction
-state, so the developers often made mistakes.
+HI,
 
-This patch improved the above problem. In this patch, we define 6 states
-for the transaction,
-  enum btrfs_trans_state {
-	TRANS_STATE_RUNNING		= 0,
-	TRANS_STATE_BLOCKED		= 1,
-	TRANS_STATE_COMMIT_START	= 2,
-	TRANS_STATE_COMMIT_DOING	= 3,
-	TRANS_STATE_UNBLOCKED		= 4,
-	TRANS_STATE_COMPLETED		= 5,
-	TRANS_STATE_MAX			= 6,
-  }
-and just use 1 variant to track those state.
+You should check the patchset about VFS hot tracking
+https://lwn.net/Articles/550495/
 
-In order to make the blocked handle types for each state more clear,
-we introduce a array:
-  unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
-	[TRANS_STATE_RUNNING]		= 0U,
-	[TRANS_STATE_BLOCKED]		= (__TRANS_USERSPACE |
-					   __TRANS_START),
-	[TRANS_STATE_COMMIT_START]	= (__TRANS_USERSPACE |
-					   __TRANS_START |
-					   __TRANS_ATTACH),
-	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_USERSPACE |
-					   __TRANS_START |
-					   __TRANS_ATTACH |
-					   __TRANS_JOIN),
-	[TRANS_STATE_UNBLOCKED]		= (__TRANS_USERSPACE |
-					   __TRANS_START |
-					   __TRANS_ATTACH |
-					   __TRANS_JOIN |
-					   __TRANS_JOIN_NOLOCK),
-	[TRANS_STATE_COMPLETED]		= (__TRANS_USERSPACE |
-					   __TRANS_START |
-					   __TRANS_ATTACH |
-					   __TRANS_JOIN |
-					   __TRANS_JOIN_NOLOCK),
-  }
-it is very intuitionistic.
 
-Besides that, because we remove ->in_commit in transaction structure, so
-the lock ->commit_lock which was used to protect it is unnecessary, remove
-->commit_lock.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v2:
-- remove the misuse of cmpxchg in __btrfs_end_transaction()
----
- fs/btrfs/ctree.h       |   1 -
- fs/btrfs/disk-io.c     |  36 ++++++------
- fs/btrfs/transaction.c | 157 +++++++++++++++++++++++++++----------------------
- fs/btrfs/transaction.h |  16 +++--
- 4 files changed, 116 insertions(+), 94 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a7e71ff..bf92302 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1496,7 +1496,6 @@ struct btrfs_fs_info {
- 	int closing;
- 	int log_root_recovering;
- 	int enospc_unlink;
--	int trans_no_join;
- 
- 	u64 total_pinned;
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6bb3f3d..530e3c0 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1747,7 +1747,7 @@ static int transaction_kthread(void *arg)
- 		}
- 
- 		now = get_seconds();
--		if (!cur->blocked &&
-+		if (cur->state < TRANS_STATE_BLOCKED &&
- 		    (now < cur->start_time || now - cur->start_time < 30)) {
- 			spin_unlock(&root->fs_info->trans_lock);
- 			delay = HZ * 5;
-@@ -2183,7 +2183,6 @@ int open_ctree(struct super_block *sb,
- 	fs_info->max_inline = 8192 * 1024;
- 	fs_info->metadata_ratio = 0;
- 	fs_info->defrag_inodes = RB_ROOT;
--	fs_info->trans_no_join = 0;
- 	fs_info->free_chunk_space = 0;
- 	fs_info->tree_mod_log = RB_ROOT;
- 
-@@ -3956,19 +3955,14 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 	btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
- 				cur_trans->dirty_pages.dirty_bytes);
- 
--	/* FIXME: cleanup wait for commit */
--	cur_trans->in_commit = 1;
--	cur_trans->blocked = 1;
-+	cur_trans->state = TRANS_STATE_COMMIT_START;
- 	wake_up(&root->fs_info->transaction_blocked_wait);
- 
- 	btrfs_evict_pending_snapshots(cur_trans);
- 
--	cur_trans->blocked = 0;
-+	cur_trans->state = TRANS_STATE_UNBLOCKED;
- 	wake_up(&root->fs_info->transaction_wait);
- 
--	cur_trans->commit_done = 1;
--	wake_up(&cur_trans->commit_wait);
--
- 	btrfs_destroy_delayed_inodes(root);
- 	btrfs_assert_delayed_root_empty(root);
- 
-@@ -3977,6 +3971,9 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 	btrfs_destroy_pinned_extent(root,
- 				    root->fs_info->pinned_extents);
- 
-+	cur_trans->state =TRANS_STATE_COMPLETED;
-+	wake_up(&cur_trans->commit_wait);
-+
- 	/*
- 	memset(cur_trans, 0, sizeof(*cur_trans));
- 	kmem_cache_free(btrfs_transaction_cachep, cur_trans);
-@@ -4004,25 +4001,23 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root)
- 
- 		btrfs_destroy_delayed_refs(t, root);
- 
--		/* FIXME: cleanup wait for commit */
--		t->in_commit = 1;
--		t->blocked = 1;
-+		/*
-+		 *  FIXME: cleanup wait for commit
-+		 *  We needn't acquire the lock here, because we are during
-+		 *  the umount, there is no other task which will change it.
-+		 */
-+		t->state = TRANS_STATE_COMMIT_START;
- 		smp_mb();
- 		if (waitqueue_active(&root->fs_info->transaction_blocked_wait))
- 			wake_up(&root->fs_info->transaction_blocked_wait);
- 
- 		btrfs_evict_pending_snapshots(t);
- 
--		t->blocked = 0;
-+		t->state = TRANS_STATE_UNBLOCKED;
- 		smp_mb();
- 		if (waitqueue_active(&root->fs_info->transaction_wait))
- 			wake_up(&root->fs_info->transaction_wait);
- 
--		t->commit_done = 1;
--		smp_mb();
--		if (waitqueue_active(&t->commit_wait))
--			wake_up(&t->commit_wait);
--
- 		btrfs_destroy_delayed_inodes(root);
- 		btrfs_assert_delayed_root_empty(root);
- 
-@@ -4034,6 +4029,11 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root)
- 		btrfs_destroy_pinned_extent(root,
- 					    root->fs_info->pinned_extents);
- 
-+		t->state = TRANS_STATE_COMPLETED;
-+		smp_mb();
-+		if (waitqueue_active(&t->commit_wait))
-+			wake_up(&t->commit_wait);
-+
- 		atomic_set(&t->use_count, 0);
- 		list_del_init(&t->list);
- 		memset(t, 0, sizeof(*t));
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5e75ff4..eec8686 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -34,6 +34,29 @@
- 
- #define BTRFS_ROOT_TRANS_TAG 0
- 
-+static unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
-+	[TRANS_STATE_RUNNING]		= 0U,
-+	[TRANS_STATE_BLOCKED]		= (__TRANS_USERSPACE |
-+					   __TRANS_START),
-+	[TRANS_STATE_COMMIT_START]	= (__TRANS_USERSPACE |
-+					   __TRANS_START |
-+					   __TRANS_ATTACH),
-+	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_USERSPACE |
-+					   __TRANS_START |
-+					   __TRANS_ATTACH |
-+					   __TRANS_JOIN),
-+	[TRANS_STATE_UNBLOCKED]		= (__TRANS_USERSPACE |
-+					   __TRANS_START |
-+					   __TRANS_ATTACH |
-+					   __TRANS_JOIN |
-+					   __TRANS_JOIN_NOLOCK),
-+	[TRANS_STATE_COMPLETED]		= (__TRANS_USERSPACE |
-+					   __TRANS_START |
-+					   __TRANS_ATTACH |
-+					   __TRANS_JOIN |
-+					   __TRANS_JOIN_NOLOCK),
-+};
-+
- static void put_transaction(struct btrfs_transaction *transaction)
- {
- 	WARN_ON(atomic_read(&transaction->use_count) == 0);
-@@ -50,13 +73,6 @@ static noinline void switch_commit_root(struct btrfs_root *root)
- 	root->commit_root = btrfs_root_node(root);
- }
- 
--static inline int can_join_transaction(struct btrfs_transaction *trans,
--				       unsigned int type)
--{
--	return !(trans->in_commit &&
--		 (type & TRANS_EXTWRITERS));
--}
--
- static inline void extwriter_counter_inc(struct btrfs_transaction *trans,
- 					 unsigned int type)
- {
-@@ -98,26 +114,13 @@ loop:
- 		return -EROFS;
- 	}
- 
--	if (fs_info->trans_no_join) {
--		/* 
--		 * If we are JOIN_NOLOCK we're already committing a current
--		 * transaction, we just need a handle to deal with something
--		 * when committing the transaction, such as inode cache and
--		 * space cache. It is a special case.
--		 */
--		if (type != TRANS_JOIN_NOLOCK) {
--			spin_unlock(&fs_info->trans_lock);
--			return -EBUSY;
--		}
--	}
--
- 	cur_trans = fs_info->running_transaction;
- 	if (cur_trans) {
- 		if (cur_trans->aborted) {
- 			spin_unlock(&fs_info->trans_lock);
- 			return cur_trans->aborted;
- 		}
--		if (!can_join_transaction(cur_trans, type)) {
-+		if (btrfs_blocked_trans_types[cur_trans->state] & type) {
- 			spin_unlock(&fs_info->trans_lock);
- 			return -EBUSY;
- 		}
-@@ -136,6 +139,12 @@ loop:
- 	if (type == TRANS_ATTACH)
- 		return -ENOENT;
- 
-+	/*
-+	 * JOIN_NOLOCK only happens during the transaction commit, so
-+	 * it is impossible that ->running_transaction is NULL
-+	 */
-+	BUG_ON(type == TRANS_JOIN_NOLOCK);
-+
- 	cur_trans = kmem_cache_alloc(btrfs_transaction_cachep, GFP_NOFS);
- 	if (!cur_trans)
- 		return -ENOMEM;
-@@ -144,7 +153,7 @@ loop:
- 	if (fs_info->running_transaction) {
- 		/*
- 		 * someone started a transaction after we unlocked.  Make sure
--		 * to redo the trans_no_join checks above
-+		 * to redo the checks above
- 		 */
- 		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
- 		goto loop;
-@@ -158,14 +167,12 @@ loop:
- 	extwriter_counter_init(cur_trans, type);
- 	init_waitqueue_head(&cur_trans->writer_wait);
- 	init_waitqueue_head(&cur_trans->commit_wait);
--	cur_trans->in_commit = 0;
--	cur_trans->blocked = 0;
-+	cur_trans->state = TRANS_STATE_RUNNING;
- 	/*
- 	 * One for this trans handle, one so it will live on until we
- 	 * commit the transaction.
- 	 */
- 	atomic_set(&cur_trans->use_count, 2);
--	cur_trans->commit_done = 0;
- 	cur_trans->start_time = get_seconds();
- 
- 	cur_trans->delayed_refs.root = RB_ROOT;
-@@ -188,7 +195,6 @@ loop:
- 			"creating a fresh transaction\n");
- 	atomic64_set(&fs_info->tree_mod_seq, 0);
- 
--	spin_lock_init(&cur_trans->commit_lock);
- 	spin_lock_init(&cur_trans->delayed_refs.lock);
- 	atomic_set(&cur_trans->delayed_refs.procs_running_refs, 0);
- 	atomic_set(&cur_trans->delayed_refs.ref_seq, 0);
-@@ -293,6 +299,12 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+static inline int is_transaction_blocked(struct btrfs_transaction *trans)
-+{
-+	return (trans->state >= TRANS_STATE_BLOCKED &&
-+		trans->state < TRANS_STATE_UNBLOCKED);
-+}
-+
- /* wait for commit against the current transaction to become unblocked
-  * when this is done, it is safe to start a new transaction, but the current
-  * transaction might not be fully on disk.
-@@ -303,12 +315,12 @@ static void wait_current_trans(struct btrfs_root *root)
- 
- 	spin_lock(&root->fs_info->trans_lock);
- 	cur_trans = root->fs_info->running_transaction;
--	if (cur_trans && cur_trans->blocked) {
-+	if (cur_trans && is_transaction_blocked(cur_trans)) {
- 		atomic_inc(&cur_trans->use_count);
- 		spin_unlock(&root->fs_info->trans_lock);
- 
- 		wait_event(root->fs_info->transaction_wait,
--			   !cur_trans->blocked);
-+			   cur_trans->state >= TRANS_STATE_UNBLOCKED);
- 		put_transaction(cur_trans);
- 	} else {
- 		spin_unlock(&root->fs_info->trans_lock);
-@@ -432,7 +444,8 @@ again:
- 	INIT_LIST_HEAD(&h->new_bgs);
- 
- 	smp_mb();
--	if (cur_trans->blocked && may_wait_transaction(root, type)) {
-+	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
-+	    may_wait_transaction(root, type)) {
- 		btrfs_commit_transaction(h, root);
- 		goto again;
- 	}
-@@ -536,7 +549,7 @@ btrfs_attach_transaction_barrier(struct btrfs_root *root)
- static noinline void wait_for_commit(struct btrfs_root *root,
- 				    struct btrfs_transaction *commit)
- {
--	wait_event(commit->commit_wait, commit->commit_done);
-+	wait_event(commit->commit_wait, commit->state == TRANS_STATE_COMPLETED);
- }
- 
- int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
-@@ -572,8 +585,8 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
- 		spin_lock(&root->fs_info->trans_lock);
- 		list_for_each_entry_reverse(t, &root->fs_info->trans_list,
- 					    list) {
--			if (t->in_commit) {
--				if (t->commit_done)
-+			if (t->state >= TRANS_STATE_COMMIT_START) {
-+				if (t->state == TRANS_STATE_COMPLETED)
- 					break;
- 				cur_trans = t;
- 				atomic_inc(&cur_trans->use_count);
-@@ -614,7 +627,8 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
- 	int err;
- 
- 	smp_mb();
--	if (cur_trans->blocked || cur_trans->delayed_refs.flushing)
-+	if (cur_trans->state >= TRANS_STATE_BLOCKED ||
-+	    cur_trans->delayed_refs.flushing)
- 		return 1;
- 
- 	updates = trans->delayed_ref_updates;
-@@ -682,12 +696,15 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		btrfs_create_pending_block_groups(trans, root);
- 
- 	if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
--	    should_end_transaction(trans, root)) {
--		trans->transaction->blocked = 1;
--		smp_wmb();
-+	    should_end_transaction(trans, root) &&
-+	    ACCESS_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
-+		spin_lock(&info->trans_lock);
-+		if (cur_trans->state == TRANS_STATE_RUNNING)
-+			cur_trans->state = TRANS_STATE_BLOCKED;
-+		spin_unlock(&info->trans_lock);
- 	}
- 
--	if (lock && cur_trans->blocked && !cur_trans->in_commit) {
-+	if (lock && ACCESS_ONCE(cur_trans->state) == TRANS_STATE_BLOCKED) {
- 		if (throttle) {
- 			/*
- 			 * We may race with somebody else here so end up having
-@@ -1343,20 +1360,26 @@ static void update_super_roots(struct btrfs_root *root)
- 
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info)
- {
-+	struct btrfs_transaction *trans;
- 	int ret = 0;
-+
- 	spin_lock(&info->trans_lock);
--	if (info->running_transaction)
--		ret = info->running_transaction->in_commit;
-+	trans = info->running_transaction;
-+	if (trans)
-+		ret = (trans->state >= TRANS_STATE_COMMIT_START);
- 	spin_unlock(&info->trans_lock);
- 	return ret;
- }
- 
- int btrfs_transaction_blocked(struct btrfs_fs_info *info)
- {
-+	struct btrfs_transaction *trans;
- 	int ret = 0;
-+
- 	spin_lock(&info->trans_lock);
--	if (info->running_transaction)
--		ret = info->running_transaction->blocked;
-+	trans = info->running_transaction;
-+	if (trans)
-+		ret = is_transaction_blocked(trans);
- 	spin_unlock(&info->trans_lock);
- 	return ret;
- }
-@@ -1368,7 +1391,8 @@ int btrfs_transaction_blocked(struct btrfs_fs_info *info)
- static void wait_current_trans_commit_start(struct btrfs_root *root,
- 					    struct btrfs_transaction *trans)
- {
--	wait_event(root->fs_info->transaction_blocked_wait, trans->in_commit);
-+	wait_event(root->fs_info->transaction_blocked_wait,
-+		   trans->state >= TRANS_STATE_COMMIT_START);
- }
- 
- /*
-@@ -1379,7 +1403,7 @@ static void wait_current_trans_commit_start_and_unblock(struct btrfs_root *root,
- 					 struct btrfs_transaction *trans)
- {
- 	wait_event(root->fs_info->transaction_wait,
--		   trans->commit_done || (trans->in_commit && !trans->blocked));
-+		   trans->state >= TRANS_STATE_UNBLOCKED);
- }
- 
- /*
-@@ -1484,18 +1508,22 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 
- 	list_del_init(&cur_trans->list);
- 	if (cur_trans == root->fs_info->running_transaction) {
--		root->fs_info->trans_no_join = 1;
-+		cur_trans->state = TRANS_STATE_COMMIT_DOING;
- 		spin_unlock(&root->fs_info->trans_lock);
- 		wait_event(cur_trans->writer_wait,
- 			   atomic_read(&cur_trans->num_writers) == 1);
- 
- 		spin_lock(&root->fs_info->trans_lock);
--		root->fs_info->running_transaction = NULL;
- 	}
- 	spin_unlock(&root->fs_info->trans_lock);
- 
- 	btrfs_cleanup_one_transaction(trans->transaction, root);
- 
-+	spin_lock(&root->fs_info->trans_lock);
-+	if (cur_trans == root->fs_info->running_transaction)
-+		root->fs_info->running_transaction = NULL;
-+	spin_unlock(&root->fs_info->trans_lock);
-+
- 	put_transaction(cur_trans);
- 	put_transaction(cur_trans);
- 
-@@ -1507,10 +1535,6 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- 		current->journal_info = NULL;
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
--
--	spin_lock(&root->fs_info->trans_lock);
--	root->fs_info->trans_no_join = 0;
--	spin_unlock(&root->fs_info->trans_lock);
- }
- 
- static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
-@@ -1554,13 +1578,6 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
- 		btrfs_wait_all_ordered_extents(fs_info, 1);
- }
- 
--/*
-- * btrfs_transaction state sequence:
-- *    in_commit = 0, blocked = 0  (initial)
-- *    in_commit = 1, blocked = 1
-- *    blocked = 0
-- *    commit_done = 1
-- */
- int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root)
- {
-@@ -1615,9 +1632,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
--	spin_lock(&cur_trans->commit_lock);
--	if (cur_trans->in_commit) {
--		spin_unlock(&cur_trans->commit_lock);
-+	spin_lock(&root->fs_info->trans_lock);
-+	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
-+		spin_unlock(&root->fs_info->trans_lock);
- 		atomic_inc(&cur_trans->use_count);
- 		ret = btrfs_end_transaction(trans, root);
- 
-@@ -1628,16 +1645,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
--	trans->transaction->in_commit = 1;
--	trans->transaction->blocked = 1;
--	spin_unlock(&cur_trans->commit_lock);
-+	cur_trans->state = TRANS_STATE_COMMIT_START;
- 	wake_up(&root->fs_info->transaction_blocked_wait);
- 
--	spin_lock(&root->fs_info->trans_lock);
- 	if (cur_trans->list.prev != &root->fs_info->trans_list) {
- 		prev_trans = list_entry(cur_trans->list.prev,
- 					struct btrfs_transaction, list);
--		if (!prev_trans->commit_done) {
-+		if (prev_trans->state != TRANS_STATE_COMPLETED) {
- 			atomic_inc(&prev_trans->use_count);
- 			spin_unlock(&root->fs_info->trans_lock);
- 
-@@ -1673,10 +1687,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	/*
- 	 * Ok now we need to make sure to block out any other joins while we
- 	 * commit the transaction.  We could have started a join before setting
--	 * no_join so make sure to wait for num_writers to == 1 again.
-+	 * COMMIT_DOING so make sure to wait for num_writers to == 1 again.
- 	 */
- 	spin_lock(&root->fs_info->trans_lock);
--	root->fs_info->trans_no_join = 1;
-+	cur_trans->state = TRANS_STATE_COMMIT_DOING;
- 	spin_unlock(&root->fs_info->trans_lock);
- 	wait_event(cur_trans->writer_wait,
- 		   atomic_read(&cur_trans->num_writers) == 1);
-@@ -1803,10 +1817,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	memcpy(root->fs_info->super_for_commit, root->fs_info->super_copy,
- 	       sizeof(*root->fs_info->super_copy));
- 
--	trans->transaction->blocked = 0;
- 	spin_lock(&root->fs_info->trans_lock);
-+	cur_trans->state = TRANS_STATE_UNBLOCKED;
- 	root->fs_info->running_transaction = NULL;
--	root->fs_info->trans_no_join = 0;
- 	spin_unlock(&root->fs_info->trans_lock);
- 	mutex_unlock(&root->fs_info->reloc_mutex);
- 
-@@ -1834,10 +1847,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_finish_extent_commit(trans, root);
- 
--	cur_trans->commit_done = 1;
--
- 	root->fs_info->last_trans_committed = cur_trans->transid;
--
-+	/*
-+	 * We needn't acquire the lock here because there is no other task
-+	 * which can change it.
-+	 */
-+	cur_trans->state = TRANS_STATE_COMPLETED;
- 	wake_up(&cur_trans->commit_wait);
- 
- 	spin_lock(&root->fs_info->trans_lock);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 0fc45e2..66d2a6c 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -22,6 +22,16 @@
- #include "delayed-ref.h"
- #include "ctree.h"
- 
-+enum btrfs_trans_state {
-+	TRANS_STATE_RUNNING		= 0,
-+	TRANS_STATE_BLOCKED		= 1,
-+	TRANS_STATE_COMMIT_START	= 2,
-+	TRANS_STATE_COMMIT_DOING	= 3,
-+	TRANS_STATE_UNBLOCKED		= 4,
-+	TRANS_STATE_COMPLETED		= 5,
-+	TRANS_STATE_MAX			= 6,
-+};
-+
- struct btrfs_transaction {
- 	u64 transid;
- 	/*
-@@ -37,10 +47,8 @@ struct btrfs_transaction {
- 	atomic_t num_writers;
- 	atomic_t use_count;
- 
--	spinlock_t commit_lock;
--	int in_commit;
--	int commit_done;
--	int blocked;
-+	/* Be protected by fs_info->trans_lock when we want to change it. */
-+	enum btrfs_trans_state state;
- 	struct list_head list;
- 	struct extent_io_tree dirty_pages;
- 	unsigned long start_time;
+
+On Thu, May 16, 2013 at 3:12 PM, Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+> Hi!
+>
+> I think such a solution as part of the filesystem could do much better than
+> something outside of it (like bcache). But I'm not sure: What makes data
+> hot? I think the most benefit is detecting random read access and mark only
+> those data as hot, also writes should go to the SSD first and then should be
+> spooled to the harddisks in background. Bcache does a lot regarding this.
+>
+> Since this is within the filesystem, users could even mark files as being
+> always "hot" with some attribute or ioctl. This could be used by a boot-
+> readahead and preload implementation to automatically make files hot used
+> during booting or for preloading when I start an application.
+>
+> On the other side hot relocation should be able to reduce writes to the SSD
+> as good as possible, for example: Do not defragment files during autodefrag,
+> it makes no sense. Also write data in bursts of erase block size etc.
+>
+> And also important: What if the SSD dies due to wearing? Will it gracefully
+> fall back to harddisk? What does "relocation" mean? Files (hot data) should
+> only be cached in copy to SSD, and not moved there. It should be possible
+> for btrfs to just drop a failing SSD from the filesystem without data loss
+> because otherwise one should use two SSDs in raid-1 mode to get a safe cache
+> storage.
+>
+> Altogether I think that a spinning media btrfs raid can outperform a single
+> SSD so hot relocation should probably be used to reduce head movements
+> because this is where SSD really excels. So everything that involves heavy
+> head movement should go to SSD first, then written back to harddisk. And I
+> think there's a lot potential to optimize because a COW filesystem like
+> btrfs naturally has a lot of head movement.
+>
+> What do you think?
+>
+> BTW: I have not tried the one or the other yet because I'm still deciding
+> which way to go. Your patches are more welcome because I do not need to
+> migrate my storage to bcache-provided block devices. OTOH the bcache
+> implementation looks a lot more mature (with regard to performance and
+> safety) at this point because it provides many of the above mentioned
+> features - most importantly gracefully handling failing SSDs.
+>
+> Regarding btrfs raid outperforms SSD: During boot my spinning media 3 device
+> btrfs raid reads boot files with up to 600 MB/s (from LZ compressed fs),
+> boot takes about 7 seconds until the display manager starts (which takes
+> another 30 seconds but that's another story), and the system is pretty
+> crowded with services I actually wouldn't need if I optimized for boot
+> performance. But I think systemd's read-ahead implementation has a lot
+> influence on this fast booting: It defragments and relocates boot files on
+> btrfs during boot so the harddisks can sequentially read all this stuff. I
+> think it also compresses boot files if compression is enabled because
+> booting is IO bound, not CPU bound. Benchmarks showed that my btrfs raid
+> could technically read up to 450 MB/s, so I think the 600 MB/s counts for
+> decompressed data. A single SSD could not do that. For that same reason I
+> created a small script to defragment and compress files used by the preload
+> daemon. Without benchmarking it, this felt like another small performance
+> boost. So I'm eager what could be next with some sort of SSD cache because
+> the only problem left seems to be heavy head movement which slows down the
+> system.
+>
+> Zhi Yong Wu <zwu.kernel@gmail.com> schrieb:
+>
+>> HI,
+>>
+>>    What do you think if its design approach goes correctly? Do you
+>> have any comments or better design idea for BTRFS hot relocation
+>> support? any comments are appreciated, thanks.
+>>
+>>
+>> On Mon, May 6, 2013 at 4:53 PM,  <zwu.kernel@gmail.com> wrote:
+>>> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>>>
+>>>   The patchset as RFC is sent out mainly to see if it goes in the
+>>> correct development direction.
+>>>
+>>>   The patchset is trying to introduce hot relocation support
+>>> for BTRFS. In hybrid storage environment, when the data in
+>>> HDD disk get hot, it can be relocated to SSD disk by BTRFS
+>>> hot relocation support automatically; also, if SSD disk ratio
+>>> exceed its upper threshold, the data which get cold can be
+>>> looked up and relocated to HDD disk to make more space in SSD
+>>> disk at first, and then the data which get hot will be relocated
+>>> to SSD disk automatically.
+>>>
+>>>   BTRFS hot relocation mainly reserve block space from SSD disk
+>>> at first, load the hot data to page cache from HDD, allocate
+>>> block space from SSD disk, and finally write the data to SSD disk.
+>>>
+>>>   If you'd like to play with it, pls pull the patchset from
+>>> my git on github:
+>>>   https://github.com/wuzhy/kernel.git hot_reloc
+>>>
+>>> For how to use, please refer too the example below:
+>>>
+>>> root@debian-i386:~# echo 0 > /sys/block/vdc/queue/rotational
+>>> ^^^ Above command will hack /dev/vdc to be one SSD disk
+>>> root@debian-i386:~# echo 999999 > /proc/sys/fs/hot-age-interval
+>>> root@debian-i386:~# echo 10 > /proc/sys/fs/hot-update-interval
+>>> root@debian-i386:~# echo 10 > /proc/sys/fs/hot-reloc-interval
+>>> root@debian-i386:~# mkfs.btrfs -d single -m single -h /dev/vdb /dev/vdc
+>>> -f
+>>>
+>>> WARNING! - Btrfs v0.20-rc1-254-gb0136aa-dirty IS EXPERIMENTAL
+>>> WARNING! - see http://btrfs.wiki.kernel.org before using
+>>>
+>>> [ 140.279011] device fsid c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 1
+>>> [ transid 16 /dev/vdb 140.283650] device fsid
+>>> [ c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 2 transid 16 /dev/vdc
+>>> [ 140.517089] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1
+>>> [ transid 3 /dev/vdb 140.550759] device fsid
+>>> [ 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1 transid 3 /dev/vdb
+>>> [ 140.552473] device fsid c563a6dc-f192-41a9-9fe1-5a3aa01f5e4c devid 2
+>>> [ transid 16 /dev/vdc
+>>> adding device /dev/vdc id 2
+>>> [ 140.636215] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 2
+>>> [ transid 3 /dev/vdc
+>>> fs created label (null) on /dev/vdb
+>>> nodesize 4096 leafsize 4096 sectorsize 4096 size 14.65GB
+>>> Btrfs v0.20-rc1-254-gb0136aa-dirty
+>>> root@debian-i386:~# mount -o hot_move /dev/vdb /data2
+>>> [ 144.855471] device fsid 197d47a7-b9cd-46a8-9360-eb087b119424 devid 1
+>>> [ transid 6 /dev/vdb 144.870444] btrfs: disk space caching is enabled
+>>> [ 144.904214] VFS: Turning on hot data tracking
+>>> root@debian-i386:~# dd if=/dev/zero of=/data2/test1 bs=1M count=2048
+>>> 2048+0 records in
+>>> 2048+0 records out
+>>> 2147483648 bytes (2.1 GB) copied, 23.4948 s, 91.4 MB/s
+>>> root@debian-i386:~# df -h
+>>> Filesystem Size Used Avail Use% Mounted on
+>>> /dev/vda1 16G 13G 2.2G 86% /
+>>> tmpfs 4.8G 0 4.8G 0% /lib/init/rw
+>>> udev 10M 176K 9.9M 2% /dev
+>>> tmpfs 4.8G 0 4.8G 0% /dev/shm
+>>> /dev/vdb 15G 2.0G 13G 14% /data2
+>>> root@debian-i386:~# btrfs fi df /data2
+>>> Data: total=3.01GB, used=2.00GB
+>>> System: total=4.00MB, used=4.00KB
+>>> Metadata: total=8.00MB, used=2.19MB
+>>> Data_SSD: total=8.00MB, used=0.00
+>>> root@debian-i386:~# echo 108 > /proc/sys/fs/hot-reloc-threshold
+>>> ^^^ Above command will start HOT RLEOCATE, because The data temperature
+>>> is currently 109 root@debian-i386:~# df -h
+>>> Filesystem Size Used Avail Use% Mounted on
+>>> /dev/vda1 16G 13G 2.2G 86% /
+>>> tmpfs 4.8G 0 4.8G 0% /lib/init/rw
+>>> udev 10M 176K 9.9M 2% /dev
+>>> tmpfs 4.8G 0 4.8G 0% /dev/shm
+>>> /dev/vdb 15G 2.1G 13G 14% /data2
+>>> root@debian-i386:~# btrfs fi df /data2
+>>> Data: total=3.01GB, used=6.25MB
+>>> System: total=4.00MB, used=4.00KB
+>>> Metadata: total=8.00MB, used=2.26MB
+>>> Data_SSD: total=2.01GB, used=2.00GB
+>>> root@debian-i386:~#
+>>>
+>>> Zhi Yong Wu (5):
+>>>   vfs: add one list_head field
+>>>   btrfs: add one new block group
+>>>   btrfs: add one hot relocation kthread
+>>>   procfs: add three proc interfaces
+>>>   btrfs: add hot relocation support
+>>>
+>>>  fs/btrfs/Makefile            |   3 +-
+>>>  fs/btrfs/ctree.h             |  26 +-
+>>>  fs/btrfs/extent-tree.c       | 107 +++++-
+>>>  fs/btrfs/extent_io.c         |  31 +-
+>>>  fs/btrfs/extent_io.h         |   4 +
+>>>  fs/btrfs/file.c              |  36 +-
+>>>  fs/btrfs/hot_relocate.c      | 802
+>>>  +++++++++++++++++++++++++++++++++++++++++++
+>>>  fs/btrfs/hot_relocate.h      |  48 +++
+>>>  fs/btrfs/inode-map.c         |  13 +-
+>>>  fs/btrfs/inode.c             |  92 ++++-
+>>>  fs/btrfs/ioctl.c             |  23 +-
+>>>  fs/btrfs/relocation.c        |  14 +-
+>>>  fs/btrfs/super.c             |  30 +-
+>>>  fs/btrfs/volumes.c           |  28 +-
+>>>  fs/hot_tracking.c            |   1 +
+>>>  include/linux/btrfs.h        |   4 +
+>>>  include/linux/hot_tracking.h |   1 +
+>>>  kernel/sysctl.c              |  22 ++
+>>>  18 files changed, 1234 insertions(+), 51 deletions(-)
+>>>  create mode 100644 fs/btrfs/hot_relocate.c
+>>>  create mode 100644 fs/btrfs/hot_relocate.h
+>>>
+>>> --
+>>> 1.7.11.7
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-1.8.1.4
+Regards,
 
+Zhi Yong Wu

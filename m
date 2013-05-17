@@ -1,65 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26892 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753886Ab3EQJgl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 05:36:41 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4H9ae9Y005175
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 09:36:41 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4H9adXr013835
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 09:36:40 GMT
-Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4H9adUM001801
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 09:36:39 GMT
-Date: Fri, 17 May 2013 17:36:17 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix memory leak in replace_path
-Message-ID: <20130517093615.GP20202@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <1368780344-7157-1-git-send-email-bo.li.liu@oracle.com>
+Received: from brockman.in8.de ([85.214.220.56]:39537 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751537Ab3EQPnD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 May 2013 11:43:03 -0400
+Message-ID: <51965005.6050703@jan-o-sch.net>
+Date: Fri, 17 May 2013 17:43:01 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1368780344-7157-1-git-send-email-bo.li.liu@oracle.com>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: hard freezes with 3.9.0 during io-intensive loads
+References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx> <51889A4D.8000201@jan-o-sch.net> <ch7o5a-g0b.ln1@hurikhan.ath.cx> <7jio5a-b5g.ln1@hurikhan.ath.cx> <518A318A.7060105@jan-o-sch.net> <15ot5a-f1m.ln1@hurikhan.ath.cx> <518C9B55.3050008@jan-o-sch.net> <btde6a-5an.ln1@hurikhan.ath.cx>
+In-Reply-To: <btde6a-5an.ln1@hurikhan.ath.cx>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-oops, please ignore this as there is already a same patch from Stefan.
+On Thu, May 16, 2013 at 09:19 (+0200), Kai Krakow wrote:
+> 3.9.2 still does not fix anything. I'll go with autodefrag=off for the 
+> moment until I hear some news in that regard. With this new information, is 
+> it still helpful to get a metadata image from me? It should be reproducable 
+> if you enable autodefrag or defragment cow'ed files.
 
-Sorry for the trouble.
+Would still be helpful, yes. If you've got questions on the usage of
+btrfs-image, your best bet is probably #btrfs on freenode, I haven't created any
+usable images with that tool so far, but I've heard of people that succeeded.
 
-thanks,
-liubo
-
-On Fri, May 17, 2013 at 04:45:44PM +0800, Liu Bo wrote:
-> We need to unlock and free extent buffer before the return.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/relocation.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 704a1b8..5c5b8bb 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1773,7 +1773,7 @@ again:
->  			if (!eb || !extent_buffer_uptodate(eb)) {
->  				ret = (!eb) ? -ENOMEM : -EIO;
->  				free_extent_buffer(eb);
-> -				return ret;
-> +				break;
->  			}
->  			btrfs_tree_lock(eb);
->  			if (cow) {
-> -- 
-> 1.7.7.6
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks!
+-Jan

@@ -1,30 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:39537 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751537Ab3EQPnD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 11:43:03 -0400
-Message-ID: <51965005.6050703@jan-o-sch.net>
-Date: Fri, 17 May 2013 17:43:01 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from relay3.sgi.com ([192.48.152.1]:46944 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751537Ab3EQPon (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 May 2013 11:44:43 -0400
+Date: Fri, 17 May 2013 10:44:36 -0500
+From: Ben Myers <bpm@sgi.com>
+To: Christian Kujau <lists@nerdbynature.de>
+Cc: jfs-discussion@lists.sourceforge.net, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, reiserfs-devel@vger.kernel.org,
+        xfs@oss.sgi.com
+Subject: Re: xattr performance
+Message-ID: <20130517154436.GW29359@sgi.com>
+References: <alpine.DEB.2.10.1305170444590.13746@trent.utfs.org>
 MIME-Version: 1.0
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: hard freezes with 3.9.0 during io-intensive loads
-References: <6moh5a-knf.ln1@hurikhan.ath.cx> <2sci5a-n8p.ln1@hurikhan.ath.cx> <5187700F.20807@jan-o-sch.net> <3egl5a-al5.ln1@hurikhan.ath.cx> <51889A4D.8000201@jan-o-sch.net> <ch7o5a-g0b.ln1@hurikhan.ath.cx> <7jio5a-b5g.ln1@hurikhan.ath.cx> <518A318A.7060105@jan-o-sch.net> <15ot5a-f1m.ln1@hurikhan.ath.cx> <518C9B55.3050008@jan-o-sch.net> <btde6a-5an.ln1@hurikhan.ath.cx>
-In-Reply-To: <btde6a-5an.ln1@hurikhan.ath.cx>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <alpine.DEB.2.10.1305170444590.13746@trent.utfs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 16, 2013 at 09:19 (+0200), Kai Krakow wrote:
-> 3.9.2 still does not fix anything. I'll go with autodefrag=off for the 
-> moment until I hear some news in that regard. With this new information, is 
-> it still helpful to get a metadata image from me? It should be reproducable 
-> if you enable autodefrag or defragment cow'ed files.
+Hey Christian,
 
-Would still be helpful, yes. If you've got questions on the usage of
-btrfs-image, your best bet is probably #btrfs on freenode, I haven't created any
-usable images with that tool so far, but I've heard of people that succeeded.
+On Fri, May 17, 2013 at 05:02:21AM -0700, Christian Kujau wrote:
+> a while ago I was setting & reading extended attributes to ~25000 files 
+> in a directory structure on an XFS filesystem. The files were usually a 
+> few MB in size, but some where up to 2GB in size.
+> 
+> Anyway, I *felt* that setting or reading these xattrs was going very
+> slowly. While the storage may be not the fastest, stat()'ing these
+> files was fine, but getfattr/setfattr took very long.
+> 
+> I got curious and while it turned out that the slowness was related to the 
+> wrapper script I used to read/set those values, I created a little test 
+> suite to 1) create a few thousand files and 2) do xattr operations on 
+> them and see if xattr performance was filesystem specific:
+> 
+>    http://nerdbynature.de/bits/xattr/
+> 
+> Not very sophisticated, true. But it was interesting to see that 
+> ext3/ext4/xfs behaved kinda well for all these tests; btrfs/jfs/reiserfs
+> sometimes took way longer than the others.
 
-Thanks!
--Jan
+Very interesting results!  One wrinkle that you might want to consider with XFS
+is the overall size of the attributes versus the size of the inode.  You can
+choose inode sizes between 256 bytes and 2k in powers of two, and we always
+allocate them in chunks of 64.  The 'literal' area is the space after the inode
+core and before the next one... it's best described here:
+http://xfs.org/docs/xfsdocs-xml-dev/XFS_Filesystem_Structure//tmp/en-US/html/On-disk_Inode.html
+
+The short version:
+
+inode core (96 bytes) + literal area == inode size
+
+The data and attribute forks share the literal area.  If the attributes get too
+big to fit inside the literal area with the data fork they will go out of line
+and be stored elsewhere in the filesystem.  The performance characteristics of
+inline vs out-of-line attributes are significantly different.  That might be
+what you experienced when you felt that setting/reading xattrs was taking a
+long time. 
+
+Anyway... If you're a heavy user of EAs you might benefit from using larger
+inodes.  Just something to consider.  Cool tests!  ;)
+
+Regards,
+	Ben

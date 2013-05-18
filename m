@@ -1,84 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:25727 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754543Ab3EPOp7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 May 2013 10:45:59 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp3) (RZmta 31.27 OK)
-	with ESMTP id p06cbep4G8bfHi for <linux-btrfs@vger.kernel.org>;
-	Thu, 16 May 2013 16:45:58 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mail-pb0-f42.google.com ([209.85.160.42]:48795 "EHLO
+	mail-pb0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752399Ab3ERQmd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 18 May 2013 12:42:33 -0400
+Received: by mail-pb0-f42.google.com with SMTP id up7so4193879pbc.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 May 2013 09:42:33 -0700 (PDT)
+Received: from localhost.localdomain.localdomain ([112.22.172.46])
+        by mx.google.com with ESMTPSA id fm2sm17521577pab.13.2013.05.18.09.42.31
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=RC4-SHA bits=128/128);
+        Sat, 18 May 2013 09:42:32 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/4] Btrfs-progs: speedup btrfs send/receive
-Date: Thu, 16 May 2013 16:45:54 +0200
-Message-Id: <cover.1368713962.git.sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs-progs: fix compile warning in btrfs_free_block_groups()
+Date: Sun, 19 May 2013 00:42:05 +0800
+Message-Id: <1368895325-1845-1-git-send-email-wangshilong1991@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The addressed issue is that Btrfs send / receive does not work as
-it is today when a high number of subvolumes exist.
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-This commit changes the btrfs send/receive commands to use the
-UUID tree to map UUIDs to subvolumes, and to use the root tree
-to map subvolume IDs to paths. Now these tools start fast and are
-independent on the number of subvolumes/snapshots that exist.
+See the warning in i386 machine:
 
-Before this commit, mapping UUIDs to subvolume IDs was an operation
-with a high effort. The algorithm even had quadratic effort (based
-on the number of existing subvolumes). E.g. with 15,000 subvolumes
-it took much more than 5 minutes on a state of the art XEON CPU to
-start btrfs send or receive before these tools were able to send or
-receive the first byte).
-Even linear effort instead of the current quadratic effort would be
-too much since it would be a waste. And these data structures to
-allow mapping UUIDs to subvolume IDs had been created every time a
-btrfs send/receive instance was started.
+extent-tree.c: In function ‘btrfs_free_block_groups’:
+extent-tree.c:3190:12: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
 
-It is much more efficient to maintain a searchable persistent data
-structure in the filesystem, one that is updated whenever a
-subvolume/snapshot is created and deleted, and when the received
-subvolume UUID is set by the btrfs-receive tool. The user mode
-tools can then just use the tree-search ioctl to quickly retrieve
-all information.
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+---
+ extent-tree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-With a recent commit, kernel code was added that is able to maintain
-data structures in the filesystem that allow to quickly search for a
-given UUID and to retrieve data that is assigned to this UUID, like
-which subvolume ID is related to this UUID.
-
-This commit series adds support for the UUID tree to Btrfs-progs
-and changes the send/receive tools to use it. Additionally, the
-btrfs-show-super tool is updated to print a new field.
-
-v1 -> v2:
-- Addressed the review comments from David Sterba.
-- The v2 of the kernel patch adds a uuid_tree_generation field to
-  the superblock, the v2 of the user mode patch adds this field
-  to the btrfs-show-super tool.
-- uuid-tree.o is added to the libbtrfs_objects since it is used
-  by send-utils.o which is part of the exported libbtrfs.
-
-v2 -> v3:
-- shrinked the uuid_item (this was a review comment from Liu Bo).
-
-Stefan Behrens (4):
-  Btrfs-progs: Support UUID tree and UUID items in btrfs-debug-tree
-  Btrfs-progs: add UUID tree lookup methods
-  Btrfs-progs: use UUID tree for send/receive
-  Btrfs-progs: add uuid_tree_gen field to btrfs-show-super
-
- Makefile           |   5 +-
- btrfs-show-super.c |   2 +
- cmds-receive.c     |  23 ++-
- cmds-send.c        |  53 +++++-
- ctree.h            |  39 ++++-
- print-tree.c       |  95 ++++++++++-
- send-utils.c       | 477 +++++++++++++++++++++--------------------------------
- send-utils.h       |   9 +-
- uuid-tree.c        | 174 +++++++++++++++++++
- 9 files changed, 562 insertions(+), 315 deletions(-)
- create mode 100644 uuid-tree.c
-
+diff --git a/extent-tree.c b/extent-tree.c
+index 381572d..153d14b 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3187,7 +3187,8 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 			break;
+ 		ret = get_state_private(&info->block_group_cache, start, &ptr);
+ 		if (!ret) {
+-			cache = (struct btrfs_block_group_cache *)ptr;
++			cache = (struct btrfs_block_group_cache *)
++							(unsigned long)ptr;
+ 			if (cache->free_space_ctl) {
+ 				btrfs_remove_free_space_cache(cache);
+ 				kfree(cache->free_space_ctl);
 -- 
-1.8.2.3
+1.7.11.7
 

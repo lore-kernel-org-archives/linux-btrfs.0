@@ -1,51 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34333 "EHLO plane.gmane.org"
+Received: from len.romanrm.net ([176.31.121.172]:55065 "EHLO len.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753140Ab3ESLEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 May 2013 07:04:22 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ue1PV-0000qa-5Y
-	for linux-btrfs@vger.kernel.org; Sun, 19 May 2013 13:04:17 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 13:04:17 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 13:04:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
+	id S1754014Ab3ESL11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 May 2013 07:27:27 -0400
+Date: Sun, 19 May 2013 17:15:10 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: george@chinilu.com
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Virtual Device Support
-Date: Sun, 19 May 2013 12:04:03 +0100
-Message-ID: <knabiu$akg$1@ger.gmane.org>
+Message-ID: <20130519171510.54897415@natsu>
+In-Reply-To: <518CFE3A.3080900@chinilu.com>
 References: <518CFE3A.3080900@chinilu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <518CFE3A.3080900@chinilu.com>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/LFrvqdp7+rZHiXbRYcxu//X"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/05/13 15:03, George Mitchell wrote:
-> One the things that is frustrating me the most at this point from a user
-> perspective ...  The current method of simply using a
-> random member device or a LABEL or a UUID is just not working well for
-> me.  Having a well thought out virtual device infrastructure would...
+--Sig_/LFrvqdp7+rZHiXbRYcxu//X
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Sorry, I'm a bit lost for your comments...
+On Fri, 10 May 2013 07:03:38 -0700
+George Mitchell <george@chinilu.com> wrote:
 
-What is your use case and what are you hoping/expecting to see?
+> One the things that is frustrating me the most at this point from a user=
+=20
+> perspective regarding btrfs is the current lack of virtual devices to=20
+> describe volumes and subvolumes.
 
+=46rom a user perspective btrfs subvolumes have a lot in common with just
+regular directories aka folders, and nothing in common with (block)devices.
+"Describing them with virtual devices" does not seem to make a whole lot of
+sense.
 
-I've been following development of btrfs for a while and I'm looking
-forward to use it to efficiently replace some of the very useful
-features of LVM2, drbd, and md-raid that I'm using at present...
+--=20
+With respect,
+Roman
 
-OK, so the way of managing all that is going to be a little different.
+--Sig_/LFrvqdp7+rZHiXbRYcxu//X
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-How would you want that?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iEYEARECAAYFAlGYtD4ACgkQTLKSvz+PZwjHugCfUSfZqUd3A6LE/PE6ZseUQw+r
+Gl8Anj38YDwvp7DrQqT6H7Rixy3terUe
+=+8gh
+-----END PGP SIGNATURE-----
 
-Regards,
-Martin
-
+--Sig_/LFrvqdp7+rZHiXbRYcxu//X--

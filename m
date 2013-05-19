@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f170.google.com ([209.85.216.170]:65394 "EHLO
-	mail-qc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752931Ab3ESNnR (ORCPT
+Received: from mail-qa0-f50.google.com ([209.85.216.50]:37438 "EHLO
+	mail-qa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751686Ab3ESNq3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 May 2013 09:43:17 -0400
-Received: by mail-qc0-f170.google.com with SMTP id s11so1270424qcw.15
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 06:43:17 -0700 (PDT)
+	Sun, 19 May 2013 09:46:29 -0400
+Received: by mail-qa0-f50.google.com with SMTP id bn16so1135573qab.9
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 06:46:28 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <10727333.ycOo9UTNXM@merkaba>
 References: <1367830418-26865-1-git-send-email-zwu.kernel@gmail.com>
 	<CAEH94LgHqyFHhmdPE439hQQFGNCVyraDq0ta0XV1kCGnNDi0yg@mail.gmail.com>
 	<10727333.ycOo9UTNXM@merkaba>
-Date: Sun, 19 May 2013 21:43:14 +0800
-Message-ID: <CAEH94LjW-5azrjN+fz8YDMqT4jW3hjm3mLj7HVeuSKrXWS=MBQ@mail.gmail.com>
+Date: Sun, 19 May 2013 21:46:28 +0800
+Message-ID: <CAEH94LiQCVRrESkppE2jAwpVQdfM+6GcN5zA6p4Y3CAAmsktzA@mail.gmail.com>
 Subject: Re: [RFC 0/5] BTRFS hot relocation support
 From: Zhi Yong Wu <zwu.kernel@gmail.com>
 To: Martin Steigerwald <Martin@lichtvoll.de>
@@ -36,7 +36,6 @@ On Sun, May 19, 2013 at 6:41 PM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
 >
 > I really look forward to VFS hot data tracking with BTRFS (and other
 > filesystem) support.
-I also really want to see this will happen.
 >
 > ZFS and BTRFS have shown that RAID support within the filesystem can make a lot
 > of sense. I think hot relocation is another area which can be done more
@@ -44,34 +43,18 @@ I also really want to see this will happen.
 > possible by going this route:
 >
 > 1) Mark files as hot via ioctl. MySQL can mark InnoDB journal files for example.
-It has been implemented to get its hot status of one specified file
-via ioctl. It is not hard to enable its set function. Before it is
-done, i more hope that the core of VFS hot tracking can get merged by
-kernel upstream. You know, it is harder if too new functions have been
-done.
-We can put it in to-do list at first, what do you think?
 >
 > 2) Proper BTRFS RAID support (as noted elsewhere in this thread)
+After the current design draft for BTRFS hot relocation in this RFC
+get basic agreement as btrfs community, maintainer or main developers,
+i will dive into this further.
+By the way, it is in my to-do list, thanks.
 >
 > 3) Easier setup. With BTRFS flexibility I would expect that a SSD as hot data
 > cache can be added and removed on the fly during filesystem is mounted. Only
 > seems supported at mkfs-time as I read the patch docs, but from my basic
 > technical understanding of BTRFS it can be extented to be done on the fly with
 > a mounted FS as well.
-Yes, it is supported only at mkfs time. It shouldn't be hard to enable
-adding or removing a nonrotating disk as hot cache on the fly. You
-know, before this is done, i would like to make sure that the current
-design for BTRFS hot relocation is this RFC patchset is going in the
-direction and is appropriate. If it is going in wrong direction, we
-will be doing a lot of meanless work. E.g. How about the current idea
-on introducing one new block group for nonrotating disks.
-When working on this work, i were trying to change the least current
-btrfs code as far as possible. You know, if we change too many current
-btrfs code, it will introduce regression bug more easily, and so the
-patchset will be also harder to get accepted by btrfs upstream.
-
-What do you think?
-
 >
 >
 > Block based caching can make sense for other use cases like raw device with

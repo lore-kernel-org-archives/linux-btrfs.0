@@ -1,65 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40804 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751950Ab3ESRTP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 May 2013 13:19:15 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ue7GI-00051j-5g
-	for linux-btrfs@vger.kernel.org; Sun, 19 May 2013 19:19:10 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 19:19:10 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 May 2013 19:19:10 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:11113 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751950Ab3ESSSX convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 May 2013 14:18:23 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:53044 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Ue8Ba-0012Wk-0c
+	for linux-btrfs@vger.kernel.org; Sun, 19 May 2013 12:18:22 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.3 \(1503\))
 Subject: Re: Virtual Device Support
-Date: Sun, 19 May 2013 18:18:59 +0100
-Message-ID: <knb1hu$iur$1@ger.gmane.org>
-References: <518CFE3A.3080900@chinilu.com> <knabiu$akg$1@ger.gmane.org> <5198E688.30402@chinilu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <5198E688.30402@chinilu.com>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130519171510.54897415@natsu>
+Date: Sun, 19 May 2013 12:18:19 -0600
+Message-Id: <262CC063-0DB4-45BD-A776-9FD1E8650E7C@colorremedies.com>
+References: <518CFE3A.3080900@chinilu.com> <20130519171510.54897415@natsu>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK, so to summarise:
 
+On May 19, 2013, at 5:15 AM, Roman Mamedov <rm@romanrm.ru> wrote:
 
-On 19/05/13 15:49, George Mitchell wrote:
-> In reply to both of these comments in one message, let me give you an
-> example.
+> On Fri, 10 May 2013 07:03:38 -0700
+> George Mitchell <george@chinilu.com> wrote:
 > 
-> I use shell scripts to mount and unmount btrfs volumes for backup
-> purposes.  Most of these volumes are not listed in fstab simply because
-> I do not want to have to clutter my fstab with volumes that are used
-> only for backup.  So the only way I can mount them is either by LABEL or
-> by UUID.  But I can't unmount them by either LABEL or UUID because that
-> is not supported by util-linux and they have no intention of supporting
-> it in the future.  So I have to resort to unmounting by directory ...
+>> One the things that is frustrating me the most at this point from a user 
+>> perspective regarding btrfs is the current lack of virtual devices to 
+>> describe volumes and subvolumes.
+> 
+> From a user perspective btrfs subvolumes have a lot in common with just
+> regular directories aka folders, and nothing in common with (block)devices.
+> "Describing them with virtual devices" does not seem to make a whole lot of
+> sense.
 
-Which all comes to a way of working...
+It's not possible to mount regular directories with other file systems. In some ways the btrfs subvolume behaves like a folder. In other ways it acts like a device. If you stat the mount point for btrfs subvolumes, you get a unique device ID for each.
 
-Likewise, I have some old and long used backups scripts that mount a
-one-of-many backups disk pack. My solution is to use filesystem labels
-and to use 'sed' to update just the one line in /etc/fstab for the
-backups mount point label so that the backups are then mounted/unmounted
-by the mount point.
+It seems inconsistent that mount and unmount allows a /dev/ designation, but only mount honors label and UUID.
 
-I've never been able to use the /dev/sdXX numbering because the multiple
-physical drives can be detected in a different order.
+I can mount with mount /dev/disk/by-uuid/xxxxxxx, but if I use umount /dev/disk/by-uuid/xxxxxxxx I get a bogus error:
 
-Agreed, that for the sake of good consistency, being able to unmount by
-filesystem label is a nice/good idea. But is there any interest for that
-to be picked up? Put in a bug/feature request onto bugzilla?
+umount: /dev/disk/by-uuid/xxxxxxxxxx: not mounted
+
+mount /dev/disk/by-uuid will autocomplete/list uuids in that directory, umount will not. So just from a consistency standpoint that seems broken.
 
 
-I would guess that most developers focus on mount point and let
-fstab/mtab sort out the detail...
-
-Regards,
-Martin
-
+Chris Murphy

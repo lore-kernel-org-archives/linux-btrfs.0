@@ -1,229 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bay0-omc2-s5.bay0.hotmail.com ([65.54.190.80]:13775 "EHLO
-	bay0-omc2-s5.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756191Ab3EQOid (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:47020 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755998Ab3ETPtN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 10:38:33 -0400
-Message-ID: <BAY172-DS1691344C45A69E61326E56B0AC0@phx.gbl>
-From: "Kyle Gates" <kylegates@hotmail.com>
-To: <bo.li.liu@oracle.com>
-Cc: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <CADn-QaPQ0aH1rb3rG3bE87Ka3XaLzHHeA6nwNLbQJsbB_BiXkw@mail.gmail.com> <h1rh5a-1lg.ln1@hurikhan.ath.cx> <CADn-QaNEdWiyKaniOhzAmaGb6p=PuZ4=FxPPPiVLZZJ3zB7xpQ@mail.gmail.com> <BAY172-DS142AB5E40D200CC3946388B0A40@phx.gbl> <20130510051500.GB5615@liubo.jp.oracle.com> <BAY172-DS77BDBEADA4D3971B47F29B0A50@phx.gbl> <BAY172-DS3707AF83BC83C3B48502DB0A30@phx.gbl> <20130517070443.GN20202@liubo.jp.oracle.com>
-In-Reply-To: <20130517070443.GN20202@liubo.jp.oracle.com>
-Subject: Re: nocow 'C' flag ignored after balance
-Date: Fri, 17 May 2013 09:38:53 -0500
+	Mon, 20 May 2013 11:49:13 -0400
+Received: by mail-pa0-f49.google.com with SMTP id bi5so5711072pad.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 May 2013 08:49:12 -0700 (PDT)
+Date: Mon, 20 May 2013 23:48:54 +0800
+Subject: Re: [PATCH] Btrfs: fix estale with btrfs send
+Message-ID: <b187dmcaigs812gqdmx0i9qh.1369064934798@email.android.com>
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-1";
-	reply-type=original
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 17 May 2013 15:04:45 +0800, Liu Bo wrote:
-> On Thu, May 16, 2013 at 02:11:41PM -0500, Kyle Gates wrote:
->> and mounted with autodefrag
->> Am I actually just seeing large ranges getting split while remaining
->> contiguous on disk? This would imply crc calculation on the two
->> outside ranges. Or perhaps there is some data being inlined for each
->> write. I believe writes on this file are 32KiB each.
->> Does the balance produce persistent crc values in the metadata even
->> though the files are nocow which implies nocrc?
->> ...
->> I ran this test again and here's filefrag -v after about a day of use:
->>
->>[...]
->> As you can see the 32KiB writes fit in the extents of size 9 and 55.
->> Are those 9 block extents inlined?
->> If I understand correctly, new extents are created for these nocow
->> writes, then the old extents are basically hole punched producing
->> three (four? because of inlining) separate extents.
->> Something here begs for optimization. Perhaps balance should treat
->> nocow files a little differently. That would be the time to remove
->> the extra bits that prevent inplace overwrites. After the fact it
->> becomes much more difficult, although removing a crc for the extent
->> being written seems a little easier then iterating over the entire
->> file.
->>
->> Thanks for taking the time to read,
->> Kyle
->>
->> P.S. I'm CCing David as I believe he wrote the patch to get the 'C'
->> flag working on empty files and directories.
->
-> Hi Kyle,
->
-> Can you please apply this patch and see if it helps?
->
-> thanks,
-> liubo
->
->
-> From: Liu Bo <bo.li.liu@oracle.com>
->
-> Subject: [PATCH] Btrfs: fix broken nocow after a normal balance
->
-> Balance will create reloc_root for each fs root, and it's going to
-> record last_snapshot to filter shared blocks.  The side effect of
-> setting last_snapshot is to break nocow attributes of files.
->
-> So here we update file extent's generation while walking relocated
-> file extents in data reloc root, and use file extent's generation
-> instead for checking if we have cross refs for the file extent.
->
-> That way we can make nocow happy again and have no impact on others.
->
-> Reported-by: Kyle Gates <kylegates@hotmail.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> fs/btrfs/ctree.h       |    2 +-
-> fs/btrfs/extent-tree.c |   18 +++++++++++++-----
-> fs/btrfs/inode.c       |   10 ++++++++--
-> fs/btrfs/relocation.c  |    1 +
-> 4 files changed, 23 insertions(+), 8 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 4560052..eb2e782 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3090,7 +3090,7 @@ int btrfs_pin_extent_for_log_replay(struct 
-> btrfs_root *root,
->      u64 bytenr, u64 num_bytes);
-> int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
->    struct btrfs_root *root,
-> -   u64 objectid, u64 offset, u64 bytenr);
-> +   u64 objectid, u64 offset, u64 bytenr, u64 gen);
-> struct btrfs_block_group_cache *btrfs_lookup_block_group(
->  struct btrfs_fs_info *info,
->  u64 bytenr);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 1e84c74..f3b3616 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2816,7 +2816,8 @@ out:
-> static noinline int check_committed_ref(struct btrfs_trans_handle *trans,
->  struct btrfs_root *root,
->  struct btrfs_path *path,
-> - u64 objectid, u64 offset, u64 bytenr)
-> + u64 objectid, u64 offset, u64 bytenr,
-> + u64 fi_gen)
-> {
->  struct btrfs_root *extent_root = root->fs_info->extent_root;
->  struct extent_buffer *leaf;
-> @@ -2861,8 +2862,15 @@ static noinline int check_committed_ref(struct 
-> btrfs_trans_handle
-> *trans,
->      btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
->  goto out;
->
-> - if (btrfs_extent_generation(leaf, ei) <=
-> -     btrfs_root_last_snapshot(&root->root_item))
-> + /*
-> + * Usually generation in extent item is larger than that in file extent
-> + * item because of delay refs.  But we don't want balance to break
-> + * file's nocow behaviour, so use file_extent's generation which has
-> + * been updates when we update fs root to point to relocated file
-> + * extents in data reloc root.
-> + */
-> + fi_gen = max_t(u64, btrfs_extent_generation(leaf, ei), fi_gen);
-> + if (fi_gen <= btrfs_root_last_snapshot(&root->root_item))
->  goto out;
->
->  iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-> @@ -2886,7 +2894,7 @@ out:
->
-> int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
->    struct btrfs_root *root,
-> -   u64 objectid, u64 offset, u64 bytenr)
-> +   u64 objectid, u64 offset, u64 bytenr, u64 gen)
-> {
->  struct btrfs_path *path;
->  int ret;
-> @@ -2898,7 +2906,7 @@ int btrfs_cross_ref_exist(struct btrfs_trans_handle 
-> *trans,
->
->  do {
->  ret = check_committed_ref(trans, root, path, objectid,
-> -   offset, bytenr);
-> +   offset, bytenr, gen);
->  if (ret && ret != -ENOENT)
->  goto out;
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 2cfdd33..976b045 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1727,6 +1727,8 @@ next_slot:
->  ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
->  if (extent_type == BTRFS_FILE_EXTENT_REG ||
->      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-> + u64 gen;
-> + gen = btrfs_file_extent_generation(leaf, fi);
->  disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
->  extent_offset = btrfs_file_extent_offset(leaf, fi);
->  extent_end = found_key.offset +
-> @@ -1749,7 +1751,8 @@ next_slot:
->  goto out_check;
->  if (btrfs_cross_ref_exist(trans, root, ino,
->    found_key.offset -
-> -   extent_offset, disk_bytenr))
-> +   extent_offset, disk_bytenr,
-> +   gen))
->  goto out_check;
->  disk_bytenr += extent_offset;
->  disk_bytenr += cur_offset - found_key.offset;
-> @@ -7002,6 +7005,7 @@ static noinline int can_nocow_odirect(struct 
-> btrfs_trans_handle
-> *trans,
->  struct btrfs_key key;
->  u64 disk_bytenr;
->  u64 backref_offset;
-> + u64 fi_gen;
->  u64 extent_end;
->  u64 num_bytes;
->  int slot;
-> @@ -7048,6 +7052,7 @@ static noinline int can_nocow_odirect(struct 
-> btrfs_trans_handle
-> *trans,
->  }
->  disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
->  backref_offset = btrfs_file_extent_offset(leaf, fi);
-> + fi_gen = btrfs_file_extent_generation(leaf, fi);
->
->  *orig_start = key.offset - backref_offset;
->  *orig_block_len = btrfs_file_extent_disk_num_bytes(leaf, fi);
-> @@ -7067,7 +7072,8 @@ static noinline int can_nocow_odirect(struct 
-> btrfs_trans_handle
-> *trans,
->  * find any we must cow
->  */
->  if (btrfs_cross_ref_exist(trans, root, btrfs_ino(inode),
-> -   key.offset - backref_offset, disk_bytenr))
-> +   key.offset - backref_offset, disk_bytenr,
-> +   fi_gen))
->  goto out;
->
->  /*
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 704a1b8..07faabf 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1637,6 +1637,7 @@ int replace_file_extents(struct btrfs_trans_handle 
-> *trans,
->  BUG_ON(ret < 0);
->
->  btrfs_set_file_extent_disk_bytenr(leaf, fi, new_bytenr);
-> + btrfs_set_file_extent_generation(leaf, fi, trans->transid);
->  dirty = 1;
->
->  key.offset -= btrfs_file_extent_offset(leaf, fi);
-> -- 
-> 1.7.7
->
-Liu Bo,
-Thank you for taking the time to produce this patch. I'm not in a position 
-to try a kernel compile and will be on vacation next week. I hope someone 
-else would like to give it a try and use a little dd magic to test it.
-Thanks,
-Kyle 
+Hello Josef,
+It seems you missed Reported-by in changelog~_~
 
+
+Thanks,
+Wang
+
+Josef Bacik <jbacik@fusionio.com>ç¼–å†™ï¼š
+
+>This fixes bugzilla 57491.  If we take a snapshot of a fs with a unlink ongoing
+>and then try to send that root we will run into problems.  When comparing with a
+>parent root we will search the parents and the send roots commit_root, which if
+>we've just created the snapshot will include the file that needs to be evicted
+>by the orphan cleanup.  So when we find a changed extent we will try and copy
+>that info into the send stream, but when we lookup the inode we use the normal
+>root, which no longer has the inode because the orphan cleanup deleted it.  The
+>best solution I have for this is to check our otransid with the generation of
+>the commit root and if they match just commit the transaction again, that way we
+>get the changes from the orphan cleanup.  With this patch the reproducer I made
+>for this bugzilla no longer returns ESTALE when trying to do the send.  Thanks,
+>
+>Cc: stable@vger.kernel.org
+>Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+>---
+> fs/btrfs/send.c |   35 +++++++++++++++++++++++++++++++++++
+> 1 files changed, 35 insertions(+), 0 deletions(-)
+>
+>diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+>index ff40f1c..ba9690b 100644
+>--- a/fs/btrfs/send.c
+>+++ b/fs/btrfs/send.c
+>@@ -4579,6 +4579,41 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+> 	send_root = BTRFS_I(file_inode(mnt_file))->root;
+> 	fs_info = send_root->fs_info;
+> 
+>+	/*
+>+	 * This is done when we lookup the root, it should already be complete
+>+	 * by the time we get here.
+>+	 */
+>+	WARN_ON(send_root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE);
+>+
+>+	/*
+>+	 * If we just created this root we need to make sure that the orphan
+>+	 * cleanup has been done and committed since we search the commit root,
+>+	 * so check its commit root transid with our otransid and if they match
+>+	 * commit the transaction to make sure everything is updated.
+>+	 */
+>+	down_read(&send_root->fs_info->extent_commit_sem);
+>+	if (btrfs_header_generation(send_root->commit_root) ==
+>+	    btrfs_root_otransid(&send_root->root_item)) {
+>+		struct btrfs_trans_handle *trans;
+>+
+>+		up_read(&send_root->fs_info->extent_commit_sem);
+>+
+>+		trans = btrfs_attach_transaction_barrier(send_root);
+>+		if (IS_ERR(trans)) {
+>+			if (PTR_ERR(trans) != -ENOENT) {
+>+				ret = PTR_ERR(trans);
+>+				goto out;
+>+			}
+>+			/* ENOENT means theres no transaction */
+>+		} else {
+>+			ret = btrfs_commit_transaction(trans, send_root);
+>+			if (ret)
+>+				goto out;
+>+		}
+>+	} else {
+>+		up_read(&send_root->fs_info->extent_commit_sem);
+>+	}
+>+
+> 	arg = memdup_user(arg_, sizeof(*arg));
+> 	if (IS_ERR(arg)) {
+> 		ret = PTR_ERR(arg);
+>-- 
+>1.7.7.6
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

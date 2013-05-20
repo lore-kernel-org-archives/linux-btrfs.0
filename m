@@ -1,45 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3.sgi.com ([192.48.152.1]:45625 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1757833Ab3EOM3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 May 2013 08:29:53 -0400
-Message-ID: <51937FDB.2090906@sgi.com>
-Date: Wed, 15 May 2013 07:30:19 -0500
-From: Rich Johnston <rjohnston@sgi.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:60700 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755528Ab3ETRUh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 May 2013 13:20:37 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id F1D9F9A036D
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 May 2013 11:20:36 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] xfstests: btrfs 308: regression test for btrfs send
+Date: Mon, 20 May 2013 13:20:34 -0400
+Message-ID: <1369070434-20852-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: xfs-oss <xfs@oss.sgi.com>, Liu Bo <liubo2009@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests btrfs/284: shorten duration, fix output
-References: <517ACB41.2030002@redhat.com>
-In-Reply-To: <517ACB41.2030002@redhat.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/26/2013 01:45 PM, Eric Sandeen wrote:
-> test 284 had... some issues.
->
+I'm not sure how the numbering is supposed to work now that we've split
+everything out so I'm just going with the next number in the directory.  This is
+a regression test for btrfs send, we had a problem where we'd try to send a file
+that had been deleted in the source snapshot.  This is just to make sure we
+don't have the same problem in the future.  Thanks,
 
-> diff --git a/tests/btrfs/284 b/tests/btrfs/284
-> old mode 100644
-> new mode 100755
-> index d952977..67161a3
-> --- a/tests/btrfs/284
-> +++ b/tests/btrfs/284
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ src/Makefile        |    2 +-
+ src/hold-open.c     |   29 ++++++++++++++++++++
+ tests/btrfs/308     |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/308.out |    2 +
+ tests/btrfs/group   |    1 +
+ 5 files changed, 107 insertions(+), 1 deletions(-)
+ create mode 100644 src/hold-open.c
+ create mode 100644 tests/btrfs/308
+ create mode 100644 tests/btrfs/308.out
 
->
-This patch has been committed:
+diff --git a/src/Makefile b/src/Makefile
+index c18ffc9..3ab9a21 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -18,7 +18,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	locktest unwritten_mmap bulkstat_unlink_test t_stripealign \
+ 	bulkstat_unlink_test_modified t_dir_offset t_futimens t_immutable \
+ 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
+-	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester
++	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester hold-open
+ 
+ SUBDIRS =
+ 
+diff --git a/src/hold-open.c b/src/hold-open.c
+new file mode 100644
+index 0000000..f44c1dd
+--- /dev/null
++++ b/src/hold-open.c
+@@ -0,0 +1,29 @@
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <errno.h>
++#include <unistd.h>
++
++int main(int argc, char **argv)
++{
++	int fd;
++
++	if (argc < 2) {
++		fprintf(stderr, "Usage: hold-open <filename>\n");
++		return -1;
++	}
++
++	fd = open(argv[1], O_RDONLY);
++	if (fd < 0) {
++		fprintf(stderr, "Error opening file: %d\n", errno);
++		return -1;
++	}
++
++	while (1) {
++		sleep(60);
++	}
++
++	close(fd);
++	return 0;
++}
+diff --git a/tests/btrfs/308 b/tests/btrfs/308
+new file mode 100644
+index 0000000..144be99
+--- /dev/null
++++ b/tests/btrfs/308
+@@ -0,0 +1,74 @@
++#! /bin/bash
++# FS QA Test No. btrfs/308
++#
++# btrfs send ESTALE regression test, kernel.org bugzilla 57491
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++dd if=/dev/zero of=$SCRATCH_MNT/foo bs=1M count=10 > /dev/null 2>&1
++sync
++$BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/snap > /dev/null 2>&1
++dd if=/dev/zero of=$SCRATCH_MNT/foo bs=1M count=10 oflag=append > /dev/null 2>&1
++sync
++
++# We need to hold the file open, tail -f makes the output file look weird so
++# here is this awful hack to get around that
++$here/src/hold-open $SCRATCH_MNT/foo &
++
++# need this so that tail doesn't error out racing with the rm
++sleep 1
++rm -f $SCRATCH_MNT/foo
++$BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/snap1 > /dev/null 2>&1
++$BTRFS_UTIL_PROG send -f /dev/null -p $SCRATCH_MNT/snap $SCRATCH_MNT/snap1 >/dev/null 2>&1
++if [ $? -ne 0 ]
++then
++	echo "send failed"
++fi
++kill $!
++
++echo "Silence is golden"
++status=0 ; exit
+diff --git a/tests/btrfs/308.out b/tests/btrfs/308.out
+new file mode 100644
+index 0000000..a731eaa
+--- /dev/null
++++ b/tests/btrfs/308.out
+@@ -0,0 +1,2 @@
++QA output created by 308
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index bc6c256..666054b 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -9,3 +9,4 @@
+ 276 auto rw metadata
+ 284 auto
+ 307 auto quick
++308 auto quick
+-- 
+1.7.7.6
 
-commit 91f87e3b89c0f7350a56d397ba7255d0e3d6b486
-Author: Eric Sandeen <sandeen@redhat.com>
-Date:   Wed May 15 07:18:07 2013 -0500
-
-     xfstests btrfs/284: shorten duration, fix output
-
-     Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-     Reviewed-by: Josef Bacik <jbacik@fusionio.com>
-     Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks
---Rich

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e8.ny.us.ibm.com ([32.97.182.138]:57768 "EHLO e8.ny.us.ibm.com"
+Received: from e9.ny.us.ibm.com ([32.97.182.139]:40713 "EHLO e9.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757230Ab3ETPKw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 May 2013 11:10:52 -0400
+	id S1756109Ab3ETPKn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 May 2013 11:10:43 -0400
 Received: from /spool/local
-	by e8.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e9.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Mon, 20 May 2013 11:10:51 -0400
+	Mon, 20 May 2013 11:10:42 -0400
 From: zwu.kernel@gmail.com
 To: linux-btrfs@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC PATCH v1 4/5] BTRFS hot reloc, procfs: add three proc interfaces
-Date: Mon, 20 May 2013 23:11:26 +0800
-Message-Id: <1369062687-23544-5-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC PATCH v1 5/5] BTRFS hot reloc: add hot relocation support
+Date: Mon, 20 May 2013 23:11:27 +0800
+Message-Id: <1369062687-23544-6-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1369062687-23544-1-git-send-email-zwu.kernel@gmail.com>
 References: <1369062687-23544-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,194 +20,102 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Add three proc interfaces hot-reloc-interval, hot-reloc-threshold,
-and hot-reloc-max-items under the dir /proc/sys/fs/ in order to
-turn HOT_RELOC_INTERVAL, HOT_RELOC_THRESHOLD, and HOT_RELOC_MAX_ITEMS
-into be tunable.
+  Add one new mount option '-o hot_move' for hot
+relocation support. When hot relocation is enabled,
+hot tracking will be enabled automatically.
+  Its usage looks like:
+    mount -o hot_move
+    mount -o nouser,hot_move
+    mount -o nouser,hot_move,loop
+    mount -o hot_move,nouser
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/btrfs/hot_relocate.c | 26 +++++++++++++++++---------
- fs/btrfs/hot_relocate.h |  5 -----
- include/linux/btrfs.h   |  4 ++++
- kernel/sysctl.c         | 22 ++++++++++++++++++++++
- 4 files changed, 43 insertions(+), 14 deletions(-)
+ fs/btrfs/super.c | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/hot_relocate.c b/fs/btrfs/hot_relocate.c
-index ae28b86..3a18555 100644
---- a/fs/btrfs/hot_relocate.c
-+++ b/fs/btrfs/hot_relocate.c
-@@ -25,7 +25,7 @@
-  * The relocation code below operates on the heat map lists to identify
-  * hot or cold data logical file ranges that are candidates for relocation.
-  * The triggering mechanism for relocation is controlled by a global heat
-- * threshold integer value (HOT_RELOC_THRESHOLD). Ranges are
-+ * threshold integer value (sysctl_hot_reloc_threshold). Ranges are
-  * queued for relocation by the periodically executing relocate kthread,
-  * which updates the global heat threshold and responds to space pressure
-  * on the nonrotating disks.
-@@ -53,6 +53,15 @@
-  * (assuming, critically, the HOT_MOVE option is set at mount time).
-  */
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c10477b..1377551 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -309,8 +309,13 @@ static void btrfs_put_super(struct super_block *sb)
+ 	 * process...  Whom would you report that to?
+ 	 */
  
-+int sysctl_hot_reloc_threshold = 150;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_threshold);
++	/* Hot data relocation */
++	if (btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_MOVE))
++		hot_relocate_exit(btrfs_sb(sb));
 +
-+int sysctl_hot_reloc_interval __read_mostly = 120;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_interval);
-+
-+int sysctl_hot_reloc_max_items __read_mostly = 250;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_max_items);
-+
- /*
-  * Returns the ratio of nonrotating disks that are full.
-  * If no nonrotating disk is found, returns THRESH_MAX_VALUE + 1.
-@@ -103,7 +112,7 @@ static int hot_calc_nonrot_ratio(struct hot_reloc *hot_reloc)
- static int hot_update_threshold(struct hot_reloc *hot_reloc,
- 				int update)
- {
--	int thresh = hot_reloc->thresh;
-+	int thresh = sysctl_hot_reloc_threshold;
- 	int ratio = hot_calc_nonrot_ratio(hot_reloc);
- 
- 	/* Sometimes update global threshold, others not */
-@@ -127,7 +136,7 @@ static int hot_update_threshold(struct hot_reloc *hot_reloc,
- 			thresh = 0;
- 	}
- 
--	hot_reloc->thresh = thresh;
-+	sysctl_hot_reloc_threshold = thresh;
- 	return ratio;
+ 	/* Hot data tracking */
+-	if (btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_TRACK))
++	if (btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_MOVE)
++		|| btrfs_test_opt(btrfs_sb(sb)->tree_root, HOT_TRACK))
+ 		hot_track_exit(sb);
  }
  
-@@ -215,7 +224,7 @@ static int hot_queue_extent(struct hot_reloc *hot_reloc,
- 			*counter = *counter + 1;
- 		}
+@@ -325,7 +330,7 @@ enum {
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_hot_track,
+-	Opt_err,
++	Opt_hot_move, Opt_err,
+ };
  
--		if (*counter >= HOT_RELOC_MAX_ITEMS)
-+		if (*counter >= sysctl_hot_reloc_max_items)
+ static match_table_t tokens = {
+@@ -366,6 +371,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_hot_track, "hot_track"},
++	{Opt_hot_move, "hot_move"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -634,6 +640,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_hot_track:
+ 			btrfs_set_opt(info->mount_opt, HOT_TRACK);
  			break;
++		case Opt_hot_move:
++			btrfs_set_opt(info->mount_opt, HOT_MOVE);
++			break;
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
+@@ -853,17 +862,26 @@ static int btrfs_fill_super(struct super_block *sb,
+ 		goto fail_close;
+ 	}
  
- 		if (kthread_should_stop()) {
-@@ -293,7 +302,7 @@ again:
- 		while (1) {
- 			lock_extent(tree, page_start, page_end);
- 			ordered = btrfs_lookup_ordered_extent(inode,
--							page_start);
-+							      page_start);
- 			unlock_extent(tree, page_start, page_end);
- 			if (!ordered)
- 				break;
-@@ -559,7 +568,7 @@ void hot_do_relocate(struct hot_reloc *hot_reloc)
+-	if (btrfs_test_opt(fs_info->tree_root, HOT_TRACK)) {
++	if (btrfs_test_opt(fs_info->tree_root, HOT_MOVE)
++		|| btrfs_test_opt(fs_info->tree_root, HOT_TRACK)) {
+ 		err = hot_track_init(sb);
+ 		if (err)
+ 			goto fail_hot;
+ 	}
  
- 	run++;
- 	ratio = hot_update_threshold(hot_reloc, !(run % 15));
--	thresh = hot_reloc->thresh;
-+	thresh = sysctl_hot_reloc_threshold;
- 
- 	INIT_LIST_HEAD(&hot_reloc->hot_relocq[TYPE_NONROT]);
- 
-@@ -569,7 +578,7 @@ void hot_do_relocate(struct hot_reloc *hot_reloc)
- 	if (count_to_hot == 0)
- 		return;
- 
--	count_to_cold = HOT_RELOC_MAX_ITEMS;
-+	count_to_cold = sysctl_hot_reloc_max_items;
- 
- 	/* Don't move cold data to HDD unless there's space pressure */
- 	if (ratio < HIGH_WATER_LEVEL)
-@@ -653,7 +662,7 @@ static int hot_relocate_kthread(void *arg)
- 	unsigned long delay;
- 
- 	do {
--		delay = HZ * HOT_RELOC_INTERVAL;
-+		delay = HZ * sysctl_hot_reloc_interval;
- 		if (mutex_trylock(&hot_reloc->hot_reloc_mutex)) {
- 			hot_do_relocate(hot_reloc);
- 			mutex_unlock(&hot_reloc->hot_reloc_mutex);
-@@ -685,7 +694,6 @@ int hot_relocate_init(struct btrfs_fs_info *fs_info)
- 
- 	fs_info->hot_reloc = hot_reloc;
- 	hot_reloc->fs_info = fs_info;
--	hot_reloc->thresh = HOT_RELOC_THRESHOLD;
- 	for (i = 0; i < MAX_RELOC_TYPES; i++)
- 		INIT_LIST_HEAD(&hot_reloc->hot_relocq[i]);
- 	mutex_init(&hot_reloc->hot_reloc_mutex);
-diff --git a/fs/btrfs/hot_relocate.h b/fs/btrfs/hot_relocate.h
-index 1b1cfb5..94defe6 100644
---- a/fs/btrfs/hot_relocate.h
-+++ b/fs/btrfs/hot_relocate.h
-@@ -18,10 +18,6 @@
- #include "btrfs_inode.h"
- #include "volumes.h"
- 
--#define HOT_RELOC_INTERVAL  120
--#define HOT_RELOC_THRESHOLD 150
--#define HOT_RELOC_MAX_ITEMS 250
--
- #define HEAT_MAX_VALUE    (MAP_SIZE - 1)
- #define HIGH_WATER_LEVEL  75 /* when to raise the threshold */
- #define LOW_WATER_LEVEL   50 /* when to lower the threshold */
-@@ -32,7 +28,6 @@
- struct hot_reloc {
- 	struct btrfs_fs_info *fs_info;
- 	struct list_head hot_relocq[MAX_RELOC_TYPES];
--	int thresh;
- 	struct task_struct *hot_reloc_kthread;
- 	struct mutex hot_reloc_mutex;
- };
-diff --git a/include/linux/btrfs.h b/include/linux/btrfs.h
-index 22d7991..7179819 100644
---- a/include/linux/btrfs.h
-+++ b/include/linux/btrfs.h
-@@ -3,4 +3,8 @@
- 
- #include <uapi/linux/btrfs.h>
- 
-+extern int sysctl_hot_reloc_threshold;
-+extern int sysctl_hot_reloc_interval;
-+extern int sysctl_hot_reloc_max_items;
++	if (btrfs_test_opt(fs_info->tree_root, HOT_MOVE)) {
++		err = hot_relocate_init(fs_info);
++		if (err)
++			goto fail_reloc;
++	}
 +
- #endif /* _LINUX_BTRFS_H */
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 6ee4338..3ab1a68 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -62,6 +62,7 @@
- #include <linux/capability.h>
- #include <linux/binfmts.h>
- #include <linux/sched/sysctl.h>
-+#include <linux/btrfs.h>
+ 	save_mount_options(sb, data);
+ 	cleancache_init_fs(sb);
+ 	sb->s_flags |= MS_ACTIVE;
+ 	return 0;
  
- #include <asm/uaccess.h>
- #include <asm/processor.h>
-@@ -1630,6 +1631,27 @@ static struct ctl_table fs_table[] = {
- 		.mode		= 0644,
- 		.proc_handler	= proc_dointvec,
- 	},
-+	{
-+		.procname	= "hot-reloc-threshold",
-+		.data		= &sysctl_hot_reloc_threshold,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
-+	{
-+		.procname	= "hot-reloc-interval",
-+		.data		= &sysctl_hot_reloc_interval,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
-+	{
-+		.procname	= "hot-reloc-max-items",
-+		.data		= &sysctl_hot_reloc_max_items,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
- 	{ }
- };
++fail_reloc:
++	hot_track_exit(sb);
+ fail_hot:
+ 	dput(sb->s_root);
+ 	sb->s_root = NULL;
+@@ -964,6 +982,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",fatal_errors=panic");
+ 	if (btrfs_test_opt(root, HOT_TRACK))
+ 		seq_puts(seq, ",hot_track");
++	if (btrfs_test_opt(root, HOT_MOVE))
++		seq_puts(seq, ",hot_move");
+ 	return 0;
+ }
  
 -- 
 1.7.11.7

@@ -1,74 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34097 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:42565 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753098Ab3EUMGR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 May 2013 08:06:17 -0400
+	id S1751379Ab3EUMTp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 May 2013 08:19:45 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UelKZ-00008C-Eq
-	for linux-btrfs@vger.kernel.org; Tue, 21 May 2013 14:06:15 +0200
+	id 1UelXb-000771-Ch
+	for linux-btrfs@vger.kernel.org; Tue, 21 May 2013 14:19:43 +0200
 Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 May 2013 14:06:15 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 May 2013 14:19:43 +0200
 Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 May 2013 14:06:15 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 May 2013 14:19:43 +0200
 To: linux-btrfs@vger.kernel.org
 From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Virtual Device Support
-Date: Tue, 21 May 2013 13:06:04 +0100
-Message-ID: <knfnv7$k9h$1@ger.gmane.org>
-References: <518CFE3A.3080900@chinilu.com> <20130519171510.54897415@natsu> <262CC063-0DB4-45BD-A776-9FD1E8650E7C@colorremedies.com> <pan$d75cf$ec7daeb9$c2cc055b$98b478d0@cox.net> <9BA35EA6-D116-4223-B2C0-CE4FEA3D4010@colorremedies.com>
+Subject: Re: Virtual Device Support ("N-way mirror code")
+Date: Tue, 21 May 2013 13:19:31 +0100
+Message-ID: <knfoof$u08$1@ger.gmane.org>
+References: <518CFE3A.3080900@chinilu.com> <20130519171510.54897415@natsu> <262CC063-0DB4-45BD-A776-9FD1E8650E7C@colorremedies.com> <pan$d75cf$ec7daeb9$c2cc055b$98b478d0@cox.net> <519AD943.6060303@chinilu.com> <pan$9855$81c2d2df$c9aa1ca3$2451cc46@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <9BA35EA6-D116-4223-B2C0-CE4FEA3D4010@colorremedies.com>
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$9855$81c2d2df$c9aa1ca3$2451cc46@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21/05/13 04:37, Chris Murphy wrote:
-> 
-> On May 20, 2013, at 7:08 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
->> Chris Murphy posted on Sun, 19 May 2013 12:18:19 -0600 as
->> excerpted:
->> 
->>> It seems inconsistent that mount and unmount allows a /dev/
->>> designation, but only mount honors label and UUID.
->> 
->> Yes.
-> 
-> I'm going to contradict myself and point out that mount with label or
-> UUID is made unambiguous via either the default subvolume being
-> mounted, or the -o subvol= option being specified. The volume label
-> and UUID doesn't apply to umount because it's an ambiguous command.
-> You'd have to umount a mountpoint, or possibly a subvolume specific
-> UUID.
+Duncan,
+
+Thanks for quiet a historical summary.
+
+Yep, ReiserFS has stood the test of time very well and I'm still using
+and abusing it still on various servers all the way from something like
+a decade ago!
+
+More recently I've been putting newer systems on ext4 mainly to take
+advantage of extents for large files on all disk types, and also
+deferred allocation to hopefully reduce wear on SSDs.
+
+Meanwhile, I've seen no need to change the ReiserFS on the existing
+systems, even for the multi-Terabyte backups. The near unlimited file
+linking is beautiful for creating in effect incremental backups spanning
+years!
+
+All on raid1 or raid5, and all remarkably robust.
+
+Enough waffle! :-)
 
 
-I'll admit that I prefer working with filesystem labels.
+On 21/05/13 04:59, Duncan wrote:
+> And hopefully, now that btrfs raid5/6 is in, in a few cycles the N-way 
+> mirrored code will make it as well
 
+I too am waiting for the "N-way mirrored code" for example to have 3
+copies of data/metadata across 4 physical disks.
 
-This is getting rather semantic... From "man umount", this is what
-umount intends:
-
-#####
-umount [-dflnrv] {dir|device}...
-
-The  umount  command  detaches the file system(s) mentioned from the
-file hierarchy.  A file system is specified by giving the directory
-where it has been mounted.  Giving the special device on which the file
-system lives may also work, but is obsolete, mainly because it will fail
-in case this device was mounted on more than one directory.
-#####
-
-
-I guess the ideas of labels and UUID and multiple devices came out a few
-years later?... For btrfs, umount needs to operate on the default subvol
-but with the means for also specifying a specific subvol if needed.
-
-One hook for btrfs to extend what/how 'umount' operates might be to
-perhaps extend what can be done with a "/sbin/(u?)mount.btrfs" 'helper'?
+When might that hit? Or is there a stable patch that can be added into
+kernel 3.8.13?
 
 
 Regards,

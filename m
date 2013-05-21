@@ -1,194 +1,404 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41082 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:41091 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755535Ab3EUS3c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 May 2013 14:29:32 -0400
+	id S1755535Ab3EUS3e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 May 2013 14:29:34 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <chris.mason@fusionio.com>, Josef Bacik <josef@redhat.com>,
         Gabriel de Perthuis <g2p.code@gmail.com>,
         David Sterba <dsterba@suse.cz>, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/4] btrfs: Introduce extent_read_full_page_nolock()
-Date: Tue, 21 May 2013 11:28:27 -0700
-Message-Id: <1369160908-26195-4-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 4/4] btrfs: offline dedupe
+Date: Tue, 21 May 2013 11:28:28 -0700
+Message-Id: <1369160908-26195-5-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1369160908-26195-1-git-send-email-mfasheh@suse.de>
 References: <1369160908-26195-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want this for btrfs_extent_same. Basically readpage and friends do their
-own extent locking but for the purposes of dedupe, we want to have both
-files locked down across a set of readpage operations (so that we can
-compare data). Introduce this variant and a flag which can be set for
-extent_read_full_page() to indicate that we are already locked.
+This patch adds an ioctl, BTRFS_IOC_FILE_EXTENT_SAME which will try to
+de-duplicate a list of extents across a range of files.
 
-Partial credit for this patch goes to Gabriel de Perthuis <g2p.code@gmail.com>
-as I have included a fix from him to the original patch which avoids a
-deadlock on compressed extents.
+Internally, the ioctl re-uses code from the clone ioctl. This avoids
+rewriting a large chunk of extent handling code.
+
+Userspace passes in an array of file, offset pairs along with a length
+argument. The ioctl will then (for each dedupe) do a byte-by-byte comparison
+of the user data before deduping the extent. Status and number of bytes
+deduped are returned for each operation.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/compression.c |  6 +++++-
- fs/btrfs/extent_io.c   | 41 +++++++++++++++++++++++++++++++----------
- fs/btrfs/extent_io.h   |  3 +++
- 3 files changed, 39 insertions(+), 11 deletions(-)
+ fs/btrfs/ioctl.c           | 290 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  27 +++++
+ 2 files changed, 317 insertions(+)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 15b9408..05819c3 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -636,7 +636,11 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	faili = nr_pages - 1;
- 	cb->nr_pages = nr_pages;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e90c519..54fcb90 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -57,6 +57,9 @@
+ #include "send.h"
+ #include "dev-replace.h"
  
--	add_ra_bio_pages(inode, em_start + em_len, cb);
-+	/* In the parent-locked case, we only locked the range we are
-+	 * interested in.  In all other cases, we can opportunistically
-+	 * cache decompressed data that goes beyond the requested range. */
-+	if (!(bio_flags & EXTENT_BIO_PARENT_LOCKED))
-+		add_ra_bio_pages(inode, em_start + em_len, cb);
- 
- 	/* include any pages we added in add_ra-bio_pages */
- 	uncompressed_len = bio->bi_vcnt * PAGE_CACHE_SIZE;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index cdee391..80ce106 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2643,11 +2643,12 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 	struct btrfs_ordered_extent *ordered;
- 	int ret;
- 	int nr = 0;
-+	int parent_locked = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
- 	size_t pg_offset = 0;
- 	size_t iosize;
- 	size_t disk_io_size;
- 	size_t blocksize = inode->i_sb->s_blocksize;
--	unsigned long this_bio_flag = 0;
-+	unsigned long this_bio_flag = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
- 
- 	set_page_extent_mapped(page);
- 
-@@ -2659,7 +2660,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 	}
- 
- 	end = page_end;
--	while (1) {
-+	while (!parent_locked) {
- 		lock_extent(tree, start, end);
- 		ordered = btrfs_lookup_ordered_extent(inode, start);
- 		if (!ordered)
-@@ -2695,15 +2696,18 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 			kunmap_atomic(userpage);
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    &cached, GFP_NOFS);
--			unlock_extent_cached(tree, cur, cur + iosize - 1,
--					     &cached, GFP_NOFS);
-+			if (!parent_locked)
-+				unlock_extent_cached(tree, cur,
-+						     cur + iosize - 1,
-+						     &cached, GFP_NOFS);
- 			break;
- 		}
- 		em = get_extent(inode, page, pg_offset, cur,
- 				end - cur + 1, 0);
- 		if (IS_ERR_OR_NULL(em)) {
- 			SetPageError(page);
--			unlock_extent(tree, cur, end);
-+			if (!parent_locked)
-+				unlock_extent(tree, cur, end);
- 			break;
- 		}
- 		extent_offset = cur - em->start;
-@@ -2711,7 +2715,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 		BUG_ON(end < cur);
- 
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
--			this_bio_flag = EXTENT_BIO_COMPRESSED;
-+			this_bio_flag |= EXTENT_BIO_COMPRESSED;
- 			extent_set_compress_type(&this_bio_flag,
- 						 em->compress_type);
- 		}
-@@ -2755,7 +2759,8 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 		if (test_range_bit(tree, cur, cur_end,
- 				   EXTENT_UPTODATE, 1, NULL)) {
- 			check_page_uptodate(tree, page);
--			unlock_extent(tree, cur, cur + iosize - 1);
-+			if (!parent_locked)
-+				unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -2765,7 +2770,8 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 		 */
- 		if (block_start == EXTENT_MAP_INLINE) {
- 			SetPageError(page);
--			unlock_extent(tree, cur, cur + iosize - 1);
-+			if (!parent_locked)
-+				unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -2783,7 +2789,8 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 			*bio_flags = this_bio_flag;
- 		} else {
- 			SetPageError(page);
--			unlock_extent(tree, cur, cur + iosize - 1);
-+			if (!parent_locked)
-+				unlock_extent(tree, cur, cur + iosize - 1);
- 		}
- 		cur = cur + iosize;
- 		pg_offset += iosize;
-@@ -2811,6 +2818,20 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
++static int btrfs_clone(struct inode *src, struct inode *inode,
++		       u64 off, u64 olen, u64 olen_aligned, u64 destoff);
++
+ /* Mask out flags that are inappropriate for the given type of inode. */
+ static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
+ {
+@@ -2456,6 +2459,61 @@ out:
  	return ret;
  }
  
-+int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
-+				 get_extent_t *get_extent, int mirror_num)
++static noinline int fill_data(struct inode *inode, u64 off, u64 len,
++			      char **cur_buffer)
 +{
-+	struct bio *bio = NULL;
-+	unsigned long bio_flags = EXTENT_BIO_PARENT_LOCKED;
-+	int ret;
++	struct page *page;
++	void *addr;
++	char *buffer;
++	pgoff_t index;
++	pgoff_t last_index;
++	int ret = 0;
++	int bytes_copied = 0;
++	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
 +
-+	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
-+				      &bio_flags);
-+	if (bio)
-+		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
++	buffer = kmalloc(len, GFP_NOFS);
++	if (!buffer)
++		return -ENOMEM;
++
++	index = off >> PAGE_CACHE_SHIFT;
++	last_index = (off + len - 1) >> PAGE_CACHE_SHIFT;
++
++	while (index <= last_index) {
++		page = grab_cache_page(inode->i_mapping, index);
++		if (!page) {
++			ret = -EINVAL;
++			goto out;
++		}
++
++		if (!PageUptodate(page)) {
++			extent_read_full_page_nolock(tree, page,
++						     btrfs_get_extent, 0);
++			lock_page(page);
++			if (!PageUptodate(page)) {
++				unlock_page(page);
++				page_cache_release(page);
++				ret = -EINVAL;
++				goto out;
++			}
++		}
++
++		addr = kmap(page);
++		memcpy(buffer + bytes_copied, addr, PAGE_CACHE_SIZE);
++		kunmap(page);
++		unlock_page(page);
++		page_cache_release(page);
++		bytes_copied += PAGE_CACHE_SIZE;
++		index++;
++	}
++
++	*cur_buffer = buffer;
++
++out:
++	if (ret)
++		kfree(buffer);
 +	return ret;
 +}
 +
- static noinline void update_nr_written(struct page *page,
- 				      struct writeback_control *wbc,
- 				      unsigned long nr_written)
-@@ -3666,7 +3687,7 @@ int extent_readpages(struct extent_io_tree *tree,
- 			continue;
- 		for (i = 0; i < nr; i++) {
- 			__extent_read_full_page(tree, pagepool[i], get_extent,
--					&bio, 0, &bio_flags);
-+						&bio, 0, &bio_flags);
- 			page_cache_release(pagepool[i]);
- 		}
- 		nr = 0;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 258c921..e3654bd 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -28,6 +28,7 @@
-  */
- #define EXTENT_BIO_COMPRESSED 1
- #define EXTENT_BIO_TREE_LOG 2
-+#define EXTENT_BIO_PARENT_LOCKED 4
- #define EXTENT_BIO_FLAG_SHIFT 16
+ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+ {
+ 	/* do any pending delalloc/csum calc on src, one way or
+@@ -2476,6 +2534,236 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+ 	}
+ }
  
- /* these are bit numbers for test/set bit */
-@@ -198,6 +199,8 @@ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 			  get_extent_t *get_extent, int mirror_num);
-+int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
-+				 get_extent_t *get_extent, int mirror_num);
- int __init extent_io_init(void);
- void extent_io_exit(void);
++static void btrfs_double_unlock(struct inode *inode1, u64 loff1,
++				struct inode *inode2, u64 loff2, u64 len)
++{
++	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
++	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
++
++	mutex_unlock(&inode1->i_mutex);
++	mutex_unlock(&inode2->i_mutex);
++}
++
++static void btrfs_double_lock(struct inode *inode1, u64 loff1,
++			      struct inode *inode2, u64 loff2, u64 len)
++{
++	if (inode1 < inode2) {
++		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
++		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
++		lock_extent_range(inode1, loff1, len);
++		lock_extent_range(inode2, loff2, len);
++	} else {
++		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_PARENT);
++		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_CHILD);
++		lock_extent_range(inode2, loff2, len);
++		lock_extent_range(inode1, loff1, len);
++	}
++}
++
++static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
++			     struct inode *dst, u64 dst_loff)
++{
++	char *orig_buffer = NULL;
++	char *dst_inode_buffer = NULL;
++	int ret;
++
++	/*
++	 * btrfs_clone() can't handle extents in the same file
++	 * yet. Once that works, we can drop this check and replace it
++	 * with a check for the same inode, but overlapping extents.
++	 */
++	if (src == dst)
++		return -EINVAL;
++
++	btrfs_double_lock(src, loff, dst, dst_loff, len);
++
++	ret = fill_data(src, loff, len, &orig_buffer);
++	if (ret) {
++		printk(KERN_ERR "btrfs: unable to source populate data "
++		       "buffer.\n");
++		goto out;
++	}
++
++	ret = fill_data(dst, dst_loff, len, &dst_inode_buffer);
++	if (ret) {
++		printk(KERN_ERR "btrfs: unable to populate destination data "
++		       "buffer.\n");
++		goto out;
++	}
++
++	ret = memcmp(orig_buffer, dst_inode_buffer, len);
++	if (ret) {
++		ret = BTRFS_SAME_DATA_DIFFERS;
++		printk(KERN_ERR "btrfs: data for inode %lu does not "
++		       "match\n", dst->i_ino);
++		goto out;
++	}
++
++	ret = btrfs_clone(src, dst, loff, len, len, dst_loff);
++
++out:
++	btrfs_double_unlock(src, loff, dst, dst_loff, len);
++
++	kfree(dst_inode_buffer);
++	kfree(orig_buffer);
++	return ret;
++}
++
++#define BTRFS_MAX_DEDUPE_LEN	(16 * 1024 * 1024)
++#define BTRFS_ONE_DEDUPE_LEN	(1 * 1024 * 1024)
++
++static long btrfs_ioctl_file_extent_same(struct file *file,
++					 void __user *argp)
++{
++	struct btrfs_ioctl_same_args *args;
++	struct btrfs_ioctl_same_args tmp;
++	struct btrfs_ioctl_same_extent_info *info;
++	struct inode *src = file->f_dentry->d_inode;
++	struct file *dst_file = NULL;
++	struct inode *dst;
++	u64 off;
++	u64 len;
++	int args_size;
++	int i;
++	int ret;
++	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
++
++	if (copy_from_user(&tmp,
++			   (struct btrfs_ioctl_same_args __user *)argp,
++			   sizeof(tmp)))
++		return -EFAULT;
++
++	args_size = sizeof(tmp) + (tmp.dest_count *
++			sizeof(struct btrfs_ioctl_same_extent_info));
++
++	/* Keep size of ioctl argument sane */
++	if (args_size > PAGE_CACHE_SIZE)
++		return -E2BIG;
++
++	args = kmalloc(args_size, GFP_NOFS);
++	if (!args)
++		return -ENOMEM;
++
++	ret = -EFAULT;
++	if (copy_from_user(args,
++			   (struct btrfs_ioctl_same_args __user *)argp,
++			   args_size))
++		goto out;
++	/* Make sure args didn't change magically between copies. */
++	if (memcmp(&tmp, args, sizeof(tmp)))
++		goto out;
++
++	if ((sizeof(tmp) + (sizeof(*info) * args->dest_count)) > args_size)
++		goto out;
++
++	/* pre-format 'out' fields to sane default values */
++	for (i = 0; i < args->dest_count; i++) {
++		info = &args->info[i];
++		info->bytes_deduped = 0;
++		info->status = 0;
++	}
++
++	off = args->logical_offset;
++	len = args->length;
++
++	/*
++	 * Limit the total length we will dedupe for each operation. 
++	 * This is intended to bound the entire ioctl to something sane.
++	 */
++	if (len > BTRFS_MAX_DEDUPE_LEN)
++		len = BTRFS_MAX_DEDUPE_LEN;
++
++	ret = -EINVAL;
++	if (off + len > src->i_size || off + len < off)
++		goto out;
++	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs))
++		goto out;
++
++	ret = -EISDIR;
++	if (S_ISDIR(src->i_mode))
++		goto out;
++
++	ret = 0;
++	for (i = 0; i < args->dest_count; i++) {
++		u64 dest_off;
++		u64 src_off;
++		u64 op_len;
++
++		info = &args->info[i];
++
++		dst_file = fget(info->fd);
++		if (!dst_file) {
++			printk(KERN_ERR "btrfs: invalid fd %lld\n", info->fd);
++			info->status = -EBADF;
++			continue;
++		}
++
++		dst = dst_file->f_dentry->d_inode;
++		if (S_ISDIR(dst->i_mode)) {
++			printk(KERN_ERR "btrfs: file is dir %lld\n", info->fd);
++			info->status = -EISDIR;
++			goto next;
++		}
++
++		info->status = -EINVAL;
++		if (dst == src) {
++			printk(KERN_ERR "btrfs: file dup %lld\n", info->fd);
++			goto next;
++		}
++
++		dest_off = info->logical_offset;
++
++		if (dest_off + len > dst->i_size || dest_off + len < dest_off)
++			goto next;
++		if (!IS_ALIGNED(dest_off, bs))
++			goto next;
++
++		/*
++		 * The purpose of this loop is to limit the number of
++		 * bytes we dedupe during a single call to
++		 * btrfs_extent_same().
++		 *
++		 * In order to memcmp the data we have to allocate a
++		 * pair of buffers. We don't want to allocate too
++		 * large a buffer, so limiting the size for each
++		 * dedupe is an easy way to do this.
++		 */
++		src_off = off;
++		op_len = len;
++		while (op_len) {
++			u64 tmp_len;
++
++			tmp_len = op_len;
++			if (op_len > BTRFS_ONE_DEDUPE_LEN)
++				tmp_len = BTRFS_ONE_DEDUPE_LEN;
++
++			info->status = btrfs_extent_same(src, src_off, tmp_len,
++							 dst, dest_off);
++			if (info->status == 0) {
++				info->bytes_deduped += tmp_len;
++			} else
++				break;
++
++			dest_off += tmp_len;
++			src_off += tmp_len;
++			op_len -= tmp_len;
++		}
++
++next:
++		fput(dst_file);
++		dst_file = NULL;
++	}
++
++	if (copy_to_user(argp, args, args_size))
++		ret = -EFAULT;
++
++out:
++	if (dst_file)
++		fput(dst_file);
++	kfree(args);
++	return ret;
++}
++
+ /**
+  * btrfs_clone() - clone a range from inode file to another
+  *
+@@ -4151,6 +4439,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_get_fslabel(file, argp);
+ 	case BTRFS_IOC_SET_FSLABEL:
+ 		return btrfs_ioctl_set_fslabel(file, argp);
++	case BTRFS_IOC_FILE_EXTENT_SAME:
++		return btrfs_ioctl_file_extent_same(file, argp);
+ 	}
  
+ 	return -ENOTTY;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index fa3a5f9..5465bc2 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -305,6 +305,31 @@ struct btrfs_ioctl_clone_range_args {
+ #define BTRFS_DEFRAG_RANGE_COMPRESS 1
+ #define BTRFS_DEFRAG_RANGE_START_IO 2
+ 
++#define BTRFS_SAME_DATA_DIFFERS	1
++/* For extent-same ioctl */
++struct btrfs_ioctl_same_extent_info {
++	__s64 fd;		/* in - destination file */
++	__u64 logical_offset;	/* in - start of extent in destination */
++	__u64 bytes_deduped;	/* out - total # of bytes we were able
++				 * to dedupe from this file */
++	/* status of this dedupe operation:
++	 * 0 if dedup succeeds
++	 * < 0 for error
++	 * == BTRFS_SAME_DATA_DIFFERS if data differs
++	 */
++	__s32 status;		/* out - see above description */
++	__u32 reserved;
++};
++
++struct btrfs_ioctl_same_args {
++	__u64 logical_offset;	/* in - start of extent in source */
++	__u64 length;		/* in - length of extent */
++	__u16 dest_count;	/* in - total elements in info array */
++	__u16 reserved1;
++	__u32 reserved2;
++	struct btrfs_ioctl_same_extent_info info[0];
++};
++
+ struct btrfs_ioctl_space_info {
+ 	__u64 flags;
+ 	__u64 total_bytes;
+@@ -510,5 +535,7 @@ struct btrfs_ioctl_send_args {
+ 				      struct btrfs_ioctl_get_dev_stats)
+ #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+ 				    struct btrfs_ioctl_dev_replace_args)
++#define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
++					 struct btrfs_ioctl_same_args)
+ 
+ #endif /* _UAPI_LINUX_BTRFS_H */
 -- 
 1.8.1.4
 

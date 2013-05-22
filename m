@@ -1,122 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:56132 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756056Ab3EVKhQ (ORCPT
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:46734 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753984Ab3EVNWn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 May 2013 06:37:16 -0400
-Received: by mail-ie0-f178.google.com with SMTP id tp5so500629ieb.23
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2013 03:37:15 -0700 (PDT)
+	Wed, 22 May 2013 09:22:43 -0400
+Received: by mail-pa0-f51.google.com with SMTP id lf10so763900pab.24
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2013 06:22:42 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <B79474121B224887AA38B74B8B7EAC71@moshePC>
-References: <1366189907-16942-1-git-send-email-sbehrens@giantdisaster.de>
-	<CAOcd+r274=ZxUkNqfgDZsy+R0irzZB2WO9CX0Dfz8uNZi4GN9g@mail.gmail.com>
-	<B79474121B224887AA38B74B8B7EAC71@moshePC>
-Date: Wed, 22 May 2013 13:37:15 +0300
-Message-ID: <CAOcd+r0NGc7cw1+2=3FgeRVY0fp8_bSD3eArYLnJRh7=01R8qw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: clear received_uuid field for new writable snapshots
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Wed, 22 May 2013 15:22:42 +0200
+Message-ID: <CAFirYm_LZh74n=x7_Jp_M_t3FHsuPfvWsiNRNmJY1H5gvXg8hQ@mail.gmail.com>
+Subject: Top shows brtfs-cache-1 and brtfs-endio-met while the hard drives
+ seem busy
+From: Laurent Humblet <laurent.humblet@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Stephan,
-I fully understand the first part of your fix, and I believe it's
-quite critical. Indeed, a writable snapshot should have no evidence
-that it has an ancestor that was once "received".
+Hi,
 
-Can you pls let me know that I understand the second part of your fix.
-In btrfs-progs the following code in tree_search() would have
-prevented us from mistakenly selecting such snapshot as a parent for
-"receive":
-        if (type == subvol_search_by_received_uuid) {
-            entry = rb_entry(n, struct subvol_info,
-                    rb_received_node);
-            comp = memcmp(entry->received_uuid, uuid,
-                    BTRFS_UUID_SIZE);
-            if (!comp) {
-                if (entry->stransid < stransid)
-                    comp = -1;
-                else if (entry->stransid > stransid)
-                    comp = 1;
-                else
-                    comp = 0;
-            }
-The code checks both received_uuid (which would have been wrongly
-equal to what we need), but also the stransid (which was the ctransid
-on the send side), which would have been zero, so it wouldn't match.
+I have setup about a year ago a BTRFS RAID 1 filesystem on two 2TB
+Western Digital WD20EARS hard drives and I have created subvolumes
+that I mount regularly as I need them.  I put mostly music, videos and
+various files on them as well as some Git bare repositories for my
+work files but for the last couple of weeks, there seems to be some
+activity happening on the drives for a few minutes and the following
+processes are showing up while this happens: brtfs-cache-1 and
+brtfs-endio-met.  It seems that brtfs-cache-1 is more 'busy' than
+brtfs-endio-met but after a while everything seems fine again.
 
-Now after your fix, the stransid field becomes not needed, correct?
-Because if we have a valid received_uuid, this means that either we
-are the "received" snapshot, or our whole chain of ancestors are
-read-only, and eventually there was an ancestor that was "received".
-So we have valid data and can be used as a parent. Is it still needed
-after your fix to check the stransid field ? (it doesn't hurt to check
-it)
+Is there anything I should worry about?  I will soon do a full backup
+on ext4 just to make sure I don't loose anything but is there any
+checks I can run on the drives to make sure everything is fine both on
+a hardware standpoint and on a data integrity standoint?
 
-Clearring/Not clearing the rtransid - does it bring any value?
-rtransid is the local transid of when we had completed the "receive"
-process for this snap. Is there any interesting usage of this value?
-
-Thanks,
-Alex.
-
-
-On Wed, Apr 17, 2013 at 12:11 PM, Stefan Behrens
-<sbehrens@giantdisaster.de> wrote:
->
-> For created snapshots, the full root_item is copied from the source
-> root and afterwards selectively modified. The current code forgets
-> to clear the field received_uuid. The only problem is that it is
-> confusing when you look at it with 'btrfs subv list', since for
-> writable snapshots, the contents of the snapshot can be completely
-> unrelated to the previously received snapshot.
-> The receiver ignores such snapshots anyway because he also checks
-> the field stransid in the root_item and that value used to be reset
-> to zero for all created snapshots.
->
-> This commit changes two things:
-> - clear the received_uuid field for new writable snapshots.
-> - don't clear the send/receive related information like the stransid
->   for read-only snapshots (which makes them useable as a parent for
->   the automatic selection of parents in the receive code).
->
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> ---
->  fs/btrfs/transaction.c | 12 ++++++++----
->  1 file changed, 8 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index ffac232..94cbd10 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1170,13 +1170,17 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->         memcpy(new_root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
->         memcpy(new_root_item->parent_uuid, root->root_item.uuid,
->                         BTRFS_UUID_SIZE);
-> +       if (!(root_flags & BTRFS_ROOT_SUBVOL_RDONLY)) {
-> +               memset(new_root_item->received_uuid, 0,
-> +                      sizeof(new_root_item->received_uuid));
-> +               memset(&new_root_item->stime, 0, sizeof(new_root_item->stime));
-> +               memset(&new_root_item->rtime, 0, sizeof(new_root_item->rtime));
-> +               btrfs_set_root_stransid(new_root_item, 0);
-> +               btrfs_set_root_rtransid(new_root_item, 0);
-> +       }
->         new_root_item->otime.sec = cpu_to_le64(cur_time.tv_sec);
->         new_root_item->otime.nsec = cpu_to_le32(cur_time.tv_nsec);
->         btrfs_set_root_otransid(new_root_item, trans->transid);
-> -       memset(&new_root_item->stime, 0, sizeof(new_root_item->stime));
-> -       memset(&new_root_item->rtime, 0, sizeof(new_root_item->rtime));
-> -       btrfs_set_root_stransid(new_root_item, 0);
-> -       btrfs_set_root_rtransid(new_root_item, 0);
->
->         old = btrfs_lock_root_node(root);
->         ret = btrfs_cow_block(trans, root, old, NULL, 0, &old);
-> --
-> 1.8.2.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thank you for your help,
+All the best,
+Laurent

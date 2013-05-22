@@ -1,46 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:53059 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753018Ab3EVOXf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 May 2013 10:23:35 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id A97799A068F
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2013 08:23:34 -0600 (MDT)
-Date: Wed, 22 May 2013 10:23:32 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Laurent Humblet <laurent.humblet@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Top shows brtfs-cache-1 and brtfs-endio-met while the hard
- drives seem busy
-Message-ID: <20130522142332.GA10043@localhost.localdomain>
-References: <CAFirYm_LZh74n=x7_Jp_M_t3FHsuPfvWsiNRNmJY1H5gvXg8hQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAFirYm_LZh74n=x7_Jp_M_t3FHsuPfvWsiNRNmJY1H5gvXg8hQ@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:56494 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756967Ab3EVWbj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 May 2013 18:31:39 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UfHZJ-000459-Ra
+	for linux-btrfs@vger.kernel.org; Thu, 23 May 2013 00:31:37 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2013 00:31:37 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2013 00:31:37 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs pseudo-drbd
+Date: Wed, 22 May 2013 23:31:27 +0100
+Message-ID: <knjgvq$r91$1@ger.gmane.org>
+References: <knb2ak$p9p$2@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <knb2ak$p9p$2@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 22, 2013 at 07:22:42AM -0600, Laurent Humblet wrote:
-> Hi,
+On 19/05/13 18:32, Martin wrote:
+> Dear Devs,
 > 
-> I have setup about a year ago a BTRFS RAID 1 filesystem on two 2TB
-> Western Digital WD20EARS hard drives and I have created subvolumes
-> that I mount regularly as I need them.  I put mostly music, videos and
-> various files on them as well as some Git bare repositories for my
-> work files but for the last couple of weeks, there seems to be some
-> activity happening on the drives for a few minutes and the following
-> processes are showing up while this happens: brtfs-cache-1 and
-> brtfs-endio-met.  It seems that brtfs-cache-1 is more 'busy' than
-> brtfs-endio-met but after a while everything seems fine again.
+> Would there be any problem to use nbd (/dev/ndX) devices to gain
+> btrfs-raid across multiple physical hosts across a network? (For a sort
+> of btrfs-drbd! :-) )
 > 
-> Is there anything I should worry about?  I will soon do a full backup
-> on ext4 just to make sure I don't loose anything but is there any
-> checks I can run on the drives to make sure everything is fine both on
-> a hardware standpoint and on a data integrity standoint?
 > 
+> Regards,
+> Martin
+> 
+> 
+> http://en.wikipedia.org/wiki/Network_block_device
+> 
+> http://www.drbd.org/
 
-Can you mount -o space_cache,inode_cache, that will get rid of the btrfs-cache-1
-stuff (after the cache's have all been built up).  Thanks,
 
-Josef
+As a follow-up, both nbd and AoE look to be active.
+
+nbd uses tcp/ip (layer 3) and is network routable;
+
+AoE operates on layer 2 (no IP addressing) and so looks to enjoy a lower
+overhead for the performance. Ideal for putting together your own low
+cost SAN!
+
+
+Network Block Device (TCP version)
+http://nbd.sourceforge.net/
+
+ATA Over Ethernet: As an Alternative
+http://www.rfxn.com/ata-over-ethernet-as-an-alternative/
+
+EtherDrive® storage and Linux 2.6
+http://support.coraid.com/support/linux/EtherDrive-2.6-HOWTO.html
+
+
+
+
+Hope of interest,
+
+Regards,
+Martin
+

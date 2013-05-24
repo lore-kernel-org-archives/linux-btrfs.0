@@ -1,77 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:61100 "EHLO mx1.redhat.com"
+Received: from sandeen.net ([63.231.237.45]:49481 "EHLO sandeen.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751907Ab3EXEVc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 May 2013 00:21:32 -0400
-Message-ID: <519EEAC4.606@redhat.com>
-Date: Thu, 23 May 2013 23:21:24 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1752105Ab3EXPga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 May 2013 11:36:30 -0400
+Message-ID: <519F88FC.30801@sandeen.net>
+Date: Fri, 24 May 2013 10:36:28 -0500
+From: Eric Sandeen <sandeen@sandeen.net>
 MIME-Version: 1.0
-To: Eryu Guan <eguan@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>
 CC: xfs-oss <xfs@oss.sgi.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
         Koen De Wit <koen.de.wit@oracle.com>
-Subject: Re: [PATCH] xfstests: btrfs/308: simple sparse copy testcase for
+Subject: [PATCH V2] xfstests: btrfs/309: sparse copy of a directory tree on
  btrfs
-References: <519E4590.4080309@redhat.com> <20130524030903.GL2460@eguan-t400.nay.redhat.com>
-In-Reply-To: <20130524030903.GL2460@eguan-t400.nay.redhat.com>
+References: <519E4734.40904@redhat.com>
+In-Reply-To: <519E4734.40904@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/23/13 10:09 PM, Eryu Guan wrote:
-> On Thu, May 23, 2013 at 11:36:32AM -0500, Eric Sandeen wrote:
->> From: Koen De Wit <koen.de.wit@oracle.com>
->>
->> # Tests file clone functionality of btrfs ("reflinks"):
->> #   - Reflink a file
->> #   - Reflink the reflinked file
->> #   - Modify the original file
->> #   - Modify the reflinked file
->>
->> [sandeen: add helpers, make several mostly-cosmetic
->>  changes to the original testcase]
->>
->> Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->>
->> Originally submitted as test 297
->>
->> diff --git a/common/rc b/common/rc
->> index fe6bbfc..4560715 100644
->> --- a/common/rc
->> +++ b/common/rc
->> @@ -2098,6 +2098,27 @@ _require_dumpe2fs()
->>  	fi
->>  }
->>  
->> +_require_cp_reflink()
->> +{
->> +	cp --help | grep -q reflink || \
->> +		_notrun "This test requires a cp with --reflink support."
->> +}
->> +
->> +# Given 2 files, verify that they have the same mapping but different
->> +# inodes - i.e. an undisturbed reflink
->> +# Silent if so, make noise if not
->> +_verify_reflink()
->> +{
->> +	# not a hard link or symlink?
->> +	cmp -s	<(stat -c '%i' $1) <(stat -c '%i' $2) \
->> +		&& echo "$1 and $2 are not reflinks: same inode number"
->> +
->> +	# same mapping?
->> +	diff -u	<($XFS_IO_PROG -F -c "fiemap" $1 | grep -v $1) \
->> +		<($XFS_IO_PROG -F -c "fiemap" $2 | grep -v $2) \
->> +		|| echo "$1 and $2 are not reflinks: different extents"
-> 
-> I'm not sure if "-F" is still needed after commit
-> 96fce07 xfstests: automatically add -F to xfs_io on non-xfs
+From: Koen De Wit <koen.de.wit@oracle.com>
 
-Right, it's not, oops.  :( Old habits (and old patch, TBH)
+# Tests file clone functionality of btrfs ("reflinks") on directory trees.
+#   - Create directory and subdirectory, each having one file
+#   - Create 2 recursive reflinked copies of the tree
+#   - Modify the original files
+#   - Modify one of the copies
 
-I can fix & resend all of them I guess.
+[sandeen: mostly cosmetic changes]
 
-Thanks,
--Eric
+Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
+
+Originally submitted as
+xfstests: 298: sparse copy of a directory tree on btrfs
+
+V2: drop -F from $XFS_IO_PROG
+
+diff --git a/tests/btrfs/309 b/tests/btrfs/309
+new file mode 100755
+index 0000000..b3927ba
+--- /dev/null
++++ b/tests/btrfs/309
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# FS QA Test No. btrfs/309
++#
++# Tests file clone functionality of btrfs ("reflinks") on directory trees.
++#   - Create directory and subdirectory, each having one file
++#   - Create 2 recursive reflinked copies of the tree
++#   - Modify the original files
++#   - Modify one of the copies
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. common/rc
++. common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++
++_require_xfs_io_fiemap
++_require_cp_reflink
++
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
++
++_checksum_files() {
++    for F in original/file1 original/subdir/file2 \
++                 copy1/file1 copy1/subdir/file2 \
++                 copy2/file1 copy2/subdir/file2
++        do
++            md5sum $TESTDIR1/$F | _filter_test_dir
++        done
++}
++
++rm -f $seqres.full
++
++mkdir $TESTDIR1/original
++mkdir $TESTDIR1/original/subdir
++
++echo "Create the original files and reflink dirs"
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original/file1  >> $seqres.full 2>&1
++$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 11000' $TESTDIR1/original/subdir/file2  >> $seqres.full 2>&1
++cp --recursive --reflink $TESTDIR1/original $TESTDIR1/copy1
++cp --recursive --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
++
++_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy1/file1
++_verify_reflink $TESTDIR1/original/subdir/file2 $TESTDIR1/copy1/subdir/file2
++_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy2/file1
++_verify_reflink $TESTDIR1/original/subdir/file2 $TESTDIR1/copy2/subdir/file2
++
++echo "Original md5sums:"
++_checksum_files
++
++echo "Overwrite original/file1 and original/subdir/file2 with new data"
++$XFS_IO_PROG -c 'pwrite -S 0x63 0 13000' $TESTDIR1/original/file1  >> $seqres.full 2>&1
++$XFS_IO_PROG -c 'pwrite -S 0x64 5000 1000'  $TESTDIR1/original/subdir/file2 >> $seqres.full 2>&1
++echo "md5sums now:"
++_checksum_files
++
++echo "Overwrite copy1/file1 and copy1/subdir/file2 with new data"
++$XFS_IO_PROG -c 'pwrite -S 0x65 0 9000' $TESTDIR1/copy1/file1  >> $seqres.full 2>&1
++$XFS_IO_PROG -c 'pwrite -S 0x66 5000 25000' $TESTDIR1/copy1/subdir/file2  >> $seqres.full 2>&1
++echo "md5sums now:"
++_checksum_files
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/309.out b/tests/btrfs/309.out
+new file mode 100644
+index 0000000..93197d8
+--- /dev/null
++++ b/tests/btrfs/309.out
+@@ -0,0 +1,25 @@
++QA output created by 309
++Create the original files and reflink dirs
++Original md5sums:
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/original/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/original/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/copy1/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/copy2/subdir/file2
++Overwrite original/file1 and original/subdir/file2 with new data
++md5sums now:
++260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-309/original/file1
++b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-309/original/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/copy1/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/copy2/subdir/file2
++Overwrite copy1/file1 and copy1/subdir/file2 with new data
++md5sums now:
++260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-309/original/file1
++b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-309/original/subdir/file2
++b20229a003e3985c4b0e6806abcd6642  TEST_DIR/test-309/copy1/file1
++b815b24069db14e0a3a07169fd563e93  TEST_DIR/test-309/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-309/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-309/copy2/subdir/file2
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f24628c..a5bd6aa 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -10,3 +10,4 @@
+ 284 auto
+ 307 auto quick
+ 308 auto quick reflink
++309 auto quick reflink
+
 

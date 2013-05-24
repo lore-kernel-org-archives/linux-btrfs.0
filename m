@@ -1,37 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f43.google.com ([209.85.215.43]:56135 "EHLO
-	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755557Ab3EXUGr (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:39965 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755557Ab3EXUHd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 May 2013 16:06:47 -0400
-Received: by mail-la0-f43.google.com with SMTP id ez20so4893405lab.30
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 May 2013 13:06:45 -0700 (PDT)
+	Fri, 24 May 2013 16:07:33 -0400
+Received: by mail-ie0-f174.google.com with SMTP id 10so13358585ied.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 May 2013 13:07:33 -0700 (PDT)
 MIME-Version: 1.0
-Date: Fri, 24 May 2013 21:06:45 +0100
-Message-ID: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
-Subject: Recommended settings for SSD
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
+References: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
+Date: Fri, 24 May 2013 14:07:33 -0600
+Message-ID: <CAE5mzvj=rAmw9DgVL5HUx+Ue1stArhjV9UBM+6fsHUZMZK25Rg@mail.gmail.com>
+Subject: Re: Recommended settings for SSD
+From: cwillu <cwillu@cwillu.com>
+To: Leonidas Spyropoulos <artafinde@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+> At the moment I am using:
+> defaults,noatime,nodiratime,ssd,subvol=@home
 
-I just got myself a new SSD and decided to install yet another time
-btrfs with ubuntu 13.04. I would like to ask if you suggest anything
-for recommended options for mount on Crucial S4 SSD.
-
-At the moment I am using:
-defaults,noatime,nodiratime,ssd,subvol=@home
-
-Anything else someone recommends for performance, stability?
-
-Thanks in advance
-Leonidas
-
---
-Caution: breathing may be hazardous to your health.
-
-#include <stdio.h>
-int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}
+No need to specify ssd, it's automatically detected.

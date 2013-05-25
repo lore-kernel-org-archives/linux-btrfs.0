@@ -1,81 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:63860 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751871Ab3EXXhC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 May 2013 19:37:02 -0400
-Received: by mail-wi0-f171.google.com with SMTP id hq7so175623wib.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 May 2013 16:37:00 -0700 (PDT)
-Message-ID: <519FF999.50101@gmail.com>
-Date: Sat, 25 May 2013 01:36:57 +0200
-From: Gabriel de Perthuis <g2p.code@gmail.com>
-MIME-Version: 1.0
-To: Mark Fasheh <mfasheh@suse.de>
-CC: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Chris Mason <chris.mason@fusionio.com>, Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 4/4] btrfs: offline dedupe
-References: <1369160908-26195-1-git-send-email-mfasheh@suse.de> <1369160908-26195-5-git-send-email-mfasheh@suse.de> <20130524140536.GQ5187@twin.jikos.cz> <20130524181706.GA5639@wotan.suse.de> <519FC476.1060206@gmail.com> <20130524223827.GB5639@wotan.suse.de>
-In-Reply-To: <20130524223827.GB5639@wotan.suse.de>
+Received: from plane.gmane.org ([80.91.229.3]:59883 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754244Ab3EYD6d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 May 2013 23:58:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ug5ci-0000Jl-9h
+	for linux-btrfs@vger.kernel.org; Sat, 25 May 2013 05:58:28 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 May 2013 05:58:28 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 May 2013 05:58:28 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recommended settings for SSD
+Date: Sat, 25 May 2013 03:58:12 +0000 (UTC)
+Message-ID: <pan$1197$73f28aeb$cb95553f$36bb7307@cox.net>
+References: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
+	<CAE5mzvj=rAmw9DgVL5HUx+Ue1stArhjV9UBM+6fsHUZMZK25Rg@mail.gmail.com>
+	<CAAeznTo1uiZMgedoWfE-E0v=2vTWVkV0_k-9_+vVZ6YMFfjdRg@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le sam. 25 mai 2013 00:38:27 CEST, Mark Fasheh a écrit :
-> On Fri, May 24, 2013 at 09:50:14PM +0200, Gabriel de Perthuis wrote:
->>> Sure. Actually, you got me thinking about some sanity checks... I need to
->>> add at least this check:
->>>
->>> 	if (btrfs_root_readonly(root))
->>> 		return -EROFS;
->>>
->>> which isn't in there as of now.
+Leonidas Spyropoulos posted on Fri, 24 May 2013 23:38:17 +0100 as
+excerpted:
+
+> On 24 May 2013 21:07, "cwillu" <cwillu@cwillu.com> wrote:
 >>
->> It's not needed and I'd rather do without, read-only snapshots and deduplication go together well for backups.
->> Data and metadata are guaranteed to be immutable, extent storage isn't.  This is also the case with raid.
->
-> You're absolutely right - I miswrote the check I meant.
-> Specifically, I was thinking about when the entire fs is readonly due to
-> either some error or the user mounted with -oro. So something more like:
->
-> 	if (root->fs_info->sb->s_flags & MS_RDONLY)
-> 		return -EROFS;
->
-> I think that should be reasonable and wouldn't affect most use cases,
-> right?
+>> No need to specify ssd, it's automatically detected.
+> I'm not so sure it did detected. When I manually set it I saw
+> significant improvement.
 
-That's all right.
+Without going back to check the wiki, IIRC it was there that the /sys 
+paths it checks for that detection are listed.  Those paths are then 
+based on what the drive itself claims.  If it claims to be rotating 
+storage...
 
->>> Also I don't really check the open mode (read, write, etc) on files passed
->>> in. We do this in the clone ioctl and it makes sense there since data (to
->>> the user) can change. With this ioctl though data won't ever change (even if
->>> the underlying extent does). So I left the checks out. A part of me is
->>> thinking we might want to be conservative to start with though and just add
->>> those type of checks in. Basically, I figure the source should be open for
->>> read at least and target files need write access.
->>
->> I don't know of any privileged files that one would be able to open(2),
->> but if this is available to unprivileged users the files all need to be
->> open for reading so that it can't be used to guess at their contents. As
->> long as root gets to bypass the checks (no btrfs_root_readonly) it doesn't
->> hurt my use case.
->
-> Oh ok so this seems to make sense. How does this logic sound:
->
-> We're not going to worry about write access since it would be entirely
-> reasonable for the user to want to do this on a readonly submount
-> (specifically for the purpose of deduplicating backups).
->
-> Read access needs to be provided however so we know that the user has access
-> to the file data.
->
-> So basically, if a user can open any files for read, they can check their
-> contents and dedupe them.
->
-> Letting users dedupe files in say, /etc seems kind of weird to me but I'm
-> struggling to come up with a good explanation of why that should mean we
-> limit this ioctl to root.
-> 	--Mark
+It may also depend on the kernel version, etc, as I'm not sure when that 
+auto-detection was added (tho for all I know it has been there awhile).
 
-I agree with that model.  Most of the code is shared with clone (and the
-copy_range RFC) which are unprivileged, so it doesn't increase the potential
-surface for bugs much.
+I do know my new SSDs (Corsair Neutrons, 256GB) are detected here, and 
+the ssd mount option is thus not needed.  However, I'm running current 
+v3.10-rcX-git kernels, tho I'm a few days behind ATM as I'm still working 
+on switching over to the SSDs ATM and am having to do some reconfiguring 
+to get there.
+
+Btrfs still being marked for testing only and under heavy development, if 
+people aren't at least running current Linus stable or better and don't 
+have a specific bug as a reason not to, they're actually behind and are 
+likely missing potentially critical patches.  That means most people 
+trying to run btrfs on stock distro kernels will be behind...
+
+
+Meanwhile, what about the discard option?  As I'm still setting up on the 
+SSDs as well as btrfs here, I haven't had a chance to decide whether I 
+want that, or would rather setup fstrim as a cron job, or what.  But 
+that's the other big question for SSD.
+
+Here, I'm actually partitioning for near 100% over-provisioning, (120-ish 
+GiB of partitions on the 238GiB/256GB drives, so I suspect actually 
+running with discard as a mount option won't be such a big deal and will 
+likely only cut write performance as I head toward stable-state, since 
+the drive should have plenty of trimmed space to work with in any case 
+due to the over-provisioning.  But I suspect it could be of benefit to 
+those much closer to 0% over-provisioning than to my near 100%.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

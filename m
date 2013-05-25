@@ -1,68 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:37505 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758153Ab3EYWdt (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:59976 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758147Ab3EYWrD convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 May 2013 18:33:49 -0400
-Received: by mail-lb0-f179.google.com with SMTP id r11so5768928lbv.38
-        for <linux-btrfs@vger.kernel.org>; Sat, 25 May 2013 15:33:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAAeznTq_+fv5SoPcr7ZYmYAvora2VCgN1WR9c8q=jPHNZORYrw@mail.gmail.com>
-References: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
- <CAAeznTo1uiZMgedoWfE-E0v=2vTWVkV0_k-9_+vVZ6YMFfjdRg@mail.gmail.com>
- <pan$1197$73f28aeb$cb95553f$36bb7307@cox.net> <1751895.r3q1HmeO0C@merkaba> <CAAeznTq_+fv5SoPcr7ZYmYAvora2VCgN1WR9c8q=jPHNZORYrw@mail.gmail.com>
-From: Harald Glatt <mail@hachre.de>
-Date: Sun, 26 May 2013 00:33:27 +0200
-Message-ID: <CAFWF=a=WXTgELv0hsfqDBPM7n8as3xz7aSj5UdXKonXcOw9ueg@mail.gmail.com>
+	Sat, 25 May 2013 18:47:03 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Recommended settings for SSD
-To: Leonidas Spyropoulos <artafinde@gmail.com>
-Cc: Martin Steigerwald <Martin@lichtvoll.de>, Duncan <1i5t5.duncan@cox.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sun, 26 May 2013 00:46:56 +0200
+Message-ID: <6555447.0nnTVXRBLE@merkaba>
+In-Reply-To: <1751895.r3q1HmeO0C@merkaba>
+References: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com> <pan$1197$73f28aeb$cb95553f$36bb7307@cox.net> <1751895.r3q1HmeO0C@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Data that already exists will only be compressed on re-write. You can
-do it with btrfs fi defrag and a script that traverses the fs to call
-defrag on every file. Another good way is the find command that has
-been outlined here:
+Am Samstag, 25. Mai 2013, 14:13:07 schrieb Martin Steigerwald:
+> The SSD is in use for about 2 years. I left about 25 GiB free of the 300 GB it 
+> has.
+> 
+> merkaba:~> smartctl -a /dev/sda | grep Host
+> 225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       
+> -       261260
+> 227 Workld_Host_Reads_Perc  0x0032   100   100   000    Old_age   Always       
+> -       49
+> 241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       
+> -       261260
+> 242 Host_Reads_32MiB        0x0032   100   100   000    Old_age   Always       
+> -       559520
+> 
+> So thats 261260 * 32 MiB = 8360320 MiB = 8164,375 GiB = about 8 TiB writes in 
+> total.
+> 
+> Intel claims a useful life of 5 years with 20 GB of host writes per day. For 2 
+> years thats 365*20 = 7300 GB. So it seems that I am exceeding this a bit.
+> 
+> Strange, last time I looked it was way under the specified limit. KDE Nepomuk / 
+> Akonadi stuff? Switch of /home to BTRFS? I don´t know. What I know that Akonadi 
+> / KDEPIM has gone wild once and wrote 450 GB in a row until I stopped it doing 
+> that manually.
 
-https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_directory_doesn.27t_work
+Well, all is well: I just calculated for one year. But the SSD is two years old.
 
-On Sun, May 26, 2013 at 12:29 AM, Leonidas Spyropoulos
-<artafinde@gmail.com> wrote:
-> On Sat, May 25, 2013 at 1:13 PM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
->> Am Samstag, 25. Mai 2013, 03:58:12 schrieb Duncan:
->> [...]
->> And can be verified by:
->>
->> martin@merkaba:~> grep ssd /proc/mounts
->> /dev/mapper/merkaba-debian / btrfs rw,noatime,compress=lzo,ssd,space_cache 0 0
->> /dev/mapper/merkaba-debian /mnt/debian-zeit btrfs
->> rw,noatime,compress=lzo,ssd,space_cache 0 0
->> /dev/mapper/merkaba-home /home btrfs rw,noatime,compress=lzo,ssd,space_cache 0
->> 0
->> /dev/mapper/merkaba-home /mnt/home-zeit btrfs
->> rw,noatime,compress=lzo,ssd,space_cache 0 0
->> martin@merkaba:~> grep ssd /etc/fstab
->> martin@merkaba:~#1>
->> [...]
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> I see you are using compression. I don't have compression at the
-> moment and I would like to use it. What will happen to the data that
-> are already on the partitions? Will it be compressed when I use them?
-> Do I have to re-write them? Would it be compressed with btrfs defrag
-> command?
->
-> Thanks for the information
->
-> --
-> Caution: breathing may be hazardous to your health.
->
-> #include <stdio.h>
-> int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That makes: 365*2*20 = 14600 GB. About 8 TiB is way below it :)
+
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

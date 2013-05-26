@@ -1,195 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:50480 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757206Ab3EXRec (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 May 2013 13:34:32 -0400
-Message-ID: <519FA4A6.5050003@sandeen.net>
-Date: Fri, 24 May 2013 12:34:30 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from mail-ie0-f175.google.com ([209.85.223.175]:52311 "EHLO
+	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751688Ab3EZJfq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 May 2013 05:35:46 -0400
+Received: by mail-ie0-f175.google.com with SMTP id s9so15587288iec.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 02:35:46 -0700 (PDT)
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: xfs-oss <xfs@oss.sgi.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Koen De Wit <koen.de.wit@oracle.com>
-Subject: [PATCH V2] xfstests: btrfs/306: simple sparse copy testcase for btrfs
-References: <519E4590.4080309@redhat.com>
-In-Reply-To: <519E4590.4080309@redhat.com>
+In-Reply-To: <51363CE6.1010807@sgi.com>
+References: <512DB284.1090806@gmail.com>
+	<51363CE6.1010807@sgi.com>
+Date: Sun, 26 May 2013 17:35:45 +0800
+Message-ID: <CAEH94LhbYShu5Q7K=G=10G6X3jUM68VL4rBBuS4zvdQsifsKGw@mail.gmail.com>
+Subject: Re: [PATCH] xfstests 276: fix error 'FIBMAP: Invalid argument'
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: Rich Johnston <rjohnston@sgi.com>
+Cc: Wang Sheng-Hui <shhuiw@gmail.com>, list.btrfs@jan-o-sch.net,
+        linux-btrfs@vger.kernel.org, xfstests <xfs@oss.sgi.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Koen De Wit <koen.de.wit@oracle.com>
+HI,
 
-# Tests file clone functionality of btrfs ("reflinks"):
-#   - Reflink a file
-#   - Reflink the reflinked file
-#   - Modify the original file
-#   - Modify the reflinked file
+  This issue still exists when xfstests is run on debian although
+xfstests has contained this patch.
 
-[sandeen: add helpers, make several mostly-cosmetic
- changes to the original testcase]
+root@debian-i386:/home/zwu/xfstests# git describe
+linux-v3.8-122-gdc75401
+root@debian-i386:/home/zwu/xfstests# uname -a
+Linux debian-i386 3.10.0-rc2+ #3 SMP Sun May 26 14:04:13 CST 2013
+x86_64 GNU/Linux
+root@debian-i386:/home/zwu/xfstests#
 
-Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+ - output mismatch (see /home/zwu/xfstests/results/btrfs/276.out.bad)
+    --- tests/btrfs/276.out    2013-05-25 15:09:01.000000000 +0000
+    +++ /home/zwu/xfstests/results/btrfs/276.out.bad    2013-05-26
+09:31:49.962876905 +0000
+    @@ -1,3 +1,32393 @@
+     QA output created by 276
+     *** test backref walking
+    +FIBMAP: Invalid argument
+    +FIBMAP: Invalid argument
+    +FIBMAP: Invalid argument
+    +FIBMAP: Invalid argument
+    +FIBMAP: Invalid argument
+     ...
+     (Run 'diff -u tests/btrfs/276.out
+/home/zwu/xfstests/results/btrfs/276.out.bad' to see the entire diff)
+[ 3877.215268] device fsid 8367602a-14fa-49eb-aff0-44da1faa3b45 devid
+1 transid 239 /dev/vdb
+[ 3877.218417] btrfs: disk space caching is enabled
+Ran: btrfs/276
+Failures: btrfs/276
+Failed 1 of 1 tests
 
-Originally submitted as test 297
-V2: move to test 306, remove "-F" from $XFS_IO_PROG
-
-diff --git a/common/rc b/common/rc
-index fe6bbfc..4560715 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2098,6 +2098,27 @@ _require_dumpe2fs()
- 	fi
- }
- 
-+_require_cp_reflink()
-+{
-+	cp --help | grep -q reflink || \
-+		_notrun "This test requires a cp with --reflink support."
-+}
-+
-+# Given 2 files, verify that they have the same mapping but different
-+# inodes - i.e. an undisturbed reflink
-+# Silent if so, make noise if not
-+_verify_reflink()
-+{
-+	# not a hard link or symlink?
-+	cmp -s	<(stat -c '%i' $1) <(stat -c '%i' $2) \
-+		&& echo "$1 and $2 are not reflinks: same inode number"
-+
-+	# same mapping?
-+	diff -u	<($XFS_IO_PROG -c "fiemap" $1 | grep -v $1) \
-+		<($XFS_IO_PROG -c "fiemap" $2 | grep -v $2) \
-+		|| echo "$1 and $2 are not reflinks: different extents"
-+}
-+
- _create_loop_device()
- {
- 	file=$1
-diff --git a/tests/btrfs/306 b/tests/btrfs/306
-new file mode 100755
-index 0000000..1bb8f02
---- /dev/null
-+++ b/tests/btrfs/306
-@@ -0,0 +1,87 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/306
-+#
-+# Tests file clone functionality of btrfs ("reflinks"):
-+#   - Reflink a file
-+#   - Reflink the reflinked file
-+#   - Modify the original file
-+#   - Modify the reflinked file
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. common/rc
-+. common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+
-+_require_xfs_io_fiemap
-+_require_cp_reflink
-+
-+TESTDIR1=$TEST_DIR/test-$seq
-+rm -rf $TESTDIR1
-+mkdir $TESTDIR1
-+
-+_checksum_files() {
-+    for F in original copy1 copy2
-+    do
-+        md5sum $TESTDIR1/$F | _filter_test_dir
-+    done
-+}
-+
-+rm -f $seqres.full
-+
-+echo "Create the original file and reflink to copy1, copy2"
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original >> $seqres.full 2>&1
-+cp --reflink $TESTDIR1/original $TESTDIR1/copy1
-+cp --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
-+_verify_reflink $TESTDIR1/original $TESTDIR1/copy1
-+_verify_reflink $TESTDIR1/original $TESTDIR1/copy2
-+echo "Original md5sums:"
-+_checksum_files
-+
-+echo "Overwrite original file with new data"
-+$XFS_IO_PROG -c 'pwrite -S 0x62 0 9000' $TESTDIR1/original >> $seqres.full 2>&1
-+echo "md5sums after overwriting original:"
-+_checksum_files
-+
-+echo "Overwrite copy1 with different new data"
-+$XFS_IO_PROG -c 'pwrite -S 0x63 0 9000' $TESTDIR1/copy1  >> $seqres.full 2>&1
-+echo "md5sums after overwriting copy1:"
-+_checksum_files
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/306.out b/tests/btrfs/306.out
-new file mode 100644
-index 0000000..7bccf08
---- /dev/null
-+++ b/tests/btrfs/306.out
-@@ -0,0 +1,16 @@
-+QA output created by 306
-+Create the original file and reflink to copy1, copy2
-+Original md5sums:
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/original
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/copy1
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/copy2
-+Overwrite original file with new data
-+md5sums after overwriting original:
-+4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-306/original
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/copy1
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/copy2
-+Overwrite copy1 with different new data
-+md5sums after overwriting copy1:
-+4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-306/original
-+e271cd47d9f62ebc96cb4e67ae4d16db  TEST_DIR/test-306/copy1
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-306/copy2
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index bc6c256..f24628c 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -9,3 +9,4 @@
- 276 auto rw metadata
- 284 auto
-+306 auto quick reflink
- 307 auto quick
+On Wed, Mar 6, 2013 at 2:43 AM, Rich Johnston <rjohnston@sgi.com> wrote:
+> This patch has been committed.
+>
+> --Rich
+>
+> commit eba3a5206cd7f8df73d6e6dbf2bb0afca677fca8
+> Author: Wang Sheng-Hui <shhuiw@gmail.com>
+> Date:   Thu Feb 28 02:05:56 2013 +0000
+>
+>     xfstests 276: fix error 'FIBMAP: Invalid argument'
+>
+>
+>     Commit 05dadc0 ("Btrfs: add fiemap's flag check") added validity
+>     checks to the fiemap flags and hence invalid flags are now being
+>     rejected. Test 276 passes an invalid fiemap flag to btrfs, and so
+>     that test fails since this commit was added.
+>
+>     Btrfs doesn't support FIEMAP_FLAG_XATTR, which is enabled by -x option
+>     of filefrag, and will fail with
+>         'FIBMAP: Invalid argument'
+>     for 'filefrag -vx'. 'filefrag -vx' fails on btrfs with
+>          'FIEMAP failed with unsupported flags 2'
+>     Remove the '-x' option.
+>
+> _______________________________________________
+> xfs mailing list
+> xfs@oss.sgi.com
+> http://oss.sgi.com/mailman/listinfo/xfs
 
 
+
+-- 
+Regards,
+
+Zhi Yong Wu

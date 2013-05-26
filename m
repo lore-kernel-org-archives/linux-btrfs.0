@@ -1,62 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54055 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758832Ab3EZCX3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 May 2013 22:23:29 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UgQcI-0004gv-AL
-	for linux-btrfs@vger.kernel.org; Sun, 26 May 2013 04:23:26 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 04:23:26 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 04:23:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: compression on external hard drive?
-Date: Sun, 26 May 2013 02:23:09 +0000 (UTC)
-Message-ID: <pan$a1b3e$c3ed264b$c0ac127c$7262bed0@cox.net>
-References: <51A1372B.6060402@gnata.eu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-la0-f51.google.com ([209.85.215.51]:39553 "EHLO
+	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751765Ab3EZKAS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 May 2013 06:00:18 -0400
+Received: by mail-la0-f51.google.com with SMTP id lx15so5587412lab.24
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 03:00:16 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAFWF=a=WXTgELv0hsfqDBPM7n8as3xz7aSj5UdXKonXcOw9ueg@mail.gmail.com>
+References: <CAAeznTr3rsJWcFWKoagNrduXGzP2AWaXMKY0FO8te2Xpa7XiHw@mail.gmail.com>
+	<CAAeznTo1uiZMgedoWfE-E0v=2vTWVkV0_k-9_+vVZ6YMFfjdRg@mail.gmail.com>
+	<pan$1197$73f28aeb$cb95553f$36bb7307@cox.net>
+	<1751895.r3q1HmeO0C@merkaba>
+	<CAAeznTq_+fv5SoPcr7ZYmYAvora2VCgN1WR9c8q=jPHNZORYrw@mail.gmail.com>
+	<CAFWF=a=WXTgELv0hsfqDBPM7n8as3xz7aSj5UdXKonXcOw9ueg@mail.gmail.com>
+Date: Sun, 26 May 2013 11:00:16 +0100
+Message-ID: <CAAeznTr8t+AnTL9JtXLA+TMg97_MX+63giGEsrP-j4rWFUhYpg@mail.gmail.com>
+Subject: Re: Recommended settings for SSD
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+To: Harald Glatt <mail@hachre.de>
+Cc: Martin Steigerwald <Martin@lichtvoll.de>, Duncan <1i5t5.duncan@cox.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Xavier Gnata posted on Sun, 26 May 2013 00:11:55 +0200 as excerpted:
+On Sat, May 25, 2013 at 11:33 PM, Harald Glatt <mail@hachre.de> wrote:
+> Data that already exists will only be compressed on re-write. You can
+> do it with btrfs fi defrag and a script that traverses the fs to call
+> defrag on every file. Another good way is the find command that has
+> been outlined here:
+>
+> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_directory_doesn.27t_work
+>
 
-> Nowdays, external hard drives are mounted automagically by kde, gnome or
-> whatever else.
-> How is it suppose to work with external hard drives using btrfs with
-> compression?
-> If a btrfs filesystem lzo-compressed is mounted without the
-> |compress=|xxx option then all the newly created files are uncompressed,
-> aren't then?
-> Would it be possible to detect if a file system is compressed  and to
-> mount it *automatically* and accordingly (except otherwise explicitly
-> stated by the user) with/without the lzo/gzip option?
+I tried to my home partition the 'find' command and worked without
+errors, not sure if it did compress (how can I check?). I tried also
+on the root partition and every file that was in use (obviously) it
+didn't defrag it. I am guessing I have to mount the partition from a
+LiveCD but since the LiceCD kernel is usually old (in terms of btrfs)
+do you reckon there will be any problems?
 
-There's a proposal to do something like ext3/4's default options as set 
-by tune2fs, at some point, presumably before btrfs loses the "unstable 
-disk format" and under heavy development warnings.  However, there's 
-nothing like that yet, AFAIK, so most options must be set per-mount.
+Thanks
+--
+Caution: breathing may be hazardous to your health.
 
-There's a lot you can do with udev events, however, and strongly suspect 
-either compression-detection, or match-against-a-list-and-compress (or 
-don't compress if the default is compression otherwise) if the UUID/LABEL 
-is listed.
-
-Alternatively, at least kde can be set not to automount specific UUIDs/
-LABELs, and then there's always the traditional fstab option, and I think 
-either fstab entered drives are ignored by the automount system or 
-they're automounted with options from fstab (I have that kde subsystem 
-entirely disabled here so it doesn't automount anything, so I'm not sure 
-which it actually does).
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+#include <stdio.h>
+int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}

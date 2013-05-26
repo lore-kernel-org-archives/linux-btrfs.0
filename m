@@ -1,117 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41038 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753076Ab3EZNvY (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47039 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753166Ab3EZNv2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 May 2013 09:51:24 -0400
+	Sun, 26 May 2013 09:51:28 -0400
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4QDpL1F007279
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4QDpQaM017098
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:22 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4QDpNFA012227
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:27 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4QDpP77012250
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:23 GMT
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:26 GMT
 Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4QDpMtJ009911
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:22 GMT
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4QDpPkR006733
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 13:51:25 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/5] Btrfs: update new flags for tracepoint
-Date: Sun, 26 May 2013 21:50:28 +0800
-Message-Id: <1369576231-17836-3-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 3/5] Btrfs: kill replicate code in replay_one_buffer
+Date: Sun, 26 May 2013 21:50:29 +0800
+Message-Id: <1369576231-17836-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1369576231-17836-1-git-send-email-bo.li.liu@oracle.com>
 References: <1369576231-17836-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adding new flags to keep tracepoints consistent with btrfs.
+EXTREF is treated same as REF, so we can make the code tidy.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- include/trace/events/btrfs.h |   35 +++++++++++++++++++++++------------
- 1 files changed, 23 insertions(+), 12 deletions(-)
+ fs/btrfs/tree-log.c |    9 ++-------
+ 1 files changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index ea546a4..2902657 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -40,22 +40,25 @@ struct extent_buffer;
- 		{ BTRFS_ROOT_TREE_DIR_OBJECTID, "ROOT_TREE_DIR"	},	\
- 		{ BTRFS_CSUM_TREE_OBJECTID, 	"CSUM_TREE"	},	\
- 		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
-+		{ BTRFS_QUOTA_TREE_OBJECTID,	"QUOTA_TREE"	},	\
- 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
- 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
- 
- #define show_root_type(obj)						\
- 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
- 	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
--	       obj <= BTRFS_CSUM_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
-+	       obj <= BTRFS_QUOTA_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
- 
- #define BTRFS_GROUP_FLAGS	\
--	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"}, \
--	{ BTRFS_BLOCK_GROUP_SYSTEM,	"SYSTEM"}, \
--	{ BTRFS_BLOCK_GROUP_METADATA,	"METADATA"}, \
--	{ BTRFS_BLOCK_GROUP_RAID0,	"RAID0"}, \
--	{ BTRFS_BLOCK_GROUP_RAID1,	"RAID1"}, \
--	{ BTRFS_BLOCK_GROUP_DUP,	"DUP"}, \
--	{ BTRFS_BLOCK_GROUP_RAID10,	"RAID10"}
-+	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
-+	{ BTRFS_BLOCK_GROUP_SYSTEM,	"SYSTEM"},	\
-+	{ BTRFS_BLOCK_GROUP_METADATA,	"METADATA"},	\
-+	{ BTRFS_BLOCK_GROUP_RAID0,	"RAID0"}, 	\
-+	{ BTRFS_BLOCK_GROUP_RAID1,	"RAID1"}, 	\
-+	{ BTRFS_BLOCK_GROUP_DUP,	"DUP"}, 	\
-+	{ BTRFS_BLOCK_GROUP_RAID10,	"RAID10"}, 	\
-+	{ BTRFS_BLOCK_GROUP_RAID5,	"RAID5"},	\
-+	{ BTRFS_BLOCK_GROUP_RAID6,	"RAID6"}
- 
- #define BTRFS_UUID_SIZE 16
- 
-@@ -154,7 +157,9 @@ DEFINE_EVENT(btrfs__inode, btrfs_inode_evict,
- 		{ EXTENT_FLAG_PINNED, 		"PINNED" 	},	\
- 		{ EXTENT_FLAG_COMPRESSED, 	"COMPRESSED" 	},	\
- 		{ EXTENT_FLAG_VACANCY, 		"VACANCY" 	},	\
--		{ EXTENT_FLAG_PREALLOC, 	"PREALLOC" 	})
-+		{ EXTENT_FLAG_PREALLOC, 	"PREALLOC" 	},	\
-+		{ EXTENT_FLAG_LOGGING,	 	"LOGGING" 	},	\
-+		{ EXTENT_FLAG_FILLING,	 	"FILLING" 	})
- 
- TRACE_EVENT(btrfs_get_extent,
- 
-@@ -201,13 +206,17 @@ TRACE_EVENT(btrfs_get_extent,
- );
- 
- #define show_ordered_flags(flags)					\
--	__print_symbolic(flags,					\
-+	__print_symbolic(flags,						\
- 		{ BTRFS_ORDERED_IO_DONE, 	"IO_DONE" 	},	\
- 		{ BTRFS_ORDERED_COMPLETE, 	"COMPLETE" 	},	\
- 		{ BTRFS_ORDERED_NOCOW, 		"NOCOW" 	},	\
- 		{ BTRFS_ORDERED_COMPRESSED, 	"COMPRESSED" 	},	\
- 		{ BTRFS_ORDERED_PREALLOC, 	"PREALLOC" 	},	\
--		{ BTRFS_ORDERED_DIRECT, 	"DIRECT" 	})
-+		{ BTRFS_ORDERED_DIRECT, 	"DIRECT" 	},	\
-+		{ BTRFS_ORDERED_IOERR, 		"IOERR" 	},	\
-+		{ BTRFS_ORDERED_UPDATED_ISIZE, 	"UPDATED_ISIZE"	},	\
-+		{ BTRFS_ORDERED_LOGGED_CSUM, 	"LOGGED_CSUM"	})
-+
- 
- DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 
-@@ -555,7 +564,9 @@ TRACE_EVENT(btrfs_delayed_ref_head,
- 		{ BTRFS_BLOCK_GROUP_RAID0, 	"RAID0" },	\
- 		{ BTRFS_BLOCK_GROUP_RAID1, 	"RAID1" },	\
- 		{ BTRFS_BLOCK_GROUP_DUP, 	"DUP"	},	\
--		{ BTRFS_BLOCK_GROUP_RAID10, 	"RAID10"})
-+		{ BTRFS_BLOCK_GROUP_RAID10, 	"RAID10"},	\
-+		{ BTRFS_BLOCK_GROUP_RAID5, 	"RAID5"	},	\
-+		{ BTRFS_BLOCK_GROUP_RAID6, 	"RAID6"	})
- 
- DECLARE_EVENT_CLASS(btrfs__chunk,
- 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c276ac9..3f30053 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2016,13 +2016,8 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
+ 					     eb, i, &key);
+ 			if (ret)
+ 				break;
+-		} else if (key.type == BTRFS_INODE_REF_KEY) {
+-			ret = add_inode_ref(wc->trans, root, log, path,
+-					    eb, i, &key);
+-			if (ret && ret != -ENOENT)
+-				break;
+-			ret = 0;
+-		} else if (key.type == BTRFS_INODE_EXTREF_KEY) {
++		} else if (key.type == BTRFS_INODE_REF_KEY ||
++			   key.type == BTRFS_INODE_EXTREF_KEY) {
+ 			ret = add_inode_ref(wc->trans, root, log, path,
+ 					    eb, i, &key);
+ 			if (ret && ret != -ENOENT)
 -- 
 1.7.7
 

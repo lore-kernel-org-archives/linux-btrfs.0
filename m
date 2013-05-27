@@ -1,50 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f169.google.com ([209.85.128.169]:59954 "EHLO
-	mail-ve0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755483Ab3E0AHH (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:34634 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756021Ab3E0DfK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 May 2013 20:07:07 -0400
-Received: by mail-ve0-f169.google.com with SMTP id jw11so4797706veb.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 May 2013 17:07:06 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 27 May 2013 02:07:06 +0200
-Message-ID: <CAFvQSYShdQL_pZB12=Xt7dg+yLt0NNCW+WTyOXgic3SbFDy69w@mail.gmail.com>
-Subject: Btrfsck errors (fs tree 565 refs 125 not found) - how serious
-From: Clemens Eisserer <linuxhippy@gmail.com>
+	Sun, 26 May 2013 23:35:10 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4R3Z6fe031602
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 May 2013 03:35:07 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4R3Z8x9003644
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 May 2013 03:35:08 GMT
+Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4R3Z7o6003640
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 May 2013 03:35:07 GMT
+Date: Mon, 27 May 2013 11:34:35 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: [Question] How to restore btrfs raid0 image file?
+Message-ID: <20130527033434.GC15816@liubo.jp.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-For about 3 weeks I've been using btrfs on my desktop machine, using
-the snapshot-functionality quite a lot.
+So the case is, now I've got a btrfs image file, which is created from a
+raid0 btrfs fs.
 
-Today I ran btrfsck and got about ~10MB of output which looks like:
+And if I run 'btrfs-image -r image_file /dev/sdf', then I have to mount
+it with 'degraded' mode, and that still fails because raid0 requires two
+disks at least.
 
-fs tree 565 refs 125 not found
-	unresolved ref root 807 dir 813347 index 277 namelen 39 name
-snapshot_1368273601_2013-05-11_14:00:01 error 600
-	unresolved ref root 808 dir 813347 index 277 namelen 39 name
-snapshot_1368273601_2013-05-11_14:00:01 error 600
-.......
+So any ideas how to make it work?
 
-fs tree 566 refs 125 not found
-	unresolved ref root 807 dir 813347 index 278 namelen 39 name
-snapshot_1368274201_2013-05-11_14:10:01 error 600
-	unresolved ref root 808 dir 813347 index 278 namelen 39 name
-snapshot_1368274201_2013-05-11_14:10:01 error 600
-......
-
-
-while the log contained a lot of different values for "fs tree", the
-refs which were not found stays fairly constant:
-
-refs: 125, 397, 398, 406, 407, 420
-
-How serious are those issues, should I be worried?
-Would it help if I find ways to reproduce this behaviour on a fresh
-btrfs filesystem?
-
-Thank you in advance, Clemens
+thanks,
+liubo

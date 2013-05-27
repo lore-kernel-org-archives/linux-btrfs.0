@@ -1,79 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f45.google.com ([74.125.83.45]:38603 "EHLO
-	mail-ee0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753047Ab3E0Rs5 (ORCPT
+Received: from mail-ea0-f173.google.com ([209.85.215.173]:52090 "EHLO
+	mail-ea0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756682Ab3E0Tif convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 May 2013 13:48:57 -0400
-Received: by mail-ee0-f45.google.com with SMTP id l10so4134739eei.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 May 2013 10:48:56 -0700 (PDT)
-Date: Mon, 27 May 2013 20:47:23 +0300
-From: Sergei Trofimovich <slyich@gmail.com>
-To: =?UTF-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: systemd "journalctl" is 1.89sec on ext4, 1.49 min on btrfs
-Message-ID: <20130527204723.573c4e3f@sf>
-In-Reply-To: <16735484.PAleCPYpY8@noname>
-References: <16735484.PAleCPYpY8@noname>
-Reply-To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/G_8Oa363m5eUB1Rpm.yYElq"; protocol="application/pgp-signature"
+	Mon, 27 May 2013 15:38:35 -0400
+Received: by mail-ea0-f173.google.com with SMTP id n15so4106640ead.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 May 2013 12:38:34 -0700 (PDT)
+Received: from linux-suse.localnet (dsl51B6D2E0.pool.t-online.hu. [81.182.210.224])
+        by mx.google.com with ESMTPSA id h49sm11294361eew.7.2013.05.27.12.38.32
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Mon, 27 May 2013 12:38:33 -0700 (PDT)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Kernel BUG at ctree.c:1144 and soft lockup while defragging
+Date: Mon, 27 May 2013 21:38:12 +0200
+Message-ID: <2462016.qiZEcvOCVp@linux-suse>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/G_8Oa363m5eUB1Rpm.yYElq
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Dear list,
 
-On Mon, 27 May 2013 18:21:21 +0200
-Sz=C5=91ts =C3=81kos <szotsaki@gmail.com> wrote:
+While I was trying to defrag a specified directory I got kernel BUGs and 
+warnings about CPUx stucked for twenty-some seconds.
 
-> Dear list,
->=20
-> I have two openSUSE 12.3 systems with kernel 3.9. On one of them there's =
-an=20
-> ext4 partition, while on the other there's a btrfs.
->=20
-> I issued a "time journalctl -b --no-pager" command on both systems. This =
-shows=20
-> the logs from the current boot without passing them to "less".
->=20
-> On ext4 (3.9.3):
-> real    0m1.898s
-> user    0m0.291s
-> sys     0m0.105s
->=20
-> On btrfs (3.9.2):
-> real    1m49.698s
-> user    0m0.102s
-> sys     0m0.470s
->=20
-> Journalctl on btrfs was always this slow, some btrfsck were made on the f=
-ile=20
-> system too, but I don't think it was corrupted. On just the first run it'=
-s=20
-> sluggish, after it's fast as the ext4 one.
->=20
-> Is it a known issue or can I help somehow debugging this further?
+The specified warnings were:
+BUG at ctree.c:1144. Invalid opcode: 0000
+command: btrfs-endio-wri
+Call trace top: btrfs_search_old_slot
 
-Let's look at your
-    /usr/sbin/filefrag /var/log/journal/*/*
-on both systems
+The executed command in $HOME/.local:
+find -xdev -type f -exec btrfs fi defrag -clzo '{}' \;
 
---=20
+After that a soft lockup BUG occurred with systemd-journal with 
+btrfs_add_delayed_data_ref being on top of the call trace.
 
-  Sergei
+Since no log stayed in the journal, I took some pictures and uploaded them 
+here:
+- Ctree bug: www.morrohun.hu/temp/btrfs/IMG_1983.JPG
+                  www.morrohun.hu/temp/btrfs/IMG_1985.JPG
+- Soft lockup with systemd-journal: www.morrohun.hu/temp/btrfs/IMG_1995.JPG
+- Same stack trace without lockup and with btrfs-endio-wri: 
+www.morrohun.hu/temp/btrfs/IMG_1996.JPG
 
---Sig_/G_8Oa363m5eUB1Rpm.yYElq
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+System: openSUSE 12.3, kernel 3.9.2-3.g97197ff-desktop.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
+If you need an image, can I take a snapshot just from the specified directory?
 
-iEYEARECAAYFAlGjnDEACgkQcaHudmEf86o3gwCePdm3hBeR49Q1v/cbVGxIDxKJ
-kfYAnjWN1RSkkaR3r7HsZCJGXuLlPcgw
-=oxtN
------END PGP SIGNATURE-----
+Best regards,
 
---Sig_/G_8Oa363m5eUB1Rpm.yYElq--
+Ákos Szőts

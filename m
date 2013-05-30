@@ -1,43 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27178 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:29171 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754093Ab3EQKv5 (ORCPT
+	with ESMTP id S966739Ab3E3DhJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 May 2013 06:51:57 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4HApsWa023583
+	Wed, 29 May 2013 23:37:09 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4U3b6hV029318
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:55 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HApt5j005241
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:56 GMT
-Received: from abhmt106.oracle.com (abhmt106.oracle.com [141.146.116.58])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4HAptbr005235
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2013 10:51:55 GMT
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:06 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3b7kd021421
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:07 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3b7bi008761
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:07 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
-Date: Fri, 17 May 2013 18:54:42 +0800
-Message-Id: <1368788082-12090-5-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/6 v2] btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
+Date: Thu, 30 May 2013 11:40:21 +0800
+Message-Id: <1369885226-3640-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1369885226-3640-1-git-send-email-anand.jain@oracle.com>
 References: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
+ <1369885226-3640-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 btrfs_scan_for_fsid uses only one argument run_ioctl out of 3
 so remove the rest two of them
 
-and also update to use the new function
-scan_devs_for_btrfs
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-find-root.c |  2 +-
- disk-io.c         |  2 +-
- utils.c           | 12 +++++++-----
- utils.h           |  3 +--
- 4 files changed, 10 insertions(+), 9 deletions(-)
+ btrfs-find-root.c | 2 +-
+ disk-io.c         | 2 +-
+ utils.c           | 5 ++---
+ utils.h           | 3 +--
+ 4 files changed, 5 insertions(+), 7 deletions(-)
 
 diff --git a/btrfs-find-root.c b/btrfs-find-root.c
 index 810d835..e736cb5 100644
@@ -53,10 +51,10 @@ index 810d835..e736cb5 100644
  			goto out;
  	}
 diff --git a/disk-io.c b/disk-io.c
-index 21b410d..574cca9 100644
+index 9ffe6e4..acd5480 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -835,7 +835,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+@@ -838,7 +838,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
  	}
  
  	if (total_devs != 1) {
@@ -66,7 +64,7 @@ index 21b410d..574cca9 100644
  			goto out;
  	}
 diff --git a/utils.c b/utils.c
-index 663670b..18148c7 100644
+index 7b4cd74..25f3cb4 100644
 --- a/utils.c
 +++ b/utils.c
 @@ -928,7 +928,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
@@ -78,7 +76,7 @@ index 663670b..18148c7 100644
  			return ret;
  	}
  
-@@ -1114,14 +1114,16 @@ fail:
+@@ -1110,8 +1110,7 @@ fail:
  	return ret;
  }
  
@@ -88,19 +86,8 @@ index 663670b..18148c7 100644
  {
  	int ret;
  
--	ret = btrfs_scan_block_devices(run_ioctls);
-+	/* try the default (0) fist which will scan /dev/mapper and
-+	 * /proc/partitions and then /dev (2)
-+	*/
-+	ret = scan_devs_for_btrfs(0, run_ioctls);
- 	if (ret)
--		ret = btrfs_scan_one_dir("/dev", run_ioctls);
-+		ret = scan_devs_for_btrfs(2, run_ioctls);
- 	return ret;
- }
- 
 diff --git a/utils.h b/utils.h
-index 375c15a..b57044a 100644
+index 3c17e14..dba37e8 100644
 --- a/utils.h
 +++ b/utils.h
 @@ -35,8 +35,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,

@@ -1,43 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33704 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758266Ab3E3Szm (ORCPT
+Received: from mail-ve0-f174.google.com ([209.85.128.174]:54462 "EHLO
+	mail-ve0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932530Ab3E3Tgp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 May 2013 14:55:42 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 2D6B39A067C
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 12:55:42 -0600 (MDT)
-Date: Thu, 30 May 2013 14:55:39 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfsck errors (fs tree 565 refs 125 not found) - how serious
-Message-ID: <20130530185539.GD9829@localhost.localdomain>
-References: <CAFvQSYShdQL_pZB12=Xt7dg+yLt0NNCW+WTyOXgic3SbFDy69w@mail.gmail.com>
- <CAFvQSYS1odBm3+ttcuQCZuxmWuVfUkCatQw1bAG_B_uTJVmCmw@mail.gmail.com>
+	Thu, 30 May 2013 15:36:45 -0400
+Received: by mail-ve0-f174.google.com with SMTP id oz10so516305veb.33
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 12:36:43 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAFvQSYS1odBm3+ttcuQCZuxmWuVfUkCatQw1bAG_B_uTJVmCmw@mail.gmail.com>
+In-Reply-To: <20130530185539.GD9829@localhost.localdomain>
+References: <CAFvQSYShdQL_pZB12=Xt7dg+yLt0NNCW+WTyOXgic3SbFDy69w@mail.gmail.com>
+	<CAFvQSYS1odBm3+ttcuQCZuxmWuVfUkCatQw1bAG_B_uTJVmCmw@mail.gmail.com>
+	<20130530185539.GD9829@localhost.localdomain>
+Date: Thu, 30 May 2013 21:36:43 +0200
+Message-ID: <CAFvQSYTDjRmU5gJGyD=Wp6JhOqaT64ytJZNujCTGX9RheGcHjQ@mail.gmail.com>
+Subject: Re: Btrfsck errors (fs tree 565 refs 125 not found) - how serious
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 30, 2013 at 12:06:50PM -0600, Clemens Eisserer wrote:
-> Hi again,
-> 
-> I am able to induce the btrfsck errors I experienced using a synthetic
-> workload on a fresh filesystem with linux-3.10.0.rc2.
-> However as filing the bug-report would take quite some time (uploading
-> 512mb trace-files, writing a short read-me, ...) I wonder whether this
-> is an issue woth of reporting, or maybe just caused by an outdated
-> version of btrfsck (I am using
-> btrfs-progs-0.20.rc1.20130308git704a08c-1).
-> 
+Hi Josef,
 
-You are running on an unmounted fs right?  Also please make sure you are running
-the git version
+> You are running on an unmounted fs right?  Also please make sure you are running
+> the git version
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+Yes, the fs was properly unmounted.
 
-Thanks,
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 
-Josef
+I still get those errors, I'll try to file a bug-report with the
+tools/data required to reproduce this issue...
+
+Thanks, Clemens

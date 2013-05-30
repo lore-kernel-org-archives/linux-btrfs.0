@@ -1,68 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48722 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754944Ab3E3ODd convert rfc822-to-8bit (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:32585 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757497Ab3E3O74 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 May 2013 10:03:33 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id EDAF47C068C
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 08:03:32 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	Thu, 30 May 2013 10:59:56 -0400
+Message-ID: <51A7696F.8090407@giantdisaster.de>
+Date: Thu, 30 May 2013 16:59:59 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>,
-        Josef Bacik <JBacik@fusionio.com>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <51A74C5E.4030201@giantdisaster.de>
-CC: Papp Tamas <tompos@martos.bme.hu>,
+To: Chris Mason <chris.mason@fusionio.com>
+CC: Josef Bacik <JBacik@fusionio.com>, Papp Tamas <tompos@martos.bme.hu>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <51A73532.6060900@martos.bme.hu>
- <20130530123235.GA9829@localhost.localdomain>
- <51A74C5E.4030201@giantdisaster.de>
-Message-ID: <20130530140329.23156.38088@localhost.localdomain>
 Subject: Re: oops at mount
-Date: Thu, 30 May 2013 10:03:29 -0400
+References: <51A73532.6060900@martos.bme.hu> <20130530123235.GA9829@localhost.localdomain> <51A74C5E.4030201@giantdisaster.de> <20130530140329.23156.38088@localhost.localdomain>
+In-Reply-To: <20130530140329.23156.38088@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Stefan Behrens (2013-05-30 08:55:58)
-> On Thu, 30 May 2013 08:32:35 -0400, Josef Bacik wrote:
-> > On Thu, May 30, 2013 at 05:17:06AM -0600, Papp Tamas wrote:
-> >> hi All,
-> >>
-> >> I'm new on the list.
-> >>
-> >> System:
-> >> Distributor ID:      Ubuntu
-> >> Description: Ubuntu 13.04
-> >> Release:     13.04
-> >> Codename:    raring
-> >>
-> >> Linux ctu 3.8.0-19-generic #30-Ubuntu SMP Wed May 1 16:35:23 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
-> >>
-> >> The symptom is the same with Saucy 3.9 kernel.
-> > 
-> > Can you try btrfs-next
-> > 
-> > git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-> > 
-> > if it's still not fixed please file a bug at bugzilla.kernel.org and make sure
-> > the component is set to btrfs.  Thanks,
+On Thu, 30 May 2013 10:03:29 -0400, Chris Mason wrote:
+> Quoting Stefan Behrens (2013-05-30 08:55:58)
+>> Papp is using an Intel X18-M/X25-M/X25-V G2 SSD. At least with an Intel
+>> X25 SSD that identifies itself with "INTEL SSDSA2M080" and on one with
+>> the ID "INTEL SSDSA2M040", I've tested whether they honor the flush
+>> request. And these two SSDs don't do so, they ignore it. If you cut the
+>> power after a flush request completes, the data that was written before
+>> the flush request is gone, the write cache was _not_ flushed.
+>>
+>> You can only disable the write cache during/after every boot "hdparm -W
+>> 0 /dev/sd..." (which reduces the SSDs write speed to about 4 MB/s), or
+>> avoid such SSDs, or prepare to restore from backup occasionally.
 > 
-> Papp is using an Intel X18-M/X25-M/X25-V G2 SSD. At least with an Intel
-> X25 SSD that identifies itself with "INTEL SSDSA2M080" and on one with
-> the ID "INTEL SSDSA2M040", I've tested whether they honor the flush
-> request. And these two SSDs don't do so, they ignore it. If you cut the
-> power after a flush request completes, the data that was written before
-> the flush request is gone, the write cache was _not_ flushed.
+> Hi Stefan,
 > 
-> You can only disable the write cache during/after every boot "hdparm -W
-> 0 /dev/sd..." (which reduces the SSDs write speed to about 4 MB/s), or
-> avoid such SSDs, or prepare to restore from backup occasionally.
+> How did you verify this?  I'm sure intel will want to hear about it if
+> we can reproduce on all filesystems.
+> 
+> -chris
+> 
 
-Hi Stefan,
+We have written a kernel module that (among others) is able to write 4KB
+block of random data at random locations on an SSD, and in a second step
+to read and verify that data.
 
-How did you verify this?  I'm sure intel will want to hear about it if
-we can reproduce on all filesystems.
+The test procedure to check SSDs is:
+1. Write 4KB blocks of random data to random locations on the disk. Send
+a submit_bio(REQ_FLUSH) after each 4KB block. Log the completion of the
+write request and of the flush request together with the result value.
+2. Somewhere in the middle of operation, switch off all power, drive
+presence and SAS data pins between the SSD and the SATA host controller.
+3. Wait some time, afterwards enable the connection between the SSD and
+the host controller again.
+4. Read back the 4KB blocks of random data at random locations using the
+same seed value that was used to generate the contents and location when
+the blocks were written. Verify the data, log whether the verification
+succeeded or failed.
+5. Compare the log of the write and flush request completion with the
+one of the read and verify process.
 
--chris
+SSDs that honor the flush request don't cause verify errors for blocks
+where the write bio and the flush bio completed successfully. Those two
+Intel SSDs that I mentioned failed this test. Other Intel SSD types
+succeeded the test.
+
+Maybe a firmware update would fix this issue, I suppose it will, I have
+never tried it. My intention was not to blame the SSD manufacturer, in
+fact, I like their SSDs very much and buy and use them frequently. I
+just wanted to prevent Josef from the headache to question the Btrfs
+implementation. The issue that Papp described looks just like a power
+failure in conjunction with a storage device that ignores flush requests.
 

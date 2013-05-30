@@ -1,167 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23646 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753734Ab3ENLu0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 May 2013 07:50:26 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r4EBoPrO004031
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2013 19:50:25 +0800
-Message-ID: <51922504.4020505@cn.fujitsu.com>
-Date: Tue, 14 May 2013 19:50:28 +0800
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix missing recow roots when making btrfs filesystem
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:29165 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754625Ab3E3DhI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 May 2013 23:37:08 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4U3b4Wg029292
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:05 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3b5vq008716
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:06 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3b5Xj007088
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:05 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/6 v2] btrfs-progs: a structure for the disks scan for btrfs
+Date: Thu, 30 May 2013 11:40:20 +0800
+Message-Id: <1369885226-3640-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
+References: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When making btrfs filesystem. we firstly write root leaf to
-specified filed, and then we recow the root. If we don't recow,
-some trees are not in the correct block group.
+The idea was to introduce /dev/mapper to find for btrfs disk, 
+However I found first we need to congregate the disk scan
+procedure at a function so it would help to consistently tune
+it across the btrfs-progs. As of now both fi show and
+dev scan use the disks scan they do it on their own.
 
-Steps to reproduce:
-	dd if=/dev/zero of=test.img bs=1M count=100
-	mkfs.btrfs -f test.img
-	btrfs-debug-tree test.img
+So here it would congregate btrfs-disk scans at the function
+scan_devs_for_btrfs, adds /dev/mapper to be used to scan
+for btrfs, and updates its calling functions and few bug fixes.
 
-extent tree key (EXTENT_TREE ROOT_ITEM 0) 
-leaf 4210688 items 10 free space 3349 generation 4 owner 2
-fs uuid 2e08fd93-f24d-4f44-a226-e2116fcd544f
-chunk uuid dc482988-6246-46ce-9329-68bcf6d3683c
-	item 0 key (0 BLOCK_GROUP_ITEM 4194304) itemoff 3971 itemsize 24
-		block group used 12288 chunk_objectid 256 flags 2
-	[..snip..]
-	item 3 key (1138688 EXTENT_ITEM 4096) itemoff 3827 itemsize 42
-		extent refs 1 gen 1 flags 2
-		tree block key (0 UNKNOWN.0 0) level 0
-	item 4 key (1138688 TREE_BLOCK_REF 7) itemoff 3827 itemsize 0
-		tree block backref
-	[..snip..]
+v1->v2:
+ Rebased on top of David' integration branch origin/integration-20130524
 
-checksum tree key (CSUM_TREE ROOT_ITEM 0) 
-leaf 1138688 items 0 free space 3995 generation 1 owner 7
-fs uuid 2e08fd93-f24d-4f44-a226-e2116fcd544f
-chunk uuid dc482988-6246-46ce-9329-68bcf6d3683c
+ patch 1 to 5 (below) are made independent of the idea to have the
+ /dev/mapper as one of the path to recognize the btrfs disks.
+ Which means they can be installed with out having anything
+ new. It just adds the framework/improves to integrated a
+ /dev/mapper path, which is only done in the patch 6.
+ So patch 1 to 5 are safe.
+ Also in v1 I suggested that we have -d option instead of
+ long option --all-devices which I have dropped that idea
+ here in v2.
 
-For the above example, csum root leaf comes into system block group which
-is wrong,csum root leaf should be in metadata block group.
+ Patch 6: adds a new option --mapper to the filesystem show
+ and device scan which inturn will use /dev/mapper to scan
+ for the btrfs.
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
- mkfs.c | 71 ++++++++++++++++++++++++++++++++++++++++++------------------------
- 1 file changed, 45 insertions(+), 26 deletions(-)
+ Example output of using the --mapper option is as below..
 
-diff --git a/mkfs.c b/mkfs.c
-index 7ff60e5..9cd93e4 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -151,37 +151,55 @@ static int recow_roots(struct btrfs_trans_handle *trans,
- 	int ret;
- 	struct extent_buffer *tmp;
- 	struct btrfs_fs_info *info = root->fs_info;
-+	u64 generation;
- 
--	ret = __btrfs_cow_block(trans, info->fs_root, info->fs_root->node,
--				NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
-+	generation = btrfs_root_generation(&info->fs_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->fs_root,
-+				info->fs_root->node, NULL, 0, &tmp, 0, 0);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
--	ret = __btrfs_cow_block(trans, info->tree_root, info->tree_root->node,
--				NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
-+	generation = btrfs_root_generation(&info->tree_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->tree_root,
-+				info->tree_root->node, NULL, 0, &tmp, 0, 0);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
--	ret = __btrfs_cow_block(trans, info->extent_root,
-+	generation = btrfs_root_generation(&info->extent_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->extent_root,
- 				info->extent_root->node, NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
--
--	ret = __btrfs_cow_block(trans, info->chunk_root, info->chunk_root->node,
--				NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
-+	generation = btrfs_root_generation(&info->chunk_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->chunk_root,
-+				info->chunk_root->node, NULL, 0, &tmp, 0, 0);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
--	ret = __btrfs_cow_block(trans, info->dev_root, info->dev_root->node,
--				NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
-+	generation = btrfs_root_generation(&info->dev_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->dev_root,
-+				info->dev_root->node, NULL, 0, &tmp, 0, 0);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
--	ret = __btrfs_cow_block(trans, info->csum_root, info->csum_root->node,
--				NULL, 0, &tmp, 0, 0);
--	BUG_ON(ret);
--	free_extent_buffer(tmp);
-+	generation = btrfs_root_generation(&info->csum_root->root_item);
-+	if (generation != trans->transid) {
-+		ret = __btrfs_cow_block(trans, info->csum_root,
-+				info->csum_root->node, NULL, 0, &tmp, 0, 0);
-+		BUG_ON(ret);
-+		free_extent_buffer(tmp);
-+	}
- 
- 	return 0;
- }
-@@ -281,8 +299,6 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
- 					    (allowed & metadata_profile));
- 		BUG_ON(ret);
- 
--		ret = recow_roots(trans, root);
--		BUG_ON(ret);
- 	}
- 	if (!mixed && num_devices > 1 && (allowed & data_profile)) {
- 		ret = create_one_raid_group(trans, root,
-@@ -290,6 +306,9 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
- 					    (allowed & data_profile));
- 		BUG_ON(ret);
- 	}
-+	ret = recow_roots(trans, root);
-+	BUG_ON(ret);
-+
- 	return 0;
- }
- 
+btrfs filesystem show --mapper
+Label: none  uuid: 0a621111-ad84-4d80-842a-dd9c1c60bf51
+	Total devices 2 FS bytes used 1.17MB
+	devid    1 size 44.99GB used 2.04GB path /dev/mapper/mpathe
+	devid    2 size 48.23GB used 2.03GB path /dev/mapper/mpathd
+
+Label: none  uuid: bad9105f-bdc6-4626-9ba7-80bd97aebe19
+	Total devices 1 FS bytes used 28.00KB
+	devid    1 size 15.00GB used 2.04GB path /dev/mapper/mpathbp1
+
+Btrfs v0.20-rc1-350-g7731651
+
+btrfs device scan --mapper
+-----
+[1118885.473298] device fsid bad9105f-bdc6-4626-9ba7-80bd97aebe19 devid 1 transid 4 /dev/mapper/mpathbp1
+[1118885.474077] device fsid 0a621111-ad84-4d80-842a-dd9c1c60bf51 devid 2 transid 103 /dev/mapper/mpathd
+[1118885.474133] device fsid 0a621111-ad84-4d80-842a-dd9c1c60bf51 devid 1 transid 103 /dev/mapper/mpathe
+-----
+
+Anand Jain (6):
+  btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
+  btrfs-progs: label option in btrfs filesystem show is not coded
+  btrfs-progs: update device scan usage
+  btrfs-progs: congregate dev scan
+  btrfs-progs: btrfs_scan_one_dir not to skip links when /dev/mapper is
+    provided
+  btrfs-progs: scan /dev/mapper in filesystem show and device scan
+
+ btrfs-find-root.c |  2 +-
+ cmds-device.c     | 19 ++++++++++---------
+ cmds-filesystem.c | 16 ++++++++--------
+ disk-io.c         |  2 +-
+ man/btrfs.8.in    | 16 +++++++++-------
+ utils.c           | 34 +++++++++++++++++++++++++++++-----
+ utils.h           |  9 ++++++---
+ 7 files changed, 64 insertions(+), 34 deletions(-)
+
 -- 
-1.7.11.7
-
-
-
-
-
-
+1.8.1.227.g44fe835
 

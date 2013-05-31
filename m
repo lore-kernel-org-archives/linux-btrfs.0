@@ -1,53 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gitanes.rtfm.co.hu ([80.249.171.82]:40849 "EHLO
-	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754917Ab3EaOzt (ORCPT
+Received: from mail-vb0-f45.google.com ([209.85.212.45]:45795 "EHLO
+	mail-vb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755609Ab3EaUno (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 May 2013 10:55:49 -0400
-Message-ID: <51A8B9EF.2070302@martos.bme.hu>
-Date: Fri, 31 May 2013 16:55:43 +0200
-From: Papp Tamas <tompos@martos.bme.hu>
+	Fri, 31 May 2013 16:43:44 -0400
+Received: by mail-vb0-f45.google.com with SMTP id 12so1373878vbf.18
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 May 2013 13:43:43 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: oops at mount
-References: <51A73532.6060900@martos.bme.hu> <20130530123235.GA9829@localhost.localdomain>
-In-Reply-To: <20130530123235.GA9829@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CAFvQSYTDjRmU5gJGyD=Wp6JhOqaT64ytJZNujCTGX9RheGcHjQ@mail.gmail.com>
+References: <CAFvQSYShdQL_pZB12=Xt7dg+yLt0NNCW+WTyOXgic3SbFDy69w@mail.gmail.com>
+	<CAFvQSYS1odBm3+ttcuQCZuxmWuVfUkCatQw1bAG_B_uTJVmCmw@mail.gmail.com>
+	<20130530185539.GD9829@localhost.localdomain>
+	<CAFvQSYTDjRmU5gJGyD=Wp6JhOqaT64ytJZNujCTGX9RheGcHjQ@mail.gmail.com>
+Date: Fri, 31 May 2013 22:43:43 +0200
+Message-ID: <CAFvQSYSWgPwBDXS_H6w9fUxZ1Bzz4t3u=ynY=oCtgOBGb3zyoA@mail.gmail.com>
+Subject: Re: Btrfsck errors (fs tree 565 refs 125 not found) - how serious
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/30/2013 02:32 PM, Josef Bacik wrote:
+Hi,
+
+>> You are running on an unmounted fs right?  Also please make sure you are running
+>> the git version
 >
-> On Thu, May 30, 2013 at 05:17:06AM -0600, Papp Tamas wrote:
->> hi All,
->>
->> I'm new on the list.
->>
->> System:
->> Distributor ID:	Ubuntu
->> Description:	Ubuntu 13.04
->> Release:	13.04
->> Codename:	raring
->>
->> Linux ctu 3.8.0-19-generic #30-Ubuntu SMP Wed May 1 16:35:23 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
->>
->> The symptom is the same with Saucy 3.9 kernel.
+> Yes, the fs was properly unmounted.
 >
-> Can you try btrfs-next
+>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 >
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
->
-> if it's still not fixed please file a bug at bugzilla.kernel.org and make sure
-> the component is set to btrfs.  Thanks,
+> I still get those errors, I'll try to file a bug-report with the
+> tools/data required to reproduce this issue...
 
-I did:
+Filed at: https://bugzilla.kernel.org/show_bug.cgi?id=59051
 
-https://bugzilla.kernel.org/show_bug.cgi?id=59141
-
-I'm doubt, it will be helpful, as unfortunately I'm not familiar with bug reports regarding to the 
-kernel.
-
-
-Thank you,
-tamas
+Regards

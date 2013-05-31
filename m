@@ -1,28 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29192 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S967452Ab3E3DhM (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:34927 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751207Ab3EaIO3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 May 2013 23:37:12 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4U3b9NM029352
+	Fri, 31 May 2013 04:14:29 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r4V8ERsJ012807
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:10 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3bB2l021573
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 May 2013 08:14:28 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4V8ERpo028400
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:11 GMT
-Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4U3bA9W006784
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2013 03:37:10 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 May 2013 08:14:27 GMT
+Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r4V8ERnl028395
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 May 2013 08:14:27 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/6 v2] btrfs-progs: congregate dev scan
-Date: Thu, 30 May 2013 11:40:24 +0800
-Message-Id: <1369885226-3640-5-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1369885226-3640-1-git-send-email-anand.jain@oracle.com>
-References: <1368788082-12090-1-git-send-email-anand.jain@oracle.com>
- <1369885226-3640-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 4/6 v3] btrfs-progs: congregate dev scan
+Date: Fri, 31 May 2013 16:17:44 +0800
+Message-Id: <1369988264-21609-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1369885226-3640-5-git-send-email-anand.jain@oracle.com>
+References: <1369885226-3640-5-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -36,15 +35,18 @@ we can play tweaking it.
 the patch which recommends to use /dev/mapper
 will also need it
 
+v3:
+bring in btrfs_scan_for_fsid to use scan_for_btrfs
+
 thanks
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
  cmds-device.c     | 11 +++--------
  cmds-filesystem.c |  9 +++------
- utils.c           | 18 ++++++++++++++++++
+ utils.c           | 22 ++++++++++++++++++++--
  utils.h           |  5 ++++-
- 4 files changed, 28 insertions(+), 15 deletions(-)
+ 4 files changed, 30 insertions(+), 17 deletions(-)
 
 diff --git a/cmds-device.c b/cmds-device.c
 index d25159b..b6ecb3b 100644
@@ -110,9 +112,21 @@ index c6a7100..0d76d58 100644
  	if (ret){
  		fprintf(stderr, "ERROR: error %d while scanning\n", ret);
 diff --git a/utils.c b/utils.c
-index 25f3cb4..f15136b 100644
+index 25f3cb4..6b2344d 100644
 --- a/utils.c
 +++ b/utils.c
+@@ -1114,9 +1114,9 @@ int btrfs_scan_for_fsid(int run_ioctls)
+ {
+ 	int ret;
+ 
+-	ret = btrfs_scan_block_devices(run_ioctls);
++	ret = scan_for_btrfs(BTRFS_SCAN_PROC, run_ioctls);
+ 	if (ret)
+-		ret = btrfs_scan_one_dir("/dev", run_ioctls);
++		ret = scan_for_btrfs(BTRFS_SCAN_DEV, run_ioctls);
+ 	return ret;
+ }
+ 
 @@ -1806,3 +1806,21 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
  	close(fd);
  	return 0;

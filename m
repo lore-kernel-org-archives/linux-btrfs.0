@@ -1,37 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www17.your-server.de ([213.133.104.17]:59468 "EHLO
-	www17.your-server.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932178Ab3FAJqJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Jun 2013 05:46:09 -0400
-Message-ID: <1370079470.29224.3.camel@localhost.localdomain>
-Subject: [PATCH] Btrfs: Cocci spatch "memdup.spatch"
-From: Thomas Meyer <thomas@m3y3r.de>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Date: Sat, 01 Jun 2013 11:37:50 +0200
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:44284 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752099Ab3FAVHz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Jun 2013 17:07:55 -0400
+Received: by mail-wi0-f173.google.com with SMTP id hi5so1628093wib.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Jun 2013 14:07:54 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sat, 1 Jun 2013 14:07:53 -0700
+Message-ID: <CAN05THTWG_jYHti7aUcz_WH97OvoVfCoz7Wuc8Hh2katqm2JmQ@mail.gmail.com>
+Subject: RADI6 questions
+From: ronnie sahlberg <ronniesahlberg@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi List,
 
-Signed-off-by: Thomas Meyer <thomas@m3y3r.de>
----
+I have a filesystem that is spanning about 10 devices.
+It is currently using RAID1 for both data and metadata.
 
-diff -u -p a/fs/btrfs/send.c b/fs/btrfs/send.c
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3429,10 +3429,9 @@ static int __find_xattr(int num, struct
- 	    strncmp(name, ctx->name, name_len) == 0) {
- 		ctx->found_idx = num;
- 		ctx->found_data_len = data_len;
--		ctx->found_data = kmalloc(data_len, GFP_NOFS);
-+		ctx->found_data = kmemdup(data, data_len, GFP_NOFS);
- 		if (!ctx->found_data)
- 			return -ENOMEM;
--		memcpy(ctx->found_data, data, data_len);
- 		return 1;
- 	}
- 	return 0;
+In order to get higher availability and be able to handle multi device failures
+I would like to change from RAID1 to RAID6.
 
 
+Is it possible/stable/supported/recommended to change data from RAID1 to RAID6 ?
+(I assume "btrfs fi balance ..."  is used for this?)
+
+Metadata is currently RAID1, is it supported to put metadata as RAID6 too?
+It would be "odd" to have lesser protection for metadata than data.
+Optimally I would like a mode where metadata is mirrored onto all the
+spindles in the filesystem, not just 2 in RAID1 or n in RAID6.
+
+
+Im running a 3.8.0 kernel.
+
+
+regards
+ronnie sahlberg

@@ -1,105 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ae1-f3.auone-net.jp ([106.187.231.3]:38970 "EHLO
-	dmta02.auone-net.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750767Ab3FVGBq (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:34816 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755099Ab3FABBH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Jun 2013 02:01:46 -0400
-Received: from amlmta037.auone-net.jp (amlmta037-MM [10.188.22.95])
-	by dmta02.auone-net.jp (au one net mail) with ESMTP id 2C9E840006C
-	for <linux-btrfs@vger.kernel.org>; Sat, 22 Jun 2013 14:39:22 +0900 (JST)
-Date: Sat, 22 Jun 2013 14:39:21 +0900
-From: Kusanagi Kouichi <slash@ac.auone-net.jp>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Fix segmentation fault
+	Fri, 31 May 2013 21:01:07 -0400
+Date: Sat, 1 Jun 2013 09:59:33 +0900
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: init relocate extent_io_tree with a mapping
+Message-ID: <20130601005932.GB20727@liubo.sigma3.com.sg>
+Reply-To: bo.li.liu@oracle.com
+References: <1370020005-3157-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-Id: <51c53889000d9fe000004a0d00004a0ea000000e0f48@amlmta037.auone-net.jp>
+In-Reply-To: <1370020005-3157-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'btrfs subvolume delete' crashes with segv if it runs in a detached mount.
+On Fri, May 31, 2013 at 01:06:45PM -0400, Josef Bacik wrote:
+> Dave reported a NULL pointer deref.  This is caused because he thought he'd be
+> smart and add sanity checks to the extent_io bit operations, but he didn't
+> expect a tree to have a NULL mapping.  To fix this we just need to init the
+> relocation's processed_blocks with the btree_inode->i_mapping.  Thanks,
 
-Steps to reprduce:
-# mkfs.btrfs /dev/vdb
+That fits my suspection, hhh.
 
-WARNING! - Btrfs v0.20-rc1 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-fs created label (null) on /dev/vdb
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
-Btrfs v0.20-rc1
-# mount -t btrfs /dev/vdb /mnt
-[  333.689984] device fsid b242775b-5e34-4e8b-8f7f-7db585ba1392 devid 1 transid 4 /dev/vdb
-[  333.691756] btrfs: disk space caching is enabled
-# cd /mnt
-# btrfs subvolume create vol
-Create subvolume './vol'
-# btrfs subvolume snapshot vol snap
-Create a snapshot of 'vol' in './snap'
-# umount -l .
-# btrfs subvolume delete snap
-[  377.897175] btrfs[1875]: segfault at 0 ip 00007f6f86100131 sp 00007fff17917318 error 4 in libc-2.17.so[7f6f8607c000+1a4000]
-Segmentation fault (core dumped)
-
-
-Backtrace:
-#0  __strlen_sse2 () at ../sysdeps/x86_64/multiarch/../strlen.S:31
-No locals.
-#1  0x00007f6f860ffda6 in __GI___strdup (s=0x0) at strdup.c:41
-        len = <optimized out>
-        new = <optimized out>
-#2  0x0000000000405a3d in cmd_subvol_delete (argc=2, argv=<optimized out>) at cmds-subvolume.c:228
-        res = <optimized out>
-        fd = <optimized out>
-        len = <optimized out>
-        e = <optimized out>
-        cnt = 1
-        ret = 0
-        args = {fd = 0, name = '\000' <repeats 976 times>...}
-        dname = <optimized out>
-        vname = <optimized out>
-        path = <optimized out>
-#3  0x0000000000403b1a in handle_command_group (grp=grp@entry=0x6500c0 <subvolume_cmd_group>, argc=2, argv=0x7fff179184e8) at btrfs.c:154
-        cmd = 0x6500f8
-#4  0x0000000000405c26 in cmd_subvolume (argc=<optimized out>, argv=<optimized out>) at cmds-subvolume.c:969
-No locals.
-#5  0x0000000000403d69 in main (argc=3, argv=0x7fff179184e0) at btrfs.c:295
-        cmd = 0x6515d0
-        bname = <optimized out>
-
-Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
----
- cmds-subvolume.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
-
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ccb4762..f005ba8 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -203,7 +203,7 @@ static int cmd_subvol_delete(int argc, char **argv)
- {
- 	int	res, fd, len, e, cnt = 1, ret = 0;
- 	struct btrfs_ioctl_vol_args	args;
--	char	*dname, *vname, *cpath;
-+	char	*dname, *vname;
- 	char	*path;
- 
- 	if (argc < 2)
-@@ -224,12 +224,10 @@ again:
- 		goto out;
- 	}
- 
--	cpath = realpath(path, 0);
--	dname = strdup(cpath);
-+	dname = strdup(path);
- 	dname = dirname(dname);
--	vname = strdup(cpath);
-+	vname = strdup(path);
- 	vname = basename(vname);
--	free(cpath);
- 
- 	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
- 	     strchr(vname, '/') ){
--- 
-1.8.3.1
-
+> 
+> Reported-by: David Sterba <dsterba@suse.cz>
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/relocation.c |    9 +++++----
+>  1 files changed, 5 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 6dbee86..1b50c41 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -4081,7 +4081,7 @@ out:
+>  	return inode;
+>  }
+>  
+> -static struct reloc_control *alloc_reloc_control(void)
+> +static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
+>  {
+>  	struct reloc_control *rc;
+>  
+> @@ -4092,7 +4092,8 @@ static struct reloc_control *alloc_reloc_control(void)
+>  	INIT_LIST_HEAD(&rc->reloc_roots);
+>  	backref_cache_init(&rc->backref_cache);
+>  	mapping_tree_init(&rc->reloc_root_tree);
+> -	extent_io_tree_init(&rc->processed_blocks, NULL);
+> +	extent_io_tree_init(&rc->processed_blocks,
+> +			    fs_info->btree_inode->i_mapping);
+>  	return rc;
+>  }
+>  
+> @@ -4109,7 +4110,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+>  	int rw = 0;
+>  	int err = 0;
+>  
+> -	rc = alloc_reloc_control();
+> +	rc = alloc_reloc_control(fs_info);
+>  	if (!rc)
+>  		return -ENOMEM;
+>  
+> @@ -4310,7 +4311,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+>  	if (list_empty(&reloc_roots))
+>  		goto out;
+>  
+> -	rc = alloc_reloc_control();
+> +	rc = alloc_reloc_control(root->fs_info);
+>  	if (!rc) {
+>  		err = -ENOMEM;
+>  		goto out;
+> -- 
+> 1.7.7.6
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

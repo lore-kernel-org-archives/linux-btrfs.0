@@ -1,95 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from longford.logfs.org ([213.229.74.203]:59363 "EHLO
-	longford.logfs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754816Ab3FCTgG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 15:36:06 -0400
-Date: Mon, 3 Jun 2013 14:07:05 -0400
-From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
-To: linux-kernel@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
-Message-ID: <20130603180705.GA10200@logfs.org>
-References: <1370280485-10047-1-git-send-email-joern@logfs.org>
+Received: from dkim1.fusionio.com ([66.114.96.53]:54331 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754544Ab3FCUoU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 16:44:20 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id DBCF67C0434
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2013 14:44:19 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id eNFPXIPAUfBghWFI (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 03 Jun 2013 14:44:19 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not pin while under spin lock
+Date: Mon, 3 Jun 2013 16:44:17 -0400
+Message-ID: <1370292257-1591-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1370280485-10047-1-git-send-email-joern@logfs.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 3 June 2013 13:28:03 -0400, Joern Engel wrote:
-> 
-> Drawback is that object size is growing.  I think an ideal compiler
-> should be able to optimize all the overhead away, but 4.7 just isn't
-> there yet.  Or maybe I just messed up - patches are only
-> compile-tested after all.  Comments/ideas are welcome.
+When testing a corrupted fs I noticed I was getting sleep while atomic errors
+when the transaction aborted.  This is because btrfs_pin_extent may need to
+allocate memory and we are calling this under the spin lock.  Fix this by moving
+it out and doing the pin after dropping the spin lock but before dropping the
+mutex, the same way it works when delayed refs run normally.  Thanks,
 
-Actually, replacing the inline function with a bit of macro hell seems
-to yield identical object size again.  And in the case of
-compression.o, it even removes 528 bytes or so of object code.
-
-New 1/2 below.
-
-Jörn
-
---
-A defeated army first battles and then seeks victory.
--- Sun Tzu
-
-[PATCH 1/2] list: add list_for_each_entry_del
-
-I have seen a lot of boilerplate code that either follows the pattern of
-	while (!list_empty(head)) {
-		pos = list_entry(head->next, struct foo, list);
-		list_del(pos->list);
-		...
-	}
-or some variant thereof.
-
-With this patch in, people can use
-	list_for_each_entry_del(pos, head, list) {
-		...
-	}
-
-The patch also adds a list_for_each_del variant, even though I have
-only found a single user for that one so far.
-
-Signed-off-by: Joern Engel <joern@logfs.org>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- include/linux/list.h |   21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ fs/btrfs/disk-io.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/include/linux/list.h b/include/linux/list.h
-index 6a1f8df..49325ca 100644
---- a/include/linux/list.h
-+++ b/include/linux/list.h
-@@ -483,6 +483,27 @@ static inline void list_splice_tail_init(struct list_head *list,
- 	     pos = list_entry(pos->member.next, typeof(*pos), member))
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5d18997..15f31c7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3762,6 +3762,7 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
  
- /**
-+ * list_for_each_remove - iterate over a list, deleting each entry
-+ * @pos:	the &struct list_head to use as a loop cursor.
-+ * @head:	the head of your list.
-+ *
-+ * Calls list_del() on pos on each iteration
-+ */
-+#define list_for_each_del(pos, head) \
-+	while (list_empty(head) ? 0 : (pos = (head)->next, list_del(pos), 1))
-+
-+/**
-+ * list_for_each_entry_remove - iterate over a list of given type, deleting each entry
-+ * @pos:	the type * to use as loop cursor.
-+ * @head:	the head of your list.
-+ * @member:	the name of the list_struct within the struct
-+ *
-+ * Calls list_del() on pos on each iteration
-+ */
-+#define list_for_each_entry_del(pos, head, member) \
-+	while (list_empty(head) ? 0 : (pos = list_first_entry((head), typeof(*pos), member), list_del(&pos->member), 1))
-+
-+/**
-  * list_for_each_entry_safe - iterate over list of given type safe against removal of list entry
-  * @pos:	the type * to use as a loop cursor.
-  * @n:		another type * to use as temporary storage
+ 	while ((node = rb_first(&delayed_refs->root)) != NULL) {
+ 		struct btrfs_delayed_ref_head *head = NULL;
++		bool pin_bytes = false;
+ 
+ 		ref = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
+ 		atomic_set(&ref->refs, 1);
+@@ -3782,8 +3783,7 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 			}
+ 
+ 			if (head->must_insert_reserved)
+-				btrfs_pin_extent(root, ref->bytenr,
+-						 ref->num_bytes, 1);
++				pin_bytes = true;
+ 			btrfs_free_delayed_extent_op(head->extent_op);
+ 			delayed_refs->num_heads--;
+ 			if (list_empty(&head->cluster))
+@@ -3794,9 +3794,13 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 		ref->in_tree = 0;
+ 		rb_erase(&ref->rb_node, &delayed_refs->root);
+ 		delayed_refs->num_entries--;
+-		if (head)
+-			mutex_unlock(&head->mutex);
+ 		spin_unlock(&delayed_refs->lock);
++		if (head) {
++			if (pin_bytes)
++				btrfs_pin_extent(root, ref->bytenr,
++						 ref->num_bytes, 1);
++			mutex_unlock(&head->mutex);
++		}
+ 		btrfs_put_delayed_ref(ref);
+ 
+ 		cond_resched();
 -- 
-1.7.10.4
+1.7.7.6
 

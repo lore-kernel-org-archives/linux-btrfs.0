@@ -1,44 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50261 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755323Ab3FCB2h (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jun 2013 21:28:37 -0400
-Date: Mon, 3 Jun 2013 09:28:49 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: George Mitchell <george@chinilu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Is there a way to flag specific directories "nodatacow"?
-Message-ID: <20130603012848.GA26016@liubo.jp.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <51AB5974.3080803@chinilu.com>
+Received: from mail-pb0-f53.google.com ([209.85.160.53]:63813 "EHLO
+	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755323Ab3FCCFF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jun 2013 22:05:05 -0400
+Received: by mail-pb0-f53.google.com with SMTP id un4so4912015pbc.26
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Jun 2013 19:05:04 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51AB5974.3080803@chinilu.com>
+Date: Sun, 2 Jun 2013 21:05:03 -0500
+Message-ID: <CAOMROUjkcZGC-OwkPdJvyx6KknpAeEA0jp3bkh=GF8zpS2mb9g@mail.gmail.com>
+Subject: csum failed during rebalance
+From: John Haller <john.h.haller@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 02, 2013 at 07:40:52AM -0700, George Mitchell wrote:
-> I am seeing massive journal corruptions that seem to be unique to
-> btrfs and I am suspecting that cow might be causing them.  My
-> bandaid fix for this will be to mark the /var filesystem "nodatacow"
-> at boot.  But I am wondering if their is any way to flag a
-> particular directory as "nodatacow" outside of the mount process.  I
-> would like to be able to mark /var/log/journal as "nodatacow" for
-> example, without having to declare it a subvolume and mount it
-> separately.
+Hi,
 
-Hi George,
+I added a new drive to an existing RAID 0 array. Every
+attempt to rebalance the array fails:
+# btrfs filesystem balance /share/bd8
+ERROR: error during balancing '/share/bd8' - Input/output error
+# dmesg | tail
+btrfs: found 1 extents
+btrfs: relocating block group 10752513540096 flags 1
+btrfs: found 5 extents
+btrfs: found 5 extents
+btrfs: relocating block group 10751439798272 flags 1
+btrfs: found 1 extents
+btrfs: found 1 extents
+btrfs: relocating block group 10048138903552 flags 1
+btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
+btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
 
-We actually have per-file/directory nodatacow :)
+An earlier rebalance attempt had the same csum error on a different inode:
+btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
+btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
 
-But please note if you set nodatacow on the particular directory, only
-new-created or zero-size files in the directory can follow the nocow rule.
+Every rebalance attempt fails the same way, but with a different inum.
 
-'chattr' in the latest e2fsprogs can fit your requirements,
-# chattr +C /var/log/journal
+Here is the array:
+# btrfs filesystem show
+Label: 'bd8'  uuid: b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+        Total devices 4 FS bytes used 7.37TB
+        devid    4 size 3.64TB used 52.00GB path /dev/sde
+        devid    1 size 3.64TB used 3.32TB path /dev/sdf1
+        devid    3 size 3.64TB used 2.92TB path /dev/sdc
+        devid    2 size 3.64TB used 2.97TB path /dev/sdb
 
-Also, what kind of massive journal corruptions?  Does it look like a
-btrfs specific bug?
+While I didn't finish the scrub, no errors were found:
+# btrfs scrub status -d /share/bd8
+scrub status for b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+scrub device /dev/sdf1 (id 1) status
+        scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+        total bytes scrubbed: 845.53GB with 0 errors
+scrub device /dev/sdb (id 2) status
+        scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+        total bytes scrubbed: 869.38GB with 0 errors
+scrub device /dev/sdc (id 3) status
+        scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+        total bytes scrubbed: 706.04GB with 0 errors
+scrub device /dev/sde (id 4) history
+        scrub started at Sun Jun  2 12:48:36 2013 and finished after 0 seconds
+        total bytes scrubbed: 0.00 with 0 errors
 
-thanks,
-liubo
+Mount options:
+/dev/sdf1 on /share/bd8 type btrfs (rw,flushoncommit)
+
+Kernel 3.9.4
+
+John

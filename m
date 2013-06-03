@@ -1,59 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [212.13.216.74] ([212.13.216.74]:46313 "EHLO mail.39.gs"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753479Ab3FCIJy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Jun 2013 04:09:54 -0400
-Received: from mail.39.gs (localhost [127.0.0.1])
-	by mail.39.gs (Postfix) with ESMTPA id 21CE188989
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2013 09:02:26 +0100 (BST)
+Received: from gitanes.rtfm.co.hu ([80.249.171.82]:59641 "EHLO
+	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755764Ab3FCL4O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 07:56:14 -0400
+Message-ID: <51AC845A.6000600@martos.bme.hu>
+Date: Mon, 03 Jun 2013 13:56:10 +0200
+From: Papp Tamas <tompos@martos.bme.hu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Mon, 03 Jun 2013 09:02:26 +0100
-From: Tim Eggleston <tim@timeggleston.co.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: RAID10 total capacity incorrect
-In-Reply-To: <pan$ac513$8629998c$786e3c74$d6f66ecd@cox.net>
-References: <7b97469e82e675814317efef48cc3d71@mail.39.gs>
- <099CD4A1-A70D-4446-8C55-843D21BE4E7F@colorremedies.com>
- <20130602174359.GI20133@carfax.org.uk>
- <pan$ac513$8629998c$786e3c74$d6f66ecd@cox.net>
-Message-ID: <3a75ea505eaf023bce3e115533c7f314@mail.39.gs>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: oops at mount
+References: <51A73532.6060900@martos.bme.hu> <20130530123235.GA9829@localhost.localdomain> <51A74C5E.4030201@giantdisaster.de>
+In-Reply-To: <51A74C5E.4030201@giantdisaster.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I'd guess normal df (not btrfs filesystem df) and doing the math in his
-> head will be the simplest for him, as it is for me.
+On 05/30/2013 02:55 PM, Stefan Behrens wrote:
+>
+> On Thu, 30 May 2013 08:32:35 -0400, Josef Bacik wrote:
+>> On Thu, May 30, 2013 at 05:17:06AM -0600, Papp Tamas wrote:
+>>> hi All,
+>>>
+>>> I'm new on the list.
+>>>
+>>> System:
+>>> Distributor ID:	Ubuntu
+>>> Description:	Ubuntu 13.04
+>>> Release:	13.04
+>>> Codename:	raring
+>>>
+>>> Linux ctu 3.8.0-19-generic #30-Ubuntu SMP Wed May 1 16:35:23 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+>>>
+>>> The symptom is the same with Saucy 3.9 kernel.
+>>
+>> Can you try btrfs-next
+>>
+>> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+>>
+>> if it's still not fixed please file a bug at bugzilla.kernel.org and make sure
+>> the component is set to btrfs.  Thanks,
+>
+> Papp is using an Intel X18-M/X25-M/X25-V G2 SSD. At least with an Intel
+> X25 SSD that identifies itself with "INTEL SSDSA2M080" and on one with
+> the ID "INTEL SSDSA2M040", I've tested whether they honor the flush
+> request. And these two SSDs don't do so, they ignore it. If you cut the
+> power after a flush request completes, the data that was written before
+> the flush request is gone, the write cache was _not_ flushed.
+>
+> You can only disable the write cache during/after every boot "hdparm -W
+> 0 /dev/sd..." (which reduces the SSDs write speed to about 4 MB/s), or
+> avoid such SSDs, or prepare to restore from backup occasionally.
 
-> But it's worth noting that normal df with math in your head isn't
-> /always/ going to be the answer, as things start getting rather more
-> complex as soon as different sized devices get thrown into the mix, or
-> raid1/10 on an /odd/ number of devices (tho there the math simply gets 
-> a
-> bit more complex since it's no longer integers), let alone the case of
-> differing data/metadata allocation mode, without even considering the
-> case of subvolumes having different modes, since I don't think that's
-> implemented yet.
+Basically it means it's not safe to use this SSD?
+I used it for 2 years with ext4 without any issue, before I switched to btrfs (on the root 
+partition). In the meantime btrfs also was quite stable on my /data partition.
 
-I think you've hit the nail on the head here Duncan. You're absolutely 
-right that given my simple setup (even number of devices, all the same 
-size, on raid10) it's trivial to do the math in my head. However I don't 
-think this approach really scales as well as btrfs is intended to scale 
-(up to big numbers, mixed device sizes, mixed raid levels etc etc).
+After I reinstalled thr system with btrfs, this issue happened two times.
+But anyway, I thought cow should be able to handle these kind of issues by design. Am I wrong?
 
-Obviously the implementation of a sane df output for all this stuff is 
-non-trivial, but in the long run I don't think expecting the user to 
-figure it out is the best approach. I speak here as an interested 
-sysadmin who quite enjoys rough edges... but for a lot of users the 
-primary thing they want to know about their storage is "how much space 
-do I have left".
 
-The documentation does do a good job of pointing out the problems and 
-explaining why free space is a tricky concept. But does "tricky" 
-/really/ mean "impossible", or is it just "this is a nice to have thing 
-that we'll figure out once the core filesystem functions are stable"?
-
-Cheers,
-
-  ---tim
+Thanks,
+tamas
 

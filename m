@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:54412 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756915Ab3FCUwI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 16:52:08 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id BC1487C0434
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2013 14:52:07 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id O9idNVmBtnPwCLtG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 03 Jun 2013 14:52:07 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: add some missing iput()'s in btrfs_orphan_cleanup
-Date: Mon, 3 Jun 2013 16:52:05 -0400
-Message-ID: <1370292725-1568-1-git-send-email-jbacik@fusionio.com>
+Received: from longford.logfs.org ([213.229.74.203]:59367 "EHLO
+	longford.logfs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757067Ab3FCVFu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 17:05:50 -0400
+Date: Mon, 3 Jun 2013 15:36:47 -0400
+From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
+Message-ID: <20130603193647.GB10200@logfs.org>
+References: <1370280485-10047-1-git-send-email-joern@logfs.org>
+ <20130603204930.GA28299@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20130603204930.GA28299@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are some error cases that we don't do an iput() on our inode, fix this.
-Thanks,
+On Mon, 3 June 2013 13:49:30 -0700, Christoph Hellwig wrote:
+> 
+> I can't say I like the structure.
+> 
+> A list_pop that removes and entry from the head or returns NULL if the
+> list is empty would lead to nice while loops that are obviously
+> readable instead.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+Something like this?
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b11a95e..d37bccf 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3234,13 +3234,16 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 			/* 1 for the orphan item deletion. */
- 			trans = btrfs_start_transaction(root, 1);
- 			if (IS_ERR(trans)) {
-+				iput(inode);
- 				ret = PTR_ERR(trans);
- 				goto out;
- 			}
- 			ret = btrfs_orphan_add(trans, inode);
- 			btrfs_end_transaction(trans, root);
--			if (ret)
-+			if (ret) {
-+				iput(inode);
- 				goto out;
-+			}
- 
- 			ret = btrfs_truncate(inode);
- 			if (ret)
--- 
-1.7.7.6
+#define list_pop(head) \
+        ({ struct list_head *____pos; \
+           list_empty(head) ? NULL : (____pos = (head)->next, \
+                   list_del(____pos), ____pos) \
+        })
 
+#define list_pop_entry(head, type, member) \
+        ({ struct list_head *____pos; \
+           list_empty(head) ? NULL : (____pos = (head)->next, \
+                   list_del(____pos), list_entry(____pos, type, member) \
+        })
+
+Would be fine with me as well.
+
+Jörn
+
+--
+Beware of bugs in the above code; I have only proved it correct, but
+not tried it.
+-- Donald Knuth

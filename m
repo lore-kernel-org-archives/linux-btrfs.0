@@ -1,48 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37968 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756754Ab3FDBlJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 21:41:09 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 126D89A0365
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2013 19:41:08 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id NmbOMBzZQqFYAznF (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 03 Jun 2013 19:41:07 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: put our inode if orphan cleanup fails
-Date: Mon, 3 Jun 2013 21:41:05 -0400
-Message-ID: <1370310065-1823-1-git-send-email-jbacik@fusionio.com>
+Received: from mail-pd0-f171.google.com ([209.85.192.171]:53949 "EHLO
+	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754544Ab3FDCpv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jun 2013 22:45:51 -0400
+Received: by mail-pd0-f171.google.com with SMTP id z11so6548422pdj.30
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jun 2013 19:45:50 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <CAOMROUjkcZGC-OwkPdJvyx6KknpAeEA0jp3bkh=GF8zpS2mb9g@mail.gmail.com>
+References: <CAOMROUjkcZGC-OwkPdJvyx6KknpAeEA0jp3bkh=GF8zpS2mb9g@mail.gmail.com>
+Date: Mon, 3 Jun 2013 21:45:50 -0500
+Message-ID: <CAOMROUhn0-B2nH-4TvqLiLE7vV4fzJFz3UV2VbHbfo+fHsQMaQ@mail.gmail.com>
+Subject: Re: csum failed during rebalance
+From: John Haller <john.h.haller@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we cross into a different subvol when doing a lookup we will run the orhpan
-cleanup.  If this fails however we do not drop the ref to the inode we were
-looking up before we return an error, which leads to busy inodes on umount.
-Thanks,
+On Sun, Jun 2, 2013 at 9:05 PM, John Haller <john.h.haller@gmail.com> wrote:
+> Hi,
+>
+> I added a new drive to an existing RAID 0 array. Every
+> attempt to rebalance the array fails:
+> # btrfs filesystem balance /share/bd8
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+> btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
+> btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
+>
+> An earlier rebalance attempt had the same csum error on a different inode:
+> btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
+> btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
+>
+> Every rebalance attempt fails the same way, but with a different inum.
+>
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d37bccf..0368a16 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4941,8 +4941,10 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 		if (!(inode->i_sb->s_flags & MS_RDONLY))
- 			ret = btrfs_orphan_cleanup(sub_root);
- 		up_read(&root->fs_info->cleanup_work_sem);
--		if (ret)
-+		if (ret) {
-+			iput(inode);
- 			inode = ERR_PTR(ret);
-+		}
- 	}
- 
- 	return inode;
--- 
-1.7.7.6
+Final scrub results:
+btrfs: checksum error at logical 9524548104192 on dev /dev/sdc, sector
+5252042552, root 5, inode 6754, offset 14188032000, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+btrfs: unable to fixup (regular) error at logical 9524548104192 on dev /dev/sdc
+btrfs: checksum error at logical 9531724152832 on dev /dev/sdc, sector
+5266058272, root 5, inode 6755, offset 1801699328, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+btrfs: unable to fixup (regular) error at logical 9531724152832 on dev /dev/sdc
+btrfs: checksum error at logical 9628551053312 on dev /dev/sdc, sector
+5455173312, root 5, inode 6757, offset 10686889984, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
+btrfs: unable to fixup (regular) error at logical 9628551053312 on dev /dev/sdc
+btrfs: checksum error at logical 9645596147712 on dev /dev/sdc, sector
+5488464512, root 5, inode 6757, offset 22100770816, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 4, gen 0
+btrfs: unable to fixup (regular) error at logical 9645596147712 on dev /dev/sdc
+btrfs: checksum error at logical 9662878707712 on dev /dev/sdc, sector
+5522219512, root 5, inode 6758, offset 1697771520, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
+btrfs: unable to fixup (regular) error at logical 9662878707712 on dev /dev/sdc
+btrfs: checksum error at logical 9967720464384 on dev /dev/sdc, sector
+6117613568, root 5, inode 6767, offset 19135102976, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
+btrfs: unable to fixup (regular) error at logical 9967720464384 on dev /dev/sdc
+btrfs: checksum error at logical 10048360648704 on dev /dev/sdc,
+sector 6275113928, root 5, inode 6771, offset 4187852800, length 4096,
+links 1 (path: bd6/...)
+btrfs: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 7, gen 0
+btrfs: unable to fixup (regular) error at logical 10048360648704 on dev /dev/sdc
+btrfs: checksum error at logical 6748601905152 on dev /dev/sdb, sector
+6199388792, root 5, inode 6782, offset 7338291200, length 4096, links
+1 (path: bd6/...)
+btrfs: bdev /dev/sdb errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
 
+
+reading one of the files yields the following in dmesg:
+btrfs csum failed ino 6782 off 7338291200 csum 444044750 private 1783974550
+
+But, none of these reflect the inodes of the original csum failure.
+
+So, what's causing the problem at offset 221745152 that didn't show up
+in the scrub, but's associated with multiple inodes?
+
+John

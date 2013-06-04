@@ -1,76 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f176.google.com ([74.125.82.176]:56452 "EHLO
-	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754008Ab3FDQXU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jun 2013 12:23:20 -0400
-Received: by mail-we0-f176.google.com with SMTP id t56so408389wes.35
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Jun 2013 09:23:19 -0700 (PDT)
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:15435 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750808Ab3FDUHf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jun 2013 16:07:35 -0400
+Message-ID: <51AE4969.8050709@gmx.net>
+Date: Tue, 04 Jun 2013 22:09:13 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-Date: Tue, 4 Jun 2013 19:23:18 +0300
-Message-ID: <CAOcd+r1Z665=5E-8Z_70tQoPDAv2A8MFdfgHQgv10jq6K-faSw@mail.gmail.com>
-Subject: wait_block_group_cache_progress() waits forever in case of drive failure
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <clmason@fusionio.com>
+CC: Christoph Hellwig <hch@infradead.org>, J??rn Engel <joern@logfs.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
+References: <1370280485-10047-1-git-send-email-joern@logfs.org> <20130603204930.GA28299@infradead.org> <20130603193647.GB10200@logfs.org> <20130603195555.GC10200@logfs.org> <20130604144856.GA12302@infradead.org> <20130604145322.4088.78915@localhost.localdomain>
+In-Reply-To: <20130604145322.4088.78915@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings all,
-when testing drive failures, I occasionally hit the following hang:
+On 06/04/13 16:53, Chris Mason wrote:
+> Quoting Christoph Hellwig (2013-06-04 10:48:56)
+>> On Mon, Jun 03, 2013 at 03:55:55PM -0400, J??rn Engel wrote:
+>>> Actually, when I compare the two invocations, I prefer the
+>>> list_for_each_entry_del() variant over list_pop_entry().
+>>>
+>>>         while ((ref = list_pop_entry(&prefs, struct __prelim_ref, list))) {
+>>>         list_for_each_entry_del(ref, &prefs, list) {
+>>>
+>>> Christoph?
+>>
+>> I really don't like something that looks like an iterator (*for_each*)
+>> to modify a list.  Maybe it's just me, so I'd love to hear others chime
+>> in.
+> 
+> Have to agree with Christoph.  I just couldn't put my finger on why I
+> didn't like it until I saw the list_pop_entry suggestion.
 
-# Block group is being cached-in by caching_thread()
-# caching_thread() experiences an error, e.g., in btrfs_search_slot,
-because of drive failure:
-	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-	if (ret < 0)
-		goto err;
+list_pop_each_entry?
 
-# caching thread exits:
-err:
-	btrfs_free_path(path);
-	up_read(&fs_info->extent_commit_sem);
+> 
+> -chris
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-	free_excluded_extents(extent_root, block_group);
-
-	mutex_unlock(&caching_ctl->mutex);
-out:
-	wake_up(&caching_ctl->wait);
-
-	put_caching_control(caching_ctl);
-	btrfs_put_block_group(block_group);
-
-However, wait_block_group_cache_progress() is still stuck in a stack like this:
-[<ffffffff816ec509>] schedule+0x29/0x70
-[<ffffffffa044bd42>] wait_block_group_cache_progress+0xe2/0x110 [btrfs]
-[<ffffffff8107fc10>] ? add_wait_queue+0x60/0x60
-[<ffffffff8107fc10>] ? add_wait_queue+0x60/0x60
-[<ffffffffa04568d6>] find_free_extent+0x306/0xb90 [btrfs]
-[<ffffffffa04462ee>] ? btrfs_search_slot+0x2fe/0x820 [btrfs]
-[<ffffffffa0457200>] btrfs_reserve_extent+0xa0/0x1b0 [btrfs]
-...
-because of:
-	wait_event(caching_ctl->wait, block_group_cache_done(cache) ||
-		   (cache->free_space_ctl->free_space >= num_bytes));
-
-But cache->cached never becomes BTRFS_CACHE_FINISHED, and
-cache->free_space_ctl->free_space will also not grow enough, so the
-wait never finishes.
-At this point, the system totally hangs.
-
-Same problem can happen with wait_block_group_cache_done().
-
-I am thinking: can we add additional condition, like:
-	wait_event(caching_ctl->wait,
-                       test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
-                       block_group_cache_done(cache) ||
-                       (cache->free_space_ctl->free_space >= num_bytes));
-
-So that when transaction aborts, FS is marked as "bad", and then all
-these waits will complete, so that the user can unmount?
-
-Or some other way to fix this problem?
-
-Thanks,
-Alex.
-
-P.S: should I open a bugzilla for this?

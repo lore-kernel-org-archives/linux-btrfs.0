@@ -1,150 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:15091 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:20836 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751144Ab3FDWSG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Jun 2013 18:18:06 -0400
+	id S1751326Ab3FDWSH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Jun 2013 18:18:07 -0400
 Received: from int-mx02.intmail.prod.int.phx2.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r54MI5Jd017163
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r54MI7nj007720
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 4 Jun 2013 18:18:06 -0400
+	for <linux-btrfs@vger.kernel.org>; Tue, 4 Jun 2013 18:18:07 -0400
 Received: from lenny.home.zabbo.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx02.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r54MI2Q5002655
-	for <linux-btrfs@vger.kernel.org>; Tue, 4 Jun 2013 18:18:05 -0400
+	by int-mx02.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r54MI2Q7002655
+	for <linux-btrfs@vger.kernel.org>; Tue, 4 Jun 2013 18:18:07 -0400
 From: Zach Brown <zab@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: trivial delayed item readdir list cleanups
-Date: Tue,  4 Jun 2013 15:17:57 -0700
-Message-Id: <1370384280-28652-4-git-send-email-zab@redhat.com>
+Subject: [PATCH 5/6] btrfs: add helper to get delayed item root
+Date: Tue,  4 Jun 2013 15:17:59 -0700
+Message-Id: <1370384280-28652-6-git-send-email-zab@redhat.com>
 In-Reply-To: <1370384280-28652-1-git-send-email-zab@redhat.com>
 References: <1370384280-28652-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just call btrfs_put_delayed_items() for each list rather than having two
-list arguments and duplicated code.
+This just moves some duplicated code into a helper.  I couldn't bring
+myself to add another copy in an upcoming patch.
 
-list_for_each_entry_safe() can handle an empty list.
+The delayed_root BUG() in __btrfs_remove_delayed_item() wasn't needed.
+The pointer deref will oops later if its null.
 
-We don't have to conditionally use and tear down the lists if we always
-initialize them to be empty.  They're only populated when needed and the
-rest of the uses just find empty lists.
+And now the remaining BUG() is in one place! :)
 
 Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- fs/btrfs/delayed-inode.c | 17 ++---------------
- fs/btrfs/delayed-inode.h |  3 +--
- fs/btrfs/inode.c         | 17 ++++++-----------
- 3 files changed, 9 insertions(+), 28 deletions(-)
+ fs/btrfs/delayed-inode.c | 28 +++++++++++++---------------
+ 1 file changed, 13 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 4d846a2..bc753fc 100644
+index 67e0f9f..fcce951 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -1618,18 +1618,11 @@ void btrfs_get_delayed_items(struct inode *inode, struct list_head *ins_list,
- 	atomic_dec(&delayed_node->refs);
+@@ -382,6 +382,16 @@ static struct btrfs_delayed_item *__btrfs_lookup_delayed_insertion_item(
+ 	return item;
  }
  
--void btrfs_put_delayed_items(struct list_head *ins_list,
--			     struct list_head *del_list)
-+void btrfs_put_delayed_items(struct list_head *list)
- {
- 	struct btrfs_delayed_item *curr, *next;
++static struct rb_root *get_ins_del_root(struct btrfs_delayed_node *delayed_node,
++					int ins_del)
++{
++	if (ins_del == BTRFS_DELAYED_INSERTION_ITEM)
++		return &delayed_node->ins_root;
++	if (ins_del == BTRFS_DELAYED_DELETION_ITEM)
++		return &delayed_node->del_root;
++	BUG();
++}
++
+ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
+ 				    struct btrfs_delayed_item *ins,
+ 				    int action)
+@@ -392,12 +402,7 @@ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
+ 	struct btrfs_delayed_item *item;
+ 	int cmp;
  
--	list_for_each_entry_safe(curr, next, ins_list, readdir_list) {
--		list_del(&curr->readdir_list);
--		if (atomic_dec_and_test(&curr->refs))
--			kfree(curr);
--	}
+-	if (action == BTRFS_DELAYED_INSERTION_ITEM)
+-		root = &delayed_node->ins_root;
+-	else if (action == BTRFS_DELAYED_DELETION_ITEM)
+-		root = &delayed_node->del_root;
+-	else
+-		BUG();
++	root = get_ins_del_root(delayed_node, action);
+ 	p = &root->rb_node;
+ 	node = &ins->rb_node;
+ 
+@@ -460,15 +465,8 @@ static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
+ 
+ 	delayed_root = delayed_item->delayed_node->root->fs_info->delayed_root;
+ 
+-	BUG_ON(!delayed_root);
+-	BUG_ON(delayed_item->ins_or_del != BTRFS_DELAYED_DELETION_ITEM &&
+-	       delayed_item->ins_or_del != BTRFS_DELAYED_INSERTION_ITEM);
 -
--	list_for_each_entry_safe(curr, next, del_list, readdir_list) {
-+	list_for_each_entry_safe(curr, next, list, readdir_list) {
- 		list_del(&curr->readdir_list);
- 		if (atomic_dec_and_test(&curr->refs))
- 			kfree(curr);
-@@ -1642,9 +1635,6 @@ int btrfs_should_delete_dir_index(struct list_head *del_list,
- 	struct btrfs_delayed_item *curr, *next;
- 	int ret;
- 
--	if (list_empty(del_list))
--		return 0;
+-	if (delayed_item->ins_or_del == BTRFS_DELAYED_INSERTION_ITEM)
+-		root = &delayed_item->delayed_node->ins_root;
+-	else
+-		root = &delayed_item->delayed_node->del_root;
 -
- 	list_for_each_entry_safe(curr, next, del_list, readdir_list) {
- 		if (curr->key.offset > index)
- 			break;
-@@ -1679,9 +1669,6 @@ int btrfs_readdir_delayed_dir_index(struct file *filp, void *dirent,
- 	int over = 0;
- 	unsigned char d_type;
++	root = get_ins_del_root(delayed_item->delayed_node,
++				delayed_item->ins_or_del);
+ 	rb_erase(&delayed_item->rb_node, root);
+ 	delayed_item->delayed_node->count--;
  
--	if (list_empty(ins_list))
--		return 0;
--
- 	/*
- 	 * Changing the data of the delayed item is impossible. So
- 	 * we needn't lock them. And we have held i_mutex of the
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index 1d5c5f7..573506b 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -135,8 +135,7 @@ void btrfs_destroy_delayed_inodes(struct btrfs_root *root);
- /* Used for readdir() */
- void btrfs_get_delayed_items(struct inode *inode, struct list_head *ins_list,
- 			     struct list_head *del_list);
--void btrfs_put_delayed_items(struct list_head *ins_list,
--			     struct list_head *del_list);
-+void btrfs_put_delayed_items(struct list_head *list);
- int btrfs_should_delete_dir_index(struct list_head *del_list,
- 				  u64 index);
- int btrfs_readdir_delayed_dir_index(struct file *filp, void *dirent,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6e2b86..53a8696 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5003,8 +5003,8 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_path *path;
--	struct list_head ins_list;
--	struct list_head del_list;
-+	LIST_HEAD(ins_list);
-+	LIST_HEAD(del_list);
- 	int ret;
- 	struct extent_buffer *leaf;
- 	int slot;
-@@ -5048,11 +5048,8 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 
- 	path->reada = 1;
- 
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		INIT_LIST_HEAD(&ins_list);
--		INIT_LIST_HEAD(&del_list);
-+	if (key_type == BTRFS_DIR_INDEX_KEY)
- 		btrfs_get_delayed_items(inode, &ins_list, &del_list);
--	}
- 
- 	btrfs_set_key_type(&key, key_type);
- 	key.offset = filp->f_pos;
-@@ -5083,9 +5080,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 			break;
- 		if (found_key.offset < filp->f_pos)
- 			goto next;
--		if (key_type == BTRFS_DIR_INDEX_KEY &&
--		    btrfs_should_delete_dir_index(&del_list,
--						  found_key.offset))
-+		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
- 			goto next;
- 
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
-@@ -5165,8 +5160,8 @@ next:
- nopos:
- 	ret = 0;
- err:
--	if (key_type == BTRFS_DIR_INDEX_KEY)
--		btrfs_put_delayed_items(&ins_list, &del_list);
-+	btrfs_put_delayed_items(&ins_list);
-+	btrfs_put_delayed_items(&del_list);
- 	btrfs_free_path(path);
- 	return ret;
- }
 -- 
 1.7.11.7
 

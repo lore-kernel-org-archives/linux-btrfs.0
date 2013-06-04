@@ -1,85 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34816 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755099Ab3FABBH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 May 2013 21:01:07 -0400
-Date: Sat, 1 Jun 2013 09:59:33 +0900
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: init relocate extent_io_tree with a mapping
-Message-ID: <20130601005932.GB20727@liubo.sigma3.com.sg>
-Reply-To: bo.li.liu@oracle.com
-References: <1370020005-3157-1-git-send-email-jbacik@fusionio.com>
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:60387 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751866Ab3FDLTh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jun 2013 07:19:37 -0400
+Received: by mail-wi0-f177.google.com with SMTP id hr14so67724wib.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Jun 2013 04:19:36 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1370020005-3157-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <CA+a=Yy45WgYRvpwUZ4BTfvi8bA-OB=XcGGcm6XXA5fmUwvp+sw@mail.gmail.com>
+References: <1370267902-9139-1-git-send-email-bergwolf@gmail.com>
+ <1370267902-9139-5-git-send-email-bergwolf@gmail.com> <20130604083206.GL28112@mwanda>
+ <CA+a=Yy45WgYRvpwUZ4BTfvi8bA-OB=XcGGcm6XXA5fmUwvp+sw@mail.gmail.com>
+From: Peng Tao <bergwolf@gmail.com>
+Date: Tue, 4 Jun 2013 19:19:16 +0800
+Message-ID: <CA+a=Yy5W45YyTVXVAsLHb9YsHjEpc2zoRDE_R5vxn1zq7V7TTw@mail.gmail.com>
+Subject: Re: [PATCH 4/9] staging/lustre: clean up and remove libcfs/linux/linux-fs.c
+To: Dan Carpenter <dan.carpenter@oracle.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        "devel@driverdev.osuosl.org" <devel@driverdev.osuosl.org>,
+        Andreas Dilger <andreas.dilger@intel.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 31, 2013 at 01:06:45PM -0400, Josef Bacik wrote:
-> Dave reported a NULL pointer deref.  This is caused because he thought he'd be
-> smart and add sanity checks to the extent_io bit operations, but he didn't
-> expect a tree to have a NULL mapping.  To fix this we just need to init the
-> relocation's processed_blocks with the btree_inode->i_mapping.  Thanks,
+On Tue, Jun 4, 2013 at 6:23 PM, Peng Tao <bergwolf@gmail.com> wrote:
+> On Tue, Jun 4, 2013 at 4:32 PM, Dan Carpenter <dan.carpenter@oracle.com> wrote:
+>> On Mon, Jun 03, 2013 at 09:58:17PM +0800, Peng Tao wrote:
+>>>  int libcfs_kkuc_msg_put(struct file *filp, void *payload)
+>>>  {
+>>>       struct kuc_hdr *kuch = (struct kuc_hdr *)payload;
+>>> +     ssize_t count = kuch->kuc_msglen;
+>>> +     loff_t offset = 0;
+>>> +     mm_segment_t fs;
+>>>       int rc = -ENOSYS;
+>>>
+>>>       if (filp == NULL || IS_ERR(filp))
+>>> @@ -165,11 +168,18 @@ int libcfs_kkuc_msg_put(struct file *filp, void *payload)
+>>>               return -ENOSYS;
+>>>       }
+>>>
+>>> -     {
+>>> -             loff_t offset = 0;
+>>> -             rc = filp_user_write(filp, payload, kuch->kuc_msglen,
+>>> -                                  &offset);
+>>> +     fs = get_fs();
+>>> +     set_fs(KERNEL_DS);
+>>> +     while ((ssize_t)count > 0) {
+>>> +             rc = vfs_write(filp, (const void __user *)payload,
+>>> +                            count, &offset);
+>>> +             if (rc < 0)
+>>> +                     break;
+>>> +             count -= rc;
+>>> +             payload += rc;
+>>> +             rc = 0;
+>>>       }
+>>> +     set_fs(fs);
+>>>
+>>>       if (rc < 0)
+>>>               CWARN("message send failed (%d)\n", rc);
+>>
+>> This was all there in the original code, it has just been shifted.
+>> Still, I had some questions about it.  "payload" is a pointer to
+>> kernel stack memory, wouldn't the access_ok() check in vfs_write()
+>> fail every time on x86?
+>>
+I've run some tests and it turns out that access_ok() doesn't deny
+vfs_write() when passed in allocated kernel memory (e.g.,
+mdc_wr_kuc()). There is indeed a bug in mdc_wr_kuc() for which I will
+send a fix later. However, I cannot test the specific stack memory
+write path because of a known issue of Lustre
+(https://jira.hpdd.intel.com/browse/LU-2489). And FYI, the Lustre hsm
+feature is still under development.
 
-That fits my suspection, hhh.
+Thanks,
+Tao
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-> 
-> Reported-by: David Sterba <dsterba@suse.cz>
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/relocation.c |    9 +++++----
->  1 files changed, 5 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 6dbee86..1b50c41 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4081,7 +4081,7 @@ out:
->  	return inode;
->  }
->  
-> -static struct reloc_control *alloc_reloc_control(void)
-> +static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
->  {
->  	struct reloc_control *rc;
->  
-> @@ -4092,7 +4092,8 @@ static struct reloc_control *alloc_reloc_control(void)
->  	INIT_LIST_HEAD(&rc->reloc_roots);
->  	backref_cache_init(&rc->backref_cache);
->  	mapping_tree_init(&rc->reloc_root_tree);
-> -	extent_io_tree_init(&rc->processed_blocks, NULL);
-> +	extent_io_tree_init(&rc->processed_blocks,
-> +			    fs_info->btree_inode->i_mapping);
->  	return rc;
->  }
->  
-> @@ -4109,7 +4110,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
->  	int rw = 0;
->  	int err = 0;
->  
-> -	rc = alloc_reloc_control();
-> +	rc = alloc_reloc_control(fs_info);
->  	if (!rc)
->  		return -ENOMEM;
->  
-> @@ -4310,7 +4311,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
->  	if (list_empty(&reloc_roots))
->  		goto out;
->  
-> -	rc = alloc_reloc_control();
-> +	rc = alloc_reloc_control(root->fs_info);
->  	if (!rc) {
->  		err = -ENOMEM;
->  		goto out;
-> -- 
-> 1.7.7.6
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Thanks for reviewing. I am not familiar with access_ok() but I think
+> you are right and I'll test to see if it really breaks. In the
+> meantime, I took a look at other kernel callers of vfs_write() and
+> btrfs is also calling vfs_write() to write kernel stack memory
+> (fs/btrfs/send.c: send_header->write_buf->vfs_write). So I CC'ed btrfs
+> list in case someone knows better than I do.
+>
+>> Some of the casting is not needed.  No need to cast "count" because
+>> it is already ssize_t.  I haven't tested but I think Sparse will
+>> complain about the __user cast until __force is added.  No need for
+>> the cast to const.
+>>
+> Thanks. I will fix it.
+>
+>> I worry about partial writes and that this could be a forever loop
+>> but I don't know enough about anything to say if that's possible.
+>> Probably not.
+>>
+> For partial writes, both payload and count are advanced properly. So
+> it won't loop forever.
+>
+> Thanks,
+> Tao

@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37752 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38068 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756080Ab3FEOZu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Jun 2013 10:25:50 -0400
-Date: Wed, 5 Jun 2013 16:25:46 +0200
+	id S1754483Ab3FEOcq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Jun 2013 10:32:46 -0400
+Date: Wed, 5 Jun 2013 16:32:44 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Arne Jansen <sensille@gmx.net>
-Cc: =?iso-8859-1?Q?J=F6rn?= Engel <joern@logfs.org>,
-        Chris Mason <clmason@fusionio.com>,
+To: =?iso-8859-1?Q?J=F6rn?= Engel <joern@logfs.org>
+Cc: Arne Jansen <sensille@gmx.net>, Chris Mason <clmason@fusionio.com>,
         Christoph Hellwig <hch@infradead.org>,
         "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
-Message-ID: <20130605142545.GB18160@twin.jikos.cz>
+Subject: Re: [PATCH 1/2] list: add while_list_drain_entry
+Message-ID: <20130605143244.GC18160@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1370280485-10047-1-git-send-email-joern@logfs.org>
  <20130603204930.GA28299@infradead.org>
@@ -22,27 +21,35 @@ References: <1370280485-10047-1-git-send-email-joern@logfs.org>
  <20130604145322.4088.78915@localhost.localdomain>
  <51AE4969.8050709@gmx.net>
  <20130604184435.GA23436@logfs.org>
- <20130605020939.GC27240@logfs.org>
- <51AEE07E.6070301@gmx.net>
+ <20130605020341.GA27240@logfs.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <51AEE07E.6070301@gmx.net>
+In-Reply-To: <20130605020341.GA27240@logfs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 05, 2013 at 08:53:50AM +0200, Arne Jansen wrote:
-> On 05.06.2013 04:09, Jörn Engel wrote:
-> > On Tue, 4 June 2013 14:44:35 -0400, Jörn Engel wrote:
-> >>
-> >> Or while_list_drain?
+On Tue, Jun 04, 2013 at 10:03:41PM -0400, Jörn Engel wrote:
+> I have seen a lot of boilerplate code that either follows the pattern of
+> 	while (!list_empty(head)) {
+> 		pos = list_entry(head->next, struct foo, list);
+> 		list_del(pos->list);
+> 		...
+> 	}
+> or some variant thereof.
 > 
-> I'm fine with while_list_drain, although a name starting with list_
-> like all other list macros would be nice. How about just list_drain?
+> With this patch in, people can use
+> 	while_list_drain_entry(pos, head, list) {
+> 		...
+> 	}
 
-The list_ prefix makes it imho more readable, we know that list_* are
-macros, but 'while_list_drain' does not fit to the group. I'd go for
+The while_list_drain_entry way changes the semantics: the list link is
+deleted before the {...} body starts, so it's not possible to access the
+list anymore. None of the code you've converted uses this, from that
+point it's safe, but if this is about to be a public interface, it
+should be (at least) documented.
 
-list_drain or list_drain_entry
+Macro trickery to postpone list_del after the {...} finishes does not
+work if kfree/kmem_cache_free/rcu_string_free/... is used.
 
 
 david

@@ -1,56 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:52027 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753323Ab3FENgx convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jun 2013 09:36:53 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id E83D29A0691
-	for <linux-btrfs@vger.kernel.org>; Wed,  5 Jun 2013 07:36:52 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+Received: from cantor2.suse.de ([195.135.220.15]:37752 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756080Ab3FEOZu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Jun 2013 10:25:50 -0400
+Date: Wed, 5 Jun 2013 16:25:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Arne Jansen <sensille@gmx.net>
+Cc: =?iso-8859-1?Q?J=F6rn?= Engel <joern@logfs.org>,
+        Chris Mason <clmason@fusionio.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
+Message-ID: <20130605142545.GB18160@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1370280485-10047-1-git-send-email-joern@logfs.org>
+ <20130603204930.GA28299@infradead.org>
+ <20130603193647.GB10200@logfs.org>
+ <20130603195555.GC10200@logfs.org>
+ <20130604144856.GA12302@infradead.org>
+ <20130604145322.4088.78915@localhost.localdomain>
+ <51AE4969.8050709@gmx.net>
+ <20130604184435.GA23436@logfs.org>
+ <20130605020939.GC27240@logfs.org>
+ <51AEE07E.6070301@gmx.net>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, Sage Weil <sage@inktank.com>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <20130605125440.GA29248@localhost.localdomain>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <alpine.DEB.2.00.1306042056350.19491@cobra.newdream.net>
- <20130605125440.GA29248@localhost.localdomain>
-Message-ID: <20130605133650.4088.67669@localhost.localdomain>
-Subject: Re: v3.9 bug at /fs/btrfs/free-space-cache.c:1567 after powercycle
-Date: Wed, 5 Jun 2013 09:36:50 -0400
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <51AEE07E.6070301@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Josef Bacik (2013-06-05 08:54:40)
-> On Tue, Jun 04, 2013 at 09:59:05PM -0600, Sage Weil wrote:
-> > Hi-
-> > 
-> > I'm pretty reliably triggering the following bug after powercycling an 
-> > active btrfs + ceph workload and then trying to remount.  Is this a known 
-> > issue?
-> > 
+On Wed, Jun 05, 2013 at 08:53:50AM +0200, Arne Jansen wrote:
+> On 05.06.2013 04:09, Jörn Engel wrote:
+> > On Tue, 4 June 2013 14:44:35 -0400, Jörn Engel wrote:
+> >>
+> >> Or while_list_drain?
 > 
-> Yeah sorry it's fixed in 3.10, I really need to send the patch back to stable.
-> Thanks,
+> I'm fine with while_list_drain, although a name starting with list_
+> like all other list macros would be nice. How about just list_drain?
 
-Do we need more than: 
+The list_ prefix makes it imho more readable, we know that list_* are
+macros, but 'while_list_drain' does not fit to the group. I'd go for
 
-commit b50c6e250ef91313518dbca96663578237ba8d3c
-Author: Josef Bacik <jbacik@fusionio.com>
-Date:   Thu Apr 25 15:55:30 2013 -0400
+list_drain or list_drain_entry
 
-    Btrfs: deal with free space cache errors while replaying log
 
-commit 09a2a8f96e3009273bed1833b3f210e2c68728a5
-Author: Josef Bacik <jbacik@fusionio.com>
-Date:   Fri Apr 5 16:51:15 2013 -0400
-
-    Btrfs: fix bad extent logging
-
-commit cc95bef635a649d595cf8d1cd4fcff5b6bf13023
-Author: Josef Bacik <jbacik@fusionio.com>
-Date:   Thu Apr 4 14:31:27 2013 -0400
-
-    Btrfs: log ram bytes properly
-
--chris
-
+david

@@ -1,44 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:55171 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752099Ab3FXG0y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 02:26:54 -0400
-Received: by mail-pa0-f49.google.com with SMTP id ld11so10407587pab.8
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Jun 2013 23:26:54 -0700 (PDT)
-Message-ID: <51C7E688.2020903@gmail.com>
-Date: Mon, 24 Jun 2013 14:26:16 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:40467 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755723Ab3FEP0R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Jun 2013 11:26:17 -0400
+Date: Wed, 5 Jun 2013 17:26:15 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger Fischer <hoo.mb@web.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-tools: debian/patches/02-ftbfs.patch
+Message-ID: <20130605152615.GD18160@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <519A1E2F.5050207@web.de>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: remove unused var *prev in extent-cache.c/find_cache_extent
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <519A1E2F.5050207@web.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-var *prev is not used in function find_cache_extent. Remove it.
+On Mon, May 20, 2013 at 02:59:27PM +0200, Holger Fischer wrote:
+> Dear BTRFS-Community,
+> 
+> as far as I understand I believe it would make sense to apply that one upstream:
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
-  extent-cache.c |    3 +--
-  1 file changed, 1 insertion(+), 2 deletions(-)
+Thanks for bringing it up.
 
-diff --git a/extent-cache.c b/extent-cache.c
-index 3dd6434..6d86c33 100644
---- a/extent-cache.c
-+++ b/extent-cache.c
-@@ -117,10 +117,9 @@ int insert_cache_extent(struct cache_tree *tree, u64 start, u64 size)
-  struct cache_extent *find_cache_extent(struct cache_tree *tree,
-  					   u64 start, u64 size)
-  {
--	struct rb_node *prev;
-  	struct rb_node *ret;
-  	struct cache_extent *entry;
--	ret = __tree_search(&tree->root, start, size, &prev);
-+	ret = __tree_search(&tree->root, start, size, NULL);
-  	if (!ret)
-  		return NULL;
+> like described, it ...  Fixes FTBFS on alpha and ia64 ...
+> 
+> >cat 02-ftbfs.patch
+> Authors:
+>  Luca Bruno <lucab@debian.org>
+>  Alexander Kurtz <kurtz.alex@googlemail.com>
+>  Daniel Baumann <daniel.baumann@progress-technologies.net>
+> Description:
+>  Patch to properly cast and avoiding compiler warnings. Fixes FTBFS on alpha
+>  and ia64 (Closes: #539433, #583768).
+> 
+> Index: b/convert.c
+> ===================================================================
+> --- a/convert.c
+> +++ b/convert.c
+> @@ -2512,7 +2512,7 @@ int do_rollback(const char *devname, int
+>         ext2_root = btrfs_read_fs_root(root->fs_info, &key);
+>         if (!ext2_root || IS_ERR(ext2_root)) {
+>                 fprintf(stderr, "unable to open subvol %llu\n",
+> -                       key.objectid);
+> +                       (unsigned long long) key.objectid);
 
--- 
-1.7.10.4
+There are way more instances of a missing (unsigned long long) casts,
+quick grep from the ia64 build log counted ~100.  I prefer to fixem all
+in one or at least separate by pure-userspace/-kernel code so we could
+apply the bits on kernel too.
+
+
+david

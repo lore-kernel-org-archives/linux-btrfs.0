@@ -1,70 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:34212 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752072Ab3FFOc3 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 10:32:29 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 6A9F79A033F
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Jun 2013 08:32:29 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+Received: from bay0-omc1-s7.bay0.hotmail.com ([65.54.190.18]:46500 "EHLO
+	bay0-omc1-s7.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750951Ab3FFPl7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Jun 2013 11:41:59 -0400
+Message-ID: <BAY172-DS9FD076B2A36E8DE54EB32B0980@phx.gbl>
+From: "Kyle Gates" <kylegates@hotmail.com>
+To: "Liu Bo" <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1370317203-31554-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1370317203-31554-1-git-send-email-bo.li.liu@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix broken nocow after balance
+Date: Thu, 6 Jun 2013 10:42:31 -0500
 MIME-Version: 1.0
-To: "dsterba@suse.cz" <dsterba@suse.cz>, David Sterba <dsterba@suse.cz>,
-        Miao Xie <miaox@cn.fujitsu.com>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <20130606135550.GG18160@twin.jikos.cz>
-CC: "dsterba@suse.cz" <dsterba@suse.cz>, Zach Brown <zab@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1370384280-28652-1-git-send-email-zab@redhat.com>
- <20130604231653.4088.91500@localhost.localdomain>
- <20130604232657.GE24721@lenny.home.zabbo.net>
- <51AEA3A0.4050203@cn.fujitsu.com> <20130605133636.GA18160@twin.jikos.cz>
- <51AFE74B.8090509@cn.fujitsu.com> <20130606135550.GG18160@twin.jikos.cz>
-Message-ID: <20130606143227.4088.53583@localhost.localdomain>
-Subject: Re: [PATCH 0/6] fix INT_MAX readdir hang, plus cleanups
-Date: Thu, 6 Jun 2013 10:32:27 -0400
+Content-Type: text/plain;
+	format=flowed;
+	charset="iso-8859-1";
+	reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting David Sterba (2013-06-06 09:55:50)
-> On Thu, Jun 06, 2013 at 09:35:07AM +0800, Miao Xie wrote:
-> > On    wed, 5 Jun 2013 15:36:36 +0200, David Sterba wrote:
-> > > On Wed, Jun 05, 2013 at 10:34:08AM +0800, Miao Xie wrote:
-> > >> On         tue, 4 Jun 2013 16:26:57 -0700, Zach Brown wrote:
-> > >>> On Tue, Jun 04, 2013 at 07:16:53PM -0400, Chris Mason wrote:
-> > >>>> Quoting Zach Brown (2013-06-04 18:17:54)
-> > >>>>> Hi gang,
-> > >>>>>
-> > >>>>> I finally sat down to fix that readdir hang that has been in the back
-> > >>>>> of my mind for a while.  I *hope* that the fix is pretty simple: just
-> > >>>>> don't manufacture a fake f_pos, I *think* we can abuse f_version as an
-> > >>>>> indicator that we shouldn't return entries.  Does this look reasonable?
-> > >>>>
-> > >>>> I like it, and it doesn't look too far away from how others are abusing
-> > >>>> f_version.  Have you tried with NFS?  I don't think it'll hurt, but NFS
-> > >>>> loves to surprise me.
-> > >>>
-> > >>> Mm, no, I hadn't.  I'll give it a go tomorrow.  What could go wrong? :)
-> > >>
-> > >> If we can not use f_version, we can use private_data. I think this variant is
-> > >> safe.
-> > > 
-> > > private_data is used within the ioctl user transactions, so a
-> > > readdir(mountpoint) with a user transaction running can break it.
-> > 
-> > don't worry, we can allocate a structure to keep both transaction handle and the information
-> > of readdir, just like ext3/ext4. It is a flexible way and we can extend the structure to keep
-> > more information if need in the future.
-> > 
-> > Beside the above method, we also can abuse the low bits of private_data to indicator that
-> > we shouldn't return entries.
+On Monday, June 03, 2013, Liu Bo wrote:
+> Balance will create reloc_root for each fs root, and it's going to
+> record last_snapshot to filter shared blocks.  The side effect of
+> setting last_snapshot is to break nocow attributes of files.
+>
+> So it turns out that checking last_snapshot does not always ensure that
+> a node/leaf/file_extent is shared.
+>
+> That's why shared node/leaf needs to search extent tree for number of 
+> references
+> even after having checked last_snapshot, and updating fs/file tree works
+> top-down so the children will always know how many references parents put
+> on them at the moment of checking shared status.
+>
+> However, our nocow path does something different, it'll firstly check
+> if the file extent is shared, then update fs/file tree by updating inode.
+> This ends up that the related extent record to the file extent may don't
+> have actual multiple references when checking shared status.
+>
+> ------------------------------------------------
+> fs_root snap
+>   \    /
+>    leaf ==> refs=2
+>     |
+>  file_extent ==> refs=1(but actually refs is 2)
+>
+> After updating fs tree(or snapshot if snapshot is not RO), it'll be
+>
+> fs root snap
+>  \      /
+>  cow  leaf
+>    \  /
+>  file_extent ==> refs=2(we do have two parents)
+> ------------------------------------------------
+>
+> So it'll be confused by last_snapshot from balance to think that the file
+> extent is now shared.
+>
+> There are actually a couple of ways to address it, but updating fs/file 
+> tree
+> firstly might be the easiest and cleanest one.  With this, updating 
+> fs/file
+> tree will at least make a delayed ref if the file extent is really shared 
+> by
+> several parents, we can make nocow happy again without having to check 
+> confusing
+> last_snapshot.
+
+Works here. Extents are stable after a balance.
+Thanks,
+Kyle
+
+Tested-by: Kyle Gates <kylegates@hotmail.com>
+
+>
+> Reported-by: Kyle Gates <kylegates@hotmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> fs/btrfs/extent-tree.c |    4 ----
+> fs/btrfs/inode.c       |    2 +-
+> 2 files changed, 1 insertions(+), 5 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index df472ab..d24c26c 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2856,10 +2856,6 @@ static noinline int check_committed_ref(struct 
+> btrfs_trans_handle *trans,
+>      btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
+>  goto out;
+>
+> - if (btrfs_extent_generation(leaf, ei) <=
+> -     btrfs_root_last_snapshot(&root->root_item))
+> - goto out;
+> -
+>  iref = (struct btrfs_extent_inline_ref *)(ei + 1);
+>  if (btrfs_extent_inline_ref_type(leaf, iref) !=
+>      BTRFS_EXTENT_DATA_REF_KEY)
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 23c596c..0dc5c7d 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1253,7 +1253,7 @@ static noinline int run_delalloc_nocow(struct inode 
+> *inode,
+>  cur_offset = start;
+>  while (1) {
+>  ret = btrfs_lookup_file_extent(trans, root, path, ino,
+> -        cur_offset, 0);
+> +        cur_offset, 1);
+>  if (ret < 0) {
+>  btrfs_abort_transaction(trans, root, ret);
+>  goto error;
+> -- 
+> 1.7.7
+>
 > 
-> Allocating a full structure for private_data sounds better than directly
-> modifying the pointer value itself.
-
-I'd actually rather tag the pointers than go through kmalloc, we just
-need one bit (maybe that really just shows how badly we've corrupted
-poor Miao).  But, we're not there yet, I think Zach's initial patch will
-work fine.
-
--chris
-

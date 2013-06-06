@@ -1,32 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:55289 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752414Ab3FFRt0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 13:49:26 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id B41F77C04D8
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Jun 2013 11:49:25 -0600 (MDT)
-Date: Thu, 6 Jun 2013 13:49:22 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Jan Schmidt <list.xfs@jan-o-sch.net>
-CC: "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "sbehrens@giantdisaster.de" <sbehrens@giantdisaster.de>
-Subject: Re: [PATCH] xfstests btrfs/314: test send / receive
-Message-ID: <20130606174922.GB29248@localhost.localdomain>
-References: <1370532033-20561-1-git-send-email-list.xfs@jan-o-sch.net>
+Received: from mx1.redhat.com ([209.132.183.28]:26689 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751818Ab3FFRyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Jun 2013 13:54:21 -0400
+Message-ID: <51B0CCC6.2010500@redhat.com>
+Date: Thu, 06 Jun 2013 12:54:14 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Jan Schmidt <list.xfs@jan-o-sch.net>
+CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de
+Subject: Re: [PATCH] xfstests btrfs/314: test send / receive
+References: <1370532033-20561-1-git-send-email-list.xfs@jan-o-sch.net>
 In-Reply-To: <1370532033-20561-1-git-send-email-list.xfs@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 06, 2013 at 09:20:33AM -0600, Jan Schmidt wrote:
+On 6/6/13 10:20 AM, Jan Schmidt wrote:
 > Basic send / receive functionality test for btrfs. Requires current
 > version of fsstress built (-x support). Relies on fssum tool, which is
 > not part of the test suite but can skip the test if it is missing.
 > 
 > Signed-off-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+
+w/o commenting on the test itself, I'm a little uneasy about requiring
+some external, not-widely-installed tool for this to run.  The fear is
+that it won't be run as often as it could/should be.
+
+Could the same test be done w/o fssum, or should we maybe put a copy
+of fssum into xfstests/src/fssum.c ?
+
+Or does fssum exist in any standard distro package?
+
+Thanks,
+-Eric
+
 > ---
 >  README              |    3 +
 >  common/config       |    2 +
@@ -202,15 +210,5 @@ On Thu, Jun 06, 2013 at 09:20:33AM -0600, Jan Schmidt wrote:
 >  284 auto
 >  307 auto quick
 > +314 auto rw metadata
-> -- 
-> 1.7.2.2
 > 
 
-It applys and runs fine with fssum and exits cleanly if it's not there.  The
-test itself looks sane, so 
-
-Reviewed-by: Josef Bacik <jbacik@fusionio.com>
-
-Thanks,
-
-Josef

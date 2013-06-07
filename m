@@ -1,44 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from longford.logfs.org ([213.229.74.203]:59467 "EHLO
-	longford.logfs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752810Ab3FGUSA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2013 16:18:00 -0400
-Date: Fri, 7 Jun 2013 14:48:44 -0400
-From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
-To: Andy Shevchenko <andy.shevchenko@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] list: add list_for_each_entry_del
-Message-ID: <20130607184844.GE25323@logfs.org>
-References: <1370280485-10047-1-git-send-email-joern@logfs.org>
- <1370280485-10047-2-git-send-email-joern@logfs.org>
- <CAHp75VczX+tjqJgNv4uv=BRekm2Gc2i8WHL91vJFWSXWS8-J_A@mail.gmail.com>
- <20130606181248.GA17707@logfs.org>
- <CAHp75VfFvirRvN8FwNey4=9GvMKmPvaM5PBThbEBwZYwL_pt-A@mail.gmail.com>
- <20130607163658.GC25323@logfs.org>
- <CAHp75VdBb3Gt+sYwDbJo8BXRSsxwN0K6qw_UeJve6ycQwz2WBQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAHp75VdBb3Gt+sYwDbJo8BXRSsxwN0K6qw_UeJve6ycQwz2WBQ@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:60153 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932204Ab3FGXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Jun 2013 19:14:40 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ul5rc-0000xT-BT
+	for linux-btrfs@vger.kernel.org; Sat, 08 Jun 2013 01:14:32 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Jun 2013 01:14:32 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Jun 2013 01:14:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs raid1 on 16TB goes read-only after "btrfs: block rsv returned
+ -28"
+Date: Sat, 08 Jun 2013 00:14:09 +0100
+Message-ID: <kotpfr$8kp$1@ger.gmane.org>
+References: <konjl0$r06$1@ger.gmane.org> <20130605150549.GP20133@carfax.org.uk> <konler$h9p$1@ger.gmane.org> <20130605154329.GQ20133@carfax.org.uk> <20130605162443.GE18160@twin.jikos.cz> <koo9jq$na8$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <koo9jq$na8$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 7 June 2013 21:30:16 +0300, Andy Shevchenko wrote:
-> >
-> > spin_lock
-> > list_for_each_entry_safe
-> >         list_del
-> >         spin_unlock
+On 05/06/13 22:12, Martin wrote:
+> On 05/06/13 17:24, David Sterba wrote:
+>> On Wed, Jun 05, 2013 at 04:43:29PM +0100, Hugo Mills wrote:
+>>>    OK, so you've got plenty of space to allocate. There were some
+>>> issues in this area (block reserves and ENOSPC, and I think
+>>> specifically addressing the issue of ENOSPC when there's space
+>>> available to allocate) that were fixed between 3.8 and 3.9 (and
+>>> probably some between 3.9 and 3.10-rc as well), so upgrading your
+>>> kernel _may_ help here.
+>>
+>> This is supposed to be fixed by
+>> https://patchwork-mail2.kernel.org/patch/2558911/
+>>
+>> that went ti 3.10-rc with some followup patches, so it might not be
+>> enough as a standalone fix.
+>>
+>> Unless you really need 'inode_cache', remove it from the mount options.
 > 
-> Who is doing such thing?
+> Thanks for that. Remounting without the inode_cache option looks to be
+> allowing rsync to continue. (No sync loop needed.)
 
-Replace list_for_each_entry_safe with 'while (!list_empty(...))' and
-just grep.  My patch is about 'while (!list_empty(...))', not about
-list_for_each_entry_safe.
+rsync is still running ok but the data copying is awfully slow... The
+copy across is going to take many days at this rate :-(
 
-Jörn
 
---
-There are three principal ways to lose money: wine, women, and engineers.
-While the first two are more pleasant, the third is by far the more certain.
--- Baron Rothschild
+> For a 16TB raid1 on kernel 3.8.13, any good mount options to try?
+> 
+> For that size of storage and with many hard links, is there any
+> advantage formatting with leaf/node size greater than the default 4kBytes?
+
+Any hints/tips? ;-)
+
+
+Regards,
+Martin
+
+
+

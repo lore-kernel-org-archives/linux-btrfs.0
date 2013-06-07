@@ -1,50 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:59615 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754357Ab3FGBzE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 21:55:04 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 298A37C0428
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Jun 2013 19:55:03 -0600 (MDT)
-Date: Thu, 6 Jun 2013 21:55:00 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
-CC: Linux BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfsck: free-space-cache.c:813: btrfs_add_free_space: Assertion
- `!(ret == -17)' failed
-Message-ID: <20130607015500.GC29248@localhost.localdomain>
-References: <CAK-xaQabh32xjmytaJXZqYicAaZivrPYx-LOSt+kZYc6q18WBQ@mail.gmail.com>
+Received: from atl4mhob12.myregisteredsite.com ([209.17.115.107]:33412 "EHLO
+	atl4mhob12.myregisteredsite.com" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750857Ab3FGCvY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Jun 2013 22:51:24 -0400
+Received: from mailpod1.hostingplatform.com ([10.30.71.116])
+	by atl4mhob12.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r572pMad026154
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Jun 2013 22:51:22 -0400
+Message-ID: <51B14AB0.4040906@chinilu.com>
+Date: Thu, 06 Jun 2013 19:51:28 -0700
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAK-xaQabh32xjmytaJXZqYicAaZivrPYx-LOSt+kZYc6q18WBQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: How do I safely terminate COW on pre-existing files?
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 06, 2013 at 07:00:50PM -0600, Andrea Gelmini wrote:
-> Hi everybody,
->    and thanks a lot for your support and work.
-> 
->    I've an external hard drive formatted with BTRFS that sometimes
-> goes readonly (no complains in logs or dmesg output).
-> 
->    It happens with kernel v9.4 and latest vanilla kernel in dev, too.
-> 
->    If I check it I got (git BTRFS progs):
-> 
-> ./btrfsck /dev/mapper/toshi
-> Checking filesystem on /dev/mapper/toshi
-> UUID: 35eb15cd-d7e3-4be8-92f1-7b210353e241
-> checking extents
-> checking free space cache
-> btrfs: unable to add free space :-17
-> btrfsck: free-space-cache.c:813: btrfs_add_free_space: Assertion
-> `!(ret == -17)' failed.
->
+I want to eliminate the COW feature on all of my OS files.  It is a nice 
+feature for user files, but I don't see a clear benefit for the actual 
+OS files.  And I suspect that COW induced fragmentation is causing or 
+aggravating problems with my system including the boot open_ctree 
+problem.  I had planned to recursively chattr these files to "nodatacow" 
+status but then I ran into this cryptic warning on the chattr man page:
 
-Can you try my git tree?
+(Note: For btrfs, the 'C' flag should be set on new or empty files. If 
+it is set on a file which already has data blocks, it is undefined when 
+the blocks assigned to the file will be fully stable.  If the  'C'  
+flag  is set on a directory, it will have no effect on the directory, 
+but new files created in that directory will the No_COW attribute.)
 
-git://github.com/josefbacik/btrfs-progs.git
+So what exactly does that mean?  Does it mean that it is unsafe?  Or 
+does it mean that it is simply unreliable?  If I run a btrfs balance 
+first will that clear out the COW snapshots and enable me to perform the 
+recursive chattrs?  What is the best way to approach this?
 
-and see if that works better?  Thanks,
-
-Josef 
+Thanks for any tips,  George

@@ -1,39 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob12.myregisteredsite.com ([209.17.115.107]:33412 "EHLO
-	atl4mhob12.myregisteredsite.com" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750857Ab3FGCvY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Jun 2013 22:51:24 -0400
-Received: from mailpod1.hostingplatform.com ([10.30.71.116])
-	by atl4mhob12.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r572pMad026154
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Jun 2013 22:51:22 -0400
-Message-ID: <51B14AB0.4040906@chinilu.com>
-Date: Thu, 06 Jun 2013 19:51:28 -0700
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:43541 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751686Ab3FGDLm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 23:11:42 -0400
+Received: by mail-wg0-f42.google.com with SMTP id n12so927431wgh.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Jun 2013 20:11:40 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: How do I safely terminate COW on pre-existing files?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <20130607015500.GC29248@localhost.localdomain>
+References: <CAK-xaQabh32xjmytaJXZqYicAaZivrPYx-LOSt+kZYc6q18WBQ@mail.gmail.com>
+ <20130607015500.GC29248@localhost.localdomain>
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Date: Fri, 7 Jun 2013 05:11:20 +0200
+Message-ID: <CAK-xaQbWxqjxCfW9+C_cbSktiUR2DwX9aMX1V9j_qCmvhi14Qg@mail.gmail.com>
+Subject: Re: btrfsck: free-space-cache.c:813: btrfs_add_free_space: Assertion
+ `!(ret == -17)' failed
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I want to eliminate the COW feature on all of my OS files.  It is a nice 
-feature for user files, but I don't see a clear benefit for the actual 
-OS files.  And I suspect that COW induced fragmentation is causing or 
-aggravating problems with my system including the boot open_ctree 
-problem.  I had planned to recursively chattr these files to "nodatacow" 
-status but then I ran into this cryptic warning on the chattr man page:
+2013/6/7 Josef Bacik <jbacik@fusionio.com>:
+> and see if that works better?  Thanks,
 
-(Note: For btrfs, the 'C' flag should be set on new or empty files. If 
-it is set on a file which already has data blocks, it is undefined when 
-the blocks assigned to the file will be fully stable.  If the  'C'  
-flag  is set on a directory, it will have no effect on the directory, 
-but new files created in that directory will the No_COW attribute.)
+Perfect:
+Checking filesystem on /dev/mapper/toshi
+UUID: 35eb15cd-d7e3-4be8-92f1-7b210353e241
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 86358842550 bytes used err is 0
+total csum bytes: 628677868
+total tree bytes: 843415552
+total fs tree bytes: 64225280
+total extent tree bytes: 59244544
+btree space waste bytes: 105300529
+file data blocks allocated: 643975458816
+ referenced 645510266880
+Btrfs v0.20-rc1
 
-So what exactly does that mean?  Does it mean that it is unsafe?  Or 
-does it mean that it is simply unreliable?  If I run a btrfs balance 
-first will that clear out the COW snapshots and enable me to perform the 
-recursive chattrs?  What is the best way to approach this?
+Now I'm scrubbing.
 
-Thanks for any tips,  George
+Thanks a lot,
+Andrea

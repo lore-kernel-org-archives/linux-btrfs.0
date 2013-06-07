@@ -1,50 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f180.google.com ([209.85.214.180]:33800 "EHLO
-	mail-ob0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752449Ab3FFTtW convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 15:49:22 -0400
+Received: from mail-we0-f181.google.com ([74.125.82.181]:32851 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754926Ab3FGBBL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jun 2013 21:01:11 -0400
+Received: by mail-we0-f181.google.com with SMTP id p58so2571964wes.40
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Jun 2013 18:01:10 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20130606181248.GA17707@logfs.org>
-References: <1370280485-10047-1-git-send-email-joern@logfs.org>
-	<1370280485-10047-2-git-send-email-joern@logfs.org>
-	<CAHp75VczX+tjqJgNv4uv=BRekm2Gc2i8WHL91vJFWSXWS8-J_A@mail.gmail.com>
-	<20130606181248.GA17707@logfs.org>
-Date: Thu, 6 Jun 2013 22:49:22 +0300
-Message-ID: <CAHp75VfFvirRvN8FwNey4=9GvMKmPvaM5PBThbEBwZYwL_pt-A@mail.gmail.com>
-Subject: Re: [PATCH 1/2] list: add list_for_each_entry_del
-From: Andy Shevchenko <andy.shevchenko@gmail.com>
-To: =?UTF-8?Q?J=C3=B6rn_Engel?= <joern@logfs.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Date: Fri, 7 Jun 2013 03:00:50 +0200
+Message-ID: <CAK-xaQabh32xjmytaJXZqYicAaZivrPYx-LOSt+kZYc6q18WBQ@mail.gmail.com>
+Subject: btrfsck: free-space-cache.c:813: btrfs_add_free_space: Assertion
+ `!(ret == -17)' failed
+To: Linux BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 6, 2013 at 9:12 PM, Jörn Engel <joern@logfs.org> wrote:
-> On Thu, 6 June 2013 22:32:55 +0300, Andy Shevchenko wrote:
->> On Mon, Jun 3, 2013 at 8:28 PM, Joern Engel <joern@logfs.org> wrote:
->> > I have seen a lot of boilerplate code that either follows the pattern of
->> >         while (!list_empty(head)) {
->> >                 pos = list_entry(head->next, struct foo, list);
->> >                 list_del(pos->list);
->> >                 ...
->> >         }
->> > or some variant thereof.
->>
->> What the problem to use list_for_each_safe()?
->
-> The loop may terminate with elements left on the list.  There is more,
-> but I would consider this the main problem.
+Hi everybody,
+   and thanks a lot for your support and work.
 
-I didn't quite get what you mean.
+   I've an external hard drive formatted with BTRFS that sometimes
+goes readonly (no complains in logs or dmesg output).
 
-list_for_each_safe() and list_for_each_entry_safe() traverse across
-list. User actually decides when the proper time to remove an element
-from the list.
+   It happens with kernel v9.4 and latest vanilla kernel in dev, too.
 
-I'm sorry, I didn't see any advantages from list_for_each_del() (or
-entry variant).
+   If I check it I got (git BTRFS progs):
 
---
-With Best Regards,
-Andy Shevchenko
+./btrfsck /dev/mapper/toshi
+Checking filesystem on /dev/mapper/toshi
+UUID: 35eb15cd-d7e3-4be8-92f1-7b210353e241
+checking extents
+checking free space cache
+btrfs: unable to add free space :-17
+btrfsck: free-space-cache.c:813: btrfs_add_free_space: Assertion
+`!(ret == -17)' failed.
+
+Thanks a lot for your time,
+Andrea

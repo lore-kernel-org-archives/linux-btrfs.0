@@ -1,55 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:40468 "EHLO mx1.redhat.com"
+Received: from xp-ob.rzone.de ([81.169.146.140]:57593 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752039Ab3FQS6U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Jun 2013 14:58:20 -0400
-Date: Mon, 17 Jun 2013 14:58:10 -0400
-From: Dave Jones <davej@redhat.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Subject: Re: [3.10-rc6] WARNING: at fs/btrfs/inode.c:7961
- btrfs_destroy_inode+0x265/0x2e0 [btrfs]()
-Message-ID: <20130617185810.GA13370@redhat.com>
-References: <20130617134955.GB15861@redhat.com>
- <20130617173942.15057.63201@localhost.localdomain>
- <20130617182005.GA9839@redhat.com>
- <20130617184227.15057.75499@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130617184227.15057.75499@localhost.localdomain>
+	id S1755484Ab3FGK14 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Jun 2013 06:27:56 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jored.store (jored xp4) (RZmta 31.27 OK)
+	with ESMTP id 60406bp579AmAs for <linux-btrfs@vger.kernel.org>;
+	Fri, 7 Jun 2013 12:27:54 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 8/8] Btrfs: add mount option to force UUID tree checking
+Date: Fri,  7 Jun 2013 12:27:53 +0200
+Message-Id: <66af61cb76bbb667984251f7d7cbe8c92ba45bbd.1370534938.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1370534937.git.sbehrens@giantdisaster.de>
+References: <cover.1370534937.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1370534937.git.sbehrens@giantdisaster.de>
+References: <cover.1370534937.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 17, 2013 at 02:42:27PM -0400, Chris Mason wrote:
- > Quoting Dave Jones (2013-06-17 14:20:06)
- > > On Mon, Jun 17, 2013 at 01:39:42PM -0400, Chris Mason wrote:
- > >  > Quoting Dave Jones (2013-06-17 09:49:55)
- > >  > > Hit this while running this script in a loop..
- > >  > > https://github.com/kernelslacker/io-tests/blob/master/setup.sh
- > >  > > [34385.251507] ------------[ cut here ]------------
- > >  > > [34385.254068] WARNING: at fs/btrfs/inode.c:7961 btrfs_destroy_inode+0x265/0x2e0 [btrfs]()
- > >  > 
- > >  > Thanks Dave, how long did you have to run the script to trigger it?
- > >  > 
- > >  > -chris
- > > 
- > > Judging by the timestamp, about 9 hours.  This is on a 3 disk (sata)
- > > (oldish) quad opteron. Might repro faster on a more modern machine.
- > 
- > Exactly how did you run it?  I want to make sure I'm matching your
- > config.
+This should never be needed, but since all functions are there
+to check and rebuild the UUID tree, a mount option is added that
+allows to force this check and rebuild procedure.
 
-while [ 1 ];
-do
-  setup.sh
-done
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/ctree.h   | 1 +
+ fs/btrfs/disk-io.c | 3 ++-
+ fs/btrfs/super.c   | 8 +++++++-
+ 3 files changed, 10 insertions(+), 2 deletions(-)
 
-You'll need to set DISK1 etc variables at the top of the script to point to
-at least 3 disks for it to scribble over.
-
-you'll also need fsx and fsstress in /usr/local/bin.
-
-Think that's all.
-
-	Dave
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 45b550d..14aaa03 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1987,6 +1987,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index fd13f17..37ceb27 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2920,7 +2920,8 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
+ 		}
+-	} else if (check_uuid_tree) {
++	} else if (check_uuid_tree ||
++		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
+ 		pr_info("btrfs: checking UUID tree\n");
+ 		ret = btrfs_check_uuid_tree(fs_info);
+ 		if (ret) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 14d2be0..ca638be 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -317,7 +317,7 @@ enum {
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+-	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_err,
+ };
+ 
+@@ -357,6 +357,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity, "check_int"},
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
++	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
+@@ -551,6 +552,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_space_cache:
+ 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+ 			break;
++		case Opt_rescan_uuid_tree:
++			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
++			break;
+ 		case Opt_no_space_cache:
+ 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
+ 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
+@@ -925,6 +929,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",space_cache");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
++	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
++		seq_puts(seq, ",rescan_uuid_tree");
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		seq_puts(seq, ",clear_cache");
+ 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
+-- 
+1.8.3
 

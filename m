@@ -1,76 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f50.google.com ([209.85.219.50]:33612 "EHLO
-	mail-oa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752746Ab3FHADZ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2013 20:03:25 -0400
+Received: from v1167.vcdns.de ([88.80.200.92]:56740 "EHLO delorus.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751107Ab3FHMrE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Jun 2013 08:47:04 -0400
+Received: from [192.168.1.101] (ip-88-153-52-10.unitymediagroup.de [88.153.52.10])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by delorus.de (Postfix) with ESMTPSA id 101F35048026
+	for <linux-btrfs@vger.kernel.org>; Sat,  8 Jun 2013 14:47:01 +0200 (CEST)
+Message-ID: <51B327C4.3000304@delorus.de>
+Date: Sat, 08 Jun 2013 14:47:00 +0200
+From: =?ISO-8859-1?Q?Andr=E9_Schlichting?= <andre@delorus.de>
 MIME-Version: 1.0
-In-Reply-To: <20130607184844.GE25323@logfs.org>
-References: <1370280485-10047-1-git-send-email-joern@logfs.org>
-	<1370280485-10047-2-git-send-email-joern@logfs.org>
-	<CAHp75VczX+tjqJgNv4uv=BRekm2Gc2i8WHL91vJFWSXWS8-J_A@mail.gmail.com>
-	<20130606181248.GA17707@logfs.org>
-	<CAHp75VfFvirRvN8FwNey4=9GvMKmPvaM5PBThbEBwZYwL_pt-A@mail.gmail.com>
-	<20130607163658.GC25323@logfs.org>
-	<CAHp75VdBb3Gt+sYwDbJo8BXRSsxwN0K6qw_UeJve6ycQwz2WBQ@mail.gmail.com>
-	<20130607184844.GE25323@logfs.org>
-Date: Sat, 8 Jun 2013 03:03:24 +0300
-Message-ID: <CAHp75VfEUWYNXuo57x6JkOQfRM=03iGFaBKUeqz77SEeg_7=mA@mail.gmail.com>
-Subject: Re: [PATCH 1/2] list: add list_for_each_entry_del
-From: Andy Shevchenko <andy.shevchenko@gmail.com>
-To: =?UTF-8?Q?J=C3=B6rn_Engel?= <joern@logfs.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Moved partition via dd
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 7, 2013 at 9:48 PM, Jörn Engel <joern@logfs.org> wrote:
-> On Fri, 7 June 2013 21:30:16 +0300, Andy Shevchenko wrote:
->> >
->> > spin_lock
->> > list_for_each_entry_safe
->> >         list_del
->> >         spin_unlock
->>
->> Who is doing such thing?
->
-> Replace list_for_each_entry_safe with 'while (!list_empty(...))' and
-> just grep.  My patch is about 'while (!list_empty(...))', not about
-> list_for_each_entry_safe.
+I did the following experiment and tried to move a dm-cryped btrfs 
+partition to the left on an external 3TB drive.
 
-I saw your patch against btrfs.
-I didn't see locking there.
+The old partition had the sector boundaries: 245547520 - 732566527
 
-Any excerpt like
+I deleted this one and created a new one with boundaries: 33024 - 732566640
 
- while (!list_empty(&prefs)) {
- ref = list_first_entry(&prefs, struct __prelim_ref, list);
- list_del(&ref->list);
+Now I moved the data
+   > sudo dd conv=notrunc bs=4096 iflag=fullblock if=/dev/sdc2 
+skip=$((245547520-33024)) seek=0 of=/dev/sdc2
 
-could be transformed to
-struct __prelim_ref *_ref;
-list_for_each_entry_safe(ref, _ref, &prefs, list) {
- list_del(&ref->list);
- ...
-}
+Afterwards I could succesfully open the dm-crypt container
+   > cryptsetup luksOpen /dev/sdc2 data-ext
 
-but is it worth to do? (Same question to your approach)
+The idea was now to mount the btrfs filesystem and resize it to fill up 
+the whole new partition. But the mounting of the btrfs filesystem failed 
+with following errors
+   > mount /dev/mapper/data-ext /mnt/data-ext/
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/data-ext,
+          missing codepage or helper program, or other error
 
-I see two potential issues with while_list_drain_entry() or whatever
-name you like:
- - you delete list as a first operation - you limit user to think in
-that way, if you choose deletion as last operation, who will go to
-free resources (call kfree() for example)?
-- you always use the same ordering (list_first_entry() call), someone
-may not be satisfied by that
+          In some cases useful info is found in syslog - try
+          dmesg | tail or so.
 
-So, the approach with while (!list_empty()) { e = list_entry();
-list_del(&e->list); ... }
-actually not bad. If there any bugs in code, better to fix those bugs
-explicitly.
+   > dmesg | tail
+[51666.228722] device label data-ext devid 1 transid 2088 
+/dev/mapper/data-ext
+[51666.230327] btrfs: disk space caching is enabled
+[51666.256347] btrfs bad tree block start 13587293097915834379 959572647936
+[51666.256854] btrfs bad tree block start 15898041577671574353 959572647936
+[51666.256863] Failed to read block groups: -5
+[51666.262707] btrfs: open_ctree failed
 
-What do I not understand?
+   > btrfs --version
+Btrfs v0.20-rc1-253-g7854c8b
 
---
-With Best Regards,
-Andy Shevchenko
+   > btrfsck /dev/mapper/data-ext
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=15898041577671574353
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=13587293097915834379
+read block failed check_tree_block
+Check tree block failed, want=615210135552, have=9470612182821228052
+Check tree block failed, want=615210135552, have=9470612182821228052
+Check tree block failed, want=615210135552, have=11515627140616528497
+Check tree block failed, want=615210135552, have=11515627140616528497
+Check tree block failed, want=615210135552, have=11515627140616528497
+read block failed check_tree_block
+Checking filesystem on /dev/mapper/data-ext
+UUID: eba8eac6-836f-4664-b8b7-e2a405772e5a
+checking extents
+
+   > dmesg | tail
+
+[51738.639126] btrfsck[15851]: segfault at 1d3 ip 0000000000413ed0 sp 
+00007fff52494e40 error 4 in btrfsck[400000+4d000]
+
+   > btrfs-debug-tree /dev/mapper/data-ext > debug-tree.log 2> 
+debug-tree.err
+
+I ran also from the Problem-FAQ
+   > btrfs-zero-log /dev/mapper/data-ext
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=15898041577671574353
+Check tree block failed, want=959572647936, have=13587293097915834379
+Check tree block failed, want=959572647936, have=13587293097915834379
+read block failed check_tree_block
+Check tree block failed, want=615210135552, have=9470612182821228052
+Check tree block failed, want=615210135552, have=9470612182821228052
+Check tree block failed, want=615210135552, have=11515627140616528497
+Check tree block failed, want=615210135552, have=11515627140616528497
+Check tree block failed, want=615210135552, have=11515627140616528497
+read block failed check_tree_block
+
+   > dmesg | tail
+[52362.222122] btrfs-zero-log[16113]: segfault at 1d3 ip 
+0000000000401e11 sp 00007fff2f214060 error 4 in btrfs-zero-log[400000+2b000]
+[52362.367331] device label data-ext devid 1 transid 2088 /dev/dm-4
+
+
+
+
+

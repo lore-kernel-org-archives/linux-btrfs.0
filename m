@@ -1,57 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f172.google.com ([74.125.82.172]:62745 "EHLO
-	mail-we0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754266Ab3FKQG5 convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:58819 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751647Ab3FJTv7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Jun 2013 12:06:57 -0400
-Received: by mail-we0-f172.google.com with SMTP id q56so6142025wes.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2013 09:06:56 -0700 (PDT)
-References: <1370893895-24884-2-git-send-email-fdmanana@gmail.com> <1370894875-26129-1-git-send-email-fdmanana@gmail.com> <20130611150052.GA7290@twin.jikos.cz>
-Mime-Version: 1.0 (1.0)
-In-Reply-To: <20130611150052.GA7290@twin.jikos.cz>
-Content-Type: text/plain;
-	charset=us-ascii
-Message-Id: <2F238C72-BCF5-4DC4-B002-26704784D93D@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Filipe Manana <fdmanana@gmail.com>
-Subject: Re: [PATCH 1/5] Btrfs-progs: fix closing of devices
-Date: Tue, 11 Jun 2013 17:09:43 +0100
-To: "dsterba@suse.cz" <dsterba@suse.cz>
+	Mon, 10 Jun 2013 15:51:59 -0400
+Received: by mail-wg0-f47.google.com with SMTP id l18so1724572wgh.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 12:51:58 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 1/5] Btrfs-progs: fix closing of devices
+Date: Mon, 10 Jun 2013 20:51:31 +0100
+Message-Id: <1370893895-24884-2-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
+References: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/06/2013, at 16:00, David Sterba <dsterba@suse.cz> wrote:
+If a device could not be opened in volumes.c:read_one_dev(), a
+btrfs_device instance was allocated and added to the list of
+devices of the fs - however this device instance had its fd,
+name and label fields not initialized. This is problematic in
+disk-io.c:close_all_devices() as it tries to close the (invalid)
+fd of the device and kfree() its name and label, which point
+to random memory locations.
 
-> On Mon, Jun 10, 2013 at 09:07:55PM +0100, Filipe David Borba Manana wrote:
->> --- a/disk-io.c
->> +++ b/disk-io.c
->> @@ -1267,12 +1267,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
->>    while (!list_empty(list)) {
->>        device = list_entry(list->next, struct btrfs_device, dev_list);
->>        list_del_init(&device->dev_list);
->> -        if (device->fd) {
->> +        if (device->fd > 0) {
-> 
->> -        device = kmalloc(sizeof(*device), GFP_NOFS);
->> +        device = kzalloc(sizeof(*device), GFP_NOFS);
->>        if (!device)
->>            return -ENOMEM;
->> -        device->total_ios = 0;
-> 
-> Can you please describe the incremental change between the two patches?
-> Why do you exclude fd == 0 ?
+  Thread 1 (Thread 0x7f0a3d2d1740 (LWP 23585)):
+  #0  __GI___libc_free (mem=0xa5a5a5a5a5a5a5a5) at malloc.c:2970
+  #1  0x000000000042054b in close_all_devices (fs_info=0x1e92bf0) at disk-io.c:1276
+  #2  0x0000000000421dcd in close_ctree (root=<optimized out>) at disk-io.c:1336
+  #3  0x0000000000418cfa in cmd_check (argc=<optimized out>, argv=<optimized out>) at cmds-check.c:4171
+  #4  0x0000000000403ed4 in main (argc=2, argv=0x7fff9a583d28) at btrfs.c:295
 
-Sorry, I messed up my git send-email foo.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ disk-io.c |    4 ++--
+ volumes.c |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-I excluded 0 because the original code did it too, however it was logically
-incorrect. The last patch version (v2, 3rd email) does not exclude 0 and
-ensures that -1 is used everywhere as a marker for invalid fd.
+diff --git a/disk-io.c b/disk-io.c
+index 21b410d..bd9cf4e 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1267,12 +1267,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
+ 	while (!list_empty(list)) {
+ 		device = list_entry(list->next, struct btrfs_device, dev_list);
+ 		list_del_init(&device->dev_list);
+-		if (device->fd) {
++		if (device->fd >= 0) {
+ 			fsync(device->fd);
+ 			if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
+ 				fprintf(stderr, "Warning, could not drop caches\n");
++			close(device->fd);
+ 		}
+-		close(device->fd);
+ 		kfree(device->name);
+ 		kfree(device->label);
+ 		kfree(device);
+diff --git a/volumes.c b/volumes.c
+index d6f81f8..a84ded7 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1628,10 +1628,10 @@ static int read_one_dev(struct btrfs_root *root,
+ 	if (!device) {
+ 		printk("warning devid %llu not found already\n",
+ 			(unsigned long long)devid);
+-		device = kmalloc(sizeof(*device), GFP_NOFS);
++		device = kzalloc(sizeof(*device), GFP_NOFS);
+ 		if (!device)
+ 			return -ENOMEM;
+-		device->total_ios = 0;
++		device->fd = -1;
+ 		list_add(&device->dev_list,
+ 			 &root->fs_info->fs_devices->devices);
+ 	}
+-- 
+1.7.9.5
 
-(Hopefully now I figured how to use git send-email to update a patch
-correctly)
-
-Thanks
-
-
-> 
-> david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

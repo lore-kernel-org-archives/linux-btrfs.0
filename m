@@ -1,98 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37367 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752419Ab3FJUuk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 16:50:40 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id C349E9A0363
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:50:39 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 8l43J5QycrnKDvdG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:50:39 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: stop waiting on current trans if we aborted
-Date: Mon, 10 Jun 2013 16:50:36 -0400
-Message-ID: <1370897436-8205-1-git-send-email-jbacik@fusionio.com>
+Received: from mx1.redhat.com ([209.132.183.28]:18944 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751051Ab3FJWkA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Jun 2013 18:40:00 -0400
+Date: Mon, 10 Jun 2013 15:39:58 -0700
+From: Zach Brown <zab@redhat.com>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Re: [PATCH 0/6] fix INT_MAX readdir hang, plus cleanups
+Message-ID: <20130610223958.GL24721@lenny.home.zabbo.net>
+References: <1370384280-28652-1-git-send-email-zab@redhat.com>
+ <20130604231653.4088.91500@localhost.localdomain>
+ <20130604232657.GE24721@lenny.home.zabbo.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130604232657.GE24721@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I hit a hang when run_delayed_refs returned an error in the beginning of
-btrfs_commit_transaction.  If we decide we need to commit the transaction in
-btrfs_end_transaction we'll set BLOCKED and start to commit, but if we get an
-error this early on we'll just exit without committing.  This is fine, except
-that anybody else who tried to start a transaction will sit in
-wait_current_trans() since we're set to BLOCKED and we never set it to something
-else and woke people up.  To fix this we want to check for trans->aborted
-everywhere we wait for the transaction state to change, and make
-btrfs_abort_transaction() wake up any waiters there may be.  All the callers
-will notice that the transaction has aborted and exit out properly.  Thanks,
+On Tue, Jun 04, 2013 at 04:26:57PM -0700, Zach Brown wrote:
+> On Tue, Jun 04, 2013 at 07:16:53PM -0400, Chris Mason wrote:
+> > Quoting Zach Brown (2013-06-04 18:17:54)
+> > > Hi gang,
+> > > 
+> > > I finally sat down to fix that readdir hang that has been in the back
+> > > of my mind for a while.  I *hope* that the fix is pretty simple: just
+> > > don't manufacture a fake f_pos, I *think* we can abuse f_version as an
+> > > indicator that we shouldn't return entries.  Does this look reasonable?
+> > 
+> > I like it, and it doesn't look too far away from how others are abusing
+> > f_version.  Have you tried with NFS?  I don't think it'll hurt, but NFS
+> > loves to surprise me.
+> 
+> Mm, no, I hadn't.  I'll give it a go tomorrow.  What could go wrong? :)
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Or a week later.  Pretty close!
+
+I couldn't get NFS to break.  Clients see new entries created directly
+in the exported btrfs and on either of noac and actime=1 client mounts.
+For whatever that's worth.
+
+But I did find that I'd broken the case of trying to re-enable readdir
+results by seeking past the last entry (which happens to be the current
+f_pos now that we're using f_version).
+
+Here's the incremental fix against what Josef has in -next.  I'm cool
+with either squashing or just committing it.
+
+- z
+
+Subject: [PATCH] btrfs: reset f_version when seeking to pos
+
+Commit 63e3dfe ("btrfs: fix readdir hang with offsets past INT_MAX")
+switched to using f_version to stop readdir results instead of setting a
+large f_pos.
+
+It inadvertantly changed behaviour in the case where an app specifically
+seeks to one past the last valid dent->d_off it has seen.  Previously
+f_pos would have changed from the fake f_pos to this new f_pos which
+would let readdir return new entries.
+
+But now that it's using f_version it might not have seen new entries.
+generic_file_llseek() won't clear f_version if the desirned pos happens
+to be the current f_pos.
+
+So we add a little wrapper to notice this case and clear f_version so
+that entries can be seen in this case.
+
+Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- fs/btrfs/super.c       |    3 +++
- fs/btrfs/transaction.c |   12 ++++++++----
- 2 files changed, 11 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 14d2be0..8eb6191 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -265,6 +265,9 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 		return;
- 	}
- 	ACCESS_ONCE(trans->transaction->aborted) = errno;
-+	/* Wake up anybody who may be waiting on this transaction */
-+	wake_up(&root->fs_info->transaction_wait);
-+	wake_up(&root->fs_info->transaction_blocked_wait);
- 	__btrfs_std_error(root->fs_info, function, line, errno, NULL);
- }
- /*
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8c8b800..c11b7ef 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -302,7 +302,8 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- static inline int is_transaction_blocked(struct btrfs_transaction *trans)
- {
- 	return (trans->state >= TRANS_STATE_BLOCKED &&
--		trans->state < TRANS_STATE_UNBLOCKED);
-+		trans->state < TRANS_STATE_UNBLOCKED &&
-+		!trans->aborted);
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1059c90..590c274 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4997,6 +4997,23 @@ unsigned char btrfs_filetype_table[] = {
+  * which prevents readdir results until seek resets f_pos and f_version.
+  */
+ #define BTRFS_READDIR_EOF ~0ULL
++static loff_t btrfs_dir_llseek(struct file *file, loff_t offset, int whence)
++{
++	struct inode *inode = file->f_mapping->host;
++	loff_t ret;
++
++	/*
++	 * f_version isn't reset if a seek is attempted to the current pos.  A
++	 * caller can be trying to see more entries by seeking past the last
++	 * entry to the current pos after creating a new entry.
++	 */
++	mutex_lock(&inode->i_mutex);
++	ret = generic_file_llseek(file, offset, whence);
++	if (ret == offset && file->f_version == BTRFS_READDIR_EOF)
++		file->f_version = 0;
++	mutex_unlock(&inode->i_mutex);
++	return ret;
++}
  
- /* wait for commit against the current transaction to become unblocked
-@@ -320,7 +321,8 @@ static void wait_current_trans(struct btrfs_root *root)
- 		spin_unlock(&root->fs_info->trans_lock);
+ static int btrfs_real_readdir(struct file *filp, void *dirent,
+ 			      filldir_t filldir)
+@@ -8642,7 +8659,7 @@ static const struct inode_operations btrfs_dir_ro_inode_operations = {
+ };
  
- 		wait_event(root->fs_info->transaction_wait,
--			   cur_trans->state >= TRANS_STATE_UNBLOCKED);
-+			   cur_trans->state >= TRANS_STATE_UNBLOCKED ||
-+			   cur_trans->aborted);
- 		put_transaction(cur_trans);
- 	} else {
- 		spin_unlock(&root->fs_info->trans_lock);
-@@ -1392,7 +1394,8 @@ static void wait_current_trans_commit_start(struct btrfs_root *root,
- 					    struct btrfs_transaction *trans)
- {
- 	wait_event(root->fs_info->transaction_blocked_wait,
--		   trans->state >= TRANS_STATE_COMMIT_START);
-+		   trans->state >= TRANS_STATE_COMMIT_START ||
-+		   trans->aborted);
- }
- 
- /*
-@@ -1403,7 +1406,8 @@ static void wait_current_trans_commit_start_and_unblock(struct btrfs_root *root,
- 					 struct btrfs_transaction *trans)
- {
- 	wait_event(root->fs_info->transaction_wait,
--		   trans->state >= TRANS_STATE_UNBLOCKED);
-+		   trans->state >= TRANS_STATE_UNBLOCKED ||
-+		   trans->aborted);
- }
- 
- /*
+ static const struct file_operations btrfs_dir_file_operations = {
+-	.llseek		= generic_file_llseek,
++	.llseek		= btrfs_dir_llseek,
+ 	.read		= generic_read_dir,
+ 	.readdir	= btrfs_real_readdir,
+ 	.unlocked_ioctl	= btrfs_ioctl,
 -- 
-1.7.7.6
+1.7.11.7
 

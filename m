@@ -1,94 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:34008 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753011Ab3FJJYT convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:60987 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751124Ab3FJM7H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 05:24:19 -0400
-Received: by mail-pa0-f49.google.com with SMTP id ld11so1404263pab.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 02:24:19 -0700 (PDT)
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: btrfs quota examples?
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <51B58333.3050901@gmx.net>
-Date: Mon, 10 Jun 2013 17:24:13 +0800
-Cc: Tomasz Chmielewski <tch@virtall.com>, linux-btrfs@vger.kernel.org
-Message-Id: <1C87739D-B324-4FFB-94DD-52DB72D8C991@gmail.com>
-References: <20130610152127.38fb8a50@virtall.com> <51B58333.3050901@gmx.net>
-To: Arne Jansen <sensille@gmx.net>
+	Mon, 10 Jun 2013 08:59:07 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id CA1389A0368
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 06:59:06 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id kUWNkHsihDDt7YVH (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 06:59:06 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: free csums when we're done scrubbing an extent
+Date: Mon, 10 Jun 2013 08:59:04 -0400
+Message-ID: <1370869144-1524-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+A user reported scrub taking up an unreasonable amount of ram as it ran.  This
+is because we lookup the csums for the extent we're scrubbing but don't free it
+up until after we're done with the scrub, which means we can take up a whole lot
+of ram.  This patch fixes this by dropping the csums once we're done with the
+extent we've scrubbed.  The user reported this to fix their problem.  Thanks,
 
-> On 10.06.2013 08:21, Tomasz Chmielewski wrote:
->> I'm trying to use btrfs quotas, but I'm unable to find reliable
->> documentation on its usage.
->> 
->> Let's start with an empty subvolume:
->> 
->> - assign 200 MB space to it:
->> 
->> # btrfs qgroup limit 200m /mnt/btrfs-backup/tester/
->> 
->> 
->> - see the usage:
->> 
->> # btrfs qgroup show /mnt/btrfs-backup/tester/
->> 0/803 0 0
->> 
->> 
->> - let's add a 100 MB file:
->> 
->> # dd if=/dev/urandom of=bigfile bs=1M count=100
->> 
->> 
->> - sync the FS to make sure quota is updated:
->> 
->> # btrfs filesystem
->> sync /mnt/btrfs-backup/ FSSync '/mnt/btrfs-backup/'
->> 
->> 
->> - see current quota usage:
->> 
->> # btrfs qgroup show /mnt/btrfs-backup/backuppc/tester/
->> 0/803 104882176 104882176
->> 
->> 
->> Now, my questions:
->> 
->> - what do both 104882176 104882176 numbers represent?
-> 
-> The first number represents the amount of data in that subvolume,
-> regardless whether that data is shared with other subvolumes or
-> not.
-> The second number shows the amount of data that is unique to this
-> subvolume and not shared with others, i.e. the amount of space
-> that will get freed if you delete this subvolume.
-> For how this extends to quota groups see http://sensille.com/qgroups.pdf
-> 
->> 
->> - how can I verify the quota assigned to any given subvolume? I've assigned 200 MB, but how can I verify that number?
-> 
-> The original patch set didn't include commands for that, but I
-> think I've seen patches for it on the mailing list, though I
-> can't find them right now.
+Reported-and-tested-by: Remco Hosman <remco@hosman.xs4all.nl>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/scrub.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Yeah, We have sent the patch-set for a long time.
-
-http://marc.info/?l=linux-btrfs&m=135478701223863&w=2
-
-
-Thanks,
-Wang
-> 
-> -Arne
-> 
->> 
->> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d485055..63144e4 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2499,6 +2499,7 @@ again:
+ 			if (ret)
+ 				goto out;
+ 
++			scrub_free_csums(sctx);
+ 			if (extent_logical + extent_len <
+ 			    key.objectid + bytes) {
+ 				logical += increment;
+-- 
+1.7.11.4
 

@@ -1,72 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from koch.ro ([88.198.2.104]:41403 "EHLO koch.ro"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750887Ab3FJSSP convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:37367 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752419Ab3FJUuk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 14:18:15 -0400
-From: Thomas Koch <thomas@koch.ro>
-To: Josef Bacik <jbacik@fusionio.com>
-Reply-To: thomas@koch.ro
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Stale NFS file handle after power loss
-Date: Mon, 10 Jun 2013 20:18:11 +0200
-Message-ID: <4263017.nb4SMd4E6p@x121e>
-In-Reply-To: <20130610130047.GA10307@localhost.localdomain>
-References: <65278856.dWSg6uQ8zb@x121e> <20130610130047.GA10307@localhost.localdomain>
+	Mon, 10 Jun 2013 16:50:40 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id C349E9A0363
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:50:39 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 8l43J5QycrnKDvdG (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:50:39 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: stop waiting on current trans if we aborted
+Date: Mon, 10 Jun 2013 16:50:36 -0400
+Message-ID: <1370897436-8205-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, June 10, 2013 09:00:47 AM Josef Bacik wrote:
-> On Sat, Jun 08, 2013 at 01:14:35PM -0600, Thomas Koch wrote:
-> > Hi,
-> > 
-> > I had a power loss on my btrfs file system during package installation and
-> > now I found this:
-> > 
-> > <code>
-> > % ls -l /var/lib/dpkg/tmp.ci
-> > ls: cannot access /var/lib/dpkg/tmp.ci/conffiles: Stale NFS file handle
-> > ls: cannot access /var/lib/dpkg/tmp.ci/md5sums: Stale NFS file handle
-> > total 0
-> > -????????? ? ? ? ?            ? conffiles
-> > -????????? ? ? ? ?            ? md5sums
-> > % sudo rm -rf /var/lib/dpkg/tmp.ci/conffiles
-> > rm: cannot remove ‘/var/lib/dpkg/tmp.ci/conffiles’: Stale NFS file handle
-> > </code>
-> > 
-> > I booted with a live system and ran btrfsck (without --repair!) but this
-> > did not change the situation. Unfortunately I wasn't clever enough to
-> > save the output of btrfsck somehow. Do you need it?
-> > 
-> > Could you help me to get rid of these bogus files, please?
-> 
-> Don't run with --repair, but please capture the output so I can see what's
-> going wrong.  Thanks,
-> 
-> Josef
+I hit a hang when run_delayed_refs returned an error in the beginning of
+btrfs_commit_transaction.  If we decide we need to commit the transaction in
+btrfs_end_transaction we'll set BLOCKED and start to commit, but if we get an
+error this early on we'll just exit without committing.  This is fine, except
+that anybody else who tried to start a transaction will sit in
+wait_current_trans() since we're set to BLOCKED and we never set it to something
+else and woke people up.  To fix this we want to check for trans->aborted
+everywhere we wait for the transaction state to change, and make
+btrfs_abort_transaction() wake up any waiters there may be.  All the callers
+will notice that the transaction has aborted and exit out properly.  Thanks,
 
-sudo btrfsck /dev/x121e/root
-checking extents
-checking fs roots
-root 5 inode 9319255 errors 1040
-root 5 inode 9698560 errors 1000
-root 5 inode 11591532 errors 2001
-        unresolved ref dir 11591531 index 2 namelen 9 name conffiles filetype 1 
-error 4
-root 5 inode 11591534 errors 2001
-        unresolved ref dir 11591531 index 4 namelen 7 name md5sums filetype 1 
-error 4
-found 270172975104 bytes used err is 1
-total csum bytes: 261797296
-total tree bytes: 2063106048
-total fs tree bytes: 1575575552
-btree space waste bytes: 561459705
-file data blocks allocated: 386128334848
- referenced 262981738496
-Btrfs Btrfs v0.19
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/super.c       |    3 +++
+ fs/btrfs/transaction.c |   12 ++++++++----
+ 2 files changed, 11 insertions(+), 4 deletions(-)
 
-thx for looking into this!
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 14d2be0..8eb6191 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -265,6 +265,9 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 		return;
+ 	}
+ 	ACCESS_ONCE(trans->transaction->aborted) = errno;
++	/* Wake up anybody who may be waiting on this transaction */
++	wake_up(&root->fs_info->transaction_wait);
++	wake_up(&root->fs_info->transaction_blocked_wait);
+ 	__btrfs_std_error(root->fs_info, function, line, errno, NULL);
+ }
+ /*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8c8b800..c11b7ef 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -302,7 +302,8 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+ static inline int is_transaction_blocked(struct btrfs_transaction *trans)
+ {
+ 	return (trans->state >= TRANS_STATE_BLOCKED &&
+-		trans->state < TRANS_STATE_UNBLOCKED);
++		trans->state < TRANS_STATE_UNBLOCKED &&
++		!trans->aborted);
+ }
+ 
+ /* wait for commit against the current transaction to become unblocked
+@@ -320,7 +321,8 @@ static void wait_current_trans(struct btrfs_root *root)
+ 		spin_unlock(&root->fs_info->trans_lock);
+ 
+ 		wait_event(root->fs_info->transaction_wait,
+-			   cur_trans->state >= TRANS_STATE_UNBLOCKED);
++			   cur_trans->state >= TRANS_STATE_UNBLOCKED ||
++			   cur_trans->aborted);
+ 		put_transaction(cur_trans);
+ 	} else {
+ 		spin_unlock(&root->fs_info->trans_lock);
+@@ -1392,7 +1394,8 @@ static void wait_current_trans_commit_start(struct btrfs_root *root,
+ 					    struct btrfs_transaction *trans)
+ {
+ 	wait_event(root->fs_info->transaction_blocked_wait,
+-		   trans->state >= TRANS_STATE_COMMIT_START);
++		   trans->state >= TRANS_STATE_COMMIT_START ||
++		   trans->aborted);
+ }
+ 
+ /*
+@@ -1403,7 +1406,8 @@ static void wait_current_trans_commit_start_and_unblock(struct btrfs_root *root,
+ 					 struct btrfs_transaction *trans)
+ {
+ 	wait_event(root->fs_info->transaction_wait,
+-		   trans->state >= TRANS_STATE_UNBLOCKED);
++		   trans->state >= TRANS_STATE_UNBLOCKED ||
++		   trans->aborted);
+ }
+ 
+ /*
+-- 
+1.7.7.6
 
-Thomas Koch, http://www.koch.ro

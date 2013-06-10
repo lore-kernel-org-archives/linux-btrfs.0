@@ -1,48 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:54907 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752128Ab3FJIMt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 04:12:49 -0400
-Message-ID: <51B58A7F.3060101@jan-o-sch.net>
-Date: Mon, 10 Jun 2013 10:12:47 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>
-Subject: Re: [PATCH 0/3] Btrfs: qgroup rescan fixes for next rc
-References: <1369756044-17194-1-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1369756044-17194-1-git-send-email-list.btrfs@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:34008 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753011Ab3FJJYT convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Jun 2013 05:24:19 -0400
+Received: by mail-pa0-f49.google.com with SMTP id ld11so1404263pab.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 02:24:19 -0700 (PDT)
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: btrfs quota examples?
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <51B58333.3050901@gmx.net>
+Date: Mon, 10 Jun 2013 17:24:13 +0800
+Cc: Tomasz Chmielewski <tch@virtall.com>, linux-btrfs@vger.kernel.org
+Message-Id: <1C87739D-B324-4FFB-94DD-52DB72D8C991@gmail.com>
+References: <20130610152127.38fb8a50@virtall.com> <51B58333.3050901@gmx.net>
+To: Arne Jansen <sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hello,
 
-I know, Linus is turning grumpy again. I'd still feel better if we sent this
-patch set for the very next rc now. Any particular objections?
-
--Jan
-
-On Tue, May 28, 2013 at 17:47 (+0200), Jan Schmidt wrote:
-> Here are three fixes for the new qgroup rescan feature. The first two
-> are quite small, the third one is a little bigger. I thought about
-> splitting that one up, but in the end I didn't find a good point to
-> break that up. It achieves more than one goal, I agree, but its more or
-> less a compact code change that need not be split artifically in my
-> opinion.
+> On 10.06.2013 08:21, Tomasz Chmielewski wrote:
+>> I'm trying to use btrfs quotas, but I'm unable to find reliable
+>> documentation on its usage.
+>> 
+>> Let's start with an empty subvolume:
+>> 
+>> - assign 200 MB space to it:
+>> 
+>> # btrfs qgroup limit 200m /mnt/btrfs-backup/tester/
+>> 
+>> 
+>> - see the usage:
+>> 
+>> # btrfs qgroup show /mnt/btrfs-backup/tester/
+>> 0/803 0 0
+>> 
+>> 
+>> - let's add a 100 MB file:
+>> 
+>> # dd if=/dev/urandom of=bigfile bs=1M count=100
+>> 
+>> 
+>> - sync the FS to make sure quota is updated:
+>> 
+>> # btrfs filesystem
+>> sync /mnt/btrfs-backup/ FSSync '/mnt/btrfs-backup/'
+>> 
+>> 
+>> - see current quota usage:
+>> 
+>> # btrfs qgroup show /mnt/btrfs-backup/backuppc/tester/
+>> 0/803 104882176 104882176
+>> 
+>> 
+>> Now, my questions:
+>> 
+>> - what do both 104882176 104882176 numbers represent?
 > 
-> Jan Schmidt (3):
->   Btrfs: fix memory patcher through fs_info->qgroup_ulist
->   Btrfs: avoid double free of fs_info->qgroup_ulist
->   Btrfs: fix qgroup rescan resume on mount
+> The first number represents the amount of data in that subvolume,
+> regardless whether that data is shared with other subvolumes or
+> not.
+> The second number shows the amount of data that is unique to this
+> subvolume and not shared with others, i.e. the amount of space
+> that will get freed if you delete this subvolume.
+> For how this extends to quota groups see http://sensille.com/qgroups.pdf
 > 
->  fs/btrfs/ctree.h   |    2 +
->  fs/btrfs/disk-io.c |    2 +
->  fs/btrfs/qgroup.c  |  198 +++++++++++++++++++++++++++++++++-------------------
->  3 files changed, 131 insertions(+), 71 deletions(-)
+>> 
+>> - how can I verify the quota assigned to any given subvolume? I've assigned 200 MB, but how can I verify that number?
+> 
+> The original patch set didn't include commands for that, but I
+> think I've seen patches for it on the mailing list, though I
+> can't find them right now.
+
+Yeah, We have sent the patch-set for a long time.
+
+http://marc.info/?l=linux-btrfs&m=135478701223863&w=2
+
+
+Thanks,
+Wang
+> 
+> -Arne
+> 
+>> 
+>> 
 > 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+

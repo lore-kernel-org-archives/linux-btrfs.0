@@ -1,49 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:51664 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752250Ab3FJNAu (ORCPT
+Received: from equinox.linksky122.com ([184.173.222.71]:43235 "EHLO
+	equinox.linksky122.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750976Ab3FJPvV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 09:00:50 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 0839B7C067E
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 07:00:50 -0600 (MDT)
-Date: Mon, 10 Jun 2013 09:00:47 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Thomas Koch <thomas@koch.ro>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Stale NFS file handle after power loss
-Message-ID: <20130610130047.GA10307@localhost.localdomain>
-References: <65278856.dWSg6uQ8zb@x121e>
+	Mon, 10 Jun 2013 11:51:21 -0400
+Message-ID: <20130610101929.162463asym1cxvnl@webmail.kevinokelley.com>
+Date: Mon, 10 Jun 2013 10:19:29 -0500
+From: kevin@kevinokelley.com
+To: linux-btrfs@vger.kernel.org
+Subject: How to mount a copy of a disk with a Btrfs file system on it?
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <65278856.dWSg6uQ8zb@x121e>
+Content-Type: text/plain;
+ charset=ISO-8859-1;
+ DelSp="Yes";
+ format="flowed"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 08, 2013 at 01:14:35PM -0600, Thomas Koch wrote:
-> Hi,
-> 
-> I had a power loss on my btrfs file system during package installation and now 
-> I found this:
-> 
-> <code>
-> % ls -l /var/lib/dpkg/tmp.ci
-> ls: cannot access /var/lib/dpkg/tmp.ci/conffiles: Stale NFS file handle
-> ls: cannot access /var/lib/dpkg/tmp.ci/md5sums: Stale NFS file handle
-> total 0
-> -????????? ? ? ? ?            ? conffiles
-> -????????? ? ? ? ?            ? md5sums
-> % sudo rm -rf /var/lib/dpkg/tmp.ci/conffiles
-> rm: cannot remove ‘/var/lib/dpkg/tmp.ci/conffiles’: Stale NFS file handle
-> </code>
-> 
-> I booted with a live system and ran btrfsck (without --repair!) but this did 
-> not change the situation. Unfortunately I wasn't clever enough to save the 
-> output of btrfsck somehow. Do you need it?
-> 
-> Could you help me to get rid of these bogus files, please?
+Consider the following environment.  We have a storage array that  
+provides its own facilities for creating snapshots, replicas, and  
+clones.  We create a Btrfs file system on a volume on one of these  
+storage arrays, and we mount a snapshot of that volume on the same  
+host.  (The simple use-case is that the snapshot is being used to  
+restore a set of files.)
 
-Don't run with --repair, but please capture the output so I can see what's going
-wrong.  Thanks,
+We've noticed two problems:
 
-Josef
+1. The dmesg log shows that the kernel recognizes the Btrfs object id  
+for both devices.  For example:
+
+[ 2920.923517] btrfs: device fsid 54c6e67c-fd51-4aed-a865-4ed4e1cd246a  
+devid 1 transid 7 /dev/dm-2
+[ 2921.007179] btrfs: device fsid 54c6e67c-fd51-4aed-a865-4ed4e1cd246a devid 1
+transid 6 /dev/dm-9
+
+If a user process modifies the original file system, the changes also  
+appear on the snapshot.  This is highly undesirable as we want to  
+preserve the integrity of the snapshot so that it reflects the state  
+of the volume when the snapshot was created.
+
+2. We cannot mount the original volume read-write and mount the  
+snapshot read-only.
+
+Is there a mount option for Btrfs that will allow us to mount the  
+Btrfs file system and ignore the UUID on the device or allow us to  
+assign a new (random) UUID for the volume?   For example, xfs provides  
+a mount option "-o nouuid".  Gfs2 allows mount option "-o  
+locktable=<UUID>" to specify a new locktable.
+
+Thank you.
+
+

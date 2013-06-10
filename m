@@ -1,99 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51287 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752053Ab3FYC41 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50494 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752275Ab3FJOw7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 22:56:27 -0400
-Message-ID: <51C907DA.2010902@oracle.com>
-Date: Tue, 25 Jun 2013 11:00:42 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2 v3] btrfs: obtain used_bytes in BTRFS_IOC_FS_INFO
- ioctl
-References: <1370876355-16584-3-git-send-email-anand.jain@oracle.com> <1371799948-14176-1-git-send-email-anand.jain@oracle.com> <20130624170316.GL4288@localhost.localdomain>
-In-Reply-To: <20130624170316.GL4288@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Mon, 10 Jun 2013 10:52:59 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5AEqtNU028082
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:52:56 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5AEqvFx016118
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:52:57 GMT
+Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5AEqv7F016106
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 14:52:57 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 8/9] btrfs-progs: get_label_mounted to return label instead of print
+Date: Mon, 10 Jun 2013 22:56:29 +0800
+Message-Id: <1370876190-16520-9-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1370876190-16520-1-git-send-email-anand.jain@oracle.com>
+References: <1370876190-16520-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This would help to reuse the function
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
 
-On 06/25/2013 01:03 AM, Josef Bacik wrote:
-> On Fri, Jun 21, 2013 at 03:32:28PM +0800, Anand Jain wrote:
->> btrfs-progs has to read fs info from the kernel to
->> read the latest info instead of reading it from the disks,
->> which generally is a stale info after certain critical
->> operation.
->>
->> getting used_bytes parameter will help to fix
->> 	btrfs filesystem show --kernel
->> to show the current info of the fs
->>
->> v2->v3:
->> 	everything is changed dropped the plan to introduce
->> 	the new ioctl, as of now filesystem show could
->> 	manage if we add the used_bytes parameter to the
->> 	BTRFS_IOC_FS_INFO and
->> 	Update the title from
->> 	 add framework to read fs info and dev info from the kernel
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/ioctl.c           | 16 ++++++++++++++--
->>   include/uapi/linux/btrfs.h |  3 ++-
->>   2 files changed, 16 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 0e7bcc5..082c9fc 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -2384,7 +2384,10 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
->>   	struct btrfs_ioctl_fs_info_args *fi_args;
->>   	struct btrfs_device *device;
->>   	struct btrfs_device *next;
->> -	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
->> +	struct btrfs_fs_info *info = root->fs_info;
->> +	struct btrfs_fs_devices *fs_devices = info->fs_devices;
->> +	struct btrfs_space_info *si;
->> +	u64 used_bytes = 0;
->>   	int ret = 0;
->>
->>   	if (!capable(CAP_SYS_ADMIN))
->> @@ -2394,8 +2397,17 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
->>   	if (!fi_args)
->>   		return -ENOMEM;
->>
->> +	rcu_read_lock();
->> +	list_for_each_entry_rcu(si, &info->space_info, list) {
->> +		used_bytes += si->bytes_used + si->bytes_reserved
->> +				+ si->bytes_pinned + si->bytes_readonly
->> +				+ si->bytes_may_use;
->> +	}
->> +	rcu_read_unlock();
->> +	fi_args->used_bytes = used_bytes;
->> +
->
-> So what exactly are we using this number for?  ->bytes_may_used is going to
-> change all the damned time because of reservations and it could even make
-> used_bytes to appear to be larger than total_bytes because of overcommitting.
- > So why exactly do you want this value?
+diff --git a/utils.c b/utils.c
+index f9545b8..b205005 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1313,7 +1313,7 @@ static int get_label_unmounted(const char *dev)
+  * mounted path rather than device.  Return the corresponding error
+  * the user specified the device path.
+  */
+-static int get_label_mounted(const char *mount_path)
++static int get_label_mounted(const char *mount_path, char *labelp)
+ {
+ 	char label[BTRFS_LABEL_SIZE];
+ 	int fd;
+@@ -1331,16 +1331,24 @@ static int get_label_mounted(const char *mount_path)
+ 		return -1;
+ 	}
+ 
+-	fprintf(stdout, "%s\n", label);
++	strncpy(labelp, label, sizeof(label));
+ 	close(fd);
+ 	return 0;
+ }
+ 
+ int get_label(const char *btrfs_dev)
+ {
+-	return is_existing_blk_or_reg_file(btrfs_dev) ?
+-		get_label_unmounted(btrfs_dev) :
+-		get_label_mounted(btrfs_dev);
++	int ret;
++	char label[BTRFS_LABEL_SIZE];
++
++	if (is_existing_blk_or_reg_file(btrfs_dev))
++		ret = get_label_unmounted(btrfs_dev);
++	else {
++		ret = get_label_mounted(btrfs_dev, label);
++		if (!ret)
++			fprintf(stdout, "%s\n", label);
++	}
++	return ret;
+ }
+ 
+ int set_label(const char *btrfs_dev, const char *label)
+-- 
+1.8.1.227.g44fe835
 
-  used for and to be consistent with what btrfs fi show does as of now,
-  it shows the number of bytes used in the FS.
-
-  just figured out that I could also use BTRFS_IOC_SPACE_INFO
-  and do that math outside kernel. So pls. drop this kernel patch.
-  I will be sending out a new progs patch which doesn't need kernel
-  ioctl changes.
-
-> Also how are you going to deal with
-> older kernels where this isn't populated?  Thanks,
-
-  Since the ioctl arg size didn't change here (as I was using the
-  reserved space) it will just show 0.0 when old kernel is used.
-  Not a best way (as it lets user to wonder) but a good trade-off
-  to make the fix as simple as possible.
-
-Thanks, Anand
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob15.myregisteredsite.com ([209.17.115.53]:58648 "EHLO
-	atl4mhob15.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753897Ab3FINjy (ORCPT
+Received: from atl4mhob07.myregisteredsite.com ([209.17.115.45]:49873 "EHLO
+	atl4mhob07.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752084Ab3FKA4b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Jun 2013 09:39:54 -0400
-Received: from mailpod1.hostingplatform.com ([10.30.71.115])
-	by atl4mhob15.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r59Ddspt023031
-	for <linux-btrfs@vger.kernel.org>; Sun, 9 Jun 2013 09:39:54 -0400
-Message-ID: <51B485B0.2080803@chinilu.com>
-Date: Sun, 09 Jun 2013 06:40:00 -0700
+	Mon, 10 Jun 2013 20:56:31 -0400
+Received: from mailpod1.hostingplatform.com ([10.30.71.117])
+	by atl4mhob07.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r5B0uUto030100
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 20:56:30 -0400
+Message-ID: <51B675C4.9070802@chinilu.com>
+Date: Mon, 10 Jun 2013 17:56:36 -0700
 From: George Mitchell <george@chinilu.com>
 Reply-To: george@chinilu.com
 MIME-Version: 1.0
@@ -21,15 +21,23 @@ To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I tried this once before and it didn't work and now I tried it again and 
+it still didn't work.  But then I became a bit suspicious of WHY it was 
+not working.  I used a number of different delay intervals and carefully 
+compared them with each other and with no delay specified in the system 
+logs (journal).  What I found was absolutely identical boot orders. How 
+on earth can bootdelay work if dracut/initrd is not honoring bootdelay 
+option presented by grub?  This becomes so maddening when trying to deal 
+with one bug only to run straight into the jaws of another.  In any 
+case, thanks Kai for trying to help with this.  At this point I have 
+opened a bug report against dracut on this issue.  One way or another we 
+will get there I suppose.  In the mean time I suppose I had better just 
+try to relax and enjoy all the excitement.  - George
+
 On 06/09/2013 01:24 AM, Kai Krakow wrote:
 >
 > Actually it should be called "rootdelay"... My fault...
 >
-
-Thanks again,  I have added it, will see what happens, I am looking for 
-anything that might help at this point, so I am very appreciative!  - George
-
-
 > Am 07.06.2013 01:48 schrieb "George Mitchell" <george@chinilu.com 
 > <mailto:george@chinilu.com>>:
 >

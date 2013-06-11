@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sawicz.net ([195.54.47.121]:54391 "EHLO sawicz.net"
+Received: from sawicz.net ([195.54.47.121]:54555 "EHLO sawicz.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751252Ab3FKSvB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Jun 2013 14:51:01 -0400
+	id S1754168Ab3FKTOF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Jun 2013 15:14:05 -0400
 Received: from sawicz.net (serwer.sawicz.net [195.54.47.121])
-	by sawicz.net (Postfix) with ESMTP id C057A304B848
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2013 20:50:55 +0200 (CEST)
+	by sawicz.net (Postfix) with ESMTP id 5D3DF304B846
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2013 20:42:57 +0200 (CEST)
 Received: from [10.2.0.15] (89-70-82-159.dynamic.chello.pl [89.70.82.159])
-	by sawicz.net (Postfix) with ESMTPSA id A096C304BC5A
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2013 20:50:55 +0200 (CEST)
-Message-ID: <51B7718E.6080000@sawicz.net>
-Date: Tue, 11 Jun 2013 20:50:54 +0200
+	by sawicz.net (Postfix) with ESMTPSA id 25C96304BC5A
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2013 20:42:57 +0200 (CEST)
+Message-ID: <51B76FB2.70504@sawicz.net>
+Date: Tue, 11 Jun 2013 20:42:58 +0200
 From: =?UTF-8?B?TWljaGHFgiBTYXdpY3o=?= <michal@sawicz.net>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
 Subject: btrfs-transacti:1014 blocked for more than 120 seconds.
 Content-Type: multipart/signed; micalg=pgp-sha1;
  protocol="application/pgp-signature";
- boundary="------------enigD154E2FB9DFD22E997DF98B2"
+ boundary="------------enig0DF15FB6D8B5FA112F7E39AB"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigD154E2FB9DFD22E997DF98B2
+--------------enig0DF15FB6D8B5FA112F7E39AB
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
@@ -54,9 +54,7 @@ Thanks,
 Micha=C5=82 (Saviq) Sawicz <michal@sawicz.net>
 
 
-
-
---------------enigD154E2FB9DFD22E997DF98B2
+--------------enig0DF15FB6D8B5FA112F7E39AB
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -65,19 +63,19 @@ Content-Disposition: attachment; filename="signature.asc"
 Version: GnuPG v1.4.12 (GNU/Linux)
 Comment: Using GnuPG with undefined - http://www.enigmail.net/
 
-iQIcBAEBAgAGBQJRt3GOAAoJEGnv7NPGHSZF6/AQAJCKOwhKjJdojkdJb146Co6K
-JB//yqpYCC2u7vIpMxa+NB42Kv408hz8b2IQ5DNW71JdiMqFnwEqN7I3HUt/Z5KJ
-t22eZYwfza/bTUHZNX0QZmlbsOisT6x7Qxa2SYwVLBoE8Yy2IHesniJGLo7XqKrR
-D/7FYN9wTr3mqkJygvkR80rncvlWOSaONwaX0PnsCbwRG6z+NhNSjDWJqNxJoj2W
-aiSHf6/q5NI59ejUTOeJlIs8/xXi1TnAzIquL1azF/V/J88GLwNQCTRWPYZ48gsy
-zdnEBgfc0xy7yOBjUrLZw4dYSadFoSpJwZChIlNEV8NF2DqTywgIBwUi4SSRzeZu
-ue3E+8bidxDqCotaLVdDQvd8e2mPmDeu8VIpwETTxQfa766R7bmTNWkUxK9VsEPZ
-BtvFX3qzyJsSY72L0ERHTvkmyPen2rFM7mldNp9TSbGxHMHwV8YZy6hiiWXLZLl0
-azxPeuHmF6k4+5cucnJd6xj+eR+Idjsiv/pMh29SMxlqaPHwZQLkiCx2ac6Cx9BE
-TSmExkHYArLmsOxhVL0xMkXvTo+V5DaS31udt7aguii3SaPfcTI8upNjPFyTng6U
-jUoxCbMtFtI9Gx8jFxqnwrnbxdESkY+xFR6zVmNmzsoQjSmiKCK6LsSn0vgt2YtU
-dj8Gjb3KV1s46LtSQn14
-=2v98
+iQIcBAEBAgAGBQJRt2+1AAoJEGnv7NPGHSZFFboQAIeu8Qq8tEpb2FCa3FdHLYrM
+wimlDqFKzd9iYwEeqRQHYbPOJdyHEEIupy31PrldVRtOz74IWVdJwYQzwhwwoI+B
+QaVtj7zuQ9LlfjRvaU9ZwZa/0xTaUV1yL1BVhab1/ZvQlDMa6BhCEwyEwzk9BzPS
+BrVcE0mIoc0V3Psm2Mxf279//NHgXpfoZa9OiuG2ZaHxmgOKcB70VxcVRq0y3gY/
+7WJYAAidfXUuusl9KBC4vzfHk9RDwuQf+srqB0osVd7scl7H+yW9tiP3r06csbJC
+rCnm25eWw4TkgTzi5BUOa/V28qB1l9Xb9CDSghV2dINAPQNOZn8zPxLDw+DQBcQo
+FRJi29AQXYQGiwxEGeQ4AfRhiH1y/V/zooC3+sRYd1AxTqUbTPBrGOrDKJcC6Psf
+tFeAod3BmmF1Ebqk7/JW9xFHv95FyME3dudeA5ctmHyNsiZGPnQik1qnzQa54rl6
+TmVWaPqJjyztaxfhI63gcxyc4Do10xkyAhCJvsOpKy7KF2nqfx8obO3o0sfyBebR
+OQtSGMwqqLP2Nh+zUDQX1Dd9h7Qz9A1iEfwLYPyOQ1Lo5s/balStUDfeAZcGIC4t
+WYzOI/lRpt4JeRjOhDl+DbxhEmxtrf9h6f0neMMyXaaFs4yJ7YDJg4h4AfZj9Nsi
+/zczZCjH5kpsbfuOwtcG
+=9D28
 -----END PGP SIGNATURE-----
 
---------------enigD154E2FB9DFD22E997DF98B2--
+--------------enig0DF15FB6D8B5FA112F7E39AB--

@@ -1,118 +1,281 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:42783 "EHLO sandeen.net"
+Received: from sandeen.net ([63.231.237.45]:42785 "EHLO sandeen.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754493Ab3FKXPY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Jun 2013 19:15:24 -0400
+	id S1756034Ab3FKXPZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Jun 2013 19:15:25 -0400
 From: Eric Sandeen <sandeen@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] Btrfs-progs: Add Makefile infrastructure for subdirs
-Date: Tue, 11 Jun 2013 18:15:17 -0500
-Message-Id: <1370992519-21369-2-git-send-email-sandeen@redhat.com>
+Subject: [PATCH 3/3] Btrfs-progs: move btrfs cmd files to cmd/ subdir
+Date: Tue, 11 Jun 2013 18:15:19 -0500
+Message-Id: <1370992519-21369-4-git-send-email-sandeen@redhat.com>
 In-Reply-To: <1370992519-21369-1-git-send-email-sandeen@redhat.com>
 References: <1370992519-21369-1-git-send-email-sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Preparatory patch to move cmd & test files into their
-own subdirs.
+Move btrfs cmd files to cmd/ subdir
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- Makefile     |   38 +++++++++++++++++++++++++++++++-------
- man/Makefile |    1 -
- 2 files changed, 31 insertions(+), 8 deletions(-)
+ Makefile                                   |   38 ++++++-----------
+ cmd/Makefile                               |   61 ++++++++++++++++++++++++++++
+ btrfs.c => cmd/btrfs.c                     |    0
+ cmds-balance.c => cmd/cmds-balance.c       |    0
+ cmds-check.c => cmd/cmds-check.c           |    0
+ cmds-device.c => cmd/cmds-device.c         |    0
+ cmds-filesystem.c => cmd/cmds-filesystem.c |    0
+ cmds-inspect.c => cmd/cmds-inspect.c       |    0
+ cmds-qgroup.c => cmd/cmds-qgroup.c         |    0
+ cmds-quota.c => cmd/cmds-quota.c           |    0
+ cmds-receive.c => cmd/cmds-receive.c       |    0
+ cmds-replace.c => cmd/cmds-replace.c       |    0
+ cmds-restore.c => cmd/cmds-restore.c       |    0
+ cmds-scrub.c => cmd/cmds-scrub.c           |    0
+ cmds-send.c => cmd/cmds-send.c             |    0
+ cmds-subvolume.c => cmd/cmds-subvolume.c   |    0
+ help.c => cmd/help.c                       |    0
+ 17 files changed, 74 insertions(+), 25 deletions(-)
+ create mode 100644 cmd/Makefile
+ rename btrfs.c => cmd/btrfs.c (100%)
+ rename cmds-balance.c => cmd/cmds-balance.c (100%)
+ rename cmds-check.c => cmd/cmds-check.c (100%)
+ rename cmds-device.c => cmd/cmds-device.c (100%)
+ rename cmds-filesystem.c => cmd/cmds-filesystem.c (100%)
+ rename cmds-inspect.c => cmd/cmds-inspect.c (100%)
+ rename cmds-qgroup.c => cmd/cmds-qgroup.c (100%)
+ rename cmds-quota.c => cmd/cmds-quota.c (100%)
+ rename cmds-receive.c => cmd/cmds-receive.c (100%)
+ rename cmds-replace.c => cmd/cmds-replace.c (100%)
+ rename cmds-restore.c => cmd/cmds-restore.c (100%)
+ rename cmds-scrub.c => cmd/cmds-scrub.c (100%)
+ rename cmds-send.c => cmd/cmds-send.c (100%)
+ rename cmds-subvolume.c => cmd/cmds-subvolume.c (100%)
+ rename help.c => cmd/help.c (100%)
 
 diff --git a/Makefile b/Makefile
-index 7a49174..5411ad9 100644
+index 01b71ec..3bc105e 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,3 +1,6 @@
-+# Export all variables to sub-makes by default
-+export
-+
- CC = gcc
- LN = ln
- AR = ar
-@@ -53,6 +56,18 @@ btrfs_convert_libs = -lext2fs -lcom_err
+@@ -10,10 +10,6 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid6.o free-space-cache.o
+-cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+-	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+-	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+-	       cmds-restore.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
+@@ -46,8 +42,8 @@ endif
+ 
+ MAKEOPTS = --no-print-directory Q=$(Q)
+ 
+-progs = mkfs.btrfs btrfs-debug-tree btrfsck \
+-	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
++progs = mkfs.btrfs btrfs-debug-tree \
++	btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
+ 	btrfs-find-root btrfstune btrfs-show-super
+ 
+ # external libs required by various binaries; for btrfs-foo,
+@@ -56,13 +52,17 @@ btrfs_convert_libs = -lext2fs -lcom_err
  btrfs_image_libs = -lpthread
  btrfs_fragment_libs = -lgd -lpng -ljpeg -lfreetype
  
-+SUBDIRS = man
-+BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
-+INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
-+CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
-+
-+.PHONY: $(SUBDIRS)
-+.PHONY: $(BUILDDIRS)
-+.PHONY: $(INSTALLDIRS)
-+.PHONY: $(TESTDIRS)
-+.PHONY: $(CLEANDIRS)
-+.PHONY: all install clean
-+
+-SUBDIRS = man tests
++SUBDIRS = cmd man tests
++STATIC_SUBDIRS = cmd
+ BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
++STATIC_BUILDDIRS = $(patsubst %,buildstatic-%,$(STATIC_SUBDIRS))
+ INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
+ CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
+ 
+ .PHONY: $(SUBDIRS)
++.PHONY: $(STATIC_SUBDIRS)
+ .PHONY: $(BUILDDIRS)
++.PHONY: $(STATIC_BUILDDIRS)
+ .PHONY: $(INSTALLDIRS)
+ .PHONY: $(TESTDIRS)
+ .PHONY: $(CLEANDIRS)
+@@ -70,7 +70,6 @@ CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
+ 
  # Create all the static targets
  static_objects = $(patsubst %.o, %.static.o, $(objects))
- static_cmds_objects = $(patsubst %.o, %.static.o, $(cmds_objects))
-@@ -85,7 +100,11 @@ endif
- 	@echo "    [CC]     $@"
- 	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(STATIC_CFLAGS) -c $< -o $@
+-static_cmds_objects = $(patsubst %.o, %.static.o, $(cmds_objects))
+ static_libbtrfs_objects = $(patsubst %.o, %.static.o, $(libbtrfs_objects))
  
--all: version.h $(progs) manpages
-+all: version.h $(progs) $(BUILDDIRS)
-+$(SUBDIRS): $(BUILDDIRS)
-+$(BUILDDIRS):
-+	@echo "Making all in $(patsubst build-%,%,$@)"
-+	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst build-%,%,$@)
- 
- #
+ # Define static compilation flags
+@@ -110,7 +109,11 @@ $(BUILDDIRS): $(libs)
  # NOTE: For static compiles, you need to have all the required libs
-@@ -178,19 +197,19 @@ send-test: $(objects) $(libs) send-test.o
- manpages:
- 	$(Q)$(MAKE) $(MAKEOPTS) -C man
+ # 	static equivalent available
+ #
+-static: version.h btrfs.static mkfs.btrfs.static btrfs-find-root.static
++static: version.h mkfs.btrfs.static btrfs-find-root.static $(STATIC_BUILDDIRS)
++$(STATIC_SUBDIRS): $(STATIC_BUILDDIRS)
++$(STATIC_BUILDDIRS): $(static_objects) $(static_libbtrfs_objects) 
++	@echo "Making static in $(patsubst buildstatic-%,%,$@)"
++	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst buildstatic-%,%,$@) static
  
--install-man:
--	cd man; $(MAKE) install
+ version.h:
+ 	@echo "    [SH]     $@"
+@@ -150,21 +153,6 @@ btrfs-%: version.h $(objects) $(libs) btrfs-%.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o $@ $(objects) $@.o $(LDFLAGS) $(LIBS) $($(subst -,_,$@-libs))
+ 
+-btrfs: $(objects) btrfs.o help.o $(cmds_objects) $(libs)
+-	@echo "    [LD]     $@"
+-	$(Q)$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
+-		$(objects) $(LDFLAGS) $(LIBS) -lpthread
 -
--clean :
-+clean: $(CLEANDIRS)
+-btrfs.static: $(static_objects) btrfs.static.o help.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
+-	@echo "    [LD]     $@"
+-	$(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o help.static.o $(static_cmds_objects) \
+-		$(static_objects) $(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
+-
+-# For backward compatibility, 'btrfs' changes behaviour to fsck if it's named 'btrfsck'
+-btrfsck: btrfs
+-	@echo "    [LN]     $@"
+-	$(Q)$(LN) -f btrfs btrfsck
+-
+ mkfs.btrfs: $(objects) $(libs) mkfs.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
+@@ -184,7 +172,7 @@ manpages:
+ clean: $(CLEANDIRS)
  	@echo "Cleaning"
  	$(Q)rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
- 	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test send-test btrfsck \
- 	      btrfs.static mkfs.btrfs.static btrfs-calc-size \
+-	      btrfs-zero-log btrfstune btrfsck btrfs.static mkfs.btrfs.static btrfs-calc-size \
++	      btrfs-zero-log btrfstune mkfs.btrfs.static btrfs-calc-size \
  	      version.h \
  	      $(libs) $(lib_links)
--	$(Q)$(MAKE) $(MAKEOPTS) -C man $@
  
--install: $(libs) $(progs) install-man
-+$(CLEANDIRS): 
-+	@echo "Cleaning $(patsubst clean-%,%,$@)"
-+	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst clean-%,%,$@) clean
+diff --git a/cmd/Makefile b/cmd/Makefile
+new file mode 100644
+index 0000000..3b1b3c5
+--- /dev/null
++++ b/cmd/Makefile
+@@ -0,0 +1,61 @@
++CFLAGS += -I..
++
++cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
++	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
++	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
++	       cmds-restore.o
++objects := $(addprefix ../, $(objects))
++static_objects = $(patsubst %.o, %.static.o, $(objects))
++
++progs = btrfs
++
++lib_LIBS = -luuid -lblkid -lm -lz -llzo2 -L.
++LIBS = $(lib_LIBS) $(addprefix ../, $(libs_static))
++
++libs_static = libbtrfs.a
++libs = $(addprefix ../, $(libs_static))
++
++.c.o:
++	$(Q)$(check) $<
++	@echo "    [CC]     $@"
++	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
++
++%.static.o: %.c
++	@echo "    [CC]     $@"
++	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(STATIC_CFLAGS) -c $< -o $@
++
++all: $(progs)
++
++#
++# NOTE: For static compiles, you need to have all the required libs
++# 	static equivalent available
++#
++static: btrfs.static
++
++btrfs: $(objects) btrfs.o help.o $(cmds_objects) $(libs)
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
++		$(objects) $(LDFLAGS) $(LIBS) -lpthread
++
++btrfs.static: $(static_objects) btrfs.static.o help.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o help.static.o $(static_cmds_objects) \
++		$(static_objects) $(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
++
++# For backward compatibility, 'btrfs' changes behaviour to fsck if it's named 'btrfsck'
++btrfsck: btrfs
++	@echo "    [LN]     $@"
++	$(Q)$(LN) -f btrfs btrfsck
++
++clean:
++	$(Q)rm -f *.o .*.d $(progs)
 +
 +install: $(libs) $(progs) $(INSTALLDIRS)
- 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
- 	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
- 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
-@@ -201,4 +220,9 @@ install: $(libs) $(progs) install-man
- 	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
- 	$(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
- 
++	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
++	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
++
 +$(INSTALLDIRS):
-+	@echo "Making install in $(patsubst install-%,%,$@)"
-+	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst install-%,%,$@) install
++	$(Q)$(MAKE) $(MAKEOPTS) -C $(@:install-%=%) install
 +
 +
- -include .*.d
-diff --git a/man/Makefile b/man/Makefile
-index 1ba23b5..54b57d1 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -21,7 +21,6 @@ all: $(MANPAGES)
- 	$(Q)$(GZIPCMD) -n -c $< > $@
- 
- clean :
--	@echo "Cleaning manpages"
- 	$(Q)rm -f $(MANPAGES)
- 
- install: $(MANPAGES)
++-include .*.d
+diff --git a/btrfs.c b/cmd/btrfs.c
+similarity index 100%
+rename from btrfs.c
+rename to cmd/btrfs.c
+diff --git a/cmds-balance.c b/cmd/cmds-balance.c
+similarity index 100%
+rename from cmds-balance.c
+rename to cmd/cmds-balance.c
+diff --git a/cmds-check.c b/cmd/cmds-check.c
+similarity index 100%
+rename from cmds-check.c
+rename to cmd/cmds-check.c
+diff --git a/cmds-device.c b/cmd/cmds-device.c
+similarity index 100%
+rename from cmds-device.c
+rename to cmd/cmds-device.c
+diff --git a/cmds-filesystem.c b/cmd/cmds-filesystem.c
+similarity index 100%
+rename from cmds-filesystem.c
+rename to cmd/cmds-filesystem.c
+diff --git a/cmds-inspect.c b/cmd/cmds-inspect.c
+similarity index 100%
+rename from cmds-inspect.c
+rename to cmd/cmds-inspect.c
+diff --git a/cmds-qgroup.c b/cmd/cmds-qgroup.c
+similarity index 100%
+rename from cmds-qgroup.c
+rename to cmd/cmds-qgroup.c
+diff --git a/cmds-quota.c b/cmd/cmds-quota.c
+similarity index 100%
+rename from cmds-quota.c
+rename to cmd/cmds-quota.c
+diff --git a/cmds-receive.c b/cmd/cmds-receive.c
+similarity index 100%
+rename from cmds-receive.c
+rename to cmd/cmds-receive.c
+diff --git a/cmds-replace.c b/cmd/cmds-replace.c
+similarity index 100%
+rename from cmds-replace.c
+rename to cmd/cmds-replace.c
+diff --git a/cmds-restore.c b/cmd/cmds-restore.c
+similarity index 100%
+rename from cmds-restore.c
+rename to cmd/cmds-restore.c
+diff --git a/cmds-scrub.c b/cmd/cmds-scrub.c
+similarity index 100%
+rename from cmds-scrub.c
+rename to cmd/cmds-scrub.c
+diff --git a/cmds-send.c b/cmd/cmds-send.c
+similarity index 100%
+rename from cmds-send.c
+rename to cmd/cmds-send.c
+diff --git a/cmds-subvolume.c b/cmd/cmds-subvolume.c
+similarity index 100%
+rename from cmds-subvolume.c
+rename to cmd/cmds-subvolume.c
+diff --git a/help.c b/cmd/help.c
+similarity index 100%
+rename from help.c
+rename to cmd/help.c
 -- 
 1.7.1
 

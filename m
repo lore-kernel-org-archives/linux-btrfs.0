@@ -1,73 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:49516 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753803Ab3FLJnt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Jun 2013 05:43:49 -0400
-Received: by mail-pa0-f50.google.com with SMTP id fb1so6402529pad.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 02:43:48 -0700 (PDT)
-MIME-Version: 1.0
-From: "mail@beta-centauri.de" <mail@beta-centauri.de>
-Date: Wed, 12 Jun 2013 11:43:28 +0200
-Message-ID: <CAK-gwOxmibLQSeSZnvYdqnCUShmVf03uLCRSphYWZ3do0u6Z6w@mail.gmail.com>
-Subject: Mounting RAID1 writeable with two devices missing but all data present
+Received: from mail.virtall.com ([178.63.195.102]:35439 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751454Ab3FLLxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Jun 2013 07:53:39 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id F09153A1C7D
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 13:53:34 +0200 (CEST)
+Received: from localhost (unknown [123.109.194.100])
+	by mail.virtall.com (Postfix) with ESMTPSA id 349F93A1A8F
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 13:53:31 +0200 (CEST)
+Date: Wed, 12 Jun 2013 20:53:03 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: can't mount a newly created fs after reboot
+Message-ID: <20130612205303.308095ca@virtall.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I've created two btrfs fileystems using these commands:
 
-I have potentially found a (minor) bug (or missing feature) in btrfs,
-but it might be a misunderstanding, so I like to ask here first before
-reporting in Bugzilla.
+mkfs.btrfs -d raid1 -m raid1 -L btrfs1 /dev/sda5 /dev/sdb5
+mkfs.btrfs -d raid1 -m raid1 -L btrfs2 /dev/sdc1 /dev/sdd1
 
-I have a btrfs file system in RAID1 mode with two missing devices, but
-I know that all data is still present on the remaining device. btrfs
-refuses mounting this fs in rw mode (too many missing devices), as it
-probably just counts the number of missing devices and assumes that
-more than one missing device means that it cannot access all data.
-This is surely a safe assumption, but it would be nice to have a way
-to escape from this situation, like a mount option that will allow rw
-after checking all chunks are present on the remaining device(s).
 
-The condition can be reproduced by the following steps (in an empty directory):
+Then, added these to /etc/fstab:
 
-dd if=/dev/zero of=d0 bs=1M count=1k
-dd if=/dev/zero of=d1 bs=1M count=1k
-losetup /dev/loop0 d0
-losetup /dev/loop1 d1
-mkfs.btrfs -m raid1 -d raid1 /dev/loop0 /dev/loop1
-mkdir mnt
-mount -t btrfs /dev/loop0 mnt
-btrfs fi df mnt
-# shows that everything is fine and RAID1
-umount mnt
-dd if=/dev/zero of=/dev/loop1 bs=1M count=1k
-mount -t btrfs /dev/loop0 mnt -o degraded
-btrfs device add /dev/loop1 mnt
-btrfs fi show
-# shows the fi has missing devices and one device with 0 bytes used
-umount mnt
-dd if=/dev/zero of=/dev/loop1 bs=1M count=1k
-mount -t btrfs /dev/loop0 mnt -o degraded
-# fails
-dmesg | tail
-# shows "Btrfs: too many missing devices, writeable mount is not allowed"
+LABEL=btrfs1 /mnt/btrfs1 btrfs noatime,compress-force=zlib 0 0
+LABEL=btrfs2 /mnt/btrfs2 btrfs noatime,compress-force=zlib 0 0
 
-As I see it, there is no way to recover from this situation (without
-creating a new file system on the second disk, copying all data to it,
-adding the first disk to it and changing raid level to 1 - which is my
-way out of this for now, but it takes a long time and really isn't
-nice) as it is not possible to add new devices while the fs is mounted
-ro.
+I mounted these filesystems with:
 
-If there are tricky ways to do this maybe there should be some hint
-somewhere (e.g. in the dmesg message stating it is not possible to
-mount writeable).
+mount -a
 
-Cheers,
-Martin
 
-PS: I am not on this mailing list so please include my mail address
-when replying. Thanks!
+And enabled quotas:
+
+btrfs quota enable /mnt/btrfs1
+btrfs quota enable /mnt/btrfs2
+
+
+I'm using Linux 3.9.5.
+
+
+After that I've rebooted and I'm no longer able to mount these two
+fileystems:
+
+- mounted from /etc/fstab (where it uses LABEL=):
+
+[  149.763638] device label btrfs1 devid 2 transid 7 /dev/sdb5
+[  149.764127] btrfs: force zlib compression
+[  149.764170] btrfs: disk space caching is enabled
+[  149.765271] btrfs: failed to read the system array on sdb5
+[  149.830891] btrfs: open_ctree failed
+[  149.836563] device label btrfs2 devid 1 transid 7 /dev/sdc1
+[  149.837005] btrfs: force zlib compression
+[  149.837050] btrfs: disk space caching is enabled
+[  149.837660] btrfs: failed to read the system array on sdc1
+[  149.910828] btrfs: open_ctree failed
+
+
+- mounted with /dev/sdc1 only:
+
+[  173.688956] device label btrfs2 devid 1 transid 7 /dev/sdc1
+[  173.689393] btrfs: disk space caching is enabled
+[  173.690195] btrfs: failed to read the system array on sdc1
+[  173.796816] btrfs: open_ctree failed
+
+
+Is it expected behaviour that the fs is mountable only once?
+
+-- 
+Tomasz Chmielewski
+http://www.ptraveler.com

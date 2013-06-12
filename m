@@ -1,62 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:52856 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754001Ab3FLM7i convert rfc822-to-8bit (ORCPT
+Received: from bay0-omc1-s14.bay0.hotmail.com ([65.54.190.25]:34061 "EHLO
+	bay0-omc1-s14.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754922Ab3FLQNP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Jun 2013 08:59:38 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 286879A0691
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 06:59:38 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	Wed, 12 Jun 2013 12:13:15 -0400
+Message-ID: <BAY172-DS17E458EC3FEFC5963F1FC7B0860@phx.gbl>
+From: "Kyle Gates" <kylegates@hotmail.com>
+To: "Miao Xie" <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Cc: "Liu Bo" <bo.li.liu@oracle.com>
+References: <1370489283-4870-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1370489283-4870-1-git-send-email-miaox@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix broken nocow after balance
+Date: Wed, 12 Jun 2013 11:13:47 -0500
 MIME-Version: 1.0
-To: Zach Brown <zab@redhat.com>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <20130610223958.GL24721@lenny.home.zabbo.net>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <JBacik@fusionio.com>
-References: <1370384280-28652-1-git-send-email-zab@redhat.com>
- <20130604231653.4088.91500@localhost.localdomain>
- <20130604232657.GE24721@lenny.home.zabbo.net>
- <20130610223958.GL24721@lenny.home.zabbo.net>
-Message-ID: <20130612125935.4914.78649@localhost.localdomain>
-Subject: Re: [PATCH 0/6] fix INT_MAX readdir hang, plus cleanups
-Date: Wed, 12 Jun 2013 08:59:35 -0400
+Content-Type: text/plain;
+	format=flowed;
+	charset="iso-8859-1";
+	reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Zach Brown (2013-06-10 18:39:58)
-> On Tue, Jun 04, 2013 at 04:26:57PM -0700, Zach Brown wrote:
-> > On Tue, Jun 04, 2013 at 07:16:53PM -0400, Chris Mason wrote:
-> > > Quoting Zach Brown (2013-06-04 18:17:54)
-> > > > Hi gang,
-> > > > 
-> > > > I finally sat down to fix that readdir hang that has been in the back
-> > > > of my mind for a while.  I *hope* that the fix is pretty simple: just
-> > > > don't manufacture a fake f_pos, I *think* we can abuse f_version as an
-> > > > indicator that we shouldn't return entries.  Does this look reasonable?
-> > > 
-> > > I like it, and it doesn't look too far away from how others are abusing
-> > > f_version.  Have you tried with NFS?  I don't think it'll hurt, but NFS
-> > > loves to surprise me.
-> > 
-> > Mm, no, I hadn't.  I'll give it a go tomorrow.  What could go wrong? :)
-> 
-> Or a week later.  Pretty close!
-> 
-> I couldn't get NFS to break.  Clients see new entries created directly
-> in the exported btrfs and on either of noac and actime=1 client mounts.
-> For whatever that's worth.
+On Wednesday, June 05, 2013 Miao Xie wrote:
+> Balance will create reloc_root for each fs root, and it's going to
+> record last_snapshot to filter shared blocks.  The side effect of
+> setting last_snapshot is to break nocow attributes of files.
+>
+> Since the extents are not shared by the relocation tree after the balance,
+> we can recover the old last_snapshot safely if no one snapshoted the
+> source tree. We fix the above problem by this way.
 
-Great.
+This patch also fixed my problem. I tend to like this patch better as the 
+fix lands on disk allowing nocow to function with an older kernel after 
+being balanced.
+Thanks,
+Kyle
 
+Tested-by: Kyle Gates <kylegates@hotmail.com>
+
+> Reported-by: Kyle Gates <kylegates@hotmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> fs/btrfs/relocation.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
+> 1 file changed, 44 insertions(+)
+>
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 395b820..934ffe6 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1305,6 +1305,7 @@ static struct btrfs_root *create_reloc_root(struct 
+> btrfs_trans_handle *trans,
+>  struct extent_buffer *eb;
+>  struct btrfs_root_item *root_item;
+>  struct btrfs_key root_key;
+> + u64 last_snap = 0;
+>  int ret;
+>
+>  root_item = kmalloc(sizeof(*root_item), GFP_NOFS);
+> @@ -1320,6 +1321,7 @@ static struct btrfs_root *create_reloc_root(struct 
+> btrfs_trans_handle *trans,
+>        BTRFS_TREE_RELOC_OBJECTID);
+>  BUG_ON(ret);
+>
+> + last_snap = btrfs_root_last_snapshot(&root->root_item);
+>  btrfs_set_root_last_snapshot(&root->root_item,
+>       trans->transid - 1);
+>  } else {
+> @@ -1345,6 +1347,12 @@ static struct btrfs_root *create_reloc_root(struct 
+> btrfs_trans_handle *trans,
+>  memset(&root_item->drop_progress, 0,
+>         sizeof(struct btrfs_disk_key));
+>  root_item->drop_level = 0;
+> + /*
+> + * abuse rtransid, it is safe because it is impossible to
+> + * receive data into a relocation tree.
+> + */
+> + btrfs_set_root_rtransid(root_item, last_snap);
+> + btrfs_set_root_otransid(root_item, trans->transid);
+>  }
+>
+>  btrfs_tree_unlock(eb);
+> @@ -2273,8 +2281,12 @@ void free_reloc_roots(struct list_head *list)
+> static noinline_for_stack
+> int merge_reloc_roots(struct reloc_control *rc)
+> {
+> + struct btrfs_trans_handle *trans;
+>  struct btrfs_root *root;
+>  struct btrfs_root *reloc_root;
+> + u64 last_snap;
+> + u64 otransid;
+> + u64 objectid;
+>  LIST_HEAD(reloc_roots);
+>  int found = 0;
+>  int ret = 0;
+> @@ -2308,12 +2320,44 @@ again:
+>  } else {
+>  list_del_init(&reloc_root->root_list);
+>  }
+> +
+> + /*
+> + * we keep the old last snapshod transid in rtranid when we
+> + * created the relocation tree.
+> + */
+> + last_snap = btrfs_root_rtransid(&reloc_root->root_item);
+> + otransid = btrfs_root_otransid(&reloc_root->root_item);
+> + objectid = reloc_root->root_key.offset;
+> +
+>  ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0, 1);
+>  if (ret < 0) {
+>  if (list_empty(&reloc_root->root_list))
+>  list_add_tail(&reloc_root->root_list,
+>        &reloc_roots);
+>  goto out;
+> + } else if (!ret) {
+> + /*
+> + * recover the last snapshot tranid to avoid
+> + * the space balance break NOCOW.
+> + */
+> + root = read_fs_root(rc->extent_root->fs_info,
+> +     objectid);
+> + if (IS_ERR(root))
+> + continue;
+> +
+> + if (btrfs_root_refs(&root->root_item) == 0)
+> + continue;
+> +
+> + trans = btrfs_join_transaction(root);
+> + BUG_ON(IS_ERR(trans));
+> +
+> + /* Check if the fs/file tree was snapshoted or not. */
+> + if (btrfs_root_last_snapshot(&root->root_item) ==
+> +     otransid - 1)
+> + btrfs_set_root_last_snapshot(&root->root_item,
+> +      last_snap);
+> +
+> + btrfs_end_transaction(trans, root);
+>  }
+>  }
+>
+> -- 
+> 1.8.1.4
+>
 > 
-> But I did find that I'd broken the case of trying to re-enable readdir
-> results by seeking past the last entry (which happens to be the current
-> f_pos now that we're using f_version).
-> 
-> Here's the incremental fix against what Josef has in -next.  I'm cool
-> with either squashing or just committing it.
-
-Lets squash it in, Josef loves to rebase.
-
--chris

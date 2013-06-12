@@ -1,144 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bay0-omc1-s14.bay0.hotmail.com ([65.54.190.25]:34061 "EHLO
-	bay0-omc1-s14.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754922Ab3FLQNP (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:46887 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757932Ab3FLR7k (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Jun 2013 12:13:15 -0400
-Message-ID: <BAY172-DS17E458EC3FEFC5963F1FC7B0860@phx.gbl>
-From: "Kyle Gates" <kylegates@hotmail.com>
-To: "Miao Xie" <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Cc: "Liu Bo" <bo.li.liu@oracle.com>
-References: <1370489283-4870-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1370489283-4870-1-git-send-email-miaox@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix broken nocow after balance
-Date: Wed, 12 Jun 2013 11:13:47 -0500
+	Wed, 12 Jun 2013 13:59:40 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 282457C064D
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 11:59:39 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id 2AtSFzgdC3dn3GpU (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2013 11:59:38 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix transaction throttling for delayed refs
+Date: Wed, 12 Jun 2013 13:59:35 -0400
+Message-ID: <1371059975-8192-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-1";
-	reply-type=original
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, June 05, 2013 Miao Xie wrote:
-> Balance will create reloc_root for each fs root, and it's going to
-> record last_snapshot to filter shared blocks.  The side effect of
-> setting last_snapshot is to break nocow attributes of files.
->
-> Since the extents are not shared by the relocation tree after the balance,
-> we can recover the old last_snapshot safely if no one snapshoted the
-> source tree. We fix the above problem by this way.
+Dave has this fs_mark script that can make btrfs abort with sufficient amount of
+ram.  This is because with more ram we can keep more dirty metadata in cache
+which in a round about way makes for many more pending delayed refs.  What
+happens is we end up not throttling the transaction enough so when we go to
+commit the transaction when we've completely filled the file system we'll
+abort() because we use all of the space in the global reserve and we still have
+delayed refs to run.  To fix this we need to make the delayed ref flushing and
+the transaction throttling dependant upon the number of delayed refs that we
+have instead of how much reserved space is left in the global reserve.  With
+this patch we not only stop aborting transactions but we also get a smoother run
+speed with fs_mark and it makes us about 10% faster.  Thanks,
 
-This patch also fixed my problem. I tend to like this patch better as the 
-fix lands on disk allowing nocow to function with an older kernel after 
-being balanced.
-Thanks,
-Kyle
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.h       |    2 +
+ fs/btrfs/extent-tree.c |   61 ++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/transaction.c |   24 ++++++++-----------
+ 3 files changed, 69 insertions(+), 18 deletions(-)
 
-Tested-by: Kyle Gates <kylegates@hotmail.com>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0049fe0..76e4983 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3056,6 +3056,8 @@ static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_root *root,
+ 		num_items;
+ }
+ 
++int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
++				       struct btrfs_root *root);
+ void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, unsigned long count);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ca1893e..6d5c5f7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2526,6 +2526,51 @@ static int refs_newer(struct btrfs_delayed_ref_root *delayed_refs, int seq,
+ 	return 0;
+ }
+ 
++static inline u64 heads_to_leaves(struct btrfs_root *root, u64 heads)
++{
++	u64 num_bytes;
++
++	num_bytes = heads * (sizeof(struct btrfs_extent_item) +
++			     sizeof(struct btrfs_extent_inline_ref));
++	if (!btrfs_fs_incompat(root->fs_info, SKINNY_METADATA))
++		num_bytes += heads * sizeof(struct btrfs_tree_block_info);
++
++	/*
++	 * We don't ever fill up leaves all the way so multiply by 2 just to be
++	 * closer to what we're really going to want to ouse.
++	 */
++	return div64_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
++}
++
++int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
++				       struct btrfs_root *root)
++{
++	struct btrfs_block_rsv *global_rsv;
++	u64 num_heads = trans->transaction->delayed_refs.num_heads_ready;
++	u64 num_bytes;
++	int ret = 0;
++
++	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
++	num_heads = heads_to_leaves(root, num_heads);
++	if (num_heads > 1)
++		num_bytes += (num_heads - 1) * root->leafsize;
++	num_bytes <<= 1;
++	global_rsv = &root->fs_info->global_block_rsv;
++
++	/*
++	 * If we can't allocate any more chunks lets make sure we have _lots_ of
++	 * wiggle room since running delayed refs can create more delayed refs.
++	 */
++	if (global_rsv->space_info->full)
++		num_bytes <<= 1;
++
++	spin_lock(&global_rsv->lock);
++	if (global_rsv->reserved <= num_bytes)
++		ret = 1;
++	spin_unlock(&global_rsv->lock);
++	return ret;
++}
++
+ /*
+  * this starts processing the delayed reference count updates and
+  * extent insertions we have queued up so far.  count can be
+@@ -2573,7 +2618,8 @@ progress:
+ 		old = atomic_cmpxchg(&delayed_refs->procs_running_refs, 0, 1);
+ 		if (old) {
+ 			DEFINE_WAIT(__wait);
+-			if (delayed_refs->num_entries < 16348)
++			if (delayed_refs->flushing ||
++			    !btrfs_should_throttle_delayed_refs(trans, root))
+ 				return 0;
+ 
+ 			prepare_to_wait(&delayed_refs->wait, &__wait,
+@@ -2608,7 +2654,7 @@ again:
+ 
+ 	while (1) {
+ 		if (!(run_all || run_most) &&
+-		    delayed_refs->num_heads_ready < 64)
++		    !btrfs_should_throttle_delayed_refs(trans, root))
+ 			break;
+ 
+ 		/*
+@@ -8665,8 +8711,15 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ 		if (end - start >= range->minlen) {
+ 			if (!block_group_cache_done(cache)) {
+ 				ret = cache_block_group(cache, 0);
+-				if (!ret)
+-					wait_block_group_cache_done(cache);
++				if (ret) {
++					btrfs_put_block_group(cache);
++					break;
++				}
++				ret = wait_block_group_cache_done(cache);
++				if (ret) {
++					btrfs_put_block_group(cache);
++					break;
++				}
+ 			}
+ 			ret = btrfs_trim_block_group(cache,
+ 						     &group_trimmed,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index c11b7ef..c916ebd 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -615,10 +615,11 @@ void btrfs_throttle(struct btrfs_root *root)
+ static int should_end_transaction(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root)
+ {
+-	int ret;
++	if (root->fs_info->global_block_rsv.space_info->full &&
++	    btrfs_should_throttle_delayed_refs(trans, root))
++		return 1;
+ 
+-	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 5);
+-	return ret ? 1 : 0;
++	return !!btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 5);
+ }
+ 
+ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
+@@ -649,7 +650,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct btrfs_fs_info *info = root->fs_info;
+-	int count = 0;
++	unsigned long cur = trans->delayed_ref_updates;
+ 	int lock = (trans->type != TRANS_JOIN_NOLOCK);
+ 	int err = 0;
+ 
+@@ -678,17 +679,11 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	if (!list_empty(&trans->new_bgs))
+ 		btrfs_create_pending_block_groups(trans, root);
+ 
+-	while (count < 1) {
+-		unsigned long cur = trans->delayed_ref_updates;
++	trans->delayed_ref_updates = 0;
++	if (btrfs_should_throttle_delayed_refs(trans, root)) {
++		cur = max_t(unsigned long, cur, 1);
+ 		trans->delayed_ref_updates = 0;
+-		if (cur &&
+-		    trans->transaction->delayed_refs.num_heads_ready > 64) {
+-			trans->delayed_ref_updates = 0;
+-			btrfs_run_delayed_refs(trans, root, cur);
+-		} else {
+-			break;
+-		}
+-		count++;
++		btrfs_run_delayed_refs(trans, root, cur);
+ 	}
+ 
+ 	btrfs_trans_release_metadata(trans, root);
+@@ -1626,6 +1621,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	 * start sending their work down.
+ 	 */
+ 	cur_trans->delayed_refs.flushing = 1;
++	smp_wmb();
+ 
+ 	if (!list_empty(&trans->new_bgs))
+ 		btrfs_create_pending_block_groups(trans, root);
+-- 
+1.7.7.6
 
-> Reported-by: Kyle Gates <kylegates@hotmail.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
-> fs/btrfs/relocation.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
-> 1 file changed, 44 insertions(+)
->
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 395b820..934ffe6 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1305,6 +1305,7 @@ static struct btrfs_root *create_reloc_root(struct 
-> btrfs_trans_handle *trans,
->  struct extent_buffer *eb;
->  struct btrfs_root_item *root_item;
->  struct btrfs_key root_key;
-> + u64 last_snap = 0;
->  int ret;
->
->  root_item = kmalloc(sizeof(*root_item), GFP_NOFS);
-> @@ -1320,6 +1321,7 @@ static struct btrfs_root *create_reloc_root(struct 
-> btrfs_trans_handle *trans,
->        BTRFS_TREE_RELOC_OBJECTID);
->  BUG_ON(ret);
->
-> + last_snap = btrfs_root_last_snapshot(&root->root_item);
->  btrfs_set_root_last_snapshot(&root->root_item,
->       trans->transid - 1);
->  } else {
-> @@ -1345,6 +1347,12 @@ static struct btrfs_root *create_reloc_root(struct 
-> btrfs_trans_handle *trans,
->  memset(&root_item->drop_progress, 0,
->         sizeof(struct btrfs_disk_key));
->  root_item->drop_level = 0;
-> + /*
-> + * abuse rtransid, it is safe because it is impossible to
-> + * receive data into a relocation tree.
-> + */
-> + btrfs_set_root_rtransid(root_item, last_snap);
-> + btrfs_set_root_otransid(root_item, trans->transid);
->  }
->
->  btrfs_tree_unlock(eb);
-> @@ -2273,8 +2281,12 @@ void free_reloc_roots(struct list_head *list)
-> static noinline_for_stack
-> int merge_reloc_roots(struct reloc_control *rc)
-> {
-> + struct btrfs_trans_handle *trans;
->  struct btrfs_root *root;
->  struct btrfs_root *reloc_root;
-> + u64 last_snap;
-> + u64 otransid;
-> + u64 objectid;
->  LIST_HEAD(reloc_roots);
->  int found = 0;
->  int ret = 0;
-> @@ -2308,12 +2320,44 @@ again:
->  } else {
->  list_del_init(&reloc_root->root_list);
->  }
-> +
-> + /*
-> + * we keep the old last snapshod transid in rtranid when we
-> + * created the relocation tree.
-> + */
-> + last_snap = btrfs_root_rtransid(&reloc_root->root_item);
-> + otransid = btrfs_root_otransid(&reloc_root->root_item);
-> + objectid = reloc_root->root_key.offset;
-> +
->  ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0, 1);
->  if (ret < 0) {
->  if (list_empty(&reloc_root->root_list))
->  list_add_tail(&reloc_root->root_list,
->        &reloc_roots);
->  goto out;
-> + } else if (!ret) {
-> + /*
-> + * recover the last snapshot tranid to avoid
-> + * the space balance break NOCOW.
-> + */
-> + root = read_fs_root(rc->extent_root->fs_info,
-> +     objectid);
-> + if (IS_ERR(root))
-> + continue;
-> +
-> + if (btrfs_root_refs(&root->root_item) == 0)
-> + continue;
-> +
-> + trans = btrfs_join_transaction(root);
-> + BUG_ON(IS_ERR(trans));
-> +
-> + /* Check if the fs/file tree was snapshoted or not. */
-> + if (btrfs_root_last_snapshot(&root->root_item) ==
-> +     otransid - 1)
-> + btrfs_set_root_last_snapshot(&root->root_item,
-> +      last_snap);
-> +
-> + btrfs_end_transaction(trans, root);
->  }
->  }
->
-> -- 
-> 1.8.1.4
->
-> 

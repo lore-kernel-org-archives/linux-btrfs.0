@@ -1,99 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57569 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756078Ab3FMRwi (ORCPT
+Received: from koch.ro ([88.198.2.104]:45115 "EHLO koch.ro"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756060Ab3FMTpk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Jun 2013 13:52:38 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 3ADEF7C069A
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2013 11:52:37 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id LRDDASsvPEwWiJia (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2013 11:52:36 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix not being able to find skinny extents during relocate
-Date: Thu, 13 Jun 2013 13:52:34 -0400
-Message-ID: <1371145954-3070-1-git-send-email-jbacik@fusionio.com>
+	Thu, 13 Jun 2013 15:45:40 -0400
+From: Thomas Koch <thomas@koch.ro>
+Reply-To: thomas@koch.ro
+To: Josef Bacik <jbacik@fusionio.com>
+Subject: Re: Stale NFS file handle after power loss
+Date: Thu, 13 Jun 2013 21:45:29 +0200
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <65278856.dWSg6uQ8zb@x121e> <20130610130047.GA10307@localhost.localdomain> <4263017.nb4SMd4E6p@x121e>
+In-Reply-To: <4263017.nb4SMd4E6p@x121e>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201306132145.29326.thomas@koch.ro>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We unconditionally search for the EXTENT_ITEM_KEY for metadata during balance,
-and then check the key that we found to see if it is actually a
-METADATA_ITEM_KEY, but this doesn't work right because METADATA is a higher key
-value, so if what we are looking for happens to be the first item in the leaf
-the search will dump us out at the previous leaf, and we won't find our item.
-So instead do what we do everywhere else, search for the skinny extent first and
-if we don't find it go back and re-search for the extent item.  This patch fixes
-the panic I was hitting when balancing a large file system with skinny extents.
-Thanks,
+Thomas Koch:
+> On Monday, June 10, 2013 09:00:47 AM Josef Bacik wrote:
+> > On Sat, Jun 08, 2013 at 01:14:35PM -0600, Thomas Koch wrote:
+> > > Hi,
+> > > 
+> > > I had a power loss on my btrfs file system during package installation
+> > > and now I found this:
+> > > 
+> > > <code>
+> > > % ls -l /var/lib/dpkg/tmp.ci
+> > > ls: cannot access /var/lib/dpkg/tmp.ci/conffiles: Stale NFS file handle
+> > > ls: cannot access /var/lib/dpkg/tmp.ci/md5sums: Stale NFS file handle
+> > > total 0
+> > > -????????? ? ? ? ?            ? conffiles
+> > > -????????? ? ? ? ?            ? md5sums
+> > > % sudo rm -rf /var/lib/dpkg/tmp.ci/conffiles
+> > > rm: cannot remove ‘/var/lib/dpkg/tmp.ci/conffiles’: Stale NFS file
+> > > handle </code>
+> > > 
+> > > I booted with a live system and ran btrfsck (without --repair!) but
+> > > this did not change the situation. Unfortunately I wasn't clever
+> > > enough to save the output of btrfsck somehow. Do you need it?
+> > > 
+> > > Could you help me to get rid of these bogus files, please?
+> > 
+> > Don't run with --repair, but please capture the output so I can see
+> > what's going wrong.  Thanks,
+> > 
+> > Josef
+> 
+> sudo btrfsck /dev/x121e/root
+> checking extents
+> checking fs roots
+> root 5 inode 9319255 errors 1040
+> root 5 inode 9698560 errors 1000
+> root 5 inode 11591532 errors 2001
+>         unresolved ref dir 11591531 index 2 namelen 9 name conffiles
+> filetype 1 error 4
+> root 5 inode 11591534 errors 2001
+>         unresolved ref dir 11591531 index 4 namelen 7 name md5sums filetype
+> 1 error 4
+> found 270172975104 bytes used err is 1
+> total csum bytes: 261797296
+> total tree bytes: 2063106048
+> total fs tree bytes: 1575575552
+> btree space waste bytes: 561459705
+> file data blocks allocated: 386128334848
+>  referenced 262981738496
+> Btrfs Btrfs v0.19
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/relocation.c |   35 +++++++++++++++++++++++++++--------
- 1 files changed, 27 insertions(+), 8 deletions(-)
+Hi Josef,
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 6162d90..df3c632 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3309,6 +3309,8 @@ static int __add_tree_block(struct reloc_control *rc,
- 	struct btrfs_path *path;
- 	struct btrfs_key key;
- 	int ret;
-+	bool skinny = btrfs_fs_incompat(rc->extent_root->fs_info,
-+					SKINNY_METADATA);
- 
- 	if (tree_block_processed(bytenr, blocksize, rc))
- 		return 0;
-@@ -3319,10 +3321,15 @@ static int __add_tree_block(struct reloc_control *rc,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--
-+again:
- 	key.objectid = bytenr;
--	key.type = BTRFS_EXTENT_ITEM_KEY;
--	key.offset = blocksize;
-+	if (skinny) {
-+		key.type = BTRFS_METADATA_ITEM_KEY;
-+		key.offset = (u64)-1;
-+	} else {
-+		key.type = BTRFS_EXTENT_ITEM_KEY;
-+		key.offset = blocksize;
-+	}
- 
- 	path->search_commit_root = 1;
- 	path->skip_locking = 1;
-@@ -3330,11 +3337,23 @@ static int __add_tree_block(struct reloc_control *rc,
- 	if (ret < 0)
- 		goto out;
- 
--	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
--	if (ret > 0) {
--		if (key.objectid == bytenr &&
--		    key.type == BTRFS_METADATA_ITEM_KEY)
--			ret = 0;
-+	if (ret > 0 && skinny) {
-+		if (path->slots[0]) {
-+			path->slots[0]--;
-+			btrfs_item_key_to_cpu(path->nodes[0], &key,
-+					      path->slots[0]);
-+			if (key.objectid == bytenr &&
-+			    (key.type == BTRFS_METADATA_ITEM_KEY ||
-+			     (key.type == BTRFS_EXTENT_ITEM_KEY &&
-+			      key.offset == blocksize)))
-+				ret = 0;
-+		}
-+
-+		if (ret) {
-+			skinny = false;
-+			btrfs_release_path(path);
-+			goto again;
-+		}
- 	}
- 	BUG_ON(ret);
- 
--- 
-1.7.7.6
+do you think that you might find some solution to this problem or should I plan 
+to re-setup my machine?
 
+Regards,
+
+Thomas Koch, http://www.koch.ro

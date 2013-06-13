@@ -1,79 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from koch.ro ([88.198.2.104]:45115 "EHLO koch.ro"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756060Ab3FMTpk convert rfc822-to-8bit (ORCPT
+Received: from moutng.kundenserver.de ([212.227.17.9]:58165 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756931Ab3FMVJE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Jun 2013 15:45:40 -0400
-From: Thomas Koch <thomas@koch.ro>
-Reply-To: thomas@koch.ro
-To: Josef Bacik <jbacik@fusionio.com>
-Subject: Re: Stale NFS file handle after power loss
-Date: Thu, 13 Jun 2013 21:45:29 +0200
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <65278856.dWSg6uQ8zb@x121e> <20130610130047.GA10307@localhost.localdomain> <4263017.nb4SMd4E6p@x121e>
-In-Reply-To: <4263017.nb4SMd4E6p@x121e>
+	Thu, 13 Jun 2013 17:09:04 -0400
+Message-ID: <51BA34EC.1080800@friedels.name>
+Date: Thu, 13 Jun 2013 23:09:00 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201306132145.29326.thomas@koch.ro>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: raid0, raid1, raid5, what to choose?
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thomas Koch:
-> On Monday, June 10, 2013 09:00:47 AM Josef Bacik wrote:
-> > On Sat, Jun 08, 2013 at 01:14:35PM -0600, Thomas Koch wrote:
-> > > Hi,
-> > > 
-> > > I had a power loss on my btrfs file system during package installation
-> > > and now I found this:
-> > > 
-> > > <code>
-> > > % ls -l /var/lib/dpkg/tmp.ci
-> > > ls: cannot access /var/lib/dpkg/tmp.ci/conffiles: Stale NFS file handle
-> > > ls: cannot access /var/lib/dpkg/tmp.ci/md5sums: Stale NFS file handle
-> > > total 0
-> > > -????????? ? ? ? ?            ? conffiles
-> > > -????????? ? ? ? ?            ? md5sums
-> > > % sudo rm -rf /var/lib/dpkg/tmp.ci/conffiles
-> > > rm: cannot remove ‘/var/lib/dpkg/tmp.ci/conffiles’: Stale NFS file
-> > > handle </code>
-> > > 
-> > > I booted with a live system and ran btrfsck (without --repair!) but
-> > > this did not change the situation. Unfortunately I wasn't clever
-> > > enough to save the output of btrfsck somehow. Do you need it?
-> > > 
-> > > Could you help me to get rid of these bogus files, please?
-> > 
-> > Don't run with --repair, but please capture the output so I can see
-> > what's going wrong.  Thanks,
-> > 
-> > Josef
-> 
-> sudo btrfsck /dev/x121e/root
-> checking extents
-> checking fs roots
-> root 5 inode 9319255 errors 1040
-> root 5 inode 9698560 errors 1000
-> root 5 inode 11591532 errors 2001
->         unresolved ref dir 11591531 index 2 namelen 9 name conffiles
-> filetype 1 error 4
-> root 5 inode 11591534 errors 2001
->         unresolved ref dir 11591531 index 4 namelen 7 name md5sums filetype
-> 1 error 4
-> found 270172975104 bytes used err is 1
-> total csum bytes: 261797296
-> total tree bytes: 2063106048
-> total fs tree bytes: 1575575552
-> btree space waste bytes: 561459705
-> file data blocks allocated: 386128334848
->  referenced 262981738496
-> Btrfs Btrfs v0.19
+Hello,
 
-Hi Josef,
+I'd appreciate your recommendation on this:
 
-do you think that you might find some solution to this problem or should I plan 
-to re-setup my machine?
+I have three hdd with 3TB each. I intend to use them as raid5 eventually.
+currently I use them like this:
 
-Regards,
+# mount|grep sd
+/dev/sda1 on /mnt/Datenplatte type ext4
+/dev/sdb1 on /mnt/BTRFS/Video type btrfs
+/dev/sdb1 on /mnt/BTRFS/rsnapshot type btrfs
 
-Thomas Koch, http://www.koch.ro
+#df -h
+/dev/sda1       2,7T  1,3T  1,3T  51% /mnt/Datenplatte
+/dev/sdb1       5,5T  5,4T   93G  99% /mnt/BTRFS/Video
+/dev/sdb1       5,5T  5,4T   93G  99% /mnt/BTRFS/rsnapshot
+
+Now, what surprises me, and here I lack memory- is that sdb appears 
+twice.. I think, I created a raid1, but how can I find out?
+
+#/usr/local/smarthome# ~/btrfs/btrfs-progs/btrfs fi show /dev/sdb1
+Label: none  uuid: 989306aa-d291-4752-8477-0baf94f8c42f
+         Total devices 2 FS bytes used 2.68TB
+         devid    2 size 2.73TB used 2.73TB path /dev/sdc1
+         devid    1 size 2.73TB used 2.73TB path /dev/sdb1
+
+Now, I wanted to convert it to raid0, because I lack space and 
+redundancy is not important for the Videos and the Backup, but this fails:
+~/btrfs/btrfs-progs/btrfs fi balance start -dconvert=raid0  /mnt/BTRFS/
+ERROR: error during balancing '/mnt/BTRFS/' - Inappropriate ioctl for device
+
+dmesg does not help here.
+
+Anyway: This gave me some time to think about this. In fact, as soon as 
+raid5 is stable, I want to have all three as a raid5. Will this be 
+possible with a balance command? If so: will this be possible as soon as 
+raid5 is stable, or will I have to wait longer?
+
+What approach do you recommend?
+
+Greetings,
+Hendrik
+
+
+
+
+

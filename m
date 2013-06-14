@@ -1,51 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18417 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750861Ab3FNDU5 (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:40221 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753120Ab3FNSZ6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Jun 2013 23:20:57 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5E3KueS026705
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 03:20:57 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5E3KuN4009754
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 03:20:56 GMT
-Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5E3KuZY020078
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 03:20:56 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: fix misuse of skinny metadata in btrfs-image
-Date: Fri, 14 Jun 2013 11:20:47 +0800
-Message-Id: <1371180047-23253-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 14 Jun 2013 14:25:58 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 78E0D7C069F
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 12:25:57 -0600 (MDT)
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id tAa2BIZk7mshaeIj (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 12:25:56 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: commit the csum_root if we do --init-csum-tree
+Date: Fri, 14 Jun 2013 14:25:54 -0400
+Message-ID: <1371234354-25635-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As for skinny metadata, key.offset stores levels rather than extent length.
+This is just an oddity with the commit stuff in btrfs-progs.  It will just
+update the generation of the root you call with, which in btrfsck case would
+have been the fs_root.  But because we didn't actually update the fs_root we
+wouldn't have cow'ed the fs root and therefore the generation will not match the
+node which will make the file system unmountable.  Fix this by calling with the
+csum_root which is the one we're messing with.  Thanks,
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- btrfs-image.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ cmds-check.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 739ae35..e5ff795 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -798,9 +798,9 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
+diff --git a/cmds-check.c b/cmds-check.c
+index 68cdd52..fa77046 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -5227,7 +5227,7 @@ int cmd_check(int argc, char **argv)
+ 			return -EIO;
+ 		}
  
- 		bytenr = key.objectid;
- 		if (key.type == BTRFS_METADATA_ITEM_KEY)
--			num_bytes = key.offset;
--		else
- 			num_bytes = extent_root->leafsize;
-+		else
-+			num_bytes = key.offset;
- 
- 		if (btrfs_item_size_nr(leaf, path->slots[0]) > sizeof(*ei)) {
- 			ei = btrfs_item_ptr(leaf, path->slots[0],
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans, info->csum_root);
+ 		if (ret)
+ 			exit(1);
+ 		goto out;
 -- 
-1.8.1.4
+1.7.7.6
 

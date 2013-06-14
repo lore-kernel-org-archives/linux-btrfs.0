@@ -1,92 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33731 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:33743 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753412Ab3FNB17 (ORCPT
+	with ESMTP id S1754785Ab3FNB3z convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Jun 2013 21:27:59 -0400
+	Thu, 13 Jun 2013 21:29:55 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 133E47C069A
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2013 19:27:59 -0600 (MDT)
-Date: Thu, 13 Jun 2013 21:27:56 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Thomas Koch <thomas@koch.ro>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Stale NFS file handle after power loss
-Message-ID: <20130614012756.GF658@localhost.localdomain>
-References: <65278856.dWSg6uQ8zb@x121e>
- <20130610130047.GA10307@localhost.localdomain>
- <4263017.nb4SMd4E6p@x121e>
- <201306132145.29326.thomas@koch.ro>
-MIME-Version: 1.0
+	by dkim1.fusionio.com (Postfix) with ESMTP id 394047C069C
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2013 19:29:55 -0600 (MDT)
 Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <201306132145.29326.thomas@koch.ro>
+MIME-Version: 1.0
+To: <torvalds@linux-foundation.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Message-ID: <20130614012953.4914.58775@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] Btrfs
+Date: Thu, 13 Jun 2013 21:29:53 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 13, 2013 at 01:45:29PM -0600, Thomas Koch wrote:
-> Thomas Koch:
-> > On Monday, June 10, 2013 09:00:47 AM Josef Bacik wrote:
-> > > On Sat, Jun 08, 2013 at 01:14:35PM -0600, Thomas Koch wrote:
-> > > > Hi,
-> > > > 
-> > > > I had a power loss on my btrfs file system during package installation
-> > > > and now I found this:
-> > > > 
-> > > > <code>
-> > > > % ls -l /var/lib/dpkg/tmp.ci
-> > > > ls: cannot access /var/lib/dpkg/tmp.ci/conffiles: Stale NFS file handle
-> > > > ls: cannot access /var/lib/dpkg/tmp.ci/md5sums: Stale NFS file handle
-> > > > total 0
-> > > > -????????? ? ? ? ?            ? conffiles
-> > > > -????????? ? ? ? ?            ? md5sums
-> > > > % sudo rm -rf /var/lib/dpkg/tmp.ci/conffiles
-> > > > rm: cannot remove ‘/var/lib/dpkg/tmp.ci/conffiles’: Stale NFS file
-> > > > handle </code>
-> > > > 
-> > > > I booted with a live system and ran btrfsck (without --repair!) but
-> > > > this did not change the situation. Unfortunately I wasn't clever
-> > > > enough to save the output of btrfsck somehow. Do you need it?
-> > > > 
-> > > > Could you help me to get rid of these bogus files, please?
-> > > 
-> > > Don't run with --repair, but please capture the output so I can see
-> > > what's going wrong.  Thanks,
-> > > 
-> > > Josef
-> > 
-> > sudo btrfsck /dev/x121e/root
-> > checking extents
-> > checking fs roots
-> > root 5 inode 9319255 errors 1040
-> > root 5 inode 9698560 errors 1000
-> > root 5 inode 11591532 errors 2001
-> >         unresolved ref dir 11591531 index 2 namelen 9 name conffiles
-> > filetype 1 error 4
-> > root 5 inode 11591534 errors 2001
-> >         unresolved ref dir 11591531 index 4 namelen 7 name md5sums filetype
-> > 1 error 4
-> > found 270172975104 bytes used err is 1
-> > total csum bytes: 261797296
-> > total tree bytes: 2063106048
-> > total fs tree bytes: 1575575552
-> > btree space waste bytes: 561459705
-> > file data blocks allocated: 386128334848
-> >  referenced 262981738496
-> > Btrfs Btrfs v0.19
-> 
-> Hi Josef,
-> 
-> do you think that you might find some solution to this problem or should I plan 
-> to re-setup my machine?
-> 
+Hi Linus,
 
-Yup sorry I just got sidetracked, I'll see what can be done tomorrow, but your
-best bet it so pull down the latest btrfs-progs and build it and run
+Please pull my for-linus branch:
 
-./btrfs-image /dev/whatever blah.img
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-and put the image up somewhere I can pull it down so I can fix btrfsck to fix
-your file system and test it locally before I send you the patch.  Thanks,
+This is an assortment of crash fixes:
 
-Josef
+Josef Bacik (3) commits (+9/-8):
+    Btrfs: don't delete fs_roots until after we cleanup the transaction (+1/-1)
+    Btrfs: init relocate extent_io_tree with a mapping (+5/-4)
+    Btrfs: stop all workers before cleaning up roots (+3/-3)
+
+Liu Bo (1) commits (+2/-2):
+    Btrfs: fix use-after-free bug during umount
+
+Naohiro Aota (1) commits (+3/-0):
+    btrfs: Drop inode if inode root is NULL
+
+Total: (5) commits (+14/-10)
+
+ fs/btrfs/disk-io.c    | 10 +++++-----
+ fs/btrfs/inode.c      |  3 +++
+ fs/btrfs/relocation.c |  9 +++++----
+ 3 files changed, 13 insertions(+), 9 deletions(-)

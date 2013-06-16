@@ -1,75 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56038 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754880Ab3FPGFG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Jun 2013 02:05:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Uo65I-0004jD-2p
-	for linux-btrfs@vger.kernel.org; Sun, 16 Jun 2013 08:05:04 +0200
-Received: from 211.238.162.10 ([211.238.162.10])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Jun 2013 08:05:04 +0200
-Received: from timcastle by 211.238.162.10 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Jun 2013 08:05:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Tim Castle <timcastle@gmail.com>
-Subject: btrfs balance resume + raid5/6
-Date: Sun, 16 Jun 2013 06:00:10 +0000 (UTC)
-Message-ID: <loom.20130616T072808-446@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-we0-f181.google.com ([74.125.82.181]:49630 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755089Ab3FPKio (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Jun 2013 06:38:44 -0400
+Received: by mail-we0-f181.google.com with SMTP id p58so1529122wes.26
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Jun 2013 03:38:42 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <51B937A9.3020906@cn.fujitsu.com>
+References: <51249468.6010004@cn.fujitsu.com>
+	<CAOcd+r35uFwUsmRuLRR3eGkVcceP2QEimhrN7xxSnBzB-LWVyQ@mail.gmail.com>
+	<512B3AE7.9090208@cn.fujitsu.com>
+	<CAOcd+r2bKGSoyxSXtnDKH5d04kRT2qRpFAKX2Dz6As=Qc_fOtg@mail.gmail.com>
+	<514FAD96.7040002@cn.fujitsu.com>
+	<CAOcd+r1i+neaAb+3o6CSVboKK_P0WPrSoiPLGC8t0QeqFM-uAQ@mail.gmail.com>
+	<CAOcd+r16WyKxpDchERq+cGcq1oaEk21BvDSKWBtLge6s3GU=xg@mail.gmail.com>
+	<518B56F1.40909@cn.fujitsu.com>
+	<CAOcd+r3t+_TCsUytsJn9CAK0=dLJ91_bPncw_q8A3n5hqnT2pQ@mail.gmail.com>
+	<51B937A9.3020906@cn.fujitsu.com>
+Date: Sun, 16 Jun 2013 13:38:42 +0300
+Message-ID: <CAOcd+r0986mL2FEC2tVTgNd0n1Lbc8FD=N9qPeAnd4h1QaxdAQ@mail.gmail.com>
+Subject: Re: [PATCH 2/3] Btrfs: fix the deadlock between the transaction
+ start/attach and commit
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: miaox@cn.fujitsu.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Shyam Kaushik <shyam@zadarastorage.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings! 
+Hi Miao,
 
-I'm testing raid6, and recently added two drives. 
-I haven't been able to properly resume a balance operation: the number of
-total chunks is always too low.  
+On Thu, Jun 13, 2013 at 6:08 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+> On wed, 12 Jun 2013 23:11:02 +0300, Alex Lyakas wrote:
+>> I reviewed the code starting from:
+>> 69aef69a1bc154 Btrfs: don't wait for all the writers circularly during
+>> the transaction commit
+>> until
+>> 2ce7935bf4cdf3 Btrfs: remove the time check in btrfs_commit_transaction()
+>>
+>> It looks very good. Let me check if I understand the fix correctly:
+>> # When transaction starts to commit, we want to wait only for external
+>> writers (those that did ATTACH/START/USERSPACE)
+>> # We guarantee at this point that no new external writers will hop on
+>> the committing transaction, by setting ->blocked state, so we only
+>> wait for existing extwriters to detach from transaction
 
-It seems that the balance starts and pauses properly, but always resumes
-with ~7 chunks. 
+I have a doubt about this point with your new code. Example:
+Task1 - external writer
+Task2 - transaction kthread
 
-Here's an example: 
+Task1                                                                   Task2
+|start_transaction(TRANS_START)                           |
+|-wait_current_trans(blocked=0, so it doesn't wait)     |
+|-join_transaction()                                                  |
+|--lock(trans_lock)                                                   |
+|--can_join_transaction() YES                                  |
+|
+      |-btrfs_commit_transaction()
+|
+      |--blocked=1
+|
+      |--in_commit=1
+|
+      |--wait_event(extwriter== 0);
+|
+      |--btrfs_flush_all_pending_stuffs()
+|                                                                            |
+|--extwriter_counter_inc()                                         |
+|--unlock(trans_lock)                                               |
+|
+      | lock(trans_lock)
+|
+      | trans_no_join=1
 
-vendikar tim # uname -r
-3.10.0-031000rc4-generic
-vendikar tim # btrfs fi sho
-Label: 'bank'  uuid: 682bd1f5-1bd3-479b-8882-867dfe32375f
-	Total devices 7 FS bytes used 4.70TB
-	devid    4 size 1.82TB used 1.44TB path /dev/dm-9
-	devid    1 size 2.73TB used 1.44TB path /dev/dm-8
-	devid    5 size 2.73TB used 1.44TB path /dev/dm-7
-	devid    6 size 931.51GB used 207.00GB path /dev/dm-6
-	devid    2 size 2.73TB used 1.44TB path /dev/dm-5
-	devid    3 size 2.73TB used 1.44TB path /dev/dm-4
-	devid    7 size 931.51GB used 207.00GB path /dev/dm-3
+Basically, the "blocked/in_commit" check is not synchronized with
+joining a transaction. After checking "blocked", the external writer
+may proceed and join the transaction. Right before joining, it calls
+can_join_transaction(). But this function checks in_commit flag under
+fs_info->trans_lock. But btrfs_commit_transaction() sets this flag not
+under trans_lock, but under commit_lock, so checking this flag is not
+synchronized.
 
-Btrfs v0.20-rc1-324-g650e656
-vendikar tim # btrfs fi df bank/
-Data, RAID6: total=4.71TB, used=4.69TB
-System, RAID1: total=32.00MB, used=376.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=8.00GB, used=6.54GB
+Or maybe I am wrong, because btrfs_commit_transaction() locks and
+unlocks trans_lock to check for previous transaction, so by accident
+there is no problem, and above scenario cannot happen?
 
-vendikar tim # btrfs balance start bank/ 
-vendikar tim # btrfs balance status bank/
-Balance on 'bank/' is running
-3 out of about 1479 chunks balanced (4 considered), 100% left
 
-vendikar tim # btrfs balance pause bank/
-vendikar tim # btrfs balance status bank/
-Balance on 'bank/' is paused
-4 out of about 1479 chunks balanced (4 considered), 100% left
+>> # We do not care at this point for TRANS_JOIN etc, we let them hop on
+>> if they want
+>> # When all external writers have detached, we flush their delalloc and
+>> then we prevent all the others to join (TRANS_JOIN etc)
+>>
+>> # Previously, we had the do-while loop, that intended to do the same,
+>> but it used num_writers, which counts both external writers and also
+>> TRANS_JOIN. So the loop was racy because new joins prevented it from
+>> completing.
+>>
+>> Is my understanding correct?
+>
+> Yes, you are right.
+>
+>> I have some questions:
+>> # Why was the do-while loop needed? Can we just delete the do-while
+>> loop as it was before, call flush_all_pending stuffs(),  then set
+>> trans_no_join and wait for all writers to detach? Is there some
+>> correctness problem here?
+>> Or we need to wait for external writers to detach before calling
+>> flush_all_pending_stuffs() one last time?
+>
+> The external writers will introduce pending works, we need flush them
+> after they detach, otherwise we will forget to deal with them at the current
+> transaction just like the following case:
+>
+>         Task1                           Task2
+>         start_transaction
+>                                         commit_transaction
+>                                           flush_all_pending_stuffs
+>         add pending works
+>         end_transaction
+>                                           ...
+>
+>
+>> # Why TRANS_ATTACH is considered external writer?
+>
+> - at most cases, it is done by the users' operations.
+> - if in_commit is set, we shouldn't start it, or the deadlock will happen.
+>   it is the same as TRANS_START/TRANS_USERSPACE.
+>
+>> # Can I apply this fix to 3.8.x kernel (manually, of course)? Or some
+>> additional things are needed that are missing in this kernel?
+>
+> Yes, you can rebase it against 3.8.x kernel freely.
+>
+> Thanks
+> Miao
 
-vendikar tim # btrfs balance resume bank
-vendikar tim # btrfs balance status bank/
-Balance on 'bank/' is running
-1 out of about 4 chunks balanced (5 considered),  75% left
-
-All the best, 
-Tim 
-
+Thanks,
+Alex.

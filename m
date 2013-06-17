@@ -1,48 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:40221 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753120Ab3FNSZ6 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:40152 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752051Ab3FQVpE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Jun 2013 14:25:58 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 78E0D7C069F
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 12:25:57 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id tAa2BIZk7mshaeIj (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Jun 2013 12:25:56 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: commit the csum_root if we do --init-csum-tree
-Date: Fri, 14 Jun 2013 14:25:54 -0400
-Message-ID: <1371234354-25635-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 17 Jun 2013 17:45:04 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5HLj3Ss027245
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:04 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5HLj2Qu005525
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:02 GMT
+Received: from abhmt108.oracle.com (abhmt108.oracle.com [141.146.116.60])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5HLj2So005501
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:02 GMT
+From: Guangyu Sun <guangyu.sun@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Guangyu Sun <guangyu.sun@oracle.com>
+Subject: [PATCH] btrfs-progs: update man page for btrfs filesystem label
+Date: Mon, 17 Jun 2013 14:45:23 -0700
+Message-Id: <1371505523-28674-1-git-send-email-guangyu.sun@oracle.com>
+In-Reply-To: <y>
+References: <y>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is just an oddity with the commit stuff in btrfs-progs.  It will just
-update the generation of the root you call with, which in btrfsck case would
-have been the fs_root.  But because we didn't actually update the fs_root we
-wouldn't have cow'ed the fs root and therefore the generation will not match the
-node which will make the file system unmountable.  Fix this by calling with the
-csum_root which is the one we're messing with.  Thanks,
+btrfs filesystem label can work on a mounted filesystem, also on a
+multi-devices filesystem. And the restriction of label name is
+changed, too. The man page should be updated accordingly.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
 ---
- cmds-check.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ man/btrfs.8.in |   17 ++++-------------
+ 1 file changed, 4 insertions(+), 13 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 68cdd52..fa77046 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -5227,7 +5227,7 @@ int cmd_check(int argc, char **argv)
- 			return -EIO;
- 		}
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index af7df4d..1da4ff1 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -263,22 +263,13 @@ it with the new desired size.  When recreating the partition make sure to use
+ the same starting disk cylinder as before.
+ .TP
  
--		ret = btrfs_commit_transaction(trans, root);
-+		ret = btrfs_commit_transaction(trans, info->csum_root);
- 		if (ret)
- 			exit(1);
- 		goto out;
+-\fBfilesystem label\fP\fI <dev> [newlabel]\fP
+-Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
+-filesystem. 
++\fBfilesystem label\fP\fI [<device>|<mountpoint>] [newlabel]\fP
++Show or update the label of a filesystem. \fI[<device>|<mountpoint>]\fR is used
++to identify the filesystem. 
+ If a \fInewlabel\fR optional argument is passed, the label is changed. The
+ following constraints exist for a label:
+ .IP
+-- the maximum allowable length shall be less or equal than 256 chars
+-.IP
+-- the label shall not  contain the '/' or '\\' characters.
+-
+-NOTE: Currently there are the following limitations:
+-.IP
+-- the filesystem has to be unmounted
+-.IP
+-- the filesystem should not have more than one device.
+-.TP
++- the maximum allowable length shall be less than 256 chars
+ 
+ \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
+ Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
 -- 
-1.7.7.6
+1.7.9.5
 

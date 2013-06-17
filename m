@@ -1,80 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33399 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753765Ab3FQVT2 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:42810 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753752Ab3FQVVg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Jun 2013 17:19:28 -0400
+	Mon, 17 Jun 2013 17:21:36 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id B011B7C0696
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 15:19:27 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id 4CQKFh21q35bYOeH (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 15:19:27 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id 8B70E9A069C
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 15:21:35 -0600 (MDT)
+Date: Mon, 17 Jun 2013 17:21:32 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: move btrfs_truncate_page to btrfs_cont_expand instead of btrfs_truncate
-Date: Mon, 17 Jun 2013 17:19:24 -0400
-Message-ID: <1371503964-5067-1-git-send-email-jbacik@fusionio.com>
+To: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: Filesystem "somewhat" destroyed - need help for recovery/fixing
+Message-ID: <20130617212132.GA19183@localhost.localdomain>
+References: <loom.20130617T230152-537@post.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <loom.20130617T230152-537@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This has plagued us forever and I'm so over working around it.  When we truncate
-down to a non-page aligned offset we will call btrfs_truncate_page to zero out
-the end of the page and write it back to disk, this will keep us from exposing
-stale data if we truncate back up from that point.  The problem with this is it
-requires data space to do this, and people don't really expect to get ENOSPC
-from truncate() for these sort of things.  This also tends to bite the orphan
-cleanup stuff too which keeps people from mounting.  To get around this we can
-just move this into btrfs_cont_expand() to make sure if we are truncating up
-from a non-page size aligned i_size we will zero out the rest of this page so
-that we don't expose stale data.  This will give ENOSPC if you try to truncate()
-up or if you try to write past the end of isize, which is much more reasonable.
-This fixes xfstests generic/083 failing to mount because of the orphan cleanup
-failing.  Thanks,
+On Mon, Jun 17, 2013 at 09:08:26PM +0000, Alexander Skwar wrote:
+> Hello
+> 
+> I think, I somewhat destroyed my btrfs filesystem on my Ubuntu 13.04 kernel 
+> 3.8.0-25-lowlatency system. It got destroyed, because the system was hanging 
+> for some other reason and I had to remove power...
+> 
+> When I try to mount my filesystem (there's only one, with a few 
+> subfilesystems), the system crashes. Also btrfsck dies; always like this:
+> 
+> a@ask-home:~$ sudo /btrfs-progs.dev/bin/btrfsck /dev/ssd/Data 
+> parent transid verify failed on 33327525888 wanted 53973 found 53972
+> parent transid verify failed on 33327525888 wanted 53973 found 53972
+> Ignoring transid failure
+> Checking filesystem on /dev/ssd/Data
+> UUID: 7d2eb10f-aced-4d41-bb7f-7badbf075b6a
+> checking extents
+> checking fs roots
+> root 325 inode 31590 errors 400
+> extent buffer leak: start 33327525888 len 4096
+> *** Error in `btrfs check': corrupted double-linked list: 0x00000000007a2600 
+> ***
+> 
+> a@ask-home:~$ /btrfs-progs.dev/bin/btrfs version
+> Btrfs v0.20-rc1-253-g7854c8b-dirty
+> 
+> btrfsck always dies with a corrupted double-linked list.
+> 
+> When the system crashes when I try to mount the filesystem, I get a kernel 
+> oop. Nothing in syslog, though - too fast :/ On 
+> http://wir.myds.me/photo/photo_thumb.php?
+> dir=53637265656e73686f74732f4372617368206d6f756e74206274726673 or 
+> http://imgur.com/a/UA7fF I tried to capute a few photos of the crash 
+> message. "Screenshots", of sorts...
+> 
+> I was able to recover most of the files with btrfs-recover. But not all of 
+> it correctly - at least one VirtualBox image is now broken.
+> 
+> Well - what do I do now? Could someone help, please?
+> 
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c |   15 ++++++++++-----
- 1 files changed, 10 insertions(+), 5 deletions(-)
+Pull down my tree
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3dbfee9..ecf8b5b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4253,6 +4253,15 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 	u64 hole_size;
- 	int err = 0;
- 
-+	/*
-+	 * If our size started in the middle of a page we need to zero out the
-+	 * rest of the page before we expand the i_size, otherwise we could
-+	 * expose stale data.
-+	 */
-+	err = btrfs_truncate_page(inode, oldsize, 0, 0);
-+	if (err)
-+		return err;
-+
- 	if (size <= hole_start)
- 		return 0;
- 
-@@ -7590,16 +7599,12 @@ static int btrfs_truncate(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_block_rsv *rsv;
--	int ret;
-+	int ret = 0;
- 	int err = 0;
- 	struct btrfs_trans_handle *trans;
- 	u64 mask = root->sectorsize - 1;
- 	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
- 
--	ret = btrfs_truncate_page(inode, inode->i_size, 0, 0);
--	if (ret)
--		return ret;
--
- 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
- 	btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
- 
--- 
-1.7.7.6
+git://github.com/josefbacik/btrfs-progs.git
 
+and build and run the fsck in there and see if it's a bit more friendly.
+Thanks,
+
+Josef

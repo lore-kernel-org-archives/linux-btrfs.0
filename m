@@ -1,42 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:33055 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755334Ab3FPRRI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Jun 2013 13:17:08 -0400
-Received: from mail.virtall.com (localhost [127.0.0.1])
-	by mail.virtall.com (Postfix) with ESMTP id C29133A3DAA
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Jun 2013 19:17:03 +0200 (CEST)
-Received: from localhost (unknown [222.110.111.200])
-	by mail.virtall.com (Postfix) with ESMTPSA id A045C3A1B01
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Jun 2013 19:17:02 +0200 (CEST)
-Date: Mon, 17 Jun 2013 02:16:53 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
+Received: from 110-174-82-20.static.tpgi.com.au ([110.174.82.20]:40033 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750959Ab3FQBHk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Jun 2013 21:07:40 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 1A1A3C1739
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 11:07:37 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
 To: linux-btrfs@vger.kernel.org
-Subject: converting lzo compression to zlib compression?
-Message-ID: <20130617021653.4718a5e0@virtall.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Subject: is this scrub error a concern?
+Date: Mon, 17 Jun 2013 11:07:33 +1000
+MIME-Version: 1.0
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201306171107.33983.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a btrfs filesystem mounted with "compress=lzo" now.
+scrub device /dev/sda3 (id 1) done
+        scrub started at Mon Jun 17 06:00:01 2013 and finished after 781 
+seconds
+        total bytes scrubbed: 76.31GB with 2 errors
+        error details: super=2
+        corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
 
-I'd like to see how much space would I save by converting it to zlib.
-
-
-Would it be possible to convert lzo compression to zlib compression
-with the following:
-
-- mount the filesystem with "compress=zlib"
-- run balance
-- when balance finishes, the data would be compressed with zlib
-
-Would this work as above, or do I have to copy the data out and back to
-convert from lzo compression to zlib compression?
-
+It's on an Intel 120G SSD running the Debian 3.8-trunk-amd64 kernel.
 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
-
-
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

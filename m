@@ -1,24 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f181.google.com ([209.85.223.181]:49211 "EHLO
-	mail-ie0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932824Ab3FROCG (ORCPT
+Received: from cobra.newdream.net ([66.33.216.30]:39733 "EHLO
+	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756080Ab3FRP4h (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Jun 2013 10:02:06 -0400
-Received: by mail-ie0-f181.google.com with SMTP id x12so10017821ief.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2013 07:02:06 -0700 (PDT)
+	Tue, 18 Jun 2013 11:56:37 -0400
+Date: Tue, 18 Jun 2013 08:56:37 -0700 (PDT)
+From: Sage Weil <sage@inktank.com>
+To: Chris Mason <chris.mason@fusionio.com>
+cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: hang on 3.9, 3.10-rc5
+In-Reply-To: <alpine.DEB.2.00.1306121317300.27596@cobra.newdream.net>
+Message-ID: <alpine.DEB.2.00.1306180855120.27273@cobra.newdream.net>
+References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net> <20130611162129.4914.54461@localhost.localdomain> <alpine.DEB.2.00.1306121317300.27596@cobra.newdream.net>
 MIME-Version: 1.0
-In-Reply-To: <CAPQsFSVtLvvdaZ2QHigSRT40QgHLGGAGiDjR-HkrYh7+LdUU2A@mail.gmail.com>
-References: <CAPQsFSVtLvvdaZ2QHigSRT40QgHLGGAGiDjR-HkrYh7+LdUU2A@mail.gmail.com>
-Date: Tue, 18 Jun 2013 08:02:06 -0600
-Message-ID: <CAE5mzvgnKOBk6MusRUnS6c4Jp_SYDo=Re+K_ZvBGX+xCj3iLOw@mail.gmail.com>
-Subject: Re: My multi-device btrfs (3*2TB) won't mount anymore.
-From: cwillu <cwillu@cwillu.com>
-To: Retro Pirate <theretropirate@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does anything show up in dmesg when you mount?
+On Wed, 12 Jun 2013, Sage Weil wrote:
+> On Tue, 11 Jun 2013, Chris Mason wrote:
+> > Quoting Sage Weil (2013-06-11 11:43:30)
+> > > I'm also seeing this hang regularly with both 3.9 and 3.10-rc5.  Is this
+> > > is a known problem?  In this case there is no powercycling; just a regular
+> > > ceph-osd workload.
+> > 
+> > Everyone here is waiting for the root node, but it isn't immediately
+> > clear who has the lock.  log_one_extent is the most likely suspect, but
+> > I can't see how it would be scheduling with the root lock held.
+> > 
+> > Could you please sysrq-w?
+> 
+> Sorry for the slow reply; had to wait for it to reproduce again.  Attached 
+> both the original dmesg output and the blocked tasks.  I'll leave the box 
+> wedged this time in case there is any other info that can help.
 
-If mount just hangs, do an alt-sysrq-w, and then post what that sends to dmesg.
+Still seeing this hang with the latest from linus' tree.  Is there another 
+tree I should try testing against?
+
+Thanks!
+sage
+

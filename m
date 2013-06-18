@@ -1,82 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46781 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750704Ab3FRGFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Jun 2013 02:05:10 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Uop2S-0007uX-2L
-	for linux-btrfs@vger.kernel.org; Tue, 18 Jun 2013 08:05:08 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2013 08:05:08 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2013 08:05:08 +0200
+Received: from mail-ob0-f193.google.com ([209.85.214.193]:50660 "EHLO
+	mail-ob0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753691Ab3FRKaY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Jun 2013 06:30:24 -0400
+Received: by mail-ob0-f193.google.com with SMTP id xk17so1870570obc.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2013 03:30:23 -0700 (PDT)
+MIME-Version: 1.0
+Date: Tue, 18 Jun 2013 12:30:23 +0200
+Message-ID: <CAPQsFSVtLvvdaZ2QHigSRT40QgHLGGAGiDjR-HkrYh7+LdUU2A@mail.gmail.com>
+Subject: My multi-device btrfs (3*2TB) won't mount anymore.
+From: Retro Pirate <theretropirate@googlemail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BUG at fs/btrfs/print-tree when trying to mount after a crash
-Date: Tue, 18 Jun 2013 06:04:50 +0000 (UTC)
-Message-ID: <pan$89a8$49bdccdf$48e0ce45$59d9acc9@cox.net>
-References: <1371496227.3925.44.camel@ivbl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Zugelder posted on Mon, 17 Jun 2013 21:10:27 +0200 as excerpted:
+My multi-device btrfs (3*2TB) won't mount anymore.
+The fs was created with lubuntu 13.04 (amd64) and the default kernel
+with -n 8192 -d single -m raid1, first with two devices the third was
+added later.
+Quotas where enabled after fs creation (btrfs quota enable) but
+nothing else, there are several subvolumes and there should be around
+100GB of free space.
+Now I tried a more recent kernel but that does not help, I'm now
+running mainline kernel 3.10-rc6 (amd64).
 
-> Hi,
-> 
-> my laptop with a btrfs on dm-crypt on SSD freezed today shortly after
-> resuming from suspend (it doesn't normally do that). I was running a
-> self compiled 3.9.6 at this point. There should be around 20 of 114 GiB
-> free on the file system and it was probably created with 16K leaf size.
-> 
-> After rebooting, mounting the rootfs didn't work anymore. I made a copy
-> of the disk and am now trying to fix it using my desktop. Trying to
-> mount it with -o recovery on 3.10-rc6 triggers the following bug: 
-[snipped]
+I tried btrfsck but it does nothing and won't react to ctrl-c (same
+thing with mount), dmesg shows a lot of these
+[ 1679.162829] INFO: task btrfsck:2786 blocked for more than 120 seconds.
+[ 1679.162838] "echo 0 > /proc/sys/kernel/hung_task_
+timeout_secs" disables this message.
+[ 1679.162843] btrfsck         D 0000000000000000     0  2786   2785 0x00000004
+[ 1679.162853]  ffff8800a1cc3d78 0000000000000046 ffff880115e1de00
+ffff8800a1cdc8a0
+[ 1679.162862]  ffff8800a1cc3fd8 ffff8800a1cc3fd8 ffff8800a1cc3fd8
+0000000000013240
+[ 1679.162869]  ffffffff81c11440 ffff880115b48000 ffff88011ac27000
+ffffffffa0130ac0
+[ 1679.162876] Call Trace:
+[ 1679.162903]  [<ffffffff816cb899>] schedule+0x29/0x70
+[ 1679.162911]  [<ffffffff816cbb9e>] schedule_preempt_disabled+0xe/0x10
+[ 1679.162919]  [<ffffffff816c9fd2>] __mutex_lock_slowpath+0x112/0x1b0
+[ 1679.162931]  [<ffffffff816c9b4a>] mutex_lock+0x2a/0x50
+[ 1679.162981]  [<ffffffffa00d856b>] btrfs_scan_one_device+0x3b/0x200 [btrfs]
+[ 1679.163011]  [<ffffffffa0085b89>] btrfs_control_ioctl+0xd9/0xf0 [btrfs]
+[ 1679.163021]  [<ffffffff81198767>] do_vfs_ioctl+0x87/0x330
+[ 1679.163029]  [<ffffffff81191ed6>] ? final_putname+0x26/0x50
+[ 1679.163037]  [<ffffffff81198aa1>] SyS_ioctl+0x91/0xb0
+[ 1679.163045]  [<ffffffff816d5586>] system_call_fastpath+0x1a/0x1f
+[ 1799.027976] INFO: task btrfsck:2786 blocked for more than 120 seconds.
+[ 1799.027985] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[ 1799.027991] btrfsck         D 0000000000000000     0  2786   2785 0x00000004
+[ 1799.028000]  ffff8800a1cc3d78 0000000000000046 ffff880115e1de00
+ffff8800a1cdc8a0
+[ 1799.028009]  ffff8800a1cc3fd8 ffff8800a1cc3fd8 ffff8800a1cc3fd8
+0000000000013240
+[ 1799.028017]  ffffffff81c11440 ffff880115b48000 ffff88011ac27000
+ffffffffa0130ac0
+[ 1799.028024] Call Trace:
+[ 1799.028050]  [<ffffffff816cb899>] schedule+0x29/0x70
+[ 1799.028059]  [<ffffffff816cbb9e>] schedule_preempt_disabled+0xe/0x10
+[ 1799.028067]  [<ffffffff816c9fd2>] __mutex_lock_slowpath+0x112/0x1b0
+[ 1799.028080]  [<ffffffff816c9b4a>] mutex_lock+0x2a/0x50
+[ 1799.028129]  [<ffffffffa00d856b>] btrfs_scan_one_device+0x3b/0x200 [btrfs]
+[ 1799.028159]  [<ffffffffa0085b89>] btrfs_control_ioctl+0xd9/0xf0 [btrfs]
+[ 1799.028169]  [<ffffffff81198767>] do_vfs_ioctl+0x87/0x330
+[ 1799.028177]  [<ffffffff81191ed6>] ? final_putname+0x26/0x50
+[ 1799.028185]  [<ffffffff81198aa1>] SyS_ioctl+0x91/0xb0
+[ 1799.028193]  [<ffffffff816d5586>] system_call_fastpath+0x1a/0x1f
 
-> Any suggestions? Never had a problem before running btrfs on that
-> machine and SSD for about 2 years now.
 
-The technical debugging's for others, but two suggestions as a btrfs user/
-tester:
+iostat
+sde               0.11         0.45         0.00        776          0
+sdg               0.11         0.44         0.00        764          0
+sdf               0.11         0.44         0.00        764          0
 
-1) I had an similar issue some time back that turned out to be a 
-corrupted space-cache.  Try mounting with the "nospace_cache" option.  If 
-that works that's it; mount with the "clear_cache" option to clear the 
-bad cache and perhaps once again with space_cache to turn it back on. 
-(Space-cache is one of the few options that's persistent, but I'm not 
-sure if no-cache is equally persistent, making it a toggle, or if once 
-it's on there's no way to turn it off permanently.)
 
-The clear_cache option will trigger a cache rebuild, so will take some 
-time on slower devices (you said SSD but didn't say whether it was a slow 
-one or a fast one).  See the mount-options page at the wiki for more.
+btrfs fi sho
+Label: none  uuid:
+    Total devices 3 FS bytes used 5.37TB
+    devid    1 size 1.82TB used 1.79TB path /dev/sdf
+    devid    2 size 1.82TB used 1.79TB path /dev/sdg
+    devid    3 size 1.82TB used 1.79TB path /dev/sde
 
-https://btrfs.wiki.kernel.org/index.php/Mount_options#Space_cache_control
 
-2) Apparently some corruption bugs in 3.9 were fixed for 3.10.  It's 
-worth trying say the latest 3.10-rc kernel, to see if can handle it.
-
-As the wiki mentions in several places and as is frequently repeated 
-here, btrfs is still under heavy development and the development kernels 
-often have fixes missing in even latest stable.  So unless there's a 
-known regression in the current development kernel that you're 
-purposefully avoiding, really, relatively speaking, in terms of btrfs 
-development, latest mainline kernel stable is in practice already a bit 
-dated, and btrfs testers are encouraged to run the development kernels 
-from rc2 or rc3 at least.  (I can understand not wanting to run them 
-during the commit window, or until rc2/3, as I often hold off during the 
-commit window here, too.  Some even run btrfs-next, before it hits 
-mainline, but I've chosen to stick with mainline here.  That's just 
-simpler all around for me, and the rcs are still current /enough/.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+How do I get the fs to mount again?

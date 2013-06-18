@@ -1,42 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f41.google.com ([209.85.219.41]:36133 "EHLO
-	mail-oa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751547Ab3FQVnX convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Jun 2013 17:43:23 -0400
-Received: by mail-oa0-f41.google.com with SMTP id n10so4092272oag.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 14:43:23 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:10689 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752247Ab3FRDMT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Jun 2013 23:12:19 -0400
+Message-ID: <51BFD061.4070404@cn.fujitsu.com>
+Date: Tue, 18 Jun 2013 11:13:37 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <20130617212132.GA19183@localhost.localdomain>
-References: <loom.20130617T230152-537@post.gmane.org> <20130617212132.GA19183@localhost.localdomain>
-From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
-Date: Mon, 17 Jun 2013 23:43:02 +0200
-Message-ID: <CADn-QaOWq7BR0DXn_Xd5YRnDc2NZOBGCn_YfV2y1FjpBg4f_LQ@mail.gmail.com>
-Subject: Re: Filesystem "somewhat" destroyed - need help for recovery/fixing
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix wrong csum clone when doing relocation
+References: <51878334.4000807@cn.fujitsu.com> <20130614152712.GA28783@localhost.localdomain>
+In-Reply-To: <20130614152712.GA28783@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef
+From: Josef Bacik <jbacik@fusionio.com>
 
-On Mon, Jun 17, 2013 at 11:21 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+Patch "Btrfs: remove btrfs_sector_sum structure" introduced a problem
+that we copied the checksum value to the wrong address when doing
+relocation.
 
-> Pull down my tree
->
-> git://github.com/josefbacik/btrfs-progs.git
->
-> and build and run the fsck in there and see if it's a bit more friendly.
+The reason is:
+It is very likely that one ordered extent has two or more checksum
+structures to keep the relative checksum value, and ->bytenr in each
+checksum structure should point to the start of its extent, not the
+start of the ordered extent. Fix it.
 
-I just gave it a try, but wasn't successful, it seems… Kernel still
-crashes.
-Maybe checkout the screenphotos at http://goo.gl/DWkRH or
-http://imgur.com/a/00pTx
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/relocation.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Thanks,
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 35c0cf7..e3108e5 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4410,11 +4410,13 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
+ 	if (ret)
+ 		goto out;
+ 
++	disk_bytenr = ordered->start;
+ 	while (!list_empty(&list)) {
+ 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
+ 		list_del_init(&sums->list);
+ 
+-		sums->bytenr = ordered->start;
++		sums->bytenr = disk_bytenr;
++		disk_bytenr += sums->len;
+ 
+ 		btrfs_add_ordered_sum(inode, ordered, sums);
+ 	}
+-- 
+1.8.1.4
 
-Alexander
---
-=>        Google+ => http://plus.skwar.me         <==
-=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==

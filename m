@@ -1,41 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:34799 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750827Ab3F3RfK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 13:35:10 -0400
-Received: by mail-ob0-f181.google.com with SMTP id 16so3557310obc.12
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 10:35:09 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CADCGFBVa42xr+4ie20GupFfZJzteihPNDnr4b_8_8UmfK_0M5w@mail.gmail.com>
-References: <CADCGFBVa42xr+4ie20GupFfZJzteihPNDnr4b_8_8UmfK_0M5w@mail.gmail.com>
-Date: Sun, 30 Jun 2013 12:35:09 -0500
-Message-ID: <CAKcLGm-JPT9XY7pS2Fv_G1RWXyovcYVQeO1WMR3a+DHm_PNoHg@mail.gmail.com>
-Subject: Re: lz4 status?
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Roger Pack <rogerpack2005@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mx1.redhat.com ([209.132.183.28]:41322 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932302Ab3FRP3Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Jun 2013 11:29:16 -0400
+Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r5IFTGfK025496
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2013 11:29:16 -0400
+From: harald@redhat.com
+To: linux-btrfs@vger.kernel.org
+Cc: Harald Hoyer <harald@redhat.com>
+Subject: [PATCH] btrfs: allow mounting btrfs subvolumes with different ro/rw options
+Date: Tue, 18 Jun 2013 17:29:04 +0200
+Message-Id: <1371569344-2978-1-git-send-email-harald@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's been a parallel effort to incorporate a general set of lz4
-patches in the kernel.
+From: Harald Hoyer <harald@redhat.com>
 
-I see these patches are currently queued up in the linux-next tree, so
-we may see them in the 3.11 kernel.
+Given the following /etc/fstab entries:
 
-It looks like lz4 and lz4hc will be provided.
+/dev/sda3 /mnt/foo btrfs subvol=foo,ro 0
+/dev/sda3 /mnt/bar btrfs subvol=bar,rw 0
 
-So, instead of btrfs having it's own implementation of lz4, the
-patches will be re-worked around kernel's new lz4 library.
+you can't issue:
 
-On Wed, Jun 26, 2013 at 10:57 AM, Roger Pack <rogerpack2005@gmail.com> wrote:
-> Any update on the "unmerged" lz4 patches? Have they been merged?
-> Just wondering (and +1'ing my support, obviously).
-> Thank you.
-> -roger-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+$ mount /mnt/foo
+$ mount /mnt/bar
+
+You would have to do:
+
+$ mount /mnt/foo
+$ mount -o remount,rw /mnt/foo
+$ mount --bind -o remount,ro /mnt/foo
+$ mount /bar
+
+or
+
+$ mount /mnt/bar
+$ mount --rw /mnt/foo
+$ mount --bind -o remount,ro /mnt/foo
+
+With this patch you can do
+
+$ mount /mnt/foo
+$ mount /mnt/bar
+
+$ cat /proc/self/mountinfo
+49 33 0:41 /foo /mnt/foo ro,relatime shared:36 - btrfs /dev/sda3 rw,ssd,space_cache
+87 33 0:41 /bar /mnt/bar rw,relatime shared:74 - btrfs /dev/sda3 rw,ssd,space_cache
+---
+ fs/btrfs/super.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f0857e0..80ed3e2 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -64,6 +64,8 @@
+ static const struct super_operations btrfs_super_ops;
+ static struct file_system_type btrfs_fs_type;
+ 
++static int btrfs_remount(struct super_block *sb, int *flags, char *data);
++
+ static const char *btrfs_decode_error(int errno)
+ {
+ 	char *errstr = "unknown";
+@@ -1036,6 +1038,26 @@ static struct dentry *mount_subvol(const char *subvol_name, int flags,
+ 	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name,
+ 			     newargs);
+ 	kfree(newargs);
++
++	if (PTR_RET(mnt) == -EBUSY) {
++		if (flags & MS_RDONLY) {
++			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY, device_name,
++					     newargs);
++		} else {
++			int r;
++			mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY, device_name,
++					     newargs);
++			if (IS_ERR(mnt))
++				return ERR_CAST(mnt);
++
++			r = btrfs_remount(mnt->mnt_sb, &flags, NULL);
++			if (r < 0) {
++				/* FIXME: release vfsmount mnt ??*/
++				return ERR_PTR(r);
++			}
++		}
++	}
++
+ 	if (IS_ERR(mnt))
+ 		return ERR_CAST(mnt);
+ 
+-- 
+1.8.2.1
+

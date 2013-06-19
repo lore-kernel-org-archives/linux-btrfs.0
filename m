@@ -1,42 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:36347 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S934147Ab3FSKUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 06:20:38 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5JAKaxi030490
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 18:20:36 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix wrong mirror number tuning
-Date: Wed, 19 Jun 2013 18:20:17 +0800
-Message-Id: <1371637217-5188-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:50941 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756667Ab3FSOTX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Jun 2013 10:19:23 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 35E007C068E
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 08:19:23 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id UlqF2pFkZqXI3YBf (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 08:19:22 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: check for actual acls rather than just xattrs when caching no acl
+Date: Wed, 19 Jun 2013 10:19:20 -0400
+Message-ID: <1371651560-4827-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now reading the data from the target device of the replace operation is allowed,
-so the mirror number that is greater than the stripes number of a chunk is valid,
-we will tune it when we find there is no target device later. Fix it.
+We have an optimization that will go ahead and cache no acls on an inode if
+there are no xattrs on the inode.  This saves us a lookup later to check the
+acls for writes or any other access.  The problem is I use selinux so I always
+have an xattr on inodes, so make this test a little smarter and check for the
+actual acl hash on the key and if it isn't there then we still get to cache no
+acl which makes everybody who uses selinux a little happier.  Thanks,
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/volumes.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/inode.c |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c58bf19..7789598 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4420,9 +4420,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 	map = (struct map_lookup *)em->bdev;
- 	offset = logical - em->start;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ecf8b5b..7b9144c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -41,6 +41,7 @@
+ #include <linux/mount.h>
+ #include <linux/btrfs.h>
+ #include <linux/blkdev.h>
++#include <linux/posix_acl_xattr.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -56,6 +57,7 @@
+ #include "free-space-cache.h"
+ #include "inode-map.h"
+ #include "backref.h"
++#include "hash.h"
  
--	if (mirror_num > map->num_stripes)
--		mirror_num = 0;
--
- 	stripe_len = map->stripe_len;
- 	stripe_nr = offset;
- 	/*
+ struct btrfs_iget_args {
+ 	u64 ino;
+@@ -3300,8 +3302,17 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
+ {
+ 	u32 nritems = btrfs_header_nritems(leaf);
+ 	struct btrfs_key found_key;
++	static u64 xattr_access = 0;
++	static u64 xattr_default = 0;
+ 	int scanned = 0;
+ 
++	if (!xattr_access) {
++		xattr_access = btrfs_name_hash(POSIX_ACL_XATTR_ACCESS,
++					strlen(POSIX_ACL_XATTR_ACCESS));
++		xattr_default = btrfs_name_hash(POSIX_ACL_XATTR_DEFAULT,
++					strlen(POSIX_ACL_XATTR_DEFAULT));
++	}
++
+ 	slot++;
+ 	while (slot < nritems) {
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+@@ -3311,8 +3322,11 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
+ 			return 0;
+ 
+ 		/* we found an xattr, assume we've got an acl */
+-		if (found_key.type == BTRFS_XATTR_ITEM_KEY)
+-			return 1;
++		if (found_key.type == BTRFS_XATTR_ITEM_KEY) {
++			if (found_key.offset == xattr_access ||
++			    found_key.offset == xattr_default)
++				return 1;
++		}
+ 
+ 		/*
+ 		 * we found a key greater than an xattr key, there can't
 -- 
-1.8.1.4
+1.7.7.6
 

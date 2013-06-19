@@ -1,105 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f53.google.com ([74.125.83.53]:55542 "EHLO
-	mail-ee0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964845Ab3FSVDx (ORCPT
+Received: from mail-pb0-f43.google.com ([209.85.160.43]:45016 "EHLO
+	mail-pb0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934604Ab3FSXzf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 17:03:53 -0400
-Received: by mail-ee0-f53.google.com with SMTP id c41so3517102eek.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 14:03:52 -0700 (PDT)
-Message-ID: <1371675423.7211.22.camel@localhost.localdomain>
-Subject: Re: BUG at fs/btrfs/print-tree when trying to mount after a crash
-From: Michael Zugelder <michael@zugelder.org>
+	Wed, 19 Jun 2013 19:55:35 -0400
+Received: by mail-pb0-f43.google.com with SMTP id md12so5650945pbc.16
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 16:55:35 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAOMROUjkcZGC-OwkPdJvyx6KknpAeEA0jp3bkh=GF8zpS2mb9g@mail.gmail.com>
+References: <CAOMROUjkcZGC-OwkPdJvyx6KknpAeEA0jp3bkh=GF8zpS2mb9g@mail.gmail.com>
+Date: Wed, 19 Jun 2013 18:55:35 -0500
+Message-ID: <CAOMROUgePCJUS_P=VhnmJQ+CDT56kRg_o=brcdYaTzf1TcGCRg@mail.gmail.com>
+Subject: Re: csum failed during rebalance
+From: John Haller <john.h.haller@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Date: Wed, 19 Jun 2013 22:57:03 +0200
-In-Reply-To: <1371557514.3293.21.camel@ivbl>
-References: <1371496227.3925.44.camel@ivbl>
-	 <pan$89a8$49bdccdf$48e0ce45$59d9acc9@cox.net>
-	 <1371557514.3293.21.camel@ivbl>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Jun 2, 2013 at 9:05 PM, John Haller <john.h.haller@...> wrote:
+> Hi,
+>
+> I added a new drive to an existing RAID 0 array. Every
+> attempt to rebalance the array fails:
+> # btrfs filesystem balance /share/bd8
+> ERROR: error during balancing '/share/bd8' - Input/output error
+> # dmesg | tail
+> btrfs: found 1 extents
+> btrfs: relocating block group 10752513540096 flags 1
+> btrfs: found 5 extents
+> btrfs: found 5 extents
+> btrfs: relocating block group 10751439798272 flags 1
+> btrfs: found 1 extents
+> btrfs: found 1 extents
+> btrfs: relocating block group 10048138903552 flags 1
+> btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
+> btrfs csum failed ino 365 off 221745152 csum 3391451932 private 3121065028
+>
+> An earlier rebalance attempt had the same csum error on a different inode:
+> btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
+> btrfs csum failed ino 312 off 221745152 csum 3391451932 private 3121065028
+>
+> Every rebalance attempt fails the same way, but with a different inum.
+>
+> Here is the array:
+> # btrfs filesystem show
+> Label: 'bd8'  uuid: b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+>         Total devices 4 FS bytes used 7.37TB
+>         devid    4 size 3.64TB used 52.00GB path /dev/sde
+>         devid    1 size 3.64TB used 3.32TB path /dev/sdf1
+>         devid    3 size 3.64TB used 2.92TB path /dev/sdc
+>         devid    2 size 3.64TB used 2.97TB path /dev/sdb
+>
+> While I didn't finish the scrub, no errors were found:
+> # btrfs scrub status -d /share/bd8
+> scrub status for b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+> scrub device /dev/sdf1 (id 1) status
+>         scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+>         total bytes scrubbed: 845.53GB with 0 errors
+> scrub device /dev/sdb (id 2) status
+>         scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+>         total bytes scrubbed: 869.38GB with 0 errors
+> scrub device /dev/sdc (id 3) status
+>         scrub resumed at Sun Jun  2 20:29:06 2013, running for 10360 seconds
+>         total bytes scrubbed: 706.04GB with 0 errors
+> scrub device /dev/sde (id 4) history
+>         scrub started at Sun Jun  2 12:48:36 2013 and finished after 0 seconds
+>         total bytes scrubbed: 0.00 with 0 errors
+>
+> Mount options:
+> /dev/sdf1 on /share/bd8 type btrfs (rw,flushoncommit)
+>
+> Kernel 3.9.4
+>
+> John
 
-here's an update on my situation.
+After cleaning up the scrub, the balance succeeded. The failure
+messages from dmesg from the balance were not helpful in finding bad
+sectors, only the scrub dmesg pointed to the right files with errors.
 
-On Tue, 2013-06-18 at 14:11 +0200, Michael Zugelder wrote:
-> Anyway, I tried using btrfsck from Josef Bacik's tree (commit f392a28d,
-> git://github.com/josefbacik/btrfs-progs.git) and it doesn't crash.
-> Output is this:
-> 
-> > Checking filesystem on /dev/mapper/cryptbtrfs
-> > UUID: b3a88070-748c-4f19-9c7c-c78e8232797c
-> > checking extents
-> > corrupt extent record: key 19642421248 168 45056
-> > corrupt extent record: key 19642904576 168 40960
-> > corrupt extent record: key 19643248640 168 49152
-> > corrupt extent record: key 19644252160 168 49152
-> > corrupt extent record: key 19644645376 168 40960
-> > corrupt extent record: key 19645878272 168 4096
-> > corrupt extent record: key 19646754816 168 524288
-> > ref mismatch on [19642265600 53248] extent item 18177, found 1
-> > Backref 19642265600 root 259 owner 1647675 offset 1572864 num_refs 0 not found in extent tree
-> > Incorrect local backref count on 19642265600 root 259 owner 1647675 offset 1572864 found 1 wanted 0 back 0x95f91a0
-> > Incorrect local backref count on 19642265600 root 295 owner 1647618 offset 1573046 found 0 wanted 162 back 0x4efb2b0
-> > Backref disk bytenr does not match extent record, bytenr=19642265600, ref bytenr=82290641
-> > backpointer mismatch on [19642265600 53248]
-> > Backref 19642318848 root 259 owner 1647675 offset 1703936 num_refs 0 not found in extent tree
-> > Incorrect local backref count on 19642318848 root 259 owner 1647675 offset 1703936 found 1 wanted 0 back 0x95f92c0
-> > Incorrect local backref count on 19642318848 root 259 owner 1647675 offset 148434071453696 found 0 wanted 1 back 0x4efb310
-> > Backref disk bytenr does not match extent record, bytenr=19642318848, ref bytenr=1
-> > backpointer mismatch on [19642318848 49152]
-> [ ... ]
-> > Errors found in extent allocation tree
-> > checking free space cache
-> > checking fs roots
-> > root 1597 inode 553154 errors 0
-> >         unresolved ref dir 473796 index 153 namelen 17 name browser_tests.log filetype 1 error 4
-> >         unresolved ref dir 473796 index 17179869337 namelen 17 name brwser_te6ts.log filetype 0 error 3
-> > found 62413098968 bytes used err is 1
-> > total csum bytes: 71717016
-> > total tree bytes: 2047426560
-> > total fs tree bytes: 1812643840
-> > total extent tree bytes: 129286144
-> > btree space waste bytes: 427714485
-> > file data blocks allocated: 186676146176
-> >  referenced 125879046144
-> > Btrfs v0.20-rc1
+Now, the question is why did the balance leave things so unbalanced as
+compared with above:
+# btrfs scrub status /share/bd8
+scrub status for b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+        scrub started at Mon Jun 17 23:07:01 2013 and finished after
+39209 seconds
+        total bytes scrubbed: 7.49TB with 0 errors
 
-I recently discovered that the git btrfsck has a --repair option. It
-seems like it was able to fix most of the errors. Here's what I did to
-get rid of the rest (output from btrfsck):
+# btrfs filesystem show
+Label: 'bd8'  uuid: b39f475f-3ebf-40ea-b088-4ce7f4d4d8f4
+        Total devices 4 FS bytes used 7.49TB
+        devid    4 size 3.64TB used 1.99TB path /dev/sdf
+        devid    1 size 3.64TB used 3.32TB path /dev/sdg1
+        devid    3 size 3.64TB used 1.99TB path /dev/sdc
+        devid    2 size 3.64TB used 1.97TB path /dev/sdb
 
-> unresolved ref dir 473796 index 153 namelen 17 name browser_tests.log filetype 1 error 4
-> unresolved ref dir 473796 index 17179869337 namelen 17 name brwser_te6ts.log filetype 0 error 3
+Btrfs v0.20-rc1
 
-Could not delete the file after mounting, so I just deleted the entire
-subvolume and it is gone now.
+It appears that devid 1 was never balanced. Note that the drive
+numbers are different because I still have the backup device connected
+which had the originals of corrupted files. The filesystem started
+with devid 1, was filled to the above capacity, and the other drives
+were added later, so it didn't start as a RAID 0 system. The metadata
+is RAID 1.
 
-> root 260  inode 12345 errors 42
-
-Used "find -num 12345" to see which files referenced it. Since it was
-just a sqlite journal file, I deleted it. But it was also referenced by
-the snapshots of the last 24 hours, so I just deleted them, too.
-
-> cache and super generation don't match, space cache will be invalidated
-
-Mounted a few times with -o clear_cache, nospace_cache and then
-space_cache. Dmesg shows "btrfs: disk space caching is enabled" and no
-errors, so I hope it works again. Never noticed any long mount/unmount
-times or heavy cpu/disk activity, though.
-
-Then I ran btrfs scrub over it, which found 0 errors, but there were
-still some corruption issues from the btrfsck repair. I used rpm -Va and
-reinstalled a few packages whose files were missing and added myself to
-the relevant groups again.
-
-The system seems to work fine now, but I'll probably keep some easier
-restorable backups from now on. If you want any details to be able to
-fix some of the BUGs, assertion errors and/or crashes I encountered, I'm
-glad to help, still have the original corrupted image.
-
-
-Michael
-
+John

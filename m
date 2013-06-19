@@ -1,188 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from perches-mx.perches.com ([206.117.179.246]:44716 "EHLO
-	labridge.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1757296Ab3FSTP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 15:15:56 -0400
-Message-ID: <1371669353.2038.45.camel@joe-AO722>
-Subject: [trivial PATCH] treewide: Add __GFP_NOWARN to k.alloc calls with
- v.alloc fallbacks
-From: Joe Perches <joe@perches.com>
-To: Jiri Kosina <trivial@kernel.org>
-Cc: Lars Ellenberg <drbd-dev@lists.linbit.com>,
-        Hoang-Nam Nguyen <hnguyen@de.ibm.com>,
-        Christoph Raisch <raisch@de.ibm.com>,
-        Roland Dreier <roland@kernel.org>, Sean Hefty <sean.hefty@intel.com>,
-        Hal Rosenstock <hal.rosenstock@gmail.com>,
-        Divy Le Ray <divy@chelsio.com>, Dimitris Michailidis <dm@chelsio.com>,
-        "James E.J. Bottomley" <JBottomley@parallels.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Steven Whitehouse <swhiteho@redhat.com>,
-        Jamal Hadi Salim <jhs@mojatatu.com>,
-        "David S. Miller" <davem@davemloft.net>, drbd-user@lists.linbit.com,
-        linux-kernel@vger.kernel.org, linux-rdma@vger.kernel.org,
-        netdev@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        cluster-devel <cluster-devel@redhat.com>
-Date: Wed, 19 Jun 2013 12:15:53 -0700
-Content-Type: text/plain; charset="ISO-8859-1"
-Mime-Version: 1.0
+Received: from dkim2.fusionio.com ([66.114.96.54]:35774 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934566Ab3FSThj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Jun 2013 15:37:39 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 303769A0690
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 13:37:39 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id snYp6IaXBK5njm6D (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 13:37:38 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: use a percpu to keep track of possibly pinned bytes
+Date: Wed, 19 Jun 2013 15:37:35 -0400
+Message-ID: <1371670655-18309-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't emit OOM warnings when k.alloc calls fail when
-there there is a v.alloc immediately afterwards.
+There are all of these checks in the ENOSPC code to see if committing the
+transaction would free up enough space to make the allocation.  This is because
+early on we just committed the transaction and hoped and prayed, which resulted
+in cases where it took _forever_ to get an ENOSPC when we really were out of
+space.  So we check space_info->bytes_pinned, except this isn't completely true
+because it doesn't account for space we may free but are stuck in delayed refs.
+So tests like xfstests 226 would fail because we wouldn't commit the transaction
+to free up the data space.  So instead add a percpu counter that will be a
+little fuzzier, it will add bytes as soon as we try to free up the space, and
+remove any space it doesn't actually free up when we get around to doing the
+actual free.  We then 0 out this counter every transaction period so we have a
+better idea of how much space we will actually free up by committing this
+transaction.  With this patch we now pass xfstests 226.  Thanks,
 
-Converted a kmalloc/vmalloc with memset to kzalloc/vzalloc.
-
-Signed-off-by: Joe Perches <joe@perches.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- drivers/block/drbd/drbd_bitmap.c                   | 2 +-
- drivers/infiniband/hw/ehca/ipz_pt_fn.c             | 3 ++-
- drivers/net/ethernet/chelsio/cxgb3/cxgb3_offload.c | 2 +-
- drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c    | 2 +-
- drivers/scsi/cxgbi/libcxgbi.h                      | 8 ++++----
- fs/btrfs/send.c                                    | 2 +-
- fs/ext4/super.c                                    | 4 ++--
- fs/gfs2/dir.c                                      | 2 +-
- net/sched/sch_choke.c                              | 3 ++-
- 9 files changed, 15 insertions(+), 13 deletions(-)
+ fs/btrfs/ctree.h       |   12 ++++++++++
+ fs/btrfs/extent-tree.c |   58 +++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 65 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/block/drbd/drbd_bitmap.c b/drivers/block/drbd/drbd_bitmap.c
-index 64fbb83..b12c11e 100644
---- a/drivers/block/drbd/drbd_bitmap.c
-+++ b/drivers/block/drbd/drbd_bitmap.c
-@@ -393,7 +393,7 @@ static struct page **bm_realloc_pages(struct drbd_bitmap *b, unsigned long want)
- 	 * we must not block on IO to ourselves.
- 	 * Context is receiver thread or dmsetup. */
- 	bytes = sizeof(struct page *)*want;
--	new_pages = kzalloc(bytes, GFP_NOIO);
-+	new_pages = kzalloc(bytes, GFP_NOIO | __GFP_NOWARN);
- 	if (!new_pages) {
- 		new_pages = __vmalloc(bytes,
- 				GFP_NOIO | __GFP_HIGHMEM | __GFP_ZERO,
-diff --git a/drivers/infiniband/hw/ehca/ipz_pt_fn.c b/drivers/infiniband/hw/ehca/ipz_pt_fn.c
-index 62c71fa..8d59451 100644
---- a/drivers/infiniband/hw/ehca/ipz_pt_fn.c
-+++ b/drivers/infiniband/hw/ehca/ipz_pt_fn.c
-@@ -222,7 +222,8 @@ int ipz_queue_ctor(struct ehca_pd *pd, struct ipz_queue *queue,
- 	queue->small_page = NULL;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 76e4983..b528a55 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1102,6 +1102,18 @@ struct btrfs_space_info {
+ 				   account */
  
- 	/* allocate queue page pointers */
--	queue->queue_pages = kzalloc(nr_of_pages * sizeof(void *), GFP_KERNEL);
-+	queue->queue_pages = kzalloc(nr_of_pages * sizeof(void *),
-+				     GFP_KERNEL | __GFP_NOWARN);
- 	if (!queue->queue_pages) {
- 		queue->queue_pages = vzalloc(nr_of_pages * sizeof(void *));
- 		if (!queue->queue_pages) {
-diff --git a/drivers/net/ethernet/chelsio/cxgb3/cxgb3_offload.c b/drivers/net/ethernet/chelsio/cxgb3/cxgb3_offload.c
-index 4058b85..76ae0999 100644
---- a/drivers/net/ethernet/chelsio/cxgb3/cxgb3_offload.c
-+++ b/drivers/net/ethernet/chelsio/cxgb3/cxgb3_offload.c
-@@ -1157,7 +1157,7 @@ static void cxgb_redirect(struct dst_entry *old, struct dst_entry *new,
-  */
- void *cxgb_alloc_mem(unsigned long size)
- {
--	void *p = kzalloc(size, GFP_KERNEL);
-+	void *p = kzalloc(size, GFP_KERNEL | __GFP_NOWARN);
- 
- 	if (!p)
- 		p = vzalloc(size);
-diff --git a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
-index 5a3256b..5d5f268 100644
---- a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
-+++ b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
-@@ -1133,7 +1133,7 @@ out:	release_firmware(fw);
-  */
- void *t4_alloc_mem(size_t size)
- {
--	void *p = kzalloc(size, GFP_KERNEL);
-+	void *p = kzalloc(size, GFP_KERNEL | __GFP_NOWARN);
- 
- 	if (!p)
- 		p = vzalloc(size);
-diff --git a/drivers/scsi/cxgbi/libcxgbi.h b/drivers/scsi/cxgbi/libcxgbi.h
-index 80fa99b..8135f04 100644
---- a/drivers/scsi/cxgbi/libcxgbi.h
-+++ b/drivers/scsi/cxgbi/libcxgbi.h
-@@ -658,11 +658,11 @@ static inline u32 cxgbi_tag_nonrsvd_bits(struct cxgbi_tag_format *tformat,
- static inline void *cxgbi_alloc_big_mem(unsigned int size,
- 					gfp_t gfp)
- {
--	void *p = kmalloc(size, gfp);
-+	void *p = kzalloc(size, gfp | __GFP_NOWARN);
+ 	/*
++	 * bytes_pinned is kept in line with what is actually pinned, as in
++	 * we've called update_block_group and dropped the bytes_used counter
++	 * and increased the bytes_pinned counter.  However this means that
++	 * bytes_pinned does not reflect the bytes that will be pinned once the
++	 * delayed refs are flushed, so this counter is inc'ed everytime we call
++	 * btrfs_free_extent so it is a realtime count of what will be freed
++	 * once the transaction is committed.  It will be zero'ed everytime the
++	 * transaction commits.
++	 */
++	struct percpu_counter total_bytes_pinned;
 +
- 	if (!p)
--		p = vmalloc(size);
--	if (p)
--		memset(p, 0, size);
-+		p = vzalloc(size);
++	/*
+ 	 * we bump reservation progress every time we decrement
+ 	 * bytes_reserved.  This way people waiting for reservations
+ 	 * know something good has happened and they can check
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6d5c5f7..806801a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -24,6 +24,7 @@
+ #include <linux/kthread.h>
+ #include <linux/slab.h>
+ #include <linux/ratelimit.h>
++#include <linux/percpu_counter.h>
+ #include "compat.h"
+ #include "hash.h"
+ #include "ctree.h"
+@@ -3357,6 +3358,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	struct btrfs_space_info *found;
+ 	int i;
+ 	int factor;
++	int ret;
+ 
+ 	if (flags & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1 |
+ 		     BTRFS_BLOCK_GROUP_RAID10))
+@@ -3380,6 +3382,10 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	if (!found)
+ 		return -ENOMEM;
+ 
++	ret = percpu_counter_init(&found->total_bytes_pinned, 0);
++	if (ret)
++		return ret;
 +
- 	return p;
+ 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+ 		INIT_LIST_HEAD(&found->block_groups[i]);
+ 	init_rwsem(&found->groups_sem);
+@@ -3612,10 +3618,11 @@ alloc:
+ 		}
+ 
+ 		/*
+-		 * If we have less pinned bytes than we want to allocate then
+-		 * don't bother committing the transaction, it won't help us.
++		 * If we don't have enough pinned space to deal with this
++		 * allocation don't bother committing the transaction.
+ 		 */
+-		if (data_sinfo->bytes_pinned < bytes)
++		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
++					   bytes) < 0)
+ 			committed = 1;
+ 		spin_unlock(&data_sinfo->lock);
+ 
+@@ -3624,6 +3631,7 @@ commit_trans:
+ 		if (!committed &&
+ 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
+ 			committed = 1;
++
+ 			trans = btrfs_join_transaction(root);
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
+@@ -4034,6 +4042,7 @@ static int may_commit_transaction(struct btrfs_root *root,
+ {
+ 	struct btrfs_block_rsv *delayed_rsv = &root->fs_info->delayed_block_rsv;
+ 	struct btrfs_trans_handle *trans;
++	u64 bytes_pinned;
+ 
+ 	trans = (struct btrfs_trans_handle *)current->journal_info;
+ 	if (trans)
+@@ -4044,7 +4053,8 @@ static int may_commit_transaction(struct btrfs_root *root,
+ 
+ 	/* See if there is enough pinned space to make this reservation */
+ 	spin_lock(&space_info->lock);
+-	if (space_info->bytes_pinned >= bytes) {
++	if (percpu_counter_compare(&space_info->total_bytes_pinned,
++				   bytes) >= 0) {
+ 		spin_unlock(&space_info->lock);
+ 		goto commit;
+ 	}
+@@ -4059,7 +4069,8 @@ static int may_commit_transaction(struct btrfs_root *root,
+ 
+ 	spin_lock(&space_info->lock);
+ 	spin_lock(&delayed_rsv->lock);
+-	if (space_info->bytes_pinned + delayed_rsv->size < bytes) {
++	bytes_pinned = percpu_counter_sum(&space_info->total_bytes_pinned);
++	if (bytes_pinned + delayed_rsv->size < bytes) {
+ 		spin_unlock(&delayed_rsv->lock);
+ 		spin_unlock(&space_info->lock);
+ 		return -ENOSPC;
+@@ -5397,6 +5408,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 	struct btrfs_caching_control *next;
+ 	struct btrfs_caching_control *caching_ctl;
+ 	struct btrfs_block_group_cache *cache;
++	struct btrfs_space_info *space_info;
+ 
+ 	down_write(&fs_info->extent_commit_sem);
+ 
+@@ -5419,6 +5431,9 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 
+ 	up_write(&fs_info->extent_commit_sem);
+ 
++	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
++		percpu_counter_set(&space_info->total_bytes_pinned, 0);
++
+ 	update_global_block_rsv(fs_info);
  }
  
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index ff40f1c..f7499ed 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -219,7 +219,7 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
- 	len = PAGE_ALIGN(len);
+@@ -5516,6 +5531,27 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
  
- 	if (p->buf == p->inline_buf) {
--		tmp_buf = kmalloc(len, GFP_NOFS);
-+		tmp_buf = kmalloc(len, GFP_NOFS | __GFP_NOWARN);
- 		if (!tmp_buf) {
- 			tmp_buf = vmalloc(len);
- 			if (!tmp_buf)
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index 85b3dd6..0f94f55 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -162,7 +162,7 @@ void *ext4_kvmalloc(size_t size, gfp_t flags)
++static void add_pinned_bytes(struct btrfs_fs_info *fs_info, u64 num_bytes,
++			     u64 owner, u64 root_objectid)
++{
++	struct btrfs_space_info *space_info;
++	u64 flags;
++
++	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
++		if (root_objectid == BTRFS_CHUNK_TREE_OBJECTID)
++			flags = BTRFS_BLOCK_GROUP_SYSTEM;
++		else
++			flags = BTRFS_BLOCK_GROUP_METADATA;
++	} else {
++		flags = BTRFS_BLOCK_GROUP_DATA;
++	}
++
++	space_info = __find_space_info(fs_info, flags);
++	BUG_ON(!space_info); /* Logic bug */
++	percpu_counter_add(&space_info->total_bytes_pinned, num_bytes);
++}
++
++
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				u64 bytenr, u64 num_bytes, u64 parent,
+@@ -5736,6 +5772,8 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				goto out;
+ 			}
+ 		}
++		add_pinned_bytes(root->fs_info, -num_bytes, owner_objectid,
++				 root_objectid);
+ 	} else {
+ 		if (found_extent) {
+ 			BUG_ON(is_data && refs_to_drop !=
+@@ -5859,6 +5897,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   u64 parent, int last_ref)
  {
- 	void *ret;
+ 	struct btrfs_block_group_cache *cache = NULL;
++	int pin = 1;
+ 	int ret;
  
--	ret = kmalloc(size, flags);
-+	ret = kmalloc(size, flags | __GFP_NOWARN);
- 	if (!ret)
- 		ret = __vmalloc(size, flags, PAGE_KERNEL);
- 	return ret;
-@@ -172,7 +172,7 @@ void *ext4_kvzalloc(size_t size, gfp_t flags)
- {
- 	void *ret;
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
+@@ -5891,8 +5930,14 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
  
--	ret = kzalloc(size, flags);
-+	ret = kzalloc(size, flags | __GFP_NOWARN);
- 	if (!ret)
- 		ret = __vmalloc(size, flags | __GFP_ZERO, PAGE_KERNEL);
- 	return ret;
-diff --git a/fs/gfs2/dir.c b/fs/gfs2/dir.c
-index 147fcc5..9ba9e0c 100644
---- a/fs/gfs2/dir.c
-+++ b/fs/gfs2/dir.c
-@@ -1867,7 +1867,7 @@ static int leaf_dealloc(struct gfs2_inode *dip, u32 index, u32 len,
+ 		btrfs_add_free_space(cache, buf->start, buf->len);
+ 		btrfs_update_reserved_bytes(cache, buf->len, RESERVE_FREE);
++		pin = 0;
+ 	}
+ out:
++	if (pin)
++		add_pinned_bytes(root->fs_info, buf->len,
++				 btrfs_header_level(buf),
++				 root->root_key.objectid);
++
+ 	/*
+ 	 * Deleting the buffer, clear the corrupt flag since it doesn't matter
+ 	 * anymore.
+@@ -5909,6 +5954,8 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	int ret;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
  
- 	memset(&rlist, 0, sizeof(struct gfs2_rgrp_list));
- 
--	ht = kzalloc(size, GFP_NOFS);
-+	ht = kzalloc(size, GFP_NOFS | __GFP_NOWARN);
- 	if (ht == NULL)
- 		ht = vzalloc(size);
- 	if (!ht)
-diff --git a/net/sched/sch_choke.c b/net/sched/sch_choke.c
-index ef53ab8..ddd73cb 100644
---- a/net/sched/sch_choke.c
-+++ b/net/sched/sch_choke.c
-@@ -438,7 +438,8 @@ static int choke_change(struct Qdisc *sch, struct nlattr *opt)
- 	if (mask != q->tab_mask) {
- 		struct sk_buff **ntab;
- 
--		ntab = kcalloc(mask + 1, sizeof(struct sk_buff *), GFP_KERNEL);
-+		ntab = kcalloc(mask + 1, sizeof(struct sk_buff *),
-+			       GFP_KERNEL | __GFP_NOWARN);
- 		if (!ntab)
- 			ntab = vzalloc((mask + 1) * sizeof(struct sk_buff *));
- 		if (!ntab)
-
++	add_pinned_bytes(root->fs_info, num_bytes, owner, root_objectid);
++
+ 	/*
+ 	 * tree log blocks never actually go into the extent allocation
+ 	 * tree, just update pinning info and exit early.
+@@ -8152,6 +8199,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 				dump_space_info(space_info, 0, 0);
+ 			}
+ 		}
++		percpu_counter_destroy(&space_info->total_bytes_pinned);
+ 		list_del(&space_info->list);
+ 		kfree(space_info);
+ 	}
+-- 
+1.7.7.6
 

@@ -1,29 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:42870 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754811Ab3FTMjW (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:33536 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965102Ab3FTMrg convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Jun 2013 08:39:22 -0400
+	Thu, 20 Jun 2013 08:47:36 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 295479A06BC
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 06:39:22 -0600 (MDT)
-Date: Thu, 20 Jun 2013 08:39:19 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 4/4] Btrfs-progs: exhance btrfs-image to restore image
- onto multiple disks
-Message-ID: <20130620123919.GB4288@localhost.localdomain>
+	by dkim1.fusionio.com (Postfix) with ESMTP id 574C07C068B
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 06:47:36 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>, Liu Bo <bo.li.liu@oracle.com>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <20130620122432.GA4288@localhost.localdomain>
+CC: <linux-btrfs@vger.kernel.org>
 References: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
  <1371729930-22497-5-git-send-email-bo.li.liu@oracle.com>
  <20130620122432.GA4288@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130620122432.GA4288@localhost.localdomain>
+Message-ID: <20130620124734.5430.58917@localhost.localdomain>
+Subject: Re: [PATCH 4/4] Btrfs-progs: exhance btrfs-image to restore image onto
+ multiple disks
+Date: Thu, 20 Jun 2013 08:47:34 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 20, 2013 at 08:24:32AM -0400, Josef Bacik wrote:
+Quoting Josef Bacik (2013-06-20 08:24:32)
 > On Thu, Jun 20, 2013 at 08:05:30PM +0800, Liu Bo wrote:
 > > This adds a 'btrfs-image -m' option, which let us restore an image that
 > > is built from a btrfs of multiple disks onto several disks altogether.
@@ -44,12 +44,12 @@ On Thu, Jun 20, 2013 at 08:24:32AM -0400, Josef Bacik wrote:
 > of btrfs-image?  If this is happening it's a bug and we need to fix it, but I've
 > restored several file systems from users with raid0/10 file systems onto a
 > single disk and it's worked just fine.  Thanks,
-> 
 
-Well apparently I've been hallucinating because it definitely doesn't work.  I'd
-rather fix the device tree so it only restores onto one disk, since the raid
-level shouldn't matter and it does in fact get masked out.  So the only thing
-left would be to fix the device tree so the only device it knows about is the
-device we're restoring to.  Thanks,
+I just pushed my current merge of Josef's patches into my master branch.
+Please base on that.
 
-Josef
+Josef, this should only be missing the enospc log, please go ahead and
+rebase/double check.
+
+-chris
+

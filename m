@@ -1,45 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:43842 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030231Ab3FTTt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Jun 2013 15:49:56 -0400
-Date: Thu, 20 Jun 2013 12:49:53 -0700
-From: Zach Brown <zab@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5 7/8] Btrfs: check UUID tree during mount if required
-Message-ID: <20130620194953.GD32674@lenny.home.zabbo.net>
-References: <cover.1371749051.git.sbehrens@giantdisaster.de>
- <a385ab71c448183b419e708cff4bd2473d53ca80.1371749051.git.sbehrens@giantdisaster.de>
+Received: from cobra.newdream.net ([66.33.216.30]:42513 "EHLO
+	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755846Ab3FTV4U (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Jun 2013 17:56:20 -0400
+Date: Thu, 20 Jun 2013 14:56:19 -0700 (PDT)
+From: Sage Weil <sage@inktank.com>
+To: Chris Mason <chris.mason@fusionio.com>
+cc: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: hang on 3.9, 3.10-rc5
+In-Reply-To: <alpine.DEB.2.00.1306192043380.14838@cobra.newdream.net>
+Message-ID: <alpine.DEB.2.00.1306201455440.454@cobra.newdream.net>
+References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net> <20130618163706.GC19183@localhost.localdomain> <20130618165952.9494.8953@localhost.localdomain> <alpine.DEB.2.00.1306192043380.14838@cobra.newdream.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a385ab71c448183b419e708cff4bd2473d53ca80.1371749051.git.sbehrens@giantdisaster.de>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> +	key.objectid = 0;
-> +	key.type = BTRFS_UUID_KEY;
-> +	key.offset = 0;
-> +
-> +	max_key.objectid = (u64)-1;
-> +	max_key.type = BTRFS_UUID_KEY;
-> +	max_key.offset = (u64)-1;
+On Wed, 19 Jun 2013, Sage Weil wrote:
+> Hi Chris,
+> 
+> On Tue, 18 Jun 2013, Chris Mason wrote:
+> > [...]
+> > Very long way of saying I think we're one release_path short.  Sage, I
+> > haven't tested this at all yet, I was hoping to trigger it first.
+> > 
+> > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> > index c276ac9..c1954b3 100644
+> > --- a/fs/btrfs/tree-log.c
+> > +++ b/fs/btrfs/tree-log.c
+> > @@ -3730,6 +3730,7 @@ next_slot:
+> >  log_extents:
+> >  	if (fast_search) {
+> >  		btrfs_release_path(dst_path);
+> > +		btrfs_release_path(path);
+> >  		ret = btrfs_log_changed_extents(trans, root, inode, dst_path);
+> >  		if (ret) {
+> >  			err = ret;
+> 
+> This seems to be doing the trick.  I'll keep testing overnight, but so far 
+> so good!
 
-> +		if (key.offset < (u64)-1) {
-> +			key.offset++;
-> +		} else if (key.type < BTRFS_UUID_KEY) {
-> +			key.offset = 0;
-> +			key.type = BTRFS_UUID_KEY;
-> +		} else if (key.objectid < (u64)-1) {
-> +			key.offset = 0;
-> +			key.type = 0;
-> +			key.objectid++;
-> +		} else {
-> +			break;
-> +		}
-> +	}
+...and it's still holding up well in QA.
 
-Presumably all of this isn't needed now that the uuid items are in their
-own tree?  Just iterate over all the items in the tree?
-
-- z
+Thanks, Chris!
+sage

@@ -1,68 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:35165 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S935124Ab3FSSmW convert rfc822-to-8bit (ORCPT
+Received: from mail-vc0-f176.google.com ([209.85.220.176]:58909 "EHLO
+	mail-vc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751863Ab3FTIry (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 14:42:22 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id E30CB9A06A1
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 12:42:21 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	Thu, 20 Jun 2013 04:47:54 -0400
+Received: by mail-vc0-f176.google.com with SMTP id ha12so4584011vcb.35
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 01:47:53 -0700 (PDT)
 MIME-Version: 1.0
-To: Dave Jones <davej@redhat.com>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <20130619183450.GA26752@redhat.com>
-CC: Linux Kernel <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <20130617134955.GB15861@redhat.com>
- <20130617173942.15057.63201@localhost.localdomain>
- <20130617182005.GA9839@redhat.com>
- <20130617184227.15057.75499@localhost.localdomain>
- <20130617185810.GA13370@redhat.com>
- <20130619180233.5430.5764@localhost.localdomain>
- <20130619183450.GA26752@redhat.com>
-Message-ID: <20130619184219.5430.47901@localhost.localdomain>
-Subject: Re: [3.10-rc6] WARNING: at fs/btrfs/inode.c:7961
- btrfs_destroy_inode+0x265/0x2e0 [btrfs]()
-Date: Wed, 19 Jun 2013 14:42:19 -0400
+Date: Thu, 20 Jun 2013 10:47:53 +0200
+Message-ID: <CAFvQSYRgvsqMxk_yZf6cPyoECJsUzn2g+cW-j7ktrWnhRL+0jA@mail.gmail.com>
+Subject: Two identical copies of an image mounted result in changes to both
+ images if only one is modified
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Dave Jones (2013-06-19 14:34:50)
-> On Wed, Jun 19, 2013 at 02:02:33PM -0400, Chris Mason wrote:
->  > Quoting Dave Jones (2013-06-17 14:58:10)
->  > > On Mon, Jun 17, 2013 at 02:42:27PM -0400, Chris Mason wrote:
->  > >  > Quoting Dave Jones (2013-06-17 14:20:06)
->  > >  > > On Mon, Jun 17, 2013 at 01:39:42PM -0400, Chris Mason wrote:
->  > >  > >  > Quoting Dave Jones (2013-06-17 09:49:55)
->  > >  > >  > > Hit this while running this script in a loop..
->  > >  > >  > > https://github.com/kernelslacker/io-tests/blob/master/setup.sh
->  > >  > >  > > [34385.251507] ------------[ cut here ]------------
->  > >  > >  > > [34385.254068] WARNING: at fs/btrfs/inode.c:7961 btrfs_destroy_inode+0x265/0x2e0 [btrfs]()
->  > >  > >  > 
->  > >  > >  > Thanks Dave, how long did you have to run the script to trigger it?
->  > >  > > 
->  > >  > > Judging by the timestamp, about 9 hours.  This is on a 3 disk (sata)
->  > >  > > (oldish) quad opteron. Might repro faster on a more modern machine.
->  > >  > 
->  > >  > Exactly how did you run it?  I want to make sure I'm matching your
->  > >  > config.
->  > > 
->  > > while [ 1 ];
->  > > do
->  > >   setup.sh
->  > > done
->  > > 
->  > > You'll need to set DISK1 etc variables at the top of the script to point to
->  > > at least 3 disks for it to scribble over.
->  > > 
->  > > you'll also need fsx and fsstress in /usr/local/bin.
->  > 
->  > I've tried with and without memory pressure, and let it run for about 30
->  > hours.  So far, nothing here.  Have you seen this again?
-> 
-> yeah, one time I hit it within 30 minutes.
+Hi,
 
-Ok, I'll try bumping the thread count on both fsstress and fsx
+I've observed a rather strange behaviour while trying to mount two
+identical copies of the same image to different mount points.
+Each modification to one image is also performed in the second one.
 
--chris
+Example:
+dd if=/dev/sda? of=image1 bs=1M
+cp image1 image2
+mount -o loop image1 m1
+mount -o loop image2 m2
 
+touch m2/hello
+ls -la m1  //will now also include a file calles "hello"
+
+Is this behaviour intentional and known or should I create a bug-report?
+I've deleted quite a bunch of files on my production system because of this...
+
+Thanks, Clemens

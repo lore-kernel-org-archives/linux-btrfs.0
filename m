@@ -1,137 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.137]:65061 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.140]:25775 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758070Ab3FTRpm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1758032Ab3FTRpm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 20 Jun 2013 13:45:42 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp4) (RZmta 31.28 OK)
-	with ESMTP id 60128dp5KHJjP5 for <linux-btrfs@vger.kernel.org>;
+	by jored.store (jored xp2) (RZmta 31.28 OK)
+	with ESMTP id g06938p5K3qmmi for <linux-btrfs@vger.kernel.org>;
 	Thu, 20 Jun 2013 19:45:39 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 2/8] Btrfs: support printing UUID tree elements
-Date: Thu, 20 Jun 2013 19:45:33 +0200
-Message-Id: <964aec5ed0cc9b008e891771d32f4c0c8f60c4a1.1371749051.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1371749051.git.sbehrens@giantdisaster.de>
-References: <cover.1371749051.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1371749051.git.sbehrens@giantdisaster.de>
-References: <cover.1371749051.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v5 0/8] Btrfs: introduce a tree for UUID to subvol ID mapping
+Date: Thu, 20 Jun 2013 19:45:31 +0200
+Message-Id: <cover.1371749051.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit adds support to print UUID tree elements to print-tree.c.
+Mapping UUIDs to subvolume IDs is an operation with a high effort
+today. Today, the algorithm even has quadratic effort (based on the
+number of existing subvolumes), which means, that it takes minutes
+to send/receive a single subvolume if 10,000 subvolumes exist. But
+even linear effort would be too much since it is a waste. And these
+data structures to allow mapping UUIDs to subvolume IDs are created
+every time a btrfs send/receive instance is started.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/print-tree.c | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+So the issue to address is that Btrfs send / receive does not work
+as it is today when a high number of subvolumes exist.
 
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index dc0024f..c27f08b 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -155,6 +155,81 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
- }
- #endif
- 
-+static void print_uuid_item(struct extent_buffer *l,
-+			    struct btrfs_uuid_item *ptr,
-+			    u32 item_size)
-+{
-+	do {
-+		u16 sub_item_type;
-+		u64 sub_item_len;
-+		u64 subvol_id;
-+		unsigned long offset;
-+
-+		if (item_size < sizeof(*ptr)) {
-+			printk(KERN_INFO
-+			       "btrfs: uuid item too short (%lu < %d)!\n",
-+			       (unsigned long)item_size, (int)sizeof(*ptr));
-+			return;
-+		}
-+		sub_item_type = btrfs_uuid_type(l, ptr);
-+		sub_item_len = btrfs_uuid_len(l, ptr);
-+		ptr++;
-+		item_size -= sizeof(*ptr);
-+
-+		if (sub_item_len * sizeof(u64) > item_size) {
-+			printk(KERN_INFO
-+			       "btrfs: uuid item too short (%llu > %lu)!\n",
-+			       (unsigned long long)(sub_item_len * sizeof(u64)),
-+			       (unsigned long)item_size);
-+			return;
-+		}
-+
-+		offset = (unsigned long)ptr;
-+		ptr = (struct btrfs_uuid_item *)
-+			(((char *)ptr) + sub_item_len * sizeof(u64));
-+		item_size -= sub_item_len * sizeof(u64);
-+		switch (sub_item_type) {
-+		case BTRFS_UUID_ITEM_TYPE_SUBVOL:
-+			while (sub_item_len) {
-+				read_extent_buffer(l, &subvol_id, offset,
-+						   sizeof(u64));
-+				printk(KERN_INFO "\t\tsubvol_id %llu\n",
-+				       (unsigned long long)
-+					le64_to_cpu(subvol_id));
-+				sub_item_len--;
-+				offset += sizeof(u64);
-+			}
-+			break;
-+		case BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL:
-+			while (sub_item_len) {
-+				read_extent_buffer(l, &subvol_id, offset,
-+						   sizeof(u64));
-+				printk(KERN_INFO
-+				       "\t\treceived_subvol_id %llu\n",
-+				       (unsigned long long)
-+					le64_to_cpu(subvol_id));
-+				sub_item_len--;
-+				offset += sizeof(u64);
-+			}
-+			break;
-+		default:
-+			printk(KERN_INFO "\t\tunknown type=%llu, len=8*%llu\n",
-+			       (unsigned long long)sub_item_type,
-+			       (unsigned long long)sub_item_len);
-+			while (sub_item_len) {
-+				read_extent_buffer(l, &subvol_id, offset,
-+						   sizeof(u64));
-+				printk(KERN_INFO "\t\tid %llu\n",
-+				       (unsigned long long)
-+					le64_to_cpu(subvol_id));
-+				sub_item_len--;
-+				offset += sizeof(u64);
-+			}
-+			break;
-+		}
-+	} while (item_size);
-+}
-+
- void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- {
- 	int i;
-@@ -168,6 +243,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 	struct btrfs_extent_data_ref *dref;
- 	struct btrfs_shared_data_ref *sref;
- 	struct btrfs_dev_extent *dev_extent;
-+	struct btrfs_uuid_item *uuid_item;
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 
-@@ -301,6 +377,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 		case BTRFS_DEV_REPLACE_KEY:
- 			printk(KERN_INFO "\t\tdev replace\n");
- 			break;
-+		case BTRFS_UUID_KEY:
-+			uuid_item = btrfs_item_ptr(l, i,
-+						   struct btrfs_uuid_item);
-+			print_uuid_item(l, uuid_item, btrfs_item_size_nr(l, i));
-+			break;
- 		};
- 	}
- }
+The table below shows the time it takes on my testbox to send _one_
+empty subvolume depending on the number of subvolume that exist in
+the filesystem.
+
+# of subvols  | without    | with
+in filesystem | UUID tree  | UUID tree
+--------------+------------+----------
+            2 |  0m00.004s | 0m00.003s
+         1000 |  0m07.010s | 0m00.004s
+         2000 |  0m28.210s | 0m00.004s
+         3000 |  1m04.872s | 0m00.004s
+         4000 |  1m56.059s | 0m00.004s
+         5000 |  3m00.489s | 0m00.004s
+         6000 |  4m27.376s | 0m00.004s
+         7000 |  6m08.938s | 0m00.004s
+         8000 |  7m54.020s | 0m00.004s
+         9000 | 10m05.108s | 0m00.004s
+        10000 | 12m47.406s | 0m00.004s
+        11000 | 15m05.800s | 0m00.004s
+        12000 | 18m00.170s | 0m00.004s
+        13000 | 21m39.438s | 0m00.004s
+        14000 | 24m54.681s | 0m00.004s
+        15000 | 28m09.096s | 0m00.004s
+        16000 | 33m08.856s | 0m00.004s
+        17000 | 37m10.562s | 0m00.004s
+        18000 | 41m44.727s | 0m00.004s
+        19000 | 46m14.335s | 0m00.004s
+        20000 | 51m55.100s | 0m00.004s
+        21000 | 56m54.346s | 0m00.004s
+        22000 | 62m53.466s | 0m00.004s
+        23000 | 66m57.328s | 0m00.004s
+        24000 | 73m59.687s | 0m00.004s
+        25000 | 81m24.476s | 0m00.004s
+        26000 | 87m11.478s | 0m00.004s
+        27000 | 92m59.225s | 0m00.004s
+
+Or as a chart:
+http://btrfs.giantdisaster.de/Btrfs-send-recv-perf.pdf
+
+It is much more efficient to maintain a searchable persistent data
+structure in the filesystem, one that is updated whenever a
+subvolume/snapshot is created and deleted, and when the received
+subvolume UUID is set by the btrfs-receive tool.
+
+Therefore kernel code is added that is able to maintain data
+structures in the filesystem that allow to quickly search for a
+given UUID and to retrieve the subvol ID.
+
+Now follows the lengthy justification, why a new tree was added
+instead of using the existing root tree:
+
+The first approach was to not create another tree that holds UUID
+items. Instead, the items should just go into the top root tree.
+Unfortunately this confused the algorithm to assign the objectid
+of subvolumes and snapshots. The reason is that
+btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
+the first created subvol or snapshot after mounting a filesystem,
+and this function simply searches for the largest used objectid in
+the root tree keys to pick the next objectid to assign. Of course,
+the UUID keys have always been the ones with the highest offset
+value, and the next assigned subvol ID was wastefully huge.
+
+To use any other existing tree did not look proper. To apply a
+workaround such as setting the objectid to zero in the UUID item
+key and to implement collision handling would either add
+limitations (in case of a btrfs_extend_item() approach to handle
+the collisions) or a lot of complexity and source code (in case a
+key would be looked up that is free of collisions). Adding new code
+that introduces limitations is not good, and adding code that is
+complex and lengthy for no good reason is also not good. That's the
+justification why a completely new tree was introduced.
+
+v1 -> v2:
+- All review comments from David Sterba, Josef Bacik and Jan Schmidt
+  are addressed.
+  The hugest change was to add a mechanism that handles the case that
+  the filesystem is mounted with an older kernel. Now that case is
+  detected when the filesystem is mounted with a newer kernel again,
+  and the UUID tree is updated in the background.
+
+v2 -> v3:
+- All review comments from Liu Bo are addressed:
+  - shrinked the size of the uuid_item.
+  - fixed the issue that the uuid-tree was not using the transaction
+    block reserve.
+
+v3 -> v4:
+- Fixed a bug. A corrupted UUID tree entry could have caused an endless
+  loop in the check+rescan thread.
+
+v4 -> v5:
+- On demand from multiple persons, the way was changed that a umount
+  waits for the completion of the uuid tree rescan thread. Now a
+  struct completion is used instead of a struct semaphore.
+
+Stefan Behrens (8):
+  Btrfs: introduce a tree for items that map UUIDs to something
+  Btrfs: support printing UUID tree elements
+  Btrfs: create UUID tree if required
+  Btrfs: maintain subvolume items in the UUID tree
+  Btrfs: fill UUID tree initially
+  Btrfs: introduce uuid-tree-gen field
+  Btrfs: check UUID tree during mount if required
+  Btrfs: add mount option to force UUID tree checking
+
+ fs/btrfs/Makefile      |   3 +-
+ fs/btrfs/ctree.h       |  64 ++++-
+ fs/btrfs/disk-io.c     |  56 +++++
+ fs/btrfs/extent-tree.c |   3 +
+ fs/btrfs/ioctl.c       |  74 +++++-
+ fs/btrfs/print-tree.c  |  81 +++++++
+ fs/btrfs/super.c       |   8 +-
+ fs/btrfs/transaction.c |  21 +-
+ fs/btrfs/uuid-tree.c   | 636 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     | 254 ++++++++++++++++++++
+ fs/btrfs/volumes.h     |   2 +
+ 11 files changed, 1188 insertions(+), 14 deletions(-)
+ create mode 100644 fs/btrfs/uuid-tree.c
+
 -- 
 1.8.3
 

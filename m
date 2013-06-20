@@ -1,46 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:58699 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S935557Ab3FTDoJ (ORCPT
+Received: from mail-oa0-f48.google.com ([209.85.219.48]:39415 "EHLO
+	mail-oa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756231Ab3FTJiw convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 23:44:09 -0400
-Date: Wed, 19 Jun 2013 20:44:08 -0700 (PDT)
-From: Sage Weil <sage@inktank.com>
-To: Chris Mason <chris.mason@fusionio.com>
-cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: hang on 3.9, 3.10-rc5
-In-Reply-To: <20130618165952.9494.8953@localhost.localdomain>
-Message-ID: <alpine.DEB.2.00.1306192043380.14838@cobra.newdream.net>
-References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net> <20130618163706.GC19183@localhost.localdomain> <20130618165952.9494.8953@localhost.localdomain>
+	Thu, 20 Jun 2013 05:38:52 -0400
+Received: by mail-oa0-f48.google.com with SMTP id f4so7675803oah.21
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 02:38:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+In-Reply-To: <CADn-QaOWq7BR0DXn_Xd5YRnDc2NZOBGCn_YfV2y1FjpBg4f_LQ@mail.gmail.com>
+References: <loom.20130617T230152-537@post.gmane.org> <20130617212132.GA19183@localhost.localdomain>
+ <CADn-QaOWq7BR0DXn_Xd5YRnDc2NZOBGCn_YfV2y1FjpBg4f_LQ@mail.gmail.com>
+From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+Date: Thu, 20 Jun 2013 11:38:31 +0200
+Message-ID: <CADn-QaNS01CGtPJtr9yHkEU-TET7MrhCUbr1j4g3gYROvQ=K+Q@mail.gmail.com>
+Subject: Re: Filesystem "somewhat" destroyed - need help for recovery/fixing
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hi
 
-On Tue, 18 Jun 2013, Chris Mason wrote:
-> [...]
-> Very long way of saying I think we're one release_path short.  Sage, I
-> haven't tested this at all yet, I was hoping to trigger it first.
-> 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index c276ac9..c1954b3 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -3730,6 +3730,7 @@ next_slot:
->  log_extents:
->  	if (fast_search) {
->  		btrfs_release_path(dst_path);
-> +		btrfs_release_path(path);
->  		ret = btrfs_log_changed_extents(trans, root, inode, dst_path);
->  		if (ret) {
->  			err = ret;
+On Mon, Jun 17, 2013 at 11:43 PM, Alexander Skwar
+<alexanders.mailinglists+nospam@gmail.com> wrote:
+> Hello Josef
+>
+> On Mon, Jun 17, 2013 at 11:21 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+>
+>> Pull down my tree
+>>
+>> git://github.com/josefbacik/btrfs-progs.git
+>>
+>> and build and run the fsck in there and see if it's a bit more friendly.
+>
+> I just gave it a try, but wasn't successful, it seems… Kernel still
+> crashes.
+> Maybe checkout the screenphotos at http://goo.gl/DWkRH or
+> http://imgur.com/a/00pTx
 
-This seems to be doing the trick.  I'll keep testing overnight, but so far 
-so good!
+Any other ideas, about what I might be able to do, to
+revive my btrfs filesystem?
 
-Thanks-
-sage
 
+
+Alexander
+--
+=>        Google+ => http://plus.skwar.me         <==
+=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43004 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:49298 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757535Ab3FTNjw (ORCPT
+	with ESMTP id S1757851Ab3FTOk0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Jun 2013 09:39:52 -0400
-Date: Thu, 20 Jun 2013 21:39:42 +0800
+	Thu, 20 Jun 2013 10:40:26 -0400
+Date: Thu, 20 Jun 2013 22:40:15 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Josef Bacik <jbacik@fusionio.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 4/4] Btrfs-progs: exhance btrfs-image to restore image
  onto multiple disks
-Message-ID: <20130620133941.GA23098@localhost.localdomain>
+Message-ID: <20130620144014.GA23986@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
  <1371729930-22497-5-git-send-email-bo.li.liu@oracle.com>
@@ -52,8 +52,16 @@ On Thu, Jun 20, 2013 at 08:39:19AM -0400, Josef Bacik wrote:
 > left would be to fix the device tree so the only device it knows about is the
 > device we're restoring to.  Thanks,
 
-Um, I believe that'd work and it's not hard, but I'm afraid that way we're not
-able to debug bugs related to raid types?
+I just check the latest progs code, in
+commit ef2a8889ef813ba77061f6a92f4954d047a78932
+Btrfs-progs: make image restore with the original device offsets,
+we suffer from an huge pain and take a great amount of efforts to map
+logical offset to physical offset.
+
+But with this patch, we'll build the same whole logical-physical mapping
+on the disks we're restoring to with what it is on the disks that
+generate the image file, so we can get rid of those pain causing by
+mapping issues.
 
 thanks,
 liubo

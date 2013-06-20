@@ -1,150 +1,424 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:25775 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:55300 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758032Ab3FTRpm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1758038Ab3FTRpm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 20 Jun 2013 13:45:42 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp2) (RZmta 31.28 OK)
-	with ESMTP id g06938p5K3qmmi for <linux-btrfs@vger.kernel.org>;
-	Thu, 20 Jun 2013 19:45:39 +0200 (CEST)
+	by josoe.store (josoe xp1) (RZmta 31.28 OK)
+	with ESMTP id X0314dp5KHFkb5 for <linux-btrfs@vger.kernel.org>;
+	Thu, 20 Jun 2013 19:45:40 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 0/8] Btrfs: introduce a tree for UUID to subvol ID mapping
-Date: Thu, 20 Jun 2013 19:45:31 +0200
-Message-Id: <cover.1371749051.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v5 7/8] Btrfs: check UUID tree during mount if required
+Date: Thu, 20 Jun 2013 19:45:38 +0200
+Message-Id: <a385ab71c448183b419e708cff4bd2473d53ca80.1371749051.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1371749051.git.sbehrens@giantdisaster.de>
+References: <cover.1371749051.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1371749051.git.sbehrens@giantdisaster.de>
+References: <cover.1371749051.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mapping UUIDs to subvolume IDs is an operation with a high effort
-today. Today, the algorithm even has quadratic effort (based on the
-number of existing subvolumes), which means, that it takes minutes
-to send/receive a single subvolume if 10,000 subvolumes exist. But
-even linear effort would be too much since it is a waste. And these
-data structures to allow mapping UUIDs to subvolume IDs are created
-every time a btrfs send/receive instance is started.
+If the filesystem was mounted with an old kernel that was not
+aware of the UUID tree, this is detected by looking at the
+uuid_tree_generation field of the superblock (similar to how
+the free space cache is doing it). If a mismatch is detected
+at mount time, a thread is started that does two things:
+1. Iterate through the UUID tree, check each entry, delete those
+   entries that are not valid anymore (i.e., the subvol does not
+   exist anymore or the value changed).
+2. Iterate through the root tree, for each found subvolume, add
+   the UUID tree entries for the subvolume (if they are not
+   already there).
 
-So the issue to address is that Btrfs send / receive does not work
-as it is today when a high number of subvolumes exist.
+This mechanism is also used to handle and repair errors that
+happened during the initial creation and filling of the tree.
+The update of the uuid_tree_generation field (which indicates
+that the state of the UUID tree is up to date) is blocked until
+all create and repair operations are successfully completed.
 
-The table below shows the time it takes on my testbox to send _one_
-empty subvolume depending on the number of subvolume that exist in
-the filesystem.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/ctree.h       |   4 ++
+ fs/btrfs/disk-io.c     |  17 +++++-
+ fs/btrfs/transaction.c |   3 +-
+ fs/btrfs/uuid-tree.c   | 156 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     |  82 ++++++++++++++++++++++++++
+ fs/btrfs/volumes.h     |   1 +
+ 6 files changed, 261 insertions(+), 2 deletions(-)
 
-# of subvols  | without    | with
-in filesystem | UUID tree  | UUID tree
---------------+------------+----------
-            2 |  0m00.004s | 0m00.003s
-         1000 |  0m07.010s | 0m00.004s
-         2000 |  0m28.210s | 0m00.004s
-         3000 |  1m04.872s | 0m00.004s
-         4000 |  1m56.059s | 0m00.004s
-         5000 |  3m00.489s | 0m00.004s
-         6000 |  4m27.376s | 0m00.004s
-         7000 |  6m08.938s | 0m00.004s
-         8000 |  7m54.020s | 0m00.004s
-         9000 | 10m05.108s | 0m00.004s
-        10000 | 12m47.406s | 0m00.004s
-        11000 | 15m05.800s | 0m00.004s
-        12000 | 18m00.170s | 0m00.004s
-        13000 | 21m39.438s | 0m00.004s
-        14000 | 24m54.681s | 0m00.004s
-        15000 | 28m09.096s | 0m00.004s
-        16000 | 33m08.856s | 0m00.004s
-        17000 | 37m10.562s | 0m00.004s
-        18000 | 41m44.727s | 0m00.004s
-        19000 | 46m14.335s | 0m00.004s
-        20000 | 51m55.100s | 0m00.004s
-        21000 | 56m54.346s | 0m00.004s
-        22000 | 62m53.466s | 0m00.004s
-        23000 | 66m57.328s | 0m00.004s
-        24000 | 73m59.687s | 0m00.004s
-        25000 | 81m24.476s | 0m00.004s
-        26000 | 87m11.478s | 0m00.004s
-        27000 | 92m59.225s | 0m00.004s
-
-Or as a chart:
-http://btrfs.giantdisaster.de/Btrfs-send-recv-perf.pdf
-
-It is much more efficient to maintain a searchable persistent data
-structure in the filesystem, one that is updated whenever a
-subvolume/snapshot is created and deleted, and when the received
-subvolume UUID is set by the btrfs-receive tool.
-
-Therefore kernel code is added that is able to maintain data
-structures in the filesystem that allow to quickly search for a
-given UUID and to retrieve the subvol ID.
-
-Now follows the lengthy justification, why a new tree was added
-instead of using the existing root tree:
-
-The first approach was to not create another tree that holds UUID
-items. Instead, the items should just go into the top root tree.
-Unfortunately this confused the algorithm to assign the objectid
-of subvolumes and snapshots. The reason is that
-btrfs_find_free_objectid() calls btrfs_find_highest_objectid() for
-the first created subvol or snapshot after mounting a filesystem,
-and this function simply searches for the largest used objectid in
-the root tree keys to pick the next objectid to assign. Of course,
-the UUID keys have always been the ones with the highest offset
-value, and the next assigned subvol ID was wastefully huge.
-
-To use any other existing tree did not look proper. To apply a
-workaround such as setting the objectid to zero in the UUID item
-key and to implement collision handling would either add
-limitations (in case of a btrfs_extend_item() approach to handle
-the collisions) or a lot of complexity and source code (in case a
-key would be looked up that is free of collisions). Adding new code
-that introduces limitations is not good, and adding code that is
-complex and lengthy for no good reason is also not good. That's the
-justification why a completely new tree was introduced.
-
-v1 -> v2:
-- All review comments from David Sterba, Josef Bacik and Jan Schmidt
-  are addressed.
-  The hugest change was to add a mechanism that handles the case that
-  the filesystem is mounted with an older kernel. Now that case is
-  detected when the filesystem is mounted with a newer kernel again,
-  and the UUID tree is updated in the background.
-
-v2 -> v3:
-- All review comments from Liu Bo are addressed:
-  - shrinked the size of the uuid_item.
-  - fixed the issue that the uuid-tree was not using the transaction
-    block reserve.
-
-v3 -> v4:
-- Fixed a bug. A corrupted UUID tree entry could have caused an endless
-  loop in the check+rescan thread.
-
-v4 -> v5:
-- On demand from multiple persons, the way was changed that a umount
-  waits for the completion of the uuid tree rescan thread. Now a
-  struct completion is used instead of a struct semaphore.
-
-Stefan Behrens (8):
-  Btrfs: introduce a tree for items that map UUIDs to something
-  Btrfs: support printing UUID tree elements
-  Btrfs: create UUID tree if required
-  Btrfs: maintain subvolume items in the UUID tree
-  Btrfs: fill UUID tree initially
-  Btrfs: introduce uuid-tree-gen field
-  Btrfs: check UUID tree during mount if required
-  Btrfs: add mount option to force UUID tree checking
-
- fs/btrfs/Makefile      |   3 +-
- fs/btrfs/ctree.h       |  64 ++++-
- fs/btrfs/disk-io.c     |  56 +++++
- fs/btrfs/extent-tree.c |   3 +
- fs/btrfs/ioctl.c       |  74 +++++-
- fs/btrfs/print-tree.c  |  81 +++++++
- fs/btrfs/super.c       |   8 +-
- fs/btrfs/transaction.c |  21 +-
- fs/btrfs/uuid-tree.c   | 636 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c     | 254 ++++++++++++++++++++
- fs/btrfs/volumes.h     |   2 +
- 11 files changed, 1188 insertions(+), 14 deletions(-)
- create mode 100644 fs/btrfs/uuid-tree.c
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 424c38d..817894d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1648,6 +1648,7 @@ struct btrfs_fs_info {
+ 	atomic_t mutually_exclusive_operation_running;
+ 
+ 	struct completion uuid_tree_rescan_completion;
++	unsigned int update_uuid_tree_gen:1;
+ };
+ 
+ /*
+@@ -3453,6 +3454,9 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root);
+ 
+ /* uuid-tree.c */
++int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info,
++			    int (*check_func)(struct btrfs_fs_info *, u8 *, u16,
++					      u64));
+ int btrfs_lookup_uuid_subvol_item(struct btrfs_root *uuid_root, u8 *uuid,
+ 				  u64 *subvol_id);
+ int btrfs_insert_uuid_subvol_item(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a52504b..7508b3a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2112,7 +2112,8 @@ int open_ctree(struct super_block *sb,
+ 	int err = -EINVAL;
+ 	int num_backups_tried = 0;
+ 	int backup_index = 0;
+-	bool create_uuid_tree = false;
++	bool create_uuid_tree;
++	bool check_uuid_tree;
+ 
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+@@ -2714,9 +2715,13 @@ retry_root_backup:
+ 		if (ret != -ENOENT)
+ 			goto recovery_tree_root;
+ 		create_uuid_tree = true;
++		check_uuid_tree = false;
+ 	} else {
+ 		uuid_root->track_dirty = 1;
+ 		fs_info->uuid_root = uuid_root;
++		create_uuid_tree = false;
++		check_uuid_tree =
++		    generation != btrfs_super_uuid_tree_generation(disk_super);
+ 	}
+ 
+ 	fs_info->generation = generation;
+@@ -2914,7 +2919,17 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
+ 		}
++	} else if (check_uuid_tree) {
++		pr_info("btrfs: checking UUID tree\n");
++		ret = btrfs_check_uuid_tree(fs_info);
++		if (ret) {
++			pr_warn("btrfs: failed to check the UUID tree %d\n",
++				ret);
++			close_ctree(tree_root);
++			return ret;
++		}
+ 	} else {
++		fs_info->update_uuid_tree_gen = 1;
+ 		complete_all(&fs_info->uuid_tree_rescan_completion);
+ 	}
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 1ae9621..cf07548 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1370,7 +1370,8 @@ static void update_super_roots(struct btrfs_root *root)
+ 	super->root_level = root_item->level;
+ 	if (btrfs_test_opt(root, SPACE_CACHE))
+ 		super->cache_generation = root_item->generation;
+-	super->uuid_tree_generation = root_item->generation;
++	if (root->fs_info->update_uuid_tree_gen)
++		super->uuid_tree_generation = root_item->generation;
+ }
+ 
+ int btrfs_transaction_in_commit(struct btrfs_fs_info *info)
+diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
+index 3939a54..59697d1 100644
+--- a/fs/btrfs/uuid-tree.c
++++ b/fs/btrfs/uuid-tree.c
+@@ -415,6 +415,162 @@ out:
+ 	return ret;
+ }
+ 
++static int btrfs_uuid_iter_rem(struct btrfs_root *uuid_root, u8 *uuid,
++			       u16 sub_item_type, u64 subid)
++{
++	struct btrfs_trans_handle *trans;
++	int ret;
++
++	/* 1 - for the uuid item */
++	trans = btrfs_start_transaction(uuid_root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	ret = btrfs_uuid_tree_rem(trans, uuid_root, uuid,
++				  sub_item_type, subid);
++	btrfs_end_transaction(trans, uuid_root);
++
++out:
++	return ret;
++}
++
++int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info,
++			    int (*check_func)(struct btrfs_fs_info *, u8 *, u16,
++					      u64))
++{
++	struct btrfs_root *root = fs_info->uuid_root;
++	struct btrfs_key key;
++	struct btrfs_key max_key;
++	struct btrfs_path *path = NULL;
++	int ret = 0;
++	struct extent_buffer *eb;
++	int slot;
++	u32 item_size;
++	struct btrfs_uuid_item *ptr;
++	u64 subid;
++	unsigned long offset;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	key.objectid = 0;
++	key.type = BTRFS_UUID_KEY;
++	key.offset = 0;
++
++	max_key.objectid = (u64)-1;
++	max_key.type = BTRFS_UUID_KEY;
++	max_key.offset = (u64)-1;
++
++	path->keep_locks = 1;
++
++	while (1) {
++again:
++		cond_resched();
++		ret = btrfs_search_forward(root, &key, &max_key, path, 0);
++		if (ret) {
++			if (ret > 0)
++				ret = 0;
++			break;
++		}
++
++		if (key.type != BTRFS_UUID_KEY)
++			goto skip;
++
++		eb = path->nodes[0];
++		slot = path->slots[0];
++		ptr = btrfs_item_ptr(eb, slot, struct btrfs_uuid_item);
++		item_size = btrfs_item_size_nr(eb, slot);
++		do {
++			u16 sub_item_type;
++			u64 sub_item_len;
++
++			if (item_size < sizeof(*ptr)) {
++				pr_warn("btrfs: uuid item too short (%lu < %d)!\n",
++					(unsigned long)item_size,
++					(int)sizeof(*ptr));
++				goto skip; /* is this an old kernel? */
++			}
++			sub_item_type = btrfs_uuid_type(eb, ptr);
++			sub_item_len = btrfs_uuid_len(eb, ptr);
++			ptr++;
++			item_size -= sizeof(*ptr);
++			if (sub_item_len * sizeof(u64) > item_size) {
++				pr_warn("btrfs: uuid item too short (%llu > %lu)!\n",
++					(unsigned long long)(sub_item_len *
++							     sizeof(u64)),
++					(unsigned long)item_size);
++				goto skip;
++			}
++			offset = (unsigned long)ptr;
++			ptr = (struct btrfs_uuid_item *)
++				(((char *)ptr) + sub_item_len * sizeof(u64));
++			item_size -= sub_item_len * sizeof(u64);
++			while (sub_item_len) {
++				u8 uuid[BTRFS_UUID_SIZE];
++
++				put_unaligned_le64(key.objectid, uuid);
++				put_unaligned_le64(key.offset,
++						   uuid + sizeof(u64));
++				read_extent_buffer(eb, &subid, offset,
++						   sizeof(subid));
++				subid = le64_to_cpu(subid);
++				ret = check_func(fs_info, uuid,
++						 sub_item_type, subid);
++				if (ret < 0)
++					goto out;
++				if (ret > 0) {
++					btrfs_release_path(path);
++					ret = btrfs_uuid_iter_rem(
++						fs_info->uuid_root, uuid,
++						sub_item_type, subid);
++					if (ret == 0) {
++						/*
++						 * this might look inefficient,
++						 * but the justification is that
++						 * it is an exception that
++						 * check_func returns 1, and
++						 * that in the regular case only
++						 * one or two entries per UUID
++						 * exist.
++						 */
++						goto again;
++					}
++					if (ret < 0 && ret != -ENOENT)
++						goto out;
++				}
++				sub_item_len--;
++				offset += sizeof(u64);
++			}
++		} while (item_size);
++
++skip:
++		btrfs_release_path(path);
++		if (key.offset < (u64)-1) {
++			key.offset++;
++		} else if (key.type < BTRFS_UUID_KEY) {
++			key.offset = 0;
++			key.type = BTRFS_UUID_KEY;
++		} else if (key.objectid < (u64)-1) {
++			key.offset = 0;
++			key.type = 0;
++			key.objectid++;
++		} else {
++			break;
++		}
++	}
++
++out:
++	btrfs_free_path(path);
++	if (ret)
++		pr_warn("btrfs: btrfs_uuid_tree_iterate failed %d\n", ret);
++	return 0;
++}
++
+ int btrfs_lookup_uuid_subvol_item(struct btrfs_root *uuid_root, u8 *uuid,
+ 				  u64 *subvol_id)
+ {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e2e2bbc..44e148f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3539,10 +3539,76 @@ out:
+ 	btrfs_free_path(path);
+ 	if (ret)
+ 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
++	else
++		fs_info->update_uuid_tree_gen = 1;
+ 	complete_all(&fs_info->uuid_tree_rescan_completion);
+ 	return 0;
+ }
+ 
++/*
++ * Callback for btrfs_uuid_tree_iterate().
++ * returns:
++ * 0	check succeeded, the entry is not outdated.
++ * < 0	if an error occured.
++ * > 0	if the check failed, which means the caller shall remove the entry.
++ */
++static int btrfs_check_uuid_tree_entry(struct btrfs_fs_info *fs_info,
++				       u8 *uuid, u16 type, u64 subid)
++{
++	struct btrfs_key key;
++	int ret = 0;
++	struct btrfs_root *subvol_root;
++
++	if (type != BTRFS_UUID_ITEM_TYPE_SUBVOL &&
++	    type != BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL)
++		goto out;
++
++	key.objectid = subid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = (u64)-1;
++	subvol_root = btrfs_read_fs_root_no_name(fs_info, &key);
++	if (IS_ERR(subvol_root)) {
++		ret = PTR_ERR(subvol_root);
++		if (ret == -ENOENT)
++			ret = 1;
++		goto out;
++	}
++
++	switch (type) {
++	case BTRFS_UUID_ITEM_TYPE_SUBVOL:
++		if (memcmp(uuid, subvol_root->root_item.uuid, BTRFS_UUID_SIZE))
++			ret = 1;
++		break;
++	case BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL:
++		if (memcmp(uuid, subvol_root->root_item.received_uuid,
++			   BTRFS_UUID_SIZE))
++			ret = 1;
++		break;
++	}
++
++out:
++	return ret;
++}
++
++static int btrfs_uuid_rescan_kthread(void *data)
++{
++	struct btrfs_fs_info *fs_info = (struct btrfs_fs_info *)data;
++	int ret;
++
++	/*
++	 * 1st step is to iterate through the existing UUID tree and
++	 * to delete all entries that contain outdated data.
++	 * 2nd step is to add all missing entries to the UUID tree.
++	 */
++	ret = btrfs_uuid_tree_iterate(fs_info, btrfs_check_uuid_tree_entry);
++	if (ret < 0) {
++		pr_warn("btrfs: iterating uuid_tree failed %d\n", ret);
++		complete_all(&fs_info->uuid_tree_rescan_completion);
++		return ret;
++	}
++	return btrfs_uuid_scan_kthread(data);
++}
++
+ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_trans_handle *trans;
+@@ -3575,6 +3641,7 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+ 
+ 	task = kthread_run(btrfs_uuid_scan_kthread, fs_info, "btrfs-uuid");
+ 	if (IS_ERR(task)) {
++		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
+ 		pr_warn("btrfs: failed to start uuid_scan task\n");
+ 		complete_all(&fs_info->uuid_tree_rescan_completion);
+ 		return PTR_ERR(task);
+@@ -3583,6 +3650,21 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ }
+ 
++int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info)
++{
++	struct task_struct *task;
++
++	task = kthread_run(btrfs_uuid_rescan_kthread, fs_info, "btrfs-uuid");
++	if (IS_ERR(task)) {
++		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
++		pr_warn("btrfs: failed to start uuid_rescan task\n");
++		complete_all(&fs_info->uuid_tree_rescan_completion);
++		return PTR_ERR(task);
++	}
++
++	return 0;
++}
++
+ /*
+  * shrinking a device means finding all of the device extents past
+  * the new size, and then following the back refs to the chunks.
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index c3fcd60..3a6a0fd 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -316,6 +316,7 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
++int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
 -- 
 1.8.3
 

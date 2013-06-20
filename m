@@ -1,71 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40152 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752051Ab3FQVpE (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:27376 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965070Ab3FTMFm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Jun 2013 17:45:04 -0400
+	Thu, 20 Jun 2013 08:05:42 -0400
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5HLj3Ss027245
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5KBxO0Z026393
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:04 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5HLj2Qu005525
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 11:59:24 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5KC5eCW013900
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:02 GMT
-Received: from abhmt108.oracle.com (abhmt108.oracle.com [141.146.116.60])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5HLj2So005501
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2013 21:45:02 GMT
-From: Guangyu Sun <guangyu.sun@oracle.com>
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 12:05:41 GMT
+Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5KC5eUG028139
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 12:05:40 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Guangyu Sun <guangyu.sun@oracle.com>
-Subject: [PATCH] btrfs-progs: update man page for btrfs filesystem label
-Date: Mon, 17 Jun 2013 14:45:23 -0700
-Message-Id: <1371505523-28674-1-git-send-email-guangyu.sun@oracle.com>
-In-Reply-To: <y>
-References: <y>
+Subject: [PATCH 1/4] Btrfs-progs: fix misuse of skinny metadata in btrfs-image
+Date: Thu, 20 Jun 2013 20:05:27 +0800
+Message-Id: <1371729930-22497-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
+References: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs filesystem label can work on a mounted filesystem, also on a
-multi-devices filesystem. And the restriction of label name is
-changed, too. The man page should be updated accordingly.
+As for skinny metadata, key.offset stores levels rather than extent length.
 
-Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- man/btrfs.8.in |   17 ++++-------------
- 1 file changed, 4 insertions(+), 13 deletions(-)
+ btrfs-image.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index af7df4d..1da4ff1 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -263,22 +263,13 @@ it with the new desired size.  When recreating the partition make sure to use
- the same starting disk cylinder as before.
- .TP
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 739ae35..e5ff795 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -798,9 +798,9 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
  
--\fBfilesystem label\fP\fI <dev> [newlabel]\fP
--Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
--filesystem. 
-+\fBfilesystem label\fP\fI [<device>|<mountpoint>] [newlabel]\fP
-+Show or update the label of a filesystem. \fI[<device>|<mountpoint>]\fR is used
-+to identify the filesystem. 
- If a \fInewlabel\fR optional argument is passed, the label is changed. The
- following constraints exist for a label:
- .IP
--- the maximum allowable length shall be less or equal than 256 chars
--.IP
--- the label shall not  contain the '/' or '\\' characters.
--
--NOTE: Currently there are the following limitations:
--.IP
--- the filesystem has to be unmounted
--.IP
--- the filesystem should not have more than one device.
--.TP
-+- the maximum allowable length shall be less than 256 chars
+ 		bytenr = key.objectid;
+ 		if (key.type == BTRFS_METADATA_ITEM_KEY)
+-			num_bytes = key.offset;
+-		else
+ 			num_bytes = extent_root->leafsize;
++		else
++			num_bytes = key.offset;
  
- \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
- Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
+ 		if (btrfs_item_size_nr(leaf, path->slots[0]) > sizeof(*ei)) {
+ 			ei = btrfs_item_ptr(leaf, path->slots[0],
 -- 
-1.7.9.5
+1.7.7
 

@@ -1,46 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44182 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965070Ab3FTMFl (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:42785 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757736Ab3FTMYf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Jun 2013 08:05:41 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5KC5eAh017116
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 12:05:40 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5KC5dWr028076
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 12:05:39 GMT
-Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5KC5dhX001568
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 12:05:39 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] multiple disks restore support of btrfs-image
-Date: Thu, 20 Jun 2013 20:05:26 +0800
-Message-Id: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
+	Thu, 20 Jun 2013 08:24:35 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id F32B09A06B8
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 06:24:34 -0600 (MDT)
+Date: Thu, 20 Jun 2013 08:24:32 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 4/4] Btrfs-progs: exhance btrfs-image to restore image
+ onto multiple disks
+Message-ID: <20130620122432.GA4288@localhost.localdomain>
+References: <1371729930-22497-1-git-send-email-bo.li.liu@oracle.com>
+ <1371729930-22497-5-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1371729930-22497-5-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patch 1-3 are bug fixes for several places.
+On Thu, Jun 20, 2013 at 08:05:30PM +0800, Liu Bo wrote:
+> This adds a 'btrfs-image -m' option, which let us restore an image that
+> is built from a btrfs of multiple disks onto several disks altogether.
+> 
+> This aims to address the following case,
+> $ mkfs.btrfs -m raid0 sda sdb
+> $ btrfs-image sda image.file
+> $ btrfs-image -r image.file sdc
+> ---------
+> so we can only restore metadata onto sdc, and another thing is we can
+> only mount sdc with degraded mode as we don't provide informations of
+> another disk.  And, it's built as RAID0 and we have only one disk,
+> so after mount sdc we'll get into readonly mode.
+> 
 
-Patch 4 adds btrfs-image support of multiple disks restore.
+Um that shouldn't be happening, the restore will mask out the RAID parts of the
+chunk tree and it should work just fine.  Are you using the most recent version
+of btrfs-image?  If this is happening it's a bug and we need to fix it, but I've
+restored several file systems from users with raid0/10 file systems onto a
+single disk and it's worked just fine.  Thanks,
 
-Liu Bo (4):
-  Btrfs-progs: fix misuse of skinny metadata in btrfs-image
-  Btrfs-progs: skip open devices which is missing
-  Btrfs-progs: delete fs_devices itself from fs_uuid list before
-    freeing
-  Btrfs-progs: exhance btrfs-image to restore image onto multiple disks
-
- btrfs-image.c |  298 ++++++++++++++++++++++++++++++++++++++++++++++++++-------
- ctree.h       |    1 +
- disk-io.c     |   91 +++++++++++++-----
- disk-io.h     |    5 +
- volumes.c     |    4 +
- 5 files changed, 339 insertions(+), 60 deletions(-)
-
--- 
-1.7.7
-
+Josef

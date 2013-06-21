@@ -1,51 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f179.google.com ([209.85.223.179]:43491 "EHLO
-	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756580Ab3FSHi5 (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:58144 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1945951Ab3FUUav (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Jun 2013 03:38:57 -0400
-Received: by mail-ie0-f179.google.com with SMTP id c10so12607647ieb.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jun 2013 00:38:57 -0700 (PDT)
-Message-ID: <51C15FFC.4010303@gmail.com>
-Date: Wed, 19 Jun 2013 15:38:36 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+	Fri, 21 Jun 2013 16:30:51 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 2AFB99A06A1
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 14:30:51 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id rQ2OFntvrfnOie3N (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 14:30:50 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] xfstests: make fs for 274 larger
+Date: Fri, 21 Jun 2013 16:30:48 -0400
+Message-ID: <1371846648-21841-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: xfstests <xfs@oss.sgi.com>, linux-btrfs@vger.kernel.org,
-        Dave Chinner <dchinner@redhat.com>, Rich Johnston <rjohnston@sgi.com>
-Subject: [PATCH] xfstests: add 'check -btrfs' support
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently we can specify the testing filesytems like 'check -xfs', but
-btrfs is not support in this kind of command option. Add the option
-'check -btrfs' support.
+Btrfs will default to mixed block groups for 1 gigabyte file systems and
+smaller, which means data and metadata share the same area.  This makes
+generic/274 fail for us because we cannot reserve enough metadata space to do
+our writes.  Bumping the scratch fs up to 2 gigabytes allows us to do our normal
+metadata/data seperation and allows us to pass this test.  Thanks,
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-  check |    2 ++
-  1 file changed, 2 insertions(+)
+ tests/generic/274 |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/check b/check
-index ff8fbcf..9c40615 100755
---- a/check
-+++ b/check
-@@ -74,6 +74,7 @@ usage()
-
-  check options
-      -xfs                test XFS (default)
-+    -btrfs              test Btrfs
-      -udf                test UDF
-      -nfs                test NFS
-      -l			line mode diff
-@@ -162,6 +163,7 @@ while [ $# -gt 0 ]; do
-  	-udf)	FSTYP=udf ;;
-  	-xfs)	FSTYP=xfs ;;
-  	-nfs)	FSTYP=nfs ;;
-+	-btrfs) FSTYP=btrfs ;;
-
-  	-g)	group=$2 ; shift ;
-  		group_list=$(get_group_list $group)
+diff --git a/tests/generic/274 b/tests/generic/274
+index da45fab..7c4887f 100755
+--- a/tests/generic/274
++++ b/tests/generic/274
+@@ -57,7 +57,7 @@ echo "------------------------------"
+ rm -f $seqres.full
+ 
+ umount $SCRATCH_DEV 2>/dev/null
+-_scratch_mkfs_sized $((1 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
++_scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
+ _scratch_mount
+ 
+ # Create a 4k file and Allocate 4M past EOF on that file
 -- 
-1.7.10.4
+1.7.7.6
 

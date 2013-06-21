@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47419 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:51421 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161419Ab3FUQD5 (ORCPT
+	with ESMTP id S1161432Ab3FUQLc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Jun 2013 12:03:57 -0400
-Date: Sat, 22 Jun 2013 00:03:48 +0800
+	Fri, 21 Jun 2013 12:11:32 -0400
+Date: Sat, 22 Jun 2013 00:11:24 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Filipe David Borba Manana <fdmanana@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/5 v2] Btrfs-progs: fix closing of devices
-Message-ID: <20130621160347.GB30620@localhost.localdomain>
+Message-ID: <20130621161123.GC30620@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
  <1370908356-31792-1-git-send-email-fdmanana@gmail.com>
@@ -34,14 +34,6 @@ On Tue, Jun 11, 2013 at 12:52:36AM +0100, Filipe David Borba Manana wrote:
 >   #2  0x0000000000421dcd in close_ctree (root=<optimized out>) at disk-io.c:1336
 >   #3  0x0000000000418cfa in cmd_check (argc=<optimized out>, argv=<optimized out>) at cmds-check.c:4171
 >   #4  0x0000000000403ed4 in main (argc=2, argv=0x7fff9a583d28) at btrfs.c:295
-
-Good catch!  This addresses one of my problems.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-thanks,
-liubo
-
 > 
 > Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 > ---
@@ -77,6 +69,14 @@ liubo
 >  			return -ENOMEM;
 >  		}
 > +		device->fd = -1;
+
+One nit here,
+I think it's ok without this since if we get the right device->name, it
+means this device is not missing and its fd will be valid.
+
+thanks,
+liubo
+
 >  		device->devid = devid;
 >  		memcpy(device->uuid, disk_super->dev_item.uuid,
 >  		       BTRFS_UUID_SIZE);

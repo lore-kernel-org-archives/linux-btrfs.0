@@ -1,227 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e32.co.us.ibm.com ([32.97.110.150]:51276 "EHLO
-	e32.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1423128Ab3FUOwr (ORCPT
+Received: from mail.fem.tu-ilmenau.de ([141.24.101.79]:58458 "EHLO
+	mail.fem.tu-ilmenau.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1423052Ab3FUPEO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Jun 2013 10:52:47 -0400
-Received: from /spool/local
-	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Fri, 21 Jun 2013 06:22:11 -0600
-Received: from d03relay04.boulder.ibm.com (d03relay04.boulder.ibm.com [9.17.195.106])
-	by d03dlp02.boulder.ibm.com (Postfix) with ESMTP id 1E5463E4004E
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 06:21:49 -0600 (MDT)
-Received: from d03av03.boulder.ibm.com (d03av03.boulder.ibm.com [9.17.195.169])
-	by d03relay04.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r5LCM7DY348038
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 06:22:07 -0600
-Received: from d03av03.boulder.ibm.com (loopback [127.0.0.1])
-	by d03av03.boulder.ibm.com (8.14.4/8.13.1/NCO v10.0 AVout) with ESMTP id r5LCM6WE007243
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 06:22:07 -0600
-From: zwu.kernel@gmail.com
+	Fri, 21 Jun 2013 11:04:14 -0400
+Received: from localhost (erft-5d80eb16.pool.mediaWays.net [93.128.235.22])
+	(using SSLv3 with cipher AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	by mail.fem.tu-ilmenau.de (Postfix) with ESMTPSA id 70EA36683
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 16:54:22 +0200 (CEST)
+Date: Fri, 21 Jun 2013 16:54:54 +0200
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 To: linux-btrfs@vger.kernel.org
-Cc: viro@zeniv.linux.org.uk, sekharan@us.ibm.com, linuxram@us.ibm.com,
-        david@fromorbit.com, chris.mason@fusionio.com, jbacik@fusionio.com,
-        idryomov@gmail.com, Martin@lichtvoll.de,
-        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC PATCH v2 4/5] BTRFS hot reloc, procfs: add three proc interfaces
-Date: Fri, 21 Jun 2013 20:20:59 +0800
-Message-Id: <1371817260-8615-5-git-send-email-zwu.kernel@gmail.com>
-In-Reply-To: <1371817260-8615-1-git-send-email-zwu.kernel@gmail.com>
-References: <1371817260-8615-1-git-send-email-zwu.kernel@gmail.com>
+Subject: Re: hang on 3.9, 3.10-rc5
+Message-ID: <20130621165454.5a87e2cb@fem.tu-ilmenau.de>
+In-Reply-To: <loom.20130618T190955-784@post.gmane.org>
+References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net>
+	<20130618163706.GC19183@localhost.localdomain>
+	<loom.20130618T190955-784@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+On Tue, 18 Jun 2013 17:19:04 +0000 (UTC)
+Jon Nelson <jnelson+btrfs@jamponi.net> wrote:
 
-  Add three proc interfaces hot-reloc-interval, hot-reloc-threshold,
-and hot-reloc-max-items under the dir /proc/sys/fs/ in order to
-turn HOT_RELOC_INTERVAL, HOT_RELOC_THRESHOLD, and HOT_RELOC_MAX_ITEMS
-into be tunable.
+> Josef Bacik <jbacik <at> fusionio.com> writes:
+> 
+> > 
+> > On Tue, Jun 11, 2013 at 11:43:30AM -0400, Sage Weil wrote:
+> > > I'm also seeing this hang regularly with both 3.9 and 3.10-rc5.
+> > > Is this is a known problem?  In this case there is no
+> > > powercycling; just a regular ceph-osd workload.
+> 
+> ..
+> 
+> 
+> I'm able to cause a complete kernel hang by defrag'ing even one 
+> file on 3.9.X (3.9.0 through 3.9.4, so far).
 
-Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
----
- fs/btrfs/hot_relocate.c | 26 +++++++++++++++++---------
- fs/btrfs/hot_relocate.h |  5 -----
- include/linux/btrfs.h   |  4 ++++
- kernel/sysctl.c         | 22 ++++++++++++++++++++++
- 4 files changed, 43 insertions(+), 14 deletions(-)
+I see similar behavior with autodefrag enabled. When fetching mails
+with claws (piped through bogofilter) the whole system got stuck more
+or less. I can switch between the tasks but everything involving I/O is
+hanging. Most time I was able to solve this with the sync command in a
+shell. I got only one time a backtrace from hung task checker:
 
-diff --git a/fs/btrfs/hot_relocate.c b/fs/btrfs/hot_relocate.c
-index ae28b86..debf580 100644
---- a/fs/btrfs/hot_relocate.c
-+++ b/fs/btrfs/hot_relocate.c
-@@ -25,7 +25,7 @@
-  * The relocation code below operates on the heat map lists to identify
-  * hot or cold data logical file ranges that are candidates for relocation.
-  * The triggering mechanism for relocation is controlled by a global heat
-- * threshold integer value (HOT_RELOC_THRESHOLD). Ranges are
-+ * threshold integer value (sysctl_hot_reloc_thresh). Ranges are
-  * queued for relocation by the periodically executing relocate kthread,
-  * which updates the global heat threshold and responds to space pressure
-  * on the nonrotating disks.
-@@ -53,6 +53,15 @@
-  * (assuming, critically, the HOT_MOVE option is set at mount time).
-  */
- 
-+int sysctl_hot_reloc_thresh = 150;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_thresh);
-+
-+int sysctl_hot_reloc_interval __read_mostly = 120;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_interval);
-+
-+int sysctl_hot_reloc_max_items __read_mostly = 250;
-+EXPORT_SYMBOL_GPL(sysctl_hot_reloc_max_items);
-+
- /*
-  * Returns the ratio of nonrotating disks that are full.
-  * If no nonrotating disk is found, returns THRESH_MAX_VALUE + 1.
-@@ -103,7 +112,7 @@ static int hot_calc_nonrot_ratio(struct hot_reloc *hot_reloc)
- static int hot_update_threshold(struct hot_reloc *hot_reloc,
- 				int update)
- {
--	int thresh = hot_reloc->thresh;
-+	int thresh = sysctl_hot_reloc_thresh;
- 	int ratio = hot_calc_nonrot_ratio(hot_reloc);
- 
- 	/* Sometimes update global threshold, others not */
-@@ -127,7 +136,7 @@ static int hot_update_threshold(struct hot_reloc *hot_reloc,
- 			thresh = 0;
- 	}
- 
--	hot_reloc->thresh = thresh;
-+	sysctl_hot_reloc_thresh = thresh;
- 	return ratio;
- }
- 
-@@ -215,7 +224,7 @@ static int hot_queue_extent(struct hot_reloc *hot_reloc,
- 			*counter = *counter + 1;
- 		}
- 
--		if (*counter >= HOT_RELOC_MAX_ITEMS)
-+		if (*counter >= sysctl_hot_reloc_max_items)
- 			break;
- 
- 		if (kthread_should_stop()) {
-@@ -293,7 +302,7 @@ again:
- 		while (1) {
- 			lock_extent(tree, page_start, page_end);
- 			ordered = btrfs_lookup_ordered_extent(inode,
--							page_start);
-+							      page_start);
- 			unlock_extent(tree, page_start, page_end);
- 			if (!ordered)
- 				break;
-@@ -559,7 +568,7 @@ void hot_do_relocate(struct hot_reloc *hot_reloc)
- 
- 	run++;
- 	ratio = hot_update_threshold(hot_reloc, !(run % 15));
--	thresh = hot_reloc->thresh;
-+	thresh = sysctl_hot_reloc_thresh;
- 
- 	INIT_LIST_HEAD(&hot_reloc->hot_relocq[TYPE_NONROT]);
- 
-@@ -569,7 +578,7 @@ void hot_do_relocate(struct hot_reloc *hot_reloc)
- 	if (count_to_hot == 0)
- 		return;
- 
--	count_to_cold = HOT_RELOC_MAX_ITEMS;
-+	count_to_cold = sysctl_hot_reloc_max_items;
- 
- 	/* Don't move cold data to HDD unless there's space pressure */
- 	if (ratio < HIGH_WATER_LEVEL)
-@@ -653,7 +662,7 @@ static int hot_relocate_kthread(void *arg)
- 	unsigned long delay;
- 
- 	do {
--		delay = HZ * HOT_RELOC_INTERVAL;
-+		delay = HZ * sysctl_hot_reloc_interval;
- 		if (mutex_trylock(&hot_reloc->hot_reloc_mutex)) {
- 			hot_do_relocate(hot_reloc);
- 			mutex_unlock(&hot_reloc->hot_reloc_mutex);
-@@ -685,7 +694,6 @@ int hot_relocate_init(struct btrfs_fs_info *fs_info)
- 
- 	fs_info->hot_reloc = hot_reloc;
- 	hot_reloc->fs_info = fs_info;
--	hot_reloc->thresh = HOT_RELOC_THRESHOLD;
- 	for (i = 0; i < MAX_RELOC_TYPES; i++)
- 		INIT_LIST_HEAD(&hot_reloc->hot_relocq[i]);
- 	mutex_init(&hot_reloc->hot_reloc_mutex);
-diff --git a/fs/btrfs/hot_relocate.h b/fs/btrfs/hot_relocate.h
-index 1b1cfb5..94defe6 100644
---- a/fs/btrfs/hot_relocate.h
-+++ b/fs/btrfs/hot_relocate.h
-@@ -18,10 +18,6 @@
- #include "btrfs_inode.h"
- #include "volumes.h"
- 
--#define HOT_RELOC_INTERVAL  120
--#define HOT_RELOC_THRESHOLD 150
--#define HOT_RELOC_MAX_ITEMS 250
--
- #define HEAT_MAX_VALUE    (MAP_SIZE - 1)
- #define HIGH_WATER_LEVEL  75 /* when to raise the threshold */
- #define LOW_WATER_LEVEL   50 /* when to lower the threshold */
-@@ -32,7 +28,6 @@
- struct hot_reloc {
- 	struct btrfs_fs_info *fs_info;
- 	struct list_head hot_relocq[MAX_RELOC_TYPES];
--	int thresh;
- 	struct task_struct *hot_reloc_kthread;
- 	struct mutex hot_reloc_mutex;
- };
-diff --git a/include/linux/btrfs.h b/include/linux/btrfs.h
-index 22d7991..a713514 100644
---- a/include/linux/btrfs.h
-+++ b/include/linux/btrfs.h
-@@ -3,4 +3,8 @@
- 
- #include <uapi/linux/btrfs.h>
- 
-+extern int sysctl_hot_reloc_thresh;
-+extern int sysctl_hot_reloc_interval;
-+extern int sysctl_hot_reloc_max_items;
-+
- #endif /* _LINUX_BTRFS_H */
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 753585d..7050086 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -62,6 +62,7 @@
- #include <linux/capability.h>
- #include <linux/binfmts.h>
- #include <linux/sched/sysctl.h>
-+#include <linux/btrfs.h>
- 
- #include <asm/uaccess.h>
- #include <asm/processor.h>
-@@ -1637,6 +1638,27 @@ static struct ctl_table fs_table[] = {
- 		.mode		= 0644,
- 		.proc_handler	= proc_dointvec,
- 	},
-+	{
-+		.procname	= "hot-reloc-thresh",
-+		.data		= &sysctl_hot_reloc_thresh,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
-+	{
-+		.procname	= "hot-reloc-interval",
-+		.data		= &sysctl_hot_reloc_interval,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
-+	{
-+		.procname	= "hot-reloc-max-items",
-+		.data		= &sysctl_hot_reloc_max_items,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
- 	{ }
- };
- 
--- 
-1.7.11.7
+Jun 20 12:37:47 localhost kernel: INFO: task btrfs-cleaner:771 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: btrfs-cleaner   D ffff88011fc91740     0   771      2 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff88011aaff530 0000000000000002 ffff880119929fd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff880119929fd8 ffff88011aabddc0 ffff880119928000 ffff880119929cb8
+Jun 20 12:37:47 localhost kernel: ffff8800aaac22b4 ffff8800aaac22b0 0000000000000000 ffff8800aaac22b8
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff8109856d>] ? ondemand_readahead+0x15d/0x200
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff81171579>] ? btrfs_defrag_file+0x41a/0xa4e
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff81159eb9>] ? btrfs_run_defrag_inodes+0x1f7/0x2d3
+Jun 20 12:37:47 localhost kernel: [<ffffffff8115100e>] ? btrfs_run_delayed_iputs+0x44/0xbe
+Jun 20 12:37:47 localhost kernel: [<ffffffff811459d5>] ? cleaner_kthread+0x89/0xf3
+Jun 20 12:37:47 localhost kernel: [<ffffffff8114594c>] ? transaction_kthread+0x17a/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff81042c00>] ? kthread+0x7d/0x85
+Jun 20 12:37:47 localhost kernel: [<ffffffff81040000>] ? thaw_workqueues+0xd3/0xff
+Jun 20 12:37:47 localhost kernel: [<ffffffff81042b83>] ? __kthread_parkme+0x59/0x59
+Jun 20 12:37:47 localhost kernel: [<ffffffff8148942c>] ? ret_from_fork+0x7c/0xb0
+Jun 20 12:37:47 localhost kernel: [<ffffffff81042b83>] ? __kthread_parkme+0x59/0x59
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:2384 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc11740     0  2384   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8800c82dce20 0000000000000002 ffff8800c0c55fd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800c0c55fd8 ffffffff81a10400 ffff8800c0c54000 ffff8800c0c55e90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:2385 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc91740     0  2385   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8800c82dd5f0 0000000000000002 ffff8800c0d1dfd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800c0d1dfd8 ffff88011aabddc0 ffff8800c0d1c000 ffff8800c0d1de90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:2393 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc91740     0  2393   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8800c82df530 0000000000000002 ffff8800c0daffd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800c0daffd8 ffff88011aabddc0 ffff8800ddd9ade0 ffff88011816e1e8
+Jun 20 12:37:47 localhost kernel: 0000000000000000 0000000000000000 00000000003c0000 0000000000000000
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff8114aa11>] ? wait_current_trans.isra.19+0xaa/0xdc
+Jun 20 12:37:47 localhost kernel: [<ffffffff81043492>] ? finish_wait+0x60/0x60
+Jun 20 12:37:47 localhost kernel: [<ffffffff8114c663>] ? start_transaction+0x3b9/0x3e9
+Jun 20 12:37:47 localhost kernel: [<ffffffff8114d71b>] ? __unlink_start_trans+0x46/0x37f
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d9b18>] ? __d_lookup+0xdb/0xed
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d242d>] ? path_lookupat+0x6d/0x2a7
+Jun 20 12:37:47 localhost kernel: [<ffffffff811537be>] ? btrfs_unlink+0x1f/0x91
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3ee2>] ? vfs_unlink+0x61/0xa8
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d4000>] ? do_unlinkat+0xd7/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:2398 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff880106fc0000     0  2398   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff880106fc0000 0000000000000002 ffff8800c0fa3fd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800c0fa3fd8 ffff8800c82dd5f0 ffff8800c0fa2000 ffff8800c0fa3e90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:2400 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc91740     0  2400   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8800d8ebc650 0000000000000002 ffff8800bece9fd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800bece9fd8 ffff88011aabddc0 ffff8800bece8000 ffff8800bece9e90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:12930 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc91740     0 12930   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8800acf22710 0000000000000002 ffff8801018a1fd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8801018a1fd8 ffff88011aabddc0 ffff8801018a0000 ffff8801018a1e90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:18283 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc11740     0 18283   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff8801030f8000 0000000000000002 ffff8800a8a9dfd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff8800a8a9dfd8 ffffffff81a10400 ffff8800a8a9c000 ffff8800a8a9de90
+Jun 20 12:37:47 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:47 localhost kernel: Call Trace:
+Jun 20 12:37:47 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:47 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:47 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:47 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:47 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:47 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:47 localhost kernel: INFO: task konqueror:21478 blocked for more than 120 seconds.
+Jun 20 12:37:47 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:47 localhost kernel: konqueror       D ffff88011fc11740     0 21478   2133 0x00000000
+Jun 20 12:37:47 localhost kernel: ffff88011aafc650 0000000000000002 ffff88010852bfd8 0000000000011740
+Jun 20 12:37:47 localhost kernel: ffff88010852bfd8 ffffffff81a10400 ffff88010852a000 ffff88010852be90
+Jun 20 12:37:49 localhost kernel: ffff8800c40aeb44 ffff8800c40aeb40 0000000000000000 ffff8800c40aeb48
+Jun 20 12:37:49 localhost kernel: Call Trace:
+Jun 20 12:37:49 localhost kernel: [<ffffffff81487fd4>] ? schedule_preempt_disabled+0x19/0x1e
+Jun 20 12:37:49 localhost kernel: [<ffffffff81486fa1>] ? __mutex_lock_common.isra.9+0x19d/0x283
+Jun 20 12:37:49 localhost kernel: [<ffffffff81486dbf>] ? mutex_lock+0xe/0x1d
+Jun 20 12:37:49 localhost kernel: [<ffffffff810d3fb1>] ? do_unlinkat+0x88/0x17a
+Jun 20 12:37:49 localhost kernel: [<ffffffff814889b0>] ? _raw_spin_unlock+0x27/0x31
+Jun 20 12:37:49 localhost kernel: [<ffffffff8100ae75>] ? syscall_trace_enter+0xcf/0x145
+Jun 20 12:37:49 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
+Jun 20 12:37:49 localhost kernel: INFO: task bogofilter:21625 blocked for more than 120 seconds.
+Jun 20 12:37:49 localhost kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 20 12:37:49 localhost kernel: bogofilter      D ffff88011fc91740     0 21625      1 0x00000000
+Jun 20 12:37:49 localhost kernel: ffff88009f116d60 0000000000000002 ffff8800296e7fd8 0000000000011740
+Jun 20 12:37:49 localhost kernel: ffff8800296e7fd8 ffff88011aabddc0 ffff88004b568da8 ffff88002970a800
+Jun 20 12:37:49 localhost kernel: 0000000000000000 ffff8800aaa2a2e0 ffff8800aaa2a350 ffff88002970ac60
+Jun 20 12:37:49 localhost kernel: Call Trace:
+Jun 20 12:37:49 localhost kernel: [<ffffffff811763fd>] ? log_one_extent.isra.24+0x441/0x58b
+Jun 20 12:37:49 localhost kernel: [<ffffffff81043492>] ? finish_wait+0x60/0x60
+Jun 20 12:37:49 localhost kernel: [<ffffffff81177ee9>] ? btrfs_log_inode+0x5d0/0x71e
+Jun 20 12:37:49 localhost kernel: [<ffffffff811791f5>] ? btrfs_log_inode_parent+0x1f1/0x2dd
+Jun 20 12:37:49 localhost kernel: [<ffffffff81179c34>] ? btrfs_log_dentry_safe+0x31/0x45
+Jun 20 12:37:49 localhost kernel: [<ffffffff81158e69>] ? btrfs_sync_file+0x11a/0x1e2
+Jun 20 12:37:49 localhost kernel: [<ffffffff810e8211>] ? do_fsync+0x2b/0x50
+Jun 20 12:37:49 localhost kernel: [<ffffffff8148966c>] ? tracesys+0x7e/0xe2
+Jun 20 12:37:49 localhost kernel: [<ffffffff810e8402>] ? SyS_fdatasync+0xa/0xd
+Jun 20 12:37:49 localhost kernel: [<ffffffff814896cb>] ? tracesys+0xdd/0xe2
 
+After disabling autodefrag it didn't happen again. The kernel is the latest git.

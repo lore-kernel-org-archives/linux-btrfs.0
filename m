@@ -1,180 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f49.google.com ([209.85.214.49]:35037 "EHLO
-	mail-bk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965720Ab3FTRIb (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47419 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161419Ab3FUQD5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Jun 2013 13:08:31 -0400
-Received: by mail-bk0-f49.google.com with SMTP id mz10so2987930bkb.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 10:08:30 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1370893895-24884-6-git-send-email-fdmanana@gmail.com>
+	Fri, 21 Jun 2013 12:03:57 -0400
+Date: Sat, 22 Jun 2013 00:03:48 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5 v2] Btrfs-progs: fix closing of devices
+Message-ID: <20130621160347.GB30620@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
-	<1370893895-24884-6-git-send-email-fdmanana@gmail.com>
-Date: Thu, 20 Jun 2013 18:08:29 +0100
-Message-ID: <CAL3q7H46KuUFpYpGZ1S_d2MtarOTzqQf4KuqoRTz8xQM4dZD6w@mail.gmail.com>
-Subject: Re: [PATCH 5/5] Btrfs-progs: Validate super block checksum
-From: Filipe David Manana <fdmanana@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>
-Content-Type: text/plain; charset=UTF-8
+ <1370908356-31792-1-git-send-email-fdmanana@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1370908356-31792-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ping.
+On Tue, Jun 11, 2013 at 12:52:36AM +0100, Filipe David Borba Manana wrote:
+> If a device could not be opened in volumes.c:read_one_dev(), a
+> btrfs_device instance was allocated and added to the list of
+> devices of the fs - however this device instance had its fd,
+> name and label fields not initialized. This is problematic in
+> disk-io.c:close_all_devices() as it tried to sync, fadvise and
+> close the (invalid) fd of the device, and kfree() its name and
+> label, which pointed to random memory locations.
+> 
+>   Thread 1 (Thread 0x7f0a3d2d1740 (LWP 23585)):
+>   #0  __GI___libc_free (mem=0xa5a5a5a5a5a5a5a5) at malloc.c:2970
+>   #1  0x000000000042054b in close_all_devices (fs_info=0x1e92bf0) at disk-io.c:1276
+>   #2  0x0000000000421dcd in close_ctree (root=<optimized out>) at disk-io.c:1336
+>   #3  0x0000000000418cfa in cmd_check (argc=<optimized out>, argv=<optimized out>) at cmds-check.c:4171
+>   #4  0x0000000000403ed4 in main (argc=2, argv=0x7fff9a583d28) at btrfs.c:295
 
-Is there any reason why the btrfs progs (except for btrfs-show-super)
-don't validate the super block's checksum?
+Good catch!  This addresses one of my problems.
 
-thanks
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-On Mon, Jun 10, 2013 at 8:51 PM, Filipe David Borba Manana
-<fdmanana@gmail.com> wrote:
-> After finding a super block in a device also validate its
-> checksum. This validation is done in the kernel but it was
-> missing in btrfs-progs.
->
-> The function btrfs_check_super_csum() is imported from the
-> file fs/btrfs/disk-io.c in the kernel source tree.
->
+thanks,
+liubo
+
+> 
 > Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 > ---
->  disk-io.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++------------
->  1 file changed, 62 insertions(+), 14 deletions(-)
->
+>  disk-io.c |    4 ++--
+>  volumes.c |    5 +++--
+>  2 files changed, 5 insertions(+), 4 deletions(-)
+> 
 > diff --git a/disk-io.c b/disk-io.c
-> index bd9cf4e..edd4d52 100644
+> index 21b410d..bd9cf4e 100644
 > --- a/disk-io.c
 > +++ b/disk-io.c
-> @@ -1085,47 +1085,95 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
->         return info->fs_root;
->  }
->
-> +static int btrfs_check_super_csum(char *raw_disk_sb)
-> +{
-> +       struct btrfs_super_block *disk_sb =
-> +               (struct btrfs_super_block *)raw_disk_sb;
-> +       u16 csum_type = btrfs_super_csum_type(disk_sb);
-> +       int ret = 0;
-> +
-> +       if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
-> +               u32 crc = ~(u32)0;
-> +               const int csum_size = sizeof(crc);
-> +               char result[csum_size];
-> +
-> +               /*
-> +                * The super_block structure does not span the whole
-> +                * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
-> +                * is filled with zeros and is included in the checkum.
-> +                */
-> +               crc = btrfs_csum_data(NULL, raw_disk_sb + BTRFS_CSUM_SIZE,
-> +                               crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-> +               btrfs_csum_final(crc, result);
-> +
-> +               if (memcmp(raw_disk_sb, result, csum_size))
-> +                       ret = 1;
-> +
-> +               if (ret && btrfs_super_generation(disk_sb) < 10) {
-> +                       fprintf(stderr, "btrfs: super block crcs don't match, "
-> +                               "older mkfs detected\n");
-> +                       ret = 0;
-> +               }
-> +       }
-> +
-> +       if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
-> +               fprintf(stderr, "btrfs: unsupported checksum algorithm %u\n",
-> +                       csum_type);
-> +               ret = 1;
-> +       }
-> +
-> +       return ret;
-> +}
-> +
->  int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
->  {
->         u8 fsid[BTRFS_FSID_SIZE];
->         int fsid_is_initialized = 0;
-> -       struct btrfs_super_block buf;
-> +       char buf[BTRFS_SUPER_INFO_SIZE];
-> +       struct btrfs_super_block *tmp_sb;
->         int i;
->         int ret;
->         u64 transid = 0;
->         u64 bytenr;
->
->         if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
-> -               ret = pread64(fd, &buf, sizeof(buf), sb_bytenr);
-> +               ret = pread64(fd, buf, sizeof(buf), sb_bytenr);
->                 if (ret < sizeof(buf))
->                         return -1;
->
-> -               if (btrfs_super_bytenr(&buf) != sb_bytenr ||
-> -                   buf.magic != cpu_to_le64(BTRFS_MAGIC))
-> +               tmp_sb = (struct btrfs_super_block *)buf;
-> +
-> +               if (btrfs_super_bytenr(tmp_sb) != sb_bytenr ||
-> +                   tmp_sb->magic != cpu_to_le64(BTRFS_MAGIC) ||
-> +                   btrfs_check_super_csum(buf))
->                         return -1;
->
-> -               memcpy(sb, &buf, sizeof(*sb));
-> +               memcpy(sb, buf, sizeof(*sb));
->                 return 0;
->         }
->
->         for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
->                 bytenr = btrfs_sb_offset(i);
-> -               ret = pread64(fd, &buf, sizeof(buf), bytenr);
-> +               ret = pread64(fd, buf, sizeof(buf), bytenr);
->                 if (ret < sizeof(buf))
->                         break;
->
-> -               if (btrfs_super_bytenr(&buf) != bytenr )
-> +               tmp_sb = (struct btrfs_super_block *)buf;
-> +
-> +               if (btrfs_super_bytenr(tmp_sb) != bytenr )
->                         continue;
->                 /* if magic is NULL, the device was removed */
-> -               if (buf.magic == 0 && i == 0)
-> +               if (tmp_sb->magic == 0 && i == 0)
->                         return -1;
-> -               if (buf.magic != cpu_to_le64(BTRFS_MAGIC))
-> +               if (tmp_sb->magic != cpu_to_le64(BTRFS_MAGIC))
-> +                       continue;
-> +               if (btrfs_check_super_csum(buf))
->                         continue;
->
->                 if (!fsid_is_initialized) {
-> -                       memcpy(fsid, buf.fsid, sizeof(fsid));
-> +                       memcpy(fsid, tmp_sb->fsid, sizeof(fsid));
->                         fsid_is_initialized = 1;
-> -               } else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
-> +               } else if (memcmp(fsid, tmp_sb->fsid, sizeof(fsid))) {
->                         /*
->                          * the superblocks (the original one and
->                          * its backups) contain data of different
-> @@ -1134,9 +1182,9 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
->                         continue;
->                 }
->
-> -               if (btrfs_super_generation(&buf) > transid) {
-> -                       memcpy(sb, &buf, sizeof(*sb));
-> -                       transid = btrfs_super_generation(&buf);
-> +               if (btrfs_super_generation(tmp_sb) > transid) {
-> +                       memcpy(sb, buf, sizeof(*sb));
-> +                       transid = btrfs_super_generation(tmp_sb);
->                 }
->         }
->
-> --
+> @@ -1267,12 +1267,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
+>  	while (!list_empty(list)) {
+>  		device = list_entry(list->next, struct btrfs_device, dev_list);
+>  		list_del_init(&device->dev_list);
+> -		if (device->fd) {
+> +		if (device->fd >= 0) {
+>  			fsync(device->fd);
+>  			if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
+>  				fprintf(stderr, "Warning, could not drop caches\n");
+> +			close(device->fd);
+>  		}
+> -		close(device->fd);
+>  		kfree(device->name);
+>  		kfree(device->label);
+>  		kfree(device);
+> diff --git a/volumes.c b/volumes.c
+> index d6f81f8..061f094 100644
+> --- a/volumes.c
+> +++ b/volumes.c
+> @@ -116,6 +116,7 @@ static int device_list_add(const char *path,
+>  			/* we can safely leave the fs_devices entry around */
+>  			return -ENOMEM;
+>  		}
+> +		device->fd = -1;
+>  		device->devid = devid;
+>  		memcpy(device->uuid, disk_super->dev_item.uuid,
+>  		       BTRFS_UUID_SIZE);
+> @@ -1628,10 +1629,10 @@ static int read_one_dev(struct btrfs_root *root,
+>  	if (!device) {
+>  		printk("warning devid %llu not found already\n",
+>  			(unsigned long long)devid);
+> -		device = kmalloc(sizeof(*device), GFP_NOFS);
+> +		device = kzalloc(sizeof(*device), GFP_NOFS);
+>  		if (!device)
+>  			return -ENOMEM;
+> -		device->total_ios = 0;
+> +		device->fd = -1;
+>  		list_add(&device->dev_list,
+>  			 &root->fs_info->fs_devices->devices);
+>  	}
+> -- 
 > 1.7.9.5
->
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

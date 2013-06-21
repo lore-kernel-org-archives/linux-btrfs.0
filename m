@@ -1,25 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:44283 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161432Ab3FUQLl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Jun 2013 12:11:41 -0400
-Date: Fri, 21 Jun 2013 09:11:38 -0700
-From: Zach Brown <zab@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5 1/8] Btrfs: introduce a tree for items that map UUIDs
- to something
-Message-ID: <20130621161138.GA25321@lenny.home.zabbo.net>
+Received: from dkim1.fusionio.com ([66.114.96.53]:46107 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161432Ab3FUQUZ convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Jun 2013 12:20:25 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 9B8BA7C0693
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 10:20:24 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+To: Stefan Behrens <sbehrens@giantdisaster.de>, Zach Brown <zab@redhat.com>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <51C41318.8070703@giantdisaster.de>
+CC: <linux-btrfs@vger.kernel.org>
 References: <cover.1371749051.git.sbehrens@giantdisaster.de>
  <ef484aa41751485fc6301ce78b5e3cddaa3f9a52.1371749051.git.sbehrens@giantdisaster.de>
  <20130620194704.GC32674@lenny.home.zabbo.net>
  <51C41318.8070703@giantdisaster.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51C41318.8070703@giantdisaster.de>
+Message-ID: <20130621162022.4477.20734@localhost.localdomain>
+Subject: Re: [PATCH v5 1/8] Btrfs: introduce a tree for items that map UUIDs to
+ something
+Date: Fri, 21 Jun 2013 12:20:22 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Quoting Stefan Behrens (2013-06-21 04:47:20)
+> On Thu, 20 Jun 2013 12:47:04 -0700, Zach Brown wrote:
+> > 
+> >> +/* for items that use the BTRFS_UUID_KEY */
+> >> +#define BTRFS_UUID_ITEM_TYPE_SUBVOL 0 /* for UUIDs assigned to subvols */
+> >> +#define BTRFS_UUID_ITEM_TYPE_RECEIVED_SUBVOL        1 /* for UUIDs assigned to
+> >> +                                               * received subvols */
+> >> +
+> >> +/* a sequence of such items is stored under the BTRFS_UUID_KEY */
+> >> +struct btrfs_uuid_item {
+> >> +    __le16 type;    /* refer to BTRFS_UUID_ITEM_TYPE* defines above */
+> >> +    __le32 len;     /* number of following 64bit values */
+> >> +    __le64 subid[0];        /* sequence of subids */
+> >> +} __attribute__ ((__packed__));
+> >> +
+> > 
+> > [...]
+> > 
+> >>  /*
+> >> + * Stores items that allow to quickly map UUIDs to something else.
+> >> + * These items are part of the filesystem UUID tree.
+> >> + * The key is built like this:
+> >> + * (UUID_upper_64_bits, BTRFS_UUID_KEY, UUID_lower_64_bits).
+> >> + */
+> >> +#if BTRFS_UUID_SIZE != 16
+> >> +#error "UUID items require BTRFS_UUID_SIZE == 16!"
+> >> +#endif
+> >> +#define BTRFS_UUID_KEY      251
+> > 
 > > Why do we need this btrfs_uuid_item structure?  Why not set the key type
 > > to either _SUBVOL or _RECEIVED_SUBVOL instead of embedding structs with
 > > those types under items with the constant BTRFS_UUID_KEY.  Then use the
@@ -45,41 +78,11 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > 
 > Anybody else with an opinion for this topic?
 
-Perhaps obviously, I'm strongly in favour of not rolling another layer
-of indirection inside the items, especially when the code to implement
-it is full of fragile pointer math.
+I've been thinking about this, and while I clearly did not have this use
+of uuids in mind originally, they have become a key part of the FS.  They
+deserve their own bits in the type field.
 
-> >> +	offset = (unsigned long)ptr;
-> >> +	while (sub_item_len > 0) {
-> >> +		u64 data;
-> >> +
-> >> +		read_extent_buffer(eb, &data, offset, sizeof(data));
-> >> +		data = le64_to_cpu(data);
-> >> +		if (data == subid) {
-> >> +			ret = 0;
-> >> +			break;
-> >> +		}
-> >> +		offset += sizeof(data);
-> >> +		sub_item_len--;
-> >> +	}
-> > 
-> > This could be cleaned up a bit by comparing an on-stack little-endian
-> > input subid with each little-endian subid in the item with
-> > memcmp_extent_buffer().
-> 
-> This would save some CPU cycles for the repeated le64_to_cpu() and for
-> the memcpy(). The number of lines of code is equal for both ways.
+I know this is not an easy thing to redo, but long term it really looks
+worth it to me.
 
-Hmm?  It would be many fewer lines of code.
-
-> read_extent_buffer() way is more straight forward and readable IMO.
-
-> > How does this extension avoid the BUG when the leaf containing the item
-> > doesn't have room for the new subid?
-> 
-> btrfs_extend_item() does not BUG() when you have called
-> btrfs_search_slot() before with ins_len > 0.
-
-Ah, got it.  Thanks.
-
-- z
+-chris

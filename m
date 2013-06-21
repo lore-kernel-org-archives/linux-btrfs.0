@@ -1,37 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49325 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1422757Ab3FUFkO convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Jun 2013 01:40:14 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.3 \(1503\))
-Subject: Re: hang on 3.9, 3.10-rc5
-From: Chris Murphy <lists@colorremedies.com>
+Received: from mail-ve0-f175.google.com ([209.85.128.175]:38781 "EHLO
+	mail-ve0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161442Ab3FUGm4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Jun 2013 02:42:56 -0400
+Received: by mail-ve0-f175.google.com with SMTP id da11so5985422veb.34
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2013 23:42:56 -0700 (PDT)
+MIME-Version: 1.0
 In-Reply-To: <CAKuK5J3TBDNgHJ_YUWupB4rO_ixG0LnZFE=K5Uo5Wbo=76rT+A@mail.gmail.com>
-Date: Thu, 20 Jun 2013 23:40:06 -0600
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <9CF14E27-2366-4C12-8DAF-DAC618C172B2@colorremedies.com>
-References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net> <20130618163706.GC19183@localhost.localdomain> <loom.20130618T190955-784@post.gmane.org> <20130621011137.4477.1347@localhost.localdomain> <CAKuK5J3TBDNgHJ_YUWupB4rO_ixG0LnZFE=K5Uo5Wbo=76rT+A@mail.gmail.com>
-To: Jon Nelson <jnelson@jamponi.net>
+References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net>
+	<20130618163706.GC19183@localhost.localdomain>
+	<loom.20130618T190955-784@post.gmane.org>
+	<20130621011137.4477.1347@localhost.localdomain>
+	<CAKuK5J3TBDNgHJ_YUWupB4rO_ixG0LnZFE=K5Uo5Wbo=76rT+A@mail.gmail.com>
+Date: Fri, 21 Jun 2013 08:42:55 +0200
+Message-ID: <CAFvQSYSq9M5bTLeO-EfrEy_LKKFq7rWsc8T25_Nj2kOSRmoCFg@mail.gmail.com>
+Subject: Re: hang on 3.9, 3.10-rc5
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Jun 20, 2013, at 7:46 PM, Jon Nelson <jnelson@jamponi.net> wrote:
+Hi Jon,
 
 > Is this what you are looking for?
+> After this, the CPU gets "stuck" and I have to reboot.
 
-If you're able to reproduce while you're remoted in via ssh, then if you get the dmesg at least you won't have to spend time trying to save it somewhere since you'll have it on the remote system's terminal window.
+This issue has already been reported:
+https://bugzilla.kernel.org/show_bug.cgi?id=59451
 
-https://www.kernel.org/doc/Documentation/sysrq.txt
-
-So basically:
-echo w > /proc/sysrq-trigger
-dmesg
-
-
-
-
-Chris Murphy
-
+Regards, Clemens

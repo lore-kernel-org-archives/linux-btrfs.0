@@ -1,74 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:63663 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751595Ab3FYNCV (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45469 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161313Ab3FUHyA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Jun 2013 09:02:21 -0400
-Received: by mail-pa0-f41.google.com with SMTP id bj3so12636646pad.14
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 06:02:21 -0700 (PDT)
-Message-ID: <51C994D5.3070509@gmail.com>
-Date: Tue, 25 Jun 2013 21:02:13 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: avoid memory leak in btrfs_close_devices
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Fri, 21 Jun 2013 03:54:00 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5L7lf7s023528
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 07:47:42 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5L7rwBU004051
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 07:53:59 GMT
+Received: from abhmt103.oracle.com (abhmt103.oracle.com [141.146.116.55])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5L7rwFY004041
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2013 07:53:58 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 00/13] Introduce show --kernel
+Date: Fri, 21 Jun 2013 15:58:00 +0800
+Message-Id: <1371801485-14571-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Three kind of structures need to be freed on close:
-      * All struct btrfs_device managed by fs_devices
-      * The name field for each struct btrfs_device
-      * The above items for seed_devices
+ In an attempt to address the reviewer concern, and to
+ find a suitable solution to the btrfs-progs not been
+ able to in sync with the kernel changes, found a 
+ solution which doesn't introduce new ioctl.
+ 
+ Along with it comes with new set of the dependent
+ patches viz 09/13 to 12/13. below.
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
-  volumes.c |   16 +++++++++++++---
-  1 file changed, 13 insertions(+), 3 deletions(-)
+  btrfs-progs: function to release a specific fsid from the list
+  btrfs-progs: move out print in cmd_df to another function
+  btrfs-progs: get string for the group profile and type
+  btrfs-progs: obtain used_bytes in BTRFS_IOC_FS_INFO ioctl
 
-diff --git a/volumes.c b/volumes.c
-index d6f81f8..257b740 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -153,6 +153,16 @@ static int device_list_add(const char *path,
-  	return 0;
-  }
+Anand Jain (13):
+  btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
+  btrfs-progs: label option in btrfs filesystem show is not coded
+  btrfs-progs: update device scan usage
+  btrfs-progs: congregate dev scan
+  btrfs-progs: btrfs_scan_one_dir not to skip links when /dev/mapper is
+    provided
+  btrfs-progs: scan /dev/mapper in filesystem show and device scan
+  btrfs-progs: device delete to get errors from the kernel
+  btrfs-progs: get_label_mounted to return label instead of print
+  btrfs-progs: function to release a specific fsid from the list
+  btrfs-progs: move out print in cmd_df to another function
+  btrfs-progs: get string for the group profile and type
+  btrfs-progs: obtain used_bytes in BTRFS_IOC_FS_INFO ioctl
+  btrfs-progs: introduce btrfs filesystem show --kernel
 
-+static void btrfs_close_device(struct btrfs_device *device)
-+{
-+	close(device->fd);
-+	device->fd = -1;
-+	device->writeable = 0;
-+	if (device->name)
-+		kfree(device->name);
-+	kfree(device);
-+}
-+
-  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
-  {
-  	struct btrfs_fs_devices *seed_devices;
-@@ -161,17 +171,17 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
-  again:
-  	list_for_each(cur, &fs_devices->devices) {
-  		device = list_entry(cur, struct btrfs_device, dev_list);
--		close(device->fd);
--		device->fd = -1;
--		device->writeable = 0;
-+		btrfs_close_device(device);
-  	}
+ btrfs-find-root.c |   2 +-
+ cmds-device.c     |  29 ++++---
+ cmds-filesystem.c | 227 ++++++++++++++++++++++++++++++++++--------------------
+ ctree.h           |  11 +++
+ disk-io.c         |   2 +-
+ ioctl.h           |  46 ++++++++++-
+ man/btrfs.8.in    |  16 ++--
+ utils.c           |  56 +++++++++++---
+ utils.h           |  10 ++-
+ volumes.c         |  48 +++++++++++-
+ volumes.h         |   5 ++
+ 11 files changed, 331 insertions(+), 121 deletions(-)
 
-  	seed_devices = fs_devices->seed;
-  	fs_devices->seed = NULL;
-  	if (seed_devices) {
-+		kfree(fs_devices);
-  		fs_devices = seed_devices;
-  		goto again;
-  	}
-+	kfree(fs_devices);
-
-  	return 0;
-  }
 -- 
-1.7.10.4
+1.8.1.227.g44fe835
 

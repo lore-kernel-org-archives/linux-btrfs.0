@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48898 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750813Ab3FVFdD (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36205 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750753Ab3FVFdE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Jun 2013 01:33:03 -0400
+	Sat, 22 Jun 2013 01:33:04 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: chris.mason@fusionio.com
-Subject: [PATCH 2/5] Btrfs-progs: skip open devices which is missing
-Date: Sat, 22 Jun 2013 13:32:42 +0800
-Message-Id: <1371879165-4993-3-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 3/5] Btrfs-progs: delete fs_devices itself from fs_uuid list before freeing
+Date: Sat, 22 Jun 2013 13:32:43 +0800
+Message-Id: <1371879165-4993-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1371879165-4993-1-git-send-email-bo.li.liu@oracle.com>
 References: <1371879165-4993-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A device can be added to the device list without getting a name, so we may
-access to illegal addresses while opening devices with their name.
+Otherwise we will access illegal addresses while searching on fs_uuid list.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- volumes.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ disk-io.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index e7923ee..f9ac2af 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -186,6 +186,10 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices, int flags)
- 
- 	list_for_each(cur, head) {
- 		device = list_entry(cur, struct btrfs_device, dev_list);
-+		if (!device->name) {
-+			printk("no name for device %llu, skip it now\n", device->devid);
-+			continue;
-+		}
- 
- 		fd = open(device->name, flags);
- 		if (fd < 0) {
+diff --git a/disk-io.c b/disk-io.c
+index 768adda..9cfd003 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1280,6 +1280,7 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
+ 		kfree(device->label);
+ 		kfree(device);
+ 	}
++	list_del(&fs_info->fs_devices->list);
+ 	kfree(fs_info->fs_devices);
+ 	return 0;
+ }
 -- 
 1.7.7
 

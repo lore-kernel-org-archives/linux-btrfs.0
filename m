@@ -1,38 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36205 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:36214 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750753Ab3FVFdE (ORCPT
+	with ESMTP id S1750821Ab3FVFdG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Jun 2013 01:33:04 -0400
+	Sat, 22 Jun 2013 01:33:06 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: chris.mason@fusionio.com
-Subject: [PATCH 3/5] Btrfs-progs: delete fs_devices itself from fs_uuid list before freeing
-Date: Sat, 22 Jun 2013 13:32:43 +0800
-Message-Id: <1371879165-4993-4-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 4/5] Btrfs-progs: cleanup btrfs-image usage
+Date: Sat, 22 Jun 2013 13:32:44 +0800
+Message-Id: <1371879165-4993-5-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1371879165-4993-1-git-send-email-bo.li.liu@oracle.com>
 References: <1371879165-4993-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Otherwise we will access illegal addresses while searching on fs_uuid list.
+A '\n' is missing.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- disk-io.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ btrfs-image.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index 768adda..9cfd003 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1280,6 +1280,7 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
- 		kfree(device->label);
- 		kfree(device);
- 	}
-+	list_del(&fs_info->fs_devices->list);
- 	kfree(fs_info->fs_devices);
- 	return 0;
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 30c1a9a..ebd283e 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -2272,7 +2272,7 @@ static void print_usage(void)
+ 	fprintf(stderr, "\t-c value\tcompression level (0 ~ 9)\n");
+ 	fprintf(stderr, "\t-t value\tnumber of threads (1 ~ 32)\n");
+ 	fprintf(stderr, "\t-o      \tdon't mess with the chunk tree when restoring\n");
+-	fprintf(stderr, "\t-s      \tsanitize file names, use once to just use garbage, use twice if you want crc collisions");
++	fprintf(stderr, "\t-s      \tsanitize file names, use once to just use garbage, use twice if you want crc collisions\n");
+ 	fprintf(stderr, "\t-w      \twalk all trees instead of using extent tree, do this if your extent tree is broken\n");
+ 	exit(1);
  }
 -- 
 1.7.7

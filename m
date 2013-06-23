@@ -1,55 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:44524 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750803Ab3FWSwQ (ORCPT
+Received: from mail1207.opentransfer.com ([98.130.1.227]:39995 "EHLO
+	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751690Ab3FWWsQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Jun 2013 14:52:16 -0400
-Received: by mail-wg0-f52.google.com with SMTP id b12so7843216wgh.7
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Jun 2013 11:52:14 -0700 (PDT)
-MIME-Version: 1.0
-Date: Sun, 23 Jun 2013 21:52:14 +0300
-Message-ID: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
-Subject: question about transaction-abort-related commits
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Josef Bacik <jbacik@fusionio.com>, bo.li.liu@oracle.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Sun, 23 Jun 2013 18:48:16 -0400
+Message-ID: <1372027293.1052.12.camel@miguel-MacBookPro>
+Subject: btrfs send/receive issues
+From: Miguel =?ISO-8859-1?Q?Negr=E3o?=
+	<miguel.negrao-lists@friendlyvirus.org>
+To: linux-btrfs@vger.kernel.org
+Date: Sun, 23 Jun 2013 23:41:33 +0100
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef, Liu,
-I am reviewing commits in the mainline tree:
+Hi,
 
-e4a2bcaca9643e7430207810653222fc5187f2be Btrfs: if we aren't
-committing just end the transaction if we error out
-(call end_transaction() instead of goto cleanup_transaction) - Josef
+I want to do a backup of a btrfs subvolume from one disk to another
+disk, both with btrfs filesystems, using the btrfs  send receive
+functionality. I do 
 
-f094ac32aba3a51c00e970a2ea029339af2ca048 Btrfs: fix NULL pointer after
-aborting a transaction
-(wait until all writers detach, before setting running_transaction to
-NULL) - Liu
+cd /media/miguel/btrfs_backup/
+mkdir backups
+sudo btrfs send /mnt/@backup2 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
 
-66b6135b7cf741f6f44ba938b27583ea3b83bd12 Btrfs: avoid deadlock on
-transaction waiting list
-(check if transaction was already removed from the transactions list) - Liu
+and this works fine, the @backup2 subvolume is created
+at /media/miguel/btrfs_backup/backups/. Then I try to send a second
+snapshot taken after @backup2 :
 
-Josef, according to your fix, if the committer encounters a problem
-early, it just doesn't commit. Instead it aborts the transaction
-(possibly setting FS to read-only) and detaches from the transaction.
-So if this was the only committer (e.g., the transaction_kthread),
-then transaction commit will not happen at all. Is this what you
-intended? So then the user will notice that FS went read-only, and she
-will unmount the FS, and transaction will be cleaned up in
-btrfs_error_commit_super()=>btrfs_cleanup_transaction(), and not in
-cleanup_transaction() via btrfs_commit_transaction(). Is my
-understanding correct?
+sudo btrfs send -p /mnt/@backup2 /mnt/@backup3 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
 
-Liu, it looks like after having Josef's fix, the above two commits of
-yours are not strictly needed, right? Because Josef's fix ensures that
-only the "real" committer will call cleanup_transaction(), so at this
-point there is only one writer attached to the transaction, which is
-the committer itself (your fixes doesn't hurt though). Is that
-correct?
+And I get:
 
-Thanks for helping,
-Alex.
+At subvol /mnt/@backup3
+At snapshot @backup3
+ERROR: open backups/@backup2 failed. No such file or directory
+
+But @backup2 is a subvolume in /media/miguel/btrfs_backup/backups/ 
+
+I'm I doing something wrong ?
+
+best,
+-- 
+Miguel Negrão
+http://www.friendlyvirus.org/miguelnegrao
+
+
+

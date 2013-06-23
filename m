@@ -1,46 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from li9-11.members.linode.com ([67.18.176.11]:60519 "EHLO
-	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750784Ab3FWSlL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Jun 2013 14:41:11 -0400
-Date: Sun, 23 Jun 2013 14:40:51 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Joe Perches <joe@perches.com>
-Cc: Jiri Kosina <trivial@kernel.org>,
-        Lars Ellenberg <drbd-dev@lists.linbit.com>,
-        Hoang-Nam Nguyen <hnguyen@de.ibm.com>,
-        Christoph Raisch <raisch@de.ibm.com>,
-        Roland Dreier <roland@kernel.org>, Sean Hefty <sean.hefty@intel.com>,
-        Hal Rosenstock <hal.rosenstock@gmail.com>,
-        Divy Le Ray <divy@chelsio.com>, Dimitris Michailidis <dm@chelsio.com>,
-        "James E.J. Bottomley" <JBottomley@parallels.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Steven Whitehouse <swhiteho@redhat.com>,
-        Jamal Hadi Salim <jhs@mojatatu.com>,
-        "David S. Miller" <davem@davemloft.net>, drbd-user@lists.linbit.com,
-        linux-kernel@vger.kernel.org, linux-rdma@vger.kernel.org,
-        netdev@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        cluster-devel <cluster-devel@redhat.com>
-Subject: Re: [trivial] treewide: Add __GFP_NOWARN to k.alloc calls with
- v.alloc fallbacks
-Message-ID: <20130623184051.GA13222@thunk.org>
-References: <1371669353.2038.45.camel@joe-AO722>
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:44524 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750803Ab3FWSwQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Jun 2013 14:52:16 -0400
+Received: by mail-wg0-f52.google.com with SMTP id b12so7843216wgh.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Jun 2013 11:52:14 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1371669353.2038.45.camel@joe-AO722>
+Date: Sun, 23 Jun 2013 21:52:14 +0300
+Message-ID: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
+Subject: question about transaction-abort-related commits
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Josef Bacik <jbacik@fusionio.com>, bo.li.liu@oracle.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 19, 2013 at 12:15:53PM -0700, Joe Perches wrote:
-> Don't emit OOM warnings when k.alloc calls fail when
-> there there is a v.alloc immediately afterwards.
-> 
-> Signed-off-by: Joe Perches <joe@perches.com>
+Hello Josef, Liu,
+I am reviewing commits in the mainline tree:
 
-For fs/ext4/super.c:
+e4a2bcaca9643e7430207810653222fc5187f2be Btrfs: if we aren't
+committing just end the transaction if we error out
+(call end_transaction() instead of goto cleanup_transaction) - Josef
 
-Acked-by: "Theodore Ts'o" <tytso@mit.edu>
+f094ac32aba3a51c00e970a2ea029339af2ca048 Btrfs: fix NULL pointer after
+aborting a transaction
+(wait until all writers detach, before setting running_transaction to
+NULL) - Liu
 
-					- Ted
+66b6135b7cf741f6f44ba938b27583ea3b83bd12 Btrfs: avoid deadlock on
+transaction waiting list
+(check if transaction was already removed from the transactions list) - Liu
+
+Josef, according to your fix, if the committer encounters a problem
+early, it just doesn't commit. Instead it aborts the transaction
+(possibly setting FS to read-only) and detaches from the transaction.
+So if this was the only committer (e.g., the transaction_kthread),
+then transaction commit will not happen at all. Is this what you
+intended? So then the user will notice that FS went read-only, and she
+will unmount the FS, and transaction will be cleaned up in
+btrfs_error_commit_super()=>btrfs_cleanup_transaction(), and not in
+cleanup_transaction() via btrfs_commit_transaction(). Is my
+understanding correct?
+
+Liu, it looks like after having Josef's fix, the above two commits of
+yours are not strictly needed, right? Because Josef's fix ensures that
+only the "real" committer will call cleanup_transaction(), so at this
+point there is only one writer attached to the transaction, which is
+the committer itself (your fixes doesn't hurt though). Is that
+correct?
+
+Thanks for helping,
+Alex.

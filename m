@@ -1,50 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1207.opentransfer.com ([98.130.1.227]:39995 "EHLO
-	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751690Ab3FWWsQ (ORCPT
+Received: from mail-la0-f53.google.com ([209.85.215.53]:49363 "EHLO
+	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752191Ab3FXKZJ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Jun 2013 18:48:16 -0400
-Message-ID: <1372027293.1052.12.camel@miguel-MacBookPro>
-Subject: btrfs send/receive issues
-From: Miguel =?ISO-8859-1?Q?Negr=E3o?=
-	<miguel.negrao-lists@friendlyvirus.org>
+	Mon, 24 Jun 2013 06:25:09 -0400
+Received: by mail-la0-f53.google.com with SMTP id fs12so10104591lab.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 03:25:07 -0700 (PDT)
+MIME-Version: 1.0
+Date: Mon, 24 Jun 2013 12:25:07 +0200
+Message-ID: <CAOEw3RbTrQkogo44sxdo62+Y8yJd_Bp_QTPQWW7-FVcv4TrJ6w@mail.gmail.com>
+Subject: Btrfs lockup during defrag and removing device
+From: =?ISO-8859-2?Q?Ond=F8ej_Kunc?= <kunc88@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Date: Sun, 23 Jun 2013 23:41:33 +0100
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-2
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi developers,
 
-I want to do a backup of a btrfs subvolume from one disk to another
-disk, both with btrfs filesystems, using the btrfs  send receive
-functionality. I do 
+I have been playing with btrfs on our test server. I have streessed it
+much ... and I can say ... it's troughput and features are very nice
+and usable, but I experienced one problem during testing, btrfs
+triggered lockup of 3 of 8 CPU cores of testing server.
 
-cd /media/miguel/btrfs_backup/
-mkdir backups
-sudo btrfs send /mnt/@backup2 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
+What I was doing ?
 
-and this works fine, the @backup2 subvolume is created
-at /media/miguel/btrfs_backup/backups/. Then I try to send a second
-snapshot taken after @backup2 :
+Simultaneously:
+- copying 130GB file on one subvolume to another file and measuring speed by pv
+- removing one device (/dev/md3) from btrfs
+- running btrfs defrag on whole  fs (via xargs)
+- rsyncing files from another server to subvolume
+- untaring the first 130GB tar to one subdirectory
 
-sudo btrfs send -p /mnt/@backup2 /mnt/@backup3 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
+Our server is HP-DL380, 12*146GB SAS HDD, 72GB RAM, Intel Xeon 5620
+Running uptodate debian wheezy with kernel and btrfs-tools from testing
+3.9-1-amd64 #1 SMP Debian 3.9.6-1 x86_64 GNU/Linux
+# btrfs version
+Btrfs Btrfs v0.19
 
-And I get:
+btrfs was created on top on 3 software RAID6 devices, every one built
+from 4 SAS drive
 
-At subvol /mnt/@backup3
-At snapshot @backup3
-ERROR: open backups/@backup2 failed. No such file or directory
+About one hour after this(see dmesg) server became inaccessible, so I
+had to restart it by power cycle.
 
-But @backup2 is a subvolume in /media/miguel/btrfs_backup/backups/ 
+After reboot there was problem with free space cache, but it was fixed
+automatically. I have one suspection, I have tried next this:
 
-I'm I doing something wrong ?
+btrfs balance start /btrfs
+and then btrfs resize 4:max /btrfs (device was previosly smaller)
 
-best,
--- 
-Miguel NegrÃ£o
-http://www.friendlyvirus.org/miguelnegrao
+it failed with dmesg output: btrfs: dev
+add/delete/balance/replace/resize operation in progress.
 
+So it is possible, that it is mutualy exclusive and should not be
+permitted in the other way, to start balance or defrag when device is
+being removed, is this true ?
 
+Thank you all for your good work!
 
+Ondrej Kunc
+
+dmesg output: http://pastebin.com/Ndxypkxa
+
+P.S. in case of duplicate message I'm sorry, but I was not able to
+post from our company email.
+
+--
+Ondøej Kunc

@@ -1,63 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:46684 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750902Ab3FXQYE (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:36824 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751412Ab3FXQ2u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 12:24:04 -0400
+	Mon, 24 Jun 2013 12:28:50 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 4F9509A03ED
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 10:24:04 -0600 (MDT)
-Date: Mon, 24 Jun 2013 12:24:01 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 8898C7C041C
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 10:28:50 -0600 (MDT)
+Date: Mon, 24 Jun 2013 12:28:48 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <bo.li.liu@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: question about transaction-abort-related commits
-Message-ID: <20130624162401.GJ4288@localhost.localdomain>
-References: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
+To: Andrea Gelmini <andrea.gelmini@gmail.com>
+CC: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: help: btrfs bad tree block start
+Message-ID: <20130624162848.GK4288@localhost.localdomain>
+References: <CAK-xaQaP7-wvzd62GyydjJO2qeW3u9HGjE4Q9f013YpSmMV5vA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
+In-Reply-To: <CAK-xaQaP7-wvzd62GyydjJO2qeW3u9HGjE4Q9f013YpSmMV5vA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 23, 2013 at 09:52:14PM +0300, Alex Lyakas wrote:
-> Hello Josef, Liu,
-> I am reviewing commits in the mainline tree:
+On Sun, Jun 23, 2013 at 05:33:59AM +0200, Andrea Gelmini wrote:
+> Hi everybody,
+>    and thanks a lot for your work.
 > 
-> e4a2bcaca9643e7430207810653222fc5187f2be Btrfs: if we aren't
-> committing just end the transaction if we error out
-> (call end_transaction() instead of goto cleanup_transaction) - Josef
+>    I have this problem.
+>    With latest 3.9 kernel and btrfs-next I was close to full my home.
+>    The system went read only mode while I was copying in some files.
 > 
-> f094ac32aba3a51c00e970a2ea029339af2ca048 Btrfs: fix NULL pointer after
-> aborting a transaction
-> (wait until all writers detach, before setting running_transaction to
-> NULL) - Liu
+>    Everything was good. I can't write, but I can read and copy last files.
 > 
-> 66b6135b7cf741f6f44ba938b27583ea3b83bd12 Btrfs: avoid deadlock on
-> transaction waiting list
-> (check if transaction was already removed from the transactions list) - Liu
+>    Then I rebooted, but since that moment I cannot mount.
 > 
-> Josef, according to your fix, if the committer encounters a problem
-> early, it just doesn't commit. Instead it aborts the transaction
-> (possibly setting FS to read-only) and detaches from the transaction.
-> So if this was the only committer (e.g., the transaction_kthread),
-> then transaction commit will not happen at all. Is this what you
-> intended? So then the user will notice that FS went read-only, and she
-> will unmount the FS, and transaction will be cleaned up in
-> btrfs_error_commit_super()=>btrfs_cleanup_transaction(), and not in
-> cleanup_transaction() via btrfs_commit_transaction(). Is my
-> understanding correct?
+>    The kernel complain is:
 > 
-> Liu, it looks like after having Josef's fix, the above two commits of
-> yours are not strictly needed, right? Because Josef's fix ensures that
-> only the "real" committer will call cleanup_transaction(), so at this
-> point there is only one writer attached to the transaction, which is
-> the committer itself (your fixes doesn't hurt though). Is that
-> correct?
+> [ 1026.226883] device label 16K devid 1 transid 66906 /dev/mapper/glen-home
+> [ 1026.227452] btrfs: disk space caching is enabled
+> [ 1026.311650] Btrfs detected SSD devices, enabling SSD mode
+> [ 1026.311825] btrfs bad tree block start 4262492213953725727 591596257280
+> [ 1026.312000] btrfs bad tree block start 4262492213953725727 591596257280
+> [ 1026.312010] btrfs: failed to read log tree
+> [ 1026.332708] btrfs: open_ctree failed
+> 
+>    If I use btrfsck (Joseph one) I got this:
+> 
+> root@glen:/home/gelma/dev/prg/btrfs_josef# ./btrfsck --repair
+> /dev/mapper/glen-home enabling repair mode
+> Check tree block failed, want=591596257280, have=4262492213953725727
+> Check tree block failed, want=591596257280, have=4262492213953725727
+> Check tree block failed, want=591596257280, have=4262492213953725727
+> Check tree block failed, want=591596257280, have=4262492213953725727
+> Check tree block failed, want=591596257280, have=4262492213953725727
+> read block failed check_tree_block
+> Checking filesystem on /dev/mapper/glen-home
+> UUID: 920ae0b9-55da-4606-af40-b58493c7882b
+> checking extents
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> checking csums
+> checking root refs
+> found 127643191167 bytes used err is 0
+> total csum bytes: 355191196
+> total tree bytes: 2457419776
+> total fs tree bytes: 1832763392
+> total extent tree bytes: 195133440
+> btree space waste bytes: 472140292
+> file data blocks allocated: 1525241155584
+>  referenced 396208013312
+> Btrfs v0.20-rc1
+> 
+>    The home partition is 352,70 GiB.
+> 
+>    I've got backup, but I would like to recover it.
 > 
 
-I've looked at the patches and I'm going to say yes with the caveat that I
-stopped thinking about it when my head started hurting :).  Thanks,
+So it looks like you just have a few transid mismatches but we manage to find
+something that works out just fine.  Could you make an image of this fs for me
+and upload it somewhere so I can pull it down and run some stuff on it?  I've
+been toying with making fsck just re-write transid mismatched blocks if we
+manage to put together the file system properly and I'd like to experiment with
+this on your fs so maybe we can put it back together without you having to
+restore from backups.  Thanks,
 
 Josef

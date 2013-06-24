@@ -1,58 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36730 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750783Ab3FXQVm (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:46684 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750902Ab3FXQYE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 12:21:42 -0400
+	Mon, 24 Jun 2013 12:24:04 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 659FB7C041C
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 10:21:42 -0600 (MDT)
-Date: Mon, 24 Jun 2013 12:21:39 -0400
+	by dkim2.fusionio.com (Postfix) with ESMTP id 4F9509A03ED
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 10:24:04 -0600 (MDT)
+Date: Mon, 24 Jun 2013 12:24:01 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Miguel =?iso-8859-1?Q?Negr=E3o?=
-	<miguel.negrao-lists@friendlyvirus.org>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send/receive issues
-Message-ID: <20130624162139.GI4288@localhost.localdomain>
-References: <1372027293.1052.12.camel@miguel-MacBookPro>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: Josef Bacik <jbacik@fusionio.com>, <bo.li.liu@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: question about transaction-abort-related commits
+Message-ID: <20130624162401.GJ4288@localhost.localdomain>
+References: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-In-Reply-To: <1372027293.1052.12.camel@miguel-MacBookPro>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 23, 2013 at 11:41:33PM +0100, Miguel Negrão wrote:
-> Hi,
+On Sun, Jun 23, 2013 at 09:52:14PM +0300, Alex Lyakas wrote:
+> Hello Josef, Liu,
+> I am reviewing commits in the mainline tree:
 > 
-> I want to do a backup of a btrfs subvolume from one disk to another
-> disk, both with btrfs filesystems, using the btrfs  send receive
-> functionality. I do 
+> e4a2bcaca9643e7430207810653222fc5187f2be Btrfs: if we aren't
+> committing just end the transaction if we error out
+> (call end_transaction() instead of goto cleanup_transaction) - Josef
 > 
-> cd /media/miguel/btrfs_backup/
-> mkdir backups
-> sudo btrfs send /mnt/@backup2 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
+> f094ac32aba3a51c00e970a2ea029339af2ca048 Btrfs: fix NULL pointer after
+> aborting a transaction
+> (wait until all writers detach, before setting running_transaction to
+> NULL) - Liu
 > 
-> and this works fine, the @backup2 subvolume is created
-> at /media/miguel/btrfs_backup/backups/. Then I try to send a second
-> snapshot taken after @backup2 :
+> 66b6135b7cf741f6f44ba938b27583ea3b83bd12 Btrfs: avoid deadlock on
+> transaction waiting list
+> (check if transaction was already removed from the transactions list) - Liu
 > 
-> sudo btrfs send -p /mnt/@backup2 /mnt/@backup3 | sudo btrfs receive /media/miguel/btrfs_backup/backups/
+> Josef, according to your fix, if the committer encounters a problem
+> early, it just doesn't commit. Instead it aborts the transaction
+> (possibly setting FS to read-only) and detaches from the transaction.
+> So if this was the only committer (e.g., the transaction_kthread),
+> then transaction commit will not happen at all. Is this what you
+> intended? So then the user will notice that FS went read-only, and she
+> will unmount the FS, and transaction will be cleaned up in
+> btrfs_error_commit_super()=>btrfs_cleanup_transaction(), and not in
+> cleanup_transaction() via btrfs_commit_transaction(). Is my
+> understanding correct?
 > 
-> And I get:
-> 
-> At subvol /mnt/@backup3
-> At snapshot @backup3
-> ERROR: open backups/@backup2 failed. No such file or directory
-> 
-> But @backup2 is a subvolume in /media/miguel/btrfs_backup/backups/ 
-> 
-> I'm I doing something wrong ?
+> Liu, it looks like after having Josef's fix, the above two commits of
+> yours are not strictly needed, right? Because Josef's fix ensures that
+> only the "real" committer will call cleanup_transaction(), so at this
+> point there is only one writer attached to the transaction, which is
+> the committer itself (your fixes doesn't hurt though). Is that
+> correct?
 > 
 
-I'm not sure, I just did it and it worked fine for me.  Could you file a
-bugzilla at bugzilla.kernel.org and make sure the component is set to btrfs?
-Also could you do the send to a file, and then receive from the file so we can
-see if its send or receive that's giving you the error and put that in the
-bugzilla?  Thanks,
+I've looked at the patches and I'm going to say yes with the caveat that I
+stopped thinking about it when my head started hurting :).  Thanks,
 
 Josef

@@ -1,66 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ae0-f57.auone-net.jp ([106.187.230.57]:45867 "EHLO
-	dmta01.auone-net.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750768Ab3FVGN5 (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:55171 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752099Ab3FXG0y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Jun 2013 02:13:57 -0400
-Received: from amlmta037.auone-net.jp (amlmta037-MM [10.188.22.95])
-	by dmta01.auone-net.jp (au one net mail) with ESMTP id 1F82D560038
-	for <linux-btrfs@vger.kernel.org>; Sat, 22 Jun 2013 15:13:43 +0900 (JST)
-Date: Sat, 22 Jun 2013 15:13:42 +0900
-From: Kusanagi Kouichi <slash@ac.auone-net.jp>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: btrfs requires version.h
+	Mon, 24 Jun 2013 02:26:54 -0400
+Received: by mail-pa0-f49.google.com with SMTP id ld11so10407587pab.8
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Jun 2013 23:26:54 -0700 (PDT)
+Message-ID: <51C7E688.2020903@gmail.com>
+Date: Mon, 24 Jun 2013 14:26:16 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-Id: <51c54096000d1fdf00004a0d00004a10a000000e44ba@amlmta037.auone-net.jp>
+To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: remove unused var *prev in extent-cache.c/find_cache_extent
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-$ make btrfs
-    [CC]     ctree.o
-    [CC]     disk-io.o
-    [CC]     radix-tree.o
-    [CC]     extent-tree.o
-    [CC]     print-tree.o
-    [CC]     root-tree.o
-    [CC]     dir-item.o
-    [CC]     file-item.o
-    [CC]     inode-item.o
-    [CC]     inode-map.o
-    [CC]     extent-cache.o
-    [CC]     extent_io.o
-    [CC]     volumes.o
-    [CC]     utils.o
-    [CC]     repair.o
-    [CC]     qgroup.o
-    [CC]     raid6.o
-    [CC]     free-space-cache.o
-    [CC]     btrfs.o
-btrfs.c:24:21: fatal error: version.h: No such file or directory
- #include "version.h"
-                     ^
-compilation terminated.
-make: *** [btrfs.o] Error 1
+var *prev is not used in function find_cache_extent. Remove it.
 
-Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+  extent-cache.c |    3 +--
+  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index da7438e..0bca4d7 100644
---- a/Makefile
-+++ b/Makefile
-@@ -131,7 +131,7 @@ btrfs-%: version.h $(objects) $(libs) btrfs-%.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o $@ $(objects) $@.o $(LDFLAGS) $(LIBS) $($(subst -,_,$@-libs))
- 
--btrfs: $(objects) btrfs.o help.o $(cmds_objects) $(libs)
-+btrfs: version.h $(objects) btrfs.o help.o $(cmds_objects) $(libs)
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
- 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+diff --git a/extent-cache.c b/extent-cache.c
+index 3dd6434..6d86c33 100644
+--- a/extent-cache.c
++++ b/extent-cache.c
+@@ -117,10 +117,9 @@ int insert_cache_extent(struct cache_tree *tree, u64 start, u64 size)
+  struct cache_extent *find_cache_extent(struct cache_tree *tree,
+  					   u64 start, u64 size)
+  {
+-	struct rb_node *prev;
+  	struct rb_node *ret;
+  	struct cache_extent *entry;
+-	ret = __tree_search(&tree->root, start, size, &prev);
++	ret = __tree_search(&tree->root, start, size, NULL);
+  	if (!ret)
+  		return NULL;
+
 -- 
-1.8.3.1
-
+1.7.10.4

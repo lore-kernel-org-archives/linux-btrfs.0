@@ -1,66 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46219 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:61258 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752513Ab3FXRyD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 13:54:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UrAxl-0007lP-Ij
-	for linux-btrfs@vger.kernel.org; Mon, 24 Jun 2013 19:54:01 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 19:54:01 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 19:54:01 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: help: btrfs bad tree block start
-Date: Mon, 24 Jun 2013 17:53:45 +0000 (UTC)
-Message-ID: <pan$148b6$94cb1909$349c5f6c$33902e96@cox.net>
-References: <CAK-xaQaP7-wvzd62GyydjJO2qeW3u9HGjE4Q9f013YpSmMV5vA@mail.gmail.com>
-	<20130624162848.GK4288@localhost.localdomain>
-	<CAK-xaQY3ZFTpreYdLjzz8-14tAbwSgdAMFNU4ijrksGHS6kSXw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1752553Ab3FXSK6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Jun 2013 14:10:58 -0400
+Date: Mon, 24 Jun 2013 11:10:54 -0700
+From: Zach Brown <zab@redhat.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v5 1/8] Btrfs: introduce a tree for items that map UUIDs
+ to something
+Message-ID: <20130624181054.GD25321@lenny.home.zabbo.net>
+References: <cover.1371749051.git.sbehrens@giantdisaster.de>
+ <ef484aa41751485fc6301ce78b5e3cddaa3f9a52.1371749051.git.sbehrens@giantdisaster.de>
+ <20130620194704.GC32674@lenny.home.zabbo.net>
+ <51C41318.8070703@giantdisaster.de>
+ <20130621161138.GA25321@lenny.home.zabbo.net>
+ <51C876E5.4060802@giantdisaster.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <51C876E5.4060802@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andrea Gelmini posted on Mon, 24 Jun 2013 18:45:39 +0200 as excerpted:
-
-> 2013/6/24 Josef Bacik <jbacik@fusionio.com>:
->> Could you make an image of this fs for me and upload it somewhere so I
->> can pull it down and run some stuff on it?  I've
+> >> This would save some CPU cycles for the repeated le64_to_cpu() and for
+> >> the memcpy(). The number of lines of code is equal for both ways.
+> > 
+> > Hmm?  It would be many fewer lines of code.
 > 
-> n.b.: I've got a lot of sensible/private data in my home, but maybe we
-> could find a way to give all to you. I'm not so afraid to trust you.
+> Are you thinking of something shorter than the following?
 
-FWIW, I just updated btrfs-progs from git, and one of the new commits 
-allows anonymizing filenames (actual file data/content hasn't been in the 
-image, which I believe is meta-data only, either ever or at least for 
-some time, but filenames can be sensitive too).  There's even two 
-different modes that can be used to do it, a fast "random name of the 
-same length" mode, and a much, MUCH slower "find a crc32c hash collision 
-of the same length and use it" mode.  (The commit noted that on new Intel 
-hardware with hardware crc accel, it took two plus minutes to find a 
-collision for a single text string, three-plus minutes without that 
-hardware accel, so doing the math, on a filesystem with even moderate 
-thousands of files, the long one's likely to take days to generate.  
-Obviously this will only be used on relatively small filesystems 
-troubleshooting problems where the fast method doesn't give a useful 
-result.) 
+That's better, yeah, but there's still some room left to go.  Almost all
+of the remaining code is boiler-plate iteration that could be done with
+a for(;;).
 
-So if you can build a current git btrfs-progs, you should be able to try 
-at least the fast version, and reasonably anonymize even the filenames. 
-=:^)
+This could be a mini OCC contest! :)
 
-If filenames aren't a problem, then certainly anything even reasonably 
-current should deliver an image with in-the-clear filenames, but no 
-content to worry about.
+> offset = (unsigned long)ptr;
+> subid = cpu_to_le64(subid);
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> while (sub_item_len > 0) {
+> 	if (memcmp_extent_buffer(eb, &subid, offset,
+> 				 sizeof(subid)) == 0) {
+> 		ret = 0;
+> 		break;
+> 	}
+> 	offset += sizeof(subid);
+> 	sub_item_len--;
+> }
 
+roughly:
+
+unsigned long end = offset + sub_item_len;
+
+for (ret = 1; offset < end && ret; offset += sizeof(subid))
+	ret = !!memcmp_extent_buffer(eb, &subid, offset,
+				     sizeof(subid));
+
+- z

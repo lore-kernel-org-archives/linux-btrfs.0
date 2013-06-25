@@ -1,55 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40467 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755723Ab3FEP0R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Jun 2013 11:26:17 -0400
-Date: Wed, 5 Jun 2013 17:26:15 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Holger Fischer <hoo.mb@web.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-tools: debian/patches/02-ftbfs.patch
-Message-ID: <20130605152615.GD18160@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <519A1E2F.5050207@web.de>
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:63663 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751595Ab3FYNCV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Jun 2013 09:02:21 -0400
+Received: by mail-pa0-f41.google.com with SMTP id bj3so12636646pad.14
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 06:02:21 -0700 (PDT)
+Message-ID: <51C994D5.3070509@gmail.com>
+Date: Tue, 25 Jun 2013 21:02:13 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <519A1E2F.5050207@web.de>
+To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: avoid memory leak in btrfs_close_devices
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 20, 2013 at 02:59:27PM +0200, Holger Fischer wrote:
-> Dear BTRFS-Community,
-> 
-> as far as I understand I believe it would make sense to apply that one upstream:
+Three kind of structures need to be freed on close:
+      * All struct btrfs_device managed by fs_devices
+      * The name field for each struct btrfs_device
+      * The above items for seed_devices
 
-Thanks for bringing it up.
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+  volumes.c |   16 +++++++++++++---
+  1 file changed, 13 insertions(+), 3 deletions(-)
 
-> like described, it ...  Fixes FTBFS on alpha and ia64 ...
-> 
-> >cat 02-ftbfs.patch
-> Authors:
->  Luca Bruno <lucab@debian.org>
->  Alexander Kurtz <kurtz.alex@googlemail.com>
->  Daniel Baumann <daniel.baumann@progress-technologies.net>
-> Description:
->  Patch to properly cast and avoiding compiler warnings. Fixes FTBFS on alpha
->  and ia64 (Closes: #539433, #583768).
-> 
-> Index: b/convert.c
-> ===================================================================
-> --- a/convert.c
-> +++ b/convert.c
-> @@ -2512,7 +2512,7 @@ int do_rollback(const char *devname, int
->         ext2_root = btrfs_read_fs_root(root->fs_info, &key);
->         if (!ext2_root || IS_ERR(ext2_root)) {
->                 fprintf(stderr, "unable to open subvol %llu\n",
-> -                       key.objectid);
-> +                       (unsigned long long) key.objectid);
+diff --git a/volumes.c b/volumes.c
+index d6f81f8..257b740 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -153,6 +153,16 @@ static int device_list_add(const char *path,
+  	return 0;
+  }
 
-There are way more instances of a missing (unsigned long long) casts,
-quick grep from the ia64 build log counted ~100.  I prefer to fixem all
-in one or at least separate by pure-userspace/-kernel code so we could
-apply the bits on kernel too.
++static void btrfs_close_device(struct btrfs_device *device)
++{
++	close(device->fd);
++	device->fd = -1;
++	device->writeable = 0;
++	if (device->name)
++		kfree(device->name);
++	kfree(device);
++}
++
+  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+  {
+  	struct btrfs_fs_devices *seed_devices;
+@@ -161,17 +171,17 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+  again:
+  	list_for_each(cur, &fs_devices->devices) {
+  		device = list_entry(cur, struct btrfs_device, dev_list);
+-		close(device->fd);
+-		device->fd = -1;
+-		device->writeable = 0;
++		btrfs_close_device(device);
+  	}
 
+  	seed_devices = fs_devices->seed;
+  	fs_devices->seed = NULL;
+  	if (seed_devices) {
++		kfree(fs_devices);
+  		fs_devices = seed_devices;
+  		goto again;
+  	}
++	kfree(fs_devices);
 
-david
+  	return 0;
+  }
+-- 
+1.7.10.4
+

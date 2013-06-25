@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38936 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751389Ab3FYIkS (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35315 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751876Ab3FYIq3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Jun 2013 04:40:18 -0400
+	Tue, 25 Jun 2013 04:46:29 -0400
 Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5P8eHZe007790
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5P8e9NU020867
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:40:17 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5P8eGJY006607
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:40:10 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5P8kRYt019786
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:40:17 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5P8eG5L006602
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:40:16 GMT
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:46:27 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5P8kR4D027158
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 08:46:27 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Subject: [PATCH 12/12 v4] btrfs-progs: introduce btrfs filesystem show --kernel
-Date: Tue, 25 Jun 2013 16:44:32 +0800
-Message-Id: <1372149872-5560-1-git-send-email-anand.jain@oracle.com>
+Date: Tue, 25 Jun 2013 16:50:43 +0800
+Message-Id: <1372150243-5686-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1371801485-14571-6-git-send-email-anand.jain@oracle.com>
 References: <1371801485-14571-6-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -34,8 +34,35 @@ This patch adds --kernel option to the 'filesystem show'
 subcli, which will read from the kernel instead of
 the disks directly.
 
-This btrfs-progs patch depends on the kernel patch
- btrfs: obtain used_bytes in BTRFS_IOC_FS_INFO ioctl
+also this path adds the group profile info to the 
+output
+
+eg:
+-----------------
+btrfs fi show --kernel
+Label: none  uuid: 39f55f14-e5ca-4a01-899d-915fd35bde05 mounted: /btrfs
+	Group profile: metadata: RAID1  data: RAID1 
+	Total devices 2 FS bytes used 7.40GB
+	devid    1 size 48.23GB used 11.04GB path /dev/dm-5
+	devid    2 size 44.99GB used 11.03GB path /dev/mapper/mpathe
+
+Label: none  uuid: a0beeb78-0019-4bdf-8002-0900a123ee07 mounted: /btrfs1
+	Group profile: mixed: single 
+	Total devices 1 FS bytes used 7.40GB
+	devid    1 size 15.00GB used 9.01GB path /dev/mapper/mpathbp1
+
+btrfs fi show --kernel /btrfs2
+Label: none  uuid: 9d6a347e-e8a0-44fe-9d2a-d28ee45ef33f mounted: /btrfs2
+	Group profile: metadata: DUP  data: single 
+	Total devices 1 FS bytes used 2.22MB
+	devid    1 size 15.00GB used 1.32GB path /dev/mapper/mpathcp1
+
+btrfs fi show --kernel 9d6a347e-e8a0-44fe-9d2a-d28ee45ef33f
+Label: none  uuid: 9d6a347e-e8a0-44fe-9d2a-d28ee45ef33f mounted: /btrfs2
+	Group profile: metadata: DUP  data: single 
+	Total devices 1 FS bytes used 2.22MB
+	devid    1 size 15.00GB used 1.32GB path /dev/mapper/mpathcp1
+------------
 
 v3->v4:
 	dropped the dependence of used_bytes from the ioctl

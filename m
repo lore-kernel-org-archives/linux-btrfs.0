@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:60194 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:9171 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751380Ab3FZPQp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751585Ab3FZPQp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 26 Jun 2013 11:16:45 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp1) (RZmta 31.28 OK)
-	with ESMTP id X06921p5QEXIGW for <linux-btrfs@vger.kernel.org>;
+	by josoe.store (josoe xp4) (RZmta 31.28 OK)
+	with ESMTP id 6031fep5QF43I9 for <linux-btrfs@vger.kernel.org>;
 	Wed, 26 Jun 2013 17:16:42 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 6/8] Btrfs: introduce uuid-tree-gen field
-Date: Wed, 26 Jun 2013 17:16:40 +0200
-Message-Id: <406785ce7a72666c135df16281b75428483c916d.1372250829.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v6 2/8] Btrfs: support printing UUID tree elements
+Date: Wed, 26 Jun 2013 17:16:36 +0200
+Message-Id: <0688e321e9a09932deb12d6eeac61dd72fb1a1b0.1372250828.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372250828.git.sbehrens@giantdisaster.de>
 References: <cover.1372250828.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372250828.git.sbehrens@giantdisaster.de>
@@ -19,54 +19,56 @@ References: <cover.1372250828.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to be able to detect the case that a filesystem is mounted
-with an old kernel, add a uuid-tree-gen field like the free space
-cache is doing it. It is part of the super block and written with
-each commit. Old kernels do not know this field and don't update it.
+This commit adds support to print UUID tree elements to print-tree.c.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h       | 5 ++++-
- fs/btrfs/transaction.c | 1 +
- 2 files changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/print-tree.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 55139078..08d559c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -481,9 +481,10 @@ struct btrfs_super_block {
- 	char label[BTRFS_LABEL_SIZE];
- 
- 	__le64 cache_generation;
-+	__le64 uuid_tree_generation;
- 
- 	/* future expansion */
--	__le64 reserved[31];
-+	__le64 reserved[30];
- 	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
- 	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
- } __attribute__ ((__packed__));
-@@ -2837,6 +2838,8 @@ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
- 			 csum_type, 16);
- BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
- 			 cache_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_uuid_tree_generation, struct btrfs_super_block,
-+			 uuid_tree_generation, 64);
- 
- static inline int btrfs_super_csum_size(struct btrfs_super_block *s)
- {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 00ae884..1ae9621 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1370,6 +1370,7 @@ static void update_super_roots(struct btrfs_root *root)
- 	super->root_level = root_item->level;
- 	if (btrfs_test_opt(root, SPACE_CACHE))
- 		super->cache_generation = root_item->generation;
-+	super->uuid_tree_generation = root_item->generation;
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index dc0024f..a8a1e4d 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -155,6 +155,26 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
  }
+ #endif
  
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info)
++static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
++			    u32 item_size)
++{
++	if (!IS_ALIGNED(item_size, sizeof(u64))) {
++		pr_warn("btrfs: uuid item with illegal size %lu!\n",
++			(unsigned long)item_size);
++		return;
++	}
++	while (item_size) {
++		u64 subvol_id;
++
++		read_extent_buffer(l, &subvol_id, offset, sizeof(u64));
++		subvol_id = le64_to_cpu(subvol_id);
++		printk(KERN_INFO "\t\tsubvol_id %llu\n",
++		       (unsigned long long)subvol_id);
++		item_size -= sizeof(u64);
++		offset += sizeof(u64);
++	}
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -301,6 +321,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_REPLACE_KEY:
+ 			printk(KERN_INFO "\t\tdev replace\n");
+ 			break;
++		case BTRFS_UUID_KEY_SUBVOL:
++		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
++					btrfs_item_size_nr(l, i));
++			break;
+ 		};
+ 	}
+ }
 -- 
 1.8.3
 

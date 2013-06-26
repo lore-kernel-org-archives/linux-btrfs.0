@@ -1,78 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f42.google.com ([209.85.160.42]:37776 "EHLO
-	mail-pb0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751076Ab3FYNFc (ORCPT
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:49982 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750826Ab3FZEOr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Jun 2013 09:05:32 -0400
-Received: by mail-pb0-f42.google.com with SMTP id un1so12555082pbc.29
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 06:05:31 -0700 (PDT)
-Message-ID: <51C99597.1090604@gmail.com>
-Date: Tue, 25 Jun 2013 21:05:27 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+	Wed, 26 Jun 2013 00:14:47 -0400
+Received: by mail-pa0-f44.google.com with SMTP id lj1so13647249pab.17
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 21:14:47 -0700 (PDT)
+From: root <yo@cristianrodriguez.net>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+Subject: [PATCH btrfs-progs] kerncompat.h: remove offsetof redefinition
+Date: Wed, 26 Jun 2013 00:14:39 -0400
+Message-Id: <1372220079-17236-1-git-send-email-root@xps9000.cristianrodriguez.net>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: [RESEND] [PATCH] btrfs-progs: avoid memory leak in btrfs_close_devices
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Cristian Rodríguez <crrodriguez@opensuse.org>
 
-Three kind of structures need to be freed on close:
-     * All struct btrfs_device managed by fs_devices
-     * The name field for each struct btrfs_device
-     * fs_devices structure itself
-
-The same ones for seed_devices.
-
-
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+Must use the version provided by the compiler in stddef.h header
 ---
-  volumes.c |   16 +++++++++++++---
-  1 file changed, 13 insertions(+), 3 deletions(-)
+ kerncompat.h | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index d6f81f8..257b740 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -153,6 +153,16 @@ static int device_list_add(const char *path,
-  	return 0;
-  }
-
-+static void btrfs_close_device(struct btrfs_device *device)
-+{
-+	close(device->fd);
-+	device->fd = -1;
-+	device->writeable = 0;
-+	if (device->name)
-+		kfree(device->name);
-+	kfree(device);
-+}
-+
-  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
-  {
-  	struct btrfs_fs_devices *seed_devices;
-@@ -161,17 +171,17 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
-  again:
-  	list_for_each(cur, &fs_devices->devices) {
-  		device = list_entry(cur, struct btrfs_device, dev_list);
--		close(device->fd);
--		device->fd = -1;
--		device->writeable = 0;
-+		btrfs_close_device(device);
-  	}
-
-  	seed_devices = fs_devices->seed;
-  	fs_devices->seed = NULL;
-  	if (seed_devices) {
-+		kfree(fs_devices);
-  		fs_devices = seed_devices;
-  		goto again;
-  	}
-+	kfree(fs_devices);
-
-  	return 0;
-  }
+diff --git a/kerncompat.h b/kerncompat.h
+index 9c116b4..6b4b4ba 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -26,6 +26,7 @@
+ #include <endian.h>
+ #include <byteswap.h>
+ #include <assert.h>
++#include <stddef.h>
+ 
+ #ifndef READ
+ #define READ 0
+@@ -234,12 +235,6 @@ static inline long IS_ERR(const void *ptr)
+ #define BUG_ON(c) assert(!(c))
+ #define WARN_ON(c) assert(!(c))
+ 
+-#undef offsetof
+-#ifdef __compiler_offsetof
+-#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
+-#else
+-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+-#endif
+ 
+ #define container_of(ptr, type, member) ({                      \
+         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 -- 
-1.7.10.4
+1.8.3.1
 

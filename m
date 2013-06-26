@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:56896 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753606Ab3FJXwy (ORCPT
+Received: from mail-we0-f171.google.com ([74.125.82.171]:42088 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751359Ab3FZQmB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Jun 2013 19:52:54 -0400
-Received: by mail-we0-f174.google.com with SMTP id q58so5320097wes.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jun 2013 16:52:52 -0700 (PDT)
+	Wed, 26 Jun 2013 12:42:01 -0400
+Received: by mail-we0-f171.google.com with SMTP id m46so10589584wev.30
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 09:41:59 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 1/5 v2] Btrfs-progs: fix closing of devices
-Date: Tue, 11 Jun 2013 00:52:36 +0100
-Message-Id: <1370908356-31792-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2 1/5] Btrfs-progs: fix closing of devices
+Date: Wed, 26 Jun 2013 17:41:36 +0100
+Message-Id: <1372264896-10184-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
 References: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -32,6 +32,9 @@ label, which pointed to random memory locations.
   #3  0x0000000000418cfa in cmd_check (argc=<optimized out>, argv=<optimized out>) at cmds-check.c:4171
   #4  0x0000000000403ed4 in main (argc=2, argv=0x7fff9a583d28) at btrfs.c:295
 
+v2: Added Liu Bo's review mention.
+
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
  disk-io.c |    4 ++--
@@ -39,10 +42,10 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
  2 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/disk-io.c b/disk-io.c
-index 21b410d..bd9cf4e 100644
+index 9ffe6e4..768adda 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -1267,12 +1267,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
+@@ -1270,12 +1270,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
  	while (!list_empty(list)) {
  		device = list_entry(list->next, struct btrfs_device, dev_list);
  		list_del_init(&device->dev_list);
@@ -85,7 +88,3 @@ index d6f81f8..061f094 100644
 -- 
 1.7.9.5
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

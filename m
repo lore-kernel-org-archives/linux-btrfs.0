@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:57148 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:57385 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752346Ab3FZPSA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Jun 2013 11:18:00 -0400
+	id S1752353Ab3FZPSB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Jun 2013 11:18:01 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp2) (RZmta 31.28 OK)
-	with ESMTP id g011bfp5PIqX0G for <linux-btrfs@vger.kernel.org>;
+	by josoe.store (josoe xp3) (RZmta 31.28 OK)
+	with ESMTP id p031a8p5PKS1cP for <linux-btrfs@vger.kernel.org>;
 	Wed, 26 Jun 2013 17:17:59 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 1/5] Btrfs-progs: Support UUID tree and UUID items in btrfs-debug-tree
-Date: Wed, 26 Jun 2013 17:17:55 +0200
-Message-Id: <77b49265b89b9c37e6f806c8513d9226306e217d.1372252739.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v4 2/5] Btrfs-progs: add UUID tree lookup methods
+Date: Wed, 26 Jun 2013 17:17:56 +0200
+Message-Id: <95ac526992b0bff417a0dff9aa7f6624a560e714.1372252739.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372252739.git.sbehrens@giantdisaster.de>
 References: <cover.1372252739.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372252739.git.sbehrens@giantdisaster.de>
@@ -19,145 +19,160 @@ References: <cover.1372252739.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Support printing these things.
+This commit adds UUID tree lookup methods that make use of the search
+ioctl. The code is based on the kernel code.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- ctree.h      | 15 +++++++++++++++
- print-tree.c | 46 +++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 58 insertions(+), 3 deletions(-)
+ Makefile    |   5 +--
+ ctree.h     |   5 +++
+ uuid-tree.c | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 112 insertions(+), 2 deletions(-)
 
+diff --git a/Makefile b/Makefile
+index 398ef52..511ba6d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,12 +6,13 @@ CFLAGS = -g -O1
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+-	  qgroup.o raid6.o free-space-cache.o
++	  qgroup.o raid6.o free-space-cache.o uuid-tree.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o
+-libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o
++libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
++		   uuid-tree.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
+ 	       extent_io.h ioctl.h ctree.h
 diff --git a/ctree.h b/ctree.h
-index 3fe14b0..f959573 100644
+index f959573..e4bca8f 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -71,6 +71,8 @@ struct btrfs_free_space_ctl;
- #define BTRFS_CSUM_TREE_OBJECTID 7ULL
- #define BTRFS_QUOTA_TREE_OBJECTID 8ULL
- 
-+/* for storing items that use the BTRFS_UUID_KEY* */
-+#define BTRFS_UUID_TREE_OBJECTID 9ULL
- 
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
-@@ -1107,6 +1109,19 @@ struct btrfs_root {
- #define BTRFS_DEV_REPLACE_KEY	250
- 
- /*
-+ * Stores items that allow to quickly map UUIDs to something else.
-+ * These items are part of the filesystem UUID tree.
-+ * The key is built like this:
-+ * (UUID_upper_64_bits, BTRFS_UUID_KEY*, UUID_lower_64_bits).
-+ */
-+#if BTRFS_UUID_SIZE != 16
-+#error "UUID items require BTRFS_UUID_SIZE == 16!"
-+#endif
-+#define BTRFS_UUID_KEY_SUBVOL	251	/* for UUIDs assigned to subvols */
-+#define BTRFS_UUID_KEY_RECEIVED_SUBVOL	252	/* for UUIDs assigned to
-+						 * received subvols */
+@@ -2346,4 +2346,9 @@ struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 isize);
 +
++/* uuid-tree.c */
++int btrfs_lookup_uuid_subvol_item(int fd, const u8 *uuid, u64 *subvol_id);
++int btrfs_lookup_uuid_received_subvol_item(int fd, const u8 *uuid,
++					   u64 *subvol_id);
+ #endif
+diff --git a/uuid-tree.c b/uuid-tree.c
+new file mode 100644
+index 0000000..3a4c48e
+--- /dev/null
++++ b/uuid-tree.c
+@@ -0,0 +1,104 @@
 +/*
-  * string items are for debugging.  They just store a short string of
-  * data in the FS
-  */
-diff --git a/print-tree.c b/print-tree.c
-index aae47a9..c1032cb 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -509,6 +509,12 @@ static void print_key_type(u64 objectid, u8 type)
- 	case BTRFS_DEV_STATS_KEY:
- 		printf("DEV_STATS_ITEM");
- 		break;
-+	case BTRFS_UUID_KEY_SUBVOL:
-+		printf("BTRFS_UUID_KEY_SUBVOL");
-+		break;
-+	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
-+		printf("BTRFS_UUID_KEY_RECEIVED_SUBVOL");
-+		break;
- 	default:
- 		printf("UNKNOWN.%d", type);
- 	};
-@@ -516,15 +522,18 @@ static void print_key_type(u64 objectid, u8 type)
- 
- static void print_objectid(u64 objectid, u8 type)
- {
--	if (type == BTRFS_DEV_EXTENT_KEY) {
-+	switch (type) {
-+	case BTRFS_DEV_EXTENT_KEY:
- 		printf("%llu", (unsigned long long)objectid); /* device id */
- 		return;
--	}
--	switch (type) {
- 	case BTRFS_QGROUP_RELATION_KEY:
- 		printf("%llu/%llu", objectid >> 48,
- 			objectid & ((1ll << 48) - 1));
- 		return;
-+	case BTRFS_UUID_KEY_SUBVOL:
-+	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
-+		printf("0x%016llx", (unsigned long long)objectid);
-+		return;
- 	}
- 
- 	switch (objectid) {
-@@ -582,6 +591,9 @@ static void print_objectid(u64 objectid, u8 type)
- 	case BTRFS_QUOTA_TREE_OBJECTID:
- 		printf("QUOTA_TREE");
- 		break;
-+	case BTRFS_UUID_TREE_OBJECTID:
-+		printf("UUID_TREE");
-+		break;
- 	case BTRFS_MULTIPLE_OBJECTIDS:
- 		printf("MULTIPLE");
- 		break;
-@@ -616,6 +628,10 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
- 		printf(" %llu/%llu)", (unsigned long long)(offset >> 48),
- 			(unsigned long long)(offset & ((1ll << 48) - 1)));
- 		break;
-+	case BTRFS_UUID_KEY_SUBVOL:
-+	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
-+		printf(" 0x%016llx)", (unsigned long long)offset);
-+		break;
- 	default:
- 		if (offset == (u64)-1)
- 			printf(" -1)");
-@@ -625,6 +641,25 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
- 	}
- }
- 
-+static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
-+			    u32 item_size)
-+{
-+	if (item_size & (sizeof(u64) - 1)) {
-+		printf("btrfs: uuid item with illegal size %lu!\n",
-+		       (unsigned long)item_size);
-+		return;
-+	}
-+	while (item_size) {
-+		u64 subvol_id;
++ * Copyright (C) STRATO AG 2013.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include <uuid/uuid.h>
++#include <sys/ioctl.h>
++#include "ctree.h"
++#include "transaction.h"
++#include "disk-io.h"
++#include "print-tree.h"
 +
-+		read_extent_buffer(l, &subvol_id, offset, sizeof(u64));
-+		subvol_id = le64_to_cpu(subvol_id);
-+		printf("\t\tsubvol_id %llu\n", (unsigned long long)subvol_id);
-+		item_size -= sizeof(u64);
-+		offset += sizeof(u64);
-+	}
++
++static void btrfs_uuid_to_key(const u8 *uuid, u64 *key_objectid,
++			      u64 *key_offset)
++{
++	*key_objectid = get_unaligned_le64(uuid);
++	*key_offset = get_unaligned_le64(uuid + sizeof(u64));
 +}
 +
- void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- {
- 	int i;
-@@ -841,6 +876,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 			       (long long)
- 			       btrfs_qgroup_limit_rsv_exclusive(l, qg_limit));
- 			break;
-+		case BTRFS_UUID_KEY_SUBVOL:
-+		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
-+			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
-+					btrfs_item_size_nr(l, i));
-+			break;
- 		case BTRFS_STRING_ITEM_KEY:
- 			/* dirty, but it's simple */
- 			str = l->data + btrfs_item_ptr_offset(l, i);
++
++/* return -ENOENT for !found, < 0 for errors, or 0 if an item was found */
++static int btrfs_uuid_tree_lookup_any(int fd, const u8 *uuid, u8 type,
++				      u64 *subid)
++{
++	int ret;
++	u64 key_objectid = 0;
++	u64 key_offset;
++	struct btrfs_ioctl_search_args search_arg;
++	struct btrfs_ioctl_search_header *search_header;
++	u32 item_size;
++
++	btrfs_uuid_to_key(uuid, &key_objectid, &key_offset);
++
++	memset(&search_arg, 0, sizeof(search_arg));
++	search_arg.key.tree_id = BTRFS_UUID_TREE_OBJECTID;
++	search_arg.key.min_objectid = key_objectid;
++	search_arg.key.max_objectid = key_objectid;
++	search_arg.key.min_type = type;
++	search_arg.key.max_type = type;
++	search_arg.key.min_offset = key_offset;
++	search_arg.key.max_offset = key_offset;
++	search_arg.key.max_transid = (u64)-1;
++	search_arg.key.nr_items = 1;
++	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search_arg);
++	if (ret < 0) {
++		fprintf(stderr,
++			"ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key %016llx, UUID_KEY, %016llx) ret=%d, error: %s\n",
++			(unsigned long long)key_objectid,
++			(unsigned long long)key_offset, ret, strerror(errno));
++		ret = -ENOENT;
++		goto out;
++	}
++
++	if (search_arg.key.nr_items < 1) {
++		ret = -ENOENT;
++		goto out;
++	}
++	search_header = (struct btrfs_ioctl_search_header *)(search_arg.buf);
++	item_size = search_header->len;
++	if ((item_size & (sizeof(u64) - 1)) || item_size == 0) {
++		printf("btrfs: uuid item with illegal size %lu!\n",
++		       (unsigned long)item_size);
++		ret = -ENOENT;
++		goto out;
++	} else {
++		ret = 0;
++	}
++
++	/* return first stored id */
++	memcpy(subid, search_header + 1, sizeof(*subid));
++	*subid = le64_to_cpu(*subid);
++
++out:
++	return ret;
++}
++
++int btrfs_lookup_uuid_subvol_item(int fd, const u8 *uuid, u64 *subvol_id)
++{
++	return btrfs_uuid_tree_lookup_any(fd, uuid, BTRFS_UUID_KEY_SUBVOL,
++					  subvol_id);
++}
++
++int btrfs_lookup_uuid_received_subvol_item(int fd, const u8 *uuid,
++					   u64 *subvol_id)
++{
++	return btrfs_uuid_tree_lookup_any(fd, uuid,
++					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
++					  subvol_id);
++}
 -- 
 1.8.3
 

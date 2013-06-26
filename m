@@ -1,42 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f41.google.com ([209.85.213.41]:35378 "EHLO
-	mail-yh0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752470Ab3FXHRF (ORCPT
+Received: from mail-pb0-f53.google.com ([209.85.160.53]:40822 "EHLO
+	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750826Ab3FZEQu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Jun 2013 03:17:05 -0400
-Received: by mail-yh0-f41.google.com with SMTP id z20so4738775yhz.14
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2013 00:17:03 -0700 (PDT)
-Message-ID: <51C7F09B.1020302@gmail.com>
-Date: Mon, 24 Jun 2013 15:09:15 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fix the comment for extent_io.c/clear_extent_bits
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Wed, 26 Jun 2013 00:16:50 -0400
+Received: by mail-pb0-f53.google.com with SMTP id xb12so13492285pbc.40
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2013 21:16:50 -0700 (PDT)
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+Subject: [PATCH btrfs-progs] kerncompat.h: remove offsetof redefinition
+Date: Wed, 26 Jun 2013 00:16:43 -0400
+Message-Id: <1372220203-17349-1-git-send-email-crrodriguez@opensuse.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It should be 'clear', not 'set'.
-
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+Must use the version provided by the compiler in stddef.h header
 ---
-  extent_io.c |    2 +-
-  1 file changed, 1 insertion(+), 1 deletion(-)
+ kerncompat.h | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/extent_io.c b/extent_io.c
-index 5093aeb..8f51250 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -197,7 +197,7 @@ static int clear_state_bit(struct extent_io_tree *tree,
-  }
-
-  /*
-- * set some bits on a range in the tree.
-+ * clear some bits on a range in the tree.
-   */
-  int clear_extent_bits(struct extent_io_tree *tree, u64 start,
-  		      u64 end, int bits, gfp_t mask)
+diff --git a/kerncompat.h b/kerncompat.h
+index 9c116b4..6b4b4ba 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -26,6 +26,7 @@
+ #include <endian.h>
+ #include <byteswap.h>
+ #include <assert.h>
++#include <stddef.h>
+ 
+ #ifndef READ
+ #define READ 0
+@@ -234,12 +235,6 @@ static inline long IS_ERR(const void *ptr)
+ #define BUG_ON(c) assert(!(c))
+ #define WARN_ON(c) assert(!(c))
+ 
+-#undef offsetof
+-#ifdef __compiler_offsetof
+-#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
+-#else
+-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+-#endif
+ 
+ #define container_of(ptr, type, member) ({                      \
+         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 -- 
-1.7.10.4
+1.8.3.1
 

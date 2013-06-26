@@ -1,93 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54573 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:12988 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752765Ab3FZTzo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Jun 2013 15:55:44 -0400
-Date: Wed, 26 Jun 2013 12:55:40 -0700
+	id S1752696Ab3FZUSd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Jun 2013 16:18:33 -0400
+Date: Wed, 26 Jun 2013 13:18:29 -0700
 From: Zach Brown <zab@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v6 1/8] Btrfs: introduce a tree for items that map UUIDs
- to something
-Message-ID: <20130626195540.GA3907@lenny.home.zabbo.net>
-References: <cover.1372250828.git.sbehrens@giantdisaster.de>
- <dcc3cedb7e15d11570aab0350113bc47eebc262b.1372250828.git.sbehrens@giantdisaster.de>
+Subject: Re: [PATCH] Btrfs: fix crash regarding to ulist_add_merge
+Message-ID: <20130626201829.GA10265@lenny.home.zabbo.net>
+References: <1372219371-15668-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <dcc3cedb7e15d11570aab0350113bc47eebc262b.1372250828.git.sbehrens@giantdisaster.de>
+In-Reply-To: <1372219371-15668-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> +	if (!uuid_root) {
-> +		WARN_ON_ONCE(1);
-> +		ret = -ENOENT;
-> +		goto out;
-> +	}
+On Wed, Jun 26, 2013 at 12:02:51PM +0800, Liu Bo wrote:
+> Several users reported this crash of NULL pointer or general protection,
+> the story is that we add a rbtree for speedup ulist iteration, and we
+> use krealloc() to address ulist growth, and krealloc() use memcpy to copy
+> old data to new memory area, so it's OK for an array as it doesn't use
+> pointers while it's not OK for a rbtree as it uses pointers.
+>
+> So krealloc() will mess up our rbtree and it ends up with crash.
 
-WARN_ON_ONCE specifically returns the condition so that you can write:
+It's not just krealloc(), the initial memcpy() out of the int_nodes
+array is also buggy.
 
-	if (WARN_ON_ONCE(!uuid_root)) {
-		ret = -ENOENT;
-		goto out;
-	}
-
-> +	while (item_size) {
-> +		u64 data;
-> +
-> +		read_extent_buffer(eb, &data, offset, sizeof(data));
-> +		data = le64_to_cpu(data);
-> +		if (data == subid) {
-> +			ret = 0;
-> +			break;
+> +		/*
+> +		 * krealloc actually uses memcpy, which does not copy rb_node
+> +		 * pointers, so we have to do it ourselves.  Otherwise we may
+> +		 * be bitten by crashes.
+> +		 */
+> +		for (i = 0; i < ulist->nnodes; i++) {
+> +			rb_erase(&ulist->nodes[i].rb_node, &ulist->root);
+> +			ret = ulist_rbtree_insert(ulist, &new_nodes[i]);
+> +			BUG_ON(ret);
 > +		}
-> +		offset += sizeof(data);
-> +		item_size -= sizeof(data);
-> +	}
 
-fs/btrfs/uuid-tree.c:81 col 24 warning: cast to restricted __le64
+This'll work for the int_nodes case where you still have access to the
+old pointers for rb_erase() to reference.
 
-There are a few more instances of this.  The good news is that fixing
-the sparse warning makes the code better, too.
+But in the krealloc() case the rb_erase() will be trying to reference
+freed memmory because krealloc() frees the old pointer on success.
 
-		__le64 data;
+And all the tree balancing in the deletion and re-insertion dance is
+totally unneeded.  And another f-ing BUG_ON()!
 
-		read_extent_buffer(eb, &data, offset, sizeof(data));
-		if (le64_to_cpu(data) == subid) {
+Just fixup all the pointers:
 
-Plese make sure the rest of the series doesn't add sparse warnings for
-Josef to get email about a few seconds after he merges.
+		ptrdiff_t diff = new_nodes - old;
+		ulist->root.rb_node += diff;
+		for (i = 0; i < ulist->nnodes; i++) {
+			ulist->nodes[i].rb_node.rb_left += diff;
+			ulist->nodes[i].rb_node.rb_left += diff;
+		}
 
-> +int btrfs_insert_uuid_subvol_item(struct btrfs_trans_handle *trans,
-> +				  struct btrfs_root *uuid_root, u8 *uuid,
-> +				  u64 subvol_id)
-> +{
-> +	int ret;
-> +
-> +	ret = btrfs_uuid_tree_lookup(uuid_root, uuid,
-> +				     BTRFS_UUID_KEY_SUBVOL, subvol_id);
-> +	if (ret == -ENOENT)
-> +		ret = btrfs_uuid_tree_add(trans, uuid_root, uuid,
-> +					  BTRFS_UUID_KEY_SUBVOL, subvol_id);
-> +	return ret;
-> +}
-
-
-> +int btrfs_insert_uuid_received_subvol_item(struct btrfs_trans_handle *trans,
-> +					   struct btrfs_root *uuid_root,
-> +					   u8 *uuid, u64 subvol_id)
-> +{
-> +	int ret;
-> +
-> +	ret = btrfs_uuid_tree_lookup(uuid_root, uuid,
-> +				     BTRFS_UUID_KEY_RECEIVED_SUBVOL, subvol_id);
-> +	if (ret == -ENOENT)
-> +		ret = btrfs_uuid_tree_add(trans, uuid_root, uuid,
-> +					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-> +					  subvol_id);
-> +	return ret;
-> +}
-
-Just have callers pass in the key type so we get slightly less enormous
-function names and less cut-and-paste code.
+Yeah, it's insane, but no more so than using krealloc() for an array
+with internal pointers in the first place.
 
 - z

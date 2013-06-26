@@ -1,180 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59371 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750826Ab3FZF02 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Jun 2013 01:26:28 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5Q5QOhv002515
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 13:26:25 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from xp-ob.rzone.de ([81.169.146.141]:57148 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752346Ab3FZPSA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Jun 2013 11:18:00 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (joses xp2) (RZmta 31.28 OK)
+	with ESMTP id g011bfp5PIqX0G for <linux-btrfs@vger.kernel.org>;
+	Wed, 26 Jun 2013 17:17:59 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH] btrfs-progs: Cleanup for using BTRFS_SETGET_STACK instead of raw convert
-Date: Wed, 26 Jun 2013 13:27:08 +0800
-Message-Id: <1372224428-5597-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 1/5] Btrfs-progs: Support UUID tree and UUID items in btrfs-debug-tree
+Date: Wed, 26 Jun 2013 17:17:55 +0200
+Message-Id: <77b49265b89b9c37e6f806c8513d9226306e217d.1372252739.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1372252739.git.sbehrens@giantdisaster.de>
+References: <cover.1372252739.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1372252739.git.sbehrens@giantdisaster.de>
+References: <cover.1372252739.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some codes still use the cpu_to_lexx instead of the
-BTRFS_SETGET_STACK_FUNCS declared in ctree.h.
+Support printing these things.
 
-Also added some BTRFS_SETGET_STACK_FUNCS for btrfs_header and
-btrfs_super.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- btrfs-convert.c    | 2 +-
- btrfs-find-root.c  | 6 +++---
- btrfs-image.c      | 2 +-
- btrfs-show-super.c | 2 +-
- ctree.h            | 7 +++++++
- disk-io.c          | 6 +++---
- utils.c            | 4 ++--
- volumes.c          | 2 +-
- 8 files changed, 19 insertions(+), 12 deletions(-)
+ ctree.h      | 15 +++++++++++++++
+ print-tree.c | 46 +++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 58 insertions(+), 3 deletions(-)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 399856f..cb96790 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -1802,7 +1802,7 @@ static int prepare_system_chunk_sb(struct btrfs_super_block *super)
- 	btrfs_set_stack_chunk_num_stripes(chunk, 1);
- 	btrfs_set_stack_chunk_sub_stripes(chunk, 0);
- 	chunk->stripe.devid = super->dev_item.devid;
--	chunk->stripe.offset = cpu_to_le64(0);
-+	btrfs_set_stack_stripe_offset(&chunk->stripe, 0);
- 	memcpy(chunk->stripe.dev_uuid, super->dev_item.uuid, BTRFS_UUID_SIZE);
- 	btrfs_set_super_sys_array_size(super, sizeof(*key) + sizeof(*chunk));
- 	return 0;
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 810d835..d3f4ccc 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -247,10 +247,10 @@ static int search_iobuf(struct btrfs_root *root, void *iobuf,
- 		u64 h_byte, h_level, h_gen, h_owner;
- 
- //		printf("searching %Lu\n", offset + block_off);
--		h_byte = le64_to_cpu(header->bytenr);
--		h_owner = le64_to_cpu(header->owner);
-+		h_byte = btrfs_stack_header_bytenr(header);
-+		h_owner = btrfs_stack_header_owner(header);
- 		h_level = header->level;
--		h_gen = le64_to_cpu(header->generation);
-+		h_gen = btrfs_stack_header_generation(header);
- 
- 		if (h_owner != objectid)
- 			goto next;
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 22239fe..599a35f 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -1332,7 +1332,7 @@ static void update_super_old(u8 *buffer)
- 	btrfs_set_stack_chunk_num_stripes(chunk, 1);
- 	btrfs_set_stack_chunk_sub_stripes(chunk, 0);
- 	chunk->stripe.devid = super->dev_item.devid;
--	chunk->stripe.offset = cpu_to_le64(0);
-+	btrfs_set_stack_stripe_offset(&chunk->stripe, 0);
- 	memcpy(chunk->stripe.dev_uuid, super->dev_item.uuid, BTRFS_UUID_SIZE);
- 	btrfs_set_super_sys_array_size(super, sizeof(*key) + sizeof(*chunk));
- 	csum_block(buffer, 4096);
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index f587f10..3e2567e 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -186,7 +186,7 @@ static void dump_superblock(struct btrfs_super_block *sb)
- 	s = (char *) &sb->magic;
- 	for (i = 0; i < 8; i++)
- 		putchar(isprint(s[i]) ? s[i] : '.');
--	if (sb->magic == cpu_to_le64(BTRFS_MAGIC))
-+	if (btrfs_super_magic(sb) == BTRFS_MAGIC)
- 		printf(" [match]\n");
- 	else
- 		printf(" [DON'T MATCH]\n");
 diff --git a/ctree.h b/ctree.h
-index 3fe14b0..4c2f430 100644
+index 3fe14b0..f959573 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -1712,6 +1712,12 @@ BTRFS_SETGET_HEADER_FUNCS(header_owner, struct btrfs_header, owner, 64);
- BTRFS_SETGET_HEADER_FUNCS(header_nritems, struct btrfs_header, nritems, 32);
- BTRFS_SETGET_HEADER_FUNCS(header_flags, struct btrfs_header, flags, 64);
- BTRFS_SETGET_HEADER_FUNCS(header_level, struct btrfs_header, level, 8);
-+BTRFS_SETGET_STACK_FUNCS(stack_header_bytenr, struct btrfs_header, bytenr, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_header_nritems, struct btrfs_header, nritems,
-+			 32);
-+BTRFS_SETGET_STACK_FUNCS(stack_header_owner, struct btrfs_header, owner, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_header_generation, struct btrfs_header,
-+			 generation, 64);
+@@ -71,6 +71,8 @@ struct btrfs_free_space_ctl;
+ #define BTRFS_CSUM_TREE_OBJECTID 7ULL
+ #define BTRFS_QUOTA_TREE_OBJECTID 8ULL
  
- static inline int btrfs_header_flag(struct extent_buffer *eb, u64 flag)
++/* for storing items that use the BTRFS_UUID_KEY* */
++#define BTRFS_UUID_TREE_OBJECTID 9ULL
+ 
+ /* for storing balance parameters in the root tree */
+ #define BTRFS_BALANCE_OBJECTID -4ULL
+@@ -1107,6 +1109,19 @@ struct btrfs_root {
+ #define BTRFS_DEV_REPLACE_KEY	250
+ 
+ /*
++ * Stores items that allow to quickly map UUIDs to something else.
++ * These items are part of the filesystem UUID tree.
++ * The key is built like this:
++ * (UUID_upper_64_bits, BTRFS_UUID_KEY*, UUID_lower_64_bits).
++ */
++#if BTRFS_UUID_SIZE != 16
++#error "UUID items require BTRFS_UUID_SIZE == 16!"
++#endif
++#define BTRFS_UUID_KEY_SUBVOL	251	/* for UUIDs assigned to subvols */
++#define BTRFS_UUID_KEY_RECEIVED_SUBVOL	252	/* for UUIDs assigned to
++						 * received subvols */
++
++/*
+  * string items are for debugging.  They just store a short string of
+  * data in the FS
+  */
+diff --git a/print-tree.c b/print-tree.c
+index aae47a9..c1032cb 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -509,6 +509,12 @@ static void print_key_type(u64 objectid, u8 type)
+ 	case BTRFS_DEV_STATS_KEY:
+ 		printf("DEV_STATS_ITEM");
+ 		break;
++	case BTRFS_UUID_KEY_SUBVOL:
++		printf("BTRFS_UUID_KEY_SUBVOL");
++		break;
++	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++		printf("BTRFS_UUID_KEY_RECEIVED_SUBVOL");
++		break;
+ 	default:
+ 		printf("UNKNOWN.%d", type);
+ 	};
+@@ -516,15 +522,18 @@ static void print_key_type(u64 objectid, u8 type)
+ 
+ static void print_objectid(u64 objectid, u8 type)
  {
-@@ -1918,6 +1924,7 @@ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
- 			 csum_type, 16);
- BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
- 			 cache_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_magic, struct btrfs_super_block, magic, 64);
- 
- static inline int btrfs_super_csum_size(struct btrfs_super_block *s)
- {
-diff --git a/disk-io.c b/disk-io.c
-index 9ffe6e4..4eef029 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1104,7 +1104,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 			return -1;
- 
- 		if (btrfs_super_bytenr(&buf) != sb_bytenr ||
--		    buf.magic != cpu_to_le64(BTRFS_MAGIC))
-+		    btrfs_super_magic(&buf) != BTRFS_MAGIC)
- 			return -1;
- 
- 		memcpy(sb, &buf, sizeof(*sb));
-@@ -1120,9 +1120,9 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 		if (btrfs_super_bytenr(&buf) != bytenr )
- 			continue;
- 		/* if magic is NULL, the device was removed */
--		if (buf.magic == 0 && i == 0) 
-+		if (btrfs_super_magic(&buf) == 0 && i == 0)
- 			return -1;
--		if (buf.magic != cpu_to_le64(BTRFS_MAGIC))
-+		if (btrfs_super_magic(&buf) != BTRFS_MAGIC)
- 			continue;
- 
- 		if (!fsid_is_initialized) {
-diff --git a/utils.c b/utils.c
-index 7b4cd74..1eeda0f 100644
---- a/utils.c
-+++ b/utils.c
-@@ -115,7 +115,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- 
- 	btrfs_set_super_bytenr(&super, blocks[0]);
- 	btrfs_set_super_num_devices(&super, 1);
--	super.magic = cpu_to_le64(BTRFS_MAGIC);
-+	btrfs_set_super_magic(&super, BTRFS_MAGIC);
- 	btrfs_set_super_generation(&super, 1);
- 	btrfs_set_super_root(&super, blocks[1]);
- 	btrfs_set_super_chunk_root(&super, blocks[3]);
-@@ -1139,7 +1139,7 @@ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 
- 	ret = 0;
- 	disk_super = (struct btrfs_super_block *)buf;
--	if (disk_super->magic != cpu_to_le64(BTRFS_MAGIC))
-+	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC)
- 		goto brelse;
- 
- 	if (!memcmp(disk_super->fsid, root->fs_info->super_copy->fsid,
-diff --git a/volumes.c b/volumes.c
-index d6f81f8..05608a5 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -231,7 +231,7 @@ int btrfs_scan_one_device(int fd, const char *path,
- 		ret = -EIO;
- 		goto error_brelse;
+-	if (type == BTRFS_DEV_EXTENT_KEY) {
++	switch (type) {
++	case BTRFS_DEV_EXTENT_KEY:
+ 		printf("%llu", (unsigned long long)objectid); /* device id */
+ 		return;
+-	}
+-	switch (type) {
+ 	case BTRFS_QGROUP_RELATION_KEY:
+ 		printf("%llu/%llu", objectid >> 48,
+ 			objectid & ((1ll << 48) - 1));
+ 		return;
++	case BTRFS_UUID_KEY_SUBVOL:
++	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++		printf("0x%016llx", (unsigned long long)objectid);
++		return;
  	}
--	devid = le64_to_cpu(disk_super->dev_item.devid);
-+	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)
- 		*total_devs = 1;
- 	else
+ 
+ 	switch (objectid) {
+@@ -582,6 +591,9 @@ static void print_objectid(u64 objectid, u8 type)
+ 	case BTRFS_QUOTA_TREE_OBJECTID:
+ 		printf("QUOTA_TREE");
+ 		break;
++	case BTRFS_UUID_TREE_OBJECTID:
++		printf("UUID_TREE");
++		break;
+ 	case BTRFS_MULTIPLE_OBJECTIDS:
+ 		printf("MULTIPLE");
+ 		break;
+@@ -616,6 +628,10 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
+ 		printf(" %llu/%llu)", (unsigned long long)(offset >> 48),
+ 			(unsigned long long)(offset & ((1ll << 48) - 1)));
+ 		break;
++	case BTRFS_UUID_KEY_SUBVOL:
++	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++		printf(" 0x%016llx)", (unsigned long long)offset);
++		break;
+ 	default:
+ 		if (offset == (u64)-1)
+ 			printf(" -1)");
+@@ -625,6 +641,25 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
+ 	}
+ }
+ 
++static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
++			    u32 item_size)
++{
++	if (item_size & (sizeof(u64) - 1)) {
++		printf("btrfs: uuid item with illegal size %lu!\n",
++		       (unsigned long)item_size);
++		return;
++	}
++	while (item_size) {
++		u64 subvol_id;
++
++		read_extent_buffer(l, &subvol_id, offset, sizeof(u64));
++		subvol_id = le64_to_cpu(subvol_id);
++		printf("\t\tsubvol_id %llu\n", (unsigned long long)subvol_id);
++		item_size -= sizeof(u64);
++		offset += sizeof(u64);
++	}
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -841,6 +876,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 			       (long long)
+ 			       btrfs_qgroup_limit_rsv_exclusive(l, qg_limit));
+ 			break;
++		case BTRFS_UUID_KEY_SUBVOL:
++		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
++					btrfs_item_size_nr(l, i));
++			break;
+ 		case BTRFS_STRING_ITEM_KEY:
+ 			/* dirty, but it's simple */
+ 			str = l->data + btrfs_item_ptr_offset(l, i);
 -- 
-1.8.3.1
+1.8.3
 

@@ -1,46 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48332 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751146Ab3FYPwy (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45281 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750712Ab3FZEDE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Jun 2013 11:52:54 -0400
-Date: Tue, 25 Jun 2013 23:52:35 +0800
+	Wed, 26 Jun 2013 00:03:04 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r5Q3ujxX022848
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 03:56:45 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5Q433fZ007369
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 04:03:03 GMT
+Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r5Q4326f007357
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 04:03:03 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Jon Nelson <jnelson+btrfs@jamponi.net>,
-        Chris Mason <chris.mason@fusionio.com>
-Subject: Re: hang on 3.9, 3.10-rc5
-Message-ID: <20130625155234.GA11866@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net>
- <20130618163706.GC19183@localhost.localdomain>
- <loom.20130618T190955-784@post.gmane.org>
- <20130621011137.4477.1347@localhost.localdomain>
- <CAKuK5J3TBDNgHJ_YUWupB4rO_ixG0LnZFE=K5Uo5Wbo=76rT+A@mail.gmail.com>
- <CAFvQSYSq9M5bTLeO-EfrEy_LKKFq7rWsc8T25_Nj2kOSRmoCFg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAFvQSYSq9M5bTLeO-EfrEy_LKKFq7rWsc8T25_Nj2kOSRmoCFg@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix crash regarding to ulist_add_merge
+Date: Wed, 26 Jun 2013 12:02:51 +0800
+Message-Id: <1372219371-15668-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 21, 2013 at 08:42:55AM +0200, Clemens Eisserer wrote:
-> Hi Jon,
-> 
-> > Is this what you are looking for?
-> > After this, the CPU gets "stuck" and I have to reboot.
-> 
-> This issue has already been reported:
-> https://bugzilla.kernel.org/show_bug.cgi?id=59451
+Several users reported this crash of NULL pointer or general protection,
+the story is that we add a rbtree for speedup ulist iteration, and we
+use krealloc() to address ulist growth, and krealloc() use memcpy to copy
+old data to new memory area, so it's OK for an array as it doesn't use
+pointers while it's not OK for a rbtree as it uses pointers.
 
-Hi,
+So krealloc() will mess up our rbtree and it ends up with crash.
 
-Could you please try this patch?
-
-(at least it addresses my ulist_add_merge crash :))
-
-thanks,
-liubo
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ulist.c |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
 index 7b417e2..69a9c32 100644
@@ -80,4 +74,6 @@ index 7b417e2..69a9c32 100644
  		ulist->nodes = new_nodes;
  		ulist->nodes_alloced = new_alloced;
  	}
+-- 
+1.7.7
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:24832 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:60578 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751893Ab3FZPQp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751559Ab3FZPQp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 26 Jun 2013 11:16:45 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by joses.store (joses xp2) (RZmta 31.28 OK)
-	with ESMTP id g011bfp5PIqX0A for <linux-btrfs@vger.kernel.org>;
+	by josoe.store (josoe xp4) (RZmta 31.28 OK)
+	with ESMTP id 6031fep5QF43IA for <linux-btrfs@vger.kernel.org>;
 	Wed, 26 Jun 2013 17:16:42 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 8/8] Btrfs: add mount option to force UUID tree checking
-Date: Wed, 26 Jun 2013 17:16:42 +0200
-Message-Id: <ed995f618eec0d8483d4d93f6c5450a01fe09273.1372250829.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v6 3/8] Btrfs: create UUID tree if required
+Date: Wed, 26 Jun 2013 17:16:37 +0200
+Message-Id: <132fa0b9f9d3a4c230e757747fcd02a5735fda5d.1372250828.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372250828.git.sbehrens@giantdisaster.de>
 References: <cover.1372250828.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372250828.git.sbehrens@giantdisaster.de>
@@ -19,83 +19,174 @@ References: <cover.1372250828.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This should never be needed, but since all functions are there
-to check and rebuild the UUID tree, a mount option is added that
-allows to force this check and rebuild procedure.
+This tree is not created by mkfs.btrfs. Therefore when a filesystem
+is mounted writable and the UUID tree does not exist, this tree is
+created if required. The tree is also added to the fs_info structure
+and initialized, but this commit does not yet read or write UUID tree
+elements.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h   | 1 +
- fs/btrfs/disk-io.c | 3 ++-
- fs/btrfs/super.c   | 8 +++++++-
- 3 files changed, 10 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     | 34 ++++++++++++++++++++++++++++++++++
+ fs/btrfs/extent-tree.c |  3 +++
+ fs/btrfs/volumes.c     | 26 ++++++++++++++++++++++++++
+ fs/btrfs/volumes.h     |  1 +
+ 5 files changed, 65 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e43f64e..634cbd1 100644
+index ef7aa16..4f3328a 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1976,6 +1976,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
-+#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+@@ -1293,6 +1293,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *fs_root;
+ 	struct btrfs_root *csum_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
  
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+ 	/* the log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7508b3a..e76554b 100644
+index 3c2886c..1db446a 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2919,7 +2919,8 @@ retry_root_backup:
- 			close_ctree(tree_root);
- 			return ret;
- 		}
--	} else if (check_uuid_tree) {
-+	} else if (check_uuid_tree ||
-+		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
- 		pr_info("btrfs: checking UUID tree\n");
- 		ret = btrfs_check_uuid_tree(fs_info);
- 		if (ret) {
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8eb6191..191f281 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -320,7 +320,7 @@ enum {
- 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
--	Opt_check_integrity_print_mask, Opt_fatal_errors,
-+	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
- 	Opt_err,
- };
+@@ -1580,6 +1580,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
+ 	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
+ 		return fs_info->quota_root ? fs_info->quota_root :
+ 					     ERR_PTR(-ENOENT);
++	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
++		return fs_info->uuid_root ? fs_info->uuid_root :
++					    ERR_PTR(-ENOENT);
+ again:
+ 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
+ 	if (root)
+@@ -2037,6 +2040,12 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 		info->quota_root->node = NULL;
+ 		info->quota_root->commit_root = NULL;
+ 	}
++	if (info->uuid_root) {
++		free_extent_buffer(info->uuid_root->node);
++		free_extent_buffer(info->uuid_root->commit_root);
++		info->uuid_root->node = NULL;
++		info->uuid_root->commit_root = NULL;
++	}
+ 	if (chunk_root) {
+ 		free_extent_buffer(info->chunk_root->node);
+ 		free_extent_buffer(info->chunk_root->commit_root);
+@@ -2097,11 +2106,13 @@ int open_ctree(struct super_block *sb,
+ 	struct btrfs_root *chunk_root;
+ 	struct btrfs_root *dev_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
+ 	struct btrfs_root *log_tree_root;
+ 	int ret;
+ 	int err = -EINVAL;
+ 	int num_backups_tried = 0;
+ 	int backup_index = 0;
++	bool create_uuid_tree = false;
  
-@@ -360,6 +360,7 @@ static match_table_t tokens = {
- 	{Opt_check_integrity, "check_int"},
- 	{Opt_check_integrity_including_extent_data, "check_int_data"},
- 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
-+	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
- 	{Opt_fatal_errors, "fatal_errors=%s"},
- 	{Opt_err, NULL},
- };
-@@ -554,6 +555,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_space_cache:
- 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 			break;
-+		case Opt_rescan_uuid_tree:
-+			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
-+			break;
- 		case Opt_no_space_cache:
- 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
- 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
-@@ -928,6 +932,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",space_cache");
- 	else
- 		seq_puts(seq, ",nospace_cache");
-+	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
-+		seq_puts(seq, ",rescan_uuid_tree");
- 	if (btrfs_test_opt(root, CLEAR_CACHE))
- 		seq_puts(seq, ",clear_cache");
- 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+@@ -2695,6 +2706,18 @@ retry_root_backup:
+ 		fs_info->quota_root = quota_root;
+ 	}
+ 
++	location.objectid = BTRFS_UUID_TREE_OBJECTID;
++	uuid_root = btrfs_read_tree_root(tree_root, &location);
++	if (IS_ERR(uuid_root)) {
++		ret = PTR_ERR(uuid_root);
++		if (ret != -ENOENT)
++			goto recovery_tree_root;
++		create_uuid_tree = true;
++	} else {
++		uuid_root->track_dirty = 1;
++		fs_info->uuid_root = uuid_root;
++	}
++
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 
+@@ -2881,6 +2904,17 @@ retry_root_backup:
+ 
+ 	btrfs_qgroup_rescan_resume(fs_info);
+ 
++	if (create_uuid_tree) {
++		pr_info("btrfs: creating UUID tree\n");
++		ret = btrfs_create_uuid_tree(fs_info);
++		if (ret) {
++			pr_warn("btrfs: failed to create the UUID tree %d\n",
++				ret);
++			close_ctree(tree_root);
++			return ret;
++		}
++	}
++
+ 	return 0;
+ 
+ fail_qgroup:
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6d5c5f7..1c4694a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4308,6 +4308,9 @@ static struct btrfs_block_rsv *get_block_rsv(
+ 	if (root == root->fs_info->csum_root && trans->adding_csums)
+ 		block_rsv = trans->block_rsv;
+ 
++	if (root == root->fs_info->uuid_root)
++		block_rsv = trans->block_rsv;
++
+ 	if (!block_rsv)
+ 		block_rsv = root->block_rsv;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c58bf19..d4c7955 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3411,6 +3411,32 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ }
+ 
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *uuid_root;
++
++	/*
++	 * 1 - root node
++	 * 1 - root item
++	 */
++	trans = btrfs_start_transaction(tree_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	uuid_root = btrfs_create_tree(trans, fs_info,
++				      BTRFS_UUID_TREE_OBJECTID);
++	if (IS_ERR(uuid_root)) {
++		btrfs_abort_transaction(trans, tree_root,
++					PTR_ERR(uuid_root));
++		return PTR_ERR(uuid_root);
++	}
++
++	fs_info->uuid_root = uuid_root;
++
++	return btrfs_commit_transaction(trans, tree_root);
++}
+ /*
+  * shrinking a device means finding all of the device extents past
+  * the new size, and then following the back refs to the chunks.
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 857acd3..c3fcd60 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -315,6 +315,7 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
+ int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
 -- 
 1.8.3
 

@@ -1,136 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:50363 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:47794 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751784Ab3F0KyU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Jun 2013 06:54:20 -0400
+	id S1752018Ab3F0KyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Jun 2013 06:54:21 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5RAsHpB013965
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5RAsHo4013964
 	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 18:54:17 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] Btrfs: cleanup the code of copy_nocow_pages_for_inode()
-Date: Thu, 27 Jun 2013 18:50:59 +0800
-Message-Id: <1372330260-1584-2-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 3/3] Btrfs: fix several potential problems in copy_nocow_pages_for_inode
+Date: Thu, 27 Jun 2013 18:51:00 +0800
+Message-Id: <1372330260-1584-3-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1372330260-1584-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1372330260-1584-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- It make no sense that we continue to do something after the error
-  happened, just go back with this patch.
-- remove some check of copy_nocow_pages_for_inode(), such as page check
-  after write, inode check in the end of the function, because we are
-  sure they exist.
-- remove the unnecessary goto in the return value check of the write
+- It makes no sense that we deal with a inode in the dead tree.
+- fix the race between dio and page copy by waiting the dio completion
+- avoid the page copy vs truncate/punch hole
+- check if the page is in the page cache or not
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 48 +++++++++++++++++++++++-------------------------
- 1 file changed, 23 insertions(+), 25 deletions(-)
+ fs/btrfs/scrub.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c1647f8..186ea82 100644
+index 186ea82..4ba2a69 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3199,16 +3199,18 @@ out:
+@@ -3224,6 +3224,11 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
+ 		return PTR_ERR(local_root);
+ 	}
  
- static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- {
--	unsigned long index;
- 	struct scrub_copy_nocow_ctx *nocow_ctx = ctx;
--	int ret = 0;
-+	struct btrfs_fs_info *fs_info = nocow_ctx->sctx->dev_root->fs_info;
- 	struct btrfs_key key;
--	struct inode *inode = NULL;
-+	struct inode *inode;
-+	struct page *page;
- 	struct btrfs_root *local_root;
- 	u64 physical_for_dev_replace;
- 	u64 len;
--	struct btrfs_fs_info *fs_info = nocow_ctx->sctx->dev_root->fs_info;
-+	unsigned long index;
- 	int srcu_index;
-+	int ret;
-+	int err;
- 
- 	key.objectid = root;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
-@@ -3230,19 +3232,17 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
++	if (btrfs_root_refs(&local_root->root_item) == 0) {
++		srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
++		return -ENOENT;
++	}
++
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.objectid = inum;
+ 	key.offset = 0;
+@@ -3232,12 +3237,16 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
  	if (IS_ERR(inode))
  		return PTR_ERR(inode);
  
-+	ret = 0;
++	/* Avoid truncate/dio/punch hole.. */
++	mutex_lock(&inode->i_mutex);
++	inode_dio_wait(inode);
++
+ 	ret = 0;
  	physical_for_dev_replace = nocow_ctx->physical_for_dev_replace;
  	len = nocow_ctx->len;
  	while (len >= PAGE_CACHE_SIZE) {
--		struct page *page = NULL;
--		int ret_sub;
--
  		index = offset >> PAGE_CACHE_SHIFT;
- 
+-
++again:
  		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
  		if (!page) {
  			pr_err("find_or_create_page() failed\n");
- 			ret = -ENOMEM;
--			goto next_page;
-+			goto out;
- 		}
- 
- 		if (PageUptodate(page)) {
-@@ -3250,12 +3250,12 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- 				goto next_page;
- 		} else {
- 			ClearPageError(page);
--			ret_sub = extent_read_full_page(&BTRFS_I(inode)->
-+			err = extent_read_full_page(&BTRFS_I(inode)->
- 							 io_tree,
- 							page, btrfs_get_extent,
- 							nocow_ctx->mirror_num);
--			if (ret_sub) {
--				ret = ret_sub;
-+			if (err) {
-+				ret = err;
+@@ -3258,7 +3267,18 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
+ 				ret = err;
  				goto next_page;
  			}
++
  			lock_page(page);
-@@ -3264,25 +3264,23 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
++			/*
++			 * If the page has been remove from the page cache,
++			 * the data on it is meaningless, because it may be
++			 * old one, the new data may be written into the new
++			 * page in the page cache.
++			 */
++			if (page->mapping != inode->i_mapping) {
++				page_cache_release(page);
++				goto again;
++			}
+ 			if (!PageUptodate(page)) {
+ 				ret = -EIO;
  				goto next_page;
- 			}
- 		}
--		ret_sub = write_page_nocow(nocow_ctx->sctx,
--					   physical_for_dev_replace, page);
--		if (ret_sub) {
--			ret = ret_sub;
--			goto next_page;
--		}
--
-+		err = write_page_nocow(nocow_ctx->sctx,
-+				       physical_for_dev_replace, page);
-+		if (err)
-+			ret = err;
- next_page:
--		if (page) {
--			unlock_page(page);
--			put_page(page);
--		}
-+		unlock_page(page);
-+		page_cache_release(page);
-+
-+		if (ret)
-+			break;
-+
- 		offset += PAGE_CACHE_SIZE;
- 		physical_for_dev_replace += PAGE_CACHE_SIZE;
+@@ -3280,6 +3300,7 @@ next_page:
  		len -= PAGE_CACHE_SIZE;
  	}
--
--	if (inode)
--		iput(inode);
-+out:
-+	iput(inode);
+ out:
++	mutex_unlock(&inode->i_mutex);
+ 	iput(inode);
  	return ret;
  }
- 
 -- 
 1.8.1.4
 

@@ -1,86 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:53361 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753892Ab3F0SMA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Jun 2013 14:12:00 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 6634C9A06A5
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 12:12:00 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id NSsyAutDVYj2DrBw (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 12:11:59 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: cleanup orphaned root orphan item V2
-Date: Thu, 27 Jun 2013 14:11:57 -0400
-Message-ID: <1372356717-24936-1-git-send-email-jbacik@fusionio.com>
+Received: from mx1.redhat.com ([209.132.183.28]:48850 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753249Ab3F0VdX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Jun 2013 17:33:23 -0400
+Date: Thu, 27 Jun 2013 14:33:20 -0700
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: make the chunk allocator completely tree lockless
+Message-ID: <20130627213320.GG10265@lenny.home.zabbo.net>
+References: <1372354038-2111-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1372354038-2111-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I hit a weird problem were my root item had been deleted but the orphan item had
-not.  This isn't necessarily a problem, but it keeps the file system from being
-mounted.  To fix this we just need to axe the orphan item if we can't find the
-fs root when we're putting them altogether.  With this patch I was able to
-successfully mount my file system.  Thanks,
+Reviewing as requested!  It certainly looks reasonable, but I don't have
+enough history with the code to really say much more than that.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-V1->V2: replace PTR_ERR() with PTR_RET(), thats what I meant to do
+Some questions:
 
- fs/btrfs/root-tree.c |   31 +++++++++++++++++++++++++++++--
- 1 files changed, 29 insertions(+), 2 deletions(-)
+> @@ -8423,6 +8432,10 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+>  					sizeof(item));
+>  		if (ret)
+>  			btrfs_abort_transaction(trans, extent_root, ret);
+> +		ret = btrfs_finish_chunk_alloc(trans, extent_root,
+> +					       key.objectid, key.offset);
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 723a531..ffb1036 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -228,6 +228,10 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
- 	struct btrfs_root *root;
- 	int err = 0;
- 	int ret;
-+	bool can_recover = true;
-+
-+	if (tree_root->fs_info->sb->s_flags & MS_RDONLY)
-+		can_recover = false;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -268,9 +272,32 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
- 		key.offset++;
- 
- 		root = btrfs_read_fs_root(tree_root, &root_key);
--		if (IS_ERR(root)) {
--			err = PTR_ERR(root);
-+		err = PTR_RET(root);
-+		if (err && err != -ENOENT) {
- 			break;
-+		} else if (err == -ENOENT) {
-+			struct btrfs_trans_handle *trans;
-+
-+			btrfs_release_path(path);
-+
-+			trans = btrfs_join_transaction(tree_root);
-+			if (IS_ERR(trans)) {
-+				err = PTR_ERR(trans);
-+				btrfs_error(tree_root->fs_info, err,
-+					    "Failed to start trans to delete "
-+					    "orphan item");
-+				break;
-+			}
-+			err = btrfs_del_orphan_item(trans, tree_root,
-+						    root_key.objectid);
-+			btrfs_end_transaction(trans, tree_root);
-+			if (err) {
-+				btrfs_error(tree_root->fs_info, err,
-+					    "Failed to delete root orphan "
-+					    "item");
-+				break;
-+			}
-+			continue;
- 		}
- 
- 		if (btrfs_root_refs(&root->root_item) == 0) {
--- 
-1.7.7.6
+Would this moved call site need to worry about the chunk mutex at all?
 
+> +		if (ret)
+> +			btrfs_abort_transaction(trans, root, ret);
+
+Did you mean to abort the root here, not the extent_root like the one
+above?
+
+> +static int contains_pending_extent(struct btrfs_trans_handle *trans,
+> +				   struct btrfs_device *device,
+> +				   u64 *start, u64 len)
+> +{
+> +	struct extent_map *em;
+> +	int ret = 0;
+> +
+> +	list_for_each_entry(em, &trans->transaction->pending_chunks, list) {
+> +		struct map_lookup *map;
+> +		int i;
+> +
+> +		map = (struct map_lookup *)em->bdev;
+> +		for (i = 0; i < map->num_stripes; i++) {
+> +			if (map->stripes[i].dev != device)
+> +				continue;
+> +			if (map->stripes[i].physical >= *start + len ||
+> +			    map->stripes[i].physical + em->orig_block_len <=
+> +			    *start)
+> +				continue;
+> +			*start = map->stripes[i].physical +
+> +				em->orig_block_len;
+> +			ret = 1;
+> +		}
+> +	}
+
+Did you want a 'break;' there?  Is it trying to set *start to the last
+match rather than returning the first?
+
+> +		ret = btrfs_alloc_dev_extent(trans, device,
+> +					     chunk_root->root_key.objectid,
+> +					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> +					     chunk_offset, dev_offset,
+> +					     stripe_size);
+> +		if (ret)
+> +			goto out;
+
+The old code tried to free up previous allocations when one failed, but
+it looks like this deferred alloc doesn't.  Do we care?
+
+> -	index = 0;
+> -	while (index < map->num_stripes) {
+> -		index++;
+
+> +	for (i = 0; i < map->num_stripes; i++) {
+
+*hugs*
+
+- z

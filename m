@@ -1,119 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36950 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751447Ab3F0Bpf (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:26605 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751643Ab3F0BvS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Jun 2013 21:45:35 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 348707C04E0
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 19:45:35 -0600 (MDT)
-Date: Wed, 26 Jun 2013 21:45:32 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Zach Brown <zab@redhat.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v6 1/8] Btrfs: introduce a tree for items that map UUIDs
- to something
-Message-ID: <20130627014532.GP4288@localhost.localdomain>
-References: <cover.1372250828.git.sbehrens@giantdisaster.de>
- <dcc3cedb7e15d11570aab0350113bc47eebc262b.1372250828.git.sbehrens@giantdisaster.de>
- <20130626195540.GA3907@lenny.home.zabbo.net>
- <51CB6171.2000006@giantdisaster.de>
+	Wed, 26 Jun 2013 21:51:18 -0400
+Date: Thu, 27 Jun 2013 09:51:05 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Zach Brown <zab@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix crash regarding to ulist_add_merge
+Message-ID: <20130627015104.GC19614@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1372219371-15668-1-git-send-email-bo.li.liu@oracle.com>
+ <20130626201829.GA10265@lenny.home.zabbo.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <51CB6171.2000006@giantdisaster.de>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130626201829.GA10265@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 26, 2013 at 11:47:29PM +0200, Stefan Behrens wrote:
-> On 06/26/2013 21:55, Zach Brown wrote:
-> >>+	if (!uuid_root) {
-> >>+		WARN_ON_ONCE(1);
-> >>+		ret = -ENOENT;
-> >>+		goto out;
-> >>+	}
+On Wed, Jun 26, 2013 at 01:18:29PM -0700, Zach Brown wrote:
+> On Wed, Jun 26, 2013 at 12:02:51PM +0800, Liu Bo wrote:
+> > Several users reported this crash of NULL pointer or general protection,
+> > the story is that we add a rbtree for speedup ulist iteration, and we
+> > use krealloc() to address ulist growth, and krealloc() use memcpy to copy
+> > old data to new memory area, so it's OK for an array as it doesn't use
+> > pointers while it's not OK for a rbtree as it uses pointers.
 > >
-> >WARN_ON_ONCE specifically returns the condition so that you can write:
-> >
-> >	if (WARN_ON_ONCE(!uuid_root)) {
-> >		ret = -ENOENT;
-> >		goto out;
-> >	}
-> >
-> >>+	while (item_size) {
-> >>+		u64 data;
-> >>+
-> >>+		read_extent_buffer(eb, &data, offset, sizeof(data));
-> >>+		data = le64_to_cpu(data);
-> >>+		if (data == subid) {
-> >>+			ret = 0;
-> >>+			break;
-> >>+		}
-> >>+		offset += sizeof(data);
-> >>+		item_size -= sizeof(data);
-> >>+	}
-> >
-> >fs/btrfs/uuid-tree.c:81 col 24 warning: cast to restricted __le64
-> >
-> >There are a few more instances of this.  The good news is that fixing
-> >the sparse warning makes the code better, too.
-> >
-> >		__le64 data;
-> >
-> >		read_extent_buffer(eb, &data, offset, sizeof(data));
-> >		if (le64_to_cpu(data) == subid) {
-> >
-> >Plese make sure the rest of the series doesn't add sparse warnings for
-> >Josef to get email about a few seconds after he merges.
-> >
-> >>+int btrfs_insert_uuid_subvol_item(struct btrfs_trans_handle *trans,
-> >>+				  struct btrfs_root *uuid_root, u8 *uuid,
-> >>+				  u64 subvol_id)
-> >>+{
-> >>+	int ret;
-> >>+
-> >>+	ret = btrfs_uuid_tree_lookup(uuid_root, uuid,
-> >>+				     BTRFS_UUID_KEY_SUBVOL, subvol_id);
-> >>+	if (ret == -ENOENT)
-> >>+		ret = btrfs_uuid_tree_add(trans, uuid_root, uuid,
-> >>+					  BTRFS_UUID_KEY_SUBVOL, subvol_id);
-> >>+	return ret;
-> >>+}
-> >
-> >
-> >>+int btrfs_insert_uuid_received_subvol_item(struct btrfs_trans_handle *trans,
-> >>+					   struct btrfs_root *uuid_root,
-> >>+					   u8 *uuid, u64 subvol_id)
-> >>+{
-> >>+	int ret;
-> >>+
-> >>+	ret = btrfs_uuid_tree_lookup(uuid_root, uuid,
-> >>+				     BTRFS_UUID_KEY_RECEIVED_SUBVOL, subvol_id);
-> >>+	if (ret == -ENOENT)
-> >>+		ret = btrfs_uuid_tree_add(trans, uuid_root, uuid,
-> >>+					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-> >>+					  subvol_id);
-> >>+	return ret;
-> >>+}
-> >
-> >Just have callers pass in the key type so we get slightly less enormous
-> >function names and less cut-and-paste code.
+> > So krealloc() will mess up our rbtree and it ends up with crash.
 > 
-> Thanks for your comments, but this salami review procedure is not very
-> efficient. Everything that you comment on now and before is there since V1.
+> It's not just krealloc(), the initial memcpy() out of the int_nodes
+> array is also buggy.
 > 
-> Please tell me when you are done with the full review. And please also stop
-> the bikeshedding.
+> > +		/*
+> > +		 * krealloc actually uses memcpy, which does not copy rb_node
+> > +		 * pointers, so we have to do it ourselves.  Otherwise we may
+> > +		 * be bitten by crashes.
+> > +		 */
+> > +		for (i = 0; i < ulist->nnodes; i++) {
+> > +			rb_erase(&ulist->nodes[i].rb_node, &ulist->root);
+> > +			ret = ulist_rbtree_insert(ulist, &new_nodes[i]);
+> > +			BUG_ON(ret);
+> > +		}
 > 
+> This'll work for the int_nodes case where you still have access to the
+> old pointers for rb_erase() to reference.
+> 
+> But in the krealloc() case the rb_erase() will be trying to reference
+> freed memmory because krealloc() frees the old pointer on success.
+> 
+> And all the tree balancing in the deletion and re-insertion dance is
+> totally unneeded.  And another f-ing BUG_ON()!
+> 
+> Just fixup all the pointers:
+> 
+> 		ptrdiff_t diff = new_nodes - old;
+> 		ulist->root.rb_node += diff;
+> 		for (i = 0; i < ulist->nnodes; i++) {
+> 			ulist->nodes[i].rb_node.rb_left += diff;
+> 			ulist->nodes[i].rb_node.rb_left += diff;
+> 		}
+> 
+> Yeah, it's insane, but no more so than using krealloc() for an array
+> with internal pointers in the first place.
 
-This is the way reviews work, people have limited time and pop in and look at
-things as closely as possible.  For something this big you are going to go
-through a bunch of iterations, and that is good.  I'd rather you be annoyed than
-users because something broke, or me when I have to come back and fix stuff and
-spend forever trying to figure out the code.
+Well, it doesn't work,
 
-Our goal is to move towards better stability overall, that means more reviews,
-more patch iterations and requirements for tests to verify new code.  We are
-never going to stabilize if we don't start making firm decisions on our code
-quality practices.  Thanks,
+[ 9062.312202] ulist_add_merge: diff 18446612136922603520
+[ 9062.312231] general protection fault: 0000 [#1] SMP 
 
-Josef
+thanks,
+liubo

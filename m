@@ -1,86 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30430 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:50363 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752053Ab3F0Jiz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Jun 2013 05:38:55 -0400
+	id S1752018Ab3F0KyT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Jun 2013 06:54:19 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5R9crg0010049
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 17:38:53 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5RAsHo3013964
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 18:54:17 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH] btrfs: Cleanup unneeded extra variant in btrfs_read_sys_array
-Date: Thu, 27 Jun 2013 17:39:35 +0800
-Message-Id: <1372325975-7004-1-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Lin Feng <linfeng@cn.fujitsu.com>
+Subject: [PATCH 1/3] Btrfs: fix oops when recovering the file data by scrub function
+Date: Thu, 27 Jun 2013 18:50:58 +0800
+Message-Id: <1372330260-1584-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The btrfs_read_sys_array function uses 3 variants to read data from
-super block.
+We get oops while running btrfs replace start test,
+------------[ cut here ]------------
+kernel BUG at mm/filemap.c:608!
+[SNIP]
+Call Trace:
+  [<ffffffffa04b36c7>] copy_nocow_pages_for_inode+0x217/0x3f0 [btrfs]
+  [<ffffffffa04b34b0>] ? scrub_print_warning_inode+0x230/0x230 [btrfs]
+  [<ffffffffa04b34b0>] ? scrub_print_warning_inode+0x230/0x230 [btrfs]
+  [<ffffffffa04bb8ce>] iterate_extent_inodes+0x1ae/0x300 [btrfs]
+  [<ffffffffa04bbab2>] iterate_inodes_from_logical+0x92/0xb0 [btrfs]
+  [<ffffffffa04b34b0>] ? scrub_print_warning_inode+0x230/0x230 [btrfs]
+  [<ffffffffa04b3b07>] copy_nocow_pages_worker+0x97/0x150 [btrfs]
+  [<ffffffffa048eed4>] worker_loop+0x134/0x540 [btrfs]
+  [<ffffffff816274ea>] ? __schedule+0x3ca/0x7f0
+  [<ffffffffa048eda0>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+  [<ffffffff8106f2f0>] kthread+0xc0/0xd0
+  [<ffffffff8106f230>] ? flush_kthread_worker+0x80/0x80
+  [<ffffffff8163181c>] ret_from_fork+0x7c/0xb0
+  [<ffffffff8106f230>] ? flush_kthread_worker+0x80/0x80
+[SNIP]
+ RIP  [<ffffffff8111f4c5>] unlock_page+0x35/0x40
+  RSP <ffff88010316bb98>
+ ---[ end trace 421e79ad0dd72c7d ]---
 
-But the three variants are related to each other, so the patch removes
-unneeded extra variants and make code a little simpler.
+it is because we forgot to lock the page again after we read data to
+the page. Fix it.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Lin Feng <linfeng@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 17 +++++------------
- 1 file changed, 5 insertions(+), 12 deletions(-)
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2494008..9d7cf92 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5613,12 +5613,10 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	struct btrfs_disk_key *disk_key;
- 	struct btrfs_chunk *chunk;
- 	u8 *ptr;
--	unsigned long sb_ptr;
-+	u8 *array_end;
- 	int ret = 0;
- 	u32 num_stripes;
--	u32 array_size;
- 	u32 len = 0;
--	u32 cur;
- 	struct btrfs_key key;
- 
- 	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET,
-@@ -5643,22 +5641,19 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 		SetPageUptodate(sb->pages[0]);
- 
- 	write_extent_buffer(sb, super_copy, 0, BTRFS_SUPER_INFO_SIZE);
--	array_size = btrfs_super_sys_array_size(super_copy);
-+	array_end = ((u8 *)super_copy->sys_chunk_array) +
-+		    btrfs_super_sys_array_size(super_copy);
- 
- 	ptr = super_copy->sys_chunk_array;
--	sb_ptr = offsetof(struct btrfs_super_block, sys_chunk_array);
--	cur = 0;
- 
--	while (cur < array_size) {
-+	while (ptr < array_end) {
- 		disk_key = (struct btrfs_disk_key *)ptr;
- 		btrfs_disk_key_to_cpu(&key, disk_key);
- 
- 		len = sizeof(*disk_key); ptr += len;
--		sb_ptr += len;
--		cur += len;
- 
- 		if (key.type == BTRFS_CHUNK_ITEM_KEY) {
--			chunk = (struct btrfs_chunk *)sb_ptr;
-+			chunk = (struct btrfs_chunk *)(ptr - (u8 *)super_copy);
- 			ret = read_one_chunk(root, &key, sb, chunk);
- 			if (ret)
- 				break;
-@@ -5669,8 +5664,6 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 			break;
- 		}
- 		ptr += len;
--		sb_ptr += len;
--		cur += len;
- 	}
- 	free_extent_buffer(sb);
- 	return ret;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 63144e4..c1647f8 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3258,7 +3258,7 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
+ 				ret = ret_sub;
+ 				goto next_page;
+ 			}
+-			wait_on_page_locked(page);
++			lock_page(page);
+ 			if (!PageUptodate(page)) {
+ 				ret = -EIO;
+ 				goto next_page;
 -- 
-1.8.3.1
+1.8.1.4
 

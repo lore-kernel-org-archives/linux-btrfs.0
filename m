@@ -1,92 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47794 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752018Ab3F0KyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Jun 2013 06:54:21 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r5RAsHo4013964
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 18:54:17 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
+Received: from plane.gmane.org ([80.91.229.3]:44641 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751746Ab3F0NvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Jun 2013 09:51:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UsCbV-0001LB-A2
+	for linux-btrfs@vger.kernel.org; Thu, 27 Jun 2013 15:51:17 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 15:51:17 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 15:51:17 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] Btrfs: fix several potential problems in copy_nocow_pages_for_inode
-Date: Thu, 27 Jun 2013 18:51:00 +0800
-Message-Id: <1372330260-1584-3-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1372330260-1584-1-git-send-email-miaox@cn.fujitsu.com>
-References: <1372330260-1584-1-git-send-email-miaox@cn.fujitsu.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: some feedbacks seen on btrfs
+Date: Thu, 27 Jun 2013 13:50:59 +0000 (UTC)
+Message-ID: <pan$3baf1$6d060523$a1fed5b3$72605eb8@cox.net>
+References: <CADCGFBV-5OMDCD-EVtsUsKnSBOifF2+sjYHHmgR0WKOoLLsQXw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- It makes no sense that we deal with a inode in the dead tree.
-- fix the race between dio and page copy by waiting the dio completion
-- avoid the page copy vs truncate/punch hole
-- check if the page is in the page cache or not
+Roger Pack posted on Wed, 26 Jun 2013 15:04:56 -0600 as excerpted:
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 23 ++++++++++++++++++++++-
- 1 file changed, 22 insertions(+), 1 deletion(-)
+> First off, thanks for an awesome file system, it is working well for my
+> purposes of compressing a  filesystem on a small VPS.  Woot!
+> 
+> I thought I'd call out a few things (in the hopes of spurring
+> improvements) I'd seen about btrfs (in case they weren't common
+> knowledge...):
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 186ea82..4ba2a69 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3224,6 +3224,11 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- 		return PTR_ERR(local_root);
- 	}
- 
-+	if (btrfs_root_refs(&local_root->root_item) == 0) {
-+		srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
-+		return -ENOENT;
-+	}
-+
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.objectid = inum;
- 	key.offset = 0;
-@@ -3232,12 +3237,16 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- 	if (IS_ERR(inode))
- 		return PTR_ERR(inode);
- 
-+	/* Avoid truncate/dio/punch hole.. */
-+	mutex_lock(&inode->i_mutex);
-+	inode_dio_wait(inode);
-+
- 	ret = 0;
- 	physical_for_dev_replace = nocow_ctx->physical_for_dev_replace;
- 	len = nocow_ctx->len;
- 	while (len >= PAGE_CACHE_SIZE) {
- 		index = offset >> PAGE_CACHE_SHIFT;
--
-+again:
- 		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
- 		if (!page) {
- 			pr_err("find_or_create_page() failed\n");
-@@ -3258,7 +3267,18 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
- 				ret = err;
- 				goto next_page;
- 			}
-+
- 			lock_page(page);
-+			/*
-+			 * If the page has been remove from the page cache,
-+			 * the data on it is meaningless, because it may be
-+			 * old one, the new data may be written into the new
-+			 * page in the page cache.
-+			 */
-+			if (page->mapping != inode->i_mapping) {
-+				page_cache_release(page);
-+				goto again;
-+			}
- 			if (!PageUptodate(page)) {
- 				ret = -EIO;
- 				goto next_page;
-@@ -3280,6 +3300,7 @@ next_page:
- 		len -= PAGE_CACHE_SIZE;
- 	}
- out:
-+	mutex_unlock(&inode->i_mutex);
- 	iput(inode);
- 	return ret;
- }
+These are common knowledge... for the folks on this list, anyway.  The 
+problem tends to be distros that make the still experimental and getting 
+new features btrfs an easily used option (or even default?), for people 
+to use, without making the caveat about btrfs still being under heavy 
+development and needing good backups equally obvious if not more so than 
+the option to use btrfs in the first place.
+
+FWIW, I tried btrfs about a year ago and it simply wasn't ready for me.  
+I tried it again this year (from about a month ago on), however, and thru 
+a combination of my needs changing somewhat and btrfs maturing 
+dramatically in the intervening year, I've been far happier with how it's 
+going now.
+
+Generally speaking, used as a traditional-use single-device filesystem, 
+btrfs is /reasonably/ stable and mature now, altho because it's still 
+actively getting new features and likely will be for several more kernel 
+cycles yet, it's not yet ready for the full production-ready stability 
+seal and delivery just yet.
+
+The multi-device raid1 mode (well, two-way-mirroring, it's not full N-way 
+mirroring raid1, despite the name) as well as raid0 striping and raid10 
+both, is in the middle, the features are there and complete, and some 
+stabilizing has been done, but it's not as stable as the traditional-use 
+single-device code is yet.  Still, this being my area of interest and 
+usage, it's in this area that I saw the biggest changes in the last year, 
+such that it's now usable for my use case, dual-device SSD in raid1 mode 
+for both data and metadata -- with good backups around just in case!
+
+Subvolumes and snapshots aren't my primary use case or focus, but I'd put 
+them in the same category as raid0/1/10, middle level toward stability, 
+code implemented for awhile and generally working, but not as mature or 
+stable as the traditional filesystem use-case.
+
+The brand new raid5/6 mode code was new to kernel 3.9 and isn't yet 
+complete.  Certainly with 3.9, and to a lessor extent with 3.10, it's 
+EXPECTED to have problems in power-drop situations, etc, as that's the 
+part of the code that isn't finished yet.  (AFAIK it's basically complete 
+with 3.10, but is still first-implementation code without anything beyond 
+first-implementation bug testing, so don't trust 3.10 for raid5/6 mode 
+either.)  By 3.12 or so, it should be starting to get there, and by 
+spring of next year, I'd guess the code should be about where raid0/1/10 
+code is today.
+
+As with subvolumes and snapshots, quotas aren't my use case or focus, but 
+simply knowing that they were implemented after my first trial last year, 
+but before raid5/6 mode in 3.9, I'd put their maturity somewhere between 
+as well, which would mean initial implementation is complete and in 
+theory they're ready for use, but there's still a LOT of debugging to go 
+before that can be considered stable.  Quota support should therefore be 
+about where raid5/6 will be by the end of this year, or where raid0/1/10 
+were near the end of last year.
+
+N-way mirroring (aka raid1 as many people consider it) is still on the 
+roadmap, as it has been, to be added after raid5/6 completion.  So maybe 
+by the end of the year...  De-dup is I believe still on the roadmap as 
+well.
+
+Which means feature completion is now reasonably in sight, possibly by 
+end of year, and next year should be primarily stabilization, FINALLY!  
+It has been rather longer in coming than I think anyone expected, but 
+given the differences I've seen over the last year, and roadmap feature 
+status, next year could be the year for stabilization; the year that 
+experimental label finally comes off.  Tho corporate production level 
+usage tends to be rather conservative (many have only recently switched 
+to ext4), so I wouldn't expect to see wide-scale deployment there until 
+2015 or so.
+
 -- 
-1.8.1.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,36 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f51.google.com ([209.85.214.51]:36863 "EHLO
-	mail-bk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753195Ab3F0Nyn (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:50208 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751685Ab3F0N6p (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Jun 2013 09:54:43 -0400
-Received: by mail-bk0-f51.google.com with SMTP id ji1so321077bkc.24
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 06:54:42 -0700 (PDT)
-Received: from [10.0.1.28] ([109.205.68.194])
-        by mx.google.com with ESMTPSA id kz11sm1467744bkb.11.2013.06.27.06.54.40
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Thu, 27 Jun 2013 06:54:41 -0700 (PDT)
-Message-ID: <51CC4419.6030108@gmail.com>
-Date: Thu, 27 Jun 2013 15:54:33 +0200
-From: =?ISO-8859-1?Q?St=E9phane_Mutz?= <stephane.mutz@gmail.com>
+	Thu, 27 Jun 2013 09:58:45 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 2EA749A0694
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2013 07:58:45 -0600 (MDT)
+Date: Thu, 27 Jun 2013 09:58:42 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: =?iso-8859-1?Q?St=E9phane?= Mutz <stephane.mutz@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: Problem with btrfsck / couurpted filesystem
+Message-ID: <20130627135842.GQ4288@localhost.localdomain>
+References: <51CC4419.6030108@gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Problem with btrfsck / couurpted filesystem
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <51CC4419.6030108@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, Jun 27, 2013 at 03:54:33PM +0200, Stéphane Mutz wrote:
+> Hello,
+> 
+> I'm trying to fix a btrfs file system. BTRFSCK reports errors in the
+> extend tree.
+> I've tryong to use --repair option but it ended up with an assertion
+> failure.
+> 
+> I'm also trying to understand how the filesystem can have become corrupted.
+> I'm running Ubuntu 12.10.
+> 
+> Any suggestion on ways to fix the problem would be really appreciated.
+> 
 
-I'm trying to fix a btrfs file system. BTRFSCK reports errors in the
-extend tree.
-I've tryong to use --repair option but it ended up with an assertion
-failure.
+Are you using the btrfs-progs from git?  If not pull that down and build it and
+run the btrfsck in there, and then capture the output if it fails.  Thanks,
 
-I'm also trying to understand how the filesystem can have become corrupted.
-I'm running Ubuntu 12.10.
-
-Any suggestion on ways to fix the problem would be really appreciated.
-
-Regards, Stéphane.
+Josef

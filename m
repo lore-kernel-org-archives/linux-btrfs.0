@@ -1,129 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:35322 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:35421 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755708Ab3F1RNB (ORCPT
+	with ESMTP id S1755382Ab3F1RSK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Jun 2013 13:13:01 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 3F4DE9A06C8
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Jun 2013 11:13:01 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id CXVeOVWA4nq1vOUp (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 28 Jun 2013 11:13:00 -0600 (MDT)
+	Fri, 28 Jun 2013 13:18:10 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 317C19A06B7
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Jun 2013 11:18:10 -0600 (MDT)
+Date: Fri, 28 Jun 2013 13:18:07 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: make backref walking code handle skinny metadata
-Date: Fri, 28 Jun 2013 13:12:58 -0400
-Message-ID: <1372439578-17151-1-git-send-email-jbacik@fusionio.com>
+To: Zach Brown <zab@redhat.com>
+CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: make the chunk allocator completely tree lockless
+Message-ID: <20130628171807.GZ4288@localhost.localdomain>
+References: <1372354038-2111-1-git-send-email-jbacik@fusionio.com>
+ <20130627213320.GG10265@lenny.home.zabbo.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130627213320.GG10265@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I missed fixing the backref stuff when I introduced the skinny metadata.  If you
-try and do things like snapshot aware defrag with skinny metadata you are going
-to see tons of warnings related to the backref count being less than 0.  This is
-because the delayed refs will be found for stuff just fine, but it won't find
-the skinny metadata extent refs.  With this patch I'm not seeing warnings
-anymore.  Thanks,
+On Thu, Jun 27, 2013 at 02:33:20PM -0700, Zach Brown wrote:
+> Reviewing as requested!  It certainly looks reasonable, but I don't have
+> enough history with the code to really say much more than that.
+> 
+> Some questions:
+> 
+> > @@ -8423,6 +8432,10 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+> >  					sizeof(item));
+> >  		if (ret)
+> >  			btrfs_abort_transaction(trans, extent_root, ret);
+> > +		ret = btrfs_finish_chunk_alloc(trans, extent_root,
+> > +					       key.objectid, key.offset);
+> 
+> Would this moved call site need to worry about the chunk mutex at all?
+> 
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/backref.c |   31 +++++++++++++++++++++++++------
- 1 files changed, 25 insertions(+), 6 deletions(-)
+No, we're just using the chunk_mutex to serialize the allocations.  So since all
+the stuff we care about is in memory or in the commit root we only need to have
+the chunk_mutex around the actuall allocation part.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 431ea92..eaf1333 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -597,6 +597,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 	int slot;
- 	struct extent_buffer *leaf;
- 	struct btrfs_key key;
-+	struct btrfs_key found_key;
- 	unsigned long ptr;
- 	unsigned long end;
- 	struct btrfs_extent_item *ei;
-@@ -614,17 +615,21 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 
- 	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
- 	flags = btrfs_extent_flags(leaf, ei);
-+	btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 
- 	ptr = (unsigned long)(ei + 1);
- 	end = (unsigned long)ei + item_size;
- 
--	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+	if (found_key.type == BTRFS_EXTENT_ITEM_KEY &&
-+	    flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 		struct btrfs_tree_block_info *info;
- 
- 		info = (struct btrfs_tree_block_info *)ptr;
- 		*info_level = btrfs_tree_block_level(leaf, info);
- 		ptr += sizeof(struct btrfs_tree_block_info);
- 		BUG_ON(ptr > end);
-+	} else if (found_key.type == BTRFS_METADATA_ITEM_KEY) {
-+		*info_level = found_key.offset;
- 	} else {
- 		BUG_ON(!(flags & BTRFS_EXTENT_FLAG_DATA));
- 	}
-@@ -796,8 +801,11 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	INIT_LIST_HEAD(&prefs_delayed);
- 
- 	key.objectid = bytenr;
--	key.type = BTRFS_EXTENT_ITEM_KEY;
- 	key.offset = (u64)-1;
-+	if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
-+		key.type = BTRFS_METADATA_ITEM_KEY;
-+	else
-+		key.type = BTRFS_EXTENT_ITEM_KEY;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -862,7 +870,8 @@ again:
- 		slot = path->slots[0];
- 		btrfs_item_key_to_cpu(leaf, &key, slot);
- 		if (key.objectid == bytenr &&
--		    key.type == BTRFS_EXTENT_ITEM_KEY) {
-+		    (key.type == BTRFS_EXTENT_ITEM_KEY ||
-+		     key.type == BTRFS_METADATA_ITEM_KEY)) {
- 			ret = __add_inline_refs(fs_info, path, bytenr,
- 						&info_level, &prefs);
- 			if (ret)
-@@ -1276,12 +1285,16 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
- {
- 	int ret;
- 	u64 flags;
-+	u64 size = 0;
- 	u32 item_size;
- 	struct extent_buffer *eb;
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_key key;
- 
--	key.type = BTRFS_EXTENT_ITEM_KEY;
-+	if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
-+		key.type = BTRFS_METADATA_ITEM_KEY;
-+	else
-+		key.type = BTRFS_EXTENT_ITEM_KEY;
- 	key.objectid = logical;
- 	key.offset = (u64)-1;
- 
-@@ -1294,9 +1307,15 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
- 		return ret;
- 
- 	btrfs_item_key_to_cpu(path->nodes[0], found_key, path->slots[0]);
--	if (found_key->type != BTRFS_EXTENT_ITEM_KEY ||
-+	if (found_key->type == BTRFS_METADATA_ITEM_KEY)
-+		size = fs_info->extent_root->leafsize;
-+	else if (found_key->type == BTRFS_EXTENT_ITEM_KEY)
-+		size = found_key->offset;
-+
-+	if ((found_key->type != BTRFS_EXTENT_ITEM_KEY &&
-+	     found_key->type != BTRFS_METADATA_ITEM_KEY) ||
- 	    found_key->objectid > logical ||
--	    found_key->objectid + found_key->offset <= logical) {
-+	    found_key->objectid + size <= logical) {
- 		pr_debug("logical %llu is not within any extent\n",
- 			 (unsigned long long)logical);
- 		return -ENOENT;
--- 
-1.7.7.6
+> > +		if (ret)
+> > +			btrfs_abort_transaction(trans, root, ret);
+> 
+> Did you mean to abort the root here, not the extent_root like the one
+> above?
 
+I'm not sure it matters but I'll change it for consistency sake.
+
+> 
+> > +static int contains_pending_extent(struct btrfs_trans_handle *trans,
+> > +				   struct btrfs_device *device,
+> > +				   u64 *start, u64 len)
+> > +{
+> > +	struct extent_map *em;
+> > +	int ret = 0;
+> > +
+> > +	list_for_each_entry(em, &trans->transaction->pending_chunks, list) {
+> > +		struct map_lookup *map;
+> > +		int i;
+> > +
+> > +		map = (struct map_lookup *)em->bdev;
+> > +		for (i = 0; i < map->num_stripes; i++) {
+> > +			if (map->stripes[i].dev != device)
+> > +				continue;
+> > +			if (map->stripes[i].physical >= *start + len ||
+> > +			    map->stripes[i].physical + em->orig_block_len <=
+> > +			    *start)
+> > +				continue;
+> > +			*start = map->stripes[i].physical +
+> > +				em->orig_block_len;
+> > +			ret = 1;
+> > +		}
+> > +	}
+> 
+> Did you want a 'break;' there?  Is it trying to set *start to the last
+> match rather than returning the first?
+> 
+
+We want the last, otherwise we'll set it to the end of the first extent we find,
+go back and do all that searching again, come back here and just adjust it up
+again if theres another allocation sitting there that butts up to the first
+entry we found.
+
+> > +		ret = btrfs_alloc_dev_extent(trans, device,
+> > +					     chunk_root->root_key.objectid,
+> > +					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> > +					     chunk_offset, dev_offset,
+> > +					     stripe_size);
+> > +		if (ret)
+> > +			goto out;
+> 
+> The old code tried to free up previous allocations when one failed, but
+> it looks like this deferred alloc doesn't.  Do we care?
+> 
+
+So before we could back out of having a chunk allocation at that point because
+we hadn't let go of the chunk mutex and nobody had been able to allocate from
+that chunk.  With the new code if we fail here we have to abort because we could
+have made allocations in our new chunk.  It is kind of a drawback, but really if
+this part failed before it was likely because of -EIO which we would likely hit
+somewhere else in the stack and end up aborted anyway, so no big loss I think?
+
+> > -	index = 0;
+> > -	while (index < map->num_stripes) {
+> > -		index++;
+> 
+> > +	for (i = 0; i < map->num_stripes; i++) {
+> 
+> *hugs*
+> 
+
+Thanks for the review!  I'll just fix up that one inconsistency and then commit
+and push to btrfs-next instead of reposting.  Thanks,
+
+Josef

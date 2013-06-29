@@ -1,41 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:22336 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750955Ab3F1TnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Jun 2013 15:43:16 -0400
-Date: Fri, 28 Jun 2013 12:43:14 -0700
-From: Zach Brown <zab@redhat.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: fix crash regarding to ulist_add_merge
-Message-ID: <20130628194314.GH10265@lenny.home.zabbo.net>
-References: <1372394265-1959-1-git-send-email-bo.li.liu@oracle.com>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:8834 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753113Ab3F2CXL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Jun 2013 22:23:11 -0400
+Date: Sat, 29 Jun 2013 12:22:45 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Jeff Liu <jeff.liu@oracle.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, tytso@mit.edu
+Subject: Re: [PATCH] btrfs: fix file truncation if FALLOC_FL_KEEP_SIZE is
+ specified
+Message-ID: <20130629022245.GD9047@dastard>
+References: <51CD1C08.40801@oracle.com>
+ <20130628124100.GU4288@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1372394265-1959-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <20130628124100.GU4288@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 28, 2013 at 12:37:45PM +0800, Liu Bo wrote:
-> Several users reported this crash of NULL pointer or general protection,
-> the story is that we add a rbtree for speedup ulist iteration, and we
-> use krealloc() to address ulist growth, and krealloc() use memcpy to copy
-> old data to new memory area, so it's OK for an array as it doesn't use
-> pointers while it's not OK for a rbtree as it uses pointers.
+On Fri, Jun 28, 2013 at 08:41:00AM -0400, Josef Bacik wrote:
+> On Fri, Jun 28, 2013 at 01:15:52PM +0800, Jeff Liu wrote:
+> > From: Jie Liu <jeff.liu@oracle.com>
+> > 
+> > Create a small file and fallocate it to a big size with
+> > FALLOC_FL_KEEP_SIZE option, then truncate it back to the
+> > small size again, the disk free space is not changed back
+> > in this case. i.e,
+> > 
+> > # dd if=/dev/zero of=/mnt/test bs=512 count=1
+> > # ls -l /mnt
+> > total 4
+> > -rw-r--r-- 1 root root 512 Jun 28 11:35 test
+> > 
+> > # df -h
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > ....
+> > /dev/sdb1       8.0G   56K  7.2G   1% /mnt
+> > 
+> > # xfs_io -c 'falloc -k 512 5G' /mnt/test 
+> > # ls -l /mnt/test
+> > -rw-r--r-- 1 root root 512 Jun 28 11:35 /mnt/test
+> > 
+> > # sync; df -h
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > ....
+> > /dev/sdb1       8.0G  5.1G  2.2G  70% /mnt
+> > 
+> > # xfs_io -c 'truncate 512' /mnt/test
+> > # sync; df -h
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > ....
+> > /dev/sdb1       8.0G  5.1G  2.2G  70% /mnt
+> > 
+> > With this fix, the truncated up space is back as:
+> > # sync; df -h
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > ....
+> > /dev/sdb1       8.0G   56K  7.2G   1% /mnt
+> > 
+> > Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+> > ---
+> >  fs/btrfs/inode.c |    3 ---
+> >  1 file changed, 3 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 4f9d16b..7e1a5ff 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -4509,9 +4509,6 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+> >  	int mask = attr->ia_valid;
+> >  	int ret;
+> >  
+> > -	if (newsize == oldsize)
+> > -		return 0;
+> > -
+> >  	/*
+> >  	 * The regular truncate() case without ATTR_CTIME and ATTR_MTIME is a
+> >  	 * special case where we need to update the times despite not having
 > 
-> So krealloc() will mess up our rbtree and it ends up with crash.
-> 
-> Reviewed-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> Cc'ing a few people on this since I'd like their opinion.  Looking at other fs's
+> it looks like ext4 does the same thing we do and would leave the prealloc'ed
+> space, but it appears that xfs will truncate it.  What do we think is the
+> correct behavior? 
 
-Yeah, this should fix the probem.  Thanks for being persistent.
+XFS has had this truncate behaviour since at least the start of the
+git tree history (2005). Given that these fallocate()
+prealloc-blocks-beyond-EOF behaviours are modelled on what XFS has
+historically provided, I think y'all can see what i think should be
+done...
 
-Reviewed-by: Zach Brown <zab@redhat.com>
+> I'm inclined to take this patch, but I'd like to have an
+> xfstest made for it so other file systems can be made to be consistent, and I'd
+> like to make sure we all agree what is the correct behavior before we wander
+> down that road.  Thanks,
 
-> +		for (i = 0; i < ulist->nnodes; i++)
-> +			rb_erase(&ulist->nodes[i].rb_node, &ulist->root);
+I couldn't have said it better myself. Jeff, can you take care of
+this, please?
 
-(still twitching over here because this is a bunch of work that achieves
-nothing :))
+Cheers,
 
-- z
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

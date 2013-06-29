@@ -1,29 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f175.google.com ([209.85.223.175]:40973 "EHLO
-	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751892Ab3F2JIq (ORCPT
+Received: from 110-174-82-20.static.tpgi.com.au ([110.174.82.20]:43254 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751459Ab3F2Jli (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Jun 2013 05:08:46 -0400
-Received: by mail-ie0-f175.google.com with SMTP id a13so6081101iee.34
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 02:08:46 -0700 (PDT)
+	Sat, 29 Jun 2013 05:41:38 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 415A8D982C
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 19:41:35 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: Re: raid1 inefficient unbalanced filesystem reads
+Date: Sat, 29 Jun 2013 19:41:31 +1000
+References: <kqk4sc$t5d$1@ger.gmane.org> <20130628170410.GX4288@localhost.localdomain> <kqki3l$nmr$1@ger.gmane.org>
+In-Reply-To: <kqki3l$nmr$1@ger.gmane.org>
 MIME-Version: 1.0
-In-Reply-To: <1372492506.3088.0.camel@Waves.darkmere>
-References: <1372492506.3088.0.camel@Waves.darkmere>
-Date: Sat, 29 Jun 2013 03:08:45 -0600
-Message-ID: <CAE5mzvhhMZGg7=Wy8CGZPzy93emHBNg+mqhjfo9GWmjvMBrSug@mail.gmail.com>
-Subject: Re: raid 10 corruption from single drive failure
-From: cwillu <cwillu@cwillu.com>
-To: "D. Spindel" <spider@skuggor.se>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201306291941.32127.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Making this with all 6 devices from the beginning and btrfsck doesn't
-> segfault. But it also doesn't repair the system enough to make it
-> mountable. ( nether does -o recover, however -o degraded works, and
-> files
-> are then accessible )
+On Sat, 29 Jun 2013, Martin <m_btrfs@ml1.co.uk> wrote:
+> Mmmm... I'm not sure trying to balance historical read/write counts is
+> the way to go... What happens for the use case of an SSD paired up with
+> a HDD? (For example an SSD and a similarly sized Raptor or enterprise
+> SCSI?...) Or even just JBODs of a mishmash of different speeds?
+> 
+> Rather than trying to balance io counts, can a realtime utilisation
+> check be made and go for the least busy?
 
-Not sure I entirely follow: mounting with -o degraded (not -o
-recovery) is how you're supposed to mount if there's a disk missing.
+It would also be nice to be able to tune this.  For example I've got a RAID-1 
+array that's mounted noatime, hardly ever written, and accessed via NFS on 
+100baseT.  It would be nice if one disk could be spun down for most of the 
+time and save 7W of system power.  Something like the --write-mostly option of 
+mdadm would be good here.
+
+Also it should be possible for a RAID-1 array to allow faster reads for a 
+single process reading a single file if the file in question is fragmented.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

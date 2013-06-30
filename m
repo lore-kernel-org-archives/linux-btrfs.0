@@ -1,124 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45631 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752413Ab3F2PUE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Jun 2013 11:20:04 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UswwU-0007lL-CO
-	for linux-btrfs@vger.kernel.org; Sat, 29 Jun 2013 17:20:02 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 17:20:02 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 17:20:02 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfsck output: What does it all mean?
-Date: Sat, 29 Jun 2013 15:19:44 +0000 (UTC)
-Message-ID: <pan$681ed$c263160$bc6fd9da$7b1eb060@cox.net>
-References: <kqmoji$hv5$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from dkim2.fusionio.com ([66.114.96.54]:45331 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750757Ab3F3DRf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 29 Jun 2013 23:17:35 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 727479A0402
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 21:17:34 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id 8CnjcjNlvrNoeEf8 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 21:17:33 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: hold the tree mod lock in __tree_mod_log_rewind
+Date: Sat, 29 Jun 2013 23:17:31 -0400
+Message-ID: <1372562251-27123-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin posted on Sat, 29 Jun 2013 14:48:40 +0100 as excerpted:
+We need to hold the tree mod log lock in __tree_mod_log_rewind since we walk
+forward in the tree mod entries, otherwise we'll end up with random entries and
+trip the BUG_ON() at the front of __tree_mod_log_rewind.  This fixes the panics
+people were seeing when running
 
-> This is the btrfsck output for a real-world rsync backup onto a btrfs
-> raid1 mirror across 4 drives (yes, I know at the moment for btrfs raid1
-> there's only ever two copies of the data...)
+find /whatever -type f -exec btrfs fi defrag {} \;
 
-Being just a btrfs user I don't have a detailed answer, but perhaps this 
-helps.
+Thansk,
 
-First of all, a btrfs-tools update is available, v0.20-rc1.  Given that 
-btrfs is still experimental and the rate of development, even using the 
-live-git version (as I do), is probably the best idea, but certainly, I'd 
-encourage you to get the 0.20-rc1 version at least.  FWIW, v0.20-rc1-335-
-gf00dd83 is what I'm running, that's 335 commits after rc1, on git-commit 
-f00dd83.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-(Of course similarly with the kernel.  You may not want to run the
-live-git mainline kernel during the commit window or even the first 
-couple of rcs, but starting with rc3 or so, a new mainline pre-release 
-kernel should be /reasonably/ safe to run in general, and the new kernel 
-will have enough fixes to btrfs that you really should be running it.  Of 
-course if you've experienced and filed a bug with it and are back on the 
-latest full stable release until it's fixed, or if there's a known btrfs 
-regression in the new version that you're waiting on a fix for, then the 
-latest version without that fix is good, but otherwise, if you're not 
-running the latest kernel and btrfs-tools, you really might be taking 
-chances with your data that you don't need to take, due to already 
-existing fixes you're not yet running.)
-
-> checking extents
-> checking fs roots
-> root 5 inode 18446744073709551604 errors 2000
-> root 5 inode 18446744073709551605 errors 1
-> root 256 inode 18446744073709551604 errors 2000
-> root 256 inode 18446744073709551605 errors 1
-
-Based on the root numbers, I'd guess those are subvolume IDs.  The 
-original "root" volume has ID 5, and the first subvolume created under it 
-has ID 256, based on my own experience.
-
-What the error numbers refer to I don't know.  However, based on the 
-identical inode and error numbers seen in both subvolumes, I'd guess that 
-#256 is a snapshot of #5, and that whatever is triggering the errors 
-hadn't been written after the snapshot (thus copying the data to a new 
-location), so when the errors happened in the one, it happened in the 
-other as well, since they're both the same location.
-
-The good news of that is that in reality that's only the one set of 
-errors duplicated twice.  The bad news is that it affects both snapshots, 
-so if you don't have different snapshot with a newer/older copy of 
-whatever's damaged in those two, you may simply lose it.
-
-> found 3183604633600 bytes used err is 1
-> total csum bytes: 3080472924
-
-csum would be checksum...  The rest, above and below, says in the output 
-pretty much what I'd be able to make of it, so I've nothing really to add 
-about that.
-
-> total tree bytes: 28427821056
-> total fs tree bytes: 23409475584
-> btree space waste bytes: 4698218231
-> file data blocks allocated: 3155176812544
->  referenced 3155176812544
-
-> Btrfs Btrfs v0.19
-
-Meanwhile, you didn't mention anything about the --repair option.  If you 
-didn't use it just because you want to know a bit more about what it's 
-doing first, OK, but while btrfsck lacked a repair option for quite some 
-time, it has had a --repair option for over year now, so it /is/ possible 
-to try to repair the detected damage, these days.
-
-Of course you might be running a really old 0.19+ snapshot without that 
-ability (distros packaged 0.19+ snapshots for some time during which 
-there was no upstream release, tho hopefully the distro package has 
-something about the snapshot it was, but we know your version is old in 
-any case since it's not 0.20-rc1 or newer, but still 0.19 something).
-
-I'd suggest ensuring that you're running the latest almost-release 3.10-
-rc7+ kernel and the latest btrfs-tools, then both trying a mount and 
-running the btrfsck again.  You can both watch the output and check the 
-kernel log for output as it runs, and as you try to mount the 
-filesystem.  It may be that a newer kernel (presuming your kernel is as 
-old as your btrfs-tools appear to be) might fix whatever's damaged on-
-mount, so btrfsck won't have anything left to do.  If not, since you have 
-backups of the data (well, this was the backup, you have the originals) 
-if anything goes wrong, you can try the --repair option and see what 
-happens.  If that doesn't fix it, post the logs and output from the 
-updated kernel and btrfs-tools btrfsck, and ask the experts about it once 
-they have that to look at too.
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c32d03d..7921e1d 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1161,8 +1161,8 @@ __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
+  * time_seq).
+  */
+ static void
+-__tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+-		      struct tree_mod_elem *first_tm)
++__tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
++		      u64 time_seq, struct tree_mod_elem *first_tm)
+ {
+ 	u32 n;
+ 	struct rb_node *next;
+@@ -1172,6 +1172,7 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 	unsigned long p_size = sizeof(struct btrfs_key_ptr);
+ 
+ 	n = btrfs_header_nritems(eb);
++	tree_mod_log_read_lock(fs_info);
+ 	while (tm && tm->seq >= time_seq) {
+ 		/*
+ 		 * all the operations are recorded with the operator used for
+@@ -1226,6 +1227,7 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 		if (tm->index != first_tm->index)
+ 			break;
+ 	}
++	tree_mod_log_read_unlock(fs_info);
+ 	btrfs_set_header_nritems(eb, n);
+ }
+ 
+@@ -1274,7 +1276,7 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 
+ 	extent_buffer_get(eb_rewin);
+ 	btrfs_tree_read_lock(eb_rewin);
+-	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
++	__tree_mod_log_rewind(fs_info, eb_rewin, time_seq, tm);
+ 	WARN_ON(btrfs_header_nritems(eb_rewin) >
+ 		BTRFS_NODEPTRS_PER_BLOCK(fs_info->tree_root));
+ 
+@@ -1350,7 +1352,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 		btrfs_set_header_generation(eb, old_generation);
+ 	}
+ 	if (tm)
+-		__tree_mod_log_rewind(eb, time_seq, tm);
++		__tree_mod_log_rewind(root->fs_info, eb, time_seq, tm);
+ 	else
+ 		WARN_ON(btrfs_header_level(eb) != 0);
+ 	WARN_ON(btrfs_header_nritems(eb) > BTRFS_NODEPTRS_PER_BLOCK(root));
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.7.6
 

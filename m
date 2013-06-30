@@ -1,90 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:42088 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751359Ab3FZQmB (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:60352 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750813Ab3F3Lwu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Jun 2013 12:42:01 -0400
-Received: by mail-we0-f171.google.com with SMTP id m46so10589584wev.30
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jun 2013 09:41:59 -0700 (PDT)
+	Sun, 30 Jun 2013 07:52:50 -0400
+Received: by mail-wi0-f179.google.com with SMTP id hj3so2234759wib.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 04:52:49 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2 1/5] Btrfs-progs: fix closing of devices
-Date: Wed, 26 Jun 2013 17:41:36 +0100
-Message-Id: <1372264896-10184-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
-References: <1370893895-24884-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH 0/3] Small fixes for btrfs-progs
+Date: Sun, 30 Jun 2013 12:51:43 +0100
+Message-Id: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a device could not be opened in volumes.c:read_one_dev(), a
-btrfs_device instance was allocated and added to the list of
-devices of the fs - however this device instance had its fd,
-name and label fields not initialized. This is problematic in
-disk-io.c:close_all_devices() as it tried to sync, fadvise and
-close the (invalid) fd of the device, and kfree() its name and
-label, which pointed to random memory locations.
+1) add missing write check for mkfs
+2) add kstrdup() return value check
+3) remove unused code in btrfs_scan_one_device()
 
-  Thread 1 (Thread 0x7f0a3d2d1740 (LWP 23585)):
-  #0  __GI___libc_free (mem=0xa5a5a5a5a5a5a5a5) at malloc.c:2970
-  #1  0x000000000042054b in close_all_devices (fs_info=0x1e92bf0) at disk-io.c:1276
-  #2  0x0000000000421dcd in close_ctree (root=<optimized out>) at disk-io.c:1336
-  #3  0x0000000000418cfa in cmd_check (argc=<optimized out>, argv=<optimized out>) at cmds-check.c:4171
-  #4  0x0000000000403ed4 in main (argc=2, argv=0x7fff9a583d28) at btrfs.c:295
+Filipe David Borba Manana (3):
+  Btrfs-progs: add missing write check for mkfs
+  Btrfs-progs: add kstrdup() return value check
+  Btrfs-progs: remove unused code in btrfs_scan_one_device()
 
-v2: Added Liu Bo's review mention.
+ utils.c   |    1 +
+ volumes.c |    7 +++++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- disk-io.c |    4 ++--
- volumes.c |    5 +++--
- 2 files changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/disk-io.c b/disk-io.c
-index 9ffe6e4..768adda 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1270,12 +1270,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
- 	while (!list_empty(list)) {
- 		device = list_entry(list->next, struct btrfs_device, dev_list);
- 		list_del_init(&device->dev_list);
--		if (device->fd) {
-+		if (device->fd >= 0) {
- 			fsync(device->fd);
- 			if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
- 				fprintf(stderr, "Warning, could not drop caches\n");
-+			close(device->fd);
- 		}
--		close(device->fd);
- 		kfree(device->name);
- 		kfree(device->label);
- 		kfree(device);
-diff --git a/volumes.c b/volumes.c
-index d6f81f8..061f094 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -116,6 +116,7 @@ static int device_list_add(const char *path,
- 			/* we can safely leave the fs_devices entry around */
- 			return -ENOMEM;
- 		}
-+		device->fd = -1;
- 		device->devid = devid;
- 		memcpy(device->uuid, disk_super->dev_item.uuid,
- 		       BTRFS_UUID_SIZE);
-@@ -1628,10 +1629,10 @@ static int read_one_dev(struct btrfs_root *root,
- 	if (!device) {
- 		printk("warning devid %llu not found already\n",
- 			(unsigned long long)devid);
--		device = kmalloc(sizeof(*device), GFP_NOFS);
-+		device = kzalloc(sizeof(*device), GFP_NOFS);
- 		if (!device)
- 			return -ENOMEM;
--		device->total_ios = 0;
-+		device->fd = -1;
- 		list_add(&device->dev_list,
- 			 &root->fs_info->fs_devices->devices);
- 	}
 -- 
 1.7.9.5
 

@@ -1,171 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:54367 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751419Ab3F3I3Q (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:46732 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751249Ab3F3LWF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 04:29:16 -0400
-Received: by mail-wi0-f179.google.com with SMTP id hj3so2157130wib.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 01:29:14 -0700 (PDT)
+	Sun, 30 Jun 2013 07:22:05 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id A64859A0403
+	for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 05:22:03 -0600 (MDT)
+Date: Sun, 30 Jun 2013 07:22:00 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: hold the tree mod lock in __tree_mod_log_rewind
+Message-ID: <20130630112200.GA4288@localhost.localdomain>
+References: <1372562251-27123-1-git-send-email-jbacik@fusionio.com>
+ <51CFEB61.1040008@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <CAOcd+r1smWp=r2GO6CY3sp2ggpaUkkBKuc9K+rye1kywg3Tfaw@mail.gmail.com>
-References: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
-	<20130624162401.GJ4288@localhost.localdomain>
-	<CAOcd+r3OA4TW6XKBW73uDWGBbQmgma=ZV1ULkH8P8OAVA63_nQ@mail.gmail.com>
-	<CAOcd+r1smWp=r2GO6CY3sp2ggpaUkkBKuc9K+rye1kywg3Tfaw@mail.gmail.com>
-Date: Sun, 30 Jun 2013 11:29:14 +0300
-Message-ID: <CAOcd+r0kx7_vdSjRrr48bZRkDcr2Ryyoc3GXVNpXgwZf-SkO3g@mail.gmail.com>
-Subject: Re: question about transaction-abort-related commits
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Shyam Kaushik <shyam@zadarastorage.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <51CFEB61.1040008@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+On Sun, Jun 30, 2013 at 10:25:05AM +0200, Jan Schmidt wrote:
+> On 30.06.2013 05:17, Josef Bacik wrote:
+> > We need to hold the tree mod log lock in __tree_mod_log_rewind since we walk
+> > forward in the tree mod entries, otherwise we'll end up with random entries and
+> > trip the BUG_ON() at the front of __tree_mod_log_rewind.  This fixes the panics
+> > people were seeing when running
+> > 
+> > find /whatever -type f -exec btrfs fi defrag {} \;
+> 
+> This patch cannot help to solve the problem, as far as I've understood
+> what is going on. It does change timing, though, which presumably makes
+> it pass the current reproducer we're having.
+> 
+> On rewinding, iteration through the tree mod log rb-tree goes backwards
+> in time, which means that once we've found our staring point we cannot
+> be trapped by later additions. The old items we're rewinding towards
+> cannot be freed, because we've allocated a blocker element within the
+> tree and rewinding never goes beyond the allocated blocker. The blocker
+> element is allocated by btrfs_get_tree_mod_seq and mostly referred to as
+> time_seq within the other tree mod log functions in ctree.c. To sum up,
+> the added lock is not required.
+> 
+> The debug output I've analyzed so far shows that after we've rewinded
+> all REMOVE_WHILE_FREEING operations on a buffer, ordered consecutively
+> as expected, there comes another REMOVE_WHILE_FREEING with a sequence
+> number much further in the past for the same buffer (but that sequence
+> number is still higher than out time_seq rewind barrier at that point).
+> This must be a logical problem I've not completely understood so far,
+> but locking doesn't seem to be the right track.
+> 
 
-On Wed, Jun 26, 2013 at 5:16 PM, Alex Lyakas
-<alex.btrfs@zadarastorage.com> wrote:
-> Hi Josef,
-> Can you please help me with another question.
->
-> I am looking at your patch:
-> Btrfs: fix chunk allocation error handling
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=0448748849ef7c593be40e2c1404f7974bd3aac6
->
-> Here you changed the order of btrfs_make_block_group() vs
-> btrfs_alloc_dev_extent(), because we could have allocated from the
-> in-memory block group, before we have inserted the dev extent into a
-> tree. However, with this fix, I hit the deadlock[1] of
-> btrfs_alloc_dev_extent() that also wants to allocate a chunk and
-> recursively calls do_chunk_alloc, but then is stuck on chunk_mutex.
->
-> Was this patch:
-> Btrfs: don't re-enter when allocating a chunk
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=c6b305a89b1903d63652691ad5eb9f05aa0326b8
-> introduced to fix this deadlock?
+So I've seen 2 scenarios with my debug output, once with my printk() which
+seemed to be unreliable and then again with trace_printk() which was much more
+reliable.
 
-With these two patches ("Btrfs: fix chunk allocation error handling"
-and "Btrfs: don't re-enter when allocating a chunk"), I am hitting
-ENOSPC during metadata chunk allocation.
+With the printk() output I saw what you described, however I was also printing
+out every mod we added and I never saw the sequence number allocated that we had
+suddenly tripped over, so I assumed that the printk() just got lost between the
+boxes (I was using netconsole to capture the output).  However if it was never
+actually allocated then it would make sense that we just pointed into some
+random peice of memory.
 
-Upon entry into "do_chunk_alloc", I have only one METADATA block-group
-as follows:
-total_bytes=8388608
-bytes_used=7938048
-bytes_pinned=446464
-bytes_reserved=4096
-bytes_readonly=0
-bytes_may_use=3362816
+The second bit I saw which is when I was convinced this was the problem had us
+processing the keys, and suddenly we'd try to process the key again.  So I saw
+something like this (I lost the output because I was capturing the output into
+the same file again when I tried to reproduce with this patch so I don't have
+the exact output)
 
-As we see bytes_used+bytes_pinned+bytes_reserved==total_bytes
+processing op 3, seq 10 slot 0
+processing op 3, seq 9 slot 1
+processing op 3, seq 8 slot 2
+processing op 3, seq 7 slot 3
+processing op 3, seq 6 slot 4
+processing op 3, seq 5 slot 5
+processing op 3, seq 8 slot 2
 
-What happens next is that within __btrfs_alloc_chunk():
-- find_free_dev_extent() finds a free extent (metadata policy is SINGLE)
-- btrfs_alloc_dev_extent() fails with ENOSPC
+so we got an entry we had already processed, which is completely in line with
+the rb_tree pointing to something random when we do rb_next.
 
-(btrfs_make_block_group() is called after btrfs_alloc_dev_extent()
-with these patches).
+Now I had another theory early on, but I haven't seen output to confirm this.
+We can re-allocate a block if we've allocated it in the same transaction, and it
+appears this would completely screw up the tree mod log.  So say we allocate
+block 5, we add keys to it, and then we free it, so we get this
+MOVE_WHILE_FREEING thing done on the entire block, but then we re-allocate the
+same block and start doing normal operations to it.  Then we go to replay back
+and we will replay all the normal operations, but then we will walk into the
+REMOVE_WHILE_FREEING entries from when the block was free'd last and this will
+trigger the BUG_ON().  Now I hadn't actually had this happen so either it can't
+happen some how and I've missed the reasoning for it, or what I saw was just the
+rb_tree messup because we aren't locking it and what you are seeing is this
+particular case.  Either way I'm going to back my patch out and re-run a few
+more times with my trace_printk()'s so I can have several runs to look at and
+verify what I'm seeing.  Thanks,
 
-What should be done in such situation, when there is not enough
-METADATA to allocate a device extent item, but we still don't allow
-allocating from the newly-created METADATA block group?
-
-Thanks,
-Alex.
-
-
-
-
->
-> Thanks,
-> Alex.
->
-> [1]
-> [<ffffffffa044e57d>] do_chunk_alloc+0x8d/0x510 [btrfs]
-> [<ffffffffa04532ad>] find_free_extent+0x9cd/0xb90 [btrfs]
-> [<ffffffffa0453510>] btrfs_reserve_extent+0xa0/0x1b0 [btrfs]
-> [<ffffffffa0453bc9>] btrfs_alloc_free_block+0xf9/0x570 [btrfs]
-> [<ffffffffa043d9e6>] __btrfs_cow_block+0x126/0x500 [btrfs]
-> [<ffffffffa043dfba>] btrfs_cow_block+0x17a/0x230 [btrfs]
-> [<ffffffffa04425b1>] btrfs_search_slot+0x381/0x820 [btrfs]
-> [<ffffffffa044463c>] btrfs_insert_empty_items+0x7c/0x120 [btrfs]
-> [<ffffffffa048f31b>] btrfs_alloc_dev_extent+0x9b/0x1c0 [btrfs]
-> [<ffffffffa048f9ca>] __btrfs_alloc_chunk+0x58a/0x850 [btrfs]
-> [<ffffffffa049239f>] btrfs_alloc_chunk+0xbf/0x160 [btrfs]
-> [<ffffffffa044e81b>] do_chunk_alloc+0x32b/0x510 [btrfs]
-> [<ffffffffa04532ad>] find_free_extent+0x9cd/0xb90 [btrfs]
-> [<ffffffffa0453510>] btrfs_reserve_extent+0xa0/0x1b0 [btrfs]
-> [<ffffffffa0453bc9>] btrfs_alloc_free_block+0xf9/0x570 [btrfs]
-> [<ffffffffa043d9e6>] __btrfs_cow_block+0x126/0x500 [btrfs]
-> [<ffffffffa043dfba>] btrfs_cow_block+0x17a/0x230 [btrfs]
-> [<ffffffffa0441613>] push_leaf_right+0x133/0x1a0 [btrfs]
-> [<ffffffffa0441d51>] split_leaf+0x5e1/0x770 [btrfs]
-> [<ffffffffa04429b5>] btrfs_search_slot+0x785/0x820 [btrfs]
-> [<ffffffffa0449c0e>] lookup_inline_extent_backref+0x8e/0x5b0 [btrfs]
-> [<ffffffffa044a193>] insert_inline_extent_backref+0x63/0x130 [btrfs]
-> [<ffffffffa044abaf>] __btrfs_inc_extent_ref+0x9f/0x240 [btrfs]
-> [<ffffffffa0451841>] run_clustered_refs+0x971/0xd00 [btrfs]
-> [<ffffffffa0455db0>] btrfs_run_delayed_refs+0xd0/0x330 [btrfs]
-> [<ffffffffa0467a87>] __btrfs_end_transaction+0xf7/0x440 [btrfs]
-> [<ffffffffa0467e20>] btrfs_end_transaction+0x10/0x20 [btrfs]
->
->
->
->
-> On Mon, Jun 24, 2013 at 9:56 PM, Alex Lyakas
-> <alex.btrfs@zadarastorage.com> wrote:
->>
->> Thanks for commenting Josef. I hope your head will get better:)
->> Actually, while re-looking at the code, I see that there are couple of
->> "goto cleanup;", before we ensure that all the writers have detached
->> from the committing transaction. So Liu's code is still needed, looks
->> like.
->>
->> Thanks,
->> Alex.
->>
->> On Mon, Jun 24, 2013 at 7:24 PM, Josef Bacik <jbacik@fusionio.com> wrote:
->> > On Sun, Jun 23, 2013 at 09:52:14PM +0300, Alex Lyakas wrote:
->> >> Hello Josef, Liu,
->> >> I am reviewing commits in the mainline tree:
->> >>
->> >> e4a2bcaca9643e7430207810653222fc5187f2be Btrfs: if we aren't
->> >> committing just end the transaction if we error out
->> >> (call end_transaction() instead of goto cleanup_transaction) - Josef
->> >>
->> >> f094ac32aba3a51c00e970a2ea029339af2ca048 Btrfs: fix NULL pointer after
->> >> aborting a transaction
->> >> (wait until all writers detach, before setting running_transaction to
->> >> NULL) - Liu
->> >>
->> >> 66b6135b7cf741f6f44ba938b27583ea3b83bd12 Btrfs: avoid deadlock on
->> >> transaction waiting list
->> >> (check if transaction was already removed from the transactions list) -
->> >> Liu
->> >>
->> >> Josef, according to your fix, if the committer encounters a problem
->> >> early, it just doesn't commit. Instead it aborts the transaction
->> >> (possibly setting FS to read-only) and detaches from the transaction.
->> >> So if this was the only committer (e.g., the transaction_kthread),
->> >> then transaction commit will not happen at all. Is this what you
->> >> intended? So then the user will notice that FS went read-only, and she
->> >> will unmount the FS, and transaction will be cleaned up in
->> >> btrfs_error_commit_super()=>btrfs_cleanup_transaction(), and not in
->> >> cleanup_transaction() via btrfs_commit_transaction(). Is my
->> >> understanding correct?
->> >>
->> >> Liu, it looks like after having Josef's fix, the above two commits of
->> >> yours are not strictly needed, right? Because Josef's fix ensures that
->> >> only the "real" committer will call cleanup_transaction(), so at this
->> >> point there is only one writer attached to the transaction, which is
->> >> the committer itself (your fixes doesn't hurt though). Is that
->> >> correct?
->> >>
->> >
->> > I've looked at the patches and I'm going to say yes with the caveat that
->> > I
->> > stopped thinking about it when my head started hurting :).  Thanks,
->> >
->> > Josef
+Josef

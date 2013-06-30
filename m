@@ -1,72 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1207.opentransfer.com ([98.130.1.227]:42607 "EHLO
-	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751819Ab3F3ROd (ORCPT
+Received: from mail-gh0-f174.google.com ([209.85.160.174]:61796 "EHLO
+	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751395Ab3F3Rxv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 13:14:33 -0400
-Message-ID: <1372612472.13762.18.camel@miguel-MacBookPro>
-Subject: btrfs send /receive : having problems sending a snapshot back to
- the original partition
-From: Miguel =?ISO-8859-1?Q?Negr=E3o?=
-	<miguel.negrao-lists@friendlyvirus.org>
-To: btrfs list <linux-btrfs@vger.kernel.org>
-Date: Sun, 30 Jun 2013 18:14:32 +0100
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Sun, 30 Jun 2013 13:53:51 -0400
+Received: by mail-gh0-f174.google.com with SMTP id r17so1679138ghr.33
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 10:53:50 -0700 (PDT)
+Received: from vfr.localnet (adsl-98-88-119-147.asm.bellsouth.net. [98.88.119.147])
+        by mx.google.com with ESMTPSA id z65sm27381606yhc.9.2013.06.30.10.53.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
+        Sun, 30 Jun 2013 10:53:50 -0700 (PDT)
+From: "Garry T. Williams" <gtwilliams@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: unclean shutdown and space cache rebuild
+Date: Sun, 30 Jun 2013 13:53:48 -0400
+Message-ID: <4774295.3Q3X7zsTmb@vfr>
+In-Reply-To: <11441914.sRzrmH57Vq@bheem>
+References: <11441914.sRzrmH57Vq@bheem>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+On 6-30-13 19:26:16 Shridhar Daithankar wrote:
+> Whenever there is a unclean shutdown(which happens a lot in my
+> case), the next reboot, system comes up relatively at the same speed
+> but as systemd is starting up daemons, the disk is continuously (and
+> unusally long) grinding.
 
-I'm now sucessfully backing up my ubuntu machine using btrfs send and
-btrfs receive. Essentially I do 
+[snip]
 
-mount /dev/sda3 /mnt
-cd /mnt
-btrfs subvolume snapshot @ backups/@-backupNew
-btrfs send -p backups/@-backupOld backups/@-backupNew | pv | btrfs
-receive /media/miguel/huge/backups/@
+> How can I confirm that it is the space cache rebuild thats taking
+> time?
+> 
+> if space cache rebuild is the reason, is there any way to improve
+> it?
+> 
+> I am running archlinux/systemd/kde
 
-This is working great and most sends take less then a minute. I did a
-diff of the original with the send snapshot and except for sockets and
-other "weird" files like in /dev all the other files seem to be exactly
-the same.
+I suspect this is, at least in part, related to severe fragmentation
+in /home.
 
-Now I was testing retrieving a snapshot back from the backup disk to the
-original partition:
+There are large files in these directories that are updated frequently
+by various components of KDE and the Chrome browser.  (Firefox has its
+own databases that are frequently updated, too.)
 
-If I do 
+    ~/.local/share/akonadi
+    ~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend
+    ~/.cache/chromium/Default/Cache
+    ~/.cache/chromium/Default/Media\ Cache
 
-btrfs subvolume delete @-backupOld
+I improved performance dramatically (orders of magnitude) by copying
+the database files into an empty file that was modified with:
 
-and then do
+    chattr -C
 
-btrfs send
--p /media/miguel/huge/backups/@/@-backupNew /media/miguel/huge/backups/@/@-backupOld | pv | btrfs receive/mnt/backups
+and renaming to make the files no COW.  (Note that this is the only
+way to change an existing file to no COW.)  I also set the same
+attribute on the owning directories so that all new files inherit the
+no COW attribute.
 
-I get an error: 
+I suspect there are other files that fragment badly since I see
+periods of high disk activity coming back slowly over a few weeks of
+use after making the modifications above.  I intend to track them down
+and do the same.
 
-ERROR: could not find parent subvolume
+Also, see these:
 
-Sending via files instead of pipes I can see the error is in btrfs
-receive, the btrfs send completes without errors.
+    https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_directory_doesn.27t_work 
+    https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_defragment_many_files.3F 
 
-Is it what I'm trying to do not possible ? I'm I using the wrong
-syntax ? It would be really handy to be able to do this, to make it easy
-to go to an old snapshot without having to transfer it in it's full
-size, instead transferring just the diff.
-
-Also, how is the -c (clone) option used and does it do ? It's not clear
-to me what is it's function, and I haven't seen any example using it on
-the web.
-
-thanks,
+    $ uname -r
+    3.9.6-200.fc18.x86_64
+    $
 
 -- 
-Miguel Negrão
-http://www.friendlyvirus.org/miguelnegrao
-
-
-ps: I've set up a Haskell script to do the backups, in case it interests
-anyone it's here: https://gist.github.com/miguel-negrao/5895613
+Garry T. Williams
 

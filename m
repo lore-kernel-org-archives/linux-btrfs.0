@@ -1,80 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:61796 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751395Ab3F3Rxv (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:38311 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751134Ab3F3SBV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 13:53:51 -0400
-Received: by mail-gh0-f174.google.com with SMTP id r17so1679138ghr.33
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 10:53:50 -0700 (PDT)
-Received: from vfr.localnet (adsl-98-88-119-147.asm.bellsouth.net. [98.88.119.147])
-        by mx.google.com with ESMTPSA id z65sm27381606yhc.9.2013.06.30.10.53.49
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
-        Sun, 30 Jun 2013 10:53:50 -0700 (PDT)
-From: "Garry T. Williams" <gtwilliams@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: unclean shutdown and space cache rebuild
-Date: Sun, 30 Jun 2013 13:53:48 -0400
-Message-ID: <4774295.3Q3X7zsTmb@vfr>
-In-Reply-To: <11441914.sRzrmH57Vq@bheem>
-References: <11441914.sRzrmH57Vq@bheem>
+	Sun, 30 Jun 2013 14:01:21 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id A58AF7C0681
+	for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 12:01:20 -0600 (MDT)
+Date: Sun, 30 Jun 2013 14:01:17 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: Josef Bacik <jbacik@fusionio.com>, Jan Schmidt <list.btrfs@jan-o-sch.net>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: hold the tree mod lock in __tree_mod_log_rewind
+Message-ID: <20130630180117.GD4288@localhost.localdomain>
+References: <1372562251-27123-1-git-send-email-jbacik@fusionio.com>
+ <51CFEB61.1040008@jan-o-sch.net>
+ <20130630112200.GA4288@localhost.localdomain>
+ <20130630150208.GA11892@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130630150208.GA11892@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 6-30-13 19:26:16 Shridhar Daithankar wrote:
-> Whenever there is a unclean shutdown(which happens a lot in my
-> case), the next reboot, system comes up relatively at the same speed
-> but as systemd is starting up daemons, the disk is continuously (and
-> unusally long) grinding.
-
-[snip]
-
-> How can I confirm that it is the space cache rebuild thats taking
-> time?
+On Sun, Jun 30, 2013 at 11:02:10PM +0800, Liu Bo wrote:
+> On Sun, Jun 30, 2013 at 07:22:00AM -0400, Josef Bacik wrote:
+> > On Sun, Jun 30, 2013 at 10:25:05AM +0200, Jan Schmidt wrote:
+> > > On 30.06.2013 05:17, Josef Bacik wrote:
+> > > > We need to hold the tree mod log lock in __tree_mod_log_rewind since we walk
+> > > > forward in the tree mod entries, otherwise we'll end up with random entries and
+> > > > trip the BUG_ON() at the front of __tree_mod_log_rewind.  This fixes the panics
+> > > > people were seeing when running
+> > > > 
+> > > > find /whatever -type f -exec btrfs fi defrag {} \;
+> > > 
+> > > This patch cannot help to solve the problem, as far as I've understood
+> > > what is going on. It does change timing, though, which presumably makes
+> > > it pass the current reproducer we're having.
+> > > 
+> > > On rewinding, iteration through the tree mod log rb-tree goes backwards
+> > > in time, which means that once we've found our staring point we cannot
+> > > be trapped by later additions. The old items we're rewinding towards
+> > > cannot be freed, because we've allocated a blocker element within the
+> > > tree and rewinding never goes beyond the allocated blocker. The blocker
+> > > element is allocated by btrfs_get_tree_mod_seq and mostly referred to as
+> > > time_seq within the other tree mod log functions in ctree.c. To sum up,
+> > > the added lock is not required.
+> > > 
+> > > The debug output I've analyzed so far shows that after we've rewinded
+> > > all REMOVE_WHILE_FREEING operations on a buffer, ordered consecutively
+> > > as expected, there comes another REMOVE_WHILE_FREEING with a sequence
+> > > number much further in the past for the same buffer (but that sequence
+> > > number is still higher than out time_seq rewind barrier at that point).
+> > > This must be a logical problem I've not completely understood so far,
+> > > but locking doesn't seem to be the right track.
+> > > 
+> > 
+> > So I've seen 2 scenarios with my debug output, once with my printk() which
+> > seemed to be unreliable and then again with trace_printk() which was much more
+> > reliable.
+> > 
+> > With the printk() output I saw what you described, however I was also printing
+> > out every mod we added and I never saw the sequence number allocated that we had
+> > suddenly tripped over, so I assumed that the printk() just got lost between the
+> > boxes (I was using netconsole to capture the output).  However if it was never
+> > actually allocated then it would make sense that we just pointed into some
+> > random peice of memory.
+> > 
+> > The second bit I saw which is when I was convinced this was the problem had us
+> > processing the keys, and suddenly we'd try to process the key again.  So I saw
+> > something like this (I lost the output because I was capturing the output into
+> > the same file again when I tried to reproduce with this patch so I don't have
+> > the exact output)
+> > 
+> > processing op 3, seq 10 slot 0
+> > processing op 3, seq 9 slot 1
+> > processing op 3, seq 8 slot 2
+> > processing op 3, seq 7 slot 3
+> > processing op 3, seq 6 slot 4
+> > processing op 3, seq 5 slot 5
+> > processing op 3, seq 8 slot 2
+> > 
+> > so we got an entry we had already processed, which is completely in line with
+> > the rb_tree pointing to something random when we do rb_next.
+> > 
+> > Now I had another theory early on, but I haven't seen output to confirm this.
+> > We can re-allocate a block if we've allocated it in the same transaction, and it
+> > appears this would completely screw up the tree mod log.  So say we allocate
+> > block 5, we add keys to it, and then we free it, so we get this
+> > MOVE_WHILE_FREEING thing done on the entire block, but then we re-allocate the
+> > same block and start doing normal operations to it.  Then we go to replay back
+> > and we will replay all the normal operations, but then we will walk into the
+> > REMOVE_WHILE_FREEING entries from when the block was free'd last and this will
+> > trigger the BUG_ON().  Now I hadn't actually had this happen so either it can't
+> > happen some how and I've missed the reasoning for it, or what I saw was just the
+> > rb_tree messup because we aren't locking it and what you are seeing is this
+> > particular case.  Either way I'm going to back my patch out and re-run a few
+> > more times with my trace_printk()'s so I can have several runs to look at and
+> > verify what I'm seeing.  Thanks,
 > 
-> if space cache rebuild is the reason, is there any way to improve
-> it?
+> I doubt the theory here, if we free a block, it's marked as pinned and
+> will then be marked as free only when we commit the transaction, isn't it?
 > 
-> I am running archlinux/systemd/kde
 
-I suspect this is, at least in part, related to severe fragmentation
-in /home.
+Not sure if my other reply made it through, my phone only responds with HTML
+which is kind of a pain.
 
-There are large files in these directories that are updated frequently
-by various components of KDE and the Chrome browser.  (Firefox has its
-own databases that are frequently updated, too.)
+If you look at btrfs_free_tree_block we will just add the space back if the
+buffer was allocated in this transaction and hasn't been written yet, so this
+case can happen.  I think we should probably add another mod log operation that
+gets added when this happens so that if we do re-allocate it and try to rewind
+back to when it belonged to another tree we can do that without panicing.
+Thanks,
 
-    ~/.local/share/akonadi
-    ~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend
-    ~/.cache/chromium/Default/Cache
-    ~/.cache/chromium/Default/Media\ Cache
-
-I improved performance dramatically (orders of magnitude) by copying
-the database files into an empty file that was modified with:
-
-    chattr -C
-
-and renaming to make the files no COW.  (Note that this is the only
-way to change an existing file to no COW.)  I also set the same
-attribute on the owning directories so that all new files inherit the
-no COW attribute.
-
-I suspect there are other files that fragment badly since I see
-periods of high disk activity coming back slowly over a few weeks of
-use after making the modifications above.  I intend to track them down
-and do the same.
-
-Also, see these:
-
-    https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_directory_doesn.27t_work 
-    https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_defragment_many_files.3F 
-
-    $ uname -r
-    3.9.6-200.fc18.x86_64
-    $
-
--- 
-Garry T. Williams
-
+Josef

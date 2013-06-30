@@ -1,98 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:46732 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751249Ab3F3LWF (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:37119 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750757Ab3F3Lgc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 07:22:05 -0400
+	Sun, 30 Jun 2013 07:36:32 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id A64859A0403
-	for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 05:22:03 -0600 (MDT)
-Date: Sun, 30 Jun 2013 07:22:00 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id AF5D17C067F
+	for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2013 05:36:31 -0600 (MDT)
+Date: Sun, 30 Jun 2013 07:36:28 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: hold the tree mod lock in __tree_mod_log_rewind
-Message-ID: <20130630112200.GA4288@localhost.localdomain>
-References: <1372562251-27123-1-git-send-email-jbacik@fusionio.com>
- <51CFEB61.1040008@jan-o-sch.net>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Shyam Kaushik <shyam@zadarastorage.com>
+Subject: Re: question about transaction-abort-related commits
+Message-ID: <20130630113628.GB4288@localhost.localdomain>
+References: <CAOcd+r1=aZ-jBcTxgmxU5BiFGCG_10c_vouK6OE=wmG6o8++3g@mail.gmail.com>
+ <20130624162401.GJ4288@localhost.localdomain>
+ <CAOcd+r3OA4TW6XKBW73uDWGBbQmgma=ZV1ULkH8P8OAVA63_nQ@mail.gmail.com>
+ <CAOcd+r1smWp=r2GO6CY3sp2ggpaUkkBKuc9K+rye1kywg3Tfaw@mail.gmail.com>
+ <CAOcd+r0kx7_vdSjRrr48bZRkDcr2Ryyoc3GXVNpXgwZf-SkO3g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <51CFEB61.1040008@jan-o-sch.net>
+In-Reply-To: <CAOcd+r0kx7_vdSjRrr48bZRkDcr2Ryyoc3GXVNpXgwZf-SkO3g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 30, 2013 at 10:25:05AM +0200, Jan Schmidt wrote:
-> On 30.06.2013 05:17, Josef Bacik wrote:
-> > We need to hold the tree mod log lock in __tree_mod_log_rewind since we walk
-> > forward in the tree mod entries, otherwise we'll end up with random entries and
-> > trip the BUG_ON() at the front of __tree_mod_log_rewind.  This fixes the panics
-> > people were seeing when running
-> > 
-> > find /whatever -type f -exec btrfs fi defrag {} \;
+On Sun, Jun 30, 2013 at 11:29:14AM +0300, Alex Lyakas wrote:
+> Hi Josef,
 > 
-> This patch cannot help to solve the problem, as far as I've understood
-> what is going on. It does change timing, though, which presumably makes
-> it pass the current reproducer we're having.
+> On Wed, Jun 26, 2013 at 5:16 PM, Alex Lyakas
+> <alex.btrfs@zadarastorage.com> wrote:
+> > Hi Josef,
+> > Can you please help me with another question.
+> >
+> > I am looking at your patch:
+> > Btrfs: fix chunk allocation error handling
+> > https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=0448748849ef7c593be40e2c1404f7974bd3aac6
+> >
+> > Here you changed the order of btrfs_make_block_group() vs
+> > btrfs_alloc_dev_extent(), because we could have allocated from the
+> > in-memory block group, before we have inserted the dev extent into a
+> > tree. However, with this fix, I hit the deadlock[1] of
+> > btrfs_alloc_dev_extent() that also wants to allocate a chunk and
+> > recursively calls do_chunk_alloc, but then is stuck on chunk_mutex.
+> >
+> > Was this patch:
+> > Btrfs: don't re-enter when allocating a chunk
+> > https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=c6b305a89b1903d63652691ad5eb9f05aa0326b8
+> > introduced to fix this deadlock?
 > 
-> On rewinding, iteration through the tree mod log rb-tree goes backwards
-> in time, which means that once we've found our staring point we cannot
-> be trapped by later additions. The old items we're rewinding towards
-> cannot be freed, because we've allocated a blocker element within the
-> tree and rewinding never goes beyond the allocated blocker. The blocker
-> element is allocated by btrfs_get_tree_mod_seq and mostly referred to as
-> time_seq within the other tree mod log functions in ctree.c. To sum up,
-> the added lock is not required.
+> With these two patches ("Btrfs: fix chunk allocation error handling"
+> and "Btrfs: don't re-enter when allocating a chunk"), I am hitting
+> ENOSPC during metadata chunk allocation.
 > 
-> The debug output I've analyzed so far shows that after we've rewinded
-> all REMOVE_WHILE_FREEING operations on a buffer, ordered consecutively
-> as expected, there comes another REMOVE_WHILE_FREEING with a sequence
-> number much further in the past for the same buffer (but that sequence
-> number is still higher than out time_seq rewind barrier at that point).
-> This must be a logical problem I've not completely understood so far,
-> but locking doesn't seem to be the right track.
+> Upon entry into "do_chunk_alloc", I have only one METADATA block-group
+> as follows:
+> total_bytes=8388608
+> bytes_used=7938048
+> bytes_pinned=446464
+> bytes_reserved=4096
+> bytes_readonly=0
+> bytes_may_use=3362816
+> 
+> As we see bytes_used+bytes_pinned+bytes_reserved==total_bytes
+> 
+> What happens next is that within __btrfs_alloc_chunk():
+> - find_free_dev_extent() finds a free extent (metadata policy is SINGLE)
+> - btrfs_alloc_dev_extent() fails with ENOSPC
+> 
+> (btrfs_make_block_group() is called after btrfs_alloc_dev_extent()
+> with these patches).
+> 
+> What should be done in such situation, when there is not enough
+> METADATA to allocate a device extent item, but we still don't allow
+> allocating from the newly-created METADATA block group?
 > 
 
-So I've seen 2 scenarios with my debug output, once with my printk() which
-seemed to be unreliable and then again with trace_printk() which was much more
-reliable.
+So I had a third patch that you are likely missing that makes sure we try and
+allocate chunks sooner specifically for this case
 
-With the printk() output I saw what you described, however I was also printing
-out every mod we added and I never saw the sequence number allocated that we had
-suddenly tripped over, so I assumed that the printk() just got lost between the
-boxes (I was using netconsole to capture the output).  However if it was never
-actually allocated then it would make sense that we just pointed into some
-random peice of memory.
+96f1bb57771f71bf1d55d5031a1cf47908494330
 
-The second bit I saw which is when I was convinced this was the problem had us
-processing the keys, and suddenly we'd try to process the key again.  So I saw
-something like this (I lost the output because I was capturing the output into
-the same file again when I tried to reproduce with this patch so I don't have
-the exact output)
+and then Miao made it better I think with this
 
-processing op 3, seq 10 slot 0
-processing op 3, seq 9 slot 1
-processing op 3, seq 8 slot 2
-processing op 3, seq 7 slot 3
-processing op 3, seq 6 slot 4
-processing op 3, seq 5 slot 5
-processing op 3, seq 8 slot 2
+3c76cd84e0c0d3ceb094a1020f8c55c2417e18d3
 
-so we got an entry we had already processed, which is completely in line with
-the rb_tree pointing to something random when we do rb_next.
-
-Now I had another theory early on, but I haven't seen output to confirm this.
-We can re-allocate a block if we've allocated it in the same transaction, and it
-appears this would completely screw up the tree mod log.  So say we allocate
-block 5, we add keys to it, and then we free it, so we get this
-MOVE_WHILE_FREEING thing done on the entire block, but then we re-allocate the
-same block and start doing normal operations to it.  Then we go to replay back
-and we will replay all the normal operations, but then we will walk into the
-REMOVE_WHILE_FREEING entries from when the block was free'd last and this will
-trigger the BUG_ON().  Now I hadn't actually had this happen so either it can't
-happen some how and I've missed the reasoning for it, or what I saw was just the
-rb_tree messup because we aren't locking it and what you are seeing is this
-particular case.  Either way I'm going to back my patch out and re-run a few
-more times with my trace_printk()'s so I can have several runs to look at and
-verify what I'm seeing.  Thanks,
+Thanks,
 
 Josef

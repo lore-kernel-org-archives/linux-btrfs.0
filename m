@@ -1,74 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54342 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751843Ab3GAJLA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Jul 2013 05:11:00 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Uta8Q-000156-Gx
-	for linux-btrfs@vger.kernel.org; Mon, 01 Jul 2013 11:10:58 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 11:10:58 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 11:10:58 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: unclean shutdown and space cache rebuild
-Date: Mon, 1 Jul 2013 09:10:41 +0000 (UTC)
-Message-ID: <pan$d6b02$c375f8e3$e64c63ed$cc12d244@cox.net>
-References: <11441914.sRzrmH57Vq@bheem> <4774295.3Q3X7zsTmb@vfr>
-	<2982023.ALTX9LRhaY@bheem>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:47429 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752738Ab3GAJTM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 05:19:12 -0400
+Date: Mon, 1 Jul 2013 17:18:54 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: hold the tree mod lock in __tree_mod_log_rewind
+Message-ID: <20130701091853.GA13173@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1372562251-27123-1-git-send-email-jbacik@fusionio.com>
+ <51CFEB61.1040008@jan-o-sch.net>
+ <20130630112200.GA4288@localhost.localdomain>
+ <20130630150208.GA11892@localhost.localdomain>
+ <20130630180117.GD4288@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130630180117.GD4288@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Shridhar Daithankar posted on Mon, 01 Jul 2013 08:20:19 +0530 as
-excerpted:
-
-> On Sunday, June 30, 2013 01:53:48 PM Garry T. Williams wrote:
-
-[discussing fragmentation]
+On Sun, Jun 30, 2013 at 02:01:17PM -0400, Josef Bacik wrote:
+> On Sun, Jun 30, 2013 at 11:02:10PM +0800, Liu Bo wrote:
+> > On Sun, Jun 30, 2013 at 07:22:00AM -0400, Josef Bacik wrote:
+> > > On Sun, Jun 30, 2013 at 10:25:05AM +0200, Jan Schmidt wrote:
+> > > > On 30.06.2013 05:17, Josef Bacik wrote:
+> > > > > We need to hold the tree mod log lock in __tree_mod_log_rewind since we walk
+> > > > > forward in the tree mod entries, otherwise we'll end up with random entries and
+> > > > > trip the BUG_ON() at the front of __tree_mod_log_rewind.  This fixes the panics
+> > > > > people were seeing when running
+> > > > > 
+> > > > > find /whatever -type f -exec btrfs fi defrag {} \;
+> > > > 
+> > > > This patch cannot help to solve the problem, as far as I've understood
+> > > > what is going on. It does change timing, though, which presumably makes
+> > > > it pass the current reproducer we're having.
+> > > > 
+> > > > On rewinding, iteration through the tree mod log rb-tree goes backwards
+> > > > in time, which means that once we've found our staring point we cannot
+> > > > be trapped by later additions. The old items we're rewinding towards
+> > > > cannot be freed, because we've allocated a blocker element within the
+> > > > tree and rewinding never goes beyond the allocated blocker. The blocker
+> > > > element is allocated by btrfs_get_tree_mod_seq and mostly referred to as
+> > > > time_seq within the other tree mod log functions in ctree.c. To sum up,
+> > > > the added lock is not required.
+> > > > 
+> > > > The debug output I've analyzed so far shows that after we've rewinded
+> > > > all REMOVE_WHILE_FREEING operations on a buffer, ordered consecutively
+> > > > as expected, there comes another REMOVE_WHILE_FREEING with a sequence
+> > > > number much further in the past for the same buffer (but that sequence
+> > > > number is still higher than out time_seq rewind barrier at that point).
+> > > > This must be a logical problem I've not completely understood so far,
+> > > > but locking doesn't seem to be the right track.
+> > > > 
+> > > 
+> > > So I've seen 2 scenarios with my debug output, once with my printk() which
+> > > seemed to be unreliable and then again with trace_printk() which was much more
+> > > reliable.
+> > > 
+> > > With the printk() output I saw what you described, however I was also printing
+> > > out every mod we added and I never saw the sequence number allocated that we had
+> > > suddenly tripped over, so I assumed that the printk() just got lost between the
+> > > boxes (I was using netconsole to capture the output).  However if it was never
+> > > actually allocated then it would make sense that we just pointed into some
+> > > random peice of memory.
+> > > 
+> > > The second bit I saw which is when I was convinced this was the problem had us
+> > > processing the keys, and suddenly we'd try to process the key again.  So I saw
+> > > something like this (I lost the output because I was capturing the output into
+> > > the same file again when I tried to reproduce with this patch so I don't have
+> > > the exact output)
+> > > 
+> > > processing op 3, seq 10 slot 0
+> > > processing op 3, seq 9 slot 1
+> > > processing op 3, seq 8 slot 2
+> > > processing op 3, seq 7 slot 3
+> > > processing op 3, seq 6 slot 4
+> > > processing op 3, seq 5 slot 5
+> > > processing op 3, seq 8 slot 2
+> > > 
+> > > so we got an entry we had already processed, which is completely in line with
+> > > the rb_tree pointing to something random when we do rb_next.
+> > > 
+> > > Now I had another theory early on, but I haven't seen output to confirm this.
+> > > We can re-allocate a block if we've allocated it in the same transaction, and it
+> > > appears this would completely screw up the tree mod log.  So say we allocate
+> > > block 5, we add keys to it, and then we free it, so we get this
+> > > MOVE_WHILE_FREEING thing done on the entire block, but then we re-allocate the
+> > > same block and start doing normal operations to it.  Then we go to replay back
+> > > and we will replay all the normal operations, but then we will walk into the
+> > > REMOVE_WHILE_FREEING entries from when the block was free'd last and this will
+> > > trigger the BUG_ON().  Now I hadn't actually had this happen so either it can't
+> > > happen some how and I've missed the reasoning for it, or what I saw was just the
+> > > rb_tree messup because we aren't locking it and what you are seeing is this
+> > > particular case.  Either way I'm going to back my patch out and re-run a few
+> > > more times with my trace_printk()'s so I can have several runs to look at and
+> > > verify what I'm seeing.  Thanks,
+> > 
+> > I doubt the theory here, if we free a block, it's marked as pinned and
+> > will then be marked as free only when we commit the transaction, isn't it?
+> > 
 > 
->> ~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend
+> Not sure if my other reply made it through, my phone only responds with HTML
+> which is kind of a pain.
 > 
-> damn!
-> 
-> # filefrag soprano-virtuoso.db soprano-virtuoso.db: 10518 extents found
->                                                                                                                                
-> # btrfs fi defrag soprano-virtuoso.db
-> 
-> # filefrag soprano-virtuoso.db soprano-virtuoso.db: 957 extents found
+> If you look at btrfs_free_tree_block we will just add the space back if the
+> buffer was allocated in this transaction and hasn't been written yet, so this
+> case can happen.  I think we should probably add another mod log operation that
+> gets added when this happens so that if we do re-allocate it and try to rewind
+> back to when it belonged to another tree we can do that without panicing.
+> Thanks,
 
-While you evidently had quite some fragmentation as the number of extents 
-dropped considerably, if you're running btrfs compression, it's worth 
-noting that (based on earlier posts here) filefrag always counts 
-compressed files as fragmented, even if they're not.  So a sufficiently 
-sized file will almost certainly show fragmentation via filefrag if it's 
-compressed, and all you can do is use filefrag as a hint in that case; 
-defrag may well not do anything if it's not actually fragmented.
+Yeah it's right, thanks for the explanation.
 
-> How much is an extend anyways?  is it a page or 256M?
+Another option is to do a bisect if time is available, I was testing
+tree mod log intensively while working on snapshot-aware defrag
+and never hit this bug, so it might be introduced by some later commits.
 
-I don't know...
- 
-> But in general, how to find out most fragmented files and folders?
-> mouting with autodefrag is a serious degradation..
-
-It is?  AFAIK, all the autodefrag mount option does is scan files for 
-fragmentation as they are written and queue any fragmentation-detected 
-files for background defrag by the defrag thread.
-
-I had expected, particularly on spinning rust, that the benefits of 
-autodefrag to far exceed the costs, so your performance drag claim is 
-interesting to me indeed.  If my expectation is wrong, which it could be, 
-I'd love to know why, and see some numbers.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+- liubo

@@ -1,211 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f47.google.com ([209.85.215.47]:61463 "EHLO
-	mail-la0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751056Ab3F2HzO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Jun 2013 03:55:14 -0400
-Received: by mail-la0-f47.google.com with SMTP id fe20so2840150lab.6
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jun 2013 00:55:13 -0700 (PDT)
-Received: from ?IPv6:2001:470:28:50b:8e89:a5ff:fec1:1ac2? ([2001:470:28:50b:8e89:a5ff:fec1:1ac2])
-        by mx.google.com with ESMTPSA id p7sm3718876lbi.15.2013.06.29.00.55.11
-        for <linux-btrfs@vger.kernel.org>
-        (version=SSLv3 cipher=RC4-SHA bits=128/128);
-        Sat, 29 Jun 2013 00:55:12 -0700 (PDT)
-Message-ID: <1372492506.3088.0.camel@Waves.darkmere>
-Subject: raid 10 corruption from single drive failure
-From: "D. Spindel" <spider@skuggor.se>
-To: linux-btrfs@vger.kernel.org
-Date: Sat, 29 Jun 2013 09:55:06 +0200
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from userp1040.oracle.com ([156.151.31.81]:25325 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751171Ab3GAPUj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 11:20:39 -0400
+Message-ID: <51D19DF9.2080007@oracle.com>
+Date: Mon, 01 Jul 2013 17:19:21 +0200
+From: Koen De Wit <koen.de.wit@oracle.com>
+MIME-Version: 1.0
+To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] xfstests: btrfs/316: cross-subvolume sparse copy
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This testscript creates reflinks to files on different subvolumes, 
+overwrites the original files and reflinks, and moves reflinked files 
+between subvolumes.
 
-Hi,
-  I'm evaluating btrfs for a future deployment, and managed to 
-(repeatedly
-) get btrfs to the state where the system can't mount, can't fsck and 
-can't
-recover.
+Originally submitted as testcase 302, changes are made based on comments 
+from Eric: http://oss.sgi.com/archives/xfs/2013-03/msg00231.html
+Two new common/rc functions used in this script (_require_cp_reflink and 
+_verify_reflink) have been submitted recently: 
+http://oss.sgi.com/archives/xfs/2013-05/msg00745.html
+Thanks to Eric Sandeen and Dave Chinner for the reviews.
 
-
-The test setup is pretty small, 6 devices of various size:
-
-  butter-1.5GA vg_dolt -wi-a----
-1.50g
-  butter-1.5GB vg_dolt -wi-a----
-1.50g
-  butter-2GA vg_dolt -wi-a----
-2.00g
-  butter-2GB vg_dolt -wi-a----
-2.00g
-  butter-3GA vg_dolt -wi-a----
-3.00g
-  butter-3GB vg_dolt -wi-a----
-3.00g
-
-
-Created an btrfs volume:
-mkfs.btrfs -d raid10 -m raid1 /dev/mapper/vg_dolt-butter--1.5GA
-/dev/mapper/vg_dolt-butter--1.5GA /dev/mapper/vg_dolt-butter--2GA
-/dev/mapper/vg_dolt-butter--2GB /dev/mapper/vg_dolt-butter--3GA
-/dev/mapper/vg_dolt-butter--3GB
-
-
-( Note how above it is mistyped, This is a 5 disk raid10. Where 1.5GA 
-was
-listed twice. )
-
-
---
-mount it and fill it with files ( I downloaded parts of the fedora 
-src.rpm
-tree ).
-
-unmount the partition
-
-Zero one drive
-dd if=/dev/zero of=/dev/vg_dolt/butter-3GB bs=1M skip=100
-
-( It's sort of hard to fake a corrupt drive, this is a decent way of 
-doing
-it )
-
-trying to mount it gives the following setup:
-Jun 28 23:58:34 dolt kernel: [2815554.803082] device fsid
-379e495a-9ba7-4485-ae74-6c8939f7b22e devid 3 transid 27
-/dev/mapper/vg_dolt-butter--2GB
-Jun 28 23:58:34 dolt kernel: [2815554.850211] btrfs: disk space caching 
-is
-enabled
-Jun 28 23:58:34 dolt kernel: [2815554.850856] btrfs: failed to read 
-chunk
-tree on dm-6
-Jun 28 23:58:34 dolt kernel: [2815554.856453] btrfs: open_ctree failed
-Jun 28 23:58:44 dolt kernel: [2815565.475519] device fsid
-379e495a-9ba7-4485-ae74-6c8939f7b22e devid 3 transid 27
-/dev/mapper/vg_dolt-butter--2GB
-Jun 28 23:58:44 dolt kernel: [2815565.476939] btrfs: enabling auto 
-recovery
-Jun 28 23:58:44 dolt kernel: [2815565.476944] btrfs: disk space caching 
-is
-enabled
-Jun 28 23:58:44 dolt kernel: [2815565.477648] btrfs: failed to read 
-chunk
-tree on dm-6
-Jun 28 23:58:44 dolt kernel: [2815565.486300] btrfs: open_ctree failed
-Jun 28 23:58:52 dolt kernel: [2815573.522271] device fsid
-379e495a-9ba7-4485-ae74-6c8939f7b22e devid 2 transid 27
-/dev/mapper/vg_dolt-butter--2GA
-Jun 28 23:58:52 dolt kernel: [2815573.536624] btrfs: enabling auto 
-recovery
-Jun 28 23:58:52 dolt kernel: [2815573.536628] btrfs: disk space caching 
-is
-enabled
-Jun 28 23:58:52 dolt kernel: [2815573.537185] btrfs: failed to read 
-chunk
-tree on dm-6
-Jun 28 23:58:52 dolt kernel: [2815573.542938] btrfs: open_ctree failed
-
-
-[root@dolt mnt]# btrfsck /dev/vg_dolt/butter-2GA
-failed to read /dev/sr0
-failed to read /dev/sr0
-warning, device 5 is missing
-warning devid 5 not found already
-checking extents
-checking fs roots
-checking root refs
-Segmentation fault
-
-[root@dolt mnt]# mount -o recovery,ro /dev/mapper/vg_dolt-butter--2GA
-/mnt/test/
-mount: wrong fs type, bad option, bad superblock on
-/dev/mapper/vg_dolt-butter--2GA,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so
-[root@dolt mnt]#
-
-debuginfo-install btrfs-progs-0.20.rc1.20121017git91d9eec-3.fc18.x86_64
-
-
-[root@dolt mnt]# gdb btrfsck /dev/vg_dolt/butter-2GA
-GNU gdb (GDB) Fedora (7.5.1-38.fc18)
-Copyright (C) 2012 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later 
-<http://gnu.org/licenses/gpl.html
- >
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law. Type "show 
-copying"
-and "show warranty" for details.
-This GDB was configured as "x86_64-redhat-linux-gnu".
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>...
-Reading symbols from /usr/sbin/btrfsck...Reading symbols from
-/usr/lib/debug/usr/sbin/btrfsck.debug...done.
-done.
-"/dev/vg_dolt/butter-2GA" is not a core dump: File format not recognized
-(gdb) run /dev/vg_dolt/butter-2GA
-Starting program: /usr/sbin/btrfsck /dev/vg_dolt/butter-2GA
-failed to read /dev/sr0
-failed to read /dev/sr0
-warning, device 5 is missing
-warning devid 5 not found already
-checking extents
-checking fs roots
-checking root refs
-
-Program received signal SIGSEGV, Segmentation fault.
-__GI___libc_free (mem=0x8000000000) at malloc.c:2907
-2907 if (chunk_is_mmapped(p)) /* release mmapped
-memory. */
-(gdb) bt full
-#0 __GI___libc_free (mem=0x8000000000) at malloc.c:2907
-        ar_ptr = <optimized out>
-        p = <optimized out>
-        hook = 0x0
-#1 0x000000000040d429 in close_all_devices (fs_info=0x6323e0) at
-disk-io.c:1088
-        list = 0x631050
-        next = 0x6300b0
-        tmp = 0x630430
-        device = 0x6300b0
-#2 0x000000000040e3df in close_ctree (root=root@entry=0x6426e0) at
-disk-io.c:1135
-        ret = <optimized out>
-        fs_info = 0x6323e0
-        __PRETTY_FUNCTION__ = "close_ctree"
-#3 0x0000000000401d8d in main (ac=<optimized out>, av=<optimized out>) 
-at
-btrfsck.c:3593
-        root_cache = {root = {rb_node = 0x0, rotate_notify = 
-0x423aad
-<__libc_csu_init+93>}}
-        root = <optimized out>
-        info = <optimized out>
-        trans = <optimized out>
-        bytenr = <optimized out>
-        ret = 0
-        num = <optimized out>
-        repair = <optimized out>
-        option_index = 0
-        init_csum_tree = <optimized out>
-        rw = 0
-
+Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
 ---
+  tests/btrfs/316     |  130 
++++++++++++++++++++++++++++++++++++++++++++++++++++
+  tests/btrfs/316.out |   39 +++++++++++++++
+  tests/btrfs/group   |    1 +
+  3 files changed, 170 insertions(+), 0 deletions(-)
+  create mode 100755 tests/btrfs/316
+  create mode 100644 tests/btrfs/316.out
 
-Making this with all 6 devices from the beginning and btrfsck doesn't
-segfault. But it also doesn't repair the system enough to make it
-mountable. ( nether does -o recover, however -o degraded works, and 
-files
-are then accessible )
-
-
-Regards,
-   D.S.
-
-
+diff --git a/tests/btrfs/316 b/tests/btrfs/316
+new file mode 100755
+index 0000000..7c9c368
+--- /dev/null
++++ b/tests/btrfs/316
+@@ -0,0 +1,130 @@
++#! /bin/bash
++# FS QA Test No. btrfs/316
++#
++# Testing cross-subvolume sparse copy on btrfs
++#    - Create two subvolumes, mount one of them
++#    - Create a file on each (sub/root)volume,
++#      reflink them on the other volumes
++#    - Change one original and two reflinked files
++#    - Move reflinked files between subvolumes
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    umount $SCRATCH_MNT
++    rm -rf $TESTDIR1
++    rm -rf $TESTDIR2
++    btrfs subvolume delete $SUBVOL1 >> $seqres.full
++    btrfs subvolume delete $SUBVOL2 >> $seqres.full
++    cd /
++    rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++
++_require_scratch
++_require_cp_reflink
++
++_checksum_files() {
++    for F in file1 file2 file3
++    do
++        for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
++        do
++            md5sum $D/$F | _filter_test_dir | _filter_scratch
++        done
++    done
++}
++
++TESTDIR1=$TEST_DIR/test-$seq-1
++TESTDIR2=$TEST_DIR/test-$seq-2
++SUBVOL1=$TEST_DIR/subvol-$seq-1
++SUBVOL2=$TEST_DIR/subvol-$seq-2
++
++_scratch_unmount 2>/dev/null
++rm -rf $seqres.full
++rm -rf $TESTDIR1 $TESTDIR2
++btrfs subvol delete $SUBVOL1 >/dev/null 2>&1
++btrfs subvol delete $SUBVOL2 >/dev/null 2>&1
++
++mkdir $TESTDIR1
++mkdir $TESTDIR2
++btrfs subvolume create $SUBVOL1 >> $seqres.full
++btrfs subvolume create $SUBVOL2 >> $seqres.full
++_mount -t btrfs -o subvol=subvol-$seq-1 $TEST_DEV $SCRATCH_MNT
++
++echo "Create initial files"
++# TESTDIR1/file1 is very small and will be inlined
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 10' $TESTDIR1/file1 >> $seqres.full
++$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $SCRATCH_MNT/file2 >> 
+$seqres.full
++$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $SUBVOL2/file3 >> $seqres.full
++
++echo "Create reflinks to the initial files on other subvolumes"
++cp --reflink $TESTDIR1/file1 $SUBVOL1
++cp --reflink $TESTDIR1/file1 $SUBVOL2
++cp --reflink $SUBVOL1/file2 $TESTDIR1/
++cp --reflink $SUBVOL1/file2 $SUBVOL2
++cp --reflink $SUBVOL2/file3 $TESTDIR1/
++cp --reflink $SUBVOL2/file3 $SUBVOL1
++
++echo "Verify the reflinks"
++_verify_reflink $SCRATCH_MNT/file2 $TESTDIR1/file2
++_verify_reflink $SCRATCH_MNT/file2 $SUBVOL2/file2
++_verify_reflink $SUBVOL2/file3 $TESTDIR1/file3
++_verify_reflink $SUBVOL2/file3 $SCRATCH_MNT/file3
++echo "Verify the file contents:"
++_checksum_files
++
++echo -e "---\nOverwrite some files with new content"
++$XFS_IO_PROG -c 'pwrite -S 0x64 0 20' $TESTDIR1/file1 >> $seqres.full
++$XFS_IO_PROG -c 'pwrite -S 0x66 0 21000' $SUBVOL2/file2 >> $seqres.full
++$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $SCRATCH_MNT/file3 >> 
+$seqres.full
++
++echo "Verify that non-overwritten reflinks still have the same data blocks"
++_verify_reflink $TESTDIR1/file2 $SCRATCH_MNT/file2
++_verify_reflink $TESTDIR1/file3 $SUBVOL2/file3
++echo "Verify the file contents:"
++_checksum_files
++
++echo -e "---\nShuffle files between directories"
++mv $TESTDIR1/file* $TESTDIR2
++mv $SCRATCH_MNT/file* $TESTDIR1/
++mv $SUBVOL2/file* $SCRATCH_MNT/
++mv $TESTDIR2/file* $SUBVOL2/
++
++# No _verify_reflink here as data is copied when moving files between 
+subvols
++echo "Verify the file contents:"
++_checksum_files
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/316.out b/tests/btrfs/316.out
+new file mode 100644
+index 0000000..fbfa550
+--- /dev/null
++++ b/tests/btrfs/316.out
+@@ -0,0 +1,39 @@
++QA output created by 316
++Create initial files
++Create reflinks to the initial files on other subvolumes
++Verify the reflinks
++Verify the file contents:
++e09c80c42fda55f9d992e59ca6b3307d  TEST_DIR/test-302-1/file1
++e09c80c42fda55f9d992e59ca6b3307d  SCRATCH_MNT/file1
++e09c80c42fda55f9d992e59ca6b3307d  TEST_DIR/subvol-302-2/file1
++d7402b46310fbbfbc5e466b1dccb043b  TEST_DIR/test-302-1/file2
++d7402b46310fbbfbc5e466b1dccb043b  SCRATCH_MNT/file2
++d7402b46310fbbfbc5e466b1dccb043b  TEST_DIR/subvol-302-2/file2
++5a95800e4c04b11117aa4e4de057721f  TEST_DIR/test-302-1/file3
++5a95800e4c04b11117aa4e4de057721f  SCRATCH_MNT/file3
++5a95800e4c04b11117aa4e4de057721f  TEST_DIR/subvol-302-2/file3
++---
++Overwrite some files with new content
++Verify that non-overwritten reflinks still have the same data blocks
++Verify the file contents:
++00d620f69f30327f0f8946b95c12de44  TEST_DIR/test-302-1/file1
++e09c80c42fda55f9d992e59ca6b3307d  SCRATCH_MNT/file1
++e09c80c42fda55f9d992e59ca6b3307d  TEST_DIR/subvol-302-2/file1
++d7402b46310fbbfbc5e466b1dccb043b  TEST_DIR/test-302-1/file2
++d7402b46310fbbfbc5e466b1dccb043b  SCRATCH_MNT/file2
++917619ae44b38bb9968af261c3c45440  TEST_DIR/subvol-302-2/file2
++5a95800e4c04b11117aa4e4de057721f  TEST_DIR/test-302-1/file3
++b9f275cd638cb784c9e61def94c622a8  SCRATCH_MNT/file3
++5a95800e4c04b11117aa4e4de057721f  TEST_DIR/subvol-302-2/file3
++---
++Shuffle files between directories
++Verify the file contents:
++e09c80c42fda55f9d992e59ca6b3307d  TEST_DIR/test-302-1/file1
++e09c80c42fda55f9d992e59ca6b3307d  SCRATCH_MNT/file1
++00d620f69f30327f0f8946b95c12de44  TEST_DIR/subvol-302-2/file1
++d7402b46310fbbfbc5e466b1dccb043b  TEST_DIR/test-302-1/file2
++917619ae44b38bb9968af261c3c45440  SCRATCH_MNT/file2
++d7402b46310fbbfbc5e466b1dccb043b  TEST_DIR/subvol-302-2/file2
++b9f275cd638cb784c9e61def94c622a8  TEST_DIR/test-302-1/file3
++5a95800e4c04b11117aa4e4de057721f  SCRATCH_MNT/file3
++5a95800e4c04b11117aa4e4de057721f  TEST_DIR/subvol-302-2/file3
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index bc6c256..a6d8de1 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -9,3 +9,4 @@
+  276 auto rw metadata
+  284 auto
+  307 auto quick
++316 auto quick
+-- 
+1.7.2.5
 

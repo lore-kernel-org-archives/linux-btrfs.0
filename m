@@ -1,82 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:58222 "EHLO
-	homiemail-a93.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751486Ab3GACuY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Jun 2013 22:50:24 -0400
-From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
-To: "Garry T. Williams" <gtwilliams@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: unclean shutdown and space cache rebuild
-Date: Mon, 01 Jul 2013 08:20:19 +0530
-Message-ID: <2982023.ALTX9LRhaY@bheem>
-In-Reply-To: <4774295.3Q3X7zsTmb@vfr>
-References: <11441914.sRzrmH57Vq@bheem> <4774295.3Q3X7zsTmb@vfr>
+Received: from mail-ob0-f181.google.com ([209.85.214.181]:42851 "EHLO
+	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752806Ab3GAHkD convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 03:40:03 -0400
+Received: by mail-ob0-f181.google.com with SMTP id 16so3872183obc.40
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 00:40:01 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <loom.20130626T173801-308@post.gmane.org>
+References: <loom.20130617T230152-537@post.gmane.org> <20130617212132.GA19183@localhost.localdomain>
+ <CADn-QaOWq7BR0DXn_Xd5YRnDc2NZOBGCn_YfV2y1FjpBg4f_LQ@mail.gmail.com>
+ <CADn-QaNS01CGtPJtr9yHkEU-TET7MrhCUbr1j4g3gYROvQ=K+Q@mail.gmail.com> <loom.20130626T173801-308@post.gmane.org>
+From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
+Date: Mon, 1 Jul 2013 09:39:39 +0200
+Message-ID: <CADn-QaPUa6vyqbgB2CMEmfk9q=Z7haE=AxO_4spYDz4JDLHQNA@mail.gmail.com>
+Subject: Re: Filesystem
+To: Rodrigo Dias Cruz <rodrigodc@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday, June 30, 2013 01:53:48 PM Garry T. Williams wrote:
-> I suspect this is, at least in part, related to severe fragmentation
-> in /home.
+Hello Rodrigo,
 
-I don't think so. The problem I have described occur only before anybody logs 
-in to the system and /home being a separate partition, it is not the problem 
-in this case.
-w
-> 
-> There are large files in these directories that are updated frequently
-> by various components of KDE and the Chrome browser.  (Firefox has its
-> own databases that are frequently updated, too.)
-> 
->     ~/.local/share/akonadi
+On Wed, Jun 26, 2013 at 5:44 PM, Rodrigo Dias Cruz <rodrigodc@gmail.com> wrote:
 
-Thats 3.9MB in my case since I point the akonadi db to a systemwide postgresql 
-instance. of course, it will just shift defragmentation there.
+> I had the very same problem some days ago.
+>
+> I have not yet found out how to fix the broken btrfs filesystem. However, I
+> have been able to recover all my files from the filesystem and copy them to
+> a brand new ext4 filesystem, that I am using now.
 
->     ~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend
+Well, yeah, I also tried to do "btrfs-restore". Did not work well.
 
-damn!
-
-# filefrag soprano-virtuoso.db                                                                                                             
-soprano-virtuoso.db: 10518 extents found
-                                                                                                                               
-# btrfs fi defrag soprano-virtuoso.db
-
-# filefrag soprano-virtuoso.db
-soprano-virtuoso.db: 957 extents found
-
-How much is an extend anyways?  is it a page or 256M?
+It restored all files, but didn't do so in a good way. An unknown
+number of files got corrupted (but btrfs-restore went thru anyway).
+For example a VirtualBox image got destroyed and my Hamster
+time tracking database. And probably some more.
 
 
->     ~/.cache/chromium/Default/Cache
->     ~/.cache/chromium/Default/Media\ Cache
+> At the end, all your files should be found at the directory "/backup". If
 
-I don't use chromium. but I get the idea.
+They were.
 
-But in general, how to find out most fragmented files and folders? mouting 
-with autodefrag is a serious degradation..
+> you wish, you can recreate the filesystem on "/dev/sda1" (using mkfs.btrfs
+> or mkfs.ext4) and copy the files back to there.
 
-> I improved performance dramatically (orders of magnitude) by copying
-> the database files into an empty file that was modified with:
-> 
->     chattr -C
-> 
-> and renaming to make the files no COW.  (Note that this is the only
-> way to change an existing file to no COW.)  I also set the same
-> attribute on the owning directories so that all new files inherit the
-> no COW attribute.
-> 
-> I suspect there are other files that fragment badly since I see
-> periods of high disk activity coming back slowly over a few weeks of
-> use after making the modifications above.  I intend to track them down
-> and do the same.
+I think, I got cured from btrfs… As of now, not ready for daily use,
+unless you are a real hacker.
 
-hmm.. a trick to find most badly fragmented files/directories and defragment 
-them should do too I think.
+It does have nice features, but an ugly userland (in comparison
+to ZFS) and is unstable with real danger of data loss.
 
+Maybe in a few years.
 
--- 
-Regards
- Shridhar
+Regards,
+
+Alexander
+--
+=>        Google+ => http://plus.skwar.me         <==
+=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==

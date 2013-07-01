@@ -1,61 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:42851 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752806Ab3GAHkD convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 03:40:03 -0400
-Received: by mail-ob0-f181.google.com with SMTP id 16so3872183obc.40
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 00:40:01 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <loom.20130626T173801-308@post.gmane.org>
-References: <loom.20130617T230152-537@post.gmane.org> <20130617212132.GA19183@localhost.localdomain>
- <CADn-QaOWq7BR0DXn_Xd5YRnDc2NZOBGCn_YfV2y1FjpBg4f_LQ@mail.gmail.com>
- <CADn-QaNS01CGtPJtr9yHkEU-TET7MrhCUbr1j4g3gYROvQ=K+Q@mail.gmail.com> <loom.20130626T173801-308@post.gmane.org>
-From: Alexander Skwar <alexanders.mailinglists+nospam@gmail.com>
-Date: Mon, 1 Jul 2013 09:39:39 +0200
-Message-ID: <CADn-QaPUa6vyqbgB2CMEmfk9q=Z7haE=AxO_4spYDz4JDLHQNA@mail.gmail.com>
-Subject: Re: Filesystem
-To: Rodrigo Dias Cruz <rodrigodc@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:54342 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751843Ab3GAJLA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Jul 2013 05:11:00 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Uta8Q-000156-Gx
+	for linux-btrfs@vger.kernel.org; Mon, 01 Jul 2013 11:10:58 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 11:10:58 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 11:10:58 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: unclean shutdown and space cache rebuild
+Date: Mon, 1 Jul 2013 09:10:41 +0000 (UTC)
+Message-ID: <pan$d6b02$c375f8e3$e64c63ed$cc12d244@cox.net>
+References: <11441914.sRzrmH57Vq@bheem> <4774295.3Q3X7zsTmb@vfr>
+	<2982023.ALTX9LRhaY@bheem>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Rodrigo,
+Shridhar Daithankar posted on Mon, 01 Jul 2013 08:20:19 +0530 as
+excerpted:
 
-On Wed, Jun 26, 2013 at 5:44 PM, Rodrigo Dias Cruz <rodrigodc@gmail.com> wrote:
+> On Sunday, June 30, 2013 01:53:48 PM Garry T. Williams wrote:
 
-> I had the very same problem some days ago.
->
-> I have not yet found out how to fix the broken btrfs filesystem. However, I
-> have been able to recover all my files from the filesystem and copy them to
-> a brand new ext4 filesystem, that I am using now.
+[discussing fragmentation]
+> 
+>> ~/.kde/share/apps/nepomuk/repository/main/data/virtuosobackend
+> 
+> damn!
+> 
+> # filefrag soprano-virtuoso.db soprano-virtuoso.db: 10518 extents found
+>                                                                                                                                
+> # btrfs fi defrag soprano-virtuoso.db
+> 
+> # filefrag soprano-virtuoso.db soprano-virtuoso.db: 957 extents found
 
-Well, yeah, I also tried to do "btrfs-restore". Did not work well.
+While you evidently had quite some fragmentation as the number of extents 
+dropped considerably, if you're running btrfs compression, it's worth 
+noting that (based on earlier posts here) filefrag always counts 
+compressed files as fragmented, even if they're not.  So a sufficiently 
+sized file will almost certainly show fragmentation via filefrag if it's 
+compressed, and all you can do is use filefrag as a hint in that case; 
+defrag may well not do anything if it's not actually fragmented.
 
-It restored all files, but didn't do so in a good way. An unknown
-number of files got corrupted (but btrfs-restore went thru anyway).
-For example a VirtualBox image got destroyed and my Hamster
-time tracking database. And probably some more.
+> How much is an extend anyways?  is it a page or 256M?
 
+I don't know...
+ 
+> But in general, how to find out most fragmented files and folders?
+> mouting with autodefrag is a serious degradation..
 
-> At the end, all your files should be found at the directory "/backup". If
+It is?  AFAIK, all the autodefrag mount option does is scan files for 
+fragmentation as they are written and queue any fragmentation-detected 
+files for background defrag by the defrag thread.
 
-They were.
+I had expected, particularly on spinning rust, that the benefits of 
+autodefrag to far exceed the costs, so your performance drag claim is 
+interesting to me indeed.  If my expectation is wrong, which it could be, 
+I'd love to know why, and see some numbers.
 
-> you wish, you can recreate the filesystem on "/dev/sda1" (using mkfs.btrfs
-> or mkfs.ext4) and copy the files back to there.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-I think, I got cured from btrfs… As of now, not ready for daily use,
-unless you are a real hacker.
-
-It does have nice features, but an ugly userland (in comparison
-to ZFS) and is unstable with real danger of data loss.
-
-Maybe in a few years.
-
-Regards,
-
-Alexander
---
-=>        Google+ => http://plus.skwar.me         <==
-=> Chat (Jabber/Google Talk) => a.skwar@gmail.com <==

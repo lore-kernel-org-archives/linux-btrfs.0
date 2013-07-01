@@ -1,50 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37022 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752741Ab3GAQVY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Jul 2013 12:21:24 -0400
-Date: Mon, 1 Jul 2013 18:21:22 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Stefan Paletta <stefanp@cabal1.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: why check f_path.mnt is equal for source and dest in
- btrfs_ioctl_clone()?
-Message-ID: <20130701162122.GE18204@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <kqoobm$jq4$1@ger.gmane.org>
+Received: from dkim1.fusionio.com ([66.114.96.53]:45698 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752093Ab3GARS3 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 13:18:29 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 8AD277C035B
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jul 2013 11:18:28 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <kqoobm$jq4$1@ger.gmane.org>
+To: Zach Brown <zab@redhat.com>, Josef Bacik <jbacik@fusionio.com>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <20130701161002.GO10265@lenny.home.zabbo.net>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1370384280-28652-1-git-send-email-zab@redhat.com>
+ <20130701125435.GE4288@localhost.localdomain>
+ <20130701161002.GO10265@lenny.home.zabbo.net>
+Message-ID: <20130701171826.14981.597@localhost.localdomain>
+Subject: Re: [PATCH 0/6] fix INT_MAX readdir hang, plus cleanups
+Date: Mon, 1 Jul 2013 13:18:26 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 30, 2013 at 09:55:26AM +0200, Stefan Paletta wrote:
-> This gives EXDEV for clone operations that btrfs could otherwise execute and
-> with slight change of circumstances will actually execute fine.
+Quoting Zach Brown (2013-07-01 12:10:02)
+> > > code.  It's all lightly tested with xfstests but it wouldn't surprise
+> > > me if I missed something so review is appreciated.
 > 
-> Imagine we have a btrfs on /dev/mapper/foobar with subvols /foo and /bar.
-> Let’s also imagine top of said fs in mounted at /mnt. In this case, a
-> cross-subvol clone of /mnt/foo/srcfile to /mnt/bar/dstfile will succeed.
+> *mmm, hmmm*
+> 
+> > One of these patches is making new entries not show up in readdir.  This was
+> > discovered while running stress.sh overnight, it complained about files not
+> > matching but when they were checked the files matched.  Dropping the entire
+> > series made stress.sh run fine.  So I'm dropping these for the next merge window
+> > but I'll dig into it and try and figure out what was causing the problem.
+> 
+> Nerts.  It's got to be the delayed inode stuff.
+> 
+> Maybe it's some unlink/recreate pattern?  Is this a thing that stress.sh
+> does?  (Where's stress.sh live?)
 
-This does not cross a mountpoint.
+It's an old namesys tool, I've copied it here:
 
-> However, if only the individual subvols were mounted like this:
-> 	/dev/mapper/foobar on /mnt (subvol=foo)
-> 	/dev/mapper/foobar on /mnt2 (subvol=bar),
-> then a clone of /mnt/srcfile to /mnt2/dstfile will fail with EXDEV even
-> though it is otherwise equal to the former clone operation.
+http://masoncoding.com/mason/tools/stress.sh
 
-And this does. This is prevented for the same reason hadlinks do not
-work accross mountpoints when the same filesytem is mounted multiple
-times.
+My command line:
 
-> Would anyone care to shed some light on this? Is it due to legacy policy? Am
-> I missing something?
+stress.sh -n 50 -s -c /build/linux /mnt
 
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/9867
+Basically its:
 
-Although it's more about reflink/clone spanning subvolumes regardless of
-the mountpoints, there's an objection against file operations performed
-accross vfsmounts and current implementation respects that.
+1) Make a list of all files in /build/linux and their md5sums
+2) Start 50 procs
+3) Each proc copies /build/linux into /mnt/stress/proc_num/
+4) Each proc compares the md5sums of its private copy with the original
+master
+5) Each proc deletes the private copy
+6) Repeat steps 2-5 forever.
 
-david
+The most likely cause of the bug I'm seeing is readdir not finding new
+files.
+
+-chris
+

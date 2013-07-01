@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57512 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755967Ab3GCLoy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jul 2013 07:44:54 -0400
-Date: Wed, 3 Jul 2013 13:44:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Received: from mail-la0-f52.google.com ([209.85.215.52]:62326 "EHLO
+	mail-la0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752812Ab3GAKQm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 06:16:42 -0400
+Received: by mail-la0-f52.google.com with SMTP id fo12so4200295lab.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jul 2013 03:16:40 -0700 (PDT)
+Message-ID: <1372673798.3030.2.camel@Waves.darkmere>
+Subject: Re: raid 10 corruption from single drive failure
+From: "D. Spindel" <spider@skuggor.se>
+To: cwillu <cwillu@cwillu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Fix segmentation fault
-Message-ID: <20130703114450.GP18204@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <51c53889000d9fe000004a0d00004a0ea000000e0f48@amlmta037.auone-net.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51c53889000d9fe000004a0d00004a0ea000000e0f48@amlmta037.auone-net.jp>
+Date: Mon, 01 Jul 2013 12:16:38 +0200
+In-Reply-To: <CAE5mzvhhMZGg7=Wy8CGZPzy93emHBNg+mqhjfo9GWmjvMBrSug@mail.gmail.com>
+References: <1372492506.3088.0.camel@Waves.darkmere>
+	 <CAE5mzvhhMZGg7=Wy8CGZPzy93emHBNg+mqhjfo9GWmjvMBrSug@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 22, 2013 at 02:39:21PM +0900, Kusanagi Kouichi wrote:
-> 'btrfs subvolume delete' crashes with segv if it runs in a detached mount.
 
-One does not even need to do the lazy unmount. If the there are 2
-processes attempting to delete the same snapshot and one deletes the
-snapshot directory entry between lines 216 and 227,
+On lör, 2013-06-29 at 03:08 -0600, cwillu wrote:
+> 
+> Not sure I entirely follow: mounting with -o degraded (not -o
+> recovery) is how you're supposed to mount if there's a disk missing.
 
-215         res = test_issubvolume(path);
-216         if(res<0){
-217                 fprintf(stderr, "ERROR: error accessing '%s'\n", path);
-218                 ret = 12;
-219                 goto out;
-220         }
-221         if(!res){
-222                 fprintf(stderr, "ERROR: '%s' is not a subvolume\n", path);
-223                 ret = 13;
-224                 goto out;
-225         }
-226
-227         cpath = realpath(path, 0);
+What I'm wondering about is why btrfsck segfaults, why it won't claim
+which drive is supposedly "corrupt" in a data-loss case.  In this case
+the drive was present, at least the first superblock should be readable,
+but I get these somewhat strange issues.
 
-the segfault occurs as well.
+Re-sending as I forgot CC.
+( Curse you, evolution )
 
-david
+//D.S.
+
+
+

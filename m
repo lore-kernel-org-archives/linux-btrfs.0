@@ -1,51 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:44004 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753210Ab3GAPuF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jul 2013 11:50:05 -0400
-Message-ID: <51D1A529.4040109@giantdisaster.de>
-Date: Mon, 01 Jul 2013 17:50:01 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mx1.redhat.com ([209.132.183.28]:31851 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752807Ab3GAQKO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Jul 2013 12:10:14 -0400
+Date: Mon, 1 Jul 2013 09:10:02 -0700
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/6] fix INT_MAX readdir hang, plus cleanups
+Message-ID: <20130701161002.GO10265@lenny.home.zabbo.net>
+References: <1370384280-28652-1-git-send-email-zab@redhat.com>
+ <20130701125435.GE4288@localhost.localdomain>
 MIME-Version: 1.0
-To: =?UTF-8?B?TWlndWVsIE5lZ3LDo28=?=
-	<miguel.negrao-lists@friendlyvirus.org>
-CC: btrfs list <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send /receive : having problems sending a snapshot back
- to the original partition
-References: <1372612472.13762.18.camel@miguel-MacBookPro>
-In-Reply-To: <1372612472.13762.18.camel@miguel-MacBookPro>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130701125435.GE4288@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 30 Jun 2013 18:14:32 +0100, Miguel Negrão wrote:
-[...]
-> Now I was testing retrieving a snapshot back from the backup disk to the
-> original partition:
-> 
-> If I do 
-> 
-> btrfs subvolume delete @-backupOld
-> 
-> and then do
-> 
-> btrfs send
-> -p /media/miguel/huge/backups/@/@-backupNew /media/miguel/huge/backups/@/@-backupOld | pv | btrfs receive/mnt/backups
-> 
-> I get an error: 
-> 
-> ERROR: could not find parent subvolume
-> 
-> Sending via files instead of pipes I can see the error is in btrfs
-> receive, the btrfs send completes without errors.
-> 
-> Is it what I'm trying to do not possible ? I'm I using the wrong
-> syntax ? It would be really handy to be able to do this, to make it easy
-> to go to an old snapshot without having to transfer it in it's full
-> size, instead transferring just the diff.
+> > code.  It's all lightly tested with xfstests but it wouldn't surprise
+> > me if I missed something so review is appreciated.
 
-What you are trying to do is not possible, it is not supported.
+*mmm, hmmm*
 
-Btrfs send/receive can be used to create backups. The use case to
-restore from backups is not addressed.
+> One of these patches is making new entries not show up in readdir.  This was
+> discovered while running stress.sh overnight, it complained about files not
+> matching but when they were checked the files matched.  Dropping the entire
+> series made stress.sh run fine.  So I'm dropping these for the next merge window
+> but I'll dig into it and try and figure out what was causing the problem.
 
+Nerts.  It's got to be the delayed inode stuff.
+
+Maybe it's some unlink/recreate pattern?  Is this a thing that stress.sh
+does?  (Where's stress.sh live?)
+
+- z 

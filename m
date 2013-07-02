@@ -1,60 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:59816 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752794Ab3GBHgj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Jul 2013 03:36:39 -0400
-Received: from [172.24.1.213] (unknown [192.166.201.94])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mail.in8.de (Postfix) with ESMTPSA id 2C8F7C96001
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jul 2013 09:36:37 +0200 (CEST)
-Message-ID: <51D28306.6050203@jan-o-sch.net>
-Date: Tue, 02 Jul 2013 09:36:38 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: only do the tree_mod_log_free_eb if this is our
- last ref
-References: <1372709547-29418-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1372709547-29418-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail1207.opentransfer.com ([98.130.1.227]:46052 "EHLO
+	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752301Ab3GBJ4T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 05:56:19 -0400
+Message-ID: <1372758978.7295.17.camel@miguel-MacBookPro>
+Subject: Re: btrfs send /receive : having problems sending a snapshot back
+ to the original partition
+From: Miguel =?ISO-8859-1?Q?Negr=E3o?=
+	<miguel.negrao-lists@friendlyvirus.org>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: btrfs list <linux-btrfs@vger.kernel.org>
+Date: Tue, 02 Jul 2013 10:56:18 +0100
+In-Reply-To: <51D1A529.4040109@giantdisaster.de>
+References: <1372612472.13762.18.camel@miguel-MacBookPro>
+	 <51D1A529.4040109@giantdisaster.de>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(resent to list)
-
-On Mon, July 01, 2013 at 22:12 (+0200), Josef Bacik wrote:
-> There is another bug in the tree mod log stuff in that we're calling
-> tree_mod_log_free_eb every single time a block is cow'ed.  The problem with this
-> is that if this block is shared by multiple snapshots we will call this multiple
-> times per block, so if we go to rewind the mod log for this block we'll BUG_ON()
-> in __tree_mod_log_rewind because we try to rewind a free twice.  We only want to
-> call tree_mod_log_free_eb if we are actually freeing the block.  With this patch
-> I no longer hit the panic in __tree_mod_log_rewind.  Thanks,
+Seg, 2013-07-01 às 17:50 +0200, Stefan Behrens escreveu:
+What you are trying to do is not possible, it is not supported.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-
-Strange that never really popped up largely so far, should be quite easy to hit.
-Anyway,
-
-Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-
-> ---
->  fs/btrfs/ctree.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
+> Btrfs send/receive can be used to create backups. The use case to
+> restore from backups is not addressed.
 > 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 32e30ad..127e1fd 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1093,7 +1093,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  		btrfs_set_node_ptr_generation(parent, parent_slot,
->  					      trans->transid);
->  		btrfs_mark_buffer_dirty(parent);
-> -		tree_mod_log_free_eb(root->fs_info, buf);
-> +		if (last_ref)
-> +			tree_mod_log_free_eb(root->fs_info, buf);
->  		btrfs_free_tree_block(trans, root, buf, parent_start,
->  				      last_ref);
->  	}
-> 
+Ok, I see, but then I think I don't understand how btrfs send receive is
+working. Is it the case that the parent 'a' in 'btrfs send -p a b' has
+to be an "older" version of 'b' and never the other way around, perhaps
+in the sense of a having a lower transid as returned by sudo btrfs
+subvolume find-new a 999999999999999 ? 
+
+I tried doing  'btrfs send -p original a' then 'btrfs send -p a b', then
+deleting 'a' in the second disk and then doing 'btrfs send -p b a' but
+that also fails [1], the error happening on the receive side.
+
+best,
+-- 
+Miguel Negrão
+http://www.friendlyvirus.org/miguelnegrao
+
+
+[1]
+ 1999  touch /tmp/aaa.txt
+ 2003  sudo btrfs subvolume snapshot -r /mnt/@ @-1
+ 2004  touch /tmp/bbb.txt
+ 2005  sudo btrfs subvolume snapshot -r /mnt/@ @-2
+ 2007  sudo btrfs send -p @-2013-07-02-08\:03 @-1 | pv | sudo btrfs
+receive /media/miguel/huge/backups/@
+ 2008  sudo btrfs send -p @-1 @-2 | pv | sudo btrfs
+receive /media/miguel/huge/backups/@
+ 2010  btrdelete /media/miguel/huge/backups/@/@-1
+ 2011  sudo btrfs send -p @-2 @-1 | pv | sudo btrfs
+receive /media/miguel/huge/backups/@
+
+error:
+
+At subvol @-1
+3,91kB 0:00:00 [ 345kB/s] [<=>
+]
+At snapshot @-1
+ERROR: failed to clone extents to var/log/syslog
+Invalid argument
+
+

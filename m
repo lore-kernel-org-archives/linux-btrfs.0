@@ -1,94 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-phx2.redhat.com ([209.132.183.24]:44509 "EHLO
-	mx3-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750774Ab3GBPv0 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 11:51:26 -0400
-Content-Type: text/plain;
-	charset=us-ascii
-Subject: Re: [PATCH v3] xfstests: btrfs/316: cross-subvolume sparse copy
-References: <51D29D17.3050000@oracle.com> <20130702101539.GC14996@dastard> <51D2E33B.1080402@oracle.com>
-From: Eric Sandeen <esandeen@redhat.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:57682 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751498Ab3GBTRV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 15:17:21 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 20C527C0692
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jul 2013 13:17:21 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: make the scratch device for generic/256 slightly larger
+Date: Tue, 2 Jul 2013 15:17:18 -0400
+Message-ID: <1372792638-23957-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-In-Reply-To: <51D2E33B.1080402@oracle.com>
-Message-Id: <6B93E4A6-D1C9-4170-8E1C-B94D24F601BB@redhat.com>
-Date: Tue, 2 Jul 2013 11:51:21 -0400 (EDT)
-To: Koen De Wit <koen.de.wit@oracle.com>
-Cc: Dave Chinner <david@fromorbit.com>, Eric Sandeen <sandeen@redhat.com>,
-        "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Jul 2, 2013, at 10:28 AM, Koen De Wit <koen.de.wit@oracle.com> wrote:
+This is similar to a previous fix I sent.  1 gig makes us do mixed file block
+groups for btrfs, so these enospc tests will usually fail because we don't have
+space for metadata, which is the case for this test.  So jack the size up to
+1.5gig so that btrfs can do its normal thing and pass the test.  Thanks,
 
-> Dave,
-> 
-> Thanks for the review. I will clean up the commit message and do a full mail-to-myself-and-test-patch round trip to avoid errors like the wrong test numbers in the golden output. I'm sorry for this.
-> 
-> About cutting out file names from the output. I did this in the first version of the patch:
-> 
->       md5sum $TESTDIR1/$F | $AWK_PROG 'END {print $1}'
-> 
-> but Eric Sandeen suggested to include them in order to provide more context in the output. (See http://oss.sgi.com/archives/xfs/2013-03/msg00231.html and http://oss.sgi.com/archives/xfs/2013-03/msg00220.html) That sounds like a good idea to me, it makes debugging failures easier. Whose opinion should I follow?
-> 
-Heh sorry.  IMHO maybe a middle ground; not bare md5sum but show only the base name?  In the end up to you; it seems Dave and I have different opinions on this.  :)
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ tests/generic/256 |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Eric
+diff --git a/tests/generic/256 b/tests/generic/256
+index 4a53da8..cfe7237 100755
+--- a/tests/generic/256
++++ b/tests/generic/256
+@@ -165,7 +165,7 @@ _test_full_fs_punch()
+ 
+ # Make a small file system to fill
+ umount $SCRATCH_DEV &> /dev/null
+-_scratch_mkfs_sized $(( 1024 * 1024 * 1024 )) &> /dev/null
++_scratch_mkfs_sized $(( 1536 * 1024 * 1024 )) &> /dev/null
+ _scratch_mount
+ # Test must be able to write files with non-root permissions
+ chmod 777 $SCRATCH_MNT
+-- 
+1.7.7.6
 
-> Koen.
-> 
-> 
-> On 07/02/2013 12:15 PM, Dave Chinner wrote:
-> 
->> On Tue, Jul 02, 2013 at 11:27:51AM +0200, Koen De Wit wrote:
->>> This testscript creates reflinks to files on different subvolumes, overwrites the original files and reflinks, and moves reflinked files between subvolumes.
->>> 
->>> Originally submitted as testcase 302, changes are made based on comments from Eric: http://oss.sgi.com/archives/xfs/2013-03/msg00231.html
->>> Two new common/rc functions used in this script (_require_cp_reflink and _verify_reflink) have been submitted recently: http://oss.sgi.com/archives/xfs/2013-05/msg00745.html
->>> Thanks to Eric Sandeen and Dave Chinner for the reviews.
->>> 
->>> Version 3: fixing wrapped patch.
->> 
->> Needs a proper commit message - wrap it at 72 columns,  change log
->> should be placed below the --- devider, not be part of hte commit
->> message.
->> 
->> Test numbers do not need to be unique across all test directories,
->> just unique within the tests/btrfs directory.
->> 
->>> +
->>> +_checksum_files() {
->>> +    for F in file1 file2 file3
->>> +    do
->>> +        for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
->>> +        do
->>> +            md5sum $D/$F | _filter_test_dir | _filter_scratch
->> 
->> Just cut the file name out. No need for filtering at that point...
->> 
->>> +        done
->>> +    done
->>> +}
->>> +
->>> +TESTDIR1=$TEST_DIR/test-$seq-1
->>> +TESTDIR2=$TEST_DIR/test-$seq-2
->>> +SUBVOL1=$TEST_DIR/subvol-$seq-1
->>> +SUBVOL2=$TEST_DIR/subvol-$seq-2
->> 
->> ....-316-.....
->> 
->>> +Verify the file contents:
->>> +e09c80c42fda55f9d992e59ca6b3307d  TEST_DIR/test-302-1/file1
->> 
->> which means the golden output is broken, despite the filtering
->> 
->> You should test your patches before posting ;)
->> 
->> FWIW, this is why you should simply cut the filename completely out
->> like we do elsewhere....
->> 
->> Cheers,
->> 
->> Dave.
-> 
-> 

@@ -1,101 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:19462 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750961Ab3GBMFT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 08:05:19 -0400
-Message-ID: <51D2C1FD.5030405@giantdisaster.de>
-Date: Tue, 02 Jul 2013 14:05:17 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: =?UTF-8?B?TWlndWVsIE5lZ3LDo28=?=
-	<miguel.negrao-lists@friendlyvirus.org>
-CC: btrfs list <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send /receive : having problems sending a snapshot back
- to the original partition
-References: <1372612472.13762.18.camel@miguel-MacBookPro>  <51D1A529.4040109@giantdisaster.de> <1372758978.7295.17.camel@miguel-MacBookPro>
-In-Reply-To: <1372758978.7295.17.camel@miguel-MacBookPro>
+Received: from plane.gmane.org ([80.91.229.3]:35097 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750985Ab3GBNAq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Jul 2013 09:00:46 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Uu0CL-0003jx-CM
+	for linux-btrfs@vger.kernel.org; Tue, 02 Jul 2013 15:00:45 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2013 15:00:45 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2013 15:00:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: unclean shutdown and space cache rebuild
+Date: Tue, 2 Jul 2013 13:00:29 +0000 (UTC)
+Message-ID: <pan$57f3a$a89b75ab$e2d2d0f4$5964d331@cox.net>
+References: <11441914.sRzrmH57Vq@bheem> <2982023.ALTX9LRhaY@bheem>
+	<pan$d6b02$c375f8e3$e64c63ed$cc12d244@cox.net> <1792894.GCCHX1XfTr@bheem>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 02 Jul 2013 10:56:18 +0100, Miguel Negrão wrote:
-> Seg, 2013-07-01 às 17:50 +0200, Stefan Behrens escreveu:
->> What you are trying to do is not possible, it is not supported.
->>
->> Btrfs send/receive can be used to create backups. The use case to
->> restore from backups is not addressed.
->>
-> Ok, I see, but then I think I don't understand how btrfs send receive is
-> working. Is it the case that the parent 'a' in 'btrfs send -p a b' has
-> to be an "older" version of 'b' and never the other way around, perhaps
-> in the sense of a having a lower transid as returned by sudo btrfs
-> subvolume find-new a 999999999999999 ? 
+Shridhar Daithankar posted on Mon, 01 Jul 2013 21:49:16 +0530 as
+excerpted:
+
+> On Monday, July 01, 2013 09:10:41 AM Duncan wrote:
+>> 
+>>> mouting with autodefrag is a serious degradation..
+>> 
+>> It is?  AFAIK, all the autodefrag mount option does is scan files for
+>> fragmentation as they are written and queue any fragmentation-detected
+>> files for background defrag by the defrag thread.
+>> 
+>> I had expected, particularly on spinning rust, that the benefits of
+>> autodefrag to far exceed the costs, so your performance drag claim is
+>> interesting to me indeed.  If my expectation is wrong, which it could
+>> be, I'd love to know why, and see some numbers.
 > 
-> I tried doing  'btrfs send -p original a' then 'btrfs send -p a b', then
-> deleting 'a' in the second disk and then doing 'btrfs send -p b a' but
-> that also fails [1], the error happening on the receive side.
+> while I don't have numbers, I enabled autodefrag on all the partitions
+> and rebooted(twice, just to confirm) and its slow..
+> 
+> everything has a 10 second tail of disk activity and has quite some
+> visible latency. Moving mouse, switching windows, starting new programs,
+> everything has visible latency thats unusable.
+> 
+> It seems autodefrag is being too aggressive for its own good..
 
->  1999  touch /tmp/aaa.txt
->  2003  sudo btrfs subvolume snapshot -r /mnt/@ @-1
->  2004  touch /tmp/bbb.txt
->  2005  sudo btrfs subvolume snapshot -r /mnt/@ @-2
->  2007  sudo btrfs send -p @-2013-07-02-08\:03 @-1 | pv | sudo btrfs
-> receive /media/miguel/huge/backups/@
->  2008  sudo btrfs send -p @-1 @-2 | pv | sudo btrfs
-> receive /media/miguel/huge/backups/@
->  2010  btrdelete /media/miguel/huge/backups/@/@-1
->  2011  sudo btrfs send -p @-2 @-1 | pv | sudo btrfs
-> receive /media/miguel/huge/backups/@
->
-> error:
->
-> At snapshot @-1
-> ERROR: failed to clone extents to var/log/syslog
-> Invalid argument
+Just to be clear, your system, your call.  I'd never /dream/ of 
+interfering with that due to the implications for my own system (which is 
+certainly highly customized even matched against a peer-group of other 
+gentoo installs =:^).  That said...
 
-Well, the issue from this mail is not related to the issue from your previous mail. The "ERROR: failed to clone extents to var/log/syslog Invalid argument" is a bug in the send code. The Btrfs receive side by design is more or less stupid and is only executing the sequence of instructions that the send side has generated (try "-vv" in the receiver to dump the sequence), therefore the bug is in the sending side.
+I'm guessing what you experiences with the autodefrag mount option was 
+because you were not in stable-state yet.  The original btrfs filesystem 
+setup and fill was very likely without the flag on[2], so there's quite a 
+lot of existing fragmentation what would have to be worked thru before 
+the filesystem gets defragged and you reach stable-state, at which I'd 
+expect the autodefrag mount option to have little overhead.
 
+Tho if what you're saying is correct[1] then it may be that the 
+background defrag thread isn't (io-)niced as I would have expected it to 
+be.
 
-Back to your initial question and to the issue from your previous mail. You should be able to do a 'send -p a b' no matter how the relation between a and b is. a may be older than b, or b may be older than a, both should work.
+But I'd still expect there to be some better performance steady state 
+after a few mounts gets the basic filesystem defragged.  Tho if the 
+fileystem is heavily fragmented[2], in practice it may well be easier to 
+backup the filesystem content, do a clean mkfs and mount with autodefrag 
+and restore from backup, thus ensuring autodefrag is on while filling the 
+filesystem in the first place, than to wait for autodefrag to reach a 
+stable system state in normal operation over many mounts.
 
-The reason why you are not able to send an incremental snapshot back (as you tried it in your previous mail) is that the implementation cannot handle it. The receive side gets a parent_uuid (in case of incremental transfers using the "-p" option), this parent_uuid is matched to the fields received_uuid of the subvolumes in the receive filesystem. If no match is found, the receive fails. And that is what happens.
+All that stated, you've definitely demonstrated that I hadn't put enough 
+thought into my initial general-case assumptions, which now come with far 
+more qualifiers than they did before this subthread.  Thanks. =:^)
 
-If you look at the following script, you can see the expected parent_uuid in the line before the "ERROR: could not find parent subvolume". And when you look at the output of "btrfs subv list ... /mnt/a", you notice that no subvolume at all has the field ruuid (which stands for received_uuid) set to any valid value. Therefore it doesn't match, therefore it fails.
+[1] I simply don't know from personal experience as I (1) ensured I 
+enabled autodefrag on the empty filesystem before I started filling it, 
+and (2) I'm on fast ssd, an entirely different world from spinning rust.
 
-This logic could be changed, but that's how it is today.
+[2] Various comments I've read seem to hint that, surprisingly, certain 
+distro installers leave a brand new install in a heavily fragmented 
+state, as they apparently install without autodefrag on during the 
+install and also apparently do heavy rewriting into existing files 
+thereby triggering heavy fragmentation without the flag during that 
+install.  No, I've not bothered to track which distros, I simply ensured 
+autodefrag was on, here, before filling my filesystems in the first place.
 
-
-# mkfs.btrfs /dev/sdy; mkfs.btrfs /dev/sdz
-# mkdir /mnt/{a,b}
-# mount /dev/sdy /mnt/a; mount /dev/sdz /mnt/b
-# btrfs subv create /mnt/a/subv
-Create subvolume '/mnt/a/subv'
-# cp /etc/motd /mnt/a/subv/.
-# btrfs subv snap -r /mnt/a/subv /mnt/a/snap.1
-Create a readonly snapshot of '/mnt/a/subv' in '/mnt/a/snap.1'
-# cat /etc/motd >> /mnt/a/subv/motd
-# btrfs subv snap -r /mnt/a/subv /mnt/a/snap.2
-Create a readonly snapshot of '/mnt/a/subv' in '/mnt/a/snap.2'
-# btrfs send /mnt/a/snap.1 | btrfs receive /mnt/b
-At subvol /mnt/a/snap.1
-At subvol snap.1
-# btrfs send -p /mnt/a/snap.1 /mnt/a/snap.2 | btrfs receive /mnt/b
-At subvol /mnt/a/snap.2
-At snapshot snap.2
-# btrfs subv list --fields=rootid,uuid,puuid,ruuid,path /mnt/a
-ID 257 uuid c0e1a79b-cdcd-0347-929b-967b5b711932 puuid - ruuid - path subv
-ID 258 uuid 3b8a3aec-a3d1-8941-88c5-dc3051b16b55 puuid c0e1a79b-cdcd-0347-929b-967b5b711932 ruuid - path snap.1
-ID 259 uuid e34b0b31-95a2-6142-9058-4bf717fdb5d9 puuid c0e1a79b-cdcd-0347-929b-967b5b711932 ruuid - path snap.2
---- ^^^ no ruuid at all is set in the /mnt/a filesystem
-# btrfs subv del /mnt/a/snap.2
-Delete subvolume '/mnt/a/snap.2'
-# btrfs send -p /mnt/b/snap.1 /mnt/b/snap.2 | btrfs receive -vv /mnt/a
-At subvol /mnt/b/snap.2
-At snapshot snap.2
-receiving snapshot snap.2 uuid=288f88ec-9915-2a48-8722-a1e163a0cf2f, ctransid=12 parent_uuid=fa82938d-b73f-3349-b264-c3ebfcadde9f, parent_ctransid=9
-ERROR: could not find parent subvolume
---- ^^^ the parent_uuid does not match to any ruuid on /mnt/a
-# btrfs subv list --fields=rootid,uuid,puuid,ruuid,path /mnt/b
-ID 257 uuid fa82938d-b73f-3349-b264-c3ebfcadde9f puuid - ruuid 3b8a3aec-a3d1-8941-88c5-dc3051b16b55 path snap.1
-ID 258 uuid 288f88ec-9915-2a48-8722-a1e163a0cf2f puuid fa82938d-b73f-3349-b264-c3ebfcadde9f ruuid e34b0b31-95a2-6142-9058-4bf717fdb5d9 path snap.2
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

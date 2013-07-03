@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:32332 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.138]:40451 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964819Ab3GCROn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S964820Ab3GCROn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 3 Jul 2013 13:14:43 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (josoe xp1) (RZmta 31.28 OK)
-	with ESMTP id X0314dp63D9Apv for <linux-btrfs@vger.kernel.org>;
+	by jorabe.store (jorabe xp2) (RZmta 31.28 OK)
+	with ESMTP id g07dc1p63CAmFE for <linux-btrfs@vger.kernel.org>;
 	Wed, 3 Jul 2013 19:14:40 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 4/8] Btrfs: maintain subvolume items in the UUID tree
-Date: Wed,  3 Jul 2013 19:14:35 +0200
-Message-Id: <1d76a04b3b88f796127eb05fca9cf5c2f218b405.1372866277.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v7 2/8] Btrfs: support printing UUID tree elements
+Date: Wed,  3 Jul 2013 19:14:33 +0200
+Message-Id: <17a70bd23862b919982d7f03d9dcb784f2ab71ac.1372866277.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372866277.git.sbehrens@giantdisaster.de>
 References: <cover.1372866277.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1372866277.git.sbehrens@giantdisaster.de>
@@ -19,231 +19,55 @@ References: <cover.1372866277.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a new subvolume or snapshot is created, a new UUID item is added
-to the UUID tree. Such items are removed when the subvolume is deleted.
-The ioctl to set the received subvolume UUID is also touched and will
-now also add this received UUID into the UUID tree together with the
-ID of the subvolume. The latter is also done when read-only snapshots
-are created which inherit all the send/receive information from the
-parent subvolume.
-
-User mode programs use the BTRFS_IOC_TREE_SEARCH ioctl to search and
-read in the UUID tree.
+This commit adds support to print UUID tree elements to print-tree.c.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/ioctl.c       | 76 +++++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/transaction.c | 20 ++++++++++++-
- 3 files changed, 86 insertions(+), 11 deletions(-)
+ fs/btrfs/print-tree.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 56f1c59..f940b8f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3668,6 +3668,7 @@ extern const struct dentry_operations btrfs_dentry_operations;
- long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
- void btrfs_update_iflags(struct inode *inode);
- void btrfs_inherit_iflags(struct inode *inode, struct inode *dir);
-+int btrfs_is_empty_uuid(u8 *uuid);
- int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		      struct btrfs_ioctl_defrag_range_args *range,
- 		      u64 newer_than, unsigned long max_pages);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0e17a30..36727e9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -363,6 +363,13 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 	return 0;
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index dc0024f..b6b209c 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -155,6 +155,25 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
  }
+ #endif
  
-+int btrfs_is_empty_uuid(u8 *uuid)
++static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
++			    u32 item_size)
 +{
-+	static char empty_uuid[BTRFS_UUID_SIZE] = {0};
++	if (!IS_ALIGNED(item_size, sizeof(u64))) {
++		pr_warn("btrfs: uuid item with illegal size %lu!\n",
++			(unsigned long)item_size);
++		return;
++	}
++	while (item_size) {
++		__le64 subvol_id;
 +
-+	return !memcmp(uuid, empty_uuid, BTRFS_UUID_SIZE);
++		read_extent_buffer(l, &subvol_id, offset, sizeof(subvol_id));
++		printk(KERN_INFO "\t\tsubvol_id %llu\n",
++		       (unsigned long long)le64_to_cpu(subvol_id));
++		item_size -= sizeof(u64);
++		offset += sizeof(u64);
++	}
 +}
 +
- static noinline int create_subvol(struct inode *dir,
- 				  struct dentry *dentry,
- 				  char *name, int namelen,
-@@ -396,7 +403,7 @@ static noinline int create_subvol(struct inode *dir,
- 	 * of create_snapshot().
- 	 */
- 	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
--					       7, &qgroup_reserved);
-+					       8, &qgroup_reserved);
- 	if (ret)
- 		return ret;
- 
-@@ -518,9 +525,14 @@ static noinline int create_subvol(struct inode *dir,
- 	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
- 				 objectid, root->root_key.objectid,
- 				 btrfs_ino(dir), index, name, namelen);
--
- 	BUG_ON(ret);
- 
-+	ret = btrfs_uuid_tree_add(trans, root->fs_info->uuid_root,
-+				  root_item.uuid, BTRFS_UUID_KEY_SUBVOL,
-+				  objectid);
-+	if (ret)
-+		btrfs_abort_transaction(trans, root, ret);
-+
- fail:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-@@ -573,9 +585,10 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	 * 1 - root item
- 	 * 2 - root ref/backref
- 	 * 1 - root of snapshot
-+	 * 1 - UUID item
- 	 */
- 	ret = btrfs_subvolume_reserve_metadata(BTRFS_I(dir)->root,
--					&pending_snapshot->block_rsv, 7,
-+					&pending_snapshot->block_rsv, 8,
- 					&pending_snapshot->qgroup_reserved);
- 	if (ret)
- 		goto out;
-@@ -2213,6 +2226,27 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 			goto out_end_trans;
- 		}
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -301,6 +320,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_REPLACE_KEY:
+ 			printk(KERN_INFO "\t\tdev replace\n");
+ 			break;
++		case BTRFS_UUID_KEY_SUBVOL:
++		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
++					btrfs_item_size_nr(l, i));
++			break;
+ 		};
  	}
-+
-+	ret = btrfs_uuid_tree_rem(trans, root->fs_info->uuid_root,
-+				  dest->root_item.uuid, BTRFS_UUID_KEY_SUBVOL,
-+				  dest->root_key.objectid);
-+	if (ret && ret != -ENOENT) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		err = ret;
-+		goto out_end_trans;
-+	}
-+	if (!btrfs_is_empty_uuid(dest->root_item.received_uuid)) {
-+		ret = btrfs_uuid_tree_rem(trans, root->fs_info->uuid_root,
-+					  dest->root_item.received_uuid,
-+					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+					  dest->root_key.objectid);
-+		if (ret && ret != -ENOENT) {
-+			btrfs_abort_transaction(trans, root, ret);
-+			err = ret;
-+			goto out_end_trans;
-+		}
-+	}
-+
- out_end_trans:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-@@ -2424,7 +2458,6 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	int ret = 0;
- 	char *s_uuid = NULL;
--	char empty_uuid[BTRFS_UUID_SIZE] = {0};
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -2433,7 +2466,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	if (IS_ERR(di_args))
- 		return PTR_ERR(di_args);
- 
--	if (memcmp(empty_uuid, di_args->uuid, BTRFS_UUID_SIZE) != 0)
-+	if (!btrfs_is_empty_uuid(di_args->uuid))
- 		s_uuid = di_args->uuid;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
-@@ -3967,6 +4000,7 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 	struct btrfs_trans_handle *trans;
- 	struct timespec ct = CURRENT_TIME;
- 	int ret = 0;
-+	int received_uuid_changed;
- 
- 	ret = mnt_want_write_file(file);
- 	if (ret < 0)
-@@ -3996,7 +4030,11 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 		goto out;
- 	}
- 
--	trans = btrfs_start_transaction(root, 1);
-+	/*
-+	 * 1 - root item
-+	 * 2 - uuid items (received uuid + subvol uuid)
-+	 */
-+	trans = btrfs_start_transaction(root, 3);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		trans = NULL;
-@@ -4007,6 +4045,14 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 	sa->rtime.sec = ct.tv_sec;
- 	sa->rtime.nsec = ct.tv_nsec;
- 
-+	received_uuid_changed = memcmp(root_item->received_uuid, sa->uuid,
-+				       BTRFS_UUID_SIZE);
-+	if (received_uuid_changed &&
-+	    !btrfs_is_empty_uuid(root_item->received_uuid))
-+		btrfs_uuid_tree_rem(trans, root->fs_info->uuid_root,
-+				    root_item->received_uuid,
-+				    BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+				    root->root_key.objectid);
- 	memcpy(root_item->received_uuid, sa->uuid, BTRFS_UUID_SIZE);
- 	btrfs_set_root_stransid(root_item, sa->stransid);
- 	btrfs_set_root_rtransid(root_item, sa->rtransid);
-@@ -4019,12 +4065,22 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
- 				&root->root_key, &root->root_item);
- 	if (ret < 0) {
- 		btrfs_end_transaction(trans, root);
--		trans = NULL;
- 		goto out;
--	} else {
--		ret = btrfs_commit_transaction(trans, root);
--		if (ret < 0)
-+	}
-+	if (received_uuid_changed && !btrfs_is_empty_uuid(sa->uuid)) {
-+		ret = btrfs_uuid_tree_add(trans, root->fs_info->uuid_root,
-+					  sa->uuid,
-+					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+					  root->root_key.objectid);
-+		if (ret < 0 && ret != -EEXIST) {
-+			btrfs_abort_transaction(trans, root, ret);
- 			goto out;
-+		}
-+	}
-+	ret = btrfs_commit_transaction(trans, root);
-+	if (ret < 0) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto out;
- 	}
- 
- 	ret = copy_to_user(arg, sa, sizeof(*sa));
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d58cce7..4f2fe5e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1311,8 +1311,26 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 					 dentry->d_name.len * 2);
- 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
- 	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
--	if (ret)
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
-+	ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root, new_uuid.b,
-+				  BTRFS_UUID_KEY_SUBVOL, objectid);
-+	if (ret) {
- 		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
-+	if (!btrfs_is_empty_uuid(new_root_item->received_uuid)) {
-+		ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
-+					  new_root_item->received_uuid,
-+					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+					  objectid);
-+		if (ret && ret != -EEXIST) {
-+			btrfs_abort_transaction(trans, root, ret);
-+			goto fail;
-+		}
-+	}
- fail:
- 	pending->error = ret;
- dir_item_existed:
+ }
 -- 
 1.8.3.2
 

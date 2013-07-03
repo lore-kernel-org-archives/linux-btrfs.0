@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42108 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756152Ab3GCRSl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jul 2013 13:18:41 -0400
-Date: Wed, 3 Jul 2013 19:18:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, wangsl-fnst@cn.fujitsu.com
-Subject: Re: [PATCH 1/2] Btrfs-progs: make pretty_sizes() works less error
- prone
-Message-ID: <20130703171839.GR18204@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1372867658-4144-1-git-send-email-wangshilong1991@gmail.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:50186 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933037Ab3GCUgq convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 16:36:46 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 7AD489A0320
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jul 2013 14:36:46 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1372867658-4144-1-git-send-email-wangshilong1991@gmail.com>
+From: Chris Mason <chris.mason@fusionio.com>
+To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>,
+        <bo.li.liu@oracle.com>
+References: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
+Message-ID: <20130703203644.14981.18637@localhost.localdomain>
+Subject: Re: [RFC PATCH 00/12] Btrfs-progs: introduce chunk recover function
+Date: Wed, 3 Jul 2013 16:36:44 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 04, 2013 at 12:07:37AM +0800, Wang Shilong wrote:
-> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-> 
-> In the original code, pretty_sizes() may return NULL in two cases:
-> <1> Allocating memory dynamically fails
+Quoting Miao Xie (2013-07-03 09:25:08)
+> This patchset introduced chunk recover function, which was implemented by
+> scanning the whoel disks in the filesystem. Now, we can recover Single,
+> Dup, RAID1 chunks, and RAID0, RAID10, RAID5, RAID6 metadata chunks.
 
-Turning it into static allocation looks much better than calling
-malloc for ~30 bytes.
+Really nice.  I've integrated this with Liu Bo's btrfs-image fixes and
+put it into a branch called integration.  I've tested both repair and
+image here, but if you could please double check the merge I'd
+appreciate it.
 
-> <2> Overflow happens(size exceeds YB)
-
-However we're limited to 16 EiB both theoretically and practically due
-to everything being 64bit, we can drop the zetta- and yotta- suffixes
-eventually.
-
-thanks,
-david
+-chris

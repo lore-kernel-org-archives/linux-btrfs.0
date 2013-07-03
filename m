@@ -1,58 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f178.google.com ([74.125.82.178]:39170 "EHLO
-	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932202Ab3GCRhL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 13:37:11 -0400
-Received: by mail-we0-f178.google.com with SMTP id u53so353593wes.23
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 10:37:10 -0700 (PDT)
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:38887 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932758Ab3GCRdF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 13:33:05 -0400
+Received: by mail-wi0-f170.google.com with SMTP id ey16so6509297wid.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 10:33:03 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2 1/3] Btrfs-progs: add missing write check for mkfs
-Date: Wed,  3 Jul 2013 18:30:41 +0100
-Message-Id: <1372872641-17998-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2 3/3] Btrfs-progs: remove unused code
+Date: Wed,  3 Jul 2013 18:32:41 +0100
+Message-Id: <1372872761-18077-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
 References: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Assert that the writes of the device and chunk tree
-roots succeed. This verification is currently done
-for all other tree roots, however it was missing for
-those 2 trees.
-
-Would these tree root writes fail, but all others succeed,
-it would lead to a corrupted/incomplete btrfs filesystem,
-or, more likely some weird failure later on in mkfs.btrfs
-inside open_ctree().
-
-V2: Added check for the chunk tree root write.
+V2: removed unused statement in
+    extent-cache.c:tree_insert() too.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- utils.c |    2 ++
- 1 file changed, 2 insertions(+)
+ extent-cache.c |    1 -
+ volumes.c      |    2 --
+ 2 files changed, 3 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 7b4cd74..702a0b1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -346,6 +346,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	btrfs_set_header_nritems(buf, nritems);
- 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
- 	ret = pwrite(fd, buf->data, leafsize, blocks[3]);
-+	BUG_ON(ret != leafsize);
+diff --git a/extent-cache.c b/extent-cache.c
+index 3dd6434..a8bab59 100644
+--- a/extent-cache.c
++++ b/extent-cache.c
+@@ -44,7 +44,6 @@ static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
+ 			return parent;
+ 	}
  
- 	/* create the device tree */
- 	memset(buf->data+sizeof(struct btrfs_header), 0,
-@@ -381,6 +382,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	btrfs_set_header_nritems(buf, nritems);
- 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
- 	ret = pwrite(fd, buf->data, leafsize, blocks[4]);
-+	BUG_ON(ret != leafsize);
+-	entry = rb_entry(parent, struct cache_extent, rb_node);
+ 	rb_link_node(node, parent, p);
+ 	rb_insert_color(node, root);
+ 	return NULL;
+diff --git a/volumes.c b/volumes.c
+index ea1d401..9d5e97e 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -223,7 +223,6 @@ int btrfs_scan_one_device(int fd, const char *path,
+ 	char *buf;
+ 	int ret;
+ 	u64 devid;
+-	char uuidbuf[37];
  
- 	/* create the FS root */
- 	memset(buf->data+sizeof(struct btrfs_header), 0,
+ 	buf = malloc(4096);
+ 	if (!buf) {
+@@ -241,7 +240,6 @@ int btrfs_scan_one_device(int fd, const char *path,
+ 		*total_devs = 1;
+ 	else
+ 		*total_devs = btrfs_super_num_devices(disk_super);
+-	uuid_unparse(disk_super->fsid, uuidbuf);
+ 
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+ 
 -- 
 1.7.9.5
 

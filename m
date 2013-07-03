@@ -1,37 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:64680 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751281Ab3GCAqd convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 20:46:33 -0400
-Message-ID: <51D37493.7070506@cn.fujitsu.com>
-Date: Wed, 03 Jul 2013 08:47:15 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-bk0-f49.google.com ([209.85.214.49]:50738 "EHLO
+	mail-bk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932073Ab3GCORE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 10:17:04 -0400
+Received: by mail-bk0-f49.google.com with SMTP id mz10so104811bkb.36
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 07:17:03 -0700 (PDT)
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Cleanup for using BTRFS_SETGET_STACK instead
- of raw convert
-References: <1372224428-5597-1-git-send-email-quwenruo@cn.fujitsu.com> <20130702172609.GM18204@twin.jikos.cz>
-In-Reply-To: <20130702172609.GM18204@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1372857920-4678-3-git-send-email-miaox@cn.fujitsu.com>
+References: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
+	<1372857920-4678-3-git-send-email-miaox@cn.fujitsu.com>
+Date: Wed, 3 Jul 2013 15:17:02 +0100
+Message-ID: <CAL3q7H5gxGg8p2JbtVtFcrgL9cMpD4S=LSf9aQ+2Y4wbz-ks6A@mail.gmail.com>
+Subject: Re: [PATCH 02/12] Btrfs-progs: don't close the file descriptor 0 when
+ closing a device
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-于 2013年07月03日 01:26, David Sterba 写道:
-> That's a good cleanup, please send the kernel version as well.
+On Wed, Jul 3, 2013 at 2:25 PM, Miao Xie <miaox@cn.fujitsu.com> wrote:
 >
-> david
->
-I'll send the kernel patch asap.
+> +++ b/disk-io.c
+> @@ -1270,12 +1270,13 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
+>         while (!list_empty(list)) {
+>                 device = list_entry(list->next, struct btrfs_device, dev_list);
+>                 list_del_init(&device->dev_list);
+> -               if (device->fd) {
+> +               if (device->fd != -1) {
+>                         fsync(device->fd);
+>                         if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
+>                                 fprintf(stderr, "Warning, could not drop caches\n");
+> +                       close(device->fd);
+> +                       device->fd = -1;
+>                 }
+> -               close(device->fd);
+>                 kfree(device->name);
+>                 kfree(device->label);
+>                 kfree(device);
 
--- 
------------------------------------------------------
-Qu Wenruo
-Development Dept.I
-Nanjing Fujitsu Nanda Software Tech. Co., Ltd.(FNST)
-No. 6 Wenzhu Road, Nanjing, 210012, China
-TEL: +86+25-86630566-8526
-COINS: 7998-8526
-FAX: +86+25-83317685
-MAIL: quwenruo@cn.fujitsu.com
------------------------------------------------------
+I deal with this part too at https://patchwork.kernel.org/patch/2787291/
+Is there any reason to set device->fd to -1 if we just kfree(device)
+shortly after?
 
+thanks
+
+
+--
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

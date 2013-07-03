@@ -1,48 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1207.opentransfer.com ([98.130.1.227]:59145 "EHLO
-	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755863Ab3GCKL6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 06:11:58 -0400
-Message-ID: <51D3F8EC.4030805@friendlyvirus.org>
-Date: Wed, 03 Jul 2013 11:11:56 +0100
-From: =?UTF-8?B?TWlndWVsIE5lZ3LDo28=?=
-	<miguel.negrao-lists@friendlyvirus.org>
-MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: "list, btrfs" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send /receive : having problems sending a snapshot back
- to the original partition
-References: <1372612472.13762.18.camel@miguel-MacBookPro>  <51D1A529.4040109@giantdisaster.de> <1372758978.7295.17.camel@miguel-MacBookPro> <51D2C1FD.5030405@giantdisaster.de>
-In-Reply-To: <51D2C1FD.5030405@giantdisaster.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:44581 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753778Ab3GCMTa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 08:19:30 -0400
+Received: by mail-wg0-f53.google.com with SMTP id y10so53781wgg.32
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 05:19:29 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: optimize function btrfs_read_chunk_tree
+Date: Wed,  3 Jul 2013 13:19:16 +0100
+Message-Id: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Em 02-07-2013 13:05, Stefan Behrens escreveu:
-> The reason why you are not able to send an incremental snapshot back
-> (as you tried it in your previous mail) is that the implementation
-> cannot handle it. The receive side gets a parent_uuid (in case of
-> incremental transfers using the "-p" option), this parent_uuid is
-> matched to the fields received_uuid of the subvolumes in the receive
-> filesystem. If no match is found, the receive fails. And that is what
-> happens.
->
-> If you look at the following script, you can see the expected
-> parent_uuid in the line before the "ERROR: could not find parent
-> subvolume". And when you look at the output of "btrfs subv list ...
-> /mnt/a", you notice that no subvolume at all has the field ruuid
-> (which stands for received_uuid) set to any valid value. Therefore it
-> doesn't match, therefore it fails.
->
-> This logic could be changed, but that's how it is today.
+After reading all device items from the chunk tree, don't
+exit the loop and then navigate down the tree again to find
+the chunk items. Instead, if while reading the device items
+we find a chunk item in the leaf keep iterating over the leaf
+and process the chunk items - at the moment chunk items always
+follow immediately the device items in the chunk tree, and if
+this fact changes in the future, revert back to previous
+behaviour of exiting the loop and navigate down the tree again
+to search for chunk items, but use BTRFS_FIRST_CHUNK_TREE_OBJECTID
+as the object id for the search key, as any chunk item has a
+key that has this object id.
 
-Hi Stefan,
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/volumes.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-Thank you for the detailed explanation, I guess I understand it better 
-now. I guess for the time being I have to use rsync to get the data back 
-or transfer the whole subvolume back.
-
-thanks,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b2d1eac..4e969db 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5668,8 +5668,13 @@ again:
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+ 		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
++			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID) {
++				if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
++					key.objectid = found_key.objectid;
++					continue;
++				}
+ 				break;
++			}
+ 			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
+ 				struct btrfs_dev_item *dev_item;
+ 				dev_item = btrfs_item_ptr(leaf, slot,
+@@ -5688,7 +5693,7 @@ again:
+ 		path->slots[0]++;
+ 	}
+ 	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-		key.objectid = 0;
++		key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+ 		btrfs_release_path(path);
+ 		goto again;
+ 	}
 -- 
-Miguel Negrão
-http://www.friendlyvirus.org/miguelnegrao
+1.7.9.5
+

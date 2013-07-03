@@ -1,72 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f45.google.com ([209.85.220.45]:63295 "EHLO
-	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755457Ab3GYONt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 10:13:49 -0400
-Received: by mail-pa0-f45.google.com with SMTP id bg4so2038701pad.18
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 07:13:48 -0700 (PDT)
-From: Eryu Guan <guaneryu@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH v2] btrfs-progs: fix segfault when listing column OTIME on big endian host
-Date: Thu, 25 Jul 2013 22:12:01 +0800
-Message-Id: <1374761521-17603-1-git-send-email-guaneryu@gmail.com>
-In-Reply-To: <51F10A50.9010308@cn.fujitsu.com>
-References: <51F10A50.9010308@cn.fujitsu.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.162]:8966 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755298Ab3GCQbR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 12:31:17 -0400
+Message-ID: <51D451CD.9090400@giantdisaster.de>
+Date: Wed, 03 Jul 2013 18:31:09 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs@vger.kernel.org, wangsl-fnst@cn.fujitsu.com
+Subject: Re: [PATCH RESEND] Btrfs-progs: fix compile warning in btrfs_free_block_groups()
+References: <1372868685-4973-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1372868685-4973-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The second btrfs command segfaults on big endian host(ppc64)
+On Thu,  4 Jul 2013 00:24:45 +0800, Wang Shilong wrote:
+> From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> 
+> extent-tree.c: In function 'btrfs_free_block_groups':
+> extent-tree.c:3189:12: warning: cast to pointer from
+> integer of different size [-Wint-to-pointer-cast]
+> 
+> Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+> ---
+>  extent-tree.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/extent-tree.c b/extent-tree.c
+> index b0cfe0a..7561bbb 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -3186,7 +3186,8 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+>  			break;
+>  		ret = get_state_private(&info->block_group_cache, start, &ptr);
+>  		if (!ret) {
+> -			cache = (struct btrfs_block_group_cache *)ptr;
+> +			cache = (struct btrfs_block_group_cache *)
+> +				(unsigned long)ptr;
 
-	btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/snap
-	btrfs subvolume list -s /mnt/btrfs
-
-And ltrace shows
-
-	localtime(0x10029c482d0)                 = 0
-	strftime( <no return ...>
-	--- SIGSEGV (Segmentation fault) ---
-
-The corresponding code
-
-btrfs-list.c:
-        case BTRFS_LIST_OTIME:
-                if (subv->otime)
-                        strftime(tstr, 256, "%Y-%m-%d %X",
-                                 localtime(&subv->otime));
-                else
-                        strcpy(tstr, "-");
-                printf("%s", tstr);
-                break;
-
-localtime() returned NULL then strftime() got SIGSEGV.
-
-The reason is that ri->otime.sec is stored as little endian but
-assigned to 't' without conversion.
-
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
----
-v1->v2:
-  use btrfs_stack_timespec_sec() instead of raw convert.
-  Thanks Miao Xie <miaox@cn.fujitsu.com> for pointing this out.
-
- btrfs-list.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 4fab858..9deddd5 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1052,7 +1052,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 				flags = btrfs_root_flags(ri);
- 				if(sh.len >
- 				   sizeof(struct btrfs_root_item_v0)) {
--					t = ri->otime.sec;
-+					t = btrfs_stack_timespec_sec(&ri->otime);
- 					ogen = btrfs_root_otransid(ri);
- 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
- 					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
--- 
-1.8.3.1
+Shouldn't this be "(uintptr_t)" instead of "(unsigned long)"?
 

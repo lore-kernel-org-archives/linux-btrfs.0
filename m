@@ -1,64 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f53.google.com ([74.125.82.53]:44581 "EHLO
-	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753778Ab3GCMTa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 08:19:30 -0400
-Received: by mail-wg0-f53.google.com with SMTP id y10so53781wgg.32
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 05:19:29 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from xp-ob.rzone.de ([81.169.146.136]:21112 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S964806Ab3GCROm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Jul 2013 13:14:42 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jorabe.store (jorabe xp2) (RZmta 31.28 OK)
+	with ESMTP id g07dc1p63CAmFF for <linux-btrfs@vger.kernel.org>;
+	Wed, 3 Jul 2013 19:14:40 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: optimize function btrfs_read_chunk_tree
-Date: Wed,  3 Jul 2013 13:19:16 +0100
-Message-Id: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v7 8/8] Btrfs: add mount option to force UUID tree checking
+Date: Wed,  3 Jul 2013 19:14:39 +0200
+Message-Id: <3f3050edef12261d45b6a96805949adebeaa3e8b.1372866277.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1372866277.git.sbehrens@giantdisaster.de>
+References: <cover.1372866277.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1372866277.git.sbehrens@giantdisaster.de>
+References: <cover.1372866277.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After reading all device items from the chunk tree, don't
-exit the loop and then navigate down the tree again to find
-the chunk items. Instead, if while reading the device items
-we find a chunk item in the leaf keep iterating over the leaf
-and process the chunk items - at the moment chunk items always
-follow immediately the device items in the chunk tree, and if
-this fact changes in the future, revert back to previous
-behaviour of exiting the loop and navigate down the tree again
-to search for chunk items, but use BTRFS_FIRST_CHUNK_TREE_OBJECTID
-as the object id for the search key, as any chunk item has a
-key that has this object id.
+This should never be needed, but since all functions are there
+to check and rebuild the UUID tree, a mount option is added that
+allows to force this check and rebuild procedure.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/volumes.c |    9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h   | 1 +
+ fs/btrfs/disk-io.c | 3 ++-
+ fs/btrfs/super.c   | 8 +++++++-
+ 3 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b2d1eac..4e969db 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5668,8 +5668,13 @@ again:
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 561ba21..4bc3186 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1988,6 +1988,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7508b3a..e76554b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2919,7 +2919,8 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
  		}
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
--			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
-+			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID) {
-+				if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
-+					key.objectid = found_key.objectid;
-+					continue;
-+				}
- 				break;
-+			}
- 			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
- 				struct btrfs_dev_item *dev_item;
- 				dev_item = btrfs_item_ptr(leaf, slot,
-@@ -5688,7 +5693,7 @@ again:
- 		path->slots[0]++;
- 	}
- 	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
--		key.objectid = 0;
-+		key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 		btrfs_release_path(path);
- 		goto again;
- 	}
+-	} else if (check_uuid_tree) {
++	} else if (check_uuid_tree ||
++		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
+ 		pr_info("btrfs: checking UUID tree\n");
+ 		ret = btrfs_check_uuid_tree(fs_info);
+ 		if (ret) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 8eb6191..191f281 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -320,7 +320,7 @@ enum {
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+-	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_err,
+ };
+ 
+@@ -360,6 +360,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity, "check_int"},
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
++	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
+@@ -554,6 +555,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_space_cache:
+ 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+ 			break;
++		case Opt_rescan_uuid_tree:
++			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
++			break;
+ 		case Opt_no_space_cache:
+ 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
+ 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
+@@ -928,6 +932,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",space_cache");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
++	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
++		seq_puts(seq, ",rescan_uuid_tree");
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		seq_puts(seq, ",clear_cache");
+ 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
 -- 
-1.7.9.5
+1.8.3.2
 

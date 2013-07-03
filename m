@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:12885 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932215Ab3GCIxI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 04:53:08 -0400
-Message-ID: <51D3E66C.8060501@jan-o-sch.net>
-Date: Wed, 03 Jul 2013 10:53:00 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mail1207.opentransfer.com ([98.130.1.227]:59145 "EHLO
+	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755863Ab3GCKL6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 06:11:58 -0400
+Message-ID: <51D3F8EC.4030805@friendlyvirus.org>
+Date: Wed, 03 Jul 2013 11:11:56 +0100
+From: =?UTF-8?B?TWlndWVsIE5lZ3LDo28=?=
+	<miguel.negrao-lists@friendlyvirus.org>
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix extent buffer leak after backref walking
-References: <1372833644-30061-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1372833644-30061-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: "list, btrfs" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs send /receive : having problems sending a snapshot back
+ to the original partition
+References: <1372612472.13762.18.camel@miguel-MacBookPro>  <51D1A529.4040109@giantdisaster.de> <1372758978.7295.17.camel@miguel-MacBookPro> <51D2C1FD.5030405@giantdisaster.de>
+In-Reply-To: <51D2C1FD.5030405@giantdisaster.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, July 03, 2013 at 08:40 (+0200), Liu Bo wrote:
-> commit 47fb091fb787420cd195e66f162737401cce023f(Btrfs: fix unlock after free on rewinded tree blocks)
-> takes an extra increment on the reference of allocated dummy extent buffer, so now we
-> cannot free this dummy one, and end up with extent buffer leak.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Em 02-07-2013 13:05, Stefan Behrens escreveu:
+> The reason why you are not able to send an incremental snapshot back
+> (as you tried it in your previous mail) is that the implementation
+> cannot handle it. The receive side gets a parent_uuid (in case of
+> incremental transfers using the "-p" option), this parent_uuid is
+> matched to the fields received_uuid of the subvolumes in the receive
+> filesystem. If no match is found, the receive fails. And that is what
+> happens.
+>
+> If you look at the following script, you can see the expected
+> parent_uuid in the line before the "ERROR: could not find parent
+> subvolume". And when you look at the output of "btrfs subv list ...
+> /mnt/a", you notice that no subvolume at all has the field ruuid
+> (which stands for received_uuid) set to any valid value. Therefore it
+> doesn't match, therefore it fails.
+>
+> This logic could be changed, but that's how it is today.
 
-Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Hi Stefan,
 
-> ---
->  fs/btrfs/ctree.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 02fae7f..3d790b4 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1268,12 +1268,12 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
->  		BUG_ON(!eb_rewin);
->  	}
->  
-> -	extent_buffer_get(eb_rewin);
->  	btrfs_tree_read_unlock(eb);
->  	free_extent_buffer(eb);
->  
->  	extent_buffer_get(eb_rewin);
->  	btrfs_tree_read_lock(eb_rewin);
-> +
->  	__tree_mod_log_rewind(eb_rewin, time_seq, tm);
->  	WARN_ON(btrfs_header_nritems(eb_rewin) >
->  		BTRFS_NODEPTRS_PER_BLOCK(fs_info->tree_root));
-> 
+Thank you for the detailed explanation, I guess I understand it better 
+now. I guess for the time being I have to use rsync to get the data back 
+or transfer the whole subvolume back.
+
+thanks,
+-- 
+Miguel Negrão
+http://www.friendlyvirus.org/miguelnegrao

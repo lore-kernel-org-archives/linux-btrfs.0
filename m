@@ -1,66 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42028 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751775Ab3GNInr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jul 2013 04:43:47 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6E8hkRf030266
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:43:47 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6E8hjqc028119
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:43:46 GMT
-Received: from abhmt119.oracle.com (abhmt119.oracle.com [141.146.116.71])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6E8hjKb017273
-	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:43:45 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:54910 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754093Ab3GCOAe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Jul 2013 10:00:34 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r63DODx2003962
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jul 2013 21:24:13 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs-progs: fix memory leak in open_file_or_dir()
-Date: Sun, 14 Jul 2013 16:48:42 +0800
-Message-Id: <1373791722-29998-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1373410908-2274-1-git-send-email-wangshilong1991@gmail.com>
-References: <1373410908-2274-1-git-send-email-wangshilong1991@gmail.com>
+Cc: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Subject: [PATCH 01/12] Btrfs-progs: fix missing recow roots when making btrfs filesystem
+Date: Wed, 3 Jul 2013 21:25:09 +0800
+Message-Id: <1372857920-4678-2-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
 
-After calling opendir() successfully, closedir() should be
-also called to free memory. Otherwise, memory leak happens.
+When making btrfs filesystem. we firstly write root leaf to
+specified filed, and then we recow the root. If we don't recow,
+some trees are not in the correct block group.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Steps to reproduce:
+	dd if=/dev/zero of=test.img bs=1M count=100
+	mkfs.btrfs -f test.img
+	btrfs-debug-tree test.img
+
+extent tree key (EXTENT_TREE ROOT_ITEM 0)
+leaf 4210688 items 10 free space 3349 generation 4 owner 2
+fs uuid 2e08fd93-f24d-4f44-a226-e2116fcd544f
+chunk uuid dc482988-6246-46ce-9329-68bcf6d3683c
+	item 0 key (0 BLOCK_GROUP_ITEM 4194304) itemoff 3971 itemsize 24
+		block group used 12288 chunk_objectid 256 flags 2
+	[..snip..]
+	item 3 key (1138688 EXTENT_ITEM 4096) itemoff 3827 itemsize 42
+		extent refs 1 gen 1 flags 2
+		tree block key (0 UNKNOWN.0 0) level 0
+	item 4 key (1138688 TREE_BLOCK_REF 7) itemoff 3827 itemsize 0
+		tree block backref
+	[..snip..]
+
+checksum tree key (CSUM_TREE ROOT_ITEM 0)
+leaf 1138688 items 0 free space 3995 generation 1 owner 7
+fs uuid 2e08fd93-f24d-4f44-a226-e2116fcd544f
+chunk uuid dc482988-6246-46ce-9329-68bcf6d3683c
+
+For the above example, csum root leaf comes into system block group which
+is wrong,csum root leaf should be in metadata block group.
+
+Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- utils.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ mkfs.c | 56 +++++++++++++++++++++-----------------------------------
+ 1 file changed, 21 insertions(+), 35 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index d3bec9b..4b3c778 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1503,7 +1503,7 @@ int open_file_or_dir(const char *fname)
+diff --git a/mkfs.c b/mkfs.c
+index 7ff60e5..b412b7e 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -145,45 +145,31 @@ err:
+ 	return ret;
+ }
+ 
+-static int recow_roots(struct btrfs_trans_handle *trans,
+-		       struct btrfs_root *root)
++static void __recow_root(struct btrfs_trans_handle *trans,
++			 struct btrfs_root *root)
  {
  	int ret;
- 	struct stat st;
--	DIR *dirstream;
-+	DIR *dirstream = NULL;
- 	int fd;
+ 	struct extent_buffer *tmp;
+-	struct btrfs_fs_info *info = root->fs_info;
+-
+-	ret = __btrfs_cow_block(trans, info->fs_root, info->fs_root->node,
+-				NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
+-
+-	ret = __btrfs_cow_block(trans, info->tree_root, info->tree_root->node,
+-				NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
+-
+-	ret = __btrfs_cow_block(trans, info->extent_root,
+-				info->extent_root->node, NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
+-
+-	ret = __btrfs_cow_block(trans, info->chunk_root, info->chunk_root->node,
+-				NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
  
- 	ret = stat(fname, &st);
-@@ -1520,7 +1520,9 @@ int open_file_or_dir(const char *fname)
- 		fd = open(fname, O_RDWR);
- 	}
- 	if (fd < 0) {
--		return -3;
-+		fd = -3;
-+		if (dirstream)
-+			closedir(dirstream);
- 	}
- 	return fd;
++	if (trans->transid != btrfs_root_generation(&root->root_item)) {
++		ret = __btrfs_cow_block(trans, root, root->node,
++					NULL, 0, &tmp, 0, 0);
++		BUG_ON(ret);
++		free_extent_buffer(tmp);
++	}
++}
+ 
+-	ret = __btrfs_cow_block(trans, info->dev_root, info->dev_root->node,
+-				NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
+-
+-	ret = __btrfs_cow_block(trans, info->csum_root, info->csum_root->node,
+-				NULL, 0, &tmp, 0, 0);
+-	BUG_ON(ret);
+-	free_extent_buffer(tmp);
++static void recow_roots(struct btrfs_trans_handle *trans,
++		       struct btrfs_root *root)
++{
++	struct btrfs_fs_info *info = root->fs_info;
+ 
+-	return 0;
++	__recow_root(trans, info->fs_root);
++	__recow_root(trans, info->tree_root);
++	__recow_root(trans, info->extent_root);
++	__recow_root(trans, info->chunk_root);
++	__recow_root(trans, info->dev_root);
++	__recow_root(trans, info->csum_root);
  }
+ 
+ static int create_one_raid_group(struct btrfs_trans_handle *trans,
+@@ -281,8 +267,6 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
+ 					    (allowed & metadata_profile));
+ 		BUG_ON(ret);
+ 
+-		ret = recow_roots(trans, root);
+-		BUG_ON(ret);
+ 	}
+ 	if (!mixed && num_devices > 1 && (allowed & data_profile)) {
+ 		ret = create_one_raid_group(trans, root,
+@@ -290,6 +274,8 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
+ 					    (allowed & data_profile));
+ 		BUG_ON(ret);
+ 	}
++	recow_roots(trans, root);
++
+ 	return 0;
+ }
+ 
 -- 
-1.7.7.6
+1.8.1.4
 

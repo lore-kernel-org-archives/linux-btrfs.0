@@ -1,44 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57682 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751498Ab3GBTRV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2013 15:17:21 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 20C527C0692
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jul 2013 13:17:21 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: [PATCH] xfstests: make the scratch device for generic/256 slightly larger
-Date: Tue, 2 Jul 2013 15:17:18 -0400
-Message-ID: <1372792638-23957-1-git-send-email-jbacik@fusionio.com>
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:6888 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753107Ab3GCGhu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Jul 2013 02:37:50 -0400
+Date: Wed, 3 Jul 2013 16:37:24 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <esandeen@redhat.com>
+Cc: Koen De Wit <koen.de.wit@oracle.com>, Eric Sandeen <sandeen@redhat.com>,
+        "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] xfstests: btrfs/316: cross-subvolume sparse copy
+Message-ID: <20130703063724.GK14996@dastard>
+References: <51D29D17.3050000@oracle.com>
+ <20130702101539.GC14996@dastard>
+ <51D2E33B.1080402@oracle.com>
+ <6B93E4A6-D1C9-4170-8E1C-B94D24F601BB@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <6B93E4A6-D1C9-4170-8E1C-B94D24F601BB@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is similar to a previous fix I sent.  1 gig makes us do mixed file block
-groups for btrfs, so these enospc tests will usually fail because we don't have
-space for metadata, which is the case for this test.  So jack the size up to
-1.5gig so that btrfs can do its normal thing and pass the test.  Thanks,
+On Tue, Jul 02, 2013 at 11:51:21AM -0400, Eric Sandeen wrote:
+> On Jul 2, 2013, at 10:28 AM, Koen De Wit <koen.de.wit@oracle.com>
+> wrote:
+> 
+> > Dave,
+> > 
+> > Thanks for the review. I will clean up the commit message and do
+> > a full mail-to-myself-and-test-patch round trip to avoid errors
+> > like the wrong test numbers in the golden output. I'm sorry for
+> > this.
+> > 
+> > About cutting out file names from the output. I did this in the
+> > first version of the patch:
+> > 
+> >       md5sum $TESTDIR1/$F | $AWK_PROG 'END {print $1}'
+> > 
+> > but Eric Sandeen suggested to include them in order to provide
+> > more context in the output. (See
+> > http://oss.sgi.com/archives/xfs/2013-03/msg00231.html and
+> > http://oss.sgi.com/archives/xfs/2013-03/msg00220.html) That
+> > sounds like a good idea to me, it makes debugging failures
+> > easier. Whose opinion should I follow?
+> > 
+> Heh sorry.  IMHO maybe a middle ground; not bare md5sum but show
+> only the base name?  In the end up to you; it seems Dave and I
+> have different opinions on this.  :)
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- tests/generic/256 |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+I was just going by current xfstests convention. i.e, in common/rc:
 
-diff --git a/tests/generic/256 b/tests/generic/256
-index 4a53da8..cfe7237 100755
---- a/tests/generic/256
-+++ b/tests/generic/256
-@@ -165,7 +165,7 @@ _test_full_fs_punch()
- 
- # Make a small file system to fill
- umount $SCRATCH_DEV &> /dev/null
--_scratch_mkfs_sized $(( 1024 * 1024 * 1024 )) &> /dev/null
-+_scratch_mkfs_sized $(( 1536 * 1024 * 1024 )) &> /dev/null
- _scratch_mount
- # Test must be able to write files with non-root permissions
- chmod 777 $SCRATCH_MNT
+# Prints the md5 checksum of a given file
+_md5_checksum()
+{
+        md5sum $1 | cut -d ' ' -f1
+}
+
+Which is used by all the hole punch tests and generic/311.
+
+Make of that what you will, but I'd prefer to see consistency of
+implementation across tests... ;)
+
+Cheers,
+
+Dave.
 -- 
-1.7.7.6
-
+Dave Chinner
+david@fromorbit.com

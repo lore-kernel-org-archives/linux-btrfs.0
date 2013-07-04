@@ -1,44 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f48.google.com ([209.85.160.48]:45864 "EHLO
-	mail-pb0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755924Ab3GCQY5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 12:24:57 -0400
-Received: by mail-pb0-f48.google.com with SMTP id ma3so282667pbc.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jul 2013 09:24:57 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
+Received: from mail-qe0-f44.google.com ([209.85.128.44]:46952 "EHLO
+	mail-qe0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753387Ab3GDLDj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jul 2013 07:03:39 -0400
+Received: by mail-qe0-f44.google.com with SMTP id 5so675373qeb.31
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jul 2013 04:03:38 -0700 (PDT)
+MIME-Version: 1.0
+Date: Thu, 4 Jul 2013 14:03:38 +0300
+Message-ID: <CADV-EXG2fjxomEBRVbKw7o5wNLmze1H+DQkMiuM56RONhfCvXg@mail.gmail.com>
+Subject: mkfs: specify subvolume for rootfs directory
+From: Yevhen Kyriukha <kirgene@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: wangsl-fnst@cn.fujitsu.com
-Subject: [PATCH RESEND] Btrfs-progs: fix compile warning in btrfs_free_block_groups()
-Date: Thu,  4 Jul 2013 00:24:45 +0800
-Message-Id: <1372868685-4973-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+Hi!
 
-extent-tree.c: In function 'btrfs_free_block_groups':
-extent-tree.c:3189:12: warning: cast to pointer from
-integer of different size [-Wint-to-pointer-cast]
+I'm using following command to create btrfs filesystem image with
+predefined content:
+mkfs.btrfs -b 300M -r /tmp/source-root-dir rootfs.btrfs
+This command creates image and put everything under root subvolume (/).
+But I want to put everything under "/my_rootfs" subvolume.
 
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
----
- extent-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+How can I accomplish this?
+Or can you point me the way to develop this feature in mkfs.
 
-diff --git a/extent-tree.c b/extent-tree.c
-index b0cfe0a..7561bbb 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -3186,7 +3186,8 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 			break;
- 		ret = get_state_private(&info->block_group_cache, start, &ptr);
- 		if (!ret) {
--			cache = (struct btrfs_block_group_cache *)ptr;
-+			cache = (struct btrfs_block_group_cache *)
-+				(unsigned long)ptr;
- 			if (cache->free_space_ctl) {
- 				btrfs_remove_free_space_cache(cache);
- 				kfree(cache->free_space_ctl);
--- 
-1.7.11.7
+Thanks!
 
+Best regards,
+Yevhen

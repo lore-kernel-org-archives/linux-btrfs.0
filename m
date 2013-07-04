@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:62347 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:46342 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756648Ab3GDNvB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Jul 2013 09:51:01 -0400
+	id S1751781Ab3GDOOZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Jul 2013 10:14:25 -0400
 Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp1) (RZmta 31.28 OK)
-	with ESMTP id X06921p649L5aP for <linux-btrfs@vger.kernel.org>;
-	Thu, 4 Jul 2013 15:50:59 +0200 (CEST)
+	by joses.store (joses xp3) (RZmta 31.28 OK)
+	with ESMTP id p01229p64AP5RN for <linux-btrfs@vger.kernel.org>;
+	Thu, 4 Jul 2013 16:14:23 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix wrong write offset when replacing a device
-Date: Thu,  4 Jul 2013 15:50:59 +0200
-Message-Id: <1372945859-23480-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH RESEND] Btrfs: fix wrong write offset when replacing a device
+Date: Thu,  4 Jul 2013 16:14:23 +0200
+Message-Id: <1372947263-823-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -39,8 +39,12 @@ back by undoing the change to the write address that the aforementioned
 commit added by mistake.
 
 Reported-by: Miao Xie <miaox@cn.fujitsu.com>
+Cc: <stable@vger.kernel.org> # 3.10+
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
+Resent to add stable@vger.kernel.org since the regression was added
+in 3.10 RC1.
+
  fs/btrfs/scrub.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 

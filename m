@@ -1,33 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50588 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756219Ab3GCVMC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jul 2013 17:12:02 -0400
-Date: Wed, 3 Jul 2013 23:12:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/3] Btrfs-progs: add missing write check for mkfs
-Message-ID: <20130703211200.GS18204@suse.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:36901 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753387Ab3GDJuH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jul 2013 05:50:07 -0400
+Received: by mail-wi0-f180.google.com with SMTP id c10so1031548wiw.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jul 2013 02:50:05 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 5/5] Btrfs-progs: don't ignore errors in btrfs_add_block_group()
+Date: Thu,  4 Jul 2013 10:48:40 +0100
+Message-Id: <1372931320-8340-3-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1372931320-8340-1-git-send-email-fdmanana@gmail.com>
 References: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
- <1372593106-6593-2-git-send-email-fdmanana@gmail.com>
- <20130703170959.GQ18204@twin.jikos.cz>
- <CAL3q7H6s-7Qk_CFXeSpb94YZUuDOTSDOBh6CjUcAUMYc4smtMA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H6s-7Qk_CFXeSpb94YZUuDOTSDOBh6CjUcAUMYc4smtMA@mail.gmail.com>
+ <1372931320-8340-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 03, 2013 at 06:25:59PM +0100, Filipe David Manana wrote:
-> > Also, replacing the BUG_ON with something else would be nice of course.
-> 
-> If you don't mind, I would prefer to do that as a different patch,
-> since the BUG_ON() use is what is currently done everywhere in this
-> function at least.
+This function was not checking if the calls to set_extent_bits()
+and set_state_private() actually succeeded or not.
 
-Yes, separate patch.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ extent-tree.c |   12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-thanks,
-david
+diff --git a/extent-tree.c b/extent-tree.c
+index b0cfe0a..d260c14 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3355,12 +3355,14 @@ btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_used, u64 type,
+ 	BUG_ON(ret);
+ 
+ 	bit = block_group_state_bits(type);
+-	set_extent_bits(block_group_cache, chunk_offset,
+-			chunk_offset + size - 1,
+-			bit | EXTENT_LOCKED, GFP_NOFS);
++	ret = set_extent_bits(block_group_cache, chunk_offset,
++			      chunk_offset + size - 1,
++			      bit | EXTENT_LOCKED, GFP_NOFS);
++	BUG_ON(ret);
+ 
+-	set_state_private(block_group_cache, chunk_offset,
+-			  (unsigned long)cache);
++	ret = set_state_private(block_group_cache, chunk_offset,
++				(unsigned long)cache);
++	BUG_ON(ret);
+ 	set_avail_alloc_bits(fs_info, type);
+ 
+ 	return cache;
+-- 
+1.7.9.5
+

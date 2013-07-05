@@ -1,53 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:50259 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:52195 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757050Ab3GEMco (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 08:32:44 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 3BB8A7C0699
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 06:32:44 -0600 (MDT)
-Date: Fri, 5 Jul 2013 08:32:41 -0400
+	with ESMTP id S1752212Ab3GESM2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 14:12:28 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id B81E47C067F
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 12:12:27 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id 34fidYNAAhXgabp3 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 12:12:27 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RESEND] Btrfs: fix wrong write offset when replacing a
- device
-Message-ID: <20130705123241.GD2260@localhost.localdomain>
-References: <1372947263-823-1-git-send-email-sbehrens@giantdisaster.de>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not offset physical if we're compressed
+Date: Fri, 5 Jul 2013 14:12:24 -0400
+Message-ID: <1373047944-3705-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1372947263-823-1-git-send-email-sbehrens@giantdisaster.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 04, 2013 at 04:14:23PM +0200, Stefan Behrens wrote:
-> Miao Xie reported the following issue:
-> 
-> The filesystem was corrupted after we did a device replace.
-> 
-> Steps to reproduce:
->  # mkfs.btrfs -f -m single -d raid10 <device0>..<device3>
->  # mount <device0> <mnt>
->  # btrfs replace start -rfB 1 <device4> <mnt>
->  # umount <mnt>
->  # btrfsck <device4>
-> 
-> The reason for the issue is that we changed the write offset by mistake,
-> introduced by commit 625f1c8dc.
-> 
-> We read the data from the source device at first, and then write the
-> data into the corresponding place of the new device. In order to
-> implement the "-r" option, the source location is remapped using
-> btrfs_map_block(). The read takes place on the mapped location, and
-> the write needs to take place on the unmapped location. Currently
-> the write is using the mapped location, and this commit changes it
-> back by undoing the change to the write address that the aforementioned
-> commit added by mistake.
-> 
+xfstest btrfs/276 was freaking out on slower boxes partly because fiemap was
+offsetting the physical based on the extent offset.  This is perfectly fine with
+uncompressed extents, however the extent offset is into the uncompressed area,
+not the compressed.  So we can return a physical value that isn't at all within
+the area we have allocated on disk.  Fix this by returning the start of the
+extent if it is compressed no matter what the offset.  Thanks,
 
-I'd like to see a xfstest for this please so we can make sure something like
-this doesn't happen in the future.  You can use SCRATCH_DEV_POOL to have
-multiple devices.  Please cc linux-btrfs when you submit it so I can review it
-and hopefully get it in faster.  Thanks,
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent_io.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f8586a9..b9244ce 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4049,7 +4049,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	}
+ 
+ 	while (!end) {
+-		u64 offset_in_extent;
++		u64 offset_in_extent = 0;
+ 
+ 		/* break if the extent we found is outside the range */
+ 		if (em->start >= max || extent_map_end(em) < off)
+@@ -4065,9 +4065,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 
+ 		/*
+ 		 * record the offset from the start of the extent
+-		 * for adjusting the disk offset below
++		 * for adjusting the disk offset below.  Only do this if the
++		 * extent isn't compressed since our in ram offset may be past
++		 * what we have actually allocated on disk.
+ 		 */
+-		offset_in_extent = em_start - em->start;
++		if (!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
++			offset_in_extent = em_start - em->start;
+ 		em_end = extent_map_end(em);
+ 		em_len = em_end - em_start;
+ 		emflags = em->flags;
+-- 
+1.7.7.6
+

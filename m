@@ -1,62 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:52195 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752212Ab3GESM2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 14:12:28 -0400
+Received: from dkim2.fusionio.com ([66.114.96.54]:33846 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752212Ab3GESMu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 14:12:50 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id B81E47C067F
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 12:12:27 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id 34fidYNAAhXgabp3 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 12:12:27 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id B8F179A0695
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 12:12:49 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id ySudPq5YfEzzMKnL (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 12:12:49 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not offset physical if we're compressed
-Date: Fri, 5 Jul 2013 14:12:24 -0400
-Message-ID: <1373047944-3705-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: fix backref walking when we hit a compressed extent
+Date: Fri, 5 Jul 2013 14:12:47 -0400
+Message-ID: <1373047967-3749-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xfstest btrfs/276 was freaking out on slower boxes partly because fiemap was
-offsetting the physical based on the extent offset.  This is perfectly fine with
-uncompressed extents, however the extent offset is into the uncompressed area,
-not the compressed.  So we can return a physical value that isn't at all within
-the area we have allocated on disk.  Fix this by returning the start of the
-extent if it is compressed no matter what the offset.  Thanks,
+If you do btrfs inspect-internal logical-resolve on a compressed extent that has
+been partly overwritten it won't find anything.  This is because we try and
+match the extent offset we've searched for based on the extent offset in the
+data extent entry.  However this doesn't work for compressed extents because the
+offsets are for the uncompressed size, not the compressed size.  So instead only
+do this check if we are not compressed, that way we can get an actual entry for
+the physical offset rather than nothing for compressed.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/extent_io.c |    9 ++++++---
- 1 files changed, 6 insertions(+), 3 deletions(-)
+ fs/btrfs/backref.c |   23 +++++++++++++++--------
+ 1 files changed, 15 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f8586a9..b9244ce 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4049,7 +4049,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 	}
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index eaf1333..30dbe1c 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -36,16 +36,23 @@ static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
+ 				u64 extent_item_pos,
+ 				struct extent_inode_elem **eie)
+ {
+-	u64 data_offset;
+-	u64 data_len;
++	u64 offset = 0;
+ 	struct extent_inode_elem *e;
  
- 	while (!end) {
--		u64 offset_in_extent;
-+		u64 offset_in_extent = 0;
+-	data_offset = btrfs_file_extent_offset(eb, fi);
+-	data_len = btrfs_file_extent_num_bytes(eb, fi);
++	if (!btrfs_file_extent_compression(eb, fi) &&
++	    !btrfs_file_extent_encryption(eb, fi) &&
++	    !btrfs_file_extent_other_encoding(eb, fi)) {
++		u64 data_offset;
++		u64 data_len;
  
- 		/* break if the extent we found is outside the range */
- 		if (em->start >= max || extent_map_end(em) < off)
-@@ -4065,9 +4065,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+-	if (extent_item_pos < data_offset ||
+-	    extent_item_pos >= data_offset + data_len)
+-		return 1;
++		data_offset = btrfs_file_extent_offset(eb, fi);
++		data_len = btrfs_file_extent_num_bytes(eb, fi);
++
++		if (extent_item_pos < data_offset ||
++		    extent_item_pos >= data_offset + data_len)
++			return 1;
++		offset = extent_item_pos - data_offset;
++	}
  
- 		/*
- 		 * record the offset from the start of the extent
--		 * for adjusting the disk offset below
-+		 * for adjusting the disk offset below.  Only do this if the
-+		 * extent isn't compressed since our in ram offset may be past
-+		 * what we have actually allocated on disk.
- 		 */
--		offset_in_extent = em_start - em->start;
-+		if (!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
-+			offset_in_extent = em_start - em->start;
- 		em_end = extent_map_end(em);
- 		em_len = em_end - em_start;
- 		emflags = em->flags;
+ 	e = kmalloc(sizeof(*e), GFP_NOFS);
+ 	if (!e)
+@@ -53,7 +60,7 @@ static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
+ 
+ 	e->next = *eie;
+ 	e->inum = key->objectid;
+-	e->offset = key->offset + (extent_item_pos - data_offset);
++	e->offset = key->offset + offset;
+ 	*eie = e;
+ 
+ 	return 0;
 -- 
 1.7.7.6
 

@@ -1,47 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:53025 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753553Ab3GEVHz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 17:07:55 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 884717C069D
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 15:07:55 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id ePBwFcwRyK4hJiFN (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 15:07:55 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: set lockdep class before locking new extent buffer
-Date: Fri, 5 Jul 2013 17:07:52 -0400
-Message-ID: <1373058472-13834-1-git-send-email-jbacik@fusionio.com>
+Received: from longford.logfs.org ([213.229.74.203]:59750 "EHLO
+	longford.logfs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750906Ab3GEWLt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 18:11:49 -0400
+Date: Fri, 5 Jul 2013 16:41:00 -0400
+From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
+To: linux-kernel@vger.kernel.org
+Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
+Message-ID: <20130705204100.GA15943@logfs.org>
+References: <1370280485-10047-1-git-send-email-joern@logfs.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1370280485-10047-1-git-send-email-joern@logfs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've been seeing spurious complaints out of lockdep because the lock class name
-changes.  This is happening because when we drop a snapshot we will lock a block
-before we've read it in, which sets the lockdep class to whatever the default
-is.  Then once we read the thing in we reset the lockdep class to what it is
-supposed to be, which blows lockdeps' mind.  This patch should fix the problem,
-it appears to be the only place where we do this sort of thing.  Thanks,
+On Mon, 3 June 2013 13:28:03 -0400, Joern Engel wrote:
+> 
+> A purely janitorial patchset.  A fairly common pattern is to take a
+> list, remove every object from it and do something with this object -
+> usually kfree() some variant.  A stupid grep identified roughly 300
+> instances, with many more hidden behind more complicated patterns to
+> achieve the same end results.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Next version of the same patchset.  Object size is shrinking now, at
+least for the one compiler I tested.  And a few kernel hackers met on
+a frozen lake in hell with pigs flying overhead and could actually
+agree on a name.  While I am sure almost every reader will still
+disagree and have one or two better suggestions, I would like to use
+this historical moment.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0236de7..d275681 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7173,6 +7173,8 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
- 		if (!next)
- 			return -ENOMEM;
-+		btrfs_set_buffer_lockdep_class(root->root_key.objectid, next,
-+					       level - 1);
- 		reada = 1;
- 	}
- 	btrfs_tree_lock(next);
--- 
-1.7.7.6
+list_del_each and list_del_each_entry is shall be!
 
+Jörn
+
+--
+It's just what we asked for, but not what we want!
+-- anonymous

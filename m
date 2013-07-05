@@ -1,54 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:48839 "EHLO
-	homiemail-a52.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755658Ab3GEDjD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Jul 2013 23:39:03 -0400
-From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: unclean shutdown and space cache rebuild
-Date: Fri, 05 Jul 2013 09:15:13 +0530
-Message-ID: <4656105.EoWWoPheHC@bheem>
-In-Reply-To: <14300696.s96c8th5lD@bheem>
-References: <11441914.sRzrmH57Vq@bheem> <pan$57f3a$a89b75ab$e2d2d0f4$5964d331@cox.net> <14300696.s96c8th5lD@bheem>
+Received: from mail-vc0-f170.google.com ([209.85.220.170]:45993 "EHLO
+	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757132Ab3GEIGf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 04:06:35 -0400
+Received: by mail-vc0-f170.google.com with SMTP id hf12so1439503vcb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 01:06:34 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130704095138.GB12359@gmail.com>
+References: <20130704095138.GB12359@gmail.com>
+Date: Fri, 5 Jul 2013 12:06:33 +0400
+Message-ID: <CANaxB-wvUcs2bKjrJUtKQxojFM86kF-oLwdWcm9d0i2MjHCJ6g@mail.gmail.com>
+Subject: Re: btrfs: stat(2) and /proc/pid/maps returns different devices
+From: Andrey Wagin <avagin@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: kzak@redhat.com, xemul@openvz.org, Mark Fasheh <mfasheh@suse.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, July 02, 2013 09:19:07 PM Shridhar Daithankar wrote:
-> On Tuesday, July 02, 2013 01:00:29 PM Duncan wrote:
-> > But I'd still expect there to be some better performance steady state
-> > after a few mounts gets the basic filesystem defragged.  Tho if the
-> > fileystem is heavily fragmented[2], in practice it may well be easier to
-> > backup the filesystem content, do a clean mkfs and mount with autodefrag
-> > and restore from backup, thus ensuring autodefrag is on while filling the
-> > filesystem in the first place, than to wait for autodefrag to reach a
-> > stable system state in normal operation over many mounts.
-> 
-> well, I think I will bite the bullet and defrag entire / overnight and
-> repeat the autodefrag mount option. That should work too.
+2013/7/4 Andrew Vagin <avagin@gmail.com>:
+> Hi All,
+>
+> I want to resurrect an old problem. Currently stat(2) returns another
+> device than other places where the device is printed (/proc/pid/maps,
+> /proc/pid/fdinfo/, unix-diag). stat(2) reports devices, which is absent
+> in /proc/pid/mountinfo.
 
-and that worked. defragged all the mount points including files and dirs, 
-enabled autodefrag and reboot. Took about 2 hour to defrag the existing files.
+Hi Chris,
 
-but the filesystem is now extremely smooth. faster than ext4 I might say. sure 
-there are occasional stalls but they are more of noticable than annoyance and 
-thats pretty much compensated by the significant improvement in latency in 
-everything.
+I found that this issue was introduced by yours changes:
 
-fun fact, pg_test_fsync now reports 44 fsyncs per seconds instead of earlier 
-20. I don't know if that down to defragmentation or compression.
+commit 3394e1607eaf870ebba37d303fbd590a4c569908
+Author: Chris Mason <chris.mason@oracle.com>
+Date:   Mon Nov 17 20:42:26 2008 -0500
 
-Also another bigger disk of 500GB, the score is around 24 fsyncs per second. 
-So I suspect it has to do with tree size.
+    Btrfs: Give each subvol and snapshot their own anonymous devid
 
-anyways, good things overall
+Now we need to find a way how to fix other places (not only stat(2)).
 
-thanks for the help and suggestions.
+Could you look at Mark Fasheh's fix and my points, why we can't use
+vfs_getattr in this case? Maybe you will have any ideas or comments
+about this issue.
 
+Thanks
 
--- 
-Regards
- Shridhar
+>
+> # cat /proc/self/mountinfo | grep mnt
+> 40 32 0:32 / /mnt rw,relatime shared:27 - btrfs /dev/loop0 rw,noacl,space_cache
+>
+> # cat /proc/2943/maps
+> 00400000-00406000 r-xp 00000000 00:20 260 /mnt/xxx/sleep
+>
+> # stat -L -c "%D" /proc/2943/map_files/400000-406000
+> 23
+>
+> We are not first who suffer from this problem:
+> https://bugzilla.redhat.com/show_bug.cgi?id=711881
+> http://marc.info/?l=linux-btrfs&m=130074451403261
+> https://bugzilla.openvz.org/show_bug.cgi?id=2653
+>
+> This bug looks like KABI violation.
+>
+> And about 2 years ago Mark Fasheh tried to fix this problem:
+> http://thr3ads.net/btrfs-devel/2011/05/2346176-RFC-PATCH-0-2-btrfs-vfs-Return-same-device-in-stat-2-and-proc-pid-maps
+>
+> Eric Biederman sugested to not create a new method and use vfs_getattr,
+> but here is a few problems:
+> * fanotify doesn't have dentry, but its fdinfo contains device.
+> * vfs_getattr can fail and which device should be shown in this case?
+> * vfs_getattr gets much more parameters, so here is a question about
+>   performance degradation.
+>
+> So I have a question: Can two inodes from different subvolumes have
+> equal inode numbers?
+>
+> If someone have any suggestions how to fix this problem or any
+> explanation why this is not a problem at all, please write here.
+>
+> Thanks.

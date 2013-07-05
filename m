@@ -1,113 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:47772 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755500Ab3GECVu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jul 2013 22:21:50 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 869617C0696
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jul 2013 20:21:50 -0600 (MDT)
-Date: Thu, 4 Jul 2013 22:21:47 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH v3] btrfs: clean snapshots one by one
-Message-ID: <20130705022147.GC2260@localhost.localdomain>
-References: <1363101208-30184-1-git-send-email-dsterba@suse.cz>
- <CAOcd+r0RM0YD+Ycky9S_h-LtLAkkztL1z-Ppp8W_85DuQP0t7w@mail.gmail.com>
- <20130704170337.GU18204@suse.cz>
- <CAOcd+r05Ph8TSeZFw+fdysm2Cr3g7yrpX7q7BHyY81+y8_LYmw@mail.gmail.com>
+Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:48839 "EHLO
+	homiemail-a52.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755658Ab3GEDjD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Jul 2013 23:39:03 -0400
+From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: unclean shutdown and space cache rebuild
+Date: Fri, 05 Jul 2013 09:15:13 +0530
+Message-ID: <4656105.EoWWoPheHC@bheem>
+In-Reply-To: <14300696.s96c8th5lD@bheem>
+References: <11441914.sRzrmH57Vq@bheem> <pan$57f3a$a89b75ab$e2d2d0f4$5964d331@cox.net> <14300696.s96c8th5lD@bheem>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAOcd+r05Ph8TSeZFw+fdysm2Cr3g7yrpX7q7BHyY81+y8_LYmw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 04, 2013 at 10:52:39PM +0300, Alex Lyakas wrote:
-> Hi David,
+On Tuesday, July 02, 2013 09:19:07 PM Shridhar Daithankar wrote:
+> On Tuesday, July 02, 2013 01:00:29 PM Duncan wrote:
+> > But I'd still expect there to be some better performance steady state
+> > after a few mounts gets the basic filesystem defragged.  Tho if the
+> > fileystem is heavily fragmented[2], in practice it may well be easier to
+> > backup the filesystem content, do a clean mkfs and mount with autodefrag
+> > and restore from backup, thus ensuring autodefrag is on while filling the
+> > filesystem in the first place, than to wait for autodefrag to reach a
+> > stable system state in normal operation over many mounts.
 > 
-> On Thu, Jul 4, 2013 at 8:03 PM, David Sterba <dsterba@suse.cz> wrote:
-> > On Thu, Jul 04, 2013 at 06:29:23PM +0300, Alex Lyakas wrote:
-> >> > @@ -7363,6 +7365,12 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> >> >         wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
-> >> >
-> >> >         while (1) {
-> >> > +               if (!for_reloc && btrfs_fs_closing(root->fs_info)) {
-> >> > +                       pr_debug("btrfs: drop snapshot early exit\n");
-> >> > +                       err = -EAGAIN;
-> >> > +                       goto out_end_trans;
-> >> > +               }
-> >> Here you exit the loop, but the "drop_progress" in the root item is
-> >> incorrect. When the system is remounted, and snapshot deletion
-> >> resumes, it seems that it tries to resume from the EXTENT_ITEM that
-> >> does not exist anymore, and [1] shows that btrfs_lookup_extent_info()
-> >> simply does not find the needed extent.
-> >> So then I hit panic in walk_down_tree():
-> >> BUG: wc->refs[level - 1] == 0
-> >>
-> >> I fixed it like follows:
-> >> There is a place where btrfs_drop_snapshot() checks if it needs to
-> >> detach from transaction and re-attach. So I moved the exit point there
-> >> and the code is like this:
-> >>
-> >>               if (btrfs_should_end_transaction(trans, tree_root) ||
-> >>                       (!for_reloc && btrfs_need_cleaner_sleep(root))) {
-> >>                       ret = btrfs_update_root(trans, tree_root,
-> >>                                               &root->root_key,
-> >>                                               root_item);
-> >>                       if (ret) {
-> >>                               btrfs_abort_transaction(trans, tree_root, ret);
-> >>                               err = ret;
-> >>                               goto out_end_trans;
-> >>                       }
-> >>
-> >>                       btrfs_end_transaction_throttle(trans, tree_root);
-> >>                       if (!for_reloc && btrfs_need_cleaner_sleep(root)) {
-> >>                               err = -EAGAIN;
-> >>                               goto out_free;
-> >>                       }
-> >>                       trans = btrfs_start_transaction(tree_root, 0);
-> >> ...
-> >>
-> >> With this fix, I do not hit the panic, and snapshot deletion proceeds
-> >> and completes alright after mount.
-> >>
-> >> Do you agree to my analysis or I am missing something? It seems that
-> >> Josef's btrfs-next still has this issue (as does Chris's for-linus).
-> >
-> > Sound analysis and I agree with the fix. The clean-by-one patch has been
-> > merged into 3.10 so we need a stable fix for that.
-> Thanks for confirming, David!
-> 
-> From more testing, I have two more notes:
-> 
-> # After applying the fix, whenever snapshot deletion is resumed after
-> mount, and successfully completes, then I unmount again, and rmmod
-> btrfs, linux complains about loosing few "struct extent_buffer" during
-> kem_cache_delete().
-> So somewhere on that path:
-> if (btrfs_disk_key_objectid(&root_item->drop_progress) == 0) {
->     ...
-> 	} else {
->     ===> HERE
-> 
-> and later we perhaps somehow overwrite the contents of "struct
-> btrfs_path" that is used in the whole function. Because at the end of
-> the function we always do btrfs_free_path(), which inside does
-> btrfs_release_path().  I was not able to determine where the leak
-> happens, do you have any hint? No other activity happens in the system
-> except the resumed snap deletion, and this problem only happens when
-> resuming.
-> 
-> # This is for Josef: after I unmount the fs with ongoing snap deletion
-> (after applying my fix), and run the latest btrfsck - it complains a
-> lot about problems in extent tree:( But after I mount again, snap
-> deletion resumes then completes, then I unmount and btrfsck is happy
-> again. So probably it does not account orphan roots properly?
-> 
+> well, I think I will bite the bullet and defrag entire / overnight and
+> repeat the autodefrag mount option. That should work too.
 
-It should but it may not be working properly.  I know it works right for normal
-inodes, probably not too hard to fix it for snapshots, I'll throw it on the TODO
-list.  Thanks,
+and that worked. defragged all the mount points including files and dirs, 
+enabled autodefrag and reboot. Took about 2 hour to defrag the existing files.
 
-Josef
+but the filesystem is now extremely smooth. faster than ext4 I might say. sure 
+there are occasional stalls but they are more of noticable than annoyance and 
+thats pretty much compensated by the significant improvement in latency in 
+everything.
+
+fun fact, pg_test_fsync now reports 44 fsyncs per seconds instead of earlier 
+20. I don't know if that down to defragmentation or compression.
+
+Also another bigger disk of 500GB, the score is around 24 fsyncs per second. 
+So I suspect it has to do with tree size.
+
+anyways, good things overall
+
+thanks for the help and suggestions.
+
+
+-- 
+Regards
+ Shridhar

@@ -1,87 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39296 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751582Ab3GHRJ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Jul 2013 13:09:27 -0400
-Date: Mon, 8 Jul 2013 19:09:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Kusanagi Kouichi <slash@ac.auone-net.jp>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Fix automatic prerequisite generation
-Message-ID: <20130708170925.GD18204@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130706082232.1679715C03A@msa104.auone-net.jp>
- <20130708164607.GC18204@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130708164607.GC18204@twin.jikos.cz>
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:59840 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752374Ab3GEUha (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 16:37:30 -0400
+Received: by mail-wg0-f53.google.com with SMTP id y10so2281833wgg.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 13:37:28 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs-progs: fix optimization in btrfs_lookup_extent_info
+Date: Fri,  5 Jul 2013 21:36:46 +0100
+Message-Id: <1373056606-897-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1372952919-21010-1-git-send-email-fdmanana@gmail.com>
+References: <1372952919-21010-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 08, 2013 at 06:46:07PM +0200, David Sterba wrote:
-> On Sat, Jul 06, 2013 at 05:22:31PM +0900, Kusanagi Kouichi wrote:
-> > Some files don't compile because of insufficient prerequisite.
-> > 
-> > $ make btrfs
-> > ...
-> >     [CC]     btrfs.o
-> > btrfs.c:24:21: fatal error: version.h: No such file or directory
-> >  #include "version.h"
-> >                      ^
-> > compilation terminated.
-> > make: *** [btrfs.o] Error 1
-> 
-> Works great, thanks. I've noticed that DEPFLAGS is now unused and
-> removed it.
+If we did a tree search with the goal to find a metadata item
+but the search failed with return value 1, we attempt to see
+if in the same leaf there's a corresponding extent item, and if
+there's one, just use it instead of doing another tree search
+for this extent item. The check in the leaf was wrong because
+it was seeking for a metadata item instead of an extent item.
 
-Two more small things: the files were previously named .something.o.d and
-now they're something.d .
+This optimization was also being triggered incorrectly, as it
+was evaluating path->slots which always evaluates to true. The
+goal was to see if the leaf level slot was greater than zero
+(i.e. not the first item in the leaf).
 
-* .gitignore needs to be updated
-* I'd prefer to keep the suffix .o.d, the leading . has go away due to
-  the macro tricks
+V2: If previous leaf item is for a different object, ensure the
+search key has the target object id.
 
-I'll fold the following patch if you don't mind
+V3: Added Josef Bacik's review mention.
 
---- a/.gitignore
-+++ b/.gitignore
-@@ -1,6 +1,6 @@
- *.o
- *.static.o
--.*.o.d
-+*.o.d
- version.h
- version
- man/*.gz
-diff --git a/Makefile b/Makefile
-index 70880bc..849e3fe 100644
---- a/Makefile
-+++ b/Makefile
-@@ -76,8 +76,8 @@ else
-        check = true
- endif
+Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ extent-tree.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
--%.d: %.c
--       $(Q)$(CC) -MM -MG -MF $@ -MT $(@:.d=.o) -MT $(@:.d=.static.o) -MT $@ $(AM_CFLAGS) $(CFLAGS) $<
-+%.o.d: %.c
-+       $(Q)$(CC) -MM -MG -MF $@ -MT $(@:.o.d=.o) -MT $(@:.o.d=.static.o) -MT $@ $(AM_CFLAGS) $(CFLAGS) $<
-
- .c.o:
-        $(Q)$(check) $<
-@@ -186,7 +186,7 @@ install-man:
-
- clean :
-        @echo "Cleaning"
--       $(Q)rm -f $(progs) cscope.out *.o *.d btrfs-convert btrfs-image btrfs-select-super \
-+       $(Q)rm -f $(progs) cscope.out *.o *.o.d btrfs-convert btrfs-image btrfs-select-super \
-              btrfs-zero-log btrfstune dir-test ioctl-test quick-test send-test btrfsck \
-              btrfs.static mkfs.btrfs.static btrfs-calc-size \
-              version.h \
-@@ -205,5 +205,5 @@ install: $(libs) $(progs) install-man
-        $(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
-
- ifneq ($(MAKECMDGOALS),clean)
---include $(objects:.o=.d) $(cmd-objects:.o=.d) $(subst .btrfs,, $(filter-out btrfsck.d, $(progs:=.d)))
-+-include $(objects:.o=.o.d) $(cmd-objects:.o=.o.d) $(subst .btrfs,, $(filter-out btrfsck.o.d, $(progs:=.o.d)))
- endif
+diff --git a/extent-tree.c b/extent-tree.c
+index b0cfe0a..875dea9 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -1515,17 +1515,19 @@ again:
+ 	 * to make sure.
+ 	 */
+ 	if (ret > 0 && metadata) {
+-		if (path->slots) {
++		if (path->slots[0]) {
+ 			path->slots[0]--;
+ 			btrfs_item_key_to_cpu(path->nodes[0], &key,
+ 					      path->slots[0]);
+ 			if (key.objectid == bytenr &&
+-			    key.type == BTRFS_METADATA_ITEM_KEY)
++			    key.type == BTRFS_EXTENT_ITEM_KEY &&
++			    key.offset == root->leafsize)
+ 				ret = 0;
+ 		}
+ 
+ 		if (ret) {
+ 			btrfs_release_path(root, path);
++			key.objectid = bytenr;
+ 			key.type = BTRFS_EXTENT_ITEM_KEY;
+ 			key.offset = root->leafsize;
+ 			metadata = 0;
+-- 
+1.7.9.5
 

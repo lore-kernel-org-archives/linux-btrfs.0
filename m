@@ -1,62 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:43406 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756742Ab3GEUc3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 16:32:29 -0400
-Received: by mail-wg0-f45.google.com with SMTP id j13so2311062wgh.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 13:32:28 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: optimize btrfs_lookup_extent_info()
-Date: Fri,  5 Jul 2013 21:32:05 +0100
-Message-Id: <1373056325-622-1-git-send-email-fdmanana@gmail.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:53025 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753553Ab3GEVHz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 17:07:55 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 884717C069D
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2013 15:07:55 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id ePBwFcwRyK4hJiFN (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2013 15:07:55 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: set lockdep class before locking new extent buffer
+Date: Fri, 5 Jul 2013 17:07:52 -0400
+Message-ID: <1373058472-13834-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we're looking for a metadata item in the tree and the
-search fails with return value of 1, and the slot doesn't
-point to the first item in the leaf, check if the previous
-item in the leaf corresponds to an extent item for the same
-object id - if it does, then don't do another tree search
-to get it.
+We've been seeing spurious complaints out of lockdep because the lock class name
+changes.  This is happening because when we drop a snapshot we will lock a block
+before we've read it in, which sets the lockdep class to whatever the default
+is.  Then once we read the thing in we reset the lockdep class to what it is
+supposed to be, which blows lockdeps' mind.  This patch should fix the problem,
+it appears to be the only place where we do this sort of thing.  Thanks,
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/extent-tree.c |   20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0236de7..dd8c7f3 100644
+index 0236de7..d275681 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -771,10 +771,22 @@ again:
- 		goto out_free;
- 
- 	if (ret > 0 && metadata && key.type == BTRFS_METADATA_ITEM_KEY) {
--		key.type = BTRFS_EXTENT_ITEM_KEY;
--		key.offset = root->leafsize;
--		btrfs_release_path(path);
--		goto again;
-+		if (path->slots[0]) {
-+			path->slots[0]--;
-+			btrfs_item_key_to_cpu(path->nodes[0], &key,
-+					      path->slots[0]);
-+			if (key.objectid == bytenr &&
-+			    key.type == BTRFS_EXTENT_ITEM_KEY &&
-+			    key.offset == root->leafsize)
-+				ret = 0;
-+		}
-+		if (ret) {
-+			key.objectid = bytenr;
-+			key.type = BTRFS_EXTENT_ITEM_KEY;
-+			key.offset = root->leafsize;
-+			btrfs_release_path(path);
-+			goto again;
-+		}
+@@ -7173,6 +7173,8 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
+ 		if (!next)
+ 			return -ENOMEM;
++		btrfs_set_buffer_lockdep_class(root->root_key.objectid, next,
++					       level - 1);
+ 		reada = 1;
  	}
- 
- 	if (ret == 0) {
+ 	btrfs_tree_lock(next);
 -- 
-1.7.9.5
+1.7.7.6
 

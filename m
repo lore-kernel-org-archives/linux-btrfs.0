@@ -1,54 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47501 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:48171 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753087Ab3GHVgc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Jul 2013 17:36:32 -0400
-Date: Mon, 8 Jul 2013 23:36:27 +0200
+	id S1751322Ab3GHVyt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Jul 2013 17:54:49 -0400
+Date: Mon, 8 Jul 2013 23:54:46 +0200
 From: David Sterba <dsterba@suse.cz>
-To: =?iso-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
-Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
-Subject: Re: Scrub causes oom after removal of failed disk (linux 3.10)
-Message-ID: <20130708213627.GG18204@twin.jikos.cz>
+To: Andrew Vagin <avagin@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+        kzak@redhat.com, xemul@openvz.org, Mark Fasheh <mfasheh@suse.com>
+Subject: Re: btrfs: stat(2) and /proc/pid/maps returns different devices
+Message-ID: <20130708215446.GH18204@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <51D46F04.6010301@skagestad.org>
+References: <20130704095138.GB12359@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <51D46F04.6010301@skagestad.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130704095138.GB12359@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 03, 2013 at 08:35:48PM +0200, Torbjørn wrote:
-> Hi btrfs devs,
-> 
-> I have a btrfs raid10 array consisting of 2TB drives.
-> 
-> I added a new drive to the array, then balanced.
-> The balance failed after ~50GB was moved to the new drive.
-> The balance fixed lots of errors according to dmesg.
-> 
-> Server rebooted
-> 
-> The newly added drive were no longer detected as a btrfs disk.
-> The array was then mounted -o recovery
-> I ran btrfs dev del missing, and everything seemed to be fine.
-> 
-> After this I ran a scrub on the array.
-> The scrub was soon stopped by the oom-killer.
-> 
-> After another reboot I started a new scrub.
-> About 3TB into the scrub over 10 GB of memory was being consumed.
-> The scrub had then fixed roughly 3,000,000 errors.
-> 
-> Canceling the scrub and resuming it frees the 10 GB of memory.
+On Thu, Jul 04, 2013 at 01:51:38PM +0400, Andrew Vagin wrote:
+> We are not first who suffer from this problem:
+> https://bugzilla.redhat.com/show_bug.cgi?id=711881
+> http://marc.info/?l=linux-btrfs&m=130074451403261
+> https://bugzilla.openvz.org/show_bug.cgi?id=2653
 
-Thanks for the report.
+> And about 2 years ago Mark Fasheh tried to fix this problem:
+> http://thr3ads.net/btrfs-devel/2011/05/2346176-RFC-PATCH-0-2-btrfs-vfs-Return-same-device-in-stat-2-and-proc-pid-maps
+> 
+> Eric Biederman sugested to not create a new method and use vfs_getattr,
+> but here is a few problems:
+> * fanotify doesn't have dentry, but its fdinfo contains device.
+> * vfs_getattr can fail and which device should be shown in this case?
+> * vfs_getattr gets much more parameters, so here is a question about
+>   performance degradation.
+> 
+> So I have a question: Can two inodes from different subvolumes have
+> equal inode numbers?
 
-This looks like the same problem that was fixed by
-https://patchwork.kernel.org/patch/2697501/
-Btrfs: free csums when we're done scrubbing an extent
+Yes, subvolumes are separate inode number spaces.
 
-but I don't see it included in the current for-linus branch. We want
-this in the 3.10.x stable series and according to stable tree policy it
-has to be merged into Linus' tree first.
+> If someone have any suggestions how to fix this problem or any
+> explanation why this is not a problem at all, please write here.
+
+The xstat syscall instead of the potentially heavyweight vfs_getattr
+could fix that, but it's not merged. For suse kernels we've taken the
+hackish approach of patching fs/proc/task_mmu.c:show_map_vma() (and the
+nommu variant) and use vfs_getattr only for btrfs.
+
+http://kernel.opensuse.org/cgit/kernel-source/tree/patches.suse/btrfs-use-correct-device-for-maps.patch?id=2434fa6ee93a83b117461eb13f24272606677fec
+
+Only a temporary and not upstreamable solution, but without it the core
+packaging tool zypper would not work correctly.
 
 david

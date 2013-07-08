@@ -1,95 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f43.google.com ([209.85.214.43]:46783 "EHLO
-	mail-bk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750977Ab3GEWiD convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2013 18:38:03 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20130705204129.GB15943@logfs.org>
-References: <1370280485-10047-1-git-send-email-joern@logfs.org>
-	<20130705204100.GA15943@logfs.org>
-	<20130705204129.GB15943@logfs.org>
-Date: Fri, 5 Jul 2013 23:38:01 +0100
-Message-ID: <CAL3q7H75aO8YvJLppif88P=CumfA8WjHUTfwEcZSvL+MUu8tJw@mail.gmail.com>
-Subject: Re: [PATCH 1/2] list: add list_del_each_entry
-From: Filipe David Manana <fdmanana@gmail.com>
-To: =?UTF-8?Q?J=C3=B6rn_Engel?= <joern@logfs.org>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:33590 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750793Ab3GHEhQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Jul 2013 00:37:16 -0400
+Date: Mon, 8 Jul 2013 14:37:09 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: =?iso-8859-1?Q?J=F6rn?= Engel <joern@logfs.org>
 Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] introduce list_for_each_entry_del
+Message-ID: <20130708043709.GB3438@dastard>
+References: <1370280485-10047-1-git-send-email-joern@logfs.org>
+ <20130705204100.GA15943@logfs.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <20130705204100.GA15943@logfs.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 5, 2013 at 9:41 PM, JÃ¶rn Engel <joern@logfs.org> wrote:
-> I have seen a lot of boilerplate code that either follows the pattern of
->         while (!list_empty(head)) {
->                 pos = list_entry(head->next, struct foo, list);
->                 list_del(pos->list);
->                 ...
->         }
-> or some variant thereof.
->
-> With this patch in, people can use
->         list_del_each_entry(pos, head, list) {
->                 ...
->         }
->
-> The patch also adds a list_del_each variant, even though I have
-> only found a single user for that one so far.
->
-> Signed-off-by: Joern Engel <joern@logfs.org>
-> ---
->  include/linux/list.h |   18 ++++++++++++++++++
->  1 file changed, 18 insertions(+)
->
-> diff --git a/include/linux/list.h b/include/linux/list.h
-> index 6a1f8df..ab39c7d 100644
-> --- a/include/linux/list.h
-> +++ b/include/linux/list.h
-> @@ -557,6 +557,24 @@ static inline void list_splice_tail_init(struct list_head *list,
->  #define list_safe_reset_next(pos, n, member)                           \
->         n = list_entry(pos->member.next, typeof(*pos), member)
->
-> +/**
-> + * list_del_each - removes an entry from the list until it is empty
-> + * @pos:       the &struct list_head to use as a loop cursor.
-> + * @head:      the head of your list.
-> + */
-> +#define list_del_each(pos, head) \
-> +       while (list_empty(head) ? 0 : (pos = (head)->next, list_del(pos), 1))
-> +
-> +/**
-> + * list_del_each_entry - removes an entry from the list until it is empty
-> + * @pos:       the type * to use as loop cursor.
-> + * @head:      the head of your list.
-> + * @member:    the name of the list_struct within the struct
-> + */
-> +#define list_del_each_entry(pos, head, member) \
-> +       while (list_empty(head) && (pos = list_first_entry((head), \
-> +               typeof(*pos), member), list_del((head)->next), 1))
-> +
+On Fri, Jul 05, 2013 at 04:41:00PM -0400, Jörn Engel wrote:
+> On Mon, 3 June 2013 13:28:03 -0400, Joern Engel wrote:
+> > 
+> > A purely janitorial patchset.  A fairly common pattern is to take a
+> > list, remove every object from it and do something with this object -
+> > usually kfree() some variant.  A stupid grep identified roughly 300
+> > instances, with many more hidden behind more complicated patterns to
+> > achieve the same end results.
+> 
+> Next version of the same patchset.  Object size is shrinking now, at
+> least for the one compiler I tested.  And a few kernel hackers met on
+> a frozen lake in hell with pigs flying overhead and could actually
+> agree on a name.  While I am sure almost every reader will still
+> disagree and have one or two better suggestions, I would like to use
+> this historical moment.
+> 
+> list_del_each and list_del_each_entry is shall be!
 
-Shouldn't it be while (!list_empty(head) ... ?
-(not operator addition)
+Can you add _init variants to this? There are many loops that
+actually require list_del_init() rather than list_del()...
 
-thanks
+Cheers,
 
->  /*
->   * Double linked lists with a single pointer list head.
->   * Mostly useful for hash tables where the two pointer list head is
-> --
-> 1.7.10.4
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
---
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

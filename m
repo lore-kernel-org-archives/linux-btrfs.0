@@ -1,55 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33309 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751245Ab3GIBRe convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jul 2013 21:17:34 -0400
-Message-ID: <51DB64D5.90807@cn.fujitsu.com>
-Date: Tue, 09 Jul 2013 09:18:13 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from [85.19.192.18] ([85.19.192.18]:32911 "EHLO mail.itpas.no"
+	rhost-flags-FAIL-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751070Ab3GIEYx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Jul 2013 00:24:53 -0400
+Message-ID: <51DB8E78.1080604@itpas.no>
+Date: Tue, 09 Jul 2013 06:15:52 +0200
+From: =?ISO-8859-1?Q?Torbj=F8rn_Skagestad?= <torbjorn@itpas.no>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Cleanup for using BTRFS_SETGET_STACK instead of
- raw convert
-References: <1372989690-4880-1-git-send-email-quwenruo@cn.fujitsu.com> <20130708132455.GA18204@twin.jikos.cz>
-In-Reply-To: <20130708132455.GA18204@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: dsterba@suse.cz, =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>,
+        linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
+Subject: Re: Scrub causes oom after removal of failed disk (linux 3.10)
+References: <51D46F04.6010301@skagestad.org> <20130708213627.GG18204@twin.jikos.cz>
+In-Reply-To: <20130708213627.GG18204@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-于 2013年07月08日 21:24, David Sterba 写道:
-> On Fri, Jul 05, 2013 at 10:01:30AM +0800, Qu Wenruo wrote:
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -2807,6 +2846,14 @@ static inline unsigned long btrfs_leaf_data(struct extent_buffer *l)
->>   
->>   /* struct btrfs_file_extent_item */
->>   BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);
->> +BTRFS_SETGET_STACK_FUNCS(stack_file_extent_bytenr,
->> +			 struct btrfs_file_extent_item, disk_bytenr, 64);
-> Please use the struct member name in the macro name, ie.
-> stack_file_extent_disk_bytenr
-Thanks for pointing out the problem.
-I'll change the macro name and send a new patch.
-
+On 07/08/2013 11:36 PM, David Sterba wrote:
+> On Wed, Jul 03, 2013 at 08:35:48PM +0200, Torbj�rn wrote:
+>> Hi btrfs devs,
+>>
+>> I have a btrfs raid10 array consisting of 2TB drives.
+>>
+>> I added a new drive to the array, then balanced.
+>> The balance failed after ~50GB was moved to the new drive.
+>> The balance fixed lots of errors according to dmesg.
+>>
+>> Server rebooted
+>>
+>> The newly added drive were no longer detected as a btrfs disk.
+>> The array was then mounted -o recovery
+>> I ran btrfs dev del missing, and everything seemed to be fine.
+>>
+>> After this I ran a scrub on the array.
+>> The scrub was soon stopped by the oom-killer.
+>>
+>> After another reboot I started a new scrub.
+>> About 3TB into the scrub over 10 GB of memory was being consumed.
+>> The scrub had then fixed roughly 3,000,000 errors.
+>>
+>> Canceling the scrub and resuming it frees the 10 GB of memory.
+> Thanks for the report.
 >
-> otherwise ok,
-> Reviewed-by: David Sterba <dsterba@suse.cz>
+> This looks like the same problem that was fixed by
+> https://patchwork.kernel.org/patch/2697501/
+> Btrfs: free csums when we're done scrubbing an extent
+>
+> but I don't see it included in the current for-linus branch. We want
+> this in the 3.10.x stable series and according to stable tree policy it
+> has to be merged into Linus' tree first.
+>
+> david
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
 
+Ok, thanks
 
--- 
------------------------------------------------------
-Qu Wenruo
-Development Dept.I
-Nanjing Fujitsu Nanda Software Tech. Co., Ltd.(FNST)
-No. 6 Wenzhu Road, Nanjing, 210012, China
-TEL: +86+25-86630566-8526
-COINS: 7998-8526
-FAX: +86+25-83317685
-MAIL: quwenruo@cn.fujitsu.com
------------------------------------------------------
-
+--
+Torbj�rn

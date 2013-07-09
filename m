@@ -1,138 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f181.google.com ([74.125.82.181]:44107 "EHLO
-	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751761Ab3GISuZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jul 2013 14:50:25 -0400
-Received: by mail-we0-f181.google.com with SMTP id p58so4992144wes.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jul 2013 11:50:24 -0700 (PDT)
+Received: from mail-wg0-f49.google.com ([74.125.82.49]:52096 "EHLO
+	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752180Ab3GISu1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jul 2013 14:50:27 -0400
+Received: by mail-wg0-f49.google.com with SMTP id a12so5222665wgh.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jul 2013 11:50:25 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 1/2] Btrfs-progs: remove duplicated code in cmds-restore.c
-Date: Tue,  9 Jul 2013 19:49:53 +0100
-Message-Id: <1373395794-29140-2-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH 2/2] Btrfs-progs: remove unneeded leaf checks in cmds-restore
+Date: Tue,  9 Jul 2013 19:49:54 +0100
+Message-Id: <1373395794-29140-3-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1373395794-29140-1-git-send-email-fdmanana@gmail.com>
 References: <1373395794-29140-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The module cmds-restore.c was defining its own next_leaf()
-function, which did exactly the same as btrfs_next_leaf()
-from ctree.c.
+If btrfs_search_slot() returns a value >= 0, then we can be
+sure that path->nodes[i] is not NULL for each i between 0 to
+tree height - 1. The function btrfs_next_leaf() also ensures
+any path->nodes[i] is not NULL as long as it returns 0.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- cmds-restore.c |   62 +++++---------------------------------------------------
- 1 file changed, 5 insertions(+), 57 deletions(-)
+ cmds-restore.c |  118 ++++++++++++++++++--------------------------------------
+ 1 file changed, 37 insertions(+), 81 deletions(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index eca528d..ed4815a 100644
+index ed4815a..baa9cab 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
-@@ -148,58 +148,6 @@ static int decompress(char *inbuf, char *outbuf, u64 compress_len,
- 	return -1;
- }
- 
--int next_leaf(struct btrfs_root *root, struct btrfs_path *path)
--{
--	int slot;
--	int level = 1;
--	struct extent_buffer *c;
--	struct extent_buffer *next = NULL;
--
--	for (; level < BTRFS_MAX_LEVEL; level++) {
--		if (path->nodes[level])
--			break;
--	}
--
--	if (level == BTRFS_MAX_LEVEL)
--		return 1;
--
--	slot = path->slots[level] + 1;
--
--	while(level < BTRFS_MAX_LEVEL) {
--		if (!path->nodes[level])
--			return 1;
--
--		slot = path->slots[level] + 1;
--		c = path->nodes[level];
--		if (slot >= btrfs_header_nritems(c)) {
--			level++;
--			if (level == BTRFS_MAX_LEVEL)
--				return 1;
--			continue;
--		}
--
--		if (path->reada)
--			reada_for_search(root, path, level, slot, 0);
--
--		next = read_node_slot(root, c, slot);
--		break;
--	}
--	path->slots[level] = slot;
--	while(1) {
--		level--;
--		c = path->nodes[level];
--		free_extent_buffer(c);
--		path->nodes[level] = next;
--		path->slots[level] = 0;
--		if (!level)
--			break;
--		if (path->reada)
--			reada_for_search(root, path, level, 0, 0);
--		next = read_node_slot(root, next, 0);
--	}
--	return 0;
--}
--
- static int copy_one_inline(int fd, struct btrfs_path *path, u64 pos)
- {
- 	struct extent_buffer *leaf = path->nodes[0];
-@@ -447,7 +395,7 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
+@@ -394,21 +394,6 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
+ 	}
  
  	leaf = path->nodes[0];
- 	while (!leaf) {
--		ret = next_leaf(root, path);
-+		ret = btrfs_next_leaf(root, path);
- 		if (ret < 0) {
- 			fprintf(stderr, "Error getting next leaf %d\n",
- 				ret);
-@@ -470,7 +418,7 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
+-	while (!leaf) {
+-		ret = btrfs_next_leaf(root, path);
+-		if (ret < 0) {
+-			fprintf(stderr, "Error getting next leaf %d\n",
+-				ret);
+-			btrfs_free_path(path);
+-			return ret;
+-		} else if (ret > 0) {
+-			/* No more leaves to search */
+-			btrfs_free_path(path);
+-			return 0;
+-		}
+-		leaf = path->nodes[0];
+-	}
+-
+ 	while (1) {
+ 		if (loops++ >= 1024) {
+ 			ret = ask_to_continue(file);
+@@ -417,19 +402,17 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
+ 			loops = 0;
  		}
  		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			do {
--				ret = next_leaf(root, path);
-+				ret = btrfs_next_leaf(root, path);
- 				if (ret < 0) {
- 					fprintf(stderr, "Error searching %d\n", ret);
- 					btrfs_free_path(path);
-@@ -569,7 +517,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		if (verbose > 1)
- 			printf("No leaf after search, looking for the next "
- 			       "leaf\n");
--		ret = next_leaf(root, path);
-+		ret = btrfs_next_leaf(root, path);
- 		if (ret < 0) {
- 			fprintf(stderr, "Error getting next leaf %d\n",
- 				ret);
-@@ -596,7 +544,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+-			do {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret < 0) {
+-					fprintf(stderr, "Error searching %d\n", ret);
+-					btrfs_free_path(path);
+-					return ret;
+-				} else if (ret) {
+-					/* No more leaves to search */
+-					btrfs_free_path(path);
+-					goto set_size;
+-				}
+-				leaf = path->nodes[0];
+-			} while (!leaf);
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0) {
++				fprintf(stderr, "Error searching %d\n", ret);
++				btrfs_free_path(path);
++				return ret;
++			} else if (ret) {
++				/* No more leaves to search */
++				btrfs_free_path(path);
++				goto set_size;
++			}
++			leaf = path->nodes[0];
+ 			continue;
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+@@ -513,27 +496,6 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 	}
+ 
+ 	leaf = path->nodes[0];
+-	while (!leaf) {
+-		if (verbose > 1)
+-			printf("No leaf after search, looking for the next "
+-			       "leaf\n");
+-		ret = btrfs_next_leaf(root, path);
+-		if (ret < 0) {
+-			fprintf(stderr, "Error getting next leaf %d\n",
+-				ret);
+-			btrfs_free_path(path);
+-			return ret;
+-		} else if (ret > 0) {
+-			/* No more leaves to search */
+-			if (verbose)
+-				printf("Reached the end of the tree looking "
+-				       "for the directory\n");
+-			btrfs_free_path(path);
+-			return 0;
+-		}
+-		leaf = path->nodes[0];
+-	}
+-
+ 	while (leaf) {
+ 		if (loops++ >= 1024) {
+ 			printf("We have looped trying to restore files in %s "
+@@ -543,24 +505,22 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 		}
  
  		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			do {
--				ret = next_leaf(root, path);
-+				ret = btrfs_next_leaf(root, path);
- 				if (ret < 0) {
- 					fprintf(stderr, "Error searching %d\n",
- 						ret);
-@@ -937,7 +885,7 @@ again:
+-			do {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret < 0) {
+-					fprintf(stderr, "Error searching %d\n",
+-						ret);
+-					btrfs_free_path(path);
+-					return ret;
+-				} else if (ret > 0) {
+-					/* No more leaves to search */
+-					if (verbose)
+-						printf("Reached the end of "
+-						       "the tree searching the"
+-						       " directory\n");
+-					btrfs_free_path(path);
+-					return 0;
+-				}
+-				leaf = path->nodes[0];
+-			} while (!leaf);
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0) {
++				fprintf(stderr, "Error searching %d\n",
++					ret);
++				btrfs_free_path(path);
++				return ret;
++			} else if (ret > 0) {
++				/* No more leaves to search */
++				if (verbose)
++					printf("Reached the end of "
++					       "the tree searching the"
++					       " directory\n");
++				btrfs_free_path(path);
++				return 0;
++			}
++			leaf = path->nodes[0];
+ 			continue;
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+@@ -884,20 +844,16 @@ again:
+ 		ret = 0;
  		goto out;
  	}
- 	do {
--		ret = next_leaf(root, path);
-+		ret = btrfs_next_leaf(root, path);
- 		if (ret < 0) {
- 			fprintf(stderr, "Error getting next leaf %d\n",
- 				ret);
+-	do {
+-		ret = btrfs_next_leaf(root, path);
+-		if (ret < 0) {
+-			fprintf(stderr, "Error getting next leaf %d\n",
+-				ret);
+-			goto out;
+-		} else if (ret > 0) {
+-			fprintf(stderr, "No more leaves\n");
+-			goto out;
+-		}
+-	} while (!path->nodes[0]);
+-	if (path->nodes[0])
+-		goto again;
+-	printf("Couldn't find a dir index item\n");
++	ret = btrfs_next_leaf(root, path);
++	if (ret < 0) {
++		fprintf(stderr, "Error getting next leaf %d\n",
++			ret);
++		goto out;
++	} else if (ret > 0) {
++		fprintf(stderr, "No more leaves\n");
++		goto out;
++	}
++	goto again;
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
 -- 
 1.7.9.5
 

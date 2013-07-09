@@ -1,56 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50958 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50967 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752113Ab3GIQii (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Jul 2013 12:38:38 -0400
+	id S1752113Ab3GIQiv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Jul 2013 12:38:51 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D9CA3A51FE
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 18:38:36 +0200 (CEST)
+	by mx2.suse.de (Postfix) with ESMTP id 3B24FA51FE
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 18:38:50 +0200 (CEST)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: Fix getopt on arm/ppc platforms
-Date: Tue,  9 Jul 2013 18:38:29 +0200
-Message-Id: <1373387909-30885-1-git-send-email-dsterba@suse.cz>
+Cc: Michal Marek <mmarek@suse.cz>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: fix duplicate __[su]* typedefs on ppc64
+Date: Tue,  9 Jul 2013 18:38:46 +0200
+Message-Id: <1373387926-30937-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(same as commit bb0eabc383e9a3fde7cdb02591ca88243f3e31fb)
-There, 'char' is unsigned, so once assigned '-1' from getopt, it gets
-the value 255. Then, it compared to '-1' gives false.
+From: Michal Marek <mmarek@suse.cz>
 
+The <ext2fs/ext2_types.h> header does attempt to avoid conflicts with
+<linux/types.h>, but on ppc64, <asm-generic/int-ll64.h> gets somehow
+included by other headers.
+
+Include <linux/types.h> explicitly, so that <ext2fs/ext2_types.h>
+notices it. The proper fix would be to fix <ext2fs/ext2_types.h> to not
+use its own typedefs.
+
+Originally observed in btrfs-convert, put the include into kerncompat.h
+to avoid future problems.
+
+Signed-off-by: Michal Marek <mmarek@suse.cz>
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- btrfs-crc.c   | 2 +-
- cmds-device.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ kerncompat.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/btrfs-crc.c b/btrfs-crc.c
-index e4cda43..1990534 100644
---- a/btrfs-crc.c
-+++ b/btrfs-crc.c
-@@ -34,7 +34,7 @@ void usage(void)
+diff --git a/kerncompat.h b/kerncompat.h
+index 9c116b4..6584818 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -26,6 +26,7 @@
+ #include <endian.h>
+ #include <byteswap.h>
+ #include <assert.h>
++#include <linux/types.h>
  
- int main(int argc, char **argv)
- {
--	char c;
-+	int c;
- 	unsigned long checksum = 0;
- 	char *str;
- 	char *buf;
-diff --git a/cmds-device.c b/cmds-device.c
-index 41e79d3..9e7328b 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -294,7 +294,7 @@ static int cmd_dev_stats(int argc, char **argv)
- 	int ret;
- 	int fdmnt;
- 	int i;
--	char c;
-+	int c;
- 	int err = 0;
- 	__u64 flags = 0;
- 
+ #ifndef READ
+ #define READ 0
 -- 
 1.8.2
 

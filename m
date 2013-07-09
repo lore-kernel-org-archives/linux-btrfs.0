@@ -1,56 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36685 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754056Ab3GJPvt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 11:51:49 -0400
-Date: Wed, 10 Jul 2013 17:51:46 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        zab@redhat.com
-Subject: Re: [PATCH] btrfs-progs: per-thread, per-call pretty buffer
-Message-ID: <20130710155146.GC25386@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20130709202443.GJ18717@lenny.home.zabbo.net>
- <1373466615-30013-1-git-send-email-dsterba@suse.cz>
- <F21C2CD4-347F-469F-99A8-BE41D0B530A2@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <F21C2CD4-347F-469F-99A8-BE41D0B530A2@gmail.com>
+Received: from mail-we0-f181.google.com ([74.125.82.181]:59987 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752931Ab3GIUbo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jul 2013 16:31:44 -0400
+Received: by mail-we0-f181.google.com with SMTP id p58so5078700wes.40
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jul 2013 13:31:43 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs-progs: update usage message for cmds-restore
+Date: Tue,  9 Jul 2013 21:31:37 +0100
+Message-Id: <1373401897-31850-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 10, 2013 at 11:31:17PM +0800, Wang Shilong wrote:
-> Hello David,
-> 
-> > From: Zach Brown <zab@redhat.com>
-> > 
-> duplicate information.
+Mention that a target path argument is mandatory unless
+the -l option is supplied. Also mention about the existence
+of the -l option, which was previously not announced.
 
-git-send-email tricked me, the line is not present in thre tree
+$ btrfs restore -v /dev/sdb3
+usage: btrfs restore [options] <device>
 
-> 
-> > From: Zach Brown <zab@redhat.com>
-> > 
-> > We don't need callers to manage string storage for each pretty_sizes()
-> > call.  We can use a macro to have per-thread and per-call static storage
-> > so that pretty_sizes() can be used as many times as needed in printf()
-> > arguments without requiring a bunch of supporting variables.
-> > 
-> > This lets us have a natural interface at the cost of requiring __thread
-> > and TLS from gcc and a small amount of static storage.  This seems
-> > better than the current code or doing something with illegible format
-> > specifier macros.
-> > 
-> > Signed-off-by: Zach Brown <zab@redhat.com>
-> > Signed-off-by: David Sterba <dsterba@suse.cz>
-> 
-> OK.  please add my tag: Acked-by: Wang Shilong <wangs.fnst@cn.fujitsu.com>
->  (I have given my tag in the previous thread to Zach and cc to you!)
-> 
-> Zach gives a better solution,but i at least report and try for it. Isn't it?
+    Try to restore files from a damaged filesystem (unmounted)
 
-Oh sorry, I'll add the tag of course, I was so excited with zach's patch
-and missed it.
+    -s              get snapshots
+    -v              verbose
+    -i              ignore errors
+    -o              overwrite
+    -t              tree location
+    -f <offset>     filesystem location
+    -u <block>      super mirror
+    -d              find dir
+$ echo $?
+129
 
-david
+After specifying a target path, the command works as expected:
+
+$ btrfs restore -v /dev/sdb3 files2/
+Restoring files2/file1
+Done searching
+$ echo $?
+0
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ cmds-restore.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/cmds-restore.c b/cmds-restore.c
+index eca528d..70ebb9f 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -956,7 +956,7 @@ out:
+ }
+ 
+ const char * const cmd_restore_usage[] = {
+-	"btrfs restore [options] <device>",
++	"btrfs restore [options] <device> <path> | btrfs restore -l <device>",
+ 	"Try to restore files from a damaged filesystem (unmounted)",
+ 	"",
+ 	"-s              get snapshots",
+@@ -967,6 +967,7 @@ const char * const cmd_restore_usage[] = {
+ 	"-f <offset>     filesystem location",
+ 	"-u <block>      super mirror",
+ 	"-d              find dir",
++	"-l              list roots",
+ 	NULL
+ };
+ 
+-- 
+1.7.9.5
+

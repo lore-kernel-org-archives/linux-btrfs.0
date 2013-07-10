@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:36802 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753948Ab3GJPnk (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:48327 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750736Ab3GJQMK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 11:43:40 -0400
-Received: by mail-wi0-f182.google.com with SMTP id m6so6488716wiv.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 08:43:39 -0700 (PDT)
+	Wed, 10 Jul 2013 12:12:10 -0400
+Received: by mail-wi0-f171.google.com with SMTP id hj3so11597644wib.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 09:12:09 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs-progs: fix restore command leaving corrupted files
-Date: Wed, 10 Jul 2013 16:43:26 +0100
-Message-Id: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs-progs: fix restore command leaving corrupted files
+Date: Wed, 10 Jul 2013 17:11:55 +0100
+Message-Id: <1373472715-21850-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
+References: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -57,6 +59,17 @@ b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
 
 $ cat write_file.c:
 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <string.h>
+ #include <assert.h>
+
+ #define BUF_SIZE (60 * 1024 * 1024 + 33350)
+
 int main(int argc, char *argv[])
 {
 	int fd;
@@ -81,6 +94,10 @@ at least).
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+
+V2: updated commit message to include the C preprocessor macros
+    in the C program.
+
  cmds-restore.c |   13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:48327 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750736Ab3GJQMK (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:45526 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752571Ab3GJQRm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 12:12:10 -0400
-Received: by mail-wi0-f171.google.com with SMTP id hj3so11597644wib.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 09:12:09 -0700 (PDT)
+	Wed, 10 Jul 2013 12:17:42 -0400
+Received: by mail-wg0-f48.google.com with SMTP id f11so6074116wgh.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 09:17:40 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs-progs: fix restore command leaving corrupted files
-Date: Wed, 10 Jul 2013 17:11:55 +0100
-Message-Id: <1373472715-21850-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs-progs: fix restore command leaving corrupted files
+Date: Wed, 10 Jul 2013 17:17:32 +0100
+Message-Id: <1373473052-22240-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
 References: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -68,23 +68,26 @@ $ cat write_file.c:
  #include <string.h>
  #include <assert.h>
 
- #define BUF_SIZE (60 * 1024 * 1024 + 33350)
+ #define BUF_SIZE (1 * 1024 * 1024 + 350)
 
 int main(int argc, char *argv[])
 {
 	int fd;
-	unsigned char buf[BUF_SIZE];
+	unsigned char *buf = malloc(BUF_SIZE);
 
+	assert(buf != NULL);
 	if (argc < 2) {
 		fprintf(stderr, "Use:  %s filepath\n", argv[0]);
 		return 1;
 	}
+
 	fd = open(argv[1], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
 	assert(fd >= 0);
 	memset(buf, 0, BUF_SIZE);
 	buf[0] = 65;
 	assert(write(fd, buf, BUF_SIZE) == BUF_SIZE);
 	assert(close(fd) == 0);
+
 	return 0;
 }
 
@@ -97,6 +100,8 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 
 V2: updated commit message to include the C preprocessor macros
     in the C program.
+V3: updated commit message again to reflect the file size used in
+    the example in the C program macro.
 
  cmds-restore.c |   13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)

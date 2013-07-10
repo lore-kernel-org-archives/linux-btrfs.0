@@ -1,45 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:34993 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751196Ab3GJEYb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 00:24:31 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 7F85540AB1
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 14:18:20 +1000 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 19323-01 for <linux-btrfs@vger.kernel.org>;
- Wed, 10 Jul 2013 14:18:20 +1000 (EST)
-Received: from [128.250.103.226] (eris.vlsci.unimelb.edu.au [128.250.103.226])
-	by csamuel.org (Postfix) with ESMTPSA id EFFAE40AB0
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 14:18:19 +1000 (EST)
-Message-ID: <51DCE08A.8060008@csamuel.org>
-Date: Wed, 10 Jul 2013 14:18:18 +1000
-From: Chris Samuel <chris@csamuel.org>
+Received: from moutng.kundenserver.de ([212.227.126.171]:51638 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754393Ab3GJKxC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jul 2013 06:53:02 -0400
+Message-ID: <51DD3D0C.3060908@hiperscan.com>
+Date: Wed, 10 Jul 2013 12:53:00 +0200
+From: =?ISO-8859-1?Q?Franziska_N=E4pelt?=
+	<franziska.naepelt@hiperscan.com>
 MIME-Version: 1.0
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: performance loss with lots of snapshots
-References: <201307101254.44583.russell@coker.com.au>
-In-Reply-To: <201307101254.44583.russell@coker.com.au>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs crashes
+References: <51DA6039.9080107@hiperscan.com> <20130708132453.GH2260@localhost.localdomain>
+In-Reply-To: <20130708132453.GH2260@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hiya Russell,
+I created a bug:
 
-On 10/07/13 12:54, Russell Coker wrote:
+https://bugzilla.kernel.org/show_bug.cgi?id=60544
 
-> This has happened to me often enough that I can probably reproduce it on a VM.  
-> What kernel should I use for such tests?
-
-I'd suggest at least 3.10, and perhaps also Chris Mason's git tree here:
-
-https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/
-
-which is 3.10 plus the latest btrfs code that was merged by Linus into
-his master for 3.11 today.
-
-All the best,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Am 08.07.2013 15:24, schrieb Josef Bacik:
+> On Mon, Jul 08, 2013 at 08:46:17AM +0200, Franziska Näpelt wrote:
+>> Hi everybody,
+>>
+>> we are using a btrfs RAID 1 with four 2TB hard drives on a Debian 7.1
+>> (Kernel 3.9.6).
+>>
+>> After about one year of working, there was an error in messages log and the
+>> filesystem was mounted read-only.
+>>
+>> After that I restarted the system but that doesn't fix the bug. The
+>> btrfs-filesystem couldn't be mounted.
+>>
+>> I attach four logs:
+>>
+>> -> when the error occured
+>> -> after the error occured
+>> -> when rebooting the system
+>> -> when I tried ti mount manually
+>>
+>> Before I rebuilt the filesystem (formatting everything and creating a new
+>> btrfs-pool) I made a btrfs-image. I can provide it to you.
+>>
+>
+> Can you file a bugzilla at bugzilla.kernel.org (make sure the component is set
+> to btrfs) with all of this information and a link to the image, and the output
+> of btrfsck?  Please use the most recent version of btrfs-progs
+>
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+>
+> Thanks,
+>
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

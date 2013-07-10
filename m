@@ -1,83 +1,286 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56261 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751300Ab3GJMtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 08:49:18 -0400
-Date: Wed, 10 Jul 2013 14:49:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zach Brown <zab@redhat.com>
-Cc: Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2 1/2] Btrfs-progs: make pretty_sizes() work less error
- prone
-Message-ID: <20130710124916.GK18204@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1373191092-4316-1-git-send-email-wangshilong1991@gmail.com>
- <20130709202443.GJ18717@lenny.home.zabbo.net>
-MIME-Version: 1.0
+Received: from mail-pb0-f50.google.com ([209.85.160.50]:43830 "EHLO
+	mail-pb0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754619Ab3GJPbX convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jul 2013 11:31:23 -0400
+Received: by mail-pb0-f50.google.com with SMTP id wz7so6842010pbc.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 08:31:23 -0700 (PDT)
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130709202443.GJ18717@lenny.home.zabbo.net>
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH] btrfs-progs: per-thread, per-call pretty buffer
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <1373466615-30013-1-git-send-email-dsterba@suse.cz>
+Date: Wed, 10 Jul 2013 23:31:17 +0800
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Message-Id: <F21C2CD4-347F-469F-99A8-BE41D0B530A2@gmail.com>
+References: <20130709202443.GJ18717@lenny.home.zabbo.net> <1373466615-30013-1-git-send-email-dsterba@suse.cz>
+To: David Sterba <dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 09, 2013 at 01:24:43PM -0700, Zach Brown wrote:
-> > The original codes don't handle error gracefully and some places
-> > forget to free memory. We can allocate memory before calling pretty_sizes(),
-> > for example, we can use static memory allocation and we don't have to deal
-> > with memory allocation fails.
-> 
-> I agree that callers shouldn't have to know to free allocated memory.
-> 
-> But I think that we can do better and not have callers need to worry
-> about per-call string storage at all.
-> 
-> How about something like this?
+Hello David,
 
-Neat trick! A few neat-picks below. Besides, I guess we can use this
-sort of trick with the fi-df patches.
+> From: Zach Brown <zab@redhat.com>
+> 
+duplicate information.
 
+> From: Zach Brown <zab@redhat.com>
+> 
+> We don't need callers to manage string storage for each pretty_sizes()
+> call.  We can use a macro to have per-thread and per-call static storage
+> so that pretty_sizes() can be used as many times as needed in printf()
+> arguments without requiring a bunch of supporting variables.
+> 
+> This lets us have a natural interface at the cost of requiring __thread
+> and TLS from gcc and a small amount of static storage.  This seems
+> better than the current code or doing something with illegible format
+> specifier macros.
+> 
+> Signed-off-by: Zach Brown <zab@redhat.com>
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+
+OK.  please add my tag: Acked-by: Wang Shilong <wangs.fnst@cn.fujitsu.com>
+ (I have given my tag in the previous thread to Zach and cc to you!)
+
+Zach gives a better solution,but i at least report and try for it. Isn't it?
+
+Thanks
+Wang
+
+> ---
+> 
+> I've updated the rest of pretty_size callers in targets that were not built by
+> default.
+> 
+> btrfs-calc-size.c | 13 +++----------
+> btrfs-fragments.c |  2 +-
+> cmds-filesystem.c | 27 +++++++++------------------
+> cmds-scrub.c      |  8 ++++----
+> mkfs.c            |  4 +---
+> utils.c           | 19 ++++++++++---------
+> utils.h           | 10 +++++++++-
+> 7 files changed, 37 insertions(+), 46 deletions(-)
+> 
+> diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+> index c4adfb0..5aa0b70 100644
+> --- a/btrfs-calc-size.c
+> +++ b/btrfs-calc-size.c
+> @@ -162,18 +162,11 @@ out_print:
+> 		       stat.total_inline, stat.total_nodes, stat.total_leaves,
+> 		       level + 1);
+> 	} else {
+> -		char *total_size;
+> -		char *inline_size;
+> -
+> -		total_size = pretty_sizes(stat.total_bytes);
+> -		inline_size = pretty_sizes(stat.total_inline);
+> -
+> 		printf("\t%s total size, %s inline data, %Lu nodes, "
+> 		       "%Lu leaves, %d levels\n",
+> -		       total_size, inline_size, stat.total_nodes,
+> -		       stat.total_leaves, level + 1);
+> -		free(total_size);
+> -		free(inline_size);
+> +		       pretty_size(stat.total_bytes),
+> +		       pretty_size(stat.total_inline),
+> +		       stat.total_nodes, stat.total_leaves, level + 1);
+> 	}
+> out:
+> 	btrfs_free_path(path);
+> diff --git a/btrfs-fragments.c b/btrfs-fragments.c
+> index a012fe1..7ec77e7 100644
+> --- a/btrfs-fragments.c
+> +++ b/btrfs-fragments.c
+> @@ -87,7 +87,7 @@ print_bg(FILE *html, char *name, u64 start, u64 len, u64 used, u64 flags,
+> 
+> 	fprintf(html, "<p>%s chunk starts at %lld, size is %s, %.2f%% used, "
+> 		      "%.2f%% fragmented</p>\n", chunk_type(flags), start,
+> -		      pretty_sizes(len), 100.0 * used / len, 100.0 * frag);
+> +		      pretty_size(len), 100.0 * used / len, 100.0 * frag);
+> 	fprintf(html, "<img src=\"%s\" border=\"1\" />\n", name);
+> }
+> 
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index f41a72a..222e458 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -111,8 +111,6 @@ static int cmd_df(int argc, char **argv)
+> 
+> 	for (i = 0; i < sargs->total_spaces; i++) {
+> 		char description[80];
+> -		char *total_bytes;
+> -		char *used_bytes;
+> 		int written = 0;
+> 		u64 flags = sargs->spaces[i].flags;
+> 
+> @@ -155,10 +153,9 @@ static int cmd_df(int argc, char **argv)
+> 			written += 7;
+> 		}
+> 
+> -		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+> -		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
+> -		printf("%s: total=%s, used=%s\n", description, total_bytes,
+> -		       used_bytes);
+> +		printf("%s: total=%s, used=%s\n", description,
+> +			pretty_size(sargs->spaces[i].total_bytes),
+> +			pretty_size(sargs->spaces[i].used_bytes));
+> 	}
+> 	close(fd);
+> 	free(sargs);
+> @@ -192,7 +189,6 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+> 	char uuidbuf[37];
+> 	struct list_head *cur;
+> 	struct btrfs_device *device;
+> -	char *super_bytes_used;
+> 	u64 devs_found = 0;
+> 	u64 total;
+> 
+> @@ -204,25 +200,20 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+> 	else
+> 		printf("Label: none ");
+> 
+> -	super_bytes_used = pretty_sizes(device->super_bytes_used);
+> 
+> 	total = device->total_devs;
+> 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
+> -	       (unsigned long long)total, super_bytes_used);
+> -
+> -	free(super_bytes_used);
+> +	       (unsigned long long)total,
+> +	       pretty_size(device->super_bytes_used));
+> 
+> 	list_for_each(cur, &fs_devices->devices) {
+> -		char *total_bytes;
+> -		char *bytes_used;
+> 		device = list_entry(cur, struct btrfs_device, dev_list);
+> -		total_bytes = pretty_sizes(device->total_bytes);
+> -		bytes_used = pretty_sizes(device->bytes_used);
+> +
+> 		printf("\tdevid %4llu size %s used %s path %s\n",
+> 		       (unsigned long long)device->devid,
+> -		       total_bytes, bytes_used, device->name);
+> -		free(total_bytes);
+> -		free(bytes_used);
+> +		       pretty_size(device->total_bytes),
+> +		       pretty_size(device->bytes_used), device->name);
+> +
+> 		devs_found++;
+> 	}
+> 	if (devs_found < total) {
+> diff --git a/cmds-scrub.c b/cmds-scrub.c
+> index 95dfee3..bf50650 100644
+> --- a/cmds-scrub.c
+> +++ b/cmds-scrub.c
+> @@ -139,7 +139,6 @@ static void print_scrub_summary(struct btrfs_scrub_progress *p)
+> {
+> 	u64 err_cnt;
+> 	u64 err_cnt2;
+> -	char *bytes;
+> 
+> 	err_cnt = p->read_errors +
+> 			p->csum_errors +
+> @@ -151,10 +150,11 @@ static void print_scrub_summary(struct btrfs_scrub_progress *p)
+> 	if (p->malloc_errors)
+> 		printf("*** WARNING: memory allocation failed while scrubbing. "
+> 		       "results may be inaccurate\n");
+> -	bytes = pretty_sizes(p->data_bytes_scrubbed + p->tree_bytes_scrubbed);
+> -	printf("\ttotal bytes scrubbed: %s with %llu errors\n", bytes,
+> +
+> +	printf("\ttotal bytes scrubbed: %s with %llu errors\n",
+> +		pretty_size(p->data_bytes_scrubbed + p->tree_bytes_scrubbed),
+> 		max(err_cnt, err_cnt2));
+> -	free(bytes);
+> +
+> 	if (err_cnt || err_cnt2) {
+> 		printf("\terror details:");
+> 		PRINT_SCRUB_ERROR(p->read_errors, "read");
+> diff --git a/mkfs.c b/mkfs.c
+> index 95fceb3..ade85c7 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1356,7 +1356,6 @@ int main(int ac, char **av)
+> 	u64 num_of_meta_chunks = 0;
+> 	u64 size_of_data = 0;
+> 	u64 source_dir_size = 0;
+> -	char *pretty_buf;
+> 	struct btrfs_super_block *super;
+> 	u64 flags;
+> 	int dev_cnt = 0;
+> @@ -1629,8 +1628,7 @@ raid_groups:
+> 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+> 	    "sectorsize %u size %s\n",
+> 	    label, first_file, nodesize, leafsize, sectorsize,
+> -	    pretty_buf = pretty_sizes(btrfs_super_total_bytes(root->fs_info->super_copy)));
+> -	free(pretty_buf);
+> +	    pretty_size(btrfs_super_total_bytes(root->fs_info->super_copy)));
+> 
+> 	printf("%s\n", BTRFS_BUILD_VERSION);
+> 	btrfs_commit_transaction(trans, root);
+> diff --git a/utils.c b/utils.c
+> index 1eeda0f..ced85aa 100644
 > --- a/utils.c
 > +++ b/utils.c
-> @@ -1153,12 +1153,13 @@ out:
->  
->  static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
->  			    "PB", "EB", "ZB", "YB"};
-
-I'll drop the ZB, YB suffixes.
-
+> @@ -1152,13 +1152,14 @@ out:
+> }
+> 
+> static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
+> -			    "PB", "EB", "ZB", "YB"};
+> -char *pretty_sizes(u64 size)
+> +			    "PB", "EB"};
+> +void pretty_size_snprintf(u64 size, char *str, size_t str_bytes)
+> {
+> 	int num_divs = 0;
+> -        int pretty_len = 16;
+> 	float fraction;
+> -	char *pretty;
+> +
+> +	if (str_bytes == 0)
+> +		return;
+> 
+> 	if( size < 1024 ){
+> 		fraction = size;
+> @@ -1172,13 +1173,13 @@ char *pretty_sizes(u64 size)
+> 			num_divs ++;
+> 		}
+> 
+> -		if (num_divs >= ARRAY_SIZE(size_strs))
+> -			return NULL;
+> +		if (num_divs >= ARRAY_SIZE(size_strs)) {
+> +			str[0] = '\0';
+> +			return;
+> +		}
+> 		fraction = (float)last_size / 1024;
+> 	}
+> -	pretty = malloc(pretty_len);
+> -	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs]);
+> -	return pretty;
+> +	snprintf(str, str_bytes, "%.2f%s", fraction, size_strs[num_divs]);
+> }
+> 
+> /*
+> diff --git a/utils.h b/utils.h
+> index 3c17e14..36fb591 100644
 > --- a/utils.h
 > +++ b/utils.h
 > @@ -44,7 +44,15 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
->  			struct btrfs_fs_devices **fs_devices_mnt);
->  int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
->  				 int super_offset);
+> 			struct btrfs_fs_devices **fs_devices_mnt);
+> int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+> 				 int super_offset);
 > -char *pretty_sizes(u64 size);
 > +
 > +void pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
-> +#define pretty_sizes(size) 					\
-
-and rename it to pretty_size as it takes only one number
-
-> +	({							\
-> +		static __thread char _str[16];			\
-
-16 is not enough for exabyte scale, that needs at least 20 bytes + 1 for 0.
-
-len(str(2**64)) = 20
-
--> 24
-
-> +		pretty_size_snprintf(size, _str, sizeof(_str));	\
-
-		pretty_size_snprintf((size), _str, sizeof(_str));	\
-
-As these are only trivial changes I'll fix them at commit time.
-
-> +		_str;						\
+> +#define pretty_size(size) 						\
+> +	({								\
+> +		static __thread char _str[24];				\
+> +		pretty_size_snprintf((size), _str, sizeof(_str));	\
+> +		_str;							\
 > +	})
 > +
->  int get_mountpt(char *dev, char *mntpt, size_t size);
->  int btrfs_scan_block_devices(int run_ioctl);
->  u64 parse_size(char *s);
+> int get_mountpt(char *dev, char *mntpt, size_t size);
+> int btrfs_scan_block_devices(int run_ioctl);
+> u64 parse_size(char *s);
 > -- 
-> 1.7.11.7
+> 1.8.2
 > 
+

@@ -1,48 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:51504 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754018Ab3GJMXS (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:58694 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754056Ab3GJMmQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 08:23:18 -0400
-Message-ID: <51DD5234.40907@giantdisaster.de>
-Date: Wed, 10 Jul 2013 14:23:16 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Wed, 10 Jul 2013 08:42:16 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 776327C0432
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 06:42:16 -0600 (MDT)
+Date: Wed, 10 Jul 2013 08:42:14 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Russell Coker <russell@coker.com.au>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: performance loss with lots of snapshots
+Message-ID: <20130710124214.GA30450@localhost.localdomain>
+References: <201307101254.44583.russell@coker.com.au>
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: num_tolerated_disk_barrier_failures is incorrect
- for RAID6
-References: <1373457270-18909-1-git-send-email-idryomov@gmail.com>
-In-Reply-To: <1373457270-18909-1-git-send-email-idryomov@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <201307101254.44583.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 10 Jul 2013 14:54:30 +0300, Ilya Dryomov wrote:
-> Currently num_tolerated_disk_barrier_failures gets the value of
-> fs_devices->num_devices in the RAID6 case.  But, RAID6 can tolerate only
-> two simultaneous failures, so set it to 2.
+On Wed, Jul 10, 2013 at 12:54:44PM +1000, Russell Coker wrote:
+> There are two uses of backups, recovering from user errors (IE deleting the 
+> wrong file) and recovering from sysadmin errors or hardware failures (IE disks 
+> are dead or wiped).  For the former use I'm mainly using BTRFS snapshots on 
+> many systems.
 > 
-> CC: Stefan Behrens <sbehrens@giantdisaster.de>
-> Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
-> ---
->  fs/btrfs/disk-io.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> A problem that I have had on more than a few occasions (most recently on the 
+> latest Debian 3.9 kernel) is of severe performance loss.  A few days ago this 
+> happened on a workstation running an Intel 120G SSD device for the root 
+> filesystem which was being used for basic workstation tasks (kmail, GIMP, 
+> OpenOffice, etc).  The /home and / subvols had about 400 snapshots between 
+> them (which doesn't seem like a huge number) when the system became unusably 
+> slow while running a scrub from a cron job, programs like GIMP became stuck in 
+> D state.  The system in question has 8G of RAM and very light load, there 
+> shouldn't be any reason for it not giving good performance while the scrub was 
+> in progress and it definitely should have performed well when the scrub was 
+> cancelled.  But it didn't return to decent performance until I deleted about 
+> 300 snapshots.
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b8b60b6..aecf788 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3258,7 +3258,7 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
->  					    BTRFS_BLOCK_GROUP_RAID10)) {
->  						num_tolerated_disk_barrier_failures = 1;
->  					} else if (flags &
-> -						   BTRFS_BLOCK_GROUP_RAID5) {
-> +						   BTRFS_BLOCK_GROUP_RAID6) {
->  						num_tolerated_disk_barrier_failures = 2;
->  					}
->  				}
+> This has happened to me often enough that I can probably reproduce it on a VM.  
+> What kernel should I use for such tests?
+> 
+> If I get a virtual machine in a state where it has ongoing performance 
+> problems would any of the BTRFS developers like root access to debug it?
 > 
 
-ELATE :), Henrik Nordvik already fixed it with commit 15b0a89d7.
+There is a memory leak-ish with scrub where it doesn't free up the csums it's
+looked up until after its done scrubbing an area which can lead to OOM's or
+degraded performance.  Btrfs-next has the fix as well as the pull request that
+just went to Linus, so pick which one you want and run again and see if that
+helps?  I imagine you are probably seeing two things, first that oom'ish
+behavior and then some other performance gotcha with a fair number of snapshots,
+but just in case.  Thanks,
 
+Josef

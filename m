@@ -1,47 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 110-174-82-20.static.tpgi.com.au ([110.174.82.20]:46537 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753627Ab3GJCys (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jul 2013 22:54:48 -0400
-Received: from xev.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id CBBD8218D1
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 12:54:45 +1000 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
+Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:48473 "EHLO
+	homiemail-a93.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754066Ab3GJDki (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Jul 2013 23:40:38 -0400
+Received: from homiemail-a93.g.dreamhost.com (localhost [127.0.0.1])
+	by homiemail-a93.g.dreamhost.com (Postfix) with ESMTP id ABCB58406F
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 20:40:37 -0700 (PDT)
+Received: from bheem.localnet (unknown [49.248.64.26])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: ghodechhap@ghodechhap.net)
+	by homiemail-a93.g.dreamhost.com (Postfix) with ESMTPSA id 4BFF58406C
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 20:40:37 -0700 (PDT)
+From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: performance loss with lots of snapshots
-Date: Wed, 10 Jul 2013 12:54:44 +1000
+Subject: space cache and unclean shutdown
+Date: Wed, 10 Jul 2013 09:10:33 +0530
+Message-ID: <1653853.IVjAPIlynG@bheem>
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201307101254.44583.russell@coker.com.au>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are two uses of backups, recovering from user errors (IE deleting the 
-wrong file) and recovering from sysadmin errors or hardware failures (IE disks 
-are dead or wiped).  For the former use I'm mainly using BTRFS snapshots on 
-many systems.
+Hello,
 
-A problem that I have had on more than a few occasions (most recently on the 
-latest Debian 3.9 kernel) is of severe performance loss.  A few days ago this 
-happened on a workstation running an Intel 120G SSD device for the root 
-filesystem which was being used for basic workstation tasks (kmail, GIMP, 
-OpenOffice, etc).  The /home and / subvols had about 400 snapshots between 
-them (which doesn't seem like a huge number) when the system became unusably 
-slow while running a scrub from a cron job, programs like GIMP became stuck in 
-D state.  The system in question has 8G of RAM and very light load, there 
-shouldn't be any reason for it not giving good performance while the scrub was 
-in progress and it definitely should have performed well when the scrub was 
-cancelled.  But it didn't return to decent performance until I deleted about 
-300 snapshots.
+I am repeatedly running into problems with space cache and unclean shutdown. I 
+am hitting the bug as reported/fixed at 
+https://bugzilla.kernel.org/show_bug.cgi?id=57631
 
-This has happened to me often enough that I can probably reproduce it on a VM.  
-What kernel should I use for such tests?
+The solution works for me but it is a good 10-15 min ritual to clean all the 
+partitions, discard cache, reboot, rebuild cache and reboot.
 
-If I get a virtual machine in a state where it has ongoing performance 
-problems would any of the BTRFS developers like root access to debug it?
+Are/is there any measures that will prevent this corruption from occurring to 
+begin with?
 
+In absence of that, any way I can un-stick space/inode cache?
+
+and should I open a separate bug for this?
+
+I am running kernel 3.9.9 on archlinux.
+
+Thanks.
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Regards
+ Shridhar

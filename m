@@ -1,72 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50987 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752335Ab3GIQj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Jul 2013 12:39:26 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id AE5A2A51FE
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 18:39:25 +0200 (CEST)
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-we0-f172.google.com ([74.125.82.172]:35211 "EHLO
+	mail-we0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750894Ab3GJIgn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jul 2013 04:36:43 -0400
+Received: by mail-we0-f172.google.com with SMTP id q56so5708461wes.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 01:36:42 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: use reentrant localtime
-Date: Tue,  9 Jul 2013 18:39:24 +0200
-Message-Id: <1373387964-31043-1-git-send-email-dsterba@suse.cz>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs-progs: update usage message for cmds-restore
+Date: Wed, 10 Jul 2013 09:36:34 +0100
+Message-Id: <1373445394-5491-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1373401897-31850-1-git-send-email-fdmanana@gmail.com>
+References: <1373401897-31850-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-localtime may return NULL (when an error is detected eg. after setting
-tzname), followed by a segfault when the values is about to be used.
-localtime_r works, does not set tzname and does not return NULL.
+Mention that a target path argument is mandatory unless
+the -l option is supplied. Also mention about the existence
+of the -l option, which was previously not announced.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+$ btrfs restore -v /dev/sdb3
+usage: btrfs restore [options] <device>
+
+    Try to restore files from a damaged filesystem (unmounted)
+
+    -s              get snapshots
+    -v              verbose
+    -i              ignore errors
+    -o              overwrite
+    -t              tree location
+    -f <offset>     filesystem location
+    -u <block>      super mirror
+    -d              find dir
+$ echo $?
+129
+
+After specifying a target path, the command works as expected:
+
+$ btrfs restore -v /dev/sdb3 files2/
+Restoring files2/file1
+Done searching
+$ echo $?
+0
+
+V2: Updated command synopsis by suggestion of Anand Jain.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- btrfs-list.c     | 10 ++++++----
- cmds-subvolume.c | 10 ++++++----
- 2 files changed, 12 insertions(+), 8 deletions(-)
+ cmds-restore.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index c3d35de..7fcee19 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1344,10 +1344,12 @@ static void print_subvolume_column(struct root_info *subv,
- 		printf("%llu", subv->top_id);
- 		break;
- 	case BTRFS_LIST_OTIME:
--		if (subv->otime)
--			strftime(tstr, 256, "%Y-%m-%d %X",
--				 localtime(&subv->otime));
--		else
-+		if (subv->otime) {
-+			struct tm tm;
-+
-+			localtime_r(&subv->otime, &tm);
-+			strftime(tstr, 256, "%Y-%m-%d %X", &tm);
-+		} else
- 			strcpy(tstr, "-");
- 		printf("%s", tstr);
- 		break;
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ccb4762..faf05ca 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -898,10 +898,12 @@ static int cmd_subvol_show(int argc, char **argv)
- 		uuid_unparse(get_ri.puuid, uuidparse);
- 	printf("\tParent uuid: \t\t%s\n", uuidparse);
+diff --git a/cmds-restore.c b/cmds-restore.c
+index eca528d..d362d79 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -956,7 +956,7 @@ out:
+ }
  
--	if (get_ri.otime)
--		strftime(tstr, 256, "%Y-%m-%d %X",
--			 localtime(&get_ri.otime));
--	else
-+	if (get_ri.otime) {
-+		struct tm tm;
-+
-+		localtime_r(&get_ri.otime, &tm);
-+		strftime(tstr, 256, "%Y-%m-%d %X", &tm);
-+	} else
- 		strcpy(tstr, "-");
- 	printf("\tCreation time: \t\t%s\n", tstr);
+ const char * const cmd_restore_usage[] = {
+-	"btrfs restore [options] <device>",
++	"btrfs restore [options] <device> <path> | -l <device>",
+ 	"Try to restore files from a damaged filesystem (unmounted)",
+ 	"",
+ 	"-s              get snapshots",
+@@ -967,6 +967,7 @@ const char * const cmd_restore_usage[] = {
+ 	"-f <offset>     filesystem location",
+ 	"-u <block>      super mirror",
+ 	"-d              find dir",
++	"-l              list roots",
+ 	NULL
+ };
  
 -- 
-1.8.2
+1.7.9.5
 

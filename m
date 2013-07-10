@@ -1,163 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:45526 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752571Ab3GJQRm (ORCPT
+Received: from mail-wi0-f175.google.com ([209.85.212.175]:51499 "EHLO
+	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753834Ab3GJXp2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 12:17:42 -0400
-Received: by mail-wg0-f48.google.com with SMTP id f11so6074116wgh.15
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 09:17:40 -0700 (PDT)
+	Wed, 10 Jul 2013 19:45:28 -0400
+Received: by mail-wi0-f175.google.com with SMTP id m6so11991146wiv.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 16:45:27 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs-progs: fix restore command leaving corrupted files
-Date: Wed, 10 Jul 2013 17:17:32 +0100
-Message-Id: <1373473052-22240-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
-References: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs-progs: restore can now recover file xattrs
+Date: Thu, 11 Jul 2013 00:45:20 +0100
+Message-Id: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When there are files that have parts shared with snapshots, the
-restore command was incorrectly restoring them, as it was not
-taking into account the offset and number of bytes fields from
-the file extent item. Besides leaving the recovered file corrupt,
-it was also inneficient as it read and wrote more data than needed
-(with each extent copy overwriting portions of the one previously
-written).
-
-The following steps and small C program show how to reproduce this
-corruption issue:
-
-$ mkfs.btrfs -f  /dev/sdb3
-$ mount /dev/sdb3 /mnt/btrfs
-$ ./write_file /mnt/btrfs/foobar
-$ du -b /mnt/btrfs/foobar
-1048926 /mnt/btrfs/foobar
-$ md5sum /mnt/btrfs/foobar
-f9f778f3a7410c40e4ed104a3a63c3c4  /mnt/btrfs/foobar
-
-$ btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/my_snap
-$ perl -e 'open($f, "+<", "/dev/btrfs/foobar"); seek($f, 4096, 0); print $f "\xff"; close($f);'
-$ md5sum /mnt/btrfs/foobar
-b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
-$ umount /mnt/btrfs
-
-$ btrfs restore /dev/sdb3 /tmp/copy
-$ du -b /tmp/copy/foobar
-1048926 /tmp/copy/foobar
-$ md5sum /tmp/copy/foobar
-88db338cbc1c44dfabae083f1ce642d5  /tmp/copy/foobar
-$ od -t x1 -j 8192 -N 4 /tmp/copy/foobar
-0020000 41 00 00 00
-0020004
-$ mount /dev/sdb3 /mnt/btrfs
-$ od -t x1 -j 8192 -N 4 /mnt/btrfs/foobar
-0020000 00 00 00 00
-0020004
-$ md5sum /mnt/btrfs/foobar
-b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
-
-$ cat write_file.c:
-
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <string.h>
- #include <assert.h>
-
- #define BUF_SIZE (1 * 1024 * 1024 + 350)
-
-int main(int argc, char *argv[])
-{
-	int fd;
-	unsigned char *buf = malloc(BUF_SIZE);
-
-	assert(buf != NULL);
-	if (argc < 2) {
-		fprintf(stderr, "Use:  %s filepath\n", argv[0]);
-		return 1;
-	}
-
-	fd = open(argv[1], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd >= 0);
-	memset(buf, 0, BUF_SIZE);
-	buf[0] = 65;
-	assert(write(fd, buf, BUF_SIZE) == BUF_SIZE);
-	assert(close(fd) == 0);
-
-	return 0;
-}
-
-Tested this change with zlib, lzo compression and file sizes larger
-than 1GiB, and found no regression or other corruption issues (so far
-at least).
+This change adds a new option to the restore command, named -x,
+that makes it restore file extented attributes too. This is an
+optional behaviour and it's disabled by default.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-
-V2: updated commit message to include the C preprocessor macros
-    in the C program.
-V3: updated commit message again to reflect the file size used in
-    the example in the C program macro.
-
- cmds-restore.c |   13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ cmds-restore.c |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 112 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index e48df40..9688599 100644
+index e48df40..0f6169e 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
-@@ -272,6 +272,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
- 	u64 bytenr;
- 	u64 ram_size;
- 	u64 disk_size;
-+	u64 num_bytes;
- 	u64 length;
- 	u64 size_left;
- 	u64 dev_bytenr;
-@@ -288,7 +289,9 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
- 	disk_size = btrfs_file_extent_disk_num_bytes(leaf, fi);
- 	ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
- 	offset = btrfs_file_extent_offset(leaf, fi);
--	size_left = disk_size;
-+	num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
-+	size_left = num_bytes;
-+	bytenr += offset;
+@@ -30,6 +30,8 @@
+ #include <lzo/lzoconf.h>
+ #include <lzo/lzo1x.h>
+ #include <zlib.h>
++#include <sys/types.h>
++#include <attr/xattr.h>
  
- 	if (offset)
- 		printf("offset is %Lu\n", offset);
-@@ -296,7 +299,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
- 	if (disk_size == 0)
- 		return 0;
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -47,6 +49,7 @@ static int get_snaps = 0;
+ static int verbose = 0;
+ static int ignore_errors = 0;
+ static int overwrite = 0;
++static int get_xattrs = 0;
  
--	inbuf = malloc(disk_size);
-+	inbuf = malloc(size_left);
- 	if (!inbuf) {
- 		fprintf(stderr, "No memory\n");
- 		return -1;
-@@ -351,8 +354,8 @@ again:
- 		goto again;
+ #define LZO_LEN 4
+ #define PAGE_CACHE_SIZE 4096
+@@ -412,6 +415,105 @@ again:
+ }
  
- 	if (compress == BTRFS_COMPRESS_NONE) {
--		while (total < ram_size) {
--			done = pwrite(fd, inbuf+total, ram_size-total,
-+		while (total < num_bytes) {
-+			done = pwrite(fd, inbuf+total, num_bytes-total,
- 				      pos+total);
- 			if (done < 0) {
- 				ret = -1;
-@@ -365,7 +368,7 @@ again:
- 		goto out;
+ 
++static int set_file_xattrs(struct btrfs_root *root, u64 inode,
++			   int fd, const char *file_name)
++{
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	struct extent_buffer *leaf;
++	struct btrfs_dir_item *di;
++	u32 name_len = 0;
++	u32 data_len = 0;
++	u32 len = 0;
++	char *name = NULL;
++	char *data = NULL;
++	int ret = 0;
++
++	key.objectid = inode;
++	key.type = BTRFS_XATTR_ITEM_KEY;
++	key.offset = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++
++	leaf = path->nodes[0];
++	while (1) {
++		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
++			do {
++				ret = next_leaf(root, path);
++				if (ret < 0) {
++					fprintf(stderr, "Error searching for"
++						" extended attributes: %d\n",
++						ret);
++					goto out;
++				} else if (ret) {
++					/* No more leaves to search */
++					goto out;
++				}
++				leaf = path->nodes[0];
++			} while (!leaf);
++			continue;
++		}
++
++		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++
++		if (key.type != BTRFS_XATTR_ITEM_KEY || key.objectid != inode)
++			break;
++
++		di = btrfs_item_ptr(leaf, path->slots[0],
++				    struct btrfs_dir_item);
++
++		len = btrfs_dir_name_len(leaf, di);
++		if (len > name_len) {
++			free(name);
++			name = (char *) malloc(len + 1);
++			if (!name) {
++				ret = -ENOMEM;
++				goto out;
++			}
++		}
++		read_extent_buffer(leaf, name, (unsigned long)(di + 1), len);
++		name[len] = '\0';
++		name_len = len;
++
++		len = btrfs_dir_data_len(leaf, di);
++		if (len > data_len) {
++			free(data);
++			data = (char *) malloc(len);
++			if (!data) {
++				ret = -ENOMEM;
++				goto out;
++			}
++		}
++		read_extent_buffer(leaf, data,
++				   (unsigned long)(di + 1) + name_len, len);
++		data_len = len;
++
++		if (fsetxattr(fd, name, data, data_len, 0)) {
++			int err = errno;
++
++			fprintf(stderr, "Error setting extended attribute %s"
++				" on file %s: %s", name, file_name,
++				strerror(err));
++		}
++
++		path->slots[0]++;
++	}
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	free(name);
++	free(data);
++
++	return ret;
++}
++
++
+ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
+ 		     const char *file)
+ {
+@@ -535,6 +637,11 @@ set_size:
+ 		if (ret)
+ 			return ret;
  	}
++	if (get_xattrs) {
++		ret = set_file_xattrs(root, key->objectid, fd, file);
++		if (ret)
++			return ret;
++	}
+ 	return 0;
+ }
  
--	ret = decompress(inbuf, outbuf, disk_size, &ram_size, compress);
-+	ret = decompress(inbuf, outbuf, num_bytes, &ram_size, compress);
- 	if (ret) {
- 		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
- 					      bytenr, length);
+@@ -966,6 +1073,7 @@ const char * const cmd_restore_usage[] = {
+ 	"Try to restore files from a damaged filesystem (unmounted)",
+ 	"",
+ 	"-s              get snapshots",
++	"-x              get extended attributes",
+ 	"-v              verbose",
+ 	"-i              ignore errors",
+ 	"-o              overwrite",
+@@ -991,7 +1099,7 @@ int cmd_restore(int argc, char **argv)
+ 	int find_dir = 0;
+ 	int list_roots = 0;
+ 
+-	while ((opt = getopt(argc, argv, "sviot:u:df:r:l")) != -1) {
++	while ((opt = getopt(argc, argv, "sxviot:u:df:r:l")) != -1) {
+ 		switch (opt) {
+ 			case 's':
+ 				get_snaps = 1;
+@@ -1045,6 +1153,9 @@ int cmd_restore(int argc, char **argv)
+ 			case 'l':
+ 				list_roots = 1;
+ 				break;
++			case 'x':
++				get_xattrs = 1;
++				break;
+ 			default:
+ 				usage(cmd_restore_usage);
+ 		}
 -- 
 1.7.9.5
 

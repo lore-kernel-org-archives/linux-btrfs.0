@@ -1,47 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:48473 "EHLO
-	homiemail-a93.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754066Ab3GJDki (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Jul 2013 23:40:38 -0400
-Received: from homiemail-a93.g.dreamhost.com (localhost [127.0.0.1])
-	by homiemail-a93.g.dreamhost.com (Postfix) with ESMTP id ABCB58406F
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 20:40:37 -0700 (PDT)
-Received: from bheem.localnet (unknown [49.248.64.26])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: ghodechhap@ghodechhap.net)
-	by homiemail-a93.g.dreamhost.com (Postfix) with ESMTPSA id 4BFF58406C
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jul 2013 20:40:37 -0700 (PDT)
-From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: space cache and unclean shutdown
-Date: Wed, 10 Jul 2013 09:10:33 +0530
-Message-ID: <1653853.IVjAPIlynG@bheem>
+Received: from csamuel.org ([74.50.50.137]:34993 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751196Ab3GJEYb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jul 2013 00:24:31 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 7F85540AB1
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 14:18:20 +1000 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 19323-01 for <linux-btrfs@vger.kernel.org>;
+ Wed, 10 Jul 2013 14:18:20 +1000 (EST)
+Received: from [128.250.103.226] (eris.vlsci.unimelb.edu.au [128.250.103.226])
+	by csamuel.org (Postfix) with ESMTPSA id EFFAE40AB0
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 14:18:19 +1000 (EST)
+Message-ID: <51DCE08A.8060008@csamuel.org>
+Date: Wed, 10 Jul 2013 14:18:18 +1000
+From: Chris Samuel <chris@csamuel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: performance loss with lots of snapshots
+References: <201307101254.44583.russell@coker.com.au>
+In-Reply-To: <201307101254.44583.russell@coker.com.au>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hiya Russell,
 
-I am repeatedly running into problems with space cache and unclean shutdown. I 
-am hitting the bug as reported/fixed at 
-https://bugzilla.kernel.org/show_bug.cgi?id=57631
+On 10/07/13 12:54, Russell Coker wrote:
 
-The solution works for me but it is a good 10-15 min ritual to clean all the 
-partitions, discard cache, reboot, rebuild cache and reboot.
+> This has happened to me often enough that I can probably reproduce it on a VM.  
+> What kernel should I use for such tests?
 
-Are/is there any measures that will prevent this corruption from occurring to 
-begin with?
+I'd suggest at least 3.10, and perhaps also Chris Mason's git tree here:
 
-In absence of that, any way I can un-stick space/inode cache?
+https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/
 
-and should I open a separate bug for this?
+which is 3.10 plus the latest btrfs code that was merged by Linus into
+his master for 3.11 today.
 
-I am running kernel 3.9.9 on archlinux.
-
-Thanks.
+All the best,
+Chris
 -- 
-Regards
- Shridhar
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

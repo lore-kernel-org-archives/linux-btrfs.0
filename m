@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:49352 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754474Ab3GJQ5F (ORCPT
+Received: from mail-we0-f179.google.com ([74.125.82.179]:48635 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755885Ab3GKPd7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 12:57:05 -0400
-Received: by mail-wg0-f51.google.com with SMTP id e11so6034843wgh.18
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 09:57:03 -0700 (PDT)
+	Thu, 11 Jul 2013 11:33:59 -0400
+Received: by mail-we0-f179.google.com with SMTP id w59so6970362wes.24
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 08:33:58 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v4] Btrfs-progs: fix restore command leaving corrupted files
-Date: Wed, 10 Jul 2013 17:56:53 +0100
-Message-Id: <1373475413-23563-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1373473052-22240-1-git-send-email-fdmanana@gmail.com>
-References: <1373473052-22240-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v5] Btrfs-progs: fix restore command leaving corrupted files
+Date: Thu, 11 Jul 2013 16:33:40 +0100
+Message-Id: <1373556820-30293-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1373475413-23563-1-git-send-email-fdmanana@gmail.com>
+References: <1373475413-23563-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -25,19 +25,18 @@ it was also inneficient as it read and wrote more data than needed
 (with each extent copy overwriting portions of the one previously
 written).
 
-The following steps and small C program show how to reproduce this
-corruption issue:
+The following steps show how to reproduce this corruption issue:
 
 $ mkfs.btrfs -f  /dev/sdb3
 $ mount /dev/sdb3 /mnt/btrfs
-$ ./write_file /mnt/btrfs/foobar
+$ perl -e '$d = "\x41" . ("\x00" x (1024*1024+349)); open($f,">","/mnt/btrfs/foobar"); print $f $d; close($f);'
 $ du -b /mnt/btrfs/foobar
 1048926 /mnt/btrfs/foobar
 $ md5sum /mnt/btrfs/foobar
 f9f778f3a7410c40e4ed104a3a63c3c4  /mnt/btrfs/foobar
 
 $ btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/my_snap
-$ perl -e 'open($f, "+<", "/mnt/btrfs/foobar"); seek($f, 4096, 0); print $f "\xff"; close($f);'
+$ perl -e 'open($f, "+<", "/dev/btrfs/foobar"); seek($f, 4096, 0); print $f "\xff"; close($f);'
 $ md5sum /mnt/btrfs/foobar
 b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
 $ umount /mnt/btrfs
@@ -57,40 +56,6 @@ $ od -t x1 -j 8192 -N 4 /mnt/btrfs/foobar
 $ md5sum /mnt/btrfs/foobar
 b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
 
-$ cat write_file.c:
-
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <string.h>
- #include <assert.h>
-
- #define BUF_SIZE (1 * 1024 * 1024 + 350)
-
-int main(int argc, char *argv[])
-{
-	int fd;
-	unsigned char *buf = malloc(BUF_SIZE);
-
-	assert(buf != NULL);
-	if (argc < 2) {
-		fprintf(stderr, "Use:  %s filepath\n", argv[0]);
-		return 1;
-	}
-
-	fd = open(argv[1], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd >= 0);
-	memset(buf, 0, BUF_SIZE);
-	buf[0] = 65;
-	assert(write(fd, buf, BUF_SIZE) == BUF_SIZE);
-	assert(close(fd) == 0);
-
-	return 0;
-}
-
 Tested this change with zlib, lzo compression and file sizes larger
 than 1GiB, and found no regression or other corruption issues (so far
 at least).
@@ -103,6 +68,7 @@ V2: updated commit message to include the C preprocessor macros
 V3: updated commit message again to reflect the file size used in
     the example in the C program macro.
 V4: fixed wrong path in commit message in the perl command line.
+V5: updated commit message with simpler steps to reproduce the issue.
 
  cmds-restore.c |   13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)

@@ -1,95 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:11035 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755600Ab3GKIES (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jul 2013 04:04:18 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6B84EZl014059
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 16:04:14 +0800
-Message-ID: <51DE673A.1050100@cn.fujitsu.com>
-Date: Thu, 11 Jul 2013 16:05:14 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
+Received: from aserp1040.oracle.com ([141.146.126.69]:30954 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754432Ab3GKJwB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jul 2013 05:52:01 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6B9pxR4031104
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 09:52:00 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6B9pwMu008741
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 09:51:59 GMT
+Received: from abhmt108.oracle.com (abhmt108.oracle.com [141.146.116.60])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6B9pwq9008733
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 09:51:58 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/5] Btrfs: remove unnecessary argument of bio_readpage_error()
-References: <1373520339-13870-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1373520339-13870-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH] Btrfs: make free space caching faster with many non-inline extent references
+Date: Thu, 11 Jul 2013 17:51:15 +0800
+Message-Id: <1373536275-15266-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are only 4 patches in this patchset, not 5.
-Sorry for my mistake.
+So to cache free space, we iterate every extent item to gather free space info.
 
-Miao
+When we have say 10,000 non-inline extent refs(such as BTRFS_EXTENT_DATA_REF),
+it takes quite a long time, and since inline extent refs and non-inline ones have
+same objectid in their keys, we can just re-search the tree with the next address
+to skip non-inline references.
 
-On thu, 11 Jul 2013 13:25:36 +0800, Miao Xie wrote:
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/extent_io.c | 25 +++++++++++--------------
->  1 file changed, 11 insertions(+), 14 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index f8586a9..4bfbcc5 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2202,8 +2202,7 @@ out:
->   */
->  
->  static int bio_readpage_error(struct bio *failed_bio, struct page *page,
-> -				u64 start, u64 end, int failed_mirror,
-> -				struct extent_state *state)
-> +				u64 start, u64 end, int failed_mirror)
->  {
->  	struct io_failure_record *failrec = NULL;
->  	u64 private;
-> @@ -2212,6 +2211,7 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
->  	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
->  	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
->  	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-> +	struct extent_state *state;
->  	struct bio *bio;
->  	int num_copies;
->  	int ret;
-> @@ -2297,21 +2297,18 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
->  		 * matter what the error is, it is very likely to persist.
->  		 */
->  		pr_debug("bio_readpage_error: cannot repair, num_copies == 1. "
-> -			 "state=%p, num_copies=%d, next_mirror %d, "
-> -			 "failed_mirror %d\n", state, num_copies,
-> -			 failrec->this_mirror, failed_mirror);
-> +			 "num_copies=%d, next_mirror %d, failed_mirror %d\n", 
-> +			 num_copies, failrec->this_mirror, failed_mirror);
->  		free_io_failure(inode, failrec, 0);
->  		return -EIO;
->  	}
->  
-> -	if (!state) {
-> -		spin_lock(&tree->lock);
-> -		state = find_first_extent_bit_state(tree, failrec->start,
-> -						    EXTENT_LOCKED);
-> -		if (state && state->start != failrec->start)
-> -			state = NULL;
-> -		spin_unlock(&tree->lock);
-> -	}
-> +	spin_lock(&tree->lock);
-> +	state = find_first_extent_bit_state(tree, failrec->start,
-> +					    EXTENT_LOCKED);
-> +	if (state && state->start != failrec->start)
-> +		state = NULL;
-> +	spin_unlock(&tree->lock);
->  
->  	/*
->  	 * there are two premises:
-> @@ -2541,7 +2538,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
->  			 * can't handle the error it will return -EIO and we
->  			 * remain responsible for that page.
->  			 */
-> -			ret = bio_readpage_error(bio, page, start, end, mirror, NULL);
-> +			ret = bio_readpage_error(bio, page, start, end, mirror);
->  			if (ret == 0) {
->  				uptodate =
->  					test_bit(BIO_UPTODATE, &bio->bi_flags);
-> 
+(This is found by dedup feature because dedup extents can end up with many
+non-inline extent refs.)
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0236de7..2796622 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -420,6 +420,7 @@ again:
+ 	/* need to make sure the commit_root doesn't disappear */
+ 	down_read(&fs_info->extent_commit_sem);
+ 
++next:
+ 	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto err;
+@@ -459,6 +460,16 @@ again:
+ 			continue;
+ 		}
+ 
++		if (key.objectid < last) {
++			key.objectid = last;
++			key.offset = 0;
++			key.type = BTRFS_EXTENT_ITEM_KEY;
++
++			caching_ctl->progress = last;
++			btrfs_release_path(path);
++			goto next;
++		}
++
+ 		if (key.objectid < block_group->key.objectid) {
+ 			path->slots[0]++;
+ 			continue;
+-- 
+1.7.7
 

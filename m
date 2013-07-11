@@ -1,82 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49197 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754259Ab3GJW0w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 18:26:52 -0400
-Date: Thu, 11 Jul 2013 00:26:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Andrew Vagin <avagin@gmail.com>, Chris Mason <chris.mason@fusionio.com>,
-        linux-btrfs@vger.kernel.org, kzak@redhat.com, xemul@openvz.org
-Subject: Re: btrfs: stat(2) and /proc/pid/maps returns different devices
-Message-ID: <20130710222650.GI25386@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20130704095138.GB12359@gmail.com>
- <20130708215446.GH18204@twin.jikos.cz>
- <20130710163105.GR32502@wotan.suse.de>
- <20130710174545.GS32502@wotan.suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130710174545.GS32502@wotan.suse.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:55550 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750877Ab3GKF1D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jul 2013 01:27:03 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6B5QxDO001051
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jul 2013 13:26:59 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/5] Btrfs: remove unnecessary argument of bio_readpage_error()
+Date: Thu, 11 Jul 2013 13:25:36 +0800
+Message-Id: <1373520339-13870-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 10, 2013 at 10:45:45AM -0700, Mark Fasheh wrote:
-> Well, what do I get when I pretend I don't care any more? The little voice
-> in my head says "keep plugging away". Here's another attempt at fixing this
-> problem in a sane manner. Basically, this time we're adding a flag to
-> s_flags which btrfs sets. Proc will see the flag and call ->getattr().
-> 
-> This compiles, but it needs testing (which I will get to soon). It still has
-> a bunch of problems in my honest opinion but maybe if we get something
-> acceptable upstream we can work from there.
-> 
-> Also, as Andrew pointed out there's more than one place which is return
-> different device than from stat(2) so I probably need to update more sites
-> to deal with this.
-> 
-> Does anyone see a problem with this approach?
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/extent_io.c | 25 +++++++++++--------------
+ 1 file changed, 11 insertions(+), 14 deletions(-)
 
-The approach looks ok to me, the implementation is internal to vfs and
-fairly minimal. The bit that bothers me is the name of the flag, it's
-completely unobvious what it means.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f8586a9..4bfbcc5 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2202,8 +2202,7 @@ out:
+  */
+ 
+ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
+-				u64 start, u64 end, int failed_mirror,
+-				struct extent_state *state)
++				u64 start, u64 end, int failed_mirror)
+ {
+ 	struct io_failure_record *failrec = NULL;
+ 	u64 private;
+@@ -2212,6 +2211,7 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
+ 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	struct extent_state *state;
+ 	struct bio *bio;
+ 	int num_copies;
+ 	int ret;
+@@ -2297,21 +2297,18 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
+ 		 * matter what the error is, it is very likely to persist.
+ 		 */
+ 		pr_debug("bio_readpage_error: cannot repair, num_copies == 1. "
+-			 "state=%p, num_copies=%d, next_mirror %d, "
+-			 "failed_mirror %d\n", state, num_copies,
+-			 failrec->this_mirror, failed_mirror);
++			 "num_copies=%d, next_mirror %d, failed_mirror %d\n", 
++			 num_copies, failrec->this_mirror, failed_mirror);
+ 		free_io_failure(inode, failrec, 0);
+ 		return -EIO;
+ 	}
+ 
+-	if (!state) {
+-		spin_lock(&tree->lock);
+-		state = find_first_extent_bit_state(tree, failrec->start,
+-						    EXTENT_LOCKED);
+-		if (state && state->start != failrec->start)
+-			state = NULL;
+-		spin_unlock(&tree->lock);
+-	}
++	spin_lock(&tree->lock);
++	state = find_first_extent_bit_state(tree, failrec->start,
++					    EXTENT_LOCKED);
++	if (state && state->start != failrec->start)
++		state = NULL;
++	spin_unlock(&tree->lock);
+ 
+ 	/*
+ 	 * there are two premises:
+@@ -2541,7 +2538,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			 * can't handle the error it will return -EIO and we
+ 			 * remain responsible for that page.
+ 			 */
+-			ret = bio_readpage_error(bio, page, start, end, mirror, NULL);
++			ret = bio_readpage_error(bio, page, start, end, mirror);
+ 			if (ret == 0) {
+ 				uptodate =
+ 					test_bit(BIO_UPTODATE, &bio->bi_flags);
+-- 
+1.8.1.4
 
-There are some differences to the linked suse patch:
-
-> +static dev_t proc_get_dev_from_stat(struct inode *inode)
-> +{
-> +	struct dentry *dentry = d_find_any_alias(inode);
-
-This does the dentry -> inode mapping, while originally there was
-
-	&file->f_path
-
-passing just the inode to proc_get_dev_from_stat unnecessarily drops the
-available information that's about to be retrieved again.
-
-> +	struct kstat kstat;
-> +
-> +	if (!dentry)
-> +		goto out_error;
-> +	if (inode->i_op->getattr(NULL, dentry, &kstat))
-
-The suse patch calls vfs_getattr that in turn calls
-
-	security_inode_getattr(path->mnt, path->dentry);
-
-That would be missing.
-
-Plus checks for presence of the ->getattr operation. Though this is
-superfluous with btrfs, I suggest to use vfs_getattr here, which will
-fix all of the above.
-
-> +		goto out_error_dput;
-> +
-> +	dput(dentry);
-> +	return kstat.dev;
-> +
-> +out_error_dput:
-> +	dput(dentry);
-> +out_error:
-> +	return inode->i_sb->s_dev;
-> +}

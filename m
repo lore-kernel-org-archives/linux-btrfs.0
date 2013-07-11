@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f175.google.com ([209.85.212.175]:51499 "EHLO
-	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753834Ab3GJXp2 (ORCPT
+Received: from mail-we0-f174.google.com ([74.125.82.174]:38020 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754177Ab3GKAr2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 19:45:28 -0400
-Received: by mail-wi0-f175.google.com with SMTP id m6so11991146wiv.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 16:45:27 -0700 (PDT)
+	Wed, 10 Jul 2013 20:47:28 -0400
+Received: by mail-we0-f174.google.com with SMTP id q58so6411835wes.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 17:47:26 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs-progs: restore can now recover file xattrs
-Date: Thu, 11 Jul 2013 00:45:20 +0100
-Message-Id: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs-progs: restore can now recover file xattrs
+Date: Thu, 11 Jul 2013 01:47:19 +0100
+Message-Id: <1373503639-490-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
+References: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -21,11 +23,14 @@ optional behaviour and it's disabled by default.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+
+V2: added missing new line at end of error message.
+
  cmds-restore.c |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 112 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index e48df40..0f6169e 100644
+index e48df40..cb8754a 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
 @@ -30,6 +30,8 @@
@@ -132,7 +137,7 @@ index e48df40..0f6169e 100644
 +			int err = errno;
 +
 +			fprintf(stderr, "Error setting extended attribute %s"
-+				" on file %s: %s", name, file_name,
++				" on file %s: %s\n", name, file_name,
 +				strerror(err));
 +		}
 +

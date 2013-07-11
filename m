@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:38020 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754177Ab3GKAr2 (ORCPT
+Received: from mail-we0-f173.google.com ([74.125.82.173]:51392 "EHLO
+	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755379Ab3GKDvv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jul 2013 20:47:28 -0400
-Received: by mail-we0-f174.google.com with SMTP id q58so6411835wes.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 17:47:26 -0700 (PDT)
+	Wed, 10 Jul 2013 23:51:51 -0400
+Received: by mail-we0-f173.google.com with SMTP id x54so6611401wes.32
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2013 20:51:50 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs-progs: restore can now recover file xattrs
-Date: Thu, 11 Jul 2013 01:47:19 +0100
-Message-Id: <1373503639-490-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs-progs: restore can now recover file xattrs
+Date: Thu, 11 Jul 2013 04:51:35 +0100
+Message-Id: <1373514695-2923-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 References: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,12 +25,13 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
 V2: added missing new line at end of error message.
+V3: return with 0 when there are no more leaves.
 
  cmds-restore.c |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 112 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index e48df40..cb8754a 100644
+index e48df40..32ba89d 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
 @@ -30,6 +30,8 @@
@@ -92,6 +93,7 @@ index e48df40..cb8754a 100644
 +					goto out;
 +				} else if (ret) {
 +					/* No more leaves to search */
++					ret = 0;
 +					goto out;
 +				}
 +				leaf = path->nodes[0];
@@ -143,7 +145,6 @@ index e48df40..cb8754a 100644
 +
 +		path->slots[0]++;
 +	}
-+	ret = 0;
 +out:
 +	btrfs_free_path(path);
 +	free(name);

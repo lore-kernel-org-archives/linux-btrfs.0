@@ -1,60 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hop-nat-141.emc.com ([168.159.213.141]:36384 "EHLO
-	mexforward.lss.emc.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S964778Ab3GLRmw convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jul 2013 13:42:52 -0400
-From: "faibish, sorin" <faibish_sorin@emc.com>
-To: Ric Wheeler <ricwheeler@gmail.com>,
-        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, xfs-oss <xfs@oss.sgi.com>,
-        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-        device-mapper development <dm-devel@redhat.com>,
-        IDE/ATA development list <linux-ide@vger.kernel.org>,
-        "anaconda-devel-list@redhat.com" <anaconda-devel-list@redhat.com>
-Date: Fri, 12 Jul 2013 13:42:21 -0400
-Subject: RE: Linux Plumbers IO & File System Micro-conference
-Message-ID: <F0897B83F4BC10458936F08DADF233160F65F99416@MX02A.corp.emc.com>
-References: <51E03AFB.1000000@gmail.com>
-In-Reply-To: <51E03AFB.1000000@gmail.com>
-Content-Type: text/plain; charset="us-ascii"
+Received: from cantor2.suse.de ([195.135.220.15]:50417 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757555Ab3GLWTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Jul 2013 18:19:39 -0400
+Date: Sat, 13 Jul 2013 00:19:37 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/5] Btrfs: add branch prediction hints in the read page
+ end IO function
+Message-ID: <20130712221937.GH24343@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1373520339-13870-1-git-send-email-miaox@cn.fujitsu.com>
+ <1373520339-13870-2-git-send-email-miaox@cn.fujitsu.com>
+ <20130711143122.12026.78808@localhost.localdomain>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130711143122.12026.78808@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can we have a discussion on Lustre client in the kernel? Thanks
+On Thu, Jul 11, 2013 at 10:31:22AM -0400, Chris Mason wrote:
+> Do you have benchmark numbers for how much these help?  I hesitate to
+> bring in the likely/unlikely unless we can see it on the benchmarks.
 
-./Sorin
+Seconded, I doubt that this particular function gets any measurable
+speed improvement with the prediction hints. They're eg suitable for
+branches that almost never happen like error conditions or shortcuts to
+the exit.
 
------Original Message-----
-From: linux-fsdevel-owner@vger.kernel.org [mailto:linux-fsdevel-owner@vger.kernel.org] On Behalf Of Ric Wheeler
-Sent: Friday, July 12, 2013 1:21 PM
-To: linux-scsi@vger.kernel.org; Linux FS Devel; linux-nfs@vger.kernel.org; linux-btrfs; xfs-oss; linux-ext4@vger.kernel.org; device-mapper development; IDE/ATA development list; anaconda-devel-list@redhat.com
-Subject: Linux Plumbers IO & File System Micro-conference
+There's a config option CONFIG_PROFILE_ANNOTATED_BRANCHES to profile
+all likely/unlikely, so if you want to see the hint effects yourself
+feel free to experiment with that.
 
+Theres' 'perf branch' patchset, able to gather information from the
+Branch Trace Store (BTS), http://lwn.net/Articles/444885/ .
 
-Linux Plumbers has approved a file and storage microconference. The overview page is here:
+There probably are functions in btrfs code where even a small
+improvement could bring some performance, first guess is
+btrfs_search_slot + the callees, but I've never seen it up in the perf
+top profile.
 
-http://wiki.linuxplumbersconf.org/2013:file_and_storage_systems
-
-I would like to started gathering in ideas for topics. I have been approached already with a request to cover the copy_range work Zach Brown kicked off at LSF which I think is a great topic since it has impact throughout the stack, all the way up to applications programmers.
-
-A similar request was made to give some time to non-volatile memory devices and the proposed "persistent memory" backed block device and persistent memory file system from Intel. That also seems to fall in nicely with the plumbers mission statement since it clearly will impact everything from the application on down through the kernel.
-
-Last year, we had a good discussion on management of storage (anaconda, yast, libstoragemgt, etc) - that also might be worth giving updates on.
-
-The instructions for submitting ideas will be updated later today at:
-
-http://www.linuxplumbersconf.org/2013/submitting-topic/
-
-If you have topics that you would like to add, wait until the instructions get posted at the link above. If you are impatient, feel free to email me directly (but probably best to drop the broad mailing lists from the reply).
-
-Thanks!
-
-Ric
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in the body of a message to majordomo@vger.kernel.org More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+david

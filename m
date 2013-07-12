@@ -1,124 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:57946 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754183Ab3G2Wh1 (ORCPT
+Received: from mail-we0-f180.google.com ([74.125.82.180]:54854 "EHLO
+	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964823Ab3GLOCC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 18:37:27 -0400
-Received: by mail-wi0-f176.google.com with SMTP id f14so1690395wiw.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 15:37:26 -0700 (PDT)
+	Fri, 12 Jul 2013 10:02:02 -0400
+Received: by mail-we0-f180.google.com with SMTP id w56so8094255wes.39
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jul 2013 07:02:01 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs-progs: add missing path alloc return value check
-Date: Mon, 29 Jul 2013 23:37:19 +0100
-Message-Id: <1375137439-12167-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1374216370-18953-1-git-send-email-fdmanana@gmail.com>
-References: <1374216370-18953-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs-progs: fix restore command leaving corrupted files
+Date: Fri, 12 Jul 2013 15:01:42 +0100
+Message-Id: <1373637702-22612-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
+References: <1373471006-20994-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also remove unused path in extent-tree.c:finish_current_insert().
+When there are files that have parts shared with snapshots, the
+restore command was incorrectly restoring them, as it was not
+taking into account the offset and number of bytes fields from
+the file extent item. Besides leaving the recovered file corrupt,
+it was also inneficient as it read and wrote more data than needed
+(with each extent copy overwriting portions of the one previously
+written).
+
+The following steps show how to reproduce this corruption issue:
+
+$ mkfs.btrfs -f  /dev/sdb3
+$ mount /dev/sdb3 /mnt/btrfs
+$ perl -e '$d = "\x41" . ("\x00" x (1024*1024+349)); open($f,">","/mnt/btrfs/foobar"); print $f $d; close($f);'
+$ du -b /mnt/btrfs/foobar
+1048926 /mnt/btrfs/foobar
+$ md5sum /mnt/btrfs/foobar
+f9f778f3a7410c40e4ed104a3a63c3c4  /mnt/btrfs/foobar
+
+$ btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/my_snap
+$ perl -e 'open($f, "+<", "/mnt/btrfs/foobar"); seek($f, 4096, 0); print $f "\xff"; close($f);'
+$ md5sum /mnt/btrfs/foobar
+b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
+$ umount /mnt/btrfs
+
+$ btrfs restore /dev/sdb3 /tmp/copy
+$ du -b /tmp/copy/foobar
+1048926 /tmp/copy/foobar
+$ md5sum /tmp/copy/foobar
+88db338cbc1c44dfabae083f1ce642d5  /tmp/copy/foobar
+$ od -t x1 -j 8192 -N 4 /tmp/copy/foobar
+0020000 41 00 00 00
+0020004
+$ mount /dev/sdb3 /mnt/btrfs
+$ od -t x1 -j 8192 -N 4 /mnt/btrfs/foobar
+0020000 00 00 00 00
+0020004
+$ md5sum /mnt/btrfs/foobar
+b983fcefd4622a03a78936484c40272b  /mnt/btrfs/foobar
+
+Tested this change with zlib, lzo compression and file sizes larger
+than 1GiB, and found no regression or other corruption issues (so far
+at least).
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
-V2: added 1 more path alloc check and removed unnecessary path
-    allocation in extent-tree.c:finish_current_insert().
-V3: added missing path alloc checks to dir-item.c, file-item.c
-    and btrfs-corrupt-block.c too.
+V2: updated commit message to include the C preprocessor macros
+    in the sample C program.
+V3: updated commit message again to reflect the file size used in
+    the example in the sample C program macro.
+V4: fixed wrong path in commit message in the perl command line.
+V5: updated commit message with simpler steps to reproduce the issue
+    (no more C sample program, all with simple perl commands now).
+V6: made correction again from V4 that was reverted in V5 by mistake.
 
- btrfs-corrupt-block.c |    2 ++
- dir-item.c            |    2 ++
- extent-tree.c         |    8 ++++----
- file-item.c           |    2 ++
- 4 files changed, 10 insertions(+), 4 deletions(-)
+ cmds-restore.c |   13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 8176fad..22facd4 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -159,6 +159,8 @@ static int corrupt_extent(struct btrfs_trans_handle *trans,
- 	int should_del = rand() % 3;
+diff --git a/cmds-restore.c b/cmds-restore.c
+index e48df40..9688599 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -272,6 +272,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+ 	u64 bytenr;
+ 	u64 ram_size;
+ 	u64 disk_size;
++	u64 num_bytes;
+ 	u64 length;
+ 	u64 size_left;
+ 	u64 dev_bytenr;
+@@ -288,7 +289,9 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+ 	disk_size = btrfs_file_extent_disk_num_bytes(leaf, fi);
+ 	ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
+ 	offset = btrfs_file_extent_offset(leaf, fi);
+-	size_left = disk_size;
++	num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
++	size_left = num_bytes;
++	bytenr += offset;
  
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
+ 	if (offset)
+ 		printf("offset is %Lu\n", offset);
+@@ -296,7 +299,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+ 	if (disk_size == 0)
+ 		return 0;
  
- 	key.objectid = bytenr;
- 	key.type = (u8)-1;
-diff --git a/dir-item.c b/dir-item.c
-index f00485a..0ab3c5e 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -123,6 +123,8 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
- 	key.offset = btrfs_name_hash(name, name_len);
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 	data_size = sizeof(*dir_item) + name_len;
- 	dir_item = insert_with_overflow(trans, root, path, &key, data_size,
- 					name, name_len);
-diff --git a/extent-tree.c b/extent-tree.c
-index f597e16..e4adaa3 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1487,6 +1487,8 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+-	inbuf = malloc(disk_size);
++	inbuf = malloc(size_left);
+ 	if (!inbuf) {
+ 		fprintf(stderr, "No memory\n");
+ 		return -1;
+@@ -351,8 +354,8 @@ again:
+ 		goto again;
+ 
+ 	if (compress == BTRFS_COMPRESS_NONE) {
+-		while (total < ram_size) {
+-			done = pwrite(fd, inbuf+total, ram_size-total,
++		while (total < num_bytes) {
++			done = pwrite(fd, inbuf+total, num_bytes-total,
+ 				      pos+total);
+ 			if (done < 0) {
+ 				ret = -1;
+@@ -365,7 +368,7 @@ again:
+ 		goto out;
  	}
  
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 	path->reada = 1;
- 
- 	key.objectid = bytenr;
-@@ -1577,6 +1579,8 @@ int btrfs_set_block_flags(struct btrfs_trans_handle *trans,
- 				  BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA);
- 
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 	path->reada = 1;
- 
- 	key.objectid = bytenr;
-@@ -2078,7 +2082,6 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 	u64 end;
- 	u64 priv;
- 	struct btrfs_fs_info *info = extent_root->fs_info;
--	struct btrfs_path *path;
- 	struct pending_extent_op *extent_op;
- 	struct btrfs_key key;
- 	int ret;
-@@ -2086,8 +2089,6 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 		btrfs_fs_incompat(extent_root->fs_info,
- 				  BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA);
- 
--	path = btrfs_alloc_path();
--
- 	while(1) {
- 		ret = find_first_extent_bit(&info->extent_ins, 0, &start,
- 					    &end, EXTENT_LOCKED);
-@@ -2121,7 +2122,6 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 				  GFP_NOFS);
- 		kfree(extent_op);
- 	}
--	btrfs_free_path(path);
- 	return 0;
- }
- 
-diff --git a/file-item.c b/file-item.c
-index 9c787f0..82bf99e 100644
---- a/file-item.c
-+++ b/file-item.c
-@@ -417,6 +417,8 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
- 	root = root->fs_info->csum_root;
- 
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 
- 	while (1) {
- 		key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+-	ret = decompress(inbuf, outbuf, disk_size, &ram_size, compress);
++	ret = decompress(inbuf, outbuf, num_bytes, &ram_size, compress);
+ 	if (ret) {
+ 		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+ 					      bytenr, length);
 -- 
 1.7.9.5
 

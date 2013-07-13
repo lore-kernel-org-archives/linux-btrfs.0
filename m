@@ -1,103 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f54.google.com ([209.85.214.54]:34854 "EHLO
-	mail-bk0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751752Ab3GMP2Z convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Jul 2013 11:28:25 -0400
-Received: by mail-bk0-f54.google.com with SMTP id it16so4138496bkc.13
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Jul 2013 08:28:23 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20130713120829.2e67645b@wpkg.org>
-References: <20130713120829.2e67645b@wpkg.org>
-Date: Sat, 13 Jul 2013 16:28:23 +0100
-Message-ID: <CAL3q7H5PyRsYZCHwRi8us31g79YG99g+-QLrqWsXqZ10E0k2kQ@mail.gmail.com>
-Subject: Re: btrfs filesystem balance /mnt/btrfs -> segmentation fault (kernel
- BUG at fs/btrfs/relocation.c:3296!)
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Tomasz Chmielewski <mangoo@wpkg.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from zougloub.eu ([188.165.233.99]:47797 "EHLO zougloub.eu"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751399Ab3GMQSA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Jul 2013 12:18:00 -0400
+Date: Sat, 13 Jul 2013 12:14:04 -0400
+From: =?UTF-8?B?SsOpcsO0bWU=?= Carretero <cJ-ko@zougloub.eu>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Subject: Troublesome failure mode and recovery
+Message-ID: <20130713121404.65fc89ea@Bidule>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 13, 2013 at 5:08 AM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
-> I've enabled "extended inode refs" and "skinny metadata extent refs" with btrfstune.
->
-> Then, I've tried running "btrfs filesystem balance" - unfortunately it segfaulted.
-> (not sure if I should run balance operation after using btrfstune with -r and -x)?
->
-> This is with 3.10 kernel with "Btrfs: make backref walking code handle skinny metadata" patch
-> https://patchwork.kernel.org/patch/2800271/
+Hi there,
 
-Perhaps this patch fixes your problem:
-https://patchwork.kernel.org/patch/2718061/
+Experiencing an broken FS in a state I haven't seen before.
 
-(Which doesn't seem to be included in 3.10,
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/relocation.c?id=refs/tags/v3.10#n3262)
+I was running linux-3.10 on my laptop, which I had tried to put to sleep
+with an external btrfs partition attached.
+On resume, the external partition was lost.
+I was able to unmount it, despite many kernel warnings.
+Then I remounted it... and unplugged the USB cable.
+Then I couldn't unmount it.
+Well, too bad, not a big deal.
+I ran alt+sysrq+s, waited a little, ran alt+sysrq+b.
+And on reboot, my root partition (also btrfs) was unmountable, with the error:
 
+  [    1.150000] btrfs bad tree block start 0 1531035648
+  [    1.150000] btrfs: failed to read log tree
+  [    1.150000] btrfs: open_ctree failed
 
->
->
-> [18483.575594] ------------[ cut here ]------------
-> [18483.575644] kernel BUG at fs/btrfs/relocation.c:3296!
-> [18483.575692] invalid opcode: 0000 [#1] SMP
-> [18483.575739] Modules linked in: veth ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand cpufreq_conservative cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor raid6_pq zlib_deflate loop acpi_cpufreq mperf freq_table intel_powerclamp kvm_intel kvm crc32_pclmul i2c_i801 i2c_core video button lpc_ich mfd_core microcode pcspkr ehci_pci ehci_hcd ext4 crc16 jbd2 mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
-> [18483.576119] CPU: 2 PID: 13753 Comm: btrfs Not tainted 3.10.0 #2
-> [18483.576167] Hardware name: System manufacturer System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
-> [18483.576259] task: ffff8807f3edc4a0 ti: ffff8802ceb26000 task.ti: ffff8802ceb26000
-> [18483.576348] RIP: 0010:[<ffffffffa0734e98>]  [<ffffffffa0734e98>] __add_tree_block+0x11b/0x12c [btrfs]
-> [18483.576453] RSP: 0018:ffff8802ceb27a28  EFLAGS: 00010287
-> [18483.576501] RAX: 0000000000000001 RBX: ffff8807efdadcf0 RCX: 0000018b46636000
-> [18483.576550] RDX: 00000000000000a9 RSI: ffff88047afa24f4 RDI: ffff8802ceb27a68
-> [18483.576600] RBP: ffff8802ceb27a98 R08: ffff8802ceb27a68 R09: ffff880527110348
-> [18483.576650] R10: 0000000000001000 R11: 0000160000000000 R12: 0000018b46647000
-> [18483.576699] R13: ffff880345192800 R14: ffff8802ceb27b40 R15: 0000000000001000
-> [18483.576752] FS:  00007fb48c80d740(0000) GS:ffff88081fa80000(0000) knlGS:0000000000000000
-> [18483.576842] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [18483.576892] CR2: 0000000045e025a8 CR3: 0000000624b31000 CR4: 00000000001407e0
-> [18483.576941] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [18483.576991] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [18483.577040] Stack:
-> [18483.577083]  ffff8807f3e00c00 ffff880500000001 0000000000000000 6000ffffa070af5f
-> [18483.577184]  00a90000018b4663 0000000000000000 a90000018b466360 0000000000000000
-> [18483.577278]  ffff8802ceb27a98 ffff8807eddd3120 ffff880345192800 0000000000000904
-> [18483.577368] Call Trace:
-> [18483.577422]  [<ffffffffa0734f6a>] add_data_references+0xc1/0x245 [btrfs]
-> [18483.577480]  [<ffffffffa0735a87>] relocate_block_group+0x212/0x503 [btrfs]
-> [18483.577537]  [<ffffffffa0735ec7>] btrfs_relocate_block_group+0x14f/0x283 [btrfs]
-> [18483.577634]  [<ffffffffa0715d8a>] btrfs_relocate_chunk.isra.65+0x50/0x3bc [btrfs]
-> [18483.577731]  [<ffffffffa0711d09>] ? free_extent_buffer+0x77/0x7c [btrfs]
-> [18483.577788]  [<ffffffffa07190cc>] btrfs_balance+0x9c2/0xb9a [btrfs]
-> [18483.577838]  [<ffffffff810b9117>] ? __do_fault+0x3d0/0x40a
-> [18483.577888]  [<ffffffff810e5e02>] ? __sb_start_write+0xbd/0xf1
-> [18483.577947]  [<ffffffffa071e778>] btrfs_ioctl_balance+0x22e/0x2ac [btrfs]
-> [18483.578004]  [<ffffffffa0721bac>] btrfs_ioctl+0xfab/0x1967 [btrfs]
-> [18483.578055]  [<ffffffff81157d72>] ? avc_has_perm_flags+0x32/0xf7
-> [18483.578104]  [<ffffffff81026887>] ? __do_page_fault+0x34f/0x3f3
-> [18483.578153]  [<ffffffff810f1f51>] vfs_ioctl+0x21/0x34
-> [18483.578200]  [<ffffffff810f27a3>] do_vfs_ioctl+0x3b1/0x3f4
-> [18483.578248]  [<ffffffff810f2838>] SyS_ioctl+0x52/0x82
-> [18483.578298]  [<ffffffff81375812>] system_call_fastpath+0x16/0x1b
-> [18483.578345] Code: 4c 89 f7 e8 77 b1 ff ff 48 89 c2 31 c0 48 85 d2 75 1b e9 42 ff ff ff 48 8d 75 ae 4c 89 f1 48 89 da 4c 89 ef e8 f2 d6 ff ff eb b7 <0f> 0b 48 83 c4 48 5b 41 5c 41 5d 41 5e 41 5f 5d c3 55 48 89 e5
-> [18483.578527] RIP  [<ffffffffa0734e98>] __add_tree_block+0x11b/0x12c [btrfs]
-> [18483.578588]  RSP <ffff8802ceb27a28>
-> [18483.578921] ---[ end trace 5fbd1b64c8886e51 ]---
->
->
-> --
-> Tomasz Chmielewski
-> http://wpkg.org
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Then I did the following:
 
+- Tested various mount flags (some by memory, some by looking at the
+  `fs/btrfs/super.c` code (recovery,clear_cache...)
 
+- Took the drive (Lenovo-branded Micron RealSSD 400) to another computer
+  and made an image of this partition, because this issue could be of use,
+  and I have some recent documents that I'd like to recover in some way.
 
---
-Filipe David Manana,
+- Run various btrfs-progs utilities on the partition
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+- Edit the kernel btrfs code and attempt to mount the partition from a
+  user-mode linux kernel.
+
+The results are the following:
+
+- `btrfs-restore` only works with `-u 1`, so the first superblock data has
+  an issue
+- `btrfsck` was crashing because the code would progress even if fs_root
+  was null... fixed with this patch:
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 8015288..be3e329 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -5777,6 +5777,11 @@ int cmd_check(int argc, char **argv)
+ 
+	root = info->fs_root;
+ 
++	if (root == NULL) {
++		fprintf(stderr, "Error finding FS root\n");
++		return -EIO;
++	}
++
+	if (init_extent_tree) {
+		printf("Creating a new extent tree\n");
+		ret = reinit_extent_tree(info);
+
+- The linux kernel code patched with the following ugly hack would (somehow)
+  boot:
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b8b60b6..0807f4d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2627,6 +2627,14 @@ retry_root_backup:
+ 	tree_root->node = read_tree_block(tree_root,
+ 					  btrfs_super_root(disk_super),
+ 					  blocksize, generation);
++
++	if (1) { // ugly hack to force using the second superblock
++		static int i = 0;
++		if (i++ == 0) {
++			goto recovery_tree_root;
++		}
++	}
++
+ 	if (!tree_root->node ||
+ 	    !test_bit(EXTENT_BUFFER_UPTODATE, &tree_root->node->bflags)) {
+ 		printk(KERN_WARNING "btrfs: failed to read tree root on %s\n",
+
+  But /sbin/init, /bin/bash wouldn't fire up because of btrfs errors.
+  Looks like some inodes are broken.
+  Somehow /usr/bin/python could start, which made me happy.
+
+Within the UML instance with python, I cannot do `ls` (`os.listdir()`)
+on my home folder (`/home/cJ`), and btrfs-restore only restores
+a few dot files in there.
+But I can get inode numbers and read files or subdirectories beyond
+this folder. And it looks like btrfs-debug-tree can find transactions
+containing older updated directory inodes.
+I can also do stat() calls on files, and to call `/sbin/btrfs`
+(using `subprocess.Popen` not `os.system()`).
+If this were a FAT partition, I would be able to recover data in subfolders
+even if the parent folder inode is broken.
+I assume the same thing is possible with btrfs, and even more,
+given that there are probably older copies of the `/home/cJ` directory
+entries from older transactions hanging around somewhere.
+But I am no btrfs specialist, so I can't get this data.
+
+Ideally I would like to be able to mount an older generation, or
+re-patch older directory inodes where the newer directories cannot be
+read.
+Having btrfs-restore able to restore sub-directories of a certain generation
+would also be very helpful.
+
+So I have my disk image, linux and btrfs-progs from git, a bootable UML,
+and can allocate some time to this issue.
+
+Your help is welcome.
+
+Thanks,
+
+-- 
+cJ

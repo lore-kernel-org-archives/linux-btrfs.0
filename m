@@ -1,61 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:40070 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757602Ab3GMLZY (ORCPT
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:37053 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753420Ab3GMNDL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Jul 2013 07:25:24 -0400
-Received: by mail-wg0-f51.google.com with SMTP id e11so8736024wgh.6
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Jul 2013 04:25:22 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+	Sat, 13 Jul 2013 09:03:11 -0400
+Received: by mail-pa0-f43.google.com with SMTP id hz11so9771231pad.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Jul 2013 06:03:10 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: add missing error checks to add_data_references
-Date: Sat, 13 Jul 2013 12:25:15 +0100
-Message-Id: <1373714715-10250-1-git-send-email-fdmanana@gmail.com>
+Cc: wangsl.fnst@cn.fujitsu.com, wangshilong1991@gmail.com
+Subject: [PATCH] Btrfs: set qgroup_ulist to be null after calling ulist_free()
+Date: Sat, 13 Jul 2013 21:02:54 +0800
+Message-Id: <1373720574-23388-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function relocation.c:add_data_references() was not checking
-if all calls to __add_tree_block() and find_data_references() were
-succeeding or not.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+We call ulist_free(qgroup_ulist) in btrfs_free_qgroup_config(),
+and btrfs_free_qgroup_config() may be called in two cases:
+
+(1)umount filesystem
+(2)disabling quota
+
+However, if we firstly disable quota and then umount filesystem,
+a double free happens. Fix it.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/relocation.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/qgroup.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1209649..295a611 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3628,7 +3628,7 @@ int add_data_references(struct reloc_control *rc,
- 	unsigned long ptr;
- 	unsigned long end;
- 	u32 blocksize = btrfs_level_size(rc->extent_root, 0);
--	int ret;
-+	int ret = 0;
- 	int err = 0;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1280eff..64a9e3c 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -460,7 +460,13 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info)
+ 		}
+ 		kfree(qgroup);
+ 	}
++	/*
++	 * we call btrfs_free_qgroup_config() when umounting
++	 * filesystem and disabling quota, so we set qgroup_ulit
++	 * to be null here to avoid double free.
++	 */
+ 	ulist_free(fs_info->qgroup_ulist);
++	fs_info->qgroup_ulist = NULL;
+ }
  
- 	eb = path->nodes[0];
-@@ -3655,6 +3655,10 @@ int add_data_references(struct reloc_control *rc,
- 		} else {
- 			BUG();
- 		}
-+		if (ret) {
-+			err = ret;
-+			goto out;
-+		}
- 		ptr += btrfs_extent_inline_ref_size(key.type);
- 	}
- 	WARN_ON(ptr > end);
-@@ -3700,6 +3704,7 @@ int add_data_references(struct reloc_control *rc,
- 		}
- 		path->slots[0]++;
- 	}
-+out:
- 	btrfs_release_path(path);
- 	if (err)
- 		free_block_list(blocks);
+ static int add_qgroup_relation_item(struct btrfs_trans_handle *trans,
 -- 
-1.7.9.5
+1.7.11.7
 

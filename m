@@ -1,105 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30295 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755817Ab3GaBL7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jul 2013 21:11:59 -0400
-Message-ID: <51F8649C.7070302@cn.fujitsu.com>
-Date: Wed, 31 Jul 2013 09:13:00 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-CC: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [PATCH v3] Btrfs-progs: optimize function btrfs_read_chunk_tree
-References: <1373062984-12641-1-git-send-email-fdmanana@gmail.com> <1375182497-31276-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1375182497-31276-1-git-send-email-fdmanana@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:41831 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751777Ab3GNIlW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 14 Jul 2013 04:41:22 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6E8fKwA029274
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:41:21 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6E8fKJg002384
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:41:20 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6E8fJjl010490
+	for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 08:41:19 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Date: Sun, 14 Jul 2013 16:46:16 +0800
+Message-Id: <1373791576-29898-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1373410908-2274-1-git-send-email-wangshilong1991@gmail.com>
+References: <1373410908-2274-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	tue, 30 Jul 2013 12:08:17 +0100, Filipe David Borba Manana wrote:
-> After reading all device items from the chunk tree, don't
-> exit the loop and then navigate down the tree again to find
-> the chunk items. Instead just read all device items and
-> chunk items with a single tree search. This is possible
-> because all device items are found before any chunk item in
-> the chunks tree.
-> 
-> This is a port of the corresponding kernel patch to keep both
-> kernel and btrfs-progs identical:
-> 
-> https://patchwork.kernel.org/patch/2835529/
-> 
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> ---
-> 
-> V2: Simplified logic inside the loop
->     (suggested by Josef Bacik on irc).
-> V3: Updated comment to comply with kernel coding style.
+After calling opendir() successfully, closedir() should be
+also called to free memory. Otherwise, memory leak happens.
 
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-> 
->  volumes.c |   28 ++++++++++------------------
->  1 file changed, 10 insertions(+), 18 deletions(-)
-> 
-> diff --git a/volumes.c b/volumes.c
-> index 0ff2283..0cb3505 100644
-> --- a/volumes.c
-> +++ b/volumes.c
-> @@ -1718,14 +1718,15 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
->  	if (!path)
->  		return -ENOMEM;
->  
-> -	/* first we search for all of the device items, and then we
-> -	 * read in all of the chunk items.  This way we can create chunk
-> -	 * mappings that reference all of the devices that are afound
-> +	/*
-> +	 * Read all device items, and then all the chunk items. All
-> +	 * device items are found before any chunk item (their object id
-> +	 * is smaller than the lowest possible object id for a chunk
-> +	 * item - BTRFS_FIRST_CHUNK_TREE_OBJECTID).
->  	 */
->  	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
->  	key.offset = 0;
->  	key.type = 0;
-> -again:
->  	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
->  	while(1) {
->  		leaf = path->nodes[0];
-> @@ -1739,16 +1740,12 @@ again:
->  			break;
->  		}
->  		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-> -		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
-> -			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
-> -				break;
-> -			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
-> -				struct btrfs_dev_item *dev_item;
-> -				dev_item = btrfs_item_ptr(leaf, slot,
-> +		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
-> +			struct btrfs_dev_item *dev_item;
-> +			dev_item = btrfs_item_ptr(leaf, slot,
->  						  struct btrfs_dev_item);
-> -				ret = read_one_dev(root, leaf, dev_item);
-> -				BUG_ON(ret);
-> -			}
-> +			ret = read_one_dev(root, leaf, dev_item);
-> +			BUG_ON(ret);
->  		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
->  			struct btrfs_chunk *chunk;
->  			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-> @@ -1757,11 +1754,6 @@ again:
->  		}
->  		path->slots[0]++;
->  	}
-> -	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
-> -		key.objectid = 0;
-> -		btrfs_release_path(root, path);
-> -		goto again;
-> -	}
->  
->  	ret = 0;
->  error:
-> 
+diff --git a/utils.c b/utils.c
+index d3bec9b..4b3c778 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1503,7 +1503,7 @@ int open_file_or_dir(const char *fname)
+ {
+ 	int ret;
+ 	struct stat st;
+-	DIR *dirstream;
++	DIR *dirstream = NULL;
+ 	int fd;
+ 
+ 	ret = stat(fname, &st);
+@@ -1520,7 +1520,9 @@ int open_file_or_dir(const char *fname)
+ 		fd = open(fname, O_RDWR);
+ 	}
+ 	if (fd < 0) {
+-		return -3;
++		fd = -3;
++		if (dirstream)
++			closedir(dirstream);
+ 	}
+ 	return fd;
+ }
+-- 
+1.7.7.6
 

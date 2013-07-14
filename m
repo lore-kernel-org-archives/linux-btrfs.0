@@ -1,32 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39592 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750844Ab3GMU7n convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Jul 2013 16:59:43 -0400
-Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:57538 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.80.1)
-	(envelope-from <lists@colorremedies.com>)
-	id 1Uy6us-002hst-Oe
-	for linux-btrfs@vger.kernel.org; Sat, 13 Jul 2013 14:59:42 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: mkfs.btrfs out of memory failure on lvm2 thinp volume
-Message-Id: <14AE2C2A-6DC0-4DB6-97F4-6A661E3BF850@colorremedies.com>
-Date: Sat, 13 Jul 2013 14:59:45 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Received: from plane.gmane.org ([80.91.229.3]:57111 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751680Ab3GNJzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 14 Jul 2013 05:55:04 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UyJ1A-0002OA-V1
+	for linux-btrfs@vger.kernel.org; Sun, 14 Jul 2013 11:55:00 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 11:55:00 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 11:55:00 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Troublesome failure mode and recovery
+Date: Sun, 14 Jul 2013 09:54:40 +0000 (UTC)
+Message-ID: <pan$34dc5$5935c1de$90ceba6d$c7cbfaeb@cox.net>
+References: <20130713121404.65fc89ea@Bidule>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-https://bugzilla.redhat.com/show_bug.cgi?id=984236
+Jérôme Carretero posted on Sat, 13 Jul 2013 12:14:04 -0400 as excerpted:
 
-kernel-3.10.0-1.fc20.x86_64
+> - `btrfsck` was crashing because the code would progress even if fs_root
+>   was null... fixed with this patch:
 
-Should it be possible to mkfs.btrfs on a virtual LV backed by LVM thinp? I can successfully create an XFS fs on the same virtual device. The virtual LV is 16TB in size, I haven't tried anything smaller yet to see if that's the problem. There is a dmesg attached to the bug report.
+AFAIK (based on what I've seen go by on the list, tho I'm not technical 
+enough to actually make sense of the patches themselves) there's a still 
+new patch floating around that deals with that one already.  It's too new 
+to be in 3.10.0 (tho it might possibly make a 3.10 stable if it hits 
+3.11), but will hopefully be in 3.11.
 
-Just because it works with mkfs.xfs doesn't mean it's sane. The end goal is testing glusterfs in two VMs, each with two bricks. One VM will use XFS bricks and the other VM will use btrfs bricks. So it's not like I'm in any sort of real trouble. At the moment, this is all being done on baremetal, not within VMs (there are no VMs yet).
+The rest I'll leave to the experts.
 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Chris Murphy

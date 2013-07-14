@@ -1,74 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50732 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752634Ab3GNPO0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jul 2013 11:14:26 -0400
-Date: Sun, 14 Jul 2013 16:14:21 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Can btrfs handle different RAID levels for different subvolumes?
-Message-ID: <20130714151421.GD29644@carfax.org.uk>
-References: <51E2BABB.3060506@statystyka.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="3Pql8miugIZX0722"
-In-Reply-To: <51E2BABB.3060506@statystyka.net>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:12662 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752497Ab3GNPyG convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 14 Jul 2013 11:54:06 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:63874 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1UyOce-001qGK-7i
+	for linux-btrfs@vger.kernel.org; Sun, 14 Jul 2013 09:54:04 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: mkfs.btrfs out of memory failure on lvm2 thinp volume
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <14AE2C2A-6DC0-4DB6-97F4-6A661E3BF850@colorremedies.com>
+Date: Sun, 14 Jul 2013 09:54:05 -0600
+Message-Id: <A4461AC3-BFEF-4B25-A47E-8E20B4A723BE@colorremedies.com>
+References: <14AE2C2A-6DC0-4DB6-97F4-6A661E3BF850@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---3Pql8miugIZX0722
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Jul 13, 2013, at 2:59 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
-On Sun, Jul 14, 2013 at 04:50:35PM +0200, Adam Ryczkowski wrote:
-> Can one btrfs filesystem handle different RAID levels e.g. for
-> different subvolumes? If so, how does deduplication with bedup
-> (https://github.com/g2p/bedup) across them work?
-
-   No, not yet.
-
-   It's planned at some point (probably in the fairly distant future),
-but hasn't arrived yet.
-
-   Hugo.
-
-> (It has been asked already on the Net (http://unix.stackexchange.com/questions/82869/can-btrfs-handle-different-raid-levels-for-different-subvolumes)
-> but the question didn't get the answer. I guess answering it should
-> be straightforward for you, guys :-) )
+> https://bugzilla.redhat.com/show_bug.cgi?id=984236
 > 
-> Adam Ryczkowski
+> kernel-3.10.0-1.fc20.x86_64
 > 
+> Should it be possible to mkfs.btrfs on a virtual LV backed by LVM thinp? I can successfully create an XFS fs on the same virtual device. The virtual LV is 16TB in size, I haven't tried anything smaller yet to see if that's the problem. There is a dmesg attached to the bug report.
 > 
+> Just because it works with mkfs.xfs doesn't mean it's sane. The end goal is testing glusterfs in two VMs, each with two bricks. One VM will use XFS bricks and the other VM will use btrfs bricks. So it's not like I'm in any sort of real trouble. At the moment, this is all being done on baremetal, not within VMs (there are no VMs yet).
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- But somewhere along the line, it seems / That pimp became ---    
-                       cool,  and punk mainstream.                       
+Nevermind. It also happens with xfs, just not every time. A VM pointed to a 16TB qcow2 file doesn't exhibit this issue with either mkfs. So I think this may be an LVM thinp related bug.
 
---3Pql8miugIZX0722
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUeLATFheFHXiqx3kAQJdhw/8CTs39fwP9q+cgUIiE3jtm/KCPUdLTRCZ
-lfYz705EfyVdcdMrlH7BIpUg/bE11LFTKVm0Oa/1obXbEQ2M2lDzTJL+pToKiVLr
-iqTLLocdfXEUtetYM+Fmip836EDS4LQ7oUK+KO9QtwseQUfyfAHjmgwY62tmcJbz
-rjm8LL8MXapzVVQZYczhJ8ITH8UmWZq1CMpmYucmNPOwhaOr1jN6UnI6IJGit/GM
-5q0tDyJJ7wD7Eyrz6iqxuY9y5zpkeMSrXBBhR9soaPbaMttSPO+FPyx9DyUrPrMN
-AgT8QGRDcbd0dtBC0q+ZeSbRvSgEOnp92P7qlVjTRLWSmnOlYvE2FFKd3VqJ1tDb
-0fVb0loVfTU5wCUid2uREcmrqOYbJR/2zDPYkNvCUSSJtJzwYfjIKQt0eWe1JmWo
-9n2lz6gr18z+ctthUcq3Aon0F1CrQ6/nWTZ9qTvMxVadNqEaOvYLHWJ+YhbiNWwq
-LGwXQqD8seHkSvxw46fJIr4HFljcjwN7LfyySnZ2FLM4B9lGnZxuka0pr1B9xCBh
-rNFFFzyGEjHscb3SZ/2Se+DtPznqeqEhR1in70GrnP3GUVrJWqoz++0aVKkVb9hS
-oMjVaaCBVx3nC36cQIxcedipAX4oQmK5Muf51DEEL57+1BxHEKjnN2/LyVNFfEyB
-3JaJCK9sZfI=
-=V5hh
------END PGP SIGNATURE-----
-
---3Pql8miugIZX0722--
+Chris Murphy

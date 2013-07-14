@@ -1,45 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57111 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751680Ab3GNJzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jul 2013 05:55:04 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UyJ1A-0002OA-V1
-	for linux-btrfs@vger.kernel.org; Sun, 14 Jul 2013 11:55:00 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 11:55:00 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 11:55:00 +0200
+Received: from mail-ie0-f173.google.com ([209.85.223.173]:35122 "EHLO
+	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752394Ab3GNNoB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 14 Jul 2013 09:44:01 -0400
+Received: by mail-ie0-f173.google.com with SMTP id k13so23581656iea.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2013 06:44:01 -0700 (PDT)
+MIME-Version: 1.0
+From: Dave Barnum <dave@thebarnums.com>
+Date: Sun, 14 Jul 2013 13:43:41 +0000
+Message-ID: <CACvcmCCQKO6cx+vV0pb-GbiFBGDr2aq6q=Yt5StsDSkq91W9Hw@mail.gmail.com>
+Subject: Need help mounting broken btrfs Fedora 19
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Troublesome failure mode and recovery
-Date: Sun, 14 Jul 2013 09:54:40 +0000 (UTC)
-Message-ID: <pan$34dc5$5935c1de$90ceba6d$c7cbfaeb@cox.net>
-References: <20130713121404.65fc89ea@Bidule>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jérôme Carretero posted on Sat, 13 Jul 2013 12:14:04 -0400 as excerpted:
+I need some help as may have lost some number of files on a btrfs raid
+1 volume. I'm not quite sure what happend which, I know, only adds to
+the problem.
 
-> - `btrfsck` was crashing because the code would progress even if fs_root
->   was null... fixed with this patch:
+On my computer #1 I had only a month or so ago installed Fedora 19
+Beta and at the time of install chose BTRFS, raid 1. Recently one of
+the drives started complaining that it was going to die. WIthout
+taking it out of the array (perhaps I should have done that) I turned
+off the system and swapped the drive with another. From then on I lost
+my ability to boot the system. I could not get anything to work with
+the new hard drive. Then I put the old hard drive back in so that I
+could try to boot again. Still nothing. At one point I think I was
+able to see grub - but at this point, I'm not. I just get boot disk
+failure.
 
-AFAIK (based on what I've seen go by on the list, tho I'm not technical 
-enough to actually make sense of the patches themselves) there's a still 
-new patch floating around that deals with that one already.  It's too new 
-to be in 3.10.0 (tho it might possibly make a 3.10 stable if it hits 
-3.11), but will hopefully be in 3.11.
+Further more on the failing drive, drive A, I can still see the
+patitions but I cannot mount it on another system. On drive B (the
+other half of the mirror) I do not see any partitions. I tried copying
+the partition structure using sfdisk from A to B but that probably was
+not smart.
 
-The rest I'll leave to the experts.
+I plugged drive A into computer #2 using a live Fedora and Ubuntu CD
+to try to mount the volume. However in both distributions I am unable
+to mount the volume. I've tried mounting using -o degraded but I still
+get the same error. The error I'm seeing when I try to mount the
+filesystem goes like this:
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Quote:
+[10792.307425] device label fedora_ison devid 2 transid 48720 /dev/sdc2
+[10792.308202] btrfs: allowing degraded mounts
+[10792.308206] btrfs: disk space caching is enabled
+[10792.308599] btrfs: failed to read chunk root on sdc2
+[10792.308799] btrfs warning page private not zero on page 20979712
+[10792.320146] btrfs: open_ctree failed
 
+I believe the superblock may be in tact since when i turn the command
+./btrfs-show-super /dev/sdc2 I get:
+
+Quote:
+root@ubuntu:/downloads/btrfs-progs# ./btrfs-show-super /dev/sdc2
+superblock: bytenr=65536, device=/dev/sdc2
+---------------------------------------------------------
+csum 0xfc19c468 [match]
+bytenr 65536
+flags 0x1
+magic _BHRfS_M [match]
+fsid cbbf7d4c-f7a0-43ff-aed5-77b347d6ff25
+label fedora_ison
+generation 48720
+root 1105526784
+sys_array_size 226
+chunk_root_generation 46504
+root_level 1
+chunk_root 20979712
+chunk_root_level 1
+log_root 0
+log_root_transid 0
+log_root_level 0
+total_bytes 2988521291776
+bytes_used 598216536064
+sectorsize 4096
+nodesize 4096
+leafsize 4096
+stripesize 4096
+root_dir 6
+num_devices 2
+compat_flags 0x0
+compat_ro_flags 0x0
+incompat_flags 0x1
+csum_type 0
+csum_size 4
+cache_generation 48720
+dev_item.uuid 5f61edaa-7f12-4ec5-a024-02f7797e1400
+dev_item.fsid cbbf7d4c-f7a0-43ff-aed5-77b347d6ff25 [match]
+dev_item.type 0
+dev_item.total_bytes 1494260645888
+dev_item.bytes_used 482110078976
+dev_item.io_align 4096
+dev_item.io_width 4096
+dev_item.sector_size 4096
+dev_item.devid 2
+dev_item.dev_group 0
+dev_item.seek_speed 0
+dev_item.bandwidth 0
+dev_item.generation 0
+
+Could someone help me troubleshoot why I can't mount my volume? I
+would REALLY appreciate it! Perhaps there is a way to repair my broken
+tree structure?
+
+Thank You!

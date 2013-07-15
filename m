@@ -1,93 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38981 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:38989 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753306Ab3GOF0J (ORCPT
+	with ESMTP id S1753765Ab3GOF0M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 01:26:09 -0400
+	Mon, 15 Jul 2013 01:26:12 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 01/11] btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
-Date: Mon, 15 Jul 2013 13:30:47 +0800
-Message-Id: <1373866257-10519-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/11] btrfs-progs: btrfs_scan_one_dir not to skip links when /dev/mapper is provided
+Date: Mon, 15 Jul 2013 13:30:51 +0800
+Message-Id: <1373866257-10519-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
 
-btrfs_scan_for_fsid uses only one argument run_ioctl out of 3
-so remove the rest two of them
+we would need btrfs_scan_one_dir to san devs under /dev/mapper,
+but /dev/mapper has links to the actual devs and current implementation
+of btrfs_scan_one_dir skips links so it does not pick any
+links under /dev/mapper. skipping links is fine when scanning whole of
+/dev. But when we just want to scan /dev/mapper we want to avoid skipping
+links otherwise we would be left with nothing.
+
+This patch just adds the check if we are scanning devs
+ONLY under /dev/mapper if when so it will not skip links
+
+Thanks
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-find-root.c |    2 +-
- disk-io.c         |    2 +-
- utils.c           |    5 ++---
- utils.h           |    3 +--
- 4 files changed, 5 insertions(+), 7 deletions(-)
+ utils.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 967486a..253c200 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -110,7 +110,7 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
- 	}
- 
- 	if (total_devs != 1) {
--		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
-+		ret = btrfs_scan_for_fsid(1);
- 		if (ret)
- 			goto out;
- 	}
-diff --git a/disk-io.c b/disk-io.c
-index 7c842be..5b84b02 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -716,7 +716,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	}
- 
- 	if (total_devs != 1) {
--		ret = btrfs_scan_for_fsid(fs_devices, total_devs, 1);
-+		ret = btrfs_scan_for_fsid(1);
- 		if (ret)
- 			goto out;
- 	}
 diff --git a/utils.c b/utils.c
-index ca4eb1b..4f74d78 100644
+index 345bfdc..59010c9 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -950,7 +950,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+@@ -1040,6 +1040,7 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+ 	struct list_head pending_list;
+ 	struct btrfs_fs_devices *tmp_devices;
+ 	u64 num_devices;
++	int skip_link = 1;
  
- 	/* scan other devices */
- 	if (is_btrfs && total_devs > 1) {
--		if((ret = btrfs_scan_for_fsid(fs_devices_mnt, total_devs, 1)))
-+		if((ret = btrfs_scan_for_fsid(1)))
- 			return ret;
- 	}
+ 	INIT_LIST_HEAD(&pending_list);
  
-@@ -1132,8 +1132,7 @@ fail:
- 	return ret;
- }
+@@ -1048,6 +1049,9 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+ 		return -ENOMEM;
+ 	strcpy(pending->name, dirname);
  
--int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
--			int run_ioctls)
-+int btrfs_scan_for_fsid(int run_ioctls)
- {
- 	int ret;
- 
-diff --git a/utils.h b/utils.h
-index 36fb591..5e5ea53 100644
---- a/utils.h
-+++ b/utils.h
-@@ -35,8 +35,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root, int fd, char *path,
- 		      u64 block_count, u32 io_width, u32 io_align,
- 		      u32 sectorsize);
--int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
--			int run_ioctls);
-+int btrfs_scan_for_fsid(int run_ioctls);
- void btrfs_register_one_device(char *fname);
- int btrfs_scan_one_dir(char *dirname, int run_ioctl);
- int check_mounted(const char *devicename);
++	if (!strncmp(dirname, "/dev/mapper", strlen("/dev/mapper")))
++		skip_link = 0;
++
+ again:
+ 	dirname_len = strlen(pending->name);
+ 	fullpath = malloc(PATH_MAX);
+@@ -1079,7 +1083,7 @@ again:
+ 			fprintf(stderr, "failed to stat %s\n", fullpath);
+ 			continue;
+ 		}
+-		if (S_ISLNK(st.st_mode))
++		if (skip_link && S_ISLNK(st.st_mode))
+ 			continue;
+ 		if (S_ISDIR(st.st_mode)) {
+ 			struct pending_dir *next = malloc(sizeof(*next));
+@@ -1090,7 +1094,7 @@ again:
+ 			strcpy(next->name, fullpath);
+ 			list_add_tail(&next->list, &pending_list);
+ 		}
+-		if (!S_ISBLK(st.st_mode)) {
++		if (skip_link && !S_ISBLK(st.st_mode)) {
+ 			continue;
+ 		}
+ 		fd = open(fullpath, O_RDONLY);
 -- 
 1.7.7.6
 

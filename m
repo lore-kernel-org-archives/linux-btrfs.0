@@ -1,85 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:41313 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752035Ab3GHNWD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jul 2013 09:22:03 -0400
-Received: by mail-wg0-f48.google.com with SMTP id f11so3687174wgh.15
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Jul 2013 06:22:01 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2 5/5] Btrfs-progs: don't ignore errors in extent-tree.c
-Date: Mon,  8 Jul 2013 14:21:24 +0100
-Message-Id: <1373289684-9441-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
-References: <1372593106-6593-1-git-send-email-fdmanana@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:43378 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752894Ab3GOF0H (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jul 2013 01:26:07 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH 00/11 v2 (resend)] btrfs-progs: coalesce of patches
+Date: Mon, 15 Jul 2013 13:30:46 +0800
+Message-Id: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Several function return values were being completely
-ignored.
+ This is the rebased patch set, rebased on top of the
+ integration-20130710
 
-V2: Added more error checking all over extent-tree.c
+ Dropped 
+	btrfs-progs: obtain used_bytes in BTRFS_IOC_FS_INFO ioctl
+ Introduced
+	btrfs-progs: move out print in cmd_df to another function
+	btrfs-progs: get string for the group profile and type
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- extent-tree.c |   20 +++++++++++++-------
- 1 file changed, 13 insertions(+), 7 deletions(-)
+ (These changes were needed as part of show --kernel support,
+ with out introducing new ioctl)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 6490d8a..6458ce4 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2110,6 +2110,7 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 						extent_op->flags,
- 						&extent_op->key,
- 						extent_op->level, &key);
-+			BUG_ON(ret);
- 		} else {
- 			BUG_ON(1);
- 		}
-@@ -2756,7 +2757,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 
- 	ret = update_block_group(trans, root, ins->objectid, root->leafsize,
- 				 1, 0);
--	return 0;
-+	return ret;
- }
- 
- static int alloc_tree_block(struct btrfs_trans_handle *trans,
-@@ -3345,12 +3346,14 @@ btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_used, u64 type,
- 	BUG_ON(ret);
- 
- 	bit = block_group_state_bits(type);
--	set_extent_bits(block_group_cache, chunk_offset,
--			chunk_offset + size - 1,
--			bit | EXTENT_LOCKED, GFP_NOFS);
-+	ret = set_extent_bits(block_group_cache, chunk_offset,
-+			      chunk_offset + size - 1,
-+			      bit | EXTENT_LOCKED, GFP_NOFS);
-+	BUG_ON(ret);
- 
--	set_state_private(block_group_cache, chunk_offset,
--			  (unsigned long)cache);
-+	ret = set_state_private(block_group_cache, chunk_offset,
-+				(unsigned long)cache);
-+	BUG_ON(ret);
- 	set_avail_alloc_bits(fs_info, type);
- 
- 	return cache;
-@@ -3372,8 +3375,11 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 				sizeof(cache->item));
- 	BUG_ON(ret);
- 
--	finish_current_insert(trans, extent_root);
-+	ret = finish_current_insert(trans, extent_root);
-+	BUG_ON(ret);
- 	ret = del_pending_extents(trans, extent_root);
-+	BUG_ON(ret);
-+
- 	return 0;
- }
- 
+Anand Jain (11):
+  btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
+  btrfs-progs: label option in btrfs filesystem show is not coded
+  btrfs-progs: update device scan usage
+  btrfs-progs: congregate dev scan
+  btrfs-progs: btrfs_scan_one_dir not to skip links when /dev/mapper is
+    provided
+  btrfs-progs: scan /dev/mapper in filesystem show and device scan
+  btrfs-progs: device delete to get errors from the kernel
+  btrfs-progs: get_label_mounted to return label instead of print
+  btrfs-progs: move out print in cmd_df to another function
+  btrfs-progs: get string for the group profile and type
+  btrfs-progs: introduce btrfs filesystem show --kernel
+
+ btrfs-find-root.c |    2 +-
+ cmds-device.c     |   29 +++--
+ cmds-filesystem.c |  349 ++++++++++++++++++++++++++++++++++++++++-------------
+ ctree.h           |   11 ++
+ disk-io.c         |    2 +-
+ ioctl.h           |   43 +++++++-
+ man/btrfs.8.in    |   15 ++-
+ utils.c           |   56 +++++++--
+ utils.h           |   10 +-
+ 9 files changed, 395 insertions(+), 122 deletions(-)
+
 -- 
-1.7.9.5
+1.7.7.6
 

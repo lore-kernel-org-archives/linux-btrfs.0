@@ -1,182 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:29171 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755296Ab3GOUz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 16:55:58 -0400
-Date: Mon, 15 Jul 2013 13:55:51 -0700
-From: Zach Brown <zab@redhat.com>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>
-Subject: Re: [PATCH 4/4] btrfs: offline dedupe
-Message-ID: <20130715205551.GT25414@lenny.home.zabbo.net>
-References: <1370982698-757-1-git-send-email-mfasheh@suse.de>
- <1370982698-757-5-git-send-email-mfasheh@suse.de>
+Received: from mail-qe0-f41.google.com ([209.85.128.41]:57297 "EHLO
+	mail-qe0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755288Ab3GOVWu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jul 2013 17:22:50 -0400
+Message-ID: <51E46826.20709@gmail.com>
+Date: Mon, 15 Jul 2013 17:22:46 -0400
+From: Ric Wheeler <ricwheeler@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1370982698-757-5-git-send-email-mfasheh@suse.de>
+To: "faibish, sorin" <faibish_sorin@emc.com>
+CC: "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, xfs-oss <xfs@oss.sgi.com>,
+        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>,
+        IDE/ATA development list <linux-ide@vger.kernel.org>,
+        "anaconda-devel-list@redhat.com" <anaconda-devel-list@redhat.com>
+Subject: Re: Linux Plumbers IO & File System Micro-conference
+References: <51E03AFB.1000000@gmail.com> <F0897B83F4BC10458936F08DADF233160F65F99416@MX02A.corp.emc.com>
+In-Reply-To: <F0897B83F4BC10458936F08DADF233160F65F99416@MX02A.corp.emc.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef asked that I check out the offline dedup patches.  I hope that I
-found the most recent posting in my archives :).
+On 07/12/2013 01:42 PM, faibish, sorin wrote:
+> Can we have a discussion on Lustre client in the kernel? Thanks
+>
+> ./Sorin
 
-The first three patches seemed fine.  I have questions about the
-read/compare/clone core:
+I am not sure that we have that much to do for Lustre on the client side. Is 
+this a topic that would be of broad enough interest to include people outside of 
+the kernel developers?
 
-> +		addr = kmap(page);
-> +		memcpy(buffer + bytes_copied, addr, PAGE_CACHE_SIZE);
-> +		kunmap(page);
+thanks!
 
-I think you need flush_dcache_page() here 'cause there could be writable
-user address mappings of these page cache pages.
+Ric
 
-> +static void btrfs_double_lock(struct inode *inode1, u64 loff1,
-> +			      struct inode *inode2, u64 loff2, u64 len)
-> +{
-> +	if (inode1 < inode2) {
-> +		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
-> +		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-> +		lock_extent_range(inode1, loff1, len);
-> +		lock_extent_range(inode2, loff2, len);
-> +	} else {
-> +		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_PARENT);
-> +		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_CHILD);
-> +		lock_extent_range(inode2, loff2, len);
-> +		lock_extent_range(inode1, loff1, len);
-> +	}
-> +}
+>
+> -----Original Message-----
+> From: linux-fsdevel-owner@vger.kernel.org [mailto:linux-fsdevel-owner@vger.kernel.org] On Behalf Of Ric Wheeler
+> Sent: Friday, July 12, 2013 1:21 PM
+> To: linux-scsi@vger.kernel.org; Linux FS Devel; linux-nfs@vger.kernel.org; linux-btrfs; xfs-oss; linux-ext4@vger.kernel.org; device-mapper development; IDE/ATA development list; anaconda-devel-list@redhat.com
+> Subject: Linux Plumbers IO & File System Micro-conference
+>
+>
+> Linux Plumbers has approved a file and storage microconference. The overview page is here:
+>
+> http://wiki.linuxplumbersconf.org/2013:file_and_storage_systems
+>
+> I would like to started gathering in ideas for topics. I have been approached already with a request to cover the copy_range work Zach Brown kicked off at LSF which I think is a great topic since it has impact throughout the stack, all the way up to applications programmers.
+>
+> A similar request was made to give some time to non-volatile memory devices and the proposed "persistent memory" backed block device and persistent memory file system from Intel. That also seems to fall in nicely with the plumbers mission statement since it clearly will impact everything from the application on down through the kernel.
+>
+> Last year, we had a good discussion on management of storage (anaconda, yast, libstoragemgt, etc) - that also might be worth giving updates on.
+>
+> The instructions for submitting ideas will be updated later today at:
+>
+> http://www.linuxplumbersconf.org/2013/submitting-topic/
+>
+> If you have topics that you would like to add, wait until the instructions get posted at the link above. If you are impatient, feel free to email me directly (but probably best to drop the broad mailing lists from the reply).
+>
+> Thanks!
+>
+> Ric
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in the body of a message to majordomo@vger.kernel.org More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 
-I'd do it a little differently to reduce the surface area for future 1/2
-copy-paste typos.  (And maybe make it safe for when src == dst?)
-
-	if (inode1 > inode2)
-		swap(inode1, inode2)
-
-	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
-	lock_extent_range(inode1, loff1, len);
-	if (inode1 != inode2) {
-		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-		lock_extent_range(inode2, loff2, len);
-	}
-
-If lockdep lets us do this, anyway :/.  (Then maybe a similar swap to
-match in unlock, I'm not sure.)
-
-> +	if (copy_from_user(&tmp,
-> +			   (struct btrfs_ioctl_same_args __user *)argp,
-> +			   sizeof(tmp))) {
-> +		ret = -EFAULT;
-> +		goto out_drop_write;
-> +	}
-> +
-> +	args_size = sizeof(tmp) + (tmp.dest_count *
-> +			sizeof(struct btrfs_ioctl_same_extent_info));
-> +
-> +	/* Keep size of ioctl argument sane */
-> +	if (args_size > PAGE_CACHE_SIZE) {
-> +		ret = -E2BIG;
-> +		goto out_drop_write;
-> +	}
-> +
-> +	args = kmalloc(args_size, GFP_NOFS);
-> +	if (!args) {
-> +		ret = -ENOMEM;
-> +		goto out_drop_write;
-> +	}
-> +
-> +	ret = -EFAULT;
-> +	if (copy_from_user(args,
-> +			   (struct btrfs_ioctl_same_args __user *)argp,
-> +			   args_size))
-> +		goto out;
-> +	/* Make sure args didn't change magically between copies. */
-> +	if (memcmp(&tmp, args, sizeof(tmp)))
-> +		goto out;
-> +
-> +	if ((sizeof(tmp) + (sizeof(*info) * args->dest_count)) > args_size)
-> +		goto out;
-> +
-> +	/* pre-format 'out' fields to sane default values */
-> +	for (i = 0; i < args->dest_count; i++) {
-> +		info = &args->info[i];
-> +		info->bytes_deduped = 0;
-> +		info->status = 0;
-> +	}
-
-I'd get rid of all this code by only copying each input argument on to
-the stack as it's needed and by getting rid of the writable output
-struct fields.  (more on this later)
-
-> +	/*
-> +	 * Limit the total length we will dedupe for each operation. 
-> +	 * This is intended to bound the entire ioctl to something sane.
-> +	 */
-> +	if (len > BTRFS_MAX_DEDUPE_LEN)
-> +		len = BTRFS_MAX_DEDUPE_LEN;
-
-[ ... ]
-
-> +	src_buffer = btrfs_kvmalloc(len, GFP_NOFS);
-> +	dst_buffer = btrfs_kvmalloc(len, GFP_NOFS);
-> +	if (!src_buffer || !dst_buffer) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-
-Why use these allocated intermediate buffers at all?  Regardless of how
-large a region you decide to lock and clone at a time, you can get page
-refs for both files and use kmap_atomic() to compare without copying. 
-
-And if you don't have the buffers, why not lock and clone as much as
-the user asked for?
-
-I could understand wanting to reduce lock hold times, but you could do
-that by doing the initial io waits on shared page cache references and
-only using the expensive locks to verify the pages and perform the
-clone.  But hopefully that complexity isn't really needed?
-
-> +		if (S_ISDIR(dst->i_mode)) {
-> +			info->status = -EISDIR;
-> +			goto next;
-> +		}
-
-Does anything stop us from getting here with symlinks?  It looks like
-btrfs_symlink() helpfully overrides i_fop with the _file_ operations
-which have .ioctl.  I didn't actually try it.
-
-> +	if (copy_to_user(argp, args, args_size))
-> +		ret = -EFAULT;
-
-I don't think it should be possible to return -EFAULT after all the work
-is done just because some input memory was accidentally read-only for
-whatever reason.
-
-> +#define BTRFS_SAME_DATA_DIFFERS	1
-> +/* For extent-same ioctl */
-> +struct btrfs_ioctl_same_extent_info {
-> +	__s64 fd;		/* in - destination file */
-> +	__u64 logical_offset;	/* in - start of extent in destination */
-> +	__u64 bytes_deduped;	/* out - total # of bytes we were able
-> +				 * to dedupe from this file */
-> +	/* status of this dedupe operation:
-> +	 * 0 if dedup succeeds
-> +	 * < 0 for error
-> +	 * == BTRFS_SAME_DATA_DIFFERS if data differs
-> +	 */
-> +	__s32 status;		/* out - see above description */
-> +	__u32 reserved;
-> +};
-
-As I said, I'd get rid of the output fields.  Like the other vectored io
-syscalls, the return value can indicate the number of initial
-consecutive bytes that worked.  When no progess was made then it can
-return errors.  Userspace is left to sort out the resulting state and
-figure out the extents to retry in exactly the same way that it found
-the initial extents to attempt to dedupe in the first place.
-
-(And imagine strace trying to print the inputs and outputs.  Poor, poor,
-strace! :))
-
-I hope this helps!
-
-- z

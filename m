@@ -1,66 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f182.google.com ([209.85.192.182]:41120 "EHLO
-	mail-pd0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755444Ab3GYJcv (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:44482 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753992Ab3GOFac (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 05:32:51 -0400
-Received: by mail-pd0-f182.google.com with SMTP id r10so1476874pdi.41
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 02:32:51 -0700 (PDT)
-From: Eryu Guan <guaneryu@gmail.com>
+	Mon, 15 Jul 2013 01:30:32 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6F5UV3O029938
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:31 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5UTYi013931
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:30 GMT
+Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5UTUt023614
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:29 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH] btrfs-progs: fix segfault when listing column OTIME on big endian host
-Date: Thu, 25 Jul 2013 17:32:29 +0800
-Message-Id: <1374744749-12231-1-git-send-email-guaneryu@gmail.com>
+Subject: [PATCH 1/2] btrfs-progs: fix the long lines
+Date: Mon, 15 Jul 2013 13:35:26 +0800
+Message-Id: <1373866527-10604-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1373866527-10604-1-git-send-email-anand.jain@oracle.com>
+References: <1373866527-10604-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The second btrfs command segfaults on big endian host(ppc64)
+trivial: cmds-replace.c contains long lines fix it
 
-	btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/snap
-	btrfs subvolume list -s /mnt/btrfs
-
-And ltrace shows
-
-	localtime(0x10029c482d0)                 = 0
-	strftime( <no return ...>
-	--- SIGSEGV (Segmentation fault) ---
-
-The corresponding code
-
-btrfs-list.c:
-        case BTRFS_LIST_OTIME:
-                if (subv->otime)
-                        strftime(tstr, 256, "%Y-%m-%d %X",
-                                 localtime(&subv->otime));
-                else
-                        strcpy(tstr, "-");
-                printf("%s", tstr);
-                break;
-
-localtime() returned NULL then strftime() got SIGSEGV.
-
-The reason is that ri->otime.sec is stored as little endian but
-assigned to 't' without conversion.
-
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ cmds-replace.c |   17 ++++++++++-------
+ 1 files changed, 10 insertions(+), 7 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 4fab858..ca1bae8 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1052,7 +1052,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 				flags = btrfs_root_flags(ri);
- 				if(sh.len >
- 				   sizeof(struct btrfs_root_item_v0)) {
--					t = ri->otime.sec;
-+					t = le64_to_cpu(ri->otime.sec);
- 					ogen = btrfs_root_otransid(ri);
- 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
- 					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 6397bb5..c68986a 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -211,8 +211,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 		struct btrfs_ioctl_dev_info_args *di_args = NULL;
+ 
+ 		if (atoi(srcdev) == 0) {
+-			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
+-				srcdev);
++			fprintf(stderr, "Error: Failed to parse the numerical "\
++				"devid value '%s'\n", srcdev);
+ 			goto leave_with_error;
+ 		}
+ 		start_args.start.srcdevid = (__u64)atoi(srcdev);
+@@ -235,8 +235,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 				break;
+ 		free(di_args);
+ 		if (i == fi_args.num_devices) {
+-			fprintf(stderr, "Error: '%s' is not a valid devid for filesystem '%s'\n",
+-				srcdev, path);
++			fprintf(stderr, "Error: '%s' is not a valid devid for "\
++				"filesystem '%s'\n", srcdev, path);
+ 			goto leave_with_error;
+ 		}
+ 	} else {
+@@ -283,7 +283,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 				    &total_devs, BTRFS_SUPER_INFO_OFFSET);
+ 	if (ret >= 0 && !force_using_targetdev) {
+ 		fprintf(stderr,
+-			"Error, target device %s contains filesystem, use '-f' to force overwriting.\n",
++			"Error, target device %s contains filesystem, "\
++			"use '-f' to force overwriting.\n",
+ 			dstdev);
+ 		goto leave_with_error;
+ 	}
+@@ -321,7 +322,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 	if (do_not_background) {
+ 		if (ret) {
+ 			fprintf(stderr,
+-				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
++				"ERROR: ioctl(DEV_REPLACE_START) failed "\
++				"on \"%s\": %s, %s\n",
+ 				path, strerror(errno),
+ 				replace_dev_result2string(start_args.result));
+ 			goto leave_with_error;
+@@ -330,7 +332,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 		if (start_args.result !=
+ 		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
+ 			fprintf(stderr,
+-				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" returns error: %s\n",
++				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" "\
++				"returns error: %s\n",
+ 				path,
+ 				replace_dev_result2string(start_args.result));
+ 			goto leave_with_error;
 -- 
-1.8.3.1
+1.7.7.6
 

@@ -1,39 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39951 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753235Ab3GOFaa (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:26026 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754163Ab3GOHZZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 01:30:30 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6F5UTdf011491
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:29 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5USk6023593
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:28 GMT
-Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5USIG010123
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:28 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs-progs: misc trivial fixes
-Date: Mon, 15 Jul 2013 13:35:25 +0800
-Message-Id: <1373866527-10604-1-git-send-email-anand.jain@oracle.com>
+	Mon, 15 Jul 2013 03:25:25 -0400
+Message-ID: <51E3A3E3.1000605@giantdisaster.de>
+Date: Mon, 15 Jul 2013 09:25:23 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Anand Jain <anand.jain@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: fix the long lines
+References: <1373866527-10604-1-git-send-email-anand.jain@oracle.com> <1373866527-10604-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1373866527-10604-2-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 15 Jul 2013 13:35:26 +0800, Anand Jain wrote:
+> trivial: cmds-replace.c contains long lines fix it
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  cmds-replace.c |   17 ++++++++++-------
+>  1 files changed, 10 insertions(+), 7 deletions(-)
+> 
+> diff --git a/cmds-replace.c b/cmds-replace.c
+> index 6397bb5..c68986a 100644
+> --- a/cmds-replace.c
+> +++ b/cmds-replace.c
+> @@ -211,8 +211,8 @@ static int cmd_start_replace(int argc, char **argv)
+>  		struct btrfs_ioctl_dev_info_args *di_args = NULL;
+>  
+>  		if (atoi(srcdev) == 0) {
+> -			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
+> -				srcdev);
+> +			fprintf(stderr, "Error: Failed to parse the numerical "\
+> +				"devid value '%s'\n", srcdev);
+>  			goto leave_with_error;
+>  		}
+>  		start_args.start.srcdevid = (__u64)atoi(srcdev);
+> @@ -235,8 +235,8 @@ static int cmd_start_replace(int argc, char **argv)
+>  				break;
+>  		free(di_args);
+>  		if (i == fi_args.num_devices) {
+> -			fprintf(stderr, "Error: '%s' is not a valid devid for filesystem '%s'\n",
+> -				srcdev, path);
+> +			fprintf(stderr, "Error: '%s' is not a valid devid for "\
+> +				"filesystem '%s'\n", srcdev, path);
+>  			goto leave_with_error;
+>  		}
+>  	} else {
+> @@ -283,7 +283,8 @@ static int cmd_start_replace(int argc, char **argv)
+>  				    &total_devs, BTRFS_SUPER_INFO_OFFSET);
+>  	if (ret >= 0 && !force_using_targetdev) {
+>  		fprintf(stderr,
+> -			"Error, target device %s contains filesystem, use '-f' to force overwriting.\n",
+> +			"Error, target device %s contains filesystem, "\
+> +			"use '-f' to force overwriting.\n",
+>  			dstdev);
+>  		goto leave_with_error;
+>  	}
+> @@ -321,7 +322,8 @@ static int cmd_start_replace(int argc, char **argv)
+>  	if (do_not_background) {
+>  		if (ret) {
+>  			fprintf(stderr,
+> -				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
+> +				"ERROR: ioctl(DEV_REPLACE_START) failed "\
+> +				"on \"%s\": %s, %s\n",
+>  				path, strerror(errno),
+>  				replace_dev_result2string(start_args.result));
+>  			goto leave_with_error;
+> @@ -330,7 +332,8 @@ static int cmd_start_replace(int argc, char **argv)
+>  		if (start_args.result !=
+>  		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
+>  			fprintf(stderr,
+> -				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" returns error: %s\n",
+> +				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" "\
+> +				"returns error: %s\n",
+>  				path,
+>  				replace_dev_result2string(start_args.result));
+>  			goto leave_with_error;
+> 
 
-Anand Jain (2):
-  btrfs-progs: fix the long lines
-  btrfs-progs: close_all_devices() declared in multiple files
-
- btrfs-find-root.c |   17 +----------------
- cmds-replace.c    |   17 ++++++++++-------
- disk-io.c         |    3 +--
- disk-io.h         |    1 +
- 4 files changed, 13 insertions(+), 25 deletions(-)
-
--- 
-1.7.7.6
+Btrfs-progs follows the Linux kernel coding style. Refer to
+Documentation/CodingStyle: "never break user-visible strings such as
+printk messages, because that breaks the ability to grep for them".
 

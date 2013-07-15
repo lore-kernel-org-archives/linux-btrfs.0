@@ -1,54 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:42967 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757311Ab3GOQnT (ORCPT
+Received: from longford.logfs.org ([213.229.74.203]:59807 "EHLO
+	longford.logfs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752467Ab3GOTGa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 12:43:19 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id AEE2A7C0645
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 10:43:19 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id w5fCi2H2HIfUBk28 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 10:43:08 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix lock leak when resuming snapshot deletion
-Date: Mon, 15 Jul 2013 12:43:06 -0400
-Message-ID: <1373906586-3271-1-git-send-email-jbacik@fusionio.com>
+	Mon, 15 Jul 2013 15:06:30 -0400
+Date: Mon, 15 Jul 2013 13:35:08 -0400
+From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] list: add list_del_each_entry
+Message-ID: <20130715173508.GB20517@logfs.org>
+References: <1370280485-10047-1-git-send-email-joern@logfs.org>
+ <20130705204100.GA15943@logfs.org>
+ <20130705204129.GB15943@logfs.org>
+ <CAL3q7H75aO8YvJLppif88P=CumfA8WjHUTfwEcZSvL+MUu8tJw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAL3q7H75aO8YvJLppif88P=CumfA8WjHUTfwEcZSvL+MUu8tJw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We aren't setting path->locks[level] when we resume a snapshot deletion which
-means we won't unlock the buffer when we free the path.  This causes deadlocks
-if we happen to re-allocate the block before we've evicted the extent buffer
-from cache.  Thanks,
+On Fri, 5 July 2013 23:38:01 +0100, Filipe David Manana wrote:
+>
+> > +#define list_del_each_entry(pos, head, member) \
+> > +       while (list_empty(head) && (pos = list_first_entry((head), \
+> > +               typeof(*pos), member), list_del((head)->next), 1))
+> > +
+> 
+> Shouldn't it be while (!list_empty(head) ... ?
+> (not operator addition)
 
-Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Obviously!  Now where is that brown paperbag...
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8c204e1..997a5dd 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7555,6 +7555,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 		while (1) {
- 			btrfs_tree_lock(path->nodes[level]);
- 			btrfs_set_lock_blocking(path->nodes[level]);
-+			path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
- 
- 			ret = btrfs_lookup_extent_info(trans, root,
- 						path->nodes[level]->start,
-@@ -7570,6 +7571,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 				break;
- 
- 			btrfs_tree_unlock(path->nodes[level]);
-+			path->locks[level] = 0;
- 			WARN_ON(wc->refs[level] != 1);
- 			level--;
- 		}
--- 
-1.7.7.6
+Will resend in a few days, including the _init variants dchinner asked
+for.
 
+Jörn
+
+--
+Computer system analysis is like child-rearing; you can do grievous damage,
+but you cannot ensure success."
+-- Tom DeMarco

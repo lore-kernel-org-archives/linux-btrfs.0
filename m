@@ -1,32 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39956 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753992Ab3GOFad (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:37981 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754472Ab3GOIfw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 01:30:33 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6F5UWgC011505
+	Mon, 15 Jul 2013 04:35:52 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6F8Zpph002548
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:33 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 08:35:52 GMT
 Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5UVCX013966
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F8ZoKE001999
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:31 GMT
-Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F5UVon023665
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 05:30:31 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 08:35:51 GMT
+Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6F8Zo24027320
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2013 08:35:50 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: close_all_devices() declared in multiple files
-Date: Mon, 15 Jul 2013 13:35:27 +0800
-Message-Id: <1373866527-10604-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1373866527-10604-1-git-send-email-anand.jain@oracle.com>
-References: <1373866527-10604-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: close_all_devices() in btrfs-find-root.c does nothing
+Date: Mon, 15 Jul 2013 16:40:41 +0800
+Message-Id: <1373877641-12789-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1373866527-10604-3-git-send-email-anand.jain@oracle.com>
+References: <1373866527-10604-3-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 close_all_devices() is declared once in disk-io.c and again
-in btrfs-find-root.c I see no reasons or is there any ?
+in btrfs-find-root.c. The one in latter is completely useless
+so delete it.
 
 This patch will fix it.
 

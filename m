@@ -1,52 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:34731 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932119Ab3GPNih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jul 2013 09:38:37 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jorabe.store (jorabe xp3) (RZmta 31.28 OK)
-	with ESMTP id p07dd7p6FHCw7E for <linux-btrfs@vger.kernel.org>;
-	Tue, 16 Jul 2013 15:38:33 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: Print key type in decimal everywhere
-Date: Tue, 16 Jul 2013 15:38:33 +0200
-Message-Id: <1373981913-24659-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:53013 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932717Ab3GPOyv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Jul 2013 10:54:51 -0400
+Received: by mail-wi0-f169.google.com with SMTP id c10so4271247wiw.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 07:54:50 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1373906586-3271-1-git-send-email-jbacik@fusionio.com>
+References: <1373906586-3271-1-git-send-email-jbacik@fusionio.com>
+Date: Tue, 16 Jul 2013 17:54:50 +0300
+Message-ID: <CAOcd+r3=v-5oBkJ8G=tRF66MBxkw4x=UJ=BS9pKfNYO2hL8Z+g@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix lock leak when resuming snapshot deletion
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org, Liran Strugano <liran@zadarastorage.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is confusing, sometimes the key type is printed in hex (without
-a leading "0x" which makes things even more complicated), sometimes
-in decimal...
-Change it to be in decimal everywhere.
+On Mon, Jul 15, 2013 at 7:43 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> We aren't setting path->locks[level] when we resume a snapshot deletion which
+> means we won't unlock the buffer when we free the path.  This causes deadlocks
+> if we happen to re-allocate the block before we've evicted the extent buffer
+> from cache.  Thanks,
+>
+> Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/extent-tree.c |    2 ++
+>  1 files changed, 2 insertions(+), 0 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 8c204e1..997a5dd 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7555,6 +7555,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>                 while (1) {
+>                         btrfs_tree_lock(path->nodes[level]);
+>                         btrfs_set_lock_blocking(path->nodes[level]);
+> +                       path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
+>
+>                         ret = btrfs_lookup_extent_info(trans, root,
+>                                                 path->nodes[level]->start,
+> @@ -7570,6 +7571,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>                                 break;
+>
+>                         btrfs_tree_unlock(path->nodes[level]);
+> +                       path->locks[level] = 0;
+>                         WARN_ON(wc->refs[level] != 1);
+>                         level--;
+>                 }
+> --
+> 1.7.7.6
+>
+> --
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/print-tree.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Tested-by: Liran Strugano <liran@zadarastorage.com>
 
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index b6b209c..32022f3 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -95,7 +95,7 @@ static void print_extent_item(struct extent_buffer *eb, int slot)
- 		struct btrfs_tree_block_info *info;
- 		info = (struct btrfs_tree_block_info *)(ei + 1);
- 		btrfs_tree_block_key(eb, info, &key);
--		printk(KERN_INFO "\t\ttree block key (%llu %x %llu) "
-+		printk(KERN_INFO "\t\ttree block key (%llu %u %llu) "
- 		       "level %d\n",
- 		       (unsigned long long)btrfs_disk_key_objectid(&key),
- 		       key.type,
-@@ -202,7 +202,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 		item = btrfs_item_nr(l, i);
- 		btrfs_item_key_to_cpu(l, &key, i);
- 		type = btrfs_key_type(&key);
--		printk(KERN_INFO "\titem %d key (%llu %x %llu) itemoff %d "
-+		printk(KERN_INFO "\titem %d key (%llu %u %llu) itemoff %d "
- 		       "itemsize %d\n",
- 			i,
- 			(unsigned long long)key.objectid, type,
--- 
-1.8.3.2
-
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

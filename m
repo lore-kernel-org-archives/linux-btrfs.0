@@ -1,121 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f47.google.com ([209.85.219.47]:37923 "EHLO
-	mail-oa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932698Ab3GPQzy (ORCPT
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:42119 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932988Ab3GPSB3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jul 2013 12:55:54 -0400
-Received: by mail-oa0-f47.google.com with SMTP id m1so1169707oag.34
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 09:55:54 -0700 (PDT)
+	Tue, 16 Jul 2013 14:01:29 -0400
+Received: by mail-ie0-f176.google.com with SMTP id ar20so2192133iec.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 11:01:29 -0700 (PDT)
 MIME-Version: 1.0
-Date: Tue, 16 Jul 2013 18:55:54 +0200
-Message-ID: <CAG7ytityYnSO_i5fCRDOYyzAcx5YzGqj2MgK4bMSmKXuwxqw1w@mail.gmail.com>
-Subject: btrfsck disk explenation
-From: Gert Cuykens <gert.cuykens@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CACvcmCAa7PMMvtYz5patzsh-5yAkK_f5cOpm6oMu2tLrvq04=Q@mail.gmail.com>
+References: <CACvcmCCQKO6cx+vV0pb-GbiFBGDr2aq6q=Yt5StsDSkq91W9Hw@mail.gmail.com>
+ <7D6F9B3C-CC33-4F9A-86D7-74C3AFEEF48A@gmail.com> <CACvcmCAa7PMMvtYz5patzsh-5yAkK_f5cOpm6oMu2tLrvq04=Q@mail.gmail.com>
+From: Dave Barnum <dave@thebarnums.com>
+Date: Tue, 16 Jul 2013 14:01:07 -0400
+Message-ID: <CACvcmCChoHFJ0gxH0hqAtNUkWnsWOtqmHukq=Z82S8t0LSKNuQ@mail.gmail.com>
+Subject: Re: Need help mounting broken btrfs Fedora 19
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a nice overview
-https://btrfs.wiki.kernel.org/index.php/Data_Structures but does not
-show how things work. Would be helpful if there was a presentation
-that shows what happens when for example you copy a file to understand
-the use of each tree better?
+Any other suggestions?
 
-I don't understand what went wrong in which tree?
-
-parent transid verify failed (transid in root tree?)
-leaf parent key incorrect (fs tree?)
-bad block (csum tree does not match block?)
-
-And finally can this be fixt?
-
-root@v7:/srv# btrfsck disk
-parent transid verify failed on 30113792 wanted 13 found 35
-parent transid verify failed on 30113792 wanted 13 found 35
-parent transid verify failed on 30113792 wanted 13 found 35
-parent transid verify failed on 30113792 wanted 13 found 35
-Ignoring transid failure
-checking extents
-parent transid verify failed on 61681664 wanted 9 found 33
-parent transid verify failed on 61681664 wanted 9 found 33
-parent transid verify failed on 61681664 wanted 9 found 33
-parent transid verify failed on 61681664 wanted 9 found 33
-Ignoring transid failure
-leaf parent key incorrect 61681664
-parent transid verify failed on 61681664 wanted 9 found 33
-Ignoring transid failure
-leaf parent key incorrect 61681664
-parent transid verify failed on 61681664 wanted 9 found 33
-Ignoring transid failure
-leaf parent key incorrect 61681664
-leaf parent key incorrect 29593600
-bad block 29593600
-parent transid verify failed on 29933568 wanted 13 found 34
-parent transid verify failed on 29933568 wanted 13 found 34
-parent transid verify failed on 29933568 wanted 13 found 34
-parent transid verify failed on 29933568 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29933568
-parent transid verify failed on 62836736 wanted 9 found 33
-parent transid verify failed on 62836736 wanted 9 found 33
-parent transid verify failed on 62836736 wanted 9 found 33
-parent transid verify failed on 62836736 wanted 9 found 33
-Ignoring transid failure
-parent transid verify failed on 29962240 wanted 13 found 34
-parent transid verify failed on 29962240 wanted 13 found 34
-parent transid verify failed on 29962240 wanted 13 found 34
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-parent transid verify failed on 29962240 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-leaf parent key incorrect 29483008
-bad block 29483008
-leaf parent key incorrect 29548544
-bad block 29548544
-leaf parent key incorrect 29560832
-bad block 29560832
-bad block 29573120
-leaf parent key incorrect 29581312
-bad block 29581312
-leaf parent key incorrect 29630464
-bad block 29630464
-leaf parent key incorrect 29691904
-bad block 29691904
-parent transid verify failed on 29933568 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29777920
-bad block 29777920
-leaf parent key incorrect 29904896
-bad block 29904896
-leaf parent key incorrect 29917184
-bad block 29917184
-leaf parent key incorrect 29933568
-bad block 29933568
-parent transid verify failed on 29933568 wanted 13 found 34
-Ignoring transid failure
-leaf parent key incorrect 29962240
-bad block 29962240
-leaf parent key incorrect 29970432
-bad block 29970432
-leaf parent key incorrect 29974528
-bad block 29974528
-leaf parent key incorrect 30068736
-bad block 30068736
-btrfsck: btrfsck.c:1935: check_owner_ref: Assertion `!(rec->is_root)' failed.
-Aborted (core dumped)
-root@v7:/srv#
+On Mon, Jul 15, 2013 at 6:56 AM, Dave Barnum <dave@thebarnums.com> wrote:
+> Thanks Wang,
+>
+> This was the result:
+> root@ubuntu:/downloads/btrfs-progs# ./btrfs chunk-recover /dev/sdc2
+> no recoverable chunk
+> Recover the chunk tree successfully.
+>
+> Still unable to mount.
+>
+> On Sun, Jul 14, 2013 at 2:03 PM, Wang Shilong <wangshilong1991@gmail.com> wrote:
+>> Hello,
+>>
+>> You call pull from:
+>>         git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+>>
+>> Miao implement chunk tree recover function, you can try it with like.
+>>         btrfs  chunk-recover /dev
+>> Maybe this can help you.
+>>
+>> Thanks,
+>> Wang
+>>> I need some help as may have lost some number of files on a btrfs raid
+>>> 1 volume. I'm not quite sure what happend which, I know, only adds to
+>>> the problem.
+>>>
+>>> On my computer #1 I had only a month or so ago installed Fedora 19
+>>> Beta and at the time of install chose BTRFS, raid 1. Recently one of
+>>> the drives started complaining that it was going to die. WIthout
+>>> taking it out of the array (perhaps I should have done that) I turned
+>>> off the system and swapped the drive with another. From then on I lost
+>>> my ability to boot the system. I could not get anything to work with
+>>> the new hard drive. Then I put the old hard drive back in so that I
+>>> could try to boot again. Still nothing. At one point I think I was
+>>> able to see grub - but at this point, I'm not. I just get boot disk
+>>> failure.
+>>>
+>>> Further more on the failing drive, drive A, I can still see the
+>>> patitions but I cannot mount it on another system. On drive B (the
+>>> other half of the mirror) I do not see any partitions. I tried copying
+>>> the partition structure using sfdisk from A to B but that probably was
+>>> not smart.
+>>>
+>>> I plugged drive A into computer #2 using a live Fedora and Ubuntu CD
+>>> to try to mount the volume. However in both distributions I am unable
+>>> to mount the volume. I've tried mounting using -o degraded but I still
+>>> get the same error. The error I'm seeing when I try to mount the
+>>> filesystem goes like this:
+>>>
+>>> Quote:
+>>> [10792.307425] device label fedora_ison devid 2 transid 48720 /dev/sdc2
+>>> [10792.308202] btrfs: allowing degraded mounts
+>>> [10792.308206] btrfs: disk space caching is enabled
+>>> [10792.308599] btrfs: failed to read chunk root on sdc2
+>>> [10792.308799] btrfs warning page private not zero on page 20979712
+>>> [10792.320146] btrfs: open_ctree failed
+>>>
+>>> I believe the superblock may be in tact since when i turn the command
+>>> ./btrfs-show-super /dev/sdc2 I get:
+>>>
+>>> Quote:
+>>> root@ubuntu:/downloads/btrfs-progs# ./btrfs-show-super /dev/sdc2
+>>> superblock: bytenr=65536, device=/dev/sdc2
+>>> ---------------------------------------------------------
+>>> csum 0xfc19c468 [match]
+>>> bytenr 65536
+>>> flags 0x1
+>>> magic _BHRfS_M [match]
+>>> fsid cbbf7d4c-f7a0-43ff-aed5-77b347d6ff25
+>>> label fedora_ison
+>>> generation 48720
+>>> root 1105526784
+>>> sys_array_size 226
+>>> chunk_root_generation 46504
+>>> root_level 1
+>>> chunk_root 20979712
+>>> chunk_root_level 1
+>>> log_root 0
+>>> log_root_transid 0
+>>> log_root_level 0
+>>> total_bytes 2988521291776
+>>> bytes_used 598216536064
+>>> sectorsize 4096
+>>> nodesize 4096
+>>> leafsize 4096
+>>> stripesize 4096
+>>> root_dir 6
+>>> num_devices 2
+>>> compat_flags 0x0
+>>> compat_ro_flags 0x0
+>>> incompat_flags 0x1
+>>> csum_type 0
+>>> csum_size 4
+>>> cache_generation 48720
+>>> dev_item.uuid 5f61edaa-7f12-4ec5-a024-02f7797e1400
+>>> dev_item.fsid cbbf7d4c-f7a0-43ff-aed5-77b347d6ff25 [match]
+>>> dev_item.type 0
+>>> dev_item.total_bytes 1494260645888
+>>> dev_item.bytes_used 482110078976
+>>> dev_item.io_align 4096
+>>> dev_item.io_width 4096
+>>> dev_item.sector_size 4096
+>>> dev_item.devid 2
+>>> dev_item.dev_group 0
+>>> dev_item.seek_speed 0
+>>> dev_item.bandwidth 0
+>>> dev_item.generation 0
+>>>
+>>> Could someone help me troubleshoot why I can't mount my volume? I
+>>> would REALLY appreciate it! Perhaps there is a way to repair my broken
+>>> tree structure?
+>>>
+>>> Thank You!
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>

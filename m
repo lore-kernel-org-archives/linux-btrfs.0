@@ -1,164 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qe0-f41.google.com ([209.85.128.41]:37560 "EHLO
-	mail-qe0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932067Ab3GPKAd (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42524 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754318Ab3GPLDq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jul 2013 06:00:33 -0400
-Received: by mail-qe0-f41.google.com with SMTP id b4so252846qen.14
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 03:00:33 -0700 (PDT)
-MIME-Version: 1.0
-From: Mathieu Malaterre <mathieu.malaterre@gmail.com>
-Date: Tue, 16 Jul 2013 12:00:12 +0200
-Message-ID: <CA+7wUsx8WJsGzNcOcS0aE1QVtwRmgKNrdBw2m01X_-UQZDf=5Q@mail.gmail.com>
-Subject: Errors found in extent allocation tree (was: btrfsck:
- cmds-check.c:2063: check_owner_ref: Assertion `!(rec->is_root)' failed.)
+	Tue, 16 Jul 2013 07:03:46 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6GB3jVj003220
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 11:03:46 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6GB3ive002460
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 11:03:45 GMT
+Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6GB3iig028761
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2013 11:03:44 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: [PATCH] Btrfs/tracepoint: update delayed ref tracepoints
+Date: Tue, 16 Jul 2013 19:03:36 +0800
+Message-Id: <1373972616-4006-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef,
+This shows exactly how btrfs processes the delayed refs onto disks,
+which is very helpful on understanding delayed ref mechanism and
+debugging related bugs.
 
-  Thanks for your help so far. I am continuing on your recommendations:
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/delayed-ref.c       |    6 ++--
+ fs/btrfs/extent-tree.c       |    6 ++++
+ include/trace/events/btrfs.h |   60 +++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 66 insertions(+), 6 deletions(-)
 
-08:55 <josef> knoppix: ok i pushed to for-knoppix
-08:55 <josef> pull and build
-08:55 <josef> and then run ./btrfsck --init-csum-tree /dev/whatever
-08:55 <josef> it will clear your csum tree and re-populate it
-08:55 <josef> once thats done re-run ./btrfsck /dev/whatever
-08:55 <josef> and make sure it doesnt complain about anything
-08:55 <josef> and then you should be good to go
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index c219463..f7be9f7 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -600,7 +600,7 @@ static noinline void add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	INIT_LIST_HEAD(&head_ref->cluster);
+ 	mutex_init(&head_ref->mutex);
+ 
+-	trace_btrfs_delayed_ref_head(ref, head_ref, action);
++	trace_add_delayed_ref_head(ref, head_ref, action);
+ 
+ 	existing = tree_insert(&delayed_refs->root, &ref->rb_node);
+ 
+@@ -661,7 +661,7 @@ static noinline void add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 		ref->type = BTRFS_TREE_BLOCK_REF_KEY;
+ 	full_ref->level = level;
+ 
+-	trace_btrfs_delayed_tree_ref(ref, full_ref, action);
++	trace_add_delayed_tree_ref(ref, full_ref, action);
+ 
+ 	existing = tree_insert(&delayed_refs->root, &ref->rb_node);
+ 
+@@ -722,7 +722,7 @@ static noinline void add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	full_ref->objectid = owner;
+ 	full_ref->offset = offset;
+ 
+-	trace_btrfs_delayed_data_ref(ref, full_ref, action);
++	trace_add_delayed_data_ref(ref, full_ref, action);
+ 
+ 	existing = tree_insert(&delayed_refs->root, &ref->rb_node);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2796622..70002ea 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2022,6 +2022,8 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+ 
+ 	ref = btrfs_delayed_node_to_data_ref(node);
++	trace_run_delayed_data_ref(node, ref, node->action);
++
+ 	if (node->type == BTRFS_SHARED_DATA_REF_KEY)
+ 		parent = ref->parent;
+ 	else
+@@ -2165,6 +2167,8 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 						 SKINNY_METADATA);
+ 
+ 	ref = btrfs_delayed_node_to_tree_ref(node);
++	trace_run_delayed_tree_ref(node, ref, node->action);
++
+ 	if (node->type == BTRFS_SHARED_BLOCK_REF_KEY)
+ 		parent = ref->parent;
+ 	else
+@@ -2223,6 +2227,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 		 */
+ 		BUG_ON(extent_op);
+ 		head = btrfs_delayed_node_to_head(node);
++		trace_run_delayed_ref_head(node, head, node->action);
++
+ 		if (insert_reserved) {
+ 			btrfs_pin_extent(root, node->bytenr,
+ 					 node->num_bytes, 1);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 2902657..45702c3 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -439,7 +439,7 @@ TRACE_EVENT(btrfs_sync_fs,
+ 		{ BTRFS_UPDATE_DELAYED_HEAD, "UPDATE_DELAYED_HEAD" })
+ 			
+ 
+-TRACE_EVENT(btrfs_delayed_tree_ref,
++DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
+ 
+ 	TP_PROTO(struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_tree_ref *full_ref,
+@@ -481,7 +481,25 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
+ 		  (unsigned long long)__entry->seq)
+ );
+ 
+-TRACE_EVENT(btrfs_delayed_data_ref,
++DEFINE_EVENT(btrfs_delayed_tree_ref,  add_delayed_tree_ref,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_tree_ref *full_ref,
++		 int action),
++
++	TP_ARGS(ref, full_ref, action)
++);
++
++DEFINE_EVENT(btrfs_delayed_tree_ref,  run_delayed_tree_ref,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_tree_ref *full_ref,
++		 int action),
++
++	TP_ARGS(ref, full_ref, action)
++);
++
++DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
+ 
+ 	TP_PROTO(struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_data_ref *full_ref,
+@@ -527,7 +545,25 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		  (unsigned long long)__entry->seq)
+ );
+ 
+-TRACE_EVENT(btrfs_delayed_ref_head,
++DEFINE_EVENT(btrfs_delayed_data_ref,  add_delayed_data_ref,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_data_ref *full_ref,
++		 int action),
++
++	TP_ARGS(ref, full_ref, action)
++);
++
++DEFINE_EVENT(btrfs_delayed_data_ref,  run_delayed_data_ref,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_data_ref *full_ref,
++		 int action),
++
++	TP_ARGS(ref, full_ref, action)
++);
++
++DECLARE_EVENT_CLASS(btrfs_delayed_ref_head,
+ 
+ 	TP_PROTO(struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_ref_head *head_ref,
+@@ -556,6 +592,24 @@ TRACE_EVENT(btrfs_delayed_ref_head,
+ 		  __entry->is_data)
+ );
+ 
++DEFINE_EVENT(btrfs_delayed_ref_head,  add_delayed_ref_head,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_ref_head *head_ref,
++		 int action),
++
++	TP_ARGS(ref, head_ref, action)
++);
++
++DEFINE_EVENT(btrfs_delayed_ref_head,  run_delayed_ref_head,
++
++	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++		 struct btrfs_delayed_ref_head *head_ref,
++		 int action),
++
++	TP_ARGS(ref, head_ref, action)
++);
++
+ #define show_chunk_type(type)					\
+ 	__print_flags(type, "|",				\
+ 		{ BTRFS_BLOCK_GROUP_DATA, 	"DATA"	},	\
+-- 
+1.7.7
 
-  However as mentionned on IRC, when running:
-
-$ ./btrfsck /dev/mapper/voxbox-root
-
-I get:
-
-http://gdcm.sourceforge.net/thingies/second-run.log.gz
-
-Here is an excerpt:
-
-[...]
-Errors found in extent allocation tree
-checking free space cache
-checking fs roots
-root 5 inode 36548371 errors 800
-root 5 inode 37487771 errors 800
-root 5 inode 41402100 errors 800
-root 5 inode 41402104 errors 800
-root 5 inode 41402106 errors 800
-root 5 inode 41402108 errors 800
-Checking filesystem on /dev/mapper/voxbox-root
-UUID: af7e6809-af9d-474f-a332-295cdba1c09f
-adding extent start=192631939072, nr=4096, item_refs=0
-adding a tree backref for 192631939072, found ref 1
-adding extent start=20987904, nr=4096, item_refs=0
-adding a tree backref for 20987904, found ref 1
-adding extent start=192631799808, nr=4096, item_refs=0
-adding a tree backref for 192631799808, found ref 1
-adding extent start=770289664, nr=4096, item_refs=0
-adding a tree backref for 770289664, found ref 1
-adding extent start=196437823488, nr=4096, item_refs=0
-adding a tree backref for 196437823488, found ref 1
-adding extent start=355315712, nr=4096, item_refs=0
-adding a tree backref for 355315712, found ref 1
-adding extent start=29380608, nr=4096, item_refs=0
-adding a tree backref for 29380608, found ref 1
-adding a tree backref for 355315712, found ref 0
-adding a tree backref for 770289664, found ref 0
-adding a tree backref for 29380608, found ref 0
-adding a tree backref for 196437823488, found ref 0
-adding a tree backref for 192631799808, found ref 0
-adding a tree backref for 192631939072, found ref 0
-adding a tree backref for 20987904, found ref 0
-cache and super generation don't match, space cache will be invalidated
-found 704384384322 bytes used err is 1
-total csum bytes: 1744520208
-total tree bytes: 9188548608
-total fs tree bytes: 6794817536
-total extent tree bytes: 532430848
-btree space waste bytes: 2180175539
-file data blocks allocated: 2840214335488
- referenced 1776183914496
-[...]
-
-
-What should I do now ?
-
-Thanks much.
-
-On Mon, Jul 8, 2013 at 4:15 PM, Mathieu Malaterre
-<mathieu.malaterre@gmail.com> wrote:
-> Here is a wrap-up of what is going on on #btrfs. I am trying to boot
-> my debian/squeeze system with btrfs filesystem. System was setup with
-> an initial kernel 2.6.32.
-> The system now refuses to boot.
->
-> Booting using a live knopix 7.2.0 (kernel 3.9.6), I can see:
->
-> $ sudo vgchange -ay /dev/voxbox
-> $ mkdir /tmp/sda1
-> $ sudo mount -v -t btrfs -o recovery /dev/mapper/voxbox-root /tmp/sda1
-> $ dmesg | tail
-> [...]
-> [13429.460451] device fsid af7e6809-af9d-474f-a332-295cdba1c09f devid
-> 1 transid 2207957 /dev/mapper/voxbox-root
-> [13429.461584] btrfs: enabling auto recovery
-> [13429.529165] parent transid verify failed on 201236885504 wanted
-> 1822936 found 2125997
-> [13429.532014] parent transid verify failed on 201236885504 wanted
-> 1822936 found 2125997
-> [13429.587204] btrfs: open_ctree failed
->
->
-> If I now use the cmd line tools from git:
->
-> $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-> $ cd btrfs-progs/
-> $ make
-> $ ./btrfsck /dev/mapper/voxbox-root
-> parent transid verify failed on 201236885504 wanted 1822936 found 2125997
-> parent transid verify failed on 201236885504 wanted 1822936 found 2125997
-> parent transid verify failed on 201236885504 wanted 1822936 found 2125997
-> parent transid verify failed on 201236885504 wanted 1822936 found 2125997
-> Ignoring transid failure
-> Checking filesystem on /dev/mapper/voxbox-root
-> UUID: af7e6809-af9d-474f-a332-295cdba1c09f
-> checking extents
-> btrfsck: cmds-check.c:2063: check_owner_ref: Assertion `!(rec->is_root)' failed.
-> Aborted
->
->
-> For reference:
->
-> $ sudo vgdisplay
->   --- Volume group ---
->   VG Name               voxbox
->   System ID
->   Format                lvm2
->   Metadata Areas        2
->   Metadata Sequence No  6
->   VG Access             read/write
->   VG Status             resizable
->   MAX LV                0
->   Cur LV                3
->   Open LV               0
->   Max PV                0
->   Cur PV                2
->   Act PV                2
->   VG Size               2.73 TiB
->   PE Size               4.00 MiB
->   Total PE              715398
->   Alloc PE / Size       715398 / 2.73 TiB
->   Free  PE / Size       0 / 0
->   VG UUID               mxbe5Y-Wjh1-fC2C-WS27-Fy0X-2JB6-PvrA0Q
->
-> Regards,
-> --
-> Mathieu
-
-
-
---
-Mathieu

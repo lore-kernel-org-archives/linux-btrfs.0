@@ -1,48 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46541 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755868Ab3GQRtE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jul 2013 13:49:04 -0400
-Date: Wed, 17 Jul 2013 10:49:00 -0700
-From: Zach Brown <zab@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: Anand Jain <Anand.Jain@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] label cli hangs until balance is completed
-Message-ID: <20130717174900.GD13965@lenny.home.zabbo.net>
-References: <51E655D1.5020309@oracle.com>
- <51E65F5A.6050501@giantdisaster.de>
+Received: from mail-lb0-f172.google.com ([209.85.217.172]:57635 "EHLO
+	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752349Ab3GQT47 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jul 2013 15:56:59 -0400
+Received: by mail-lb0-f172.google.com with SMTP id v20so1886005lbc.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 12:56:57 -0700 (PDT)
+Received: from mail-la0-x233.google.com (mail-la0-x233.google.com [2a00:1450:4010:c03::233])
+        by mx.google.com with ESMTPSA id p17sm3306263lbv.11.2013.07.17.12.56.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 17 Jul 2013 12:56:57 -0700 (PDT)
+Received: by mail-la0-f51.google.com with SMTP id ga9so110035lab.38
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 12:56:56 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51E65F5A.6050501@giantdisaster.de>
+In-Reply-To: <CABZ+qqnM4g9H1d4dCw9Ao3Kj7tKGJ7M1_oPkGjFKcheMrD=HMQ@mail.gmail.com>
+References: <CABZ+qqnM4g9H1d4dCw9Ao3Kj7tKGJ7M1_oPkGjFKcheMrD=HMQ@mail.gmail.com>
+From: Dan van der Ster <dan@vanderster.com>
+Date: Wed, 17 Jul 2013 21:56:16 +0200
+Message-ID: <CABZ+qqmm4X7FEWr=BuPwF_uPJ8Rdg9Le3d-iLnYfB+if3N-mzQ@mail.gmail.com>
+Subject: Re: unfinished convert to raid6, enospc
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 17, 2013 at 11:09:46AM +0200, Stefan Behrens wrote:
-> On Wed, 17 Jul 2013 16:29:05 +0800, Anand Jain wrote:
-> >  'btrfs fi label /btrfs' will hang until balance is completed.
-> >  (and probably even set label would hang). This is because we
-> >  are trying to hold volume_mutex lock which balance will hold
-> >  during its tenure.
-> > 
-> > -------
-> > static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
-> > ::
-> >         mutex_lock(&root->fs_info->volume_mutex);
-> >         ret = copy_to_user(arg, label, len);
-> >         mutex_unlock(&root->fs_info->volume_mutex);
-> > --------
-> > 
-> >  I doubt if get label would need such a heavy weight lock?
-> >  Do we have any other lock which could fit better here ?
-> >  Any comments ?
-> 
-> Just use the uuid_mutex instead of the volume_mutex.
+Well, I'm trying a balance again with -dconvert=raid6 -dusage=5 this
+time. Will report back...
 
-I wouldn't copy_to_user() with the lock held.  That nests all of readpage
-and mkwrite under the mutex creating more possibilities for deadlocks.
-
-Whatever lock is chosen, I'd have get copy the label onto the kernel
-stack before sending it to user space.
-
-- z
+On Wed, Jul 17, 2013 at 3:34 PM, Dan van der Ster <dan@vanderster.com> wrote:
+> Hi,
+> Two days ago I decided to throw caution to the wind and convert my
+> raid1 array to raid6, for the space and redundancy benefits. I did
+>
+> # btrfs fi balance start -dconvert=raid6 /media/btrfs
+>
+> Eventually today the balance finished, but the conversion to raid6 was
+> incomplete:
+>
+> # btrfs fi df /media/btrfs
+> Data, RAID1: total=693.00GB, used=690.47GB
+> Data, RAID6: total=6.36TB, used=4.35TB
+> System, RAID1: total=32.00MB, used=1008.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, RAID1: total=8.00GB, used=6.04GB
+>
+> A recent btrfs balance status (before finishing) said:
+>
+> # btrfs balance status /media/btrfs
+> Balance on '/media/btrfs' is running
+> 4289 out of about 5208 chunks balanced (4988 considered),  18% left
+>
+> and at the end I have:
+>
+> [164935.053643] btrfs: 693 enospc errors during balance
+>
+> Here is the array:
+>
+> # btrfs fi show /dev/sdb
+> Label: none  uuid: 743135d0-d1f5-4695-9f32-e682537749cf
+> Total devices 7 FS bytes used 5.04TB
+> devid    2 size 2.73TB used 2.73TB path /dev/sdh
+> devid    1 size 2.73TB used 2.73TB path /dev/sdg
+> devid    5 size 1.36TB used 1.31TB path /dev/sde
+> devid    6 size 1.36TB used 1.31TB path /dev/sdf
+> devid    4 size 1.82TB used 1.82TB path /dev/sdd
+> devid    3 size 1.82TB used 1.82TB path /dev/sdc
+> devid    7 size 1.82TB used 1.82TB path /dev/sdb
+>
+>
+> I'm running latest stable, plus the patch "free csums when we're done
+> scrubbing an extent" (otherwise I get OOM when scrubbing).
+>
+> # uname -a
+> Linux dvanders-webserver 3.10.1+ #1 SMP Mon Jul 15 17:07:19 CEST 2013
+> x86_64 x86_64 x86_64 GNU/Linux
+>
+> I still have plenty of free space:
+>
+> # df -h /media/btrfs
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sdd         14T  5.8T  2.2T  74% /media/btrfs
+>
+> Any idea how I can get out of this? Thanks!
+> --
+> Dan van der Ster

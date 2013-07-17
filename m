@@ -1,37 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f182.google.com ([209.85.217.182]:42973 "EHLO
-	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752411Ab3GQVtF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jul 2013 17:49:05 -0400
-Received: by mail-lb0-f182.google.com with SMTP id r11so1959574lbv.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 14:49:04 -0700 (PDT)
-Received: from mail-lb0-x22d.google.com (mail-lb0-x22d.google.com [2a00:1450:4010:c04::22d])
-        by mx.google.com with ESMTPSA id m14sm3436631lbl.1.2013.07.17.14.43.56
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Wed, 17 Jul 2013 14:43:56 -0700 (PDT)
-Received: by mail-lb0-f173.google.com with SMTP id v1so1964052lbd.18
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 14:43:55 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <51E7044C.2030805@giantdisaster.de>
-References: <CABZ+qqnM4g9H1d4dCw9Ao3Kj7tKGJ7M1_oPkGjFKcheMrD=HMQ@mail.gmail.com>
- <CABZ+qqmm4X7FEWr=BuPwF_uPJ8Rdg9Le3d-iLnYfB+if3N-mzQ@mail.gmail.com> <51E7044C.2030805@giantdisaster.de>
-From: Dan van der Ster <dan@vanderster.com>
-Date: Wed, 17 Jul 2013 23:43:15 +0200
-Message-ID: <CABZ+qqmrL1VuBF=oqd8nMONu2N4it76UWrZyx-6TFGYUZuCWnQ@mail.gmail.com>
-Subject: Re: unfinished convert to raid6, enospc
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:65407 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752411Ab3GQVtn convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jul 2013 17:49:43 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:54244 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1UzZbS-001O1G-UB
+	for linux-btrfs@vger.kernel.org; Wed, 17 Jul 2013 15:49:43 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Questions about multi-device behavior
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1860433.azE0Vf7tMy@horus>
+Date: Wed, 17 Jul 2013 15:49:41 -0600
+Message-Id: <456C85D9-B747-47E3-8A47-0282163362FA@colorremedies.com>
+References: <1860433.azE0Vf7tMy@horus>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 17, 2013 at 10:53 PM, Stefan Behrens
-<sbehrens@giantdisaster.de> wrote:
-> No protection against ... disk failures
 
-Well I was aware of the power loss and scrub issues, but not the lack
-of protection against disk failures. That sorta defeats the purpose.
-Back to RAID 1 I go then...
-thanks :)
+On Jul 17, 2013, at 3:24 PM, Florian Lindner <mailinglists@xgm.de> wrote:
+> 
+> a) If one disk fails, is there any chance of data recovery? 
+
+Slim to none it seems so far. Maybe with more specialized tools.
+
+
+> b) If not, is there any advantage over a raid0 configuration.
+
+raid0 allocates equal chunks, so in order to maximize usable space the devices need to be the same size or space is wasted (not used). single allocated chunks based on availability so it's possible to maximally use all space on all devices even if they're significantly different in size.
+
+Chris

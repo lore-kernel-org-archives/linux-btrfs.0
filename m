@@ -1,35 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44010 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759049Ab3GRRu1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jul 2013 13:50:27 -0400
-Date: Thu, 18 Jul 2013 19:50:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: chandan <chandan@linux.vnet.ibm.com>
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs_read_block_groups: Use enums to index
- btrfs_space_info->block_groups.
-Message-ID: <20130718175024.GP24343@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1650034.SFcoKv6ShF@localhost.localdomain>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:6076 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S965081Ab3GRUFf convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Jul 2013 16:05:35 -0400
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1650034.SFcoKv6ShF@localhost.localdomain>
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Questions about multi-device behavior
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130718173337.GN24343@twin.jikos.cz>
+Date: Thu, 18 Jul 2013 14:05:31 -0600
+Cc: Florian Lindner <mailinglists@xgm.de>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <CCB92795-C346-467B-B85F-D5CB5C401B77@colorremedies.com>
+References: <1860433.azE0Vf7tMy@horus> <20130718173337.GN24343@twin.jikos.cz>
+To: dsterba@suse.cz
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 16, 2013 at 03:03:12PM +0530, chandan wrote:
-> >From 33e376755b8a928610032a1cef024dcdd980aee3 Mon Sep 17 00:00:00 2001
-> From: chandan <chandan@linux.vnet.ibm.com>
-> Date: Tue, 16 Jul 2013 12:28:56 +0530
-> Subject: [PATCH] btrfs_read_block_groups: Use enums to index
->  btrfs_space_info->block_groups.
-> 
-> The current code uses integer literals to index
-> btrfs_space_info->block_groups[] array. Instead use corresponding
-> enums from 'enum btrfs_raid_types'.
-> 
-> Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+On Jul 18, 2013, at 11:33 AM, David Sterba <dsterba@suse.cz> wrote:
+
+> 
+> The missing data blocks return IO error and the valid data can be read.
+
+Sounds like if I have a degraded 'single' volume, I can simply cp or rsync everything from that volume to another, and I'll end up with a successful copy of the surviving data. True?
+
+
+Chris Murphy

@@ -1,51 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:55789 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756451Ab3GRAvz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jul 2013 20:51:55 -0400
-Received: by mail-ob0-f174.google.com with SMTP id wd20so3109660obb.33
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 17:51:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20130717230401.GA2581@localhost.localdomain>
-References: <CAKuK5J0ZiMnAHWAEvNBESX99cawYJQ4_sFQ=5_Ka8gwJqLT2cA@mail.gmail.com>
- <20130717230401.GA2581@localhost.localdomain>
-From: Jon Nelson <jnelson@jamponi.net>
-Date: Wed, 17 Jul 2013 19:51:34 -0500
-Message-ID: <CAKuK5J2opbAWNmYsdSVkWAopyfPip8rypW7yKADEBCyqXb6Qxw@mail.gmail.com>
-Subject: Re: report: my btrfs filesystem failed hard today
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:56338 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932185Ab3GRCAp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jul 2013 22:00:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1UzdWK-00070M-FN
+	for linux-btrfs@vger.kernel.org; Thu, 18 Jul 2013 04:00:40 +0200
+Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 04:00:40 +0200
+Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 04:00:40 +0200
+To: linux-btrfs@vger.kernel.org
+From: Roger Binns <rogerb@rogerbinns.com>
+Subject: Re: Questions about multi-device behavior
+Date: Wed, 17 Jul 2013 19:00:24 -0700
+Message-ID: <ks7i7i$9ev$1@ger.gmane.org>
+References: <1860433.azE0Vf7tMy@horus>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <1860433.azE0Vf7tMy@horus>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 17, 2013 at 6:04 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Wed, Jul 17, 2013 at 05:44:23PM -0500, Jon Nelson wrote:
->> I had a btrfs filesystem under 3.9.8 that failed /hard/ today. So hard
->> that the filesystem could not be mounted because there wasn't enough
->> free space, unless it was mounted read only.
->>
->> This happened after I ran out of metadata space (is there a way to
->> increase the amount of metadata storage) while still having many gigs
->> free of data space, as reported by btrfs fi df. I tried balancing the
->> metadata, defrag'ing files (with -czlib) and even tried mounting with
->> -o remount,metadata_ratio={several values}, none of which worked, and
->> then it crashed hard.
->>
->> First, it killed systemd's logger (journald), which refused to
->> start.Following the crash, I was not able to mount the filesystem
->> without -o ro.  -o recovery did not work.
->>
->
-> Can you try btrfs-next, I did some work in this area in the last few months.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Unfortunately, I could not wait. I reaaaaly needed that system back
-up, so I copied everything off, reformatted with ext4, and copied it
-all back.
-I (probably?) have more logs, though.
+On 17/07/13 14:24, Florian Lindner wrote:
+> metadata ist mirrored on each device, data chunks are scattered more or
+> less randomly on one disk.
+> 
+> a) If one disk fails, is there any chance of data recovery? b) If not,
+> is there any advantage over a raid0 configuration.
 
+I was using that exact configuration when one disk failed (2 x 2TB Seagate
+drives).  The data was backed up in multiple ways, a lot of it was in
+source control systems and the remainder was generated information.
+Essentially the risk was worth taking since nothing would be lost.
 
---
-Jon
-Software Blacksmith
+One drive gave up mechanically - the controller still worked and it was
+fun running SMART tests and having huge amounts of red text show up in
+response.  The initial symptoms were that various programs crashed or
+didn't launch with no diagnostics.  That is typical behaviour for Linux
+apps when they get I/O errors on reads and writes.
+
+Eventually I figured out the problem, and bought a new 4TB drive to
+replace both originals and started recovery.  Out of ~750GB of original
+data I could recover just over 2GB which represented files whose entire
+contents were on the unfailed drive.
+
+Having the metadata duplicated was however immensely helpful and I could
+easily get a list of all directories and filenames, and used that to guide
+what data I recovered/regenerated/reinstalled/checked out.
+
+Meanwhile the performance improvement by having the data scattered across
+both drives was noticeable.  I would often see it in iostat roughly evenly
+balanced.
+
+Roger
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlHnTDgACgkQmOOfHg372QSTJwCeI17B4QhstkM4nnO0qOMDB1ae
+WfwAoOBu6lBwZ+GyFwnZVGXC5ki7Oge/
+=i+YN
+-----END PGP SIGNATURE-----
+

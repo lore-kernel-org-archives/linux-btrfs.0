@@ -1,113 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37151 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932104Ab3GQXiy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jul 2013 19:38:54 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UzbJ6-0007jF-H7
-	for linux-btrfs@vger.kernel.org; Thu, 18 Jul 2013 01:38:52 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 01:38:52 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 01:38:52 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: bug: corrupt filesystem, cannot delete tmp files created just
- before crash.
-Date: Wed, 17 Jul 2013 23:38:32 +0000 (UTC)
-Message-ID: <pan$8addd$a853ed60$657c1f02$89661ea8@cox.net>
-References: <CAPs0Bij+BQZArDJuXmKF0S25=wGgdMq6otXmrLJtQYRoMAjQFw@mail.gmail.
-	com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from atl4mhob13.myregisteredsite.com ([209.17.115.51]:34957 "EHLO
+	atl4mhob13.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756570Ab3GRARA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jul 2013 20:17:00 -0400
+Received: from mailpod1.hostingplatform.com ([10.30.71.116])
+	by atl4mhob13.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r6I0Gwdr026186
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 20:16:58 -0400
+Message-ID: <51E733FF.2070102@chinilu.com>
+Date: Wed, 17 Jul 2013 17:17:03 -0700
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
+MIME-Version: 1.0
+To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: What is the current status of defragmentation?
+References: <51E7182F.9020009@statystyka.net>
+In-Reply-To: <51E7182F.9020009@statystyka.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sandy McArthur posted on Wed, 17 Jul 2013 10:06:05 -0400 as excerpted:
+Hello Adam,  I routinely defrag my filesystems and here is how I do it:
 
-> have a btrfs filesystem that is corrupt so that I cannot remove a few
-> files. Attempting to delete these temp files from before a crash leaves
-> the filesystem read-only and sends a trace to the syslog. Assistance
-> correcting this issue is most appreciated.
-> 
-> I have two disks /dev/sd{b,c}1 to make up this filesystem.
-> I've updated to the latest btrfs-tools and kernel packages available.
-> The crash happened with kernel 3.8.13-gentoo.
-> 
-> # btrfs version Btrfs v0.20-rc1
-> # [uname -r] 3.10.1-gentoo
+find /home -type d -mtime -3 -o -type f -mtime -3 | egrep -v 
+"Cache|cache" | while read file; do /usr/sbin/btrfs filesystem defrag -f 
+-v "${file}"; done
 
-Hi fellow gentooer. =:^)  I'm just a user too so won't attempt a 
-technical answer.  However...
+The above is what I use to defrag my data (non-OS) files.  I use a while 
+loop because it relieves pressure on the system by guaranteeing that 
+each file and directory are processed one at a time.  I use "-mtime -3" 
+because I run this script daily via anacron and I see no reason to 
+defragment user files over and over again.  I specifically filter out 
+"cache" directories because they take forever to defragment and are 
+refragmented in no time anyway and they are simply low priority for me 
+in terms of performance. I may revisit that policy again sometime in the 
+future, but for now I have been skipping them.
 
-I see you've tried the latest packages for both kernel and btrfs-tools.  
-That's good as otherwise that's one of the the first suggestion you'd 
-get.  However you don't mention the btrfs wiki, nor do you mention trying 
-what it suggests in such cases, so I'll assume you're not familiar with 
-it.  (Additionally, being a wiki and btrfs still being under development, 
-it's worth checking back every couple months or so, and possibly using 
-the wiki history function to see what has changed on your pages of 
-interest since your last visit.)
+The following is what I use for system files:
 
-Main page (for bookmarking):
 
-https://btrfs.wiki.kernel.org/index.php/Main_Page
+find / -type d -mtime -3 -o -type f | while read file; do 
+/usr/sbin/btrfs filesystem  defrag -f -v "${file}"; done
 
-Of course right at the top there it mentions (in bold) that btrfs is 
-under heavy development and to run the latest, which you're basically 
-doing, altho you apparently haven't tried the latest kernel rc or the 
-btrfs-tools git build (which being a gentooer, I know are available, but 
-masked by default).  If the following suggestion doesn't help, you might 
-try them, as fixes really are going in all the time.
+This is very similar to what I use for user files except I go back only 
+for 3 days on directories (meta data), but run defrag on every file in 
+the system every day just in case.  This approach has worked very well 
+for me, but your mileage may vary (no guarantees).  Also, in the case of 
+the system files noted above, I defrag daily and ALWAYS OFFLINE, because 
+at this point as I understand things, btrfs cannot defragment files when 
+they are currently in use.  I get around this issue by doing system (/) 
+defrags only offline.
 
-Meanwhile, I recommend reading up on the documentation section of the 
-wiki.  In particular, altho with the corruption it may not help in your 
-case, pay attention to the no-space sections of the FAQ and Problem FAQ 
-pages.  Even more in particular, when there's space problems it 
-recommends attempting to clobber/truncate a file in place, the idea being 
-to free up space without having to allocate additional metadata space to 
-do it.  Again, with corruption it may not help, but it's worth a try.
+That's how I do it.
 
-echo > /path/to/file
+- George
 
-Of course, even more with a development filesystem than ordinarily, you 
-should have good backups, so you shouldn't need to worry too much about 
-finding clobber candidates since you can recover most files from backup 
-in any case.
 
-If the echo/clobber doesn't work, try again after mounting with the 
-nodatacow option.  But read the wiki for the details.
 
-There's also mount options such as recovery (and skip-balance if you have 
-an aborted balance it'd otherwise be trying to restart), that you can 
-try.  Of course if you have the space to do so, it might be worth dd-ing 
-the filesystem elsewhere as a backup image, in case you screw things up 
-worse while experimenting.
-
-Meanwhile, based on my interested-admin most definitely NOT kernel-dev 
-technical level following of this list at least, there /have/ been recent 
-no-space, extents maintenance and other cleanups in the really-latest 
-code (3.11-rc1+ kernel and live-git btrfs-tools, and there may be further 
-patches posted to the list that haven't actually been committed yet), 
-that may well help in your case.  I'm not technically qualified to match 
-backtraces against commits/patches and identify a solid match, but it's 
-definitely worth a try.
-
-Finally, as background once you're out of the tight spot, since you're 
-running a multi-device filesystem, you're likely to find the discussion 
-of that on the multiple devices, sysadmin guide, and use cases pages 
-useful.  FWIW, here I'm running most of my btrfs filesystems in dual-
-device raid1 (both data/metadata) mode, to take advantage of the 
-checksumming and extra copy to lookup in case of checksum error, that 
-btrfs offers, in addition to the device-loss scenario that raid1 helps 
-protect against.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+On 07/17/2013 03:18 PM, Adam Ryczkowski wrote:
+> Today I booted my linux-mint 14 into the latest 3.10.1 kernel to
+> defragment the root btrfs filesystem on my ASUS N56VZ laptop with hybrid
+> Seagate Momentus XT disk. I did something like
+>
+>     find / -exec btrfs filesystem defrag {}
+>
+> To my amazement it didn't really made a lot of I/O (the HDD LED wasn't
+> blinking). Confident that at the beginning the defragmentation is
+> CPU-bound (like it sometimes is for instance in case of O&O Defrag on
+> Windows world), I let it go on, and I switched myself to my other
+> chores. After a few minutes my system froze. I was barely able to switch
+> to text terminal and login, but I couldn't reach bash prompt; it looked
+> like the OS couln't perform any I/O on the disk. At the end, the system
+> responded to SysRq REISUB combination though; Unfortunately I can't
+> reproduce exactly what I typed in, because the command was not logged to
+> the bash history...).
+>
+> It clearly showed me, that defragmenting the filesystem is not that
+> trivial, as it is for ext4. So I have quesions:
+>
+> * Is the defragmentation of the whole filesystem supported at all? I
+> can't find a single reference that it is, and a syntax of btrfs-progs
+> suggest that it isn't. If supported, under what conditions? Like what %
+> of free space should be available?
+>
+> * How to check the level of defragmentation, and what are the reasonable
+> threshold values, that should indicate the desktop filesystem needs
+> defragmenting? I know, that everyone's millage my vary; I just want to
+> know some values as a point-of-reference.
+>
+> * What is the recommended command, that would efficiently defragment the
+> whole file system, preferably with some sort of progress indication?
+> Does this command
+>
+> find / -type f -o -type d -print0 | xargs --null --no-run-if-empty btrfs
+> filesystem defragment -cv
+>
+> look like a reasonable idiom for defragmenting the whole filesystem?
+>
+> Thank you for your help,
+>
+> Adam Ryczkowski
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 

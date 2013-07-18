@@ -1,42 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43631 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:43704 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754745Ab3GRRdj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jul 2013 13:33:39 -0400
-Date: Thu, 18 Jul 2013 19:33:37 +0200
+	id S1754870Ab3GRRgh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Jul 2013 13:36:37 -0400
+Date: Thu, 18 Jul 2013 19:36:35 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Florian Lindner <mailinglists@xgm.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Questions about multi-device behavior
-Message-ID: <20130718173337.GN24343@twin.jikos.cz>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: dsterba@suse.cz, George Amvrosiadis <gamvrosi@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: filebench varmail + scrubber = btrfs_update_root bug
+Message-ID: <20130718173635.GO24343@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1860433.azE0Vf7tMy@horus>
+References: <CABF9=8i1Bd6mVOR8kNZmQJa2UJLg9tiCojWHbN1HLVWhEh7_0g@mail.gmail.com>
+ <20130716113745.GI24343@twin.jikos.cz>
+ <51E549C6.1090303@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1860433.azE0Vf7tMy@horus>
+In-Reply-To: <51E549C6.1090303@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 17, 2013 at 11:24:22PM +0200, Florian Lindner wrote:
-> I create a btrfs volume comprised of two partitions:
+On Tue, Jul 16, 2013 at 03:25:26PM +0200, Stefan Behrens wrote:
+> >> And that root key (18446744073709551610) looks very suspicious. Any ideas?
+> > 
+> > It translates to key type 250 which is BTRFS_DEV_REPLACE_KEY, plus the
+> > parent transid error this looks like broken/unfinished device replace.
+> > Have you used the 'btrfs device replace' recently?
+> > 
 > 
-> # mkfs.btrfs -m dup -d single /dev/sdd1 /dev/sde1
+> Where do you see the key type 250?
 
-DUP does not work on multiple devices, I assume you mean RAID1.
-
-> metadata ist mirrored on each device, data chunks are scattered more or less 
-> randomly on one disk. 
-> 
-> a) If one disk fails, is there any chance of data recovery? 
-> b) If not, is there any advantage over a raid0 configuration.
-
-Regarding data layout, raid0 will always place the small (64k) chunks on
-multiple devices, with single this does not happen every time and the
-data are spread in larger contiguous chunks on each of the device.
-Rewriting data makes the placement unpredictable, so it may end up
-random.
-
-The missing data blocks return IO error and the valid data can be read.
-
-
-david
+mis-interpreted the 18446744073709551610 value as key type (-6 -> 250).

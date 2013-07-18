@@ -1,132 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:58249 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754507Ab3GRMrb (ORCPT
+Received: from atl4mhob14.myregisteredsite.com ([209.17.115.52]:49493 "EHLO
+	atl4mhob14.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1758677Ab3GRNhk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jul 2013 08:47:31 -0400
-Message-ID: <51E7E3E3.9000008@giantdisaster.de>
-Date: Thu, 18 Jul 2013 14:47:31 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Thu, 18 Jul 2013 09:37:40 -0400
+Received: from mailpod1.hostingplatform.com ([10.30.71.117])
+	by atl4mhob14.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r6IDbcaj031166
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 09:37:38 -0400
+Message-ID: <51E7EFA6.10503@chinilu.com>
+Date: Thu, 18 Jul 2013 06:37:42 -0700
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
 MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix get set label blocking against balance
-References: <51E655D1.5020309@oracle.com> <1374146298-30789-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1374146298-30789-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Re: What is the current status of defragmentation?
+References: <51E7182F.9020009@statystyka.net> <51E733FF.2070102@chinilu.com> <51E79542.9030001@statystyka.net>
+In-Reply-To: <51E79542.9030001@statystyka.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 18 Jul 2013 19:18:18 +0800, Anand Jain wrote:
-> btrfs_ioctl_get_fslabel() and btrfs_ioctl_set_fslabel()
-> used root->fs_info->volume_mutex mutex which caused operations
-> like balance to block set/get label operation until its
-> completion and generally balance operation takes a long
-> time to complete, so it will be annoying to the user when
-> cli appears hung
-> 
-> This patch will use mutex uuid_mutex. which is defined
-> in volume.c, and so it is moved to volume.h as well.
-> 
-> also this patch will add a bit of optimization within
-> the btrfs_ioctl_get_falabel() function.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/ioctl.c   | 16 ++++++++++------
->  fs/btrfs/volumes.c |  1 -
->  fs/btrfs/volumes.h |  1 +
->  3 files changed, 11 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 2177bea..d67d7d3 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -4043,17 +4043,21 @@ static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
->  {
->  	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
->  	const char *label = root->fs_info->super_copy->label;
-> -	size_t len = strnlen(label, BTRFS_LABEL_SIZE);
-> +	char label_copy[BTRFS_LABEL_SIZE];
-> +	size_t	len;
->  	int ret;
->  
-> +	mutex_lock(&uuid_mutex);
-> +	memcpy(label_copy, label, BTRFS_LABEL_SIZE);
-> +	mutex_unlock(&uuid_mutex);
-> +
-> +	len = strnlen(label_copy, BTRFS_LABEL_SIZE);
->  	if (len == BTRFS_LABEL_SIZE) {
->  		pr_warn("btrfs: label is too long, return the first %zu bytes\n",
->  			--len);
->  	}
->  
-> -	mutex_lock(&root->fs_info->volume_mutex);
-> -	ret = copy_to_user(arg, label, len);
-> -	mutex_unlock(&root->fs_info->volume_mutex);
-> +	ret = copy_to_user(arg, label_copy, len);
->  
->  	return ret ? -EFAULT : 0;
->  }
-> @@ -4082,7 +4086,7 @@ static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
->  	if (ret)
->  		return ret;
->  
-> -	mutex_lock(&root->fs_info->volume_mutex);
-> +	mutex_lock(&uuid_mutex);
->  	trans = btrfs_start_transaction(root, 0);
->  	if (IS_ERR(trans)) {
->  		ret = PTR_ERR(trans);
-> @@ -4093,7 +4097,7 @@ static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
->  	ret = btrfs_end_transaction(trans, root);
->  
->  out_unlock:
-> -	mutex_unlock(&root->fs_info->volume_mutex);
-> +	mutex_unlock(&uuid_mutex);
->  	mnt_drop_write_file(file);
->  	return ret;
->  }
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 557a743..a5b3eb3 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -49,7 +49,6 @@ static void __btrfs_reset_dev_stats(struct btrfs_device *dev);
->  static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev);
->  static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
->  
-> -static DEFINE_MUTEX(uuid_mutex);
->  static LIST_HEAD(fs_uuids);
->  
->  static void lock_chunks(struct btrfs_root *root)
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 8670558..7855ef9 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -26,6 +26,7 @@
->  
->  #define BTRFS_STRIPE_LEN	(64 * 1024)
->  
-> +static DEFINE_MUTEX(uuid_mutex);
+Indeed! That is a VERY good question and one I have not seen a good 
+answer to thus far.  A traditional defragger in the Windows realm, which 
+defrags on a global basis rather than directory by directory, file by 
+file, also "restacks" the file and directory structure in a way that 
+minimizes free space and the result is also close to a maximum amount of 
+contiguous free space somewhere within the filesystem after the defrag 
+process finishes.  As you correctly point out, no one has indicated a 
+method as to how that can be accomplished with btrfs at this point.  I 
+am not even sure that rebuilding the partition from scratch would do the 
+job.  My solution so far is just to always make sure to have a 
+ridiculous amount of free space available, but that cannot go on forever 
+(and is very inefficient).  So it would be nice to know what the 
+solution to this conundrum would be.  Thanks for pointing this out.
 
-^^^ Not like this. Everybody who includes volumes.h creates his own
-instance of the mutex because of the "static" keyword. A shared mutex
-cannot work like this. Functions in volumes.c and functions in ioctl.c
-would use different mutexs, thus would not protect concurrent read/write
-access.
-
-And I'm sorry to say that I just realized that what I wrote yesterday
-was nuisance, the label that btrfs_scan_one_device() accesses while
-holding the uuid_mutex is not the one from the copy of the super block
-that the fs_info structure contains, it's the one that is temporarily
-read from disk. The whole idea to use the uuid_mutex was valueless and
-nuisance. Instead the spinlock super_lock looks appropriate for
-protecting concurrent access to the label field of fs_info->super_copy.
-In btrfs_ioctl_set_fslabel() make sure to only hold the spinlock for the
-copy operation, not while calling the transaction functions.
-
-
->  struct buffer_head;
->  struct btrfs_pending_bios {
->  	struct bio *head;
-> 
+On 07/18/2013 12:12 AM, Adam Ryczkowski wrote:
+> On 07/18/2013 02:17 AM, George Mitchell wrote:
+>> find /home -type d -mtime -3 -o -type f -mtime -3 | egrep -v
+>> "Cache|cache" | while read file; do /usr/sbin/btrfs filesystem defrag
+>> -f -v "${file}"; done
+> Thank you for your answer.
+>
+> This still defragments file-after-file. But what about a little
+> consolidation of free space? As I understand, if there is no consecutive
+> free space for a file's extents, it is impossible to defragment it, no
+> matter how many times I run the above command, am I right?
+>
+> Adam Ryczkowski
+>
+> <http://www.google.com/>
+>
+>
+>
 

@@ -1,64 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60967 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932473Ab3GRAWg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jul 2013 20:22:36 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1UzbzO-0002nx-9z
-	for linux-btrfs@vger.kernel.org; Thu, 18 Jul 2013 02:22:34 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 02:22:34 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jul 2013 02:22:34 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: What is the current status of defragmentation?
-Date: Thu, 18 Jul 2013 00:22:16 +0000 (UTC)
-Message-ID: <pan$51ece$57cdeac0$66b0922d$a0484ffc@cox.net>
-References: <51E7182F.9020009@statystyka.net>
-Mime-Version: 1.0
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:55789 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756451Ab3GRAvz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jul 2013 20:51:55 -0400
+Received: by mail-ob0-f174.google.com with SMTP id wd20so3109660obb.33
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 17:51:54 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20130717230401.GA2581@localhost.localdomain>
+References: <CAKuK5J0ZiMnAHWAEvNBESX99cawYJQ4_sFQ=5_Ka8gwJqLT2cA@mail.gmail.com>
+ <20130717230401.GA2581@localhost.localdomain>
+From: Jon Nelson <jnelson@jamponi.net>
+Date: Wed, 17 Jul 2013 19:51:34 -0500
+Message-ID: <CAKuK5J2opbAWNmYsdSVkWAopyfPip8rypW7yKADEBCyqXb6Qxw@mail.gmail.com>
+Subject: Re: report: my btrfs filesystem failed hard today
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adam Ryczkowski posted on Thu, 18 Jul 2013 00:18:23 +0200 as excerpted:
+On Wed, Jul 17, 2013 at 6:04 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> On Wed, Jul 17, 2013 at 05:44:23PM -0500, Jon Nelson wrote:
+>> I had a btrfs filesystem under 3.9.8 that failed /hard/ today. So hard
+>> that the filesystem could not be mounted because there wasn't enough
+>> free space, unless it was mounted read only.
+>>
+>> This happened after I ran out of metadata space (is there a way to
+>> increase the amount of metadata storage) while still having many gigs
+>> free of data space, as reported by btrfs fi df. I tried balancing the
+>> metadata, defrag'ing files (with -czlib) and even tried mounting with
+>> -o remount,metadata_ratio={several values}, none of which worked, and
+>> then it crashed hard.
+>>
+>> First, it killed systemd's logger (journald), which refused to
+>> start.Following the crash, I was not able to mount the filesystem
+>> without -o ro.  -o recovery did not work.
+>>
+>
+> Can you try btrfs-next, I did some work in this area in the last few months.
 
-> Today I booted my linux-mint 14 into the latest 3.10.1 kernel to
-> defragment the root btrfs filesystem on my ASUS N56VZ laptop with hybrid
-> Seagate Momentus XT disk. I did something like
-> 
->    find / -exec btrfs filesystem defrag {}
+Unfortunately, I could not wait. I reaaaaly needed that system back
+up, so I copied everything off, reformatted with ext4, and copied it
+all back.
+I (probably?) have more logs, though.
 
-> [description of experience snipped] It clearly showed me, that
-> defragmenting the filesystem is not that trivial, as it is for ext4.
-> So I have quesions: [snipped]
 
-> Does this command
-> 
-> find / -type f -o -type d -print0 | xargs --null --no-run-if-empty btrfs
-> filesystem defragment -cv
-> 
-> look like a reasonable idiom for defragmenting the whole filesystem?
-
-Given that you don't mention the btrfs wiki, and to a large extent your 
-questions are covered there, I'll assume you're not familiar with it.
-
-The short answer is that yes, a find of that nature, piped to xargs to 
-run btrfs filesystem defrag, is the suggested solution.  However, you 
-really need to read up on the wiki, and then ask any remaining questions 
-you may have.  (I still had some questions myself.)
-
-Bookmarking link:  https://btrfs.wiki.kernel.org/
-
-Defrag is covered there in some detail, including a recommended find-
-piped defrag command. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--
+Jon
+Software Blacksmith

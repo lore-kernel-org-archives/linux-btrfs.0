@@ -1,70 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:51263 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752167Ab3GVFWP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jul 2013 01:22:15 -0400
-To: linux-btrfs@vger.kernel.org, 1i5t5.duncan@cox.net, linuxhippy@gmail.com
-Subject: Re: abysmal rm =?UTF-8?Q?performance=3F?=
+Received: from userp1040.oracle.com ([156.151.31.81]:19558 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756385Ab3GVG5s (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jul 2013 02:57:48 -0400
+Date: Mon, 22 Jul 2013 09:55:15 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: [patch] btrfs/raid56: fix and cleanup some error paths
+Message-ID: <20130722065515.GB14617@longonot.mountain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Mon, 22 Jul 2013 12:22:11 +0700
-From: Tomasz Chmielewski <tch@virtall.com>
-Message-ID: <827cf884b1a6e12db95beea6912d946b@admin.virtall.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> You /really/ need to read up on the btrfs wiki.
-> 
-> The short answer is yes, btrfs does a LOT more metadata processing
-> due to the checksumming it does by default.
+The alloc_rbio() frees "raid_map" and "bbio" on error, so there is a
+potential double free bug in raid56_parity_write().  The
+raid56_parity_write() and raid56_parity_recover() functions should still
+free "raid_map" and "bbio" on error if other errors occur though, so I
+have added some more calls to kfree().
 
-According to the wiki, checksumming has barely any influence, so I
-guess the above advice is not really helpful?
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-https://btrfs.wiki.kernel.org/index.php/Mount_options
-
-	nodatasum
-	(...)
-	On most modern CPUs this option does not result in any
-	reasonable performance improvement.
-
-
-> Then there's the whole problem that you didn't provide nearly enough
-> information about your test to tell what it was actually comparing.
-> What sort of raid1, btrfs/md/dm/hardware/what, and if btrfs raid1, was
-> that for both data and metadata or just one of the two and what was
-> the other one if they weren't both raid1?  And if you were testing
-> btrfs raid1, what did you do with the ext4 test to try to make it
-> comparable since ext4 doesn't have a native raid1 mode, or was it on
-> a single device?
-
-ext4: using md RAID
-
-
-btrfs:
-
-Data, RAID1: total=1.73TB, used=1.36TB
-System, RAID1: total=32.00MB, used=264.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=79.00GB, used=70.23GB
-
-
-Quite high metadata usage here.
-
-
-The filesystems on ext4 and btrfs are copies; there are >30 milion 
-inodes on ext4; most of the files have multiple hardlinks.
-
-
-So paraphrasing my question: is there anything to improve "rm"
-performance with btrfs?
-
-"nodatacow" might help a bit, but then, it disabled the compression,
-which is a major drawback.
-
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
-
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 0525e13..0db856c 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1687,11 +1687,8 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
+ 	struct blk_plug_cb *cb;
+ 
+ 	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
+-	if (IS_ERR(rbio)) {
+-		kfree(raid_map);
+-		kfree(bbio);
++	if (IS_ERR(rbio))
+ 		return PTR_ERR(rbio);
+-	}
+ 	bio_list_add(&rbio->bio_list, bio);
+ 	rbio->bio_list_bytes = bio->bi_size;
+ 
+@@ -2041,9 +2038,8 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 	int ret;
+ 
+ 	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
+-	if (IS_ERR(rbio)) {
++	if (IS_ERR(rbio))
+ 		return PTR_ERR(rbio);
+-	}
+ 
+ 	rbio->read_rebuild = 1;
+ 	bio_list_add(&rbio->bio_list, bio);
+@@ -2052,6 +2048,8 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 	rbio->faila = find_logical_bio_stripe(rbio, bio);
+ 	if (rbio->faila == -1) {
+ 		BUG();
++		kfree(raid_map);
++		kfree(bbio);
+ 		kfree(rbio);
+ 		return -EIO;
+ 	}

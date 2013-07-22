@@ -1,52 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from caibbdcaaaaf.dreamhost.com ([208.113.200.5]:52654 "EHLO
-	homiemail-a68.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752410Ab3GVELQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jul 2013 00:11:16 -0400
-From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
-To: george@chinilu.com
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: autodefrag by default, was: Lots of harddrive chatter
-Date: Mon, 22 Jul 2013 09:41:12 +0530
-Message-ID: <3865098.S4o5hbA3km@bheem>
-In-Reply-To: <51ECACC6.1090104@chinilu.com>
-References: <ksf42h$suu$1@ger.gmane.org> <5436903.bmHYcuMpfJ@bheem> <51ECACC6.1090104@chinilu.com>
+Received: from mail.virtall.com ([178.63.195.102]:51263 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752167Ab3GVFWP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jul 2013 01:22:15 -0400
+To: linux-btrfs@vger.kernel.org, 1i5t5.duncan@cox.net, linuxhippy@gmail.com
+Subject: Re: abysmal rm =?UTF-8?Q?performance=3F?=
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Mon, 22 Jul 2013 12:22:11 +0700
+From: Tomasz Chmielewski <tch@virtall.com>
+Message-ID: <827cf884b1a6e12db95beea6912d946b@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday, July 21, 2013 08:53:42 PM George Mitchell wrote:
-> > system files typically are installed once and never rewritten in place, so
-> > they should not be much fragmented to begin with.
-> > 
-> > now their directory objects, is a different story and so is things like
-> > systemd journal, log files, or database files.
+> You /really/ need to read up on the btrfs wiki.
 > 
-> Never rewritten in place?  I wouldn't go that far.  In the case of many 
-> distros there is a continual flow of updates which results in some 
-> degree of data churning throughout the system filesystems. Just a kernel 
-> update, for example, can affect a rather large number of files and 
-> directories with new writes while application updates (KDE or even Gnome 
-> for example) can cause a large number of files to be rewritten in place.
+> The short answer is yes, btrfs does a LOT more metadata processing
+> due to the checksumming it does by default.
 
-While it is true that large number of files are changed with each update, most 
-of the update delete the existing files and install new one. That does not 
-lead to fragmentation of a file.
+According to the wiki, checksumming has barely any influence, so I
+guess the above advice is not really helpful?
 
-Unless the packages are patching the files in place(AFAIK, even delta RPMs 
-patch the RPM and not the individual files), it would not lead to the 
-defragmentation that is problematic on btrfs.
+https://btrfs.wiki.kernel.org/index.php/Mount_options
 
-There are two types of defragmentations. first is where files are continually 
-added/deleted to the file system, e.g. a mail server. IME btrfs handles that 
-quite well.
+	nodatasum
+	(...)
+	On most modern CPUs this option does not result in any
+	reasonable performance improvement.
 
-Another is where a file is constantly updated in place e.g. a 
-postgresql/sqlite database. In the second case, COW nature of btrfs causes the 
-defragmentation which directly affects the performance, at least on spinning 
-hard disks.
+
+> Then there's the whole problem that you didn't provide nearly enough
+> information about your test to tell what it was actually comparing.
+> What sort of raid1, btrfs/md/dm/hardware/what, and if btrfs raid1, was
+> that for both data and metadata or just one of the two and what was
+> the other one if they weren't both raid1?  And if you were testing
+> btrfs raid1, what did you do with the ext4 test to try to make it
+> comparable since ext4 doesn't have a native raid1 mode, or was it on
+> a single device?
+
+ext4: using md RAID
+
+
+btrfs:
+
+Data, RAID1: total=1.73TB, used=1.36TB
+System, RAID1: total=32.00MB, used=264.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=79.00GB, used=70.23GB
+
+
+Quite high metadata usage here.
+
+
+The filesystems on ext4 and btrfs are copies; there are >30 milion 
+inodes on ext4; most of the files have multiple hardlinks.
+
+
+So paraphrasing my question: is there anything to improve "rm"
+performance with btrfs?
+
+"nodatacow" might help a bit, but then, it disabled the compression,
+which is a major drawback.
+
+
 -- 
-Regards
- Shridhar
+Tomasz Chmielewski
+http://wpkg.org
+

@@ -1,74 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3774 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:61734 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750937Ab3GWFWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jul 2013 01:22:42 -0400
+	id S1751162Ab3GWFXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jul 2013 01:23:21 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6N5MeQc004290
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 13:22:40 +0800
-Message-ID: <51EE12E3.1010801@cn.fujitsu.com>
-Date: Tue, 23 Jul 2013 13:21:39 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6N5NJbX004353
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 13:23:19 +0800
+Message-ID: <51EE130A.7020101@cn.fujitsu.com>
+Date: Tue, 23 Jul 2013 13:22:18 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/3] Btrfs: use u64 for subvolid when parsing mount options
+Subject: [PATCH 3/3] Btrfs: add missing mounting options in btrfs_show_options()
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although for most time, int is enough for subvolid, we should
-ensure safety in theory.
+Some options are missing in btrfs_show_options(), this patch
+adds them.
 
 Signed-off-by: Wang Shilong<wangsl.fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie<miaox@cn.fujitsu.com>
 ---
-  fs/btrfs/super.c | 16 +++++++---------
-  1 file changed, 7 insertions(+), 9 deletions(-)
+  fs/btrfs/super.c | 14 ++++++++++++++
+  1 file changed, 14 insertions(+)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index cc00295..d82391d 100644
+index d82391d..fa57418 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -327,7 +327,7 @@ enum {
-  static match_table_t tokens = {
-  	{Opt_degraded, "degraded"},
-  	{Opt_subvol, "subvol=%s"},
--	{Opt_subvolid, "subvolid=%d"},
-+	{Opt_subvolid, "subvolid=%s"},
-  	{Opt_device, "device=%s"},
-  	{Opt_nodatasum, "nodatasum"},
-  	{Opt_nodatacow, "nodatacow"},
-@@ -673,8 +673,8 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
-  {
-  	substring_t args[MAX_OPT_ARGS];
-  	char *device_name, *opts, *orig, *p;
-+	char *num = NULL;
-  	int error = 0;
--	int intarg;
-  
-  	if (!options)
-  		return 0;
-@@ -704,16 +704,14 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
-  			}
-  			break;
-  		case Opt_subvolid:
--			error = match_int(&args[0], &intarg);
--			if (!error) {
--				goto out;
--			} else if (intarg >= 0) {
-+			num = match_strdup(&args[0]);
-+			if (num) {
-+				*subvol_objectid = memparse(num, NULL);
-+				kfree(num);
-  				/* we want the original fs_tree */
--				if (!intarg)
-+				if (!*subvol_objectid)
-  					*subvol_objectid =
-  						BTRFS_FS_TREE_OBJECTID;
--				else
--					*subvol_objectid = intarg;
-  			} else {
-  				error = -EINVAL;
-  				goto out;
+@@ -965,6 +965,20 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+  		seq_puts(seq, ",inode_cache");
+  	if (btrfs_test_opt(root, SKIP_BALANCE))
+  		seq_puts(seq, ",skip_balance");
++	if (btrfs_test_opt(root, RECOVERY))
++		seq_puts(seq, ",auto_recovery");
++#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
++	if (btrfs_test_opt(root, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
++		seq_puts(seq, ",check_int_data");
++	else if (btrfs_test_opt(root, CHECK_INTEGRITY))
++		seq_puts(seq, ",check_int");
++	if (info->check_integrity_print_mask)
++		seq_printf(seq, ",check_int_print_mask=%d",
++				info->check_integrity_print_mask);
++#endif
++	if (info->metadata_ratio)
++		seq_printf(seq, ",metadata_ratio=%d",
++				info->metadata_ratio);
+  	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
+  		seq_puts(seq, ",fatal_errors=panic");
+  	return 0;
 -- 1.8.0.1
 

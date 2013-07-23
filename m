@@ -1,75 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f176.google.com ([74.125.82.176]:44624 "EHLO
-	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933379Ab3GWR0D (ORCPT
+Received: from mail-wg0-f46.google.com ([74.125.82.46]:40902 "EHLO
+	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933722Ab3GWRrp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jul 2013 13:26:03 -0400
-Received: by mail-we0-f176.google.com with SMTP id q56so1182177wes.35
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 10:26:01 -0700 (PDT)
-Message-ID: <51EEBCA7.3080802@gmail.com>
-Date: Tue, 23 Jul 2013 19:25:59 +0200
+	Tue, 23 Jul 2013 13:47:45 -0400
+Received: by mail-wg0-f46.google.com with SMTP id k13so699196wgh.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 10:47:44 -0700 (PDT)
+Message-ID: <51EEC1BD.9030001@gmail.com>
+Date: Tue, 23 Jul 2013 19:47:41 +0200
 From: Gabriel de Perthuis <g2p.code@gmail.com>
 MIME-Version: 1.0
-To: Rick van Rein <rick@vanrein.org>
-CC: linux-btrfs@vger.kernel.org, cwillu@cwillu.com,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: Re: Manual deduplication would be useful
-References: <3DF45F2F-A56D-4302-AB84-31A6A3084A39@vanrein.org>
-In-Reply-To: <3DF45F2F-A56D-4302-AB84-31A6A3084A39@vanrein.org>
+To: Hugo Mills <hugo@carfax.org.uk>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Jerome Haltom <wasabi@cogito.cx>
+Subject: Re: Q: Why subvolumes?
+References: <CA+V+5QrNAo_RVEiONHRqkN5O89jgtoFDecuWnu41_ovJmLVhuA@mail.gmail.com> <20130723150620.GG20517@carfax.org.uk>
+In-Reply-To: <20130723150620.GG20517@carfax.org.uk>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Hello,
-> 
-> For over a year now, I've been experimenting with stacked filesystems
-> as a way to save on resources.  A basic OS layer is shared among
-> Containers, each of which stacks a layer with modifications on top of
-> it.  This approach means that Containers share buffer cache and
-> loaded executables.  Concrete technology choices aside, the result is
-> rock-solid and the efficiency improvements are incredible, as
-> documented here:
-> 
-> http://rickywiki.vanrein.org/doku.php?id=openvz-aufs
-> 
-> One problem with this setup is updating software.  In lieu of
-> stacking-support in package managers, it is necessary to do this on a
-> per-Container basis, meaning that each installs their own versions,
-> including overwrites of the basic OS layer.  Deduplication could
-> remedy this, but the generic mechanism is known from ZFS to be fairly
-> inefficient.
-> 
-> Interestingly however, this particular use case demonstrates that a
-> much simpler deduplication mechanism than normally considered could
-> be useful.  It would suffice if the filesystem could check on manual
-> hints, or stack-specifying hints, to see if overlaid files share the
-> same file contents; when they do, deduplication could commence.  This
-> saves searching through the entire filesystem for every file or block
-> written.  It might also mean that the actual stacking is not needed,
-> but instead a basic OS could be cloned to form a new basic install,
-> and kept around for this hint processing.
-> 
-> I'm not sure if this should ideally be implemented inside the
-> stacking approach (where it would be
-> stacking-implementation-specific) or in the filesystem (for which it
-> might be too far off the main purpose) but I thought it wouldn't hurt
-> to start a discussion on it, given that (1) filesystems nowadays
-> service multiple instances, (2) filesystems like Btrfs are based on
-> COW, and (3) deduplication is a goal but the generic mechanism could
-> use some efficiency improvements.
-> 
-> I hope having seen this approach is useful to you!
+>    Now... since the snapshot's FS tree is a direct duplicate of the
+> original FS tree (actually, it's the same tree, but they look like
+> different things to the outside world), they share everything --
+> including things like inode numbers. This is OK within a subvolume,
+> because we have the semantics that subvolumes have their own distinct
+> inode-number spaces. If we could snapshot arbitrary subsections of the
+> FS, we'd end up having to fix up inode numbers to ensure that they
+> were unique -- which can't really be an atomic operation (unless you
+> want to have the FS locked while the kernel updates the inodes of the
+> billion files you just snapshotted).
 
-Have a look at bedup[1] (disclaimer: I wrote it).  The normal mode
-does incremental scans, and there's also a subcommand for
-deduplicating files that you already know are identical:
-  bedup dedup-files
+I don't think so; I just checked some snapshots and the inos are the same.
+Btrfs just changes the dev_id of subvolumes (somehow the vfs allows this).
 
-The implementation in master uses a clone ioctl.  Here is Mark
-Fasheh's latest patch series to implement a dedup ioctl[2]; it
-also comes with a command to work on listed files
-(btrfs-extent-same in [3]).
+>    The other thing to talk about here is that while the FS tree is a
+> tree structure, it's not a direct one-to-one map to the directory tree
+> structure. In fact, it looks more like a list of inodes, in inode
+> order, with some extra info for easily tracking through the list. The
+> B-tree structure of the FS tree is just a fast indexing method. So
+> snapshotting a directory entry within the FS tree would require
+> (somehow) making an atomic copy, or CoW copy, of only the parts of the
+> FS tree that fall under the directory in question -- so you'd end up
+> trying to take a sequence of records in the FS tree, of arbitrary size
+> (proportional roughly to the number of entries in the directory) and
+> copying them to somewhere else in the same tree in such a way that you
+> can automatically dereference the copies when you modify them. So,
+> ultimately, it boils down to being able to do CoW operations at the
+> byte level, which is going to introduce huge quantities of extra
+> metadata, and it all starts looking really awkward to implement (plus
+> having to deal with the long time taken to copy the directory entries
+> for the thing you're snapshotting).
 
-[1] https://github.com/g2p/bedup
-[2] http://comments.gmane.org/gmane.comp.file-systems.btrfs/26310/
-[3] https://github.com/markfasheh/duperemove
+Btrfs already does CoW of arbitrarily-large files (extent lists);
+doing the same for directories doesn't seem impossible.

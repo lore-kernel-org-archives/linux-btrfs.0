@@ -1,47 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f41.google.com ([209.85.219.41]:50288 "EHLO
-	mail-oa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932481Ab3GWQGL convert rfc822-to-8bit (ORCPT
+Received: from mail-we0-f171.google.com ([74.125.82.171]:63255 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933299Ab3GWQQb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jul 2013 12:06:11 -0400
-Received: by mail-oa0-f41.google.com with SMTP id n10so11841943oag.28
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 09:06:11 -0700 (PDT)
+	Tue, 23 Jul 2013 12:16:31 -0400
+Received: by mail-we0-f171.google.com with SMTP id q55so3328265wes.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 09:16:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <3DF45F2F-A56D-4302-AB84-31A6A3084A39@vanrein.org>
-References: <3DF45F2F-A56D-4302-AB84-31A6A3084A39@vanrein.org>
-Date: Tue, 23 Jul 2013 10:06:10 -0600
-Message-ID: <CAE5mzvj_f2GDYiE=RVhppfhXK+0vCindPROJA6g+XoumSBmYUA@mail.gmail.com>
-Subject: Re: Manual deduplication would be useful
-From: cwillu <cwillu@cwillu.com>
-To: Rick van Rein <rick@vanrein.org>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <20130723143236.GA12119@thinkpad.home.lan>
+References: <20130723143236.GA12119@thinkpad.home.lan>
+Date: Tue, 23 Jul 2013 12:16:27 -0400
+Message-ID: <CAPs0BihEVhGcqiN_-VHigRQTfw-p-MX4wB4T5jx8MG+oXxRUig@mail.gmail.com>
+Subject: Re: Different size devices in RAID
+From: Sandy McArthur <sandymac@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Curtis Shimamoto <sugar.and.scruffy@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 23, 2013 at 9:47 AM, Rick van Rein <rick@vanrein.org> wrote:
-> Hello,
->
-> For over a year now, I've been experimenting with stacked filesystems as a way to save on resources.  A basic OS layer is shared among Containers, each of which stacks a layer with modifications on top of it.  This approach means that Containers share buffer cache and loaded executables.  Concrete technology choices aside, the result is rock-solid and the efficiency improvements are incredible, as documented here:
->
-> http://rickywiki.vanrein.org/doku.php?id=openvz-aufs
->
-> One problem with this setup is updating software.  In lieu of stacking-support in package managers, it is necessary to do this on a per-Container basis, meaning that each installs their own versions, including overwrites of the basic OS layer.  Deduplication could remedy this, but the generic mechanism is known from ZFS to be fairly inefficient.
->
-> Interestingly however, this particular use case demonstrates that a much simpler deduplication mechanism than normally considered could be useful.  It would suffice if the filesystem could check on manual hints, or stack-specifying hints, to see if overlaid files share the same file contents; when they do, deduplication could commence.  This saves searching through the entire filesystem for every file or block written.  It might also mean that the actual stacking is not needed, but instead a basic OS could be cloned to form a new basic install, and kept around for this hint processing.
->
-> I'm not sure if this should ideally be implemented inside the stacking approach (where it would be stacking-implementation-specific) or in the filesystem (for which it might be too far off the main purpose) but I thought it wouldn't hurt to start a discussion on it, given that (1) filesystems nowadays service multiple instances, (2) filesystems like Btrfs are based on COW, and (3) deduplication is a goal but the generic mechanism could use some efficiency improvements.
->
-> I hope having seen this approach is useful to you!
->
-> Please reply-all?  I'm not on this list.
->
-> Cheers,
->  -Rick--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Tue, Jul 23, 2013 at 10:32 AM, Curtis Shimamoto
+<sugar.and.scruffy@gmail.com> wrote:
+> [...]
+> Additionally, though not quite as much of a concern to me, the machine in
+> which these drives live is an Ivy Bridge Laptop, so there are actually
+> only two available SATA3 ports.  The odd drive out at this point in time
+> is actually an mSATA which is the only SATA2 port.  If I were to add this
+> to an array (assuming the above questions have favorable answers), how
+> dramatically would the speed of the array be affected?  To be honest, the
+> speed of even just the mSATA drive alone is enough to keep me happy.  But
+> I have just been very curious about this.  The write speeds of all three
+> are relatively close. But the read speeds on the SATA3 are significantly
+> faster than the mSATA.
+> [...]
 
-There's patches providing offline dedup (i.e., manually telling the
-kernel which files to consider) floating around:
-http://lwn.net/Articles/547542/
+I expect instantaneous I/O to be a jittery experience based on if a
+particular I/O takes a fast or slow path. I expect the average I/O
+performance to be the weighted average of the performance of all
+drives involved.
+
+This is my btrfs-noob understanding/observations. Hope it helps:
+
+I currently have a two drives RAID1 setup connected via USB3 on a
+3.10.1 kernel. I've observed the following via the `iostat` command.
+If I recall correctly my max observed read-only throughput is 160
+megs/second and my max observed write throughput is 130 megs/second
+combined (65 megs/second per drive).
+
+Here is an `iostat 10` sample for only writing files to the drives in
+my btrfs setup:
+Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sdb             310.80         0.00     18092.80          0     180928
+sdc             312.90        86.40     18099.20        864     180992
+
+You'll see I'm pushing about 18 megs a second to each drive (the copy
+here is from DVD to btrfs). Being RAID1 each drive gets a copy of the
+data and I expect write performance to be limited by the slowest drive
+being written to. I expect write performance to be jittery if multiple
+drives are on different speed buses as some writes would wait on the
+slow bus to catch up, others would only be on the fast bus.
+
+Here I am reading from files (`cat /btrfs/backups/* >/dev/null`) and
+still writing files like from above:
+Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sdb            1640.60     89085.60     15230.00     890856     152300
+sdc             245.50         3.60     15096.80         36     150968
+
+Note that even though this is RAID1 data being read, only one drive is
+feeding all the read I/O. Write speeds slowed a little as I expect the
+USB3 bus/controller/whatever to be max out. (89+15+15=~120 megs/second
+I/O + plus other overhead) If you had more drives and btrfs decided to
+read from the slowest drive that would likely be your bottleneck for
+that read.
+
+
+Another drive arrived today, I'll see what happens when I mix/match
+USB3 and SATA connected drives.
+
+--
+Sandy McArthur
+
+"He who dares not offend cannot be honest."
+- Thomas Paine

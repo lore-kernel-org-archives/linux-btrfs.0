@@ -1,54 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61734 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:59297 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751162Ab3GWFXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jul 2013 01:23:21 -0400
+	id S1754689Ab3GWF0v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jul 2013 01:26:51 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6N5NJbX004353
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 13:23:19 +0800
-Message-ID: <51EE130A.7020101@cn.fujitsu.com>
-Date: Tue, 23 Jul 2013 13:22:18 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6N5QnkL004643
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jul 2013 13:26:49 +0800
+Message-ID: <51EE13DB.5060205@cn.fujitsu.com>
+Date: Tue, 23 Jul 2013 13:25:47 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] Btrfs: add missing mounting options in btrfs_show_options()
+Subject: [PATCH 1/3] Btrfs: add sanity checks regarding to parsing mount options
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some options are missing in btrfs_show_options(), this patch
-adds them.
+I just notice the following commands succeed:
+	mount <dev> <mnt> -o thread_pool=-1
+
+This is ridiculous, only positive thread_pool makes sense,this
+patch adds sanity checks for them, and also catches the error of
+ENOMEM if allocating memory fails.
 
 Signed-off-by: Wang Shilong<wangsl.fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie<miaox@cn.fujitsu.com>
 ---
-  fs/btrfs/super.c | 14 ++++++++++++++
-  1 file changed, 14 insertions(+)
+  fs/btrfs/super.c | 47 +++++++++++++++++++++++++++++++++++++----------
+  1 file changed, 37 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d82391d..fa57418 100644
+index 8eb6191..cc00295 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -965,6 +965,20 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
-  		seq_puts(seq, ",inode_cache");
-  	if (btrfs_test_opt(root, SKIP_BALANCE))
-  		seq_puts(seq, ",skip_balance");
-+	if (btrfs_test_opt(root, RECOVERY))
-+		seq_puts(seq, ",auto_recovery");
-+#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
-+	if (btrfs_test_opt(root, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
-+		seq_puts(seq, ",check_int_data");
-+	else if (btrfs_test_opt(root, CHECK_INTEGRITY))
-+		seq_puts(seq, ",check_int");
-+	if (info->check_integrity_print_mask)
-+		seq_printf(seq, ",check_int_print_mask=%d",
-+				info->check_integrity_print_mask);
-+#endif
-+	if (info->metadata_ratio)
-+		seq_printf(seq, ",metadata_ratio=%d",
-+				info->metadata_ratio);
-  	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
-  		seq_puts(seq, ",fatal_errors=panic");
-  	return 0;
+@@ -496,10 +496,15 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+  			btrfs_set_opt(info->mount_opt, NOBARRIER);
+  			break;
+  		case Opt_thread_pool:
+-			intarg = 0;
+-			match_int(&args[0], &intarg);
+-			if (intarg)
++			ret = match_int(&args[0], &intarg);
++			if (ret) {
++				goto out;
++			} else if (intarg > 0) {
+  				info->thread_pool_size = intarg;
++			} else {
++				ret = -EINVAL;
++				goto out;
++			}
+  			break;
+  		case Opt_max_inline:
+  			num = match_strdup(&args[0]);
+@@ -514,6 +519,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+  				}
+  				printk(KERN_INFO "btrfs: max_inline at %llu\n",
+  					(unsigned long long)info->max_inline);
++			} else {
++				ret = -ENOMEM;
++				goto out;
+  			}
+  			break;
+  		case Opt_alloc_start:
+@@ -526,6 +534,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+  				printk(KERN_INFO
+  					"btrfs: allocations start at %llu\n",
+  					(unsigned long long)info->alloc_start);
++			} else {
++				ret = -ENOMEM;
++				goto out;
+  			}
+  			break;
+  		case Opt_noacl:
+@@ -540,12 +551,16 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+  			btrfs_set_opt(info->mount_opt, FLUSHONCOMMIT);
+  			break;
+  		case Opt_ratio:
+-			intarg = 0;
+-			match_int(&args[0], &intarg);
+-			if (intarg) {
++			ret = match_int(&args[0], &intarg);
++			if (ret) {
++				goto out;
++			} else if (intarg >= 0) {
+  				info->metadata_ratio = intarg;
+  				printk(KERN_INFO "btrfs: metadata ratio %d\n",
+  				       info->metadata_ratio);
++			} else {
++				ret = -EINVAL;
++				goto out;
+  			}
+  			break;
+  		case Opt_discard:
+@@ -596,13 +611,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+  			btrfs_set_opt(info->mount_opt, CHECK_INTEGRITY);
+  			break;
+  		case Opt_check_integrity_print_mask:
+-			intarg = 0;
+-			match_int(&args[0], &intarg);
+-			if (intarg) {
++			ret = match_int(&args[0], &intarg);
++			if (ret) {
++				goto out;
++			} else if (intarg >= 0) {
+  				info->check_integrity_print_mask = intarg;
+  				printk(KERN_INFO "btrfs:"
+  				       " check_integrity_print_mask 0x%x\n",
+  				       info->check_integrity_print_mask);
++			} else {
++				ret = -EINVAL;
++				goto out;
+  			}
+  			break;
+  #else
+@@ -679,17 +698,25 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+  		case Opt_subvol:
+  			kfree(*subvol_name);
+  			*subvol_name = match_strdup(&args[0]);
++			if (!*subvol_name) {
++				error = -ENOMEM;
++				goto out;
++			}
+  			break;
+  		case Opt_subvolid:
+-			intarg = 0;
+  			error = match_int(&args[0], &intarg);
+  			if (!error) {
++				goto out;
++			} else if (intarg >= 0) {
+  				/* we want the original fs_tree */
+  				if (!intarg)
+  					*subvol_objectid =
+  						BTRFS_FS_TREE_OBJECTID;
+  				else
+  					*subvol_objectid = intarg;
++			} else {
++				error = -EINVAL;
++				goto out;
+  			}
+  			break;
+  		case Opt_subvolrootid:
 -- 1.8.0.1
 

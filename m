@@ -1,143 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:12238 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33326 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750731Ab3GXCaU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jul 2013 22:30:20 -0400
+	id S1750864Ab3GXCbE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jul 2013 22:31:04 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6O2TvqH017993
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jul 2013 10:30:10 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6O2UZNM018054
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jul 2013 10:30:35 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND 1/3] Btrfs: add sanity checks regarding to parsing mount options
-Date: Wed, 24 Jul 2013 10:29:05 +0800
-Message-Id: <1374632945-3344-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH RESEND 2/3] Btrfs: use u64 for subvolid when parsing mount options
+Date: Wed, 24 Jul 2013 10:29:20 +0800
+Message-Id: <1374632960-3379-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just notice the following commands succeed:
-	mount <dev> <mnt> -o thread_pool=-1
-
-This is ridiculous, only positive thread_pool makes sense,this
-patch adds sanity checks for them, and also catches the error of
-ENOMEM if allocating memory fails.
+Although for most time, int is enough for subvolid, we should
+ensure safety in theory.
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/super.c | 47 +++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 37 insertions(+), 10 deletions(-)
+ fs/btrfs/super.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8eb6191..cc00295 100644
+index cc00295..d82391d 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -496,10 +496,15 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_set_opt(info->mount_opt, NOBARRIER);
- 			break;
- 		case Opt_thread_pool:
--			intarg = 0;
--			match_int(&args[0], &intarg);
--			if (intarg)
-+			ret = match_int(&args[0], &intarg);
-+			if (ret) {
-+				goto out;
-+			} else if (intarg > 0) {
- 				info->thread_pool_size = intarg;
-+			} else {
-+				ret = -EINVAL;
-+				goto out;
-+			}
- 			break;
- 		case Opt_max_inline:
- 			num = match_strdup(&args[0]);
-@@ -514,6 +519,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				}
- 				printk(KERN_INFO "btrfs: max_inline at %llu\n",
- 					(unsigned long long)info->max_inline);
-+			} else {
-+				ret = -ENOMEM;
-+				goto out;
+@@ -327,7 +327,7 @@ enum {
+ static match_table_t tokens = {
+ 	{Opt_degraded, "degraded"},
+ 	{Opt_subvol, "subvol=%s"},
+-	{Opt_subvolid, "subvolid=%d"},
++	{Opt_subvolid, "subvolid=%s"},
+ 	{Opt_device, "device=%s"},
+ 	{Opt_nodatasum, "nodatasum"},
+ 	{Opt_nodatacow, "nodatacow"},
+@@ -673,8 +673,8 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ {
+ 	substring_t args[MAX_OPT_ARGS];
+ 	char *device_name, *opts, *orig, *p;
++	char *num = NULL;
+ 	int error = 0;
+-	int intarg;
+ 
+ 	if (!options)
+ 		return 0;
+@@ -704,16 +704,14 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
  			}
- 			break;
- 		case Opt_alloc_start:
-@@ -526,6 +534,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				printk(KERN_INFO
- 					"btrfs: allocations start at %llu\n",
- 					(unsigned long long)info->alloc_start);
-+			} else {
-+				ret = -ENOMEM;
-+				goto out;
- 			}
- 			break;
- 		case Opt_noacl:
-@@ -540,12 +551,16 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_set_opt(info->mount_opt, FLUSHONCOMMIT);
- 			break;
- 		case Opt_ratio:
--			intarg = 0;
--			match_int(&args[0], &intarg);
--			if (intarg) {
-+			ret = match_int(&args[0], &intarg);
-+			if (ret) {
-+				goto out;
-+			} else if (intarg >= 0) {
- 				info->metadata_ratio = intarg;
- 				printk(KERN_INFO "btrfs: metadata ratio %d\n",
- 				       info->metadata_ratio);
-+			} else {
-+				ret = -EINVAL;
-+				goto out;
- 			}
- 			break;
- 		case Opt_discard:
-@@ -596,13 +611,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_set_opt(info->mount_opt, CHECK_INTEGRITY);
- 			break;
- 		case Opt_check_integrity_print_mask:
--			intarg = 0;
--			match_int(&args[0], &intarg);
--			if (intarg) {
-+			ret = match_int(&args[0], &intarg);
-+			if (ret) {
-+				goto out;
-+			} else if (intarg >= 0) {
- 				info->check_integrity_print_mask = intarg;
- 				printk(KERN_INFO "btrfs:"
- 				       " check_integrity_print_mask 0x%x\n",
- 				       info->check_integrity_print_mask);
-+			} else {
-+				ret = -EINVAL;
-+				goto out;
- 			}
- 			break;
- #else
-@@ -679,17 +698,25 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		case Opt_subvol:
- 			kfree(*subvol_name);
- 			*subvol_name = match_strdup(&args[0]);
-+			if (!*subvol_name) {
-+				error = -ENOMEM;
-+				goto out;
-+			}
  			break;
  		case Opt_subvolid:
--			intarg = 0;
- 			error = match_int(&args[0], &intarg);
- 			if (!error) {
-+				goto out;
-+			} else if (intarg >= 0) {
+-			error = match_int(&args[0], &intarg);
+-			if (!error) {
+-				goto out;
+-			} else if (intarg >= 0) {
++			num = match_strdup(&args[0]);
++			if (num) {
++				*subvol_objectid = memparse(num, NULL);
++				kfree(num);
  				/* we want the original fs_tree */
- 				if (!intarg)
+-				if (!intarg)
++				if (!*subvol_objectid)
  					*subvol_objectid =
  						BTRFS_FS_TREE_OBJECTID;
- 				else
- 					*subvol_objectid = intarg;
-+			} else {
-+				error = -EINVAL;
-+				goto out;
- 			}
- 			break;
- 		case Opt_subvolrootid:
+-				else
+-					*subvol_objectid = intarg;
+ 			} else {
+ 				error = -EINVAL;
+ 				goto out;
 -- 
 1.8.0.1
 

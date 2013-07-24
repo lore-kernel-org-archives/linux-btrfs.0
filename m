@@ -1,186 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29465 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753139Ab3GCNLs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jul 2013 09:11:48 -0400
-From: Koen De Wit <koen.de.wit@oracle.com>
-To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Cc: Koen De Wit <koen.de.wit@oracle.com>
-Subject: [PATCH v4] xfstests: btrfs/311: sparse copy between different filesystems/mountpoints
-Date: Wed,  3 Jul 2013 15:10:07 +0200
-Message-Id: <1372857007-6520-1-git-send-email-koen.de.wit@oracle.com>
+Received: from xp-ob.rzone.de ([81.169.146.140]:55389 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751579Ab3GXPht (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Jul 2013 11:37:49 -0400
+From: Jan Schmidt <list.xfs@jan-o-sch.net>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de
+Subject: [PATCH v2 0/2] xfstest btrfs/316: test send / receive (was: btrfs/314)
+Date: Wed, 24 Jul 2013 17:07:27 +0200
+Message-Id: <1374678449-21780-1-git-send-email-list.xfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check if creating a sparse copy ("reflink") of a file on btrfs
-expectedly fails when it's done between different filesystems or
-different mount points of the same filesystem.
+From: root <root@zarzz.(none)>
 
-For both situations, these actions are executed:
-   - Copy a file with the reflink=auto option.
-     A normal copy should be created.
-   - Copy a file with the reflink=always option. Should result in error,
-     no file should be created.
+These two patches add the announced tests for btrfs send / receive. As
+requested, the fssum tool is now included.
 
-[sandeen: mostly cosmetic changes]
+One drawback is that I'm unable to edit configure.ac or whatever needs
+to be modified in an autotools preferred way. Any hints appreciated,
+preferrably hints containing all the modifications required to introduce
+something like HAVE_SEEK_HOLE.
 
-Signed-off-by: Koen De Wit <koen.de.wit@xxxxxxxxxx>
-Signed-off-by: Eric Sandeen <sandeen@xxxxxxxxxx>
----
-Changelog:
-v3 -> v4: Cleaning up commit message
-v2 -> v3: replacing "$seqres.fll" by "$seqres.full"
-v1 -> v2: (sandeen) mostly cosmetic changes, renamed 301 -> 311
+I do not want to make modifications to fssum.c here, if that's
+absolutely required (because one /could/ get along using linux/fs.h,
+which is not the way I would like to go), I'd like to have that changed
+in the far-progs repository where fssum.c comes from as well.
 
- tests/btrfs/311     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/311.out |   15 +++++++
- tests/btrfs/group   |    4 ++
- 3 files changed, 126 insertions(+), 0 deletions(-)
- create mode 100755 tests/btrfs/311
- create mode 100644 tests/btrfs/311.out
+Jan Schmidt (2):
+  xfstests: add fssum tool
+  xfstests btrfs/316: test send / receive
 
-diff --git a/tests/btrfs/311 b/tests/btrfs/311
-new file mode 100755
-index 0000000..56ebd58
---- /dev/null
-+++ b/tests/btrfs/311
-@@ -0,0 +1,107 @@
-+#! /bin/bash
-+# FS QA Test No. 311
-+#
-+# Check if creating a sparse copy ("reflink") of a file on btrfs
-+# expectedly fails when it's done between different filesystems or
-+# different mount points of the same filesystem.
-+#
-+# For both situations, these actions are executed:
-+#    - Copy a file with the reflink=auto option.
-+#      A normal copy should be created.
-+#    - Copy a file with the reflink=always option. Should result in error,
-+#      no file should be created.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    umount $SCRATCH_MNT &>/dev/null
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+
-+_require_scratch
-+_require_cp_reflink
-+
-+SOURCE_DIR=$TEST_DIR/test-$seq
-+CROSS_DEV_DIR=$SCRATCH_MNT/test-$seq
-+# mount point & target for twice-mounted device
-+TEST_DIR2=$TEST_DIR/mount2
-+DUAL_MOUNT_DIR=$SCRATCH_MNT/test-bis-$seq
-+
-+rm -rf $SOURCE_DIR
-+mkdir $SOURCE_DIR
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $SOURCE_DIR/original \
-+ >> $seqres.full
-+
-+_filter_testdirs()
-+{
-+    _filter_test_dir | _filter_scratch
-+}
-+
-+_create_reflinks_to()
-+{
-+    # auto reflink, should fall back to non-reflink
-+    rm -rf $1; mkdir $1
-+    echo "reflink=auto:"
-+    cp --reflink=auto $SOURCE_DIR/original $1/copy
-+    md5sum $SOURCE_DIR/original | _filter_testdirs
-+    md5sum $1/copy | _filter_testdirs
-+
-+    # always reflink, should fail outright
-+    rm -rf $1; mkdir $1
-+    echo "reflink=always:"
-+    cp --reflink=always $SOURCE_DIR/original $1/copyfail 2>&1 | _filter_testdirs
-+
-+    # The failed target actually gets created by cp:
-+    ls $1/copyfail | _filter_testdirs
-+}
-+
-+echo "test reflinks across different devices"
-+_scratch_mount
-+_create_reflinks_to $CROSS_DEV_DIR
-+_scratch_unmount
-+
-+echo "test reflinks across different mountpoints of same device"
-+mount $TEST_DEV $SCRATCH_MNT || _fail "Couldn't double-mount $TEST_DEV"
-+_create_reflinks_to $DUAL_MOUNT_DIR
-+umount $SCRATCH_MNT
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/311.out b/tests/btrfs/311.out
-new file mode 100644
-index 0000000..210727b
---- /dev/null
-+++ b/tests/btrfs/311.out
-@@ -0,0 +1,15 @@
-+QA output created by 311
-+test reflinks across different devices
-+reflink=auto:
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-311/original
-+42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-311/copy
-+reflink=always:
-+cp: failed to clone `SCRATCH_MNT/test-311/copyfail': Invalid cross-device link
-+SCRATCH_MNT/test-311/copyfail
-+test reflinks across different mountpoints of same device
-+reflink=auto:
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-311/original
-+42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-bis-311/copy
-+reflink=always:
-+cp: failed to clone `SCRATCH_MNT/test-bis-311/copyfail': Invalid cross-device link
-+SCRATCH_MNT/test-bis-311/copyfail
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index bc6c256..c897118 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -12,3 +12,4 @@
- 308 auto quick reflink
- 309 auto quick reflink
- 310 auto quick reflink
-+311 auto quick reflink
---
-1.7.2.5 
+ .gitignore          |    1 +
+ README              |    3 +
+ common/config       |    2 +
+ src/Makefile        |   11 +-
+ src/fssum.c         |  819 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/316     |  113 +++++++
+ tests/btrfs/316.out |    4 +
+ tests/btrfs/group   |    1 +
+ 8 files changed, 953 insertions(+), 1 deletions(-)
+ create mode 100644 src/fssum.c
+ create mode 100755 tests/btrfs/316
+ create mode 100644 tests/btrfs/316.out
+
+-- 
+1.7.2.5
+

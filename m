@@ -1,56 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32644 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756690Ab3GYRaS (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:44449 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756730Ab3GYRaU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 13:30:18 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6PHUHmc017923
+	Thu, 25 Jul 2013 13:30:20 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6PHUJVr030698
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:17 GMT
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:19 GMT
 Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUFif029333
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUIqf007068
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:16 GMT
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:18 GMT
 Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUFO7006934
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:15 GMT
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUIWO007050
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:18 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/6] btrfs-progs: mkfs.c overwrites fd without appropriate close
-Date: Fri, 26 Jul 2013 01:35:28 +0800
-Message-Id: <1374773730-29957-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 6/6] btrfs-progs: don't have to report ENOMEDIUM error during open
+Date: Fri, 26 Jul 2013 01:35:30 +0800
+Message-Id: <1374773730-29957-7-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
 References: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+when we scan /proc/partitions the cdrom is scanned
+as well, and we don't have to report ENOMEDIUM errors
+against it.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- mkfs.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ utils.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index 60f906c..66f558a 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1570,6 +1570,8 @@ int main(int ac, char **av)
- 		 * occur by the following processing.
- 		 * (btrfs_register_one_device() fails if O_EXCL is on)
- 		 */
-+		if (fd > 0)
-+			close(fd);
- 		fd = open(file, O_RDWR);
+diff --git a/utils.c b/utils.c
+index 4aeea9c..638cef0 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1443,8 +1443,9 @@ scan_again:
+ 
+ 		fd = open(fullpath, O_RDONLY);
  		if (fd < 0) {
- 			fprintf(stderr, "unable to open %s: %s\n", file,
-@@ -1581,7 +1583,6 @@ int main(int ac, char **av)
- 		if (ret) {
- 			fprintf(stderr, "skipping duplicate device %s in FS\n",
- 				file);
--			close(fd);
+-			fprintf(stderr, "failed to open %s: %s\n",
+-				fullpath, strerror(errno));
++			if (errno != ENOMEDIUM)
++				fprintf(stderr, "failed to open %s: %s\n",
++					fullpath, strerror(errno));
  			continue;
  		}
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
+ 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
 -- 
 1.7.1
 

@@ -1,67 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qe0-f53.google.com ([209.85.128.53]:44946 "EHLO
-	mail-qe0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757573Ab3GaVeH (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:41448 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756704Ab3GYRYS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 17:34:07 -0400
-Received: by mail-qe0-f53.google.com with SMTP id f6so697523qej.40
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 14:34:06 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 31 Jul 2013 23:33:59 +0200
-Message-ID: <CAKvOHKD+cYp+CO4XLXkktnFZ_5n1tZnbrqS3D+T8nJhVEReWig@mail.gmail.com>
-Subject: Problems with incremental btrfs send (out of order instructions?)
-From: Mathijs Kwik <mathijs@bluescreen303.nl>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 25 Jul 2013 13:24:18 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6PHOHIP024231
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:24:18 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHOHOM022131
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:24:17 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHOGgH002939
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:24:16 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: use BTRFS_SUPER_INFO_SIZE macro at btrfs_read_dev_super()
+Date: Fri, 26 Jul 2013 01:29:35 +0800
+Message-Id: <1374773376-29853-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/disk-io.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-For some time, I've successfully deployed btrfs send/receive as a
-viable backup solution.
-It's fast and flexible and nicely scriptable =)
-However, every once in a while, trouble strikes on the receiving end
-with a message like:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index dfe6864..de5884f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2982,9 +2982,11 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+ 	 */
+ 	for (i = 0; i < 1; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+-		if (bytenr + 4096 >= i_size_read(bdev->bd_inode))
++		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
++					i_size_read(bdev->bd_inode))
+ 			break;
+-		bh = __bread(bdev, bytenr / 4096, 4096);
++		bh = __bread(bdev, bytenr / 4096,
++					BTRFS_SUPER_INFO_SIZE);
+ 		if (!bh)
+ 			continue;
+ 
+-- 
+1.7.1
 
-ERROR: rename nixpkgs/pkgs/applications/version-management/subversion-1.2.x/default.nix
--> o2979-81788-0 failed. No such file or directory
-
-Judging from looking at the dump-stream, I think sometimes a directory
-gets moved (subversion-1.2.x in the example) to some temporary name
-(or it gets deleted), but a little later a file within that directory
-is being changed.
-This seems to happen most often with filesystem-heavy applications
-like a git tree or a webbrowser's cache dir.
-
-I've tried many things to recover from such a situation, like removing
-the offending directory and retrying from a new snapshot, but nothing
-seems to work except for a full (non-incremental) send which is
-expensive.
-
-After some narrowing down, I managed to capture a problematic
-sendstream. To reproduce:
-- I created a separate subvolume (so there are no privacy-related
-issues with sharing the dump)
-- put a moderately large git tree on it (I used
-https://github.com/NixOS/nixpkgs)
-- perform an initial btrfs send of the subvolume
-- jump around git history (check out very early revision, check out HEAD again)
-- perform an incremental (with parent) btrfs send to a file
-- try to receive this file on another machine
-- about 80% chance this triggers it, if not, jump/branch some more with git
-
-The problematic dump is here:
-https://bluescreen303.nl/btrfs-send-error.dump.xz
-The error provided above goes with this dump.
-
-The dump was on kernel 3.9.x but it still happens on 3.10.4
-btrfs-progs 650e656a8b9c1fbe4ec5cd8c48ae285b8abd3b69
-I noticed there have been some commits since that revision but nothing
-mentions send/receive.
-
-Can someone have a look at my dumpfile and confirm this is indeed a
-problem with btrfs send as opposed to something I am doing wrong?
-
-Thanks!
-Mathijs

@@ -1,153 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42823 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751412Ab3GQClx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jul 2013 22:41:53 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6H2fqYf014174
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 02:41:52 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6H2fpdJ023823
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 02:41:51 GMT
-Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6H2fpi6014745
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2013 02:41:51 GMT
-Message-ID: <51E605A1.5050407@oracle.com>
-Date: Wed, 17 Jul 2013 10:46:57 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:33339 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755478Ab3GYLUy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jul 2013 07:20:54 -0400
+Message-ID: <51F10A50.9010308@cn.fujitsu.com>
+Date: Thu, 25 Jul 2013 19:21:52 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: fix the long lines
-References: <1373866527-10604-1-git-send-email-anand.jain@oracle.com> <1373866527-10604-2-git-send-email-anand.jain@oracle.com> <51E401E7.8040202@redhat.com>
-In-Reply-To: <51E401E7.8040202@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Eryu Guan <guaneryu@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fix segfault when listing column OTIME on
+ big endian host
+References: <1374744749-12231-1-git-send-email-guaneryu@gmail.com>
+In-Reply-To: <1374744749-12231-1-git-send-email-guaneryu@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On thu, 25 Jul 2013 17:32:29 +0800, Eryu Guan wrote:
+> The second btrfs command segfaults on big endian host(ppc64)
+> 
+> 	btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/snap
+> 	btrfs subvolume list -s /mnt/btrfs
+> 
+> And ltrace shows
+> 
+> 	localtime(0x10029c482d0)                 = 0
+> 	strftime( <no return ...>
+> 	--- SIGSEGV (Segmentation fault) ---
+> 
+> The corresponding code
+> 
+> btrfs-list.c:
+>         case BTRFS_LIST_OTIME:
+>                 if (subv->otime)
+>                         strftime(tstr, 256, "%Y-%m-%d %X",
+>                                  localtime(&subv->otime));
+>                 else
+>                         strcpy(tstr, "-");
+>                 printf("%s", tstr);
+>                 break;
+> 
+> localtime() returned NULL then strftime() got SIGSEGV.
+> 
+> The reason is that ri->otime.sec is stored as little endian but
+> assigned to 't' without conversion.
+> 
+> Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+> ---
+>  btrfs-list.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/btrfs-list.c b/btrfs-list.c
+> index 4fab858..ca1bae8 100644
+> --- a/btrfs-list.c
+> +++ b/btrfs-list.c
+> @@ -1052,7 +1052,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+>  				flags = btrfs_root_flags(ri);
+>  				if(sh.len >
+>  				   sizeof(struct btrfs_root_item_v0)) {
+> -					t = ri->otime.sec;
+> +					t = le64_to_cpu(ri->otime.sec);
 
+It is better to use btrfs_stack_timespec_sec() instead of raw convert.
 
-  Strings being grep-able is important. Thanks Stefan and Eric
-  for the comments.
+Thanks
+Miao
 
-  Hopefully we shall have some better ways to handle long strings.
+>  					ogen = btrfs_root_otransid(ri);
+>  					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
+>  					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
+> 
 
-  OR
-
-  shorter error message and still communicate the
-  intended message is another choice but challenging. :-)
-
-  I have dropped this patch for now.
-
-Thanks Anand
-
-
-On 07/15/2013 10:06 PM, Eric Sandeen wrote:
-> On 7/15/13 12:35 AM, Anand Jain wrote:
->> trivial: cmds-replace.c contains long lines fix it
->
-> I realize that this is total bikeshedding, so you can take or leave it, but:
->
-> One downside to this is that it makes it a little harder to grep for strings
-> when they get arbitrarily split across lines.
->
-> One thing XFS userspace did was to out-dent in cases like this, i.e.:
->
->> --- a/cmds-replace.c
->> +++ b/cmds-replace.c
->> @@ -211,8 +211,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   		struct btrfs_ioctl_dev_info_args *di_args = NULL;
->>
->>   		if (atoi(srcdev) == 0) {
->> -			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
->> -				srcdev);
->> +			fprintf(stderr,
->> +	"Error: Failed to parse the numerical devid value '%s'\n",
->> +				srcdev);
->>   			goto leave_with_error;
->>   		}
->>   		start_args.start.srcdevid = (__u64)atoi(srcdev);
->
-> so that the strings remain more easily searchable.  Just a thought; maybe folks hate that idea but I thought I'd throw it out there.
->
-> But as a more topical review:
->
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   cmds-replace.c |   17 ++++++++++-------
->>   1 files changed, 10 insertions(+), 7 deletions(-)
->>
->> diff --git a/cmds-replace.c b/cmds-replace.c
->> index 6397bb5..c68986a 100644
->> --- a/cmds-replace.c
->> +++ b/cmds-replace.c
->> @@ -211,8 +211,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   		struct btrfs_ioctl_dev_info_args *di_args = NULL;
->>
->>   		if (atoi(srcdev) == 0) {
->> -			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
->> -				srcdev);
->> +			fprintf(stderr, "Error: Failed to parse the numerical "\
->                                                                                 ^
-> There's no need for the line continuation, this isn't a macro.  ;)
->
-> To split the line this way just do:
->
->> +			fprintf(stderr, "Error: Failed to parse the numerical "
->> +				"devid value '%s'\n", srcdev);
->
-> -Eric
->
->>   			goto leave_with_error;
->>   		}
->>   		start_args.start.srcdevid = (__u64)atoi(srcdev);
->> @@ -235,8 +235,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   				break;
->>   		free(di_args);
->>   		if (i == fi_args.num_devices) {
->> -			fprintf(stderr, "Error: '%s' is not a valid devid for filesystem '%s'\n",
->> -				srcdev, path);
->> +			fprintf(stderr, "Error: '%s' is not a valid devid for "\
->> +				"filesystem '%s'\n", srcdev, path);
->>   			goto leave_with_error;
->>   		}
->>   	} else {
->> @@ -283,7 +283,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   				    &total_devs, BTRFS_SUPER_INFO_OFFSET);
->>   	if (ret >= 0 && !force_using_targetdev) {
->>   		fprintf(stderr,
->> -			"Error, target device %s contains filesystem, use '-f' to force overwriting.\n",
->> +			"Error, target device %s contains filesystem, "\
->> +			"use '-f' to force overwriting.\n",
->>   			dstdev);
->>   		goto leave_with_error;
->>   	}
->> @@ -321,7 +322,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   	if (do_not_background) {
->>   		if (ret) {
->>   			fprintf(stderr,
->> -				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
->> +				"ERROR: ioctl(DEV_REPLACE_START) failed "\
->> +				"on \"%s\": %s, %s\n",
->>   				path, strerror(errno),
->>   				replace_dev_result2string(start_args.result));
->>   			goto leave_with_error;
->> @@ -330,7 +332,8 @@ static int cmd_start_replace(int argc, char **argv)
->>   		if (start_args.result !=
->>   		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
->>   			fprintf(stderr,
->> -				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" returns error: %s\n",
->> +				"ERROR: ioctl(DEV_REPLACE_START) on \"%s\" "\
->> +				"returns error: %s\n",
->>   				path,
->>   				replace_dev_result2string(start_args.result));
->>   			goto leave_with_error;
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

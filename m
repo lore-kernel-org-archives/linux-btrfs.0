@@ -1,141 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19893 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756975Ab3GYRwC (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:46982 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756674Ab3GYTNo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 13:52:02 -0400
-From: Dave Kleikamp <dave.kleikamp@oracle.com>
-To: linux-kernel@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
-        "Maxim V. Patlasov" <mpatlasov@parallels.com>,
-        Zach Brown <zab@zabbo.net>, Dave Kleikamp <dave.kleikamp@oracle.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V8 25/33] btrfs: add support for read_iter and write_iter
-Date: Thu, 25 Jul 2013 12:50:51 -0500
-Message-Id: <1374774659-13121-26-git-send-email-dave.kleikamp@oracle.com>
-In-Reply-To: <1374774659-13121-1-git-send-email-dave.kleikamp@oracle.com>
-References: <1374774659-13121-1-git-send-email-dave.kleikamp@oracle.com>
+	Thu, 25 Jul 2013 15:13:44 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 901B57C0643
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 13:13:43 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id iJ2FifkfCS2ptTuN (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 13:13:42 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: check to see if root_list is empty before adding it to dead roots
+Date: Thu, 25 Jul 2013 15:13:40 -0400
+Message-ID: <1374779620-28788-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs can use generic_file_read_iter(). Base btrfs_file_write_iter()
-on btrfs_file_aio_write(), then have the latter call the former.
+A user reported a panic when running with autodefrag and deleting snapshots.
+This is because we could end up trying to add the root to the dead roots list
+twice.  To fix this check to see if we are empty before adding ourselves to the
+dead roots list.  Thanks,
 
-Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>
-Cc: Zach Brown <zab@zabbo.net>
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/file.c | 42 ++++++++++++++----------------------------
- 1 file changed, 14 insertions(+), 28 deletions(-)
+ fs/btrfs/transaction.c |    8 ++++----
+ fs/btrfs/transaction.h |    2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a005fe2..ca28faa 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -453,7 +453,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
- 		write_bytes -= copied;
- 		total_copied += copied;
- 
--		/* Return to btrfs_file_aio_write to fault page */
-+		/* Return to btrfs_file_write_iter to fault page */
- 		if (unlikely(copied == 0))
- 			break;
- 
-@@ -1548,27 +1548,23 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 61a5c2c..18f7e71 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -983,12 +983,12 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+  * a dirty root struct and adds it into the list of dead roots that need to
+  * be deleted
+  */
+-int btrfs_add_dead_root(struct btrfs_root *root)
++void btrfs_add_dead_root(struct btrfs_root *root)
+ {
+ 	spin_lock(&root->fs_info->trans_lock);
+-	list_add_tail(&root->root_list, &root->fs_info->dead_roots);
++	if (list_empty(&root->root_list))
++		list_add_tail(&root->root_list, &root->fs_info->dead_roots);
+ 	spin_unlock(&root->fs_info->trans_lock);
+-	return 0;
  }
  
- static ssize_t __btrfs_direct_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos,
--				    loff_t *ppos, size_t count, size_t ocount)
-+				     struct iov_iter *iter, loff_t pos,
-+				    loff_t *ppos, size_t count)
- {
- 	struct file *file = iocb->ki_filp;
--	struct iov_iter i;
- 	ssize_t written;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
- 	int err;
- 
--	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
--					    count, ocount);
-+	written = generic_file_direct_write_iter(iocb, iter, pos, ppos, count);
- 
- 	if (written < 0 || written == count)
- 		return written;
- 
- 	pos += written;
- 	count -= written;
--	iov_iter_init(&i, iov, nr_segs, count, written);
--	written_buffered = __btrfs_buffered_write(file, &i, pos);
-+	written_buffered = __btrfs_buffered_write(file, iter, pos);
- 	if (written_buffered < 0) {
- 		err = written_buffered;
- 		goto out;
-@@ -1603,9 +1599,8 @@ static void update_time_for_write(struct inode *inode)
- 		inode_inc_iversion(inode);
- }
- 
--static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
--				    const struct iovec *iov,
--				    unsigned long nr_segs, loff_t pos)
-+static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
-+				     struct iov_iter *iter, loff_t pos)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file_inode(file);
-@@ -1614,17 +1609,12 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	u64 start_pos;
- 	ssize_t num_written = 0;
- 	ssize_t err = 0;
--	size_t count, ocount;
-+	size_t count;
- 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
- 
- 	mutex_lock(&inode->i_mutex);
- 
--	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
--	if (err) {
--		mutex_unlock(&inode->i_mutex);
--		goto out;
--	}
--	count = ocount;
-+	count = iov_iter_count(iter);
- 
- 	current->backing_dev_info = inode->i_mapping->backing_dev_info;
- 	err = generic_write_checks(file, &pos, &count, S_ISBLK(inode->i_mode));
-@@ -1677,14 +1667,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
- 	if (unlikely(file->f_flags & O_DIRECT)) {
--		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
--						   pos, ppos, count, ocount);
-+		num_written = __btrfs_direct_write(iocb, iter, pos, ppos,
-+						   count);
- 	} else {
--		struct iov_iter i;
--
--		iov_iter_init(&i, iov, nr_segs, count, num_written);
--
--		num_written = __btrfs_buffered_write(file, &i, pos);
-+		num_written = __btrfs_buffered_write(file, iter, pos);
- 		if (num_written > 0)
- 			*ppos = pos + num_written;
+ /*
+@@ -1925,7 +1925,7 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
  	}
-@@ -2543,9 +2529,9 @@ const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
--	.aio_read       = generic_file_aio_read,
- 	.splice_read	= generic_file_splice_read,
--	.aio_write	= btrfs_file_aio_write,
-+	.read_iter	= generic_file_read_iter,
-+	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
- 	.open		= generic_file_open,
- 	.release	= btrfs_release_file,
+ 	root = list_first_entry(&fs_info->dead_roots,
+ 			struct btrfs_root, root_list);
+-	list_del(&root->root_list);
++	list_del_init(&root->root_list);
+ 	spin_unlock(&fs_info->trans_lock);
+ 
+ 	pr_debug("btrfs: cleaner removing %llu\n",
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 005b037..defbc42 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -143,7 +143,7 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid);
+ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root);
+ 
+-int btrfs_add_dead_root(struct btrfs_root *root);
++void btrfs_add_dead_root(struct btrfs_root *root);
+ int btrfs_defrag_root(struct btrfs_root *root);
+ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
 -- 
-1.8.3.4
+1.7.7.6
 

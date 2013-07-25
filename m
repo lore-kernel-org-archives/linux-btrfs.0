@@ -1,82 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39005 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:32582 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753943Ab3GOF0Q (ORCPT
+	with ESMTP id S1755993Ab3GYRaM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jul 2013 01:26:16 -0400
+	Thu, 25 Jul 2013 13:30:12 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6PHUBt1017830
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:12 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUAMI017444
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:11 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUANj017417
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:10 GMT
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 08/11] btrfs-progs: get_label_mounted to return label instead of print
-Date: Mon, 15 Jul 2013 13:30:54 +0800
-Message-Id: <1373866257-10519-9-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/6]
+Date: Fri, 26 Jul 2013 01:35:24 +0800
+Message-Id: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
 
-This would help to reuse the function
+The below patch set is on top of,
 
-v1->v2: removed static and updated .h file, in a preparation
-        work for the following patch
+ git://repo.or.cz/btrfs-progs-unstable/devel.git integration-20130710
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- utils.c |   18 +++++++++++++-----
- utils.h |    1 +
- 2 files changed, 14 insertions(+), 5 deletions(-)
+and is for your kind review coment and integration
 
-diff --git a/utils.c b/utils.c
-index a7f2ca3..e8a42bf 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1335,7 +1335,7 @@ static int get_label_unmounted(const char *dev)
-  * mounted path rather than device.  Return the corresponding error
-  * the user specified the device path.
-  */
--static int get_label_mounted(const char *mount_path)
-+int get_label_mounted(const char *mount_path, char *labelp)
- {
- 	char label[BTRFS_LABEL_SIZE];
- 	int fd;
-@@ -1353,16 +1353,24 @@ static int get_label_mounted(const char *mount_path)
- 		return -1;
- 	}
- 
--	fprintf(stdout, "%s\n", label);
-+	strncpy(labelp, label, sizeof(label));
- 	close(fd);
- 	return 0;
- }
- 
- int get_label(const char *btrfs_dev)
- {
--	return is_existing_blk_or_reg_file(btrfs_dev) ?
--		get_label_unmounted(btrfs_dev) :
--		get_label_mounted(btrfs_dev);
-+	int ret;
-+	char label[BTRFS_LABEL_SIZE];
-+
-+	if (is_existing_blk_or_reg_file(btrfs_dev))
-+		ret = get_label_unmounted(btrfs_dev);
-+	else {
-+		ret = get_label_mounted(btrfs_dev, label);
-+		if (!ret)
-+			fprintf(stdout, "%s\n", label);
-+	}
-+	return ret;
- }
- 
- int set_label(const char *btrfs_dev, const char *label)
-diff --git a/utils.h b/utils.h
-index a10c51a..708b580 100644
---- a/utils.h
-+++ b/utils.h
-@@ -77,4 +77,5 @@ u64 btrfs_device_size(int fd, struct stat *st);
- #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
- int test_dev_for_mkfs(char *file, int force_overwrite, char *estr);
- int scan_for_btrfs(int where, int update_kernel);
-+int get_label_mounted(const char *mount_path, char *labelp);
- #endif
--- 
-1.7.7.6
+Thanks
+
+Anand Jain (6):
+  btrfs-progs: close_all_devices() in btrfs-find-root.c does nothing
+  btrfs-progs: let user know that devid can be used if path is missing
+  btrfs-progs: cmd_start_replace() to use test_dev_for_mkfs()
+  btrfs-progs: mkfs.c overwrites fd without appropriate close
+  btrfs-progs: avoid write to the disk before sure to create fs
+  btrfs-progs: don't have to report ENOMEDIUM error during open
+
+ btrfs-find-root.c |   17 +--------
+ cmds-replace.c    |   33 ++--------------
+ disk-io.c         |    3 +-
+ disk-io.h         |    1 +
+ mkfs.c            |  107 +++++++++++++++++++++-------------------------------
+ utils.c           |   56 +++++++++++++++++++++++++++-
+ utils.h           |    2 +
+ 7 files changed, 107 insertions(+), 112 deletions(-)
 

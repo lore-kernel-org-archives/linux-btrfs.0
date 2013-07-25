@@ -1,75 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19996 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:20418 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755098Ab3GYIZ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 04:25:59 -0400
-Message-ID: <51F0E150.6080203@cn.fujitsu.com>
-Date: Thu, 25 Jul 2013 16:26:56 +0800
+	id S1754994Ab3GYLWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jul 2013 07:22:49 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r6PBMlhd027098
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 19:22:48 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: Andi Shyti <andi@etezian.org>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: raid56: avoid double allocation
-References: <1374710980-5707-1-git-send-email-andi@etezian.org> <20130725081840.GB5202@localhost.localdomain>
-In-Reply-To: <20130725081840.GB5202@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH V2 0/6] reduce the lock contention when reading pages
+Date: Thu, 25 Jul 2013 19:22:31 +0800
+Message-Id: <1374751357-3327-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	thu, 25 Jul 2013 16:18:41 +0800, Liu Bo wrote:
-> On Thu, Jul 25, 2013 at 02:09:40AM +0200, Andi Shyti wrote:
->> alloc_rbio frees already bbio and raid_map, therefore they don't
->> need to be freed in case it fails
->>
-> 
-> Looks good to me.
-> 
-> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Before applying this patchset, we had to do extent state operation by
+the block size when reading pages because we need cache the checksum value
+of each block into the extent state, it was inefficient and increased the lock
+contenttion of extent state. Besides that, the acquisition of the extent map
+during the page read was also inefficient, we searched it every time we dealt
+with a page.
 
-Dan Carpenter has fixed this problem in patch
-https://patchwork.kernel.org/patch/2831091/
+In fact, if we don't cache the checksum into the extent state, we can batch
+those extent state operation to reduce the time of the operations and the lock
+contention. Patch 3-5 do this work.
 
-Thanks
-Miao
+Besides that, the acquisition of the extent map during the page read was also
+inefficient, we searched it every time we dealt with a page. In fact, it is
+very likely that the extent map objects are the same one. So we can cache
+the extent map object to reduce its search time and the lock contention
+of the extent map tree. Patch 6 does this work.
 
-> 
->> Signed-off-by: Andi Shyti <andi@etezian.org>
->> ---
->>  fs/btrfs/raid56.c | 6 ++----
->>  1 file changed, 2 insertions(+), 4 deletions(-)
->>
->> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
->> index 0525e13..35fe775 100644
->> --- a/fs/btrfs/raid56.c
->> +++ b/fs/btrfs/raid56.c
->> @@ -1687,11 +1687,9 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
->>  	struct blk_plug_cb *cb;
->>  
->>  	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
->> -	if (IS_ERR(rbio)) {
->> -		kfree(raid_map);
->> -		kfree(bbio);
->> +	if (IS_ERR(rbio))
->>  		return PTR_ERR(rbio);
->> -	}
->> +
->>  	bio_list_add(&rbio->bio_list, bio);
->>  	rbio->bio_list_bytes = bio->bi_size;
->>  
->> -- 
->> 1.8.3.2
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> Please read the FAQ at  http://www.tux.org/lkml/
-> -liubo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I tested this patchset by sysbench on my SSD, it makes the performance of
+the random read be faster by ~7%. The lock contention is reduced by ~97%.
+
+Miao Xie (6):
+  Btrfs: remove unnecessary argument of bio_readpage_error()
+  Btrfs: add branch prediction hints in the read page end IO function
+  Btrfs: don't cache the csum value into the extent state tree
+  Btrfs: batch the extent state operation in the end io handle of the read page
+  Btrfs: batch the extent state operation when reading pages
+  Btrfs: cache the extent map struct when reading several pages
+
+ fs/btrfs/btrfs_inode.h |  21 +++
+ fs/btrfs/ctree.h       |   4 +-
+ fs/btrfs/disk-io.c     |   5 +-
+ fs/btrfs/extent_io.c   | 392 ++++++++++++++++++++++++++++++-------------------
+ fs/btrfs/extent_io.h   |  10 +-
+ fs/btrfs/file-item.c   |  81 ++++++----
+ fs/btrfs/inode.c       |  85 +++++------
+ fs/btrfs/volumes.h     |   7 +
+ 8 files changed, 370 insertions(+), 235 deletions(-)
+
+-- 
+1.8.1.4
 

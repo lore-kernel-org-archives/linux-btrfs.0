@@ -1,157 +1,291 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59228 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752878Ab3GZHry (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jul 2013 03:47:54 -0400
-Date: Fri, 26 Jul 2013 08:47:52 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Pete <pete@petezilla.co.uk>
+Received: from xp-ob.rzone.de ([81.169.146.136]:34496 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755787Ab3GZJ2J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Jul 2013 05:28:09 -0400
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Error on rebooting
-Message-ID: <20130726074752.GK20517@carfax.org.uk>
-References: <51F1C09C.9020602@petezilla.co.uk>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="BFVE2HhgxTpCzM8t"
-In-Reply-To: <51F1C09C.9020602@petezilla.co.uk>
+Subject: [PATCH] xfstest: add a test for btrfs device replace operation
+Date: Fri, 26 Jul 2013 11:28:05 +0200
+Message-Id: <1374830885-26966-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Unfortunately this test takes 6 minutes on my SSD equiped test box since
+it runs all possible single/dup/raid0/raid1/raid10/mixed profiles, one
+round with the '-f' option to 'btrfs replace start' and one round
+without this option. The cancelation is tested only once and with the
+dup/single profile for metadata/data.
 
---BFVE2HhgxTpCzM8t
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Almost all the time is spent when the filesystem is populated with test
+data. The replace operation itself takes one second for all the tests,
+and 20 seconds for the test that is marked as 'thorough' (this one
+spends more than a minute to populate the filesystem with data).
 
-On Fri, Jul 26, 2013 at 01:19:40AM +0100, Pete wrote:
-> Dear All,
-> 
-> Have I anything to be concerned about?
-> 
-> I have got some error messages on booting.  The scenario was that I
-> had installed some ram and I suspect that I had disturbed a cable as
-> one disk was not visible.  I could not mount the other disk (did not
-> try degraded, but the messages seemed to indicate something serious
-> was up).
-> 
-> After installing ram booted.  But some issue with some files,
-> anything accessing those files froze.  Had to reboot.  Failed to
-> shutdown correctly (shutdown stalled on unmount)
-> 
-> Reboot.
-> 
-> /home etc not mounted (btrfs in question)
-> 
-> Btrfsck /dev/sdb showed various errors.
-> 
-> When complete turned off machine.  Fiddled with cables.  Affected
-> drive now seen on reboot.
-> 
-> Rebooted.  Mounted disks (perhaps) error messages may have been
-> present on boot.  Much disk IO.  Disk IO stopped.  Machine appeared
-> frozen except that Caps lock and Num lock worked.
-> Ctrl-alt-backspace did not sort out stalled x(?)dm session.  Hard
-> power down.
-> 
-> Last reboot.  Error messages.  However, works.  Example messages from dmesg:
-> 
-> [    8.063138] btrfs: enabling inode map caching
-> [    8.067617] btrfs: use lzo compression
-> [    8.072092] btrfs: disk space caching is enabled
-> [    8.147324] btrfs: bdev /dev/sdb errs: wr 4015, rd 464, flush 0,
-> corrupt 0, gen 0
-> [    8.802275] NET: Registered protocol family 10
-> [   15.462313] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
-> devid 2 transid 27794 /dev/sdc
-> [   15.511463] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
-> devid 2 transid 27794 /dev/sdc
-> [   15.566689] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
-> devid 2 transid 27794 /dev/sdc
-> [   15.587851] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
-> devid 2 transid 27794 /dev/sdc
-> [   15.620678] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
-> devid 2 transid 27794 /dev/sdc
-> [   16.024295] IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready
-> ...
-> 
-> ...
-> 
-> ...
-> 
-> ...
->    19.491507] tun: (C) 1999-2004 Max Krasnyansky <maxk@qualcomm.com>
-> [   56.064899] parent transid verify failed on 1142639534080 wanted
-> 27788 found 26856
-> [   56.154721] btrfs read error corrected: ino 1 off 1142639534080
-> (dev /dev/sdb sector 2179305424)
-> [   56.166301] parent transid verify failed on 1142597795840 wanted
-> 27777 found 27772
-> [   56.186790] btrfs read error corrected: ino 1 off 1142597795840
-> (dev /dev/sdb sector 2179223904)
-> [   56.460857] parent transid verify failed on 1142599532544 wanted
-> 27779 found 27772
-> [   56.461396] btrfs read error corrected: ino 1 off 1142599532544
-> (dev /dev/sdb sector 2179227296)
-> [   59.927078] ata1.00: configured for UDMA/133
-> [   59.927082] ata1: EH complete
-> [   59.933467] ata2.00: configured for UDMA/133
-> [   59.933473] ata2: EH complete
-> [   60.129445] ata3.00: configured for UDMA/133
-> [   60.129458] ata3: EH complete
-> [   61.449810] parent transid verify failed on 1142629605376 wanted
-> 27784 found 26856
-> [   61.473817] btrfs read error corrected: ino 1 off 1142629605376
-> (dev /dev/sdb sector 2179286032)
-[snip]
-> [  104.204035] btrfs read error corrected: ino 1544486 off 0 (dev
-> /dev/sdb sector 2182960392)
-> [  104.204551] btrfs read error corrected: ino 1544486 off 4096 (dev
-> /dev/sdb sector 2182960400)
-> [  117.249253] parent transid verify failed on 1142609051648 wanted
-> 27774 found 26856
-> [  117.255886] btrfs read error corrected: ino 1 off 1142609051648
-> (dev /dev/sdb sector 2179245888)
-> [  117.419294] parent transid verify failed on 1142599507968 wanted
-> 27779 found 27772
-> [  117.437317] btrfs read error corrected: ino 1 off 1142599507968
-> (dev /dev/sdb sector 2179227248)
-> [  137.502176] NFSD: Unable to end grace period: -110
-> 
-> Given that I have booted now - does this mean that the above was
-> btrfs sorting itself out?
+The amount of tests done depends on the number of devices in the
+SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
+be available (e.g. 5 partitions).
 
-   Looks like it. I'd recommend a scrub to check for any other out of
-date data on the affected drive. I've done pretty much the same thing
-as this myself, and a scrub, though scary in the amount of noise it
-made, fixed everything satisfactorily.
+For the first round, the last device in the SCRATCH_DEV_POOL string
+is taken as the target device for the replace operation, the first
+device is the source device. For the second round it is the other way
+round. Therefore make sure that both devices have _exactly_ the same
+size, otherwise the tests fail! The target device for a replace
+operation always needs to be larger or of equal size than the source
+device.
 
-   Hugo.
+If SCRATCH_DEV_POOL is set to "A B C D E" for example, the first
+round creates a filesystem on "A B C D" and replaces A with E in the
+first round, and E again with A in the second round. E and A need to
+have the same size for the tests to succeed.
 
+To check the filesystems after replacing a device, a scrub run is
+performed, a btrfsck run, and finally the filesystem is remounted.
+
+This commit depends on my other commit:
+"xfstest: don't remove the two first devices from SCRATCH_DEV_POOL"
+
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ tests/btrfs/317     | 209 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/317.out |   3 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 213 insertions(+)
+
+diff --git a/tests/btrfs/317 b/tests/btrfs/317
+new file mode 100755
+index 0000000..b4f0d8c
+--- /dev/null
++++ b/tests/btrfs/317
+@@ -0,0 +1,209 @@
++#! /bin/bash
++# FSQA Test No. 317
++#
++# Test of the btrfs replace operation.
++#
++# The amount of tests done depends on the number of devices in the
++# SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
++# be available (e.g. 5 partitions).
++#
++# For the first round, the last device in the SCRATCH_DEV_POOL string
++# is taken as the target device for the replace operation, the first
++# device is the source device. For the second round it is the other way
++# round.
++#
++# THEREFORE MAKE SURE THAT BOTH DEVICES HAVE _EXACTLY_ THE SAME
++# SIZE, OTHERWISE THE TESTS FAIL!
++#
++# The target device for a replace operation always needs to be larger
++# or of equal size than the source device.
++#
++# If SCRATCH_DEV_POOL is set to "A B C D E" for example, the first
++# round creates a filesystem on "A B C D" and replaces A with E in the
++# first round, and E again with A in the second round. E and A need to
++# have the same size for the tests to succeed.
++#
++# To check the filesystems after replacing a device, a scrub run is
++# performed, a btrfsck run, and finally the filesystem is remounted.
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2013 STRATO.  All rights reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1
++noise_pid=0
++
++_cleanup()
++{
++	if [ $noise_pid -ne 0 ] && ps -p $noise_pid | grep -q $noise_pid; then
++		kill -TERM $noise_pid
++	fi
++	wait
++	rm -f $tmp.tmp
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_require_scratch
++_require_scratch_dev_pool
++
++rm -f $seqres.full
++rm -f $tmp.tmp
++
++echo "*** test btrfs replace"
++
++workout()
++{
++	mkfs_options=$1
++	num_devs4raid=$2
++	with_cancel=$3
++	quick=$4
++	local first_dev=`echo ${SCRATCH_DEV_POOL} | awk '{print $1}'`
++	local last_dev=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
++	local without_1stnlast_dev=`echo $SCRATCH_DEV_POOL | \
++		awk '{ORS=" "; for (i = 2; i < NF; i++) print $i}'`
++
++	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt `expr $num_devs4raid + 1` ]; then
++		echo "skip workout $1 $2 $3 $4" >> $seqres.full
++		echo "Too less devices in SCRATCH_DEV_POOL $SCRATCH_DEV_POOL" >> $seqres.full
++		return 0
++	fi
++
++	# dup works only on a single disk
++	if echo $mkfs_options | grep -q dup; then
++		without_1stnlast_dev=""
++	fi
++
++	# _scratch_mkfs adds the 1st device again (which is $SCRATCH_DEV)
++	_scratch_mkfs $mkfs_options $without_1stnlast_dev >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++
++	_populate_fs -r $SCRATCH_MNT/zero -s 130 -f 1000 -d 0 -n 0
++	_populate_fs -r $SCRATCH_MNT/urandom -x -s 1300 -f 10 -d 0 -n 0
++	if [ "${quick}Q" = "quickQ" ]; then
++		dd if=/dev/urandom of=$SCRATCH_MNT/r bs=1M count=10 >> $seqres.full 2>&1 &
++		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=250 >> $seqres.full 2>&1
++		wait
++	else
++		dd if=/dev/urandom of=$SCRATCH_MNT/r bs=1M count=100 >> $seqres.full 2>&1 &
++		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=2500 >> $seqres.full 2>&1
++		wait
++	fi
++	echo 3 > /proc/sys/vm/drop_caches; echo 3 > /proc/sys/vm/drop_caches
++	sync
++
++	# generate some (slow) background traffic in parallel to the
++	# replace operation. It is not a problem if cat fails early
++	# with ENOSPC.
++	cat /dev/urandom > $SCRATCH_MNT/noise 2> $seqres.full 2>&1 &
++	noise_pid=$!
++
++	if [ "${with_cancel}Q" = "cancelQ" ]; then
++		$BTRFS_UTIL_PROG replace start -f $first_dev $last_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
++		sleep 1
++		$BTRFS_UTIL_PROG replace cancel $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace cancel failed"
++
++		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
++		cat $tmp.tmp >> $seqres.full
++		egrep -q "canceled|finished" $tmp.tmp || _fail "btrfs replace status failed"
++	else
++		$BTRFS_UTIL_PROG replace start -Bf $first_dev $last_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
++
++		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
++		cat $tmp.tmp >> $seqres.full
++		grep -q finished $tmp.tmp || _fail "btrfs replace status failed"
++	fi
++
++	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT > $tmp.tmp 2>&1
++	cat $tmp.tmp >> $seqres.full
++	grep -q finished $tmp.tmp || _fail "btrfs scrub failed"
++	grep -q "with 0 errors" $tmp.tmp || _fail "btrfs scrub failed"
++
++	if ps -p $noise_pid | grep -q $noise_pid; then
++		kill -TERM $noise_pid 2> /dev/null
++	fi
++	noise_pid=0
++	wait
++	umount $SCRATCH_MNT
++	if [ "${with_cancel}Q" = "cancelQ" ]; then
++		_check_btrfs_filesystem $first_dev
++		return 0
++	else
++		_check_btrfs_filesystem $last_dev
++	fi
++
++	# now one more time without the -f option. Instead of wasting
++	# time to populate the filesystem with data again, use the
++	# existing filesystem in the state as it is after the previous
++	# replace operation.
++	umount $SCRATCH_MNT > /dev/null 2>&1
++	_mount -t $FSTYP `_scratch_mount_options | sed "s&${SCRATCH_DEV}&${last_dev}&"`
++	if [ $? -ne 0 ]; then
++		echo "mount failed"
++		exit 1
++	fi
++
++	cat /dev/urandom > $SCRATCH_MNT/noise2 2> $seqres.full 2>&1 &
++	noise_pid=$!
++
++	$BTRFS_UTIL_PROG replace start -B $last_dev $first_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
++
++	$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
++	cat $tmp.tmp >> $seqres.full
++	grep -q finished $tmp.tmp || _fail "btrfs replace status failed"
++
++	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT > $tmp.tmp 2>&1
++	cat $tmp.tmp >> $seqres.full
++	grep -q finished $tmp.tmp || _fail "btrfs scrub failed"
++	grep -q "with 0 errors" $tmp.tmp || _fail "btrfs scrub failed"
++
++	if ps -p $noise_pid | grep -q $noise_pid; then
++		kill -TERM $noise_pid 2> /dev/null
++	fi
++	noise_pid=0
++	wait
++	umount $SCRATCH_MNT
++	_check_btrfs_filesystem $first_dev
++}
++
++workout "-m single -d single" 1 no quick
++workout "-m single -d single -M" 1 no quick
++workout "-m dup -d single" 1 no quick
++workout "-m dup -d single" 1 cancel quick
++workout "-m dup -d dup -M" 1 no quick
++workout "-m raid0 -d raid0" 2 no quick
++workout "-m raid1 -d raid1" 2 no thorough
++#workout "-m raid5 -d raid5" 2 no quick
++#workout "-m raid6 -d raid6" 3 no quick
++workout "-m raid10 -d raid10" 4 no quick
++
++echo "*** done"
++status=0
++exit
+diff --git a/tests/btrfs/317.out b/tests/btrfs/317.out
+new file mode 100644
+index 0000000..4bda623
+--- /dev/null
++++ b/tests/btrfs/317.out
+@@ -0,0 +1,3 @@
++QA output created by 317
++*** test btrfs replace
++*** done
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index bc6c256..1b64321 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -9,3 +9,4 @@
+ 276 auto rw metadata
+ 284 auto
+ 307 auto quick
++317 auto
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- Sometimes, when I'm alone, I Google myself. ---           
+1.8.3.3
 
---BFVE2HhgxTpCzM8t
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUfIpqFheFHXiqx3kAQL4xQ//fNLsw48d62KtJIRuEUmRQVzKMshyJFv6
-IG984uI1qRAEHrp9waAZIkdBY12WnqDUwhRj/EIJimxR5NZ6g8jlKZgLdbraRYGn
-6O9G15vseJUsEkWbMaTVOmiIVksJRbplLejqrdXCzKYjHwYr2E/Yw1sk5v0lz68T
-qCTsNMAn/9MPAAQYdhMA7g8GONpDXq/M8I9nCTN09hzl6gyg0q+caCnn26RXgcVP
-1i+jg1IvEvJLbL6XOiyy41phlv3/15qGGsmTm6T1fON/dxXXn38fPABW2g3rrz7O
-vFCGgl3os5txzbvXCY1pKuVRcakiMS80x/G4vlYmXHZIsIHhntXU+vTPxVWbe5f0
-CaVSpuJmzWz8hjJlBrl5/IQK4FRaQaPuPJMmNMYaxe4/pJ4lfT3GTkdiwJbcTCiB
-/ZBWPsVW9cw90Rhc186juhW/gZVBDv4xEI8wXgl169pHCCYsUt11SBCsU45Is6fx
-0x/VZB+lwLeAImfVW5zvDUVlD5RMhVXphNMUeqww7HlsK4VsMaL8gLBd8Mv6rqV0
-BtGwkp/RuEyPJKDPdEuAMUp3yHRXq03di7hX4EH9gexWHxGOav+HRMYLLUgSLBXq
-7L6Q9U14LFK4LKBTyHu1OLzec293wI4M6P4ly81CIGXVPTy2gskfXVpG+oKKATai
-XM5GKQD20TA=
-=oMr5
------END PGP SIGNATURE-----
-
---BFVE2HhgxTpCzM8t--

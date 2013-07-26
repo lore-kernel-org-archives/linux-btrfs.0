@@ -1,51 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:57923 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758379Ab3GZQs0 (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:62217 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754465Ab3GZUbS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jul 2013 12:48:26 -0400
-Received: by mail-la0-f44.google.com with SMTP id fo12so1400876lab.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 09:48:24 -0700 (PDT)
-Message-ID: <51F2A853.3000006@gmail.com>
-Date: Fri, 26 Jul 2013 12:48:19 -0400
-From: Ric Wheeler <ricwheeler@gmail.com>
+	Fri, 26 Jul 2013 16:31:18 -0400
+Received: by mail-wi0-f181.google.com with SMTP id en1so1214785wid.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 13:31:17 -0700 (PDT)
 MIME-Version: 1.0
-To: Mark Fasheh <mfasheh@suse.de>
-CC: linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Gabriel de Perthuis <g2p.code@gmail.com>,
-        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>
-Subject: Re: [PATCH 0/4] btrfs: offline dedupe v3
-References: <1374856212-11228-1-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1374856212-11228-1-git-send-email-mfasheh@suse.de>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Date: Fri, 26 Jul 2013 16:31:17 -0400
+Message-ID: <CAPs0BijizOo0c566U6-uAe1voCr-W2SVHkMeT1sirTfi4jgeSg@mail.gmail.com>
+Subject: Recovery advice
+From: Sandy McArthur <sandymac@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/26/2013 12:30 PM, Mark Fasheh wrote:
-> Hi,
->
-> The following series of patches implements in btrfs an ioctl to do
-> offline deduplication of file extents.
->
-> To be clear, "offline" in this sense means that the file system is
-> mounted and running, but the dedupe is not done during file writes,
-> but after the fact when some userspace software initiates a dedupe.
+I have a 4 disk RAID1 setup that fails to {mount,btrfsck} when disk 4
+is connected.
 
-I think that you might want to use the terms "inband" and "out of band" which 
-seem to be used in the "de dup" storage space a bit more often.  Offline 
-definitely carries the wrong connotation :)
+With disk 4 attached btrfsck errors with:
+btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion
+`!(path->slots[0] == 0)' failed
+(I'd have to reboot in a non-functioning state to get the full output.)
 
-ric
+I can mount the filesystem in a degraded state with the 4th drive
+removed. I believe there is some data corruption as I see lines in
+/var/log/messages from the degraded,ro filesystem like this:
 
->
-> The primary patch is loosely based off of one sent by Josef Bacik back
-> in January, 2011.
->
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/8508
->
-> I've made significant updates and changes from the original. In
-> particular the structure passed is more fleshed out, this series has a
-> high degree of code sharing between itself and the clone code, and the
-> locking has been updated.
+BTRFS info (device sdd1): csum failed ino 4433 off 3254538240 csum
+1033749897 private 2248083221
 
+I'm at the point where all I can think to do is wipe disk 4 and then
+add it back in. Is there anything else I should try first. I have
+booted btrfs-next with the latest btrfs-progs.
+
+Thanks.
+--
+Sandy McArthur
+
+"He who dares not offend cannot be honest."
+- Thomas Paine

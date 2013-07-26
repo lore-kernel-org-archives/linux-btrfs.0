@@ -1,182 +1,304 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37103 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37114 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758367Ab3GZQaq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jul 2013 12:30:46 -0400
+	id S1758367Ab3GZQau (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Jul 2013 12:30:50 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>
 Cc: Chris Mason <chris.mason@fusionio.com>,
         Gabriel de Perthuis <g2p.code@gmail.com>,
-        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>
-Subject: [PATCH 0/4] btrfs: offline dedupe v3
-Date: Fri, 26 Jul 2013 09:30:08 -0700
-Message-Id: <1374856212-11228-1-git-send-email-mfasheh@suse.de>
+        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 2/4] btrfs_ioctl_clone: Move clone code into it's own function
+Date: Fri, 26 Jul 2013 09:30:10 -0700
+Message-Id: <1374856212-11228-3-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1374856212-11228-1-git-send-email-mfasheh@suse.de>
+References: <1374856212-11228-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+There's some 250+ lines here that are easily encapsulated into their own
+function. I don't change how anything works here, just create and document
+the new btrfs_clone() function from btrfs_ioctl_clone() code.
 
-The following series of patches implements in btrfs an ioctl to do
-offline deduplication of file extents.
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/ioctl.c | 232 ++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 128 insertions(+), 104 deletions(-)
 
-To be clear, "offline" in this sense means that the file system is
-mounted and running, but the dedupe is not done during file writes,
-but after the fact when some userspace software initiates a dedupe.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ef53952..e90c519 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2476,125 +2476,43 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+ 	}
+ }
+ 
+-static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+-				       u64 off, u64 olen, u64 destoff)
++/**
++ * btrfs_clone() - clone a range from inode file to another
++ *
++ * @src: Inode to clone from
++ * @inode: Inode to clone to
++ * @off: Offset within source to start clone from
++ * @olen: Original length, passed by user, of range to clone
++ * @olen_aligned: Block-aligned value of olen, extent_same uses
++ *               identical values here
++ * @destoff: Offset within @inode to start clone
++ */
++static int btrfs_clone(struct inode *src, struct inode *inode,
++		       u64 off, u64 olen, u64 olen_aligned, u64 destoff)
+ {
+-	struct inode *inode = file_inode(file);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct fd src_file;
+-	struct inode *src;
+-	struct btrfs_trans_handle *trans;
+-	struct btrfs_path *path;
++	struct btrfs_path *path = NULL;
+ 	struct extent_buffer *leaf;
+-	char *buf;
++	struct btrfs_trans_handle *trans;
++	char *buf = NULL;
+ 	struct btrfs_key key;
+ 	u32 nritems;
+ 	int slot;
+ 	int ret;
+-	u64 len = olen;
+-	u64 bs = root->fs_info->sb->s_blocksize;
+-
+-	/*
+-	 * TODO:
+-	 * - split compressed inline extents.  annoying: we need to
+-	 *   decompress into destination's address_space (the file offset
+-	 *   may change, so source mapping won't do), then recompress (or
+-	 *   otherwise reinsert) a subrange.
+-	 * - allow ranges within the same file to be cloned (provided
+-	 *   they don't overlap)?
+-	 */
+-
+-	/* the destination must be opened for writing */
+-	if (!(file->f_mode & FMODE_WRITE) || (file->f_flags & O_APPEND))
+-		return -EINVAL;
+-
+-	if (btrfs_root_readonly(root))
+-		return -EROFS;
+-
+-	ret = mnt_want_write_file(file);
+-	if (ret)
+-		return ret;
+-
+-	src_file = fdget(srcfd);
+-	if (!src_file.file) {
+-		ret = -EBADF;
+-		goto out_drop_write;
+-	}
+-
+-	ret = -EXDEV;
+-	if (src_file.file->f_path.mnt != file->f_path.mnt)
+-		goto out_fput;
+-
+-	src = file_inode(src_file.file);
+-
+-	ret = -EINVAL;
+-	if (src == inode)
+-		goto out_fput;
+-
+-	/* the src must be open for reading */
+-	if (!(src_file.file->f_mode & FMODE_READ))
+-		goto out_fput;
+-
+-	/* don't make the dst file partly checksummed */
+-	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+-	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
+-		goto out_fput;
+-
+-	ret = -EISDIR;
+-	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
+-		goto out_fput;
+-
+-	ret = -EXDEV;
+-	if (src->i_sb != inode->i_sb)
+-		goto out_fput;
++	u64 len = olen_aligned;
+ 
+ 	ret = -ENOMEM;
+ 	buf = vmalloc(btrfs_level_size(root, 0));
+ 	if (!buf)
+-		goto out_fput;
++		return ret;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+ 		vfree(buf);
+-		goto out_fput;
+-	}
+-	path->reada = 2;
+-
+-	if (inode < src) {
+-		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+-		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+-	} else {
+-		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+-		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
+-	}
+-
+-	/* determine range to clone */
+-	ret = -EINVAL;
+-	if (off + len > src->i_size || off + len < off)
+-		goto out_unlock;
+-	if (len == 0)
+-		olen = len = src->i_size - off;
+-	/* if we extend to eof, continue to block boundary */
+-	if (off + len == src->i_size)
+-		len = ALIGN(src->i_size, bs) - off;
+-
+-	/* verify the end result is block aligned */
+-	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||
+-	    !IS_ALIGNED(destoff, bs))
+-		goto out_unlock;
+-
+-	if (destoff > inode->i_size) {
+-		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+-		if (ret)
+-			goto out_unlock;
++		return ret;
+ 	}
+ 
+-	/* truncate page cache pages from target inode range */
+-	truncate_inode_pages_range(&inode->i_data, destoff,
+-				   PAGE_CACHE_ALIGN(destoff + len) - 1);
+-
+-	lock_extent_range(src, off, len);
+-
++	path->reada = 2;
+ 	/* clone data */
+ 	key.objectid = btrfs_ino(src);
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+@@ -2840,14 +2758,120 @@ next:
+ 		key.offset++;
+ 	}
+ 	ret = 0;
++
+ out:
+ 	btrfs_release_path(path);
++	btrfs_free_path(path);
++	vfree(buf);
++	return ret;
++}
++
++static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
++				       u64 off, u64 olen, u64 destoff)
++{
++	struct inode *inode = fdentry(file)->d_inode;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct fd src_file;
++	struct inode *src;
++	int ret;
++	u64 len = olen;
++	u64 bs = root->fs_info->sb->s_blocksize;
++
++	/*
++	 * TODO:
++	 * - split compressed inline extents.  annoying: we need to
++	 *   decompress into destination's address_space (the file offset
++	 *   may change, so source mapping won't do), then recompress (or
++	 *   otherwise reinsert) a subrange.
++	 * - allow ranges within the same file to be cloned (provided
++	 *   they don't overlap)?
++	 */
++
++	/* the destination must be opened for writing */
++	if (!(file->f_mode & FMODE_WRITE) || (file->f_flags & O_APPEND))
++		return -EINVAL;
++
++	if (btrfs_root_readonly(root))
++		return -EROFS;
++
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
++
++	src_file = fdget(srcfd);
++	if (!src_file.file) {
++		ret = -EBADF;
++		goto out_drop_write;
++	}
++
++	ret = -EXDEV;
++	if (src_file.file->f_path.mnt != file->f_path.mnt)
++		goto out_fput;
++
++	src = src_file.file->f_dentry->d_inode;
++
++	ret = -EINVAL;
++	if (src == inode)
++		goto out_fput;
++
++	/* the src must be open for reading */
++	if (!(src_file.file->f_mode & FMODE_READ))
++		goto out_fput;
++
++	/* don't make the dst file partly checksummed */
++	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
++	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
++		goto out_fput;
++
++	ret = -EISDIR;
++	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
++		goto out_fput;
++
++	ret = -EXDEV;
++	if (src->i_sb != inode->i_sb)
++		goto out_fput;
++
++	if (inode < src) {
++		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
++		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
++	} else {
++		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
++		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
++	}
++
++	/* determine range to clone */
++	ret = -EINVAL;
++	if (off + len > src->i_size || off + len < off)
++		goto out_unlock;
++	if (len == 0)
++		olen = len = src->i_size - off;
++	/* if we extend to eof, continue to block boundary */
++	if (off + len == src->i_size)
++		len = ALIGN(src->i_size, bs) - off;
++
++	/* verify the end result is block aligned */
++	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||
++	    !IS_ALIGNED(destoff, bs))
++		goto out_unlock;
++
++	if (destoff > inode->i_size) {
++		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
++		if (ret)
++			goto out_unlock;
++	}
++
++	/* truncate page cache pages from target inode range */
++	truncate_inode_pages_range(&inode->i_data, destoff,
++				   PAGE_CACHE_ALIGN(destoff + len) - 1);
++
++	lock_extent_range(src, off, len);
++
++	ret = btrfs_clone(src, inode, off, olen, len, destoff);
++
+ 	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+ out_unlock:
+ 	mutex_unlock(&src->i_mutex);
+ 	mutex_unlock(&inode->i_mutex);
+-	vfree(buf);
+-	btrfs_free_path(path);
+ out_fput:
+ 	fdput(src_file);
+ out_drop_write:
+-- 
+1.8.1.4
 
-The primary patch is loosely based off of one sent by Josef Bacik back
-in January, 2011.
-
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/8508
-
-I've made significant updates and changes from the original. In
-particular the structure passed is more fleshed out, this series has a
-high degree of code sharing between itself and the clone code, and the
-locking has been updated.
-
-
-The ioctl accepts a struct:
-
-struct btrfs_ioctl_same_args {
-	__u64 logical_offset;	/* in - start of extent in source */
-	__u64 length;		/* in - length of extent */
-	__u16 dest_count;	/* in - total elements in info array */
-	__u16 reserved1;
-	__u32 reserved2;
-	struct btrfs_ioctl_same_extent_info info[0];
-};
-
-Userspace puts each duplicate extent (other than the source) in an
-item in the info array. As there can be multiple dedupes in one
-operation, each info item has it's own status and 'bytes_deduped'
-member. This provides a number of benefits:
-
-- We don't have to fail the entire ioctl because one of the dedupes failed.
-
-- Userspace will always know how much progress was made on a file as we always
-  return the number of bytes deduped.
-
-
-#define BTRFS_SAME_DATA_DIFFERS	1
-/* For extent-same ioctl */
-struct btrfs_ioctl_same_extent_info {
-	__s64 fd;		/* in - destination file */
-	__u64 logical_offset;	/* in - start of extent in destination */
-	__u64 bytes_deduped;	/* out - total # of bytes we were able
-				 * to dedupe from this file */
-	/* status of this dedupe operation:
-	 * 0 if dedup succeeds
-	 * < 0 for error
-	 * == BTRFS_SAME_DATA_DIFFERS if data differs
-	 */
-	__s32 status;		/* out - see above description */
-	__u32 reserved;
-};
-
-
-The kernel patches are based off Linux v3.9. At this point I've tested the
-ioctl against a decent variety of files and conditions.
-
-A git tree for the kernel changes can be found at:
-
-https://github.com/markfasheh/btrfs-extent-same
-
-
-I have a userspace project, duperemove available at:
-
-https://github.com/markfasheh/duperemove
-
-Hopefully this can serve as an example of one possible usage of the ioctl.
-
-duperemove takes a list of files as argument and will search them for
-duplicated extents. If given the '-D' switch, duperemove will send dedupe
-requests for same extents and display the results.
-
-Within the duperemove repo is a file, btrfs-extent-same.c that acts as
-a test wrapper around the ioctl. It can be compiled completely
-seperately from the rest of the project via "make
-btrfs-extent-same". This makes direct testing of the ioctl more
-convenient.
-
-
-Gabriel de Perthuis also has a bedup branch which works against this ioctl.
-The branch can be found at:
-
-https://github.com/g2p/bedup/tree/wip/dedup-syscall
-
-
-Limitations
-
-We can't yet dedupe within the same file (that is, source and destination
-are the same inode). This is due to a limitation in btrfs_clone().
-
-
-Code review is very much appreciated. Thanks,
-     --Mark
-
-
-ChangeLog
-
-- allow root to always dedupe
-
-- call flush_dcach_page() before we memcmp user data (thanks to Zach Brown
-  <zab@redhat.com> for review)
-
-- make sure we can't get a symlink passed in as one of our arguments (thanks
-  to Zach Brown <zab@redhat.com> for review)
-
-- we don't read into buffers any more and compare page by page (thanks to
-  Zach Brown <zab@redhat.com> for review)
-
-- rework btrfs_double_lock() a bit to use swap() (thanks to Zach Brown
-  <zab@redhat.com> for review)
-
-Changes from v1 to v2
-
-- check that we have appropriate access to each file before deduping. For
-  the source, we only check that it is opened for read. Target files have to
-  be open for write.
-
-- don't dedupe on readonly submounts (this is to maintain 
-
-- check that we don't dedupe files with different checksumming states
- (compare BTRFS_INODE_NODATASUM flags)
-
-- get and maintain write access to the mount during the extent same
-  operation (mount_want_write())
-
-- allocate our read buffers up front in btrfs_ioctl_file_extent_same() and
-  pass them through for re-use on every call to btrfs_extent_same(). (thanks
-  to David Sterba <dsterba@suse.cz> for reporting this
-
-- As the read buffers could possibly be up to 1MB (depending on user
-  request), we now conditionally vmalloc them.
-
-- removed redundant check for same inode. btrfs_extent_same() catches it now
-  and bubbles the error up.
-
-- remove some unnecessary printks
-
-Changes from RFC to v1:
-
-- don't error on large length value in btrfs exent-same, instead we just
-  dedupe the maximum allowed.  That way userspace doesn't have to worry
-  about an arbitrary length limit.
-
-- btrfs_extent_same will now loop over the dedupe range at 1MB increments (for
-  a total of 16MB per request)
-
-- cleaned up poorly coded while loop in __extent_read_full_page() (thanks to
-  David Sterba <dsterba@suse.cz> for reporting this)
-
-- included two fixes from Gabriel de Perthuis <g2p.code@gmail.com>:
-   - allow dedupe across subvolumes
-   - don't lock compressed pages twice when deduplicating
-
-- removed some unused / poorly designed fields in btrfs_ioctl_same_args.
-  This should also give us a bit more reserved bytes.
-
-- return -E2BIG instead of -ENOMEM when arg list is too large (thanks to
-  David Sterba <dsterba@suse.cz> for reporting this)
-
-- Some more reserved bytes are now included as a result of some of my
-  cleanups. Quite possibly we could add a couple more.

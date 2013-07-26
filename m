@@ -1,62 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:34264 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:34297 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757038Ab3GZNJT (ORCPT
+	with ESMTP id S1757038Ab3GZNOm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jul 2013 09:09:19 -0400
+	Fri, 26 Jul 2013 09:14:42 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 989009A06A8
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 07:09:18 -0600 (MDT)
-Date: Fri, 26 Jul 2013 09:09:15 -0400
+	by dkim2.fusionio.com (Postfix) with ESMTP id 3413A9A06A8
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 07:14:42 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id FnYxnVwmAIwDVFE1 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 07:14:40 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: check to see if root_list is empty before adding
- it to dead roots
-Message-ID: <20130726130915.GA24583@localhost.localdomain>
-References: <1374779620-28788-1-git-send-email-jbacik@fusionio.com>
- <51F243A7.1060907@giantdisaster.de>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't bother autodefragging if our root is going away
+Date: Fri, 26 Jul 2013 09:14:38 -0400
+Message-ID: <1374844478-5531-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <51F243A7.1060907@giantdisaster.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 26, 2013 at 11:38:47AM +0200, Stefan Behrens wrote:
-> On Thu, 25 Jul 2013 15:13:40 -0400, Josef Bacik wrote:
-> > A user reported a panic when running with autodefrag and deleting snapshots.
-> > This is because we could end up trying to add the root to the dead roots list
-> > twice.  To fix this check to see if we are empty before adding ourselves to the
-> > dead roots list.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> 
-> Tested-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> 
-> The patch eliminates the crash. The question still is whether the double addition to the list is an indication for a problem and this patch just hides that there is a problem.
+We can end up with inodes on the auto defrag list that exist on roots that are
+going to be deleted.  This is extra work we don't need to do, so just bail if
+our root has 0 root refs.  Thanks,
 
-This is what is happening
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/file.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-start writing file
-  notice it was a random write, add it to the defrag list
-Delete subvol
- evict all dentry/icache
-  roots inode tree is empty, add to dead root
-process defrag inodes
-  lookup inode based on its location and root
-    do our defrag
-      iput in finish_ordered_io, which removes us from the inode tree
-        notice the inode tree is empty, add root to dead root 
-	  EXPLOSION
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 94413af..36ddd20 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -310,6 +310,11 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 		goto cleanup;
+ 	}
+ 
++	if (btrfs_root_refs(&inode_root->root_item) == 0) {
++		ret = -ENOENT;
++		goto cleanup;
++	}
++
+ 	key.objectid = defrag->ino;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+ 	key.offset = 0;
+-- 
+1.7.7.6
 
-So we could probably avoid this issue by checking the root's count before we go
-to lookup the inode and just bailing if the used count is 0, but then if we race
-between looking up the root and looking up the inode we could end up in the same
-situation, because we'd have to check again after looking up the inode and iput
-there if the count was 0 and we'd be in the same mess again, though with a much
-smaller window.  So this patch fixes the actual problem, it's not a paper over.
-I will fix us to not do anything if the root has been deleted since theres no
-sense in doing the extra work, but we'll still need this for the small window
-between looking up the root and looking up the inode.  Thanks,
-
-Josef

@@ -1,123 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59210 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:59228 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752680Ab3GZHpM (ORCPT
+	with ESMTP id S1752878Ab3GZHry (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jul 2013 03:45:12 -0400
-Date: Fri, 26 Jul 2013 08:45:08 +0100
+	Fri, 26 Jul 2013 03:47:54 -0400
+Date: Fri, 26 Jul 2013 08:47:52 +0100
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Axelle <aafortinet@gmail.com>
+To: Pete <pete@petezilla.co.uk>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Adding 500G disk to btrfs volume... but I don't get 500G more of
- available space (raid0)
-Message-ID: <20130726074508.GJ20517@carfax.org.uk>
-References: <CANKzOHASE9pB6TjJ4JbqY1PE6cRsbCsY=KU3NVRjwcb74tikVQ@mail.gmail.com>
+Subject: Re: Error on rebooting
+Message-ID: <20130726074752.GK20517@carfax.org.uk>
+References: <51F1C09C.9020602@petezilla.co.uk>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="yr/DzoowOgTDcSCF"
-In-Reply-To: <CANKzOHASE9pB6TjJ4JbqY1PE6cRsbCsY=KU3NVRjwcb74tikVQ@mail.gmail.com>
+	protocol="application/pgp-signature"; boundary="BFVE2HhgxTpCzM8t"
+In-Reply-To: <51F1C09C.9020602@petezilla.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---yr/DzoowOgTDcSCF
+--BFVE2HhgxTpCzM8t
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Fri, Jul 26, 2013 at 09:05:03AM +0200, Axelle wrote:
-> Hi btrfs folks,
+On Fri, Jul 26, 2013 at 01:19:40AM +0100, Pete wrote:
+> Dear All,
 > 
-> I'm afraid I have a newbie question... but I can't sort it out? It's
-> just about adding a disk to a btrfs volume and not getting the correct
-> amount of GB in the end...
+> Have I anything to be concerned about?
 > 
-> I have a btrfs volume which already consists of two different devices
-> and which is mounted on /samples. Its total size is 194G.
+> I have got some error messages on booting.  The scenario was that I
+> had installed some ram and I suspect that I had disturbed a cable as
+> one disk was not visible.  I could not mount the other disk (did not
+> try degraded, but the messages seemed to indicate something serious
+> was up).
 > 
-> $ df -h
-> Filesystem Size Used Avail Use% Mounted on ... /dev/sdc1 194G 165G 20G
-> 90% /samples
+> After installing ram booted.  But some issue with some files,
+> anything accessing those files froze.  Had to reboot.  Failed to
+> shutdown correctly (shutdown stalled on unmount)
 > 
-> Now, I would like to add another 500G to that volume, from another device. I did
+> Reboot.
 > 
-> $ sudo mkfs.btrfs -m raid0 -d raid0 /dev/sdb
-> $ sudo btrfs device add /dev/sdb /samples
-> My filesystem now correctly reports:
+> /home etc not mounted (btrfs in question)
 > 
-> $ sudo btrfs filesystem show
-> Label: none  uuid: 545e95c6-d347-4a8c-8a49-38b9f9cb9add
->     Total devices 3 FS bytes used 161.98GB
->     devid    3 size 465.76GB used 0.00 path /dev/sdb
->     devid    2 size 93.13GB used 84.51GB path /dev/sdc1
->     devid    1 size 100.61GB used 84.53GB path /dev/sdc6
-> But I miss some space when I do:
+> Btrfsck /dev/sdb showed various errors.
+> 
+> When complete turned off machine.  Fiddled with cables.  Affected
+> drive now seen on reboot.
+> 
+> Rebooted.  Mounted disks (perhaps) error messages may have been
+> present on boot.  Much disk IO.  Disk IO stopped.  Machine appeared
+> frozen except that Caps lock and Num lock worked.
+> Ctrl-alt-backspace did not sort out stalled x(?)dm session.  Hard
+> power down.
+> 
+> Last reboot.  Error messages.  However, works.  Example messages from dmesg:
+> 
+> [    8.063138] btrfs: enabling inode map caching
+> [    8.067617] btrfs: use lzo compression
+> [    8.072092] btrfs: disk space caching is enabled
+> [    8.147324] btrfs: bdev /dev/sdb errs: wr 4015, rd 464, flush 0,
+> corrupt 0, gen 0
+> [    8.802275] NET: Registered protocol family 10
+> [   15.462313] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
+> devid 2 transid 27794 /dev/sdc
+> [   15.511463] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
+> devid 2 transid 27794 /dev/sdc
+> [   15.566689] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
+> devid 2 transid 27794 /dev/sdc
+> [   15.587851] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
+> devid 2 transid 27794 /dev/sdc
+> [   15.620678] device fsid 2628a800-e095-4460-9b93-8847e9fb626b
+> devid 2 transid 27794 /dev/sdc
+> [   16.024295] IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready
+> ...
+> 
+> ...
+> 
+> ...
+> 
+> ...
+>    19.491507] tun: (C) 1999-2004 Max Krasnyansky <maxk@qualcomm.com>
+> [   56.064899] parent transid verify failed on 1142639534080 wanted
+> 27788 found 26856
+> [   56.154721] btrfs read error corrected: ino 1 off 1142639534080
+> (dev /dev/sdb sector 2179305424)
+> [   56.166301] parent transid verify failed on 1142597795840 wanted
+> 27777 found 27772
+> [   56.186790] btrfs read error corrected: ino 1 off 1142597795840
+> (dev /dev/sdb sector 2179223904)
+> [   56.460857] parent transid verify failed on 1142599532544 wanted
+> 27779 found 27772
+> [   56.461396] btrfs read error corrected: ino 1 off 1142599532544
+> (dev /dev/sdb sector 2179227296)
+> [   59.927078] ata1.00: configured for UDMA/133
+> [   59.927082] ata1: EH complete
+> [   59.933467] ata2.00: configured for UDMA/133
+> [   59.933473] ata2: EH complete
+> [   60.129445] ata3.00: configured for UDMA/133
+> [   60.129458] ata3: EH complete
+> [   61.449810] parent transid verify failed on 1142629605376 wanted
+> 27784 found 26856
+> [   61.473817] btrfs read error corrected: ino 1 off 1142629605376
+> (dev /dev/sdb sector 2179286032)
+[snip]
+> [  104.204035] btrfs read error corrected: ino 1544486 off 0 (dev
+> /dev/sdb sector 2182960392)
+> [  104.204551] btrfs read error corrected: ino 1544486 off 4096 (dev
+> /dev/sdb sector 2182960400)
+> [  117.249253] parent transid verify failed on 1142609051648 wanted
+> 27774 found 26856
+> [  117.255886] btrfs read error corrected: ino 1 off 1142609051648
+> (dev /dev/sdb sector 2179245888)
+> [  117.419294] parent transid verify failed on 1142599507968 wanted
+> 27779 found 27772
+> [  117.437317] btrfs read error corrected: ino 1 off 1142599507968
+> (dev /dev/sdb sector 2179227248)
+> [  137.502176] NFSD: Unable to end grace period: -110
+> 
+> Given that I have booted now - does this mean that the above was
+> btrfs sorting itself out?
 
-   RAID-0 requires at least two devices. If you balance this
-configuration, you'll use up the first 93.13 GiB of each device
-striping across all three devices, for a total of 3*93.13 = 279.39
-GiB. Then /dev/sdc1 becomes full, leaving you with two devices which
-have 7.48 GiB and 372.63 GiB respectively. After another 7.48 GiB on
-each device (for a total of 2*7.48 = 14.96 GiB), you have filled
-/dev/sdc1, leaving only /dev/sdb to work with. Since there's only one
-device, it can't be used by RAID-0.
-
-   If you want to use the full space available, you should rebalance
-to single usage, which stops the RAID-0 striping, and allocates
-linearly:
-
-# btrfs balance start -dconvert=single,soft /samples
+   Looks like it. I'd recommend a scrub to check for any other out of
+date data on the affected drive. I've done pretty much the same thing
+as this myself, and a scrub, though scary in the amount of noise it
+made, fixed everything satisfactorily.
 
    Hugo.
-
-> $ df -h
-> Filesystem      Size  Used Avail Use% Mounted on
-> ...
-> /dev/sdc1       660G  165G   43G  80% /samples
-> I added 500G! Why haven't I got more available??
-> 
-> To debug, I ran this command:
-> 
-> $ sudo btrfs filesystem df /samples
-> Data, RAID0: total=162.00GB, used=159.79GB
-> Data: total=8.00MB, used=7.48MB
-> System, RAID1: total=8.00MB, used=24.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=3.50GB, used=2.19GB
-> Metadata: total=8.00MB, used=0.00
-> My data is in RAID0, that's ok. So where have my 500G gone, and how
-> can I fix this?
-> 
-> Thanks
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
            --- Sometimes, when I'm alone, I Google myself. ---           
 
---yr/DzoowOgTDcSCF
+--BFVE2HhgxTpCzM8t
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIVAwUBUfIpBFheFHXiqx3kAQLJFRAAg0Wvr+/grFrTtOwh1g+76M/O131GBNek
-jUiqajxsglEcE1ntzdirpikCTGjrNPu4zyxPw+f6SvykrDCvlGj9Fi2Qo5j4sB7f
-qJMFgcPG2ciApQtFkVLfuREMakO/+WrpFh0xa+97WyE9ywHm2OKlPs1bsxmyO0aJ
-66AcmMRq9AZmmSCp/G+MfFvcPA0ApBy/v9RZt9wSxZT+qAaue69wt/hKvOaeU+aq
-7lYK8Tm+/Mhh4BeKT10A9o6tnLVA5ELucak+DFRZwn4CbfT6YNpB/ubJsTDzjrZ5
-hZOaKq5MXRypxo58ZQYrEbiI4eJUSpcRv1r4ZY7lrGlUHPIhYRT06abYZmajdj4p
-R04NmbvBdHs+9WW9UsWWeZLFaFI1fesbhsYK77smSRUeK96FclamM4mIs2WpQJdE
-mvNcse/SrGXKkyI2pwT2aZvdIghxnhIa5GrTJRyk1vEs9FwEb2LUZPJ9ACWhEfN6
-4oRmq+RVgkRSnV1b4lSxHOcxZKBwta3O7WbqZP7MoYgtEf9QXiS71Z1IStz3KR0N
-z35ajAMNCIYqjiaMmBW60BNiw+nKUCPGDqbdlHe7NRandrEqcL7nbv96dK5e6Var
-HoyCo2M+oY46zQIJRjQ4HOgbH+vnnb6HQJPmnyokWA/w6oQ2SWsAR0ZB5haY4rGG
-R2bj2WGPI1E=
-=Rs4a
+iQIVAwUBUfIpqFheFHXiqx3kAQL4xQ//fNLsw48d62KtJIRuEUmRQVzKMshyJFv6
+IG984uI1qRAEHrp9waAZIkdBY12WnqDUwhRj/EIJimxR5NZ6g8jlKZgLdbraRYGn
+6O9G15vseJUsEkWbMaTVOmiIVksJRbplLejqrdXCzKYjHwYr2E/Yw1sk5v0lz68T
+qCTsNMAn/9MPAAQYdhMA7g8GONpDXq/M8I9nCTN09hzl6gyg0q+caCnn26RXgcVP
+1i+jg1IvEvJLbL6XOiyy41phlv3/15qGGsmTm6T1fON/dxXXn38fPABW2g3rrz7O
+vFCGgl3os5txzbvXCY1pKuVRcakiMS80x/G4vlYmXHZIsIHhntXU+vTPxVWbe5f0
+CaVSpuJmzWz8hjJlBrl5/IQK4FRaQaPuPJMmNMYaxe4/pJ4lfT3GTkdiwJbcTCiB
+/ZBWPsVW9cw90Rhc186juhW/gZVBDv4xEI8wXgl169pHCCYsUt11SBCsU45Is6fx
+0x/VZB+lwLeAImfVW5zvDUVlD5RMhVXphNMUeqww7HlsK4VsMaL8gLBd8Mv6rqV0
+BtGwkp/RuEyPJKDPdEuAMUp3yHRXq03di7hX4EH9gexWHxGOav+HRMYLLUgSLBXq
+7L6Q9U14LFK4LKBTyHu1OLzec293wI4M6P4ly81CIGXVPTy2gskfXVpG+oKKATai
+XM5GKQD20TA=
+=oMr5
 -----END PGP SIGNATURE-----
 
---yr/DzoowOgTDcSCF--
+--BFVE2HhgxTpCzM8t--

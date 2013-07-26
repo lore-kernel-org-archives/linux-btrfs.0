@@ -1,149 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29196 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755130Ab3GYIPU (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:35741 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932413Ab3GZPpf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 04:15:20 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: xfs@oss.sgi.com, Ben Myers <bpm@sgi.com>
-Subject: [PATCH v2] xfstests/btrfs/308: add snapshot-aware defrag for partial extents testcases
-Date: Thu, 25 Jul 2013 16:15:02 +0800
-Message-Id: <1374740102-9687-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 26 Jul 2013 11:45:35 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id EA3C49A03C9
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2013 09:45:34 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: generic/314 filter out total from ls -l output
+Date: Fri, 26 Jul 2013 11:45:32 -0400
+Message-ID: <1374853532-19253-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is to test whether snapshot-aware defrag can work well on partial extents.
+ls -l will show the nblocks for the directory, and this made it into the golden
+output for 314.  The problem is nblocks is 0 for btrfs directories because we're
+awesome, which makes us fail this test.  So filter out the "total blah" line of
+ls -l so btrfs can pass this test too.  Thanks,
 
-Reviewed-by: Ben Myers <bpm@sgi.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-v2:
-   limit _supported_fs btrfs to btrfs.
+ tests/generic/314     |    2 +-
+ tests/generic/314.out |    1 -
+ 2 files changed, 1 insertions(+), 2 deletions(-)
 
- tests/btrfs/308     |   93 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/308.out |    2 +
- tests/btrfs/group   |    1 +
- 3 files changed, 96 insertions(+), 0 deletions(-)
- create mode 100755 tests/btrfs/308
- create mode 100644 tests/btrfs/308.out
-
-diff --git a/tests/btrfs/308 b/tests/btrfs/308
-new file mode 100755
-index 0000000..b3dd39c
---- /dev/null
-+++ b/tests/btrfs/308
-@@ -0,0 +1,93 @@
-+#! /bin/bash
-+# BTRFS QA Test No. 308
-+#
-+# Test if snapshot-aware defrag can work well on partial extents, ie.
-+# extent_offset is not zero.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Oracle.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_command "/usr/sbin/filefrag"
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+subvol=$SCRATCH_MNT/subvol
-+
-+$BTRFS_UTIL_PROG subvolume create $subvol >> $seqres.full
-+
-+for i in `seq 5 -1 1`
-+do
-+	dd if=/dev/zero of=$subvol/foobar bs=6k count=1 seek=$i conv=notrunc oflag=dsync 2>> $seqres.full
-+done
-+
-+sync
-+for i in `seq 2 -1 1`
-+do
-+	$BTRFS_UTIL_PROG subvolume snapshot $subvol $SCRATCH_MNT/snap-$i >> $seqres.full
-+done
-+
-+$BTRFS_UTIL_PROG filesystem defrag $subvol/foobar && sync
-+
-+num_extent_orig=`filefrag $subvol/foobar | awk -F ' ' '{print $2}'`
-+num_extent_snap1=`filefrag $SCRATCH_MNT/snap-1/foobar | awk -F ' ' '{print $2}'`
-+num_extent_snap2=`filefrag $SCRATCH_MNT/snap-2/foobar | awk -F ' ' '{print $2}'`
-+
-+echo "$num_extent_orig $num_extent_snap1 $num_extent_snap2" >> $seqres.full
-+
-+# if error
-+if [ "x$num_extent_snap1" != "x$num_extent_orig" -o "x$num_extent_snap2" != "x$num_extent_orig" ]; then
-+	echo "number of extents mis-match!"
-+	exit
-+fi
-+
-+# optional stuff if your test has verbose output to help resolve problems
-+#echo
-+#echo "If failure, check $seqres.full (this) and $seqres.full.ok (reference)"
-+
-+# success, all done
-+echo "done"
-+status=0
-+exit
-diff --git a/tests/btrfs/308.out b/tests/btrfs/308.out
-new file mode 100644
-index 0000000..1f3de82
---- /dev/null
-+++ b/tests/btrfs/308.out
-@@ -0,0 +1,2 @@
-+QA output created by 308
-+done
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index bc6c256..666054b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -9,3 +9,4 @@
- 276 auto rw metadata
- 284 auto
- 307 auto quick
-+308 auto quick
+diff --git a/tests/generic/314 b/tests/generic/314
+index 2d34ea8..0dd98a3 100644
+--- a/tests/generic/314
++++ b/tests/generic/314
+@@ -62,7 +62,7 @@ su $qa_user -c "setfacl -m u:$qa_user:rwx,d:u:$qa_user:rwx $TEST_DIR/$seq-dir"
+ su $qa_user -c "mkdir $TEST_DIR/$seq-dir/subdir2"
+ 
+ # Both subdirs should have inherited sgid
+-_ls_l $TEST_DIR/$seq-dir/ | _filter_test_dir | awk '{print $1,$NF}'
++_ls_l $TEST_DIR/$seq-dir/ | grep -v total | _filter_test_dir | awk '{print $1,$NF}'
+ 
+ status=0
+ exit
+diff --git a/tests/generic/314.out b/tests/generic/314.out
+index 180be80..b2db82b 100644
+--- a/tests/generic/314.out
++++ b/tests/generic/314.out
+@@ -1,4 +1,3 @@
+ QA output created by 314
+-total 4
+ drwxr-sr-x subdir
+ drwxrwsr-x+ subdir2
 -- 
-1.7.7
+1.7.7.6
 

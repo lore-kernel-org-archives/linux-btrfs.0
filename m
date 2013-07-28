@@ -1,47 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f50.google.com ([209.85.160.50]:39853 "EHLO
-	mail-pb0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751544Ab3G1FRg convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Jul 2013 01:17:36 -0400
-Received: by mail-pb0-f50.google.com with SMTP id uo5so153614pbc.37
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Jul 2013 22:17:35 -0700 (PDT)
+Received: from mail.virtall.com ([178.63.195.102]:32953 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753184Ab3G1Gv1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 28 Jul 2013 02:51:27 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id 599003878EF
+	for <linux-btrfs@vger.kernel.org>; Sun, 28 Jul 2013 08:51:23 +0200 (CEST)
+Received: from localhost (ppp-58-8-14-23.revip2.asianet.co.th [58.8.14.23])
+	by mail.virtall.com (Postfix) with ESMTPSA id 63608387792
+	for <linux-btrfs@vger.kernel.org>; Sun, 28 Jul 2013 08:51:22 +0200 (CEST)
+Date: Sun, 28 Jul 2013 13:51:16 +0700
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfs qgroup assign -> "ERROR: bad relation requested"
+Message-ID: <20130728135116.5ed992d4@wpkg.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: Recovering from btrfs error Couldn't read chunk root.
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <CAA6RbirvdqOvCcWi1qGG1+USCmcc9J=ECXGJiUH3anHa5EaP7g@mail.gmail.com>
-Date: Sun, 28 Jul 2013 13:17:29 +0800
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <8E1258E3-BCFC-406E-B8F6-2ABB3280C9F0@gmail.com>
-References: <CAA6RbirvdqOvCcWi1qGG1+USCmcc9J=ECXGJiUH3anHa5EaP7g@mail.gmail.com>
-To: Kyriakos <kyriakosbrastianos@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, 
+I'm trying to use this feature of qgroup:
 
-It seems Btrfs Chunk Tree is damaged, so you can not mount Btrfs filesystem any more.
-
-However, you can try the latest Btrfs-progs, Miao Xie implements chunk tree recover function.
-
-The url is:
-
-	git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+btrfs qgroup assign <srcid> <destid> <path>
+    Assigns the lower level qgroup src to the higher level qgroup dest
+    in the btrfs found in <path>. It is used to build qgroup
+    hierarchies.
 
 
-you can try it:
-		btrfs chunk-recover  -v <dev>
+However, I fail to understand how this feature should work, and I'm
+getting "ERROR: bad relation requested":
 
-This is Time-consuming, because it will scan the whole disk. And also,
-please catch output of processing(this is helpful to us if the recovery fails, -v option
-enable this).
+# btrfs sub create test1
+Create subvolume './test1'
 
-Thanks,
-Wang
+# btrfs sub create test2
+Create subvolume './test2'
+
+# btrfs sub list /mnt/lxc2 | grep test
+ID 1177 gen 85131 top level 5 path test1
+ID 1178 gen 85132 top level 5 path test2
+
+# btrfs qgroup show /mnt/lxc2
+0/1177 4096 4096
+0/1178 4096 4096
+
+# btrfs qgroup assign 1177 1178 /mnt/lx2
+ERROR: bad relation requested '/mnt/lx2'
 
 
+Could anyone give examples of proper usage of this feature?
+
+This is Linux 3.10.
 
 
-
-
+-- 
+Tomasz Chmielewski
+http://wpkg.org

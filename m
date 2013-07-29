@@ -1,168 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:59220 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751410Ab3G2Tex (ORCPT
+Received: from mail-oa0-f43.google.com ([209.85.219.43]:65110 "EHLO
+	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754474Ab3G2USX convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 15:34:53 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 211749A0407
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 13:34:52 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id F0UMLXa96sBXS3So (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 13:34:51 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix what bits we clear when erroring out from delalloc V2
-Date: Mon, 29 Jul 2013 15:34:49 -0400
-Message-ID: <1375126489-1623-1-git-send-email-jbacik@fusionio.com>
+	Mon, 29 Jul 2013 16:18:23 -0400
+Received: by mail-oa0-f43.google.com with SMTP id i10so8859269oag.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 13:18:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <EECFF15F-5957-4186-99B2-CC1B656861B5@gmail.com>
+References: <CAA6RbirvdqOvCcWi1qGG1+USCmcc9J=ECXGJiUH3anHa5EaP7g@mail.gmail.com>
+ <8E1258E3-BCFC-406E-B8F6-2ABB3280C9F0@gmail.com> <CAA6RbiqwS8mvZERdENv1ixD+=He9HehmA6rMtcW8wSGud+V6nA@mail.gmail.com>
+ <EECFF15F-5957-4186-99B2-CC1B656861B5@gmail.com>
+From: Kyriakos <kyriakosbrastianos@gmail.com>
+Date: Mon, 29 Jul 2013 23:18:03 +0300
+Message-ID: <CAA6Rbipj3j30ASmAJ3KvQtBwwpsU-2H6rbwhfSkN9=jnvoxQsQ@mail.gmail.com>
+Subject: Re: Recovering from btrfs error Couldn't read chunk root.
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First of all we no longer set EXTENT_DIRTY when we dirty an extent so this patch
-removes the clearing of EXTENT_DIRTY since it confuses me.  This patch also adds
-clearing EXTENT_DEFRAG and also doing EXTENT_DO_ACCOUNTING when we have errors.
-This is because if we are clearing delalloc without adding an ordered extent
-then we need to make sure the enospc handling stuff is accounted for.  Also if
-this range was DEFRAG we need to make sure that bit is cleared so we dont leak
-it.  Thanks,
+Unrecoverable?
+I know i cant mount and have access but my data are still there intact
+( as i was using them till the reboot) i shouldn't be able to
+extract/recover them to another disc? With any magic command without
+mounting?
+Any other solutions?
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-V1->V2:
-- only do EXTENT_DO_ACCOUNTING in compress_file_range if we had an error
+http://bpaste.net/show/118112/
 
- fs/btrfs/inode.c |   49 ++++++++++++++++++++++++++++---------------------
- 1 files changed, 28 insertions(+), 21 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a60be02..88fe045 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -484,15 +484,17 @@ cont:
- 						    compress_type, pages);
- 		}
- 		if (ret <= 0) {
-+			unsigned long clear_flags = EXTENT_DELALLOC |
-+				EXTENT_DEFRAG;
-+			clear_flags |= (ret < 0) ? EXTENT_DO_ACCOUNTING : 0;
-+
- 			/*
- 			 * inline extent creation worked or returned error,
- 			 * we don't need to create any more async work items.
- 			 * Unlock and free up our temp pages.
- 			 */
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
--						     EXTENT_DIRTY |
--						     EXTENT_DELALLOC,
--						     PAGE_UNLOCK |
-+						     clear_flags, PAGE_UNLOCK |
- 						     PAGE_CLEAR_DIRTY |
- 						     PAGE_SET_WRITEBACK |
- 						     PAGE_END_WRITEBACK);
-@@ -593,9 +595,10 @@ free_pages_out:
- 
- cleanup_and_out:
- 	extent_clear_unlock_delalloc(inode, start, end, NULL,
--				     EXTENT_DIRTY | EXTENT_DELALLOC,
--				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				     EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+				     EXTENT_DEFRAG, PAGE_UNLOCK |
-+				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-+				     PAGE_END_WRITEBACK);
- 	if (!trans || IS_ERR(trans))
- 		btrfs_error(root->fs_info, ret, "Failed to join transaction");
- 	else
-@@ -770,8 +773,8 @@ retry:
- 		extent_clear_unlock_delalloc(inode, async_extent->start,
- 				async_extent->start +
- 				async_extent->ram_size - 1,
--				NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
--				EXTENT_DIRTY, PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
-+				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
- 				PAGE_SET_WRITEBACK);
- 		ret = btrfs_submit_compressed_write(inode,
- 				    async_extent->start,
-@@ -795,9 +798,9 @@ out_free:
- 				     async_extent->start +
- 				     async_extent->ram_size - 1,
- 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
--				     EXTENT_DIRTY, PAGE_UNLOCK |
--				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
--				     PAGE_END_WRITEBACK);
-+				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
-+				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
- 	kfree(async_extent);
- 	goto again;
- }
-@@ -884,7 +887,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 		if (ret == 0) {
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
- 				     EXTENT_LOCKED | EXTENT_DELALLOC |
--				     EXTENT_DIRTY, PAGE_UNLOCK |
-+				     EXTENT_DEFRAG, PAGE_UNLOCK |
- 				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
- 				     PAGE_END_WRITEBACK);
- 
-@@ -995,10 +998,10 @@ out_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
- out_unlock:
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				     EXTENT_LOCKED | EXTENT_DIRTY |
--				     EXTENT_DELALLOC, PAGE_UNLOCK |
--				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
--				     PAGE_END_WRITEBACK);
-+				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
-+				     EXTENT_DELALLOC | EXTENT_DEFRAG,
-+				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
- 	goto out;
- }
- 
-@@ -1016,7 +1019,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	if (IS_ERR(trans)) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1201,7 +1205,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	if (!path) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1218,7 +1223,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	if (IS_ERR(trans)) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1434,8 +1440,9 @@ error:
- 	if (ret && cur_offset < end)
- 		extent_clear_unlock_delalloc(inode, cur_offset, end,
- 					     locked_page, EXTENT_LOCKED |
--					     EXTENT_DELALLOC | EXTENT_DIRTY,
--					     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+					     EXTENT_DELALLOC | EXTENT_DEFRAG |
-+					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
-+					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
- 	btrfs_free_path(path);
--- 
-1.7.7.6
-
+On 29 July 2013 15:06, Wang Shilong <wangshilong1991@gmail.com> wrote:
+>
+> 在 2013-7-29，上午2:12，Kyriakos <kyriakosbrastianos@gmail.com> 写道：
+>
+>> Just tried it as you said with the -v option enabled
+>> This is my output:
+>>
+>> http://bpaste.net/show/118112/
+>>
+>>
+> This is a *long* email, and seems that btrfs list refuse it.
+>
+>>  Device extent: devid = 1, start = 1667558801408, len = 1073741824,
+>> chunk offset = 1663255445504
+>> Couldn't map the block 626309926912
+>> btrfs: volumes.c:1020: btrfs_num_copies: Assertion `!(ce->start >
+>> logical || ce->start + ce->size < logical)' failed.
+>> Aborted (core dumped)
+>
+> Strange enough, we don't find any chunks during scanning process.
+>
+> And seems this is unrecoverable ~_~
+>
+>
+> Wang,
+>>
+>>
+>> Any thoughts?
+>>
+>> On 28 July 2013 08:17, Wang Shilong <wangshilong1991@gmail.com> wrote:
+>>> Hello,
+>>>
+>>> It seems Btrfs Chunk Tree is damaged, so you can not mount Btrfs filesystem any more.
+>>>
+>>> However, you can try the latest Btrfs-progs, Miao Xie implements chunk tree recover function.
+>>>
+>>> The url is:
+>>>
+>>>        git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+>>>
+>>>
+>>> you can try it:
+>>>                btrfs chunk-recover  -v <dev>
+>>>
+>>> This is Time-consuming, because it will scan the whole disk. And also,
+>>> please catch output of processing(this is helpful to us if the recovery fails, -v option
+>>> enable this).
+>>>
+>>> Thanks,
+>>> Wang
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>

@@ -1,66 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f172.google.com ([209.85.128.172]:58432 "EHLO
-	mail-ve0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750811Ab3G2Hsd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 03:48:33 -0400
-MIME-Version: 1.0
-In-Reply-To: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
-References: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
-Date: Mon, 29 Jul 2013 11:48:32 +0400
-Message-ID: <CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: use list_for_each_entry_safe() when delete items
-From: Azat Khuzhin <a3at.mail@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com, Azat Khuzhin <a3at.mail@gmail.com>,
-        open list <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.virtall.com ([178.63.195.102]:37539 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750740Ab3G2IFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jul 2013 04:05:23 -0400
+Date: Mon, 29 Jul 2013 15:05:10 +0700
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Arne Jansen <sensille@gmx.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs quota examples?
+Message-ID: <20130729150510.19e5886a@virtall.com>
+In-Reply-To: <51B58333.3050901@gmx.net>
+References: <20130610152127.38fb8a50@virtall.com>
+	<51B58333.3050901@gmx.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 27, 2013 at 2:12 PM, Azat Khuzhin <a3at.mail@gmail.com> wrote:
-> Replace list_for_each_entry() by list_for_each_entry_safe() in
-> __btrfs_close_devices()
->
-> There is another place that delete items lock_stripe_add(), but there we
-> don't need safe version, because after deleting we exit from loop.
->
-> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
-> ---
->  fs/btrfs/volumes.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 78b8717..1d1b595 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -616,13 +616,13 @@ static void free_device(struct rcu_head *head)
->
->  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
->  {
-> -       struct btrfs_device *device;
-> +       struct btrfs_device *device, *next;
->
->         if (--fs_devices->opened > 0)
->                 return 0;
->
->         mutex_lock(&fs_devices->device_list_mutex);
-> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
-> +       list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
->                 struct btrfs_device *new_device;
->                 struct rcu_string *name;
+On Mon, 10 Jun 2013 09:41:39 +0200
+Arne Jansen <sensille@gmx.net> wrote:
 
-There is "kfree(device);" at the end of loop, maybe there must "goto
-again;" after it?
-(instead of this patch)
+> > Now, my questions:
+> > 
+> > - what do both 104882176 104882176 numbers represent?
+> 
+> The first number represents the amount of data in that subvolume,
+> regardless whether that data is shared with other subvolumes or
+> not.
+> The second number shows the amount of data that is unique to this
+> subvolume and not shared with others, i.e. the amount of space
+> that will get freed if you delete this subvolume.
 
->
-> --
-> 1.7.10.4
->
+I've played with qgroups for some time, but the results are rather
+inconsistent.
 
+I.e. here - what does a negative number represent in 0/1181 row?
+
+# btrfs qgroup show /mnt/lxc2
+0/260 151490953216 151490953216
+0/261 180969472 180969472
+0/262 155557888 983040
+0/377 180310016 25776128
+0/378 304088072192 304088072192
+0/535 571944960 417370112
+0/536 68550987776 68550987776
+0/642 247463936 92921856
+0/1175 617213952 827392
+0/1181 16112013312 -22184235008
+0/1268 38296248320 0
+0/1269 616386560 0
+0/1270 4096 4096
+0/1271 4096 4096
 
 
 -- 
-Respectfully
-Azat Khuzhin
+Tomasz Chmielewski
+http://wpkg.org

@@ -1,24 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.9]:59158 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751740Ab3G1S5Q (ORCPT
+Received: from mail-ve0-f172.google.com ([209.85.128.172]:58432 "EHLO
+	mail-ve0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750811Ab3G2Hsd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Jul 2013 14:57:16 -0400
-Message-ID: <51F56987.7080409@friedels.name>
-Date: Sun, 28 Jul 2013 20:57:11 +0200
-From: Hendrik Friedel <hendrik@friedels.name>
+	Mon, 29 Jul 2013 03:48:33 -0400
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Mount multiple-device-filesystem by UUID
-References: <51F41660.1070405@friedels.name> <51F41702.2000508@friedels.name> <20130727194448.GO20517@carfax.org.uk>
-In-Reply-To: <20130727194448.GO20517@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
+References: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
+Date: Mon, 29 Jul 2013 11:48:32 +0400
+Message-ID: <CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: use list_for_each_entry_safe() when delete items
+From: Azat Khuzhin <a3at.mail@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@fusionio.com, Azat Khuzhin <a3at.mail@gmail.com>,
+        open list <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your replies.
+On Sat, Jul 27, 2013 at 2:12 PM, Azat Khuzhin <a3at.mail@gmail.com> wrote:
+> Replace list_for_each_entry() by list_for_each_entry_safe() in
+> __btrfs_close_devices()
+>
+> There is another place that delete items lock_stripe_add(), but there we
+> don't need safe version, because after deleting we exit from loop.
+>
+> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
+> ---
+>  fs/btrfs/volumes.c |    4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 78b8717..1d1b595 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -616,13 +616,13 @@ static void free_device(struct rcu_head *head)
+>
+>  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>  {
+> -       struct btrfs_device *device;
+> +       struct btrfs_device *device, *next;
+>
+>         if (--fs_devices->opened > 0)
+>                 return 0;
+>
+>         mutex_lock(&fs_devices->device_list_mutex);
+> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
+> +       list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+>                 struct btrfs_device *new_device;
+>                 struct rcu_string *name;
 
-I will try.
+There is "kfree(device);" at the end of loop, maybe there must "goto
+again;" after it?
+(instead of this patch)
 
-Greetings,
-Hendrik
+>
+> --
+> 1.7.10.4
+>
+
+
+
+-- 
+Respectfully
+Azat Khuzhin

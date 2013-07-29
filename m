@@ -1,55 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44449 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756730Ab3GYRaU (ORCPT
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:49799 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754006Ab3G2ShN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jul 2013 13:30:20 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6PHUJVr030698
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:19 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUIqf007068
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:18 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6PHUIWO007050
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2013 17:30:18 GMT
-From: Anand Jain <anand.jain@oracle.com>
+	Mon, 29 Jul 2013 14:37:13 -0400
+Received: by mail-wg0-f43.google.com with SMTP id z12so5137868wgg.34
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:37:11 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs-progs: don't have to report ENOMEDIUM error during open
-Date: Fri, 26 Jul 2013 01:35:30 +0800
-Message-Id: <1374773730-29957-7-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
-References: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
+Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs-progs: return immediately on tree search failure
+Date: Mon, 29 Jul 2013 19:36:36 +0100
+Message-Id: <1375122996-6665-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-when we scan /proc/partitions the cdrom is scanned
-as well, and we don't have to report ENOMEDIUM errors
-against it.
+If the chunk tree search failed in volumes.c:btrfs_read_chunk_tree()
+return immediately, rather than looping and use the invalid contents
+of the path structure, causing weird errors/crash at run time.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- utils.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ volumes.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/utils.c b/utils.c
-index 4aeea9c..638cef0 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1443,8 +1443,9 @@ scan_again:
- 
- 		fd = open(fullpath, O_RDONLY);
- 		if (fd < 0) {
--			fprintf(stderr, "failed to open %s: %s\n",
--				fullpath, strerror(errno));
-+			if (errno != ENOMEDIUM)
-+				fprintf(stderr, "failed to open %s: %s\n",
-+					fullpath, strerror(errno));
- 			continue;
- 		}
- 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+diff --git a/volumes.c b/volumes.c
+index 0ff2283..79008de 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1727,6 +1727,8 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
+ 	key.type = 0;
+ again:
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret < 0)
++		goto error;
+ 	while(1) {
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
 -- 
-1.7.1
+1.7.9.5
 

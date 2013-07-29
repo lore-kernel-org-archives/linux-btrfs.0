@@ -1,156 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48205 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758272Ab3G2RYZ (ORCPT
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:60617 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756407Ab3G2SW4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 13:24:25 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id D7CB67C0431
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:24:24 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id SNFYYs89GGq2fcrp (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:24:24 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix what bits we clear when erroring out from delalloc
-Date: Mon, 29 Jul 2013 13:24:22 -0400
-Message-ID: <1375118662-29718-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 29 Jul 2013 14:22:56 -0400
+Received: by mail-wg0-f50.google.com with SMTP id m15so5261598wgh.29
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:22:54 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: optimize function btrfs_read_chunk_tree
+Date: Mon, 29 Jul 2013 19:22:34 +0100
+Message-Id: <1375122154-5177-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
+References: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First of all we no longer set EXTENT_DIRTY when we dirty an extent so this patch
-removes the clearing of EXTENT_DIRTY since it confuses me.  This patch also adds
-clearing EXTENT_DEFRAG and also doing EXTENT_DO_ACCOUNTING when we have errors.
-This is because if we are clearing delalloc without adding an ordered extent
-then we need to make sure the enospc handling stuff is accounted for.  Also if
-this range was DEFRAG we need to make sure that bit is cleared so we dont leak
-it.  Thanks,
+After reading all device items from the chunk tree, don't
+exit the loop and then navigate down the tree again to find
+the chunk items. Instead just read all device items and
+chunk items with a single tree search. This is possible
+because all device items are found before any chunk item in
+the chunks tree.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/inode.c |   46 ++++++++++++++++++++++++++--------------------
- 1 files changed, 26 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a60be02..686ba5c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -490,8 +490,9 @@ cont:
- 			 * Unlock and free up our temp pages.
- 			 */
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
--						     EXTENT_DIRTY |
--						     EXTENT_DELALLOC,
-+						     EXTENT_DELALLOC |
-+						     EXTENT_DO_ACCOUNTING |
-+						     EXTENT_DEFRAG,
- 						     PAGE_UNLOCK |
- 						     PAGE_CLEAR_DIRTY |
- 						     PAGE_SET_WRITEBACK |
-@@ -593,9 +594,10 @@ free_pages_out:
+V2: Simplified logic inside the loop
+    (suggested by Josef Bacik on irc).
+
+ fs/btrfs/volumes.c |   30 ++++++++++--------------------
+ 1 file changed, 10 insertions(+), 20 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 090f57c..45c5ec3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5676,14 +5676,13 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
+ 	mutex_lock(&uuid_mutex);
+ 	lock_chunks(root);
  
- cleanup_and_out:
- 	extent_clear_unlock_delalloc(inode, start, end, NULL,
--				     EXTENT_DIRTY | EXTENT_DELALLOC,
--				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				     EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+				     EXTENT_DEFRAG, PAGE_UNLOCK |
-+				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-+				     PAGE_END_WRITEBACK);
- 	if (!trans || IS_ERR(trans))
- 		btrfs_error(root->fs_info, ret, "Failed to join transaction");
- 	else
-@@ -770,8 +772,8 @@ retry:
- 		extent_clear_unlock_delalloc(inode, async_extent->start,
- 				async_extent->start +
- 				async_extent->ram_size - 1,
--				NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
--				EXTENT_DIRTY, PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
-+				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
- 				PAGE_SET_WRITEBACK);
- 		ret = btrfs_submit_compressed_write(inode,
- 				    async_extent->start,
-@@ -795,9 +797,9 @@ out_free:
- 				     async_extent->start +
- 				     async_extent->ram_size - 1,
- 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
--				     EXTENT_DIRTY, PAGE_UNLOCK |
--				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
--				     PAGE_END_WRITEBACK);
-+				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
-+				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
- 	kfree(async_extent);
- 	goto again;
- }
-@@ -884,7 +886,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
- 		if (ret == 0) {
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
- 				     EXTENT_LOCKED | EXTENT_DELALLOC |
--				     EXTENT_DIRTY, PAGE_UNLOCK |
-+				     EXTENT_DEFRAG, PAGE_UNLOCK |
- 				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
- 				     PAGE_END_WRITEBACK);
- 
-@@ -995,10 +997,10 @@ out_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
- out_unlock:
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				     EXTENT_LOCKED | EXTENT_DIRTY |
--				     EXTENT_DELALLOC, PAGE_UNLOCK |
--				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
--				     PAGE_END_WRITEBACK);
-+				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
-+				     EXTENT_DELALLOC | EXTENT_DEFRAG,
-+				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
- 	goto out;
- }
- 
-@@ -1016,7 +1018,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	if (IS_ERR(trans)) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1201,7 +1204,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	if (!path) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1218,7 +1222,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	if (IS_ERR(trans)) {
- 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DIRTY, PAGE_UNLOCK |
-+					     EXTENT_DO_ACCOUNTING |
-+					     EXTENT_DEFRAG, PAGE_UNLOCK |
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-@@ -1434,8 +1439,9 @@ error:
- 	if (ret && cur_offset < end)
- 		extent_clear_unlock_delalloc(inode, cur_offset, end,
- 					     locked_page, EXTENT_LOCKED |
--					     EXTENT_DELALLOC | EXTENT_DIRTY,
--					     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-+					     EXTENT_DELALLOC | EXTENT_DEFRAG |
-+					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
-+					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
- 	btrfs_free_path(path);
+-	/* first we search for all of the device items, and then we
+-	 * read in all of the chunk items.  This way we can create chunk
+-	 * mappings that reference all of the devices that are afound
+-	 */
++	/* Read all device items, and then all the chunk items. All
++	   device items are found before any chunk item (their object id
++	   is smaller than the lowest possible object id for a chunk
++	   item - BTRFS_FIRST_CHUNK_TREE_OBJECTID). */
+ 	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+ 	key.offset = 0;
+ 	key.type = 0;
+-again:
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto error;
+@@ -5699,17 +5698,13 @@ again:
+ 			break;
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+-		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
+-				break;
+-			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
+-				struct btrfs_dev_item *dev_item;
+-				dev_item = btrfs_item_ptr(leaf, slot,
++		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
++			struct btrfs_dev_item *dev_item;
++			dev_item = btrfs_item_ptr(leaf, slot,
+ 						  struct btrfs_dev_item);
+-				ret = read_one_dev(root, leaf, dev_item);
+-				if (ret)
+-					goto error;
+-			}
++			ret = read_one_dev(root, leaf, dev_item);
++			if (ret)
++				goto error;
+ 		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
+ 			struct btrfs_chunk *chunk;
+ 			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+@@ -5719,11 +5714,6 @@ again:
+ 		}
+ 		path->slots[0]++;
+ 	}
+-	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-		key.objectid = 0;
+-		btrfs_release_path(path);
+-		goto again;
+-	}
+ 	ret = 0;
+ error:
+ 	unlock_chunks(root);
 -- 
-1.7.7.6
+1.7.9.5
 

@@ -1,69 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.placs.net ([71.244.57.52]:46537 "EHLO mail.placs.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751155Ab3G2Pcj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 11:32:39 -0400
-Date: Mon, 29 Jul 2013 10:32:32 -0500 (CDT)
-From: BJ Quinn <bj@placs.net>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: linux-btrfs@vger.kernel.org, psusi@cfl.rr.com,
-        Freddie Cash <fjwcash@gmail.com>
-Message-ID: <20759263.6051.1375111952352.JavaMail.root@mail.placs.net>
-In-Reply-To: <51F6261F.204@jan-o-sch.net>
-Subject: Re: Cloning a Btrfs partition
+Received: from dkim1.fusionio.com ([66.114.96.53]:48205 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758272Ab3G2RYZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jul 2013 13:24:25 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D7CB67C0431
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:24:24 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id SNFYYs89GGq2fcrp (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:24:24 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix what bits we clear when erroring out from delalloc
+Date: Mon, 29 Jul 2013 13:24:22 -0400
+Message-ID: <1375118662-29718-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the response!  Not sure I want to roll a custom kernel on this
-particular system.  Any idea on when it might make it to 3.10 stable or 
-3.11?  Or should I just revert back to 3.9?
+First of all we no longer set EXTENT_DIRTY when we dirty an extent so this patch
+removes the clearing of EXTENT_DIRTY since it confuses me.  This patch also adds
+clearing EXTENT_DEFRAG and also doing EXTENT_DO_ACCOUNTING when we have errors.
+This is because if we are clearing delalloc without adding an ordered extent
+then we need to make sure the enospc handling stuff is accounted for.  Also if
+this range was DEFRAG we need to make sure that bit is cleared so we dont leak
+it.  Thanks,
 
-Thanks!
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |   46 ++++++++++++++++++++++++++--------------------
+ 1 files changed, 26 insertions(+), 20 deletions(-)
 
--BJ
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a60be02..686ba5c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -490,8 +490,9 @@ cont:
+ 			 * Unlock and free up our temp pages.
+ 			 */
+ 			extent_clear_unlock_delalloc(inode, start, end, NULL,
+-						     EXTENT_DIRTY |
+-						     EXTENT_DELALLOC,
++						     EXTENT_DELALLOC |
++						     EXTENT_DO_ACCOUNTING |
++						     EXTENT_DEFRAG,
+ 						     PAGE_UNLOCK |
+ 						     PAGE_CLEAR_DIRTY |
+ 						     PAGE_SET_WRITEBACK |
+@@ -593,9 +594,10 @@ free_pages_out:
+ 
+ cleanup_and_out:
+ 	extent_clear_unlock_delalloc(inode, start, end, NULL,
+-				     EXTENT_DIRTY | EXTENT_DELALLOC,
+-				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+-				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
++				     EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
++				     EXTENT_DEFRAG, PAGE_UNLOCK |
++				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
++				     PAGE_END_WRITEBACK);
+ 	if (!trans || IS_ERR(trans))
+ 		btrfs_error(root->fs_info, ret, "Failed to join transaction");
+ 	else
+@@ -770,8 +772,8 @@ retry:
+ 		extent_clear_unlock_delalloc(inode, async_extent->start,
+ 				async_extent->start +
+ 				async_extent->ram_size - 1,
+-				NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+-				EXTENT_DIRTY, PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
++				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
++				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+ 				PAGE_SET_WRITEBACK);
+ 		ret = btrfs_submit_compressed_write(inode,
+ 				    async_extent->start,
+@@ -795,9 +797,9 @@ out_free:
+ 				     async_extent->start +
+ 				     async_extent->ram_size - 1,
+ 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+-				     EXTENT_DIRTY, PAGE_UNLOCK |
+-				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
+-				     PAGE_END_WRITEBACK);
++				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
++				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
++				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
+ 	kfree(async_extent);
+ 	goto again;
+ }
+@@ -884,7 +886,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
+ 		if (ret == 0) {
+ 			extent_clear_unlock_delalloc(inode, start, end, NULL,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+-				     EXTENT_DIRTY, PAGE_UNLOCK |
++				     EXTENT_DEFRAG, PAGE_UNLOCK |
+ 				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
+ 				     PAGE_END_WRITEBACK);
+ 
+@@ -995,10 +997,10 @@ out_reserve:
+ 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset);
+ out_unlock:
+ 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
+-				     EXTENT_LOCKED | EXTENT_DIRTY |
+-				     EXTENT_DELALLOC, PAGE_UNLOCK |
+-				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
+-				     PAGE_END_WRITEBACK);
++				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
++				     EXTENT_DELALLOC | EXTENT_DEFRAG,
++				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
++				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
+ 	goto out;
+ }
+ 
+@@ -1016,7 +1018,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 	if (IS_ERR(trans)) {
+ 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+-					     EXTENT_DIRTY, PAGE_UNLOCK |
++					     EXTENT_DO_ACCOUNTING |
++					     EXTENT_DEFRAG, PAGE_UNLOCK |
+ 					     PAGE_CLEAR_DIRTY |
+ 					     PAGE_SET_WRITEBACK |
+ 					     PAGE_END_WRITEBACK);
+@@ -1201,7 +1204,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 	if (!path) {
+ 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+-					     EXTENT_DIRTY, PAGE_UNLOCK |
++					     EXTENT_DO_ACCOUNTING |
++					     EXTENT_DEFRAG, PAGE_UNLOCK |
+ 					     PAGE_CLEAR_DIRTY |
+ 					     PAGE_SET_WRITEBACK |
+ 					     PAGE_END_WRITEBACK);
+@@ -1218,7 +1222,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 	if (IS_ERR(trans)) {
+ 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+-					     EXTENT_DIRTY, PAGE_UNLOCK |
++					     EXTENT_DO_ACCOUNTING |
++					     EXTENT_DEFRAG, PAGE_UNLOCK |
+ 					     PAGE_CLEAR_DIRTY |
+ 					     PAGE_SET_WRITEBACK |
+ 					     PAGE_END_WRITEBACK);
+@@ -1434,8 +1439,9 @@ error:
+ 	if (ret && cur_offset < end)
+ 		extent_clear_unlock_delalloc(inode, cur_offset, end,
+ 					     locked_page, EXTENT_LOCKED |
+-					     EXTENT_DELALLOC | EXTENT_DIRTY,
+-					     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
++					     EXTENT_DELALLOC | EXTENT_DEFRAG |
++					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
++					     PAGE_CLEAR_DIRTY |
+ 					     PAGE_SET_WRITEBACK |
+ 					     PAGE_END_WRITEBACK);
+ 	btrfs_free_path(path);
+-- 
+1.7.7.6
 
------ Original Message ----- 
-
-From: "Jan Schmidt" <list.btrfs@jan-o-sch.net> 
-Sent: Monday, July 29, 2013 3:21:51 AM 
-
-Hi BJ, 
-
-[original message rewrapped] 
-
-On Thu, July 25, 2013 at 18:32 (+0200), BJ Quinn wrote: 
-> (Apologies for the double post -- forgot to send as plain text the first time 
-> around, so the list rejected it.) 
-> 
-> I see that there's now a btrfs send / receive and I've tried using it, but 
-> I'm getting the oops I've pasted below, after which the FS becomes 
-> unresponsive (no I/O to the drive, no CPU usage, but all attempts to access 
-> the FS results in a hang). I have an internal drive (single drive) that 
-> contains 82GB of compressed data with a couple hundred snapshots. I tried 
-> taking the first snapshot and making a read only copy (btrfs subvolume 
-> snapshot -r) and then I connected an external USB drive and ran btrfs send / 
-> receive to that external drive. It starts working and gets a couple of GB in 
-> (I'd expect the first snapshot to be about 20GB) and then gets the following 
-> error. I had to use the latest copy of btrfs-progs from git, because the 
-> package installed on my system (btrfs-progs-0.20-0.2.git91d9eec) simply 
-> returned "invalid argument" when trying to run btrfs send / receive. Thanks 
-> in advance for any info you may have. 
-
-The problem has been introduced with rbtree ulists in 3.10, commit 
-
-Btrfs: add a rb_tree to improve performance of ulist search 
-
-You should be safe to revert that commit, it's a performance optimization 
-attempt. Alternatively, you can apply the published fix 
-
-Btrfs: fix crash regarding to ulist_add_merge 
-
-It has not made it into 3.10 stable or 3.11, yet, but is contained in Josef's 
-btrfs-next 
-
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git 
-
-Thanks, 
--Jan 

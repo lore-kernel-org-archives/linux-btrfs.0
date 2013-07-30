@@ -1,82 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:44998 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758696Ab3G3KeP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jul 2013 06:34:15 -0400
-Message-ID: <51F79530.50006@jan-o-sch.net>
-Date: Tue, 30 Jul 2013 12:28:00 +0200
-From: Jan Schmidt <mail@jan-o-sch.net>
-MIME-Version: 1.0
-To: BJ Quinn <bj@placs.net>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org,
-        psusi@cfl.rr.com, Freddie Cash <fjwcash@gmail.com>
-Subject: Re: Cloning a Btrfs partition
-References: <20759263.6051.1375111952352.JavaMail.root@mail.placs.net>
-In-Reply-To: <20759263.6051.1375111952352.JavaMail.root@mail.placs.net>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:59329 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750848Ab3G3LDQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jul 2013 07:03:16 -0400
+Received: by mail-wg0-f45.google.com with SMTP id x12so6005327wgg.24
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2013 04:03:15 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: optimize function btrfs_read_chunk_tree
+Date: Tue, 30 Jul 2013 12:03:04 +0100
+Message-Id: <1375182184-30490-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
+References: <1372853956-10569-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, July 29, 2013 at 17:32 (+0200), BJ Quinn wrote:
-> Thanks for the response!  Not sure I want to roll a custom kernel on this
-> particular system.  Any idea on when it might make it to 3.10 stable or 
-> 3.11?  Or should I just revert back to 3.9?
+After reading all device items from the chunk tree, don't
+exit the loop and then navigate down the tree again to find
+the chunk items. Instead just read all device items and
+chunk items with a single tree search. This is possible
+because all device items are found before any chunk item in
+the chunks tree.
 
-I missed that it's in fact in 3.11 and if I got Liu Bo right he's going to send
-it to 3.10 stable soon.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
-Thanks,
--Jan
+V2: Simplified logic inside the loop
+    (suggested by Josef Bacik on irc).
+V3: Updated comment to comply with kernel coding style.
 
-> Thanks!
-> 
-> -BJ
-> 
-> ----- Original Message ----- 
-> 
-> From: "Jan Schmidt" <list.btrfs@jan-o-sch.net> 
-> Sent: Monday, July 29, 2013 3:21:51 AM 
-> 
-> Hi BJ, 
-> 
-> [original message rewrapped] 
-> 
-> On Thu, July 25, 2013 at 18:32 (+0200), BJ Quinn wrote: 
->> (Apologies for the double post -- forgot to send as plain text the first time 
->> around, so the list rejected it.) 
->>
->> I see that there's now a btrfs send / receive and I've tried using it, but 
->> I'm getting the oops I've pasted below, after which the FS becomes 
->> unresponsive (no I/O to the drive, no CPU usage, but all attempts to access 
->> the FS results in a hang). I have an internal drive (single drive) that 
->> contains 82GB of compressed data with a couple hundred snapshots. I tried 
->> taking the first snapshot and making a read only copy (btrfs subvolume 
->> snapshot -r) and then I connected an external USB drive and ran btrfs send / 
->> receive to that external drive. It starts working and gets a couple of GB in 
->> (I'd expect the first snapshot to be about 20GB) and then gets the following 
->> error. I had to use the latest copy of btrfs-progs from git, because the 
->> package installed on my system (btrfs-progs-0.20-0.2.git91d9eec) simply 
->> returned "invalid argument" when trying to run btrfs send / receive. Thanks 
->> in advance for any info you may have. 
-> 
-> The problem has been introduced with rbtree ulists in 3.10, commit 
-> 
-> Btrfs: add a rb_tree to improve performance of ulist search 
-> 
-> You should be safe to revert that commit, it's a performance optimization 
-> attempt. Alternatively, you can apply the published fix 
-> 
-> Btrfs: fix crash regarding to ulist_add_merge 
-> 
-> It has not made it into 3.10 stable or 3.11, yet, but is contained in Josef's 
-> btrfs-next 
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git 
-> 
-> Thanks, 
-> -Jan 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ fs/btrfs/volumes.c |   30 +++++++++++-------------------
+ 1 file changed, 11 insertions(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 090f57c..125a60e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5676,14 +5676,15 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
+ 	mutex_lock(&uuid_mutex);
+ 	lock_chunks(root);
+ 
+-	/* first we search for all of the device items, and then we
+-	 * read in all of the chunk items.  This way we can create chunk
+-	 * mappings that reference all of the devices that are afound
++	/*
++	 * Read all device items, and then all the chunk items. All
++	 * device items are found before any chunk item (their object id
++	 * is smaller than the lowest possible object id for a chunk
++	 * item - BTRFS_FIRST_CHUNK_TREE_OBJECTID).
+ 	 */
+ 	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+ 	key.offset = 0;
+ 	key.type = 0;
+-again:
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto error;
+@@ -5699,17 +5700,13 @@ again:
+ 			break;
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+-		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
+-				break;
+-			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
+-				struct btrfs_dev_item *dev_item;
+-				dev_item = btrfs_item_ptr(leaf, slot,
++		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
++			struct btrfs_dev_item *dev_item;
++			dev_item = btrfs_item_ptr(leaf, slot,
+ 						  struct btrfs_dev_item);
+-				ret = read_one_dev(root, leaf, dev_item);
+-				if (ret)
+-					goto error;
+-			}
++			ret = read_one_dev(root, leaf, dev_item);
++			if (ret)
++				goto error;
+ 		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
+ 			struct btrfs_chunk *chunk;
+ 			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+@@ -5719,11 +5716,6 @@ again:
+ 		}
+ 		path->slots[0]++;
+ 	}
+-	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+-		key.objectid = 0;
+-		btrfs_release_path(path);
+-		goto again;
+-	}
+ 	ret = 0;
+ error:
+ 	unlock_chunks(root);
+-- 
+1.7.9.5
+

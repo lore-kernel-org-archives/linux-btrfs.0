@@ -1,89 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f43.google.com ([209.85.219.43]:65110 "EHLO
-	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754474Ab3G2USX convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 16:18:23 -0400
-Received: by mail-oa0-f43.google.com with SMTP id i10so8859269oag.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 13:18:23 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:17293 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753254Ab3G3DI0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jul 2013 23:08:26 -0400
+Message-ID: <51F72E65.4000002@cn.fujitsu.com>
+Date: Tue, 30 Jul 2013 11:09:25 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <EECFF15F-5957-4186-99B2-CC1B656861B5@gmail.com>
-References: <CAA6RbirvdqOvCcWi1qGG1+USCmcc9J=ECXGJiUH3anHa5EaP7g@mail.gmail.com>
- <8E1258E3-BCFC-406E-B8F6-2ABB3280C9F0@gmail.com> <CAA6RbiqwS8mvZERdENv1ixD+=He9HehmA6rMtcW8wSGud+V6nA@mail.gmail.com>
- <EECFF15F-5957-4186-99B2-CC1B656861B5@gmail.com>
-From: Kyriakos <kyriakosbrastianos@gmail.com>
-Date: Mon, 29 Jul 2013 23:18:03 +0300
-Message-ID: <CAA6Rbipj3j30ASmAJ3KvQtBwwpsU-2H6rbwhfSkN9=jnvoxQsQ@mail.gmail.com>
-Subject: Re: Recovering from btrfs error Couldn't read chunk root.
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
+Subject: Re: [PATCH v2] Btrfs: optimize function btrfs_read_chunk_tree
+References: <1372853956-10569-1-git-send-email-fdmanana@gmail.com> <1375122154-5177-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1375122154-5177-1-git-send-email-fdmanana@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unrecoverable?
-I know i cant mount and have access but my data are still there intact
-( as i was using them till the reboot) i shouldn't be able to
-extract/recover them to another disc? With any magic command without
-mounting?
-Any other solutions?
+On mon, 29 Jul 2013 19:22:34 +0100, Filipe David Borba Manana wrote:
+> After reading all device items from the chunk tree, don't
+> exit the loop and then navigate down the tree again to find
+> the chunk items. Instead just read all device items and
+> chunk items with a single tree search. This is possible
+> because all device items are found before any chunk item in
+> the chunks tree.
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+> 
+> V2: Simplified logic inside the loop
+>     (suggested by Josef Bacik on irc).
+> 
+>  fs/btrfs/volumes.c |   30 ++++++++++--------------------
+>  1 file changed, 10 insertions(+), 20 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 090f57c..45c5ec3 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5676,14 +5676,13 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
+>  	mutex_lock(&uuid_mutex);
+>  	lock_chunks(root);
+>  
+> -	/* first we search for all of the device items, and then we
+> -	 * read in all of the chunk items.  This way we can create chunk
+> -	 * mappings that reference all of the devices that are afound
+> -	 */
+> +	/* Read all device items, and then all the chunk items. All
+> +	   device items are found before any chunk item (their object id
+> +	   is smaller than the lowest possible object id for a chunk
+> +	   item - BTRFS_FIRST_CHUNK_TREE_OBJECTID). */
 
-http://bpaste.net/show/118112/
+According to the coding style of the kernel(Documentation/CodingStyle),
+the preferred style for long (multi-line) comments is:
 
-On 29 July 2013 15:06, Wang Shilong <wangshilong1991@gmail.com> wrote:
->
-> 在 2013-7-29，上午2:12，Kyriakos <kyriakosbrastianos@gmail.com> 写道：
->
->> Just tried it as you said with the -v option enabled
->> This is my output:
->>
->> http://bpaste.net/show/118112/
->>
->>
-> This is a *long* email, and seems that btrfs list refuse it.
->
->>  Device extent: devid = 1, start = 1667558801408, len = 1073741824,
->> chunk offset = 1663255445504
->> Couldn't map the block 626309926912
->> btrfs: volumes.c:1020: btrfs_num_copies: Assertion `!(ce->start >
->> logical || ce->start + ce->size < logical)' failed.
->> Aborted (core dumped)
->
-> Strange enough, we don't find any chunks during scanning process.
->
-> And seems this is unrecoverable ~_~
->
->
-> Wang,
->>
->>
->> Any thoughts?
->>
->> On 28 July 2013 08:17, Wang Shilong <wangshilong1991@gmail.com> wrote:
->>> Hello,
->>>
->>> It seems Btrfs Chunk Tree is damaged, so you can not mount Btrfs filesystem any more.
->>>
->>> However, you can try the latest Btrfs-progs, Miao Xie implements chunk tree recover function.
->>>
->>> The url is:
->>>
->>>        git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->>>
->>>
->>> you can try it:
->>>                btrfs chunk-recover  -v <dev>
->>>
->>> This is Time-consuming, because it will scan the whole disk. And also,
->>> please catch output of processing(this is helpful to us if the recovery fails, -v option
->>> enable this).
->>>
->>> Thanks,
->>> Wang
->>>
->>>
->>>
->>>
->>>
->>>
->
+	/*
+	 * This is the preferred style for multi-line
+	 * comments in the Linux kernel source code.
+	 *
+	 * Description:  A column of asterisks on the left side,
+	 * with beginning and ending almost-blank lines.
+	 */
+
+The other code is OK.
+
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+
+>  	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+>  	key.offset = 0;
+>  	key.type = 0;
+> -again:
+>  	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+>  	if (ret < 0)
+>  		goto error;
+> @@ -5699,17 +5698,13 @@ again:
+>  			break;
+>  		}
+>  		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+> -		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+> -			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
+> -				break;
+> -			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
+> -				struct btrfs_dev_item *dev_item;
+> -				dev_item = btrfs_item_ptr(leaf, slot,
+> +		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
+> +			struct btrfs_dev_item *dev_item;
+> +			dev_item = btrfs_item_ptr(leaf, slot,
+>  						  struct btrfs_dev_item);
+> -				ret = read_one_dev(root, leaf, dev_item);
+> -				if (ret)
+> -					goto error;
+> -			}
+> +			ret = read_one_dev(root, leaf, dev_item);
+> +			if (ret)
+> +				goto error;
+>  		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
+>  			struct btrfs_chunk *chunk;
+>  			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+> @@ -5719,11 +5714,6 @@ again:
+>  		}
+>  		path->slots[0]++;
+>  	}
+> -	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
+> -		key.objectid = 0;
+> -		btrfs_release_path(path);
+> -		goto again;
+> -	}
+>  	ret = 0;
+>  error:
+>  	unlock_chunks(root);
+> 
+

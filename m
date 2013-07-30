@@ -1,115 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30943 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755671Ab3G3G0l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jul 2013 02:26:41 -0400
-Message-ID: <51F75CDC.505@cn.fujitsu.com>
-Date: Tue, 30 Jul 2013 14:27:40 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:54078 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752332Ab3G3HO5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jul 2013 03:14:57 -0400
+Received: by mail-wi0-f171.google.com with SMTP id hr7so2256930wib.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2013 00:14:56 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <1373903973-2904-1-git-send-email-jbacik@fusionio.com>
+References: <1373903973-2904-1-git-send-email-jbacik@fusionio.com>
+Date: Tue, 30 Jul 2013 10:14:56 +0300
+Message-ID: <CAOcd+r1Tdsg2tOE3NT9D38EiCe+KBCwJtaQaxHzXhD8NQaKVmA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: update drop progress before stopping snapshot dropping
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
 To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix what bits we clear when erroring out from
- delalloc
-References: <1375118662-29718-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1375118662-29718-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On mon, 29 Jul 2013 13:24:22 -0400, Josef Bacik wrote:
-> First of all we no longer set EXTENT_DIRTY when we dirty an extent so this patch
-> removes the clearing of EXTENT_DIRTY since it confuses me.  This patch also adds
-> clearing EXTENT_DEFRAG and also doing EXTENT_DO_ACCOUNTING when we have errors.
-> This is because if we are clearing delalloc without adding an ordered extent
-> then we need to make sure the enospc handling stuff is accounted for.  Also if
-> this range was DEFRAG we need to make sure that bit is cleared so we dont leak
-> it.  Thanks,
-> 
+Thanks for posting that patch, Josef.
+
+On Mon, Jul 15, 2013 at 6:59 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+>
+> Alex pointed out a problem and fix that exists in the drop one snapshot at
+> a
+> time patch.  If we decide we need to exit for whatever reason (umount for
+> example) we will just exit the snapshot dropping without updating the drop
+> progress.  So the next time we go to resume we will BUG_ON() because we
+> can't
+> find the extent we left off at because we never updated it.  This patch
+> fixes
+> the problem.
+>
+> Cc: stable@vger.kernel.org
+> Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
 > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 > ---
->  fs/btrfs/inode.c |   46 ++++++++++++++++++++++++++--------------------
->  1 files changed, 26 insertions(+), 20 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index a60be02..686ba5c 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -490,8 +490,9 @@ cont:
->  			 * Unlock and free up our temp pages.
->  			 */
->  			extent_clear_unlock_delalloc(inode, start, end, NULL,
-> -						     EXTENT_DIRTY |
-> -						     EXTENT_DELALLOC,
-> +						     EXTENT_DELALLOC |
-> +						     EXTENT_DO_ACCOUNTING |
-> +						     EXTENT_DEFRAG,
->  						     PAGE_UNLOCK |
->  						     PAGE_CLEAR_DIRTY |
->  						     PAGE_SET_WRITEBACK |
-
-I found we released the reserved space in cow_file_range_inline(), but at that time,
-we didn't drop the outstanding_extents counter by the number of the delalloc extents,
-so it might leave some reserved space which was not released. So I think we should remove
-the release function in cow_file_range_inline().
-
-(This bug is not introduced by your patch. but if we don't fix the above problem before
- applying your patch, the double release would happen because we have released the space
- in cow_file_range_inline())
-
-> @@ -593,9 +594,10 @@ free_pages_out:
->  
->  cleanup_and_out:
->  	extent_clear_unlock_delalloc(inode, start, end, NULL,
-> -				     EXTENT_DIRTY | EXTENT_DELALLOC,
-> -				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-> -				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-> +				     EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-> +				     EXTENT_DEFRAG, PAGE_UNLOCK |
-> +				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-> +				     PAGE_END_WRITEBACK);
->  	if (!trans || IS_ERR(trans))
->  		btrfs_error(root->fs_info, ret, "Failed to join transaction");
->  	else
-> @@ -770,8 +772,8 @@ retry:
->  		extent_clear_unlock_delalloc(inode, async_extent->start,
->  				async_extent->start +
->  				async_extent->ram_size - 1,
-> -				NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
-> -				EXTENT_DIRTY, PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-> +				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
-> +				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
->  				PAGE_SET_WRITEBACK);
->  		ret = btrfs_submit_compressed_write(inode,
->  				    async_extent->start,
-> @@ -795,9 +797,9 @@ out_free:
->  				     async_extent->start +
->  				     async_extent->ram_size - 1,
->  				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
-> -				     EXTENT_DIRTY, PAGE_UNLOCK |
-> -				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-> -				     PAGE_END_WRITEBACK);
-> +				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
-> +				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-> +				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
->  	kfree(async_extent);
->  	goto again;
->  }
-> @@ -884,7 +886,7 @@ static noinline int __cow_file_range(struct btrfs_trans_handle *trans,
->  		if (ret == 0) {
->  			extent_clear_unlock_delalloc(inode, start, end, NULL,
->  				     EXTENT_LOCKED | EXTENT_DELALLOC |
-> -				     EXTENT_DIRTY, PAGE_UNLOCK |
-> +				     EXTENT_DEFRAG, PAGE_UNLOCK |
->  				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
->  				     PAGE_END_WRITEBACK);
-
-If we remove the reserved space release function in cow_file_range_inline() as I said above,
-we should add EXTENT_DO_ACCOUNTING here.
-
-I will send a patch to fix the problem I said above soon, please wait a moment
-
-The other code is OK.
-
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+>  fs/btrfs/extent-tree.c |   14 ++++++++------
+>  1 files changed, 8 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index bc00b24..8c204e1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7584,11 +7584,6 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>         wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
+>
+>         while (1) {
+> -               if (!for_reloc && btrfs_need_cleaner_sleep(root)) {
+> -                       pr_debug("btrfs: drop snapshot early exit\n");
+> -                       err = -EAGAIN;
+> -                       goto out_end_trans;
+> -               }
+>
+>                 ret = walk_down_tree(trans, root, path, wc);
+>                 if (ret < 0) {
+> @@ -7616,7 +7611,8 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>                 }
+>
+>                 BUG_ON(wc->level == 0);
+> -               if (btrfs_should_end_transaction(trans, tree_root)) {
+> +               if (btrfs_should_end_transaction(trans, tree_root) ||
+> +                   (!for_reloc && btrfs_need_cleaner_sleep(root))) {
+>                         ret = btrfs_update_root(trans, tree_root,
+>                                                 &root->root_key,
+>                                                 root_item);
+> @@ -7627,6 +7623,12 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>                         }
+>
+>                         btrfs_end_transaction_throttle(trans, tree_root);
+> +                       if (!for_reloc && btrfs_need_cleaner_sleep(root))
+> {
+> +                               pr_debug("btrfs: drop snapshot early
+> exit\n");
+> +                               err = -EAGAIN;
+> +                               goto out_free;
+> +                       }
+> +
+>                         trans = btrfs_start_transaction(tree_root, 0);
+>                         if (IS_ERR(trans)) {
+>                                 err = PTR_ERR(trans);
+> --
+> 1.7.7.6
+>

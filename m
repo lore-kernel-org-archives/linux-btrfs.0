@@ -1,99 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:43380 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753572Ab3G3Nc4 convert rfc822-to-8bit (ORCPT
+Received: from static-87-79-237-121.netcologne.de ([87.79.237.121]:27350 "EHLO
+	herc.mirbsd.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750745Ab3G3PyQ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jul 2013 09:32:56 -0400
-Received: by mail-pa0-f49.google.com with SMTP id bi5so7118691pad.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2013 06:32:56 -0700 (PDT)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: Recovering from btrfs error Couldn't read chunk root.
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <CAA6Rbipj3j30ASmAJ3KvQtBwwpsU-2H6rbwhfSkN9=jnvoxQsQ@mail.gmail.com>
-Date: Tue, 30 Jul 2013 21:32:50 +0800
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <C5861C9F-B907-4CDE-A0C3-B99909491B0E@gmail.com>
-References: <CAA6RbirvdqOvCcWi1qGG1+USCmcc9J=ECXGJiUH3anHa5EaP7g@mail.gmail.com> <8E1258E3-BCFC-406E-B8F6-2ABB3280C9F0@gmail.com> <CAA6RbiqwS8mvZERdENv1ixD+=He9HehmA6rMtcW8wSGud+V6nA@mail.gmail.com> <EECFF15F-5957-4186-99B2-CC1B656861B5@gmail.com> <CAA6Rbipj3j30ASmAJ3KvQtBwwpsU-2H6rbwhfSkN9=jnvoxQsQ@mail.gmail.com>
-To: Kyriakos <kyriakosbrastianos@gmail.com>
+	Tue, 30 Jul 2013 11:54:16 -0400
+Date: Tue, 30 Jul 2013 15:40:01 +0000 (UTC)
+From: Thorsten Glaser <tg@mirbsd.de>
+To: debian-68k@lists.debian.org
+cc: linux-btrfs@vger.kernel.org,
+        Linux Kernel Development <linux-kernel@vger.kernel.org>
+Subject: Re: btrfs zero divide
+In-Reply-To: <alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
+Message-ID: <Pine.BSM.4.64L.1307301539150.28836@herc.mirbsd.org>
+References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org>
+ <alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Geert Uytterhoeven dixit:
 
-> Unrecoverable?
-> I know i cant mount and have access but my data are still there intact
-> ( as i was using them till the reboot) i shouldn't be able to
-> extract/recover them to another disc? With any magic command without
-> mounting?
-> Any other solutions?
+>   0:	222e ff74      	movel %fp@(-140),%d1
+>   4:	2a2e ff5c      	movel %fp@(-164),%d5
+>   8:	2c2e ff60      	movel %fp@(-160),%d6
+>   c:	4c45 1402     <	divul %d5,%d2,%d1 >
+>  10:	2d40 ff64      	movel %d0,%fp@(-156)
+>  14:	2d41 ff68      	movel %d1,%fp@(-152)
+>  18:	2205           	movel %d5,%d1
+>  1a:	4c2e 1800 ff68 	mulsl %fp@(-152),%d1
+>  20:	4c04 0800      	mulsl %d4,%d0
+>  24:	2041           	moveal %d1,%a0
+>  26:	d1c0           	addal %d0,%a0
+>  28:	2206           	movel %d6,%d1
+>  2a:	4c2e 1400 ff68 	mulul %fp@(-152),%d0,%d1
 
-As We Know chunk Tree really plays a vital role in btrfs filesystem, And it seems
-your chunk Tree is totally damaged, And it is ok to recover chunk tree if block groups
-are ok, Unfortunately, dd seems to destroy some of them.
+This is gcc-4.8 compiled, btw‚Ä¶ in case that‚Äôs a known issue.
 
-Maybe you can refers to commands btrfs-restore's help, i guess it doesn't work either.
-
-Thank,
-Wang
-> 
-> http://bpaste.net/show/118112/
-> 
-> On 29 July 2013 15:06, Wang Shilong <wangshilong1991@gmail.com> wrote:
->> 
->> ‘⁄ 2013-7-29£¨…œŒÁ2:12£¨Kyriakos <kyriakosbrastianos@gmail.com> –¥µ¿£∫
->> 
->>> Just tried it as you said with the -v option enabled
->>> This is my output:
->>> 
->>> http://bpaste.net/show/118112/
->>> 
->>> 
->> This is a *long* email, and seems that btrfs list refuse it.
->> 
->>> Device extent: devid = 1, start = 1667558801408, len = 1073741824,
->>> chunk offset = 1663255445504
->>> Couldn't map the block 626309926912
->>> btrfs: volumes.c:1020: btrfs_num_copies: Assertion `!(ce->start >
->>> logical || ce->start + ce->size < logical)' failed.
->>> Aborted (core dumped)
->> 
->> Strange enough, we don't find any chunks during scanning process.
->> 
->> And seems this is unrecoverable ~_~
->> 
->> 
->> Wang,
->>> 
->>> 
->>> Any thoughts?
->>> 
->>> On 28 July 2013 08:17, Wang Shilong <wangshilong1991@gmail.com> wrote:
->>>> Hello,
->>>> 
->>>> It seems Btrfs Chunk Tree is damaged, so you can not mount Btrfs filesystem any more.
->>>> 
->>>> However, you can try the latest Btrfs-progs, Miao Xie implements chunk tree recover function.
->>>> 
->>>> The url is:
->>>> 
->>>>       git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->>>> 
->>>> 
->>>> you can try it:
->>>>               btrfs chunk-recover  -v <dev>
->>>> 
->>>> This is Time-consuming, because it will scan the whole disk. And also,
->>>> please catch output of processing(this is helpful to us if the recovery fails, -v option
->>>> enable this).
->>>> 
->>>> Thanks,
->>>> Wang
->>>> 
->>>> 
->>>> 
->>>> 
->>>> 
->>>> 
->> 
-
+bye,
+//mirabilos
+-- 
+‚ÄúIt is inappropriate to require that a time represented as
+ seconds since the Epoch precisely represent the number of
+ seconds between the referenced time and the Epoch.‚Äù
+	-- IEEE Std 1003.1b-1993 (POSIX) Section B.2.2.2

@@ -1,113 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:17293 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:8878 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753254Ab3G3DI0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 23:08:26 -0400
-Message-ID: <51F72E65.4000002@cn.fujitsu.com>
-Date: Tue, 30 Jul 2013 11:09:25 +0800
+	id S1757115Ab3G3Dje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jul 2013 23:39:34 -0400
+Message-ID: <51F735AE.2050902@cn.fujitsu.com>
+Date: Tue, 30 Jul 2013 11:40:30 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-CC: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [PATCH v2] Btrfs: optimize function btrfs_read_chunk_tree
-References: <1372853956-10569-1-git-send-email-fdmanana@gmail.com> <1375122154-5177-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1375122154-5177-1-git-send-email-fdmanana@gmail.com>
+To: Azat Khuzhin <a3at.mail@gmail.com>
+CC: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
+        open list <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: use list_for_each_entry_safe() when delete items
+References: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com> <CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
+In-Reply-To: <CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On mon, 29 Jul 2013 19:22:34 +0100, Filipe David Borba Manana wrote:
-> After reading all device items from the chunk tree, don't
-> exit the loop and then navigate down the tree again to find
-> the chunk items. Instead just read all device items and
-> chunk items with a single tree search. This is possible
-> because all device items are found before any chunk item in
-> the chunks tree.
+On mon, 29 Jul 2013 11:48:32 +0400, Azat Khuzhin wrote:
+> On Sat, Jul 27, 2013 at 2:12 PM, Azat Khuzhin <a3at.mail@gmail.com> wrote:
+>> Replace list_for_each_entry() by list_for_each_entry_safe() in
+>> __btrfs_close_devices()
+>>
+>> There is another place that delete items lock_stripe_add(), but there we
+>> don't need safe version, because after deleting we exit from loop.
+>>
+>> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
+>> ---
+>>  fs/btrfs/volumes.c |    4 ++--
+>>  1 file changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 78b8717..1d1b595 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -616,13 +616,13 @@ static void free_device(struct rcu_head *head)
+>>
+>>  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>>  {
+>> -       struct btrfs_device *device;
+>> +       struct btrfs_device *device, *next;
+>>
+>>         if (--fs_devices->opened > 0)
+>>                 return 0;
+>>
+>>         mutex_lock(&fs_devices->device_list_mutex);
+>> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
+>> +       list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+>>                 struct btrfs_device *new_device;
+>>                 struct rcu_string *name;
 > 
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> ---
-> 
-> V2: Simplified logic inside the loop
->     (suggested by Josef Bacik on irc).
-> 
->  fs/btrfs/volumes.c |   30 ++++++++++--------------------
->  1 file changed, 10 insertions(+), 20 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 090f57c..45c5ec3 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -5676,14 +5676,13 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
->  	mutex_lock(&uuid_mutex);
->  	lock_chunks(root);
->  
-> -	/* first we search for all of the device items, and then we
-> -	 * read in all of the chunk items.  This way we can create chunk
-> -	 * mappings that reference all of the devices that are afound
-> -	 */
-> +	/* Read all device items, and then all the chunk items. All
-> +	   device items are found before any chunk item (their object id
-> +	   is smaller than the lowest possible object id for a chunk
-> +	   item - BTRFS_FIRST_CHUNK_TREE_OBJECTID). */
+> There is "kfree(device);" at the end of loop, maybe there must "goto
+> again;" after it?
+> (instead of this patch)
 
-According to the coding style of the kernel(Documentation/CodingStyle),
-the preferred style for long (multi-line) comments is:
+Your fix is right, we needn't search from the head once again.
 
-	/*
-	 * This is the preferred style for multi-line
-	 * comments in the Linux kernel source code.
-	 *
-	 * Description:  A column of asterisks on the left side,
-	 * with beginning and ending almost-blank lines.
-	 */
-
-The other code is OK.
+The other fix way is:
+	call_rcu(&device->rcu, free_device);
++	device = new_device;
+ }
+but from the viewpoint of the readability, this way is not so good.
 
 Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
->  	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
->  	key.offset = 0;
->  	key.type = 0;
-> -again:
->  	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
->  	if (ret < 0)
->  		goto error;
-> @@ -5699,17 +5698,13 @@ again:
->  			break;
->  		}
->  		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-> -		if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
-> -			if (found_key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
-> -				break;
-> -			if (found_key.type == BTRFS_DEV_ITEM_KEY) {
-> -				struct btrfs_dev_item *dev_item;
-> -				dev_item = btrfs_item_ptr(leaf, slot,
-> +		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
-> +			struct btrfs_dev_item *dev_item;
-> +			dev_item = btrfs_item_ptr(leaf, slot,
->  						  struct btrfs_dev_item);
-> -				ret = read_one_dev(root, leaf, dev_item);
-> -				if (ret)
-> -					goto error;
-> -			}
-> +			ret = read_one_dev(root, leaf, dev_item);
-> +			if (ret)
-> +				goto error;
->  		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
->  			struct btrfs_chunk *chunk;
->  			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-> @@ -5719,11 +5714,6 @@ again:
->  		}
->  		path->slots[0]++;
->  	}
-> -	if (key.objectid == BTRFS_DEV_ITEMS_OBJECTID) {
-> -		key.objectid = 0;
-> -		btrfs_release_path(path);
-> -		goto again;
-> -	}
->  	ret = 0;
->  error:
->  	unlock_chunks(root);
+> 
+>>
+>> --
+>> 1.7.10.4
+>>
+> 
+> 
 > 
 

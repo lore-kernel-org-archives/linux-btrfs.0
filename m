@@ -1,25 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:17163 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754464Ab3GaQpx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 12:45:53 -0400
-Message-ID: <51F93F3E.9060108@giantdisaster.de>
-Date: Wed, 31 Jul 2013 18:45:50 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
+Received: from mx1.redhat.com ([209.132.183.28]:24892 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751418Ab3GaVTI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Jul 2013 17:19:08 -0400
+Date: Wed, 31 Jul 2013 14:19:06 -0700
+From: Zach Brown <zab@redhat.com>
 To: Liu Bo <bo.li.liu@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH v5 2/5] Btrfs: improve the delayed refs process in
- rm case
-References: <1375285066-14173-1-git-send-email-bo.li.liu@oracle.com> <1375285066-14173-3-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1375285066-14173-3-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH v5 3/5] Btrfs: introduce a head ref rbtree
+Message-ID: <20130731211906.GM32145@lenny.home.zabbo.net>
+References: <1375285066-14173-1-git-send-email-bo.li.liu@oracle.com>
+ <1375285066-14173-4-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1375285066-14173-4-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 31 Jul 2013 23:37:42 +0800, Liu Bo wrote:
-> +	WARN_ON(update->ref_mod > 0 && update->ref_mod != 1);
+> +			BUG_ON(!locked_ref);
 
-WARN_ON(update->ref_mod > 1)
+> +			BUG_ON(!btrfs_delayed_ref_is_head(&head->node));
 
+Please don't add more BUG_ON()s.  They're unreliable because they can
+kill the system.
+
+If you *must* have logic asserts, use WARN_ON_ONCE and return errors.
+If the path is so dire that the fs is inconsistent, go read only.
+
+- z

@@ -1,109 +1,367 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50613 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755043Ab3GaJry (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 05:47:54 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6V9lrJB002363
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 09:47:54 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6V9lq32023684
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 09:47:53 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6V9lqsI026754
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 09:47:52 GMT
-Message-ID: <51F8DE99.6060704@oracle.com>
-Date: Wed, 31 Jul 2013 17:53:29 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [bug] balance BUG at fs/btrfs/relocation.c:886
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from xp-ob.rzone.de ([81.169.146.138]:52756 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1760275Ab3GaPwn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Jul 2013 11:52:43 -0400
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH V2] xfstest: add a test for btrfs device replace operation
+Date: Wed, 31 Jul 2013 17:52:40 +0200
+Message-Id: <1375285960-4039-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This test performs btrfs device replace tests with all possible profiles
+(single/dup/mixed/raid0/raid1/raid10), one round with the '-r' option
+to 'btrfs replace start' and one round without this option. The
+cancelation is tested only once and with the dup/single profile for
+metadata/data.
 
-3.11.0-rc3+
+This test takes 181 seconds on my SSD equiped test box and 237s on
+spinning disks. Almost all the time is spent when the filesystem is
+populated with test data. The replace operation itself takes less than
+a second for all the tests, except for the test that is marked as
+'thorough' which will run for about 8 seconds on my test box.
 
+The amount of tests done depends on the number of devices in the
+SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
+be available (e.g. 5 partitions). With less than 2 entries in
+SCRATCH_DEV_POOL, the test is not executed.
 
-------------------
-[  225.586356] kernel BUG at fs/btrfs/relocation.c:886!
-[  225.586362] invalid opcode: 0000 [#1] SMP
-::
-[  225.586431] Call Trace:
-[  225.586440]  [<ffffffffa0055cd1>] ? 
-btree_read_extent_buffer_pages.clone.4+0xd1/0x120 [btrfs]
-[  225.586447]  [<ffffffffa00a9123>] relocate_tree_blocks+0x363/0x6d0 
-[btrfs]
-[  225.586454]  [<ffffffffa00a242c>] ? tree_insert+0x4c/0x60 [btrfs]
-[  225.586461]  [<ffffffffa00a97b3>] relocate_block_group+0x323/0x640 
-[btrfs]
-[  225.586469]  [<ffffffffa00aa14f>] 
-btrfs_relocate_block_group+0x19f/0x2c0 [btrfs]
-[  225.586477]  [<ffffffffa0081768>] btrfs_relocate_chunk+0x88/0x770 [btrfs]
-[  225.586485]  [<ffffffffa0076211>] ? read_extent_buffer+0xb1/0x110 [btrfs]
-[  225.586493]  [<ffffffffa00724bf>] ? btrfs_get_token_64+0x5f/0xf0 [btrfs]
-[  225.586500]  [<ffffffffa0082c51>] btrfs_balance+0x891/0xe40 [btrfs]
-[  225.586508]  [<ffffffffa008c3ff>] ? kzalloc+0xf/0x20 [btrfs]
-[  225.586552]  [<ffffffff8113d445>] ? __kmalloc+0xf5/0x170
-[  225.586560]  [<ffffffffa008cfca>] btrfs_ioctl_balance+0x21a/0x330 [btrfs]
-[  225.586568]  [<ffffffffa008fd95>] btrfs_ioctl+0x585/0x1660 [btrfs]
-[  225.586575]  [<ffffffff8111d9eb>] ? handle_mm_fault+0x12b/0x230
-[  225.586590]  [<ffffffff811556d4>] do_vfs_ioctl+0x84/0x4c0
-[  225.586616]  [<ffffffff812867cd>] ? inode_has_perm.clone.0+0x2d/0x30
-[  225.586618]  [<ffffffff8128891a>] ? file_has_perm+0x8a/0xa0
-[  225.586625]  [<ffffffff8114ec71>] ? final_putname+0x21/0x50
-[  225.586627]  [<ffffffff81155ba1>] SyS_ioctl+0x91/0xa0
-[  225.586670]  [<ffffffff8181fed2>] system_call_fastpath+0x16/0x1b
--------------------
+The source and target devices for the replace operation are arbitrarily
+chosen out of SCRATCH_DEV_POOl. Since the target device mustn't be
+smaller than the source device, the requirement for this test is that
+all devices have _exactly_ the same size. If this is not the case, the
+test terminates with _notrun.
 
+To check the filesystems after replacing a device, a scrub run is
+performed, a btrfsck run, and finally the filesystem is remounted.
 
-                 if (btrfs_root_level(&root->root_item) == cur->level) {
-                         /* tree root */
-                         BUG_ON(btrfs_root_bytenr(&root->root_item) !=
-                                cur->bytenr);
-                         if (should_ignore_root(root))
-                                 list_add(&cur->list, &useless);
-                         else
-                                 cur->root = root;
-                         break;
-                 }
+This commit depends on my other commit:
+"xfstest: don't remove the two first devices from SCRATCH_DEV_POOL"
 
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+V1 -> V2:
+Major reworking in order to address all the comments from Eric Sandeen's
+review.
 
+ common/config       |   1 +
+ tests/btrfs/317     | 273 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/317.out |   3 +
+ tests/btrfs/group   |   1 +
+ 4 files changed, 278 insertions(+)
 
-reproducer:
-
----------------------
-# mkfs.btrfs /dev/sdb -f
-
-# btrfsck --init-csum /dev/sdb
-Creating a new CRC tree
-Checking filesystem on /dev/sdb
-UUID: 51576f7d-af1d-458b-b3c5-02eda4b3c39f
-checking extents
-Reinit crc root
-found 0 bytes used err is 0
-total csum bytes: 0
-total tree bytes: 0
-total fs tree bytes: 0
-total extent tree bytes: 0
-btree space waste bytes: 0
-file data blocks allocated: 0
-  referenced 0
-Btrfs v0.20-rc1-413-g3f4deb0-dirty
-
-# mount /dev/sdb /btrfs
-
-# btrfs fi bal /btrfs
-Segmentation fault
-#
----------------------
-
-  Any idea how do we fix this ?
-  ( other than don't run --init-csum :-) )
-
-
+diff --git a/common/config b/common/config
+index 1bc9233..8c2d750 100644
+--- a/common/config
++++ b/common/config
+@@ -207,6 +207,7 @@ case "$HOSTOS" in
+         export MKFS_UDF_PROG="`set_prog_path mkudffs`"
+         export MKFS_BTRFS_PROG="`set_btrfs_mkfs_prog_path_with_opts`"
+         export BTRFS_UTIL_PROG="`set_prog_path btrfs`"
++        export BTRFS_SHOW_SUPER_PROG="`set_prog_path btrfs-show-super`"
+         export XFS_FSR_PROG="`set_prog_path xfs_fsr`"
+         export MKFS_NFS_PROG="false"
+         ;;
+diff --git a/tests/btrfs/317 b/tests/btrfs/317
+new file mode 100755
+index 0000000..a78c6f1
+--- /dev/null
++++ b/tests/btrfs/317
+@@ -0,0 +1,273 @@
++#! /bin/bash
++# FSQA Test No. 317
++#
++# Test of the btrfs replace operation.
++#
++# The amount of tests done depends on the number of devices in the
++# SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
++# be available (e.g. 5 partitions).
++#
++# The source and target devices for the replace operation are
++# arbitrarily chosen out of SCRATCH_DEV_POOl. Since the target device
++# mustn't be smaller than the source device, the requirement for this
++# test is that all devices have _exactly_ the same size. If this is
++# not the case, this test is not run.
++#
++# To check the filesystems after replacing a device, a scrub run is
++# performed, a btrfsck run, and finally the filesystem is remounted.
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2013 STRATO.  All rights reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1
++noise_pid=0
++
++_cleanup()
++{
++	if [ $noise_pid -ne 0 ] && ps -p $noise_pid | grep -q $noise_pid; then
++		kill -TERM $noise_pid
++	fi
++	wait
++	rm -f $tmp.tmp
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_require_scratch
++_require_scratch_dev_pool
++_require_command $BTRFS_SHOW_SUPER_PROG btrfs-show-super
++
++rm -f $seqres.full
++rm -f $tmp.tmp
++
++echo "*** test btrfs replace"
++
++workout()
++{
++	local mkfs_options="$1"
++	local num_devs4raid="$2"
++	local with_cancel="$3"
++	local quick="$4"
++	local source_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $1}'`"
++	local target_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`"
++
++	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt `expr $num_devs4raid + 1` ]; then
++		echo "Skip workout $1 $2 $3 $4" >> $seqres.full
++		echo "Too few devices in SCRATCH_DEV_POOL $SCRATCH_DEV_POOL, required: " `expr $num_devs4raid + 1` >> $seqres.full
++		return 0
++	fi
++
++	# use min number of disks in order to fill up the disk to replace
++	# as much as possible
++	local used_devs_without_1st="`echo $SCRATCH_DEV_POOL | \
++		awk '{ORS=\" \"; for (i = 2; i <= (NF - 1 < '$num_devs4raid' ? NF - 1 : '$num_devs4raid'); i++) print $i}'`"
++
++	# _scratch_mkfs adds the 1st device again (which is $SCRATCH_DEV)
++	_scratch_mkfs $mkfs_options $used_devs_without_1st >> $seqres.full 2>&1 || _fail "mkfs failed"
++
++	# The source and target devices for the replace operation are
++	# arbitrarily chosen out of the pool. Since the target device mustn't
++	# be smaller than the source device, the requirement for this test is
++	# that all devices have _exactly_ the same size. If this is not the
++	# case, this test is not run.
++	local num_lines=`$BTRFS_SHOW_SUPER_PROG $SCRATCH_DEV $used_devs_without_1st | grep dev_item.total_bytes | uniq | wc -l`
++	if [ $num_lines -gt 1 ]; then
++		_notrun "Different device sizes detected"
++	fi
++
++	_scratch_mount
++
++	# Generate 500 times 20K extents in the data chunk and fill up
++	# metadata with inline extents. Ignore ENOSPC.
++	for i in `seq 1 500`; do
++		dd if=/dev/urandom of=/mnt/l$i bs=16385 count=1
++		dd if=/dev/urandom of=/mnt/s$i bs=3800 count=1
++	done > /dev/null 2>&1
++
++	if [ "${quick}Q" = "thoroughQ" ]; then
++		# The intention of this "thorough" test is to increase
++		# the probability of random errors, in particular in
++		# conjunction with the background noise generator and
++		# a sync call while the replace operation in ongoing.
++		# Unfortunately it takes quite some time to generate
++		# the test filesystem, therefore most data consists out
++		# of zeros although this data is not very useful for
++		# detecting misplaced read/write requests.
++		# Ignore ENOSPC, it's not a problem..
++		dd if=/dev/urandom of=$SCRATCH_MNT/r bs=1M count=200 >> $seqres.full 2>&1 &
++		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=2000 >> $seqres.full 2>&1
++		wait
++	elif [ "${with_cancel}Q" = "cancelQ" ]; then
++		# produce some data to prevent that the replace operation
++		# finishes before the cancel request is started
++		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=1000 >> $seqres.full 2>&1
++	fi
++	sync; sync
++
++	btrfs_replace_test $source_dev $target_dev "" $with_cancel $quick
++	umount $SCRATCH_MNT > /dev/null 2>&1
++
++	if echo $mkfs_options | egrep -qv "raid1|raid5|raid6|raid10" || \
++	   [ "${with_cancel}Q" = "cancelQ" ]; then
++		# the -r option has no effect without mirrors, skip -r test
++		# in this case, and if only the canceling should be tested
++		# as well
++		return 0
++	fi
++
++	# One more time with the '-r' option this time. Instead of wasting
++	# time to populate the filesystem with data again, use the
++	# existing filesystem in the state as it is after the previous
++	# replace operation.
++	# If possible, use a strategy to select the source and target
++	# device so that we really change bits on the target disk, see
++	# below.
++
++	# The default: For the 2nd run, the new target drive is the old
++	# source drive, and the new source drive is the old target drive.
++	# Since except for the noise data, the copied data is already on
++	# the new target disk (which is the old source disk), this is not
++	# optimal to check whether data is copied correctly.
++	local tmp_dev="$source_dev"
++	source_dev="$target_dev"
++	target_dev="$tmp_dev"
++
++	# If we have at least one more device in the SCRATCH_DEV_POOL than
++	# used so far, use one of those for the new target devive.
++	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -gt `expr $num_devs4raid + 1` ]; then
++		target_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $(NF-1)}'`"
++	fi
++
++	# If the filesystem is built out of more than one devices, use a
++	# different source device for this round.
++	if [ $num_devs4raid -gt 1 ]; then
++		source_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $2}'`"
++	fi
++
++	# Mount similar to _scratch_mount, but since the SCRATCH_DEV (the
++	# 1st device in SCRATCH_DEV_POOL) was replaced by the previous
++	# btrfs replace operation, substitute SCRATCH_DEV with a device
++	# that is known to be part of the SCRATCH_MNT filesystem.
++	_mount -t $FSTYP `_scratch_mount_options | sed "s&${SCRATCH_DEV}&${source_dev}&"`
++	if [ $? -ne 0 ]; then
++		echo "mount failed"
++		return 1
++	fi
++
++	btrfs_replace_test $source_dev $target_dev "-r" $with_cancel $quick
++	umount $SCRATCH_MNT > /dev/null 2>&1
++}
++
++btrfs_replace_test()
++{
++	local source_dev="$1"
++	local target_dev="$2"
++	local replace_options="$3"
++	local with_cancel="$4"
++	local quick="$5"
++
++	# generate some (slow) background traffic in parallel to the
++	# replace operation. It is not a problem if cat fails early
++	# with ENOSPC.
++	cat /dev/urandom > $SCRATCH_MNT/noise 2>> $seqres.full &
++	noise_pid=$!
++
++	if [ "${with_cancel}Q" = "cancelQ" ]; then
++		# background the replace operation (no '-B' option given)
++		$BTRFS_UTIL_PROG replace start -f $source_dev $target_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
++		sleep 1
++		$BTRFS_UTIL_PROG replace cancel $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace cancel failed"
++
++		# 'replace status' waits for the replace operation to finish
++		# before the status is printed
++		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
++		cat $tmp.tmp >> $seqres.full
++		grep -q canceled $tmp.tmp || _fail "btrfs replace status failed"
++	else
++		if [ "${quick}Q" = "thoroughQ" ]; then
++			# On current hardware, the thorough test runs
++			# more than a second. This is a chance to force
++			# a sync in the middle of the replace operation.
++			(sleep 1; sync) > /dev/null 2>&1 &
++		fi
++		$BTRFS_UTIL_PROG replace start -Bf $source_dev $target_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
++
++		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
++		cat $tmp.tmp >> $seqres.full
++		grep -q finished $tmp.tmp || _fail "btrfs replace status failed"
++	fi
++
++	if ps -p $noise_pid | grep -q $noise_pid; then
++		kill -TERM $noise_pid 2> /dev/null
++	fi
++	noise_pid=0
++	wait
++
++	# scrub tests on-disk data, that's the reason for the sync.
++	# With the '-B' option (don't background), any type of error causes
++	# exit values != 0, including detected correctable and uncorrectable
++	# errors on the device.
++	sync; sync
++	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs scrub failed"
++
++	# Two tests are performed, the 1st is to btrfsck the filesystem,
++	# and the 2nd test is to mount the filesystem.
++	# Usually _check_btrfs_filesystem would perform the mount test,
++	# but it gets confused by the mount output that shows SCRATCH_MNT
++	# mounted but not being mounted to SCRATCH_DEV. This happens
++	# because in /proc/mounts the 2nd device of the filesystem is
++	# shown after the replace operation. Let's just do the mount
++	# test manually after _check_btrfs_filesystem is finished.
++	umount $SCRATCH_MNT > /dev/null 2>&1
++	if [ "${with_cancel}Q" != "cancelQ" ]; then
++		# after the replace operation, use the target_dev for everything
++		_check_btrfs_filesystem $target_dev
++		_mount -t $FSTYP `_scratch_mount_options | sed "s&${SCRATCH_DEV}&${target_dev}&"`
++	else
++		_check_btrfs_filesystem $source_dev
++		_scratch_mount
++	fi
++}
++
++workout "-m single -d single" 1 no quick
++workout "-m single -d single -M" 1 no quick
++workout "-m dup -d single" 1 no quick
++workout "-m dup -d single" 1 cancel quick
++workout "-m dup -d dup -M" 1 no quick
++workout "-m raid0 -d raid0" 2 no quick
++workout "-m raid1 -d raid1" 2 no thorough
++#workout "-m raid5 -d raid5" 2 no quick # not yet supported for btrfs replace
++#workout "-m raid6 -d raid6" 3 no quick # not yet supported for btrfs replace
++workout "-m raid10 -d raid10" 4 no quick
++
++echo "*** done"
++status=0
++exit
+diff --git a/tests/btrfs/317.out b/tests/btrfs/317.out
+new file mode 100644
+index 0000000..4bda623
+--- /dev/null
++++ b/tests/btrfs/317.out
+@@ -0,0 +1,3 @@
++QA output created by 317
++*** test btrfs replace
++*** done
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index bc6c256..1b64321 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -9,3 +9,4 @@
+ 276 auto rw metadata
+ 284 auto
+ 307 auto quick
++317 auto
+-- 
+1.8.3.4
 

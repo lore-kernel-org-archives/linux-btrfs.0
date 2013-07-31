@@ -1,26 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20576 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759462Ab3GaKBH (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:22924 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751903Ab3GaKCl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 06:01:07 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6VA167V015057
+	Wed, 31 Jul 2013 06:02:41 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r6VA2e35027467
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:01:07 GMT
+	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:02:41 GMT
 Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6VA153s026714
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6VA2eir001726
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:01:06 GMT
-Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6VA15Qe026860
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:01:05 GMT
-Date: Wed, 31 Jul 2013 18:00:59 +0800
+	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:02:40 GMT
+Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r6VA2eK3001713
+	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 10:02:40 GMT
+Date: Wed, 31 Jul 2013 18:02:34 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Anand Jain <Anand.Jain@oracle.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [bug] balance BUG at fs/btrfs/relocation.c:886
-Message-ID: <20130731100058.GD5691@localhost.localdomain>
+Message-ID: <20130731100233.GE5691@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <51F8DE99.6060704@oracle.com>
 MIME-Version: 1.0
@@ -110,7 +110,12 @@ On Wed, Jul 31, 2013 at 05:53:29PM +0800, Anand Jain wrote:
 >  Any idea how do we fix this ?
 >  ( other than don't run --init-csum :-) )
 
-This looks like a problem of --init-csum, so I guess btrfsck --init-csum
-changes fs root by accident.  Could you please show the version of btrfs-progs?
+Btw, my result of running the reproducer didn't crash but gave 
+
+[43880.144535] parent transid verify failed on 29360128 wanted 5 found 4
+[43880.144854] parent transid verify failed on 29360128 wanted 5 found 4
+[43880.152389] btrfs: open_ctree failed
+
+(29360128 refers to fs root.)
 
 -liubo

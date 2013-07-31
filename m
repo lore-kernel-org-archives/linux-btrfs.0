@@ -1,41 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:36096 "EHLO mail.virtall.com"
+Received: from brockman.in8.de ([85.214.220.56]:52472 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752340Ab3GaHqO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 03:46:14 -0400
-Date: Wed, 31 Jul 2013 14:46:06 +0700
-From: Tomasz Chmielewski <tch@virtall.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: ERROR: quota command failed: Invalid argument
-Message-ID: <20130731144606.01cb0962@virtall.com>
-In-Reply-To: <20130731144128.08c50a7d@wpkg.org>
-References: <20130731144128.08c50a7d@wpkg.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: unlisted-recipients:; (no To-header on input)
+	id S1753942Ab3GaJH0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Jul 2013 05:07:26 -0400
+Message-ID: <51F8D3CD.5040604@jan-o-sch.net>
+Date: Wed, 31 Jul 2013 11:07:25 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: add missing error check to find_parent_nodes
+References: <1375210462-17820-1-git-send-email-fdmanana@gmail.com> <1375226795-7671-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1375226795-7671-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 31 Jul 2013 14:41:28 +0700
-Tomasz Chmielewski <mangoo@wpkg.org> wrote:
-
-> I'm getting "ERROR: quota command failed: Invalid argument" when
-> trying to run "btrfs quota rescan" - is it expected?
+On Wed, July 31, 2013 at 01:26 (+0200), Filipe David Borba Manana wrote:
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
 > 
-> root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
-> ERROR: quota command failed: Invalid argument
+> V2: Ensure extent buffer is freed on error.
 > 
-> root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
-> ERROR: quota command failed: Invalid argument
+>  fs/btrfs/backref.c |    4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 8bc5e8c..980e85a 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -935,8 +935,10 @@ again:
+>  				}
+>  				ret = find_extent_in_eb(eb, bytenr,
+>  							*extent_item_pos, &eie);
+> -				ref->inode_list = eie;
+>  				free_extent_buffer(eb);
+> +				if (ret < 0)
+> +					goto out;
+> +				ref->inode_list = eie;
+>  			}
+>  			ret = ulist_add_merge(refs, ref->parent,
+>  					      (uintptr_t)ref->inode_list,
+> 
 
-Ah, just noticed it's because I uses btrfs from here:
+The only ret < 0 I'm seeing is ENOMEM, so that should be safe.
 
-http://github.com/miaoxie/btrfs-progs.git
+Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 
-
-The upstream version works fine.
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Thanks,
+-Jan

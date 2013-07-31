@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:5862 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:2938 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751566Ab3G3DSW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 23:18:22 -0400
-Message-ID: <51F730BB.4070001@cn.fujitsu.com>
-Date: Tue, 30 Jul 2013 11:19:23 +0800
+	id S1755817Ab3GaBNA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jul 2013 21:13:00 -0400
+Message-ID: <51F864D9.904@cn.fujitsu.com>
+Date: Wed, 31 Jul 2013 09:14:01 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Filipe David Borba Manana <fdmanana@gmail.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs-progs: add missing path alloc return value check
-References: <1374216370-18953-1-git-send-email-fdmanana@gmail.com> <1375137439-12167-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1375137439-12167-1-git-send-email-fdmanana@gmail.com>
+Subject: Re: [PATCH v4] Btrfs-progs: add missing path alloc return value check
+References: <1374216370-18953-1-git-send-email-fdmanana@gmail.com> <1375182595-31458-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1375182595-31458-1-git-send-email-fdmanana@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	mon, 29 Jul 2013 23:37:19 +0100, Filipe David Borba Manana wrote:
+On 	tue, 30 Jul 2013 12:09:55 +0100, Filipe David Borba Manana wrote:
 > Also remove unused path in extent-tree.c:finish_current_insert().
 > 
 > Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
@@ -27,19 +27,19 @@ On 	mon, 29 Jul 2013 23:37:19 +0100, Filipe David Borba Manana wrote:
 >     allocation in extent-tree.c:finish_current_insert().
 > V3: added missing path alloc checks to dir-item.c, file-item.c
 >     and btrfs-corrupt-block.c too.
+> V4: added missing patch alloc checks to cmd-checks.c and
+>     root-tree.c.
 
-fixup_extent_refs() in cmds-check.c and btrfs_add_root_ref() in root-tree.c also
-miss the path allocation check.
-
-Thanks
-Miao
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
 > 
 >  btrfs-corrupt-block.c |    2 ++
+>  cmds-check.c          |    2 ++
 >  dir-item.c            |    2 ++
 >  extent-tree.c         |    8 ++++----
 >  file-item.c           |    2 ++
->  4 files changed, 10 insertions(+), 4 deletions(-)
+>  root-tree.c           |    2 ++
+>  6 files changed, 14 insertions(+), 4 deletions(-)
 > 
 > diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
 > index 8176fad..22facd4 100644
@@ -54,6 +54,19 @@ Miao
 >  
 >  	key.objectid = bytenr;
 >  	key.type = (u8)-1;
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 8015288..c1a0df9 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -4561,6 +4561,8 @@ static int fixup_extent_refs(struct btrfs_trans_handle *trans,
+>  		flags = BTRFS_BLOCK_FLAG_FULL_BACKREF;
+>  
+>  	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+>  
+>  	/* step one, make sure all of the backrefs agree */
+>  	ret = verify_backrefs(trans, info, path, rec);
 > diff --git a/dir-item.c b/dir-item.c
 > index f00485a..0ab3c5e 100644
 > --- a/dir-item.c
@@ -127,5 +140,18 @@ Miao
 >  
 >  	while (1) {
 >  		key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+> diff --git a/root-tree.c b/root-tree.c
+> index ba380bd..efcdb7b 100644
+> --- a/root-tree.c
+> +++ b/root-tree.c
+> @@ -264,6 +264,8 @@ int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
+>  
+>  
+>  	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+>  
+>  	key.objectid = root_id;
+>  	key.type = type;
 > 
 

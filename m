@@ -1,42 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f43.google.com ([74.125.82.43]:49799 "EHLO
-	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754006Ab3G2ShN (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:39679 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754374Ab3GaOYD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jul 2013 14:37:13 -0400
-Received: by mail-wg0-f43.google.com with SMTP id z12so5137868wgg.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2013 11:37:11 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs-progs: return immediately on tree search failure
-Date: Mon, 29 Jul 2013 19:36:36 +0100
-Message-Id: <1375122996-6665-1-git-send-email-fdmanana@gmail.com>
+	Wed, 31 Jul 2013 10:24:03 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id EB9FC7C06A5
+	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 08:24:01 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id 8lIbAq5StwezAk8o (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 08:24:01 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: sanitize xattrs when we specify sanitization
+Date: Wed, 31 Jul 2013 10:23:58 -0400
+Message-ID: <1375280638-1961-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the chunk tree search failed in volumes.c:btrfs_read_chunk_tree()
-return immediately, rather than looping and use the invalid contents
-of the path structure, causing weird errors/crash at run time.
+Alexandre pointed out that his xattrs have sensitive information in them as
+well, so fix btrfs-image to zero out the data part of xattrs that we find.
+Thanks,
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- volumes.c |    2 ++
- 1 file changed, 2 insertions(+)
+ btrfs-image.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index 0ff2283..79008de 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1727,6 +1727,8 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
- 	key.type = 0;
- again:
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto error;
- 	while(1) {
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 82aa4f3..025facf 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -162,6 +162,7 @@ static int has_name(struct btrfs_key *key)
+ 	case BTRFS_DIR_INDEX_KEY:
+ 	case BTRFS_INODE_REF_KEY:
+ 	case BTRFS_INODE_EXTREF_KEY:
++	case BTRFS_XATTR_ITEM_KEY:
+ 		return 1;
+ 	default:
+ 		break;
+@@ -446,6 +447,21 @@ static void sanitize_inode_ref(struct metadump_struct *md,
+ 	}
+ }
+ 
++static void sanitize_xattr(struct metadump_struct *md,
++			   struct extent_buffer *eb, int slot)
++{
++	struct btrfs_dir_item *dir_item;
++	unsigned long data_ptr;
++	u32 data_len;
++
++	dir_item = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
++	data_len = btrfs_dir_data_len(eb, dir_item);
++
++	data_ptr = (unsigned long)((char *)(dir_item + 1) +
++				   btrfs_dir_name_len(eb, dir_item));
++	memset_extent_buffer(eb, 0, data_ptr, data_len);
++}
++
+ static void sanitize_name(struct metadump_struct *md, u8 *dst,
+ 			  struct extent_buffer *src, struct btrfs_key *key,
+ 			  int slot)
+@@ -471,6 +487,9 @@ static void sanitize_name(struct metadump_struct *md, u8 *dst,
+ 	case BTRFS_INODE_EXTREF_KEY:
+ 		sanitize_inode_ref(md, eb, slot, 1);
+ 		break;
++	case BTRFS_XATTR_ITEM_KEY:
++		sanitize_xattr(md, eb, slot);
++		break;
+ 	default:
+ 		break;
+ 	}
 -- 
-1.7.9.5
+1.7.7.6
 

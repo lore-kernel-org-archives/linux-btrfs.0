@@ -1,43 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:42440 "EHLO mail.virtall.com"
+Received: from mail.virtall.com ([178.63.195.102]:36096 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752245Ab3GaHli (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Jul 2013 03:41:38 -0400
-Received: from mail.virtall.com (localhost [127.0.0.1])
-	by mail.virtall.com (Postfix) with ESMTP id 62E663401FA
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 09:41:35 +0200 (CEST)
-Received: from localhost (ppp-58-8-50-9.revip2.asianet.co.th [58.8.50.9])
-	by mail.virtall.com (Postfix) with ESMTPSA id 67D103401DC
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Jul 2013 09:41:34 +0200 (CEST)
-Date: Wed, 31 Jul 2013 14:41:28 +0700
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: ERROR: quota command failed: Invalid argument
-Message-ID: <20130731144128.08c50a7d@wpkg.org>
+	id S1752340Ab3GaHqO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Jul 2013 03:46:14 -0400
+Date: Wed, 31 Jul 2013 14:46:06 +0700
+From: Tomasz Chmielewski <tch@virtall.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: ERROR: quota command failed: Invalid argument
+Message-ID: <20130731144606.01cb0962@virtall.com>
+In-Reply-To: <20130731144128.08c50a7d@wpkg.org>
+References: <20130731144128.08c50a7d@wpkg.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm getting "ERROR: quota command failed: Invalid argument" when trying
-to run "btrfs quota rescan" - is it expected?
+On Wed, 31 Jul 2013 14:41:28 +0700
+Tomasz Chmielewski <mangoo@wpkg.org> wrote:
 
-root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
-ERROR: quota command failed: Invalid argument
+> I'm getting "ERROR: quota command failed: Invalid argument" when
+> trying to run "btrfs quota rescan" - is it expected?
+> 
+> root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
+> ERROR: quota command failed: Invalid argument
+> 
+> root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
+> ERROR: quota command failed: Invalid argument
 
-root@bkp010 ~ # btrfs quota rescan /mnt/lxc1
-ERROR: quota command failed: Invalid argument
+Ah, just noticed it's because I uses btrfs from here:
+
+http://github.com/miaoxie/btrfs-progs.git
 
 
-There is nothing in dmesg when I run these commands.
-
-I had these errors logged a few hours earlier:
-
-Jul 31 08:12:59 bkp010 kernel: [260172.744870] BTRFS error (device sdb5): block group 3835502264320 has wrong amount of free space
-Jul 31 08:12:59 bkp010 kernel: [260172.744979] BTRFS error (device sdb5): failed to load free space cache for block group 3835502264320
-
-This is running 3.10.
-
+The upstream version works fine.
 
 -- 
 Tomasz Chmielewski

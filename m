@@ -1,52 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42174 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932796Ab3HHCdY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Aug 2013 22:33:24 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] Btrfs-progs: add manpage of btrfs-image -m option
-Date: Thu,  8 Aug 2013 10:33:09 +0800
-Message-Id: <1375929189-1920-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:47941 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752050Ab3HAVIL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 17:08:11 -0400
+Date: Thu, 1 Aug 2013 23:08:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eryu Guan <guaneryu@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs-progs: fix segfault when listing column OTIME
+ on big endian host
+Message-ID: <20130801210809.GE24343@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <51F10A50.9010308@cn.fujitsu.com>
+ <1374761521-17603-1-git-send-email-guaneryu@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1374761521-17603-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a lack of manpage of btrfs-image '-m' option.
+On Thu, Jul 25, 2013 at 10:12:01PM +0800, Eryu Guan wrote:
+> The second btrfs command segfaults on big endian host(ppc64)
+> 
+> 	btrfs subvolume snapshot /mnt/btrfs /mnt/btrfs/snap
+> 	btrfs subvolume list -s /mnt/btrfs
+> 
+> And ltrace shows
+> 
+> 	localtime(0x10029c482d0)                 = 0
+> 	strftime( <no return ...>
+> 	--- SIGSEGV (Segmentation fault) ---
+> 
+> The corresponding code
+> 
+> btrfs-list.c:
+>         case BTRFS_LIST_OTIME:
+>                 if (subv->otime)
+>                         strftime(tstr, 256, "%Y-%m-%d %X",
+>                                  localtime(&subv->otime));
+>                 else
+>                         strcpy(tstr, "-");
+>                 printf("%s", tstr);
+>                 break;
+> 
+> localtime() returned NULL then strftime() got SIGSEGV.
+> 
+> The reason is that ri->otime.sec is stored as little endian but
+> assigned to 't' without conversion.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- btrfs-image.c        |    1 +
- man/btrfs-image.8.in |    4 ++++
- 2 files changed, 5 insertions(+), 0 deletions(-)
+I've sent fixes to both otime endianity and localtime crashes some days
+ago and will keep them in integration branch. The reentrant variant of
+localtime is safer, though the fix to otime access might be enough to
+fix it.
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 82aa4f3..862f081 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -2422,6 +2422,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t-o      \tdon't mess with the chunk tree when restoring\n");
- 	fprintf(stderr, "\t-s      \tsanitize file names, use once to just use garbage, use twice if you want crc collisions\n");
- 	fprintf(stderr, "\t-w      \twalk all trees instead of using extent tree, do this if your extent tree is broken\n");
-+	fprintf(stderr, "\t-m      \trestore metadump image onto multiple disks\n");
- 	exit(1);
- }
- 
-diff --git a/man/btrfs-image.8.in b/man/btrfs-image.8.in
-index d5ba594..d0fdfc7 100644
---- a/man/btrfs-image.8.in
-+++ b/man/btrfs-image.8.in
-@@ -42,6 +42,10 @@ problems with your file system tree and need to have it mostly working.
- Walk all the trees manually and copy any blocks that are referenced. Use this
- option if your extent tree is corrupted to make sure that all of the metadata is
- captured.
-+.TP
-+\fB\-m\fP
-+restore metadump image onto multiple disks. Use this option if your metadump
-+image is created on a multiple disk made btrfs filesystem.
- .SH AVAILABILITY
- .B btrfs-image
- is part of btrfs-progs. Btrfs is currently under heavy development,
--- 
-1.7.7
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg25676.html
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg25677.html
 
+david

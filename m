@@ -1,45 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:30108 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753779Ab3HAKRU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Aug 2013 06:17:20 -0400
-Date: Thu, 1 Aug 2013 18:17:11 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mx1.redhat.com ([209.132.183.28]:28393 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752208Ab3HASfH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 14:35:07 -0400
+Date: Thu, 1 Aug 2013 11:35:05 -0700
+From: Zach Brown <zab@redhat.com>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add dedup subcommand
-Message-ID: <20130801101710.GD20228@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Subject: Re: [RFC PATCH v5 5/5] Btrfs: online data deduplication
+Message-ID: <20130801183505.GD12314@lenny.home.zabbo.net>
 References: <1375285066-14173-1-git-send-email-bo.li.liu@oracle.com>
- <1375285066-14173-7-git-send-email-bo.li.liu@oracle.com>
- <51F93BAD.4030306@giantdisaster.de>
+ <1375285066-14173-6-git-send-email-bo.li.liu@oracle.com>
+ <20130731225050.GN32145@lenny.home.zabbo.net>
+ <20130801101457.GB20228@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51F93BAD.4030306@giantdisaster.de>
+In-Reply-To: <20130801101457.GB20228@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 31, 2013 at 06:30:37PM +0200, Stefan Behrens wrote:
-> On Wed, 31 Jul 2013 23:37:46 +0800, Liu Bo wrote:
-> > This aims to add deduplication subcommand, 'btrfs dedup command <path>',
-> > ie. register/unregister'.
-> > 
-> > It can be used to enable or disable dedup support for a filesystem.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> >  Makefile     |    2 +-
-> >  btrfs.c      |    1 +
-> >  cmds-dedup.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  commands.h   |    2 +
-> >  ctree.h      |    2 +
-> >  ioctl.h      |    5 +++
-> >  6 files changed, 112 insertions(+), 1 deletions(-)
-> >  create mode 100644 cmds-dedup.c
-> 
-> No manpage?
-> 
+> So do you mean that our whole hash value will be (key.objectid + bytes)
+> because key.objectid is a part of hash value?
 
-Good reminder, thanks very much.
+I think so, if I understood your question.  The idea is to not store the
+bytes of the hash that make up the objectid more than once so the tree
+items are smaller.
 
--liubo
+For example:
+
++	read_extent_buffer(leaf, hash_in_item, ((unsigned long)hash_item),
++			   BTRFS_DEDUP_HASH_SIZE);
+
+That'd be (_SIZE - sizeof(u64)) if the bytes of the hash that made up
+the object id weren't also stored in the item payload.
+
+- z

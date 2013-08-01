@@ -1,77 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:52312 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753871Ab3HAFhE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Aug 2013 01:37:04 -0400
+	id S1753910Ab3HAFhF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 01:37:05 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r715avKU009257
-	for <linux-btrfs@vger.kernel.org>; Thu, 1 Aug 2013 13:36:59 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r715avKV009257
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Aug 2013 13:37:00 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/10] Btrfs-progs: add missing man page information for btrfs-zero-log
-Date: Thu, 1 Aug 2013 13:35:31 +0800
-Message-Id: <1375335334-32540-7-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH 08/10] btrfs-progs: Update usage string of btrfs-map-logical
+Date: Thu, 1 Aug 2013 13:35:32 +0800
+Message-Id: <1375335334-32540-8-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1375335334-32540-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1375335334-32540-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs-map-logical supports both short and long options, and also every option
+should follow an arg,fix it.
+
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- man/Makefile            |  2 +-
- man/btrfs-zero-log.8.in | 29 +++++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-zero-log.8.in
+ btrfs-map-logical.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/man/Makefile b/man/Makefile
-index e1246db..5ccb60a 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -13,7 +13,7 @@ man8dir = $(mandir)/man8
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index b9635f7..e46d812 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -86,10 +86,14 @@ struct extent_buffer *debug_read_block(struct btrfs_root *root, u64 bytenr,
+ static void print_usage(void)
+ {
+ 	fprintf(stderr, "usage: btrfs-map-logical [options] device\n");
+-	fprintf(stderr, "\t-l Logical extent to map\n");
+-	fprintf(stderr, "\t-c Copy of the extent to read (usually 1 or 2)\n");
+-	fprintf(stderr, "\t-o Output file to hold the extent\n");
+-	fprintf(stderr, "\t-b Number of bytes to read\n");
++	fprintf(stderr,
++		"\t-l|--logical <logical_num> Logical extent to map\n");
++	fprintf(stderr,
++		"\t-c|--copy <copy> Copy of the extent to read (usually 1 or 2)\n");
++	fprintf(stderr,
++		"\t-o|--output <filename> Output file to hold the extent\n");
++	fprintf(stderr,
++		"\t-b|--bytes <bytes> Number of bytes to read\n");
+ 	exit(1);
+ }
  
- MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
- 	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
--	   btrfs-convert.8.gz btrfstune.8.gz
-+	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz
- INFILES = ${MANPAGES:.in=.gz}
- 
- all: $(MANPAGES)
-diff --git a/man/btrfs-zero-log.8.in b/man/btrfs-zero-log.8.in
-new file mode 100644
-index 0000000..68ebefd
---- /dev/null
-+++ b/man/btrfs-zero-log.8.in
-@@ -0,0 +1,29 @@
-+.TH BTRFS-ZERO-LOG 8
-+.SH NAME
-+btrfs-zero-log \- clear out log tree.
-+.SH SYNOPSIS
-+.B btrfs-zero-log \fI <dev>\fP
-+.SH DESCRIPTION
-+\fBbtrfs-zero-log\fP will remove the log tree if log tree is corrupt, which will allow you to mount the filesystem again. The common case where this
-+happens has been fixed a long time ago, so it is unlikely that you will see this particular problem.
-+
-+.SH EXIT CODE
-+\fBbtrfs-zero-log\fR will return 0 exit code if no error happened.
-+Other exit code means some problems happened.
-+
-+.SH AUTHOR
-+Written by Shilong Wang and Wenruo Qu.
-+
-+.SH COPYRIGHT
-+Copyright \(co 2013 Fujitsu, Inc.
-+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.
-+.br
-+This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-+.SH AVAILABILITY
-+.B btrfs-zero-log
-+is part of btrfs-progs. Btrfs is currently under heavy development,
-+and not suitable for any uses other than benchmarking and review.
-+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
-+further details.
-+.SH SEE ALSO
-+.BR mkfs.btrfs (8)
 -- 
 1.8.0.1
 

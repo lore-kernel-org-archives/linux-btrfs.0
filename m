@@ -1,54 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18748 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755492Ab3HLCqM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Aug 2013 22:46:12 -0400
-Date: Mon, 12 Aug 2013 10:45:55 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs-progs: add dedup subcommand
-Message-ID: <20130812024554.GA19701@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1375950946-5470-1-git-send-email-bo.li.liu@oracle.com>
- <1375950946-5470-7-git-send-email-bo.li.liu@oracle.com>
- <20130809125134.GJ5284@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130809125134.GJ5284@twin.jikos.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:52312 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753632Ab3HAFhG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 01:37:06 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r715avKW009257
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Aug 2013 13:37:00 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 09/10] btrfs-progs: Fix the return value of btrfs-map-logical
+Date: Thu, 1 Aug 2013 13:35:33 +0800
+Message-Id: <1375335334-32540-9-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1375335334-32540-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1375335334-32540-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 09, 2013 at 02:51:35PM +0200, David Sterba wrote:
-> On Thu, Aug 08, 2013 at 04:35:46PM +0800, Liu Bo wrote:
-> > This aims to add deduplication subcommand, 'btrfs dedup command <path>',
-> > ie. register/unregister'.
-> 
-> I'm not sure that calling it register/unregister is the right thing, IMO
-> it's more enable/disable as you write in the documentation under each
-> respective command.
-> 
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Both of them are easy to be understood, but let's keep it consistent
-with the docs as you suggest :)
+The ret variant in the main function is not changed so even problems
+happen, return value is still 0.
+The patch fixs the minor bug and return 1 if any problems happen.
 
-> Please post a list of the other commands if there are any, and the
-> expected usage.
-> 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ btrfs-map-logical.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-So far only these two commands are needed, thanks for reviewing this.
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index e46d812..7dc71d3 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -119,7 +119,6 @@ int main(int ac, char **av)
+ 	int copy = 0;
+ 	u64 bytes = 0;
+ 	int out_fd = 0;
+-	int err;
+ 
+ 	while(1) {
+ 		int c;
+@@ -187,8 +186,9 @@ int main(int ac, char **av)
+ 			out_fd = open(output_file, O_RDWR | O_CREAT, 0600);
+ 			if (out_fd < 0)
+ 				goto close;
+-			err = ftruncate(out_fd, 0);
+-			if (err) {
++			ret = ftruncate(out_fd, 0);
++			if (ret) {
++				ret = 1;
+ 				close(out_fd);
+ 				goto close;
+ 			}
+@@ -205,8 +205,9 @@ int main(int ac, char **av)
+ 	while (bytes > 0) {
+ 		eb = debug_read_block(root, logical, root->sectorsize, copy);
+ 		if (eb && output_file) {
+-			err = write(out_fd, eb->data, eb->len);
+-			if (err < 0 || err != eb->len) {
++			ret = write(out_fd, eb->data, eb->len);
++			if (ret < 0 || ret != eb->len) {
++				ret = 1;
+ 				fprintf(stderr, "output file write failed\n");
+ 				goto out_close_fd;
+ 			}
+-- 
+1.8.0.1
 
--liubo
-
-> thanks,
-> david
-> 
-> > +\fBbtrfs dedup register\fP \fI<path>\fP
-> > +Enable data deduplication support for a filesystem.
->    ^^^^^
-> 
-> > +.TP
-> > +
-> > +\fBbtrfs dedup unregister\fP \fI<path>\fP
-> > +Disable data deduplication support for a filesystem.
->    ^^^^^^^

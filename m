@@ -1,96 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49480 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757377Ab3HHIf5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 04:35:57 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r788ZuQ4021743
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:35:56 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r788ZtfO024858
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:35:55 GMT
-Received: from abhmt108.oracle.com (abhmt108.oracle.com [141.146.116.60])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r788ZsL9012512
-	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:35:54 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:52312 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753165Ab3HAFhA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 01:37:00 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r715avKO009257
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Aug 2013 13:36:57 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v6 0/5] Online data deduplication
-Date: Thu,  8 Aug 2013 16:35:40 +0800
-Message-Id: <1375950946-5470-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 01/10] Btrfs-progs: add missing man page information for btrfsck
+Date: Thu, 1 Aug 2013 13:35:25 +0800
+Message-Id: <1375335334-32540-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Data deduplication is a specialized data compression technique for eliminating
-duplicate copies of repeating data.[1]
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ man/btrfsck.8.in | 35 ++++++++++++++++++++++++++++++-----
+ 1 file changed, 30 insertions(+), 5 deletions(-)
 
-This patch set is also related to "Content based storage" in project ideas[2].
-
-PATCH 1 is a hang fix with deduplication on, but it's also useful without
-dedup in practice use.
-
-PATCH 2 and 3 are targetting delayed refs' scalability problems, which are
-uncovered by the dedup feature.
-
-PATCH 4 is a speed-up improvement, which is about dedup and quota.
-
-PATCH 5 is full of real things, all details about implementation of dedup.
-
-Plus, there is also a btrfs-progs patch which helps to enable/disable dedup
-feature.
-
-TODO:
-* a bit-to-bit comparison callback.
-
-All comments are welcome!
-
-[1]: http://en.wikipedia.org/wiki/Data_deduplication
-[2]: https://btrfs.wiki.kernel.org/index.php/Project_ideas#Content_based_storage
-
-v5->v6:
-- remove BUG_ON()s and use proper error handling.
-- make dedup hash endian safe on disk.
-- refractor dedup tree item.
-- fix a bug of deleting file extents with dedup disabled.
-- some cleanups
-- add manpage for dedup subcommand.
-
-v4->v5:
-- go back to one dedup key with a special backref for dedup tree because
-  the disk format understands backref well.
-- fix a fsync hang with dedup enabled.
-- rebase onto the latest btrfs.
-
-
-Liu Bo (5):
-  Btrfs: skip merge part for delayed data refs
-  Btrfs: improve the delayed refs process in rm case
-  Btrfs: introduce a head ref rbtree
-  Btrfs: disable qgroups accounting when quata_enable is 0
-  Btrfs: online data deduplication
-
- fs/btrfs/backref.c         |    9 +
- fs/btrfs/ctree.c           |    2 +-
- fs/btrfs/ctree.h           |   82 ++++++
- fs/btrfs/delayed-ref.c     |  159 +++++++----
- fs/btrfs/delayed-ref.h     |    8 +
- fs/btrfs/disk-io.c         |   31 ++
- fs/btrfs/extent-tree.c     |  190 +++++++++++--
- fs/btrfs/extent_io.c       |   29 ++-
- fs/btrfs/extent_io.h       |   16 +
- fs/btrfs/file-item.c       |  211 ++++++++++++++
- fs/btrfs/inode.c           |  673 +++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/ioctl.c           |   93 ++++++
- fs/btrfs/ordered-data.c    |   38 ++-
- fs/btrfs/ordered-data.h    |   13 +-
- fs/btrfs/qgroup.c          |    3 +
- fs/btrfs/relocation.c      |    3 +
- fs/btrfs/super.c           |   27 ++-
- fs/btrfs/transaction.c     |    4 +-
- include/uapi/linux/btrfs.h |    5 +
- 19 files changed, 1420 insertions(+), 176 deletions(-)
-
+diff --git a/man/btrfsck.8.in b/man/btrfsck.8.in
+index 5004ba0..6087c14 100644
+--- a/man/btrfsck.8.in
++++ b/man/btrfsck.8.in
+@@ -1,11 +1,35 @@
+ .TH BTRFSCK 8
+ .SH NAME
+-btrfsck \- check a btrfs filesystem
++btrfsck \- check and repair of a Btrfs filesystem
+ .SH SYNOPSIS
+-.B btrfsck \fI device\fP
++.B btrfsck [\fIoptions\fP] \fI<device>\fP
+ .SH DESCRIPTION
+-\fBbtrfsck\fP is used to check a btrfs filesystem.
+-\fIdevice\fP is the device file where the filesystem is stored.
++\fBbtrfsck\fP is used to check and optionally repair of a Btrfs filesystem. Now, it can only be run on an unmounted FS. Considering it is not well-tested
++in real-life situations yet. if you have a broken Btrfs filesystem, btrfsck may not repair but cause aditional damages. \fI<device>\fP is the device file
++where the filesystem is stored.
++
++\fIOptions\fP
++.IP "\fB-s,--super \fI<superblock>\fP" 5
++specify which superblock copy that you want to use.
++.IP "\fB--repair\fP" 5
++try to repair the filesystem.
++.IP "\fB--init-csum-tree\fP" 5
++create a new CRC tree.
++.IP "\fB--init-extent-tree\fP" 5
++create a new extent tree.
++
++.SH EXIT CODE
++\fBbtrfsck\fR will return 0 exit code if no error happened.
++Other exit code means some problems happened.
++
++.SH AUTHOR
++Written by Shilong Wang and Wenruo Qu.
++
++.SH COPYRIGHT
++Copyright \(co 2013 Fujitsu, Inc.
++License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.
++.br
++This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+ .SH AVAILABILITY
+ .B btrfsck
+ is part of btrfs-progs. Btrfs is currently under heavy development,
+@@ -13,4 +37,5 @@ and not suitable for any uses other than benchmarking and review.
+ Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
+ further details.
+ .SH SEE ALSO
+-.BR mkfs.btrfs (8)
++.BR mkfs.btrfs (8),
++.BR btrfs (8)
 -- 
-1.7.7
+1.8.0.1
 

@@ -1,53 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f179.google.com ([209.85.192.179]:52375 "EHLO
-	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753884Ab3HAMOt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Aug 2013 08:14:49 -0400
-Received: by mail-pd0-f179.google.com with SMTP id v10so1939091pde.38
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Aug 2013 05:14:48 -0700 (PDT)
-Message-ID: <51FA512F.5040507@gmail.com>
-Date: Thu, 01 Aug 2013 13:14:39 +0100
-From: Andrew Stubbs <andrew.stubbs@gmail.com>
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: How to merge two partitions?
-References: <51FA3E2E.30405@gmail.com> <20130801110849.GZ20517@carfax.org.uk>
-In-Reply-To: <20130801110849.GZ20517@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from cantor2.suse.de ([195.135.220.15]:37337 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756690Ab3HAPmU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 11:42:20 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: zab@redhat.com, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: add mount option to set commit interval
+Date: Thu,  1 Aug 2013 17:42:14 +0200
+Message-Id: <1375371734-19581-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/08/13 12:08, Hugo Mills wrote:
->> I thought of using "btrfs device add" and just living with the
->> untidy underlying devices, but an experiment with loopback
->> filesystems shows that any data on the new device is silently
->> obliterated (it might be nice if the docs mentioned this!)
->
->     You would expect data in a different filesystem format to be
-> integrated into an existing set of data structures? That would be...
-> magic. :)
+I'ts hardcoded to 30 seconds which is fine for most users. Higher values
+defer data being synced to permanent storage with obvious consequences
+when the system crashes. The upper bound is not forced, but a warning is
+printed if it's more than 300 seconds (5 minutes).
 
-No, this was merging two btrfs filesystem of the same format. I hoped 
-that, somehow, it would just add it into the tree, perhaps as another 
-subvolume. Maybe even it might not show up in the overall volume, but 
-could still be mounted from the partition volume. It's all about trees, 
-right?!
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/disk-io.c |  6 ++++--
+ fs/btrfs/super.c   | 23 +++++++++++++++++++++++
+ 3 files changed, 30 insertions(+), 2 deletions(-)
 
-Anyway, what's confused me is that one of the tutorials I found says 
-that you should run mkfs on the new device before adding it, but 
-experimentation shows that's just not necessary. The bogus instructions 
-led me to believe that the contents of the new device was significant, 
-somehow.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d6dd49b..6f7b607 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1338,6 +1338,7 @@ struct btrfs_fs_info {
+ 	u64 last_trans_log_full_commit;
+ 	unsigned long mount_opt;
+ 	unsigned long compress_type:4;
++	int commit_interval;
+ 	/*
+ 	 * It is a suggestive number, the read side is safe even it gets a
+ 	 * wrong number because we will write out the data into a regular
+@@ -1928,6 +1929,8 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+ 
++#define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
++
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+ #define btrfs_raw_test_opt(o, opt)	((o) & BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b0292b3..d366043 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1714,7 +1714,7 @@ static int transaction_kthread(void *arg)
+ 
+ 	do {
+ 		cannot_commit = false;
+-		delay = HZ * 30;
++		delay = HZ * root->fs_info->commit_interval;
+ 		mutex_lock(&root->fs_info->transaction_kthread_mutex);
+ 
+ 		spin_lock(&root->fs_info->trans_lock);
+@@ -1726,7 +1726,8 @@ static int transaction_kthread(void *arg)
+ 
+ 		now = get_seconds();
+ 		if (!cur->blocked &&
+-		    (now < cur->start_time || now - cur->start_time < 30)) {
++		    (now < cur->start_time ||
++		     now - cur->start_time < root->fs_info->commit_interval)) {
+ 			spin_unlock(&root->fs_info->trans_lock);
+ 			delay = HZ * 5;
+ 			goto sleep;
+@@ -2173,6 +2174,7 @@ int open_ctree(struct super_block *sb,
+ 	fs_info->trans_no_join = 0;
+ 	fs_info->free_chunk_space = 0;
+ 	fs_info->tree_mod_log = RB_ROOT;
++	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
+ 
+ 	/* readahead state */
+ 	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f0857e0..4cc950f 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -319,6 +319,7 @@ enum {
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_commit_interval,
+ 	Opt_err,
+ };
+ 
+@@ -359,6 +360,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
++	{Opt_commit_interval, "commit=%d"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -624,6 +626,27 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				goto out;
+ 			}
+ 			break;
++		case Opt_commit_interval:
++			intarg = 0;
++			ret = match_int(&args[0], &intarg);
++			if (ret < 0) {
++				printk(KERN_ERR
++					"btrfs: invalid commit interval\n", ret);
++				ret = -EINVAL;
++			}
++			if (intarg > 0) {
++				if (intarg > 300) {
++					printk(KERN_WARNING
++					    "btrfs: excessive commit interval %d\n",
++							intarg);
++				}
++				info->commit_interval = intarg;
++			} else {
++				printk(KERN_INFO
++				    "btrfs: using default commit interval %ds\n",
++				    BTRFS_DEFAULT_COMMIT_INTERVAL);
++				info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
++			}
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
+-- 
+1.8.1.4
 
-It would be nice if "man btrfs" had a big warning that the added device 
-will get wiped, effectively.
-
->> Is there a cunning btrfs trick to do this? Can a btrfs filesystem be
->> extended "backwards", if you see what I mean?
->
->     No, using gparted to move it backwards into the free space is your
-> best option here.
-
-OK, thanks.
-
-Andrew

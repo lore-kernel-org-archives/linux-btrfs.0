@@ -1,49 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:18084 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030305Ab3HIOjb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 10:39:31 -0400
-Message-ID: <5204FF1F.5070602@giantdisaster.de>
-Date: Fri, 09 Aug 2013 16:39:27 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from cantor2.suse.de ([195.135.220.15]:47087 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751877Ab3HAUau (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 16:30:50 -0400
+Date: Thu, 1 Aug 2013 22:30:47 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        chris.mason@fusionio.com
+Subject: Re: [PATCH 09/12] Btrfs-progs: Add chunk recover function - using
+ old chunk items
+Message-ID: <20130801203047.GB24343@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com>
+ <1372857920-4678-10-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs-progs: mark static & remove unused from non-kernel
- code
-References: <52019C6D.9050308@redhat.com> <52019D5F.3070301@redhat.com> <5201C3CC.8000303@redhat.com> <5201FD1D.7030200@giantdisaster.de> <52026525.8030004@redhat.com> <20130809141039.GK5284@twin.jikos.cz>
-In-Reply-To: <20130809141039.GK5284@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1372857920-4678-10-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 9 Aug 2013 16:10:39 +0200, David Sterba wrote:
-> On Wed, Aug 07, 2013 at 10:17:57AM -0500, Eric Sandeen wrote:
->> And isn't it still a mistake?  I think it used to be that subvol_uuid_search_init()
->> would allocate the memory which must be freed, but that's no longer the case,
->> right?  So under what circumstances is it correct to call
->> subvol_uuid_search_add() which frees those pointers?
-> 
-> Looks like the memory management is internal to the subvol_uuid*
-> functions, now _init does not allocate and I don't see why _add should
-> call free. All users of subvol_uuid_search() free the memory themselves
-> (in current code).
-> 
-> Seems that subvol_uuid_search_add was exported without any concern that
-> it could be part of the library interface.
-> 
-> We don't have library ABI versioning in place, so I suggest to keep the
-> function there for compatibility with current code (though I'm not aware
-> of any external users of the _add function), but drop th free() calls
-> and put a "don't use" comment.
-> 
+On Wed, Jul 03, 2013 at 09:25:17PM +0800, Miao Xie wrote:
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -247,6 +247,7 @@ const struct cmd_group btrfs_cmd_group = {
+>  		{ "device", cmd_device, NULL, &device_cmd_group, 0 },
+>  		{ "scrub", cmd_scrub, NULL, &scrub_cmd_group, 0 },
+>  		{ "check", cmd_check, cmd_check_usage, NULL, 0 },
+> +		{ "chunk-recover", cmd_chunk_recover, cmd_chunk_recover_usage, NULL, 0},
 
-Callers of the subvol_uuid interface (like Btrfs receive) allocate the
-memory for newly created items (this is the case after receiving a
-subvolume) and add them to the database with the _add function. _add()
-stores the pointer and the caller mustn't free() the item. This was/is
-the interface.
+Better late than never, though the patches are already in master branch
+and I am horribly late.
 
-We don't have this database anymore, we don't keep the items that are
-added. Since it was not allowed to call free() for items that have been
-added, _add() must call free() now.
+I don't like to see this very specific command in the first level of
+command namespace. In the past we've proposed a group named 'rescue'
+that would collect functions that are potentially dangerous but perform
+certain tasks that can make a filesystem usable again.
+
+Examples are select-super or zero-log that are now separate utilities.
+
+As a related topic, I was thinking about intorducing a separate
+namespace that would be declared unstable and any feature in development
+would be free to use it and add/modify/delete commands and params as
+needed. That way developers can focus on the feature itself and let the
+user interface polishing for later.
+
+And now the name of the namespace: how about _ ? It's short, will never
+clash with any other command.
+
+
+david

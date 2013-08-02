@@ -1,40 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([74.208.4.201]:65216 "EHLO mout.gmx.net"
+Received: from plane.gmane.org ([80.91.229.3]:42359 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751489Ab3HBU6p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Aug 2013 16:58:45 -0400
-Received: from mailout-us.gmx.com ([172.19.198.47]) by mrigmx.server.lan
- (mrigmxus002) with ESMTP (Nemesis) id 0Lkglc-1UVCCX0Kg8-00aRSb for
- <linux-btrfs@vger.kernel.org>; Fri, 02 Aug 2013 22:58:45 +0200
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="utf-8"
-Date: Fri, 02 Aug 2013 16:58:42 -0400
-From: "Mike Audia" <mikey_a@gmx.com>
-Message-ID: <20130802205842.157580@gmx.com>
-MIME-Version: 1.0
-Subject: Re: Is the checkpoint interval adjustable?
-To: dsterba@suse.cz, "Zach Brown" <zab@redhat.com>
+	id S1754772Ab3HCAAP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 2 Aug 2013 20:00:15 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1V5PGV-0001Wz-29
+	for linux-btrfs@vger.kernel.org; Sat, 03 Aug 2013 02:00:11 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Aug 2013 02:00:11 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Aug 2013 02:00:11 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Which better: rsync or snapshot + rsync --delete
+Date: Sat, 03 Aug 2013 00:59:56 +0100
+Message-ID: <kthh5l$7ti$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: David Sterba
-> There were a few requests to tune the interval. This finally made me to
-> finish the patch and will send it in a second.
+Which is 'best' or 'faster'?
 
-Thank you, David and to others who kindly replied to my post.  I will try your patch rather than modifying the code
+Take a snapshot of an existing backup and then "rsync --delete" into
+that to make a backup of some other filesystem?
 
-> > >  Are there any unforeseen and effects of doing this?  Thank you for
-> > > the consideration.
-> >
-> > I don't *think* that there should be. One way of looking at it is that
-> > both 30 and 300 seconds are an *eternity* for cpu, memory, and storage.
-> > Any trouble that you could get in to in 300 seconds some other machine
-> > could trivially get in to in 30 with beefier hardware.
->
-> That's a good point and lowers my worries a bit, though it would be
-> interesting to see in what way a beefy machine blows with 300 seconds
-> set.
+Or use "rsync --link" to link a new backup tree against a previous
+backup tree for the some other filesystem?
 
-I have my system booting to a BTRFS root partition.  Let's say I'm using a value of 300 for my checkpoint interval.  Does this mean that if I do a TON of filesystem writes (say I update my system which pulls down a bunch of system file updates for example), and I copy over several gigs of data from a backup, all _between_ checkpoints and for some reason, my system freezes forcing me to ungracefully restart... is EVERYTHING since the last checkpoint is lost?  Upon a reboot, will BTRFS just mount up to the last good checkpoiint automatically or will I have a broken system and need to add the `-o recovery` option while I mount it manualy from a chroot?
+Which case does btrfs handle the better?
 
-Another naive question: if I shutdown the system between checkpoints, systemd should umount my partitions.  Does the syncing of cached data occur after the graceful umount?
+Would there be any problems for doing this over an nfs mount of the btrfs?
+
+
+Both cases can take advantage of the raid and dedup and compression
+features of btrfs. Would taking a btrfs snapshot be better than rsync
+creating the hard links to unchanged files?
+
+Any other considerations?
+
+(There are perhaps about 5% new or changed files each time.)
+
+Thanks,
+Martin
+

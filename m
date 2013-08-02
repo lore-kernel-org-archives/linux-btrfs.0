@@ -1,64 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:40530 "EHLO
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:34351 "EHLO
 	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752890Ab3HBG12 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 02:27:28 -0400
-Message-ID: <51FB5059.1080406@gmx.net>
-Date: Fri, 02 Aug 2013 08:23:21 +0200
+	with ESMTP id S1752890Ab3HBGaV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 02:30:21 -0400
+Message-ID: <51FB5270.80303@gmx.net>
+Date: Fri, 02 Aug 2013 08:32:16 +0200
 From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-To: Tomasz Chmielewski <tch@virtall.com>
-CC: linux-btrfs@vger.kernel.org, Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: btrfs quota examples?
-References: <20130610152127.38fb8a50@virtall.com> <51B58333.3050901@gmx.net> <20130729150510.19e5886a@virtall.com>
-In-Reply-To: <20130729150510.19e5886a@virtall.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        Wang Shilong <wangshilong1991@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs qgroup assign -> "ERROR: bad relation requested"
+References: <20130728135116.5ed992d4@wpkg.org> <8C42FC74-384A-4D88-9D11-17AC7394A20B@gmail.com> <20130730192525.42725e74@wpkg.org> <3C9EC4DB-0B63-49A8-B53C-24E162CB8FEF@gmail.com> <20130731104624.163d07d7@wpkg.org> <51F89058.6080101@cn.fujitsu.com> <20130731113644.0d98bb06@wpkg.org> <51F89D01.2020703@cn.fujitsu.com> <20130731123910.28016442@wpkg.org>
+In-Reply-To: <20130731123910.28016442@wpkg.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/29/13 10:05, Tomasz Chmielewski wrote:
-> On Mon, 10 Jun 2013 09:41:39 +0200
-> Arne Jansen <sensille@gmx.net> wrote:
+On 07/31/13 07:39, Tomasz Chmielewski wrote:
+> On Wed, 31 Jul 2013 13:13:37 +0800
+> Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
 > 
->>> Now, my questions:
->>>
->>> - what do both 104882176 104882176 numbers represent?
+>>> # git pull origin master
 >>
->> The first number represents the amount of data in that subvolume,
->> regardless whether that data is shared with other subvolumes or
->> not.
->> The second number shows the amount of data that is unique to this
->> subvolume and not shared with others, i.e. the amount of space
->> that will get freed if you delete this subvolume.
+>> Oops, i am sorry, here should:
+>>
+>> git pull origin qgroup
+>>
+>> would you please try it again
 > 
-> I've played with qgroups for some time, but the results are rather
-> inconsistent.
+> Excellent, it works:
 > 
-> I.e. here - what does a negative number represent in 0/1181 row?
+> # btrfs qgroup show -p /mnt/lxc2
+> 0/260 154273873920 154273873920 ---
+> 0/261 181260288 181260288 ---
+> 0/262 155557888 983040 ---
+> 0/377 180539392 26005504 ---
+> 0/378 308607238144 308607238144 ---
+> 0/535 572407808 417832960 ---
+> 0/536 68085026816 68085026816 ---
+> 0/642 247824384 93282304 ---
+> 0/1276 636026880 4096 1/1
+> 0/1277 38301687808 4096 1/1
+> 0/1278 617164800 32768 1/1
+> 0/1279 38297591808 4096 1/1
+> 0/1284 38299160576 0 1/1
+> 0/1285 38299160576 21364736 1/1
+> 0/1286 620396544 0 1/1
+> 0/1287 633090048 12722176 1/1
+> 0/1293 38301687808 4096 1/1
+> 0/1294 636026880 4096 1/1
+> 1/1 38972137472 38972137472 ---
+> 
+> 
+> Thanks a lot!
+> 
+> 
+> Am I correct to think that I have to run quota rescan after
+> assigning groups?
+> 
+> # btrfs qgroup assign 378 1/1 /mnt/lxc2  <<----- assigning volid 378, having 300+ GB
+> 
+> # btrfs qgroup show -p /mnt/lxc2 | grep 1/1
+> 0/378 308607238144 308607238144 1/1
+> 0/1276 636026880 4096 1/1
+> 0/1277 38301687808 4096 1/1
+> 0/1278 617164800 32768 1/1
+> 0/1279 38297591808 4096 1/1
+> 0/1284 38299160576 0 1/1
+> 0/1285 38299160576 21364736 1/1
+> 0/1286 620396544 0 1/1
+> 0/1287 633090048 12722176 1/1
+> 0/1293 38301687808 4096 1/1
+> 0/1294 636026880 4096 1/1
+> 1/1 38972137472 38972137472 ---  <<----- although we've added 300+ GB volume, the total numbers are unchanged
+> 
+> 
+> That can be quite a bit of IO?
 
-Either you have turned on qgroups after filling the subvol with
-some data, or you've managed to produce a tracking error. In that
-case, we would be interested how you did that and how to reproduce
-it.
+To avoid the rescan you can do the assignment atomically with
+the creation of the subvol.
+Basically if you lay out your future quota/subvol/snapshot when
+you create your filesystem, you never have to do a rescan. The
+commands are all there for that, but it's not really easy to do
+if you have a complex setup. That part needs a better documentation
+and more examples, and also probably a better UI.
+Only if you change your mind later on you probably have to rescan.
 
 -Arne
 
-> 
-> # btrfs qgroup show /mnt/lxc2
-> 0/260 151490953216 151490953216
-> 0/261 180969472 180969472
-> 0/262 155557888 983040
-> 0/377 180310016 25776128
-> 0/378 304088072192 304088072192
-> 0/535 571944960 417370112
-> 0/536 68550987776 68550987776
-> 0/642 247463936 92921856
-> 0/1175 617213952 827392
-> 0/1181 16112013312 -22184235008
-> 0/1268 38296248320 0
-> 0/1269 616386560 0
-> 0/1270 4096 4096
-> 0/1271 4096 4096
 > 
 > 
 

@@ -1,46 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f53.google.com ([74.125.82.53]:57311 "EHLO
-	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752496Ab3HAVSw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Aug 2013 17:18:52 -0400
-Received: by mail-wg0-f53.google.com with SMTP id c11so2129645wgh.20
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Aug 2013 14:18:50 -0700 (PDT)
+Received: from userp1040.oracle.com ([156.151.31.81]:22998 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752621Ab3HBCTZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Aug 2013 22:19:25 -0400
+Date: Fri, 2 Aug 2013 10:19:17 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Sandy McArthur <sandymac@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: filefrag and btrfs filesystem defragment and maybe snapshots
+Message-ID: <20130802021916.GC24158@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.com>
 MIME-Version: 1.0
-Date: Thu, 1 Aug 2013 17:18:50 -0400
-Message-ID: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.com>
-Subject: filefrag and btrfs filesystem defragment and maybe snapshots
-From: Sandy McArthur <sandymac@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While exploring some btrfs maintenance with respect to defragmenting I
-ran the following commands:
+On Thu, Aug 01, 2013 at 05:18:50PM -0400, Sandy McArthur wrote:
+> While exploring some btrfs maintenance with respect to defragmenting I
+> ran the following commands:
+> 
+> # filefrag /path/to/34G.file /path/to/5.7G.file
+> /path/to/34G.file: 2406 extents found
+> /path/to/5.7G.file: 572 extents found
+> 
+> Thinking those mostly static files could be less fragmented I ran:
+> # btrfs filesystem defragment -c /path/to/34G.file
+> # btrfs filesystem defragment -c /path/to/5.7G.file
+> 
+> and to my surprise the number of fragments/extends doubled:
+> 
+> # filefrag /path/to/34G.file /path/to/5.7G.file
+> /path/to/34G.file: 6324 extents found
+> /path/to/5.7G.file: 1079 extents found
+> 
+> Did I actually improve these files?
+> 
+> I do have a number rolling readonly snapshots on the subvolume these
+> files are on. I can imagine how that might be related but I'm not
+> sure. When the pre-defrag snapshots are purged will the filefrag
+> extents count drop.
 
-# filefrag /path/to/34G.file /path/to/5.7G.file
-/path/to/34G.file: 2406 extents found
-/path/to/5.7G.file: 572 extents found
+I guess the reason is that you're doing the defragment with compression,
+ZLIB in default case, and btrfs compression has a maximum length limit, 128k.
+So if the original file's extents have a length larger than 128k, it's possible
+to get the results of 'filefrag' doubled.
 
-Thinking those mostly static files could be less fragmented I ran:
-# btrfs filesystem defragment -c /path/to/34G.file
-# btrfs filesystem defragment -c /path/to/5.7G.file
+But I have no possible answer for
+'why filefrag extents count drop after purging snapshots'.
 
-and to my surprise the number of fragments/extends doubled:
-
-# filefrag /path/to/34G.file /path/to/5.7G.file
-/path/to/34G.file: 6324 extents found
-/path/to/5.7G.file: 1079 extents found
-
-Did I actually improve these files?
-
-I do have a number rolling readonly snapshots on the subvolume these
-files are on. I can imagine how that might be related but I'm not
-sure. When the pre-defrag snapshots are purged will the filefrag
-extents count drop.
-
--- 
-Sandy McArthur
-
-"He who dares not offend cannot be honest."
-- Thomas Paine
+-liubo

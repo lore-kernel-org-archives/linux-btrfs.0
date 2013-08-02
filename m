@@ -1,23 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22998 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752621Ab3HBCTZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Aug 2013 22:19:25 -0400
-Date: Fri, 2 Aug 2013 10:19:17 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Sandy McArthur <sandymac@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:51722 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751400Ab3HBC1q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Aug 2013 22:27:46 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1V555j-0001FS-Vn
+	for linux-btrfs@vger.kernel.org; Fri, 02 Aug 2013 04:27:43 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Aug 2013 04:27:43 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Aug 2013 04:27:43 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: filefrag and btrfs filesystem defragment and maybe snapshots
-Message-ID: <20130802021916.GC24158@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.com>
+Date: Fri, 2 Aug 2013 02:27:25 +0000 (UTC)
+Message-ID: <pan$4a6c0$5f5b3ad0$c61266cc$feaf3eba@cox.net>
+References: <CAPs0BihZNQ1fY4syh-=Pqm_ekVwd7Fw+YhGuVgz0fcO=VUZrFw@mail.gmail.
+	com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 01, 2013 at 05:18:50PM -0400, Sandy McArthur wrote:
+Sandy McArthur posted on Thu, 01 Aug 2013 17:18:50 -0400 as excerpted:
+
 > While exploring some btrfs maintenance with respect to defragmenting I
 > ran the following commands:
 > 
@@ -38,16 +48,16 @@ On Thu, Aug 01, 2013 at 05:18:50PM -0400, Sandy McArthur wrote:
 > Did I actually improve these files?
 > 
 > I do have a number rolling readonly snapshots on the subvolume these
-> files are on. I can imagine how that might be related but I'm not
-> sure. When the pre-defrag snapshots are purged will the filefrag
-> extents count drop.
+> files are on. I can imagine how that might be related but I'm not sure.
+> When the pre-defrag snapshots are purged will the filefrag extents count
+> drop.
 
-I guess the reason is that you're doing the defragment with compression,
-ZLIB in default case, and btrfs compression has a maximum length limit, 128k.
-So if the original file's extents have a length larger than 128k, it's possible
-to get the results of 'filefrag' doubled.
+I can't answer the snapshot angle, but do you have btrfs compression 
+turned on?  I've read that filefrag always sees btrfs compressed files of 
+sufficient size as fragmented, due to the way btrfs compression works.
 
-But I have no possible answer for
-'why filefrag extents count drop after purging snapshots'.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
--liubo

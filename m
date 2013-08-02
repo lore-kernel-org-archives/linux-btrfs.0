@@ -1,95 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:34351 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752890Ab3HBGaV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 02:30:21 -0400
-Message-ID: <51FB5270.80303@gmx.net>
-Date: Fri, 02 Aug 2013 08:32:16 +0200
-From: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
-To: Tomasz Chmielewski <mangoo@wpkg.org>
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        Wang Shilong <wangshilong1991@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs qgroup assign -> "ERROR: bad relation requested"
-References: <20130728135116.5ed992d4@wpkg.org> <8C42FC74-384A-4D88-9D11-17AC7394A20B@gmail.com> <20130730192525.42725e74@wpkg.org> <3C9EC4DB-0B63-49A8-B53C-24E162CB8FEF@gmail.com> <20130731104624.163d07d7@wpkg.org> <51F89058.6080101@cn.fujitsu.com> <20130731113644.0d98bb06@wpkg.org> <51F89D01.2020703@cn.fujitsu.com> <20130731123910.28016442@wpkg.org>
-In-Reply-To: <20130731123910.28016442@wpkg.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from userp1040.oracle.com ([156.151.31.81]:32792 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754751Ab3HBGuE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 02:50:04 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r726o3JN011097
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 2 Aug 2013 06:50:04 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r726o2Mt026808
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 2 Aug 2013 06:50:02 GMT
+Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r726o1D9002361
+	for <linux-btrfs@vger.kernel.org>; Fri, 2 Aug 2013 06:50:01 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: allow compressed extents to be merged during defragment
+Date: Fri,  2 Aug 2013 14:49:54 +0800
+Message-Id: <1375426194-28121-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/31/13 07:39, Tomasz Chmielewski wrote:
-> On Wed, 31 Jul 2013 13:13:37 +0800
-> Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
-> 
->>> # git pull origin master
->>
->> Oops, i am sorry, here should:
->>
->> git pull origin qgroup
->>
->> would you please try it again
-> 
-> Excellent, it works:
-> 
-> # btrfs qgroup show -p /mnt/lxc2
-> 0/260 154273873920 154273873920 ---
-> 0/261 181260288 181260288 ---
-> 0/262 155557888 983040 ---
-> 0/377 180539392 26005504 ---
-> 0/378 308607238144 308607238144 ---
-> 0/535 572407808 417832960 ---
-> 0/536 68085026816 68085026816 ---
-> 0/642 247824384 93282304 ---
-> 0/1276 636026880 4096 1/1
-> 0/1277 38301687808 4096 1/1
-> 0/1278 617164800 32768 1/1
-> 0/1279 38297591808 4096 1/1
-> 0/1284 38299160576 0 1/1
-> 0/1285 38299160576 21364736 1/1
-> 0/1286 620396544 0 1/1
-> 0/1287 633090048 12722176 1/1
-> 0/1293 38301687808 4096 1/1
-> 0/1294 636026880 4096 1/1
-> 1/1 38972137472 38972137472 ---
-> 
-> 
-> Thanks a lot!
-> 
-> 
-> Am I correct to think that I have to run quota rescan after
-> assigning groups?
-> 
-> # btrfs qgroup assign 378 1/1 /mnt/lxc2  <<----- assigning volid 378, having 300+ GB
-> 
-> # btrfs qgroup show -p /mnt/lxc2 | grep 1/1
-> 0/378 308607238144 308607238144 1/1
-> 0/1276 636026880 4096 1/1
-> 0/1277 38301687808 4096 1/1
-> 0/1278 617164800 32768 1/1
-> 0/1279 38297591808 4096 1/1
-> 0/1284 38299160576 0 1/1
-> 0/1285 38299160576 21364736 1/1
-> 0/1286 620396544 0 1/1
-> 0/1287 633090048 12722176 1/1
-> 0/1293 38301687808 4096 1/1
-> 0/1294 636026880 4096 1/1
-> 1/1 38972137472 38972137472 ---  <<----- although we've added 300+ GB volume, the total numbers are unchanged
-> 
-> 
-> That can be quite a bit of IO?
+The rule originally comes from nocow writing, but snapshot-aware
+defrag is a different case, the extent has been writen and we're
+not going to change the extent but add a reference on the data.
 
-To avoid the rescan you can do the assignment atomically with
-the creation of the subvol.
-Basically if you lay out your future quota/subvol/snapshot when
-you create your filesystem, you never have to do a rescan. The
-commands are all there for that, but it's not really easy to do
-if you have a complex setup. That part needs a better documentation
-and more examples, and also probably a better UI.
-Only if you change your mind later on you probably have to rescan.
+So we're able to allow such compressed extents to be merged into
+one bigger extent if they're pointing to the same data.
 
--Arne
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-> 
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 55dda87..a7aeecc 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2229,7 +2229,7 @@ static noinline bool record_extent_backrefs(struct btrfs_path *path,
+ 
+ static int relink_is_mergable(struct extent_buffer *leaf,
+ 			      struct btrfs_file_extent_item *fi,
+-			      u64 disk_bytenr)
++			      u64 disk_bytenr, u8 compress)
+ {
+ 	if (btrfs_file_extent_disk_bytenr(leaf, fi) != disk_bytenr)
+ 		return 0;
+@@ -2237,8 +2237,10 @@ static int relink_is_mergable(struct extent_buffer *leaf,
+ 	if (btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_REG)
+ 		return 0;
+ 
+-	if (btrfs_file_extent_compression(leaf, fi) ||
+-	    btrfs_file_extent_encryption(leaf, fi) ||
++	if (btrfs_file_extent_compression(leaf, fi) != compress)
++		return 0;
++
++	if (btrfs_file_extent_encryption(leaf, fi) ||
+ 	    btrfs_file_extent_other_encoding(leaf, fi))
+ 		return 0;
+ 
+@@ -2382,8 +2384,9 @@ again:
+ 				    struct btrfs_file_extent_item);
+ 		extent_len = btrfs_file_extent_num_bytes(leaf, fi);
+ 
+-		if (relink_is_mergable(leaf, fi, new->bytenr) &&
+-		    extent_len + found_key.offset == start) {
++		if (extent_len + found_key.offset == start &&
++		    relink_is_mergable(leaf, fi, new->bytenr,
++				       new->compress_type)) {
+ 			btrfs_set_file_extent_num_bytes(leaf, fi,
+ 							extent_len + len);
+ 			btrfs_mark_buffer_dirty(leaf);
+-- 
+1.8.1.4
 

@@ -1,104 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f170.google.com ([209.85.212.170]:50360 "EHLO
-	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753982Ab3HBFCe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 01:02:34 -0400
-Received: by mail-wi0-f170.google.com with SMTP id hi8so158970wib.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Aug 2013 22:02:32 -0700 (PDT)
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:40530 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752890Ab3HBG12 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Aug 2013 02:27:28 -0400
+Message-ID: <51FB5059.1080406@gmx.net>
+Date: Fri, 02 Aug 2013 08:23:21 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-In-Reply-To: <pan$4a6c0$5f5b3ad0$c61266cc$feaf3eba@cox.net>
-References: <pan$4a6c0$5f5b3ad0$c61266cc$feaf3eba@cox.net>
-Date: Fri, 2 Aug 2013 01:02:32 -0400
-Message-ID: <CAPs0Bihgip2L9qGrtqnUMozRHtDraCW-qyHXGV3eQsYwwpPVBQ@mail.gmail.com>
-Subject: Re: filefrag and btrfs filesystem defragment and maybe snapshots
-From: Sandy McArthur <sandymac@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Tomasz Chmielewski <tch@virtall.com>
+CC: linux-btrfs@vger.kernel.org, Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: btrfs quota examples?
+References: <20130610152127.38fb8a50@virtall.com> <51B58333.3050901@gmx.net> <20130729150510.19e5886a@virtall.com>
+In-Reply-To: <20130729150510.19e5886a@virtall.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 1, 2013 at 10:27 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Sandy McArthur posted on Thu, 01 Aug 2013 17:18:50 -0400 as excerpted:
->
->> While exploring some btrfs maintenance with respect to defragmenting I
->> ran the following commands:
+On 07/29/13 10:05, Tomasz Chmielewski wrote:
+> On Mon, 10 Jun 2013 09:41:39 +0200
+> Arne Jansen <sensille@gmx.net> wrote:
+> 
+>>> Now, my questions:
+>>>
+>>> - what do both 104882176 104882176 numbers represent?
 >>
->> # filefrag /path/to/34G.file /path/to/5.7G.file
->> /path/to/34G.file: 2406 extents found
->> /path/to/5.7G.file: 572 extents found
->>
->> Thinking those mostly static files could be less fragmented I ran:
->> # btrfs filesystem defragment -c /path/to/34G.file
->> # btrfs filesystem defragment -c /path/to/5.7G.file
->>
->> and to my surprise the number of fragments/extends doubled:
->>
->> # filefrag /path/to/34G.file /path/to/5.7G.file
->> /path/to/34G.file: 6324 extents found
->> /path/to/5.7G.file: 1079 extents found
->>
->> Did I actually improve these files?
->>
->> I do have a number rolling readonly snapshots on the subvolume these
->> files are on. I can imagine how that might be related but I'm not sure.
->> When the pre-defrag snapshots are purged will the filefrag extents count
->> drop.
->
-> I can't answer the snapshot angle, but do you have btrfs compression
-> turned on?  I've read that filefrag always sees btrfs compressed files of
-> sufficient size as fragmented, due to the way btrfs compression works.
+>> The first number represents the amount of data in that subvolume,
+>> regardless whether that data is shared with other subvolumes or
+>> not.
+>> The second number shows the amount of data that is unique to this
+>> subvolume and not shared with others, i.e. the amount of space
+>> that will get freed if you delete this subvolume.
+> 
+> I've played with qgroups for some time, but the results are rather
+> inconsistent.
+> 
+> I.e. here - what does a negative number represent in 0/1181 row?
 
-Compress at the mount options is not enabled. The '-c' in the defrag
-command is to attempt compression during the defrag process.
+Either you have turned on qgroups after filling the subvol with
+some data, or you've managed to produce a tracking error. In that
+case, we would be interested how you did that and how to reproduce
+it.
 
-I found that `btrfs filesystem defragment -c /path/to/5.7G.file` (with
-compression) take a while every time you run it repeatedly. Presumably
-to re-compress the file each time. But `btrfs filesystem defragment
-/path/to/5.7G.file` (without compression) will return instantly after
-the first defrag suggesting it knows when to avoid unnecessary work.
+-Arne
 
+> 
+> # btrfs qgroup show /mnt/lxc2
+> 0/260 151490953216 151490953216
+> 0/261 180969472 180969472
+> 0/262 155557888 983040
+> 0/377 180310016 25776128
+> 0/378 304088072192 304088072192
+> 0/535 571944960 417370112
+> 0/536 68550987776 68550987776
+> 0/642 247463936 92921856
+> 0/1175 617213952 827392
+> 0/1181 16112013312 -22184235008
+> 0/1268 38296248320 0
+> 0/1269 616386560 0
+> 0/1270 4096 4096
+> 0/1271 4096 4096
+> 
+> 
 
-I also observed compression does increase filefrag extents count. I
-think snapshots can keep the filefrag extents count high:
-
-# filefrag /path/to/5.7G.file
-/path/to/5.7G.file: 1173 extents found
-
-# btrfs subvolume delete /path/to/.snapshots/*
-Delete subvolume '/path/to/.snapshots/2013....'
-[...]
-
-# filefrag /path/to/5.7G.file
-/path/to/5.7G.file: 556 extents found
-
-Purging the old snapshots above reduced extents count.
-
-
-# btrfs filesystem defragment -c /path/to/5.7G.file
-# filefrag /path/to/5.7G.file
-/path/to/5.7G.file: 1260 extents found
-
-Compressing the file "increases" extents count.
-
-
-# btrfs filesystem defragment /path/to/5.7G.file
-# filefrag /path/to/5.7G.file
-/path/to/5.7G.file: 597 extents found
-
-Uncompressing file lowers extents count.
-
-# /snapshop-script.sh
-# filefrag /path/to/5.7G.file
-/path/to/5.7G.file: 597 extents found
-
-Taking a snapshot didn't directly increase the extents count.
-
-I don't know how to intentionally fragment a file to test other
-permutations of snapshots and defrag behavior.
-
--- 
-Sandy McArthur
-
-"He who dares not offend cannot be honest."
-- Thomas Paine

@@ -1,139 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:51668 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752178Ab3HEPT6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Aug 2013 11:19:58 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 49EA47C068D
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Aug 2013 09:19:58 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id N8Zpq8ubbHDpoMFs (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 05 Aug 2013 09:19:57 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: handle errors when doing slow caching
-Date: Mon, 5 Aug 2013 11:19:55 -0400
-Message-ID: <1375715995-3843-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:39685 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751521Ab3HDBDT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 3 Aug 2013 21:03:19 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1V5mj7-0000MD-Uo
+	for linux-btrfs@vger.kernel.org; Sun, 04 Aug 2013 03:03:17 +0200
+Received: from dyndsl-085-016-048-159.ewe-ip-backbone.de ([85.16.48.159])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 03:03:17 +0200
+Received: from hurikhan77+btrfs by dyndsl-085-016-048-159.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 03:03:17 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Is the checkpoint interval adjustable?
+Date: Sun, 04 Aug 2013 02:58:36 +0200
+Message-ID: <4jl0da-ep6.ln1@hurikhan.ath.cx>
+References: <20130731200229.221580@gmx.com> <17rvca-hju.ln1@hurikhan.ath.cx> <51FD3FDC.803@skagestad.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex Lyakas reported a bug where wait_block_group_cache_progress() would wait
-forever if a drive failed.  This is because we just bail out if there is an
-error while trying to cache a block group, we don't update anybody who may be
-waiting.  So this introduces a new enum for the cache state in case of error and
-makes everybody bail out if we have an error.  Alex tested and verified this
-patch fixed his problem.  This fixes bz 59431.  Thanks,
+Torbjørn <lists@skagestad.org> schrieb:
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/ctree.h       |    1 +
- fs/btrfs/extent-tree.c |   27 ++++++++++++++++++++-------
- 2 files changed, 21 insertions(+), 7 deletions(-)
+>> Just curious: What would be the benefit of increasing the checkpoint
+>> interval?
+> Laptops typically spin down disks to save power. If btrfs forces a write
+> every 30 second, you have to spin it back up.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index cbb1263..c17acbc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1188,6 +1188,7 @@ enum btrfs_caching_type {
- 	BTRFS_CACHE_STARTED	= 1,
- 	BTRFS_CACHE_FAST	= 2,
- 	BTRFS_CACHE_FINISHED	= 3,
-+	BTRFS_CACHE_ERROR	= 4,
- };
- 
- enum btrfs_disk_cache_state {
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e868c35..e6dfa7f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -113,7 +113,8 @@ static noinline int
- block_group_cache_done(struct btrfs_block_group_cache *cache)
- {
- 	smp_mb();
--	return cache->cached == BTRFS_CACHE_FINISHED;
-+	return cache->cached == BTRFS_CACHE_FINISHED ||
-+		cache->cached == BTRFS_CACHE_ERROR;
- }
- 
- static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
-@@ -389,7 +390,7 @@ static noinline void caching_thread(struct btrfs_work *work)
- 	u64 total_found = 0;
- 	u64 last = 0;
- 	u32 nritems;
--	int ret = 0;
-+	int ret = -ENOMEM;
- 
- 	caching_ctl = container_of(work, struct btrfs_caching_control, work);
- 	block_group = caching_ctl->block_group;
-@@ -517,6 +518,12 @@ err:
- 
- 	mutex_unlock(&caching_ctl->mutex);
- out:
-+	if (ret) {
-+		spin_lock(&block_group->lock);
-+		block_group->caching_ctl = NULL;
-+		block_group->cached = BTRFS_CACHE_ERROR;
-+		spin_unlock(&block_group->lock);
-+	}
- 	wake_up(&caching_ctl->wait);
- 
- 	put_caching_control(caching_ctl);
-@@ -6035,8 +6042,11 @@ static u64 stripe_align(struct btrfs_root *root,
-  * for our min num_bytes.  Another option is to have it go ahead
-  * and look in the rbtree for a free extent of a given size, but this
-  * is a good start.
-+ *
-+ * Callers of this must check if cache->cached == BTRFS_CACHE_ERROR before using
-+ * any of the information in this block group.
-  */
--static noinline int
-+static noinline void
- wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
- 				u64 num_bytes)
- {
-@@ -6044,28 +6054,29 @@ wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
- 
- 	caching_ctl = get_caching_control(cache);
- 	if (!caching_ctl)
--		return 0;
-+		return;
- 
- 	wait_event(caching_ctl->wait, block_group_cache_done(cache) ||
- 		   (cache->free_space_ctl->free_space >= num_bytes));
- 
- 	put_caching_control(caching_ctl);
--	return 0;
- }
- 
- static noinline int
- wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
- {
- 	struct btrfs_caching_control *caching_ctl;
-+	int ret = 0;
- 
- 	caching_ctl = get_caching_control(cache);
- 	if (!caching_ctl)
- 		return 0;
- 
- 	wait_event(caching_ctl->wait, block_group_cache_done(cache));
--
-+	if (cache->cached == BTRFS_CACHE_ERROR)
-+		ret = -EIO;
- 	put_caching_control(caching_ctl);
--	return 0;
-+	return ret;
- }
- 
- int __get_raid_index(u64 flags)
-@@ -6248,6 +6259,8 @@ have_block_group:
- 			ret = 0;
- 		}
- 
-+		if (unlikely(block_group->cached == BTRFS_CACHE_ERROR))
-+			goto loop;
- 		if (unlikely(block_group->ro))
- 			goto loop;
- 
--- 
-1.7.7.6
+I'd expect btrfs not to write to the disk when a checkpoint is reached and 
+no writes occurred to the filesystem meanwhile... Could some developer shed 
+some light on this?
+
+IMHO if this is true, there is no point in increasing the checkpoint 
+interval... Thoughts?
+
+Regards,
+Kai
 

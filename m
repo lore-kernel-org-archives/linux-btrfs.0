@@ -1,36 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:48172 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751341Ab3HDLtc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Aug 2013 07:49:32 -0400
-Received: from bluebottle.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 5F2B0218E1
-	for <linux-btrfs@vger.kernel.org>; Sun,  4 Aug 2013 21:42:13 +1000 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
+Received: from plane.gmane.org ([80.91.229.3]:33420 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751385Ab3HDMp0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Aug 2013 08:45:26 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1V5xgZ-0002iZ-Qp
+	for linux-btrfs@vger.kernel.org; Sun, 04 Aug 2013 14:45:23 +0200
+Received: from dyndsl-085-016-048-159.ewe-ip-backbone.de ([85.16.48.159])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 14:45:23 +0200
+Received: from hurikhan77+btrfs by dyndsl-085-016-048-159.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 14:45:23 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: error count
-Date: Sun, 4 Aug 2013 21:42:11 +1000
-MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201308042142.12310.russell@coker.com.au>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Recovery advice
+Date: Sun, 04 Aug 2013 14:41:54 +0200
+Message-ID: <kpu1da-elm.ln1@hurikhan.ath.cx>
+References: <CAPs0BijizOo0c566U6-uAe1voCr-W2SVHkMeT1sirTfi4jgeSg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've got a 3TB SATA disk that is known to have problems (it failed in a zpool 
-for one of my clients).  For test purposes I'm running a BTRFS RAID-1 on two 
-partitions on that disk, bad for performance and not something you'd normally 
-do but good for testing.
+Sandy McArthur <sandymac@gmail.com> schrieb:
 
-BTRFS recovers from read errors quite well and gives informative log messages.
+> I have a 4 disk RAID1 setup that fails to {mount,btrfsck} when disk 4
+> is connected.
+> 
+> With disk 4 attached btrfsck errors with:
+> btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion
+> `!(path->slots[0] == 0)' failed
+> (I'd have to reboot in a non-functioning state to get the full output.)
+> 
+> I can mount the filesystem in a degraded state with the 4th drive
+> removed. I believe there is some data corruption as I see lines in
+> /var/log/messages from the degraded,ro filesystem like this:
+> 
+> BTRFS info (device sdd1): csum failed ino 4433 off 3254538240 csum
+> 1033749897 private 2248083221
+> 
+> I'm at the point where all I can think to do is wipe disk 4 and then
+> add it back in. Is there anything else I should try first. I have
+> booted btrfs-next with the latest btrfs-progs.
 
-But it doesn't seem possible to get a count of the number of errors.  I think 
-that at the minimum I should be able to get a count of the number of errors 
-from a device since it was attached to the system.  I think that the ideal 
-would be to have an error count stored on the device and available to the 
-sysadmin.
+It is a RAID-1 so why bother with the faulty drive? Just wipe it, put it 
+back in, then run a btrfs balance... There should be no data loss because 
+all data is stored twice (two-way mirroring).
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Regards,
+Kai
+

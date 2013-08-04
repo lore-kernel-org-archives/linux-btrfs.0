@@ -1,45 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:54366 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752773Ab3HDS7N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Aug 2013 14:59:13 -0400
-Received: by mail-wg0-f49.google.com with SMTP id y10so1794050wgg.28
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 11:59:12 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:47467 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753932Ab3HDWUG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Aug 2013 18:20:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1V66eh-0006Zx-UC
+	for linux-btrfs@vger.kernel.org; Mon, 05 Aug 2013 00:20:03 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Aug 2013 00:20:03 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Aug 2013 00:20:03 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix inode leak on kmalloc failure in tree-log.c
-Date: Sun,  4 Aug 2013 19:58:57 +0100
-Message-Id: <1375642737-18448-1-git-send-email-fdmanana@gmail.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recovery advice
+Date: Sun, 4 Aug 2013 22:19:31 +0000 (UTC)
+Message-ID: <pan$b7e2c$bf7f3666$af6e4a6$909b9d97@cox.net>
+References: <CAPs0BijizOo0c566U6-uAe1voCr-W2SVHkMeT1sirTfi4jgeSg@mail.gmail.
+	com> <kpu1da-elm.ln1@hurikhan.ath.cx>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In tree-log.c:replay_one_name(), if memory allocation for
-the name fails, ensure we iput the dir inode we got before
-before we return.
+Kai Krakow posted on Sun, 04 Aug 2013 14:41:54 +0200 as excerpted:
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/tree-log.c |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+> It is a RAID-1 so why bother with the faulty drive? Just wipe it, put it
+> back in, then run a btrfs balance... There should be no data loss
+> because all data is stored twice (two-way mirroring).
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index ff60d89..6797a93 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1536,8 +1536,10 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
- 
- 	name_len = btrfs_dir_name_len(eb, di);
- 	name = kmalloc(name_len, GFP_NOFS);
--	if (!name)
--		return -ENOMEM;
-+	if (!name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 
- 	log_type = btrfs_dir_type(eb, di);
- 	read_extent_buffer(eb, name, (unsigned long)(di + 1),
+The caveat would be if it didn't start as btrfs raid1, and there's still 
+some data (or possibly metadata if it was the single drive at one point 
+or they're ssds, as btrfs defaults to metadata single in ssd mode) that 
+hasn't been duped elsewhere.
+
 -- 
-1.7.9.5
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

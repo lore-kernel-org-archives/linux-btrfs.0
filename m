@@ -1,40 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53350 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:44260 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752907Ab3HBApB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Aug 2013 20:45:01 -0400
-Date: Fri, 2 Aug 2013 02:44:59 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: fix closing of opendir()
-Message-ID: <20130802004459.GG24343@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1373888210-5351-1-git-send-email-wangshilong1991@gmail.com>
+	id S1753432Ab3HDQEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Aug 2013 12:04:21 -0400
+Message-ID: <51FE7B7F.2090206@redhat.com>
+Date: Sun, 04 Aug 2013 11:04:15 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1373888210-5351-1-git-send-email-wangshilong1991@gmail.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 04/12] Btrfs-progs: cleanup similar code in open_ctree_*
+ and close_ctree
+References: <1372857920-4678-1-git-send-email-miaox@cn.fujitsu.com> <1372857920-4678-5-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1372857920-4678-5-git-send-email-miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1476,11 +1475,11 @@ u64 parse_size(char *s)
->  	return strtoull(s, NULL, 10) * mult;
->  }
+On 7/3/13 8:25 AM, Miao Xie wrote:
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  btrfs-find-root.c | 137 +++-------------
+>  disk-io.c         | 473 +++++++++++++++++++++++++++++++-----------------------
+>  disk-io.h         |  12 ++
+>  3 files changed, 307 insertions(+), 315 deletions(-)
+
+This broke at least btrfs-convert:
+
+> ./btrfs-convert fsfile
+> No valid Btrfs found on fsfile
+> unable to open ctree
+> conversion aborted.
+
+I read the detailed changelog carefully but it didn't help me
+understand the change, or how it might have broken.  (yes,
+that's sarcasm ;) ).
+
+Can you take a look & see what is wrong with your change?
+
+Also, I guess we need a regression test for btrfs-convert.
+
+-Eric
+
+> diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+> index da22c1d..f2cc1bf 100644
+> --- a/btrfs-find-root.c
+> +++ b/btrfs-find-root.c
+> @@ -67,74 +67,31 @@ int csum_block(void *buf, u32 len)
 >  
-> -int open_file_or_dir(const char *fname)
-> +int open_file_or_dir(const char *fname, DIR **dirstream)
+>  static struct btrfs_root *open_ctree_broken(int fd, const char *device)
 >  {
->  	int ret;
->  	struct stat st;
-> -	DIR *dirstream = NULL;
-> +	*dirstream = NULL;
+> -	u32 sectorsize;
+> -	u32 nodesize;
+> -	u32 leafsize;
+> -	u32 blocksize;
+> -	u32 stripesize;
+> -	u64 generation;
+> -	struct btrfs_root *tree_root = malloc(sizeof(struct btrfs_root));
+> -	struct btrfs_root *extent_root = malloc(sizeof(struct btrfs_root));
+> -	struct btrfs_root *chunk_root = malloc(sizeof(struct btrfs_root));
+> -	struct btrfs_root *dev_root = malloc(sizeof(struct btrfs_root));
+> -	struct btrfs_root *csum_root = malloc(sizeof(struct btrfs_root));
+> -	struct btrfs_fs_info *fs_info = malloc(sizeof(*fs_info));
+> -	int ret;
+<giant snip>
 
-This is imho not needed, all call sites explicitly set dirstream to NULL
-which is more clear than hiding it inside a function as a sideefect, so
-I'll drop that line.
 
->  	int fd;
->  
->  	ret = stat(fname, &st);

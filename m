@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f182.google.com ([74.125.82.182]:62209 "EHLO
-	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751850Ab3HCOEt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Aug 2013 10:04:49 -0400
-Received: by mail-we0-f182.google.com with SMTP id u55so1330942wes.13
-        for <linux-btrfs@vger.kernel.org>; Sat, 03 Aug 2013 07:04:48 -0700 (PDT)
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:34812 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752368Ab3HDOOU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Aug 2013 10:14:20 -0400
+Received: by mail-wg0-f50.google.com with SMTP id m15so1713879wgh.17
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Aug 2013 07:14:18 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v5] Btrfs-progs: restore can now recover file xattrs
-Date: Sat,  3 Aug 2013 15:04:31 +0100
-Message-Id: <1375538671-31543-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs-progs: restore can now recover file xattrs
+Date: Sun,  4 Aug 2013 15:14:05 +0100
+Message-Id: <1375625645-5790-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 References: <1373499920-32007-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -28,12 +28,14 @@ V3: Return with 0 when there are no more leaves.
 V4: Fix back return value to 0 when no more xattrs are found.
 V5: Deal with multiple dir items per single xattr key. This
     happens when multiple xattr names have the same hash.
+V6: Reset cur to 0 for every xattr found for a single file.
+
 
  cmds-restore.c |  122 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 121 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index e48df40..656eed2 100644
+index e48df40..4ac6e55 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
 @@ -30,6 +30,8 @@
@@ -67,8 +69,7 @@ index e48df40..656eed2 100644
 +	u32 name_len = 0;
 +	u32 data_len = 0;
 +	u32 len = 0;
-+	u32 cur = 0;
-+	u32 total_len;
++	u32 cur, total_len;
 +	char *name = NULL;
 +	char *data = NULL;
 +	int ret = 0;
@@ -108,6 +109,7 @@ index e48df40..656eed2 100644
 +		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
 +		if (key.type != BTRFS_XATTR_ITEM_KEY || key.objectid != inode)
 +			break;
++		cur = 0;
 +		total_len = btrfs_item_size_nr(leaf, path->slots[0]);
 +		di = btrfs_item_ptr(leaf, path->slots[0],
 +				    struct btrfs_dir_item);

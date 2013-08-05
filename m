@@ -1,77 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33157 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752085Ab3HUDi7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 23:38:59 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: jbacik@fusionio.com
+Received: from mx1.redhat.com ([209.132.183.28]:26040 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754418Ab3HEWLB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Aug 2013 18:11:01 -0400
+Date: Mon, 5 Aug 2013 15:10:59 -0700
+From: Zach Brown <zab@redhat.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: return btrfs error code for dev excl ops err
-Date: Wed, 21 Aug 2013 11:44:48 +0800
-Message-Id: <1377056688-16724-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1376979054-2883-2-git-send-email-anand.jain@oracle.com>
-References: <1376979054-2883-2-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH] Btrfs: race free update of super flags
+Message-ID: <20130805221059.GJ12314@lenny.home.zabbo.net>
+References: <1375555397-10886-1-git-send-email-fdmanana@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1375555397-10886-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-now threads can return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
-as defined in btrfs.h for the dev excl operation error in
-the FS, which means with this kernel would stop logging
-(almost an user error) into the /var/log/messages
+On Sat, Aug 03, 2013 at 07:43:17PM +0100, Filipe David Borba Manana wrote:
+> Before updating the super block's flags, which is a non-atomic
+> operation, grab the super_lock in the fs_info structure. At
+> the moment only 2 different code paths can update these flags
+> in parallel:
 
-v2: accepts Josef' comment
+Hmm.  You say "the" super block, but it's not clear to me that it's that
+simple.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/ioctl.c |   12 ++++--------
- 1 files changed, 4 insertions(+), 8 deletions(-)
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3357,8 +3357,10 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+>  		memcpy(dev_item->uuid, dev->uuid, BTRFS_UUID_SIZE);
+>  		memcpy(dev_item->fsid, dev->fs_devices->fsid, BTRFS_UUID_SIZE);
+>  
+> +		spin_lock(&root->fs_info->super_lock);
+>  		flags = btrfs_super_flags(sb);
+>  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+> +		spin_unlock(&root->fs_info->super_lock);
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 107c5f4..89f346c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1382,9 +1382,8 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 
- 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
--		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
- 		mnt_drop_write_file(file);
--		return -EINVAL;
-+		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 	}
- 
- 	mutex_lock(&root->fs_info->volume_mutex);
-@@ -2346,8 +2345,7 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
- 
- 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
--		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
--		return -EINVAL;
-+		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 	}
- 
- 	mutex_lock(&root->fs_info->volume_mutex);
-@@ -3638,8 +3636,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
- 		if (atomic_xchg(
- 			&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
--			pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
--			ret = -EINPROGRESS;
-+			ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		} else {
- 			ret = btrfs_dev_replace_start(root, p);
- 			atomic_set(
-@@ -3883,8 +3880,7 @@ again:
- 	} else {
- 		/* this is (1) */
- 		mutex_unlock(&fs_info->balance_mutex);
--		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
--		ret = -EINVAL;
-+		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		goto out;
- 	}
- 
--- 
-1.7.1
+        sb = root->fs_info->super_for_commit;
 
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1862,9 +1862,11 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
+>  	generate_random_uuid(fs_devices->fsid);
+>  	memcpy(root->fs_info->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
+>  	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
+> +	spin_lock(&root->fs_info->super_lock);
+>  	super_flags = btrfs_super_flags(disk_super) &
+>  		      ~BTRFS_SUPER_FLAG_SEEDING;
+>  	btrfs_set_super_flags(disk_super, super_flags);
+> +	spin_unlock(&root->fs_info->super_lock);
+
+        struct btrfs_super_block *disk_super = root->fs_info->super_copy;
+
+Can you explain why the lock is needed given the different super blocks
+and the mutexes that each path holds?
+
+What lead you to write this patch?
+
+- z

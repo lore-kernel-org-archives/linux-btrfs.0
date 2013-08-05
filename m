@@ -1,63 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33151 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751885Ab3HEPLG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Aug 2013 11:11:06 -0400
+Received: from dkim1.fusionio.com ([66.114.96.53]:51668 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752178Ab3HEPT6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Aug 2013 11:19:58 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 1224C9A0406
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Aug 2013 09:11:06 -0600 (MDT)
-Date: Mon, 5 Aug 2013 11:09:06 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 49EA47C068D
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Aug 2013 09:19:58 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id N8Zpq8ubbHDpoMFs (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 05 Aug 2013 09:19:57 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: stop all workers before cleaning up roots
-Message-ID: <20130805150906.GG2372@localhost.localdomain>
-References: <1369947496-27707-1-git-send-email-jbacik@fusionio.com>
- <CAOcd+r1mkZhaFNNBsu6G89zBKmtLTL5U72mBczFpukMNXckKXw@mail.gmail.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: handle errors when doing slow caching
+Date: Mon, 5 Aug 2013 11:19:55 -0400
+Message-ID: <1375715995-3843-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAOcd+r1mkZhaFNNBsu6G89zBKmtLTL5U72mBczFpukMNXckKXw@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 01, 2013 at 05:05:35PM +0300, Alex Lyakas wrote:
-> Hi Josef,
-> 
-> On Thu, May 30, 2013 at 11:58 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> > Dave reported a panic because the extent_root->commit_root was NULL in the
-> > caching kthread.  That is because we just unset it in free_root_pointers, which
-> > is not the correct thing to do, we have to either wait for the caching kthread
-> > to complete or hold the extent_commit_sem lock so we know the thread has exited.
-> > This patch makes the kthreads all stop first and then we do our cleanup.  This
-> > should fix the race.  Thanks,
-> >
-> > Reported-by: David Sterba <dsterba@suse.cz>
-> > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> > ---
-> >  fs/btrfs/disk-io.c |    6 +++---
-> >  1 files changed, 3 insertions(+), 3 deletions(-)
-> >
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index 2b53afd..77cb566 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -3547,13 +3547,13 @@ int close_ctree(struct btrfs_root *root)
-> >
-> >         btrfs_free_block_groups(fs_info);
-> 
-> do you think it would be safer to stop all workers first and make sure
-> they are stopped, then do btrfs_free_block_groups()? I see, for
-> example, that btrfs_free_block_groups() checks:
-> if (block_group->cached == BTRFS_CACHE_STARTED)
-> which could be perhaps racy with other people spawning caching_threads.
-> 
-> So maybe better to stop all threads (including cleaner and committer)
-> and then free everything?
-> 
+Alex Lyakas reported a bug where wait_block_group_cache_progress() would wait
+forever if a drive failed.  This is because we just bail out if there is an
+error while trying to cache a block group, we don't update anybody who may be
+waiting.  So this introduces a new enum for the cache state in case of error and
+makes everybody bail out if we have an error.  Alex tested and verified this
+patch fixed his problem.  This fixes bz 59431.  Thanks,
 
-Well nobody should be writing anymore, so we shouldn't be starting any new
-caching_kthreads, we should just be cleaning up threads that are already
-running.  Btrfs_free_block_groups() will wait on any kthreads it spawned, so we
-are good there.  Hth,
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/extent-tree.c |   27 ++++++++++++++++++++-------
+ 2 files changed, 21 insertions(+), 7 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index cbb1263..c17acbc 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1188,6 +1188,7 @@ enum btrfs_caching_type {
+ 	BTRFS_CACHE_STARTED	= 1,
+ 	BTRFS_CACHE_FAST	= 2,
+ 	BTRFS_CACHE_FINISHED	= 3,
++	BTRFS_CACHE_ERROR	= 4,
+ };
+ 
+ enum btrfs_disk_cache_state {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e868c35..e6dfa7f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -113,7 +113,8 @@ static noinline int
+ block_group_cache_done(struct btrfs_block_group_cache *cache)
+ {
+ 	smp_mb();
+-	return cache->cached == BTRFS_CACHE_FINISHED;
++	return cache->cached == BTRFS_CACHE_FINISHED ||
++		cache->cached == BTRFS_CACHE_ERROR;
+ }
+ 
+ static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
+@@ -389,7 +390,7 @@ static noinline void caching_thread(struct btrfs_work *work)
+ 	u64 total_found = 0;
+ 	u64 last = 0;
+ 	u32 nritems;
+-	int ret = 0;
++	int ret = -ENOMEM;
+ 
+ 	caching_ctl = container_of(work, struct btrfs_caching_control, work);
+ 	block_group = caching_ctl->block_group;
+@@ -517,6 +518,12 @@ err:
+ 
+ 	mutex_unlock(&caching_ctl->mutex);
+ out:
++	if (ret) {
++		spin_lock(&block_group->lock);
++		block_group->caching_ctl = NULL;
++		block_group->cached = BTRFS_CACHE_ERROR;
++		spin_unlock(&block_group->lock);
++	}
+ 	wake_up(&caching_ctl->wait);
+ 
+ 	put_caching_control(caching_ctl);
+@@ -6035,8 +6042,11 @@ static u64 stripe_align(struct btrfs_root *root,
+  * for our min num_bytes.  Another option is to have it go ahead
+  * and look in the rbtree for a free extent of a given size, but this
+  * is a good start.
++ *
++ * Callers of this must check if cache->cached == BTRFS_CACHE_ERROR before using
++ * any of the information in this block group.
+  */
+-static noinline int
++static noinline void
+ wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
+ 				u64 num_bytes)
+ {
+@@ -6044,28 +6054,29 @@ wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
+ 
+ 	caching_ctl = get_caching_control(cache);
+ 	if (!caching_ctl)
+-		return 0;
++		return;
+ 
+ 	wait_event(caching_ctl->wait, block_group_cache_done(cache) ||
+ 		   (cache->free_space_ctl->free_space >= num_bytes));
+ 
+ 	put_caching_control(caching_ctl);
+-	return 0;
+ }
+ 
+ static noinline int
+ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
+ {
+ 	struct btrfs_caching_control *caching_ctl;
++	int ret = 0;
+ 
+ 	caching_ctl = get_caching_control(cache);
+ 	if (!caching_ctl)
+ 		return 0;
+ 
+ 	wait_event(caching_ctl->wait, block_group_cache_done(cache));
+-
++	if (cache->cached == BTRFS_CACHE_ERROR)
++		ret = -EIO;
+ 	put_caching_control(caching_ctl);
+-	return 0;
++	return ret;
+ }
+ 
+ int __get_raid_index(u64 flags)
+@@ -6248,6 +6259,8 @@ have_block_group:
+ 			ret = 0;
+ 		}
+ 
++		if (unlikely(block_group->cached == BTRFS_CACHE_ERROR))
++			goto loop;
+ 		if (unlikely(block_group->ro))
+ 			goto loop;
+ 
+-- 
+1.7.7.6
+

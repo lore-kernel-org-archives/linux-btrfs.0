@@ -1,55 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:57281 "EHLO mail.virtall.com"
+Received: from cantor2.suse.de ([195.135.220.15]:54314 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755907Ab3HFQmi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Aug 2013 12:42:38 -0400
-Date: Wed, 7 Aug 2013 00:42:27 +0800
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: Arne Jansen <sensille@gmx.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Heavy memory leak when using quota groups
-Message-ID: <20130807004227.6b2b688e@wpkg.org>
-In-Reply-To: <5200888A.4030109@gmx.net>
-References: <20130806003505.7d7feff6@wpkg.org>
-	<5200888A.4030109@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	id S1753278Ab3HFSnR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Aug 2013 14:43:17 -0400
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        Gabriel de Perthuis <g2p.code@gmail.com>,
+        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>
+Subject: [PATCH 0/4] btrfs: out-of-band (aka offline) dedupe v4
+Date: Tue,  6 Aug 2013 11:42:47 -0700
+Message-Id: <1375814571-31753-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 06 Aug 2013 07:24:26 +0200
-Arne Jansen <sensille@gmx.net> wrote:
+Hi,
 
-> On 05.08.2013 18:35, Tomasz Chmielewski wrote:
-> >> I am trying to use qgroups
-> >> functionality & with a basic random-write workload, it constantly
-> >> keeps leaking memory & within few minutes of IO, there is either
-> >> out-of-memory killer trying to kill some tasks or there are
-> >> page-allocation failures that btrfs or other kernel module
-> >> experiences.
-> > 
-> > FYI, I just saw something similar with 3.10 on a server with 32 GB
-> > RAM:
-> > 
-> > The result was a frozen server and a need to hard reset.
-> > 
-> 
-> What do I have to do to reproduce it here? How do you generate the
-> load? What is the disk setup, what the qgroups setup?
+The following series of patches implements in btrfs an ioctl to do
+out-of-band deduplication of file extents.
 
-Unfortunately I don't have a way to reproduce, as the issue
-happened to me only once.
+To be clear, this means that the file system is mounted and running, but the
+dedupe is not done during file writes, but after the fact when some
+userspace software initiates a dedupe.
 
-Server uptime was about 2 weeks, and there were millions of files with
-multiple hardlinks on disk (backuppc archive copied from ext4 to
-btrfs). Then, "rm" command was running for many days, about 5 times in
-parallel, and many other rsync commands, with snapshots being added and
-removed.
+The primary patch is loosely based off of one sent by Josef Bacik back
+in January, 2011.
 
-When I saw the issue I looked up in btrfs list archives that there was
-a similar report in the past - but I doubt I will be able to find a
-reliable way to reproduce this.
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/8508
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+I've made significant updates and changes from the original. In
+particular the structure passed is more fleshed out, this series has a
+high degree of code sharing between itself and the clone code, and the
+locking has been updated.
+
+
+The ioctl accepts a struct:
+
+struct btrfs_ioctl_same_args {
+	__u64 logical_offset;	/* in - start of extent in source */
+	__u64 length;		/* in - length of extent */
+	__u16 dest_count;	/* in - total elements in info array */
+	__u16 reserved1;
+	__u32 reserved2;
+	struct btrfs_ioctl_same_extent_info info[0];
+};
+
+Userspace puts each duplicate extent (other than the source) in an
+item in the info array. As there can be multiple dedupes in one
+operation, each info item has it's own status and 'bytes_deduped'
+member. This provides a number of benefits:
+
+- We don't have to fail the entire ioctl because one of the dedupes failed.
+
+- Userspace will always know how much progress was made on a file as we always
+  return the number of bytes deduped.
+
+
+#define BTRFS_SAME_DATA_DIFFERS	1
+/* For extent-same ioctl */
+struct btrfs_ioctl_same_extent_info {
+	__s64 fd;		/* in - destination file */
+	__u64 logical_offset;	/* in - start of extent in destination */
+	__u64 bytes_deduped;	/* out - total # of bytes we were able
+				 * to dedupe from this file */
+	/* status of this dedupe operation:
+	 * 0 if dedup succeeds
+	 * < 0 for error
+	 * == BTRFS_SAME_DATA_DIFFERS if data differs
+	 */
+	__s32 status;		/* out - see above description */
+	__u32 reserved;
+};
+
+
+The kernel patches are based off Linux v3.9. At this point I've tested the
+ioctl against a decent variety of files and conditions.
+
+A git tree for the kernel changes can be found at:
+
+https://github.com/markfasheh/btrfs-extent-same
+
+
+I have a userspace project, duperemove available at:
+
+https://github.com/markfasheh/duperemove
+
+Hopefully this can serve as an example of one possible usage of the ioctl.
+
+duperemove takes a list of files as argument and will search them for
+duplicated extents. If given the '-D' switch, duperemove will send dedupe
+requests for same extents and display the results.
+
+Within the duperemove repo is a file, btrfs-extent-same.c that acts as
+a test wrapper around the ioctl. It can be compiled completely
+seperately from the rest of the project via "make
+btrfs-extent-same". This makes direct testing of the ioctl more
+convenient.
+
+
+Gabriel de Perthuis also has a bedup branch which works against this ioctl.
+The branch can be found at:
+
+https://github.com/g2p/bedup/tree/wip/dedup-syscall
+
+
+Limitations
+
+We can't yet dedupe within the same file (that is, source and destination
+are the same inode). This is due to a limitation in btrfs_clone().
+ 
+
+Code review is very much appreciated. Thanks,
+     --Mark
+
+
+ChangeLog
+
+All of this rounds fixes are thanks to review from Zach Brown <zab@redhat.com>
+
+- test for errors from extent_read_full_page_nolock()
+
+- use kmap_atomic() instead of kmap()
+
+- WARN_ON and return an error if blocksize < pagesize
+
+- describe the use and reasoning of BTRFS_MAX_DEDUPE_LEN in comments
+
+- explicitely check !S_ISREG on input files now
+
+- copy arguments into/out of userspace on demand
+
+- do i_size and data checksumming checks under lock
+
+Changes from v2 to v3:
+
+- allow root to always dedupe
+
+- call flush_dcach_page() before we memcmp user data (thanks to Zach Brown
+  <zab@redhat.com> for review)
+
+- make sure we can't get a symlink passed in as one of our arguments (thanks
+  to Zach Brown <zab@redhat.com> for review)
+
+- we don't read into buffers any more and compare page by page (thanks to
+  Zach Brown <zab@redhat.com> for review)
+
+- rework btrfs_double_lock() a bit to use swap() (thanks to Zach Brown
+  <zab@redhat.com> for review)
+
+Changes from v1 to v2
+
+- check that we have appropriate access to each file before deduping. For
+  the source, we only check that it is opened for read. Target files have to
+  be open for write.
+
+- don't dedupe on readonly submounts (this is to maintain 
+
+- check that we don't dedupe files with different checksumming states
+ (compare BTRFS_INODE_NODATASUM flags)
+
+- get and maintain write access to the mount during the extent same
+  operation (mount_want_write())
+
+- allocate our read buffers up front in btrfs_ioctl_file_extent_same() and
+  pass them through for re-use on every call to btrfs_extent_same(). (thanks
+  to David Sterba <dsterba@suse.cz> for reporting this
+
+- As the read buffers could possibly be up to 1MB (depending on user
+  request), we now conditionally vmalloc them.
+
+- removed redundant check for same inode. btrfs_extent_same() catches it now
+  and bubbles the error up.
+
+- remove some unnecessary printks
+
+Changes from RFC to v1:
+
+- don't error on large length value in btrfs exent-same, instead we just
+  dedupe the maximum allowed.  That way userspace doesn't have to worry
+  about an arbitrary length limit.
+
+- btrfs_extent_same will now loop over the dedupe range at 1MB increments (for
+  a total of 16MB per request)
+
+- cleaned up poorly coded while loop in __extent_read_full_page() (thanks to
+  David Sterba <dsterba@suse.cz> for reporting this)
+
+- included two fixes from Gabriel de Perthuis <g2p.code@gmail.com>:
+   - allow dedupe across subvolumes
+   - don't lock compressed pages twice when deduplicating
+
+- removed some unused / poorly designed fields in btrfs_ioctl_same_args.
+  This should also give us a bit more reserved bytes.
+
+- return -E2BIG instead of -ENOMEM when arg list is too large (thanks to
+  David Sterba <dsterba@suse.cz> for reporting this)
+
+- Some more reserved bytes are now included as a result of some of my
+  cleanups. Quite possibly we could add a couple more.

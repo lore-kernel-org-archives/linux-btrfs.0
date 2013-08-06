@@ -1,36 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34031 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752490Ab3HEREV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Aug 2013 13:04:21 -0400
-Date: Mon, 5 Aug 2013 19:04:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 06/11] btrfs-progs: scan /dev/mapper in filesystem show
- and device scan
-Message-ID: <20130805170419.GE5284@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:35264 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753088Ab3HFPJA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2013 11:09:00 -0400
+Message-ID: <52011178.8090200@oracle.com>
+Date: Tue, 06 Aug 2013 23:08:40 +0800
+From: anand jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1373866257-10519-7-git-send-email-anand.jain@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/11 v2 (resend)] btrfs-progs: coalesce of patches
+References: <1373866257-10519-1-git-send-email-anand.jain@oracle.com> <20130805173643.GF5284@twin.jikos.cz>
+In-Reply-To: <20130805173643.GF5284@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1373866257-10519-1-git-send-email-anand.jain@oracle.com>
- <1373866257-10519-7-git-send-email-anand.jain@oracle.com>
 
-On Mon, Jul 15, 2013 at 01:30:52PM +0800, Anand Jain wrote:
-> This patch adds --mapper option to btrfs device scan and
-> btrfs filesystem show cli, when used will look for btrfs
-> devs under /dev/mapper and will use the links provided
-> under the /dev/mapper.
 
-> In the long run I want the usage of /dev/mapper path
-> (along with /proc/partitions) be the default option to
-> scan for the btrfs devs. (/proc/partitions must be scanned
-> as well because to include the mapper blacklisted devs.)
+On 06/08/2013 01:36, David Sterba wrote:
+> On Mon, Jul 15, 2013 at 01:30:46PM +0800, Anand Jain wrote:
+>> Anand Jain (11):
+>>    btrfs-progs: btrfs_scan_for_fsid doesn't need all the arguments
+>>    btrfs-progs: label option in btrfs filesystem show is not coded
+>>    btrfs-progs: update device scan usage
+>>    btrfs-progs: congregate dev scan
+>>    btrfs-progs: btrfs_scan_one_dir not to skip links when /dev/mapper is
+>>      provided
+>>    btrfs-progs: scan /dev/mapper in filesystem show and device scan
+>>    btrfs-progs: device delete to get errors from the kernel
+>>    btrfs-progs: get_label_mounted to return label instead of print
+>>    btrfs-progs: move out print in cmd_df to another function
+>>    btrfs-progs: get string for the group profile and type
+>>    btrfs-progs: introduce btrfs filesystem show --kernel
+>
+> patches 1-4,7,8 added to integration, skipped 5,6 as they enhance dev
+> scan that'll need a rewrite anyway.
+>
+> 9-11 are sort of independent of the previous changes so I'd like to look
+> at them in context of all the other df/show patches.
 
-Well, we want to avoid using own scanning and always consult the blkid
-cache, so I'd rather stop adding user-visible changes to this command.
+  makes sense. I am looking at them.
 
-david
+Thanks,  Anand

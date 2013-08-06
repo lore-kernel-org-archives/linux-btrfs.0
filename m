@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:46737 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753315Ab3HFUy0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2013 16:54:26 -0400
+Received: from dkim1.fusionio.com ([66.114.96.53]:36997 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755949Ab3HFVHO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2013 17:07:14 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 5616B9A06A2
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 Aug 2013 14:54:26 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id 51FA3byaIVymVmtb (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 06 Aug 2013 14:54:25 -0600 (MDT)
+	by dkim1.fusionio.com (Postfix) with ESMTP id 113F87C06A0
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 Aug 2013 15:07:14 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id AMMZqUA6ssSMlPO2 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 06 Aug 2013 15:07:13 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: check our parent dir when doing a compare send
-Date: Tue, 6 Aug 2013 16:54:23 -0400
-Message-ID: <1375822463-7901-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: check our parent dir when doing a compare send V2
+Date: Tue, 6 Aug 2013 17:07:11 -0400
+Message-ID: <1375823231-8806-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -37,40 +37,16 @@ of the way because it would have been completely destroyed.  This fixes bz
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/send.c |   28 ++++++++++++++++++++++++++--
- 1 files changed, 26 insertions(+), 2 deletions(-)
+V1->V2: remove the debugging stuff
+
+ fs/btrfs/send.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d3f3b43..ab82473 100644
+index d3f3b43..0efc2e2 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -34,9 +34,9 @@
- #include "btrfs_inode.h"
- #include "transaction.h"
- 
--static int g_verbose = 0;
-+static int g_verbose = 1;
- 
--#define verbose_printk(...) if (g_verbose) printk(__VA_ARGS__)
-+#define verbose_printk(...) if (g_verbose) trace_printk(__VA_ARGS__)
- 
- /*
-  * A fs_path is a helper to dynamically build path names with unknown size.
-@@ -608,8 +608,13 @@ static int send_rename(struct send_ctx *sctx,
- 		     struct fs_path *from, struct fs_path *to)
- {
- 	int ret;
-+	int len = strlen(from->start);
-+	char blah[] = "nixpkgs/pkgs/development/libraries/liblqr-1/default.nix";
-+
- 
- verbose_printk("btrfs: send_rename %s -> %s\n", from->start, to->start);
-+	if (len == strlen(blah) && !memcmp(blah, from->start, len ))
-+		dump_stack();
- 
- 	ret = begin_cmd(sctx, BTRFS_SEND_C_RENAME);
- 	if (ret < 0)
-@@ -1668,6 +1673,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+@@ -1668,6 +1668,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
  			      u64 *who_ino, u64 *who_gen)
  {
  	int ret = 0;
@@ -78,7 +54,7 @@ index d3f3b43..ab82473 100644
  	u64 other_inode = 0;
  	u8 other_type = 0;
  
-@@ -1678,6 +1684,24 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+@@ -1678,6 +1679,24 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
  	if (ret <= 0)
  		goto out;
  

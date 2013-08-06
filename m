@@ -1,84 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:21997 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755676Ab3HGIc3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Aug 2013 04:32:29 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:63888 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756665Ab3HFS2g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2013 14:28:36 -0400
+Received: by mail-wg0-f43.google.com with SMTP id z12so671453wgg.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Aug 2013 11:28:35 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [patch v2 resend 4/8] Btrfs-progs: add man page information for btrfs-find-root
-Date: Wed, 7 Aug 2013 16:30:59 +0800
-Message-Id: <1375864259-10920-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH RFC] Btrfs-progs: allow btrfstune to set persistent mount options
+Date: Tue,  6 Aug 2013 19:28:27 +0100
+Message-Id: <1375813707-14167-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-V1->V2: GPLv3->GPLv2
-Thanks to Stefan Behrens
----
- man/Makefile             |  2 +-
- man/btrfs-find-root.8.in | 36 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 37 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-find-root.8.in
+This is the complement to the corresponding kernel patch that
+adds support for permanent options.
 
-diff --git a/man/Makefile b/man/Makefile
-index b1d3645..3d2e3ba 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
- .SUFFIXES: .in .gz
+NOTE: Like the corresponding kernel patch, this is a WIP with the
+goal o gathering feedback.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ btrfstune.c  |  105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ ctree.h      |    8 +++++
+ print-tree.c |    9 +++++
+ 3 files changed, 120 insertions(+), 2 deletions(-)
+
+diff --git a/btrfstune.c b/btrfstune.c
+index 4db1767..b3d3e57 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -97,12 +97,100 @@ int enable_skinny_metadata(struct btrfs_root *root)
+ 	return 0;
+ }
  
- MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
--	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
-+	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
- INFILES = ${MANPAGES:.in=.gz}
++static int set_persistent_mount_options(struct btrfs_root *root,
++					const char *options)
++{
++	int ret;
++	struct btrfs_trans_handle *trans = NULL;
++	struct btrfs_path *path;
++	struct btrfs_key key, location;
++	struct extent_buffer *leaf;
++	struct btrfs_dir_item *dir_item;
++	struct btrfs_disk_key disk_key;
++	struct btrfs_root *tree_root = root->fs_info->tree_root;
++	unsigned long data_ptr;
++	u32 data_size, data_len;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (!trans) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	key.objectid = BTRFS_PERSISTENT_OPTIONS_OBJECTID;
++	key.type = 0;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
++	if (ret < 0)
++		goto out;
++	if (!ret) {
++		char *buf;
++
++		leaf = path->nodes[0];
++		dir_item = btrfs_item_ptr(leaf, path->slots[0],
++					  struct btrfs_dir_item);
++		buf = (char *) malloc(btrfs_dir_data_len(leaf, dir_item));
++		if (!buf) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		read_extent_buffer(leaf, buf,
++				   (unsigned long)((char *)(dir_item + 1)),
++				   btrfs_dir_data_len(leaf, dir_item));
++		printf("Current persistent options:  %.*s\n",
++		       btrfs_dir_data_len(leaf, dir_item), buf);
++		free(buf);
++		ret = btrfs_del_item(trans, tree_root, path);
++		if (ret)
++			goto out;
++	}
++
++	btrfs_release_path(root, path);
++
++	data_len = strlen(options);
++	data_size = sizeof(*dir_item) + data_len;
++	ret = btrfs_insert_empty_item(trans, tree_root, path, &key, data_size);
++	if (ret)
++		goto out;
++
++	leaf = path->nodes[0];
++	dir_item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
++
++	memset(&location, 0, sizeof(location));
++	btrfs_cpu_key_to_disk(&disk_key, &location);
++	btrfs_set_dir_item_key(leaf, dir_item, &disk_key);
++	btrfs_set_dir_type(leaf, dir_item, BTRFS_FT_UNKNOWN);
++	btrfs_set_dir_name_len(leaf, dir_item, 0);
++	btrfs_set_dir_data_len(leaf, dir_item, data_len);
++	data_ptr = (unsigned long)((char *)(dir_item + 1));
++
++	write_extent_buffer(leaf, options, data_ptr, data_len);
++	btrfs_mark_buffer_dirty(leaf);
++
++out:
++	if (!ret && trans)
++		ret = btrfs_commit_transaction(trans, root);
++	else if (trans)
++		btrfs_free_transaction(root, trans);
++	btrfs_free_path(path);
++	if (!ret)
++		printf("New persistent options:      %s\n", options);
++
++	return ret;
++}
++
+ static void print_usage(void)
+ {
+ 	fprintf(stderr, "usage: btrfstune [options] device\n");
+ 	fprintf(stderr, "\t-S value\tenable/disable seeding\n");
+ 	fprintf(stderr, "\t-r \t\tenable extended inode refs\n");
+-	fprintf(stderr, "\t-x enable skinny metadata extent refs\n");
++	fprintf(stderr, "\t-x \t\tenable skinny metadata extent refs\n");
++	fprintf(stderr, "\t-o options\tset persistent mount options\n");
+ }
  
- all: $(MANPAGES)
-diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
-new file mode 100644
-index 0000000..966bd33
---- /dev/null
-+++ b/man/btrfs-find-root.8.in
-@@ -0,0 +1,36 @@
-+.TH BTRFS-FIND-ROOT 8
-+.SH NAME
-+btrfs-find-root \- filter to find btrfs root.
-+.SH SYNOPSIS
-+.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
-+.SH DESCRIPTION
-+\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
+ int main(int argc, char *argv[])
+@@ -114,9 +202,10 @@ int main(int argc, char *argv[])
+ 	int seeding_value = 0;
+ 	int skinny_flag = 0;
+ 	int ret;
++	char *options = NULL;
+ 
+ 	while(1) {
+-		int c = getopt(argc, argv, "S:rx");
++		int c = getopt(argc, argv, "S:rxo:");
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -130,6 +219,9 @@ int main(int argc, char *argv[])
+ 		case 'x':
+ 			skinny_flag = 1;
+ 			break;
++		case 'o':
++			options = optarg;
++			break;
+ 		default:
+ 			print_usage();
+ 			return 1;
+@@ -171,6 +263,15 @@ int main(int argc, char *argv[])
+ 		success++;
+ 	}
+ 
++	if (options) {
++		ret = set_persistent_mount_options(root, options);
++		if (ret)
++			fprintf(stderr,
++				"Error setting persistent options: %d\n", ret);
++		else
++			success++;
++	}
 +
-+\fIOptions\fP
-+.IP "\fB-g \fI<generation>\fP" 5
-+filter root tree by it's original transaction id, tree root's generation in default.
-+.IP "\fB-o \fI<objectid>\fP" 5
-+filter root tree by it's objectid,tree root's objectid in default.
-+.IP "\fB-l \fI<level>\fP" 5
-+filter root tree by B-+ tree's level, level 0 in default.
+ 	if (success > 0) {
+ 		ret = 0;
+ 	} else {
+diff --git a/ctree.h b/ctree.h
+index 0b0d701..8255661 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -102,6 +102,14 @@ struct btrfs_free_space_ctl;
+  */
+ #define BTRFS_FREE_INO_OBJECTID -12ULL
+ 
++/*
++ * Item that stores permanent mount options. These options
++ * have effect if they are not specified as well at mount
++ * time (that is, if a permanent option is also specified at
++ * mount time, the later wins).
++ */
++#define BTRFS_PERSISTENT_OPTIONS_OBJECTID -13ULL
 +
-+.SH EXIT CODE
-+\fBbtrfs-find-root\fP will return 0 if no error happened.
-+If any problems happened, 1 will be returned.
-+
-+.SH AUTHOR
-+Written by Shilong Wang and Wenruo Qu.
-+
-+.SH COPYRIGHT
-+Copyright \(co 2013 Fujitsu, Inc.
-+License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
-+.br
-+This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-+.SH AVAILABILITY
-+.B btrfs-find-root
-+is part of btrfs-progs. Btrfs is currently under heavy development,
-+and not suitable for any uses other than benchmarking and review.
-+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
-+further details.
-+.SH SEE ALSO
-+.BR mkfs.btrfs (8)
+ /* dummy objectid represents multiple objectids */
+ #define BTRFS_MULTIPLE_OBJECTIDS -255ULL
+ 
+diff --git a/print-tree.c b/print-tree.c
+index aae47a9..4cb7af6 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -585,6 +585,9 @@ static void print_objectid(u64 objectid, u8 type)
+ 	case BTRFS_MULTIPLE_OBJECTIDS:
+ 		printf("MULTIPLE");
+ 		break;
++	case BTRFS_PERSISTENT_OPTIONS_OBJECTID:
++		printf("PERSISTENT_OPTIONS");
++		break;
+ 	case (u64)-1:
+ 		printf("-1");
+ 		break;
+@@ -849,6 +852,12 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_STATS_KEY:
+ 			printf("\t\tdevice stats\n");
+ 			break;
++		case 0:
++			if (objectid == BTRFS_PERSISTENT_OPTIONS_OBJECTID) {
++				di = btrfs_item_ptr(l, i, struct btrfs_dir_item);
++				print_dir_item(l, item, di);
++			}
++			break;
+ 		};
+ 		fflush(stdout);
+ 	}
 -- 
-1.8.0.1
+1.7.9.5
 

@@ -1,36 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47868 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753590Ab3HFPbQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Aug 2013 11:31:16 -0400
-Date: Tue, 6 Aug 2013 17:31:12 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Gabriel de Perthuis <g2p.code@gmail.com>
-Cc: Josef Bacik <jbacik@fusionio.com>, Mark Fasheh <mfasheh@suse.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PROGS PATCH] Import btrfs-extent-same
-Message-ID: <20130806153112.GL5284@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <51CB6D5B.70302@gmail.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.161]:34986 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754219Ab3HGGqP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Aug 2013 02:46:15 -0400
+Message-ID: <5201ED33.5020700@giantdisaster.de>
+Date: Wed, 07 Aug 2013 08:46:11 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <51CB6D5B.70302@gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [v2 4/8] Btrfs-progs: add man page information for btrfs-find-root
+References: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1375854849-15224-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1375854849-15224-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 27, 2013 at 12:38:19AM +0200, Gabriel de Perthuis wrote:
-> Originally from
-> https://github.com/markfasheh/duperemove/blob/master/btrfs-extent-same.c
+On Wed, 7 Aug 2013 13:54:05 +0800, Wang Shilong wrote:
+> ---
+> V1->V2: GPLv3->GPLv2
+> ---
 
-Can you (or Mark) please turn it into a subcommand of dedup? The idea is
-to merge both in-bound and out-bound dedup into one command, eg.
+[...]
+>  .SH COPYRIGHT
+>  Copyright \(co 2013 Fujitsu, Inc.
+> -License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+> +License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.
 
- btrfs dedup files dir/*
-
-Liu Bo's dedup patch is in today's integration snapshot
-http://repo.or.cz/w/btrfs-progs-unstable/devel.git/shortlog/refs/heads/integration-20130806-2
-
-you can use it as a base.
-
-thanks,
-david
+...

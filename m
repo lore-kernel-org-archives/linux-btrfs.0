@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52270 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:15832 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757055Ab3HGF4C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Aug 2013 01:56:02 -0400
+	id S932094Ab3HGF4B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Aug 2013 01:56:01 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [v2 7/8] Btrfs-progs: add missing man page information for btrfs-zero-log
-Date: Wed, 7 Aug 2013 13:54:08 +0800
-Message-Id: <1375854849-15224-7-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [v2 8/8] Btrfs-progs: add missing man page for btrfs-map-logical
+Date: Wed, 7 Aug 2013 13:54:09 +0800
+Message-Id: <1375854849-15224-8-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,42 +19,52 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 V1->V2: GPLv3->GPLv2
 ---
- man/Makefile            |  2 +-
- man/btrfs-zero-log.8.in | 29 +++++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-zero-log.8.in
+ man/Makefile               |  2 +-
+ man/btrfs-map-logical.8.in | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 1 deletion(-)
+ create mode 100644 man/btrfs-map-logical.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index e1246db..5ccb60a 100644
+index 5ccb60a..690fa65 100644
 --- a/man/Makefile
 +++ b/man/Makefile
 @@ -13,7 +13,7 @@ man8dir = $(mandir)/man8
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
  	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
--	   btrfs-convert.8.gz btrfstune.8.gz
-+	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz
+-	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz
++	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz btrfs-map-logical.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-zero-log.8.in b/man/btrfs-zero-log.8.in
+diff --git a/man/btrfs-map-logical.8.in b/man/btrfs-map-logical.8.in
 new file mode 100644
-index 0000000..9bdf34b
+index 0000000..a18cca4
 --- /dev/null
-+++ b/man/btrfs-zero-log.8.in
-@@ -0,0 +1,29 @@
-+.TH BTRFS-ZERO-LOG 8
++++ b/man/btrfs-map-logical.8.in
+@@ -0,0 +1,39 @@
++.TH BTRFS-MAP-LOGICAL 8
 +.SH NAME
-+btrfs-zero-log \- clear out log tree.
++btrfs-map-logical \- map btrfs logical extent to physical extent
 +.SH SYNOPSIS
-+.B btrfs-zero-log \fI <dev>\fP
++.B btrfs-map-logical [\fIoptions\fP] \fI<device>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-zero-log\fP will remove the log tree if log tree is corrupt, which will allow you to mount the filesystem again. The common case where this
-+happens has been fixed a long time ago, so it is unlikely that you will see this particular problem.
++\fBbtrfs-map-logical\fP can be used to find out what the physical offsets are
++on the mirrors, the result is dumped into stdout in default.
++
++\fIOptions\fP
++.IP "\fB-l|--logical \fI<logical_num>\fP" 5
++Logical extent to map.
++.IP "\fB-c|--copy \fI<copy>\fP" 5
++Copy of the extent to read(usually 1 or 2).
++.IP "\fB-o|--output \fI<filename>\fP" 5
++Output file to hold the extent.
++.IP "\fB-b|--bytes \fI<bytes>\fP" 5
++Number of bytes to read.
 +
 +.SH EXIT CODE
-+\fBbtrfs-zero-log\fR will return 0 exit code if no error happened.
-+Other exit code means some problems happened.
++\fBbtrfs-map-logical\fP will return 0 if no error happened.
++If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR
 +Written by Shilong Wang and Wenruo Qu.
@@ -65,7 +75,7 @@ index 0000000..9bdf34b
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
 +.SH AVAILABILITY
-+.B btrfs-zero-log
++.B btrfs-map-logical
 +is part of btrfs-progs. Btrfs is currently under heavy development,
 +and not suitable for any uses other than benchmarking and review.
 +Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for

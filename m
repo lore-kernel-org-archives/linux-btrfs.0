@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52270 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:64482 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757051Ab3HGF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756836Ab3HGF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 7 Aug 2013 01:56:00 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [v2 4/8] Btrfs-progs: add man page information for btrfs-find-root
-Date: Wed, 7 Aug 2013 13:54:05 +0800
-Message-Id: <1375854849-15224-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [v2 5/8] Btrfs-progs: add man page information for btrfs-convert
+Date: Wed, 7 Aug 2013 13:54:06 +0800
+Message-Id: <1375854849-15224-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,49 +19,51 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 V1->V2: GPLv3->GPLv2
 ---
- man/Makefile              |  2 +-
- man/btrfs-find-root.8.in  | 36 ++++++++++++++++++++++++++++++++++++
- man/btrfs-show-super.8.in |  4 ++--
- 3 files changed, 39 insertions(+), 3 deletions(-)
- create mode 100644 man/btrfs-find-root.8.in
+ man/Makefile           |  3 ++-
+ man/btrfs-convert.8.in | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 1 deletion(-)
+ create mode 100644 man/btrfs-convert.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index b1d3645..3d2e3ba 100644
+index 3d2e3ba..a2201e8 100644
 --- a/man/Makefile
 +++ b/man/Makefile
-@@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
+@@ -12,7 +12,8 @@ man8dir = $(mandir)/man8
  .SUFFIXES: .in .gz
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
--	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
-+	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
++	   btrfs-convert.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
+diff --git a/man/btrfs-convert.8.in b/man/btrfs-convert.8.in
 new file mode 100644
-index 0000000..966bd33
+index 0000000..e394df2
 --- /dev/null
-+++ b/man/btrfs-find-root.8.in
-@@ -0,0 +1,36 @@
-+.TH BTRFS-FIND-ROOT 8
++++ b/man/btrfs-convert.8.in
+@@ -0,0 +1,39 @@
++.TH BTRFS-CONVERT 8
 +.SH NAME
-+btrfs-find-root \- filter to find btrfs root.
++btrfs-convert \- convert ext2/3/4 to btrfs.
 +.SH SYNOPSIS
-+.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
++.B btrfs-convert [\fIoptions\fP] \fI<dev>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
++\fBbtrfs-convert\fP is used to convert existed ext2/3/4 to btrfs filesystem, and the original filesystem image is accessible as from separate subvolume named ext2_subvol as file image.
 +
 +\fIOptions\fP
-+.IP "\fB-g \fI<generation>\fP" 5
-+filter root tree by it's original transaction id, tree root's generation in default.
-+.IP "\fB-o \fI<objectid>\fP" 5
-+filter root tree by it's objectid,tree root's objectid in default.
-+.IP "\fB-l \fI<level>\fP" 5
-+filter root tree by B-+ tree's level, level 0 in default.
++.IP "\fB-d\fP" 5
++disable data checksum.
++.IP "\fB-i\fP" 5
++ignore xattrs and ACLs.
++.IP "\fB-n\fP" 5
++disable packing of small files.
++.IP "\fB-r\fP" 5
++roll back to ext2fs.
 +
 +.SH EXIT CODE
-+\fBbtrfs-find-root\fP will return 0 if no error happened.
++\fBbtrfs-convert\fP will return 0 if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR
@@ -72,35 +74,15 @@ index 0000000..966bd33
 +License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
++
 +.SH AVAILABILITY
-+.B btrfs-find-root
++.B btrfs-convert
 +is part of btrfs-progs. Btrfs is currently under heavy development,
 +and not suitable for any uses other than benchmarking and review.
 +Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
 +further details.
 +.SH SEE ALSO
 +.BR mkfs.btrfs (8)
-diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
-index 6588d46..f7af33c 100644
---- a/man/btrfs-show-super.8.in
-+++ b/man/btrfs-show-super.8.in
-@@ -1,6 +1,6 @@
- .TH BTRFS-SHOW-SUPER 8
- .SH NAME
--btrfs-show-super \- show btrfs superblock information stored in devices
-+btrfs-show-super \- show Btrfs superblock information stored in devices
- .SH SYNOPSIS
- .B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
- .SH DESCRIPTION
-@@ -23,7 +23,7 @@ Written by Shilong Wang and Wenruo Qu.
- 
- .SH COPYRIGHT
- Copyright \(co 2013 Fujitsu, Inc.
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
-+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
- .SH AVAILABILITY
 -- 
 1.8.0.1
 

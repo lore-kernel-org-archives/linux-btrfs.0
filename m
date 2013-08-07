@@ -1,116 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24922 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755181Ab3HGFR1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Aug 2013 01:17:27 -0400
-Message-ID: <5201D811.6030500@cn.fujitsu.com>
-Date: Wed, 07 Aug 2013 13:16:01 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: sensille@gmx.net
-CC: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com
-Subject: Re: [PATCH 1/3] Btrfs: fix oops when writing dirty qgroups to disk
-References: <1375852351-11919-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1375852351-11919-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail.virtall.com ([178.63.195.102]:56156 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932417Ab3HGIAh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Aug 2013 04:00:37 -0400
+Date: Wed, 7 Aug 2013 16:00:27 +0800
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Arne Jansen <sensille@gmx.net>
+Subject: Re: Heavy memory leak when using quota groups
+Message-ID: <20130807160027.188b340b@wpkg.org>
+In-Reply-To: <20130807004227.6b2b688e@wpkg.org>
+References: <20130806003505.7d7feff6@wpkg.org>
+	<5200888A.4030109@gmx.net>
+	<20130807004227.6b2b688e@wpkg.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/07/2013 01:12 PM, Wang Shilong wrote:
-> When disabling quota, we should clear out list 'dirty_qgroups',otherwise,
-> we will get oops if enabling quota again. Fix this by abstracting similar
-> code from del_qgroup_rb().
+On Wed, 7 Aug 2013 00:42:27 +0800
+Tomasz Chmielewski <mangoo@wpkg.org> wrote:
 
-Hello Arne,
-
-Would you pleae review this patch and other cleanup patches,
-i just hit this oops when i want to reproduce memory leak of qgroups.
-
-
-Thanks,
-Wang
+> > What do I have to do to reproduce it here? How do you generate the
+> > load? What is the disk setup, what the qgroups setup?
 > 
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/qgroup.c | 43 ++++++++++++++-----------------------------
->  1 file changed, 14 insertions(+), 29 deletions(-)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 64a9e3c..3b103e2 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -157,18 +157,11 @@ static struct btrfs_qgroup *add_qgroup_rb(struct btrfs_fs_info *fs_info,
->  	return qgroup;
->  }
->  
-> -/* must be called with qgroup_lock held */
-> -static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
-> +static void __del_qgroup_rb(struct btrfs_qgroup *qgroup)
->  {
-> -	struct btrfs_qgroup *qgroup = find_qgroup_rb(fs_info, qgroupid);
-> -	struct btrfs_qgroup_list *list;
-> +	struct btrfs_qgroup_list *list = NULL;
->  
-> -	if (!qgroup)
-> -		return -ENOENT;
-> -
-> -	rb_erase(&qgroup->node, &fs_info->qgroup_tree);
->  	list_del(&qgroup->dirty);
-> -
->  	while (!list_empty(&qgroup->groups)) {
->  		list = list_first_entry(&qgroup->groups,
->  					struct btrfs_qgroup_list, next_group);
-> @@ -185,7 +178,18 @@ static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
->  		kfree(list);
->  	}
->  	kfree(qgroup);
-> +}
-> +
-> +/* must be called with qgroup_lock held */
-> +static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
-> +{
-> +	struct btrfs_qgroup *qgroup = find_qgroup_rb(fs_info, qgroupid);
->  
-> +	if (!qgroup)
-> +		return -ENOENT;
-> +
-> +	rb_erase(&qgroup->node, &fs_info->qgroup_tree);
-> +	__del_qgroup_rb(qgroup);
->  	return 0;
->  }
->  
-> @@ -435,30 +439,11 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info)
->  {
->  	struct rb_node *n;
->  	struct btrfs_qgroup *qgroup;
-> -	struct btrfs_qgroup_list *list;
->  
->  	while ((n = rb_first(&fs_info->qgroup_tree))) {
->  		qgroup = rb_entry(n, struct btrfs_qgroup, node);
->  		rb_erase(n, &fs_info->qgroup_tree);
-> -
-> -		while (!list_empty(&qgroup->groups)) {
-> -			list = list_first_entry(&qgroup->groups,
-> -						struct btrfs_qgroup_list,
-> -						next_group);
-> -			list_del(&list->next_group);
-> -			list_del(&list->next_member);
-> -			kfree(list);
-> -		}
-> -
-> -		while (!list_empty(&qgroup->members)) {
-> -			list = list_first_entry(&qgroup->members,
-> -						struct btrfs_qgroup_list,
-> -						next_member);
-> -			list_del(&list->next_group);
-> -			list_del(&list->next_member);
-> -			kfree(list);
-> -		}
-> -		kfree(qgroup);
-> +		__del_qgroup_rb(qgroup);
->  	}
->  	/*
->  	 * we call btrfs_free_qgroup_config() when umounting
-> 
+> Unfortunately I don't have a way to reproduce, as the issue
+> happened to me only once.
 
+I keep removing the files, and memory usage has grown to 28 GB (out of
+32 GB).
+
+Is there anything I can debug at this point?
+
+# free
+             total       used       free     shared    buffers     cached
+Mem:      32638512   32476992     161520          0        732    3531152
+-/+ buffers/cache:   28945108    3693404
+Swap:     16776116     173392   16602724
+
+
+# cat /proc/meminfo
+MemTotal:       32638512 kB
+MemFree:          163364 kB
+Buffers:             864 kB
+Cached:          3531940 kB
+SwapCached:        60992 kB
+Active:          3599804 kB
+Inactive:        2422176 kB
+Active(anon):    1860412 kB
+Inactive(anon):   629848 kB
+Active(file):    1739392 kB
+Inactive(file):  1792328 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:      16776116 kB
+SwapFree:       16602916 kB
+Dirty:             85432 kB
+Writeback:         10320 kB
+AnonPages:       2458792 kB
+Mapped:            11068 kB
+Shmem:               796 kB
+Slab:            3168820 kB
+SReclaimable:    3099388 kB
+SUnreclaim:        69432 kB
+KernelStack:        3408 kB
+PageTables:        14764 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    33095372 kB
+Committed_AS:    4301988 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      130036 kB
+VmallocChunk:   34359595900 kB
+HardwareCorrupted:     0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       12520 kB
+DirectMap2M:    33220608 kB
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

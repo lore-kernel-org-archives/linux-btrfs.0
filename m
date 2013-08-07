@@ -1,69 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:15832 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:21997 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932094Ab3HGF4B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Aug 2013 01:56:01 -0400
+	id S1755676Ab3HGIc3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Aug 2013 04:32:29 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [v2 8/8] Btrfs-progs: add missing man page for btrfs-map-logical
-Date: Wed, 7 Aug 2013 13:54:09 +0800
-Message-Id: <1375854849-15224-8-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [patch v2 resend 4/8] Btrfs-progs: add man page information for btrfs-find-root
+Date: Wed, 7 Aug 2013 16:30:59 +0800
+Message-Id: <1375864259-10920-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 V1->V2: GPLv3->GPLv2
+Thanks to Stefan Behrens
 ---
- man/Makefile               |  2 +-
- man/btrfs-map-logical.8.in | 39 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 40 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-map-logical.8.in
+ man/Makefile             |  2 +-
+ man/btrfs-find-root.8.in | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 1 deletion(-)
+ create mode 100644 man/btrfs-find-root.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index 5ccb60a..690fa65 100644
+index b1d3645..3d2e3ba 100644
 --- a/man/Makefile
 +++ b/man/Makefile
-@@ -13,7 +13,7 @@ man8dir = $(mandir)/man8
+@@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
+ .SUFFIXES: .in .gz
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
- 	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
--	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz
-+	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz btrfs-map-logical.8.gz
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-map-logical.8.in b/man/btrfs-map-logical.8.in
+diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
 new file mode 100644
-index 0000000..a18cca4
+index 0000000..966bd33
 --- /dev/null
-+++ b/man/btrfs-map-logical.8.in
-@@ -0,0 +1,39 @@
-+.TH BTRFS-MAP-LOGICAL 8
++++ b/man/btrfs-find-root.8.in
+@@ -0,0 +1,36 @@
++.TH BTRFS-FIND-ROOT 8
 +.SH NAME
-+btrfs-map-logical \- map btrfs logical extent to physical extent
++btrfs-find-root \- filter to find btrfs root.
 +.SH SYNOPSIS
-+.B btrfs-map-logical [\fIoptions\fP] \fI<device>\fP
++.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-map-logical\fP can be used to find out what the physical offsets are
-+on the mirrors, the result is dumped into stdout in default.
++\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
 +
 +\fIOptions\fP
-+.IP "\fB-l|--logical \fI<logical_num>\fP" 5
-+Logical extent to map.
-+.IP "\fB-c|--copy \fI<copy>\fP" 5
-+Copy of the extent to read(usually 1 or 2).
-+.IP "\fB-o|--output \fI<filename>\fP" 5
-+Output file to hold the extent.
-+.IP "\fB-b|--bytes \fI<bytes>\fP" 5
-+Number of bytes to read.
++.IP "\fB-g \fI<generation>\fP" 5
++filter root tree by it's original transaction id, tree root's generation in default.
++.IP "\fB-o \fI<objectid>\fP" 5
++filter root tree by it's objectid,tree root's objectid in default.
++.IP "\fB-l \fI<level>\fP" 5
++filter root tree by B-+ tree's level, level 0 in default.
 +
 +.SH EXIT CODE
-+\fBbtrfs-map-logical\fP will return 0 if no error happened.
++\fBbtrfs-find-root\fP will return 0 if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR
@@ -75,7 +72,7 @@ index 0000000..a18cca4
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
 +.SH AVAILABILITY
-+.B btrfs-map-logical
++.B btrfs-find-root
 +is part of btrfs-progs. Btrfs is currently under heavy development,
 +and not suitable for any uses other than benchmarking and review.
 +Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:52270 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932069Ab3HGF4B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Aug 2013 01:56:01 -0400
+	id S1757051Ab3HGF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Aug 2013 01:56:00 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [v2 3/8] Btrfs-progs: add missing man page for btrfs-show-super
-Date: Wed, 7 Aug 2013 13:54:04 +0800
-Message-Id: <1375854849-15224-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [v2 4/8] Btrfs-progs: add man page information for btrfs-find-root
+Date: Wed, 7 Aug 2013 13:54:05 +0800
+Message-Id: <1375854849-15224-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1375854849-15224-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,47 +20,48 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 V1->V2: GPLv3->GPLv2
 ---
  man/Makefile              |  2 +-
- man/btrfs-show-super.8.in | 36 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 37 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-show-super.8.in
+ man/btrfs-find-root.8.in  | 36 ++++++++++++++++++++++++++++++++++++
+ man/btrfs-show-super.8.in |  4 ++--
+ 3 files changed, 39 insertions(+), 3 deletions(-)
+ create mode 100644 man/btrfs-find-root.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index e5c1f7c..b1d3645 100644
+index b1d3645..3d2e3ba 100644
 --- a/man/Makefile
 +++ b/man/Makefile
 @@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
  .SUFFIXES: .in .gz
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
--	   btrfs-debug-tree.8.gz
-+	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
+diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
 new file mode 100644
-index 0000000..6588d46
+index 0000000..966bd33
 --- /dev/null
-+++ b/man/btrfs-show-super.8.in
++++ b/man/btrfs-find-root.8.in
 @@ -0,0 +1,36 @@
-+.TH BTRFS-SHOW-SUPER 8
++.TH BTRFS-FIND-ROOT 8
 +.SH NAME
-+btrfs-show-super \- show btrfs superblock information stored in devices
++btrfs-find-root \- filter to find btrfs root.
 +.SH SYNOPSIS
-+.B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
++.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-show-super\fP is used to print the information of superblock,
-+you can specify which mirror to print out. In default, every device's
-+first superblock will be printed out.
++\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
 +
 +\fIOptions\fP
-+.IP "\fB-a\fP" 5
-+print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
-+.IP "\fB-i \fI<super_mirror>\fP" 5
-+specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2. if several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
++.IP "\fB-g \fI<generation>\fP" 5
++filter root tree by it's original transaction id, tree root's generation in default.
++.IP "\fB-o \fI<objectid>\fP" 5
++filter root tree by it's objectid,tree root's objectid in default.
++.IP "\fB-l \fI<level>\fP" 5
++filter root tree by B-+ tree's level, level 0 in default.
 +
 +.SH EXIT CODE
-+\fBbtrfs-show-super\fR will return 0 exit code if no error happened.
++\fBbtrfs-find-root\fP will return 0 if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR
@@ -72,13 +73,34 @@ index 0000000..6588d46
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
 +.SH AVAILABILITY
-+.B btrfs-show-super
++.B btrfs-find-root
 +is part of btrfs-progs. Btrfs is currently under heavy development,
 +and not suitable for any uses other than benchmarking and review.
 +Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
 +further details.
 +.SH SEE ALSO
 +.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
+index 6588d46..f7af33c 100644
+--- a/man/btrfs-show-super.8.in
++++ b/man/btrfs-show-super.8.in
+@@ -1,6 +1,6 @@
+ .TH BTRFS-SHOW-SUPER 8
+ .SH NAME
+-btrfs-show-super \- show btrfs superblock information stored in devices
++btrfs-show-super \- show Btrfs superblock information stored in devices
+ .SH SYNOPSIS
+ .B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
+ .SH DESCRIPTION
+@@ -23,7 +23,7 @@ Written by Shilong Wang and Wenruo Qu.
+ 
+ .SH COPYRIGHT
+ Copyright \(co 2013 Fujitsu, Inc.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
++License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.
+ .br
+ This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+ .SH AVAILABILITY
 -- 
 1.8.0.1
 

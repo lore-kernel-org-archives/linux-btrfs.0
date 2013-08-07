@@ -1,130 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:61222 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965133Ab3HHLEE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 07:04:04 -0400
-Message-ID: <52037B21.3080303@giantdisaster.de>
-Date: Thu, 08 Aug 2013 13:04:01 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs: drop weird indirections & dead code from send/receive
-References: <51FC5BE7.2080506@redhat.com>
-In-Reply-To: <51FC5BE7.2080506@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:23710 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932658Ab3HGMFk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Aug 2013 08:05:40 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r77C5d48000788
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 7 Aug 2013 12:05:40 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r77C5be2016276
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 7 Aug 2013 12:05:39 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r77C5bDM022723
+	for <linux-btrfs@vger.kernel.org>; Wed, 7 Aug 2013 12:05:37 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3 resend] 
+Date: Wed,  7 Aug 2013 20:11:22 +0800
+Message-Id: <1375877485-12105-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 02 Aug 2013 20:24:55 -0500, Eric Sandeen wrote:
-> cmds-recieve.c & cmds-send.c seem to have weird wrappers and
-> indirections, and "groups" of commands which have only
-> one member, which are never referenced in the code.
-> 
-> I think these can be removed.
-> 
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-> ---
-> 
->  cmds-receive.c |   19 +------------------
->  cmds-send.c    |   12 +-----------
->  commands.h     |    2 --
->  3 files changed, 2 insertions(+), 31 deletions(-)
-> 
-> Stefan, I'd appreciate your review & testing of this though!
-> TBH it's an old patch I had laying around, but I have
-> not re-tested it recently.
+Anand Jain (3):
+  btrfs-progs: let user know that devid can be used if path is missing
+  btrfs-progs: cmd_start_replace() to use test_dev_for_mkfs()
+  btrfs-progs: avoid write to the disk before sure to create fs
 
-Reviewed & tested without issues.
-
-
-> diff --git a/cmds-receive.c b/cmds-receive.c
-> index 4e480f9..7abce76 100644
-> --- a/cmds-receive.c
-> +++ b/cmds-receive.c
-> @@ -907,7 +907,7 @@ out:
->  	return ret;
->  }
->  
-> -static int do_cmd_receive(int argc, char **argv)
-> +int cmd_receive(int argc, char **argv)
->  {
->  	int c;
->  	char *tomnt = NULL;
-> @@ -960,11 +960,6 @@ static int do_cmd_receive(int argc, char **argv)
->  	return ret;
->  }
->  
-> -static const char * const receive_cmd_group_usage[] = {
-> -	"btrfs receive <command> <args>",
-> -	NULL
-> -};
-> -
->  const char * const cmd_receive_usage[] = {
->  	"btrfs receive [-ve] [-f <infile>] <mount>",
->  	"Receive subvolumes from stdin.",
-> @@ -988,15 +983,3 @@ const char * const cmd_receive_usage[] = {
->  	"                 is recognized or on EOF.",
->  	NULL
->  };
-> -
-> -const struct cmd_group receive_cmd_group = {
-> -	receive_cmd_group_usage, NULL, {
-> -		{ "receive", do_cmd_receive, cmd_receive_usage, NULL, 0 },
-> -		{ 0, 0, 0, 0, 0 },
-> -        },
-> -};
-> -
-> -int cmd_receive(int argc, char **argv)
-> -{
-> -	return do_cmd_receive(argc, argv);
-> -}
-> diff --git a/cmds-send.c b/cmds-send.c
-> index 7209aba..f9899f4 100644
-> --- a/cmds-send.c
-> +++ b/cmds-send.c
-> @@ -465,7 +465,7 @@ out:
->  	return ret;
->  }
->  
-> -int cmd_send_start(int argc, char **argv)
-> +int cmd_send(int argc, char **argv)
->  {
->  	char *subvol = NULL;
->  	int c;
-> @@ -718,11 +718,6 @@ out:
->  	return ret;
->  }
->  
-> -static const char * const send_cmd_group_usage[] = {
-> -	"btrfs send <command> <args>",
-> -	NULL
-> -};
-> -
->  const char * const cmd_send_usage[] = {
->  	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] <subvol>",
->  	"Send the subvolume to stdout.",
-> @@ -750,8 +745,3 @@ const char * const cmd_send_usage[] = {
->  	"                 use pipes.",
->  	NULL
->  };
-> -
-> -int cmd_send(int argc, char **argv)
-> -{
-> -	return cmd_send_start(argc, argv);
-> -}
-> diff --git a/commands.h b/commands.h
-> index 65829f4..3f12fab 100644
-> --- a/commands.h
-> +++ b/commands.h
-> @@ -85,8 +85,6 @@ extern const struct cmd_group balance_cmd_group;
->  extern const struct cmd_group device_cmd_group;
->  extern const struct cmd_group scrub_cmd_group;
->  extern const struct cmd_group inspect_cmd_group;
-> -extern const struct cmd_group send_cmd_group;
-> -extern const struct cmd_group receive_cmd_group;
->  extern const struct cmd_group quota_cmd_group;
->  extern const struct cmd_group qgroup_cmd_group;
->  extern const struct cmd_group replace_cmd_group;
-> 
+ cmds-replace.c |   33 +++---------------
+ mkfs.c         |  104 ++++++++++++++++++++++----------------------------------
+ utils.c        |   53 ++++++++++++++++++++++++++++-
+ utils.h        |    4 ++
+ 4 files changed, 102 insertions(+), 92 deletions(-)
 

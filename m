@@ -1,52 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:33069 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965213Ab3HHRpF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 13:45:05 -0400
-Message-ID: <5203D91E.1060806@sandeen.net>
-Date: Thu, 08 Aug 2013 12:45:02 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from dkim2.fusionio.com ([66.114.96.54]:39647 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966544Ab3HHUzt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 16:55:49 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 251829A06C1
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 14:55:49 -0600 (MDT)
+Date: Thu, 8 Aug 2013 16:55:46 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Gabriel de Perthuis <g2p.code@gmail.com>
+CC: Josef Bacik <jbacik@fusionio.com>, Eric Sandeen <sandeen@sandeen.net>,
+        Mark Fasheh <mfasheh@suse.de>, <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [XFSTESTS PATCH] btrfs: Test deduplication
+Message-ID: <20130808205546.GJ16712@localhost.localdomain>
+References: <51CB6DDE.8060509@gmail.com>
 MIME-Version: 1.0
-To: Jan Schmidt <list.xfs@jan-o-sch.net>
-CC: xfs@oss.sgi.com, sbehrens@giantdisaster.de, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 2/2] xfstests btrfs/316: test send / receive
-References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net> <1375949833-1104-3-git-send-email-list.xfs@jan-o-sch.net>
-In-Reply-To: <1375949833-1104-3-git-send-email-list.xfs@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <51CB6DDE.8060509@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/8/13 3:17 AM, Jan Schmidt wrote:
-> Basic send / receive functionality test for btrfs. Requires current
-> version of fsstress built (-x support). Relies on fssum tool but can
-> skip the test if it failed to build.
-> 
-> Signed-off-by: Jan Schmidt <list.xfs@jan-o-sch.net>
-> Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+On Thu, Jun 27, 2013 at 12:40:30AM +0200, Gabriel de Perthuis wrote:
 > ---
->  tests/btrfs/316     |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/316.out |    4 ++
->  tests/btrfs/group   |    1 +
->  3 files changed, 118 insertions(+), 0 deletions(-)
->  create mode 100755 tests/btrfs/316
->  create mode 100644 tests/btrfs/316.out
+> The matching kernel patch is here:
+> https://github.com/g2p/linux/tree/v3.10%2Bextent-same (rebased on 3.10, fixing a small conflict)
+> Requires the btrfs-extent-same command:
 > 
-> diff --git a/tests/btrfs/316 b/tests/btrfs/316
+> - http://permalink.gmane.org/gmane.comp.file-systems.btrfs/26579
+> - https://github.com/markfasheh/duperemove
+> 
+
+Sorry it took me so long to get to this, but I wanted to have the dedup patches
+merged before I looked at this.  So first of all just copy btrfs-extent-same
+into xfstests since it's not part of a normally installed package.
+
+> 
+>  tests/btrfs/313     | 93 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/313.out | 25 ++++++++++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 119 insertions(+)
+>  create mode 100755 tests/btrfs/313
+>  create mode 100644 tests/btrfs/313.out
+> 
+> diff --git a/tests/btrfs/313 b/tests/btrfs/313
 > new file mode 100755
-> index 0000000..087978a
+> index 0000000..04e4ccb
 > --- /dev/null
-> +++ b/tests/btrfs/316
-> @@ -0,0 +1,113 @@
+> +++ b/tests/btrfs/313
+> @@ -0,0 +1,93 @@
 > +#! /bin/bash
-> +# FSQA Test No. 316
+> +# FS QA Test No. 313
 > +#
-> +# Run fsstress to create a reasonably strange file system, make a
-> +# snapshot (base) and run more fsstress. Then take another snapshot
-> +# (incr) and send both snapshots to a temp file. Remake the file
-> +# system and receive from the files. Check both states with fssum.
+> +# Test the deduplication syscall
 > +#
 > +#-----------------------------------------------------------------------
-> +# Copyright (C) 2013 STRATO.  All rights reserved.
+> +# Copyright (c) 2013 Red Hat, Inc.  All Rights Reserved.
 > +#
 > +# This program is free software; you can redistribute it and/or
 > +# modify it under the terms of the GNU General Public License as
@@ -60,131 +69,137 @@ On 8/8/13 3:17 AM, Jan Schmidt wrote:
 > +# You should have received a copy of the GNU General Public License
 > +# along with this program; if not, write the Free Software Foundation,
 > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#
 > +#-----------------------------------------------------------------------
 > +#
-> +# creator
-> +owner=list.btrfs@jan-o-sch.net
 > +
 > +seq=`basename $0`
 > +seqres=$RESULT_DIR/$seq
 > +echo "QA output created by $seq"
 > +
 > +here=`pwd`
-> +tmp=`mktemp -d`
-> +status=1
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
 > +
 > +_cleanup()
 > +{
-> +	echo "*** unmount"
-> +	umount $SCRATCH_MNT 2>/dev/null
-> +	rm -f $tmp.*
+> +    cd /
+> +    rm -f $tmp.*
 > +}
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
 > +
-> +# get standard environment, filters and checks
 > +. ./common/rc
 > +. ./common/filter
 > +
-> +# real QA test starts here
+> +ESAME=`set_prog_path btrfs-extent-same`
+> +
 > +_need_to_be_root
 > +_supported_fs btrfs
 > +_supported_os Linux
+> +_require_command $ESAME
+> +_require_command $XFS_IO_PROG
 > +_require_scratch
-
-_require_seek_data_hole
-
-> +_require_command $FSSUM_PROG fssum
-
-Usually for local binaries in src/ we'd just do:
-
-FSSUM_PROG=$here/src/fssum
-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
-
-There's no other src/* binary that gets set in common/config;
-every test just does it locally, so probably best to
-stick with that convention.
-
-I think we're almost there!  :)
-
--Eric
-
 > +
-> +rm -f $seqres.full
+> +_scratch_mkfs &>/dev/null
+> +_scratch_mount >>$seqres.full 2>&1
 > +
-> +workout()
-> +{
-> +	fsz=$1
-> +	ops=$2
-> +
-> +	umount $SCRATCH_DEV >/dev/null 2>&1
-> +	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
-> +	echo ""                                     >>$seqres.full
-> +	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
-> +		|| _fail "size=$fsz mkfs failed"
-> +	run_check _scratch_mount "-o noatime"
-> +
-> +	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n $ops $FSSTRESS_AVOID -x \
-> +		"$BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/base"
-> +
-> +	run_check $BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/incr
-> +
-> +	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap" \
-> +		>> $seqres.full
-> +	$BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap 2>> $seqres.full \
-> +		|| _fail "failed: '$@'"
-> +	echo "# $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base\
-> +		$SCRATCH_MNT/incr > $tmp/incr.snap" >> $seqres.full
-> +	$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base \
-> +		$SCRATCH_MNT/incr > $tmp/incr.snap 2>> $seqres.full \
-> +		|| _fail "failed: '$@'"
-> +
-> +	run_check $FSSUM_PROG -A -f -w $tmp/base.fssum $SCRATCH_MNT/base
-> +	run_check $FSSUM_PROG -A -f -w $tmp/incr.fssum -x $SCRATCH_MNT/incr/base \
-> +		$SCRATCH_MNT/incr
-> +
-> +	umount $SCRATCH_DEV >/dev/null 2>&1
-> +	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
-> +	echo ""                                     >>$seqres.full
-> +	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
-> +		|| _fail "size=$fsz mkfs failed"
-> +	run_check _scratch_mount "-o noatime"
-> +
-> +	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/base.snap
-> +	run_check $FSSUM_PROG -r $tmp/base.fssum $SCRATCH_MNT/base
-> +
-> +	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/incr.snap
-> +	run_check $FSSUM_PROG -r $tmp/incr.fssum $SCRATCH_MNT/incr
+> +fiemap() {
+> +    xfs_io -r -c fiemap $1 |tail -n+2
 > +}
 > +
-> +echo "*** test send / receive"
+> +dedup() {
+> +    ! diff -q <(fiemap $1) <(fiemap $2)
+> +    $ESAME $(stat -c %s $1) $1 0 $2 0
+> +    diff -u <(fiemap $1) <(fiemap $2)
+
+These are spitting out the full path to SCRATCH, so you will want to use
+something like _filter_scratch so that the output is consistent across people
+running it.
+
+> +}
 > +
-> +fssize=`expr 2000 \* 1024 \* 1024`
-> +ops=200
+> +echo "Silence is golden"
+> +set -e
 > +
-> +workout $fssize $ops
+> +v1=$SCRATCH_MNT/v1
+> +v2=$SCRATCH_MNT/v2
+> +v3=$SCRATCH_MNT/v3
 > +
-> +echo "*** done"
+> +$BTRFS_UTIL_PROG subvolume create $v1
+> +$BTRFS_UTIL_PROG subvolume create $v2
+
+Redirect the output of these commands to /dev/null
+
+> +
+> +dd bs=1M status=none if=/dev/urandom of=$v1/file1 count=1
+> +dd bs=1M status=none if=/dev/urandom of=$v1/file2 count=1
+> +dd bs=1M status=none if=$v1/file1 of=$v2/file3
+> +dd bs=1M status=none if=$v1/file1 of=$v2/file4
+> +
+
+status=none doesn't work on my copy of dd, so don't use this, just do
+
+dd > $seqres.full 2>&1
+
+or to /dev/null.
+
+> +$BTRFS_UTIL_PROG subvolume snapshot -r $v2 $v3
+> +
+> +# identical, multiple volumes
+> +dedup $v1/file1 $v2/file3
+> +
+> +# not identical, same volume
+> +! $ESAME $((2**20)) $v1/file1 0 $v1/file2 0
+> +
+> +# identical, second file on a frozen volume
+> +dedup $v1/file1 $v3/file4
+> +
+> +_scratch_unmount
+> +_check_scratch_fs
 > +status=0
 > +exit
-> diff --git a/tests/btrfs/316.out b/tests/btrfs/316.out
+> diff --git a/tests/btrfs/313.out b/tests/btrfs/313.out
 > new file mode 100644
-> index 0000000..4564c85
+> index 0000000..eabe6be
 > --- /dev/null
-> +++ b/tests/btrfs/316.out
-> @@ -0,0 +1,4 @@
-> +QA output created by 316
-> +*** test send / receive
-> +*** done
-> +*** unmount
+> +++ b/tests/btrfs/313.out
+> @@ -0,0 +1,25 @@
+> +QA output created by 313
+> +Silence is golden
+> +Create subvolume 'sdir/v1'
+> +Create subvolume 'sdir/v2'
+> +Create a readonly snapshot of 'sdir/v2' in 'sdir/v3'
+> +Files /dev/fd/63 and /dev/fd/62 differ
+> +Deduping 2 total files
+> +(0, 1048576): sdir/v1/file1
+> +(0, 1048576): sdir/v2/file3
+> +1 files asked to be deduped
+> +i: 0, status: 0, bytes_deduped: 1048576
+> +1048576 total bytes deduped in this operation
+> +Deduping 2 total files
+> +(0, 1048576): sdir/v1/file1
+> +(0, 1048576): sdir/v1/file2
+> +1 files asked to be deduped
+> +i: 0, status: 1, bytes_deduped: 0
+> +0 total bytes deduped in this operation
+> +Files /dev/fd/63 and /dev/fd/62 differ
+> +Deduping 2 total files
+> +(0, 1048576): sdir/v1/file1
+> +(0, 1048576): sdir/v3/file4
+> +1 files asked to be deduped
+> +i: 0, status: 0, bytes_deduped: 1048576
+> +1048576 total bytes deduped in this operation
 > diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index bc6c256..11d708a 100644
+> index bc6c256..4c868c8 100644
 > --- a/tests/btrfs/group
 > +++ b/tests/btrfs/group
-> @@ -9,3 +9,4 @@
+> @@ -7,5 +7,6 @@
+>  264 auto
+>  265 auto
 >  276 auto rw metadata
 >  284 auto
 >  307 auto quick
-> +316 auto rw metadata
-> 
+> +313 auto
 
+This is pretty quick, so add it to the quick group too.  Thanks,
+
+Josef

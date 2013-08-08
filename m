@@ -1,27 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49605 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965937Ab3HHQKd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 12:10:33 -0400
-Date: Thu, 8 Aug 2013 18:10:31 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Gabriel de Perthuis <g2p.code@gmail.com>,
-        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>
-Subject: Re: [PATCH 0/4] btrfs: out-of-band (aka offline) dedupe v4
-Message-ID: <20130808161031.GY5284@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1375814571-31753-1-git-send-email-mfasheh@suse.de>
+Received: from mail-qa0-f68.google.com ([209.85.216.68]:60032 "EHLO
+	mail-qa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964796Ab3HHQNG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 12:13:06 -0400
+Received: by mail-qa0-f68.google.com with SMTP id j11so205220qag.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Aug 2013 09:13:04 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1375814571-31753-1-git-send-email-mfasheh@suse.de>
+Date: Thu, 8 Aug 2013 09:13:04 -0700
+Message-ID: <CAJBj3vcfSrWC3sxxxin93GYYPZY_z_MJnAHoMxB45MFqEXYXkA@mail.gmail.com>
+Subject: Why does btrfs benchmark so badly in this case?
+From: John Williams <jwilliams4200@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 06, 2013 at 11:42:47AM -0700, Mark Fasheh wrote:
-> The following series of patches implements in btrfs an ioctl to do
-> out-of-band deduplication of file extents.
+Phoronix periodically runs benchmarks on filesystems, and one thing I
+have noticed is that btrfs always does terribly on their fio "Intel
+IOMeter fileserver access pattern" benchmark:
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+http://www.phoronix.com/scan.php?page=article&item=linux_310_10fs&num=2
+
+Here, btrfs is more than 6 times slower than ext4, and about 3 times
+slower than XFS.
+
+Lest we attribute it to an unavoidable downside of COW filesystems and
+move on...no, we cannot do that, because ZFS does well here -- btrfs
+is about 6 times slower than ZFS!
+
+Note that btrfs does quite well in the other Phoronix benchmarks. It
+is just the fio fileserver benchmark that btrfs has problems with.
+
+What is going on here? Why is btrfs doing so poorly?

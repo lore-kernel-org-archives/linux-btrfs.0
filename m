@@ -1,69 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:29165 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753110Ab3HCVhA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Aug 2013 17:37:00 -0400
-Message-ID: <51FD77F6.2070800@redhat.com>
-Date: Sat, 03 Aug 2013 16:36:54 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, Filipe David Borba Manana <fdmanana@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@fusionio.com>
-Subject: Re: [PATCH 1/2] Btrfs-progs: remove duplicated code in cmds-restore.c
-References: <1373395794-29140-1-git-send-email-fdmanana@gmail.com> <1373395794-29140-2-git-send-email-fdmanana@gmail.com> <20130710161255.GD25386@twin.jikos.cz> <51FC5005.20101@redhat.com>
-In-Reply-To: <51FC5005.20101@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from aserp1040.oracle.com ([141.146.126.69]:36909 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757696Ab3HHIBT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 04:01:19 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7881HnH025312
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:01:18 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7881Gal005728
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:01:17 GMT
+Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
+	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7881GqH016811
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 08:01:16 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2 v2] introduce btrfs filesystem show --kernel
+Date: Thu,  8 Aug 2013 16:07:05 +0800
+Message-Id: <1375949227-23729-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/2/13 7:34 PM, Eric Sandeen wrote:
-> On 7/10/13 11:12 AM, David Sterba wrote:
->> On Tue, Jul 09, 2013 at 07:49:53PM +0100, Filipe David Borba Manana wrote:
->>> The module cmds-restore.c was defining its own next_leaf()
->>> function, which did exactly the same as btrfs_next_leaf()
->>> from ctree.c.
->>
->> This has been removed by Eric's patch present in the integration
->> branches:
->>  Btrfs-progs: remove cut & paste btrfs_next_leaf from restore
->> http://www.spinics.net/lists/linux-btrfs/msg24477.html
->>
->> but now Chris has a fix in the master branch,
->>  btrfs-restore: deal with NULL returns from read_node_slot
->> https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/commit/?id=194aa4a1bd6447bb545286d0bcb0b0be8204d79f
-> 
-> Just noticed this.  :(
-> 
-> Is there some reason that kernelspace should not also get Chris' fix, though?
+This patch set introduces --kernel option for filesystem show 
+for the reason as mentioned in the patch 1/2 below
+1/1 is the preparatory patch
 
-Or for that matter the other copy in ctree.c...
+Anand Jain (2):
+  btrfs-progs: move out print in cmd_df to another function
+  btrfs-progs: introduce btrfs filesystem show --kernel
 
-Ok, my email didn't make a ton of sense.  :/  But there are basically 3 copies
-of this function now, diverging further - in btrfs-progs' ctree.c and cmds-restore.c,
-as well as kernelspace ctree.c  Should they differ?
+ cmds-filesystem.c | 355 ++++++++++++++++++++++++++++++++++++++++--------------
+ ctree.h           |  11 ++
+ man/btrfs.8.in    |   5 +-
+ 3 files changed, 281 insertions(+), 90 deletions(-)
 
-Now that I have some time I guess I'll get back to trying to bring userspace
-in line w/ kernelspace again...
+-- 
+1.8.1.191.g414c78c
 
--Eric
-
-
->> the code of updated next_leaf is not identical to btrfs_next_leaf and I
->> think 'restore' could be more tolerant to partially corrupted
->> structures, so both functions could make sense in the end.
-> 
-> Surely kernelspace should be at least as tolerant as userspace; it
-> it seems like Chris's BUG_ON removal patch could benefit kernelspace too, no?
-> 
-> And then we could take one more baby step towards a cleaner, non-
-> cut-and-pasted codebase.
-> 
-> -Eric
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

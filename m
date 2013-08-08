@@ -1,71 +1,1533 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:42386 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932142Ab3HHFgl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 01:36:41 -0400
-Message-ID: <52032EA6.8040505@cn.fujitsu.com>
-Date: Thu, 08 Aug 2013 13:37:42 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:57008 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755406Ab3HHGKV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 02:10:21 -0400
+Received: from /spool/local
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 8 Aug 2013 15:53:56 +1000
+Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id D392B3578052
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 16:10:16 +1000 (EST)
+Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
+	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r786A6vK6357426
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 16:10:06 +1000
+Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
+	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r786AGrB016825
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Aug 2013 16:10:16 +1000
+From: chandan <chandan@linux.vnet.ibm.com>
+To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Cc: sekharan@linux.vnet.ibm.com
+Subject: [PATCH] _test_generic_punch: Extend $testfile's size to work with 64k block.
+Date: Thu, 08 Aug 2013 11:40:04 +0530
+Message-ID: <3326777.u9YeDIQiYF@localhost.localdomain>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] Btrfs: fix possible memory leak in find_parent_nodes()
-References: <1375938259-5015-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20130808052211.GB644@localhost.localdomain>
-In-Reply-To: <20130808052211.GB644@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On thu, 8 Aug 2013 13:22:12 +0800, Liu Bo wrote:
-> On Thu, Aug 08, 2013 at 01:04:17PM +0800, Wang Shilong wrote:
->> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
-> 
-> I think I know the whys :p, but still a log is preferred.
+>From cf6e1fc3a8d7806a97055b5f483cf50f58c8294f Mon Sep 17 00:00:00 2001
+From: chandan <chandan@linux.vnet.ibm.com>
+Date: Thu, 8 Aug 2013 11:33:10 +0530
+Subject: [PATCH] _test_generic_punch: Extend $testfile's size to work with 64k
+ block.
 
-Right, we need a explanation, we will update this patch soon.
+The current script does not work with 64k block size. This patch fixes it
+by creating a larger $testfile.
 
-Thanks
-Miao
+Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+---
+ common/punch          | 119 +++++++------
+ tests/generic/255.out | 476 +++++++++++++++++++++++++-------------------------
+ tests/xfs/242.out     | 118 ++++++-------
+ tests/xfs/252.out     | 476 +++++++++++++++++++++++++-------------------------
+ 4 files changed, 594 insertions(+), 595 deletions(-)
 
-> 
-> -liubo
-> 
->> ---
->>  fs/btrfs/backref.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
->> index cb73a12..54e7610 100644
->> --- a/fs/btrfs/backref.c
->> +++ b/fs/btrfs/backref.c
->> @@ -911,7 +911,6 @@ again:
->>  
->>  	while (!list_empty(&prefs)) {
->>  		ref = list_first_entry(&prefs, struct __prelim_ref, list);
->> -		list_del(&ref->list);
->>  		WARN_ON(ref->count < 0);
->>  		if (ref->count && ref->root_id && ref->parent == 0) {
->>  			/* no parent == root of tree */
->> @@ -954,6 +953,7 @@ again:
->>  				eie->next = ref->inode_list;
->>  			}
->>  		}
->> +		list_del(&ref->list);
->>  		kfree(ref);
->>  	}
->>  
->> -- 
->> 1.8.0.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/common/punch b/common/punch
+index d8f73d0..e6f0b2a 100644
+--- a/common/punch
++++ b/common/punch
+@@ -316,8 +316,8 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -326,9 +326,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 20k" $sync_cmd \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 320k" $sync_cmd \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -337,9 +337,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 20k" \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 320k" \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -348,9 +348,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 8k 8k" $sync_cmd \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 128k 128k" $sync_cmd \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -359,9 +359,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 8k 8k" \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 128k 128k" \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -370,9 +370,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 8k" $sync_cmd \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 128k" $sync_cmd \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -381,10 +381,10 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 8k" $sync_cmd \
+-		-c "$alloc_cmd 8k 8k" \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 128k" $sync_cmd \
++		-c "$alloc_cmd 128k 128k" \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -393,9 +393,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 8k" \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 128k" \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -404,10 +404,10 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 8k" \
+-		-c "pwrite 8k 8k" $sync_cmd \
+-		-c "$zero_cmd 4k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 128k" \
++		-c "pwrite 128k 128k" $sync_cmd \
++		-c "$zero_cmd 64k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -416,9 +416,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 8k 4k" $sync_cmd \
+-		-c "$zero_cmd 4k 12k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 128k 64k" $sync_cmd \
++		-c "$zero_cmd 64k 192k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -427,12 +427,12 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 20k" \
+-		-c "pwrite 0 8k" \
+-		-c "pwrite 12k 8k" $sync_cmd \
+-		-c "$punch_cmd 8k 4k" \
+-		-c "$zero_cmd 4k 12k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 320k" \
++		-c "pwrite 0 128k" \
++		-c "pwrite 192k 128k" $sync_cmd \
++		-c "$punch_cmd 128k 64k" \
++		-c "$zero_cmd 64k 192k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -441,10 +441,10 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 20k" \
+-		-c "pwrite 8k 4k" $sync_cmd \
+-		-c "$zero_cmd 4k 12k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 320k" \
++		-c "pwrite 128k 64k" $sync_cmd \
++		-c "$zero_cmd 64k 192k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -453,20 +453,20 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "$alloc_cmd 0 20k" \
+-		-c "pwrite 0k 8k" $sync_cmd \
+-		-c "pwrite 12k 8k" -c "fsync" \
+-		-c "$zero_cmd 4k 12k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "$alloc_cmd 0 320k" \
++		-c "pwrite 0k 128k" $sync_cmd \
++		-c "pwrite 192k 128k" -c "fsync" \
++		-c "$zero_cmd 64k 192k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+ 
+ 	echo "	14. data -> hole @ EOF"
+ 	rm -f $testfile
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 20k" $sync_cmd \
+-		-c "$zero_cmd 12k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 320k" $sync_cmd \
++		-c "$zero_cmd 192k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -475,9 +475,9 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 20k" $sync_cmd \
+-		-c "$zero_cmd 0k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 320k" $sync_cmd \
++		-c "$zero_cmd 0k 128k" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+ 	_md5_checksum $testfile
+@@ -489,12 +489,12 @@ _test_generic_punch()
+ 	else
+ 		cp $testfile $testfile.2
+ 	fi
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 8k 12k" -c "fsync" $testfile.2 \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 128k 192k" -c "fsync" $testfile.2 \
+ 		> /dev/null
+-	$XFS_IO_PROG -f -c "truncate 20k" \
+-		-c "pwrite 0 20k" $sync_cmd \
+-		-c "$zero_cmd 0k 8k" \
++	$XFS_IO_PROG -f -c "truncate 320k" \
++		-c "pwrite 0 320k" $sync_cmd \
++		-c "$zero_cmd 0k 128k" \
+ 		-c "fadvise -d" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	diff $testfile $testfile.2
+@@ -506,9 +506,8 @@ _test_generic_punch()
+ 	if [ "$remove_testfile" ]; then
+ 		rm -f $testfile
+ 	fi
+-	block_size=`stat -f $TEST_DEV | grep "Block size" | cut -d " " -f3`
+-	$XFS_IO_PROG -f -c "truncate $block_size" \
+-		-c "pwrite 0 $block_size" $sync_cmd \
++	$XFS_IO_PROG -f -c "truncate 64k" \
++		-c "pwrite 0 64k" $sync_cmd \
+ 		-c "$zero_cmd 128 128" \
+ 		-c "$map_cmd -v" $testfile | $filter_cmd
+ 	[ $? -ne 0 ] && die_now
+diff --git a/tests/generic/255.out b/tests/generic/255.out
+index 2ce882b..5aa1ce1 100644
+--- a/tests/generic/255.out
++++ b/tests/generic/255.out
+@@ -1,307 +1,307 @@
+ QA output created by 255
+ 	1. into a hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	2. into allocated space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++1aca77e2188f52a62674fe8a873bdaba
+ 	4. hole -> data
+-0: [0..23]: hole
+-1: [24..31]: extent
+-2: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..383]: hole
++1: [384..511]: extent
++2: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	5. hole -> unwritten
+-0: [0..23]: hole
+-1: [24..31]: extent
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..383]: hole
++1: [384..511]: extent
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	6. data -> hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: extent
++1: [128..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	7. data -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..31]: extent
+-3: [32..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..511]: extent
++3: [512..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	8. unwritten -> hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	9. unwritten -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..31]: extent
+-3: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..511]: extent
++3: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	10. hole -> data -> hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	11. data -> hole -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++1aca77e2188f52a62674fe8a873bdaba
+ 	13. data -> unwritten -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: extent
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: extent
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: extent
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: extent
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	2. into allocated space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++1aca77e2188f52a62674fe8a873bdaba
+ 	4. hole -> data
+-0: [0..23]: hole
+-1: [24..31]: extent
+-2: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..383]: hole
++1: [384..511]: extent
++2: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	5. hole -> unwritten
+-0: [0..23]: hole
+-1: [24..31]: extent
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..383]: hole
++1: [384..511]: extent
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	6. data -> hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: extent
++1: [128..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	7. data -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..31]: extent
+-3: [32..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..511]: extent
++3: [512..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	8. unwritten -> hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	9. unwritten -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..31]: extent
+-3: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..511]: extent
++3: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	10. hole -> data -> hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	11. data -> hole -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++1aca77e2188f52a62674fe8a873bdaba
+ 	13. data -> unwritten -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: extent
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: extent
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: extent
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: extent
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-5a58e46082be047d0f13bee7974015b9
++0: [0..127]: extent
++1: [128..639]: hole
++4c4016ef1838c07e9cf59da9c77d017f
+ 	2. into allocated space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	4. hole -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	5. hole -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	6. data -> hole
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	7. data -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	8. unwritten -> hole
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	9. unwritten -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	10. hole -> data -> hole
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	11. data -> hole -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	13. data -> unwritten -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: extent
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: extent
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: extent
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: extent
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-0: [0..7]: extent
+-1: [8..39]: hole
+-5a58e46082be047d0f13bee7974015b9
++0: [0..127]: extent
++1: [128..639]: hole
++4c4016ef1838c07e9cf59da9c77d017f
+ 	2. into allocated space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	4. hole -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	5. hole -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	6. data -> hole
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	7. data -> unwritten
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	8. unwritten -> hole
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	9. unwritten -> data
+-0: [0..7]: extent
+-1: [8..23]: hole
+-2: [24..39]: extent
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: extent
++1: [128..383]: hole
++2: [384..639]: extent
++2f7a72b9ca9923b610514a11a45a80c9
+ 	10. hole -> data -> hole
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	11. data -> hole -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	13. data -> unwritten -> data
+-0: [0..7]: extent
+-1: [8..31]: hole
+-2: [32..39]: extent
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: extent
++1: [128..511]: hole
++2: [512..639]: extent
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: extent
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: extent
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: extent
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: extent
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: extent
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: extent
++27b1998d7d1907fb55376ff286f3f506
+diff --git a/tests/xfs/242.out b/tests/xfs/242.out
+index 72026a3..11531d4 100644
+--- a/tests/xfs/242.out
++++ b/tests/xfs/242.out
+@@ -1,77 +1,77 @@
+ QA output created by 242
+ 	1. into a hole
+-0: [0..7]: hole
+-1: [8..23]: unwritten
+-2: [24..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: hole
++1: [128..383]: unwritten
++2: [384..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	2. into allocated space
+-0: [0..7]: data
+-1: [8..23]: unwritten
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: unwritten
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	4. hole -> data
+-0: [0..7]: hole
+-1: [8..23]: unwritten
+-2: [24..31]: data
+-3: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..127]: hole
++1: [128..383]: unwritten
++2: [384..511]: data
++3: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	5. hole -> unwritten
+-0: [0..7]: hole
+-1: [8..31]: unwritten
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: hole
++1: [128..511]: unwritten
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	6. data -> hole
+-0: [0..7]: data
+-1: [8..23]: unwritten
+-2: [24..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..383]: unwritten
++2: [384..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	7. data -> unwritten
+-0: [0..7]: data
+-1: [8..31]: unwritten
+-2: [32..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..511]: unwritten
++2: [512..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	8. unwritten -> hole
+-0: [0..23]: unwritten
+-1: [24..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..383]: unwritten
++1: [384..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	9. unwritten -> data
+-0: [0..23]: unwritten
+-1: [24..31]: data
+-2: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..383]: unwritten
++1: [384..511]: data
++2: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	10. hole -> data -> hole
+-0: [0..7]: hole
+-1: [8..31]: unwritten
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: hole
++1: [128..511]: unwritten
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	11. data -> hole -> data
+-0: [0..7]: data
+-1: [8..31]: unwritten
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: unwritten
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	13. data -> unwritten -> data
+-0: [0..7]: data
+-1: [8..31]: unwritten
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: unwritten
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: data
+-1: [24..39]: unwritten
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: data
++1: [384..639]: unwritten
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: unwritten
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: unwritten
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: unwritten
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: unwritten
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: data
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: data
++27b1998d7d1907fb55376ff286f3f506
+diff --git a/tests/xfs/252.out b/tests/xfs/252.out
+index 3caf9d6..ba37288 100644
+--- a/tests/xfs/252.out
++++ b/tests/xfs/252.out
+@@ -1,307 +1,307 @@
+ QA output created by 252
+ 	1. into a hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	2. into allocated space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: unwritten
+-1: [8..23]: hole
+-2: [24..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..383]: hole
++2: [384..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	4. hole -> data
+-0: [0..23]: hole
+-1: [24..31]: data
+-2: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..383]: hole
++1: [384..511]: data
++2: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	5. hole -> unwritten
+-0: [0..23]: hole
+-1: [24..31]: unwritten
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..383]: hole
++1: [384..511]: unwritten
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	6. data -> hole
+-0: [0..7]: data
+-1: [8..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	7. data -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..31]: unwritten
+-3: [32..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..511]: unwritten
++3: [512..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	8. unwritten -> hole
+-0: [0..7]: unwritten
+-1: [8..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	9. unwritten -> data
+-0: [0..7]: unwritten
+-1: [8..23]: hole
+-2: [24..31]: data
+-3: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..127]: unwritten
++1: [128..383]: hole
++2: [384..511]: data
++3: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	10. hole -> data -> hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	11. data -> hole -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: unwritten
+-1: [8..31]: hole
+-2: [32..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..511]: hole
++2: [512..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	13. data -> unwritten -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: data
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: data
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: data
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: data
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	2. into allocated space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: unwritten
+-1: [8..23]: hole
+-2: [24..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..383]: hole
++2: [384..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	4. hole -> data
+-0: [0..23]: hole
+-1: [24..31]: data
+-2: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..383]: hole
++1: [384..511]: data
++2: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	5. hole -> unwritten
+-0: [0..23]: hole
+-1: [24..31]: unwritten
+-2: [32..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..383]: hole
++1: [384..511]: unwritten
++2: [512..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	6. data -> hole
+-0: [0..7]: data
+-1: [8..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	7. data -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..31]: unwritten
+-3: [32..39]: hole
+-1b3779878366498b28c702ef88c4a773
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..511]: unwritten
++3: [512..639]: hole
++3976e5cc0b8a47c4cdc9e0211635f568
+ 	8. unwritten -> hole
+-0: [0..7]: unwritten
+-1: [8..39]: hole
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..639]: hole
++1aca77e2188f52a62674fe8a873bdaba
+ 	9. unwritten -> data
+-0: [0..7]: unwritten
+-1: [8..23]: hole
+-2: [24..31]: data
+-3: [32..39]: hole
+-cc63069677939f69a6e8f68cae6a6dac
++0: [0..127]: unwritten
++1: [128..383]: hole
++2: [384..511]: data
++3: [512..639]: hole
++286aad7ca07b2256f0f2bb8e608ff63d
+ 	10. hole -> data -> hole
+-daa100df6e6711906b61c9ab5aa16032
++1aca77e2188f52a62674fe8a873bdaba
+ 	11. data -> hole -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: unwritten
+-1: [8..31]: hole
+-2: [32..39]: unwritten
+-daa100df6e6711906b61c9ab5aa16032
++0: [0..127]: unwritten
++1: [128..511]: hole
++2: [512..639]: unwritten
++1aca77e2188f52a62674fe8a873bdaba
+ 	13. data -> unwritten -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: data
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: data
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: data
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: data
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-0: [0..7]: data
+-1: [8..39]: hole
+-5a58e46082be047d0f13bee7974015b9
++0: [0..127]: data
++1: [128..639]: hole
++4c4016ef1838c07e9cf59da9c77d017f
+ 	2. into allocated space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	4. hole -> data
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	5. hole -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	6. data -> hole
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	7. data -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	8. unwritten -> hole
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	9. unwritten -> data
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	10. hole -> data -> hole
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	11. data -> hole -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	13. data -> unwritten -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: data
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: data
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: data
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: data
++27b1998d7d1907fb55376ff286f3f506
+ 	1. into a hole
+-0: [0..7]: data
+-1: [8..39]: hole
+-5a58e46082be047d0f13bee7974015b9
++0: [0..127]: data
++1: [128..639]: hole
++4c4016ef1838c07e9cf59da9c77d017f
+ 	2. into allocated space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	3. into unwritten space
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	4. hole -> data
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	5. hole -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	6. data -> hole
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	7. data -> unwritten
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	8. unwritten -> hole
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	9. unwritten -> data
+-0: [0..7]: data
+-1: [8..23]: hole
+-2: [24..39]: data
+-cc58a7417c2d7763adc45b6fcd3fa024
++0: [0..127]: data
++1: [128..383]: hole
++2: [384..639]: data
++2f7a72b9ca9923b610514a11a45a80c9
+ 	10. hole -> data -> hole
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	11. data -> hole -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	12. unwritten -> data -> unwritten
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	13. data -> unwritten -> data
+-0: [0..7]: data
+-1: [8..31]: hole
+-2: [32..39]: data
+-f6aeca13ec49e5b266cd1c913cd726e3
++0: [0..127]: data
++1: [128..511]: hole
++2: [512..639]: data
++0bcfc7652751f8fe46381240ccadd9d7
+ 	14. data -> hole @ EOF
+-0: [0..23]: data
+-1: [24..39]: hole
+-e1f024eedd27ea6b1c3e9b841c850404
++0: [0..383]: data
++1: [384..639]: hole
++eb591f549edabba2b21f80ce4deed8a9
+ 	15. data -> hole @ 0
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	16. data -> cache cold ->hole
+-0: [0..15]: hole
+-1: [16..39]: data
+-eecb7aa303d121835de05028751d301c
++0: [0..255]: hole
++1: [256..639]: data
++b0c249edb75ce5b52136864d879cde83
+ 	17. data -> hole in single block file
+-0: [0..7]: data
+-13535fd4d496bf0b74bb2335aa4d1b31
++0: [0..127]: data
++27b1998d7d1907fb55376ff286f3f506
+-- 
+1.8.3.1
+
 

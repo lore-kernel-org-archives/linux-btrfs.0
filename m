@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45841 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46219 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755494Ab3HHFUn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 01:20:43 -0400
-Date: Thu, 8 Aug 2013 13:18:15 +0800
+	with ESMTP id S1755496Ab3HHFWU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 01:22:20 -0400
+Date: Thu, 8 Aug 2013 13:22:12 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/3] Btrfs: fix possible memory leak in
  find_parent_nodes()
-Message-ID: <20130808051813.GA644@localhost.localdomain>
+Message-ID: <20130808052211.GB644@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1375938259-5015-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,8 +22,7 @@ On Thu, Aug 08, 2013 at 01:04:17PM +0800, Wang Shilong wrote:
 > Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 > Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
-Sorry, I don't think I understand why it's a memory leak, some explanation
-is needed here.
+I think I know the whys :p, but still a log is preferred.
 
 -liubo
 

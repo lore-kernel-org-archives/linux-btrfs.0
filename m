@@ -1,88 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:25630 "EHLO mx1.redhat.com"
+Received: from sandeen.net ([63.231.237.45]:33051 "EHLO sandeen.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965704Ab3HHRfG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 13:35:06 -0400
-Message-ID: <5203D6BF.4040201@redhat.com>
-Date: Thu, 08 Aug 2013 12:34:55 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S965843Ab3HHRk5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Aug 2013 13:40:57 -0400
+Message-ID: <5203D827.3050909@sandeen.net>
+Date: Thu, 08 Aug 2013 12:40:55 -0500
+From: Eric Sandeen <sandeen@sandeen.net>
 MIME-Version: 1.0
 To: Jan Schmidt <list.xfs@jan-o-sch.net>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de
-Subject: Re: [PATCH v3 0/2] xfstest btrfs/316: test send / receive
-References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
-In-Reply-To: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
+CC: xfs@oss.sgi.com, sbehrens@giantdisaster.de, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/2] xfstests: add fssum tool
+References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net> <1375949833-1104-2-git-send-email-list.xfs@jan-o-sch.net>
+In-Reply-To: <1375949833-1104-2-git-send-email-list.xfs@jan-o-sch.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 8/8/13 3:17 AM, Jan Schmidt wrote:
-> These two patches add the announced tests for btrfs send / receive. As
-> requested, the fssum tool is now included.
+> fssum is a tool to build a recursive checksum for a file system. The home
+> repository of fssum is
 > 
-> One drawback is that I'm unable to edit configure.ac or whatever needs
-> to be modified in an autotools preferred way. Any hints appreciated,
-> preferrably hints containing all the modifications required to introduce
-> something like HAVE_SEEK_HOLE.
+>     git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
+> 
+> It is added as an optional target, because it depends on glibc >= 2.15 for
+> SEEK_HOLE / SEEK_DATA. The test to be added using fssum will just be skipped
+> if fssum wasn't built.
+> 
+> Signed-off-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+> ---
+>  .gitignore    |    1 +
+>  common/config |    2 +
+>  src/Makefile  |   11 +-
+>  src/fssum.c   |  819 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  4 files changed, 832 insertions(+), 1 deletions(-)
+>  create mode 100644 src/fssum.c
+> 
+> diff --git a/.gitignore b/.gitignore
+> index 11594aa..c2fc6e3 100644
+> --- a/.gitignore
+> +++ b/.gitignore
+> @@ -45,6 +45,7 @@
+>  /src/fill
+>  /src/fill2
+>  /src/fs_perms
+> +/src/fssum
+>  /src/fstest
+>  /src/fsync-tester
+>  /src/ftrunc
+> diff --git a/common/config b/common/config
+> index 67c1498..c8bee29 100644
+> --- a/common/config
+> +++ b/common/config
+> @@ -146,6 +146,8 @@ export SED_PROG="`set_prog_path sed`"
+>  export BC_PROG="`set_prog_path bc`"
+>  [ "$BC_PROG" = "" ] && _fatal "bc not found"
+>  
+> +export FSSUM_PROG="`set_prog_path fssum $here/src/fssum`"
 
-Other tests in the tree just add:
+So this will pick up a local copy of fssum if it exists;
+is that really desired?  (If there's any difference in
+behavior, then the one in src/ presumably would need to
+be fixed...)
 
-#ifndef SEEK_DATA
-#define SEEK_DATA       3
-#define SEEK_HOLE       4
-#endif
+> +
+>  export PS_ALL_FLAGS="-ef"
+>  
+>  export DF_PROG="`set_prog_path df`"
+> diff --git a/src/Makefile b/src/Makefile
+> index cc679e8..10a4d3c 100644
+> --- a/src/Makefile
+> +++ b/src/Makefile
+> @@ -20,10 +20,14 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+>  	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
+>  	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester
+>  
+> +OPT_TARGETS = fssum
+> +
 
-> I do not want to make modifications to fssum.c here, if that's
-> absolutely required (because one /could/ get along using linux/fs.h,
-> which is not the way I would like to go), I'd like to have that changed
-> in the far-progs repository where fssum.c comes from as well.
+I'm not sure how this helps . . .
 
-Well, unfortunately it breaks the build w/o some change or other,
-on older distros:
+>  SUBDIRS =
+>  
+>  LLDLIBS = $(LIBATTR) $(LIBHANDLE) $(LIBACL)
+>  
+> +OPT_LDLIBS = -lssl -lcrypto
 
-Building src
-    [CC]    fssum
-fssum.c: In function 'sum_file_data_permissive':
-fssum.c:243: error: 'SEEK_DATA' undeclared (first use in this function)
+Hm, new deps.  I guess it's not a huge problem, these should always
+be available, right?
 
-so this can't be merged as-is.
+>  ifeq ($(HAVE_XLOG_ASSIGN_LSN), true)
+>  LINUX_TARGETS += loggen
+>  endif
+> @@ -60,7 +64,7 @@ CFILES = $(TARGETS:=.c)
+>  LDIRT = $(TARGETS)
+>  
+>  
+> -default: depend $(TARGETS) $(SUBDIRS)
+> +default: depend $(TARGETS) $(OPT_TARGETS) $(SUBDIRS)
 
-Adding the 4 lines above to the xfstests copy seems like a pretty obvious fix
-to get the tool building and move this along.
+Anyway, OPT_TARGETS isn't optional, because you still build it by default.  :)
 
-Then, to simply skip this test if the kernel we're running on doesn't grok
-SEEK_DATA, add:
+>  depend: .dep
+>  
+> @@ -70,11 +74,16 @@ $(TARGETS): $(LIBTEST)
+>  	@echo "    [CC]    $@"
+>  	$(Q)$(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(LIBTEST)
+>  
+> +$(OPT_TARGETS): $(LIBTEST)
+> +	@echo "    [CC]    $@"
+> +	-$(Q)$(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(OPT_LDLIBS) $(LIBTEST)
 
-_require_seek_data_hole
-
-to your new test in patch 2.
+Oh, I see, you ignore the error.  Well, that's still pretty ugly.
+I'd really rather you just add the #defines as I suggested in my
+reply to [PATCH 0/2], so it'll build for everyone.
 
 Thanks,
 -Eric
 
-> --
-> v1->v2:
->  - included fssum
->  - test number is now 316 (was 314)
-> v2->v3:
->  - added missing -lcrypto to build fssum
->  - removed obsolete change in README now that fssum is included
->  - fixed comment in test/btrfs/316's header (314 -> 316)
-> 
-> Jan Schmidt (2):
->   xfstests: add fssum tool
->   xfstests btrfs/316: test send / receive
-> 
->  .gitignore          |    1 +
->  common/config       |    2 +
->  src/Makefile        |   11 +-
->  src/fssum.c         |  819 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/316     |  113 +++++++
->  tests/btrfs/316.out |    4 +
->  tests/btrfs/group   |    1 +
->  7 files changed, 950 insertions(+), 1 deletions(-)
->  create mode 100644 src/fssum.c
->  create mode 100755 tests/btrfs/316
->  create mode 100644 tests/btrfs/316.out
-> 
+> +
+>  LINKTEST = $(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS)
+>  
+>  install: default $(addsuffix -install,$(SUBDIRS))
+>  	$(INSTALL) -m 755 -d $(PKG_LIB_DIR)/src
+>  	$(LTINSTALL) -m 755 $(TARGETS) $(PKG_LIB_DIR)/src
+> +	-$(LTINSTALL) -m 755 $(OPT_TARGETS) $(PKG_LIB_DIR)/src
+>  	$(LTINSTALL) -m 755 fill2attr fill2fs fill2fs_check scaleread.sh $(PKG_LIB_DIR)/src
+>  	$(LTINSTALL) -m 644 dumpfile $(PKG_LIB_DIR)/src
+>  
 

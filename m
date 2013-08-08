@@ -1,61 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f177.google.com ([209.85.215.177]:51313 "EHLO
-	mail-ea0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933398Ab3HGWQY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Aug 2013 18:16:24 -0400
-Date: Thu, 8 Aug 2013 01:13:21 +0300
-From: Sergei Trofimovich <slyich@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
+Received: from mo-p05-ob.rzone.de ([81.169.146.182]:38527 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757638Ab3HHHdi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 03:33:38 -0400
+Message-ID: <520349BA.8080006@gmx.net>
+Date: Thu, 08 Aug 2013 09:33:14 +0200
+From: Arne Jansen <sensille@gmx.net>
+MIME-Version: 1.0
+To: Sergei Trofimovich <slyich@gmail.com>
+CC: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
         Josef Bacik <jbacik@fusionio.com>, linux-kernel@vger.kernel.org,
         Sergei Trofimovich <slyfox@gentoo.org>
-Subject: Re: [PATCH 0/7] uselex.rb as a tiny tool to find dead code
-Message-ID: <20130808011321.1eec9a17@sf>
-In-Reply-To: <5202C3EF.4090501@redhat.com>
-References: <1375911803-17318-1-git-send-email-slyich@gmail.com>
-	<5202C3EF.4090501@redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/899069ojtE0AJME2Aw9pOCZ"; protocol="application/pgp-signature"
+Subject: Re: [PATCH 6/7] btrfs: cleanup: removed unused 'btrfs_reada_detach'
+References: <1375911803-17318-1-git-send-email-slyich@gmail.com> <1375911803-17318-7-git-send-email-slyich@gmail.com>
+In-Reply-To: <1375911803-17318-7-git-send-email-slyich@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/899069ojtE0AJME2Aw9pOCZ
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On 07.08.2013 23:43, Sergei Trofimovich wrote:
+> From: Sergei Trofimovich <slyfox@gentoo.org>
+> 
+> Found by uselex.rb:
+>> btrfs_reada_detach: [R]: exported from: fs/btrfs/btrfs.o fs/btrfs/built-in.o fs/btrfs/reada.o
 
-On Wed, 07 Aug 2013 17:02:23 -0500
-Eric Sandeen <sandeen@redhat.com> wrote:
+even though the function is currently unused, I'm hesitating to remove it
+as it's part of the reada-API and might be handy for anyone going to use
+the API in the future.
 
-> On 8/7/13 4:43 PM, Sergei Trofimovich wrote:
->=20
-> ...
->=20
-> > Meet uselex.rb: one-file script to parse 'nm' output:
-> >=20
-> >     https://github.com/trofi/uselex/blob/master/uselex.rb
->=20
-> Nice to meet you!  I think I've met your close relative,
-> ftp://ftp.samba.org/pub/unpacked/junkcode/findstatic.pl  :)
+-Arne
 
-Yeah, even finds the same.
+> 
+> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+> ---
+>  fs/btrfs/ctree.h | 1 -
+>  fs/btrfs/reada.c | 9 +--------
+>  2 files changed, 1 insertion(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index e91ab9e..f35e086 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3861,7 +3861,6 @@ struct reada_control {
+>  struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+>  			      struct btrfs_key *start, struct btrfs_key *end);
+>  int btrfs_reada_wait(void *handle);
+> -void btrfs_reada_detach(void *handle);
+>  int btree_readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+>  			 u64 start, int err);
+>  
+> diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+> index 1031b69..c41d470 100644
+> --- a/fs/btrfs/reada.c
+> +++ b/fs/btrfs/reada.c
+> @@ -37,7 +37,7 @@
+>   * To trigger a readahead, btrfs_reada_add must be called. It will start
+>   * a read ahead for the given range [start, end) on tree root. The returned
+>   * handle can either be used to wait on the readahead to finish
+> - * (btrfs_reada_wait), or to send it to the background (btrfs_reada_detach).
+> + * (btrfs_reada_wait).
+>   *
+>   * The read ahead works as follows:
+>   * On btrfs_reada_add, the root of the tree is inserted into a radix_tree.
+> @@ -979,10 +979,3 @@ int btrfs_reada_wait(void *handle)
+>  	return 0;
+>  }
+>  #endif
+> -
+> -void btrfs_reada_detach(void *handle)
+> -{
+> -	struct reada_control *rc = handle;
+> -
+> -	kref_put(&rc->refcnt, reada_control_release);
+> -}
 
-Thanks!
-
---=20
-
-  Sergei
-
---Sig_/899069ojtE0AJME2Aw9pOCZ
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iEYEARECAAYFAlICxoEACgkQcaHudmEf86pZcQCeIKhoxbaPRkLTPL3DWqlAvPJY
-ZJkAnRoDK+vKkhy+YGKyKcFTL6h9m60J
-=NbaA
------END PGP SIGNATURE-----
-
---Sig_/899069ojtE0AJME2Aw9pOCZ--

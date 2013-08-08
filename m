@@ -1,50 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f48.google.com ([209.85.214.48]:35928 "EHLO
-	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964997Ab3HHKZA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 06:25:00 -0400
-Received: by mail-bk0-f48.google.com with SMTP id my13so616278bkb.35
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Aug 2013 03:24:59 -0700 (PDT)
+Received: from brockman.in8.de ([85.214.220.56]:37657 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965178Ab3HHLCc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Aug 2013 07:02:32 -0400
+Message-ID: <52037AC6.70508@jan-o-sch.net>
+Date: Thu, 08 Aug 2013 13:02:30 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1375938259-5015-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1375938259-5015-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-	<1375938259-5015-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Date: Thu, 8 Aug 2013 11:24:59 +0100
-Message-ID: <CAL3q7H77CCD9saViLZukwHtmi3=PHkxiOy4rc+z1ftvHfOuK=w@mail.gmail.com>
-Subject: Re: [PATCH 2/3] Btrfs: catch error return value from find_extent_in_eb()
-From: Filipe David Manana <fdmanana@gmail.com>
 To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] Btrfs: fix possible memory leak in find_parent_nodes()
+References: <1375938259-5015-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1375938259-5015-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 8, 2013 at 6:04 AM, Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
-> find_extent_in_eb() may return ENOMEM, catch this error return value.
->
+ 
+On Thu, August 08, 2013 at 07:04 (+0200), Wang Shilong wrote:
 > Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 > Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 > ---
->  fs/btrfs/backref.c | 4 ++++
->  1 file changed, 4 insertions(+)
->
+>  fs/btrfs/backref.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
 > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 54e7610..f7781e6 100644
+> index cb73a12..54e7610 100644
 > --- a/fs/btrfs/backref.c
 > +++ b/fs/btrfs/backref.c
-> @@ -934,6 +934,10 @@ again:
->                                 }
->                                 ret = find_extent_in_eb(eb, bytenr,
->                                                         *extent_item_pos, &eie);
-> +                               if (ret) {
-> +                                       free_extent_buffer(eb);
-> +                                       goto out;
-> +                               }
->                                 ref->inode_list = eie;
->                                 free_extent_buffer(eb);
->                         }
+> @@ -911,7 +911,6 @@ again:
+>  
+>  	while (!list_empty(&prefs)) {
+>  		ref = list_first_entry(&prefs, struct __prelim_ref, list);
+> -		list_del(&ref->list);
+>  		WARN_ON(ref->count < 0);
+>  		if (ref->count && ref->root_id && ref->parent == 0) {
+>  			/* no parent == root of tree */
+> @@ -954,6 +953,7 @@ again:
+>  				eie->next = ref->inode_list;
+>  			}
+>  		}
+> +		list_del(&ref->list);
+>  		kfree(ref);
+>  	}
+>  
+> 
 
-Hello, this is a duplicate of:  https://patchwork.kernel.org/patch/2835989/
+I'm not convinced, you're not calling kfree() more often. Can you please add
+some patch description?
 
-thanks
+-Jan

@@ -1,263 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:52668 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:52677 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964912Ab3HHNLd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 09:11:33 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 106807C06A0
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 07:11:33 -0600 (MDT)
-Date: Thu, 8 Aug 2013 09:11:30 -0400
+	with ESMTP id S964909Ab3HHNMT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 09:12:19 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 9D5117C06A1
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 07:12:19 -0600 (MDT)
+Date: Thu, 8 Aug 2013 09:12:17 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: deal with enomem in the rewind path V3
-Message-ID: <20130808131130.GB16712@localhost.localdomain>
-References: <1375909381-24516-1-git-send-email-jbacik@fusionio.com>
- <52034A94.9040003@jan-o-sch.net>
+CC: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: stop using GFP_ATOMIC when allocating rewind ebs
+Message-ID: <20130808131217.GC16712@localhost.localdomain>
+References: <1375909909-25955-1-git-send-email-jbacik@fusionio.com>
+ <5203475A.9070705@jan-o-sch.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <52034A94.9040003@jan-o-sch.net>
+In-Reply-To: <5203475A.9070705@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 08, 2013 at 09:36:52AM +0200, Jan Schmidt wrote:
-> On Wed, August 07, 2013 at 23:03 (+0200), Josef Bacik wrote:
-> > We can get ENOMEM trying to allocate dummy bufs for the rewind operation of the
-> > tree mod log.  Instead of BUG_ON()'ing in this case pass up ENOMEM.  I looked
-> > back through the callers and I'm pretty sure I got everybody who did BUG_ON(ret)
-> > in this path.  Thanks,
+On Thu, Aug 08, 2013 at 09:23:06AM +0200, Jan Schmidt wrote:
+>  
+> On Wed, August 07, 2013 at 23:11 (+0200), Josef Bacik wrote:
+> > There is no reason we can't just set the path to blocking and then do normal
+> > GFP_NOFS allocations for these extent buffers.  Thanks,
 > > 
 > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 > > ---
-> > V2->V3:
-> > -unlock and free the original buffer on error
-> > -return NULL instead of ERR_PTR(-ENOMEM)
-> > V1->V2: missed a BUG_ON() for alloc_dummy_extent_buffer.
-> > 
-> >  fs/btrfs/ctree.c     |   16 +++++-
-> >  fs/btrfs/extent_io.c |  145 +++++++++++++++++++++++++------------------------
-> >  2 files changed, 88 insertions(+), 73 deletions(-)
+> >  fs/btrfs/ctree.c     |   16 ++++++++++------
+> >  fs/btrfs/extent_io.c |    8 ++++----
+> >  2 files changed, 14 insertions(+), 10 deletions(-)
 > > 
 > > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> > index 0d5c686..1dd8a71 100644
+> > index 1dd8a71..414a2d7 100644
 > > --- a/fs/btrfs/ctree.c
 > > +++ b/fs/btrfs/ctree.c
-> > @@ -1211,7 +1211,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+> > @@ -1191,8 +1191,8 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+> >   * is freed (its refcount is decremented).
+> >   */
+> >  static struct extent_buffer *
+> > -tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+> > -		    u64 time_seq)
+> > +tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+> > +		    struct extent_buffer *eb, u64 time_seq)
+> >  {
+> >  	struct extent_buffer *eb_rewin;
+> >  	struct tree_mod_elem *tm;
+> > @@ -1207,12 +1207,15 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+> >  	if (!tm)
+> >  		return eb;
+> >  
+> > +	btrfs_set_path_blocking(path);
+> > +	btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+> > +
+> >  	if (tm->op == MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
 > >  		BUG_ON(tm->slot != 0);
 > >  		eb_rewin = alloc_dummy_extent_buffer(eb->start,
 > >  						fs_info->tree_root->nodesize);
-> > -		BUG_ON(!eb_rewin);
-> > +		if (!eb_rewin) {
-> > +			btrfs_tree_read_unlock(eb);
-> > +			free_extent_buffer(eb);
-> > +			return NULL;
-> > +		}
-> >  		btrfs_set_header_bytenr(eb_rewin, eb->start);
-> >  		btrfs_set_header_backref_rev(eb_rewin,
-> >  					     btrfs_header_backref_rev(eb));
-> > @@ -1219,7 +1223,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
-> >  		btrfs_set_header_level(eb_rewin, btrfs_header_level(eb));
+> >  		if (!eb_rewin) {
+> > -			btrfs_tree_read_unlock(eb);
+> > +			btrfs_tree_read_unlock_blocking(eb);
+> >  			free_extent_buffer(eb);
+> >  			return NULL;
+> >  		}
+> > @@ -1224,13 +1227,14 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
 > >  	} else {
 > >  		eb_rewin = btrfs_clone_extent_buffer(eb);
-> > -		BUG_ON(!eb_rewin);
-> > +		if (!eb_rewin) {
-> > +			btrfs_tree_read_unlock(eb);
-> > +			free_extent_buffer(eb);
-> > +			return NULL;
-> > +		}
+> >  		if (!eb_rewin) {
+> > -			btrfs_tree_read_unlock(eb);
+> > +			btrfs_tree_read_unlock_blocking(eb);
+> >  			free_extent_buffer(eb);
+> >  			return NULL;
+> >  		}
 > >  	}
 > >  
-> >  	btrfs_tree_read_unlock(eb);
-> > @@ -2772,6 +2780,10 @@ again:
-> >  							  BTRFS_READ_LOCK);
-> >  			}
-> >  			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
-> > +			if (!b) {
-> > +				ret = -ENOMEM;
-> > +				goto done;
-> > +			}
-> >  			p->locks[level] = BTRFS_READ_LOCK;
-> >  			p->nodes[level] = b;
-> >  		} else {
-> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > index deaea9c..b422cba 100644
-> > --- a/fs/btrfs/extent_io.c
-> > +++ b/fs/btrfs/extent_io.c
-> > @@ -4222,6 +4222,76 @@ static void __free_extent_buffer(struct extent_buffer *eb)
-> >  	kmem_cache_free(extent_buffer_cache, eb);
-> >  }
-> >  
-> > +static int extent_buffer_under_io(struct extent_buffer *eb)
-> > +{
-> > +	return (atomic_read(&eb->io_pages) ||
-> > +		test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> > +		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> > +}
-> > +
-> > +/*
-> > + * Helper for releasing extent buffer page.
-> > + */
-> > +static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
-> > +						unsigned long start_idx)
-> > +{
-> > +	unsigned long index;
-> > +	unsigned long num_pages;
-> > +	struct page *page;
-> > +	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
-> > +
-> > +	BUG_ON(extent_buffer_under_io(eb));
-> > +
-> > +	num_pages = num_extent_pages(eb->start, eb->len);
-> > +	index = start_idx + num_pages;
-> > +	if (start_idx >= index)
-> > +		return;
-> > +
-> > +	do {
-> > +		index--;
-> > +		page = extent_buffer_page(eb, index);
-> > +		if (page && mapped) {
-> > +			spin_lock(&page->mapping->private_lock);
-> > +			/*
-> > +			 * We do this since we'll remove the pages after we've
-> > +			 * removed the eb from the radix tree, so we could race
-> > +			 * and have this page now attached to the new eb.  So
-> > +			 * only clear page_private if it's still connected to
-> > +			 * this eb.
-> > +			 */
-> > +			if (PagePrivate(page) &&
-> > +			    page->private == (unsigned long)eb) {
-> > +				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> > +				BUG_ON(PageDirty(page));
-> > +				BUG_ON(PageWriteback(page));
-> > +				/*
-> > +				 * We need to make sure we haven't be attached
-> > +				 * to a new eb.
-> > +				 */
-> > +				ClearPagePrivate(page);
-> > +				set_page_private(page, 0);
-> > +				/* One for the page private */
-> > +				page_cache_release(page);
-> > +			}
-> > +			spin_unlock(&page->mapping->private_lock);
-> > +
-> > +		}
-> > +		if (page) {
-> > +			/* One for when we alloced the page */
-> > +			page_cache_release(page);
-> > +		}
-> > +	} while (index != start_idx);
-> > +}
-> > +
-> > +/*
-> > + * Helper for releasing the extent buffer.
-> > + */
-> > +static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
-> > +{
-> > +	btrfs_release_extent_buffer_page(eb, 0);
-> > +	__free_extent_buffer(eb);
-> > +}
-> > +
-> >  static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
-> >  						   u64 start,
-> >  						   unsigned long len,
-> > @@ -4276,7 +4346,10 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
-> >  
-> >  	for (i = 0; i < num_pages; i++) {
-> >  		p = alloc_page(GFP_ATOMIC);
-> > -		BUG_ON(!p);
-> > +		if (!p) {
-> > +			btrfs_release_extent_buffer(new);
-> > +			return NULL;
-> > +		}
-> >  		attach_extent_buffer_page(new, p);
-> >  		WARN_ON(PageDirty(p));
-> >  		SetPageUptodate(p);
-> > @@ -4317,76 +4390,6 @@ err:
-> >  	return NULL;
-> >  }
-> >  
-> > -static int extent_buffer_under_io(struct extent_buffer *eb)
-> > -{
-> > -	return (atomic_read(&eb->io_pages) ||
-> > -		test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> > -		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> > -}
-> > -
-> > -/*
-> > - * Helper for releasing extent buffer page.
-> > - */
-> > -static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
-> > -						unsigned long start_idx)
-> > -{
-> > -	unsigned long index;
-> > -	unsigned long num_pages;
-> > -	struct page *page;
-> > -	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
-> > -
-> > -	BUG_ON(extent_buffer_under_io(eb));
-> > -
-> > -	num_pages = num_extent_pages(eb->start, eb->len);
-> > -	index = start_idx + num_pages;
-> > -	if (start_idx >= index)
-> > -		return;
-> > -
-> > -	do {
-> > -		index--;
-> > -		page = extent_buffer_page(eb, index);
-> > -		if (page && mapped) {
-> > -			spin_lock(&page->mapping->private_lock);
-> > -			/*
-> > -			 * We do this since we'll remove the pages after we've
-> > -			 * removed the eb from the radix tree, so we could race
-> > -			 * and have this page now attached to the new eb.  So
-> > -			 * only clear page_private if it's still connected to
-> > -			 * this eb.
-> > -			 */
-> > -			if (PagePrivate(page) &&
-> > -			    page->private == (unsigned long)eb) {
-> > -				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> > -				BUG_ON(PageDirty(page));
-> > -				BUG_ON(PageWriteback(page));
-> > -				/*
-> > -				 * We need to make sure we haven't be attached
-> > -				 * to a new eb.
-> > -				 */
-> > -				ClearPagePrivate(page);
-> > -				set_page_private(page, 0);
-> > -				/* One for the page private */
-> > -				page_cache_release(page);
-> > -			}
-> > -			spin_unlock(&page->mapping->private_lock);
-> > -
-> > -		}
-> > -		if (page) {
-> > -			/* One for when we alloced the page */
-> > -			page_cache_release(page);
-> > -		}
-> > -	} while (index != start_idx);
-> > -}
-> > -
-> > -/*
-> > - * Helper for releasing the extent buffer.
-> > - */
-> > -static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
-> > -{
-> > -	btrfs_release_extent_buffer_page(eb, 0);
-> > -	__free_extent_buffer(eb);
-> > -}
-> > -
-> >  static void check_buffer_tree_ref(struct extent_buffer *eb)
-> >  {
-> >  	int refs;
-> > 
+> > -	btrfs_tree_read_unlock(eb);
+> > +	btrfs_clear_path_blocking(path, NULL, BTRFS_READ_LOCK);
+> > +	btrfs_tree_read_unlock_blocking(eb);
 > 
-> Weird patch formatting concerning extent_io.c, I assume there are no changes in
-> extent_buffer_under_io and btrfs_release_extent_buffer_page, you just moved
-> btrfs_clone_extent_buffer, right? Perhaps --patience or --minimal could do
-> better? Otherwise,
+> unlock_blocking? Rest looks ok to me.
 > 
 
-Yeah I just moved them up so I could call them, I do hate how it makes the diff
-look massive when there's basically no change.  Thanks,
+Yeah I change the lock to blocking above, so I have to do read_unlock_blocking
+here.  Thanks,
 
 Josef

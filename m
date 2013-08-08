@@ -1,45 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:11682 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966606Ab3HHVZ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 17:25:27 -0400
-Date: Thu, 8 Aug 2013 14:25:16 -0700
-From: Zach Brown <zab@redhat.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Why does btrfs benchmark so badly in this case?
-Message-ID: <20130808212516.GY12314@lenny.home.zabbo.net>
-References: <CAJBj3vcfSrWC3sxxxin93GYYPZY_z_MJnAHoMxB45MFqEXYXkA@mail.gmail.com>
- <20130808194015.GH16712@localhost.localdomain>
- <CAJBj3vfrHPDhM579JZDhUQgmyd2PnUtrgwYX0718tOrK8MzNCA@mail.gmail.com>
- <2A60AA23-4496-4C0F-9B4A-22DF5DB3884F@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <2A60AA23-4496-4C0F-9B4A-22DF5DB3884F@colorremedies.com>
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:48323 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757968Ab3HHVpz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 17:45:55 -0400
+Received: by mail-wg0-f50.google.com with SMTP id m15so3058924wgh.29
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Aug 2013 14:45:54 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: set default max_inline to 8KiB instead of 8MiB
+Date: Thu,  8 Aug 2013 22:45:48 +0100
+Message-Id: <1375998348-20639-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I also don't know if any common use fs has an optimization whereby
-> just the modified sector(s) is overwritten, rather than all sectors
-> making up the file system block being modified.
+8MiB is way too large and likely set by mistake. This is not
+a significant issue as in practice the max amount of data
+added to an inline extent is also limited by the page cache
+and btree leaf sizes.
 
-Most of them do.  The generic direct io path allows sector sized dio.
-The very first bit of do_blockdev_direct_IO() is testing first for file
-system block size alignment then for block device sector size alignment.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/disk-io.c |    2 +-
+ fs/btrfs/disk-io.h |    2 ++
+ fs/btrfs/super.c   |    2 +-
+ 3 files changed, 4 insertions(+), 2 deletions(-)
 
-You can see this easily with dd conv=notrunc oflags=direct and blktrace.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5de9ad7..aff37bd 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2189,7 +2189,7 @@ int open_ctree(struct super_block *sb,
+ 	atomic_set(&fs_info->defrag_running, 0);
+ 	atomic64_set(&fs_info->tree_mod_seq, 0);
+ 	fs_info->sb = sb;
+-	fs_info->max_inline = 8192 * 1024;
++	fs_info->max_inline = BTRFS_DEFAULT_MAX_INLINE;
+ 	fs_info->metadata_ratio = 0;
+ 	fs_info->defrag_inodes = RB_ROOT;
+ 	fs_info->free_chunk_space = 0;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index b71acd6e..e76c1a2 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -25,6 +25,8 @@
+ #define BTRFS_SUPER_MIRROR_MAX	 3
+ #define BTRFS_SUPER_MIRROR_SHIFT 12
+ 
++#define BTRFS_DEFAULT_MAX_INLINE 8192
++
+ enum {
+ 	BTRFS_WQ_ENDIO_DATA = 0,
+ 	BTRFS_WQ_ENDIO_METADATA = 1,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1967903..7359a9e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -941,7 +941,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",nodatacow");
+ 	if (btrfs_test_opt(root, NOBARRIER))
+ 		seq_puts(seq, ",nobarrier");
+-	if (info->max_inline != 8192 * 1024)
++	if (info->max_inline != BTRFS_DEFAULT_MAX_INLINE)
+ 		seq_printf(seq, ",max_inline=%llu",
+ 			   (unsigned long long)info->max_inline);
+ 	if (info->alloc_start != 0)
+-- 
+1.7.9.5
 
-# blockdev --getss /dev/sda
-512
-# blockdev --getbsz /dev/sda
-4096
-
-# blktrace -d /dev/sda -a issue -o - | blkparse -i - &
-
-$ dd if=/dev/zero of=file bs=4096 count=1 oflag=direct conv=notrunc
-  8,0    3       14    35.957320002 17941  D  WS 137297704 + 8 [dd]
-
-$ dd if=/dev/zero of=file bs=512 count=1 oflag=direct conv=notrunc
-  8,0    1        4    31.405641362 17940  D  WS 137297704 + 1 [dd]
-
-- z

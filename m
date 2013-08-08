@@ -1,53 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:56821 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965817Ab3HHTkS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 15:40:18 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 26D5B7C06A2
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 13:40:18 -0600 (MDT)
-Date: Thu, 8 Aug 2013 15:40:15 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: John Williams <jwilliams4200@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: Why does btrfs benchmark so badly in this case?
-Message-ID: <20130808194015.GH16712@localhost.localdomain>
-References: <CAJBj3vcfSrWC3sxxxin93GYYPZY_z_MJnAHoMxB45MFqEXYXkA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAJBj3vcfSrWC3sxxxin93GYYPZY_z_MJnAHoMxB45MFqEXYXkA@mail.gmail.com>
+Received: from mail-we0-f173.google.com ([74.125.82.173]:52154 "EHLO
+	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966063Ab3HHUBe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 16:01:34 -0400
+Received: by mail-we0-f173.google.com with SMTP id x55so2949375wes.32
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Aug 2013 13:01:33 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix race between removing a dev and writing sbs
+Date: Thu,  8 Aug 2013 21:00:52 +0100
+Message-Id: <1375992052-17706-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 08, 2013 at 09:13:04AM -0700, John Williams wrote:
-> Phoronix periodically runs benchmarks on filesystems, and one thing I
-> have noticed is that btrfs always does terribly on their fio "Intel
-> IOMeter fileserver access pattern" benchmark:
-> 
-> http://www.phoronix.com/scan.php?page=article&item=linux_310_10fs&num=2
-> 
-> Here, btrfs is more than 6 times slower than ext4, and about 3 times
-> slower than XFS.
-> 
-> Lest we attribute it to an unavoidable downside of COW filesystems and
-> move on...no, we cannot do that, because ZFS does well here -- btrfs
-> is about 6 times slower than ZFS!
-> 
-> Note that btrfs does quite well in the other Phoronix benchmarks. It
-> is just the fio fileserver benchmark that btrfs has problems with.
-> 
-> What is going on here? Why is btrfs doing so poorly?
+Since all code paths that update the number of devices in the
+super copy (fs_info->super_copy) first lock the device list
+(fs_info->fs_devices->device_list_mutex), and write_all_supers()
+also needs to lock the devices list mutex, make write_all_supers()
+read the number of devices from the super copy after it locks
+the device list mutex (and before unlocking it of course).
 
-So the reason this workload sucks for btrfs is because we fall back on buffered
-IO because fio does not do block size aligned writes for this workload.  If you
-add
+The only code path that doesn't lock the device list mutex
+before updating the number of devices in the super copy is
+disk-io.c:next_root_backup(), called by open_ctree() during
+mount time where concurrency issues can't happen.
 
-ba=4k
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/disk-io.c |    2 +-
+ fs/btrfs/volumes.c |   11 ++++-------
+ 2 files changed, 5 insertions(+), 8 deletions(-)
 
-to the iometer fio file then we go the same speed as xfs and ext4.  Not a whole
-lot we can do about this since unaligned writes means we have to read in pages
-to cow the block properly, which is why we fall back to buffered.  Once we do
-that we end up having a lot of page locking stuff that gets in the way and makes
-us twice as slow.  Thanks,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 254cdc8..c4b24c7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3313,7 +3313,6 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 	int total_errors = 0;
+ 	u64 flags;
+ 
+-	max_errors = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 	do_barriers = !btrfs_test_opt(root, NOBARRIER);
+ 	backup_super_roots(root->fs_info);
+ 
+@@ -3322,6 +3321,7 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+ 	head = &root->fs_info->fs_devices->devices;
++	max_errors = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 
+ 	if (do_barriers) {
+ 		ret = barrier_all_devices(root->fs_info);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 090f57c..eddf386 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1568,11 +1568,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	if (ret)
+ 		goto error_undo;
+ 
+-	/*
+-	 * TODO: the superblock still includes this device in its num_devices
+-	 * counter although write_all_supers() is not locked out. This
+-	 * could give a filesystem state which requires a degraded mount.
+-	 */
+ 	ret = btrfs_rm_dev_item(root->fs_info->chunk_root, device);
+ 	if (ret)
+ 		goto error_undo;
+@@ -1588,7 +1583,9 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	/*
+ 	 * the device list mutex makes sure that we don't change
+ 	 * the device list while someone else is writing out all
+-	 * the device supers.
++	 * the device supers. Whoever is writing all supers, should
++	 * lock the device list mutex before getting the number of
++	 * devices in the super block (super_copy).
+ 	 */
+ 
+ 	cur_devices = device->fs_devices;
+@@ -1612,10 +1609,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		device->fs_devices->open_devices--;
+ 
+ 	call_rcu(&device->rcu, free_device);
+-	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 	btrfs_set_super_num_devices(root->fs_info->super_copy, num_devices);
++	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	if (cur_devices->open_devices == 0) {
+ 		struct btrfs_fs_devices *fs_devices;
+-- 
+1.7.9.5
 
-Josef

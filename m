@@ -1,44 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:54193 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757906Ab3HHPo4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Aug 2013 11:44:56 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4F57A7C06A3
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Aug 2013 09:44:56 -0600 (MDT)
-Date: Thu, 8 Aug 2013 11:44:54 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Christoph Hellwig <hch@infradead.org>
-CC: Josef Bacik <jbacik@fusionio.com>, Mark Fasheh <mfasheh@suse.de>,
-        <viro@ZenIV.linux.org.uk>, <linux-fsdevel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>, Chris Mason <chris.mason@fusionio.com>,
-        Andrew Vagin <avagin@gmail.com>
-Subject: Re: [PATCH][RESEND] vfs: allow /proc/PID/maps to get device from stat
-Message-ID: <20130808154454.GF16712@localhost.localdomain>
-References: <20130807195718.GC31381@wotan.suse.de>
- <20130807201826.GA23804@infradead.org>
- <20130807205146.GE2397@localhost.localdomain>
- <20130808121349.GC5180@infradead.org>
- <20130808130207.GA16712@localhost.localdomain>
- <20130808134805.GB24181@infradead.org>
+Received: from cantor2.suse.de ([195.135.220.15]:49605 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965937Ab3HHQKd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Aug 2013 12:10:33 -0400
+Date: Thu, 8 Aug 2013 18:10:31 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>,
+        Chris Mason <chris.mason@fusionio.com>,
+        Gabriel de Perthuis <g2p.code@gmail.com>,
+        David Sterba <dsterba@suse.cz>, Zach Brown <zab@redhat.com>
+Subject: Re: [PATCH 0/4] btrfs: out-of-band (aka offline) dedupe v4
+Message-ID: <20130808161031.GY5284@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1375814571-31753-1-git-send-email-mfasheh@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130808134805.GB24181@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1375814571-31753-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 08, 2013 at 06:48:05AM -0700, Christoph Hellwig wrote:
-> On Thu, Aug 08, 2013 at 09:02:07AM -0400, Josef Bacik wrote:
-> > This won't work, try having 10000 subvolumes with dirty inodes and do sync then
-> > go skiing, you'll have time :).  Thanks,
-> 
-> Why would the dirty inodes make any difference?  If you share the bdi
-> between the subvolumes the sync workflow should be exactly the same
-> still.
-> 
+On Tue, Aug 06, 2013 at 11:42:47AM -0700, Mark Fasheh wrote:
+> The following series of patches implements in btrfs an ioctl to do
+> out-of-band deduplication of file extents.
 
-If we could dis-entangle vfsmounts from sb's and have it so you could have
-multiple vfsmounts with just one sb that would solve at least the in-kernel
-confusion, but I think we still have the userspace confusion.  Thanks,
-
-Josef
+Reviewed-by: David Sterba <dsterba@suse.cz>

@@ -1,257 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:45564 "EHLO mail.in8.de"
+Received: from brockman.in8.de ([85.214.220.56]:41912 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751211Ab3HHHgy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Aug 2013 03:36:54 -0400
-Message-ID: <52034A94.9040003@jan-o-sch.net>
-Date: Thu, 08 Aug 2013 09:36:52 +0200
+	id S933890Ab3HHHt5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Aug 2013 03:49:57 -0400
+Message-ID: <52034DA4.1000702@jan-o-sch.net>
+Date: Thu, 08 Aug 2013 09:49:56 +0200
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: deal with enomem in the rewind path V3
-References: <1375909381-24516-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1375909381-24516-1-git-send-email-jbacik@fusionio.com>
+Subject: Re: [PATCH] Btrfs: pass gfp_t to __add_prelim_ref() to avoid always
+ using GFP_ATOMIC
+References: <1375756194-5143-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1375756194-5143-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, August 07, 2013 at 23:03 (+0200), Josef Bacik wrote:
-> We can get ENOMEM trying to allocate dummy bufs for the rewind operation of the
-> tree mod log.  Instead of BUG_ON()'ing in this case pass up ENOMEM.  I looked
-> back through the callers and I'm pretty sure I got everybody who did BUG_ON(ret)
-> in this path.  Thanks,
+On Tue, August 06, 2013 at 04:29 (+0200), Wang Shilong wrote:
+> Currently, only add_delayed_refs have to allocate with GFP_ATOMIC,
+> So just pass arg 'gfp_t' to decide which allocation mode.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 > ---
-> V2->V3:
-> -unlock and free the original buffer on error
-> -return NULL instead of ERR_PTR(-ENOMEM)
-> V1->V2: missed a BUG_ON() for alloc_dummy_extent_buffer.
+>  fs/btrfs/backref.c | 30 +++++++++++++++---------------
+>  1 file changed, 15 insertions(+), 15 deletions(-)
 > 
->  fs/btrfs/ctree.c     |   16 +++++-
->  fs/btrfs/extent_io.c |  145 +++++++++++++++++++++++++------------------------
->  2 files changed, 88 insertions(+), 73 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 0d5c686..1dd8a71 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1211,7 +1211,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
->  		BUG_ON(tm->slot != 0);
->  		eb_rewin = alloc_dummy_extent_buffer(eb->start,
->  						fs_info->tree_root->nodesize);
-> -		BUG_ON(!eb_rewin);
-> +		if (!eb_rewin) {
-> +			btrfs_tree_read_unlock(eb);
-> +			free_extent_buffer(eb);
-> +			return NULL;
-> +		}
->  		btrfs_set_header_bytenr(eb_rewin, eb->start);
->  		btrfs_set_header_backref_rev(eb_rewin,
->  					     btrfs_header_backref_rev(eb));
-> @@ -1219,7 +1223,11 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
->  		btrfs_set_header_level(eb_rewin, btrfs_header_level(eb));
->  	} else {
->  		eb_rewin = btrfs_clone_extent_buffer(eb);
-> -		BUG_ON(!eb_rewin);
-> +		if (!eb_rewin) {
-> +			btrfs_tree_read_unlock(eb);
-> +			free_extent_buffer(eb);
-> +			return NULL;
-> +		}
->  	}
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 8bc5e8c..cb73a12 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -160,12 +160,12 @@ struct __prelim_ref {
 >  
->  	btrfs_tree_read_unlock(eb);
-> @@ -2772,6 +2780,10 @@ again:
->  							  BTRFS_READ_LOCK);
->  			}
->  			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
-> +			if (!b) {
-> +				ret = -ENOMEM;
-> +				goto done;
-> +			}
->  			p->locks[level] = BTRFS_READ_LOCK;
->  			p->nodes[level] = b;
->  		} else {
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index deaea9c..b422cba 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -4222,6 +4222,76 @@ static void __free_extent_buffer(struct extent_buffer *eb)
->  	kmem_cache_free(extent_buffer_cache, eb);
->  }
->  
-> +static int extent_buffer_under_io(struct extent_buffer *eb)
-> +{
-> +	return (atomic_read(&eb->io_pages) ||
-> +		test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> +		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> +}
-> +
-> +/*
-> + * Helper for releasing extent buffer page.
-> + */
-> +static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
-> +						unsigned long start_idx)
-> +{
-> +	unsigned long index;
-> +	unsigned long num_pages;
-> +	struct page *page;
-> +	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
-> +
-> +	BUG_ON(extent_buffer_under_io(eb));
-> +
-> +	num_pages = num_extent_pages(eb->start, eb->len);
-> +	index = start_idx + num_pages;
-> +	if (start_idx >= index)
-> +		return;
-> +
-> +	do {
-> +		index--;
-> +		page = extent_buffer_page(eb, index);
-> +		if (page && mapped) {
-> +			spin_lock(&page->mapping->private_lock);
-> +			/*
-> +			 * We do this since we'll remove the pages after we've
-> +			 * removed the eb from the radix tree, so we could race
-> +			 * and have this page now attached to the new eb.  So
-> +			 * only clear page_private if it's still connected to
-> +			 * this eb.
-> +			 */
-> +			if (PagePrivate(page) &&
-> +			    page->private == (unsigned long)eb) {
-> +				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> +				BUG_ON(PageDirty(page));
-> +				BUG_ON(PageWriteback(page));
-> +				/*
-> +				 * We need to make sure we haven't be attached
-> +				 * to a new eb.
-> +				 */
-> +				ClearPagePrivate(page);
-> +				set_page_private(page, 0);
-> +				/* One for the page private */
-> +				page_cache_release(page);
-> +			}
-> +			spin_unlock(&page->mapping->private_lock);
-> +
-> +		}
-> +		if (page) {
-> +			/* One for when we alloced the page */
-> +			page_cache_release(page);
-> +		}
-> +	} while (index != start_idx);
-> +}
-> +
-> +/*
-> + * Helper for releasing the extent buffer.
-> + */
-> +static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
-> +{
-> +	btrfs_release_extent_buffer_page(eb, 0);
-> +	__free_extent_buffer(eb);
-> +}
-> +
->  static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
->  						   u64 start,
->  						   unsigned long len,
-> @@ -4276,7 +4346,10 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
->  
->  	for (i = 0; i < num_pages; i++) {
->  		p = alloc_page(GFP_ATOMIC);
-> -		BUG_ON(!p);
-> +		if (!p) {
-> +			btrfs_release_extent_buffer(new);
-> +			return NULL;
-> +		}
->  		attach_extent_buffer_page(new, p);
->  		WARN_ON(PageDirty(p));
->  		SetPageUptodate(p);
-> @@ -4317,76 +4390,6 @@ err:
->  	return NULL;
->  }
->  
-> -static int extent_buffer_under_io(struct extent_buffer *eb)
-> -{
-> -	return (atomic_read(&eb->io_pages) ||
-> -		test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> -		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> -}
-> -
-> -/*
-> - * Helper for releasing extent buffer page.
-> - */
-> -static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
-> -						unsigned long start_idx)
-> -{
-> -	unsigned long index;
-> -	unsigned long num_pages;
-> -	struct page *page;
-> -	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
-> -
-> -	BUG_ON(extent_buffer_under_io(eb));
-> -
-> -	num_pages = num_extent_pages(eb->start, eb->len);
-> -	index = start_idx + num_pages;
-> -	if (start_idx >= index)
-> -		return;
-> -
-> -	do {
-> -		index--;
-> -		page = extent_buffer_page(eb, index);
-> -		if (page && mapped) {
-> -			spin_lock(&page->mapping->private_lock);
-> -			/*
-> -			 * We do this since we'll remove the pages after we've
-> -			 * removed the eb from the radix tree, so we could race
-> -			 * and have this page now attached to the new eb.  So
-> -			 * only clear page_private if it's still connected to
-> -			 * this eb.
-> -			 */
-> -			if (PagePrivate(page) &&
-> -			    page->private == (unsigned long)eb) {
-> -				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> -				BUG_ON(PageDirty(page));
-> -				BUG_ON(PageWriteback(page));
-> -				/*
-> -				 * We need to make sure we haven't be attached
-> -				 * to a new eb.
-> -				 */
-> -				ClearPagePrivate(page);
-> -				set_page_private(page, 0);
-> -				/* One for the page private */
-> -				page_cache_release(page);
-> -			}
-> -			spin_unlock(&page->mapping->private_lock);
-> -
-> -		}
-> -		if (page) {
-> -			/* One for when we alloced the page */
-> -			page_cache_release(page);
-> -		}
-> -	} while (index != start_idx);
-> -}
-> -
-> -/*
-> - * Helper for releasing the extent buffer.
-> - */
-> -static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
-> -{
-> -	btrfs_release_extent_buffer_page(eb, 0);
-> -	__free_extent_buffer(eb);
-> -}
-> -
->  static void check_buffer_tree_ref(struct extent_buffer *eb)
+>  static int __add_prelim_ref(struct list_head *head, u64 root_id,
+>  			    struct btrfs_key *key, int level,
+> -			    u64 parent, u64 wanted_disk_byte, int count)
+> +			    u64 parent, u64 wanted_disk_byte, int count,
+> +			    gfp_t gfp_mask)
 >  {
->  	int refs;
+>  	struct __prelim_ref *ref;
+>  
+> -	/* in case we're adding delayed refs, we're holding the refs spinlock */
+> -	ref = kmalloc(sizeof(*ref), GFP_ATOMIC);
+> +	ref = kmalloc(sizeof(*ref), gfp_mask);
+>  	if (!ref)
+>  		return -ENOMEM;
+>  
+> @@ -548,7 +548,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+>  			ref = btrfs_delayed_node_to_tree_ref(node);
+>  			ret = __add_prelim_ref(prefs, ref->root, &op_key,
+>  					       ref->level + 1, 0, node->bytenr,
+> -					       node->ref_mod * sgn);
+> +					       node->ref_mod * sgn, GFP_ATOMIC);
+>  			break;
+>  		}
+>  		case BTRFS_SHARED_BLOCK_REF_KEY: {
+> @@ -558,7 +558,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+>  			ret = __add_prelim_ref(prefs, ref->root, NULL,
+>  					       ref->level + 1, ref->parent,
+>  					       node->bytenr,
+> -					       node->ref_mod * sgn);
+> +					       node->ref_mod * sgn, GFP_ATOMIC);
+>  			break;
+>  		}
+>  		case BTRFS_EXTENT_DATA_REF_KEY: {
+> @@ -570,7 +570,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+>  			key.offset = ref->offset;
+>  			ret = __add_prelim_ref(prefs, ref->root, &key, 0, 0,
+>  					       node->bytenr,
+> -					       node->ref_mod * sgn);
+> +					       node->ref_mod * sgn, GFP_ATOMIC);
+>  			break;
+>  		}
+>  		case BTRFS_SHARED_DATA_REF_KEY: {
+> @@ -583,7 +583,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+>  			key.offset = ref->offset;
+>  			ret = __add_prelim_ref(prefs, ref->root, &key, 0,
+>  					       ref->parent, node->bytenr,
+> -					       node->ref_mod * sgn);
+> +					       node->ref_mod * sgn, GFP_ATOMIC);
+>  			break;
+>  		}
+>  		default:
+> @@ -657,7 +657,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+>  		case BTRFS_SHARED_BLOCK_REF_KEY:
+>  			ret = __add_prelim_ref(prefs, 0, NULL,
+>  						*info_level + 1, offset,
+> -						bytenr, 1);
+> +						bytenr, 1, GFP_NOFS);
+>  			break;
+>  		case BTRFS_SHARED_DATA_REF_KEY: {
+>  			struct btrfs_shared_data_ref *sdref;
+> @@ -666,13 +666,13 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+>  			sdref = (struct btrfs_shared_data_ref *)(iref + 1);
+>  			count = btrfs_shared_data_ref_count(leaf, sdref);
+>  			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
+> -					       bytenr, count);
+> +					       bytenr, count, GFP_NOFS);
+>  			break;
+>  		}
+>  		case BTRFS_TREE_BLOCK_REF_KEY:
+>  			ret = __add_prelim_ref(prefs, offset, NULL,
+>  					       *info_level + 1, 0,
+> -					       bytenr, 1);
+> +					       bytenr, 1, GFP_NOFS);
+>  			break;
+>  		case BTRFS_EXTENT_DATA_REF_KEY: {
+>  			struct btrfs_extent_data_ref *dref;
+> @@ -687,7 +687,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+>  			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+>  			root = btrfs_extent_data_ref_root(leaf, dref);
+>  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+> -					       bytenr, count);
+> +					       bytenr, count, GFP_NOFS);
+>  			break;
+>  		}
+>  		default:
+> @@ -738,7 +738,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+>  		case BTRFS_SHARED_BLOCK_REF_KEY:
+>  			ret = __add_prelim_ref(prefs, 0, NULL,
+>  						info_level + 1, key.offset,
+> -						bytenr, 1);
+> +						bytenr, 1, GFP_NOFS);
+>  			break;
+>  		case BTRFS_SHARED_DATA_REF_KEY: {
+>  			struct btrfs_shared_data_ref *sdref;
+> @@ -748,13 +748,13 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+>  					      struct btrfs_shared_data_ref);
+>  			count = btrfs_shared_data_ref_count(leaf, sdref);
+>  			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
+> -						bytenr, count);
+> +						bytenr, count, GFP_NOFS);
+>  			break;
+>  		}
+>  		case BTRFS_TREE_BLOCK_REF_KEY:
+>  			ret = __add_prelim_ref(prefs, key.offset, NULL,
+>  					       info_level + 1, 0,
+> -					       bytenr, 1);
+> +					       bytenr, 1, GFP_NOFS);
+>  			break;
+>  		case BTRFS_EXTENT_DATA_REF_KEY: {
+>  			struct btrfs_extent_data_ref *dref;
+> @@ -770,7 +770,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+>  			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+>  			root = btrfs_extent_data_ref_root(leaf, dref);
+>  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+> -					       bytenr, count);
+> +					       bytenr, count, GFP_NOFS);
+>  			break;
+>  		}
+>  		default:
 > 
 
-Weird patch formatting concerning extent_io.c, I assume there are no changes in
-extent_buffer_under_io and btrfs_release_extent_buffer_page, you just moved
-btrfs_clone_extent_buffer, right? Perhaps --patience or --minimal could do
-better? Otherwise,
-
-Reviewed-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 
 Thanks,
 -Jan

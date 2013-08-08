@@ -1,48 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:44156 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932145Ab3HGQP5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Aug 2013 12:15:57 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 5DEC87C0431
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Aug 2013 10:15:57 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] xfstests: add regression test for kernel bz 60673
-Date: Wed, 7 Aug 2013 12:15:54 -0400
-Message-ID: <1375892154-11548-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from xp-ob.rzone.de ([81.169.146.139]:46575 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933997Ab3HHIRT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Aug 2013 04:17:19 -0400
+From: Jan Schmidt <list.xfs@jan-o-sch.net>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de
+Subject: [PATCH v3 2/2] xfstests btrfs/316: test send / receive
+Date: Thu,  8 Aug 2013 10:17:13 +0200
+Message-Id: <1375949833-1104-3-git-send-email-list.xfs@jan-o-sch.net>
+In-Reply-To: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
+References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There was a problem with send trying to overwrite a file that wasn't actually
-the same.  This is a test to check this particular case where receive fails when
-it should succeed properly.  I tested this to verify it fails without my fix and
-passes with my fix.  Thanks,
+Basic send / receive functionality test for btrfs. Requires current
+version of fsstress built (-x support). Relies on fssum tool but can
+skip the test if it failed to build.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 ---
- tests/btrfs/001     |  110 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/001.out |    2 +
+ tests/btrfs/316     |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/316.out |    4 ++
  tests/btrfs/group   |    1 +
- 3 files changed, 113 insertions(+), 0 deletions(-)
- create mode 100755 tests/btrfs/001
- create mode 100644 tests/btrfs/001.out
+ 3 files changed, 118 insertions(+), 0 deletions(-)
+ create mode 100755 tests/btrfs/316
+ create mode 100644 tests/btrfs/316.out
 
-diff --git a/tests/btrfs/001 b/tests/btrfs/001
+diff --git a/tests/btrfs/316 b/tests/btrfs/316
 new file mode 100755
-index 0000000..453db95
+index 0000000..087978a
 --- /dev/null
-+++ b/tests/btrfs/001
-@@ -0,0 +1,110 @@
++++ b/tests/btrfs/316
+@@ -0,0 +1,113 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/001
++# FSQA Test No. 316
 +#
-+# btrfs send ENOENT regression test, kernel bugzilla 60673
++# Run fsstress to create a reasonably strange file system, make a
++# snapshot (base) and run more fsstress. Then take another snapshot
++# (incr) and send both snapshots to a temp file. Remake the file
++# system and receive from the files. Check both states with fssum.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
++# Copyright (C) 2013 STRATO.  All rights reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -59,113 +60,112 @@ index 0000000..453db95
 +#
 +#-----------------------------------------------------------------------
 +#
++# creator
++owner=list.btrfs@jan-o-sch.net
 +
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
-+tmp=/tmp/$$
-+tmp_dir=send_temp_$seq
-+
-+status=1	# failure is the default!
++tmp=`mktemp -d`
++status=1
 +
 +_cleanup()
 +{
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap1 > /dev/null 2>&1
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap2 > /dev/null 2>&1
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send > /dev/null 2>&1
-+	rm -rf $TEST_DIR/$tmp_dir
++	echo "*** unmount"
++	umount $SCRATCH_MNT 2>/dev/null
 +	rm -f $tmp.*
 +}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
 +
 +# real QA test starts here
++_need_to_be_root
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
++_require_command $FSSUM_PROG fssum
 +
-+_scratch_mkfs > /dev/null 2>&1
++rm -f $seqres.full
 +
-+#receive needs to be able to setxattrs, including the selinux context, if we use
-+#the normal nfs context thing it screws up our ability to set the
-+#security.selinux xattrs so we need to disable this for this test
-+export SELINUX_MOUNT_OPTIONS=""
++workout()
++{
++	fsz=$1
++	ops=$2
 +
-+_scratch_mount
++	umount $SCRATCH_DEV >/dev/null 2>&1
++	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
++	echo ""                                     >>$seqres.full
++	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
++		|| _fail "size=$fsz mkfs failed"
++	run_check _scratch_mount "-o noatime"
 +
-+mkdir $TEST_DIR/$tmp_dir
-+$BTRFS_UTIL_PROG subvol create $TEST_DIR/$tmp_dir/send \
-+	> $seqres.full 2>&1 || _fail "failed subvol create"
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n $ops $FSSTRESS_AVOID -x \
++		"$BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/base"
 +
-+cd $TEST_DIR/$tmp_dir/send
++	run_check $BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/incr
 +
-+mkdir test
-+touch test/baz
-+touch test/blah
-+mkdir test/foo
-+touch test/foo/bar
++	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap" \
++		>> $seqres.full
++	$BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap 2>> $seqres.full \
++		|| _fail "failed: '$@'"
++	echo "# $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base\
++		$SCRATCH_MNT/incr > $tmp/incr.snap" >> $seqres.full
++	$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base \
++		$SCRATCH_MNT/incr > $tmp/incr.snap 2>> $seqres.full \
++		|| _fail "failed: '$@'"
 +
-+# cd out in case any of this fails
-+cd /
++	run_check $FSSUM_PROG -A -f -w $tmp/base.fssum $SCRATCH_MNT/base
++	run_check $FSSUM_PROG -A -f -w $tmp/incr.fssum -x $SCRATCH_MNT/incr/base \
++		$SCRATCH_MNT/incr
 +
-+$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
-+	$TEST_DIR/$tmp_dir/snap1 >> $seqres.full 2>&1 || _fail "failed snap1"
++	umount $SCRATCH_DEV >/dev/null 2>&1
++	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
++	echo ""                                     >>$seqres.full
++	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
++		|| _fail "size=$fsz mkfs failed"
++	run_check _scratch_mount "-o noatime"
 +
-+$BTRFS_UTIL_PROG send -f $TEST_DIR/$tmp_dir/send1.dump \
-+	$TEST_DIR/$tmp_dir/snap1 >> $seqres.full 2>&1 || _fail "failed send"
++	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/base.snap
++	run_check $FSSUM_PROG -r $tmp/base.fssum $SCRATCH_MNT/base
 +
-+$BTRFS_UTIL_PROG receive -f $TEST_DIR/$tmp_dir/send1.dump $SCRATCH_MNT \
-+	>> $seqres.full 2>&1 || _fail "failed receive"
++	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/incr.snap
++	run_check $FSSUM_PROG -r $tmp/incr.fssum $SCRATCH_MNT/incr
++}
 +
-+#recreate everything exactly the way it was exceptn in a different order so we
-+#get different inode numbers
-+cd $TEST_DIR/$tmp_dir/send
-+rm -rf test
-+mkdir test
-+touch test/baz
-+mkdir test/foo
-+touch test/foo/bar
-+touch test/blah
-+cd /
++echo "*** test send / receive"
 +
-+$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
-+	$TEST_DIR/$tmp_dir/snap2 >> $seqres.full 2>&1 || _fail "failed snap2"
++fssize=`expr 2000 \* 1024 \* 1024`
++ops=200
 +
-+$BTRFS_UTIL_PROG send -f $TEST_DIR/$tmp_dir/send2.dump \
-+	$TEST_DIR/$tmp_dir/snap2 -p $TEST_DIR/$tmp_dir/snap1 \
-+	>> $seqres.full 2>&1 || _fail "failed second send"
++workout $fssize $ops
 +
-+$BTRFS_UTIL_PROG receive -f $TEST_DIR/$tmp_dir/send2.dump $SCRATCH_MNT \
-+	>> $seqres.full 2>&1 || _fail "failed second receive"
-+
-+echo "Silence is golden"
-+status=0 ; exit
-diff --git a/tests/btrfs/001.out b/tests/btrfs/001.out
++echo "*** done"
++status=0
++exit
+diff --git a/tests/btrfs/316.out b/tests/btrfs/316.out
 new file mode 100644
-index 0000000..88678b8
+index 0000000..4564c85
 --- /dev/null
-+++ b/tests/btrfs/001.out
-@@ -0,0 +1,2 @@
-+QA output created by 001
-+Silence is golden
++++ b/tests/btrfs/316.out
+@@ -0,0 +1,4 @@
++QA output created by 316
++*** test send / receive
++*** done
++*** unmount
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index c8fb502..3afa04f 100644
+index bc6c256..11d708a 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -3,6 +3,7 @@
- # - do not start group names with a digit
- # - comment line before each group is "new" description
- #
-+001 auto quick
- 254 auto quick
- 264 auto
- 265 auto
+@@ -9,3 +9,4 @@
+ 276 auto rw metadata
+ 284 auto
+ 307 auto quick
++316 auto rw metadata
 -- 
-1.7.7.6
+1.7.2.5
 

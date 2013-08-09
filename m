@@ -1,30 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f47.google.com ([209.85.212.47]:50743 "EHLO
-	mail-vb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030482Ab3HIHfP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 03:35:15 -0400
-Received: by mail-vb0-f47.google.com with SMTP id h10so3892954vbh.34
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Aug 2013 00:35:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1375874984-31139-1-git-send-email-fdmanana@gmail.com>
-References: <1375874984-31139-1-git-send-email-fdmanana@gmail.com>
-Date: Fri, 9 Aug 2013 09:35:14 +0200
-Message-ID: <CAFvQSYQpJu0Di163SgBqPS+LVKwC2X2wfz=1eKr6XtTnQeCJig@mail.gmail.com>
-Subject: Re: [PATCH RFC] Btrfs: track compression algorithm on inodes
-From: Clemens Eisserer <linuxhippy@gmail.com>
-To: Filipe David Borba Manana <fdmanana@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.virtall.com ([178.63.195.102]:35254 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S967517Ab3HIHra (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 03:47:30 -0400
+Date: Fri, 9 Aug 2013 15:47:20 +0800
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs qgroup destroy -> ERROR: unable to create quota group:
+ Device or resource busy
+Message-ID: <20130809154720.7f4cb618@virtall.com>
+In-Reply-To: <5204928F.1020603@cn.fujitsu.com>
+References: <20130809133933.2fbfc6e4@virtall.com>
+	<52048483.1010809@cn.fujitsu.com>
+	<20130809140750.59832bc4@virtall.com>
+	<52048770.40602@cn.fujitsu.com>
+	<20130809144221.740d57b1@virtall.com>
+	<5204928F.1020603@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been waiting for such functionality quite a long time, great to
-seem some progress here :)
-It would allow me to compress files which are not frequently accessed
-(~75%?) with zlib, while staying at LZO for everything else.
+On Fri, 09 Aug 2013 14:56:15 +0800
+Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
 
-> I think we should take the top-down approach and start with UI how to set these attributes,
-Yes, some command-line tool to set the compression algorithm would be
-a better idea then using mountn..
+> > So how exactly should I do it? A bit confused on how to proceed.
+> 
+> btrfs qgroup remove 4494 13/1 <mnt>
+> 
+> will destroy relation between 4494 and 13/1
+> Then you can try:
+> 
+> btrfs qgroup destroy 4494 <mnt>
 
-Regards
+Excellent, thanks a lot!
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+

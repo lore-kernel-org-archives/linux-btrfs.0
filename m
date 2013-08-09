@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:24034 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:33824 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753224Ab3HFCxH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Aug 2013 22:53:07 -0400
-Message-ID: <52006509.1060207@redhat.com>
-Date: Mon, 05 Aug 2013 21:52:57 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1758045Ab3HIOKl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 10:10:41 -0400
+Date: Fri, 9 Aug 2013 16:10:39 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] btrfs-progs: mark static & remove unused from
+ non-kernel code
+Message-ID: <20130809141039.GK5284@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52019C6D.9050308@redhat.com>
+ <52019D5F.3070301@redhat.com>
+ <5201C3CC.8000303@redhat.com>
+ <5201FD1D.7030200@giantdisaster.de>
+ <52026525.8030004@redhat.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: don't overrun "answer" array in cmds-chunk.c
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52026525.8030004@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If an array is 5 chars in size:
+On Wed, Aug 07, 2013 at 10:17:57AM -0500, Eric Sandeen wrote:
+> And isn't it still a mistake?  I think it used to be that subvol_uuid_search_init()
+> would allocate the memory which must be freed, but that's no longer the case,
+> right?  So under what circumstances is it correct to call
+> subvol_uuid_search_add() which frees those pointers?
 
-       char answer[5];
+Looks like the memory management is internal to the subvol_uuid*
+functions, now _init does not allocate and I don't see why _add should
+call free. All users of subvol_uuid_search() free the memory themselves
+(in current code).
 
-and we write the 6th char (counting from 0)...
+Seems that subvol_uuid_search_add was exported without any concern that
+it could be part of the library interface.
 
-       answer[5] = '\0';
+We don't have library ABI versioning in place, so I suggest to keep the
+function there for compatibility with current code (though I'm not aware
+of any external users of the _add function), but drop th free() calls
+and put a "don't use" comment.
 
-we get problems:
-
-cmds-chunk.c: In function 'ask_user.clone.0':
-cmds-chunk.c:1343: warning: array subscript is above array bounds
-
-Fix it...
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
-
-
-diff --git a/cmds-chunk.c b/cmds-chunk.c
-index 03314de..7c3257c 100644
---- a/cmds-chunk.c
-+++ b/cmds-chunk.c
-@@ -1340,7 +1340,7 @@ again:
- 		}
- 		i++;
- 	}
--	answer[5] = '\0';
-+	answer[4] = '\0';
- 	__fpurge(stdin);
- 
- 	if (strlen(answer) == 0) {
-
+david

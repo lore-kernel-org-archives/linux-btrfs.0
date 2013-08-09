@@ -1,70 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:47108 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758589Ab3HISIz convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 14:08:55 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 0BEEE9A0405
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Aug 2013 12:08:55 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Sage Weil <sage@inktank.com>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <alpine.DEB.2.00.1308091101480.14125@cobra.newdream.net>
-CC: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net>
- <20130618163706.GC19183@localhost.localdomain>
- <20130618165952.9494.8953@localhost.localdomain>
- <alpine.DEB.2.00.1306192043380.14838@cobra.newdream.net>
- <alpine.DEB.2.00.1306201455440.454@cobra.newdream.net>
- <20130621004216.4477.93556@localhost.localdomain>
- <alpine.DEB.2.00.1308091101480.14125@cobra.newdream.net>
-Message-ID: <20130809180852.17880.6919@localhost.localdomain>
-Subject: Re: hang on 3.9, 3.10-rc5
-Date: Fri, 9 Aug 2013 14:08:52 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:9244 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1030942Ab3HIUhX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 16:37:23 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r79KbN9D020346
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Aug 2013 16:37:23 -0400
+Received: from lenny.home.zabbo.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r79KbNvj001231
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Aug 2013 16:37:23 -0400
+From: Zach Brown <zab@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: brelse in error path in open_ctree
+Date: Fri,  9 Aug 2013 13:37:13 -0700
+Message-Id: <1376080634-1714-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Sage Weil (2013-08-09 14:04:15)
-> Hi Chris,
-> 
-> On Thu, 20 Jun 2013, Chris Mason wrote:
-> > Quoting Sage Weil (2013-06-20 17:56:19)
-> > > On Wed, 19 Jun 2013, Sage Weil wrote:
-> > > > Hi Chris,
-> > > > 
-> > > > On Tue, 18 Jun 2013, Chris Mason wrote:
-> > > > > [...]
-> > > > > Very long way of saying I think we're one release_path short.  Sage, I
-> > > > > haven't tested this at all yet, I was hoping to trigger it first.
-> > > > > 
-> > > > > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> > > > > index c276ac9..c1954b3 100644
-> > > > > --- a/fs/btrfs/tree-log.c
-> > > > > +++ b/fs/btrfs/tree-log.c
-> > > > > @@ -3730,6 +3730,7 @@ next_slot:
-> > > > >  log_extents:
-> > > > >     if (fast_search) {
-> > > > >             btrfs_release_path(dst_path);
-> > > > > +           btrfs_release_path(path);
-> > > > >             ret = btrfs_log_changed_extents(trans, root, inode, dst_path);
-> > > > >             if (ret) {
-> > > > >                     err = ret;
-> > > > 
-> > > > This seems to be doing the trick.  I'll keep testing overnight, but so far 
-> > > > so good!
-> > > 
-> > > ...and it's still holding up well in QA.
-> > 
-> > Awesome, thanks for getting the traces for us.  Looks like this one has
-> > been around since v3.7, so I'm not going to try and sneak it into the
-> > 3.10 final.  I'll have it in the next merge window and for stable.
-> 
-> I was just pulling in the current -rc for testing and realized that this 
-> isn't upstream yet.  Was this missed?  Sorry I didn't check earlier.
+Commit 1104a8855 added an error branch that forgot to release the super
+bh.  I found this while looking for an unrelated double brelse.
 
-Ack, thanks Sage.  It'll go into the next pull (cc stable)
+Signed-off-by: Zach Brown <zab@redhat.com>
+---
+ fs/btrfs/disk-io.c | 1 +
+ 1 file changed, 1 insertion(+)
 
--chris
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 254cdc8..ca1e25f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2329,6 +2329,7 @@ int open_ctree(struct super_block *sb,
+ 	if (btrfs_check_super_csum(bh->b_data)) {
+ 		printk(KERN_ERR "btrfs: superblock checksum mismatch\n");
+ 		err = -EINVAL;
++		brelse(bh);
+ 		goto fail_alloc;
+ 	}
+ 
+-- 
+1.7.11.7
 

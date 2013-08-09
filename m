@@ -1,64 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7094 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:13871 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932235Ab3HII45 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Aug 2013 04:56:57 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r798usqa026433
-	for <linux-btrfs@vger.kernel.org>; Fri, 9 Aug 2013 16:56:55 +0800
+	id S965456Ab3HIJNw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 05:13:52 -0400
+Message-ID: <5204B278.4010506@cn.fujitsu.com>
+Date: Fri, 09 Aug 2013 17:12:24 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH V3 1/2] Btrfs: fix possible memory leak in find_parent_nodes()
-Date: Fri, 9 Aug 2013 16:55:25 +0800
-Message-Id: <1376038525-3286-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org, sensille@gmx.net, miaox@cn.fujitsu.com
+Subject: Re: [PATCH 1/3] Btrfs: fix oops when writing dirty qgroups to disk
+References: <1375852351-11919-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20130808132033.GD16712@localhost.localdomain>
+In-Reply-To: <20130808132033.GD16712@localhost.localdomain>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The origin code dealt with 'ref' as following steps:
-	|->list_del(&ref-list)
-	|->some operations
-	|-->goto cleanup if failed
-	|->kfree(ref)
-cleanup:
-	|->cleanup all 'ref's in the list
+On 08/08/2013 09:20 PM, Josef Bacik wrote:
+> On Wed, Aug 07, 2013 at 01:12:29PM +0800, Wang Shilong wrote:
+>> When disabling quota, we should clear out list 'dirty_qgroups',otherwise,
+>> we will get oops if enabling quota again. Fix this by abstracting similar
+>> code from del_qgroup_rb().
+>>
+>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+>> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+> 
+> Can we get an xfstest for this, or at the very least a generic xfstest to
+> exercise qgroups in general so I can be sure all these qgroup patches I take
+> don't cause regressions?  Thanks,
 
-If operations failed, it would goto label 'cleanup' without
-freeing this 'ref'.The cleanup code would also not free it,
-because it has been removed from list.
+Yeah, we have a test suite ourself for btrfs qgroup, and i wil change it integrated into
+xfstest later.
 
-We fix the problem by calling list_del() after operations, so
-it is still in the list even if operations fail, and then the
-cleanup code can get and free it.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
-V2->V3: make changelog more clear.
-V1->V2: add explanations to changelog
----
- fs/btrfs/backref.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 68048d6..7b55c95 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -911,7 +911,6 @@ again:
- 
- 	while (!list_empty(&prefs)) {
- 		ref = list_first_entry(&prefs, struct __prelim_ref, list);
--		list_del(&ref->list);
- 		WARN_ON(ref->count < 0);
- 		if (ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
-@@ -956,6 +955,7 @@ again:
- 				eie->next = ref->inode_list;
- 			}
- 		}
-+		list_del(&ref->list);
- 		kfree(ref);
- 	}
- 
--- 
-1.8.0.1
+Thanks,
+Wang
+> 
+> Josef
+> 
 

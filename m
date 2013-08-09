@@ -1,59 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:36623 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758536Ab3HISEP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 14:04:15 -0400
-Date: Fri, 9 Aug 2013 11:04:15 -0700 (PDT)
-From: Sage Weil <sage@inktank.com>
-To: Chris Mason <chris.mason@fusionio.com>
-cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: hang on 3.9, 3.10-rc5
-In-Reply-To: <20130621004216.4477.93556@localhost.localdomain>
-Message-ID: <alpine.DEB.2.00.1308091101480.14125@cobra.newdream.net>
-References: <alpine.DEB.2.00.1306110841550.15858@cobra.newdream.net> <20130618163706.GC19183@localhost.localdomain> <20130618165952.9494.8953@localhost.localdomain> <alpine.DEB.2.00.1306192043380.14838@cobra.newdream.net> <alpine.DEB.2.00.1306201455440.454@cobra.newdream.net>
- <20130621004216.4477.93556@localhost.localdomain>
+Received: from mx1.redhat.com ([209.132.183.28]:8487 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758574Ab3HISF3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 14:05:29 -0400
+Date: Fri, 9 Aug 2013 11:04:41 -0700
+From: Zach Brown <zab@redhat.com>
+To: Andreas Schwab <schwab@linux-m68k.org>
+Cc: Josef Bacik <jbacik@fusionio.com>, Thorsten Glaser <tg@mirbsd.de>,
+        Joe Perches <joe@perches.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Debian GNU/Linux m68k <debian-68k@lists.debian.org>,
+        linux-btrfs@vger.kernel.org,
+        Linux Kernel Development <linux-kernel@vger.kernel.org>
+Subject: Re: btrfs zero divide
+Message-ID: <20130809180441.GB12314@lenny.home.zabbo.net>
+References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org>
+ <alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
+ <20130730171329.GF24583@localhost.localdomain>
+ <Pine.BSM.4.64L.1307301741360.20305@herc.mirbsd.org>
+ <20130730204001.GG24583@localhost.localdomain>
+ <87eha33v9f.fsf@igel.home>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <87eha33v9f.fsf@igel.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-On Thu, 20 Jun 2013, Chris Mason wrote:
-> Quoting Sage Weil (2013-06-20 17:56:19)
-> > On Wed, 19 Jun 2013, Sage Weil wrote:
-> > > Hi Chris,
-> > > 
-> > > On Tue, 18 Jun 2013, Chris Mason wrote:
-> > > > [...]
-> > > > Very long way of saying I think we're one release_path short.  Sage, I
-> > > > haven't tested this at all yet, I was hoping to trigger it first.
-> > > > 
-> > > > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> > > > index c276ac9..c1954b3 100644
-> > > > --- a/fs/btrfs/tree-log.c
-> > > > +++ b/fs/btrfs/tree-log.c
-> > > > @@ -3730,6 +3730,7 @@ next_slot:
-> > > >  log_extents:
-> > > >     if (fast_search) {
-> > > >             btrfs_release_path(dst_path);
-> > > > +           btrfs_release_path(path);
-> > > >             ret = btrfs_log_changed_extents(trans, root, inode, dst_path);
-> > > >             if (ret) {
-> > > >                     err = ret;
-> > > 
-> > > This seems to be doing the trick.  I'll keep testing overnight, but so far 
-> > > so good!
-> > 
-> > ...and it's still holding up well in QA.
+On Fri, Aug 09, 2013 at 02:26:36PM +0200, Andreas Schwab wrote:
+> Josef Bacik <jbacik@fusionio.com> writes:
 > 
-> Awesome, thanks for getting the traces for us.  Looks like this one has
-> been around since v3.7, so I'm not going to try and sneak it into the
-> 3.10 final.  I'll have it in the next merge window and for stable.
+> > So stripe_len shouldn't be 0, if it is you have bigger problems :).
+> 
+> The bigger problem is that stripe_nr is u64, this is completely bogus.
+> The first operand of do_div must be u32.  This goes through the whole
+> file.
 
-I was just pulling in the current -rc for testing and realized that this 
-isn't upstream yet.  Was this missed?  Sorry I didn't check earlier.
+Definitely.  Can we get some typeof() tricks in the macros to have the
+build fail if (when, evidently) someone gets it wrong?
 
-Thanks!
-sage
+- z

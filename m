@@ -1,50 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:34732 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030282Ab3HIOfj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 10:35:39 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 2C3747C067B
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Aug 2013 08:35:39 -0600 (MDT)
-Date: Fri, 9 Aug 2013 10:35:37 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Andreas Schwab <schwab@linux-m68k.org>
-CC: Josef Bacik <jbacik@fusionio.com>, Thorsten Glaser <tg@mirbsd.de>,
-        Joe Perches <joe@perches.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Debian GNU/Linux m68k <debian-68k@lists.debian.org>,
-        <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Development <linux-kernel@vger.kernel.org>
-Subject: Re: btrfs zero divide
-Message-ID: <20130809143537.GA861@localhost.localdomain>
-References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org>
- <alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
- <20130730171329.GF24583@localhost.localdomain>
- <Pine.BSM.4.64L.1307301741360.20305@herc.mirbsd.org>
- <20130730204001.GG24583@localhost.localdomain>
- <87eha33v9f.fsf@igel.home>
- <87a9kr3v2p.fsf@igel.home>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <87a9kr3v2p.fsf@igel.home>
+Received: from mail-we0-f169.google.com ([74.125.82.169]:54272 "EHLO
+	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030305Ab3HIOlp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 10:41:45 -0400
+Received: by mail-we0-f169.google.com with SMTP id n5so3645406wev.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Aug 2013 07:41:44 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: fix race between removing a dev and writing sbs
+Date: Fri,  9 Aug 2013 15:41:36 +0100
+Message-Id: <1376059296-8490-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1375992052-17706-1-git-send-email-fdmanana@gmail.com>
+References: <1375992052-17706-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 09, 2013 at 02:30:38PM +0200, Andreas Schwab wrote:
-> Andreas Schwab <schwab@linux-m68k.org> writes:
-> 
-> > Josef Bacik <jbacik@fusionio.com> writes:
-> >
-> >> So stripe_len shouldn't be 0, if it is you have bigger problems :).
-> >
-> > The bigger problem is that stripe_nr is u64, this is completely bogus.
-> > The first operand of do_div must be u32.  This goes through the whole
-> > file.
-> 
-> Of course, what I meant was that the *second* operand must be u32, but
-> that doesn't change my point.
-> 
+This change fixes an issue when removing a device and writing
+all super blocks run simultaneously. Here's the steps necessary
+for the issue to happen:
 
-Yeah we can change this.  Thanks,
+1) disk-io.c:write_all_supers() gets a number of N devices from the
+   super_copy, so it will not panic if it fails to write super blocks
+   for N - 1 devices;
 
-Josef
+2) Then it tries to acquire the device_list_mutex, but blocks because
+   volumes.c:btrfs_rm_device() got it first;
+
+3) btrfs_rm_device() removes the device from the list, then unlocks the
+   mutex and after the unlock it updates the number of devices in
+   super_copy to N - 1.
+
+4) write_all_supers() finally acquires the mutex, iterates over all the
+   devices in the list and gets N - 1 errors, that is, it failed to write
+   super blocks to all the devices;
+
+5) Because write_all_supers() thinks there are a total of N devices, it
+   considers N - 1 errors to be ok, and therefore won't panic.
+
+So this change just makes sure that write_all_supers() reads the number
+of devices from super_copy after it acquires the device_list_mutex.
+Conversely, it changes btrfs_rm_device() to update the number of devices
+in super_copy before it releases the device list mutex.
+
+The code path to add a new device (volumes.c:btrfs_init_new_device),
+already has the right behaviour: it updates the number of devices in
+super_copy while holding the device_list_mutex.
+
+The only code path that doesn't lock the device list mutex
+before updating the number of devices in the super copy is
+disk-io.c:next_root_backup(), called by open_ctree() during
+mount time where concurrency issues can't happen.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+
+V2: Restored Stefan Behrens's comment as it's about a different issue,
+    and updated the commit message to be more detailed.
+
+ fs/btrfs/disk-io.c |    2 +-
+ fs/btrfs/volumes.c |    8 ++++++--
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5de9ad7..e70f9c5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3319,7 +3319,6 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 	int total_errors = 0;
+ 	u64 flags;
+ 
+-	max_errors = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 	do_barriers = !btrfs_test_opt(root, NOBARRIER);
+ 	backup_super_roots(root->fs_info);
+ 
+@@ -3328,6 +3327,7 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+ 	head = &root->fs_info->fs_devices->devices;
++	max_errors = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 
+ 	if (do_barriers) {
+ 		ret = barrier_all_devices(root->fs_info);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c74d702..f62f535 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1588,7 +1588,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	/*
+ 	 * the device list mutex makes sure that we don't change
+ 	 * the device list while someone else is writing out all
+-	 * the device supers.
++	 * the device supers. Whoever is writing all supers, should
++	 * lock the device list mutex before getting the number of
++	 * devices in the super block (super_copy). Conversely,
++	 * whoever updates the number of devices in the super block
++	 * (super_copy) should hold the device list mutex.
+ 	 */
+ 
+ 	cur_devices = device->fs_devices;
+@@ -1612,10 +1616,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		device->fs_devices->open_devices--;
+ 
+ 	call_rcu(&device->rcu, free_device);
+-	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 	btrfs_set_super_num_devices(root->fs_info->super_copy, num_devices);
++	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	if (cur_devices->open_devices == 0) {
+ 		struct btrfs_fs_devices *fs_devices;
+-- 
+1.7.9.5
+

@@ -1,151 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46452 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752605Ab3H3IgP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 04:36:15 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7U8aE3r013700
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:36:14 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7U8aDea024151
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:36:13 GMT
-Received: from abhmt116.oracle.com (abhmt116.oracle.com [141.146.116.68])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7U8aCXW021277
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:36:12 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: use btrfs error code for kernel errors
-Date: Fri, 30 Aug 2013 16:42:51 +0800
-Message-Id: <1377852171-4155-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1376657550-15011-1-git-send-email-anand.jain@oracle.com>
-References: <1376657550-15011-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36940 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S964779Ab3HIP1R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Aug 2013 11:27:17 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 43356A538E
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Aug 2013 17:27:16 +0200 (CEST)
+Date: Fri, 9 Aug 2013 17:27:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Arvin Schnell <aschnell@suse.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: library version defines?
+Message-ID: <20130809152714.GM5284@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130603123141.GA2315@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130603123141.GA2315@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now with the below kernel patch, the excl operations like dev
-add/replace/resize and balance returns the btrfs error
-code defined in btrfs.h, this patch will help btrfs-progs
-(and thus user) to know the error string on the terminal
-(instead of /var/log/messages as previously kernel did).
+On Mon, Jun 03, 2013 at 02:31:41PM +0200, Arvin Schnell wrote:
+> commit 46de1a6ec3dbb0db203baa6c46cb64ba9b000ea2 changed the
+> parameters of btrfs_read_and_process_send_stream().  This breaks
+> snapper compilation so I wonder whether we can include version
+> defines usable for the C preprocessor.  Surely it won't help in
+> this case anymore but might in the future.
+> 
+> Please find my proposal attached.
 
-This patch depends on the btrfs kernel patch:
-  btrfs: return btrfs error code for dev excl ops err
+The C define part looks ok, the version numbers should be used in
+Makefile to build libbtrfs.so.* files.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-balance.c    |   15 +++++++++++++++
- cmds-device.c     |    7 ++++++-
- cmds-filesystem.c |    6 +++++-
- cmds-replace.c    |    7 ++++++-
- 4 files changed, 32 insertions(+), 3 deletions(-)
+> +lib_major=0
+> +lib_minor=1
+> +lib_patchlevel=0
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index c78b726..30019be 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -316,6 +316,12 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 			if (ret == 0)
- 				goto out;
- 			e = errno;
-+			if (ret > 0) {
-+				fprintf(stderr,
-+					"ERROR: Balance failed due to - %s\n",
-+					btrfs_err_str(ret));
-+				goto out;
-+			}
- 		}
- 
- 		if (e == ECANCELED) {
-@@ -332,6 +338,11 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 					"syslog - try dmesg | tail\n");
- 			ret = 19;
- 		}
-+	} else if (ret > 0) {
-+		fprintf(stderr,
-+			"ERROR: Balance start failed - %s\n",
-+			btrfs_err_str(ret));
-+		ret = 1;
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
- 		       (unsigned long long)args->stat.completed,
-@@ -603,6 +614,10 @@ static int cmd_balance_resume(int argc, char **argv)
- "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
- 			return 19;
- 		}
-+	} else if (ret > 0) {
-+		fprintf(stderr,
-+			"ERROR: Balance resume failed - %s\n",
-+			btrfs_err_str(ret));
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
- 		       (unsigned long long)args.stat.completed,
-diff --git a/cmds-device.c b/cmds-device.c
-index 833ad30..282590c 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -120,10 +120,15 @@ static int cmd_add_dev(int argc, char **argv)
- 		strncpy_null(ioctl_args.name, argv[i]);
- 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
- 		e = errno;
--		if(res<0){
-+		if (res < 0) {
- 			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n",
- 				argv[i], strerror(e));
- 			ret++;
-+		} else if (res > 0) {
-+			fprintf(stderr,
-+				"ERROR: adding the device '%s' - %s\n",
-+				argv[i], btrfs_err_str(res));
-+			ret = 1;
- 		}
- 
- 	}
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 412f793..2f6a0ab 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -577,10 +577,14 @@ static int cmd_resize(int argc, char **argv)
- 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
- 	e = errno;
- 	close_file_or_dir(fd, dirstream);
--	if( res < 0 ){
-+	if (res < 0) {
- 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
- 			path, strerror(e));
- 		return 30;
-+	} else if (res > 0) {
-+		fprintf(stderr, "ERROR: resize failed - %s\n",
-+			btrfs_err_str(res));
-+		return res;
- 	}
- 	return 0;
- }
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 8ed92c4..e3ff695 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -297,12 +297,17 @@ static int cmd_start_replace(int argc, char **argv)
- 	start_args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_START;
- 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &start_args);
- 	if (do_not_background) {
--		if (ret) {
-+		if (ret < 0) {
- 			fprintf(stderr,
- 				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
- 				path, strerror(errno),
- 				replace_dev_result2string(start_args.result));
- 			goto leave_with_error;
-+		} else if (ret > 0) {
-+			fprintf(stderr,
-+				"ERROR: replace start failed on %s - %s\n",
-+				path, btrfs_err_str(ret));
-+			goto leave_with_error;
- 		}
- 
- 		if (start_args.result !=
--- 
-1.7.1
+If the above snippet is placed into a separate file, it can be
+included/sourced into Makefile and version.sh, keeping the version
+information at a single location.
 
+david

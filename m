@@ -1,27 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([74.208.4.200]:65006 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S968527Ab3HJJ7Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 05:59:24 -0400
-Received: from mailout-us.gmx.com ([172.19.198.45]) by mrigmx.server.lan
- (mrigmxus001) with ESMTP (Nemesis) id 0MUZKZ-1VYJtx3d7j-00RE14 for
- <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 11:59:22 +0200
+Received: from dkim2.fusionio.com ([66.114.96.54]:52010 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758542Ab3HJM2f convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 08:28:35 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 2D1C09A068D
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 06:28:35 -0600 (MDT)
 Content-Type: text/plain; charset="utf-8"
-Date: Sat, 10 Aug 2013 05:59:22 -0400
-From: "Mike Audia" <mikey_a@gmx.com>
-Message-ID: <20130810095922.206170@gmx.com>
 MIME-Version: 1.0
-Subject: Error relating to /dev/sr0 when calling btrfs fi show /dev/sdxy
-To: linux-btrfs@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        LKML <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
+Message-ID: <20130810122832.17880.78970@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] Btrfs
+Date: Sat, 10 Aug 2013 08:28:32 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is the error relating to /dev/sr0 relevant to a call to /usr/bin/brtfs?  Why does it show the superfluous output?
+Hi Linus
 
-% sudo btrfs fi show /dev/sda3
-failed to open /dev/sr0: No medium found
-Label: 'arch64'  uuid: ab6f9133-a2ce-4c92-97ab-35cdc3c2d2a9
- Total devices 1 FS bytes used 2.46GB
- devid    1 size 119.00GB used 5.02GB path /dev/sda3
+Please pull my for-linus branch:
 
-Btrfs v0.20-rc1-253-g7854c8b
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+
+These are assorted fixes, mostly from Josef nailing down xfstests runs.
+Zach also has a long standing fix for problems with readdir wrapping
+f_pos (or ctx->pos)
+
+These patches were spread out over different bases, so I rebased things on
+top of rc4 and retested overnight.
+
+Josef Bacik (6) commits (+82/-52):
+    Btrfs: check to see if root_list is empty before adding it to dead roots (+5/-5)
+    Btrfs: make sure the backref walker catches all refs to our extent (+14/-11)
+    Btrfs: allow splitting of hole em's when dropping extent cache (+40/-22)
+    Btrfs: release both paths before logging dir/changed extents (+2/-3)
+    Btrfs: fix backref walking when we hit a compressed extent (+15/-8)
+    Btrfs: do not offset physical if we're compressed (+6/-3)
+
+Liu Bo (2) commits (+12/-5):
+    Btrfs: fix a bug of snapshot-aware defrag to make it work on partial extents (+12/-4)
+    Btrfs: fix extent buffer leak after backref walking (+0/-1)
+
+Zach Brown (1) commits (+25/-8):
+    btrfs: don't loop on large offsets in readdir
+
+Jie Liu (1) commits (+0/-3):
+    btrfs: fix file truncation if FALLOC_FL_KEEP_SIZE is specified
+
+Total: (10) commits (+119/-68)
+
+ fs/btrfs/backref.c     | 48 ++++++++++++++++++++++----------------
+ fs/btrfs/ctree.c       |  1 -
+ fs/btrfs/extent_io.c   |  9 +++++---
+ fs/btrfs/file.c        | 62 ++++++++++++++++++++++++++++++++------------------
+ fs/btrfs/inode.c       | 52 ++++++++++++++++++++++++++++++------------
+ fs/btrfs/transaction.c |  8 +++----
+ fs/btrfs/transaction.h |  2 +-
+ fs/btrfs/tree-log.c    |  5 ++--
+ 8 files changed, 119 insertions(+), 68 deletions(-)

@@ -1,94 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f177.google.com ([209.85.214.177]:41326 "EHLO
-	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757704Ab3HJVal (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 17:30:41 -0400
-Received: by mail-ob0-f177.google.com with SMTP id f8so7081841obp.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 14:30:40 -0700 (PDT)
+Received: from mx1.redhat.com ([209.132.183.28]:49834 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758870Ab3HJWKQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 18:10:16 -0400
+Message-ID: <5206BA38.20903@redhat.com>
+Date: Sat, 10 Aug 2013 17:10:00 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <20130809144626.GL5284@twin.jikos.cz>
-References: <1375998348-20639-1-git-send-email-fdmanana@gmail.com>
-	<5204826C.3060902@cn.fujitsu.com>
-	<20130809144626.GL5284@twin.jikos.cz>
-Date: Sat, 10 Aug 2013 16:30:40 -0500
-Message-ID: <CAKcLGm-rwRPGja3N+52+pKvAoMzfDX3TxhFNSw+u2iMx9C-5oA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: set default max_inline to 8KiB instead of 8MiB
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: David Sterba <dsterba@suse.cz>, Miao Xie <miaox@cn.fujitsu.com>,
-        Filipe David Borba Manana <fdmanana@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To: anand jain <anand.jain@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: btrfs_rm_device() should zero mirror SB as
+ well
+References: <1374773376-29853-1-git-send-email-anand.jain@oracle.com> <1374773376-29853-2-git-send-email-anand.jain@oracle.com> <5205556E.8030902@redhat.com> <52059FC2.3080203@oracle.com>
+In-Reply-To: <52059FC2.3080203@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 9, 2013 at 9:46 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Aug 09, 2013 at 01:47:24PM +0800, Miao Xie wrote:
->> On thu, 8 Aug 2013 22:45:48 +0100, Filipe David Borba Manana wrote:
->> > 8MiB is way too large and likely set by mistake. This is not
->> > a significant issue as in practice the max amount of data
->> > added to an inline extent is also limited by the page cache
->> > and btree leaf sizes.
+On 8/9/13 9:04 PM, anand jain wrote:
+> 
+> 
+>>> btrfs fi show
+>>> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c
+>>>          Total devices 1 FS bytes used 28.00KiB
+>>>          devid    2 size 2.00GiB used 0.00 path /dev/sdc   <-- WRONG
+>>>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
 >>
->> I don't think 8KB is a reasonable value of the default max inline size
->> because it makes no sense on the machine whose page size is 4KB.
->
-> Page size limit is artificial implied by the implementation and on a 4k
-> page machine max_inline does not take place. Even if it's 4k, it does
-> not apply because the leaf space is smaller.
->
->> I think 4KB is a reasonable value, because we may mount the fs on
->> the machines with the different page size in the future, in order to
->> avoid the compatible problem, we should use the min page size as
->> the max inline size.
->
-> If there's support for mounting a fs with sectorsize != pagesize, this
-> will work automatically. Currently such filesystem fails to mount, as we
-> know.
->
-> Whether it's 4k or 8k could be decided by the performance impact, but I
-> have no numbers to vote for either.
->
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Ok, now it's findable.  Isn't that exactly how this should behave?
+>> What is wrong about this?
+> 
+>  Total devices is still 1.
 
-I did some research on max_inline when I was playing with an
-experimental patch to allow inline extents to be greater than
-sectorsize (but still < leafsize and inodesize).
+Hm, so it is.  But that inconsistency indicates a bug
+somewhere else, doesn't it?  (FWIW the above works for me,
+w/ the right number of devices shown after removal...)
 
-I concluded that that max_inline doesn't matter as long as it is >
-PAGE_CACHE_SIZE.
+Anyway, I wonder if we've ever resolved the "when should we look
+for backup superblocks?" question.  Because that would inform
+decisions about when they should be read, when they must be zeroed, etc.
 
-My guess is that at some point early in BTRFS history, they wanted to
-allow for inlining of really large extents (essentially inlining
-almost the entire filesystem except for really large files).
+I thought the plan was that backup superblocks should not be
+read unless we explicitly specify it via mount option or btrfs
+commandline option.
 
-When Chris incorporated compression (Btrfs: Add zlib compression
-support, 2008-10-29, commit c8b978188c9a0fd3d535c13debd19d522b726f1f,
-and a follow-up patch: Btrfs: Compression corner fixes, 2008-10-31,
-70b99e6959a4c28ae1b314985eca731f3db72f1d), the new
-cow_file_range_inline() function limited inline extent size to
-PAGE_CACHE_SIZE.
+If we must add code to zero all the superblocks on removal to fix
+something that's still discovering them, that seems
+to mean backups are still being automatically read.  Should they be?
 
-if (start > 0 ||
-   actual_end >= PAGE_CACHE_SIZE ||
-   data_len >= BTRFS_MAX_INLINE_DATA_SIZE(root) ||
-   (!compressed_size &&
-   (actual_end & (root->sectorsize - 1)) == 0) ||
-   end + 1 < isize ||
-   data_len > root->fs_info->max_inline) {
-return 1;
-}
+What is the design intent for when backup SBs whould be used?
+Maybe then I could better understand the reason for this change.
 
-So, this is why we could have a really large max_inline setting for
-all these years that didn't make anything go BOOM.
+Thanks,
+-Eric
 
-As Miao Xie suggested, if you use fs_info->max_inline =
-PAGE_CACHE_SIZE, the code will be ready if the issue with 64k page
-size is ever addressed.
+>>> mount /dev/sdc /btrfs
+>>> btrfs fi show --kernel
+>>> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c mounted: /btrfs
+>>>          Group profile: metadata: single  data: single
+>>>          Total devices 1 FS bytes used 28.00KiB
+>>>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
+>>
+>> Oh good, you could bring it back after a potential administrative error,
+>> using a recovery tool (btrfs-select-super)!  Isn't that a good thing?
+> 
+>  Note, here btrfs fi show used the new option --kernel
+>  this does not show /dev/sdc though you use it mount.
+>  Its all messed up.
+> 
+>  If user wants to bring back the intentionally deleted
+>  disk, then they should rather call btrfs dev add, so
+>  that it will take care of integrating the disk back
+>  to the FS.
+> 
+>  recovery tools are for possible recovery from the
+>  corruption, delete is not a corruption. Thats an
+>  intentional step that user decided to take and the
+>  undo for it is 'dev add'.
+> 
+>> IOWS: what does this change actually fix?
+> 
+>  Writes zeros to all copies of SB when disk is deleted
+>  (before we used to just zero only the first copy).
+>  In that way corruption is distinguished from the
+>  deleted disk in a fair calculations.
+> 
+>  Otherwise allowing these things would cost us in terms
+>  of support for the administrative error. Which we don't
+>  have to encourage.
+> 
+> Thanks, Anand
 
-You could probably also refactor fs_info->max_inline out completely
-with some additional work.

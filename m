@@ -1,65 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:38302 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750885Ab3HJE6Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 00:58:16 -0400
-From: Chris Samuel <chris@csamuel.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: russell@coker.com.au
-Subject: Re: error count
-Date: Sat, 10 Aug 2013 14:58:06 +1000
-Message-ID: <10123682.SXiMQfqCrF@quad>
-In-Reply-To: <CAGy7UtjvPHbC0zSvXNAV+LYAr=QX-ePXKCXCx-VKTDD2O9fLMw@mail.gmail.com>
-References: <201308042142.12310.russell@coker.com.au> <CAGy7UtjvPHbC0zSvXNAV+LYAr=QX-ePXKCXCx-VKTDD2O9fLMw@mail.gmail.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54841 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S968472Ab3HJJIA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 05:08:00 -0400
+Received: from bluebottle.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 794E92192F
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 19:07:51 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs device stats /dev/mapper/ext4 SEGV
+Date: Sat, 10 Aug 2013 19:07:50 +1000
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1504253.gQio7aJA34"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201308101907.50539.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git
 
---nextPart1504253.gQio7aJA34
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+I can repeatedly get the following SEGV from running "btrfs device stats" on a 
+device node for an Ext3/4 filesystem.  This happens with the version of the 
+code downloaded from the above GIT repository as well as with an older 
+version.  Obviously the command in question is not going to do anything useful 
+when run against a non-BTRFS filesystem, but it should do something other than 
+crash.
 
-On Sun, 4 Aug 2013 03:37:22 PM Bart Noordervliet wrote:
+Program received signal SIGSEGV, Segmentation fault.
+0x000000000045842d in get_fs_info (path=0x7fffffffce60 "/boot", 
+    fi_args=0x7fffffffe6c0, di_ret=0x7fffffffe6b8) at utils.c:1560
+1560                    fi_args->max_id = fs_devices_mnt->latest_devid;
+(gdb) bt
+#0  0x000000000045842d in get_fs_info (path=0x7fffffffce60 "/boot", 
+    fi_args=0x7fffffffe6c0, di_ret=0x7fffffffe6b8) at utils.c:1560
+#1  0x0000000000408576 in cmd_dev_stats (argc=2, argv=0x7fffffffec78)
+    at cmds-device.c:331
+#2  0x0000000000404177 in handle_command_group (grp=0x684660, argc=2, 
+    argv=0x7fffffffec78) at btrfs.c:154
+#3  0x0000000000408830 in cmd_device (argc=3, argv=0x7fffffffec70)
+    at cmds-device.c:410
+#4  0x000000000040450e in main (argc=3, argv=0x7fffffffec70) at btrfs.c:296
 
-> a sufficiently up-to-date kernel and btrfs tool will provide the
-> 'btrfs device stats' command, which should give you the info you want.
-
-This is what it looks like:
-
-chris@quad:~/Downloads/Linux/FileSystems/BtrFS/btrfs-progs$ sudo ./btrfs 
-device stats /srv/DR
-[/dev/sdb3].write_io_errs   0
-[/dev/sdb3].read_io_errs    0
-[/dev/sdb3].flush_io_errs   0
-[/dev/sdb3].corruption_errs 0
-[/dev/sdb3].generation_errs 0
-
-All the best,
-Chris
 -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart1504253.gQio7aJA34
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQEVAwUAUgXIXo1yjaOTJg85AQIH4Af/SDWqR7d+sFD39jx5SKhTiXxfBzywtC9j
-eRc7/pkIzvC7jbh2zGENqDRF9Mm7VBT1XsP274a164b+2I37shTIT9HFNMyv7uHe
-JqoK8xPQfpNnCxvYh4rFz8Puq7ChN1H7Wk9KGdHr/VFvu8DS6j4WCcs5RP0W3hut
-N1Yrj6vnC8Rg690gIzxmyf0fhLcg2ircnVncXM4S1HN2zXtaizvZjkuhvCH3W00c
-pI6ixEAUdjblbiwlnbCRRW6U/TxGdLuVPBnL+t2iuahKuO+qFV1CNdu1DadMCXDm
-aE0lFi+aFujBSvV6Uu+BluQ9lACNkl5OdbuMiD4SWGEZwsC4FLnKHg==
-=Yc/3
------END PGP SIGNATURE-----
-
---nextPart1504253.gQio7aJA34--
-
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

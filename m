@@ -1,71 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:54886 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933739Ab3HJN4M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 09:56:12 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id AA11C40C14
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 23:56:11 +1000 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 29921-01 for <linux-btrfs@vger.kernel.org>;
- Sat, 10 Aug 2013 23:56:11 +1000 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 4D73340C13
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 23:56:11 +1000 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs device stats /dev/mapper/ext4 SEGV
-Date: Sat, 10 Aug 2013 23:56:06 +1000
-Message-ID: <1384122.xvVNAvLv2n@quad>
-In-Reply-To: <201308101907.50539.russell@coker.com.au>
-References: <201308101907.50539.russell@coker.com.au>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart11667450.45kN0fiDsq"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41083 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S933901Ab3HJOi1 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 10:38:27 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:58750 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1V8AJE-002vjm-Fh
+	for linux-btrfs@vger.kernel.org; Sat, 10 Aug 2013 08:38:24 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Error relating to /dev/sr0 when calling btrfs fi show /dev/sdxy
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130810095922.206170@gmx.com>
+Date: Sat, 10 Aug 2013 08:38:26 -0600
+Message-Id: <44CB3A36-5FC9-4E57-9D38-D8945761EED4@colorremedies.com>
+References: <20130810095922.206170@gmx.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart11667450.45kN0fiDsq
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+On Aug 10, 2013, at 3:59 AM, "Mike Audia" <mikey_a@gmx.com> wrote:
 
-On Sat, 10 Aug 2013 07:07:50 PM Russell Coker wrote:
+> Is the error relating to /dev/sr0 relevant to a call to /usr/bin/brtfs?  Why does it show the superfluous output?
+> 
+> % sudo btrfs fi show /dev/sda3
+> failed to open /dev/sr0: No medium found
 
-> I can repeatedly get the following SEGV from running "btrfs device stats" on
-> a  device node for an Ext3/4 filesystem.  This happens with the version of
-> the code downloaded from the above GIT repository as well as with an older
-> version.  Obviously the command in question is not going to do anything
-> useful when run against a non-BTRFS filesystem, but it should do something
-> other than crash.
+I get this on Virtual Box VMs, also with parted. I don't get it with parted or btrfs on baremetal.
 
-The code calls btrfs_read_dev_super() on that filesystem, but it looks like the 
-checks are failing to detect it as not btrfs.  :-(
-
-I can reproduce the crash here too with ext3 and XFS filesystems.
-
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart11667450.45kN0fiDsq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQEVAwUAUgZGdo1yjaOTJg85AQIyvQf/RX+t1tWgbIaj45nDM5Gn3mwgbL+4hV7r
-vW3M6opk7eYk/jEyc9QUlHD8HakDjnad2twu/cxrxnCXTVD4H5JTewpyLefPL8RV
-OjFQ9TZqqoaOC/YSd1X1btdiKxl8vP++aKSxXnGhlK0IX70EVP4jPkIiiNWz7P4R
-Zt2IGdLXzPE818Yxw6OlopRt1mZGmcgeUDCl7/1+7v2hMfAjTODOB1PiAjNTXX3Z
-n2YLbLq2Y9zGnT4gQjPavXJFsl+YaZlMwHQvwHt9sGzdBlcZYhx5ihg3ce30dKPa
-fzxipjaxr9EXnP2947saYpK6sIO+cQ/ws9cwpn2TcNH7bQpPRHs4yw==
-=OR2K
------END PGP SIGNATURE-----
-
---nextPart11667450.45kN0fiDsq--
-
+Chris Murphy

@@ -1,56 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([74.208.4.201]:56006 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934434Ab3HJPmZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 11:42:25 -0400
-Received: from mailout-us.gmx.com ([172.19.198.47]) by mrigmx.server.lan
- (mrigmxus002) with ESMTP (Nemesis) id 0Mfpmy-1VSzQ40aW4-00NDpA for
- <linux-btrfs@vger.kernel.org>; Sat, 10 Aug 2013 17:42:24 +0200
-Content-Type: text/plain; charset="utf-8"
-Date: Sat, 10 Aug 2013 11:42:21 -0400
-From: "Mike Audia" <mikey_a@gmx.com>
-Message-ID: <20130810154221.206170@gmx.com>
-MIME-Version: 1.0
-Subject: Question about blocksize, I want to use 16k
-To: linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:23372 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S964808Ab3HJQRJ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 12:17:09 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:59664 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1V8Bqm-003HEA-LF
+	for linux-btrfs@vger.kernel.org; Sat, 10 Aug 2013 10:17:08 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Question about blocksize, I want to use 16k
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130810154221.206170@gmx.com>
+Date: Sat, 10 Aug 2013 10:17:11 -0600
+Message-Id: <4060398C-D72E-43D6-B380-8BF642C1C2C1@colorremedies.com>
+References: <20130810154221.206170@gmx.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wanting to use 16k block for my btrfs, I did so via:
 
-# mkfs.btrfs -l 16k -s 16k -L arch64 -f /dev/sda3
+On Aug 10, 2013, at 9:42 AM, Mike Audia <mikey_a@gmx.com> wrote:
 
-WARNING! - Btrfs v0.20-rc1-253-g7854c8b IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+> -s 16k
 
-Detected a SSD, turning off metadata duplication.  Mkfs with -m dup if you want to force metadata duplication.
-fs created label arch64 on /dev/sda3
- nodesize 16384 leafsize 16384 sectorsize 16384 size 119.00GB
-Btrfs v0.20-rc1-253-g7854c8b
+One answer is the drive doesn't expose a 16KB sector. It's basically lying when it reports a 512 byte physical sector, but there isn't anything that can be done about this on the software side. The other answer:
 
-But when I tried to mount it, dmesg showed these errors aobut sector sizes:
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/20746
 
-# mount /dev/sda3 /newarch
-mount: wrong fs type, bad option, bad superblock on /dev/sda3,
-       missing codepage or helper program, or other error
 
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
 
-[ 1463.366701] device label arch64 devid 1 transid 4 /dev/sda3
-[ 1463.367186] btrfs: disk space caching is enabled
-[ 1463.367189] btrfs flagging fs with big metadata feature
-[ 1463.367539] btrfs: Incompatible sector size(16384) found on sda3
-[ 1463.419215] btrfs: open_ctree failed
+Chris Murphy
 
-So I made the filesystem like this and all is well... what am I missing?
-
-# mkfs.btrfs -l 16k -L arch64 -f /dev/sda3       
-
-WARNING! - Btrfs v0.20-rc1-253-g7854c8b IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-Detected a SSD, turning off metadata duplication.  Mkfs with -m dup if you want to force metadata duplication.
-fs created label arch64 on /dev/sda3
- nodesize 16384 leafsize 16384 sectorsize 4096 size 119.00GB
-Btrfs v0.20-rc1-253-g7854c8b

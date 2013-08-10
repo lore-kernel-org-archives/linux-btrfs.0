@@ -1,68 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44341 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1031731Ab3HJCE7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Aug 2013 22:04:59 -0400
-Message-ID: <52059FC2.3080203@oracle.com>
-Date: Sat, 10 Aug 2013 10:04:50 +0800
-From: anand jain <anand.jain@oracle.com>
+Received: from csamuel.org ([74.50.50.137]:38302 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750885Ab3HJE6Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Aug 2013 00:58:16 -0400
+From: Chris Samuel <chris@csamuel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: russell@coker.com.au
+Subject: Re: error count
+Date: Sat, 10 Aug 2013 14:58:06 +1000
+Message-ID: <10123682.SXiMQfqCrF@quad>
+In-Reply-To: <CAGy7UtjvPHbC0zSvXNAV+LYAr=QX-ePXKCXCx-VKTDD2O9fLMw@mail.gmail.com>
+References: <201308042142.12310.russell@coker.com.au> <CAGy7UtjvPHbC0zSvXNAV+LYAr=QX-ePXKCXCx-VKTDD2O9fLMw@mail.gmail.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: btrfs_rm_device() should zero mirror SB as
- well
-References: <1374773376-29853-1-git-send-email-anand.jain@oracle.com> <1374773376-29853-2-git-send-email-anand.jain@oracle.com> <5205556E.8030902@redhat.com>
-In-Reply-To: <5205556E.8030902@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; boundary="nextPart1504253.gQio7aJA34"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--nextPart1504253.gQio7aJA34
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
->> btrfs fi show
->> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c
->>          Total devices 1 FS bytes used 28.00KiB
->>          devid    2 size 2.00GiB used 0.00 path /dev/sdc   <-- WRONG
->>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
->
-> Ok, now it's findable.  Isn't that exactly how this should behave?
-> What is wrong about this?
+On Sun, 4 Aug 2013 03:37:22 PM Bart Noordervliet wrote:
 
-  Total devices is still 1.
+> a sufficiently up-to-date kernel and btrfs tool will provide the
+> 'btrfs device stats' command, which should give you the info you want.
 
->> mount /dev/sdc /btrfs
->> btrfs fi show --kernel
->> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c mounted: /btrfs
->>          Group profile: metadata: single  data: single
->>          Total devices 1 FS bytes used 28.00KiB
->>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
->
-> Oh good, you could bring it back after a potential administrative error,
-> using a recovery tool (btrfs-select-super)!  Isn't that a good thing?
+This is what it looks like:
 
-  Note, here btrfs fi show used the new option --kernel
-  this does not show /dev/sdc though you use it mount.
-  Its all messed up.
+chris@quad:~/Downloads/Linux/FileSystems/BtrFS/btrfs-progs$ sudo ./btrfs 
+device stats /srv/DR
+[/dev/sdb3].write_io_errs   0
+[/dev/sdb3].read_io_errs    0
+[/dev/sdb3].flush_io_errs   0
+[/dev/sdb3].corruption_errs 0
+[/dev/sdb3].generation_errs 0
 
-  If user wants to bring back the intentionally deleted
-  disk, then they should rather call btrfs dev add, so
-  that it will take care of integrating the disk back
-  to the FS.
+All the best,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-  recovery tools are for possible recovery from the
-  corruption, delete is not a corruption. Thats an
-  intentional step that user decided to take and the
-  undo for it is 'dev add'.
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-> IOWS: what does this change actually fix?
+--nextPart1504253.gQio7aJA34
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-  Writes zeros to all copies of SB when disk is deleted
-  (before we used to just zero only the first copy).
-  In that way corruption is distinguished from the
-  deleted disk in a fair calculations.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-  Otherwise allowing these things would cost us in terms
-  of support for the administrative error. Which we don't
-  have to encourage.
+iQEVAwUAUgXIXo1yjaOTJg85AQIH4Af/SDWqR7d+sFD39jx5SKhTiXxfBzywtC9j
+eRc7/pkIzvC7jbh2zGENqDRF9Mm7VBT1XsP274a164b+2I37shTIT9HFNMyv7uHe
+JqoK8xPQfpNnCxvYh4rFz8Puq7ChN1H7Wk9KGdHr/VFvu8DS6j4WCcs5RP0W3hut
+N1Yrj6vnC8Rg690gIzxmyf0fhLcg2ircnVncXM4S1HN2zXtaizvZjkuhvCH3W00c
+pI6ixEAUdjblbiwlnbCRRW6U/TxGdLuVPBnL+t2iuahKuO+qFV1CNdu1DadMCXDm
+aE0lFi+aFujBSvV6Uu+BluQ9lACNkl5OdbuMiD4SWGEZwsC4FLnKHg==
+=Yc/3
+-----END PGP SIGNATURE-----
 
-Thanks, Anand
+--nextPart1504253.gQio7aJA34--
+

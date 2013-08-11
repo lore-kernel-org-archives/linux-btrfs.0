@@ -1,92 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:49834 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758870Ab3HJWKQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Aug 2013 18:10:16 -0400
-Message-ID: <5206BA38.20903@redhat.com>
-Date: Sat, 10 Aug 2013 17:10:00 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from shiva.centershock.net ([85.214.87.241]:35506 "EHLO
+	h1774498.stratoserver.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753166Ab3HKNyY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Aug 2013 09:54:24 -0400
+Received: from horus.localnet (host44-2.natpool.mwn.de [138.246.2.44])
+	by h1774498.stratoserver.net (Postfix) with ESMTPSA id 15FBE21F8157
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Aug 2013 15:44:11 +0200 (CEST)
+From: Florian Lindner <mailinglists@centershock.net>
+To: linux-btrfs@vger.kernel.org
+Subject: (un)mounting takes a long time
+Date: Sun, 11 Aug 2013 15:44:10 +0200
+Message-ID: <2929473.GGcWYBHif4@horus>
 MIME-Version: 1.0
-To: anand jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: btrfs_rm_device() should zero mirror SB as
- well
-References: <1374773376-29853-1-git-send-email-anand.jain@oracle.com> <1374773376-29853-2-git-send-email-anand.jain@oracle.com> <5205556E.8030902@redhat.com> <52059FC2.3080203@oracle.com>
-In-Reply-To: <52059FC2.3080203@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/9/13 9:04 PM, anand jain wrote:
-> 
-> 
->>> btrfs fi show
->>> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c
->>>          Total devices 1 FS bytes used 28.00KiB
->>>          devid    2 size 2.00GiB used 0.00 path /dev/sdc   <-- WRONG
->>>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
->>
->> Ok, now it's findable.  Isn't that exactly how this should behave?
->> What is wrong about this?
-> 
->  Total devices is still 1.
+Hello!
 
-Hm, so it is.  But that inconsistency indicates a bug
-somewhere else, doesn't it?  (FWIW the above works for me,
-w/ the right number of devices shown after removal...)
+I'm using ArchLinux with kernel Linux horus 3.10.5-1-ARCH #1 SMP PREEMPT. 
+Mounting and unmounting takes a long time:
 
-Anyway, I wonder if we've ever resolved the "when should we look
-for backup superblocks?" question.  Because that would inform
-decisions about when they should be read, when they must be zeroed, etc.
+# time mount -v /mnt/Archiv         
+mount: /dev/sde1 mounted on /mnt/Archiv.
+mount -v /mnt/Archiv  0,00s user 0,16s system 1% cpu 9,493 total
 
-I thought the plan was that backup superblocks should not be
-read unless we explicitly specify it via mount option or btrfs
-commandline option.
+# sync && time umount -v /mnt/Archiv
+umount: /mnt/Archiv (/dev/sdd1) unmounted
+umount -v /mnt/Archiv  0,00s user 0,33s system 1% cpu 23,247 total
 
-If we must add code to zero all the superblocks on removal to fix
-something that's still discovering them, that seems
-to mean backups are still being automatically read.  Should they be?
+fstab:
 
-What is the design intent for when backup SBs whould be used?
-Maybe then I could better understand the reason for this change.
+LABEL=Archiv    /mnt/Archiv             btrfs           defaults,compress=zlib 
+0 0
 
-Thanks,
--Eric
+Archiv is a RAID 0 comprised of two discs:
 
->>> mount /dev/sdc /btrfs
->>> btrfs fi show --kernel
->>> Label: none  uuid: e7aae9f0-1aa8-41f5-8fb6-d4d8f80cdb2c mounted: /btrfs
->>>          Group profile: metadata: single  data: single
->>>          Total devices 1 FS bytes used 28.00KiB
->>>          devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
->>
->> Oh good, you could bring it back after a potential administrative error,
->> using a recovery tool (btrfs-select-super)!  Isn't that a good thing?
-> 
->  Note, here btrfs fi show used the new option --kernel
->  this does not show /dev/sdc though you use it mount.
->  Its all messed up.
-> 
->  If user wants to bring back the intentionally deleted
->  disk, then they should rather call btrfs dev add, so
->  that it will take care of integrating the disk back
->  to the FS.
-> 
->  recovery tools are for possible recovery from the
->  corruption, delete is not a corruption. Thats an
->  intentional step that user decided to take and the
->  undo for it is 'dev add'.
-> 
->> IOWS: what does this change actually fix?
-> 
->  Writes zeros to all copies of SB when disk is deleted
->  (before we used to just zero only the first copy).
->  In that way corruption is distinguished from the
->  deleted disk in a fair calculations.
-> 
->  Otherwise allowing these things would cost us in terms
->  of support for the administrative error. Which we don't
->  have to encourage.
-> 
-> Thanks, Anand
+Label: 'Archiv'  uuid: b2504193-efeb-4ef3-8797-a8d73536a416
+        Total devices 2 FS bytes used 1.99TB
+        devid    2 size 2.73TB used 1023.01GB path /dev/sde1
+        devid    1 size 2.73TB used 1023.03GB path /dev/sdd1
 
+Are un(mounting) times like these normal?
+
+Regards,
+Florian

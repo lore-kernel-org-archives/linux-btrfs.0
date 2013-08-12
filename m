@@ -1,63 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga14.intel.com ([143.182.124.37]:8265 "EHLO mga14.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754984Ab3HLLlX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 07:41:23 -0400
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Subject: [PATCH] btrfs: reuse kbasename helper
-Date: Mon, 12 Aug 2013 14:41:10 +0300
-Message-Id: <1376307670-27010-1-git-send-email-andriy.shevchenko@linux.intel.com>
+Received: from bombadil.infradead.org ([198.137.202.9]:35244 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756105Ab3HLLr5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Aug 2013 07:47:57 -0400
+Date: Mon, 12 Aug 2013 04:47:52 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Christoph Hellwig <hch@infradead.org>, Mark Fasheh <mfasheh@suse.de>,
+        viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
+        Andrew Vagin <avagin@gmail.com>
+Subject: Re: [PATCH][RESEND] vfs: allow /proc/PID/maps to get device from stat
+Message-ID: <20130812114752.GA2390@infradead.org>
+References: <20130807195718.GC31381@wotan.suse.de>
+ <20130807201826.GA23804@infradead.org>
+ <20130807205146.GE2397@localhost.localdomain>
+ <20130808121349.GC5180@infradead.org>
+ <20130808130207.GA16712@localhost.localdomain>
+ <20130808134805.GB24181@infradead.org>
+ <20130808154454.GF16712@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130808154454.GF16712@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To get name of the file from a pathname let's use kbasename() helper. It allows
-to simplify code a bit.
+On Thu, Aug 08, 2013 at 11:44:54AM -0400, Josef Bacik wrote:
+> On Thu, Aug 08, 2013 at 06:48:05AM -0700, Christoph Hellwig wrote:
+> > On Thu, Aug 08, 2013 at 09:02:07AM -0400, Josef Bacik wrote:
+> > > This won't work, try having 10000 subvolumes with dirty inodes and do sync then
+> > > go skiing, you'll have time :).  Thanks,
+> > 
+> > Why would the dirty inodes make any difference?  If you share the bdi
+> > between the subvolumes the sync workflow should be exactly the same
+> > still.
+> > 
+> 
+> If we could dis-entangle vfsmounts from sb's and have it so you could have
+> multiple vfsmounts with just one sb that would solve at least the in-kernel
+> confusion, but I think we still have the userspace confusion.  Thanks,
 
-Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
----
- fs/btrfs/send.c | 17 ++++++-----------
- 1 file changed, 6 insertions(+), 11 deletions(-)
+I think it would mostly solve userspace confusion, as userspace only
+sees mounts and the device names.
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d3f3b43..4fdc99d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -26,6 +26,7 @@
- #include <linux/radix-tree.h>
- #include <linux/crc32c.h>
- #include <linux/vmalloc.h>
-+#include <linux/string.h>
- 
- #include "send.h"
- #include "backref.h"
-@@ -2591,20 +2592,14 @@ static int record_ref(struct list_head *head, u64 dir,
- 	ref->dir_gen = dir_gen;
- 	ref->full_path = path;
- 
--	tmp = strrchr(ref->full_path->start, '/');
--	if (!tmp) {
--		ref->name_len = ref->full_path->end - ref->full_path->start;
--		ref->name = ref->full_path->start;
-+	ref->name = kbasename(ref->full_path->start);
-+	ref->name_len = ref->full_path->end - ref->name;
-+	ref->dir_path = ref->full_path->start;
-+	if (ref->name == ref->full_path->start)
- 		ref->dir_path_len = 0;
--		ref->dir_path = ref->full_path->start;
--	} else {
--		tmp++;
--		ref->name_len = ref->full_path->end - tmp;
--		ref->name = tmp;
--		ref->dir_path = ref->full_path->start;
-+	else
- 		ref->dir_path_len = ref->full_path->end -
- 				ref->full_path->start - 1 - ref->name_len;
--	}
- 
- 	list_add_tail(&ref->list, head);
- 	return 0;
--- 
-1.8.4.rc1
+But please fix this up properly instead of propagating the effects of
+the nasty btrfs hack that should never have been merged in that form
+further up the stack.
 

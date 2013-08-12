@@ -1,162 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:38401 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934068Ab3HIP6b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Aug 2013 11:58:31 -0400
-Message-ID: <520511A4.1070302@sandeen.net>
-Date: Fri, 09 Aug 2013 10:58:28 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
-MIME-Version: 1.0
-To: Jan Schmidt <list.xfs@jan-o-sch.net>
-CC: xfs@oss.sgi.com, sbehrens@giantdisaster.de, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 0/2] xfstest btrfs/316: test send / receive
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:33711 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755207Ab3HLBPx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Aug 2013 21:15:53 -0400
+Date: Mon, 12 Aug 2013 11:15:39 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <sandeen@sandeen.net>
+Cc: Jan Schmidt <list.xfs@jan-o-sch.net>, xfs@oss.sgi.com,
+        sbehrens@giantdisaster.de, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/2] xfstests: add fssum tool
+Message-ID: <20130812011539.GM12779@dastard>
 References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
-In-Reply-To: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1
+ <1375949833-1104-2-git-send-email-list.xfs@jan-o-sch.net>
+ <5203D827.3050909@sandeen.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5203D827.3050909@sandeen.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/8/13 3:17 AM, Jan Schmidt wrote:
-> These two patches add the announced tests for btrfs send / receive. As
-> requested, the fssum tool is now included.
+On Thu, Aug 08, 2013 at 12:40:55PM -0500, Eric Sandeen wrote:
+> On 8/8/13 3:17 AM, Jan Schmidt wrote:
+> >  SUBDIRS =
+> >  
+> >  LLDLIBS = $(LIBATTR) $(LIBHANDLE) $(LIBACL)
+> >  
+> > +OPT_LDLIBS = -lssl -lcrypto
 > 
-> One drawback is that I'm unable to edit configure.ac or whatever needs
-> to be modified in an autotools preferred way. Any hints appreciated,
-> preferrably hints containing all the modifications required to introduce
-> something like HAVE_SEEK_HOLE.
+> Hm, new deps.  I guess it's not a huge problem, these should always
+> be available, right?
 
-Here's how I'd fix all that up.
+Please, let's keep crypto out of xfstests if we can. That's just
+going to add a nightmare of US export compliance garbage to any
+distro that wants to package and ship this....
 
-I guess the local defines are a little crummy but that's what's done
-everywhere else.
+Cheers,
 
-After that, use the autoconf stuff to figure out if the ssl headers
-are available, and built fssum conditionally on that; libcrypto doesn't
-actually seem to be required?
-
--Eric
-
-
-diff --git a/src/fssum.c b/src/fssum.c
-index ecddb6a..5d4433a 100644
---- a/src/fssum.c
-+++ b/src/fssum.c
-@@ -37,6 +37,11 @@
- #include <inttypes.h>
- #include <assert.h>
- 
-+#ifndef SEEK_DATA
-+#define SEEK_DATA      3
-+#define SEEK_HOLE      4
-+#endif
-+
- #define CS_SIZE 16
- #define CHUNKS	128
- 
-diff --git a/aclocal.m4 b/aclocal.m4
-index 5739004..f3412e1 100644
---- a/aclocal.m4
-+++ b/aclocal.m4
-@@ -44,6 +44,7 @@ m4_include([m4/package_attrdev.m4])
- m4_include([m4/package_dmapidev.m4])
- m4_include([m4/package_gdbmdev.m4])
- m4_include([m4/package_globals.m4])
-+m4_include([m4/package_ssldev.m4])
- m4_include([m4/package_utilies.m4])
- m4_include([m4/package_uuiddev.m4])
- m4_include([m4/package_xfslibs.m4])
-diff --git a/configure.ac b/configure.ac
-index bfae106..bd48fd9 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -70,6 +70,7 @@ in
- 		AC_PACKAGE_WANT_FALLOCATE
- 		AC_PACKAGE_WANT_LINUX_PRCTL_H
- 		AC_PACKAGE_WANT_LINUX_FS_H
-+		AC_PACKAGE_WANT_SSL
- 		;;
- esac
- 
-diff --git a/include/builddefs.in b/include/builddefs.in
-index 6519c13..c899cfc 100644
---- a/include/builddefs.in
-+++ b/include/builddefs.in
-@@ -65,6 +65,7 @@ HAVE_DMAPI = @have_dmapi@
- HAVE_ATTR_LIST = @have_attr_list@
- HAVE_FIEMAP = @have_fiemap@
- HAVE_FALLOCATE = @have_fallocate@
-+HAVE_SSL = @have_ssl@
- 
- GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall
- 
-diff --git a/m4/Makefile b/m4/Makefile
-index 6c1d0e4..7c2ecdd 100644
---- a/m4/Makefile
-+++ b/m4/Makefile
-@@ -16,6 +16,7 @@ LSRCFILES = \
- 	package_libcdev.m4 \
- 	package_ncurses.m4 \
- 	package_pthread.m4 \
-+	package_ssl.m4 \
- 	package_types.m4 \
- 	package_utilies.m4 \
- 	package_uuiddev.m4 \
-diff --git a/src/Makefile b/src/Makefile
-index 10a4d3c..228f5ff 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -20,14 +20,10 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
- 	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester
- 
--OPT_TARGETS = fssum
--
- SUBDIRS =
- 
- LLDLIBS = $(LIBATTR) $(LIBHANDLE) $(LIBACL)
- 
--OPT_LDLIBS = -lssl -lcrypto
--
- ifeq ($(HAVE_XLOG_ASSIGN_LSN), true)
- LINUX_TARGETS += loggen
- endif
-@@ -40,6 +36,11 @@ ifeq ($(HAVE_FALLOCATE), true)
- LCFLAGS += -DHAVE_FALLOCATE
- endif
- 
-+ifeq ($(HAVE_SSL), true)
-+LINUX_TARGETS += fssum
-+LLDLIBS += -lssl
-+endif
-+
- IRIX_TARGETS = open_unlink
- 
- ifeq ($(PKG_PLATFORM),linux)
-@@ -64,7 +65,7 @@ CFILES = $(TARGETS:=.c)
- LDIRT = $(TARGETS)
- 
- 
--default: depend $(TARGETS) $(OPT_TARGETS) $(SUBDIRS)
-+default: depend $(TARGETS) $(SUBDIRS)
- 
- depend: .dep
- 
-@@ -74,16 +75,11 @@ $(TARGETS): $(LIBTEST)
- 	@echo "    [CC]    $@"
- 	$(Q)$(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(LIBTEST)
- 
--$(OPT_TARGETS): $(LIBTEST)
--	@echo "    [CC]    $@"
--	-$(Q)$(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(OPT_LDLIBS) $(LIBTEST)
--
- LINKTEST = $(LTLINK) $@.c -o $@ $(CFLAGS) $(LDFLAGS)
- 
- install: default $(addsuffix -install,$(SUBDIRS))
- 	$(INSTALL) -m 755 -d $(PKG_LIB_DIR)/src
- 	$(LTINSTALL) -m 755 $(TARGETS) $(PKG_LIB_DIR)/src
--	-$(LTINSTALL) -m 755 $(OPT_TARGETS) $(PKG_LIB_DIR)/src
- 	$(LTINSTALL) -m 755 fill2attr fill2fs fill2fs_check scaleread.sh $(PKG_LIB_DIR)/src
- 	$(LTINSTALL) -m 644 dumpfile $(PKG_LIB_DIR)/src
- 
-
-
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

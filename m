@@ -1,28 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46552 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755623Ab3HLCz7 (ORCPT
+Received: from mail-lb0-f179.google.com ([209.85.217.179]:36734 "EHLO
+	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755019Ab3HLLdU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Aug 2013 22:55:59 -0400
-Message-ID: <52085025.7010504@oracle.com>
-Date: Mon, 12 Aug 2013 11:01:57 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Error relating to /dev/sr0 when calling btrfs fi show /dev/sdxy
-References: <20130810095922.206170@gmx.com> <44CB3A36-5FC9-4E57-9D38-D8945761EED4@colorremedies.com>
-In-Reply-To: <44CB3A36-5FC9-4E57-9D38-D8945761EED4@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Mon, 12 Aug 2013 07:33:20 -0400
+Received: by mail-lb0-f179.google.com with SMTP id v1so4748730lbd.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 04:33:18 -0700 (PDT)
+From: Ilya Dryomov <idryomov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
+Subject: [PATCH 0/4] btrfs_device fixes
+Date: Mon, 12 Aug 2013 14:33:00 +0300
+Message-Id: <1376307184-7175-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
-  This fixed it.
+This patch series does two things:
 
-  http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27129
+- adds allocation helpers for struct btrfs_device and struct
+  btrfs_fs_devices so that all the list_heads, spinlocks, etc are
+  properly initialized and the code for that is in one place;
+
+- fixes a bug in the umount sequence, which, under certain conditions,
+  can lead to mount failures.
+
+This is on top of 3.11-rc3, but applies cleanly to btrfs-next/master as
+of now.  You can pull from:
+
+git://github.com/idryomov/btrfs-unstable.git dev-fixes
+ 
+Thanks,
+
+		Ilya
 
 
+Ilya Dryomov (4):
+  Btrfs: find_next_devid: root -> fs_info
+  Btrfs: add btrfs_alloc_device and switch to it
+  Btrfs: add alloc_fs_devices and switch to it
+  Btrfs: rollback btrfs_device fields on umount
 
->> % sudo btrfs fi show /dev/sda3
->> failed to open /dev/sr0: No medium found
+ fs/btrfs/volumes.c |  250 +++++++++++++++++++++++++++++++++-------------------
+ fs/btrfs/volumes.h |    3 +
+ 2 files changed, 162 insertions(+), 91 deletions(-)
+
+-- 
+1.7.10.4
+

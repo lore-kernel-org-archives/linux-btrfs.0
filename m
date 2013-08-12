@@ -1,57 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33973 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:34714 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755340Ab3HLNuS (ORCPT
+	with ESMTP id S1756357Ab3HLO70 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 09:50:18 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 29AA99A0406
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 07:50:18 -0600 (MDT)
-Date: Mon, 12 Aug 2013 09:50:16 -0400
+	Mon, 12 Aug 2013 10:59:26 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id A5EAF9A04E0
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 08:59:25 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id kIFmELp0RpMjhdOD (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 08:59:25 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Florian Lindner <mailinglists@centershock.net>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: (un)mounting takes a long time
-Message-ID: <20130812135016.GB2150@localhost.localdomain>
-References: <2929473.GGcWYBHif4@horus>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: skip subvol entries when checking if we've created a dir already
+Date: Mon, 12 Aug 2013 10:59:22 -0400
+Message-ID: <1376319562-5230-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <2929473.GGcWYBHif4@horus>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 11, 2013 at 03:44:10PM +0200, Florian Lindner wrote:
-> Hello!
-> 
-> I'm using ArchLinux with kernel Linux horus 3.10.5-1-ARCH #1 SMP PREEMPT. 
-> Mounting and unmounting takes a long time:
-> 
-> # time mount -v /mnt/Archiv         
-> mount: /dev/sde1 mounted on /mnt/Archiv.
-> mount -v /mnt/Archiv  0,00s user 0,16s system 1% cpu 9,493 total
-> 
-> # sync && time umount -v /mnt/Archiv
-> umount: /mnt/Archiv (/dev/sdd1) unmounted
-> umount -v /mnt/Archiv  0,00s user 0,33s system 1% cpu 23,247 total
-> 
-> fstab:
-> 
-> LABEL=Archiv    /mnt/Archiv             btrfs           defaults,compress=zlib 
-> 0 0
-> 
-> Archiv is a RAID 0 comprised of two discs:
-> 
-> Label: 'Archiv'  uuid: b2504193-efeb-4ef3-8797-a8d73536a416
->         Total devices 2 FS bytes used 1.99TB
->         devid    2 size 2.73TB used 1023.01GB path /dev/sde1
->         devid    1 size 2.73TB used 1023.03GB path /dev/sdd1
-> 
-> Are un(mounting) times like these normal?
+We have logic to see if we've already created a parent directory by check to see
+if an inode inside of that directory has a lower inode number than the one we
+are currently processing.  The logic is that if there is a lower inode number
+then we would have had to made sure the directory was created at that previous
+point.  The problem is if we have subvols in that directory these will always be
+lower since they are set to the first free objectid.  To fix this we just skip
+entries with that inode number.  Thanks,
 
-Are you using -o space_cache?  If not can you add that and mount/umount a couple
-of times to get the cache built up and see if that helps.  If you are using
-space cache then sysrq+w while its taking forever to unmount and create a
-bugzilla at bugzilla.kernel.org (make sure the component is set to btrfs) so I
-can take a look at it.  Thanks,
+Reported-by: Emil Karlson <jekarlson@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/send.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 0efc2e2..5c09059 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2538,7 +2538,8 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
+ 		di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
+ 		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
+ 
+-		if (di_key.objectid < sctx->send_progress) {
++		if (di_key.objectid != BTRFS_FIRST_FREE_OBJECTID &&
++		    di_key.objectid < sctx->send_progress) {
+ 			ret = 1;
+ 			goto out;
+ 		}
+-- 
+1.7.7.6
+

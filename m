@@ -1,80 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:16169 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756374Ab3HLPQI (ORCPT
+Received: from mail-vc0-f170.google.com ([209.85.220.170]:39872 "EHLO
+	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756780Ab3HLQ5T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 11:16:08 -0400
-Message-ID: <5208FC34.4080705@giantdisaster.de>
-Date: Mon, 12 Aug 2013 17:16:04 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Mon, 12 Aug 2013 12:57:19 -0400
+Received: by mail-vc0-f170.google.com with SMTP id kw10so3017531vcb.29
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 09:57:18 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Emil Karlson <jekarlson@gmail.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Possible bug in send/receive with simple reproducer
-References: <CAELSAVaZNofc+g8jgvbkiL7dmzv9jiFtYtNxDR1+UkLZyaCMmg@mail.gmail.com> <20130812145952.GC2150@localhost.localdomain>
-In-Reply-To: <20130812145952.GC2150@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8
+Date: Mon, 12 Aug 2013 19:57:18 +0300
+Message-ID: <CAOv4OrWkKGL37r+gnMtB8KbQip61NjhPpX1YA-rLCZQu4vDzHA@mail.gmail.com>
+Subject: BTRFS corruptions counter
+From: Todor Ivanov <t.i.ivanov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 12 Aug 2013 10:59:52 -0400, Josef Bacik wrote:
-> On Sun, Aug 11, 2013 at 09:53:01PM +0300, Emil Karlson wrote:
->> Greetings
->>
->> Send fails for me unexpectedly:
->>
->> I get:
->> ERROR: rename o262-5-0 -> snapshots failed. No such file or directory
->>
->> reproducer ( http://users.tkk.fi/~jkarlson/files/test4.txt  ):
->>
->> for i in 1 2; do
->>   mkdir /mnt/$i
->>   truncate -s 4G /mnt/$i.img
->>   mkfs.btrfs /mnt/$i.img
->>   mount -o loop /mnt/$i.img /mnt/$i
->> done
->>
->> mkdir /mnt/1/testdir
->> mkdir /mnt/1/testdir/1/
->> mkdir /mnt/1/testdir/2/
->> dd if=/dev/urandom  of=/mnt/1/testdir/aa count=16
->> dd if=/dev/urandom  of=/mnt/1/testdir/bb count=16
->>
->> mkdir /mnt/1/snapshots
->> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup2
->> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup3
->> btrfs send /mnt/1/snapshots/backup3/ | btrfs receive /mnt/2/
->>
->> umount /mnt/{1,2}; rm /mnt/{1,2}.img; rmdir /mnt/{1,2}
-> 
-> This was perfect, thank you for that.  I've posted a fix and I'll turn this into
-> an xfstest to make sure we don't ever regress.  Thanks again,
->
+Hi,
 
-If you create a subvolume below /mnt/[12] and run the test there, you
-have the problem reproduced again :)
+We decided to give BTRFS a try. We find it very flexible and generally
+fast. However last week we had a problem with a Marvell controller in
+AHCI and one BTRFS formatted hard drive. We isolated the problem by
+relocating the disk to an Intel contoller (SATA controller: Marvell
+Technology Group Ltd. 88SE9172 SATA 6Gb/s Controller (rev 11) had a
+lot of problems and I managed to overcome them by passing
+libata.force=noncq for a couple of weeks, until it failed generally).
+Now that the disk is on the intel contoller it works fine and data is
+intact, but whenever I do mount or unmount I see:
 
-for i in 1 2; do
- mkdir /mnt/$i
- truncate -s 4G /mnt/$i.img
- mkfs.btrfs /mnt/$i.img
- mount -o loop /mnt/$i.img /mnt/$i
-done
+Aug 10 18:34:47 MyServerHere kernel: btrfs: bdev /dev/sde1 errs: wr 0,
+rd 0, flush 0, corrupt 166, gen 0
 
-btrfs subv create /mnt/1/sub
-btrfs subv create /mnt/2/sub
-mkdir /mnt/1/sub/testdir
-mkdir /mnt/1/sub/testdir/1/
-mkdir /mnt/1/sub/testdir/2/
-dd if=/dev/urandom  of=/mnt/1/sub/testdir/aa count=16
-dd if=/dev/urandom  of=/mnt/1/sub/testdir/bb count=16
+The problem is "corrupt 166"
+Sofar I did:
 
-mkdir /mnt/1/sub/snapshots
-btrfs sub snap -r /mnt/1/sub/ /mnt/1/sub/snapshots/backup2
-btrfs sub snap -r /mnt/1/sub/ /mnt/1/sub/snapshots/backup3
-btrfs send /mnt/1/sub/snapshots/backup3/ | btrfs receive /mnt/2/sub/
+1. btrfsck and it reported everything is OK
+2. btrfs scrub start /dev/sde1 and it again reported all is OK
 
-umount /mnt/[12]; rm /mnt/[12].img; rmdir /mnt/[12]
+Am I missing something in my filesystem checks or there is another way
+to zero the corrupt counter?
 
+Regards,
+Todor

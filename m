@@ -1,55 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:32823 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754720Ab3HKTIN (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:50382 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755207Ab3HLBMa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Aug 2013 15:08:13 -0400
-Received: by mail-pd0-f170.google.com with SMTP id x10so564056pdj.29
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Aug 2013 12:08:12 -0700 (PDT)
+	Sun, 11 Aug 2013 21:12:30 -0400
+Date: Mon, 12 Aug 2013 11:11:56 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: chandan <chandan@linux.vnet.ibm.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, sekharan@linux.vnet.ibm.com
+Subject: Re: [PATCH] _test_generic_punch: Extend $testfile's size to work
+ with 64k block.
+Message-ID: <20130812011155.GL12779@dastard>
+References: <3326777.u9YeDIQiYF@localhost.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <CAELSAVaZNofc+g8jgvbkiL7dmzv9jiFtYtNxDR1+UkLZyaCMmg@mail.gmail.com>
-References: <CAELSAVaZNofc+g8jgvbkiL7dmzv9jiFtYtNxDR1+UkLZyaCMmg@mail.gmail.com>
-Date: Sun, 11 Aug 2013 22:08:12 +0300
-Message-ID: <CAELSAVZYqyV=Exc6V1BS9yhA6gzh3XS6ag8PKVq5FpNNOieccg@mail.gmail.com>
-Subject: Re: Possible bug in send/receive with simple reproducer
-From: Emil Karlson <jekarlson@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <3326777.u9YeDIQiYF@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 11, 2013 at 9:53 PM, Emil Karlson <jekarlson@gmail.com> wrote:
-> Greetings
->
-> Send fails for me unexpectedly:
->
-> I get:
-> ERROR: rename o262-5-0 -> snapshots failed. No such file or directory
->
-> reproducer ( http://users.tkk.fi/~jkarlson/files/test4.txt  ):
->
-> for i in 1 2; do
->   mkdir /mnt/$i
->   truncate -s 4G /mnt/$i.img
->   mkfs.btrfs /mnt/$i.img
->   mount -o loop /mnt/$i.img /mnt/$i
-> done
->
-> mkdir /mnt/1/testdir
-> mkdir /mnt/1/testdir/1/
-> mkdir /mnt/1/testdir/2/
-> dd if=/dev/urandom  of=/mnt/1/testdir/aa count=16
-> dd if=/dev/urandom  of=/mnt/1/testdir/bb count=16
->
-> mkdir /mnt/1/snapshots
-> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup2
-> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup3
-> btrfs send /mnt/1/snapshots/backup3/ | btrfs receive /mnt/2/
->
-> umount /mnt/{1,2}; rm /mnt/{1,2}.img; rmdir /mnt/{1,2}
->
-> Best Regards
-> -Emil
+On Thu, Aug 08, 2013 at 11:40:04AM +0530, chandan wrote:
+> From cf6e1fc3a8d7806a97055b5f483cf50f58c8294f Mon Sep 17 00:00:00 2001
+> From: chandan <chandan@linux.vnet.ibm.com>
+> Date: Thu, 8 Aug 2013 11:33:10 +0530
+> Subject: [PATCH] _test_generic_punch: Extend $testfile's size to work with 64k
+>  block.
+> 
+> The current script does not work with 64k block size. This patch fixes it
+> by creating a larger $testfile.
 
-Kernel version is 3.11-rc4 with "Btrfs: check our parent dir when
-doing a compare send V2" and a few other patches.
+I can see why we might want to support such a configuration, but the
+changes being made defeat the purpose of the sizes chosen for this
+test.
+
+That is, most people testing are using 4k block size filesystems,
+and the sizes are selected such that single blocks are being
+manipulated by the test. it's looking for corner/edge case problems,
+and changing the code to now use chunks of 64k changes all the edge
+cases being tested.
+
+Indeed, even the new bmap output is likely to cause problems in that
+small block size filesystems are no guaranteed to allocate
+contiguous blocks linearly. This is another reason that 4k was
+chosen as the size of the regions.
+
+So, to do this properly, I'd suggest that the code needs to scale
+the offset/size of the IO being done by the filesystem block size,
+not use a fixed size. Using a filter on the bmap output to handle
+the different block ranges will ensure everything works correctly
+from a golden output POV, except for one thing - the md5sum.
+
+The md5sum of the file is used for integrity checking and will
+change as the block size changes. I haven't thought about a way to
+avoid his problem yet but we do need some form of integrity check
+to ensure all filesystems are ending up with the correct contents in
+the files.
+
+In the interim, if all you want to do is stop a test failure on your
+power machines, then either add a "_requires_le_4k_blocksize" check
+to avoid running the test on problematic filesystems or specifically
+create the fileystem being tested with a 4k block size...
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

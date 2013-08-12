@@ -1,140 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f43.google.com ([209.85.215.43]:46222 "EHLO
-	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755910Ab3HLLd0 (ORCPT
+Received: from mail-la0-f49.google.com ([209.85.215.49]:44886 "EHLO
+	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755936Ab3HLLd2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 07:33:26 -0400
-Received: by mail-la0-f43.google.com with SMTP id ep20so4633110lab.16
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 04:33:25 -0700 (PDT)
+	Mon, 12 Aug 2013 07:33:28 -0400
+Received: by mail-la0-f49.google.com with SMTP id ev20so4588447lab.36
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 04:33:27 -0700 (PDT)
 From: Ilya Dryomov <idryomov@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
-Subject: [PATCH 3/4] Btrfs: add alloc_fs_devices and switch to it
-Date: Mon, 12 Aug 2013 14:33:03 +0300
-Message-Id: <1376307184-7175-4-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 4/4] Btrfs: rollback btrfs_device fields on umount
+Date: Mon, 12 Aug 2013 14:33:04 +0300
+Message-Id: <1376307184-7175-5-git-send-email-idryomov@gmail.com>
 In-Reply-To: <1376307184-7175-1-git-send-email-idryomov@gmail.com>
 References: <1376307184-7175-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the spirit of btrfs_alloc_device, add a helper for allocating and
-doing some common initialization of btrfs_fs_devices struct.
+It turns out we don't properly rollback in-core btrfs_device state on
+umount.  We zero out ->bdev, ->in_fs_metadata and that's about it.  In
+particular, we don't zero out ->generation, and this can lead to us
+refusing a mount -- a non-NULL fs_devices->latest_bdev is essential, but
+btrfs_close_extra_devices will happily assign NULL to ->latest_bdev if
+the first device on the dev_list happens to be missing and consequently
+has no bdev attached.  This happens because since commit a6b0d5c8
+btrfs_close_extra_devices adjusts ->latest_bdev, and in doing that,
+relies on the ->generation.  Fix this, and possibly other problems, by
+zeroing out everything except for what device_list_add sets, so that a
+mount right after insmod and 'btrfs dev scan' is no different from any
+later mount in this respect.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/volumes.c |   71 +++++++++++++++++++++++++++++++++++++++-------------
- 1 file changed, 53 insertions(+), 18 deletions(-)
+ fs/btrfs/volumes.c |   15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fe52704..af17b17 100644
+index af17b17..2f6bc12 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -62,6 +62,48 @@ static void unlock_chunks(struct btrfs_root *root)
- 	mutex_unlock(&root->fs_info->chunk_mutex);
- }
+@@ -673,22 +673,19 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		if (device->can_discard)
+ 			fs_devices->num_can_discard--;
  
-+static struct btrfs_fs_devices *__alloc_fs_devices(void)
-+{
-+	struct btrfs_fs_devices *fs_devs;
-+
-+	fs_devs = kzalloc(sizeof(*fs_devs), GFP_NOFS);
-+	if (!fs_devs)
-+		return ERR_PTR(-ENOMEM);
-+
-+	mutex_init(&fs_devs->device_list_mutex);
-+
-+	INIT_LIST_HEAD(&fs_devs->devices);
-+	INIT_LIST_HEAD(&fs_devs->alloc_list);
-+	INIT_LIST_HEAD(&fs_devs->list);
-+
-+	return fs_devs;
-+}
-+
-+/**
-+ * alloc_fs_devices - allocate struct btrfs_fs_devices
-+ * @fsid:	a pointer to UUID for this FS.  If NULL a new UUID is
-+ *		generated.
-+ *
-+ * Return: a pointer to a new &struct btrfs_fs_devices on success;
-+ * ERR_PTR() on error.  Returned struct is not linked onto any lists and
-+ * can be destroyed with kfree() right away.
-+ */
-+static struct btrfs_fs_devices *alloc_fs_devices(const u8 *fsid)
-+{
-+	struct btrfs_fs_devices *fs_devs;
-+
-+	fs_devs = __alloc_fs_devices();
-+	if (IS_ERR(fs_devs))
-+		return fs_devs;
-+
-+	if (fsid)
-+		memcpy(fs_devs->fsid, fsid, BTRFS_FSID_SIZE);
-+	else
-+		generate_random_uuid(fs_devs->fsid);
-+
-+	return fs_devs;
-+}
-+
- static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
- {
- 	struct btrfs_device *device;
-@@ -416,16 +458,14 @@ static noinline int device_list_add(const char *path,
+-		new_device = kmalloc(sizeof(*new_device), GFP_NOFS);
+-		BUG_ON(!new_device); /* -ENOMEM */
+-		memcpy(new_device, device, sizeof(*new_device));
++		new_device = btrfs_alloc_device(NULL, &device->devid,
++						device->uuid);
++		BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
  
- 	fs_devices = find_fsid(disk_super->fsid);
- 	if (!fs_devices) {
--		fs_devices = kzalloc(sizeof(*fs_devices), GFP_NOFS);
--		if (!fs_devices)
--			return -ENOMEM;
--		INIT_LIST_HEAD(&fs_devices->devices);
--		INIT_LIST_HEAD(&fs_devices->alloc_list);
-+		fs_devices = alloc_fs_devices(disk_super->fsid);
-+		if (IS_ERR(fs_devices))
-+			return PTR_ERR(fs_devices);
+ 		/* Safe because we are under uuid_mutex */
+ 		if (device->name) {
+ 			name = rcu_string_strdup(device->name->str, GFP_NOFS);
+-			BUG_ON(device->name && !name); /* -ENOMEM */
++			BUG_ON(!name); /* -ENOMEM */
+ 			rcu_assign_pointer(new_device->name, name);
+ 		}
+-		new_device->bdev = NULL;
+-		new_device->writeable = 0;
+-		new_device->in_fs_metadata = 0;
+-		new_device->can_discard = 0;
+-		spin_lock_init(&new_device->io_lock);
 +
- 		list_add(&fs_devices->list, &fs_uuids);
--		memcpy(fs_devices->fsid, disk_super->fsid, BTRFS_FSID_SIZE);
- 		fs_devices->latest_devid = devid;
- 		fs_devices->latest_trans = found_transid;
--		mutex_init(&fs_devices->device_list_mutex);
-+
- 		device = NULL;
- 	} else {
- 		device = __find_device(&fs_devices->devices, devid,
-@@ -481,18 +521,13 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
- 	struct btrfs_device *device;
- 	struct btrfs_device *orig_dev;
+ 		list_replace_rcu(&device->dev_list, &new_device->dev_list);
++		new_device->fs_devices = device->fs_devices;
  
--	fs_devices = kzalloc(sizeof(*fs_devices), GFP_NOFS);
--	if (!fs_devices)
--		return ERR_PTR(-ENOMEM);
-+	fs_devices = alloc_fs_devices(orig->fsid);
-+	if (IS_ERR(fs_devices))
-+		return fs_devices;
- 
--	INIT_LIST_HEAD(&fs_devices->devices);
--	INIT_LIST_HEAD(&fs_devices->alloc_list);
--	INIT_LIST_HEAD(&fs_devices->list);
--	mutex_init(&fs_devices->device_list_mutex);
- 	fs_devices->latest_devid = orig->latest_devid;
- 	fs_devices->latest_trans = orig->latest_trans;
- 	fs_devices->total_devices = orig->total_devices;
--	memcpy(fs_devices->fsid, orig->fsid, sizeof(fs_devices->fsid));
- 
- 	/* We have held the volume lock, it is safe to get the devices. */
- 	list_for_each_entry(orig_dev, &orig->devices, dev_list) {
-@@ -1794,9 +1829,9 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
- 	if (!fs_devices->seeding)
- 		return -EINVAL;
- 
--	seed_devices = kzalloc(sizeof(*fs_devices), GFP_NOFS);
--	if (!seed_devices)
--		return -ENOMEM;
-+	seed_devices = __alloc_fs_devices();
-+	if (IS_ERR(seed_devices))
-+		return PTR_ERR(seed_devices);
- 
- 	old_devices = clone_fs_devices(fs_devices);
- 	if (IS_ERR(old_devices)) {
+ 		call_rcu(&device->rcu, free_device);
+ 	}
 -- 
 1.7.10.4
 

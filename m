@@ -1,152 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:55455 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752513Ab3HLTkE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 15:40:04 -0400
-Message-ID: <52093A11.40807@sandeen.net>
-Date: Mon, 12 Aug 2013 14:40:01 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from dkim2.fusionio.com ([66.114.96.54]:37937 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754868Ab3HLTku (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Aug 2013 15:40:50 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 772969A04F8
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 13:40:50 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id z4x8pOFBafmdz2hf (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 13:40:49 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] xfstests: btrfs/003: regression test for subvol delete
+Date: Mon, 12 Aug 2013 15:40:47 -0400
+Message-ID: <1376336447-20684-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH] xfstests: btrfs/002, another send regression test
-References: <1376334802-18960-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1376334802-18960-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/12/13 2:13 PM, Josef Bacik wrote:
-> This is a regression test for a problem we had where we'd assume we had created
-> a directory if it only had subvols inside of it.  This was happening because
-> subvols would have lower inode numbers than our current send progress because
-> their inode numbers are based off of a different counter.  Thanks,
+We were allowing users to delete their default subvolume, which is problematic.
+This test is a regression test to make sure we don't let that happen in the
+future.  Thanks,
 
-The problem itself isn't totally clear to me, but the test itself looks
-fine.  ;)
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ tests/btrfs/003     |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/003.out |    2 +
+ tests/btrfs/group   |    1 +
+ 3 files changed, 67 insertions(+), 0 deletions(-)
+ create mode 100755 tests/btrfs/003
+ create mode 100644 tests/btrfs/003.out
 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
-
-> ---
->  tests/btrfs/002     |   85 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/002.out |    2 +
->  tests/btrfs/group   |    1 +
->  3 files changed, 88 insertions(+), 0 deletions(-)
->  create mode 100755 tests/btrfs/002
->  create mode 100644 tests/btrfs/002.out
-> 
-> diff --git a/tests/btrfs/002 b/tests/btrfs/002
-> new file mode 100755
-> index 0000000..d671688
-> --- /dev/null
-> +++ b/tests/btrfs/002
-> @@ -0,0 +1,85 @@
-> +#! /bin/bash
-> +# FS QA Test No. btrfs/002
-> +#
-> +# btrfs send ENOENT regression test, from a user report on linux-btrfs
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +tmp_dir=send_temp_$seq
-> +
-> +status=1	# failure is the default!
-> +
-> +_cleanup()
-> +{
-> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send/snapshots/backup2 > /dev/null 2>&1
-> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send/snapshots/backup3 > /dev/null 2>&1
-> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send > /dev/null 2>&1
-> +	rm -rf $TEST_DIR/$tmp_dir
-> +	rm -f $tmp.*
-> +}
-> +
-> +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +_scratch_mkfs > /dev/null 2>&1
-> +
-> +#receive needs to be able to setxattrs, including the selinux context, if we use
-> +#the normal nfs context thing it screws up our ability to set the
-> +#security.selinux xattrs so we need to disable this for this test
-> +export SELINUX_MOUNT_OPTIONS=""
-> +
-> +_scratch_mount
-> +
-> +mkdir $TEST_DIR/$tmp_dir
-> +$BTRFS_UTIL_PROG subvol create $TEST_DIR/$tmp_dir/send \
-> +	> $seqres.full 2>&1 || _fail "failed subvol create"
-> +work_dir="$TEST_DIR/$tmp_dir/send"
-> +mkdir $work_dir/testdir
-> +mkdir $work_dir/testdir/1/
-> +mkdir $work_dir/testdir/2/
-> +dd if=/dev/urandom  of=$work_dir/testdir/aa count=16 > /dev/null 2>&1
-> +dd if=/dev/urandom  of=$work_dir/testdir/bb count=16 > /dev/null 2>&1
-> +
-> +mkdir $work_dir/snapshots
-> +$BTRFS_UTIL_PROG sub snap -r $work_dir $work_dir/snapshots/backup2 \
-> +	>> $seqres.full 2>&1 || _fail "failed backup2"
-> +$BTRFS_UTIL_PROG sub snap -r $work_dir $work_dir/snapshots/backup3 \
-> +	>> $seqres.full 2>&1 || _fail "failed backup3"
-> +$BTRFS_UTIL_PROG send $work_dir/snapshots/backup3/ -f $TEST_DIR/$tmp_dir/blah \
-> +	>> $seqres.full 2>&1 || _fail "send failed"
-> +$BTRFS_UTIL_PROG receive $SCRATCH_MNT -vvvv -f $TEST_DIR/$tmp_dir/blah \
-> +	>> $seqres.full 2>&1 || _fail "receive failed"
-> +
-> +echo "Silence is golden"
-> +status=0 ; exit
-> diff --git a/tests/btrfs/002.out b/tests/btrfs/002.out
-> new file mode 100644
-> index 0000000..61705c7
-> --- /dev/null
-> +++ b/tests/btrfs/002.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 002
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 3afa04f..0733a1d 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -4,6 +4,7 @@
->  # - comment line before each group is "new" description
->  #
->  001 auto quick
-> +002 auto quick
->  254 auto quick
->  264 auto
->  265 auto
-> 
+diff --git a/tests/btrfs/003 b/tests/btrfs/003
+new file mode 100755
+index 0000000..775322a
+--- /dev/null
++++ b/tests/btrfs/003
+@@ -0,0 +1,64 @@
++#! /bin/bash
++# FS QA Test No. btrfs/003
++#
++# Regression test to make sure we can't delete the default subvol
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++
++status=1	# failure is the default!
++
++_cleanup()
++{
++	rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++# This will be set to subvolid 256.  If this ever changes in the future for
++# whatever reason we'll have to pull the subvolid out of the subvol list command
++# but since it's a newly mkfs'ed fs we should be fine with this.
++$BTRFS_UTIL_PROG sub create $SCRATCH_MNT/newvol >> $seqres.full 2>&1 \
++	|| _fail "couldnt create subvol"
++$BTRFS_UTIL_PROG sub set-default 256 $SCRATCH_MNT >> $seqres.full 2>&1 \
++	|| _fail "couldn't set default"
++$BTRFS_UTIL_PROG sub delete $SCRATCH_MNT/newvol >> $seqres.full 2>&1
++[ $? -eq 0 ] && _fail "delete succeeded, should have failed"
++
++echo "Silence is golden"
++status=0 ; exit
+diff --git a/tests/btrfs/003.out b/tests/btrfs/003.out
+new file mode 100644
+index 0000000..6895fc8
+--- /dev/null
++++ b/tests/btrfs/003.out
+@@ -0,0 +1,2 @@
++QA output created by 003
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 0733a1d..44b2f8e 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -5,6 +5,7 @@
+ #
+ 001 auto quick
+ 002 auto quick
++003 auto quick
+ 254 auto quick
+ 264 auto
+ 265 auto
+-- 
+1.7.7.6
 

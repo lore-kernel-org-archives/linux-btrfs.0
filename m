@@ -1,51 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:34714 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756357Ab3HLO70 (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:52334 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756357Ab3HLO7z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Aug 2013 10:59:26 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id A5EAF9A04E0
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 08:59:25 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id kIFmELp0RpMjhdOD (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 08:59:25 -0600 (MDT)
+	Mon, 12 Aug 2013 10:59:55 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id E462E7C064D
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2013 08:59:54 -0600 (MDT)
+Date: Mon, 12 Aug 2013 10:59:52 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: skip subvol entries when checking if we've created a dir already
-Date: Mon, 12 Aug 2013 10:59:22 -0400
-Message-ID: <1376319562-5230-1-git-send-email-jbacik@fusionio.com>
+To: Emil Karlson <jekarlson@gmail.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Possible bug in send/receive with simple reproducer
+Message-ID: <20130812145952.GC2150@localhost.localdomain>
+References: <CAELSAVaZNofc+g8jgvbkiL7dmzv9jiFtYtNxDR1+UkLZyaCMmg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAELSAVaZNofc+g8jgvbkiL7dmzv9jiFtYtNxDR1+UkLZyaCMmg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have logic to see if we've already created a parent directory by check to see
-if an inode inside of that directory has a lower inode number than the one we
-are currently processing.  The logic is that if there is a lower inode number
-then we would have had to made sure the directory was created at that previous
-point.  The problem is if we have subvols in that directory these will always be
-lower since they are set to the first free objectid.  To fix this we just skip
-entries with that inode number.  Thanks,
+On Sun, Aug 11, 2013 at 09:53:01PM +0300, Emil Karlson wrote:
+> Greetings
+> 
+> Send fails for me unexpectedly:
+> 
+> I get:
+> ERROR: rename o262-5-0 -> snapshots failed. No such file or directory
+> 
+> reproducer ( http://users.tkk.fi/~jkarlson/files/test4.txt  ):
+> 
+> for i in 1 2; do
+>   mkdir /mnt/$i
+>   truncate -s 4G /mnt/$i.img
+>   mkfs.btrfs /mnt/$i.img
+>   mount -o loop /mnt/$i.img /mnt/$i
+> done
+> 
+> mkdir /mnt/1/testdir
+> mkdir /mnt/1/testdir/1/
+> mkdir /mnt/1/testdir/2/
+> dd if=/dev/urandom  of=/mnt/1/testdir/aa count=16
+> dd if=/dev/urandom  of=/mnt/1/testdir/bb count=16
+> 
+> mkdir /mnt/1/snapshots
+> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup2
+> btrfs sub snap -r /mnt/1/ /mnt/1/snapshots/backup3
+> btrfs send /mnt/1/snapshots/backup3/ | btrfs receive /mnt/2/
+> 
+> umount /mnt/{1,2}; rm /mnt/{1,2}.img; rmdir /mnt/{1,2}
 
-Reported-by: Emil Karlson <jekarlson@gmail.com>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/send.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+This was perfect, thank you for that.  I've posted a fix and I'll turn this into
+an xfstest to make sure we don't ever regress.  Thanks again,
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 0efc2e2..5c09059 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2538,7 +2538,8 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
- 		di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
- 		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
- 
--		if (di_key.objectid < sctx->send_progress) {
-+		if (di_key.objectid != BTRFS_FIRST_FREE_OBJECTID &&
-+		    di_key.objectid < sctx->send_progress) {
- 			ret = 1;
- 			goto out;
- 		}
--- 
-1.7.7.6
-
+Josef

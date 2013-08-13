@@ -1,48 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:44766 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758317Ab3HMP6P (ORCPT
+Received: from mail-oa0-f42.google.com ([209.85.219.42]:64482 "EHLO
+	mail-oa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932228Ab3HMQDe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Aug 2013 11:58:15 -0400
-Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 13 Aug 2013 21:19:35 +0530
-Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 1CF083940053
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 21:28:01 +0530 (IST)
-Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
-	by d28relay01.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r7DFxSYF22544536
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 21:29:29 +0530
-Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
-	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r7DFw8iA029539
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 21:28:08 +0530
-From: chandan <chandan@linux.vnet.ibm.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, sekharan@linux.vnet.ibm.com
-Subject: Re: [PATCH] _test_generic_punch: Extend $testfile's size to work with 64k block.
-Date: Tue, 13 Aug 2013 21:28:06 +0530
-Message-ID: <1795219.CLAn9GhObP@localhost.localdomain>
-In-Reply-To: <20130812011155.GL12779@dastard>
-References: <3326777.u9YeDIQiYF@localhost.localdomain> <20130812011155.GL12779@dastard>
+	Tue, 13 Aug 2013 12:03:34 -0400
+Received: by mail-oa0-f42.google.com with SMTP id i18so11740005oag.15
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 09:03:34 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130813141542.GF2150@localhost.localdomain>
+References: <CAKcLGm_DXiwJrAMYG66ZiEmXtSKe0z0LUPfxat0Repb0jfDnNA@mail.gmail.com>
+	<20130813141542.GF2150@localhost.localdomain>
+Date: Tue, 13 Aug 2013 11:03:33 -0500
+Message-ID: <CAKcLGm99PdyuurtmA6_ZW1PQOaH4piQSK-VYQMT-0PJkgDf-Yw@mail.gmail.com>
+Subject: Re: Kernel BUG on Snapshot Deletion (3.11.0-rc5)
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Dave,
+Let me work on making that script more portable, and hopefully quicker
+to reproduce.
 
-> So, to do this properly, I'd suggest that the code needs to scale
-> the offset/size of the IO being done by the filesystem block size,
-> not use a fixed size. Using a filter on the bmap output to handle
-> the different block ranges will ensure everything works correctly
-> from a golden output POV, except for one thing - the md5sum.
-> 
-Yes, we did try the approach of using variable block size and scaling
-the offset values in the filter function. But we got stuck
-working with md5sum (since we would need two sets of md5sums (with and
-without '-k' option) per block size). As suggested, I will be
-reposting the patch to use "_requires_le_4k_blocksize".
-
-chandan
-
+On Tue, Aug 13, 2013 at 9:15 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+> On Mon, Aug 12, 2013 at 11:06:27PM -0500, Mitch Harder wrote:
+>> I'm hitting a btrfs Kernel BUG running a snapshot stress script with
+>> linux-3.11.0-rc5.
+>>
+>
+> I can haz script?  Thanks,
+>
+> Josef

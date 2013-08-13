@@ -1,34 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f42.google.com ([209.85.219.42]:64482 "EHLO
-	mail-oa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932228Ab3HMQDe (ORCPT
+Received: from jacques.telenet-ops.be ([195.130.132.50]:58170 "EHLO
+	jacques.telenet-ops.be" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754280Ab3HMQdK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Aug 2013 12:03:34 -0400
-Received: by mail-oa0-f42.google.com with SMTP id i18so11740005oag.15
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 09:03:34 -0700 (PDT)
+	Tue, 13 Aug 2013 12:33:10 -0400
+Date: Tue, 13 Aug 2013 18:32:59 +0200 (CEST)
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Zach Brown <zab@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+cc: Andreas Schwab <schwab@linux-m68k.org>, Josef Bacik <jbacik@fusionio.com>,
+        Thorsten Glaser <tg@mirbsd.de>, Joe Perches <joe@perches.com>,
+        Debian GNU/Linux m68k <debian-68k@lists.debian.org>,
+        linux-btrfs@vger.kernel.org,
+        Linux Kernel Development <linux-kernel@vger.kernel.org>,
+        David Woodhouse <David.Woodhouse@intel.com>,
+        Chris Mason <chris.mason@fusionio.com>
+Subject: Re: btrfs zero divide
+In-Reply-To: <20130809180441.GB12314@lenny.home.zabbo.net>
+Message-ID: <alpine.DEB.2.02.1308131714130.12565@ayla.of.borg>
+References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org> <alpine.DEB.2.02.1307301052010.23107@ayla.of.borg> <20130730171329.GF24583@localhost.localdomain> <Pine.BSM.4.64L.1307301741360.20305@herc.mirbsd.org> <20130730204001.GG24583@localhost.localdomain>
+ <87eha33v9f.fsf@igel.home> <20130809180441.GB12314@lenny.home.zabbo.net>
 MIME-Version: 1.0
-In-Reply-To: <20130813141542.GF2150@localhost.localdomain>
-References: <CAKcLGm_DXiwJrAMYG66ZiEmXtSKe0z0LUPfxat0Repb0jfDnNA@mail.gmail.com>
-	<20130813141542.GF2150@localhost.localdomain>
-Date: Tue, 13 Aug 2013 11:03:33 -0500
-Message-ID: <CAKcLGm99PdyuurtmA6_ZW1PQOaH4piQSK-VYQMT-0PJkgDf-Yw@mail.gmail.com>
-Subject: Re: Kernel BUG on Snapshot Deletion (3.11.0-rc5)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Let me work on making that script more portable, and hopefully quicker
-to reproduce.
+On Fri, 9 Aug 2013, Zach Brown wrote:
+> On Fri, Aug 09, 2013 at 02:26:36PM +0200, Andreas Schwab wrote:
+> > Josef Bacik <jbacik@fusionio.com> writes:
+> > 
+> > > So stripe_len shouldn't be 0, if it is you have bigger problems :).
+> > 
+> > The bigger problem is that stripe_nr is u64, this is completely bogus.
+> > The first operand of do_div must be u32.  This goes through the whole
+> > file.
 
-On Tue, Aug 13, 2013 at 9:15 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Mon, Aug 12, 2013 at 11:06:27PM -0500, Mitch Harder wrote:
->> I'm hitting a btrfs Kernel BUG running a snapshot stress script with
->> linux-3.11.0-rc5.
->>
->
-> I can haz script?  Thanks,
->
-> Josef
+This was introduced by commit 53b381b3abeb86f12787a6c40fee9b2f71edc23b
+("Btrfs: RAID5 and RAID6"), which changed the divisor from
+map->stripe_len (struct map_lookup.stripe_len is int) to a 64-bit
+temporary.
+
+> Definitely.  Can we get some typeof() tricks in the macros to have the
+> build fail if (when, evidently) someone gets it wrong?
+
+Not using typeof, as there are way too many callsites where int is used
+instead of u32.
+
+However, checking that sizeof() equals to 4 seems to work.
+Below is a patch for asm-generic, which is untested, but it works when
+adding the same checks to arch/m68k/include/asm/div64.h
+
+This is not something we just want to drop in, as it has the potential of
+breaking lots of things (yes, it breaks btrfs :-)
+
+>From 7ccabf41beae38da514f3e09624219a9362375d7 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 13 Aug 2013 18:04:40 +0200
+Subject: [PATCH] asm-generic: Check divisor size in do_div()
+
+The second parameter of do_div() should be a 32-bit number.
+Enforce this using BUILD_BUG_ON().
+
+The first parameter of do_div() should be a 64-bit number,
+enforce this on 64-bit architectures, just like is done on 32-bit
+architectures.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ include/asm-generic/div64.h |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/asm-generic/div64.h b/include/asm-generic/div64.h
+index 8f4e319..69c0307 100644
+--- a/include/asm-generic/div64.h
++++ b/include/asm-generic/div64.h
+@@ -19,12 +19,15 @@
+ 
+ #include <linux/types.h>
+ #include <linux/compiler.h>
++#include <linux/bug.h>
+ 
+ #if BITS_PER_LONG == 64
+ 
+ # define do_div(n,base) ({					\
+ 	uint32_t __base = (base);				\
+ 	uint32_t __rem;						\
++	(void)(((typeof((n)) *)0) == ((uint64_t *)0));		\
++	BUILD_BUG_ON(sizeof(base) != 4);			\
+ 	__rem = ((uint64_t)(n)) % __base;			\
+ 	(n) = ((uint64_t)(n)) / __base;				\
+ 	__rem;							\
+@@ -41,6 +44,7 @@ extern uint32_t __div64_32(uint64_t *dividend, uint32_t divisor);
+ 	uint32_t __base = (base);			\
+ 	uint32_t __rem;					\
+ 	(void)(((typeof((n)) *)0) == ((uint64_t *)0));	\
++	BUILD_BUG_ON(sizeof(base) != 4);		\
+ 	if (likely(((n) >> 32) == 0)) {			\
+ 		__rem = (uint32_t)(n) % __base;		\
+ 		(n) = (uint32_t)(n) / __base;		\
+-- 
+1.7.9.5
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds

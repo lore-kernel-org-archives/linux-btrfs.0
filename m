@@ -1,70 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:60272 "EHLO sandeen.net"
+Received: from xp-ob.rzone.de ([81.169.146.137]:48958 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758412Ab3HMQ3C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Aug 2013 12:29:02 -0400
-Message-ID: <520A5EAB.5050909@sandeen.net>
-Date: Tue, 13 Aug 2013 11:28:27 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Dave Chinner <david@fromorbit.com>, Jan Schmidt <list.xfs@jan-o-sch.net>,
-        "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "sbehrens@giantdisaster.de" <sbehrens@giantdisaster.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 1/2] xfstests: add fssum tool
-References: <1375949833-1104-1-git-send-email-list.xfs@jan-o-sch.net> <1375949833-1104-2-git-send-email-list.xfs@jan-o-sch.net> <5203D827.3050909@sandeen.net> <20130812011539.GM12779@dastard> <BB446B35-F3DA-462E-9E2C-9E4B780BC6B9@sandeen.net> <20130813152822.GG2150@localhost.localdomain>
-In-Reply-To: <20130813152822.GG2150@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1757606Ab3HMRYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Aug 2013 13:24:36 -0400
+From: Jan Schmidt <list.xfs@jan-o-sch.net>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de,
+        sandeen@sandeen.net
+Subject: [PATCH v4 2/2] xfstests btrfs/316: test send / receive
+Date: Tue, 13 Aug 2013 19:24:18 +0200
+Message-Id: <1376414658-4563-3-git-send-email-list.xfs@jan-o-sch.net>
+In-Reply-To: <1376414658-4563-1-git-send-email-list.xfs@jan-o-sch.net>
+References: <1376414658-4563-1-git-send-email-list.xfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/13/13 10:28 AM, Josef Bacik wrote:
-> On Sun, Aug 11, 2013 at 09:54:41PM -0500, Eric Sandeen wrote:
->> On Aug 11, 2013, at 8:15 PM, Dave Chinner <david@fromorbit.com> wrote:
->>
->>> On Thu, Aug 08, 2013 at 12:40:55PM -0500, Eric Sandeen wrote:
->>>> On 8/8/13 3:17 AM, Jan Schmidt wrote:
->>>>> SUBDIRS =
->>>>>
->>>>> LLDLIBS = $(LIBATTR) $(LIBHANDLE) $(LIBACL)
->>>>>
->>>>> +OPT_LDLIBS = -lssl -lcrypto
->>>>
->>>> Hm, new deps.  I guess it's not a huge problem, these should always
->>>> be available, right?
->>>
->>> Please, let's keep crypto out of xfstests if we can. That's just
->>> going to add a nightmare of US export compliance garbage to any
->>> distro that wants to package and ship this....
->>>
->> It's ssl that's (optionally) required for check summing I believe.  But it's optional if done properly...
->>
-> 
-> It doesn't build without -lcrypto for me, so either we have an external
-> dependancy (which I'm fine with), or we add it to xfstests (which is what you
-> wanted).  Does a config option alleviate your concerns?  And I it's just linking
-> it in at build time, I don't think we have to work about export compliance as
-> long as we aren't shipping actual crytpo stuff right?  Anybody who is going to
-> be running this stuff is going to have libssl installed, which installs
-> libcrypto (at least on my box) so I don't think it's a huge deal to have us
-> linking it.  Thanks,
+Basic send / receive functionality test for btrfs. Requires current
+version of fsstress built (-x support). Relies on fssum tool but can
+skip the test if it failed to build.
 
-Yeah I think linking in a consumer is not at all the same as exporting the functionality.
+Signed-off-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+---
+ tests/btrfs/316     |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/316.out |    4 ++
+ tests/btrfs/group   |    1 +
+ 3 files changed, 121 insertions(+), 0 deletions(-)
+ create mode 100755 tests/btrfs/316
+ create mode 100644 tests/btrfs/316.out
 
-Looks like my Makefile patch needs to add both -lssl & -lcrypto after all,
-but again, yeah, just linking against it _if_ it's there.
-
-Oh, and here's my m4/package_ssldev.m4, sorry about that:
-
-AC_DEFUN([AC_PACKAGE_WANT_SSL],
-  [ AC_CHECK_HEADERS(openssl/md5.h, [ have_ssl=true ], [ have_ssl=false ])
-    AC_SUBST(have_ssl)
-  ])
-
-
--Eric
-
-> Josef
-> 
+diff --git a/tests/btrfs/316 b/tests/btrfs/316
+new file mode 100755
+index 0000000..b3af7d9
+--- /dev/null
++++ b/tests/btrfs/316
+@@ -0,0 +1,116 @@
++#! /bin/bash
++# FSQA Test No. 316
++#
++# Run fsstress to create a reasonably strange file system, make a
++# snapshot (base) and run more fsstress. Then take another snapshot
++# (incr) and send both snapshots to a temp file. Remake the file
++# system and receive from the files. Check both states with fssum.
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2013 STRATO.  All rights reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++# creator
++owner=list.btrfs@jan-o-sch.net
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=`mktemp -d`
++status=1
++
++_cleanup()
++{
++	echo "*** unmount"
++	umount $SCRATCH_MNT 2>/dev/null
++	rm -f $tmp.*
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_seek_data_hole
++
++FSSUM_PROG=$here/src/fssum
++[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++
++rm -f $seqres.full
++
++workout()
++{
++	fsz=$1
++	ops=$2
++
++	umount $SCRATCH_DEV >/dev/null 2>&1
++	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
++	echo ""                                     >>$seqres.full
++	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
++		|| _fail "size=$fsz mkfs failed"
++	run_check _scratch_mount "-o noatime"
++
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n $ops $FSSTRESS_AVOID -x \
++		"$BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/base"
++
++	run_check $BTRFS_UTIL_PROG subvol snap -r $SCRATCH_MNT $SCRATCH_MNT/incr
++
++	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap" \
++		>> $seqres.full
++	$BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap 2>> $seqres.full \
++		|| _fail "failed: '$@'"
++	echo "# $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base\
++		$SCRATCH_MNT/incr > $tmp/incr.snap" >> $seqres.full
++	$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base \
++		$SCRATCH_MNT/incr > $tmp/incr.snap 2>> $seqres.full \
++		|| _fail "failed: '$@'"
++
++	run_check $FSSUM_PROG -A -f -w $tmp/base.fssum $SCRATCH_MNT/base
++	run_check $FSSUM_PROG -A -f -w $tmp/incr.fssum -x $SCRATCH_MNT/incr/base \
++		$SCRATCH_MNT/incr
++
++	umount $SCRATCH_DEV >/dev/null 2>&1
++	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
++	echo ""                                     >>$seqres.full
++	_scratch_mkfs_sized $fsz >>$seqres.full 2>&1 \
++		|| _fail "size=$fsz mkfs failed"
++	run_check _scratch_mount "-o noatime"
++
++	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/base.snap
++	run_check $FSSUM_PROG -r $tmp/base.fssum $SCRATCH_MNT/base
++
++	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/incr.snap
++	run_check $FSSUM_PROG -r $tmp/incr.fssum $SCRATCH_MNT/incr
++}
++
++echo "*** test send / receive"
++
++fssize=`expr 2000 \* 1024 \* 1024`
++ops=200
++
++workout $fssize $ops
++
++echo "*** done"
++status=0
++exit
+diff --git a/tests/btrfs/316.out b/tests/btrfs/316.out
+new file mode 100644
+index 0000000..4564c85
+--- /dev/null
++++ b/tests/btrfs/316.out
+@@ -0,0 +1,4 @@
++QA output created by 316
++*** test send / receive
++*** done
++*** unmount
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index bc6c256..11d708a 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -9,3 +9,4 @@
+ 276 auto rw metadata
+ 284 auto
+ 307 auto quick
++316 auto rw metadata
+-- 
+1.7.2.5
 

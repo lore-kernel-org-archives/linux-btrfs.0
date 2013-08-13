@@ -1,63 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from y235201.ppp.asahi-net.or.jp ([118.243.235.201]:46633 "EHLO
-	mactop" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1754571Ab3HMFhf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Aug 2013 01:37:35 -0400
-Received: from [10.81.1.3] (mydomain.com [10.81.1.3])
-	by mactop (Postfix) with ESMTP id 796605FA3D
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 14:37:30 +0900 (JST)
-Message-ID: <5209C61A.5010702@parallels.com>
-Date: Tue, 13 Aug 2013 14:37:30 +0900
-From: dima <dolenin@parallels.com>
+Received: from mail-pa0-f53.google.com ([209.85.220.53]:54129 "EHLO
+	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757719Ab3HMMMF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Aug 2013 08:12:05 -0400
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-ino-cache is running on each reboot
-References: <52098BDB.5010400@parallels.com> <pan$9b25b$c3cfd854$ecd09a4$c58fb9da@cox.net>
-In-Reply-To: <pan$9b25b$c3cfd854$ecd09a4$c58fb9da@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <87a9kr3v2p.fsf@igel.home>
+References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org>
+	<alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
+	<20130730171329.GF24583@localhost.localdomain>
+	<Pine.BSM.4.64L.1307301741360.20305@herc.mirbsd.org>
+	<20130730204001.GG24583@localhost.localdomain>
+	<87eha33v9f.fsf@igel.home>
+	<87a9kr3v2p.fsf@igel.home>
+Date: Tue, 13 Aug 2013 14:12:04 +0200
+Message-ID: <CAMuHMdWWz7EmU0-OyM+hnBss4AZjR30tLsRbBVsXF0cy2THMyA@mail.gmail.com>
+Subject: Re: btrfs zero divide
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Andreas Schwab <schwab@linux-m68k.org>
+Cc: Josef Bacik <jbacik@fusionio.com>, Thorsten Glaser <tg@mirbsd.de>,
+        Joe Perches <joe@perches.com>,
+        "Debian GNU/Linux m68k" <debian-68k@lists.debian.org>,
+        linux-btrfs@vger.kernel.org,
+        Linux Kernel Development <linux-kernel@vger.kernel.org>,
+        David Howells <dhowells@redhat.com>,
+        Koichi Yasutake <yasutake.koichi@jp.panasonic.com>,
+        linux-am33-list@redhat.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/13/2013 01:09 PM, Duncan wrote:
-> dima posted on Tue, 13 Aug 2013 10:28:59 +0900 as excerpted:
->
->> About a week or so ago I noticed that [btrfs-ino-cache] process was
->> appearing in the 'top' on each reboot and disk is spinning like crazy
->> for about five minutes or so. Quite so often this caused X failing to
->> start because all I/O was busy with caching.
->> Even after letting it to calm down and seeing [btrfs-ino-cache]
->> disappearing from the process list, on next reboot it starts all over
->> again.
->
->> inode_cache was always enabled since the FS was created about a year or
->> so ago, and actually I have never had any problems with it up until
->> recently.
->>
->> Removing inode_cache option from fstab solves the problem, but I am not
->> sure if it is the right choice.
->
-> A number of people have reported problems with inode_cache enabled, and
-> the recommendation has always been to turn it off "unless you need it".
-> Easy enough problem to fix, I guess. =:^)
->
-> Of course that immediately invites the question of why have the option at
-> all if all it does is cause trouble, and (as a user not a dev) I don't
-> have the answer to that.  I don't know the use case when "unless you need
-> it" would actually apply, but apparently, it does in some cases.
->
-> I guess the wiki[1] should really have a warning on that option, but
-> without a more solid reason than "just don't turn it on, causes more
-> trouble than it's worth", I'd feel kind of goofy adding it.
->
-> Anyway, yes, the general recommendation on the list at this point seems
-> to be to simply leave inode_cache off and not worry about it.
+On Fri, Aug 9, 2013 at 2:30 PM, Andreas Schwab <schwab@linux-m68k.org> wrote:
+> Andreas Schwab <schwab@linux-m68k.org> writes:
+>> Josef Bacik <jbacik@fusionio.com> writes:
+>>> So stripe_len shouldn't be 0, if it is you have bigger problems :).
 
+[ lost context: this is about the first do_div() in __btrfs_map_block() ]
 
-Thanks Duncan. So I did.
-I was just wondering why it stopped behaving all of a sudden.
-
-
-
-> ---
-> [1] https://btrfs.wiki.kernel.org/
+>> The bigger problem is that stripe_nr is u64, this is completely bogus.
+>> The first operand of do_div must be u32.  This goes through the whole
+>> file.
 >
+> Of course, what I meant was that the *second* operand must be u32, but
+> that doesn't change my point.
+
+I checked all do_div() implementations, and (unless I missed one) m68k and
+mn10300 were the only two that didn't truncate base to 32 bits.
+
+Mn10300 is little endian, so I think the problem won't happen there.
+
+Andreas, I'll apply your patch
+(http://permalink.gmane.org/gmane.linux.ports.m68k/5008)
+with the crash log added to the commit message, so it's appropriate for -stable.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds

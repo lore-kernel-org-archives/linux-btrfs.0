@@ -1,62 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:13670 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:51556 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933153Ab3HNXRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S933370Ab3HNXRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 14 Aug 2013 19:17:22 -0400
 Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7ENHMrQ030719
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7ENHMmG015833
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
 	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 19:17:22 -0400
 Received: from lenny.home.zabbo.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r7ENHKSq017824
+	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r7ENHKSr017824
 	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 19:17:22 -0400
 From: Zach Brown <zab@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/15] btrfs-progs: fix endian bugs in chunk rebuilding
-Date: Wed, 14 Aug 2013 16:16:37 -0700
-Message-Id: <1376522205-16992-8-git-send-email-zab@redhat.com>
+Subject: [PATCH 08/15] btrfs-progs: fix extent key endian bug in repair
+Date: Wed, 14 Aug 2013 16:16:38 -0700
+Message-Id: <1376522205-16992-9-git-send-email-zab@redhat.com>
 In-Reply-To: <1376522205-16992-1-git-send-email-zab@redhat.com>
 References: <1376522205-16992-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A disk_key was set by hand instead of using the endian helpers.
-
-I *think* the second one is just a typo.  The chunk's num_stripes was
-already initialized from the record, but it's le16.  So we'll set the
-item's size based on the record's native num_stripes.
+Extents rebuilt from backrefs can have their objectid mangled.  The code
+tried to build a disk_key by hand and got the swabbing backwards.
 
 Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- cmds-chunk.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ cmds-check.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-chunk.c b/cmds-chunk.c
-index 16f399e..54f0573 100644
---- a/cmds-chunk.c
-+++ b/cmds-chunk.c
-@@ -1031,9 +1031,9 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
- 		if (min_devid > dev->devid)
- 			min_devid = dev->devid;
- 	}
--	disk_key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
--	disk_key.type = BTRFS_DEV_ITEM_KEY;
--	disk_key.offset = min_devid;
-+	btrfs_set_disk_key_objectid(&disk_key, BTRFS_DEV_ITEMS_OBJECTID);
-+	btrfs_set_disk_key_type(&disk_key, BTRFS_DEV_ITEM_KEY);
-+	btrfs_set_disk_key_offset(&disk_key, min_devid);
+diff --git a/cmds-check.c b/cmds-check.c
+index 2318aed..2d5162c 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -3931,9 +3931,12 @@ static int record_extent(struct btrfs_trans_handle *trans,
+ 			bi = (struct btrfs_tree_block_info *)(ei + 1);
+ 			memset_extent_buffer(leaf, 0, (unsigned long)bi,
+ 					     sizeof(*bi));
+-			memset(&copy_key, 0, sizeof(copy_key));
  
- 	cow = btrfs_alloc_free_block(trans, root, root->sectorsize,
- 				     BTRFS_CHUNK_TREE_OBJECTID,
-@@ -1117,7 +1117,7 @@ static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
- 		key.offset = chunk_rec->offset;
+-			copy_key.objectid = le64_to_cpu(rec->info_objectid);
++			btrfs_set_disk_key_objectid(&copy_key,
++						    rec->info_objectid);
++			btrfs_set_disk_key_type(&copy_key, 0);
++			btrfs_set_disk_key_offset(&copy_key, 0);
++
+ 			btrfs_set_tree_block_level(leaf, bi, rec->info_level);
+ 			btrfs_set_tree_block_key(leaf, bi, &copy_key);
  
- 		ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
--				btrfs_chunk_item_size(chunk->num_stripes));
-+				btrfs_chunk_item_size(chunk_rec->num_stripes));
- 		free(chunk);
- 		if (ret)
- 			return ret;
 -- 
 1.7.11.7
 

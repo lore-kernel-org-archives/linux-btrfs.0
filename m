@@ -1,136 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:53598 "EHLO smtp.gentoo.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758543Ab3HNUbG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 16:31:06 -0400
-From: Sergei Trofimovich <slyfox@gentoo.org>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Sergei Trofimovich <slyfox@gentoo.org>, Josef Bacik <jbacik@fusionio.com>,
-        Chris Mason <chris.mason@fusionio.com>
-Subject: [PATCH] btrfs: mark some local function as 'static'
-Date: Wed, 14 Aug 2013 23:27:46 +0300
-Message-Id: <1376512066-7284-1-git-send-email-slyfox@gentoo.org>
+Received: from relay2.sgi.com ([192.48.179.30]:58049 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S933115Ab3HNWRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 18:17:51 -0400
+Message-ID: <520C0235.6060301@sgi.com>
+Date: Wed, 14 Aug 2013 17:18:29 -0500
+From: Rich Johnston <rjohnston@sgi.com>
+MIME-Version: 1.0
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] xfstest: don't remove the two first devices from SCRATCH_DEV_POOL
+References: <1374685304-2510-1-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1374685304-2510-1-git-send-email-sbehrens@giantdisaster.de>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cc: Josef Bacik <jbacik@fusionio.com>
-Cc: Chris Mason <chris.mason@fusionio.com>
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
----
- fs/btrfs/ctree.h       | 2 --
- fs/btrfs/disk-io.c     | 8 ++++----
- fs/btrfs/extent_io.c   | 2 +-
- fs/btrfs/extent_io.h   | 1 -
- fs/btrfs/root-tree.c   | 4 ++--
- fs/btrfs/transaction.c | 2 +-
- fs/btrfs/transaction.h | 2 --
- 7 files changed, 8 insertions(+), 13 deletions(-)
+On 07/24/2013 12:01 PM, Stefan Behrens wrote:
+> Since common/config is executed twice, if SCRATCH_DEV_POOL is configured
+> via the environment, the current code removes the first device entry twice
+> which means that you lose the second device for the test.
+>
+> The fix is to not remove anything from SCRATCH_DEV_POOL anymore.
+> That used to be done (I can only guess) to allow to pass the
+> SCRATCH_DEV_POOL as an argument to _scratch_mkfs. Since _scratch_mkfs adds
+> the SCRATCH_DEV, the pool mustn't contain that device anymore.
+>
+> A new function _scratch_pool_mkfs is introduced that does the expected
+> thing.
+>
+> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+> ---
+>   common/config   |  3 +--
+>   common/rc       | 12 ++++++++++++
+>   tests/btrfs/264 |  3 ++-
+>   tests/btrfs/265 | 12 ++++++------
+>   tests/btrfs/307 |  4 ++--
+>   5 files changed, 23 insertions(+), 11 deletions(-)
+>
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e795bf1..e91ab9e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3414,8 +3414,6 @@ int __must_check btrfs_update_root(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct btrfs_key *key,
- 				   struct btrfs_root_item *item);
--void btrfs_read_root_item(struct extent_buffer *eb, int slot,
--			  struct btrfs_root_item *item);
- int btrfs_find_root(struct btrfs_root *root, struct btrfs_key *search_key,
- 		    struct btrfs_path *path, struct btrfs_root_item *root_item,
- 		    struct btrfs_key *root_key);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6b092a1..227339d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1428,8 +1428,8 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
--					struct btrfs_key *key)
-+static struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
-+					       struct btrfs_key *key)
- {
- 	struct btrfs_root *root;
- 	struct btrfs_fs_info *fs_info = tree_root->fs_info;
-@@ -1529,8 +1529,8 @@ fail:
- 	return ret;
- }
- 
--struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
--					u64 root_id)
-+static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
-+					       u64 root_id)
- {
- 	struct btrfs_root *root;
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fe443fe..045263a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1810,7 +1810,7 @@ out:
-  * set the private field for a given byte offset in the tree.  If there isn't
-  * an extent_state there already, this does nothing.
-  */
--int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
-+static int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 3b8c4e2..bb1f75d 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -261,7 +261,6 @@ int extent_readpages(struct extent_io_tree *tree,
- 		     get_extent_t get_extent);
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent);
--int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
- void extent_cache_csums_dio(struct extent_io_tree *tree, u64 start, u32 csums[],
- 			    int count);
- void extent_cache_csums(struct extent_io_tree *tree, struct bio *bio,
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index ffb1036..92453f0 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -29,8 +29,8 @@
-  * generation numbers as then we know the root was once mounted with an older
-  * kernel that was not aware of the root item structure change.
-  */
--void btrfs_read_root_item(struct extent_buffer *eb, int slot,
--			  struct btrfs_root_item *item)
-+static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
-+				struct btrfs_root_item *item)
- {
- 	uuid_le uuid;
- 	int len;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index af1931a..a689247 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -837,7 +837,7 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
-  * them in one of two extent_io trees.  This is used to make sure all of
-  * those extents are on disk for transaction or log commit
-  */
--int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
-+static int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
- 				struct extent_io_tree *dirty_pages, int mark)
- {
- 	int ret;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index defbc42..5c2af84 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -160,8 +160,6 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
- void btrfs_throttle(struct btrfs_root *root);
- int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root);
--int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
--				struct extent_io_tree *dirty_pages, int mark);
- int btrfs_write_marked_extents(struct btrfs_root *root,
- 				struct extent_io_tree *dirty_pages, int mark);
- int btrfs_wait_marked_extents(struct btrfs_root *root,
--- 
-1.8.3.2
+Hey Stefan,
+
+Thanks for submitting this patch. This patch had not been reviewed 
+before I pulled in commit aab6d4e
+"xfstests: renumber existing btrfs tests to start with 1"
+
+Will you please rebase this off the current xfstests tree.
+
+Thanks
+--Rich
+
+> diff --git a/common/config b/common/config
+> index 67c1498..1bc9233 100644
+> --- a/common/config
+> +++ b/common/config
+> @@ -252,14 +252,13 @@ if [ ! -d "$TEST_DIR" ]; then
+>   fi
+>
+>   # a btrfs tester will set only SCRATCH_DEV_POOL, we will put first of its dev
+> -# to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward compatibility
+> +# to SCRATCH_DEV to maintain the backward compatibility
+>   if [ ! -z "$SCRATCH_DEV_POOL" ]; then
+>       if [ ! -z "$SCRATCH_DEV" ]; then
+>           echo "common/config: Error: \$SCRATCH_DEV should be unset when \$SCRATCH_DEV_POOL is set"
+>           exit 1
+>       fi
+>       SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+> -    SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | awk '{ ORS=" "; for (i = 2; i <= NF; i++) print $i}'`
+>   fi
+>
+>   echo $SCRATCH_DEV | grep -q ":" > /dev/null 2>&1
+> diff --git a/common/rc b/common/rc
+> index 5cb1fe2..1caf9cc 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -546,6 +546,18 @@ _scratch_mkfs()
+>       esac
+>   }
+>
+> +_scratch_pool_mkfs()
+> +{
+> +    case $FSTYP in
+> +    btrfs)
+> +	$MKFS_BTRFS_PROG $MKFS_OPTIONS $* $SCRATCH_DEV_POOL > /dev/null
+> +	;;
+> +    *)
+> +	echo "_scratch_pool_mkfs is not implemented for $FSTYP" 1>&2
+> +	;;
+> +    esac
+> +}
+> +
+>   # Create fs of certain size on scratch device
+>   # _scratch_mkfs_sized <size in bytes> [optional blocksize]
+>   _scratch_mkfs_sized()
+> diff --git a/tests/btrfs/264 b/tests/btrfs/264
+> index b08667a..996c187 100755
+> --- a/tests/btrfs/264
+> +++ b/tests/btrfs/264
+> @@ -45,8 +45,9 @@ _need_to_be_root
+>   _supported_fs btrfs
+>   _supported_os Linux
+>   _require_scratch
+> +_require_scratch_dev_pool
+>
+> -_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
+> +_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   _scratch_mount
+>
+>   # Create and save sha256sum
+> diff --git a/tests/btrfs/265 b/tests/btrfs/265
+> index 79a9ddf..5bd6944 100755
+> --- a/tests/btrfs/265
+> +++ b/tests/btrfs/265
+> @@ -56,7 +56,7 @@ _require_deletable_scratch_dev_pool
+>   _test_raid0()
+>   {
+>   	export MKFS_OPTIONS="-m raid0 -d raid0"
+> -	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
+> +	_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> @@ -66,7 +66,7 @@ _test_raid0()
+>   _test_raid1()
+>   {
+>   	export MKFS_OPTIONS="-m raid1 -d raid1"
+> -	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
+> +	_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> @@ -76,7 +76,7 @@ _test_raid1()
+>   _test_raid10()
+>   {
+>   	export MKFS_OPTIONS="-m raid10 -d raid10"
+> -	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
+> +	_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> @@ -86,7 +86,7 @@ _test_raid10()
+>   _test_single()
+>   {
+>   	export MKFS_OPTIONS="-m single -d single"
+> -	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
+> +	_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> @@ -106,7 +106,7 @@ _test_add()
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> -	for i in `seq 1 $n`; do
+> +	for i in `seq 2 $n`; do
+>   		$BTRFS_UTIL_PROG device add ${devs[$i]} $SCRATCH_MNT > /dev/null 2>&1 || _fail "device add failed"
+>   	done
+>   	$BTRFS_UTIL_PROG filesystem balance $SCRATCH_MNT || _fail "balance failed"
+> @@ -162,7 +162,7 @@ _test_replace()
+>
+>   _test_remove()
+>   {
+> -	_scratch_mkfs "$SCRATCH_DEV_POOL" > /dev/null 2>&1 || _fail "mkfs failed"
+> +	_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+>   	_scratch_mount
+>   	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+>   	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+> diff --git a/tests/btrfs/307 b/tests/btrfs/307
+> index 87314c6..20d8664 100755
+> --- a/tests/btrfs/307
+> +++ b/tests/btrfs/307
+> @@ -53,12 +53,12 @@ rm -f $seqres.full
+>
+>   FIRST_POOL_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+>   LAST_POOL_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $NF}'`
+> -TOTAL_DEVS=`echo $SCRATCH_DEV $SCRATCH_DEV_POOL | wc -w`
+> +TOTAL_DEVS=`echo $SCRATCH_DEV_POOL | wc -w`
+>   LABEL=TestLabel.$seq
+>
+>   echo "Scratch $SCRATCH_DEV First $FIRST_POOL_DEV last $LAST_POOL_DEV Total $TOTAL_DEVS" > $seqres.full
+>
+> -_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
+> +_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+>
+>   # These have to be done unmounted...?
+>   echo "== Set filesystem label to $LABEL"
+>
 

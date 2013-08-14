@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:56462 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750780Ab3HNEbV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 00:31:21 -0400
+	id S1750977Ab3HNEbf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 00:31:35 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 3/8] Btrfs-progs: add missing man page for btrfs-show-super
-Date: Wed, 14 Aug 2013 12:29:12 +0800
-Message-Id: <1376454557-3041-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 4/8] Btrfs-progs: add man page information for btrfs-find-root
+Date: Wed, 14 Aug 2013 12:29:13 +0800
+Message-Id: <1376454557-3041-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,48 +20,48 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 v2->v3: remove 'AVAILIABLE' parts
 v1->v2: GPLv3->GPLv2
 ---
- man/Makefile              |  2 +-
- man/btrfs-show-super.8.in | 30 ++++++++++++++++++++++++++++++
+ man/Makefile             |  2 +-
+ man/btrfs-find-root.8.in | 30 ++++++++++++++++++++++++++++++
  2 files changed, 31 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-show-super.8.in
+ create mode 100644 man/btrfs-find-root.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index e5c1f7c..b1d3645 100644
+index b1d3645..3d2e3ba 100644
 --- a/man/Makefile
 +++ b/man/Makefile
 @@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
  .SUFFIXES: .in .gz
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
--	   btrfs-debug-tree.8.gz
-+	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
+diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
 new file mode 100644
-index 0000000..ad04a42
+index 0000000..398aa41
 --- /dev/null
-+++ b/man/btrfs-show-super.8.in
++++ b/man/btrfs-find-root.8.in
 @@ -0,0 +1,30 @@
-+.TH BTRFS-SHOW-SUPER 8
++.TH BTRFS-FIND-ROOT 8
 +.SH NAME
-+btrfs-show-super \- show btrfs superblock information stored in devices
++btrfs-find-root \- filter to find btrfs root.
 +.SH SYNOPSIS
-+.B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
++.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-show-super\fP is used to print the information of superblock,
-+you can specify which mirror to print out. In default, every device's
-+first superblock will be printed out.
++\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
 +
 +\fIOptions\fP
-+.IP "\fB-a\fP" 5
-+print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
-+.IP "\fB-i \fI<super_mirror>\fP" 5
-+specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2. if several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
++.IP "\fB-g \fI<generation>\fP" 5
++filter root tree by it's original transaction id, tree root's generation in default.
++.IP "\fB-o \fI<objectid>\fP" 5
++filter root tree by it's objectid,tree root's objectid in default.
++.IP "\fB-l \fI<level>\fP" 5
++filter root tree by B-+ tree's level, level 0 in default.
 +
 +.SH EXIT CODE
-+\fBbtrfs-show-super\fR will return 0 exit code if no error happened.
++\fBbtrfs-find-root\fP will return 0 if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR

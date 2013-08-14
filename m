@@ -1,112 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f47.google.com ([209.85.214.47]:42831 "EHLO
-	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932350Ab3HNNEl (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:48220 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758769Ab3HNPlE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 09:04:41 -0400
-Received: by mail-bk0-f47.google.com with SMTP id mx12so2750042bkb.34
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 06:04:39 -0700 (PDT)
+	Wed, 14 Aug 2013 11:41:04 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id B1CED7C06B1
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 09:41:03 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id ldvF408SEs8u1i5W (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 09:41:03 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix heavy delalloc related deadlock
+Date: Wed, 14 Aug 2013 11:41:00 -0400
+Message-ID: <1376494860-8864-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAKcLGm-rwRPGja3N+52+pKvAoMzfDX3TxhFNSw+u2iMx9C-5oA@mail.gmail.com>
-References: <1375998348-20639-1-git-send-email-fdmanana@gmail.com>
-	<5204826C.3060902@cn.fujitsu.com>
-	<20130809144626.GL5284@twin.jikos.cz>
-	<CAKcLGm-rwRPGja3N+52+pKvAoMzfDX3TxhFNSw+u2iMx9C-5oA@mail.gmail.com>
-Date: Wed, 14 Aug 2013 14:04:39 +0100
-Message-ID: <CAL3q7H6iAvyDEHBAZr7RQKi-Ym25Q8j=aRxR_Y67nw=UDrXJ0g@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: set default max_inline to 8KiB instead of 8MiB
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: David Sterba <dsterba@suse.cz>, Miao Xie <miaox@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 10, 2013 at 10:30 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> On Fri, Aug 9, 2013 at 9:46 AM, David Sterba <dsterba@suse.cz> wrote:
->> On Fri, Aug 09, 2013 at 01:47:24PM +0800, Miao Xie wrote:
->>> On thu, 8 Aug 2013 22:45:48 +0100, Filipe David Borba Manana wrote:
->>> > 8MiB is way too large and likely set by mistake. This is not
->>> > a significant issue as in practice the max amount of data
->>> > added to an inline extent is also limited by the page cache
->>> > and btree leaf sizes.
->>>
->>> I don't think 8KB is a reasonable value of the default max inline size
->>> because it makes no sense on the machine whose page size is 4KB.
->>
->> Page size limit is artificial implied by the implementation and on a 4k
->> page machine max_inline does not take place. Even if it's 4k, it does
->> not apply because the leaf space is smaller.
->>
->>> I think 4KB is a reasonable value, because we may mount the fs on
->>> the machines with the different page size in the future, in order to
->>> avoid the compatible problem, we should use the min page size as
->>> the max inline size.
->>
->> If there's support for mounting a fs with sectorsize != pagesize, this
->> will work automatically. Currently such filesystem fails to mount, as we
->> know.
->>
->> Whether it's 4k or 8k could be decided by the performance impact, but I
->> have no numbers to vote for either.
->>
->> david
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> I did some research on max_inline when I was playing with an
-> experimental patch to allow inline extents to be greater than
-> sectorsize (but still < leafsize and inodesize).
->
-> I concluded that that max_inline doesn't matter as long as it is >
-> PAGE_CACHE_SIZE.
->
-> My guess is that at some point early in BTRFS history, they wanted to
-> allow for inlining of really large extents (essentially inlining
-> almost the entire filesystem except for really large files).
->
-> When Chris incorporated compression (Btrfs: Add zlib compression
-> support, 2008-10-29, commit c8b978188c9a0fd3d535c13debd19d522b726f1f,
-> and a follow-up patch: Btrfs: Compression corner fixes, 2008-10-31,
-> 70b99e6959a4c28ae1b314985eca731f3db72f1d), the new
-> cow_file_range_inline() function limited inline extent size to
-> PAGE_CACHE_SIZE.
->
-> if (start > 0 ||
->    actual_end >= PAGE_CACHE_SIZE ||
->    data_len >= BTRFS_MAX_INLINE_DATA_SIZE(root) ||
->    (!compressed_size &&
->    (actual_end & (root->sectorsize - 1)) == 0) ||
->    end + 1 < isize ||
->    data_len > root->fs_info->max_inline) {
-> return 1;
-> }
->
-> So, this is why we could have a really large max_inline setting for
-> all these years that didn't make anything go BOOM.
->
-> As Miao Xie suggested, if you use fs_info->max_inline =
-> PAGE_CACHE_SIZE, the code will be ready if the issue with 64k page
-> size is ever addressed.
+I added a patch where we started taking the ordered operations mutex when we
+waited on ordered extents.  We need this because we splice the list and process
+it, so if a flusher came in during this scenario it would think the list was
+empty and we'd usually get an early ENOSPC.  The problem with this is that this
+lock is used in transaction committing.  So we end up with something like this
 
-If  a default  value of PAGE_CACHE_SIZE is the most preferred, I'm
-fine with it too.
-Thanks for the feedback and information.
+Transaction commit
+	-> wait on writers
 
->
-> You could probably also refactor fs_info->max_inline out completely
-> with some additional work.
+Delalloc flusher
+	-> run_ordered_operations (holds mutex)
+		->wait for filemap-flush to do its thing
 
+flush task
+	-> cow_file_range
+		->wait on btrfs_join_transaction because we're commiting
 
+some other task
+	-> commit_transaction because we notice trans->transaction->flush is set
+		-> run_ordered_operations (hang on mutex)
 
+We need to disentangle the ordered operations flushing from the delalloc
+flushing, since they are separate things.  This solves the deadlock issue I was
+seeing.  Thanks,
+
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/ctree.h        |    7 +++++++
+ fs/btrfs/disk-io.c      |    1 +
+ fs/btrfs/ordered-data.c |    4 ++--
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ea4cc16..d79e32c 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1418,6 +1418,13 @@ struct btrfs_fs_info {
+ 	 * before jumping into the main commit.
+ 	 */
+ 	struct mutex ordered_operations_mutex;
++
++	/*
++	 * Same as ordered_operations_mutex except this is for ordered extents
++	 * and not the operations.
++	 */
++	struct mutex ordered_extent_flush_mutex;
++
+ 	struct rw_semaphore extent_commit_sem;
+ 
+ 	struct rw_semaphore cleanup_work_sem;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c82025d..880dcde 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2288,6 +2288,7 @@ int open_ctree(struct super_block *sb,
+ 
+ 
+ 	mutex_init(&fs_info->ordered_operations_mutex);
++	mutex_init(&fs_info->ordered_extent_flush_mutex);
+ 	mutex_init(&fs_info->tree_log_mutex);
+ 	mutex_init(&fs_info->chunk_mutex);
+ 	mutex_init(&fs_info->transaction_kthread_mutex);
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 8136982..b52b2c4 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -671,7 +671,7 @@ int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
+ 	INIT_LIST_HEAD(&splice);
+ 	INIT_LIST_HEAD(&works);
+ 
+-	mutex_lock(&root->fs_info->ordered_operations_mutex);
++	mutex_lock(&root->fs_info->ordered_extent_flush_mutex);
+ 	spin_lock(&root->fs_info->ordered_root_lock);
+ 	list_splice_init(&cur_trans->ordered_operations, &splice);
+ 	while (!list_empty(&splice)) {
+@@ -718,7 +718,7 @@ out:
+ 		list_del_init(&work->list);
+ 		btrfs_wait_and_free_delalloc_work(work);
+ 	}
+-	mutex_unlock(&root->fs_info->ordered_operations_mutex);
++	mutex_unlock(&root->fs_info->ordered_extent_flush_mutex);
+ 	return ret;
+ }
+ 
 -- 
-Filipe David Manana,
+1.7.7.6
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

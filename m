@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:56462 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750977Ab3HNEbf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 00:31:35 -0400
+	id S1750894Ab3HNEb1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 00:31:27 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 4/8] Btrfs-progs: add man page information for btrfs-find-root
-Date: Wed, 14 Aug 2013 12:29:13 +0800
-Message-Id: <1376454557-3041-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 5/8] Btrfs-progs: add man page information for btrfs-convert
+Date: Wed, 14 Aug 2013 12:29:14 +0800
+Message-Id: <1376454557-3041-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,51 +17,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2->v3: remove 'AVAILIABLE' parts
+v2->v3: remove 'AVAILIABLE' parts.
 v1->v2: GPLv3->GPLv2
 ---
- man/Makefile             |  2 +-
- man/btrfs-find-root.8.in | 30 ++++++++++++++++++++++++++++++
- 2 files changed, 31 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-find-root.8.in
+ man/Makefile           |  3 ++-
+ man/btrfs-convert.8.in | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 1 deletion(-)
+ create mode 100644 man/btrfs-convert.8.in
 
 diff --git a/man/Makefile b/man/Makefile
-index b1d3645..3d2e3ba 100644
+index 3d2e3ba..a2201e8 100644
 --- a/man/Makefile
 +++ b/man/Makefile
-@@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
+@@ -12,7 +12,8 @@ man8dir = $(mandir)/man8
  .SUFFIXES: .in .gz
  
  MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
--	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
-+	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
++	   btrfs-convert.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
+diff --git a/man/btrfs-convert.8.in b/man/btrfs-convert.8.in
 new file mode 100644
-index 0000000..398aa41
+index 0000000..9d4c642
 --- /dev/null
-+++ b/man/btrfs-find-root.8.in
-@@ -0,0 +1,30 @@
-+.TH BTRFS-FIND-ROOT 8
++++ b/man/btrfs-convert.8.in
+@@ -0,0 +1,33 @@
++.TH BTRFS-CONVERT 8
 +.SH NAME
-+btrfs-find-root \- filter to find btrfs root.
++btrfs-convert \- convert ext2/3/4 to btrfs.
 +.SH SYNOPSIS
-+.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
++.B btrfs-convert [\fIoptions\fP] \fI<dev>\fP
 +.SH DESCRIPTION
-+\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
++\fBbtrfs-convert\fP is used to convert existed ext2/3/4 to btrfs filesystem, and the original filesystem image is accessible as from separate subvolume named ext2_subvol as file image.
 +
 +\fIOptions\fP
-+.IP "\fB-g \fI<generation>\fP" 5
-+filter root tree by it's original transaction id, tree root's generation in default.
-+.IP "\fB-o \fI<objectid>\fP" 5
-+filter root tree by it's objectid,tree root's objectid in default.
-+.IP "\fB-l \fI<level>\fP" 5
-+filter root tree by B-+ tree's level, level 0 in default.
++.IP "\fB-d\fP" 5
++disable data checksum.
++.IP "\fB-i\fP" 5
++ignore xattrs and ACLs.
++.IP "\fB-n\fP" 5
++disable packing of small files.
++.IP "\fB-r\fP" 5
++roll back to ext2fs.
 +
 +.SH EXIT CODE
-+\fBbtrfs-find-root\fP will return 0 if no error happened.
++\fBbtrfs-convert\fP will return 0 if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR
@@ -72,6 +75,7 @@ index 0000000..398aa41
 +License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
++
 +.SH SEE ALSO
 +.BR mkfs.btrfs (8)
 -- 

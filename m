@@ -1,71 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56462 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:58678 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750780Ab3HNEbS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 00:31:18 -0400
+	id S1750781Ab3HNEdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 00:33:16 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 1/8] Btrfs-progs: add missing man page information for btrfsck
-Date: Wed, 14 Aug 2013 12:29:10 +0800
-Message-Id: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 2/8] Btrfs-progs: add missing man information for btrfs-debug-tree
+Date: Wed, 14 Aug 2013 12:29:11 +0800
+Message-Id: <1376454557-3041-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2->v3: availiable parts is not true anymore,remove it.
-v1->v2: remove wrong copyrights.
+v2->v3: remove 'AVAILIABLE' parts.
+v1->v2: GPLv3->GPLv2
 ---
- man/btrfsck.8.in | 35 ++++++++++++++++++++++++-----------
- 1 file changed, 24 insertions(+), 11 deletions(-)
+ btrfs-debug-tree.c        |  2 +-
+ man/Makefile              |  3 ++-
+ man/btrfs-debug-tree.8.in | 35 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+), 2 deletions(-)
+ create mode 100644 man/btrfs-debug-tree.8.in
 
-diff --git a/man/btrfsck.8.in b/man/btrfsck.8.in
-index 5004ba0..bf65e3c 100644
---- a/man/btrfsck.8.in
-+++ b/man/btrfsck.8.in
-@@ -1,16 +1,29 @@
- .TH BTRFSCK 8
- .SH NAME
--btrfsck \- check a btrfs filesystem
-+btrfsck \- check and repair of a Btrfs filesystem
- .SH SYNOPSIS
--.B btrfsck \fI device\fP
-+.B btrfsck [\fIoptions\fP] \fI<device>\fP
- .SH DESCRIPTION
--\fBbtrfsck\fP is used to check a btrfs filesystem.
--\fIdevice\fP is the device file where the filesystem is stored.
--.SH AVAILABILITY
--.B btrfsck
--is part of btrfs-progs. Btrfs is currently under heavy development,
--and not suitable for any uses other than benchmarking and review.
--Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
--further details.
-+\fBbtrfsck\fP is used to check and optionally repair of a Btrfs filesystem. Now, it can only be run on an unmounted FS. Considering it is not well-tested
-+in real-life situations yet. if you have a broken Btrfs filesystem, btrfsck may not repair but cause aditional damages. \fI<device>\fP is the device file
-+where the filesystem is stored.
+diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
+index bae7f94..dc912f1 100644
+--- a/btrfs-debug-tree.c
++++ b/btrfs-debug-tree.c
+@@ -195,7 +195,7 @@ int main(int ac, char **av)
+ 		if (!leaf) {
+ 			fprintf(stderr, "failed to read %llu\n",
+ 				(unsigned long long)block_only);
+-			return 0;
++			exit(1);
+ 		}
+ 		btrfs_print_tree(root, leaf, 0);
+ 		return 0;
+diff --git a/man/Makefile b/man/Makefile
+index 1ba23b5..e5c1f7c 100644
+--- a/man/Makefile
++++ b/man/Makefile
+@@ -11,7 +11,8 @@ man8dir = $(mandir)/man8
+ # list only those we use
+ .SUFFIXES: .in .gz
+ 
+-MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz
++MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
++	   btrfs-debug-tree.8.gz
+ INFILES = ${MANPAGES:.in=.gz}
+ 
+ all: $(MANPAGES)
+diff --git a/man/btrfs-debug-tree.8.in b/man/btrfs-debug-tree.8.in
+new file mode 100644
+index 0000000..9b0420b
+--- /dev/null
++++ b/man/btrfs-debug-tree.8.in
+@@ -0,0 +1,35 @@
++.TH BTRFS-DEBUG-TREE 8
++.SH NAME
++btrfs-debug-tree \- dump Btrfs filesystem metadata into stdout.
++.SH SYNOPSIS
++.B btrfs-debug-tree [\fIoptions\fP] \fI<device>\fP
++.SH DESCRIPTION
++\fBbtrfs-debug-tree\fP is used to dump the whole tree of the given device.
++This is maybe useful for analyzing filesystem state or inconsistence and has
++a positive educational effect on understanding the internal structure.
++\fIdevice\fP is the device file where the filesystem is stored.
 +
 +\fIOptions\fP
-+.IP "\fB-s,--super \fI<superblock>\fP" 5
-+specify which superblock copy that you want to use.
-+.IP "\fB--repair\fP" 5
-+try to repair the filesystem.
-+.IP "\fB--init-csum-tree\fP" 5
-+create a new CRC tree.
-+.IP "\fB--init-extent-tree\fP" 5
-+create a new extent tree.
++.IP "\fB-e\fP" 5
++print detailed extents info.
++.IP "\fB-d\fP" 5
++print info of btrfs device and root tree dirs only.
++.IP "\fB-r\fP" 5
++print info of roots only.
++.IP "\fB-b \fI<block_num>\fP" 5
++print info of the specified block only.
 +
 +.SH EXIT CODE
-+\fBbtrfsck\fR will return 0 exit code if no error happened.
-+Other exit code means some problems happened.
++\fBbtrfs-debug-tree\fP will return 0 if no error happened.
++If any problems happened, 1 will be returned.
 +
++.SH AUTHOR
++Written by Shilong Wang and Wenruo Qu.
++
++.SH COPYRIGHT
++Copyright \(co 2013 Fujitsu, Inc.
++License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
 +.br
 +This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
- .SH SEE ALSO
--.BR mkfs.btrfs (8)
-+.BR mkfs.btrfs (8),
-+.BR btrfs (8)
++.SH SEE ALSO
++.BR mkfs.btrfs (8)
 -- 
 1.8.0.1
 

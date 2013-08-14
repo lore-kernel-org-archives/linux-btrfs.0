@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58678 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:56462 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750781Ab3HNEdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 00:33:16 -0400
+	id S1750780Ab3HNEbV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 00:31:21 -0400
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 2/8] Btrfs-progs: add missing man information for btrfs-debug-tree
-Date: Wed, 14 Aug 2013 12:29:11 +0800
-Message-Id: <1376454557-3041-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 3/8] Btrfs-progs: add missing man page for btrfs-show-super
+Date: Wed, 14 Aug 2013 12:29:12 +0800
+Message-Id: <1376454557-3041-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,71 +17,51 @@ List-ID: <linux-btrfs.vger.kernel.org>
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2->v3: remove 'AVAILIABLE' parts.
+v2->v3: remove 'AVAILIABLE' parts
 v1->v2: GPLv3->GPLv2
 ---
- btrfs-debug-tree.c        |  2 +-
- man/Makefile              |  3 ++-
- man/btrfs-debug-tree.8.in | 35 +++++++++++++++++++++++++++++++++++
- 3 files changed, 38 insertions(+), 2 deletions(-)
- create mode 100644 man/btrfs-debug-tree.8.in
+ man/Makefile              |  2 +-
+ man/btrfs-show-super.8.in | 30 ++++++++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+), 1 deletion(-)
+ create mode 100644 man/btrfs-show-super.8.in
 
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index bae7f94..dc912f1 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -195,7 +195,7 @@ int main(int ac, char **av)
- 		if (!leaf) {
- 			fprintf(stderr, "failed to read %llu\n",
- 				(unsigned long long)block_only);
--			return 0;
-+			exit(1);
- 		}
- 		btrfs_print_tree(root, leaf, 0);
- 		return 0;
 diff --git a/man/Makefile b/man/Makefile
-index 1ba23b5..e5c1f7c 100644
+index e5c1f7c..b1d3645 100644
 --- a/man/Makefile
 +++ b/man/Makefile
-@@ -11,7 +11,8 @@ man8dir = $(mandir)/man8
- # list only those we use
+@@ -12,7 +12,7 @@ man8dir = $(mandir)/man8
  .SUFFIXES: .in .gz
  
--MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz
-+MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
-+	   btrfs-debug-tree.8.gz
+ MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
+-	   btrfs-debug-tree.8.gz
++	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz
  INFILES = ${MANPAGES:.in=.gz}
  
  all: $(MANPAGES)
-diff --git a/man/btrfs-debug-tree.8.in b/man/btrfs-debug-tree.8.in
+diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
 new file mode 100644
-index 0000000..9b0420b
+index 0000000..ad04a42
 --- /dev/null
-+++ b/man/btrfs-debug-tree.8.in
-@@ -0,0 +1,35 @@
-+.TH BTRFS-DEBUG-TREE 8
++++ b/man/btrfs-show-super.8.in
+@@ -0,0 +1,30 @@
++.TH BTRFS-SHOW-SUPER 8
 +.SH NAME
-+btrfs-debug-tree \- dump Btrfs filesystem metadata into stdout.
++btrfs-show-super \- show btrfs superblock information stored in devices
 +.SH SYNOPSIS
-+.B btrfs-debug-tree [\fIoptions\fP] \fI<device>\fP
++.B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
 +.SH DESCRIPTION
-+\fBbtrfs-debug-tree\fP is used to dump the whole tree of the given device.
-+This is maybe useful for analyzing filesystem state or inconsistence and has
-+a positive educational effect on understanding the internal structure.
-+\fIdevice\fP is the device file where the filesystem is stored.
++\fBbtrfs-show-super\fP is used to print the information of superblock,
++you can specify which mirror to print out. In default, every device's
++first superblock will be printed out.
 +
 +\fIOptions\fP
-+.IP "\fB-e\fP" 5
-+print detailed extents info.
-+.IP "\fB-d\fP" 5
-+print info of btrfs device and root tree dirs only.
-+.IP "\fB-r\fP" 5
-+print info of roots only.
-+.IP "\fB-b \fI<block_num>\fP" 5
-+print info of the specified block only.
++.IP "\fB-a\fP" 5
++print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
++.IP "\fB-i \fI<super_mirror>\fP" 5
++specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2. if several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
 +
 +.SH EXIT CODE
-+\fBbtrfs-debug-tree\fP will return 0 if no error happened.
++\fBbtrfs-show-super\fR will return 0 exit code if no error happened.
 +If any problems happened, 1 will be returned.
 +
 +.SH AUTHOR

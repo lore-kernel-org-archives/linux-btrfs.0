@@ -1,103 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:47633 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:55401 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933332Ab3HNXRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S933385Ab3HNXRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 14 Aug 2013 19:17:22 -0400
 Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7ENHLN3005736
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7ENHMZv014645
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 19:17:21 -0400
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 19:17:22 -0400
 Received: from lenny.home.zabbo.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r7ENHKSo017824
+	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r7ENHKSp017824
 	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 19:17:21 -0400
 From: Zach Brown <zab@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/15] btrfs-progs: remove variable length stack arrays
-Date: Wed, 14 Aug 2013 16:16:35 -0700
-Message-Id: <1376522205-16992-6-git-send-email-zab@redhat.com>
+Subject: [PATCH 06/15] btrfs-print: define void function args
+Date: Wed, 14 Aug 2013 16:16:36 -0700
+Message-Id: <1376522205-16992-7-git-send-email-zab@redhat.com>
 In-Reply-To: <1376522205-16992-1-git-send-email-zab@redhat.com>
 References: <1376522205-16992-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-sparse hates variable length array definitions on the stack:
+This silences (reasonable) sparse warnings of the form:
 
- btrfs-show-super.c:155:21: warning: Variable length array is used.
-
-And it's right to.  They're a fragile construct that doesn't handle bad
-input well at all.
+	warning: non-ANSI function declaration of ..
 
 Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- btrfs-show-super.c |  2 +-
- volumes.c          | 16 ++++++++++++++--
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ btrfs-find-root.c | 2 +-
+ btrfs-list.c      | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index c2e844d..0c3c73c 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -152,7 +152,7 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr)
+diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+index 1a7a80c..b48c800 100644
+--- a/btrfs-find-root.c
++++ b/btrfs-find-root.c
+@@ -40,7 +40,7 @@ static u64 search_objectid = BTRFS_ROOT_TREE_OBJECTID;
+ static u64 search_generation = 0;
+ static unsigned long search_level = 0;
  
- static int check_csum_sblock(void *sb, int csum_size)
+-static void usage()
++static void usage(void)
  {
--	char result[csum_size];
-+	char result[BTRFS_CSUM_SIZE];
- 	u32 crc = ~(u32)0;
- 
- 	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
-diff --git a/volumes.c b/volumes.c
-index e460bce..dba5b0e 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1779,12 +1779,15 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
- 			     struct btrfs_multi_bio *multi,
- 			     u64 stripe_len, u64 *raid_map)
- {
--	struct extent_buffer *ebs[multi->num_stripes], *p_eb = NULL, *q_eb = NULL;
-+	struct extent_buffer **ebs, *p_eb = NULL, *q_eb = NULL;
- 	int i;
- 	int j;
- 	int ret;
- 	int alloc_size = eb->len;
- 
-+	ebs = kmalloc(sizeof(*ebs) * multi->num_stripes, GFP_NOFS);
-+	BUG_ON(!ebs);
-+
- 	if (stripe_len > alloc_size)
- 		alloc_size = stripe_len;
- 
-@@ -1813,7 +1816,12 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
- 			q_eb = new_eb;
- 	}
- 	if (q_eb) {
--		void *pointers[multi->num_stripes];
-+		void **pointers;
-+
-+		pointers = kmalloc(sizeof(*pointers) * multi->num_stripes,
-+				   GFP_NOFS);
-+		BUG_ON(!pointers);
-+
- 		ebs[multi->num_stripes - 2] = p_eb;
- 		ebs[multi->num_stripes - 1] = q_eb;
- 
-@@ -1821,6 +1829,7 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
- 			pointers[i] = ebs[i]->data;
- 
- 		raid6_gen_syndrome(multi->num_stripes, stripe_len, pointers);
-+		kfree(pointers);
- 	} else {
- 		ebs[multi->num_stripes - 1] = p_eb;
- 		memcpy(p_eb->data, ebs[0]->data, stripe_len);
-@@ -1838,5 +1847,8 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
- 		if (ebs[i] != eb)
- 			kfree(ebs[i]);
- 	}
-+
-+	kfree(ebs);
-+
- 	return 0;
+ 	fprintf(stderr, "Usage: find-roots [-o search_objectid] "
+ 		"[ -g search_generation ] [ -l search_level ] <device>\n");
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 214cb45..55508d2 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1418,7 +1418,7 @@ static void print_single_volume_info_default(struct root_info *subv)
+ 	printf("\n");
  }
+ 
+-static void print_all_volume_info_tab_head()
++static void print_all_volume_info_tab_head(void)
+ {
+ 	int i;
+ 	int len;
 -- 
 1.7.11.7
 

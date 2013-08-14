@@ -1,89 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:40211 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759531Ab3HNI4k (ORCPT
+Received: from mail-bk0-f48.google.com ([209.85.214.48]:44053 "EHLO
+	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759227Ab3HNLru (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 04:56:40 -0400
+	Wed, 14 Aug 2013 07:47:50 -0400
+Received: by mail-bk0-f48.google.com with SMTP id my13so2695577bkb.21
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 04:47:48 -0700 (PDT)
+From: Florian Lindner <mailinglists@xgm.de>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Florian Lindner <mailinglists@centershock.net>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: (un)mounting takes a long time
+Date: Wed, 14 Aug 2013 13:47:46 +0200
+Message-ID: <1882848.qKhuHT46UX@horus>
+In-Reply-To: <20130812135016.GB2150@localhost.localdomain>
+References: <2929473.GGcWYBHif4@horus> <20130812135016.GB2150@localhost.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <CAMuHMdXu+j03r_TQWC74e1dZzi6n9DsdBj_gRfrznW-VzzyTHQ@mail.gmail.com>
-References: <Pine.BSM.4.64L.1307300820160.20675@herc.mirbsd.org>
-	<alpine.DEB.2.02.1307301052010.23107@ayla.of.borg>
-	<20130730171329.GF24583@localhost.localdomain>
-	<Pine.BSM.4.64L.1307301741360.20305@herc.mirbsd.org>
-	<20130730204001.GG24583@localhost.localdomain>
-	<87eha33v9f.fsf@igel.home>
-	<20130809180441.GB12314@lenny.home.zabbo.net>
-	<alpine.DEB.2.02.1308131714130.12565@ayla.of.borg>
-	<CAMuHMdXu+j03r_TQWC74e1dZzi6n9DsdBj_gRfrznW-VzzyTHQ@mail.gmail.com>
-Date: Wed, 14 Aug 2013 10:56:40 +0200
-Message-ID: <CAMuHMdV-nBbhKbVSAAwh5M45-7kz4RJRqfHrCfudRA5dE2CKoA@mail.gmail.com>
-Subject: Re: btrfs zero divide
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-To: Zach Brown <zab@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Andreas Schwab <schwab@linux-m68k.org>, Josef Bacik <jbacik@fusionio.com>,
-        Thorsten Glaser <tg@mirbsd.de>, Joe Perches <joe@perches.com>,
-        "Debian GNU/Linux m68k" <debian-68k@lists.debian.org>,
-        linux-btrfs@vger.kernel.org,
-        Linux Kernel Development <linux-kernel@vger.kernel.org>,
-        David Woodhouse <David.Woodhouse@intel.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        scsi <linux-scsi@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 14, 2013 at 10:40 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Tue, Aug 13, 2013 at 6:32 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Fri, 9 Aug 2013, Zach Brown wrote:
->>> On Fri, Aug 09, 2013 at 02:26:36PM +0200, Andreas Schwab wrote:
->>> > Josef Bacik <jbacik@fusionio.com> writes:
->>> >
->>> > > So stripe_len shouldn't be 0, if it is you have bigger problems :).
->>> >
->>> > The bigger problem is that stripe_nr is u64, this is completely bogus.
->>> > The first operand of do_div must be u32.  This goes through the whole
->>> > file.
->>
->> This was introduced by commit 53b381b3abeb86f12787a6c40fee9b2f71edc23b
->> ("Btrfs: RAID5 and RAID6"), which changed the divisor from
->> map->stripe_len (struct map_lookup.stripe_len is int) to a 64-bit
->> temporary.
->>
->>> Definitely.  Can we get some typeof() tricks in the macros to have the
->>> build fail if (when, evidently) someone gets it wrong?
->>
->> Not using typeof, as there are way too many callsites where int is used
->> instead of u32.
->>
->> However, checking that sizeof() equals to 4 seems to work.
->> Below is a patch for asm-generic, which is untested, but it works when
->> adding the same checks to arch/m68k/include/asm/div64.h
->>
->> This is not something we just want to drop in, as it has the potential of
->> breaking lots of things (yes, it breaks btrfs :-)
->
-> Found so far:
->   - Several calls to sector_div() in blkdev_issue_discard()
->   - Two calls to do_div() in sd_completed_bytes()
->
-> Some of these even operate on dividends that never exceed 32-bit, tss...
+Am Montag, 12. August 2013, 09:50:16 schrieb Josef Bacik:
+> On Sun, Aug 11, 2013 at 03:44:10PM +0200, Florian Lindner wrote:
+> > Hello!
+> > 
+> > I'm using ArchLinux with kernel Linux horus 3.10.5-1-ARCH #1 SMP PREEMPT.
+> > Mounting and unmounting takes a long time:
+> > 
+> > # time mount -v /mnt/Archiv
+> > mount: /dev/sde1 mounted on /mnt/Archiv.
+> > mount -v /mnt/Archiv  0,00s user 0,16s system 1% cpu 9,493 total
+> > 
+> > # sync && time umount -v /mnt/Archiv
+> > umount: /mnt/Archiv (/dev/sdd1) unmounted
+> > umount -v /mnt/Archiv  0,00s user 0,33s system 1% cpu 23,247 total
+> > 
+> > fstab:
+> > 
+> > LABEL=Archiv    /mnt/Archiv             btrfs          
+> > defaults,compress=zlib 0 0
+> > 
+> > Archiv is a RAID 0 comprised of two discs:
+> > 
+> > Label: 'Archiv'  uuid: b2504193-efeb-4ef3-8797-a8d73536a416
+> > 
+> >         Total devices 2 FS bytes used 1.99TB
+> >         devid    2 size 2.73TB used 1023.01GB path /dev/sde1
+> >         devid    1 size 2.73TB used 1023.03GB path /dev/sdd1
+> > 
+> > Are un(mounting) times like these normal?
+> 
+> Are you using -o space_cache?  If not can you add that and mount/umount a
+> couple of times to get the cache built up and see if that helps.
 
-Two more:
- drivers/md/dm-cache-target.c:too_many_discard_blocks
- fs/jfs/jfs_dmap.c:dbDiscardAG
+Yes, I'm using space_cache (not explicitly, seems to be the default). I reboot 
+my machine regularly, so there is frequent mount/unmount acitivity,
 
-These bring in the 64-bit divisor from somewhere else, so they're less
-trivial to fix.
+> If you
+> are using space cache then sysrq+w while its taking forever to unmount and
+> create a bugzilla at bugzilla.kernel.org (make sure the component is set to
+> btrfs) so I can take a look at it.  Thanks,
 
-Gr{oetje,eeting}s,
+https://bugzilla.kernel.org/show_bug.cgi?id=60743
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks!
+Florian

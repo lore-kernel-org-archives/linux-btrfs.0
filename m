@@ -1,133 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:38426 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751265Ab3HMSOA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Aug 2013 14:14:00 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id DF8A57C06A0
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 12:13:59 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id yjavBmbHsVhi8RBR (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2013 12:13:59 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix the error handling wrt orphan items
-Date: Tue, 13 Aug 2013 14:13:57 -0400
-Message-ID: <1376417637-22065-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cn.fujitsu.com ([222.73.24.84]:14612 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1758038Ab3HNBPX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Aug 2013 21:15:23 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r7E1FJS8025721
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 09:15:19 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/3] Btrfs: fix oops when writing dirty qgroups to disk
+Date: Wed, 14 Aug 2013 09:13:36 +0800
+Message-Id: <1376442818-7587-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are several places where we BUG_ON() if we fail to remove the orphan items
-and such, which is not ok, so remove those and either abort or just carry on.
-This also fixes a problem where if we couldn't start a transaction we wouldn't
-actually remove the orphan item reserve for the inode.  Thanks,
+When disabling quota, we should clear out list 'dirty_qgroups',otherwise,
+we will get oops if enabling quota again. Fix this by abstracting similar
+code from del_qgroup_rb().
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Reviewed-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/inode.c |   41 ++++++++++++++++++++++++++---------------
- 1 files changed, 26 insertions(+), 15 deletions(-)
+v1->v2: remove unnecessary initialization(thanks to Arne)
+---
+ fs/btrfs/qgroup.c | 41 +++++++++++++----------------------------
+ 1 file changed, 13 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0b38755..bd05bb6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2940,8 +2940,10 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 	    btrfs_root_refs(&root->root_item) > 0) {
- 		ret = btrfs_del_orphan_item(trans, root->fs_info->tree_root,
- 					    root->root_key.objectid);
--		BUG_ON(ret);
--		root->orphan_item_inserted = 0;
-+		if (ret)
-+			btrfs_abort_transaction(trans, root, ret);
-+		else
-+			root->orphan_item_inserted = 0;
- 	}
- 
- 	if (block_rsv) {
-@@ -3010,11 +3012,18 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 	/* insert an orphan item to track this unlinked/truncated file */
- 	if (insert >= 1) {
- 		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
--		if (ret && ret != -EEXIST) {
-+		if (ret) {
- 			clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 				  &BTRFS_I(inode)->runtime_flags);
--			btrfs_abort_transaction(trans, root, ret);
--			return ret;
-+			if (reserve) {
-+				clear_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
-+					  &BTRFS_I(inode)->runtime_flags);
-+				btrfs_orphan_release_metadata(inode);
-+			}
-+			if (ret != -EEXIST) {
-+				btrfs_abort_transaction(trans, root, ret);
-+				return ret;
-+			}
- 		}
- 		ret = 0;
- 	}
-@@ -3053,17 +3062,15 @@ static int btrfs_orphan_del(struct btrfs_trans_handle *trans,
- 		release_rsv = 1;
- 	spin_unlock(&root->orphan_lock);
- 
--	if (trans && delete_item) {
-+	if (trans && delete_item)
- 		ret = btrfs_del_orphan_item(trans, root, btrfs_ino(inode));
--		BUG_ON(ret); /* -ENOMEM or corruption (JDM: Recheck) */
--	}
- 
- 	if (release_rsv) {
- 		btrfs_orphan_release_metadata(inode);
- 		atomic_dec(&root->orphan_inodes);
- 	}
- 
--	return 0;
-+	return ret;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 64a9e3c..57b9805 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -157,18 +157,11 @@ static struct btrfs_qgroup *add_qgroup_rb(struct btrfs_fs_info *fs_info,
+ 	return qgroup;
  }
  
- /*
-@@ -3193,8 +3200,9 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 				found_key.objectid);
- 			ret = btrfs_del_orphan_item(trans, root,
- 						    found_key.objectid);
--			BUG_ON(ret); /* -ENOMEM or corruption (JDM: Recheck) */
- 			btrfs_end_transaction(trans, root);
-+			if (ret)
-+				goto out;
- 			continue;
- 		}
+-/* must be called with qgroup_lock held */
+-static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
++static void __del_qgroup_rb(struct btrfs_qgroup *qgroup)
+ {
+-	struct btrfs_qgroup *qgroup = find_qgroup_rb(fs_info, qgroupid);
+ 	struct btrfs_qgroup_list *list;
  
-@@ -4570,10 +4578,15 @@ void btrfs_evict_inode(struct inode *inode)
- 
- 	btrfs_free_block_rsv(root, rsv);
- 
-+	/*
-+	 * Errors here aren't a big deal, it just means we leave orphan items
-+	 * in the tree.  They will be cleaned up on the next mount.
-+	 */
- 	if (ret == 0) {
- 		trans->block_rsv = root->orphan_block_rsv;
--		ret = btrfs_orphan_del(trans, inode);
--		BUG_ON(ret);
-+		btrfs_orphan_del(trans, inode);
-+	} else {
-+		btrfs_orphan_del(NULL, inode);
+-	if (!qgroup)
+-		return -ENOENT;
+-
+-	rb_erase(&qgroup->node, &fs_info->qgroup_tree);
+ 	list_del(&qgroup->dirty);
+-
+ 	while (!list_empty(&qgroup->groups)) {
+ 		list = list_first_entry(&qgroup->groups,
+ 					struct btrfs_qgroup_list, next_group);
+@@ -185,7 +178,18 @@ static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
+ 		kfree(list);
  	}
+ 	kfree(qgroup);
++}
  
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
-@@ -8136,10 +8149,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 						 new_dentry->d_name.name,
- 						 new_dentry->d_name.len);
- 		}
--		if (!ret && new_inode->i_nlink == 0) {
-+		if (!ret && new_inode->i_nlink == 0)
- 			ret = btrfs_orphan_add(trans, new_dentry->d_inode);
--			BUG_ON(ret);
++/* must be called with qgroup_lock held */
++static int del_qgroup_rb(struct btrfs_fs_info *fs_info, u64 qgroupid)
++{
++	struct btrfs_qgroup *qgroup = find_qgroup_rb(fs_info, qgroupid);
++
++	if (!qgroup)
++		return -ENOENT;
++
++	rb_erase(&qgroup->node, &fs_info->qgroup_tree);
++	__del_qgroup_rb(qgroup);
+ 	return 0;
+ }
+ 
+@@ -435,30 +439,11 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info)
+ {
+ 	struct rb_node *n;
+ 	struct btrfs_qgroup *qgroup;
+-	struct btrfs_qgroup_list *list;
+ 
+ 	while ((n = rb_first(&fs_info->qgroup_tree))) {
+ 		qgroup = rb_entry(n, struct btrfs_qgroup, node);
+ 		rb_erase(n, &fs_info->qgroup_tree);
+-
+-		while (!list_empty(&qgroup->groups)) {
+-			list = list_first_entry(&qgroup->groups,
+-						struct btrfs_qgroup_list,
+-						next_group);
+-			list_del(&list->next_group);
+-			list_del(&list->next_member);
+-			kfree(list);
 -		}
- 		if (ret) {
- 			btrfs_abort_transaction(trans, root, ret);
- 			goto out_fail;
+-
+-		while (!list_empty(&qgroup->members)) {
+-			list = list_first_entry(&qgroup->members,
+-						struct btrfs_qgroup_list,
+-						next_member);
+-			list_del(&list->next_group);
+-			list_del(&list->next_member);
+-			kfree(list);
+-		}
+-		kfree(qgroup);
++		__del_qgroup_rb(qgroup);
+ 	}
+ 	/*
+ 	 * we call btrfs_free_qgroup_config() when umounting
 -- 
-1.7.7.6
+1.8.0.1
 

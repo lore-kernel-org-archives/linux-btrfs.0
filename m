@@ -1,48 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:57931 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756602Ab3HON4Y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Aug 2013 09:56:24 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 2042D7C068B
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2013 07:56:24 -0600 (MDT)
-Date: Thu, 15 Aug 2013 09:56:21 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Filipe David Manana <fdmanana@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: separate out tests into their own directory
-Message-ID: <20130815135621.GF26269@localhost.localdomain>
-References: <1376508521-8666-1-git-send-email-jbacik@fusionio.com>
- <CAL3q7H4EO+SXXDfRJHw4Zg+Lbg8b4VAby2=b43r3v2K7mLUseg@mail.gmail.com>
- <20130815133833.GE26269@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130815133833.GE26269@localhost.localdomain>
+Received: from xp-ob.rzone.de ([81.169.146.136]:36092 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755151Ab3HOPL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Aug 2013 11:11:29 -0400
+Received: from pizpot.store ([192.168.43.236])
+ by josoe.store (RZmta 31.40 OK) with ESMTP id p04750p7FEfDLr
+ for <linux-btrfs@vger.kernel.org>;
+ Thu, 15 Aug 2013 17:11:24 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v8 2/8] Btrfs: support printing UUID tree elements
+Date: Thu, 15 Aug 2013 17:11:18 +0200
+Message-Id: <02fce9d487b6df1de4812e62e8708774afb1e121.1376575048.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
+References: <cover.1376575048.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
+References: <cover.1376575048.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 15, 2013 at 09:38:33AM -0400, Josef Bacik wrote:
-> On Thu, Aug 15, 2013 at 01:23:53AM +0100, Filipe David Manana wrote:
-> > On Wed, Aug 14, 2013 at 8:28 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> > > The plan is to have a bunch of unit tests that run when btrfs is loaded when you
-> > > build with the appropriate config option.  My ultimate goal is to have a test
-> > > for every non-static function we have, but at first I'm going to focus on the
-> > > things that cause us the most problems.  To start out with this just adds a
-> > > tests/ directory and moves the existing free space cache tests into that
-> > > directory and sets up all of the infrastructure.  Thanks,
-> > >
-> > > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> > 
-> > Josef this seems to have broke compilation when sanity checks are not enabled.
-> > The following patch fixes it for me at least. Thanks.
-> > 
-> 
-> Weird that's what I committed but not what I sent to the list, sorry about that.
-> Thanks,
-> 
+This commit adds support to print UUID tree elements to print-tree.c.
 
-Oh I see, I didn't actually commit it, oops.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/print-tree.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-Josef
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index fe7bf4a..32022f3 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -155,6 +155,25 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
+ }
+ #endif
+ 
++static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
++			    u32 item_size)
++{
++	if (!IS_ALIGNED(item_size, sizeof(u64))) {
++		pr_warn("btrfs: uuid item with illegal size %lu!\n",
++			(unsigned long)item_size);
++		return;
++	}
++	while (item_size) {
++		__le64 subvol_id;
++
++		read_extent_buffer(l, &subvol_id, offset, sizeof(subvol_id));
++		printk(KERN_INFO "\t\tsubvol_id %llu\n",
++		       (unsigned long long)le64_to_cpu(subvol_id));
++		item_size -= sizeof(u64);
++		offset += sizeof(u64);
++	}
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -301,6 +320,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_REPLACE_KEY:
+ 			printk(KERN_INFO "\t\tdev replace\n");
+ 			break;
++		case BTRFS_UUID_KEY_SUBVOL:
++		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
++			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
++					btrfs_item_size_nr(l, i));
++			break;
+ 		};
+ 	}
+ }
+-- 
+1.8.3.4
+

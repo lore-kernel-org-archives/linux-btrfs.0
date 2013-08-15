@@ -1,98 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from neo-zeon.de ([173.228.7.105]:60216 "EHLO neo-zeon.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760033Ab3HNWZa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 18:25:30 -0400
-Received: from [10.20.23.68] (70-35-47-130.static.wiline.com [70.35.47.130])
-	(authenticated bits=0)
-	by neo-zeon.de (8.14.7/8.14.5) with ESMTP id r7EMHlKZ009826
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 15:17:50 -0700 (PDT)
-	(envelope-from cam@neo-zeon.de)
-Message-ID: <520C0206.1040900@neo-zeon.de>
-Date: Wed, 14 Aug 2013 15:17:42 -0700
-From: Cameron Berkenpas <cam@neo-zeon.de>
+Received: from mail-bk0-f51.google.com ([209.85.214.51]:41989 "EHLO
+	mail-bk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753863Ab3HOAX4 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Aug 2013 20:23:56 -0400
+Received: by mail-bk0-f51.google.com with SMTP id mx10so41209bkb.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2013 17:23:54 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: unable to fixup (regular) error
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1376508521-8666-1-git-send-email-jbacik@fusionio.com>
+References: <1376508521-8666-1-git-send-email-jbacik@fusionio.com>
+Date: Thu, 15 Aug 2013 01:23:53 +0100
+Message-ID: <CAL3q7H4EO+SXXDfRJHw4Zg+Lbg8b4VAby2=b43r3v2K7mLUseg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: separate out tests into their own directory
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Wed, Aug 14, 2013 at 8:28 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> The plan is to have a bunch of unit tests that run when btrfs is loaded when you
+> build with the appropriate config option.  My ultimate goal is to have a test
+> for every non-static function we have, but at first I'm going to focus on the
+> things that cause us the most problems.  To start out with this just adds a
+> tests/ directory and moves the existing free space cache tests into that
+> directory and sets up all of the infrastructure.  Thanks,
+>
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 
-I hope this is the correct mailing list.
-
-I have btrfs running on a 6TB (5.5ish TiB) raid10 array on a 3ware 
-9750-4i controller. I decided to run a script and a got 5 checksum 
-errors for the same file (errors from dmesg below).
-
-I deleted the file without any issues, reran scrub, and now I don't see 
-any errors. The file itself was unimportant as it was from a backup of 
-another box that I already have multiple backups of (and the box itself 
-is still fine). The disks in the array appear to all be fine and the 
-array is also healthy. I also run "verify" regularly. Verify appears to 
-be the controller's equivalent to scrub.
-
-Additionally, according to smartctl, things are healthly although it 
-seems error logging isn't supported:
-Vendor:               LSI
-Product:              9750-4i    DISK
-Revision:             5.12
-User Capacity:        5,999,977,037,824 bytes [5.99 TB]
-Logical block size:   512 bytes
-Logical Unit id:      0x600050e016538a004567000011970000
-Serial number:        9XK0C13D16538A004567
-Device type:          disk
-Local Time is:        Wed Aug 14 15:15:42 2013 PDT
-Device supports SMART and is Disabled
-Temperature Warning Disabled or Not Supported
-SMART Health Status: OK
-
-Error Counter logging not supported
-Device does not support Self Test logging
-
-Any idea what may have happened here? Is this something to worry about?
-
-Thanks,
-
--Cameron
-
-[101511.280510] btrfs: checksum error at logical 1590664605696 on dev 
-/dev/sda3, sector 3119366104, root 681, inode 1668516, offset 3473408, 
-length 4096, links 1 (path: path/to/some/file)
-[101511.288676] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 
-1, gen 0
-[101511.291611] btrfs: unable to fixup (regular) error at logical 
-1590664605696 on dev /dev/sda3
-[101511.390081] btrfs: checksum error at logical 1590664609792 on dev 
-/dev/sda3, sector 3119366112, root 681, inode 1668516, offset 3477504, 
-length 4096, links 1 (path: path/to/some/file)
-[101511.399321] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 
-2, gen 0
-[101511.402552] btrfs: unable to fixup (regular) error at logical 
-1590664609792 on dev /dev/sda3
-[101511.406038] btrfs: checksum error at logical 1590664613888 on dev 
-/dev/sda3, sector 3119366120, root 681, inode 1668516, offset 3481600, 
-length 4096, links 1 (path: path/to/some/file)
-[101511.416438] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 
-3, gen 0
-[101511.420050] btrfs: unable to fixup (regular) error at logical 
-1590664613888 on dev /dev/sda3
-[101511.424238] btrfs: checksum error at logical 1590664617984 on dev 
-/dev/sda3, sector 3119366128, root 681, inode 1668516, offset 3485696, 
-length 4096, links 1 (path: path/to/some/file)
-[101511.435928] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 
-4, gen 0
-[101511.440241] btrfs: unable to fixup (regular) error at logical 
-1590664617984 on dev /dev/sda3
-[101511.523988] btrfs: checksum error at logical 1590664622080 on dev 
-/dev/sda3, sector 3119366136, root 681, inode 1668516, offset 3489792, 
-length 4096, links 1 (path: path/to/some/file)
-[101511.537097] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 
-5, gen 0
-[101511.541636] btrfs: unable to fixup (regular) error at logical 
-1590664622080 on dev /dev/sda3
+Josef this seems to have broke compilation when sanity checks are not enabled.
+The following patch fixes it for me at least. Thanks.
 
 
+>From d35b256737dd53245c223692a4c16165a0196a5e Mon Sep 17 00:00:00 2001
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+Date: Thu, 15 Aug 2013 01:19:53 +0100
+Subject: [PATCH] Btrfs: fix compilation when sanity tests aren't enabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
+Error was:
+
+  CC [M]  fs/btrfs/super.o
+  CC [M]  fs/btrfs/ctree.o
+  CC [M]  fs/btrfs/extent-tree.o
+  CC [M]  fs/btrfs/print-tree.o
+fs/btrfs/super.c: In function ‘btrfs_run_sanity_tests’:
+fs/btrfs/super.c:1771:2: error: implicit declaration of function
+‘btrfs_test_free_space_cache’ [-Werror=implicit-function-declaration]
+cc1: some warnings being treated as errors
+make[2]: *** [fs/btrfs/super.o] Error 1
+make[2]: *** Waiting for unfinished jobs....
+make[1]: *** [fs/btrfs] Error 2
+make[1]: *** Waiting for unfinished jobs....
+make: *** [fs] Error 2
+make: *** Waiting for unfinished jobs....
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/super.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 8c2d650..e859b4a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -57,9 +57,7 @@
+ #include "dev-replace.h"
+ #include "free-space-cache.h"
+
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ #include "tests/btrfs-tests.h"
+-#endif
+
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/btrfs.h>
+-- 
+1.7.9.5

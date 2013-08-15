@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.136]:36092 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:54547 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755151Ab3HOPL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1755939Ab3HOPL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 15 Aug 2013 11:11:29 -0400
 Received: from pizpot.store ([192.168.43.236])
- by josoe.store (RZmta 31.40 OK) with ESMTP id p04750p7FEfDLr
+ by joses.store (RZmta 31.40 OK) with ESMTP id g04feep7FEOZNs
  for <linux-btrfs@vger.kernel.org>;
  Thu, 15 Aug 2013 17:11:24 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 2/8] Btrfs: support printing UUID tree elements
-Date: Thu, 15 Aug 2013 17:11:18 +0200
-Message-Id: <02fce9d487b6df1de4812e62e8708774afb1e121.1376575048.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v8 8/8] Btrfs: add mount option to force UUID tree checking
+Date: Thu, 15 Aug 2013 17:11:24 +0200
+Message-Id: <c280896503119fda4a197a0c0a430902b4cd26fe.1376575048.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
 References: <cover.1376575048.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
@@ -19,55 +19,83 @@ References: <cover.1376575048.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit adds support to print UUID tree elements to print-tree.c.
+This should never be needed, but since all functions are there
+to check and rebuild the UUID tree, a mount option is added that
+allows to force this check and rebuild procedure.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/print-tree.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ fs/btrfs/ctree.h   | 1 +
+ fs/btrfs/disk-io.c | 3 ++-
+ fs/btrfs/super.c   | 8 +++++++-
+ 3 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index fe7bf4a..32022f3 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -155,6 +155,25 @@ static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
- }
- #endif
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index edd74da..c420dc9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1991,6 +1991,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
++#define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
  
-+static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
-+			    u32 item_size)
-+{
-+	if (!IS_ALIGNED(item_size, sizeof(u64))) {
-+		pr_warn("btrfs: uuid item with illegal size %lu!\n",
-+			(unsigned long)item_size);
-+		return;
-+	}
-+	while (item_size) {
-+		__le64 subvol_id;
-+
-+		read_extent_buffer(l, &subvol_id, offset, sizeof(subvol_id));
-+		printk(KERN_INFO "\t\tsubvol_id %llu\n",
-+		       (unsigned long long)le64_to_cpu(subvol_id));
-+		item_size -= sizeof(u64);
-+		offset += sizeof(u64);
-+	}
-+}
-+
- void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- {
- 	int i;
-@@ -301,6 +320,11 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 		case BTRFS_DEV_REPLACE_KEY:
- 			printk(KERN_INFO "\t\tdev replace\n");
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index fc3d95f..b7bc4ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2927,7 +2927,8 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
+ 		}
+-	} else if (check_uuid_tree) {
++	} else if (check_uuid_tree ||
++		   btrfs_test_opt(tree_root, RESCAN_UUID_TREE)) {
+ 		pr_info("btrfs: checking UUID tree\n");
+ 		ret = btrfs_check_uuid_tree(fs_info);
+ 		if (ret) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1967903..0eea577 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -320,7 +320,7 @@ enum {
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+ 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+ 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+-	Opt_check_integrity_print_mask, Opt_fatal_errors,
++	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval,
+ 	Opt_err,
+ };
+@@ -361,6 +361,7 @@ static match_table_t tokens = {
+ 	{Opt_check_integrity, "check_int"},
+ 	{Opt_check_integrity_including_extent_data, "check_int_data"},
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
++	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_commit_interval, "commit=%d"},
+ 	{Opt_err, NULL},
+@@ -571,6 +572,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_space_cache:
+ 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
  			break;
-+		case BTRFS_UUID_KEY_SUBVOL:
-+		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
-+			print_uuid_item(l, btrfs_item_ptr_offset(l, i),
-+					btrfs_item_size_nr(l, i));
++		case Opt_rescan_uuid_tree:
++			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
 +			break;
- 		};
- 	}
- }
+ 		case Opt_no_space_cache:
+ 			printk(KERN_INFO "btrfs: disabling disk space caching\n");
+ 			btrfs_clear_opt(info->mount_opt, SPACE_CACHE);
+@@ -978,6 +982,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",space_cache");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
++	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
++		seq_puts(seq, ",rescan_uuid_tree");
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		seq_puts(seq, ",clear_cache");
+ 	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
 -- 
 1.8.3.4
 

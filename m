@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:41357 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.140]:64356 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756958Ab3HOPLa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756926Ab3HOPLa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 15 Aug 2013 11:11:30 -0400
 Received: from pizpot.store ([192.168.43.236])
- by josoe.store (RZmta 31.40 OK) with ESMTP id p04750p7FEfDLt
+ by josoe.store (RZmta 31.40 OK) with ESMTP id p04750p7FEfDLs
  for <linux-btrfs@vger.kernel.org>;
  Thu, 15 Aug 2013 17:11:24 +0200 (CEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 5/8] Btrfs: fill UUID tree initially
-Date: Thu, 15 Aug 2013 17:11:21 +0200
-Message-Id: <8dca359fd18ab34e242111542f48891a53124e58.1376575048.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v8 3/8] Btrfs: create UUID tree if required
+Date: Thu, 15 Aug 2013 17:11:19 +0200
+Message-Id: <667a2b95cd962edb432fc263dc35517004913cfe.1376575048.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
 References: <cover.1376575048.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1376575048.git.sbehrens@giantdisaster.de>
@@ -19,255 +19,174 @@ References: <cover.1376575048.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the UUID tree is initially created, a task is spawned that
-walks through the root tree. For each found subvolume root_item,
-the uuid and received_uuid entries in the UUID tree are added.
-This is such a quick operation so that in case somebody wants
-to unmount the filesystem while the task is still running, the
-unmount is delayed until the UUID tree building task is finished.
+This tree is not created by mkfs.btrfs. Therefore when a filesystem
+is mounted writable and the UUID tree does not exist, this tree is
+created if required. The tree is also added to the fs_info structure
+and initialized, but this commit does not yet read or write UUID tree
+elements.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h   |   3 ++
- fs/btrfs/disk-io.c |   7 +++
- fs/btrfs/volumes.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 160 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     | 34 ++++++++++++++++++++++++++++++++++
+ fs/btrfs/extent-tree.c |  3 +++
+ fs/btrfs/volumes.c     | 26 ++++++++++++++++++++++++++
+ fs/btrfs/volumes.h     |  1 +
+ 5 files changed, 65 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9a99c66..e6b71ad 100644
+index ba5eef2..9e0d212 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -23,6 +23,7 @@
- #include <linux/highmem.h>
- #include <linux/fs.h>
- #include <linux/rwsem.h>
-+#include <linux/semaphore.h>
- #include <linux/completion.h>
- #include <linux/backing-dev.h>
- #include <linux/wait.h>
-@@ -1647,6 +1648,8 @@ struct btrfs_fs_info {
- 	struct btrfs_dev_replace dev_replace;
+@@ -1306,6 +1306,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *fs_root;
+ 	struct btrfs_root *csum_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
  
- 	atomic_t mutually_exclusive_operation_running;
-+
-+	struct semaphore uuid_tree_rescan_sem;
- };
- 
- /*
+ 	/* the log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f75ccfc..d9ff76e 100644
+index 5de9ad7..f75ccfc 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -31,6 +31,7 @@
- #include <linux/migrate.h>
- #include <linux/ratelimit.h>
- #include <linux/uuid.h>
-+#include <linux/semaphore.h>
- #include <asm/unaligned.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -2295,6 +2296,7 @@ int open_ctree(struct super_block *sb,
- 	init_rwsem(&fs_info->extent_commit_sem);
- 	init_rwsem(&fs_info->cleanup_work_sem);
- 	init_rwsem(&fs_info->subvol_sem);
-+	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
- 	fs_info->dev_replace.lock_owner = 0;
- 	atomic_set(&fs_info->dev_replace.nesting_level, 0);
- 	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
-@@ -3552,6 +3554,11 @@ int close_ctree(struct btrfs_root *root)
- 	fs_info->closing = 1;
- 	smp_mb();
+@@ -1585,6 +1585,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
+ 	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
+ 		return fs_info->quota_root ? fs_info->quota_root :
+ 					     ERR_PTR(-ENOENT);
++	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
++		return fs_info->uuid_root ? fs_info->uuid_root :
++					    ERR_PTR(-ENOENT);
+ again:
+ 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
+ 	if (root)
+@@ -2043,6 +2046,12 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 		info->quota_root->node = NULL;
+ 		info->quota_root->commit_root = NULL;
+ 	}
++	if (info->uuid_root) {
++		free_extent_buffer(info->uuid_root->node);
++		free_extent_buffer(info->uuid_root->commit_root);
++		info->uuid_root->node = NULL;
++		info->uuid_root->commit_root = NULL;
++	}
+ 	if (chunk_root) {
+ 		free_extent_buffer(info->chunk_root->node);
+ 		free_extent_buffer(info->chunk_root->commit_root);
+@@ -2103,11 +2112,13 @@ int open_ctree(struct super_block *sb,
+ 	struct btrfs_root *chunk_root;
+ 	struct btrfs_root *dev_root;
+ 	struct btrfs_root *quota_root;
++	struct btrfs_root *uuid_root;
+ 	struct btrfs_root *log_tree_root;
+ 	int ret;
+ 	int err = -EINVAL;
+ 	int num_backups_tried = 0;
+ 	int backup_index = 0;
++	bool create_uuid_tree = false;
  
-+	/* wait for the uuid_scan task to finish */
-+	down(&fs_info->uuid_tree_rescan_sem);
-+	/* avoid complains from lockdep et al., set sem back to initial state */
-+	up(&fs_info->uuid_tree_rescan_sem);
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+@@ -2702,6 +2713,18 @@ retry_root_backup:
+ 		fs_info->quota_root = quota_root;
+ 	}
+ 
++	location.objectid = BTRFS_UUID_TREE_OBJECTID;
++	uuid_root = btrfs_read_tree_root(tree_root, &location);
++	if (IS_ERR(uuid_root)) {
++		ret = PTR_ERR(uuid_root);
++		if (ret != -ENOENT)
++			goto recovery_tree_root;
++		create_uuid_tree = true;
++	} else {
++		uuid_root->track_dirty = 1;
++		fs_info->uuid_root = uuid_root;
++	}
 +
- 	/* pause restriper - we want to resume on mount */
- 	btrfs_pause_balance(fs_info);
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 
+@@ -2888,6 +2911,17 @@ retry_root_backup:
+ 
+ 	btrfs_qgroup_rescan_resume(fs_info);
+ 
++	if (create_uuid_tree) {
++		pr_info("btrfs: creating UUID tree\n");
++		ret = btrfs_create_uuid_tree(fs_info);
++		if (ret) {
++			pr_warn("btrfs: failed to create the UUID tree %d\n",
++				ret);
++			close_ctree(tree_root);
++			return ret;
++		}
++	}
++
+ 	return 0;
+ 
+ fail_qgroup:
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c1b2dd7..e065086 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4361,6 +4361,9 @@ static struct btrfs_block_rsv *get_block_rsv(
+ 	if (root == root->fs_info->csum_root && trans->adding_csums)
+ 		block_rsv = trans->block_rsv;
+ 
++	if (root == root->fs_info->uuid_root)
++		block_rsv = trans->block_rsv;
++
+ 	if (!block_rsv)
+ 		block_rsv = root->block_rsv;
  
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b99d3f4..8e0aeef 100644
+index 44abd15..b99d3f4 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -26,6 +26,7 @@
- #include <linux/ratelimit.h>
- #include <linux/kthread.h>
- #include <linux/raid/pq.h>
-+#include <linux/semaphore.h>
- #include <asm/div64.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -3432,11 +3433,146 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+@@ -3432,6 +3432,32 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
  	return 0;
  }
  
-+static int btrfs_uuid_scan_kthread(void *data)
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
 +{
-+	struct btrfs_fs_info *fs_info = data;
-+	struct btrfs_root *root = fs_info->tree_root;
-+	struct btrfs_key key;
-+	struct btrfs_key max_key;
-+	struct btrfs_path *path = NULL;
-+	int ret = 0;
-+	struct extent_buffer *eb;
-+	int slot;
-+	struct btrfs_root_item root_item;
-+	u32 item_size;
 +	struct btrfs_trans_handle *trans;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *uuid_root;
 +
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
++	/*
++	 * 1 - root node
++	 * 1 - root item
++	 */
++	trans = btrfs_start_transaction(tree_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	uuid_root = btrfs_create_tree(trans, fs_info,
++				      BTRFS_UUID_TREE_OBJECTID);
++	if (IS_ERR(uuid_root)) {
++		btrfs_abort_transaction(trans, tree_root,
++					PTR_ERR(uuid_root));
++		return PTR_ERR(uuid_root);
 +	}
 +
-+	key.objectid = 0;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = 0;
++	fs_info->uuid_root = uuid_root;
 +
-+	max_key.objectid = (u64)-1;
-+	max_key.type = BTRFS_ROOT_ITEM_KEY;
-+	max_key.offset = (u64)-1;
-+
-+	path->keep_locks = 1;
-+
-+	while (1) {
-+		ret = btrfs_search_forward(root, &key, &max_key, path, 0);
-+		if (ret) {
-+			if (ret > 0)
-+				ret = 0;
-+			break;
-+		}
-+
-+		if (key.type != BTRFS_ROOT_ITEM_KEY ||
-+		    (key.objectid < BTRFS_FIRST_FREE_OBJECTID &&
-+		     key.objectid != BTRFS_FS_TREE_OBJECTID) ||
-+		    key.objectid > BTRFS_LAST_FREE_OBJECTID)
-+			goto skip;
-+
-+		eb = path->nodes[0];
-+		slot = path->slots[0];
-+		item_size = btrfs_item_size_nr(eb, slot);
-+		if (item_size < sizeof(root_item))
-+			goto skip;
-+
-+		trans = NULL;
-+		read_extent_buffer(eb, &root_item,
-+				   btrfs_item_ptr_offset(eb, slot),
-+				   (int)sizeof(root_item));
-+		if (btrfs_root_refs(&root_item) == 0)
-+			goto skip;
-+		if (!btrfs_is_empty_uuid(root_item.uuid)) {
-+			/*
-+			 * 1 - subvol uuid item
-+			 * 1 - received_subvol uuid item
-+			 */
-+			trans = btrfs_start_transaction(fs_info->uuid_root, 2);
-+			if (IS_ERR(trans)) {
-+				ret = PTR_ERR(trans);
-+				break;
-+			}
-+			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
-+						  root_item.uuid,
-+						  BTRFS_UUID_KEY_SUBVOL,
-+						  key.objectid);
-+			if (ret < 0) {
-+				pr_warn("btrfs: uuid_tree_add failed %d\n",
-+					ret);
-+				btrfs_end_transaction(trans,
-+						      fs_info->uuid_root);
-+				break;
-+			}
-+		}
-+
-+		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
-+			if (!trans) {
-+				/* 1 - received_subvol uuid item */
-+				trans = btrfs_start_transaction(
-+						fs_info->uuid_root, 1);
-+				if (IS_ERR(trans)) {
-+					ret = PTR_ERR(trans);
-+					break;
-+				}
-+			}
-+			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
-+						  root_item.received_uuid,
-+						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+						  key.objectid);
-+			if (ret < 0) {
-+				pr_warn("btrfs: uuid_tree_add failed %d\n",
-+					ret);
-+				btrfs_end_transaction(trans,
-+						      fs_info->uuid_root);
-+				break;
-+			}
-+		}
-+
-+		if (trans) {
-+			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
-+			if (ret)
-+				break;
-+		}
-+
-+skip:
-+		btrfs_release_path(path);
-+		if (key.offset < (u64)-1) {
-+			key.offset++;
-+		} else if (key.type < BTRFS_ROOT_ITEM_KEY) {
-+			key.offset = 0;
-+			key.type = BTRFS_ROOT_ITEM_KEY;
-+		} else if (key.objectid < (u64)-1) {
-+			key.offset = 0;
-+			key.type = BTRFS_ROOT_ITEM_KEY;
-+			key.objectid++;
-+		} else {
-+			break;
-+		}
-+		cond_resched();
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	if (ret)
-+		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
-+	up(&fs_info->uuid_tree_rescan_sem);
-+	return 0;
++	return btrfs_commit_transaction(trans, tree_root);
 +}
-+
- int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_root *uuid_root;
-+	struct task_struct *task;
-+	int ret;
- 
- 	/*
- 	 * 1 - root node
-@@ -3456,8 +3592,21 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
- 
- 	fs_info->uuid_root = uuid_root;
- 
--	return btrfs_commit_transaction(trans, tree_root);
-+	ret = btrfs_commit_transaction(trans, tree_root);
-+	if (ret)
-+		return ret;
-+
-+	down(&fs_info->uuid_tree_rescan_sem);
-+	task = kthread_run(btrfs_uuid_scan_kthread, fs_info, "btrfs-uuid");
-+	if (IS_ERR(task)) {
-+		pr_warn("btrfs: failed to start uuid_scan task\n");
-+		up(&fs_info->uuid_tree_rescan_sem);
-+		return PTR_ERR(task);
-+	}
-+
-+	return 0;
- }
-+
  /*
   * shrinking a device means finding all of the device extents past
   * the new size, and then following the back refs to the chunks.
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 08c44d9..7071b298 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -322,6 +322,7 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
+ int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
++int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_device *device, u64 num_bytes,
 -- 
 1.8.3.4
 

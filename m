@@ -1,66 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:10391 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751798Ab3HPITG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 04:19:06 -0400
-Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7G8J45I032377
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 04:19:04 -0400
-Received: from dhcp-1-102.brq.redhat.com (dhcp-1-102.brq.redhat.com [10.34.1.102])
-	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id r7G8J2Jf003006
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 04:19:04 -0400
-Date: Fri, 16 Aug 2013 10:19:02 +0200 (CEST)
-From: =?ISO-8859-15?Q?Luk=E1=A8_Czerner?= <lczerner@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:44682 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751149Ab3HPI2A (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Aug 2013 04:28:00 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: How btrfs resize should work ?
-Message-ID: <alpine.LFD.2.00.1308161011160.1968@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: pth@suse.de, sf@suse.de, dave@jikos.cz, jeff.liu@oracle.com
+Subject: [RFC PATCH] Btrfs: export btrfs space shared info to userspace
+Date: Fri, 16 Aug 2013 16:27:28 +0800
+Message-Id: <1376641648-25015-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Similar to ocfs2, btrfs also supports that extents can be shared by
+different inodes, and there are some userspace tools requesting
+for this kind of 'space shared infomation'.[1]
 
-I am working on system storage manager (ssm) trying to implement
-btrfs resize correctly, however I have some troubles with it.
+ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
 
+[1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
 
-# mkfs.btrfs /dev/sda /dev/sdb
-# mount /dev/sda /mnt/test
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c |   34 +++++++++++++++++++++++++++++++++-
+ 1 files changed, 33 insertions(+), 1 deletions(-)
 
-# btrfs filesystem show
-failed to open /dev/sr0: No medium found
-Label: none  uuid: 8dce5578-a2bc-416e-96fd-16a2f4f770b7
-	Total devices 2 FS bytes used 28.00KB
-	devid    2 size 50.00GB used 2.01GB path /dev/sdb
-	devid    1 size 100.00GB used 2.03GB path /dev/sda
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fe443fe..2b3dd4a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -20,6 +20,7 @@
+ #include "check-integrity.h"
+ #include "locking.h"
+ #include "rcu-string.h"
++#include "backref.h"
+ 
+ static struct kmem_cache *extent_state_cache;
+ static struct kmem_cache *extent_buffer_cache;
+@@ -3957,6 +3958,19 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
+ 	return NULL;
+ }
+ 
++static noinline int count_ext_ref(u64 inum, u64 offset, u64 root_id, void *ctx)
++{
++	int cnt = *((int *)ctx);
++
++	cnt++;
++	*((int *)ctx) = cnt;
++
++	/* Now we're sure that the extent is shared. */
++	if (cnt > 1)
++		return 1;
++	return 0;
++}
++
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent)
+ {
+@@ -4023,7 +4037,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		last = found_key.offset;
+ 		last_for_get_extent = last + 1;
+ 	}
+-	btrfs_free_path(path);
++	btrfs_release_path(path);
+ 
+ 	/*
+ 	 * we might have some extents allocated but more delalloc past those
+@@ -4093,7 +4107,24 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			flags |= (FIEMAP_EXTENT_DELALLOC |
+ 				  FIEMAP_EXTENT_UNKNOWN);
+ 		} else {
++			int ref_cnt = 0;
++
+ 			disko = em->block_start + offset_in_extent;
++
++			/*
++			 * As btrfs supports shared space, this information
++			 * can be exported to userspace tools via
++			 * flag FIEMAP_EXTENT_SHARED.
++			 */
++			ret = iterate_inodes_from_logical(
++					em->block_start,
++					BTRFS_I(inode)->root->fs_info,
++					path, count_ext_ref, &ref_cnt);
++			if (ret < 0)
++				goto out_free;
++
++			if (ref_cnt > 1)
++				flags |= FIEMAP_EXTENT_SHARED;
+ 		}
+ 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
+ 			flags |= FIEMAP_EXTENT_ENCODED;
+@@ -4127,6 +4158,7 @@ out_free:
+ out:
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+ 			     &cached_state, GFP_NOFS);
++	btrfs_free_path(path);
+ 	return ret;
+ }
+ 
+-- 
+1.7.7
 
-Btrfs v0.20-rc1
-
-# btrfs filesystem resize 3G /mnt/test
-
-
-# sync
-# btrfs filesystem show
-failed to open /dev/sr0: No medium found
-Label: none  uuid: 8dce5578-a2bc-416e-96fd-16a2f4f770b7
-	Total devices 2 FS bytes used 796.00KB
-	devid    2 size 50.00GB used 2.01GB path /dev/sdb
-	devid    1 size 3.00GB used 2.03GB path /dev/sda
-
-So it appears that it only resized part of the file system which
-lies on /dev/sda to 3G. This behavior is confusing as hell, is this
-really desirable behaviour ?
-
-I do understand that you're able to specify devid to resize, however
-without devid specification this kind of does not make any sense. dm
-get it right, and it also has several different policies on handling
-this stuff and it was not easy to get this right. Is btrfs going to
-fix this somehow, it does it expect user to take care of this (I
-hope not). Because currently ssm is not able to resize btrfs
-correctly.
-
-Thanks!
--Lukas

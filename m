@@ -1,105 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44682 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751149Ab3HPI2A (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.162]:35291 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754727Ab3HPLhu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 04:28:00 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: pth@suse.de, sf@suse.de, dave@jikos.cz, jeff.liu@oracle.com
-Subject: [RFC PATCH] Btrfs: export btrfs space shared info to userspace
-Date: Fri, 16 Aug 2013 16:27:28 +0800
-Message-Id: <1376641648-25015-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 16 Aug 2013 07:37:50 -0400
+Message-ID: <520E0F09.1050604@giantdisaster.de>
+Date: Fri, 16 Aug 2013 13:37:45 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: stop using GFP_ATOMIC when allocating rewind ebs
+References: <1375909909-25955-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1375909909-25955-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Similar to ocfs2, btrfs also supports that extents can be shared by
-different inodes, and there are some userspace tools requesting
-for this kind of 'space shared infomation'.[1]
+On Wed, 7 Aug 2013 17:11:49 -0400, Josef Bacik wrote:
+> There is no reason we can't just set the path to blocking and then do normal
+> GFP_NOFS allocations for these extent buffers.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 
-ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
+You've forgotten at least one place.
 
-[1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
+static inline struct extent_buffer *
+get_old_root(struct btrfs_root *root, u64 time_seq)
+{
+...
+        eb_root = btrfs_read_lock_root_node(root);
+...
+        } else {
+                eb = btrfs_clone_extent_buffer(eb_root);
+                btrfs_tree_read_unlock(eb_root);
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fe443fe..2b3dd4a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -20,6 +20,7 @@
- #include "check-integrity.h"
- #include "locking.h"
- #include "rcu-string.h"
-+#include "backref.h"
- 
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -3957,6 +3958,19 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 	return NULL;
- }
- 
-+static noinline int count_ext_ref(u64 inum, u64 offset, u64 root_id, void *ctx)
-+{
-+	int cnt = *((int *)ctx);
-+
-+	cnt++;
-+	*((int *)ctx) = cnt;
-+
-+	/* Now we're sure that the extent is shared. */
-+	if (cnt > 1)
-+		return 1;
-+	return 0;
-+}
-+
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -4023,7 +4037,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		last = found_key.offset;
- 		last_for_get_extent = last + 1;
- 	}
--	btrfs_free_path(path);
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * we might have some extents allocated but more delalloc past those
-@@ -4093,7 +4107,24 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			flags |= (FIEMAP_EXTENT_DELALLOC |
- 				  FIEMAP_EXTENT_UNKNOWN);
- 		} else {
-+			int ref_cnt = 0;
-+
- 			disko = em->block_start + offset_in_extent;
-+
-+			/*
-+			 * As btrfs supports shared space, this information
-+			 * can be exported to userspace tools via
-+			 * flag FIEMAP_EXTENT_SHARED.
-+			 */
-+			ret = iterate_inodes_from_logical(
-+					em->block_start,
-+					BTRFS_I(inode)->root->fs_info,
-+					path, count_ext_ref, &ref_cnt);
-+			if (ret < 0)
-+				goto out_free;
-+
-+			if (ref_cnt > 1)
-+				flags |= FIEMAP_EXTENT_SHARED;
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-@@ -4127,6 +4158,7 @@ out_free:
- out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
- 			     &cached_state, GFP_NOFS);
-+	btrfs_free_path(path);
- 	return ret;
- }
- 
--- 
-1.7.7
+The xfstest btrfs/004 (backref testing) discovered this issue in the
+context of ioctl(BTRFS_IOC_LOGICAL_INO).
+
+
+> ---
+>  fs/btrfs/ctree.c     |   16 ++++++++++------
+>  fs/btrfs/extent_io.c |    8 ++++----
+>  2 files changed, 14 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 1dd8a71..414a2d7 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1191,8 +1191,8 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+>   * is freed (its refcount is decremented).
+>   */
+>  static struct extent_buffer *
+> -tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+> -		    u64 time_seq)
+> +tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+> +		    struct extent_buffer *eb, u64 time_seq)
+>  {
+>  	struct extent_buffer *eb_rewin;
+>  	struct tree_mod_elem *tm;
+> @@ -1207,12 +1207,15 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+>  	if (!tm)
+>  		return eb;
+>  
+> +	btrfs_set_path_blocking(path);
+> +	btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+> +
+>  	if (tm->op == MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
+>  		BUG_ON(tm->slot != 0);
+>  		eb_rewin = alloc_dummy_extent_buffer(eb->start,
+>  						fs_info->tree_root->nodesize);
+>  		if (!eb_rewin) {
+> -			btrfs_tree_read_unlock(eb);
+> +			btrfs_tree_read_unlock_blocking(eb);
+>  			free_extent_buffer(eb);
+>  			return NULL;
+>  		}
+> @@ -1224,13 +1227,14 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+>  	} else {
+>  		eb_rewin = btrfs_clone_extent_buffer(eb);
+>  		if (!eb_rewin) {
+> -			btrfs_tree_read_unlock(eb);
+> +			btrfs_tree_read_unlock_blocking(eb);
+>  			free_extent_buffer(eb);
+>  			return NULL;
+>  		}
+>  	}
+>  
+> -	btrfs_tree_read_unlock(eb);
+> +	btrfs_clear_path_blocking(path, NULL, BTRFS_READ_LOCK);
+> +	btrfs_tree_read_unlock_blocking(eb);
+>  	free_extent_buffer(eb);
+>  
+>  	extent_buffer_get(eb_rewin);
+> @@ -2779,7 +2783,7 @@ again:
+>  				btrfs_clear_path_blocking(p, b,
+>  							  BTRFS_READ_LOCK);
+>  			}
+> -			b = tree_mod_log_rewind(root->fs_info, b, time_seq);
+> +			b = tree_mod_log_rewind(root->fs_info, p, b, time_seq);
+>  			if (!b) {
+>  				ret = -ENOMEM;
+>  				goto done;
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b422cba..beda5a8 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4340,12 +4340,12 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+>  	struct extent_buffer *new;
+>  	unsigned long num_pages = num_extent_pages(src->start, src->len);
+>  
+> -	new = __alloc_extent_buffer(NULL, src->start, src->len, GFP_ATOMIC);
+> +	new = __alloc_extent_buffer(NULL, src->start, src->len, GFP_NOFS);
+
+Here.
+
+
+>  	if (new == NULL)
+>  		return NULL;
+>  
+>  	for (i = 0; i < num_pages; i++) {
+> -		p = alloc_page(GFP_ATOMIC);
+> +		p = alloc_page(GFP_NOFS);
+>  		if (!p) {
+>  			btrfs_release_extent_buffer(new);
+>  			return NULL;
+> @@ -4369,12 +4369,12 @@ struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
+>  	unsigned long num_pages = num_extent_pages(0, len);
+>  	unsigned long i;
+>  
+> -	eb = __alloc_extent_buffer(NULL, start, len, GFP_ATOMIC);
+> +	eb = __alloc_extent_buffer(NULL, start, len, GFP_NOFS);
+>  	if (!eb)
+>  		return NULL;
+>  
+>  	for (i = 0; i < num_pages; i++) {
+> -		eb->pages[i] = alloc_page(GFP_ATOMIC);
+> +		eb->pages[i] = alloc_page(GFP_NOFS);
+>  		if (!eb->pages[i])
+>  			goto err;
+>  	}
+> 
+
 

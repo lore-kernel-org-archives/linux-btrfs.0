@@ -1,49 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:61952 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752270Ab3HPQak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 12:30:40 -0400
-Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7GGUe8n011188
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 12:30:40 -0400
-Date: Fri, 16 Aug 2013 09:30:39 -0700
-From: Zach Brown <zab@redhat.com>
-To: =?utf-8?B?THVrw6HFoQ==?= Czerner <lczerner@redhat.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How btrfs resize should work ?
-Message-ID: <20130816163039.GK12314@lenny.home.zabbo.net>
-References: <alpine.LFD.2.00.1308161011160.1968@localhost.localdomain>
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:56300 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751446Ab3HPQvA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Aug 2013 12:51:00 -0400
+Received: by mail-vc0-f175.google.com with SMTP id ia10so1615113vcb.34
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 09:50:59 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <alpine.LFD.2.00.1308161011160.1968@localhost.localdomain>
+Date: Fri, 16 Aug 2013 11:50:59 -0500
+Message-ID: <CAPidFuhbjxYUqjLV_8tCCVX6aSNwZ1qJGCZvnSPx8cShGCrQvA@mail.gmail.com>
+Subject: 4 vol raid5 segfault on device delete
+From: Craig Johnson <crajohns@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> So it appears that it only resized part of the file system which
-> lies on /dev/sda to 3G. This behavior is confusing as hell, is this
-> really desirable behaviour ?
+I have a 4 device volume with raid5 - trying to remove one of the
+devices (plenty of free space) and I get an almost immediate segfault.
+ Scrub shows no errors, repair show space cache invalid but nothing
+else (I remounted with clear cache to be safe).  Lots of corrupt on
+bdev (for 3 out of 4 drives), but I have no file access issues that I
+know of.  Thanks!
 
-Yeah, 'btrfs filesystem resize' is misnamed.  It only resizes a
-specified device which defaults to devid 1 if you don't specify one.
-The documentation is just tragically wrong:
+Output below:
 
-"
-       filesystem resize [devid:][+/-]<size>[gkm]|[devid:]max <path>
-              Resize a filesystem identified by <path> for the
-              underlying device devid.
-"
+http://pastebin.com/AnrmZrt2
 
-Nope.
-
-> fix this somehow, it does it expect user to take care of this (I
-> hope not). Because currently ssm is not able to resize btrfs
-> correctly.
-
-What *would* be correctly?  What does ssm expect to be able to do with
-all of the devices under a file system after it is resized?
-
-Put another way: if you couldn't inspect the btrfs metadata, what would
-a unit test for this look like that would pass?
-
-- z
+- Craig

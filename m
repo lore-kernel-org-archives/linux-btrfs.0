@@ -1,50 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:51368 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751446Ab3HPOFZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 10:05:25 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 617999A0404
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 08:05:24 -0600 (MDT)
-Date: Fri, 16 Aug 2013 10:05:22 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: stop using GFP_ATOMIC when allocating rewind ebs
-Message-ID: <20130816140522.GA3990@localhost.localdomain>
-References: <1375909909-25955-1-git-send-email-jbacik@fusionio.com>
- <520E0F09.1050604@giantdisaster.de>
+Received: from mx1.redhat.com ([209.132.183.28]:61952 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752270Ab3HPQak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Aug 2013 12:30:40 -0400
+Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r7GGUe8n011188
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 12:30:40 -0400
+Date: Fri, 16 Aug 2013 09:30:39 -0700
+From: Zach Brown <zab@redhat.com>
+To: =?utf-8?B?THVrw6HFoQ==?= Czerner <lczerner@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: How btrfs resize should work ?
+Message-ID: <20130816163039.GK12314@lenny.home.zabbo.net>
+References: <alpine.LFD.2.00.1308161011160.1968@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <520E0F09.1050604@giantdisaster.de>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <alpine.LFD.2.00.1308161011160.1968@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 16, 2013 at 01:37:45PM +0200, Stefan Behrens wrote:
-> On Wed, 7 Aug 2013 17:11:49 -0400, Josef Bacik wrote:
-> > There is no reason we can't just set the path to blocking and then do normal
-> > GFP_NOFS allocations for these extent buffers.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> 
-> You've forgotten at least one place.
-> 
-> static inline struct extent_buffer *
-> get_old_root(struct btrfs_root *root, u64 time_seq)
-> {
-> ...
->         eb_root = btrfs_read_lock_root_node(root);
-> ...
->         } else {
->                 eb = btrfs_clone_extent_buffer(eb_root);
->                 btrfs_tree_read_unlock(eb_root);
-> 
-> 
-> The xfstest btrfs/004 (backref testing) discovered this issue in the
-> context of ioctl(BTRFS_IOC_LOGICAL_INO).
->
+> So it appears that it only resized part of the file system which
+> lies on /dev/sda to 3G. This behavior is confusing as hell, is this
+> really desirable behaviour ?
 
-Ah excellent, thanks.  I will fix this up right now.
+Yeah, 'btrfs filesystem resize' is misnamed.  It only resizes a
+specified device which defaults to devid 1 if you don't specify one.
+The documentation is just tragically wrong:
 
-Josef 
+"
+       filesystem resize [devid:][+/-]<size>[gkm]|[devid:]max <path>
+              Resize a filesystem identified by <path> for the
+              underlying device devid.
+"
+
+Nope.
+
+> fix this somehow, it does it expect user to take care of this (I
+> hope not). Because currently ssm is not able to resize btrfs
+> correctly.
+
+What *would* be correctly?  What does ssm expect to be able to do with
+all of the devices under a file system after it is resized?
+
+Put another way: if you couldn't inspect the btrfs metadata, what would
+a unit test for this look like that would pass?
+
+- z

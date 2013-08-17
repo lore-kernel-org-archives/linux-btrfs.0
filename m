@@ -1,47 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f169.google.com ([209.85.128.169]:56498 "EHLO
-	mail-ve0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753033Ab3HQMYt (ORCPT
+Received: from slow1-d.mail.gandi.net ([217.70.178.86]:49411 "EHLO
+	slow1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753314Ab3HQORR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 17 Aug 2013 08:24:49 -0400
-Received: by mail-ve0-f169.google.com with SMTP id db10so2064150veb.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Aug 2013 05:24:49 -0700 (PDT)
+	Sat, 17 Aug 2013 10:17:17 -0400
+Received: from relay5-d.mail.gandi.net (relay5-d.mail.gandi.net [217.70.183.197])
+	by slow1-d.mail.gandi.net (Postfix) with ESMTP id DF91347A093
+	for <linux-btrfs@vger.kernel.org>; Sat, 17 Aug 2013 16:01:05 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <20130817120534.17880.11982@localhost.localdomain>
-References: <CAPidFuhbjxYUqjLV_8tCCVX6aSNwZ1qJGCZvnSPx8cShGCrQvA@mail.gmail.com>
-	<20130817120534.17880.11982@localhost.localdomain>
-Date: Sat, 17 Aug 2013 07:24:49 -0500
-Message-ID: <CAPidFuiiqWg6U5f5APH3wXibeEY7GHgT1c2_W8CH=iSydZ-JNg@mail.gmail.com>
-Subject: Re: 4 vol raid5 segfault on device delete
-From: Craig Johnson <crajohns@gmail.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain;
+ charset=UTF-8;
+ format=flowed
+Date: Sat, 17 Aug 2013 16:00:41 +0200
+From: Xavier Bassery <xavier@bartica.org>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: Mathijs Kwik <mathijs@bluescreen303.nl>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Problems with incremental btrfs send (out of order
+ =?UTF-8?Q?instructions=3F=29?=
+In-Reply-To: <51FA20FE.7020708@giantdisaster.de>
+References: <CAKvOHKD+cYp+CO4XLXkktnFZ_5n1tZnbrqS3D+T8nJhVEReWig@mail.gmail.com>
+ <51FA20FE.7020708@giantdisaster.de>
+Message-ID: <b866582a35e6e829b88bdea3df8a57b0@bartica.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I did this on 3.11-rc5 kernel I compiled a few days ago.
-3.11.0-1-ARCH-00013-g584d88b-dirty.
-
-Thanks!
-
-On Sat, Aug 17, 2013 at 7:05 AM, Chris Mason <chris.mason@fusionio.com> wrote:
-> Quoting Craig Johnson (2013-08-16 12:50:59)
->> I have a 4 device volume with raid5 - trying to remove one of the
->> devices (plenty of free space) and I get an almost immediate segfault.
->>  Scrub shows no errors, repair show space cache invalid but nothing
->> else (I remounted with clear cache to be safe).  Lots of corrupt on
->> bdev (for 3 out of 4 drives), but I have no file access issues that I
->> know of.  Thanks!
+On 2013-08-01 10:49, Stefan Behrens wrote:
+> On Wed, 31 Jul 2013 23:33:59 +0200, Mathijs Kwik wrote:
+>> Hi all,
 >>
->> Output below:
+>> For some time, I've successfully deployed btrfs send/receive as a
+>> viable backup solution.
+>> It's fast and flexible and nicely scriptable =)
+>> However, every once in a while, trouble strikes on the receiving end
+>> with a message like:
 >>
->> http://pastebin.com/AnrmZrt2
+>> ERROR: rename 
+>> nixpkgs/pkgs/applications/version-management/subversion-1.2.x/default.nix
+>> -> o2979-81788-0 failed. No such file or directory
 >
-> Hi Craig,
+> I've also seen such an errors. It's an error in the send code.
 >
-> Just double checking how you setup the device removal?  This is a 3.11
-> arch kernel?  Which rc was it based from?
->
-> -chris
->
+[...]
+> If you enter a bug on bugzilla.kernel.org (refer to
+> 
+> <https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F>),
+> you increase the probability that somebody fixes the issue some day 
+> :)
+
+
+This bug has been reported in BZ #60673 [1] and was fixed in Josef's 
+btrfs-next commit
+titled "Btrfs: check our parent dir when doing a compare send" [2].
+This fix hasn't been merged in the stable kernel yet.
+
+Thanks to all.
+
+
+[1] https://bugzilla.kernel.org/show_bug.cgi?id=60673
+[2] 
+http://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/fs/btrfs/send.c?id=441f6d6f7115a927f3e13f7acc53184a6081dbe0

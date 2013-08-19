@@ -1,370 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17769 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752280Ab3HPMmW (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:48690 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751085Ab3HSRbC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 08:42:22 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7GCgKTb019223
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 12:42:21 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7GCgKLK004029
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 12:42:20 GMT
-Received: from abhmt104.oracle.com (abhmt104.oracle.com [141.146.116.56])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7GCgKgd004009
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2013 12:42:20 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: use lblkid to scan and filesystem show improvements
-Date: Fri, 16 Aug 2013 20:48:23 +0800
-Message-Id: <1376657303-14931-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1376657303-14931-1-git-send-email-anand.jain@oracle.com>
+	Mon, 19 Aug 2013 13:31:02 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 960949A069F
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:31:01 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id sT94e3qsoPHMI0t1 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:31:00 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: allow fsck to fix directory isize errors
+Date: Mon, 19 Aug 2013 13:30:58 -0400
+Message-ID: <1376933458-5323-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1376657303-14931-1-git-send-email-anand.jain@oracle.com>
 
-create helper functions to use lblkid to scan for the
-btrfs disks
+A user reported a problem where he was unable to rmdir an empty directory.  This
+is because his isize was wrong.  This patch will fix this sort of corruption and
+allow him to rmdir his directory.  Thanks
 
-When we are using the lblkid for scanning for btrfs disks,
-we don't have to worry about the manually scanning the
-/dev or /dev/mapper which means we don't need the
---all-devices (and proposed --mapper) options.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- cmds-device.c     |   21 ++-------
- cmds-filesystem.c |  126 +++++++++++++---------------------------------------
- utils.c           |   54 +++++++++++++++++++++-
- utils.h           |    7 +++-
- 4 files changed, 93 insertions(+), 115 deletions(-)
+ cmds-check.c |   86 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 files changed, 80 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index be2aaff..833ad30 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -186,7 +186,7 @@ static int cmd_rm_dev(int argc, char **argv)
- }
- 
- static const char * const cmd_scan_dev_usage[] = {
--	"btrfs device scan [<--all-devices>|<device> [<device>...]]",
-+	"btrfs device scan [<device>...]",
- 	"Scan devices for a btrfs filesystem",
- 	NULL
+diff --git a/cmds-check.c b/cmds-check.c
+index dbb41e5..64712fa 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -221,6 +221,8 @@ struct walk_control {
+ 	int root_level;
  };
-@@ -194,28 +194,15 @@ static const char * const cmd_scan_dev_usage[] = {
- static int cmd_scan_dev(int argc, char **argv)
+ 
++static void reset_cached_block_groups(struct btrfs_fs_info *fs_info);
++
+ static u8 imode_to_type(u32 imode)
  {
- 	int	i, fd, e;
--	int	where = BTRFS_SCAN_PROC;
- 	int	devstart = 1;
- 
--	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
--		if (check_argc_max(argc, 2))
--			usage(cmd_scan_dev_usage);
--
--		where = BTRFS_SCAN_DEV;
--		devstart += 1;
--	}
--
--	if(argc<=devstart){
--		int ret;
-+	if (argc <= devstart) {
- 		printf("Scanning for Btrfs filesystems\n");
--		ret = scan_for_btrfs(where, 1);
--		if (ret){
--			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
--			return 18;
--		}
-+		scan_for_btrfs_v2(BTRFS_UPDATE_KERNEL);
- 		return 0;
- 	}
- 
-+	/* there are specific device/file to scan*/
- 	fd = open("/dev/btrfs-control", O_RDWR);
- 	if (fd < 0) {
- 		perror("failed to open /dev/btrfs-control");
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 508ba90..9a325ba 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -195,27 +195,6 @@ static int cmd_df(int argc, char **argv)
+ #define S_SHIFT 12
+@@ -1336,8 +1338,64 @@ out:
  	return ret;
  }
  
--static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
--{
--	char uuidbuf[37];
--	struct list_head *cur;
--	struct btrfs_device *device;
--	int search_len = strlen(search);
--
--	search_len = min(search_len, 37);
--	uuid_unparse(fs_devices->fsid, uuidbuf);
--	if (!strncmp(uuidbuf, search, search_len))
--		return 1;
--
--	list_for_each(cur, &fs_devices->devices) {
--		device = list_entry(cur, struct btrfs_device, dev_list);
--		if ((device->label && strcmp(device->label, search) == 0) ||
--		    strcmp(device->name, search) == 0)
--			return 1;
--	}
--	return 0;
--}
--
- static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
- {
- 	char uuidbuf[37];
-@@ -232,10 +211,10 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
- 	else
- 		printf("Label: none ");
- 
--
- 	total = device->total_devs;
--	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
--	       (unsigned long long)total,
-+
-+	printf(" uuid: %s (unmounted)\n\tTotal devices %llu FS bytes used %s\n",
-+		uuidbuf, (unsigned long long)total,
- 	       pretty_size(device->super_bytes_used));
- 
- 	list_for_each(cur, &fs_devices->devices) {
-@@ -305,23 +284,6 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fi,
- 	return 0;
- }
- 
--/* This function checks if the given input parameter is
-- * an uuid or a path
-- * return -1: some error in the given input
-- * return 0: unknow input
-- * return 1: given input is uuid
-- * return 2: given input is path
-- */
--static int check_arg_type(char *input, u8 *processed)
--{
--	int ret = 0;
--	if (!uuid_parse(input, processed))
--		ret = 1;
--	else if (realpath(input, (char *)processed))
--		ret = 2;
--	return ret;
--}
--
- static int btrfs_scan_kernel(void *input, int type)
- {
- 	int ret = 0, fd;
-@@ -371,7 +333,7 @@ static int btrfs_scan_kernel(void *input, int type)
- }
- 
- static const char * const cmd_show_usage[] = {
--	"btrfs filesystem show [--all-devices|--mapper|--kernel|<uuid>]",
-+	"btrfs filesystem show [--mounted]",
- 	"Show the structure of a filesystem",
- 	"If no argument is given, structure of all present filesystems is shown.",
- 	NULL
-@@ -382,65 +344,41 @@ static int cmd_show(int argc, char **argv)
- 	struct list_head *all_uuids;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct list_head *cur_uuid;
--	char *search = 0;
- 	int ret = 0;
--	int where = BTRFS_SCAN_PROC;
--	int searchstart = 1;
--	u8 processed[PATH_MAX];
--
--	if( argc > 1 && !strcmp(argv[1], "--all-devices")){
--		where = BTRFS_SCAN_DEV;
--		searchstart += 1;
--	} else if (argc > 1 && !strcmp(argv[1], "--kernel")) {
--		where = 0;
--		searchstart += 1;
--	}
-+	int where = 0;
- 
--	if (!where) {
--		/* option --kernel*/
--		if (! (searchstart < argc))
--			ret = btrfs_scan_kernel(NULL, 0);
--
--		while (searchstart < argc) {
--			ret = check_arg_type(argv[searchstart], processed);
--			if (ret < 0) {
--				fprintf(stderr, "ERROR at input %s\n",
--							argv[searchstart]);
--				return 1;
--			}
--			if (!ret) {
--				fprintf(stderr, "ERROR unknown %s\n",
--					argv[searchstart]);
--				return 1;
--			}
-+	if (check_argc_max(argc, 2))
-+		usage(cmd_show_usage);
- 
--			ret = btrfs_scan_kernel(processed, ret);
--			if (ret)
--				break;
--			searchstart++;
--		}
-+	/* show only mounted btrfs disks */
-+	if (argc > 1 && !strcmp(argv[1], "--mounted"))
-+		where = BTRFS_SCAN_MOUNTED;
-+
-+	switch (where) {
-+	case 0:
-+		/* no option : show both mounted and unmounted
-+		 */
-+		/* mounted */
-+		ret = btrfs_scan_kernel(NULL, 0);
- 		if (ret)
- 			fprintf(stderr, "ERROR: scan kernel failed, %d\n",
- 				ret);
--		return ret;
--	}
- 
--	ret = scan_for_btrfs(where, 0);
--	if (ret) {
--		fprintf(stderr, "ERROR: %d while scanning\n", ret);
--		return 1;
--	}
--	
--	if(searchstart < argc)
--		search = argv[searchstart];
--
--	all_uuids = btrfs_scanned_uuids();
--	list_for_each(cur_uuid, all_uuids) {
--		fs_devices = list_entry(cur_uuid, struct btrfs_fs_devices,
-+		/* unmounted */
-+		scan_for_btrfs_v2(!BTRFS_UPDATE_KERNEL);
-+		all_uuids = btrfs_scanned_uuids();
-+		list_for_each(cur_uuid, all_uuids) {
-+			fs_devices = list_entry(cur_uuid, struct btrfs_fs_devices,
- 					list);
--		if (search && uuid_search(fs_devices, search) == 0)
--			continue;
--		print_one_uuid(fs_devices);
-+			print_one_uuid(fs_devices);
-+		}
-+		break;
-+	case BTRFS_SCAN_MOUNTED:
-+		ret = btrfs_scan_kernel(NULL, 0);
-+		if (ret)
-+			fprintf(stderr, "ERROR: scan kernel failed, %d\n",
-+				ret);
-+		break;
- 	}
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return 0;
-diff --git a/utils.c b/utils.c
-index 86ee948..c26193e 100644
---- a/utils.c
-+++ b/utils.c
-@@ -680,9 +680,8 @@ int is_block_device(const char *path) {
-  * Find the mount point for a mounted device.
-  * On success, returns 0 with mountpoint in *mp.
-  * On failure, returns -errno (not mounted yields -EINVAL)
-- * Is noisy on failures, expects to be given a mounted device.
-  */
--static int get_btrfs_mount(const char *dev, char *mp, size_t mp_size) {
-+int get_btrfs_mount(const char *dev, char *mp, size_t mp_size) {
- 	int ret;
- 	int fd = -1;
- 
-@@ -707,7 +706,6 @@ static int get_btrfs_mount(const char *dev, char *mp, size_t mp_size) {
- 
- 	ret = check_mounted_where(fd, dev, mp, mp_size, NULL);
- 	if (!ret) {
--		fprintf(stderr, "%s is not a mounted btrfs device\n", dev);
- 		ret = -EINVAL;
- 	} else { /* mounted, all good */
- 		ret = 0;
-@@ -1133,6 +1131,56 @@ fail:
- 	return ret;
- }
- 
-+int test_skip_this_disk(char *path)
++static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
 +{
-+	int fd;
-+	/* this will eliminate disks which are mounted (btrfs)
-+	 * and non-dm disk path when dm is enabled
-+	 */
-+	fd = open(path, O_RDWR|O_EXCL);
-+	if (fd < 0)
++	struct btrfs_trans_handle *trans;
++	struct btrfs_path *path;
++	struct btrfs_inode_item *ei;
++	struct btrfs_key key;
++	int ret;
++
++	/* So far we just fix dir isize wrong */
++	if (!(rec->errors & I_ERR_DIR_ISIZE_WRONG))
 +		return 1;
-+	close(fd);
-+	return 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
++		return PTR_ERR(trans);
++	}
++
++	key.objectid = rec->ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = (u64)-1;
++
++	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
++	if (ret < 0)
++		goto out;
++	if (ret) {
++		if (!path->slots[0]) {
++			ret = -ENOENT;
++			goto out;
++		}
++		path->slots[0]--;
++		ret = 0;
++	}
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++	if (key.objectid != rec->ino) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			    struct btrfs_inode_item);
++	btrfs_set_inode_size(path->nodes[0], ei, rec->found_size);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++	rec->errors &= ~I_ERR_DIR_ISIZE_WRONG;
++	printf("reset isize for dir %Lu root %Lu\n", rec->ino,
++	       root->root_key.objectid);
++out:
++	btrfs_commit_transaction(trans, root);
++	btrfs_free_path(path);
++	return ret;
 +}
 +
-+void scan_for_btrfs_v2(int update_kernel)
-+{
-+	int fd = -1;
-+	u64 num_devices;
-+	struct btrfs_fs_devices *tmp_devices;
-+	blkid_dev_iterate iter = NULL;
-+	blkid_dev dev = NULL;
-+	blkid_cache cache = NULL;
-+	char path[PATH_MAX];
-+
-+	if (blkid_get_cache(&cache, 0) < 0) {
-+		printf("ERROR: lblkid cache get failed\n");
-+		return;
-+	}
-+	blkid_probe_all(cache);
-+	iter = blkid_dev_iterate_begin(cache);
-+	blkid_dev_set_search(iter, "TYPE", "btrfs");
-+	while (blkid_dev_next(iter, &dev) == 0) {
-+		dev = blkid_verify(cache, dev);
-+		if (!dev)
-+			continue;
-+		/* if we are here its definitly a btrfs disk*/
-+		strcpy(path, blkid_dev_devname(dev));
-+		if (test_skip_this_disk(path))
-+			continue;
-+
-+		fd = open(path, O_RDONLY);
-+		btrfs_scan_one_device(fd, path, &tmp_devices,
-+				&num_devices, BTRFS_SUPER_INFO_OFFSET);
-+		close(fd);
-+		fd = -1;
-+		if (update_kernel)
-+			btrfs_register_one_device(path);
-+	}
-+	blkid_dev_iterate_end(iter);
-+}
-+
- int btrfs_scan_for_fsid(int run_ioctls)
+ static int check_inode_recs(struct btrfs_root *root,
+-			    struct cache_tree *inode_cache)
++			    struct cache_tree *inode_cache, int repair)
  {
- 	int ret;
-diff --git a/utils.h b/utils.h
-index ec06a82..4b449b8 100644
---- a/utils.h
-+++ b/utils.h
-@@ -25,8 +25,11 @@
+ 	struct cache_extent *cache;
+ 	struct ptr_node *node;
+@@ -1392,6 +1450,15 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			}
+ 		}
  
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
- 
--#define BTRFS_SCAN_PROC	1
-+#define BTRFS_SCAN_PROC		1
- #define BTRFS_SCAN_DEV		2
-+#define BTRFS_SCAN_MOUNTED	3
++		if (repair) {
++			ret = try_repair_inode(root, rec);
++			if (ret == 0 && can_free_inode_rec(rec)) {
++				free_inode_rec(rec);
++				continue;
++			}
++			ret = 0;
++		}
 +
-+#define BTRFS_UPDATE_KERNEL	1
+ 		error++;
+ 		if (!rec->found_inode_item)
+ 			rec->errors |= I_ERR_NO_INODE_ITEM;
+@@ -1733,7 +1800,7 @@ static int process_root_ref(struct extent_buffer *eb, int slot,
  
- int make_btrfs(int fd, const char *device, const char *label,
- 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
-@@ -74,7 +77,9 @@ u64 btrfs_device_size(int fd, struct stat *st);
- #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
- int test_dev_for_mkfs(char *file, int force_overwrite, char *estr);
- int scan_for_btrfs(int where, int update_kernel);
-+void scan_for_btrfs_v2(int update_kernel);
- int get_label_mounted(const char *mount_path, char *labelp);
- int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
- 	u64 dev_cnt, int mixed, char *estr);
-+int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
- #endif
+ static int check_fs_root(struct btrfs_root *root,
+ 			 struct cache_tree *root_cache,
+-			 struct walk_control *wc)
++			 struct walk_control *wc, int repair)
+ {
+ 	int ret = 0;
+ 	int wret;
+@@ -1803,7 +1870,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 				root_node.current);
+ 	}
+ 
+-	ret = check_inode_recs(root, &root_node.inode_cache);
++	ret = check_inode_recs(root, &root_node.inode_cache, repair);
+ 	return ret;
+ }
+ 
+@@ -1819,7 +1886,8 @@ static int fs_root_objectid(u64 objectid)
+ }
+ 
+ static int check_fs_roots(struct btrfs_root *root,
+-			  struct cache_tree *root_cache)
++			  struct cache_tree *root_cache,
++			  int repair)
+ {
+ 	struct btrfs_path path;
+ 	struct btrfs_key key;
+@@ -1830,6 +1898,12 @@ static int check_fs_roots(struct btrfs_root *root,
+ 	int ret;
+ 	int err = 0;
+ 
++	/*
++	 * Just in case we made any changes to the extent tree that weren't
++	 * reflected into the free space cache yet.
++	 */
++	if (repair)
++		reset_cached_block_groups(root->fs_info);
+ 	memset(&wc, 0, sizeof(wc));
+ 	cache_tree_init(&wc.shared);
+ 	btrfs_init_path(&path);
+@@ -1856,7 +1930,7 @@ static int check_fs_roots(struct btrfs_root *root,
+ 				err = 1;
+ 				goto next;
+ 			}
+-			ret = check_fs_root(tmp_root, root_cache, &wc);
++			ret = check_fs_root(tmp_root, root_cache, &wc, repair);
+ 			if (ret)
+ 				err = 1;
+ 			btrfs_free_fs_root(tmp_root);
+@@ -5815,7 +5889,7 @@ int cmd_check(int argc, char **argv)
+ 		goto out;
+ 
+ 	fprintf(stderr, "checking fs roots\n");
+-	ret = check_fs_roots(root, &root_cache);
++	ret = check_fs_roots(root, &root_cache, repair);
+ 	if (ret)
+ 		goto out;
+ 
 -- 
-1.7.1
+1.7.7.6
 

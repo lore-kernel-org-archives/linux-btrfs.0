@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f50.google.com ([74.125.82.50]:35146 "EHLO
-	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750908Ab3HSSJC (ORCPT
+Received: from mail-wg0-f49.google.com ([74.125.82.49]:45949 "EHLO
+	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750946Ab3HSSbd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 14:09:02 -0400
-Received: by mail-wg0-f50.google.com with SMTP id m15so3833353wgh.29
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:09:01 -0700 (PDT)
+	Mon, 19 Aug 2013 14:31:33 -0400
+Received: by mail-wg0-f49.google.com with SMTP id y10so3754124wgg.28
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:31:32 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [RFC PATCH] Btrfs: fix memory leak of orphan block rsv
-Date: Mon, 19 Aug 2013 19:08:45 +0100
-Message-Id: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: fix memory leak of orphan block rsv
+Date: Mon, 19 Aug 2013 19:31:06 +0100
+Message-Id: <1376937066-10860-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
+References: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -24,10 +26,9 @@ transaction.c:commit_fs_roots()).
 
 The respective inode will end up being called by inode.c:btrfs_evict_node()
 (via the VFS). So my likely dirty hack, after some debugging, of
-freeing the orphan block rsv in btrfs_evict_inode() if its not being
-used by other tasks, seems to fix the leak without failing xfstests
-so far. But this is unlikely to be a correct solution without causing
-issues elsewhere.
+freeing the orphan block rsv in btrfs_evict_inode() if it's not being
+used by other tasks, seems to fix the leak for the cases listed below and
+without failing xfstests.
 
 This commit also changes calls to btrfs_orphan_del() which grabbed the
 root's orphan_block_rsv without acquiring the orphan_lock first (confront
@@ -35,7 +36,7 @@ with btrfs_orphan_commit_root(), which acquires the lock before getting
 and setting the root's orphan_block_rsv).
 
 This issue is simple to reproduce and observe if kmemleak is enabled.
-Two simple ways to reproduce it:
+There are at least two simple ways to reproduce it:
 
 ** 1
 
@@ -80,37 +81,16 @@ This affects btrfs-next, revision be8e3cd00d7293dd177e3f8a4a1645ce09ca3acb
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/ctree.h       |    1 +
- fs/btrfs/extent-tree.c |    1 +
- fs/btrfs/inode.c       |   36 +++++++++++++++++++++++++++++-------
- 3 files changed, 31 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7c93d9f..da3ac13 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1153,6 +1153,7 @@ struct btrfs_block_rsv {
- 	u64 reserved;
- 	struct btrfs_space_info *space_info;
- 	spinlock_t lock;
-+	atomic_t count;
- 	unsigned short full;
- 	unsigned short type;
- 	unsigned short failfast;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 32639f2..3ecee8e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4500,6 +4500,7 @@ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
- 	btrfs_init_block_rsv(block_rsv, type);
- 	block_rsv->space_info = __find_space_info(fs_info,
- 						  BTRFS_BLOCK_GROUP_METADATA);
-+	atomic_set(&block_rsv->count, 0);
- 	return block_rsv;
- }
- 
+V2: removed atomic_t member in struct btrfs_block_rsv, as suggested by
+    Josef Bacik, and use instead the condition reserved == 0 to decide
+    when to free the block.
+
+ fs/btrfs/inode.c |   35 ++++++++++++++++++++++++++++-------
+ 1 file changed, 28 insertions(+), 7 deletions(-)
+
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b67b81a..459ffe2 100644
+index b67b81a..905de1e2 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -2870,8 +2870,13 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
@@ -120,7 +100,7 @@ index b67b81a..459ffe2 100644
 -	block_rsv = root->orphan_block_rsv;
 -	root->orphan_block_rsv = NULL;
 +	if (root->orphan_block_rsv &&
-+	    atomic_dec_and_test(&root->orphan_block_rsv->count)) {
++	    root->orphan_block_rsv->reserved == 0) {
 +		block_rsv = root->orphan_block_rsv;
 +		root->orphan_block_rsv = NULL;
 +	} else {
@@ -129,15 +109,7 @@ index b67b81a..459ffe2 100644
  	spin_unlock(&root->orphan_lock);
  
  	if (root->orphan_item_inserted &&
-@@ -2918,6 +2923,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 		btrfs_free_block_rsv(root, block_rsv);
- 		block_rsv = NULL;
- 	}
-+	atomic_inc(&root->orphan_block_rsv->count);
- 
- 	if (!test_and_set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 			      &BTRFS_I(inode)->runtime_flags)) {
-@@ -2991,6 +2997,9 @@ static int btrfs_orphan_del(struct btrfs_trans_handle *trans,
+@@ -2991,6 +2996,9 @@ static int btrfs_orphan_del(struct btrfs_trans_handle *trans,
  	int ret = 0;
  
  	spin_lock(&root->orphan_lock);
@@ -147,7 +119,7 @@ index b67b81a..459ffe2 100644
  	if (test_and_clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
  			       &BTRFS_I(inode)->runtime_flags))
  		delete_item = 1;
-@@ -4520,12 +4529,10 @@ void btrfs_evict_inode(struct inode *inode)
+@@ -4520,12 +4528,10 @@ void btrfs_evict_inode(struct inode *inode)
  	 * Errors here aren't a big deal, it just means we leave orphan items
  	 * in the tree.  They will be cleaned up on the next mount.
  	 */
@@ -162,14 +134,14 @@ index b67b81a..459ffe2 100644
  
  	trans->block_rsv = &root->fs_info->trans_block_rsv;
  	if (!(root == root->fs_info->tree_root ||
-@@ -4535,6 +4542,22 @@ void btrfs_evict_inode(struct inode *inode)
+@@ -4535,6 +4541,22 @@ void btrfs_evict_inode(struct inode *inode)
  	btrfs_end_transaction(trans, root);
  	btrfs_btree_balance_dirty(root);
  no_delete:
 +
 +	spin_lock(&root->orphan_lock);
 +	if (root->orphan_block_rsv &&
-+	    atomic_dec_and_test(&root->orphan_block_rsv->count)) {
++	    root->orphan_block_rsv->reserved == 0) {
 +		rsv = root->orphan_block_rsv;
 +		root->orphan_block_rsv = NULL;
 +	} else {
@@ -185,7 +157,7 @@ index b67b81a..459ffe2 100644
  	btrfs_remove_delayed_node(inode);
  	clear_inode(inode);
  	return;
-@@ -7650,7 +7673,6 @@ static int btrfs_truncate(struct inode *inode)
+@@ -7650,7 +7672,6 @@ static int btrfs_truncate(struct inode *inode)
  	}
  
  	if (ret == 0 && inode->i_nlink > 0) {

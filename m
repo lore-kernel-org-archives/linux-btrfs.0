@@ -1,99 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob12.myregisteredsite.com ([209.17.115.50]:46248 "EHLO
-	atl4mhob12.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752010Ab3HSBVy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 Aug 2013 21:21:54 -0400
-Received: from mailpod1.hostingplatform.com ([10.30.71.116])
-	by atl4mhob12.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id r7J1LqRa023442
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Aug 2013 21:21:52 -0400
-Message-ID: <52117334.4010306@chinilu.com>
-Date: Sun, 18 Aug 2013 18:21:56 -0700
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
+Received: from cn.fujitsu.com ([222.73.24.84]:48920 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753068Ab3HSCaN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 18 Aug 2013 22:30:13 -0400
+Message-ID: <52118373.7050800@cn.fujitsu.com>
+Date: Mon, 19 Aug 2013 10:31:15 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: uncorrectable errors after btrfs replace
-References: <S1753593Ab3HRQvp/20130818165145Z+301@vger.kernel.org> <52111C9D.3090704@pook.it> <73B6CA35-5279-44D6-A427-46985C3F554C@colorremedies.com> <52114C4A.6000003@pook.it> <4DD5A25C-8210-4E5B-9BD3-49AAAB7CAAAC@colorremedies.com>
-In-Reply-To: <4DD5A25C-8210-4E5B-9BD3-49AAAB7CAAAC@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: unlisted-recipients:; (no To-header on input)
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix heavy delalloc related deadlock
+References: <1376494860-8864-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1376494860-8864-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is just a comment from someone following all of this from the 
-sidelines.
+On wed, 14 Aug 2013 11:41:00 -0400, Josef Bacik wrote:
+> I added a patch where we started taking the ordered operations mutex when we
+> waited on ordered extents.  We need this because we splice the list and process
+> it, so if a flusher came in during this scenario it would think the list was
+> empty and we'd usually get an early ENOSPC.  The problem with this is that this
+> lock is used in transaction committing.  So we end up with something like this
+> 
+> Transaction commit
+> 	-> wait on writers
+> 
+> Delalloc flusher
+> 	-> run_ordered_operations (holds mutex)
+> 		->wait for filemap-flush to do its thing
+> 
+> flush task
+> 	-> cow_file_range
+> 		->wait on btrfs_join_transaction because we're commiting
+> 
+> some other task
+> 	-> commit_transaction because we notice trans->transaction->flush is set
+> 		-> run_ordered_operations (hang on mutex)
 
-And that is that I see so much going on here with this procedure that is 
-scares me.  Once a single operation reaches a certain degree of 
-complexity I get really scared because all it takes is a single misstep 
-and my data is gone.  And that happens so easily as complexity increases 
-and confusion tends to set in.  In this particular situation, my 
-solution would probably have been to create a new btrfs partition from 
-scratch on the new drive and simply mount the source partition/drive ro 
-and rsync the data across to the target partition/drive rather than 
-trying to do the btrfs replace operation.  That way I could have 
-verified the target drive before erasing the source drive and I would 
-not have had to worry about partition sizes, encryption, etc.
+Sorry, I can not understand this explanation. As far as I know, if the flush task
+waits on btrfs_join_transaction(), it means the transaction is under commit
+(state = TRANS_STATE_COMMIT_DOING), and all the external writers(TRANS_START/TRANS_ATTACH/
+TRANS_USERSPACE) have quitted the current transaction, so no one would try to call
+run_ordered_operations().
 
-That said, I am certainly thankful that this was backup data and not 
-working data.  But I think it serves as a cautionary tale as to not 
-assuming that something should be done just because it theoretically can 
-be done.  I am not really familiar with btrfs replace but would imagine 
-that it is intended for use more in a raid situation than in simply 
-moving data from one drive to another.
+Could you show us the reproduce steps?
 
+Thanks
+Miao
 
-
-On 08/18/2013 05:42 PM, Chris Murphy wrote:
-> On Aug 18, 2013, at 4:35 PM, Stuart Pook <slp644161@pook.it> wrote:
->>> You first shrank a 2TB btrfs file system on dmcrypt device to 590GB.
->>> But then you didn't resize the dm device or the partition?
->> no, I had no need to resize the dm device or partition.
-> OK well it's unusual to resize a file system and then not resize the containing block device. I don't know if Btrfs cares about this or not.
->
->> I ran a badblocks scan on the raw device (not the luks device) and didn't get any errors.
-> badblocks will depend on the drive determining a persistent read failure with a sector, and timing out before the SCSI block layer times out. Since the linux SCSI driver time out is 30 seconds, and most consumer drive ECT is 120 seconds, the bus is reset before the drive has a chance to report a bad sector. So I think you're better off using smartctl -l long tests to find bad sectors on a disk.
->
-> Further a smartctl -x may show SATA Phy Event Counters, which should have 0's or very low numbers and if not then that's also an indicator of hardware problems.
->
->
->> The data was written to the WD-Blue (640Gb) disk and then copied off it.  The only errors I saw concerned the WB-Blue.  If the errors were data corruption on writing or reading the WD-Blue then I would have thought that the checksums would have told me that there was something wrong.  btrfs didn't give me an IO error until I started to read the files when the data was on a final disk.
-> How does Btrfs know there's been a failure during write if the hardware hasn't detected it? Btrfs doesn't re-read everything it just wrote to the drive to confirm it was written correctly. It assumes it was unless there's a hardware error. It wouldn't know this until a Btrfs scrub is done on the written drive.
->
-> What I can't tell you is how Btrfs behaves and if it behaves correctly, when writing data to hardware having transient errors. I don't know what it does when the hardware reports the error, but presumably if the hardware doesn't report an error Btrfs can't do anything about that except on the next read or scrub.
->
->
->
->
->> Just to be clear. This is the series of btrfs replace I did:
->>
->> backups : HD204UI -> WD-Blue
->> /mnt : WD-Black -> HD204UI
->> backups : WD-Blue -> WD-Black
->>
->> I guess that my backups were corrupted was they were written to or read from the WD-Blue. Wouldn't the checksums have detected this problem before the data was written to the WD-Black?
-> When you first encountered the btrfs reported csum errors, what operation was occurring?
->
->>> There's only so much software can do to overcome blatant hardware problems.
->> I was hoping to be informed of them
-> Well you were informed of them in dmesg, by virtue of the controller having problems talking to a SATA rev 2 drive at rev 2 speed, with a negotiated fallback to rev 1 speed.
->>> But, it seems unlikely such a high percent of errors would go
->>> undetected to result in so many uncorrectable errors, so there may be
->>> user error here along with a bug.
->> I'm not sure how I could have done it better. Does "btrfs replace" check that the data is correctly written to the new disk before it is removed from the old disk?
-> That's a valid question. Hopefully someone more knowledgable can answer what the expected error handling behavior is supposed to be.
->
->>   Should I have used the 2 disks to make a RAID-1 and then done a scrub before removing the old disk?
-> Good question. Possibly it's best practices to use btrfs replace with an existing raid1, rather than using it as a way to move a single copy of data from one disk to another. I think you'd have been better off using btrfs send and receive for this operation.
->
-> A full dmesg might also be enlightening even if it is really long. Just put it in its own email without comment. I think pasting it out of forum is less preferred.
->
->
-> Chris Murphy--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+> 
+> We need to disentangle the ordered operations flushing from the delalloc
+> flushing, since they are separate things.  This solves the deadlock issue I was
+> seeing.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/ctree.h        |    7 +++++++
+>  fs/btrfs/disk-io.c      |    1 +
+>  fs/btrfs/ordered-data.c |    4 ++--
+>  3 files changed, 10 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index ea4cc16..d79e32c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1418,6 +1418,13 @@ struct btrfs_fs_info {
+>  	 * before jumping into the main commit.
+>  	 */
+>  	struct mutex ordered_operations_mutex;
+> +
+> +	/*
+> +	 * Same as ordered_operations_mutex except this is for ordered extents
+> +	 * and not the operations.
+> +	 */
+> +	struct mutex ordered_extent_flush_mutex;
+> +
+>  	struct rw_semaphore extent_commit_sem;
+>  
+>  	struct rw_semaphore cleanup_work_sem;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index c82025d..880dcde 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2288,6 +2288,7 @@ int open_ctree(struct super_block *sb,
+>  
+>  
+>  	mutex_init(&fs_info->ordered_operations_mutex);
+> +	mutex_init(&fs_info->ordered_extent_flush_mutex);
+>  	mutex_init(&fs_info->tree_log_mutex);
+>  	mutex_init(&fs_info->chunk_mutex);
+>  	mutex_init(&fs_info->transaction_kthread_mutex);
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index 8136982..b52b2c4 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -671,7 +671,7 @@ int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
+>  	INIT_LIST_HEAD(&splice);
+>  	INIT_LIST_HEAD(&works);
+>  
+> -	mutex_lock(&root->fs_info->ordered_operations_mutex);
+> +	mutex_lock(&root->fs_info->ordered_extent_flush_mutex);
+>  	spin_lock(&root->fs_info->ordered_root_lock);
+>  	list_splice_init(&cur_trans->ordered_operations, &splice);
+>  	while (!list_empty(&splice)) {
+> @@ -718,7 +718,7 @@ out:
+>  		list_del_init(&work->list);
+>  		btrfs_wait_and_free_delalloc_work(work);
+>  	}
+> -	mutex_unlock(&root->fs_info->ordered_operations_mutex);
+> +	mutex_unlock(&root->fs_info->ordered_extent_flush_mutex);
+>  	return ret;
+>  }
+>  
+> 
 

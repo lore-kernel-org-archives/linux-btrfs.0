@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:47283 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751147Ab3HSUak (ORCPT
+Received: from mail-wg0-f51.google.com ([74.125.82.51]:39397 "EHLO
+	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751137Ab3HSUnP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 16:30:40 -0400
-Received: by mail-wg0-f47.google.com with SMTP id j13so3863630wgh.26
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:30:39 -0700 (PDT)
+	Mon, 19 Aug 2013 16:43:15 -0400
+Received: by mail-wg0-f51.google.com with SMTP id a12so3875401wgh.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:43:14 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v4] Btrfs: fix memory leak of orphan block rsv
-Date: Mon, 19 Aug 2013 21:30:33 +0100
-Message-Id: <1376944233-1094-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v5] Btrfs: fix memory leak of orphan block rsv
+Date: Mon, 19 Aug 2013 21:42:36 +0100
+Message-Id: <1376944956-24862-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 References: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -73,23 +73,26 @@ V3: simplified patch, just kfree() (and not btrfs_free_block_rsv) the
 V4: use btrfs_free_block_rsv() instead of kfree(). The error I was getting
     in xfstests when using btrfs_free_block_rsv() was unrelated, Josef just
     pointed it to me (separate issue).
+V5: move the free call below the iput() call, so that btrfs_evict_node()
+    can process the orphan_block_rsv first to do some needed cleanup before
+    we free it.
 
  fs/btrfs/disk-io.c |    2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3b12c26..c4b90a0 100644
+index 3b12c26..9e66543 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3428,6 +3428,8 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 
- static void free_fs_root(struct btrfs_root *root)
+@@ -3430,6 +3430,8 @@ static void free_fs_root(struct btrfs_root *root)
  {
-+	btrfs_free_block_rsv(root, root->orphan_block_rsv);
-+	root->orphan_block_rsv = NULL;
  	iput(root->cache_inode);
  	WARN_ON(!RB_EMPTY_ROOT(&root->inode_tree));
++	btrfs_free_block_rsv(root, root->orphan_block_rsv);
++	root->orphan_block_rsv = NULL;
  	if (root->anon_dev)
+ 		free_anon_bdev(root->anon_dev);
+ 	free_extent_buffer(root->node);
 -- 
 1.7.9.5
 

@@ -1,99 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33606 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750790Ab3HSJjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 05:39:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VBLvR-0002jJ-Rq
-	for linux-btrfs@vger.kernel.org; Mon, 19 Aug 2013 11:39:01 +0200
-Received: from dyndsl-080-228-186-133.ewe-ip-backbone.de ([80.228.186.133])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:39:01 +0200
-Received: from hurikhan77+btrfs by dyndsl-080-228-186-133.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:39:01 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Extreme performance loss since 3.9
-Date: Mon, 19 Aug 2013 11:38:48 +0200
-Message-ID: <9m59ea-ql1.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from dkim1.fusionio.com ([66.114.96.53]:34810 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751263Ab3HSMtz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 08:49:55 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 122C57C0423
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 06:49:55 -0600 (MDT)
+Date: Mon, 19 Aug 2013 08:49:52 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix heavy delalloc related deadlock
+Message-ID: <20130819124952.GB3990@localhost.localdomain>
+References: <1376494860-8864-1-git-send-email-jbacik@fusionio.com>
+ <52118373.7050800@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <52118373.7050800@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list!
+On Mon, Aug 19, 2013 at 10:31:15AM +0800, Miao Xie wrote:
+> On wed, 14 Aug 2013 11:41:00 -0400, Josef Bacik wrote:
+> > I added a patch where we started taking the ordered operations mutex when we
+> > waited on ordered extents.  We need this because we splice the list and process
+> > it, so if a flusher came in during this scenario it would think the list was
+> > empty and we'd usually get an early ENOSPC.  The problem with this is that this
+> > lock is used in transaction committing.  So we end up with something like this
+> > 
+> > Transaction commit
+> > 	-> wait on writers
+> > 
+> > Delalloc flusher
+> > 	-> run_ordered_operations (holds mutex)
+> > 		->wait for filemap-flush to do its thing
+> > 
+> > flush task
+> > 	-> cow_file_range
+> > 		->wait on btrfs_join_transaction because we're commiting
+> > 
+> > some other task
+> > 	-> commit_transaction because we notice trans->transaction->flush is set
+> > 		-> run_ordered_operations (hang on mutex)
+> 
+> Sorry, I can not understand this explanation. As far as I know, if the flush task
+> waits on btrfs_join_transaction(), it means the transaction is under commit
+> (state = TRANS_STATE_COMMIT_DOING), and all the external writers(TRANS_START/TRANS_ATTACH/
+> TRANS_USERSPACE) have quitted the current transaction, so no one would try to call
+> run_ordered_operations().
+> 
+> Could you show us the reproduce steps?
+> 
 
-During 3.9 I had dead-lock problems with autodefrag. The system either froze 
-or showed some kernel oopses randomly while working with the system. So I 
-turned off autodefrag and the problem was cured.
+Sorry I wrote the wrong thing for the delalloc flusher, that should be
 
-But that radically slowed my system down over time. My desktop programs now 
-take almost 10 times as long to start in comparision to 3.8 and beginning of 
-3.9 before I hit the bug. This also affects opening file dialogs, browsing 
-directories with the graphical filebrowser, hell: Even right-click menus 
-sometimes take ages to open while the harddisk LED happily brightens my 
-room.
+  ->btrfs_wait_ordered_extents (holds ordered operations mutex)
+	-> wait for filemap-flush to do its thing
 
-I have a three device btrfs filesystem (rotational, 3x 1TB) with non-forced 
-lzo compression. Before, startup of KDE programs was almost immediatly after 
-clicking on the icons - even after login.
-
-Now, since 3.10 the freeze bug seems to be fixed and I turned autodefrag 
-back on. But the performance simply does not return (I did not expect the 
-effect to be immediatly). Then, I've turned on skinny extent which made a 
-little subjective difference. But still the system is far from the 
-performance before I turned off autodefrag.
-
-I'm not sure if there is still some performance regression bug in 3.10 or if 
-I have to run some defragmentation. I've run a defrag on each directory with
-
-find / -xdev -type d -print0 | xargs -0 btrfs fi defrag -v
-
-and it helped (apparently only) a little but after a few days of usage the 
-system returns to its newly developed slowness. :-(
-
-I've changed nr_requests in the I/O scheduler to 4096 which also gives a 
-subjective small speed boost during I/O intensive loads. The system has 16 
-GB of memory with at least 8 GB cached most of the time. So it is no memory 
-pressure problem.
-
-Unfortunatly, the defrag process does not finish. Somewhere in the process 
-the system hard freezes with no chance to get a backtrace from kernel. At 
-least it works for almost the complete filesystem so it should be 
-sufficient.
-
-A friend of mine with a single SSD reports similar slowdown issues lately 
-and it makes him almost wanting to return to Ext4.
-
-My btrfs system was so blazing fast in the beginning, and now when it starts 
-to get older (almost 2 years now), it comes to a crawl. And it started with 
-turning off autodefrag and never returned to its old speed when I turned it 
-back on.
-
-I'm not doing any snapshots on this system which would explain increased 
-fragmentation.
-
-Are there any known issues? Are there suggestions how to investigate or fix 
-it?
-
-Mount options:
-/dev/sda3 on / type btrfs (rw,relatime,compress=lzo,space_cache,autodefrag)
-
-Label: 'system'  uuid: d2bb232a-2e8f-4951-8bcc-97e237f1b536
-        Total devices 3 FS bytes used 1.07TB
-        devid    3 size 927.26GB used 428.03GB path /dev/sdc3
-        devid    2 size 927.26GB used 428.03GB path /dev/sdb3
-        devid    1 size 927.26GB used 429.07GB path /dev/sda3
-
-Data, RAID0: total=1.15TB, used=1.06TB
-System, RAID1: total=64.00MB, used=96.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=56.00GB, used=4.46GB
-
-
+That should make it clearer.  I reproduced it running xfstests generic/224.
 Thanks,
-Kai
 
+Josef

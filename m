@@ -1,121 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47724 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752540Ab3HPAmv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Aug 2013 20:42:51 -0400
-Message-ID: <520D7582.3050804@suse.com>
-Date: Thu, 15 Aug 2013 20:42:42 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clmason@fusionio.com>,
-        Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: restore passing of super_bytenr to device scan
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:35146 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750908Ab3HSSJC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 14:09:02 -0400
+Received: by mail-wg0-f50.google.com with SMTP id m15so3833353wgh.29
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 11:09:01 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [RFC PATCH] Btrfs: fix memory leak of orphan block rsv
+Date: Mon, 19 Aug 2013 19:08:45 +0100
+Message-Id: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 615f2867 (Btrfs-progs: cleanup similar code in open_ctree_*
-and close_ctree) introduced a regression in btrfs-convert.
+When adding orphans to an inode's root, we start a transaction for
+that root that when ended in several places such as for example
+extent-tree.c:btrfs_remove_block_group(), inode.c:btrfs_unlink() and
+inode.c:btrfs_evict_node(), doesn't result in a commit, that is,
+inode.c:btrfs_orphan_commit_root() doesn't get called (via
+transaction.c:commit_fs_roots()).
 
-open_ctree takes a sb_bytenr argument to specify where to find the
-superblock. Under normal conditions, this will be at BTRFS_SUPER_INFO_OFFSET,
-and that commit assumed as much under all conditions.
+The respective inode will end up being called by inode.c:btrfs_evict_node()
+(via the VFS). So my likely dirty hack, after some debugging, of
+freeing the orphan block rsv in btrfs_evict_inode() if its not being
+used by other tasks, seems to fix the leak without failing xfstests
+so far. But this is unlikely to be a correct solution without causing
+issues elsewhere.
 
-make_btrfs allows the caller to specify which blocks to use for
-certain blocks (including the superblock) and this is used by btrfs-convert
-to avoid overwriting the source file system's superblock until the
-conversion is complete.
+This commit also changes calls to btrfs_orphan_del() which grabbed the
+root's orphan_block_rsv without acquiring the orphan_lock first (confront
+with btrfs_orphan_commit_root(), which acquires the lock before getting
+and setting the root's orphan_block_rsv).
 
-When btrfs-convert goes to open the newly initialized file system, it
-fails with: "No valid btrfs found" since its superblock wasn't written
-to the normal location.
+This issue is simple to reproduce and observe if kmemleak is enabled.
+Two simple ways to reproduce it:
 
-This patch restores the passing down of super_bytesnr to
-btrfs_scan_one_device.
+** 1
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+$ mkfs.btrfs -f /dev/loop0
+$ mount /dev/loop0 /mnt/btrfs
+$ btrfs balance start /mnt/btrfs
+$ umount /mnt/btrfs
+
+** 2
+
+$ mkfs.btrfs -f /dev/loop0
+$ mount /dev/loop0 /mnt/btrfs
+$ touch /mnt/btrfs/foobar
+$ rm -f /mnt/btrfs/foobar
+$ umount /mnt/btrfs
+
+After a while, kmemleak reports the leak:
+
+$ cat /sys/kernel/debug/kmemleak
+unreferenced object 0xffff880402b13e00 (size 128):
+  comm "btrfs", pid 19621, jiffies 4341648183 (age 70057.844s)
+  hex dump (first 32 bytes):
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+    00 fc c6 b1 04 88 ff ff 04 00 04 00 ad 4e ad de  .............N..
+  backtrace:
+    [<ffffffff817275a6>] kmemleak_alloc+0x26/0x50
+    [<ffffffff8117832b>] kmem_cache_alloc_trace+0xeb/0x1d0
+    [<ffffffffa04db499>] btrfs_alloc_block_rsv+0x39/0x70 [btrfs]
+    [<ffffffffa04f8bad>] btrfs_orphan_add+0x13d/0x1b0 [btrfs]
+    [<ffffffffa04e2b13>] btrfs_remove_block_group+0x143/0x500 [btrfs]
+    [<ffffffffa0518158>] btrfs_relocate_chunk.isra.63+0x618/0x790 [btrfs]
+    [<ffffffffa051bc27>] btrfs_balance+0x8f7/0xe90 [btrfs]
+    [<ffffffffa05240a0>] btrfs_ioctl_balance+0x250/0x550 [btrfs]
+    [<ffffffffa05269ca>] btrfs_ioctl+0xdfa/0x25f0 [btrfs]
+    [<ffffffff8119c936>] do_vfs_ioctl+0x96/0x570
+    [<ffffffff8119cea1>] SyS_ioctl+0x91/0xb0
+    [<ffffffff81750242>] system_call_fastpath+0x16/0x1b
+    [<ffffffffffffffff>] 0xffffffffffffffff
+
+This affects btrfs-next, revision be8e3cd00d7293dd177e3f8a4a1645ce09ca3acb
+(Btrfs: separate out tests into their own directory).
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- btrfs-find-root.c |  2 +-
- cmds-chunk.c      |  2 +-
- disk-io.c         | 10 +++++++---
- disk-io.h         |  3 ++-
- 4 files changed, 11 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/extent-tree.c |    1 +
+ fs/btrfs/inode.c       |   36 +++++++++++++++++++++++++++++-------
+ 3 files changed, 31 insertions(+), 7 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 9b3d7df..374cf81 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -82,7 +82,7 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
- 		return NULL;
- 	}
- 
--	ret = btrfs_scan_fs_devices(fd, device, &fs_devices);
-+	ret = btrfs_scan_fs_devices(fd, device, &fs_devices, 0);
- 	if (ret)
- 		goto out;
- 
-diff --git a/cmds-chunk.c b/cmds-chunk.c
-index 03314de..6ada328 100644
---- a/cmds-chunk.c
-+++ b/cmds-chunk.c
-@@ -1291,7 +1291,7 @@ static int recover_prepare(struct recover_control *rc, char *path)
- 		goto fail_free_sb;
- 	}
- 
--	ret = btrfs_scan_fs_devices(fd, path, &fs_devices);
-+	ret = btrfs_scan_fs_devices(fd, path, &fs_devices, 0);
- 	if (ret)
- 		goto fail_free_sb;
- 
-diff --git a/disk-io.c b/disk-io.c
-index 13dbe27..1b91de6 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -909,13 +909,17 @@ void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7c93d9f..da3ac13 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1153,6 +1153,7 @@ struct btrfs_block_rsv {
+ 	u64 reserved;
+ 	struct btrfs_space_info *space_info;
+ 	spinlock_t lock;
++	atomic_t count;
+ 	unsigned short full;
+ 	unsigned short type;
+ 	unsigned short failfast;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 32639f2..3ecee8e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4500,6 +4500,7 @@ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
+ 	btrfs_init_block_rsv(block_rsv, type);
+ 	block_rsv->space_info = __find_space_info(fs_info,
+ 						  BTRFS_BLOCK_GROUP_METADATA);
++	atomic_set(&block_rsv->count, 0);
+ 	return block_rsv;
  }
  
- int btrfs_scan_fs_devices(int fd, const char *path,
--			  struct btrfs_fs_devices **fs_devices)
-+			  struct btrfs_fs_devices **fs_devices,
-+			  u64 super_bytenr)
- {
- 	u64 total_devs;
- 	int ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b67b81a..459ffe2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2870,8 +2870,13 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 		return;
+ 	}
  
-+	if (super_bytenr == 0)
-+		super_bytenr = BTRFS_SUPER_INFO_OFFSET;
+-	block_rsv = root->orphan_block_rsv;
+-	root->orphan_block_rsv = NULL;
++	if (root->orphan_block_rsv &&
++	    atomic_dec_and_test(&root->orphan_block_rsv->count)) {
++		block_rsv = root->orphan_block_rsv;
++		root->orphan_block_rsv = NULL;
++	} else {
++		block_rsv = NULL;
++	}
+ 	spin_unlock(&root->orphan_lock);
+ 
+ 	if (root->orphan_item_inserted &&
+@@ -2918,6 +2923,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+ 		btrfs_free_block_rsv(root, block_rsv);
+ 		block_rsv = NULL;
+ 	}
++	atomic_inc(&root->orphan_block_rsv->count);
+ 
+ 	if (!test_and_set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 			      &BTRFS_I(inode)->runtime_flags)) {
+@@ -2991,6 +2997,9 @@ static int btrfs_orphan_del(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 
+ 	spin_lock(&root->orphan_lock);
++	if (trans)
++		trans->block_rsv = root->orphan_block_rsv;
 +
- 	ret = btrfs_scan_one_device(fd, path, fs_devices,
--				    &total_devs, BTRFS_SUPER_INFO_OFFSET);
-+				    &total_devs, super_bytenr);
- 	if (ret) {
- 		fprintf(stderr, "No valid Btrfs found on %s\n", path);
- 		return ret;
-@@ -1001,7 +1005,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	if (restore)
- 		fs_info->on_restoring = 1;
+ 	if (test_and_clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 			       &BTRFS_I(inode)->runtime_flags))
+ 		delete_item = 1;
+@@ -4520,12 +4529,10 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * Errors here aren't a big deal, it just means we leave orphan items
+ 	 * in the tree.  They will be cleaned up on the next mount.
+ 	 */
+-	if (ret == 0) {
+-		trans->block_rsv = root->orphan_block_rsv;
++	if (ret == 0)
+ 		btrfs_orphan_del(trans, inode);
+-	} else {
++	else
+ 		btrfs_orphan_del(NULL, inode);
+-	}
  
--	ret = btrfs_scan_fs_devices(fp, path, &fs_devices);
-+	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr);
- 	if (ret)
- 		goto out;
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+ 	if (!(root == root->fs_info->tree_root ||
+@@ -4535,6 +4542,22 @@ void btrfs_evict_inode(struct inode *inode)
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root);
+ no_delete:
++
++	spin_lock(&root->orphan_lock);
++	if (root->orphan_block_rsv &&
++	    atomic_dec_and_test(&root->orphan_block_rsv->count)) {
++		rsv = root->orphan_block_rsv;
++		root->orphan_block_rsv = NULL;
++	} else {
++		rsv = NULL;
++	}
++	spin_unlock(&root->orphan_lock);
++
++	if (rsv) {
++		WARN_ON(rsv->size > 0);
++		btrfs_free_block_rsv(root, rsv);
++	}
++
+ 	btrfs_remove_delayed_node(inode);
+ 	clear_inode(inode);
+ 	return;
+@@ -7650,7 +7673,6 @@ static int btrfs_truncate(struct inode *inode)
+ 	}
  
-diff --git a/disk-io.h b/disk-io.h
-index effaa9f..d7792e0 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -59,7 +59,8 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info,
- void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
- void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info);
- int btrfs_scan_fs_devices(int fd, const char *path,
--			  struct btrfs_fs_devices **fs_devices);
-+			  struct btrfs_fs_devices **fs_devices,
-+			  u64 super_bytenr);
- int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info);
- 
- struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes);
+ 	if (ret == 0 && inode->i_nlink > 0) {
+-		trans->block_rsv = root->orphan_block_rsv;
+ 		ret = btrfs_orphan_del(trans, inode);
+ 		if (ret)
+ 			err = ret;
 -- 
-1.8.1.4
-
+1.7.9.5
 

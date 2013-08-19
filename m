@@ -1,51 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:45260 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750780Ab3HSQvP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 12:51:15 -0400
-Received: from pizpot.store ([192.168.43.236])
- by joses.store (RZmta 31.43 OK) with ESMTP id X02c54p7JCAmi2
- for <linux-btrfs@vger.kernel.org>;
- Mon, 19 Aug 2013 18:51:13 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: don't allow the replace procedure on read only filesystems
-Date: Mon, 19 Aug 2013 18:51:13 +0200
-Message-Id: <1376931073-25320-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from dkim2.fusionio.com ([66.114.96.54]:49264 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751073Ab3HSSVE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 14:21:04 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 573C59A0364
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 12:21:04 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id ya9MhqETLX65kRSe (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 12:21:03 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix some basic sparse errors
+Date: Mon, 19 Aug 2013 14:21:01 -0400
+Message-ID: <1376936461-8285-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you start the replace procedure on a read only filesystem, at
-the end the procedure fails to write the updated dev_items to the
-chunk tree. The problem is that this error is not indicated except
-for a WARN_ON(). If the user now thinks that everything was done
-as expected and destroys the source device (with mkfs or with a
-hammer). The next mount fails with "failed to read chunk root" and
-the filesystem is gone.
+Running sparse I found a few small things where we should have static functions
+that aren't used externally and we should be using unsigned values for bit
+fields.  Thanks,
 
-This commit adds code to fail the attempt to start the replace
-procedure if the filesystem is mounted read-only.
-
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: <stable@vger.kernel.org> # 3.10+
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/ioctl.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/disk-io.c |    8 ++++----
+ fs/btrfs/send.c    |    4 ++--
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3e36626..bf42d41 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3653,6 +3653,9 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3b12c26..f51cd95 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1432,8 +1432,8 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
  
- 	switch (p->cmd) {
- 	case BTRFS_IOCTL_DEV_REPLACE_CMD_START:
-+		if (root->fs_info->sb->s_flags & MS_RDONLY)
-+			return -EROFS;
-+
- 		if (atomic_xchg(
- 			&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
+-struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
+-					struct btrfs_key *key)
++static struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
++					       struct btrfs_key *key)
+ {
+ 	struct btrfs_root *root;
+ 	struct btrfs_fs_info *fs_info = tree_root->fs_info;
+@@ -1533,8 +1533,8 @@ fail:
+ 	return ret;
+ }
+ 
+-struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
+-					u64 root_id)
++static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
++					       u64 root_id)
+ {
+ 	struct btrfs_root *root;
+ 
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index fc03a57..db7da68 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -54,8 +54,8 @@ struct fs_path {
+ 
+ 			char *buf;
+ 			int buf_len;
+-			int reversed:1;
+-			int virtual_mem:1;
++			unsigned int reversed:1;
++			unsigned int virtual_mem:1;
+ 			char inline_buf[];
+ 		};
+ 		char pad[PAGE_SIZE];
 -- 
-1.8.3.4
+1.7.7.6
 

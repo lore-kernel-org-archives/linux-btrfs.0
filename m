@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.139]:57194 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.137]:27075 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750999Ab3HSJIl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 05:08:41 -0400
+	id S1751190Ab3HSJX5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 05:23:57 -0400
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH V2] xfstests: don't remove the two first devices from SCRATCH_DEV_POOL
-Date: Mon, 19 Aug 2013 11:08:37 +0200
-Message-Id: <1376903317-28006-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH V3] xfstests: don't remove the two first devices from SCRATCH_DEV_POOL
+Date: Mon, 19 Aug 2013 11:23:54 +0200
+Message-Id: <1376904234-2553-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -31,12 +31,18 @@ V1 -> V2:
 - fixed a missing adaption to the new way to deal with SCRATCH_DEV_POOL
   in  _test_replace() in tests/btrfs/003.
 
+V2 -> V3:
+- V2 was the result of a git rebase mistake (a user error), forget it,
+  sorry. V3 now contains the correct fix for a missing adaption to the
+  new way to deal with SCRATCH_DEV_POOL in _test_replace() in
+  tests/btrfs/003.
+
  common/config   |  3 +--
  common/rc       | 12 ++++++++++++
  tests/btrfs/002 |  3 ++-
- tests/btrfs/003 | 18 +++++++++---------
+ tests/btrfs/003 | 16 ++++++++--------
  tests/btrfs/006 |  4 ++--
- 5 files changed, 26 insertions(+), 14 deletions(-)
+ 5 files changed, 25 insertions(+), 13 deletions(-)
 
 diff --git a/common/config b/common/config
 index 67c1498..1bc9233 100644
@@ -97,7 +103,7 @@ index 03e9137..f4389ae 100755
  
  # Create and save sha256sum
 diff --git a/tests/btrfs/003 b/tests/btrfs/003
-index 5c88651..a23d3a0 100755
+index 5c88651..262b1d5 100755
 --- a/tests/btrfs/003
 +++ b/tests/btrfs/003
 @@ -58,7 +58,7 @@ rm -f $seqres.full
@@ -150,11 +156,10 @@ index 5c88651..a23d3a0 100755
  	local DEVHTL=""
  
 -	# exclude the last disk in the disk pool
--	n=$(($n-1))
--	ds=${devs[@]:0:$n}
 +	# exclude the first and the last disk in the disk pool
-+	n=$(($n-2))
-+	ds=${devs[@]:1:$n}
+ 	n=$(($n-1))
+-	ds=${devs[@]:0:$n}
++	ds=${devs[@]:1:$(($n-1))}
  
  	export MKFS_OPTIONS="-m raid1 -d raid1"
  	_scratch_mkfs "$ds" >> $seqres.full 2>&1 || _fail "tr: mkfs failed"

@@ -1,92 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:49860 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751019Ab3HSTQl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 15:16:41 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 27C979A06A1
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:16:41 -0600 (MDT)
-Date: Mon, 19 Aug 2013 15:16:38 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix some basic sparse errors
-Message-ID: <20130819191638.GD3990@localhost.localdomain>
-References: <1376936461-8285-1-git-send-email-jbacik@fusionio.com>
- <52126839.5060502@giantdisaster.de>
+Received: from mail.placs.net ([71.244.57.52]:55941 "EHLO mail.placs.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751121Ab3HSUpk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 16:45:40 -0400
+Date: Mon, 19 Aug 2013 15:45:32 -0500 (CDT)
+From: BJ Quinn <bj@placs.net>
+To: Jan Schmidt <mail@jan-o-sch.net>
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org,
+        psusi@cfl.rr.com, Freddie Cash <fjwcash@gmail.com>,
+        bo li liu <bo.li.liu@oracle.com>
+Message-ID: <5278956.15824.1376945132989.JavaMail.root@mail.placs.net>
+In-Reply-To: <51F79530.50006@jan-o-sch.net>
+Subject: Re: Cloning a Btrfs partition
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <52126839.5060502@giantdisaster.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 19, 2013 at 08:47:21PM +0200, Stefan Behrens wrote:
-> On 08/19/2013 20:21, Josef Bacik wrote:
-> >Running sparse I found a few small things where we should have static functions
-> >that aren't used externally and we should be using unsigned values for bit
-> >fields.  Thanks,
-> >
-> >Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> >---
-> >  fs/btrfs/disk-io.c |    8 ++++----
-> >  fs/btrfs/send.c    |    4 ++--
-> >  2 files changed, 6 insertions(+), 6 deletions(-)
-> >
-> >diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> >index 3b12c26..f51cd95 100644
-> >--- a/fs/btrfs/disk-io.c
-> >+++ b/fs/btrfs/disk-io.c
-> >@@ -1432,8 +1432,8 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
-> >  	return 0;
-> >  }
-> >
-> >-struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
-> >-					struct btrfs_key *key)
-> >+static struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
-> >+					       struct btrfs_key *key)
-> >  {
-> >  	struct btrfs_root *root;
-> >  	struct btrfs_fs_info *fs_info = tree_root->fs_info;
-> >@@ -1533,8 +1533,8 @@ fail:
-> >  	return ret;
-> >  }
-> 
-> Already posted in "[PATCH] Btrfs: get rid of sparse warnings" on
-> 14.Aug.2013.
-> 
-> >-struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
-> >-					u64 root_id)
-> >+static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
-> >+					       u64 root_id)
-> >  {
-> >  	struct btrfs_root *root;
-> >
-> 
-> Already posted in "[PATCH 1/7] btrfs: cleanup: mark 'btrfs_lookup_fs_root'
-> as static" on 7.Aug.2013.
-> 
-> 
-> >diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> >index fc03a57..db7da68 100644
-> >--- a/fs/btrfs/send.c
-> >+++ b/fs/btrfs/send.c
-> >@@ -54,8 +54,8 @@ struct fs_path {
-> >
-> >  			char *buf;
-> >  			int buf_len;
-> >-			int reversed:1;
-> >-			int virtual_mem:1;
-> >+			unsigned int reversed:1;
-> >+			unsigned int virtual_mem:1;
-> >  			char inline_buf[];
-> >  		};
-> >  		char pad[PAGE_SIZE];
-> 
-> Already posted in "[PATCH] Btrfs: get rid of sparse warnings" on
-> 14.Aug.2013.
-> 
+Ok, so the fix is now in 3.10.6 and I'm using that.  I don't get the hang
+anymore, but now I'm having a new problem.
 
-/me shakes his fist at patchwork.
+Mount options --
 
-Josef
+rw,noatime,nodiratime,compress-force=zlib,space_cache,inode_cache,ssd
+
+I need compression because I get a very high compression ratio with my data
+and I have lots of snapshots, so it's the only way it can all fit. I have an
+ssd and 24 cores anyway, so it should be fast. I need compress-force because
+I have lots of files in my data which compress typically by a 10:1 or 20:1
+ratio, but btrfs likes to see them as incompressible, so I need the
+compress-force flag. I've just heard good things about space_cache
+and inode_cache, so I've enabled them. The ssd option is because I do have an
+ssd, but I have DRBD on top of it, and it looked like btrfs could not
+automatically detect that it was an ssd (rotation speed was showing as "1").
+
+Using newest btrfs-progs from git, because newest shipping btrfs-progs on
+CentOS 6 returns an error for invalid argument.
+
+I have a filesystem with maybe 1000 snapshots. They're daily snapshots of
+a filesystem that is about 24GB compressed. The total space usage is 323GB
+out of 469GB on an Intel SSD.
+
+All the snapshots are writable, so I know I have to create a readonly
+snapshot to copy to a backup drive.
+
+btrfs subvolume snapshot -r /home/data/snapshots/storage\@NIGHTLY20101201 /home/data/snapshots\storageROTEMP
+
+Then I send the snapshot to the backup drive, mounted with the same mount options.
+
+btrfs send /home/data/snapshots/storageROTEMP | btrfs receive /mnt/backup/snapshots/
+
+This takes about 5 hours to transfer 24GB compressed. Uncompressed it is about
+150GB.  There is a "btrfs" process that takes 100% of one core during this 5
+hour period.  There are some btrfs-endio and other processes that are using
+small amounts of more than one core, but the "btrfs" process always takes 100%
+and always only takes one core. And iostat clearly shows no significant disk
+activity, so we're completely waiting on the btrfs command. Keep in mind that
+the source filesystem is on an SSD, so it should be super fast. The destination
+filesystem is on a hard drive connected via USB 2.0, but again, there's no
+significant disk activity.  Processor is a dual socket Xeon E5-2420.
+
+Then I try to copy another snapshot to the backup drive, hoping that it will
+keep the space efficiency of the snapshots.
+
+mv /mnt/backup/snapshots/storageROTEMP /mnt/backup/snapshots/storage\@NIGHTLY20101201
+btrfs subvolume delete /home/data/snapshots/storageROTEMP
+btrfs subvolume snapshot -r /home/data/snapshots/storage\@NIGHTLY20101202 /home/data/snapshots/storageROTEMP
+btrfs send /home/data/snapshots/storageROTEMP | btrfs receive /mnt/backup/snapshots/
+
+This results in a couple of problems. First of all, it takes 5 hours just like
+the first snapshot did. Secondly, it takes up another ~20GB of data, so it's not
+space efficient (I expect each snapshot should add far less than 500MB on
+average due to the math on how many snapshots I have and how much total space
+usage I have on the main filesystem). Finally, it doesn't even complete without
+error. I get the following error after about 5 hours --
+
+At subvol /home/data/snapshots/storageROTEMP
+At subvol storageROTEMP
+ERROR: send ioctl failed with -12: Cannot allocate memory
+ERROR: unexpected EOF in stream.
+
+So in the end, unless I'm doing something wrong, btrfs send is much slower
+than just doing a full rsync of the first snapshot, and then incremental
+rsyncs with the subsequent ones.  That and btrfs send doesn't seem to be
+space efficient here (again, unless I'm using it incorrectly).
+
+Thanks in advance for your help!
+
+-BJ
+
+----- Original Message ----- 
+
+From: "Jan Schmidt" <mail@jan-o-sch.net> 
+To: "BJ Quinn" <bj@placs.net> 
+Cc: "Jan Schmidt" <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org, psusi@cfl.rr.com, "Freddie Cash" <fjwcash@gmail.com> 
+Sent: Tuesday, July 30, 2013 5:28:00 AM 
+Subject: Re: Cloning a Btrfs partition 
+
+On Mon, July 29, 2013 at 17:32 (+0200), BJ Quinn wrote: 
+> Thanks for the response! Not sure I want to roll a custom kernel on this 
+> particular system. Any idea on when it might make it to 3.10 stable or 
+> 3.11? Or should I just revert back to 3.9? 
+
+I missed that it's in fact in 3.11 and if I got Liu Bo right he's going to send 
+it to 3.10 stable soon. 
+
+Thanks, 
+-Jan 
+
+> Thanks! 
+> 
+> -BJ 
+> 
+> ----- Original Message ----- 
+> 
+> From: "Jan Schmidt" <list.btrfs@jan-o-sch.net> 
+> Sent: Monday, July 29, 2013 3:21:51 AM 
+> 
+> Hi BJ, 
+> 
+> [original message rewrapped] 
+> 
+> On Thu, July 25, 2013 at 18:32 (+0200), BJ Quinn wrote: 
+>> (Apologies for the double post -- forgot to send as plain text the first time 
+>> around, so the list rejected it.) 
+>> 
+>> I see that there's now a btrfs send / receive and I've tried using it, but 
+>> I'm getting the oops I've pasted below, after which the FS becomes 
+>> unresponsive (no I/O to the drive, no CPU usage, but all attempts to access 
+>> the FS results in a hang). I have an internal drive (single drive) that 
+>> contains 82GB of compressed data with a couple hundred snapshots. I tried 
+>> taking the first snapshot and making a read only copy (btrfs subvolume 
+>> snapshot -r) and then I connected an external USB drive and ran btrfs send / 
+>> receive to that external drive. It starts working and gets a couple of GB in 
+>> (I'd expect the first snapshot to be about 20GB) and then gets the following 
+>> error. I had to use the latest copy of btrfs-progs from git, because the 
+>> package installed on my system (btrfs-progs-0.20-0.2.git91d9eec) simply 
+>> returned "invalid argument" when trying to run btrfs send / receive. Thanks 
+>> in advance for any info you may have. 
+> 
+> The problem has been introduced with rbtree ulists in 3.10, commit 
+> 
+> Btrfs: add a rb_tree to improve performance of ulist search 
+> 
+> You should be safe to revert that commit, it's a performance optimization 
+> attempt. Alternatively, you can apply the published fix 
+> 
+> Btrfs: fix crash regarding to ulist_add_merge 
+> 
+> It has not made it into 3.10 stable or 3.11, yet, but is contained in Josef's 
+> btrfs-next 
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git 
+> 
+> Thanks, 
+> -Jan 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in 
+> the body of a message to majordomo@vger.kernel.org 
+> More majordomo info at http://vger.kernel.org/majordomo-info.html 
+> 

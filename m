@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f175.google.com ([209.85.212.175]:61989 "EHLO
-	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751024Ab3HSUPv (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:47283 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751147Ab3HSUak (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 16:15:51 -0400
-Received: by mail-wi0-f175.google.com with SMTP id hq12so3551794wib.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:15:50 -0700 (PDT)
+	Mon, 19 Aug 2013 16:30:40 -0400
+Received: by mail-wg0-f47.google.com with SMTP id j13so3863630wgh.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:30:39 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: fix memory leak of orphan block rsv
-Date: Mon, 19 Aug 2013 21:15:43 +0100
-Message-Id: <1376943343-1582-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v4] Btrfs: fix memory leak of orphan block rsv
+Date: Mon, 19 Aug 2013 21:30:33 +0100
+Message-Id: <1376944233-1094-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 References: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -70,22 +70,26 @@ V2: removed atomic_t member in struct btrfs_block_rsv, as suggested by
 V3: simplified patch, just kfree() (and not btrfs_free_block_rsv) the
     root's orphan_block_rsv when free'ing the root. Thanks Josef for
     the suggestion.
+V4: use btrfs_free_block_rsv() instead of kfree(). The error I was getting
+    in xfstests when using btrfs_free_block_rsv() was unrelated, Josef just
+    pointed it to me (separate issue).
 
- fs/btrfs/disk-io.c |    1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/disk-io.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3b12c26..c7d2fd8 100644
+index 3b12c26..c4b90a0 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3434,6 +3434,7 @@ static void free_fs_root(struct btrfs_root *root)
- 		free_anon_bdev(root->anon_dev);
- 	free_extent_buffer(root->node);
- 	free_extent_buffer(root->commit_root);
-+	kfree(root->orphan_block_rsv);
- 	kfree(root->free_ino_ctl);
- 	kfree(root->free_ino_pinned);
- 	kfree(root->name);
+@@ -3428,6 +3428,8 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
+ 
+ static void free_fs_root(struct btrfs_root *root)
+ {
++	btrfs_free_block_rsv(root, root->orphan_block_rsv);
++	root->orphan_block_rsv = NULL;
+ 	iput(root->cache_inode);
+ 	WARN_ON(!RB_EMPTY_ROOT(&root->inode_tree));
+ 	if (root->anon_dev)
 -- 
 1.7.9.5
 

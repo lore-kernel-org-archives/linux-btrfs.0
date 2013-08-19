@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:39397 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751137Ab3HSUnP (ORCPT
+Received: from mail-we0-f180.google.com ([74.125.82.180]:53547 "EHLO
+	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751283Ab3HSXxI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 16:43:15 -0400
-Received: by mail-wg0-f51.google.com with SMTP id a12so3875401wgh.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 13:43:14 -0700 (PDT)
+	Mon, 19 Aug 2013 19:53:08 -0400
+Received: by mail-we0-f180.google.com with SMTP id p61so4476945wes.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 16:53:07 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v5] Btrfs: fix memory leak of orphan block rsv
-Date: Mon, 19 Aug 2013 21:42:36 +0100
-Message-Id: <1376944956-24862-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs: fix memory leak of orphan block rsv
+Date: Tue, 20 Aug 2013 00:52:51 +0100
+Message-Id: <1376956371-6764-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 References: <1376935725-27427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -76,12 +76,15 @@ V4: use btrfs_free_block_rsv() instead of kfree(). The error I was getting
 V5: move the free call below the iput() call, so that btrfs_evict_node()
     can process the orphan_block_rsv first to do some needed cleanup before
     we free it.
+V6: free the root's orphan_block_rsv in close_ctree() too. After a balance
+    the orphan_block_rsv of the tree of tree roots was being leaked, because
+    free_fs_root() is only called for filesystem trees.
 
- fs/btrfs/disk-io.c |    2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/disk-io.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3b12c26..9e66543 100644
+index 3b12c26..5d17163 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
 @@ -3430,6 +3430,8 @@ static void free_fs_root(struct btrfs_root *root)
@@ -93,6 +96,16 @@ index 3b12c26..9e66543 100644
  	if (root->anon_dev)
  		free_anon_bdev(root->anon_dev);
  	free_extent_buffer(root->node);
+@@ -3582,6 +3584,9 @@ int close_ctree(struct btrfs_root *root)
+ 
+ 	btrfs_free_stripe_hash_table(fs_info);
+ 
++	btrfs_free_block_rsv(root, root->orphan_block_rsv);
++	root->orphan_block_rsv = NULL;
++
+ 	return 0;
+ }
+ 
 -- 
 1.7.9.5
 

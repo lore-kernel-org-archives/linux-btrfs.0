@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:63989 "EHLO xp-ob.rzone.de"
+Received: from xp-ob.rzone.de ([81.169.146.141]:19125 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751152Ab3HSKFh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 06:05:37 -0400
+	id S1751405Ab3HSMvA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Aug 2013 08:51:00 -0400
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH V3] xfstests: add a test for btrfs device replace operation
-Date: Mon, 19 Aug 2013 12:05:35 +0200
-Message-Id: <1376906735-18814-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH V4] xfstests: add a test for btrfs device replace operation
+Date: Mon, 19 Aug 2013 14:50:57 +0200
+Message-Id: <1376916657-17183-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -52,6 +52,10 @@ V2 -> V3:
 - The check that the devices have the same size was missing the target
   device.
 
+V3 -> V4:
+Somehow I managed to add code that used a hardcoded path instead of
+$SCRATCH_MNT. Fixed this issue.
+
  common/config       |   1 +
  tests/btrfs/010     | 277 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/010.out |   3 +
@@ -72,7 +76,7 @@ index 1bc9233..8c2d750 100644
          ;;
 diff --git a/tests/btrfs/010 b/tests/btrfs/010
 new file mode 100755
-index 0000000..2a83727
+index 0000000..36800ff
 --- /dev/null
 +++ b/tests/btrfs/010
 @@ -0,0 +1,277 @@
@@ -190,8 +194,8 @@ index 0000000..2a83727
 +	# Generate 500 times 20K extents in the data chunk and fill up
 +	# metadata with inline extents. Ignore ENOSPC.
 +	for i in `seq 1 500`; do
-+		dd if=/dev/urandom of=/mnt/l$i bs=16385 count=1
-+		dd if=/dev/urandom of=/mnt/s$i bs=3800 count=1
++		dd if=/dev/urandom of=$SCRATCH_MNT/l$i bs=16385 count=1
++		dd if=/dev/urandom of=$SCRATCH_MNT/s$i bs=3800 count=1
 +	done > /dev/null 2>&1
 +
 +	if [ "${quick}Q" = "thoroughQ" ]; then

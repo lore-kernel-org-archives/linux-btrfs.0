@@ -1,37 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:39838 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750991Ab3HTNqZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 09:46:25 -0400
-Message-ID: <5213732F.4010900@sandeen.net>
-Date: Tue, 20 Aug 2013 08:46:23 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
-MIME-Version: 1.0
+Received: from dkim1.fusionio.com ([66.114.96.53]:46468 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750991Ab3HTNuT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Aug 2013 09:50:19 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 568597C0403
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 07:50:19 -0600 (MDT)
+Date: Tue, 20 Aug 2013 09:50:17 -0400
+From: Josef Bacik <jbacik@fusionio.com>
 To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org,
-        xfs@oss.sgi.com
+CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
+        <xfs@oss.sgi.com>
 Subject: Re: [PATCH] xfstests: add regression test for kernel bz 60673 V2
-References: <1376945597-2202-1-git-send-email-jbacik@fusionio.com> <5213338D.3000205@giantdisaster.de>
+Message-ID: <20130820135017.GE3990@localhost.localdomain>
+References: <1376945597-2202-1-git-send-email-jbacik@fusionio.com>
+ <5213338D.3000205@giantdisaster.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 In-Reply-To: <5213338D.3000205@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/20/13 4:14 AM, Stefan Behrens wrote:
+On Tue, Aug 20, 2013 at 11:14:53AM +0200, Stefan Behrens wrote:
 > On Mon, 19 Aug 2013 16:53:17 -0400, Josef Bacik wrote:
->> There was a problem with send trying to overwrite a file that wasn't actually
->> the same.  This is a test to check this particular case where receive fails when
->> it should succeed properly.  I tested this to verify it fails without my fix and
->> passes with my fix.  Thanks,
+> > There was a problem with send trying to overwrite a file that wasn't actually
+> > the same.  This is a test to check this particular case where receive fails when
+> > it should succeed properly.  I tested this to verify it fails without my fix and
+> > passes with my fix.  Thanks,
 > 
 > I tested this xfstest but for me it passes with and without the fix
 > ("Btrfs: check our parent dir when doing a compare send").
+>
 
-is there any interesting fail-ish output in $seqres.full?
+Try again, I just tested myself and got
 
-I wonder if it squawked about errors but exited w/ success.
+[root@destiny xfstests-dev]# cat /root/xfstests-dev/results//btrfs/010.full
+Create subvolume '/mnt/btrfs-test/send_temp_010/send'
+Create a readonly snapshot of '/mnt/btrfs-test/send_temp_010/send' in
+'/mnt/btrfs-test/send_temp_010/snap1'
+At subvol /mnt/btrfs-test/send_temp_010/snap1
+At subvol snap1
+Create a readonly snapshot of '/mnt/btrfs-test/send_temp_010/send' in
+'/mnt/btrfs-test/send_temp_010/snap2'
+At subvol /mnt/btrfs-test/send_temp_010/snap2
+At snapshot snap2
+ERROR: rename test/foo -> o260-953-0 failed. No such file or directory
+failed second receive
 
->> $NOT_STDOUT 2>&1 can be dangerous ...
+Thanks,
 
--Eric
-
+Josef 

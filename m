@@ -1,47 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f53.google.com ([74.125.82.53]:49334 "EHLO
-	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751144Ab3HTQwI (ORCPT
+Received: from mail1207.opentransfer.com ([98.130.1.227]:59569 "EHLO
+	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751429Ab3HTRQ3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 12:52:08 -0400
-Received: by mail-wg0-f53.google.com with SMTP id c11so602240wgh.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 09:52:06 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix printing of non NULL terminated string
-Date: Tue, 20 Aug 2013 17:51:48 +0100
-Message-Id: <1377017508-9355-1-git-send-email-fdmanana@gmail.com>
+	Tue, 20 Aug 2013 13:16:29 -0400
+Message-ID: <5213A46C.20701@friendlyvirus.org>
+Date: Tue, 20 Aug 2013 18:16:28 +0100
+From: =?ISO-8859-1?Q?Miguel_Negr=E3o?=
+	<miguel.negrao-lists@friendlyvirus.org>
+MIME-Version: 1.0
+To: "list, btrfs" <linux-btrfs@vger.kernel.org>
+Subject: btrfs check : extent-tree.c:283: find_search_start: Assertion `!(1)'
+ failed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="3Tg44NxeIarXel1rgMk6fgehqJtCqCEXs"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The name buffer is not terminated by a '\0' character,
-therefore it needs to be printed with %.*s and use the
-length of the buffer.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3Tg44NxeIarXel1rgMk6fgehqJtCqCEXs
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/delayed-inode.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+Hi,
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index fa88297..c0c3a6b 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1471,10 +1471,10 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
- 	mutex_lock(&delayed_node->mutex);
- 	ret = __btrfs_add_delayed_insertion_item(delayed_node, delayed_item);
- 	if (unlikely(ret)) {
--		printk(KERN_ERR "err add delayed dir index item(name: %s) into "
--				"the insertion tree of the delayed node"
-+		printk(KERN_ERR "err add delayed dir index item (name: %.*s) "
-+				"into the insertion tree of the delayed node "
- 				"(root id: %llu, inode id: %llu, errno: %d)\n",
--				name,
-+		                name_len, name,
- 				(unsigned long long)delayed_node->root->objectid,
- 				(unsigned long long)delayed_node->inode_id,
- 				ret);
--- 
-1.7.9.5
+I have a btrfs partition on a usb external hard drive which doesn't
+mount anymore. I tried doing a btrfs check on it, but it fails with the
+error on the subject. The btrfs progs were compiled from git today. I
+have a backup of this partition elsewhere, so I can restore from there
+if all else fails.
 
+The output of
+
+sudo btrfs check --repair /dev/sdc1 > ~/log/btfs-repair-1.log 2>&1
+
+was
+
+parent transid verify failed on 7624175616 wanted 1431 found 1428
+parent transid verify failed on 7624175616 wanted 1431 found 1428
+Ignoring transid failure
+leaf parent key incorrect 7624175616
+checking extents
+parent transid verify failed on 7624175616 wanted 1431 found 1428
+Ignoring transid failure
+
+=2E..
+
+
+leaf parent key incorrect 7717249024
+Unable to find block group for 0
+btrfs: extent-tree.c:283: find_search_start: Assertion `!(1)' failed.
+enabling repair mode
+Checking filesystem on /dev/sdc1
+UUID: 42688de3-f4ed-4592-bb34-02c9d5014e51
+
+
+
+best,
+--=20
+Miguel Negr=E3o
+http://www.friendlyvirus.org/miguelnegrao
+
+
+
+--3Tg44NxeIarXel1rgMk6fgehqJtCqCEXs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iQEcBAEBAgAGBQJSE6RsAAoJEPo6SjfPe12D044IAJxp4b03PdoYRezLORytPhCH
+CQR67csiU/8r+iKAgoxNXmCg86zPdwUwTNr7++qb+02hOS41ahRr1+c0SBATkjrV
+E4eSvqD194q8tJTSY/MJkQjmkbThJ0p1Kuy+B/eaeTNVZrc7b61ltkB3KBLC0To0
+poV4Gk8asmnpyfJxjE2pWtTA69UwQh9NYiggveFOu4Ngk1KjnWu+ZG7LcD31qe9o
+em7kVMFXfrBkj1eg/8OH/AZyiczqwogP2tEe9lT397d2YgWCmw/uwFydC3guBIBG
+m2CH3r6jBiILDT5q5t3kR1/CwjhzGmadMCSozLBktF5Rsml5XsMa9kSVFNA1alI=
+=3EOm
+-----END PGP SIGNATURE-----
+
+--3Tg44NxeIarXel1rgMk6fgehqJtCqCEXs--

@@ -1,216 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36621 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751062Ab3HSPsf (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:26921 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751927Ab3HTGEo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Aug 2013 11:48:35 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 6ECF07C0431
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 09:48:35 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id HwOoRAOdioIxdJvd (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 19 Aug 2013 09:48:34 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: setup framework to corrupt specific fields of an inode
-Date: Mon, 19 Aug 2013 11:48:32 -0400
-Message-ID: <1376927312-2898-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Tue, 20 Aug 2013 02:04:44 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7K64gnP001605
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:43 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64fg4010701
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:42 GMT
+Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64f4G029857
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:41 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: use btrfs error code for kernel errors
+Date: Tue, 20 Aug 2013 14:10:53 +0800
+Message-Id: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a problem with his fs where he had a bogus isize on his
-directory.  In order to make sure my patch for fsck fixes this properly I needed
-to be able to corrupt an inode like this, which is what this patch is for.
-Eventually I want to extend this to corrupt everything so we can integrate tests
-into btrfs-progs to run btrfsck against to make sure we don't regress on fixing
-things with btrfsck.  Thanks,
+Now with the below kernel patch, the excl operations like dev
+add/replace/resize and balance returns the btrfs error
+code defined in btrfs.h, this patch will help btrfs-progs
+(and thus user) to know the error string on the terminal
+(instead of /var/log/messages as previously kernel did).
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+This patch depends on the btrfs kernel patch:
+  btrfs: return btrfs error code for dev excl ops err
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-corrupt-block.c |  113 ++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 111 insertions(+), 2 deletions(-)
+ cmds-balance.c    |   15 +++++++++++++++
+ cmds-device.c     |    7 ++++++-
+ cmds-filesystem.c |    6 +++++-
+ cmds-replace.c    |    7 ++++++-
+ 4 files changed, 32 insertions(+), 3 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 8176fad..f0b1ae9 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -32,6 +32,8 @@
- #include "list.h"
- #include "version.h"
- 
-+#define FIELD_BUF_LEN 80
-+
- struct extent_buffer *debug_corrupt_block(struct btrfs_root *root, u64 bytenr,
- 				     u32 blocksize, int copy)
- {
-@@ -93,6 +95,9 @@ static void print_usage(void)
- 	fprintf(stderr, "\t-b Number of bytes to be corrupted\n");
- 	fprintf(stderr, "\t-e Extent to be corrupted\n");
- 	fprintf(stderr, "\t-E The whole extent free to be corrupted\n");
-+	fprintf(stderr, "\t-i The inode item to corrupt (must also specify "
-+		"the field to corrupt\n");
-+	fprintf(stderr, "\t-f The field in the item to corrupt\n");
- 	exit(1);
- }
- 
-@@ -268,6 +273,83 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 	}
- }
- 
-+enum btrfs_inode_field {
-+	BTRFS_INODE_FIELD_ISIZE,
-+	BTRFS_INODE_FIELD_BAD,
-+};
-+
-+static enum btrfs_inode_field convert_field(char *field)
-+{
-+	if (!strncmp(field, "isize", FIELD_BUF_LEN))
-+		return BTRFS_INODE_FIELD_ISIZE;
-+	return BTRFS_INODE_FIELD_BAD;
-+}
-+
-+static int corrupt_inode(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root, u64 inode, char *field)
-+{
-+	struct btrfs_inode_item *ei;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	enum btrfs_inode_field corrupt_field = convert_field(field);
-+	u64 bogus;
-+	u64 orig;
-+	int ret;
-+
-+	if (corrupt_field == BTRFS_INODE_FIELD_BAD) {
-+		fprintf(stderr, "Invalid field %s\n", field);
-+		return -EINVAL;
-+	}
-+
-+	key.objectid = inode;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = (u64)-1;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret < 0)
-+		goto out;
-+	if (ret) {
-+		if (!path->slots[0]) {
-+			fprintf(stderr, "Couldn't find inode %Lu\n", inode);
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+		path->slots[0]--;
-+		ret = 0;
-+	}
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if (key.objectid != inode) {
-+		fprintf(stderr, "Couldn't find inode %Lu\n", inode);
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			    struct btrfs_inode_item);
-+	switch (corrupt_field) {
-+	case BTRFS_INODE_FIELD_ISIZE:
-+		orig = btrfs_inode_size(path->nodes[0], ei);
-+		do {
-+			bogus = rand();
-+		} while (bogus == orig);
-+
-+		btrfs_set_inode_size(path->nodes[0], ei, bogus);
-+		break;
-+	default:
-+		ret = -EINVAL;
-+		break;
-+	}
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static struct option long_options[] = {
- 	/* { "byte-count", 1, NULL, 'b' }, */
- 	{ "logical", 1, NULL, 'l' },
-@@ -276,6 +358,8 @@ static struct option long_options[] = {
- 	{ "extent-record", 0, NULL, 'e' },
- 	{ "extent-tree", 0, NULL, 'E' },
- 	{ "keys", 0, NULL, 'k' },
-+	{ "inode", 1, NULL, 'i'},
-+	{ "field", 1, NULL, 'f'},
- 	{ 0, 0, 0, 0}
- };
- 
-@@ -294,12 +378,15 @@ int main(int ac, char **av)
- 	int extent_rec = 0;
- 	int extent_tree = 0;
- 	int corrupt_block_keys = 0;
-+	u64 inode = 0;
-+	char field[FIELD_BUF_LEN];
- 
-+	field[0] = '\0';
- 	srand(128);
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "l:c:b:eEk", long_options,
-+		c = getopt_long(ac, av, "l:c:b:eEki:f:", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
-@@ -337,6 +424,17 @@ int main(int ac, char **av)
- 			case 'k':
- 				corrupt_block_keys = 1;
- 				break;
-+			case 'i':
-+				inode = atoll(optarg);
-+				if (inode == 0) {
-+					fprintf(stderr,
-+						"invalid inode number\n");
-+					print_usage();
-+				}
-+				break;
-+			case 'f':
-+				strncpy(field, optarg, FIELD_BUF_LEN);
-+				break;
- 			default:
- 				print_usage();
+diff --git a/cmds-balance.c b/cmds-balance.c
+index c78b726..30019be 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -316,6 +316,12 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 			if (ret == 0)
+ 				goto out;
+ 			e = errno;
++			if (ret > 0) {
++				fprintf(stderr,
++					"ERROR: Balance failed due to - %s\n",
++					btrfs_err_str(ret));
++				goto out;
++			}
  		}
-@@ -344,10 +442,12 @@ int main(int ac, char **av)
- 	ac = ac - optind;
- 	if (ac == 0)
- 		print_usage();
--	if (logical == 0 && !extent_tree)
-+	if (logical == 0 && (!extent_tree && !inode))
- 		print_usage();
- 	if (copy < 0)
- 		print_usage();
-+	if ((inode && !strlen(field)) || (strlen(field) && !inode))
-+		print_usage();
  
- 	dev = av[optind];
+ 		if (e == ECANCELED) {
+@@ -332,6 +338,11 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 					"syslog - try dmesg | tail\n");
+ 			ret = 19;
+ 		}
++	} else if (ret > 0) {
++		fprintf(stderr,
++			"ERROR: Balance start failed - %s\n",
++			btrfs_err_str(ret));
++		ret = 1;
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
+ 		       (unsigned long long)args->stat.completed,
+@@ -603,6 +614,10 @@ static int cmd_balance_resume(int argc, char **argv)
+ "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
+ 			return 19;
+ 		}
++	} else if (ret > 0) {
++		fprintf(stderr,
++			"ERROR: Balance resume failed - %s\n",
++			btrfs_err_str(ret));
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
+ 		       (unsigned long long)args.stat.completed,
+diff --git a/cmds-device.c b/cmds-device.c
+index 833ad30..282590c 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -120,10 +120,15 @@ static int cmd_add_dev(int argc, char **argv)
+ 		strncpy_null(ioctl_args.name, argv[i]);
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		e = errno;
+-		if(res<0){
++		if (res < 0) {
+ 			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n",
+ 				argv[i], strerror(e));
+ 			ret++;
++		} else if (res > 0) {
++			fprintf(stderr,
++				"ERROR: adding the device '%s' - %s\n",
++				argv[i], btrfs_err_str(res));
++			ret = 1;
+ 		}
  
-@@ -374,6 +474,15 @@ int main(int ac, char **av)
- 		btrfs_commit_transaction(trans, root);
- 		goto out_close;
  	}
-+	if (inode) {
-+		struct btrfs_trans_handle *trans;
-+
-+		printf("corrupting inode\n");
-+		trans = btrfs_start_transaction(root, 1);
-+		ret = corrupt_inode(trans, root, inode, field);
-+		btrfs_commit_transaction(trans, root);
-+		goto out_close;
-+	}
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index e78b95c..239bd3b 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -575,10 +575,14 @@ static int cmd_resize(int argc, char **argv)
+ 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+ 	e = errno;
+ 	close_file_or_dir(fd, dirstream);
+-	if( res < 0 ){
++	if (res < 0) {
+ 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
+ 			path, strerror(e));
+ 		return 30;
++	} else if (res > 0) {
++		fprintf(stderr, "ERROR: resize failed - %s\n",
++			btrfs_err_str(res));
++		return res;
+ 	}
+ 	return 0;
+ }
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 8ed92c4..e3ff695 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -297,12 +297,17 @@ static int cmd_start_replace(int argc, char **argv)
+ 	start_args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_START;
+ 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &start_args);
+ 	if (do_not_background) {
+-		if (ret) {
++		if (ret < 0) {
+ 			fprintf(stderr,
+ 				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
+ 				path, strerror(errno),
+ 				replace_dev_result2string(start_args.result));
+ 			goto leave_with_error;
++		} else if (ret > 0) {
++			fprintf(stderr,
++				"ERROR: replace start failed on %s - %s\n",
++				path, btrfs_err_str(ret));
++			goto leave_with_error;
+ 		}
  
- 	if (bytes == 0)
- 		bytes = root->sectorsize;
+ 		if (start_args.result !=
 -- 
-1.7.7.6
+1.7.1
 

@@ -1,149 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26921 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:26959 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751927Ab3HTGEo (ORCPT
+	with ESMTP id S1751927Ab3HTGEt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 02:04:44 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7K64gnP001605
+	Tue, 20 Aug 2013 02:04:49 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7K64lbv001669
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:43 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64fg4010701
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:48 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64g2p022243
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:42 GMT
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:47 GMT
 Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64f4G029857
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:41 GMT
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7K64gHs012433
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 06:04:42 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: use btrfs error code for kernel errors
-Date: Tue, 20 Aug 2013 14:10:53 +0800
-Message-Id: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs: return btrfs error code for dev excl ops err
+Date: Tue, 20 Aug 2013 14:10:54 +0800
+Message-Id: <1376979054-2883-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
+References: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now with the below kernel patch, the excl operations like dev
-add/replace/resize and balance returns the btrfs error
-code defined in btrfs.h, this patch will help btrfs-progs
-(and thus user) to know the error string on the terminal
-(instead of /var/log/messages as previously kernel did).
-
-This patch depends on the btrfs kernel patch:
-  btrfs: return btrfs error code for dev excl ops err
+now threads can return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
+as defined in btrfs.h for the dev excl operation error in
+the FS, which means with this kernel would stop logging
+(almost an user error) into the /var/log/messages
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-balance.c    |   15 +++++++++++++++
- cmds-device.c     |    7 ++++++-
- cmds-filesystem.c |    6 +++++-
- cmds-replace.c    |    7 ++++++-
- 4 files changed, 32 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c           |   12 ++++--------
+ include/uapi/linux/btrfs.h |    3 +--
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index c78b726..30019be 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -316,6 +316,12 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 			if (ret == 0)
- 				goto out;
- 			e = errno;
-+			if (ret > 0) {
-+				fprintf(stderr,
-+					"ERROR: Balance failed due to - %s\n",
-+					btrfs_err_str(ret));
-+				goto out;
-+			}
- 		}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 107c5f4..89f346c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1382,9 +1382,8 @@ static noinline int btrfs_ioctl_resize(struct file *file,
  
- 		if (e == ECANCELED) {
-@@ -332,6 +338,11 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 					"syslog - try dmesg | tail\n");
- 			ret = 19;
- 		}
-+	} else if (ret > 0) {
-+		fprintf(stderr,
-+			"ERROR: Balance start failed - %s\n",
-+			btrfs_err_str(ret));
-+		ret = 1;
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
- 		       (unsigned long long)args->stat.completed,
-@@ -603,6 +614,10 @@ static int cmd_balance_resume(int argc, char **argv)
- "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
- 			return 19;
- 		}
-+	} else if (ret > 0) {
-+		fprintf(stderr,
-+			"ERROR: Balance resume failed - %s\n",
-+			btrfs_err_str(ret));
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
- 		       (unsigned long long)args.stat.completed,
-diff --git a/cmds-device.c b/cmds-device.c
-index 833ad30..282590c 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -120,10 +120,15 @@ static int cmd_add_dev(int argc, char **argv)
- 		strncpy_null(ioctl_args.name, argv[i]);
- 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
- 		e = errno;
--		if(res<0){
-+		if (res < 0) {
- 			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n",
- 				argv[i], strerror(e));
- 			ret++;
-+		} else if (res > 0) {
-+			fprintf(stderr,
-+				"ERROR: adding the device '%s' - %s\n",
-+				argv[i], btrfs_err_str(res));
-+			ret = 1;
- 		}
- 
+ 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+-		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
+ 		mnt_drop_write_file(file);
+-		return -EINVAL;
++		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
  	}
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index e78b95c..239bd3b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -575,10 +575,14 @@ static int cmd_resize(int argc, char **argv)
- 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
- 	e = errno;
- 	close_file_or_dir(fd, dirstream);
--	if( res < 0 ){
-+	if (res < 0) {
- 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
- 			path, strerror(e));
- 		return 30;
-+	} else if (res > 0) {
-+		fprintf(stderr, "ERROR: resize failed - %s\n",
-+			btrfs_err_str(res));
-+		return res;
- 	}
- 	return 0;
- }
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 8ed92c4..e3ff695 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -297,12 +297,17 @@ static int cmd_start_replace(int argc, char **argv)
- 	start_args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_START;
- 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &start_args);
- 	if (do_not_background) {
--		if (ret) {
-+		if (ret < 0) {
- 			fprintf(stderr,
- 				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
- 				path, strerror(errno),
- 				replace_dev_result2string(start_args.result));
- 			goto leave_with_error;
-+		} else if (ret > 0) {
-+			fprintf(stderr,
-+				"ERROR: replace start failed on %s - %s\n",
-+				path, btrfs_err_str(ret));
-+			goto leave_with_error;
- 		}
  
- 		if (start_args.result !=
+ 	mutex_lock(&root->fs_info->volume_mutex);
+@@ -2346,8 +2345,7 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
+ 
+ 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+-		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
+-		return -EINVAL;
++		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
+ 	}
+ 
+ 	mutex_lock(&root->fs_info->volume_mutex);
+@@ -3638,8 +3636,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
+ 		if (atomic_xchg(
+ 			&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+-			pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
+-			ret = -EINPROGRESS;
++			ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
+ 		} else {
+ 			ret = btrfs_dev_replace_start(root, p);
+ 			atomic_set(
+@@ -3883,8 +3880,7 @@ again:
+ 	} else {
+ 		/* this is (1) */
+ 		mutex_unlock(&fs_info->balance_mutex);
+-		pr_info("btrfs: dev add/delete/balance/replace/resize operation in progress\n");
+-		ret = -EINVAL;
++		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
+ 		goto out;
+ 	}
+ 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 90d7bd9..182305f 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -505,8 +505,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 		case BTRFS_ERROR_DEV_ONLY_WRITABLE:
+ 			return "unable to remove the only writeable device";
+ 		case BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS:
+-			return "add/delete/balance/replace/resize operation "\
+-				"in progress";
++			return "add/delete/balance/replace/resize operation in progress";
+ 		default:
+ 			return NULL;
+ 	}
 -- 
 1.7.1
 

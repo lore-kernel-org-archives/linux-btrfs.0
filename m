@@ -1,72 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56462 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750872Ab3HNEbY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Aug 2013 00:31:24 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v3 7/8] Btrfs-progs: add missing man page information for btrfs-zero-log
-Date: Wed, 14 Aug 2013 12:29:16 +0800
-Message-Id: <1376454557-3041-7-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:33054 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750912Ab3HTTTo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Aug 2013 15:19:44 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id CA3EF9A06AD
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 13:19:43 -0600 (MDT)
+Date: Tue, 20 Aug 2013 15:19:41 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Anand Jain <anand.jain@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Subject: Re: [PATCH 3/3] btrfs-progs: avoid write to the disk before sure to
+ create fs
+Message-ID: <20130820191941.GJ3990@localhost.localdomain>
+References: <1374773730-29957-1-git-send-email-anand.jain@oracle.com>
+ <1375877485-12105-1-git-send-email-anand.jain@oracle.com>
+ <1375877485-12105-4-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1375877485-12105-4-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2->v3: remove 'AVAILIABLE' parts.
-v1->v2: GPLv3->GPLv2
----
- man/Makefile            |  2 +-
- man/btrfs-zero-log.8.in | 23 +++++++++++++++++++++++
- 2 files changed, 24 insertions(+), 1 deletion(-)
- create mode 100644 man/btrfs-zero-log.8.in
+On Wed, Aug 07, 2013 at 08:11:25PM +0800, Anand Jain wrote:
+> This patch provides fix for the following bug,
+> 
+> When mkfs.btrfs fails the disks shouldn't be written.
+> ------------
+> btrfs fi show /dev/sdb
+> Label: none  uuid: 60fb76f4-3b4d-4632-a7da-6a44dea5573d
+>         Total devices 1 FS bytes used 24.00KiB
+>         devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
+> 
+> mkfs.btrfs -dsingle -mraid1 /dev/sdb -f
+> ::
+> unable to create FS with metadata profile 16 (have 1 devices)
+> 
+> btrfs fi show /dev/sdb
+> Label: none  uuid: 2da2179d-ecb1-4a4e-a44d-e7613a08c18d
+>         Total devices 1 FS bytes used 24.00KiB
+>         devid    1 size 2.00GiB used 20.00MiB path /dev/sdb
+> -------------
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-diff --git a/man/Makefile b/man/Makefile
-index e1246db..5ccb60a 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -13,7 +13,7 @@ man8dir = $(mandir)/man8
- 
- MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
- 	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
--	   btrfs-convert.8.gz btrfstune.8.gz
-+	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz
- INFILES = ${MANPAGES:.in=.gz}
- 
- all: $(MANPAGES)
-diff --git a/man/btrfs-zero-log.8.in b/man/btrfs-zero-log.8.in
-new file mode 100644
-index 0000000..80aaa9a
---- /dev/null
-+++ b/man/btrfs-zero-log.8.in
-@@ -0,0 +1,23 @@
-+.TH BTRFS-ZERO-LOG 8
-+.SH NAME
-+btrfs-zero-log \- clear out log tree.
-+.SH SYNOPSIS
-+.B btrfs-zero-log \fI <dev>\fP
-+.SH DESCRIPTION
-+\fBbtrfs-zero-log\fP will remove the log tree if log tree is corrupt, which will allow you to mount the filesystem again. The common case where this
-+happens has been fixed a long time ago, so it is unlikely that you will see this particular problem.
-+
-+.SH EXIT CODE
-+\fBbtrfs-zero-log\fR will return 0 exit code if no error happened.
-+Other exit code means some problems happened.
-+
-+.SH AUTHOR
-+Written by Shilong Wang and Wenruo Qu.
-+
-+.SH COPYRIGHT
-+Copyright \(co 2013 Fujitsu, Inc.
-+License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
-+.br
-+This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-+.SH SEE ALSO
-+.BR mkfs.btrfs (8)
--- 
-1.8.0.1
+This regresses making a filesystem that is forced to be a mixed block group.
+Dave this is in your integration branch, can you please kick it out?  Anand if
+I have to waste 30 more minutes bisecting your latest regression I'm going to
+just start ignoring all of your patches.
 
+Josef

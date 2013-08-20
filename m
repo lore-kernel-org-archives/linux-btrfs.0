@@ -1,91 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:62751 "EHLO mx1.redhat.com"
+Received: from smtp2-g21.free.fr ([212.27.42.2]:54212 "EHLO smtp2-g21.free.fr"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751249Ab3HTORy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 10:17:54 -0400
-Message-ID: <52137A8D.40805@redhat.com>
-Date: Tue, 20 Aug 2013 09:17:49 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-CC: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 01/12] Btrfs: Remove superfluous casts from u64 to unsigned
- long long
-References: <1376997618-13573-1-git-send-email-geert@linux-m68k.org> <1376997618-13573-2-git-send-email-geert@linux-m68k.org> <52137A5A.8060207@redhat.com>
-In-Reply-To: <52137A5A.8060207@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1751013Ab3HTOrQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Aug 2013 10:47:16 -0400
+Received: from shiva (unknown [88.171.134.228])
+	by smtp2-g21.free.fr (Postfix) with ESMTP id 574244B0149
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 16:47:07 +0200 (CEST)
+In-Reply-To: <4DD5A25C-8210-4E5B-9BD3-49AAAB7CAAAC@colorremedies.com>
+References: <S1753593Ab3HRQvp/20130818165145Z+301@vger.kernel.org> <52111C9D.3090704@pook.it> <73B6CA35-5279-44D6-A427-46985C3F554C@colorremedies.com> <52114C4A.6000003@pook.it> <4DD5A25C-8210-4E5B-9BD3-49AAAB7CAAAC@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Subject: Re: uncorrectable errors after btrfs replace
+From: slp644161@pook.it
+Date: Tue, 20 Aug 2013 16:46:59 +0200
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <434c716a-7687-4738-bb24-f4752ada1e3f@email.android.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/20/13 9:16 AM, Eric Sandeen wrote:
-> On 8/20/13 6:20 AM, Geert Uytterhoeven wrote:
->> u64 is "unsigned long long" on all architectures now, so there's no need to
->> cast it when formatting it using the "ll" length modifier.
->>
->> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
->> ---
->>  fs/btrfs/backref.c          |   24 ++--
->>  fs/btrfs/check-integrity.c  |  294 ++++++++++++++-----------------------------
->>  fs/btrfs/compression.c      |    5 +-
->>  fs/btrfs/ctree.c            |    6 +-
->>  fs/btrfs/delayed-inode.c    |   10 +-
->>  fs/btrfs/dev-replace.c      |    2 +-
->>  fs/btrfs/disk-io.c          |   25 ++--
->>  fs/btrfs/extent-tree.c      |   47 +++----
->>  fs/btrfs/extent_io.c        |   30 ++---
->>  fs/btrfs/file-item.c        |    4 +-
->>  fs/btrfs/free-space-cache.c |    6 +-
->>  fs/btrfs/inode.c            |   24 ++--
->>  fs/btrfs/ioctl.c            |   10 +-
->>  fs/btrfs/ordered-data.c     |   11 +-
->>  fs/btrfs/print-tree.c       |   80 +++++-------
->>  fs/btrfs/qgroup.c           |   10 +-
->>  fs/btrfs/relocation.c       |    7 +-
->>  fs/btrfs/root-tree.c        |    3 +-
->>  fs/btrfs/scrub.c            |   16 +--
->>  fs/btrfs/super.c            |   10 +-
->>  fs/btrfs/transaction.c      |    3 +-
->>  fs/btrfs/volumes.c          |   19 ++-
->>  22 files changed, 222 insertions(+), 424 deletions(-)
->>
->> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
->> index 8bc5e8c..c1a518e 100644
->> --- a/fs/btrfs/backref.c
->> +++ b/fs/btrfs/backref.c
->> @@ -295,10 +295,9 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
->>  	ret = btrfs_search_old_slot(root, &ref->key_for_search, path, time_seq);
->>  	pr_debug("search slot in root %llu (level %d, ref count %d) returned "
->>  		 "%d for key (%llu %u %llu)\n",
->> -		 (unsigned long long)ref->root_id, level, ref->count, ret,
->> -		 (unsigned long long)ref->key_for_search.objectid,
->> -		 ref->key_for_search.type,
->> -		 (unsigned long long)ref->key_for_search.offset);
->> +		 ref->root_id, level, ref->count, ret,
->> +		 ref->key_for_search.objectid, ref->key_for_search.type,
->> +		 ref->key_for_search.offset);
->>  	if (ret < 0)
->>  		goto out;
->>  
->> @@ -1326,8 +1325,7 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
->>  	     found_key->type != BTRFS_METADATA_ITEM_KEY) ||
->>  	    found_key->objectid > logical ||
->>  	    found_key->objectid + size <= logical) {
->> -		pr_debug("logical %llu is not within any extent\n",
->> -			 (unsigned long long)logical);
->> +		pr_debug("logical %llu is not within any extent\n", logical);
-> 
-> ...
-> 
-> Many platforms use "long" for u64, so without these casts, they'll generate
-> compile-time printf-format warnings.  See int-l64.h, and the various
-> arch/*/include/uapi/asm/types.h files that include it - ia64, ppc, etc.
 
-Sorry, should have read your commit message first ;)  I didn't know that this
-had changed...
 
--Eric
+Chris Murphy <lists@colorremedies.com> wrote:
 
-> -Eric
-> 
+>> I ran a badblocks scan on the raw device (not the luks device) and
+>didn't get any errors.
+>
+>badblocks will depend on the drive determining a persistent read
+>failure with a sector, and timing out before the SCSI block layer times
+>out. Since the linux SCSI driver time out is 30 seconds, and most
+>consumer drive ECT is 120 seconds, the bus is reset before the drive
+>has a chance to report a bad sector. So I think you're better off using
+>smartctl -l long tests to find bad sectors on a disk.
 
+I have no reason to think that I have bad sectors on the disk. I just wanted to see if badblocks would lead to errors due to connection or cable problems. It didn't.
+
+>How does Btrfs know there's been a failure during write if the hardware
+>hasn't detected it? Btrfs doesn't re-read everything it just wrote to
+>the drive to confirm it was written correctly. It assumes it was unless
+>there's a hardware error. It wouldn't know this until a Btrfs scrub is
+>done on the written drive. 
+
+I was hoping that btrfs would have checked that the data was correctly copied to the new disk before it removed it from the original. This is what would have saved my filesystem.
+
+>What I can't tell you is how Btrfs behaves and if it behaves correctly,
+>when writing data to hardware having transient errors. I don't know
+>what it does when the hardware reports the error, but presumably if the
+>hardware doesn't report an error Btrfs can't do anything about that
+>except on the next read or scrub.
+
+But btrfs did read the data from the WD-blue because it copied it to the WD-black. btrfs copied rubbish onto the WD-black so if it had checked the checksums as it read from the WD-blue it would have seen that things were bad. This would already have been too late for my filesystem but it would have been good to know then rather than just get errors when I tried to read the files on the filesystem.
+
+>> Just to be clear. This is the series of btrfs replace I did:
+>> 
+>> backups : HD204UI -> WD-Blue
+>> /mnt : WD-Black -> HD204UI
+>> backups : WD-Blue -> WD-Black
+>> 
+>> I guess that my backups were corrupted was they were written to or
+>read from the WD-Blue. Wouldn't the checksums have detected this
+>problem before the data was written to the WD-Black?
+>
+>When you first encountered the btrfs reported csum errors, what
+>operation was occurring?
+
+When I started to read and write my backups after they have been copied to the WD-black
+
+>>> There's only so much software can do to overcome blatant hardware
+>problems.
+>> 
+>> I was hoping to be informed of them
+>
+>Well you were informed of them in dmesg, by virtue of the controller
+>having problems talking to a SATA rev 2 drive at rev 2 speed, with a
+>negotiated fallback to rev 1 speed.
+
+I wanted btrfs to reread the new disk before removing the old disk from the filesystem. I also do not understand why the errors, which were going into dmesg, were not received by btrfs so that it could abort the replace.
+
+>> Does "btrfs replace"
+>check that the data is correctly written to the new disk before it is
+>removed from the old disk?
+>
+>That's a valid question. Hopefully someone more knowledgable can answer
+>what the expected error handling behavior is supposed to be.
+
+It would be good if it did!
+
+>>  Should I have used the 2 disks to make a RAID-1 and then done a
+>scrub before removing the old disk?
+>
+>Good question. Possibly it's best practices to use btrfs replace with
+>an existing raid1, rather than using it as a way to move a single copy
+>of data from one disk to another. I think you'd have been better off
+>using btrfs send and receive for this operation.
+
+But using send and receive would have lead to downtime.
+
+>A full dmesg might also be enlightening even if it is really long. Just
+>put it in its own email without comment. 
+
+As soon as I get back home ...
+
+Stuart Pook, http://www.pook.it

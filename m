@@ -1,51 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:59286 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751250Ab3HTQin (ORCPT
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:49334 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751144Ab3HTQwI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 12:38:43 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id C299D9A06AB
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 10:38:42 -0600 (MDT)
-Date: Tue, 20 Aug 2013 12:38:40 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Lutz Euler <lutz.euler@freenet.de>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: BUG at fs/btrfs/relocation.c:1055 during balance.
-Message-ID: <20130820163840.GF3990@localhost.localdomain>
-References: <21010.37299.189607.141474@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <21010.37299.189607.141474@localhost.localdomain>
+	Tue, 20 Aug 2013 12:52:08 -0400
+Received: by mail-wg0-f53.google.com with SMTP id c11so602240wgh.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 09:52:06 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix printing of non NULL terminated string
+Date: Tue, 20 Aug 2013 17:51:48 +0100
+Message-Id: <1377017508-9355-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 19, 2013 at 11:44:19PM +0200, Lutz Euler wrote:
-> Hi,
-> 
-> during a balance I got the BUG from the subject line, followed by
-> BUG: unable to handle kernel paging request at 000000000008a940.
-> The machine needed to be rebooted afterwards; the filesystem was
-> successfully mounted and the balance resumed and finished successfully.
-> I then ran scrub which found no errors.
-> 
-> I have run the same balance command several times already in the past,
-> without problems. This was the first time I tried it under kernel
-> 3.11.0-rc6.
-> 
-> Please find below:
-> 
-> - the balance command I issued
-> - software versions
-> - filesystem information (taken after the reboot and after the balance
->   finished)
-> - the syslog entries from the start of the balance until the machine
->   was rebooted
-> - an excerpt from syslog at reboot
-> 
-> Thanks for looking into this,
-> 
+The name buffer is not terminated by a '\0' character,
+therefore it needs to be printed with %.*s and use the
+length of the buffer.
 
-This should be fixed in btrfs-next.  Thanks,
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/delayed-inode.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index fa88297..c0c3a6b 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1471,10 +1471,10 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
+ 	mutex_lock(&delayed_node->mutex);
+ 	ret = __btrfs_add_delayed_insertion_item(delayed_node, delayed_item);
+ 	if (unlikely(ret)) {
+-		printk(KERN_ERR "err add delayed dir index item(name: %s) into "
+-				"the insertion tree of the delayed node"
++		printk(KERN_ERR "err add delayed dir index item (name: %.*s) "
++				"into the insertion tree of the delayed node "
+ 				"(root id: %llu, inode id: %llu, errno: %d)\n",
+-				name,
++		                name_len, name,
+ 				(unsigned long long)delayed_node->root->objectid,
+ 				(unsigned long long)delayed_node->inode_id,
+ 				ret);
+-- 
+1.7.9.5
+

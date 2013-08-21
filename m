@@ -1,78 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33549 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751069Ab3HTT5M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 15:57:12 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 2AFAE9A06AE
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 13:57:11 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id gCHNTUa4syQCoTSP (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 13:57:10 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix send to deal with sparse files properly
-Date: Tue, 20 Aug 2013 15:57:08 -0400
-Message-ID: <1377028628-19544-1-git-send-email-jbacik@fusionio.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:7875 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752017Ab3HUGfP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Aug 2013 02:35:15 -0400
+Message-ID: <52145EC1.4000905@cn.fujitsu.com>
+Date: Wed, 21 Aug 2013 14:31:29 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix heavy delalloc related deadlock
+References: <1376494860-8864-1-git-send-email-jbacik@fusionio.com> <52118373.7050800@cn.fujitsu.com> <20130819124952.GB3990@localhost.localdomain>
+In-Reply-To: <20130819124952.GB3990@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Send was just sending everything it found, even if the extent was a hole.  This
-is unpleasant for users, so just skip holes when we are sending.  This will also
-skip sending prealloc extents since the send spec doesn't have a prealloc
-command.  Eventually we will add a prealloc command and rev the send version so
-we can send down the prealloc info.  Thanks,
+Josef
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/send.c |   25 ++++++++++++++++++++++++-
- 1 files changed, 24 insertions(+), 1 deletions(-)
+On mon, 19 Aug 2013 08:49:52 -0400, Josef Bacik wrote:
+> On Mon, Aug 19, 2013 at 10:31:15AM +0800, Miao Xie wrote:
+>> On wed, 14 Aug 2013 11:41:00 -0400, Josef Bacik wrote:
+>>> I added a patch where we started taking the ordered operations mutex when we
+>>> waited on ordered extents.  We need this because we splice the list and process
+>>> it, so if a flusher came in during this scenario it would think the list was
+>>> empty and we'd usually get an early ENOSPC.  The problem with this is that this
+>>> lock is used in transaction committing.  So we end up with something like this
+>>>
+>>> Transaction commit
+>>> 	-> wait on writers
+>>>
+>>> Delalloc flusher
+>>> 	-> run_ordered_operations (holds mutex)
+>>> 		->wait for filemap-flush to do its thing
+>>>
+>>> flush task
+>>> 	-> cow_file_range
+>>> 		->wait on btrfs_join_transaction because we're commiting
+>>>
+>>> some other task
+>>> 	-> commit_transaction because we notice trans->transaction->flush is set
+>>> 		-> run_ordered_operations (hang on mutex)
+>>
+>> Sorry, I can not understand this explanation. As far as I know, if the flush task
+>> waits on btrfs_join_transaction(), it means the transaction is under commit
+>> (state = TRANS_STATE_COMMIT_DOING), and all the external writers(TRANS_START/TRANS_ATTACH/
+>> TRANS_USERSPACE) have quitted the current transaction, so no one would try to call
+>> run_ordered_operations().
+>>
+>> Could you show us the reproduce steps?
+>>
+> 
+> Sorry I wrote the wrong thing for the delalloc flusher, that should be
+> 
+>   ->btrfs_wait_ordered_extents (holds ordered operations mutex)
+> 	-> wait for filemap-flush to do its thing
+> 
+> That should make it clearer.  I reproduced it running xfstests generic/224.
+> Thanks,
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index db7da68..3a1e75a 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4011,8 +4011,10 @@ static int process_extent(struct send_ctx *sctx,
- 			  struct btrfs_path *path,
- 			  struct btrfs_key *key)
- {
--	int ret = 0;
- 	struct clone_root *found_clone = NULL;
-+	struct btrfs_file_extent_item *ei;
-+	int ret = 0;
-+	u8 type;
- 
- 	if (S_ISLNK(sctx->cur_inode_mode))
- 		return 0;
-@@ -4027,6 +4029,27 @@ static int process_extent(struct send_ctx *sctx,
- 		}
- 	}
- 
-+	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			    struct btrfs_file_extent_item);
-+	type = btrfs_file_extent_type(path->nodes[0], ei);
-+	if (type == BTRFS_FILE_EXTENT_PREALLOC ||
-+	    type == BTRFS_FILE_EXTENT_REG) {
-+		/*
-+		 * The send spec does not have a prealloc command yet, so just
-+		 * leave a hole for prealloc'ed extents until we have enough
-+		 * commands queued up to justify rev'ing the send spec.
-+		 */
-+		if (type == BTRFS_FILE_EXTENT_PREALLOC) {
-+			ret = 0;
-+			goto out;
-+		}
-+
-+		/* Have a hole, just skip it. */
-+		if (btrfs_file_extent_disk_bytenr(path->nodes[0], ei) == 0) {
-+			ret = 0;
-+			goto out;
-+		}
-+	}
- 	ret = find_extent_clone(sctx, path, key->objectid, key->offset,
- 			sctx->cur_inode_size, &found_clone);
- 	if (ret != -ENOENT && ret < 0)
--- 
-1.7.7.6
+Your patch can fix the above deadlock problem. And this problem also happens on
+the old kernel, so it is better to send it to the stable kernel mail list, and please
+add
+	Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
+By the way, I found the "some other tasks" you said above are tasks that start
+TRANS_JOIN transaction handles, if we don't use btrfs_join_transaction/btrfs_commit_transaction
+at the same time, we can also avoid the above deadlock. And besides that, I think 
+the TRANS_JOIN handle should not be committed because the TRANS_JOIN handle can
+grab the current transaction even it is going to be committed, it is error prone if
+we commit a TRANS_JOIN handle when the transaction is going to be committed.
+And in the most cases that we need commit the transaction, we just want to commit
+the current transaction, but don't want to start a new transaction and then commit it,
+so in those cases, the TRANS_JOIN is not suitable.
+
+In short, we need clean up the code that use btrfs_join_transaction/btrfs_commit_transaction
+at the same time.
+
+Thanks
+Miao

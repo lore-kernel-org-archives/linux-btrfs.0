@@ -1,82 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7875 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752017Ab3HUGfP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Aug 2013 02:35:15 -0400
-Message-ID: <52145EC1.4000905@cn.fujitsu.com>
-Date: Wed, 21 Aug 2013 14:31:29 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix heavy delalloc related deadlock
-References: <1376494860-8864-1-git-send-email-jbacik@fusionio.com> <52118373.7050800@cn.fujitsu.com> <20130819124952.GB3990@localhost.localdomain>
-In-Reply-To: <20130819124952.GB3990@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mga03.intel.com ([143.182.124.21]:49215 "EHLO mga03.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752176Ab3HUHca (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Aug 2013 03:32:30 -0400
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To: Josef Bacik <jbacik@fusionio.com>, Chris Mason <chris.mason@fusionio.com>,
+        linux-btrfs@vger.kernel.org
+Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Subject: [PATCH v2] btrfs: reuse kbasename helper
+Date: Wed, 21 Aug 2013 10:32:13 +0300
+Message-Id: <1377070333-29089-1-git-send-email-andriy.shevchenko@linux.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef
+To get name of the file from a pathname let's use kbasename() helper. It allows
+to simplify code a bit.
 
-On mon, 19 Aug 2013 08:49:52 -0400, Josef Bacik wrote:
-> On Mon, Aug 19, 2013 at 10:31:15AM +0800, Miao Xie wrote:
->> On wed, 14 Aug 2013 11:41:00 -0400, Josef Bacik wrote:
->>> I added a patch where we started taking the ordered operations mutex when we
->>> waited on ordered extents.  We need this because we splice the list and process
->>> it, so if a flusher came in during this scenario it would think the list was
->>> empty and we'd usually get an early ENOSPC.  The problem with this is that this
->>> lock is used in transaction committing.  So we end up with something like this
->>>
->>> Transaction commit
->>> 	-> wait on writers
->>>
->>> Delalloc flusher
->>> 	-> run_ordered_operations (holds mutex)
->>> 		->wait for filemap-flush to do its thing
->>>
->>> flush task
->>> 	-> cow_file_range
->>> 		->wait on btrfs_join_transaction because we're commiting
->>>
->>> some other task
->>> 	-> commit_transaction because we notice trans->transaction->flush is set
->>> 		-> run_ordered_operations (hang on mutex)
->>
->> Sorry, I can not understand this explanation. As far as I know, if the flush task
->> waits on btrfs_join_transaction(), it means the transaction is under commit
->> (state = TRANS_STATE_COMMIT_DOING), and all the external writers(TRANS_START/TRANS_ATTACH/
->> TRANS_USERSPACE) have quitted the current transaction, so no one would try to call
->> run_ordered_operations().
->>
->> Could you show us the reproduce steps?
->>
-> 
-> Sorry I wrote the wrong thing for the delalloc flusher, that should be
-> 
->   ->btrfs_wait_ordered_extents (holds ordered operations mutex)
-> 	-> wait for filemap-flush to do its thing
-> 
-> That should make it clearer.  I reproduced it running xfstests generic/224.
-> Thanks,
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+---
+Since v1:
+- fix build warnings
+ fs/btrfs/send.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-Your patch can fix the above deadlock problem. And this problem also happens on
-the old kernel, so it is better to send it to the stable kernel mail list, and please
-add
-	Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index d3f3b43..f5281cc 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -26,6 +26,7 @@
+ #include <linux/radix-tree.h>
+ #include <linux/crc32c.h>
+ #include <linux/vmalloc.h>
++#include <linux/string.h>
+ 
+ #include "send.h"
+ #include "backref.h"
+@@ -2581,7 +2582,6 @@ static int record_ref(struct list_head *head, u64 dir,
+ 		      u64 dir_gen, struct fs_path *path)
+ {
+ 	struct recorded_ref *ref;
+-	char *tmp;
+ 
+ 	ref = kmalloc(sizeof(*ref), GFP_NOFS);
+ 	if (!ref)
+@@ -2591,20 +2591,14 @@ static int record_ref(struct list_head *head, u64 dir,
+ 	ref->dir_gen = dir_gen;
+ 	ref->full_path = path;
+ 
+-	tmp = strrchr(ref->full_path->start, '/');
+-	if (!tmp) {
+-		ref->name_len = ref->full_path->end - ref->full_path->start;
+-		ref->name = ref->full_path->start;
++	ref->name = (char *)kbasename(ref->full_path->start);
++	ref->name_len = ref->full_path->end - ref->name;
++	ref->dir_path = ref->full_path->start;
++	if (ref->name == ref->full_path->start)
+ 		ref->dir_path_len = 0;
+-		ref->dir_path = ref->full_path->start;
+-	} else {
+-		tmp++;
+-		ref->name_len = ref->full_path->end - tmp;
+-		ref->name = tmp;
+-		ref->dir_path = ref->full_path->start;
++	else
+ 		ref->dir_path_len = ref->full_path->end -
+ 				ref->full_path->start - 1 - ref->name_len;
+-	}
+ 
+ 	list_add_tail(&ref->list, head);
+ 	return 0;
+-- 
+1.8.4.rc2
 
-By the way, I found the "some other tasks" you said above are tasks that start
-TRANS_JOIN transaction handles, if we don't use btrfs_join_transaction/btrfs_commit_transaction
-at the same time, we can also avoid the above deadlock. And besides that, I think 
-the TRANS_JOIN handle should not be committed because the TRANS_JOIN handle can
-grab the current transaction even it is going to be committed, it is error prone if
-we commit a TRANS_JOIN handle when the transaction is going to be committed.
-And in the most cases that we need commit the transaction, we just want to commit
-the current transaction, but don't want to start a new transaction and then commit it,
-so in those cases, the TRANS_JOIN is not suitable.
-
-In short, we need clean up the code that use btrfs_join_transaction/btrfs_commit_transaction
-at the same time.
-
-Thanks
-Miao

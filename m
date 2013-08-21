@@ -1,53 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:46468 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750991Ab3HTNuT (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:42433 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751696Ab3HUQDi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Aug 2013 09:50:19 -0400
+	Wed, 21 Aug 2013 12:03:38 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 568597C0403
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2013 07:50:19 -0600 (MDT)
-Date: Tue, 20 Aug 2013 09:50:17 -0400
+	by dkim2.fusionio.com (Postfix) with ESMTP id CFC5B9A06AB
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Aug 2013 10:03:37 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
-        <xfs@oss.sgi.com>
-Subject: Re: [PATCH] xfstests: add regression test for kernel bz 60673 V2
-Message-ID: <20130820135017.GE3990@localhost.localdomain>
-References: <1376945597-2202-1-git-send-email-jbacik@fusionio.com>
- <5213338D.3000205@giantdisaster.de>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: btrfs/003: stat the dev we're removing to make sure its' really gone
+Date: Wed, 21 Aug 2013 12:03:35 -0400
+Message-ID: <1377101015-3070-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <5213338D.3000205@giantdisaster.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 20, 2013 at 11:14:53AM +0200, Stefan Behrens wrote:
-> On Mon, 19 Aug 2013 16:53:17 -0400, Josef Bacik wrote:
-> > There was a problem with send trying to overwrite a file that wasn't actually
-> > the same.  This is a test to check this particular case where receive fails when
-> > it should succeed properly.  I tested this to verify it fails without my fix and
-> > passes with my fix.  Thanks,
-> 
-> I tested this xfstest but for me it passes with and without the fix
-> ("Btrfs: check our parent dir when doing a compare send").
->
+I've been periodically failing btrfs/003 because my box sometimes takes a little
+longer to unregister the device when we remove it and so the output from btrfs
+dev show doesn't match what we are wanting since it still sees the device.  To
+fix this just stat and sleep if we still see the device node and only continue
+once udev or whatever actually removes the device node so that we don't get
+random failures.  Thanks,
 
-Try again, I just tested myself and got
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ tests/btrfs/003 |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-[root@destiny xfstests-dev]# cat /root/xfstests-dev/results//btrfs/010.full
-Create subvolume '/mnt/btrfs-test/send_temp_010/send'
-Create a readonly snapshot of '/mnt/btrfs-test/send_temp_010/send' in
-'/mnt/btrfs-test/send_temp_010/snap1'
-At subvol /mnt/btrfs-test/send_temp_010/snap1
-At subvol snap1
-Create a readonly snapshot of '/mnt/btrfs-test/send_temp_010/send' in
-'/mnt/btrfs-test/send_temp_010/snap2'
-At subvol /mnt/btrfs-test/send_temp_010/snap2
-At snapshot snap2
-ERROR: rename test/foo -> o260-953-0 failed. No such file or directory
-failed second receive
+diff --git a/tests/btrfs/003 b/tests/btrfs/003
+index 5c88651..dba1a32 100755
+--- a/tests/btrfs/003
++++ b/tests/btrfs/003
+@@ -145,6 +145,12 @@ _test_replace()
+ 	_devmgt_remove ${DEVHTL}
+ 	dev_removed=1
+ 
++	stat $ds >> $seqres.full 2>&1
++	while [ $? -eq 0 ]; do
++		sleep 1
++		stat $ds >> $seqres.full 2>&1
++	done
++
+ 	$BTRFS_UTIL_PROG fi show $SCRATCH_DEV | grep "Some devices missing" >> $seqres.full || _fail \
+ 							"btrfs did not report device missing"
+ 
+-- 
+1.7.7.6
 
-Thanks,
-
-Josef 

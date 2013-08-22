@@ -1,44 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:41681 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752563Ab3HVOHy (ORCPT
+Received: from mail-ob0-f179.google.com ([209.85.214.179]:56460 "EHLO
+	mail-ob0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752850Ab3HVOJP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Aug 2013 10:07:54 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 5F89F7C0693
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2013 08:07:54 -0600 (MDT)
-Date: Thu, 22 Aug 2013 10:07:52 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Mark Ridley <mark@backupsystems.co.uk>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: Samba strict allocate  = yes stops btrfs compression working
-Message-ID: <20130822140752.GO3990@localhost.localdomain>
-References: <loom.20130822T115349-248@post.gmane.org>
+	Thu, 22 Aug 2013 10:09:15 -0400
+Received: by mail-ob0-f179.google.com with SMTP id fb19so3734450obc.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2013 07:09:15 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <loom.20130822T115349-248@post.gmane.org>
+In-Reply-To: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es>
+References: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es>
+Date: Thu, 22 Aug 2013 09:09:14 -0500
+Message-ID: <CAKcLGm_QXTjN3e-HtogM+XXygymG+1kjhuOAMNfj=ngSHx5T5Q@mail.gmail.com>
+Subject: Re: Question: How can I recover this partition? (unable to find
+ logical $hugenum len 4096)
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Nicholas Lee <email@nickle.es>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 22, 2013 at 09:57:24AM +0000, Mark Ridley wrote:
-> Hi,
-> 
-> If i set strict allocate = yes in samba to speed up the transfer
-> of a mssql database dump,
-> then btrfs does not compress the file. 
-> I have tried it also by just copying a small file in Windows to the 
-> samba share and the same.
-> I have tried btrfs mount options autodefrag and then
->  btrfs fi defrag -c and the file still does not get compressed.
-> 
-> I have tried kernels 3.6.11, 3.8 and 3.10.7 on FC16 and FC18.
-> 
-> Any help, much appreciated. 
->
+On Thu, Aug 22, 2013 at 1:47 AM, Nicholas Lee <email@nickle.es> wrote:
 
-Not sure what strict allocate = yes does, but I assume it probably does
-fallocate() in which case yeah we aren't going to compress, we'll just write
-into the preallocated space.  We don't support compressed writes into
-preallocated space ATM, and I'm not sure we ever will.  Thanks,
+> [   45.914275] ------------[ cut here ]------------
+> [   45.914406] kernel BUG at fs/btrfs/volumes.c:4417!
+> [   45.914489] invalid opcode: 0000 [#1] PREEMPT SMP
 
-Josef 
+I can't say if this will fix your problem or not, but the 3.10.x
+kernel has a patch to pass this error back instead of halting with a
+BUG() at this point.

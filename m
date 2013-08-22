@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:43646 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:55490 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751663Ab3HURbV (ORCPT
+	with ESMTP id S1752230Ab3HVSTU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Aug 2013 13:31:21 -0400
+	Thu, 22 Aug 2013 14:19:20 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 3BC3B9A04E0
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Aug 2013 11:31:21 -0600 (MDT)
-Date: Wed, 21 Aug 2013 13:31:19 -0400
+	by dkim2.fusionio.com (Postfix) with ESMTP id 6E2929A0402
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2013 12:19:20 -0600 (MDT)
+Date: Thu, 22 Aug 2013 14:19:18 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Eric Sandeen <sandeen@sandeen.net>
 CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
         <xfs@oss.sgi.com>
 Subject: Re: [PATCH] xfstests: btrfs/003: stat the dev we're removing to make
  sure its' really gone
-Message-ID: <20130821173119.GN3990@localhost.localdomain>
+Message-ID: <20130822181918.GA29654@localhost.localdomain>
 References: <1377101015-3070-1-git-send-email-jbacik@fusionio.com>
  <5214EE7F.8090507@sandeen.net>
 MIME-Version: 1.0
@@ -51,9 +51,14 @@ On Wed, Aug 21, 2013 at 11:44:47AM -0500, Eric Sandeen wrote:
 > a comment explaining what it's doing?
 > 
 > Otherwise someone else will run into the same problem down the line.
-> 
 
-No, the next guy will have to go as much pain and annoyance as I did to make
-sure he is worthy of the fix.  Thanks,
+Ok so I went to do this and realized we only send the formatted thing to the
+function, ie '0 0 0' for host/target/lun or whatever the numbers line up to.  We
+don't have the actual device node to check at this point, so it needs to be done
+on a case by case basis.  I looked at the other tests and all they want is the
+device removed for kernel stuff, which happens immediately.  We are the weird
+ones checking to make sure btrfs fi show actually notices that we've removed the
+device, so it's only really specific to this case and not something I can easily
+add to the helper.  Thanks,
 
 Josef

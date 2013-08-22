@@ -1,111 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:10939 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754592Ab3HVW6H convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Aug 2013 18:58:07 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
-Subject: Re: Question: How can I recover this partition? (unable to find logical $hugenum len 4096)
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <DD09B4EA-9F87-4D18-8B7A-EEF2FFD6A7FE@nickle.es>
-Date: Thu, 22 Aug 2013 16:58:00 -0600
-Message-Id: <EC688346-BA9C-4077-A301-12FFE5463121@colorremedies.com>
-References: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es> <CAKcLGm_QXTjN3e-HtogM+XXygymG+1kjhuOAMNfj=ngSHx5T5Q@mail.gmail.com> <5EB2ECAC-9A8C-4403-8630-944B646DE3B8@nickle.es> <DD09B4EA-9F87-4D18-8B7A-EEF2FFD6A7FE@nickle.es>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, Nicholas Lee <email@nickle.es>
+Received: from plane.gmane.org ([80.91.229.3]:59313 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754041Ab3HVXxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Aug 2013 19:53:47 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VCehG-0004hB-4i
+	for linux-btrfs@vger.kernel.org; Fri, 23 Aug 2013 01:53:46 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 01:53:46 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 01:53:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Question: How can I recover this partition? (unable to find
+ logical $hugenum len 4096)
+Date: Thu, 22 Aug 2013 23:53:28 +0000 (UTC)
+Message-ID: <pan$c2c58$61dbf027$55d0c5a2$71b9b679@cox.net>
+References: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Non-expert on btrfs errors, so hopefully someone else will still reply with recovery advice. I have some foundational questions on the setup that may relate, if you don't already know what precipitated this failure:
+Nicholas Lee posted on Thu, 22 Aug 2013 02:47:38 -0400 as excerpted:
 
+> Problem: My filesystem is screwed up, and I can't mount it at all right
+> now. In the logs, the problem begins around 45s.
 
-1.
-You said it's md raid5, but I see /dev/mapper/main--storage--vg-root and dm-1 or dm-2, so I wonder if this is md raid with LVM on top; or if this is LVM raid5 (which directly implements raid5 at LV level, without mdadm, but does use md code underneath)?
+> Adding insult to injury, this occurred right as I began the initial
+> backup to another system with rsync. :(
 
-2.
-In one dmesg I see /dev/dm-2 referenced with errors, and in another /dev/dm-1. Is it actually the same btrfs volume, and if so I wonder why it's sometimes being mapped to a difference dm device?
+> I would be seriously grateful to anyone that can figure out a way to
+> mount/fix this partition, and I'd be willing to send some bitcoin
 
-3.
-If it's an md device, when was the last time a scrub check was run?
-echo check > /sys/block/mdX/md/sync_action
-then after that completes:
-cat /sys/block/mdX/mismatch_cnt
+Not to add insult to injury, but for future reference anyway, you /are/ 
+aware that btrfs is still marked experimental both in the kernel btrfs 
+option description and on the btrfs wiki[1], and that as such, anything 
+you put on it should be considered subject to loss, basically throw-away 
+data that you don't care about losing either because you have multiple 
+backups (on rather less developmental-stage stable filesystems), or 
+because it really is throw-away data, and backups would be overkill.
 
-Or if LVM raid5, I think this is only recently added:
-http://www.redhat.com/archives/lvm-devel/2013-April/msg00042.html
+I know you were just starting that backup, but the fact that you're 
+willing to throw some bitcoin at recovery indicates that you 
+/already/ had valuable data on the filesystem, that should have already 
+been restoreable from (tested) backup.  Alternatively, perhaps btrfs 
+simply isn't an appropriate choice of filesystem for you at this point, 
+because it /is/ still considered experimental.  Maybe in a year or two, 
+sometime after that experimental label comes off, depending on how 
+conservative you actually need to be with your data.
 
-4.
-smartctl -x for each drive; are there any indications of reallocated sectors, pending sectors, bad block, ECC error, CRC or UDMA error? Also included in the above command should return the SCT Error Recovery Control value for each drive, what's that value?
-
-5.
-What is returned for any one of the drives:
-
-cat /sys/block/sdX/device/timeout
-
-Thanks,
-
-Chris Murphy
-
-
-On Aug 22, 2013, at 1:38 PM, Nicholas Lee <email@nickle.es> wrote:
-
-> Full pastebin here: http://cwillu.com:8080/96.245.194.45#6
-> 
-> [   9.213212] Btrfs loaded
-> [    9.245673] device fsid 2ffb2450-f74f-4cfb-a3be-bb5e3c6d32ec devid 1 transid 23568 /dev/dm-1
-> [  102.886834] device fsid 2ffb2450-f74f-4cfb-a3be-bb5e3c6d32ec devid 1 transid 23568 /dev/mapper/main--storage--vg-root
-> [  102.888348] btrfs: enabling auto recovery
-> [  102.888354] btrfs: disabling disk space caching
-> [  102.888357] btrfs: disabling disk space caching
-> [  102.911068] BTRFS critical (device dm-1): unable to find logical 1781900460032 len 4096
-> [  102.911103] BTRFS emergency (device dm-1): No mapping for 1781900460032-1781900464128
-> 
-> [  102.911108] btrfs: failed to read tree root on dm-1
-> [  102.911186] BTRFS critical (device dm-1): unable to find logical 1781900460032 len 4096
-> [  102.911217] BTRFS emergency (device dm-1): No mapping for 1781900460032-1781900464128
-> 
-> [  102.911222] btrfs: failed to read tree root on dm-1
-> [  102.911235] BTRFS critical (device dm-1): unable to find logical 1198824710144 len 4096
-> [  102.911240] BTRFS emergency (device dm-1): No mapping for 1198824710144-1198824714240
-> 
-> [  102.911243] btrfs: failed to read tree root on dm-1
-> [  102.911255] BTRFS critical (device dm-1): unable to find logical 1198518919168 len 4096
-> [  102.911286] BTRFS emergency (device dm-1): No mapping for 1198518919168-1198518923264
-> 
-> [  102.911290] btrfs: failed to read tree root on dm-1
-> [  102.911302] BTRFS critical (device dm-1): unable to find logical 582755782656 len 4096
-> [  102.911308] BTRFS emergency (device dm-1): No mapping for 582755782656-582755786752
-> 
-> [  102.911311] btrfs: failed to read tree root on dm-1
-> [  102.986797] btrfs: open_ctree failed
-> 
-> 
-> On 22.08.2013, at 15:23, Nicholas Lee <email@nickle.es> wrote:
-> 
->> After updating the kernel and using btrfs-progs-git from the AUR, I'm now getting this output. Does this yield any new insight?
->> 
->> [  473.305408] btrfs: failed to read tree root on dm-2
->> [  473.305555] BTRFS critical (device dm-2): unable to find logical 1781900460032 len 4096
->> [  473.305591] BTRFS emergency (device dm-2): No mapping for 1781900460032-1781900464128
->> 
->> 
->> On 22.08.2013, at 10:09, Mitch Harder <mitch.harder@sabayonlinux.org> wrote:
->> 
->>> On Thu, Aug 22, 2013 at 1:47 AM, Nicholas Lee <email@nickle.es> wrote:
->>> 
->>>> [   45.914275] ------------[ cut here ]------------
->>>> [   45.914406] kernel BUG at fs/btrfs/volumes.c:4417!
->>>> [   45.914489] invalid opcode: 0000 [#1] PREEMPT SMP
->>> 
->>> I can't say if this will fix your problem or not, but the 3.10.x
->>> kernel has a patch to pass this error back instead of halting with a
->>> BUG() at this point.
->> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

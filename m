@@ -1,35 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f172.google.com ([74.125.82.172]:58573 "EHLO
-	mail-we0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755002Ab3HWI5Z (ORCPT
+Received: from mail2.jellyfishnet.co.uk ([93.91.20.10]:21654 "EHLO
+	mail2.jellyfishnet.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753006Ab3HWJDZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 04:57:25 -0400
-Received: by mail-we0-f172.google.com with SMTP id t60so286927wes.31
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 01:57:24 -0700 (PDT)
+	Fri, 23 Aug 2013 05:03:25 -0400
+From: Mark Ridley <mark@backupsystems.co.uk>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Fri, 23 Aug 2013 10:03:22 +0100
+Subject: Re: Samba strict allocate  = yes stops btrfs compression working
+Message-ID: <CE3CE3BC.3C431%mark@backupsystems.co.uk>
+In-Reply-To: <6t1iea-qg7.ln1@hurikhan77.spdns.de>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-In-Reply-To: <521710A7.3050401@giantdisaster.de>
-References: <1376307184-7175-1-git-send-email-idryomov@gmail.com>
-	<1376307184-7175-3-git-send-email-idryomov@gmail.com>
-	<521710A7.3050401@giantdisaster.de>
-Date: Fri, 23 Aug 2013 11:57:24 +0300
-Message-ID: <CAOi1vP95FxWXL=ZJCA-JAN_+M3JZn+08ehaBbuWfJHdhdVbOjQ@mail.gmail.com>
-Subject: Re: [PATCH 2/4] Btrfs: add btrfs_alloc_device and switch to it
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 23, 2013 at 10:35 AM, Stefan Behrens
-<sbehrens@giantdisaster.de> wrote:
-> This WARN_ON(1) is triggered with the device replace procedure because
-> BTRFS_DEV_REPLACE_DEVID is zero.
 
-Ah, a dreaded 0 in C.  What a screw up.  This came from my rebuild
-branch where btrfs_init_dev_replace_tgtdev is a bit different, and I
-just auto-merged it.  I'll fix it up.
+I tried defrag -c and it does nothing to files that have come in with
+strict allocate = yes.
 
-Thanks,
+On 22/08/2013 19:29, "Kai Krakow" <hurikhan77+btrfs@gmail.com> wrote:
 
-                Ilya
+>Josef Bacik <jbacik@fusionio.com> schrieb:
+>
+>> Not sure what strict allocate = yes does, but I assume it probably does
+>> fallocate() in which case yeah we aren't going to compress, we'll just
+>> write
+>> into the preallocated space.  We don't support compressed writes into
+>> preallocated space ATM, and I'm not sure we ever will.  Thanks,
+>
+>Good to know, this renders btrfs as efficient storage backend for Windows
+>file shares pretty useless. Does this also happen with compress-force?
+>
+>As a work-around one could write a cronjob that regularly defrags all
+>files 
+>changed since the last run with -c option...
+>
+>Thanks,
+>Kai
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

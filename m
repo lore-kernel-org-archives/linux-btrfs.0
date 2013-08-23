@@ -1,53 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:60793 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753563Ab3HWM6K convert rfc822-to-8bit (ORCPT
+Received: from mail-vb0-f49.google.com ([209.85.212.49]:56665 "EHLO
+	mail-vb0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754857Ab3HWNn2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 08:58:10 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Xavier Bassery <xavier@bartica.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: default mount options 3.10
-Date: Fri, 23 Aug 2013 14:58:07 +0200
-Message-ID: <4901822.EYC3h3vBSD@merkaba>
-In-Reply-To: <20130823122942.18548b21@xavier-ThinkPad-T60p.lan>
-References: <52172DB0.1000701@gmail.com> <20130823122942.18548b21@xavier-ThinkPad-T60p.lan>
+	Fri, 23 Aug 2013 09:43:28 -0400
+Received: by mail-vb0-f49.google.com with SMTP id w16so421474vbb.22
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 06:43:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <CE3CE57C.3C441%mark@backupsystems.co.uk>
+References: <pan$e0fe5$102b89f1$6420a15b$7c2eaf18@cox.net>
+	<CE3CE57C.3C441%mark@backupsystems.co.uk>
+Date: Fri, 23 Aug 2013 15:43:27 +0200
+Message-ID: <CAFvQSYT=4+KTV+fsQod2PNgXyFqkq4enEJOjEut7pN+YEU5EgA@mail.gmail.com>
+Subject: Re: Samba strict allocate = yes stops btrfs compression working
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 23. August 2013, 12:29:42 schrieb Xavier Bassery:
-> On Fri, 23 Aug 2013 11:38:56 +0200
-> 
-> David Kofler <dkofler92@googlemail.com> wrote:
-> > Hi,
-> > can someone tell me which mount options are included in "defaults"
-> > mount option? Couldn't find this in BTRFS Wiki. I'm using Debian
-> > Wheezy 7.1 and Linux kernel 3.10.6.
-> > Thanks in advance.
-> 
-> Hi,
-> you've looked at the wrong place.
-> From mount man page:
-> 
-> FILESYSTEM INDEPENDENT MOUNT OPTIONS
-> defaults : Use default options: rw, suid, dev, exec, auto, nouser, async
-> 
-> You can also have a look here [1].
+Hi,
 
-That are just VFS options, no BTRFS specific ones.
+> The speed improvement for dumping large databases through samba with
+> strict allocate = yes to BTRFS was amazing.  It reduced a 1 hour dump down
+> to 20 minutes.
 
-A good way is to look at output of "mount" and "cat /proc/mounts". It can 
-differ from situation as well, for example SSD or not.
+What you want btrfs to do is to allocate a file of fixed-size on disk
+in advance, without knowing how large the file will be after
+compression (which is the only thing of interest to btrfs). So the
+whole idea doesn't make a lot of sence.
 
-But some hints at BTRFS default options are also on (search for "default"):
+Sure, you could generate a 50gb file filled with zeros, but once you
+put real data in it, it will fragment a lot - probably even more than
+the file which was created without strict allocate.
 
-https://btrfs.wiki.kernel.org/index.php/Mount_options
-
-I don´t know wether there is a complete documentation on the defaults.
-
-> [1] https://wiki.debian.org/fstab#Field_definitions
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Regards

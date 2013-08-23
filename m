@@ -1,92 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail2.jellyfishnet.co.uk ([93.91.20.10]:11819 "EHLO
-	mail2.jellyfishnet.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754451Ab3HWIUE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 04:20:04 -0400
-From: Mark Ridley <mark@backupsystems.co.uk>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Fri, 23 Aug 2013 09:20:04 +0100
-Subject: Re: Samba strict allocate  = yes stops btrfs compression working
-Message-ID: <CE3CD861.3C3F5%mark@backupsystems.co.uk>
-In-Reply-To: <kv74sk$bg9$1@ger.gmane.org>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from xp-ob.rzone.de ([81.169.146.139]:30354 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754908Ab3HWIer (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Aug 2013 04:34:47 -0400
+Received: from pizpot.store ([192.168.43.236])
+ by josoe.store (RZmta 31.45 OK) with ESMTP id p05afcp7N0sIFv
+ for <linux-btrfs@vger.kernel.org>;
+ Fri, 23 Aug 2013 10:34:43 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] Btrf: cleanup: don't check for root_refs == 0 twice
+Date: Fri, 23 Aug 2013 10:34:43 +0200
+Message-Id: <1377246883-28772-2-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1377246883-28772-1-git-send-email-sbehrens@giantdisaster.de>
+References: <1377246883-28772-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The main reason I started using strict allocate = yes on samba was out of
-desperation/exasperation with BTRFS.
+btrfs_read_fs_root_no_name() already checks if btrfs_root_refs()
+is zero and returns ENOENT in this case. There is no need to do
+it again in three more places.
 
-BTRFS stalls from time to time causing SAMBA and/or MSSQL to give up on
-the dump of a database.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/file.c       | 5 -----
+ fs/btrfs/relocation.c | 3 ---
+ fs/btrfs/scrub.c      | 5 -----
+ 3 files changed, 13 deletions(-)
 
->From what I have noticed, if for example you dump a 50GB database to samba
-without strict allocate, then sometimes the file size gets set to 15GB
-(for example), MSSQL then fills it in and then the file size jumps up to a
-next amount and gets filled in.
-
-But a lot of times, especially on a system that has been going for about 6
-months and may be it is fragmented, but the next allocation of size just
-stalls for a while, you cannot even ls the directory.
-
-Either Samba or MSSQL gets fed up of this and the dump fails with a write
-error.
-
-I am seeing this on 3.3.2, 3.6.11 and even worse on 3.9 and 3.10.
-
-I don't want to try nodatacow (which would probably fix the issue), but
-you lose compression on the whole filesystem, autodefrag doesn't fix it
-either.
-
-Any suggestions?
-
-Many thanks.
-
-On 23/08/2013 09:01, "Roger Binns" <rogerb@rogerbinns.com> wrote:
-
->-----BEGIN PGP SIGNED MESSAGE-----
->Hash: SHA1
->
->On 22/08/13 07:07, Josef Bacik wrote:
->> Not sure what strict allocate = yes does,
->
->I've worked on SMB servers before and can answer that.  Historically the
->way Windows apps (right back into the 16 bit days) have made sure there is
->space for a file about to be written is to ask the OS to allocate all the
->space for it.  (Unix by default leaves holes making a sparse file.)
->
->For example if a 10MB file is going to be written then an allocation will
->be done of 10MB.  (The exact underlying protocol commands vary, but
->originally were similar to the Unix seek to end and write.)  After that
->seeks and writes are done.  Because the allocation succeeded the app knows
->that it won't get an out of space error.
->
->Separately from that, it turns out that some filesystems do benefit from
->preallocating the file to the expected size, and then writing the contents
->in dribs and drabs into the allocated space.
->
->Consequently Samba gives you the option of really allocating all the file,
->either for Windows semantics compatibility, or because it results in
->improved performance on the Unix filesystem.
->
->However I can't see it being of any benefit on a COW filesystem like
->btrfs.
->
->Roger
->
->
->
->-----BEGIN PGP SIGNATURE-----
->Version: GnuPG v1.4.12 (GNU/Linux)
->
->iEYEARECAAYFAlIXFtsACgkQmOOfHg372QR7cwCggRyQxtxj9E7dNKV94M/Tv5o6
->LC0AoN9icJNVxzkV0kDQSgf3Vt0N3g3V
->=wBHz
->-----END PGP SIGNATURE-----
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 5c63229..fce83dd 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -310,11 +310,6 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 		goto cleanup;
+ 	}
+ 
+-	if (btrfs_root_refs(&inode_root->root_item) == 0) {
+-		ret = -ENOENT;
+-		goto cleanup;
+-	}
+-
+ 	key.objectid = defrag->ino;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+ 	key.offset = 0;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index cf5e30f..aacc212 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2354,9 +2354,6 @@ again:
+ 			if (IS_ERR(root))
+ 				continue;
+ 
+-			if (btrfs_root_refs(&root->root_item) == 0)
+-				continue;
+-
+ 			trans = btrfs_join_transaction(root);
+ 			BUG_ON(IS_ERR(trans));
+ 
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ec6a33a..0afcd45 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3217,11 +3217,6 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, void *ctx)
+ 		return PTR_ERR(local_root);
+ 	}
+ 
+-	if (btrfs_root_refs(&local_root->root_item) == 0) {
+-		srcu_read_unlock(&fs_info->subvol_srcu, srcu_index);
+-		return -ENOENT;
+-	}
+-
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.objectid = inum;
+ 	key.offset = 0;
+-- 
+1.8.3.4
 

@@ -1,38 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:56391 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:56403 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755968Ab3HWSed (ORCPT
+	with ESMTP id S1754659Ab3HWSfN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 14:34:33 -0400
+	Fri, 23 Aug 2013 14:35:13 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id B61757C0431
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 12:34:33 -0600 (MDT)
-Date: Fri, 23 Aug 2013 14:34:31 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id B7A3F7C0431
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 12:35:12 -0600 (MDT)
+Date: Fri, 23 Aug 2013 14:35:10 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Stefan Behrens <sbehrens@giantdisaster.de>
 CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: update _filter_size() for Btrfs
-Message-ID: <20130823183431.GG29654@localhost.localdomain>
+Subject: Re: [PATCH][RESEND] xfstests: add a test for btrfs device replace
+ operation
+Message-ID: <20130823183510.GH29654@localhost.localdomain>
 References: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
- <1377263233-8903-3-git-send-email-sbehrens@giantdisaster.de>
+ <1377263233-8903-2-git-send-email-sbehrens@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1377263233-8903-3-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1377263233-8903-2-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 23, 2013 at 03:07:12PM +0200, Stefan Behrens wrote:
-> From: root <root@qvarne.iata>
+On Fri, Aug 23, 2013 at 03:07:11PM +0200, Stefan Behrens wrote:
+> This test performs btrfs device replace tests with all possible profiles
+> (single/dup/mixed/raid0/raid1/raid10), one round with the '-r' option
+> to 'btrfs replace start' and one round without this option. The
+> cancelation is tested only once and with the dup/single profile for
+> metadata/data.
 > 
-> The btrfs-progs tools changed the output:
-> - 100GiB instead of 100GB
+> This test takes 181 seconds on my SSD equiped test box and 237s on
+> spinning disks. Almost all the time is spent when the filesystem is
+> populated with test data. The replace operation itself takes less than
+> a second for all the tests, except for the test that is marked as
+> 'thorough' which will run for about 8 seconds on my test box.
 > 
-> xfstest btrfs/006 is one that failed due to this change.
+> The amount of tests done depends on the number of devices in the
+> SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
+> be available (e.g. 5 partitions). With less than 2 entries in
+> SCRATCH_DEV_POOL, the test is not executed.
+> 
+> The source and target devices for the replace operation are arbitrarily
+> chosen out of SCRATCH_DEV_POOl. Since the target device mustn't be
+> smaller than the source device, the requirement for this test is that
+> all devices have _exactly_ the same size. If this is not the case, the
+> test terminates with _notrun.
+> 
+> To check the filesystems after replacing a device, a scrub run is
+> performed, a btrfsck run, and finally the filesystem is remounted.
+> 
+> This commit depends on my other commit:
+> "xfstest: don't remove the two first devices from SCRATCH_DEV_POOL"
 > 
 > Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 
-Thank you for this, it was super annoying with the new btrfs-progs breaking
-this.
+This worked well, thanks,
 
 Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 

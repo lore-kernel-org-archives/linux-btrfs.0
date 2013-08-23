@@ -1,61 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59313 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754041Ab3HVXxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Aug 2013 19:53:47 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VCehG-0004hB-4i
-	for linux-btrfs@vger.kernel.org; Fri, 23 Aug 2013 01:53:46 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 01:53:46 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 01:53:46 +0200
+Received: from cobra.newdream.net ([66.33.216.30]:60959 "EHLO
+	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752580Ab3HWAkT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Aug 2013 20:40:19 -0400
+Received: from cobra.newdream.net (localhost [127.0.0.1])
+	by cobra.newdream.net (Postfix) with ESMTP id 8BBD38004F
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2013 17:40:18 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+	by cobra.newdream.net (Postfix) with ESMTP id 673B78004F
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2013 17:40:18 -0700 (PDT)
+Date: Thu, 22 Aug 2013 17:40:18 -0700 (PDT)
+From: Sage Weil <sage@inktank.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Question: How can I recover this partition? (unable to find
- logical $hugenum len 4096)
-Date: Thu, 22 Aug 2013 23:53:28 +0000 (UTC)
-Message-ID: <pan$c2c58$61dbf027$55d0c5a2$71b9b679@cox.net>
-References: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: bad unlock balance in btrfs_commit_transaction_async
+Message-ID: <alpine.DEB.2.00.1308221731350.2577@cobra.newdream.net>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nicholas Lee posted on Thu, 22 Aug 2013 02:47:38 -0400 as excerpted:
+I just noticed that there is a locking imbalance warning with sb_internal 
+in the transaction commit code.  I believe this has only started appearing 
+recently (after I merged -rc5 into my testing tree), but I'm working on 
+confirming that. The error is
 
-> Problem: My filesystem is screwed up, and I can't mount it at all right
-> now. In the logs, the problem begins around 45s.
+<4>[27034.835134] =====================================
+<4>[27034.839854] [ BUG: bad unlock balance detected! ]
+<4>[27034.844576] 3.11.0-rc5-ceph-00061-g546140d #1 Not tainted
+<4>[27034.849992] -------------------------------------
+<4>[27034.854713] ceph-osd/30797 is trying to release lock (sb_internal) at:
+<4>[27034.861304] [<ffffffffa0148fd8>] btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
+<4>[27034.868994] but there are no more locks to release!
+<4>[27034.873887] 
+<4>[27034.873887] other info that might help us debug this:
+<4>[27034.880448] no locks held by ceph-osd/30797.
+<4>[27034.884733] 
+<4>[27034.884733] stack backtrace:
+<4>[27034.889123] CPU: 0 PID: 30797 Comm: ceph-osd Not tainted 3.11.0-rc5-ceph-00061-g546140d #1
+<4>[27034.897421] Hardware name: Dell Inc. PowerEdge R410/01V648, BIOS 1.6.3 02/07/2011
+<4>[27034.904938]  ffffffffa0148fd8 ffff88020baf9c68 ffffffff81642d85 0000000000000007
+<4>[27034.912411]  ffff88021b32deb0 ffff88020baf9c98 ffffffff810ab89e ffff88020cff8000
+<4>[27034.919883]  0000000000000246 ffff88020aaeddd0 ffffffffa0148fd8 ffff88020baf9ce8
+<4>[27034.927358] Call Trace:
+<4>[27034.929836]  [<ffffffffa0148fd8>] ? btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
+<4>[27034.937790]  [<ffffffff81642d85>] dump_stack+0x46/0x58
+<4>[27034.942951]  [<ffffffff810ab89e>] print_unlock_imbalance_bug+0xfe/0x110
+<4>[27034.949599]  [<ffffffffa0148fd8>] ? btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
+<4>[27034.957552]  [<ffffffff810aeafe>] lock_release+0x15e/0x220
+<4>[27034.963069]  [<ffffffffa0148fff>] btrfs_commit_transaction_async+0x1ef/0x2c0 [btrfs]
+<4>[27034.970850]  [<ffffffff810af6f5>] ? trace_hardirqs_on_caller+0x105/0x1d0
+<4>[27034.977587]  [<ffffffffa0177907>] btrfs_ioctl_start_sync+0x47/0xc0 [btrfs]
+<4>[27034.984499]  [<ffffffffa017c575>] btrfs_ioctl+0xe55/0x1af0 [btrfs]
+<4>[27034.990700]  [<ffffffff8164ab2b>] ? _raw_spin_unlock+0x2b/0x40
+<4>[27034.996552]  [<ffffffff810b40b5>] ? do_futex+0xa45/0xbb0
+<4>[27035.001885]  [<ffffffff8119cf0c>] ? fget_light+0x3c/0x130
+<4>[27035.007302]  [<ffffffff811922a6>] do_vfs_ioctl+0x96/0x560
+<4>[27035.012720]  [<ffffffff8119cf6e>] ? fget_light+0x9e/0x130
+<4>[27035.018137]  [<ffffffff8119cf0c>] ? fget_light+0x3c/0x130
+<4>[27035.023556]  [<ffffffff81192801>] SyS_ioctl+0x91/0xb0
+<4>[27035.028628]  [<ffffffff813338fe>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+<4>[27035.035089]  [<ffffffff81653782>] system_call_fastpath+0x16/0x1b
 
-> Adding insult to injury, this occurred right as I began the initial
-> backup to another system with rsync. :(
+This is presumably some breakage in the freeze locking dance that goes on 
+with async commits (btrfs_commit_transaction_async caller takes the freeze 
+semaphore, do_async_commit releases it), but it's not obvious to me what 
+broke yet.  Unless this rings any bells for anyone, I'll go ahead and 
+bisect.
 
-> I would be seriously grateful to anyone that can figure out a way to
-> mount/fix this partition, and I'd be willing to send some bitcoin
-
-Not to add insult to injury, but for future reference anyway, you /are/ 
-aware that btrfs is still marked experimental both in the kernel btrfs 
-option description and on the btrfs wiki[1], and that as such, anything 
-you put on it should be considered subject to loss, basically throw-away 
-data that you don't care about losing either because you have multiple 
-backups (on rather less developmental-stage stable filesystems), or 
-because it really is throw-away data, and backups would be overkill.
-
-I know you were just starting that backup, but the fact that you're 
-willing to throw some bitcoin at recovery indicates that you 
-/already/ had valuable data on the filesystem, that should have already 
-been restoreable from (tested) backup.  Alternatively, perhaps btrfs 
-simply isn't an appropriate choice of filesystem for you at this point, 
-because it /is/ still considered experimental.  Maybe in a year or two, 
-sometime after that experimental label comes off, depending on how 
-conservative you actually need to be with your data.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks!
+sage

@@ -1,184 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:16806 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754719Ab3HWNG1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 09:06:27 -0400
-Message-ID: <52175E4F.40207@giantdisaster.de>
-Date: Fri, 23 Aug 2013 15:06:23 +0200
+Received: from xp-ob.rzone.de ([81.169.146.139]:14260 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754948Ab3HWNHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Aug 2013 09:07:14 -0400
 From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: Eric Sandeen <sandeen@sandeen.net>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] xfstests: update filters and output of btrfs/006
-References: <1376672566-5446-1-git-send-email-sbehrens@giantdisaster.de> <520E5D07.6090708@sandeen.net>
-In-Reply-To: <520E5D07.6090708@sandeen.net>
-Content-Type: text/plain; charset=UTF-8
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH V4] xfstests: don't remove the two first devices from SCRATCH_DEV_POOL
+Date: Fri, 23 Aug 2013 15:07:10 +0200
+Message-Id: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 16 Aug 2013 12:10:31 -0500, Eric Sandeen wrote:
-> On 8/16/13 12:02 PM, Stefan Behrens wrote:
->> The btrfs-progs tools changed the output:
->> - 100GiB instead of 100GB
->> - The number of spaces was changed
-> 
-> ugh.
-> 
->>
->> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
->> ---
->>  common/filter       |  2 +-
->>  common/filter.btrfs |  3 ++-
->>  tests/btrfs/006     |  6 +++---
->>  tests/btrfs/006.out | 36 ++++++++++++++++++------------------
->>  4 files changed, 24 insertions(+), 23 deletions(-)
->>
->> diff --git a/common/filter b/common/filter
->> index dbb1674..ee738ca 100644
->> --- a/common/filter
->> +++ b/common/filter
->> @@ -262,7 +262,7 @@ _filter_uuid()
->>  # Filter out sizes like 6.14MB etc
->>  _filter_size()
->>  {
->> -	sed -e "s/[0-9\.]\+\s\?[b|k|m|g|t][b]\?/<SIZE>/ig"
->> +	sed -e "s/[0-9\.]\+\s\?[b|k|m|g|t][i]\?[b]\?/<SIZE>/ig"
->>  }
-> 
-> makes sense
-> 
-> But for the rest, is the output change intentional, or sloppiness/accidental?
-> 
-> If it's really intentional, then:
-> 
-> Reviewed-by: Eric Sandeen <sandeen@redhat.com>
-> 
+Since common/config is executed twice, if SCRATCH_DEV_POOL is configured
+via the environment, the current code removes the first device entry twice
+which means that you lose the second device for the test.
 
-Thanks for the review, Eric!
+The fix is to not remove anything from SCRATCH_DEV_POOL anymore.
+That used to be done (I can only guess) to allow to pass the
+SCRATCH_DEV_POOL as an argument to _scratch_mkfs. Since _scratch_mkfs adds
+the SCRATCH_DEV, the pool mustn't contain that device anymore.
 
-Since this commit is not yet added to the repo, I just took the time to
-create a cleaner fix.
+A new function _scratch_pool_mkfs is introduced that does the expected
+thing.
 
-The tools didn't change the number of spaces in the output. The root
-cause was that I had 11 devices in SCRATCH_DEV_POOL for the first time.
-And this caused changes in the number of spaces in the output wherever
-things like %4d was used.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+V1 -> V2:
+- rebased.
+- fixed a missing adaption to the new way to deal with SCRATCH_DEV_POOL
+  in  _test_replace() in tests/btrfs/003.
 
-One problem was the output of "uniq -c" which added spaces depending
-on the size of the count value (e.g. one space less for 10+ devices).
+V2 -> V3:
+- V2 was the result of a git rebase mistake (a user error), forget it,
+  sorry. V3 now contains the correct fix for a missing adaption to the
+  new way to deal with SCRATCH_DEV_POOL in _test_replace() in
+  tests/btrfs/003.
 
-The second problem was that "btrfs fi show" was doing the same:
-"devid %4llu size %s used %s path %s".
+V3 -> V4:
+- rebased, because it didn't apply cleanly anymore today.
 
-Please scratch this patch out, I'll send two better patches instead
-which address the real problems.
+ common/config   |  1 -
+ common/rc       | 12 ++++++++++++
+ tests/btrfs/002 |  3 ++-
+ tests/btrfs/003 | 16 ++++++++--------
+ tests/btrfs/006 |  4 ++--
+ 5 files changed, 24 insertions(+), 12 deletions(-)
 
-
->>  # Convert string read from stdin like 128K to bytes and print it to stdout
->> diff --git a/common/filter.btrfs b/common/filter.btrfs
->> index e9a2bc2..1584596 100644
->> --- a/common/filter.btrfs
->> +++ b/common/filter.btrfs
->> @@ -33,6 +33,7 @@ _filter_btrfs_filesystem_show()
->>  	# the uniq collapses all device lines into 1
->>  	_filter_uuid $UUID | _filter_scratch | _filter_scratch_pool | \
->>  	_filter_size | _filter_btrfs_version | _filter_devid | \
->> +	_filter_spaces | \
->>  	sed -e "s/\(Total devices\) $NUMDEVS/\1 $NUM_SUBST/g" | \
->>  	uniq
->>  }
->> @@ -51,7 +52,7 @@ _filter_btrfs_device_stats()
->>  		UNIQ_OPT=""
->>  	fi
->>  
->> -	_filter_scratch | _filter_scratch_pool | \
->> +	_filter_scratch | _filter_scratch_pool | _filter_spaces | \
->>  	sed -e "s/[0-9]\+$/<NUM>/g" | sort | uniq $UNIQ_OPT | \
->>  	sed -e "s/$NUMDEVS /<NUMDEVS> /g"
->>  }
->> diff --git a/tests/btrfs/006 b/tests/btrfs/006
->> index 9f7beff..f323cc4 100755
->> --- a/tests/btrfs/006
->> +++ b/tests/btrfs/006
->> @@ -82,13 +82,13 @@ echo "== Sync filesystem"
->>  $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
->>  
->>  echo "== Show device stats by mountpoint"
->> -$BTRFS_UTIL_PROG device stats $SCRATCH_MNT | _filter_btrfs_device_stats $TOTAL_DEVS
->> +$BTRFS_UTIL_PROG device stats $SCRATCH_MNT | _filter_btrfs_device_stats $TOTAL_DEVS | _filter_spaces
->>  echo "== Show device stats by first/scratch dev"
->>  $BTRFS_UTIL_PROG device stats $SCRATCH_DEV | _filter_btrfs_device_stats
->>  echo "== Show device stats by second dev"
->> -$BTRFS_UTIL_PROG device stats $FIRST_POOL_DEV | sed -e "s,$FIRST_POOL_DEV,FIRST_POOL_DEV,g"
->> +$BTRFS_UTIL_PROG device stats $FIRST_POOL_DEV | sed -e "s,$FIRST_POOL_DEV,FIRST_POOL_DEV,g" | _filter_spaces
->>  echo "== Show device stats by last dev"
->> -$BTRFS_UTIL_PROG device stats $LAST_POOL_DEV | sed -e "s,$LAST_POOL_DEV,LAST_POOL_DEV,g"
->> +$BTRFS_UTIL_PROG device stats $LAST_POOL_DEV | sed -e "s,$LAST_POOL_DEV,LAST_POOL_DEV,g" | _filter_spaces
->>  
->>  # success, all done
->>  status=0
->> diff --git a/tests/btrfs/006.out b/tests/btrfs/006.out
->> index ab33b7e..413a5a8 100644
->> --- a/tests/btrfs/006.out
->> +++ b/tests/btrfs/006.out
->> @@ -4,38 +4,38 @@
->>  TestLabel.006
->>  == Mount.
->>  == Show filesystem by label
->> -Label: 'TestLabel.006'  uuid: <UUID>
->> +Label: 'TestLabel.006' uuid: <UUID>
->>  	Total devices <EXACTNUM> FS bytes used <SIZE>
->> -	devid     <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
->> +	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
->>  
->>  == Show filesystem by UUID
->> -Label: 'TestLabel.006'  uuid: <EXACTUUID>
->> +Label: 'TestLabel.006' uuid: <EXACTUUID>
->>  	Total devices <EXACTNUM> FS bytes used <SIZE>
->> -	devid     <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
->> +	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
->>  
->>  == Sync filesystem
->>  FSSync 'SCRATCH_MNT'
->>  == Show device stats by mountpoint
->> -      <NUMDEVS> [SCRATCH_DEV].corruption_errs <NUM>
->> -      <NUMDEVS> [SCRATCH_DEV].flush_io_errs   <NUM>
->> -      <NUMDEVS> [SCRATCH_DEV].generation_errs <NUM>
->> -      <NUMDEVS> [SCRATCH_DEV].read_io_errs    <NUM>
->> -      <NUMDEVS> [SCRATCH_DEV].write_io_errs   <NUM>
->> + <NUMDEVS> [SCRATCH_DEV].corruption_errs <NUM>
->> + <NUMDEVS> [SCRATCH_DEV].flush_io_errs <NUM>
->> + <NUMDEVS> [SCRATCH_DEV].generation_errs <NUM>
->> + <NUMDEVS> [SCRATCH_DEV].read_io_errs <NUM>
->> + <NUMDEVS> [SCRATCH_DEV].write_io_errs <NUM>
->>  == Show device stats by first/scratch dev
->>  [SCRATCH_DEV].corruption_errs <NUM>
->> -[SCRATCH_DEV].flush_io_errs   <NUM>
->> +[SCRATCH_DEV].flush_io_errs <NUM>
->>  [SCRATCH_DEV].generation_errs <NUM>
->> -[SCRATCH_DEV].read_io_errs    <NUM>
->> -[SCRATCH_DEV].write_io_errs   <NUM>
->> +[SCRATCH_DEV].read_io_errs <NUM>
->> +[SCRATCH_DEV].write_io_errs <NUM>
->>  == Show device stats by second dev
->> -[FIRST_POOL_DEV].write_io_errs   0
->> -[FIRST_POOL_DEV].read_io_errs    0
->> -[FIRST_POOL_DEV].flush_io_errs   0
->> +[FIRST_POOL_DEV].write_io_errs 0
->> +[FIRST_POOL_DEV].read_io_errs 0
->> +[FIRST_POOL_DEV].flush_io_errs 0
->>  [FIRST_POOL_DEV].corruption_errs 0
->>  [FIRST_POOL_DEV].generation_errs 0
->>  == Show device stats by last dev
->> -[LAST_POOL_DEV].write_io_errs   0
->> -[LAST_POOL_DEV].read_io_errs    0
->> -[LAST_POOL_DEV].flush_io_errs   0
->> +[LAST_POOL_DEV].write_io_errs 0
->> +[LAST_POOL_DEV].read_io_errs 0
->> +[LAST_POOL_DEV].flush_io_errs 0
->>  [LAST_POOL_DEV].corruption_errs 0
->>  [LAST_POOL_DEV].generation_errs 0
->>
-> 
+diff --git a/common/config b/common/config
+index 39dd469..586870b 100644
+--- a/common/config
++++ b/common/config
+@@ -267,7 +267,6 @@ get_next_config() {
+ 			exit 1
+ 		fi
+ 		SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+-		SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | awk '{ ORS=" "; for (i = 2; i <= NF; i++) print $i}'`
+ 	fi
+ 
+ 	echo $SCRATCH_DEV | grep -q ":" > /dev/null 2>&1
+diff --git a/common/rc b/common/rc
+index ae80b12..77e96c4 100644
+--- a/common/rc
++++ b/common/rc
+@@ -550,6 +550,18 @@ _scratch_mkfs()
+     esac
+ }
+ 
++_scratch_pool_mkfs()
++{
++    case $FSTYP in
++    btrfs)
++	$MKFS_BTRFS_PROG $MKFS_OPTIONS $* $SCRATCH_DEV_POOL > /dev/null
++	;;
++    *)
++	echo "_scratch_pool_mkfs is not implemented for $FSTYP" 1>&2
++	;;
++    esac
++}
++
+ # Create fs of certain size on scratch device
+ # _scratch_mkfs_sized <size in bytes> [optional blocksize]
+ _scratch_mkfs_sized()
+diff --git a/tests/btrfs/002 b/tests/btrfs/002
+index 03e9137..f4389ae 100755
+--- a/tests/btrfs/002
++++ b/tests/btrfs/002
+@@ -45,8 +45,9 @@ _need_to_be_root
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_scratch_dev_pool
+ 
+-_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
++_scratch_pool_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+ _scratch_mount
+ 
+ # Create and save sha256sum
+diff --git a/tests/btrfs/003 b/tests/btrfs/003
+index 5c88651..262b1d5 100755
+--- a/tests/btrfs/003
++++ b/tests/btrfs/003
+@@ -58,7 +58,7 @@ rm -f $seqres.full
+ _test_raid0()
+ {
+ 	export MKFS_OPTIONS="-m raid0 -d raid0"
+-	_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+@@ -68,7 +68,7 @@ _test_raid0()
+ _test_raid1()
+ {
+ 	export MKFS_OPTIONS="-m raid1 -d raid1"
+-	_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+@@ -78,7 +78,7 @@ _test_raid1()
+ _test_raid10()
+ {
+ 	export MKFS_OPTIONS="-m raid10 -d raid10"
+-	_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+@@ -88,7 +88,7 @@ _test_raid10()
+ _test_single()
+ {
+ 	export MKFS_OPTIONS="-m single -d single"
+-	_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+@@ -108,7 +108,7 @@ _test_add()
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+-	for i in `seq 1 $n`; do
++	for i in `seq 2 $n`; do
+ 		$BTRFS_UTIL_PROG device add ${devs[$i]} $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "device add failed"
+ 	done
+ 	$BTRFS_UTIL_PROG filesystem balance $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "balance failed"
+@@ -124,9 +124,9 @@ _test_replace()
+ 	local d
+ 	local DEVHTL=""
+ 
+-	# exclude the last disk in the disk pool
++	# exclude the first and the last disk in the disk pool
+ 	n=$(($n-1))
+-	ds=${devs[@]:0:$n}
++	ds=${devs[@]:1:$(($n-1))}
+ 
+ 	export MKFS_OPTIONS="-m raid1 -d raid1"
+ 	_scratch_mkfs "$ds" >> $seqres.full 2>&1 || _fail "tr: mkfs failed"
+@@ -164,7 +164,7 @@ _test_replace()
+ 
+ _test_remove()
+ {
+-	_scratch_mkfs "$SCRATCH_DEV_POOL" >> $seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 	_scratch_mount
+ 	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
+ 	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
+diff --git a/tests/btrfs/006 b/tests/btrfs/006
+index 9f7beff..715fd80 100755
+--- a/tests/btrfs/006
++++ b/tests/btrfs/006
+@@ -53,12 +53,12 @@ rm -f $seqres.full
+ 
+ FIRST_POOL_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+ LAST_POOL_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $NF}'`
+-TOTAL_DEVS=`echo $SCRATCH_DEV $SCRATCH_DEV_POOL | wc -w`
++TOTAL_DEVS=`echo $SCRATCH_DEV_POOL | wc -w`
+ LABEL=TestLabel.$seq
+ 
+ echo "Scratch $SCRATCH_DEV First $FIRST_POOL_DEV last $LAST_POOL_DEV Total $TOTAL_DEVS" > $seqres.full
+ 
+-_scratch_mkfs $SCRATCH_DEV_POOL >> $seqres.full 2>&1 || _fail "mkfs failed"
++_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+ 
+ # These have to be done unmounted...?
+ echo "== Set filesystem label to $LABEL"
+-- 
+1.8.3.4
 

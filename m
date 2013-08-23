@@ -1,44 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.137]:18153 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755260Ab3HWNHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 09:07:14 -0400
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] xfstests: update _filter_size() for Btrfs
-Date: Fri, 23 Aug 2013 15:07:12 +0200
-Message-Id: <1377263233-8903-3-git-send-email-sbehrens@giantdisaster.de>
-In-Reply-To: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
+Received: from dkim1.fusionio.com ([66.114.96.53]:56363 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754565Ab3HWSc2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Aug 2013 14:32:28 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 7FF047C040A
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 12:32:28 -0600 (MDT)
+Date: Fri, 23 Aug 2013 14:32:26 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V4] xfstests: don't remove the two first devices from
+ SCRATCH_DEV_POOL
+Message-ID: <20130823183226.GE29654@localhost.localdomain>
 References: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: root <root@qvarne.iata>
+On Fri, Aug 23, 2013 at 03:07:10PM +0200, Stefan Behrens wrote:
+> Since common/config is executed twice, if SCRATCH_DEV_POOL is configured
+> via the environment, the current code removes the first device entry twice
+> which means that you lose the second device for the test.
+> 
+> The fix is to not remove anything from SCRATCH_DEV_POOL anymore.
+> That used to be done (I can only guess) to allow to pass the
+> SCRATCH_DEV_POOL as an argument to _scratch_mkfs. Since _scratch_mkfs adds
+> the SCRATCH_DEV, the pool mustn't contain that device anymore.
+> 
+> A new function _scratch_pool_mkfs is introduced that does the expected
+> thing.
+> 
 
-The btrfs-progs tools changed the output:
-- 100GiB instead of 100GB
+This didn't break anything and makes sense
 
-xfstest btrfs/006 is one that failed due to this change.
+Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- common/filter | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks,
 
-diff --git a/common/filter b/common/filter
-index dbb1674..ee738ca 100644
---- a/common/filter
-+++ b/common/filter
-@@ -262,7 +262,7 @@ _filter_uuid()
- # Filter out sizes like 6.14MB etc
- _filter_size()
- {
--	sed -e "s/[0-9\.]\+\s\?[b|k|m|g|t][b]\?/<SIZE>/ig"
-+	sed -e "s/[0-9\.]\+\s\?[b|k|m|g|t][i]\?[b]\?/<SIZE>/ig"
- }
- 
- # Convert string read from stdin like 128K to bytes and print it to stdout
--- 
-1.8.3.4
-
+Josef

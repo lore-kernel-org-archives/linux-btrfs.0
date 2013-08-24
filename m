@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:3107 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755299Ab3HXQzh convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Aug 2013 12:55:37 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
-Subject: Re: default mount options 3.10
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
-Date: Sat, 24 Aug 2013 10:55:35 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <CDCFD65D-3D63-458E-8A64-7DCDA3D50B03@colorremedies.com>
-References: <52172DB0.1000701@gmail.com> <20130823122942.18548b21@ xavier-ThinkPad-T60p.lan> <4901822.EYC3h3vBSD@merkaba> <pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
-To: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-wg0-f46.google.com ([74.125.82.46]:54660 "EHLO
+	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755360Ab3HXSvW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Aug 2013 14:51:22 -0400
+Received: by mail-wg0-f46.google.com with SMTP id k13so1520190wgh.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 11:51:21 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix memory leak of uuid_root in free_fs_info
+Date: Sat, 24 Aug 2013 19:51:06 +0100
+Message-Id: <1377370266-31989-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Aug 24, 2013, at 6:23 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-> I recommend autodefrag for general use, as well, but you'll want to have 
-> it enabled when you first start copying data to the filesystem, and some 
-> distros don't enable it by default and setup a system on btrfs, which 
-> means there's fragmentation to begin with, and performance will probably 
-> be bad for awhile (even on newly setup systems!) when the option is first 
-> enabled as a result.  You can readup on defrag on the wiki for a defrag 
-> command that should fix the problem, but unfortunately the command isn't 
-> as straightforward as one might expect.
-
-At least Fedora's installer developers have made it pretty clear they don't intend to use non-default mount options like this. So if autodefrag is really that important for general use, it needs to be part of the default mount options. And quite honestly, with as many changes that happen with btrfs, I think it's better if btrfs developers are making the decisions to add/remove what they think should be current default mount options for general purpose, rather than installer developers or users. Especially when the command isn't straightforward.
-
-
-Chris Murphy
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index c90be01..742dea1 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3460,6 +3460,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
+ 	kfree(fs_info->dev_root);
+ 	kfree(fs_info->csum_root);
+ 	kfree(fs_info->quota_root);
++	kfree(fs_info->uuid_root);
+ 	kfree(fs_info->super_copy);
+ 	kfree(fs_info->super_for_commit);
+ 	kfree(fs_info);
+-- 
+1.7.9.5
 

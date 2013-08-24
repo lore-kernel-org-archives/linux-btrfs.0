@@ -1,57 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50974 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:50168 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753194Ab3HWTfk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 15:35:40 -0400
+	id S1754473Ab3HXMXj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Aug 2013 08:23:39 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VCx91-0008SO-BH
-	for linux-btrfs@vger.kernel.org; Fri, 23 Aug 2013 21:35:39 +0200
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+	id 1VDCsT-0002TL-CV
+	for linux-btrfs@vger.kernel.org; Sat, 24 Aug 2013 14:23:37 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 21:35:39 +0200
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 14:23:37 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 21:35:39 +0200
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 14:23:37 +0200
 To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
-Subject: Re: Samba strict allocate  = yes stops btrfs compression working
-Date: Fri, 23 Aug 2013 12:35:25 -0700
-Message-ID: <kv8dhn$lko$1@ger.gmane.org>
-References: <kv74sk$bg9$1@ger.gmane.org> <CE3CD861.3C3F5%mark@backupsystems.co.uk>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: default mount options 3.10
+Date: Sat, 24 Aug 2013 12:23:18 +0000 (UTC)
+Message-ID: <pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
+References: <52172DB0.1000701@gmail.com> <20130823122942.18548b21@
+	xavier-ThinkPad-T60p.lan> <4901822.EYC3h3vBSD@merkaba>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <CE3CD861.3C3F5%mark@backupsystems.co.uk>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Martin Steigerwald posted on Fri, 23 Aug 2013 14:58:07 +0200 as excerpted:
 
-On 23/08/13 01:20, Mark Ridley wrote:
-> The main reason I started using strict allocate = yes on samba was out
-> of desperation/exasperation with BTRFS.
+> Am Freitag, 23. August 2013, 12:29:42 schrieb Xavier Bassery:
+>> On Fri, 23 Aug 2013 11:38:56 +0200
+>> 
+>> David Kofler <dkofler92@googlemail.com> wrote:
+>> > Hi,
+>> > can someone tell me which mount options are included in "defaults"
+>> > mount option? Couldn't find this in BTRFS Wiki. I'm using Debian
+>> > Wheezy 7.1 and Linux kernel 3.10.6.
+>> > Thanks in advance.
+>> 
+>> Hi,
+>> you've looked at the wrong place.
+>> From mount man page:
+>> 
+>> FILESYSTEM INDEPENDENT MOUNT OPTIONS defaults : Use default options:
+>> rw, suid, dev, exec, auto, nouser, async
+> 
+> That are just VFS options, no BTRFS specific ones.
+> 
+> A good way is to look at output of "mount" and "cat /proc/mounts". It
+> can differ from situation as well, for example SSD or not.
+> 
+> But some hints at BTRFS default options are also on (search for
+> "default"):
+> 
+> https://btrfs.wiki.kernel.org/index.php/Mount_options
 
-The most effective performance option is to turn oplocks on.
-Opportunistic locks are granted to a client when it is the only one with a
-file open.  That lets it do caching and not even tell the server about
-record locking.  Once another client opens the same file then the first
-client has to flush all outstanding writes, its caches, record locking etc.
+FWIW, space_cache seems to be the default now, and for ssds (detected if 
+sysfs has a device rotation value of zero), ssd.  There's some others 
+that are the normal default now, but aren't listed (flushoncommit is 
+one), as running with those features disabled can increase performance 
+but also dramatically increases chance of data loss, so it's not 
+recommended.
 
-I don't know what Samba currently uses as the default value, but it is
-traditionally set to off because there are scenarios under which it isn't
-sufficiently robust (eg access on the Unix server side, a network break
-when there is outstanding data).
+Compression options are the big ones you may want to add, but they aren't 
+default as usage is too varied for them to be a sane default.  And of 
+course ssd if it applies and isn't detected, and possibly ssd_spread.
 
-http://www.samba.org/samba/docs/man/Samba-HOWTO-Collection/locking.html#id2616903
+I recommend autodefrag for general use, as well, but you'll want to have 
+it enabled when you first start copying data to the filesystem, and some 
+distros don't enable it by default and setup a system on btrfs, which 
+means there's fragmentation to begin with, and performance will probably 
+be bad for awhile (even on newly setup systems!) when the option is first 
+enabled as a result.  You can readup on defrag on the wiki for a defrag 
+command that should fix the problem, but unfortunately the command isn't 
+as straightforward as one might expect.  (Also note that if compression 
+is enabled, a compressed file over a certain size, 128 MiB IIRC, but I'm 
+not sure if that's compressed or uncompressed size, will appear 
+fragmented to filefrag no matter what.  That's an artifact of the way 
+btrfs handles compression.)
 
-Roger
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Inode_cache LOOKS good, but beware; people have reported problems with it 
+and unsafe shutdowns or the like.  So it's probably best to avoid it 
+unless you really need it for your workload and judge it to be worth the 
+risk.  That's why it's not the default, yet.
 
-iEYEARECAAYFAlIXuX0ACgkQmOOfHg372QSRwgCgwwwoo7QqRql8+CS5xggRBVRt
-krAAn1wFiIIliZJ7WbWh/oh8crEWLgfR
-=HZG9
------END PGP SIGNATURE-----
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

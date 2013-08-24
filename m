@@ -1,47 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:22144 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:2025 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753950Ab3HXEYX convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1754678Ab3HXE6T convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Aug 2013 00:24:23 -0400
-Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:50004 helo=[192.168.1.126])
+	Sat, 24 Aug 2013 00:58:19 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:50017 helo=[192.168.1.126])
 	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
 	(Exim 4.80.1)
 	(envelope-from <lists@colorremedies.com>)
-	id 1VD5Og-001o9B-GQ
-	for linux-btrfs@vger.kernel.org; Fri, 23 Aug 2013 22:24:22 -0600
+	id 1VD5vU-001x7K-Re
+	for linux-btrfs@vger.kernel.org; Fri, 23 Aug 2013 22:58:16 -0600
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
 Subject: Re: Help interpreting RAID1 space allocation
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <25d36b2410416c9a767766fb9be313b6@lixil.net>
-Date: Fri, 23 Aug 2013 22:24:21 -0600
-Message-Id: <C0968F38-8432-41C3-B916-DC00C5C69B34@colorremedies.com>
-References: <25d36b2410416c9a767766fb9be313b6@lixil.net>
+In-Reply-To: <C0968F38-8432-41C3-B916-DC00C5C69B34@colorremedies.com>
+Date: Fri, 23 Aug 2013 22:58:14 -0600
+Message-Id: <27E06913-DDBB-4B75-86D3-A8F6C5B09F99@colorremedies.com>
+References: <25d36b2410416c9a767766fb9be313b6@lixil.net> <C0968F38-8432-41C3-B916-DC00C5C69B34@colorremedies.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Aug 23, 2013, at 6:05 PM, Joel Johnson <mrjoel@lixil.net> wrote:
+On Aug 23, 2013, at 10:24 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> When replacing a failed disk, I'd like btrfs to compare states between the available drives and know that it needs to catch up the newly added device, but this doesn't yet happen. It's necessary to call btrfs balance.
 
-> What is the expectation on hot-adding a failed drive, is an explicit 'device add' or 'replace' expected/required?
+I can only test device replacement, not a readd. Upon 'btrfs device delete missing /mnt' there's a delay, and it's doing a balance. I don't know what happens for a readd, if the whole volume needs balancing or if it's able to just write the changes.
 
-I'd expect to have to add a device and then remove missing. There isn't a readd option in btrfs, which in md parlance is used for readding a device previously part of an array. 
+> And still further, somehow the data profile has reverted to single even though the mkfs.btfs was raid1. [SNIP] That is a huge bug. I'll try to come up with some steps to reproduce.
 
-When replacing a failed disk, I'd like btrfs to compare states between the available drives and know that it needs to catch up the newly added device, but this doesn't yet happen. It's necessary to call btrfs balance.
+If I create the file system, mount it, but I do not copy any data, upon adding new and deleting missing, the data profile is changed from raid1 to single. If I've first copied data to the volume prior to device failure/missing, this doesn't happen, it remains raid1.
 
-However, after adding a device and deleting missing, I see what you see, the btrfs volume is still mounted degraded. 
-
-Further, if I use:
-
-# mount -o remount /dev/sdb /mnt
-# mount | grep btrfs
-/dev/sdc on /mnt type btrfs (rw,relatime,seclabel,degraded,space_cache)
-
-So it's still degraded. I had to unmount and mount again to clear degraded. That seems to be a problem, to have to unmount the volume in order to remove the degraded flag, which is needed to begin the rebalance. And what if btrfs is the root file system? It needs to be rebooted to clear the degraded option.
-
-And still further, somehow the data profile has reverted to single even though the mkfs.btfs was raid1. So even though the volume now has two devices, has been balanced, is not degraded, the data profile is single and presumably I no longer actually have mirrored data at all on this volume. That is a huge bug. I'll try to come up with some steps to reproduce.
+Also, again after the missing device is replaced, and the volume rebalanced, while the mount option is degraded, subsequent file copies end up on both virtual disks. So it says it's degraded but it really isn't? I'm not sure what's up here.
 
 
 Chris Murphy

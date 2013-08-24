@@ -1,71 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:42692 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754502Ab3HXQUR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Aug 2013 12:20:17 -0400
-Date: Sat, 24 Aug 2013 17:20:13 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Thomas Koch <thomas@koch.ro>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:3107 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755299Ab3HXQzh convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Aug 2013 12:55:37 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: default mount options 3.10
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
+Date: Sat, 24 Aug 2013 10:55:35 -0600
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: check for reflink capability and for shared data
-Message-ID: <20130824162013.GL3115@carfax.org.uk>
-References: <201308241809.58701.thomas@koch.ro>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/jkxxxtAhYIHVDuh"
-In-Reply-To: <201308241809.58701.thomas@koch.ro>
+Message-Id: <CDCFD65D-3D63-458E-8A64-7DCDA3D50B03@colorremedies.com>
+References: <52172DB0.1000701@gmail.com> <20130823122942.18548b21@ xavier-ThinkPad-T60p.lan> <4901822.EYC3h3vBSD@merkaba> <pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
+To: Duncan <1i5t5.duncan@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---/jkxxxtAhYIHVDuh
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Aug 24, 2013, at 6:23 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-On Sat, Aug 24, 2013 at 06:09:58PM +0200, Thomas Koch wrote:
-> Hi,
-> 
-> how can I do the following in a shell script:
-> 
-> - check whether my file system supports cp --reflink?
+> I recommend autodefrag for general use, as well, but you'll want to have 
+> it enabled when you first start copying data to the filesystem, and some 
+> distros don't enable it by default and setup a system on btrfs, which 
+> means there's fragmentation to begin with, and performance will probably 
+> be bad for awhile (even on newly setup systems!) when the option is first 
+> enabled as a result.  You can readup on defrag on the wiki for a defrag 
+> command that should fix the problem, but unfortunately the command isn't 
+> as straightforward as one might expect.
 
-touch foo; if cp --reflink=always foo bar; then ...; fi; rm -f foo bar
+At least Fedora's installer developers have made it pretty clear they don't intend to use non-default mount options like this. So if autodefrag is really that important for general use, it needs to be part of the default mount options. And quite honestly, with as many changes that happen with btrfs, I think it's better if btrfs developers are making the decisions to add/remove what they think should be current default mount options for general purpose, rather than installer developers or users. Especially when the command isn't straightforward.
 
-> - check whether two files share the same data on disk, i.e. one has been 
-> created by cp --reflink of the other?
 
-   You can't, using simple userspace tools. I think the only way would
-be to use the tree search ioctl to inspect the extents for each file,
-and see whether any of them overlap. Why do you need to know this?
+Chris Murphy
 
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- Someone's been throwing dead sheep down my Fun Well ---       
-
---/jkxxxtAhYIHVDuh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUhjdPVheFHXiqx3kAQLi9hAAvGq98aMXsssbKzUA87Aa4H63gKgZXOqA
-evFrgB+vaitmc6BIH6hsObUJ8Q1yRFEzhQm4FBrJf9FDWa1bhfzbN/+T0+u0ZRmF
-TlHfsWfcAcKewVV3QCia6EIhsciamXNI7aZDutqiP58q/GkUX1N1UtfvYXBP0cyA
-lDvILLo50+HvXt2Q+xF3g8HoRtyNI2QiMxyaVAGf8W+9jrktYy5wNC+XfraQaEY9
-+S4MAQrWGscleivzCqXqRgVvt+MPjYeU1aImf13FE49eGgY1DLt85ZdG7jUhCq/p
-EnWYeqDQGwK31/c2ktsRDryS3fn4OdWbm7bYmEeFozr5URTsrmLgx2fDY+BKiiLY
-PqwGluxt+Ulo4DHlphzCtsFsRIkTc8tzvAXZUxvI3Vmn8elDES9nyA9q+Z/xd1Aq
-5AgZ+XQNWbLMGGkE1n9s5H67Yd4A1BxTTGjBV/O6eiPFveb+eBgMPRIgp+jKw24h
-tM3FyVTTJzWLHyAqn4p2kB7YfoIOPzllEBcvuVaLENoz0Qz3OAdbybI+nEgC9RgQ
-4FFIjLsdJL303CtU0rRtx83KgHClEqzVoE6IgxBdGnABpMi5vg3SzQnrFYSvEANb
-rEFIgqblAq16xxx2G9U/sGZCSrZnxhnYcAoy9aneh9Xfaad4Hs0wjTAb7auSQTg0
-z3ESDVo6eE8=
-=qJEH
------END PGP SIGNATURE-----
-
---/jkxxxtAhYIHVDuh--

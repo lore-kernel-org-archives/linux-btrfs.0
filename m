@@ -1,123 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36627 "EHLO plane.gmane.org"
+Received: from crane.lixil.net ([71.19.157.101]:55445 "EHLO crane.lixil.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754392Ab3HXL5D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Aug 2013 07:57:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VDCSi-000731-TM
-	for linux-btrfs@vger.kernel.org; Sat, 24 Aug 2013 13:57:00 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 13:57:00 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 13:57:00 +0200
+	id S1751173Ab3HXRYo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Aug 2013 13:24:44 -0400
+Received: from webmail.lixil.net (crane.lixil.net [71.19.157.101])
+	(Authenticated sender: mrjoel@lixil.net)
+	by crane.lixil.net (Postfix) with ESMTPSA id 6BBB7142D79
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 Aug 2013 17:24:44 +0000 (UTC)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Sat, 24 Aug 2013 11:24:44 -0600
+From: Joel Johnson <mrjoel@lixil.net>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Help interpreting RAID1 space allocation
-Date: Sat, 24 Aug 2013 11:56:42 +0000 (UTC)
-Message-ID: <pan$6915b$40024f4d$2b0976b0$d4dddbcf@cox.net>
-References: <25d36b2410416c9a767766fb9be313b6@lixil.net> <
-	C0968F38-8432-41C3-B916-DC00C5C69B34@colorremedies.com> <
-	27E06913-DDBB-4B75-86D3-A8F6C5B09F99@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <25d36b2410416c9a767766fb9be313b6@lixil.net>
+References: <25d36b2410416c9a767766fb9be313b6@lixil.net>
+Message-ID: <093e4c7d21b5e734c86fc4bb1703a69e@lixil.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Fri, 23 Aug 2013 22:58:14 -0600 as excerpted:
+On Aug 23, 2013, Chris Murphy <li...@colorremedies.com> wrote:
+> When replacing a failed disk, I'd like btrfs to compare states between 
+> the
+> available drives and know that it needs to catch up the newly added 
+> device,
+> but this doesn't yet happen. It's necessary to call btrfs balance.
 
-> So it says it's degraded but it really isn't?
-> I'm not sure what's up here.
+> I can only test device replacement, not a readd. Upon 'btrfs device 
+> delete
+> missing /mnt' there's a delay, and it's doing a balance. I don't know 
+> what
+> happens for a readd, if the whole volume needs balancing or if it's 
+> able to
+> just write the changes.
 
-In general, this was my experience a couple months ago when I tried it 
-then, as well.
+Similar to what Duncan described in his response, on a hot-remove 
+(without doing the proper btrfs device delete), there is no opportunity 
+for a rebalance or metadata change on the pulled drives, so I would 
+expect there to be a signature of some sort for consistency checking 
+before readding it. At least, btrfs shouldn't add the readded device 
+back as an active device when it's really still inconsistent and not 
+being used, even if it indicates the same UUID.
 
-And yes, IIRC the wiki actually describes the "degraded" mount option as 
-allowing it to mount "degraded" IF NECESSARY, NOT saying that it'll force 
-degraded.
+> And still further, somehow the data profile has reverted to single even
+> though the mkfs.btfs was raid1. [SNIP] That is a huge bug. I'll try to 
+> come
+> up with some steps to reproduce.
 
-I found one additional quirk, however, which was rather disturbing.  You 
-may recall my thread about it then...
+> If I create the file system, mount it, but I do not copy any data, upon 
+> adding
+> new and deleting missing, the data profile is changed from raid1 to 
+> single. If
+> I've first copied data to the volume prior to device failure/missing, 
+> this
+> doesn't happen, it remains raid1.
 
-Background:  I was actually trying to mount a dual device raid1 root 
-without an initr*, using rootflags=device=.  However, that didn't work.  
-The only way I could mount from the kernel commandline was using 
-degraded.  (I'm guessing the double-equals in the rootflags=device= got 
-parsed incorrectly, probably trying to take rootflags=device as the name, 
-which of course doesn't apply to anything, as it should be rootflags.  
-This because it definitely took the rootflags=degraded parameter just 
-fine.  That'd be a kernel bug, but I'm not sure that's it; I just know 
-others have reported trouble with rootflags=device=whatever on this list, 
-as well.)
+And yet, the tools indicate that it is still raid1, even if internally 
+it reverts to single???
 
-So, while I was trying to get it to work (while I was still 
-experimenting, and before I gave up and setup a simple initramfs using 
-dracut), I booted with root=/dev/sdaX rootflags=degraded, and it worked.  
-I then made a change to the filesystem, and rebooted again to the other 
-one, using root=/dev/sdbX rootflags=degraded, and that worked too.  I 
-then made a different change to the same file, thus diverging the two 
-separately mounted devices with a different write to each one.
+Based on my experience with this and Duncan's feedback, I'd like to see 
+the wiki have some warnings about dealing with multidevice filesystems, 
+especially surrounding the degraded mount option. Specifically, it 
+sounds like a reasonable practice with the current state is that after a 
+device is removed from a filesystem which receives any subsequent 
+changes, the removed device should be cleared (dd if=/dev/zero, at least 
+the superblocks) before being readded in order to remove any ambiguity 
+about state. Adding such a note to the wiki now would communicate the 
+potential pitfalls (especially with the difficulty determining what the 
+state it by bugs below), and also allow updating once things are 
+improved in this area.
 
-Then I rebooted back to my main system (not yet on btrfs at that point), 
-and mounted the btrfs normally -- it mounted without the degraded option 
-as both devices were found in the scan, DESPITE the fact that the two 
-component devices now had diverged content.  I checked and the later 
-change was shown, and there were no errors or warnings with the mount or 
-with reading the file.
+Looking again at the wiki Gotchas page, it does say
+On a multi device btrfs filesystem, mistakingly re-adding
+a block device that is already part of the btrfs fs with
+btrfs device add results in an error, and brings btrfs in
+an inconsistent state. In striping mode, this causes data
+loss and kernel oops. The btrfs userland tools need to do
+more checking to prevent these easy mistakes.
 
-I then booted degraded again, to the one with the other change, AND IT 
-STILL HAD THE CHANGE I HAD WRITTEN!!!
+Which seems very related, however perhaps adding the workaround and 
+clarifying that even hotplugged devices may be added and bitten by this.
 
-So the mount of both together had given me NO WARNING OR ERROR about 
-diverged copies; it simply showed one of them.  BUT THE OTHER ONE WASN'T 
-AUTO-DETECTED OR FIXED, EITHER.
+Should I file a few bugs to capture the related issues? Here are the 
+discrete issues that seem to be present from a user point of view:
 
-With mdraid, attempting to mount (well, re-add, in the case of mdraid) 
-with both devices would have triggered an automatic resync.  I expected 
-at LEAST a warning with btrfs, but I didn't get it.  I guess I'd have had 
-to manually initiate a scrub to detect and fix it, but was new enough to 
-(multi-device) btrfs at the time that trying that didn't occur to me.  
-I'm not sure what a full rebalance would have done.
+1. btrfs filesystem show - shouldn't list devices as present unlesss 
+they're in use and in a consistent state
 
-That was rather disturbing to me, to say the least.
+If an explicit add is needed to add new device, don't auto-add, even for 
+devices previously part of the filesystem. Although I would claim that 
+auto-adding and being consistent is most desired (when it makes sense 
+with an existing signature, an empty drive has no indication on where to 
+be added), it should be all or nothing instead of showing the device as 
+being added (or at least how I interpret it being present in the 'fi 
+show' listing) but internally being untracked or inconsistent.
 
-But for my usage, knowing and noting the problem to avoid in the future 
-was enough.
+As Chris said, "There isn't a readd option in btrfs, which in md 
+parlance is used for readding a device previously part of an array." 
+However, when I hotplugged the drive and it reappeared in the 'fi show' 
+output, I assumed exactly the md semantics had occurred, with the drive 
+having been readded and made consistent - it didn't take any time, but I 
+hadn't copied data yet and knew btrfs may only sync the used data and 
+metadata blocks.
 
-I blew away my (then) test btrfs with a fresh mkfs.btrfs raid1 both data 
-and metadata, copied root from my main system over to it once again, and 
-set it up with an initr* mount to avoid kernel commandline degraded-
-mounting.  Meanwhile, I don't do any more degraded tests.  I do scrubs 
-every so often (after a bad shutdown the other day I actually had a scrub 
-find and fix some bad checksums for the first time, and files that were 
-definitely giving problems before the scrub worked just fine afterward, 
-so I was glad I had btrfs checksums and raid1 copies to restore, the 
-feature worked as advertised! =:^), and...
+In other words, I never ran a device add or remove, but still saw what 
+appeared to be consistent behavior.
 
-If I ever do lose a device and have to go degraded, I know *NOT* to try 
-degraded-mounting both devices read/write separately, and then 
-recombining them once again.  If I need to degraded-mount one, fine, but 
-I'll make sure it's only the one, and if I do mount the other, I'll 
-either mount it read-only, or if I do end up mounting them both read/
-write, I'll blow one away and then add it as a new device, in ordered to 
-avoid having problems figuring out which divergent copy I'm going to be 
-dealing with once I'm using both devices again.
+2. data profile shouldn't revert to single if adding/deleting before 
+copying data
 
-With that sort of ground rule, I think I should be fine.  But it's 
-certainly a lot different than mdraid works in the same setup.  Btrfs 
-definitely has its own raid1 rules -- the mdraid raid1 rules do *NOT* 
-apply.
+3. degraded mount option should be "allow degraded if needed", allowing 
+non-degraded when it becomes available
 
-Meanwhile, hopefully at some point as btrfs heads toward stable, it gets 
-a write signature or whatever it is that mdraid has, so it can detect and 
-warn when raid1 devices diverge, and ideally can auto-sync, at least if 
-configured to do so.
+Shouldn't force degraded, especially after adding (either manually or 
+automatically) sufficient devices to operate in non-degraded mode. As 
+soon as devices are added, a rebalance should be done to bring the new 
+device(s) into consistent state.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+This then drives the question, how does one check the degraded state of 
+a filesystem if not the mount flag. I (quite likely with an md-raid 
+bias) expected to use the 'filesystem show' output, listed the devices 
+as well as a status flag of fully-consistent or rebalance in progress. 
+If that's not the correct or intended location, then provide 
+documentation on how to properly check the consistency state and 
+degraded state of a filesystem.
 
+Joel

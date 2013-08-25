@@ -1,63 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:56403 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754659Ab3HWSfN (ORCPT
+Received: from e23smtp05.au.ibm.com ([202.81.31.147]:35168 "EHLO
+	e23smtp05.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756427Ab3HYPGQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Aug 2013 14:35:13 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id B7A3F7C0431
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2013 12:35:12 -0600 (MDT)
-Date: Fri, 23 Aug 2013 14:35:10 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH][RESEND] xfstests: add a test for btrfs device replace
- operation
-Message-ID: <20130823183510.GH29654@localhost.localdomain>
-References: <1377263233-8903-1-git-send-email-sbehrens@giantdisaster.de>
- <1377263233-8903-2-git-send-email-sbehrens@giantdisaster.de>
+	Sun, 25 Aug 2013 11:06:16 -0400
+Received: from /spool/local
+	by e23smtp05.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Mon, 26 Aug 2013 00:59:00 +1000
+Received: from d23relay04.au.ibm.com (d23relay04.au.ibm.com [9.190.234.120])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id B8EDD2BB0054
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 01:06:08 +1000 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay04.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r7PEo5ME1769806
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 00:50:06 +1000
+Received: from d23av04.au.ibm.com (loopback [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.13.1/NCO v10.0 AVout) with ESMTP id r7PF67fJ032152
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 01:06:08 +1000
+From: chandan <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+Cc: david@fromorbit.com, sekharan@linux.vnet.ibm.com
+Subject: [PATCH] xfstests: generic/255: Execute only if blocksize <= 4096
+Date: Sun, 25 Aug 2013 20:36 +0530
+Message-ID: <2909046.09LYLQvZ6q@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1377263233-8903-2-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 23, 2013 at 03:07:11PM +0200, Stefan Behrens wrote:
-> This test performs btrfs device replace tests with all possible profiles
-> (single/dup/mixed/raid0/raid1/raid10), one round with the '-r' option
-> to 'btrfs replace start' and one round without this option. The
-> cancelation is tested only once and with the dup/single profile for
-> metadata/data.
-> 
-> This test takes 181 seconds on my SSD equiped test box and 237s on
-> spinning disks. Almost all the time is spent when the filesystem is
-> populated with test data. The replace operation itself takes less than
-> a second for all the tests, except for the test that is marked as
-> 'thorough' which will run for about 8 seconds on my test box.
-> 
-> The amount of tests done depends on the number of devices in the
-> SCRATCH_DEV_POOL. For full test coverage, at least 5 devices should
-> be available (e.g. 5 partitions). With less than 2 entries in
-> SCRATCH_DEV_POOL, the test is not executed.
-> 
-> The source and target devices for the replace operation are arbitrarily
-> chosen out of SCRATCH_DEV_POOl. Since the target device mustn't be
-> smaller than the source device, the requirement for this test is that
-> all devices have _exactly_ the same size. If this is not the case, the
-> test terminates with _notrun.
-> 
-> To check the filesystems after replacing a device, a scrub run is
-> performed, a btrfsck run, and finally the filesystem is remounted.
-> 
-> This commit depends on my other commit:
-> "xfstest: don't remove the two first devices from SCRATCH_DEV_POOL"
-> 
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+The patch adds the function _require_le_4k_blocksize to perform the
+block size check on $TEST_DEV and $SCRATCH_DEV.
 
-This worked well, thanks,
+Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+---
+ common/rc         | 10 ++++++++++
+ tests/generic/255 |  1 +
+ 2 files changed, 11 insertions(+)
 
-Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+diff --git a/common/rc b/common/rc
+index ae80b12..d8ee132 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2106,6 +2106,16 @@ _require_dumpe2fs()
+ 	fi
+ }
+ 
++_require_le_4k_blocksize()
++{
++	test_dev_bs=`stat -f $TEST_DEV | grep "Block size" | cut -d " " -f3`
++	scratch_dev_bs=`stat -f $SCRATCH_DEV | grep "Block size" | cut -d " " -f3`
++
++	if (( $test_dev_bs > 4096 || $scratch_dev_bs > 4096 )); then
++		_notrun "This test requires a filesystem with a block size less than or equal to 4k."
++	fi
++}
++
+ _create_loop_device()
+ {
+ 	file=$1
+diff --git a/tests/generic/255 b/tests/generic/255
+index dd329b4..763e861 100755
+--- a/tests/generic/255
++++ b/tests/generic/255
+@@ -49,6 +49,7 @@ _supported_os Linux
+ _require_xfs_io_falloc_punch
+ _require_xfs_io_falloc
+ _require_xfs_io_fiemap
++_require_le_4k_blocksize
+ 
+ testfile=$TEST_DIR/255.$$
+ 
+-- 
+1.8.3.1
 
-Thanks,
 
-Josef

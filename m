@@ -1,68 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36296 "EHLO plane.gmane.org"
+Received: from dalmat.net ([88.183.56.135]:52646 "EHLO athena.dalmat.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754027Ab3HYK3o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Aug 2013 06:29:44 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VDXZn-0005hE-8I
-	for linux-btrfs@vger.kernel.org; Sun, 25 Aug 2013 12:29:43 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Aug 2013 12:29:43 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Aug 2013 12:29:43 +0200
+	id S1755433Ab3HYQXU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 25 Aug 2013 12:23:20 -0400
+Received: from [192.168.0.37] (ncemdalstein-wifi.dalmat.net [192.168.0.37])
+	by athena.dalmat.net (Postfix) with ESMTPSA id 520713FC6F
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Aug 2013 18:23:18 +0200 (CEST)
+Message-ID: <521A2F78.908@dalmat.net>
+Date: Sun, 25 Aug 2013 18:23:20 +0200
+From: Matthieu Dalstein <matthieu.dalstein@dalmat.net>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: default mount options 3.10
-Date: Sun, 25 Aug 2013 10:29:25 +0000 (UTC)
-Message-ID: <pan$1a1a3$f154c1a1$c83dacd2$30613a32@cox.net>
-References: <52172DB0.1000701@gmail.com> <20130823122942.18548b21@
-	xavier-ThinkPad-T60p.lan> <4901822.EYC3h3vBSD@merkaba> <
-	pan$348ab$94e882cf$7b189911$f0786ffb@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Ability to free space on a full btrfs filesystem
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Sat, 24 Aug 2013 12:23:18 +0000 as excerpted:
+Hello,
 
-> Martin Steigerwald posted on Fri, 23 Aug 2013 14:58:07 +0200 as
-> excerpted:
-> 
->> Am Freitag, 23. August 2013, 12:29:42 schrieb Xavier Bassery:
->>> On Fri, 23 Aug 2013 11:38:56 +0200
->>> 
->>> David Kofler <dkofler92@googlemail.com> wrote:
+I'm currently experiencing some space issue on btrfs with linux kernel 3.10.
+My btrfs partition is full and I fail to remove any data to give some 
+free space:
 
-[mount-option discussion]
+athena:~# rm -f /mnt/storage/current/backup/slash/var/log/syslog
+rm: cannot remove `/mnt/storage/current/backup/slash/var/log/syslog': No 
+space left on device
 
-One that I omitted in my previous discussion because it's not btrfs 
-specific, but that makes a rather larger difference than normal on btrfs, 
-especially with lots of snapshots, is noatime.  Unfortunately, for legacy 
-reasons, that can't be the default, but unless you're running mutt (which 
-needs atime to track read messages except with mbox) or something 
-similar, there really are very few even half-modern apps that require 
-atime, and it really is best to run with noatime, saving the constant 
-access-time update writes.
+athena:~# true > /mnt/storage/current/backup/slash/var/log/syslog
+bash: /mnt/storage/current/backup/slash/var/log/syslog: No space left on 
+device
 
-The general kernel default is now relatime, which is a compromise that 
-works reasonably well on most filesystems, but even that tends to trigger 
-way more atime updates and thus de-dupped metadata when dealing with 
-btrfs snapshots than would be optimal.
+I tried to follow the wiki page 
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_get_.22No_space_left_on_device.22_errors.2C_but_df_says_I.27ve_got_lots_of_space
+but the balance operation fails due to lack of space:
+athena:~# btrfs fi balance start -dusage=5 /mnt/storage/
+ERROR: error during balancing '/mnt/storage/' - No space left on device
 
-Similarly, limited-write-cycle SSDs will do best with noatime.  If you 
-happen to be running btrfs on ssd as I am, well...
+[ Kernel logs ] btrfs: 138 enospc errors during balance
 
-So just run with noatime unless you are running something (like mutt) 
-that is known to need atimes, and then, preferably limit it to a 
-particular dedicated filesystem, perhaps choosing a filesystem other than 
-btrfs or at least a limited-snapshot btrfs.
+I guess this scenario is not expected, or I am probably missing something.
+Is there any way I can free some space and get back a writable filesystem ?
 
+Some more info:
+Mount options used for the recovery (from 
+https://btrfs.wiki.kernel.org/index.php/Ubuntu_support#ENOSPC.2C_no_space_left_on_device)
+/dev/sdb1 on /mnt/storage type btrfs 
+(rw,relatime,nodatasum,nodatacow,nospace_cache,clear_cache)
+
+athena:~# btrfs fi show
+Label: none  uuid: 8fa5ecc2-fff6-4ad1-a6bb-e384ea2086cb
+         Total devices 1 FS bytes used 475.19GB
+         devid    1 size 619.33GB used 619.33GB path /dev/sdb1
+
+athena:~# btrfs fi df /mnt/storage/
+Data: total=613.30GB, used=472.69GB
+System, DUP: total=8.00MB, used=72.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=3.00GB, used=2.50GB
+Metadata: total=8.00MB, used=0.00
+
+Thanks in advance
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Matthieu

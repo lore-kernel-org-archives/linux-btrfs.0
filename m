@@ -1,41 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:54120 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755883Ab3HZGmz (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:22853 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751666Ab3HZJah (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Aug 2013 02:42:55 -0400
-Message-ID: <521AF8E4.80405@jan-o-sch.net>
-Date: Mon, 26 Aug 2013 08:42:44 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
+	Mon, 26 Aug 2013 05:30:37 -0400
+Date: Mon, 26 Aug 2013 17:30:22 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 To: Thomas Koch <thomas@koch.ro>
-CC: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: check for reflink capability and for shared data
-References: <201308241809.58701.thomas@koch.ro> <20130824162013.GL3115@carfax.org.uk>
-In-Reply-To: <20130824162013.GL3115@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20130826093021.GB17457@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <201308241809.58701.thomas@koch.ro>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201308241809.58701.thomas@koch.ro>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
- 
-On Sat, August 24, 2013 at 18:20 (+0200), Hugo Mills wrote:
-> On Sat, Aug 24, 2013 at 06:09:58PM +0200, Thomas Koch wrote:
->> Hi,
->>
->> how can I do the following in a shell script:
->>
->> - check whether my file system supports cp --reflink?
+On Sat, Aug 24, 2013 at 06:09:58PM +0200, Thomas Koch wrote:
+> Hi,
 > 
-> touch foo; if cp --reflink=always foo bar; then ...; fi; rm -f foo bar
+> how can I do the following in a shell script:
 > 
->> - check whether two files share the same data on disk, i.e. one has been 
->> created by cp --reflink of the other?
-> 
->    You can't, using simple userspace tools. I think the only way would
-> be to use the tree search ioctl to inspect the extents for each file,
-> and see whether any of them overlap. Why do you need to know this?
+> - check whether my file system supports cp --reflink?
+> - check whether two files share the same data on disk, i.e. one has been 
+> created by cp --reflink of the other?
 
-It should work with fiemap to a file in question and btrfs inspect logical to
-what ever extents fiemap reported as "physical".
+Someone has proposed to teach 'du(1)' to show this, ie. 'du --shared'[1].
 
--Jan
+It's written for ocfs2 originally, besides btrfs, ocfs2 also can share
+data between two files.
+
+[1]: https://oss.oracle.com/pipermail/ocfs2-devel/2010-September/007287.html
+
+-liubo

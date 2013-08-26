@@ -1,94 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54798 "EHLO mx1.redhat.com"
+Received: from dalmat.net ([88.183.56.135]:44886 "EHLO athena.dalmat.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751743Ab3HZVVI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Aug 2013 17:21:08 -0400
-Message-ID: <521BC6C0.9070305@redhat.com>
-Date: Mon, 26 Aug 2013 16:21:04 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1751820Ab3HZVn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Aug 2013 17:43:26 -0400
+Received: from [192.168.0.23] (nyx.dalmat.net [192.168.0.23])
+	by athena.dalmat.net (Postfix) with ESMTP id DD9223FCDC
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 23:43:22 +0200 (CEST)
+Message-ID: <521BCBFA.8040506@dalmat.net>
+Date: Mon, 26 Aug 2013 23:43:22 +0200
+From: Matthieu Dalstein <matthieu.dalstein@dalmat.net>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add support for asserts
-References: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: Ability to free space on a full btrfs filesystem
+References: <521A2F78.908@dalmat.net> <502292E7-02F9-4398-905B-BA58D186CA7E@colorremedies.com>
+In-Reply-To: <502292E7-02F9-4398-905B-BA58D186CA7E@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/26/13 3:56 PM, Josef Bacik wrote:
-> One of the complaints we get a lot is how many BUG_ON()'s we have.  So to help
-> with this I'm introducing a kconfig option to enable/disable a new ASSERT()
-> mechanism much like what XFS does.  This will allow us developers to still get
-> our nice panics but allow users/distros to compile them out.  With this we can
-> go through and convert any BUG_ON()'s that we have to catch actual programming
-> mistakes to the new ASSERT() and then fix everybody else to return errors.  This
-> will also allow developers to leave sanity checks in their new code to make sure
-> we don't trip over problems while testing stuff and vetting new features.
-> Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> I don't know if removing a snapshot will necessarily help but it may be worth a try and see if these numbers change enough to allow file deletion.
 
-+1000 for inheriting the wildly popular XFS assfail() technology. ;)
+Actually the snapshots could not be removed due to the unsufficient 
+remaining space.
 
-I think this is a step in the right direction, it'll make it easier to
-clearly mark things which are logic assertions vs. things which are just punts
-in more common error-handling paths.
 
-Acked-by: Eric Sandeen <sandeen@redhat.com>
+> Another way out of this that's worked for some people in the past is to btrfs device add another disk to the volume. Maybe just 1GB of USB stick space is enough so that it can allocate another metadata chunk. But I'd give it as much of the fastest storage you have: can be any disk partition, or LV. But I've also done it with a USB stick partition.
+>
+> After it's added, see if you can do a balance, which should free most of those 141GB of data chunks. And then you can btrfs device delete the recently added device, which will move whatever data/metadata chunks are on it, back to the primary device for the volume.
 
-Thanks,
+Thanks for the tip. I would have expected another less intrusive 
+recovery but this one worked well. I did not fully rebalance the fs 
+(could have lasted days!) but with the d/m usage balance parameters I 
+managed to get back to a good state.
 
--Eric
+I guess this means I should find ways to avoid full fs unless there is a 
+plan to recover gracefully from such situations.
 
-> ---
->  fs/btrfs/Kconfig |    9 +++++++++
->  fs/btrfs/ctree.h |   16 ++++++++++++++++
->  2 files changed, 25 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-> index 2b3b832..398cbd5 100644
-> --- a/fs/btrfs/Kconfig
-> +++ b/fs/btrfs/Kconfig
-> @@ -72,3 +72,12 @@ config BTRFS_DEBUG
->  	  performance, or export extra information via sysfs.
->  
->  	  If unsure, say N.
-> +
-> +config BTRFS_ASSERT
-> +	bool "Btrfs assert support"
-> +	depends on BTRFS_FS
-> +	help
-> +	  Enable run-time assertion checking.  This will result in panics if
-> +	  any of the assertions trip.  This is meant for btrfs developers only.
-> +
-> +	  If unsure, say N.
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index c90be01..8278a3f 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3814,6 +3814,22 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
->  #define btrfs_debug(fs_info, fmt, args...) \
->  	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
->  
-> +#ifdef BTRFS_ASSERT
-> +
-> +static inline void assfail(char *expr, char *file, int lin)
-> +{
-> +	printk(KERN_ERR "BTRFS assertion failed: %s, file: %s, line: %d",
-> +	       expr, file, line);
-> +	BUG();
-> +}
-> +
-> +#define ASSERT(expr)	\
-> +	(unlikely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
-> +#else
-> +#define ASSERT(expr)	((void)0)
-> +#endif
-> +
-> +#define btrfs_assert()
->  __printf(5, 6)
->  void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
->  		     unsigned int line, int errno, const char *fmt, ...);
-> 
-
+Thanks
+-- 
+Matthieu

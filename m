@@ -1,60 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:55689 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751683Ab3HZOQp (ORCPT
+Received: from mail-qa0-f46.google.com ([209.85.216.46]:62156 "EHLO
+	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752523Ab3HZR0m convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Aug 2013 10:16:45 -0400
-Received: by mail-wi0-f181.google.com with SMTP id ex4so831816wid.14
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 07:16:44 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 26 Aug 2013 17:16:42 +0300
-Message-ID: <CAOcd+r0PfcX9Xs9ND8zXui3-YyJh+9THz1qrg7u9DsH1L-uO2g@mail.gmail.com>
-Subject: btrfs:async-thread: atomic_start_pending=1 is set, but it's too late
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Josef Bacik <jbacik@fusionio.com>, Lev Vainblat <lev@zadarastorage.com>,
-        Shyam Kaushik <shyam@zadarastorage.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	Mon, 26 Aug 2013 13:26:42 -0400
+Received: by mail-qa0-f46.google.com with SMTP id i13so667423qae.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 10:26:41 -0700 (PDT)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Question: How can I recover this partition? (unable to find logical $hugenum len 4096)
+From: Nicholas Lee <email@nickle.es>
+In-Reply-To: <6A12FF1B-5E1A-4F6F-92DA-41E52152E6F2@nickle.es>
+Date: Mon, 26 Aug 2013 13:26:40 -0400
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <EA37CDC0-8D44-45ED-8266-0E1CDECBE3EE@nickle.es>
+References: <79471CD1-CDDD-4EDD-B255-40568B8446E2@nickle.es> <CAKcLGm_QXTjN3e-HtogM+XXygymG+1kjhuOAMNfj=ngSHx5T5Q@mail.gmail.com> <5EB2ECAC-9A8C-4403-8630-944B646DE3B8@nickle.es> <DD09B4EA-9F87-4D18-8B7A-EEF2FFD6A7FE@nickle.es> <EC688346-BA9C-4077-A301-12FFE5463121@colorremedies.com> <A19C7607-0BF4-4C40-B9A3-F94144034B72@colorremedies.com> <6A12FF1B-5E1A-4F6F-92DA-41E52152E6F2@nickle.es>
+To: Chris Murphy <lists@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings all,
-I see a following issue with spawning new threads for btrfs_workers
-that have atomic_worker_start set:
+Good news everyone! I got this to mount again using btrfs chunk-recover on the partition! It took around a day for it to run the initial chunk recovery scan (iotop showed that I was limited by disk throughput) and another three hours for the actual chunk recovery (iops limited).
 
-# I have BTRFS that has 24Gb of total metadata, out of which extent
-tree takes 11Gb; space_cache option is not used.
-# After mouting, cache_block_group() triggers ~250 work items to
-cache-in the needed block groups.
-# At this point, fs_info->caching_workers has one thread, which is
-considered "idle".
-# Work items start to add to this thread's "pending" list, until this
-thread becomes considered "busy".
-# Now workers->atomic_worker_start is set, but
-check_pending_worker_creates() has not run yet (it is called only from
-worker_loop), so the same single thread is picked as "fallback".
+Hopefully someone out there that runs into a similar issue will end up finding this!
 
-The problem is that this thread is still running the "caching_thread"
-function, scanning for EXTENT_ITEMs of the first block-group. This
-takes 3-4seconds for 1Gb block group.
+On 22.08.2013, at 21:36, Nicholas Lee <email@nickle.es> wrote:
 
-# Once caching_thread() exits, check_pending_worker_creates() is
-called, and creates the second thread, but it's too late, because all
-the 250 work items are already sitting in the first thread's "pending"
-list. So the  second thread doesn't help at all.
+> 6. I don't know off the top of my head, but I'd assume it was the default. It was created by Ubuntu Server Edition
+> 7.  I installed btrfs-progs-git from the AUR, and it (pretty much instantly) returns the following error: 
+> 
+> sudo btrfsck /dev/main-storage-vg/root 
+> Couldn't map the block 1781900460032
+> btrfsck: volumes.c:1020: btrfs_num_copies: Assertion `!(ce->start > logical || ce->start + ce->size < logical)' failed.
+> 
+> If chunk-recover finds anything, I'll let you guys know. (It's still running, and I have yet to write anything.)
+> 
+> 
+> On 22.08.2013, at 20:58, Chris Murphy <lists@colorremedies.com> wrote:
+>> 
+>> 6. What was the mkfs.btrfs command used? In particular are you certain the metadata profile is default (DUP)?
+>> 
+>> 7. If you have a very recent btrfs-progs (few months at most), or better if you can build from btrfs-next, it may be worth running btrfsck *without* the repair option, to see what it has to say about the situation.
+> 
 
-As a result, all block-group caching is performed by the same thread,
-which, due to one-by-one scanning of EXTENT_ITEMs, takes forever for
-this BTRFS.
-
-How this can be fixed?
-- can perhaps check_pending_worker_creates() be called out of
-worker_loop, e.g., by find_worker()? Instead of just setting
-workers->atomic_start_pending?
-- maybe for fs_info->caching_workers we don't have to create new
-workers asynchronously, so we can pass NULL for async_helper in
-btrfs_init_workers()? (probably we have to, just checking)
-- any other way?
-
-Thanks,
-Alex.

@@ -1,42 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dalmat.net ([88.183.56.135]:44886 "EHLO athena.dalmat.net"
+Received: from mx1.redhat.com ([209.132.183.28]:50018 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751820Ab3HZVn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Aug 2013 17:43:26 -0400
-Received: from [192.168.0.23] (nyx.dalmat.net [192.168.0.23])
-	by athena.dalmat.net (Postfix) with ESMTP id DD9223FCDC
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2013 23:43:22 +0200 (CEST)
-Message-ID: <521BCBFA.8040506@dalmat.net>
-Date: Mon, 26 Aug 2013 23:43:22 +0200
-From: Matthieu Dalstein <matthieu.dalstein@dalmat.net>
+	id S1752359Ab3HZVx3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Aug 2013 17:53:29 -0400
+Date: Mon, 26 Aug 2013 14:53:26 -0700
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: add support for asserts
+Message-ID: <20130826215326.GH26818@lenny.home.zabbo.net>
+References: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Ability to free space on a full btrfs filesystem
-References: <521A2F78.908@dalmat.net> <502292E7-02F9-4398-905B-BA58D186CA7E@colorremedies.com>
-In-Reply-To: <502292E7-02F9-4398-905B-BA58D186CA7E@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I don't know if removing a snapshot will necessarily help but it may be worth a try and see if these numbers change enough to allow file deletion.
+> With this we can
+> go through and convert any BUG_ON()'s that we have to catch actual programming
+> mistakes to the new ASSERT() and then fix everybody else to return errors.
 
-Actually the snapshots could not be removed due to the unsufficient 
-remaining space.
+I like the sound of that!
 
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3814,6 +3814,22 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+>  #define btrfs_debug(fs_info, fmt, args...) \
+>  	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
+>  
+> +#ifdef BTRFS_ASSERT
+> +
+> +static inline void assfail(char *expr, char *file, int lin)
+> +{
+> +	printk(KERN_ERR "BTRFS assertion failed: %s, file: %s, line: %d",
+> +	       expr, file, line);
+> +	BUG();
+> +}
 
-> Another way out of this that's worked for some people in the past is to btrfs device add another disk to the volume. Maybe just 1GB of USB stick space is enough so that it can allocate another metadata chunk. But I'd give it as much of the fastest storage you have: can be any disk partition, or LV. But I've also done it with a USB stick partition.
->
-> After it's added, see if you can do a balance, which should free most of those 141GB of data chunks. And then you can btrfs device delete the recently added device, which will move whatever data/metadata chunks are on it, back to the primary device for the volume.
+I'm not sure why this is needed.
 
-Thanks for the tip. I would have expected another less intrusive 
-recovery but this one worked well. I did not fully rebalance the fs 
-(could have lasted days!) but with the d/m usage balance parameters I 
-managed to get back to a good state.
+> +#define ASSERT(expr)	\
+> +	(unlikely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
 
-I guess this means I should find ways to avoid full fs unless there is a 
-plan to recover gracefully from such situations.
+(Passing the assertion is unlikely()?  I know, this is from xfs...
+still.)
 
-Thanks
--- 
-Matthieu
+> +#else
+> +#define ASSERT(expr)	((void)0)
+> +#endif
+
+Anyway, if you're going to do it this way, why not:
+
+	#ifdef BTRFS_ASSERT
+	#define btrfs_assert(cond)  BUG_ON(!(cond))
+	#else
+	#define btrfs_assert(cond)  do { if (cond) ; } while (0)
+	#endif
+
+?
+
+- z

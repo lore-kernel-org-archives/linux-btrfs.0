@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:56976 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752714Ab3H0QLl (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:60369 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753746Ab3H0QWQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 12:11:41 -0400
-Received: by mail-wi0-f173.google.com with SMTP id ey11so2315916wid.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 09:11:40 -0700 (PDT)
+	Tue, 27 Aug 2013 12:22:16 -0400
+Received: by mail-wi0-f174.google.com with SMTP id c10so1495466wiw.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 09:22:15 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: fix deadlock in uuid scan kthread
-Date: Tue, 27 Aug 2013 17:11:29 +0100
-Message-Id: <1377619889-12272-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: fix deadlock in uuid scan kthread
+Date: Tue, 27 Aug 2013 17:22:07 +0100
+Message-Id: <1377620527-28987-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -80,12 +80,14 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 
 V2: Removed wrong assignment of NULL to transaction pointer, and
     addressed code style comment from Josef.
+V3: Removed unnecessary if statement to check if trans is NULL,
+    as it can't be NULL anymore in that section of the loop.
 
- fs/btrfs/volumes.c |   27 +++++++++++++++------------
- 1 file changed, 15 insertions(+), 12 deletions(-)
+ fs/btrfs/volumes.c |   35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f42e412..3cb9649 100644
+index f42e412..0129503 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
@@ -147,14 +149,22 @@ index f42e412..3cb9649 100644
  			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
  						  root_item.received_uuid,
  						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-@@ -3557,6 +3559,7 @@ static int btrfs_uuid_scan_kthread(void *data)
- 
- 		if (trans) {
- 			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
-+			trans = NULL;
- 			if (ret)
- 				break;
+@@ -3555,11 +3557,10 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 			}
  		}
+ 
+-		if (trans) {
+-			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
+-			if (ret)
+-				break;
+-		}
++		ret = btrfs_end_transaction(trans, fs_info->uuid_root);
++		trans = NULL;
++		if (ret)
++			break;
+ 
+ skip:
+ 		btrfs_release_path(path);
 -- 
 1.7.9.5
 

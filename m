@@ -1,147 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57957 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753667Ab3H0T2b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 15:28:31 -0400
-Message-ID: <521CFDD8.6030205@suse.com>
-Date: Tue, 27 Aug 2013 15:28:24 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add support for asserts
-References: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="7KklAtGs2JAMd1TfSXPGV7qC46q0SwkfT"
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:64472 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753493Ab3H0TbC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 Aug 2013 15:31:02 -0400
+Received: by mail-wg0-f45.google.com with SMTP id n12so4607156wgh.24
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 12:31:00 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v5] Btrfs: fix deadlock in uuid scan kthread
+Date: Tue, 27 Aug 2013 20:30:45 +0100
+Message-Id: <1377631845-25965-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
+References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---7KklAtGs2JAMd1TfSXPGV7qC46q0SwkfT
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+If there's an ongoing transaction when the uuid scan kthread attempts
+to create one, the kthread will block, waiting for that transaction to
+finish while it's keeping locks on the tree root, and in turn the existing
+transaction is waiting for those locks to be free.
 
-On 8/26/13 4:56 PM, Josef Bacik wrote:
-> One of the complaints we get a lot is how many BUG_ON()'s we have.  So =
-to help
-> with this I'm introducing a kconfig option to enable/disable a new ASSE=
-RT()
-> mechanism much like what XFS does.  This will allow us developers to st=
-ill get
-> our nice panics but allow users/distros to compile them out.  With this=
- we can
-> go through and convert any BUG_ON()'s that we have to catch actual prog=
-ramming
-> mistakes to the new ASSERT() and then fix everybody else to return erro=
-rs.  This
-> will also allow developers to leave sanity checks in their new code to =
-make sure
-> we don't trip over problems while testing stuff and vetting new feature=
-s.
-> Thanks,
+The stack trace reported by the kernel follows.
 
-I don't think the complaint is so much about the number of BUG_ONs, but
-that there's no distinction between something that is supposed to be
-impossible and something that is improbable. The BUG_ONs to keep code
-correctness are good and are littered all over the kernel with positive
-results. The BUG_ONs that are there in place of real error handling
-served their purpose and need to be replaced.
+[36700.671601] INFO: task btrfs-uuid:15480 blocked for more than 120 seconds.
+[36700.671602] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671602] btrfs-uuid      D 0000000000000000     0 15480      2 0x00000000
+[36700.671604]  ffff880710bd5b88 0000000000000046 ffff8803d36ba850 0000000000030000
+[36700.671605]  ffff8806d76dc530 ffff880710bd5fd8 ffff880710bd5fd8 ffff880710bd5fd8
+[36700.671607]  ffff8808098ac530 ffff8806d76dc530 ffff880710bd5b98 ffff8805e4508e40
+[36700.671608] Call Trace:
+[36700.671610]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671620]  [<ffffffffa05a3bdf>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
+[36700.671623]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671629]  [<ffffffffa05a5b06>] start_transaction+0x3d6/0x530 [btrfs]
+[36700.671636]  [<ffffffffa05bb1f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
+[36700.671642]  [<ffffffffa05a5fbb>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+[36700.671649]  [<ffffffffa05c8a81>] btrfs_uuid_scan_kthread+0x211/0x3d0 [btrfs]
+[36700.671655]  [<ffffffffa05c8870>] ? __btrfs_open_devices+0x2a0/0x2a0 [btrfs]
+[36700.671657]  [<ffffffff81065fa0>] kthread+0xc0/0xd0
+[36700.671659]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671661]  [<ffffffff816fcd1c>] ret_from_fork+0x7c/0xb0
+[36700.671662]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671663] INFO: task btrfs:15481 blocked for more than 120 seconds.
+[36700.671664] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671665] btrfs           D 0000000000000000     0 15481  15212 0x00000004
+[36700.671666]  ffff880248cbf4c8 0000000000000086 ffff8803d36ba700 ffff8801dbd5c280
+[36700.671668]  ffff880807815c40 ffff880248cbffd8 ffff880248cbffd8 ffff880248cbffd8
+[36700.671669]  ffff8805e86a0000 ffff880807815c40 ffff880248cbf4d8 ffff8801dbd5c280
+[36700.671670] Call Trace:
+[36700.671672]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671679]  [<ffffffffa05d9b0d>] btrfs_tree_lock+0x6d/0x230 [btrfs]
+[36700.671680]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671685]  [<ffffffffa0582829>] btrfs_search_slot+0x999/0xb00 [btrfs]
+[36700.671691]  [<ffffffffa05bd9de>] ? btrfs_lookup_first_ordered_extent+0x5e/0xb0 [btrfs]
+[36700.671698]  [<ffffffffa05e3e54>] __btrfs_write_out_cache+0x8c4/0xa80 [btrfs]
+[36700.671704]  [<ffffffffa05e4362>] btrfs_write_out_cache+0xb2/0xf0 [btrfs]
+[36700.671710]  [<ffffffffa05c4441>] ? free_extent_buffer+0x61/0xc0 [btrfs]
+[36700.671716]  [<ffffffffa0594c82>] btrfs_write_dirty_block_groups+0x562/0x650 [btrfs]
+[36700.671723]  [<ffffffffa0610092>] commit_cowonly_roots+0x171/0x24b [btrfs]
+[36700.671729]  [<ffffffffa05a4dde>] btrfs_commit_transaction+0x4fe/0xa10 [btrfs]
+[36700.671735]  [<ffffffffa0610af3>] create_subvol+0x5c0/0x636 [btrfs]
+[36700.671742]  [<ffffffffa05d49ff>] btrfs_mksubvol.isra.60+0x33f/0x3f0 [btrfs]
+[36700.671747]  [<ffffffffa05d4bf2>] btrfs_ioctl_snap_create_transid+0x142/0x190 [btrfs]
+[36700.671752]  [<ffffffffa05d4c6c>] ? btrfs_ioctl_snap_create+0x2c/0x80 [btrfs]
+[36700.671757]  [<ffffffffa05d4c9e>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
+[36700.671759]  [<ffffffff8113a764>] ? handle_pte_fault+0x84/0x920
+[36700.671764]  [<ffffffffa05d87eb>] btrfs_ioctl+0xf0b/0x1d00 [btrfs]
+[36700.671766]  [<ffffffff8113c120>] ? handle_mm_fault+0x210/0x310
+[36700.671768]  [<ffffffff816f83a4>] ? __do_page_fault+0x284/0x4e0
+[36700.671770]  [<ffffffff81180aa6>] do_vfs_ioctl+0x96/0x550
+[36700.671772]  [<ffffffff81170fe3>] ? __sb_end_write+0x33/0x70
+[36700.671774]  [<ffffffff81180ff1>] SyS_ioctl+0x91/0xb0
+[36700.671775]  [<ffffffff816fcdc2>] system_call_fastpath+0x16/0x1b
 
-So, I don't know if it's a net win to compile the "good" BUG_ONs out of
-the code. Especially if a user runs into something strange yet familiar
-and the first response is "oh, huh, can you rebuild with asserts enabled?=
-"
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
-For the call sites that are unimplemented error handling, something to
-annotate those so that we can keep track of them and gradually eliminate
-those too would be good, though.
+V2: Removed wrong assignment of NULL to transaction pointer, and
+    addressed code style comment from Josef.
+V3: Removed unnecessary if statement to check if trans is NULL,
+    as it can't be NULL anymore in that section of the loop.
+V4: Ensure that we don't leak a transaction handle if after looking
+    again for items we don't end up updating anything in the uuid
+    tree. Before we create a transaction, we release the path we
+    found and then repeat the key search and check if the item
+    still needs to be updated - if not we don't use the transaction
+    for that iteration of the loop - if this is true for all iterations,
+    we would leak the transaction handle.
+V5: If a transaction is not used in a loop iteration, end it before
+    we call cond_resched() at the end of the loop body. This is more
+    friendly for other tasks.
 
--Jeff
+ fs/btrfs/volumes.c |   33 ++++++++++++++++++++-------------
+ 1 file changed, 20 insertions(+), 13 deletions(-)
 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/Kconfig |    9 +++++++++
->  fs/btrfs/ctree.h |   16 ++++++++++++++++
->  2 files changed, 25 insertions(+), 0 deletions(-)
->=20
-> diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-> index 2b3b832..398cbd5 100644
-> --- a/fs/btrfs/Kconfig
-> +++ b/fs/btrfs/Kconfig
-> @@ -72,3 +72,12 @@ config BTRFS_DEBUG
->  	  performance, or export extra information via sysfs.
-> =20
->  	  If unsure, say N.
-> +
-> +config BTRFS_ASSERT
-> +	bool "Btrfs assert support"
-> +	depends on BTRFS_FS
-> +	help
-> +	  Enable run-time assertion checking.  This will result in panics if
-> +	  any of the assertions trip.  This is meant for btrfs developers onl=
-y.
-> +
-> +	  If unsure, say N.
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index c90be01..8278a3f 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3814,6 +3814,22 @@ void btrfs_printk(const struct btrfs_fs_info *fs=
-_info, const char *fmt, ...)
->  #define btrfs_debug(fs_info, fmt, args...) \
->  	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
-> =20
-> +#ifdef BTRFS_ASSERT
-> +
-> +static inline void assfail(char *expr, char *file, int lin)
-> +{
-> +	printk(KERN_ERR "BTRFS assertion failed: %s, file: %s, line: %d",
-> +	       expr, file, line);
-> +	BUG();
-> +}
-> +
-> +#define ASSERT(expr)	\
-> +	(unlikely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
-> +#else
-> +#define ASSERT(expr)	((void)0)
-> +#endif
-> +
-> +#define btrfs_assert()
->  __printf(5, 6)
->  void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *func=
-tion,
->  		     unsigned int line, int errno, const char *fmt, ...);
->=20
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f42e412..0629729 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 	int slot;
+ 	struct btrfs_root_item root_item;
+ 	u32 item_size;
+-	struct btrfs_trans_handle *trans;
++	struct btrfs_trans_handle *trans = NULL;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -3503,13 +3503,18 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 		if (item_size < sizeof(root_item))
+ 			goto skip;
+ 
+-		trans = NULL;
+ 		read_extent_buffer(eb, &root_item,
+ 				   btrfs_item_ptr_offset(eb, slot),
+ 				   (int)sizeof(root_item));
+ 		if (btrfs_root_refs(&root_item) == 0)
+ 			goto skip;
+-		if (!btrfs_is_empty_uuid(root_item.uuid)) {
++
++		if (!btrfs_is_empty_uuid(root_item.uuid) ||
++		    !btrfs_is_empty_uuid(root_item.received_uuid)) {
++			if (trans)
++				goto update_tree;
++
++			btrfs_release_path(path);
+ 			/*
+ 			 * 1 - subvol uuid item
+ 			 * 1 - received_subvol uuid item
+@@ -3519,6 +3524,12 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 				ret = PTR_ERR(trans);
+ 				break;
+ 			}
++			continue;
++		} else {
++			goto skip;
++		}
++update_tree:
++		if (!btrfs_is_empty_uuid(root_item.uuid)) {
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.uuid,
+ 						  BTRFS_UUID_KEY_SUBVOL,
+@@ -3528,20 +3539,12 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 					ret);
+ 				btrfs_end_transaction(trans,
+ 						      fs_info->uuid_root);
++				trans = NULL;
+ 				break;
+ 			}
+ 		}
+ 
+ 		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
+-			if (!trans) {
+-				/* 1 - received_subvol uuid item */
+-				trans = btrfs_start_transaction(
+-						fs_info->uuid_root, 1);
+-				if (IS_ERR(trans)) {
+-					ret = PTR_ERR(trans);
+-					break;
+-				}
+-			}
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.received_uuid,
+ 						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+@@ -3551,17 +3554,19 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 					ret);
+ 				btrfs_end_transaction(trans,
+ 						      fs_info->uuid_root);
++				trans = NULL;
+ 				break;
+ 			}
+ 		}
+ 
++skip:
+ 		if (trans) {
+ 			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
++			trans = NULL;
+ 			if (ret)
+ 				break;
+ 		}
+ 
+-skip:
+ 		btrfs_release_path(path);
+ 		if (key.offset < (u64)-1) {
+ 			key.offset++;
+@@ -3580,6 +3585,8 @@ skip:
+ 
+ out:
+ 	btrfs_free_path(path);
++	if (trans)
++		btrfs_end_transaction(trans, fs_info->uuid_root);
+ 	if (ret)
+ 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
+ 	else
+-- 
+1.7.9.5
 
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---7KklAtGs2JAMd1TfSXPGV7qC46q0SwkfT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJSHP3YAAoJEB57S2MheeWyRUcP/0ITckz38CstAvJ6l0MO6SMD
-yKCBAMXL0aABD3l/9Wjb/DZBv00YvBKUfhocraE9vy+HvJvikLApQ41ztFpVx2/q
-MeW/0WwYOAIa56uwp4pJtkifmhVRYKqkzj1foYnJlygdKZAsSz24z3O9HcxJBZl/
-winEnxzVu0LsnumcAsnVUJufoF0LCrAAbWmTpAVB/vi+vY0JJhnlKmqZG0Z65WIf
-BKAz0WtRCRta2E9hWvMH7lXrqY8s+dGTJcpB/kEsKTjWViqs0HYtpru/KtBQ054U
-XM01YYZEzU+Ytnfs2OQD1172lM6ac20Bb6ShwtQy+v5Ee5d3xEwjfv8K39rcfnhT
-Njc58FJNw79QeEzbErgAjwhk0n266JKeHf2mKMoO1F1KL0L44yKfqWbF/3BpXcjQ
-R6PteZlQ/fmLRuEsbIfyWbmwPhQBPL3kU5tyVCNbRhWmFX+/nmpwl5V0JKiyD+me
-H2FyzL0OLXo5AQB6VApRYlG3EGsPLdG88bCO0wSXAW/OTjzXv1XSF+Crh9+iXo8Y
-bP7w6XPdYHVFqnBI9U3SgwssOKNR22voszVGeD/HwoNGpY92Urf/DJhzJK0EO7lH
-fNZVLgLbGC7sJfegT0CR4+9fvrgkE9ymXnKtZkVQu8qZ6Xa8K1ezHnRSVr4yCwYe
-cT7HO8iksCB7cxtY5SeP
-=/DMa
------END PGP SIGNATURE-----
-
---7KklAtGs2JAMd1TfSXPGV7qC46q0SwkfT--

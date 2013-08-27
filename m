@@ -1,197 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:45005 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753309Ab3H0Qzx (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:57365 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752289Ab3H0RUS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 12:55:53 -0400
-Received: by mail-wg0-f45.google.com with SMTP id n12so4421847wgh.24
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 09:55:52 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v4] Btrfs: fix deadlock in uuid scan kthread
-Date: Tue, 27 Aug 2013 17:55:44 +0100
-Message-Id: <1377622544-12615-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
-References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
+	Tue, 27 Aug 2013 13:20:18 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 944D37C06A0
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 11:20:17 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id QK5wgXqRVE2Rrz2N (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 11:20:17 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not complete ordered extents that are truncated
+Date: Tue, 27 Aug 2013 13:20:14 -0400
+Message-ID: <1377624014-6426-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If there's an ongoing transaction when the uuid scan kthread attempts
-to create one, the kthread will block, waiting for that transaction to
-finish while it's keeping locks on the tree root, and in turn the existing
-transaction is waiting for those locks to be free.
+Currently we will do the normal btrfs_finish_ordered_io if we invalidate a dirty
+page that is part of an ordered extent but hasn't yet been submitted for IO.
+The side effect of this is that when the rest of the ordered extent is completed
+it will still add its extent to the file and it's csums to the tree.  This
+usually isn't a problem since this occurs right before a truncate, so these
+csums and extents are going to be cleaned up.  However if there is an error
+doing the truncate we can leave extents that point to invalid data, and as such
+you'll get csum errors trying to read back this extent.  So to handle this just
+set a flag on the ordered extent if we are going to invalidate one of its dirty
+pages, and then once we go to do the completion stuff we skip updating the file
+extents and adding our csums, we just free everything up and exit.  This is
+preliminary work we need to have better orphan entry error handling.  Thanks,
 
-The stack trace reported by the kernel follows.
-
-[36700.671601] INFO: task btrfs-uuid:15480 blocked for more than 120 seconds.
-[36700.671602] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[36700.671602] btrfs-uuid      D 0000000000000000     0 15480      2 0x00000000
-[36700.671604]  ffff880710bd5b88 0000000000000046 ffff8803d36ba850 0000000000030000
-[36700.671605]  ffff8806d76dc530 ffff880710bd5fd8 ffff880710bd5fd8 ffff880710bd5fd8
-[36700.671607]  ffff8808098ac530 ffff8806d76dc530 ffff880710bd5b98 ffff8805e4508e40
-[36700.671608] Call Trace:
-[36700.671610]  [<ffffffff816f36b9>] schedule+0x29/0x70
-[36700.671620]  [<ffffffffa05a3bdf>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
-[36700.671623]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
-[36700.671629]  [<ffffffffa05a5b06>] start_transaction+0x3d6/0x530 [btrfs]
-[36700.671636]  [<ffffffffa05bb1f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
-[36700.671642]  [<ffffffffa05a5fbb>] btrfs_start_transaction+0x1b/0x20 [btrfs]
-[36700.671649]  [<ffffffffa05c8a81>] btrfs_uuid_scan_kthread+0x211/0x3d0 [btrfs]
-[36700.671655]  [<ffffffffa05c8870>] ? __btrfs_open_devices+0x2a0/0x2a0 [btrfs]
-[36700.671657]  [<ffffffff81065fa0>] kthread+0xc0/0xd0
-[36700.671659]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
-[36700.671661]  [<ffffffff816fcd1c>] ret_from_fork+0x7c/0xb0
-[36700.671662]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
-[36700.671663] INFO: task btrfs:15481 blocked for more than 120 seconds.
-[36700.671664] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[36700.671665] btrfs           D 0000000000000000     0 15481  15212 0x00000004
-[36700.671666]  ffff880248cbf4c8 0000000000000086 ffff8803d36ba700 ffff8801dbd5c280
-[36700.671668]  ffff880807815c40 ffff880248cbffd8 ffff880248cbffd8 ffff880248cbffd8
-[36700.671669]  ffff8805e86a0000 ffff880807815c40 ffff880248cbf4d8 ffff8801dbd5c280
-[36700.671670] Call Trace:
-[36700.671672]  [<ffffffff816f36b9>] schedule+0x29/0x70
-[36700.671679]  [<ffffffffa05d9b0d>] btrfs_tree_lock+0x6d/0x230 [btrfs]
-[36700.671680]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
-[36700.671685]  [<ffffffffa0582829>] btrfs_search_slot+0x999/0xb00 [btrfs]
-[36700.671691]  [<ffffffffa05bd9de>] ? btrfs_lookup_first_ordered_extent+0x5e/0xb0 [btrfs]
-[36700.671698]  [<ffffffffa05e3e54>] __btrfs_write_out_cache+0x8c4/0xa80 [btrfs]
-[36700.671704]  [<ffffffffa05e4362>] btrfs_write_out_cache+0xb2/0xf0 [btrfs]
-[36700.671710]  [<ffffffffa05c4441>] ? free_extent_buffer+0x61/0xc0 [btrfs]
-[36700.671716]  [<ffffffffa0594c82>] btrfs_write_dirty_block_groups+0x562/0x650 [btrfs]
-[36700.671723]  [<ffffffffa0610092>] commit_cowonly_roots+0x171/0x24b [btrfs]
-[36700.671729]  [<ffffffffa05a4dde>] btrfs_commit_transaction+0x4fe/0xa10 [btrfs]
-[36700.671735]  [<ffffffffa0610af3>] create_subvol+0x5c0/0x636 [btrfs]
-[36700.671742]  [<ffffffffa05d49ff>] btrfs_mksubvol.isra.60+0x33f/0x3f0 [btrfs]
-[36700.671747]  [<ffffffffa05d4bf2>] btrfs_ioctl_snap_create_transid+0x142/0x190 [btrfs]
-[36700.671752]  [<ffffffffa05d4c6c>] ? btrfs_ioctl_snap_create+0x2c/0x80 [btrfs]
-[36700.671757]  [<ffffffffa05d4c9e>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
-[36700.671759]  [<ffffffff8113a764>] ? handle_pte_fault+0x84/0x920
-[36700.671764]  [<ffffffffa05d87eb>] btrfs_ioctl+0xf0b/0x1d00 [btrfs]
-[36700.671766]  [<ffffffff8113c120>] ? handle_mm_fault+0x210/0x310
-[36700.671768]  [<ffffffff816f83a4>] ? __do_page_fault+0x284/0x4e0
-[36700.671770]  [<ffffffff81180aa6>] do_vfs_ioctl+0x96/0x550
-[36700.671772]  [<ffffffff81170fe3>] ? __sb_end_write+0x33/0x70
-[36700.671774]  [<ffffffff81180ff1>] SyS_ioctl+0x91/0xb0
-[36700.671775]  [<ffffffff816fcdc2>] system_call_fastpath+0x16/0x1b
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
+ fs/btrfs/inode.c        |   17 +++++++++++++++--
+ fs/btrfs/ordered-data.h |    3 +++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
 
-V2: Removed wrong assignment of NULL to transaction pointer, and
-    addressed code style comment from Josef.
-V3: Removed unnecessary if statement to check if trans is NULL,
-    as it can't be NULL anymore in that section of the loop.
-V4: Ensure that we don't leak a transaction handle if after looking
-    again for items we don't end up updating anything in the uuid
-    tree. Before we create a transaction, we release the path we
-    found and then repeat the key search and check if the item
-    still needs to be updated - if not we don't use the transaction
-    for that iteration of the loop - if this is true for all iterations,
-    we would leak the transaction handle.
-
- fs/btrfs/volumes.c |   39 ++++++++++++++++++++++-----------------
- 1 file changed, 22 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f42e412..ec1cf0e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
- 	int slot;
- 	struct btrfs_root_item root_item;
- 	u32 item_size;
--	struct btrfs_trans_handle *trans;
-+	struct btrfs_trans_handle *trans = NULL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1c86f9d..d212b36 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2562,8 +2562,9 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	struct extent_state *cached_state = NULL;
+ 	struct new_sa_defrag_extent *new = NULL;
+ 	int compress_type = 0;
+-	int ret;
++	int ret = 0;
+ 	bool nolock;
++	bool truncated = false;
  
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -3503,13 +3503,18 @@ static int btrfs_uuid_scan_kthread(void *data)
- 		if (item_size < sizeof(root_item))
- 			goto skip;
+ 	nolock = btrfs_is_free_space_inode(inode);
  
--		trans = NULL;
- 		read_extent_buffer(eb, &root_item,
- 				   btrfs_item_ptr_offset(eb, slot),
- 				   (int)sizeof(root_item));
- 		if (btrfs_root_refs(&root_item) == 0)
- 			goto skip;
--		if (!btrfs_is_empty_uuid(root_item.uuid)) {
+@@ -2572,6 +2573,11 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		goto out;
+ 	}
+ 
++	if (test_bit(BTRFS_ORDERED_TRUNCATED, &ordered_extent->flags)) {
++		truncated = true;
++		goto out;
++	}
 +
-+		if (!btrfs_is_empty_uuid(root_item.uuid) ||
-+		    !btrfs_is_empty_uuid(root_item.received_uuid)) {
-+			if (trans)
-+				goto update_tree;
+ 	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
+ 		BUG_ON(!list_empty(&ordered_extent->list)); /* Logic error */
+ 		btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+@@ -2667,7 +2673,7 @@ out:
+ 	if (trans)
+ 		btrfs_end_transaction(trans, root);
+ 
+-	if (ret) {
++	if (ret || truncated) {
+ 		clear_extent_uptodate(io_tree, ordered_extent->file_offset,
+ 				      ordered_extent->file_offset +
+ 				      ordered_extent->len - 1, NULL, GFP_NOFS);
+@@ -7348,6 +7354,13 @@ static void btrfs_invalidatepage(struct page *page, unsigned long offset)
+ 				 EXTENT_DIRTY | EXTENT_DELALLOC |
+ 				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+ 				 EXTENT_DEFRAG, 1, 0, &cached_state, GFP_NOFS);
 +
-+			btrfs_release_path(path);
- 			/*
- 			 * 1 - subvol uuid item
- 			 * 1 - received_subvol uuid item
-@@ -3519,6 +3524,12 @@ static int btrfs_uuid_scan_kthread(void *data)
- 				ret = PTR_ERR(trans);
- 				break;
- 			}
-+			continue;
-+		} else {
-+			goto skip;
-+		}
-+update_tree:
-+		if (!btrfs_is_empty_uuid(root_item.uuid)) {
- 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
- 						  root_item.uuid,
- 						  BTRFS_UUID_KEY_SUBVOL,
-@@ -3528,20 +3539,12 @@ static int btrfs_uuid_scan_kthread(void *data)
- 					ret);
- 				btrfs_end_transaction(trans,
- 						      fs_info->uuid_root);
-+				trans = NULL;
- 				break;
- 			}
- 		}
++		/*
++		 * Set this so that we don't actually do the extent update work
++		 * for this ordered extent.
++		 */
++		set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
++
+ 		/*
+ 		 * whoever cleared the private bit is responsible
+ 		 * for the finish_ordered_io
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 68844d5..3d7fe72 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -69,6 +69,9 @@ struct btrfs_ordered_sum {
+ 				       * the isize. */
+ #define BTRFS_ORDERED_LOGGED_CSUM 8 /* We've logged the csums on this ordered
+ 				       ordered extent */
++#define BTRFS_ORDERED_TRUNCATED 9 /* We truncated a page in this ordered
++				     extent, do not allow the completion stuff
++				     to occur */
  
- 		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
--			if (!trans) {
--				/* 1 - received_subvol uuid item */
--				trans = btrfs_start_transaction(
--						fs_info->uuid_root, 1);
--				if (IS_ERR(trans)) {
--					ret = PTR_ERR(trans);
--					break;
--				}
--			}
- 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
- 						  root_item.received_uuid,
- 						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-@@ -3551,15 +3554,15 @@ static int btrfs_uuid_scan_kthread(void *data)
- 					ret);
- 				btrfs_end_transaction(trans,
- 						      fs_info->uuid_root);
-+				trans = NULL;
- 				break;
- 			}
- 		}
- 
--		if (trans) {
--			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
--			if (ret)
--				break;
--		}
-+		ret = btrfs_end_transaction(trans, fs_info->uuid_root);
-+		trans = NULL;
-+		if (ret)
-+			break;
- 
- skip:
- 		btrfs_release_path(path);
-@@ -3580,6 +3583,8 @@ skip:
- 
- out:
- 	btrfs_free_path(path);
-+	if (trans)
-+		btrfs_end_transaction(trans, fs_info->uuid_root);
- 	if (ret)
- 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
- 	else
+ struct btrfs_ordered_extent {
+ 	/* logical offset in the file */
 -- 
-1.7.9.5
+1.7.7.6
 

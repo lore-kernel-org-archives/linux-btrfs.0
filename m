@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:60369 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753746Ab3H0QWQ (ORCPT
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:45005 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753309Ab3H0Qzx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 12:22:16 -0400
-Received: by mail-wi0-f174.google.com with SMTP id c10so1495466wiw.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 09:22:15 -0700 (PDT)
+	Tue, 27 Aug 2013 12:55:53 -0400
+Received: by mail-wg0-f45.google.com with SMTP id n12so4421847wgh.24
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 09:55:52 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: fix deadlock in uuid scan kthread
-Date: Tue, 27 Aug 2013 17:22:07 +0100
-Message-Id: <1377620527-28987-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v4] Btrfs: fix deadlock in uuid scan kthread
+Date: Tue, 27 Aug 2013 17:55:44 +0100
+Message-Id: <1377622544-12615-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -82,12 +82,19 @@ V2: Removed wrong assignment of NULL to transaction pointer, and
     addressed code style comment from Josef.
 V3: Removed unnecessary if statement to check if trans is NULL,
     as it can't be NULL anymore in that section of the loop.
+V4: Ensure that we don't leak a transaction handle if after looking
+    again for items we don't end up updating anything in the uuid
+    tree. Before we create a transaction, we release the path we
+    found and then repeat the key search and check if the item
+    still needs to be updated - if not we don't use the transaction
+    for that iteration of the loop - if this is true for all iterations,
+    we would leak the transaction handle.
 
- fs/btrfs/volumes.c |   35 ++++++++++++++++++-----------------
- 1 file changed, 18 insertions(+), 17 deletions(-)
+ fs/btrfs/volumes.c |   39 ++++++++++++++++++++++-----------------
+ 1 file changed, 22 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f42e412..0129503 100644
+index f42e412..ec1cf0e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
@@ -133,7 +140,13 @@ index f42e412..0129503 100644
  			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
  						  root_item.uuid,
  						  BTRFS_UUID_KEY_SUBVOL,
-@@ -3533,15 +3544,6 @@ static int btrfs_uuid_scan_kthread(void *data)
+@@ -3528,20 +3539,12 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 					ret);
+ 				btrfs_end_transaction(trans,
+ 						      fs_info->uuid_root);
++				trans = NULL;
+ 				break;
+ 			}
  		}
  
  		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
@@ -149,7 +162,12 @@ index f42e412..0129503 100644
  			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
  						  root_item.received_uuid,
  						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-@@ -3555,11 +3557,10 @@ static int btrfs_uuid_scan_kthread(void *data)
+@@ -3551,15 +3554,15 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 					ret);
+ 				btrfs_end_transaction(trans,
+ 						      fs_info->uuid_root);
++				trans = NULL;
+ 				break;
  			}
  		}
  
@@ -165,6 +183,15 @@ index f42e412..0129503 100644
  
  skip:
  		btrfs_release_path(path);
+@@ -3580,6 +3583,8 @@ skip:
+ 
+ out:
+ 	btrfs_free_path(path);
++	if (trans)
++		btrfs_end_transaction(trans, fs_info->uuid_root);
+ 	if (ret)
+ 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
+ 	else
 -- 
 1.7.9.5
 

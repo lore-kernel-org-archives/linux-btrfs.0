@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:64472 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753493Ab3H0TbC (ORCPT
+Received: from mail-we0-f179.google.com ([74.125.82.179]:65125 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752591Ab3H0UIr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 15:31:02 -0400
-Received: by mail-wg0-f45.google.com with SMTP id n12so4607156wgh.24
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 12:31:00 -0700 (PDT)
+	Tue, 27 Aug 2013 16:08:47 -0400
+Received: by mail-we0-f179.google.com with SMTP id t58so4489595wes.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 13:08:46 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v5] Btrfs: fix deadlock in uuid scan kthread
-Date: Tue, 27 Aug 2013 20:30:45 +0100
-Message-Id: <1377631845-25965-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs: fix deadlock in uuid scan kthread
+Date: Tue, 27 Aug 2013 21:08:38 +0100
+Message-Id: <1377634118-28875-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -92,12 +92,14 @@ V4: Ensure that we don't leak a transaction handle if after looking
 V5: If a transaction is not used in a loop iteration, end it before
     we call cond_resched() at the end of the loop body. This is more
     friendly for other tasks.
+V6: Removed redundant btrfs_end_transaction() calls on error, because
+    this is already performed after we exit the loop.
 
- fs/btrfs/volumes.c |   33 ++++++++++++++++++++-------------
- 1 file changed, 20 insertions(+), 13 deletions(-)
+ fs/btrfs/volumes.c |   35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f42e412..0629729 100644
+index f42e412..78f1ea4 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
@@ -143,11 +145,12 @@ index f42e412..0629729 100644
  			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
  						  root_item.uuid,
  						  BTRFS_UUID_KEY_SUBVOL,
-@@ -3528,20 +3539,12 @@ static int btrfs_uuid_scan_kthread(void *data)
+@@ -3526,22 +3537,11 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 			if (ret < 0) {
+ 				pr_warn("btrfs: uuid_tree_add failed %d\n",
  					ret);
- 				btrfs_end_transaction(trans,
- 						      fs_info->uuid_root);
-+				trans = NULL;
+-				btrfs_end_transaction(trans,
+-						      fs_info->uuid_root);
  				break;
  			}
  		}
@@ -165,11 +168,12 @@ index f42e412..0629729 100644
  			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
  						  root_item.received_uuid,
  						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-@@ -3551,17 +3554,19 @@ static int btrfs_uuid_scan_kthread(void *data)
+@@ -3549,19 +3549,18 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 			if (ret < 0) {
+ 				pr_warn("btrfs: uuid_tree_add failed %d\n",
  					ret);
- 				btrfs_end_transaction(trans,
- 						      fs_info->uuid_root);
-+				trans = NULL;
+-				btrfs_end_transaction(trans,
+-						      fs_info->uuid_root);
  				break;
  			}
  		}
@@ -186,7 +190,7 @@ index f42e412..0629729 100644
  		btrfs_release_path(path);
  		if (key.offset < (u64)-1) {
  			key.offset++;
-@@ -3580,6 +3585,8 @@ skip:
+@@ -3580,6 +3579,8 @@ skip:
  
  out:
  	btrfs_free_path(path);

@@ -1,74 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:36770 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751857Ab3H0Nri (ORCPT
+Received: from mail-wg0-f54.google.com ([74.125.82.54]:63036 "EHLO
+	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753472Ab3H0PwF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 09:47:38 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 1BBBC9A06AB
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 07:47:38 -0600 (MDT)
-Date: Tue, 27 Aug 2013 09:47:36 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Zach Brown <zab@redhat.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: add support for asserts
-Message-ID: <20130827134736.GJ29654@localhost.localdomain>
-References: <1377550566-10941-1-git-send-email-jbacik@fusionio.com>
- <20130826215326.GH26818@lenny.home.zabbo.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130826215326.GH26818@lenny.home.zabbo.net>
+	Tue, 27 Aug 2013 11:52:05 -0400
+Received: by mail-wg0-f54.google.com with SMTP id e11so1230068wgh.33
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 08:52:04 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix deadlock in uuid scan kthread
+Date: Tue, 27 Aug 2013 16:51:55 +0100
+Message-Id: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 26, 2013 at 02:53:26PM -0700, Zach Brown wrote:
-> > With this we can
-> > go through and convert any BUG_ON()'s that we have to catch actual programming
-> > mistakes to the new ASSERT() and then fix everybody else to return errors.
-> 
-> I like the sound of that!
-> 
-> > --- a/fs/btrfs/ctree.h
-> > +++ b/fs/btrfs/ctree.h
-> > @@ -3814,6 +3814,22 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
-> >  #define btrfs_debug(fs_info, fmt, args...) \
-> >  	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
-> >  
-> > +#ifdef BTRFS_ASSERT
-> > +
-> > +static inline void assfail(char *expr, char *file, int lin)
-> > +{
-> > +	printk(KERN_ERR "BTRFS assertion failed: %s, file: %s, line: %d",
-> > +	       expr, file, line);
-> > +	BUG();
-> > +}
-> 
-> I'm not sure why this is needed.
-> 
-> > +#define ASSERT(expr)	\
-> > +	(unlikely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
-> 
-> (Passing the assertion is unlikely()?  I know, this is from xfs...
-> still.)
->
+If there's an ongoing transaction when the uuid scan kthread attempts
+to create one, the kthread will block, waiting for that transaction to
+finish while it's keeping locks on the tree root, and in turn the existing
+transaction is waiting for those locks to be free.
 
-Yeah I copy+pasted and then thought about it after I sent it.  I will fix it up.
+The stack trace reported by the kernel follows.
+
+[36700.671601] INFO: task btrfs-uuid:15480 blocked for more than 120 seconds.
+[36700.671602] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671602] btrfs-uuid      D 0000000000000000     0 15480      2 0x00000000
+[36700.671604]  ffff880710bd5b88 0000000000000046 ffff8803d36ba850 0000000000030000
+[36700.671605]  ffff8806d76dc530 ffff880710bd5fd8 ffff880710bd5fd8 ffff880710bd5fd8
+[36700.671607]  ffff8808098ac530 ffff8806d76dc530 ffff880710bd5b98 ffff8805e4508e40
+[36700.671608] Call Trace:
+[36700.671610]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671620]  [<ffffffffa05a3bdf>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
+[36700.671623]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671629]  [<ffffffffa05a5b06>] start_transaction+0x3d6/0x530 [btrfs]
+[36700.671636]  [<ffffffffa05bb1f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
+[36700.671642]  [<ffffffffa05a5fbb>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+[36700.671649]  [<ffffffffa05c8a81>] btrfs_uuid_scan_kthread+0x211/0x3d0 [btrfs]
+[36700.671655]  [<ffffffffa05c8870>] ? __btrfs_open_devices+0x2a0/0x2a0 [btrfs]
+[36700.671657]  [<ffffffff81065fa0>] kthread+0xc0/0xd0
+[36700.671659]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671661]  [<ffffffff816fcd1c>] ret_from_fork+0x7c/0xb0
+[36700.671662]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671663] INFO: task btrfs:15481 blocked for more than 120 seconds.
+[36700.671664] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671665] btrfs           D 0000000000000000     0 15481  15212 0x00000004
+[36700.671666]  ffff880248cbf4c8 0000000000000086 ffff8803d36ba700 ffff8801dbd5c280
+[36700.671668]  ffff880807815c40 ffff880248cbffd8 ffff880248cbffd8 ffff880248cbffd8
+[36700.671669]  ffff8805e86a0000 ffff880807815c40 ffff880248cbf4d8 ffff8801dbd5c280
+[36700.671670] Call Trace:
+[36700.671672]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671679]  [<ffffffffa05d9b0d>] btrfs_tree_lock+0x6d/0x230 [btrfs]
+[36700.671680]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671685]  [<ffffffffa0582829>] btrfs_search_slot+0x999/0xb00 [btrfs]
+[36700.671691]  [<ffffffffa05bd9de>] ? btrfs_lookup_first_ordered_extent+0x5e/0xb0 [btrfs]
+[36700.671698]  [<ffffffffa05e3e54>] __btrfs_write_out_cache+0x8c4/0xa80 [btrfs]
+[36700.671704]  [<ffffffffa05e4362>] btrfs_write_out_cache+0xb2/0xf0 [btrfs]
+[36700.671710]  [<ffffffffa05c4441>] ? free_extent_buffer+0x61/0xc0 [btrfs]
+[36700.671716]  [<ffffffffa0594c82>] btrfs_write_dirty_block_groups+0x562/0x650 [btrfs]
+[36700.671723]  [<ffffffffa0610092>] commit_cowonly_roots+0x171/0x24b [btrfs]
+[36700.671729]  [<ffffffffa05a4dde>] btrfs_commit_transaction+0x4fe/0xa10 [btrfs]
+[36700.671735]  [<ffffffffa0610af3>] create_subvol+0x5c0/0x636 [btrfs]
+[36700.671742]  [<ffffffffa05d49ff>] btrfs_mksubvol.isra.60+0x33f/0x3f0 [btrfs]
+[36700.671747]  [<ffffffffa05d4bf2>] btrfs_ioctl_snap_create_transid+0x142/0x190 [btrfs]
+[36700.671752]  [<ffffffffa05d4c6c>] ? btrfs_ioctl_snap_create+0x2c/0x80 [btrfs]
+[36700.671757]  [<ffffffffa05d4c9e>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
+[36700.671759]  [<ffffffff8113a764>] ? handle_pte_fault+0x84/0x920
+[36700.671764]  [<ffffffffa05d87eb>] btrfs_ioctl+0xf0b/0x1d00 [btrfs]
+[36700.671766]  [<ffffffff8113c120>] ? handle_mm_fault+0x210/0x310
+[36700.671768]  [<ffffffff816f83a4>] ? __do_page_fault+0x284/0x4e0
+[36700.671770]  [<ffffffff81180aa6>] do_vfs_ioctl+0x96/0x550
+[36700.671772]  [<ffffffff81170fe3>] ? __sb_end_write+0x33/0x70
+[36700.671774]  [<ffffffff81180ff1>] SyS_ioctl+0x91/0xb0
+[36700.671775]  [<ffffffff816fcdc2>] system_call_fastpath+0x16/0x1b
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/volumes.c |   25 ++++++++++++++-----------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f42e412..44cd21b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 	int slot;
+ 	struct btrfs_root_item root_item;
+ 	u32 item_size;
+-	struct btrfs_trans_handle *trans;
++	struct btrfs_trans_handle *trans = NULL;
  
-> > +#else
-> > +#define ASSERT(expr)	((void)0)
-> > +#endif
-> 
-> Anyway, if you're going to do it this way, why not:
-> 
-> 	#ifdef BTRFS_ASSERT
-> 	#define btrfs_assert(cond)  BUG_ON(!(cond))
-> 	#else
-> 	#define btrfs_assert(cond)  do { if (cond) ; } while (0)
-> 	#endif
->
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -3509,7 +3509,13 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 				   (int)sizeof(root_item));
+ 		if (btrfs_root_refs(&root_item) == 0)
+ 			goto skip;
+-		if (!btrfs_is_empty_uuid(root_item.uuid)) {
++
++		if (!btrfs_is_empty_uuid(root_item.uuid) ||
++		    !btrfs_is_empty_uuid(root_item.received_uuid)) {
++			if (trans)
++				goto update_tree;
++
++			btrfs_release_path(path);
+ 			/*
+ 			 * 1 - subvol uuid item
+ 			 * 1 - received_subvol uuid item
+@@ -3519,6 +3525,11 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 				ret = PTR_ERR(trans);
+ 				break;
+ 			}
++			continue;
++		} else
++			goto skip;
++update_tree:
++		if (!btrfs_is_empty_uuid(root_item.uuid)) {
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.uuid,
+ 						  BTRFS_UUID_KEY_SUBVOL,
+@@ -3533,15 +3544,6 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 		}
+ 
+ 		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
+-			if (!trans) {
+-				/* 1 - received_subvol uuid item */
+-				trans = btrfs_start_transaction(
+-						fs_info->uuid_root, 1);
+-				if (IS_ERR(trans)) {
+-					ret = PTR_ERR(trans);
+-					break;
+-				}
+-			}
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.received_uuid,
+ 						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+@@ -3557,6 +3559,7 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 
+ 		if (trans) {
+ 			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
++			trans = NULL;
+ 			if (ret)
+ 				break;
+ 		}
+-- 
+1.7.9.5
 
-I like the verbosity, especially with random kernel versions and such, it will
-help me figure out where we BUG_ON()'ed without having to checkout a particular
-version and go hunting.  Thanks,
-
-Josef 

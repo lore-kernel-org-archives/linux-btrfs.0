@@ -1,109 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f42.google.com ([209.85.215.42]:60395 "EHLO
-	mail-la0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752529Ab3H1Bdi (ORCPT
+Received: from mail-wi0-f175.google.com ([209.85.212.175]:48052 "EHLO
+	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752446Ab3H1J2o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 21:33:38 -0400
-Received: by mail-la0-f42.google.com with SMTP id ep20so4154865lab.15
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 18:33:37 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <521D4ADB.8010804@inktank.com>
-References: <alpine.DEB.2.00.1308221731350.2577@cobra.newdream.net>
-	<521D4ADB.8010804@inktank.com>
-Date: Wed, 28 Aug 2013 09:33:36 +0800
-Message-ID: <CAAM7YAnhyFAqhArjV6WQtpAkbnj7er0FCFWU-kc5ybz=REg5uw@mail.gmail.com>
-Subject: Re: bad unlock balance in btrfs_commit_transaction_async
-From: "Yan, Zheng" <ukernel@gmail.com>
-To: Dan Mick <dan.mick@inktank.com>
-Cc: Sage Weil <sage@inktank.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Wed, 28 Aug 2013 05:28:44 -0400
+Received: by mail-wi0-f175.google.com with SMTP id hi5so978958wib.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Aug 2013 02:28:43 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v7] Btrfs: fix deadlock in uuid scan kthread
+Date: Wed, 28 Aug 2013 10:28:34 +0100
+Message-Id: <1377682114-32515-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
+References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 28, 2013 at 8:56 AM, Dan Mick <dan.mick@inktank.com> wrote:
-> Another developer just noticed this in testing; anyone have any ideas?
->
+If there's an ongoing transaction when the uuid scan kthread attempts
+to create one, the kthread will block, waiting for that transaction to
+finish while it's keeping locks on the tree root, and in turn the existing
+transaction is waiting for those locks to be free.
 
-btrfs_ioctl_start_sync() calls btrfs_attach_transaction_barrier() which further
-calls start_transaction() with "type == TRANS_ATTACH".  In start_transaction(),
-sb_start_intwrite() is called when (type & __TRANS_FREEZABLE) is true. but
-(TRANS_ATTACH & __TRANS_FREEZABLE) is false. So we see the bad
-bad unlock balance bug.
+The stack trace reported by the kernel follows.
 
-Yan, Zheng
+[36700.671601] INFO: task btrfs-uuid:15480 blocked for more than 120 seconds.
+[36700.671602] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671602] btrfs-uuid      D 0000000000000000     0 15480      2 0x00000000
+[36700.671604]  ffff880710bd5b88 0000000000000046 ffff8803d36ba850 0000000000030000
+[36700.671605]  ffff8806d76dc530 ffff880710bd5fd8 ffff880710bd5fd8 ffff880710bd5fd8
+[36700.671607]  ffff8808098ac530 ffff8806d76dc530 ffff880710bd5b98 ffff8805e4508e40
+[36700.671608] Call Trace:
+[36700.671610]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671620]  [<ffffffffa05a3bdf>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
+[36700.671623]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671629]  [<ffffffffa05a5b06>] start_transaction+0x3d6/0x530 [btrfs]
+[36700.671636]  [<ffffffffa05bb1f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
+[36700.671642]  [<ffffffffa05a5fbb>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+[36700.671649]  [<ffffffffa05c8a81>] btrfs_uuid_scan_kthread+0x211/0x3d0 [btrfs]
+[36700.671655]  [<ffffffffa05c8870>] ? __btrfs_open_devices+0x2a0/0x2a0 [btrfs]
+[36700.671657]  [<ffffffff81065fa0>] kthread+0xc0/0xd0
+[36700.671659]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671661]  [<ffffffff816fcd1c>] ret_from_fork+0x7c/0xb0
+[36700.671662]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
+[36700.671663] INFO: task btrfs:15481 blocked for more than 120 seconds.
+[36700.671664] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[36700.671665] btrfs           D 0000000000000000     0 15481  15212 0x00000004
+[36700.671666]  ffff880248cbf4c8 0000000000000086 ffff8803d36ba700 ffff8801dbd5c280
+[36700.671668]  ffff880807815c40 ffff880248cbffd8 ffff880248cbffd8 ffff880248cbffd8
+[36700.671669]  ffff8805e86a0000 ffff880807815c40 ffff880248cbf4d8 ffff8801dbd5c280
+[36700.671670] Call Trace:
+[36700.671672]  [<ffffffff816f36b9>] schedule+0x29/0x70
+[36700.671679]  [<ffffffffa05d9b0d>] btrfs_tree_lock+0x6d/0x230 [btrfs]
+[36700.671680]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
+[36700.671685]  [<ffffffffa0582829>] btrfs_search_slot+0x999/0xb00 [btrfs]
+[36700.671691]  [<ffffffffa05bd9de>] ? btrfs_lookup_first_ordered_extent+0x5e/0xb0 [btrfs]
+[36700.671698]  [<ffffffffa05e3e54>] __btrfs_write_out_cache+0x8c4/0xa80 [btrfs]
+[36700.671704]  [<ffffffffa05e4362>] btrfs_write_out_cache+0xb2/0xf0 [btrfs]
+[36700.671710]  [<ffffffffa05c4441>] ? free_extent_buffer+0x61/0xc0 [btrfs]
+[36700.671716]  [<ffffffffa0594c82>] btrfs_write_dirty_block_groups+0x562/0x650 [btrfs]
+[36700.671723]  [<ffffffffa0610092>] commit_cowonly_roots+0x171/0x24b [btrfs]
+[36700.671729]  [<ffffffffa05a4dde>] btrfs_commit_transaction+0x4fe/0xa10 [btrfs]
+[36700.671735]  [<ffffffffa0610af3>] create_subvol+0x5c0/0x636 [btrfs]
+[36700.671742]  [<ffffffffa05d49ff>] btrfs_mksubvol.isra.60+0x33f/0x3f0 [btrfs]
+[36700.671747]  [<ffffffffa05d4bf2>] btrfs_ioctl_snap_create_transid+0x142/0x190 [btrfs]
+[36700.671752]  [<ffffffffa05d4c6c>] ? btrfs_ioctl_snap_create+0x2c/0x80 [btrfs]
+[36700.671757]  [<ffffffffa05d4c9e>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
+[36700.671759]  [<ffffffff8113a764>] ? handle_pte_fault+0x84/0x920
+[36700.671764]  [<ffffffffa05d87eb>] btrfs_ioctl+0xf0b/0x1d00 [btrfs]
+[36700.671766]  [<ffffffff8113c120>] ? handle_mm_fault+0x210/0x310
+[36700.671768]  [<ffffffff816f83a4>] ? __do_page_fault+0x284/0x4e0
+[36700.671770]  [<ffffffff81180aa6>] do_vfs_ioctl+0x96/0x550
+[36700.671772]  [<ffffffff81170fe3>] ? __sb_end_write+0x33/0x70
+[36700.671774]  [<ffffffff81180ff1>] SyS_ioctl+0x91/0xb0
+[36700.671775]  [<ffffffff816fcdc2>] system_call_fastpath+0x16/0x1b
 
-> On 08/22/2013 05:40 PM, Sage Weil wrote:
->>
->> I just noticed that there is a locking imbalance warning with sb_internal
->> in the transaction commit code.  I believe this has only started appearing
->> recently (after I merged -rc5 into my testing tree), but I'm working on
->> confirming that. The error is
->>
->> <4>[27034.835134] =====================================
->> <4>[27034.839854] [ BUG: bad unlock balance detected! ]
->> <4>[27034.844576] 3.11.0-rc5-ceph-00061-g546140d #1 Not tainted
->> <4>[27034.849992] -------------------------------------
->> <4>[27034.854713] ceph-osd/30797 is trying to release lock (sb_internal)
->> at:
->> <4>[27034.861304] [<ffffffffa0148fd8>]
->> btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
->> <4>[27034.868994] but there are no more locks to release!
->> <4>[27034.873887]
->> <4>[27034.873887] other info that might help us debug this:
->> <4>[27034.880448] no locks held by ceph-osd/30797.
->> <4>[27034.884733]
->> <4>[27034.884733] stack backtrace:
->> <4>[27034.889123] CPU: 0 PID: 30797 Comm: ceph-osd Not tainted
->> 3.11.0-rc5-ceph-00061-g546140d #1
->> <4>[27034.897421] Hardware name: Dell Inc. PowerEdge R410/01V648, BIOS
->> 1.6.3 02/07/2011
->> <4>[27034.904938]  ffffffffa0148fd8 ffff88020baf9c68 ffffffff81642d85
->> 0000000000000007
->> <4>[27034.912411]  ffff88021b32deb0 ffff88020baf9c98 ffffffff810ab89e
->> ffff88020cff8000
->> <4>[27034.919883]  0000000000000246 ffff88020aaeddd0 ffffffffa0148fd8
->> ffff88020baf9ce8
->> <4>[27034.927358] Call Trace:
->> <4>[27034.929836]  [<ffffffffa0148fd8>] ?
->> btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
->> <4>[27034.937790]  [<ffffffff81642d85>] dump_stack+0x46/0x58
->> <4>[27034.942951]  [<ffffffff810ab89e>]
->> print_unlock_imbalance_bug+0xfe/0x110
->> <4>[27034.949599]  [<ffffffffa0148fd8>] ?
->> btrfs_commit_transaction_async+0x1c8/0x2c0 [btrfs]
->> <4>[27034.957552]  [<ffffffff810aeafe>] lock_release+0x15e/0x220
->> <4>[27034.963069]  [<ffffffffa0148fff>]
->> btrfs_commit_transaction_async+0x1ef/0x2c0 [btrfs]
->> <4>[27034.970850]  [<ffffffff810af6f5>] ?
->> trace_hardirqs_on_caller+0x105/0x1d0
->> <4>[27034.977587]  [<ffffffffa0177907>] btrfs_ioctl_start_sync+0x47/0xc0
->> [btrfs]
->> <4>[27034.984499]  [<ffffffffa017c575>] btrfs_ioctl+0xe55/0x1af0 [btrfs]
->> <4>[27034.990700]  [<ffffffff8164ab2b>] ? _raw_spin_unlock+0x2b/0x40
->> <4>[27034.996552]  [<ffffffff810b40b5>] ? do_futex+0xa45/0xbb0
->> <4>[27035.001885]  [<ffffffff8119cf0c>] ? fget_light+0x3c/0x130
->> <4>[27035.007302]  [<ffffffff811922a6>] do_vfs_ioctl+0x96/0x560
->> <4>[27035.012720]  [<ffffffff8119cf6e>] ? fget_light+0x9e/0x130
->> <4>[27035.018137]  [<ffffffff8119cf0c>] ? fget_light+0x3c/0x130
->> <4>[27035.023556]  [<ffffffff81192801>] SyS_ioctl+0x91/0xb0
->> <4>[27035.028628]  [<ffffffff813338fe>] ?
->> trace_hardirqs_on_thunk+0x3a/0x3f
->> <4>[27035.035089]  [<ffffffff81653782>] system_call_fastpath+0x16/0x1b
->>
->> This is presumably some breakage in the freeze locking dance that goes on
->> with async commits (btrfs_commit_transaction_async caller takes the freeze
->> semaphore, do_async_commit releases it), but it's not obvious to me what
->> broke yet.  Unless this rings any bells for anyone, I'll go ahead and
->> bisect.
->>
->> Thanks!
->> sage
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+
+V2: Removed wrong assignment of NULL to transaction pointer, and
+    addressed code style comment from Josef.
+V3: Removed unnecessary if statement to check if trans is NULL,
+    as it can't be NULL anymore in that section of the loop.
+V4: Ensure that we don't leak a transaction handle if after looking
+    again for items we don't end up updating anything in the uuid
+    tree. Before we create a transaction, we release the path we
+    found and then repeat the key search and check if the item
+    still needs to be updated - if not we don't use the transaction
+    for that iteration of the loop - if this is true for all iterations,
+    we would leak the transaction handle.
+V5: If a transaction is not used in a loop iteration, end it before
+    we call cond_resched() at the end of the loop body. This is more
+    friendly for other tasks.
+V6: Removed redundant btrfs_end_transaction() calls on error, because
+    this is already performed after we exit the loop.
+V7: On error creating a transaction, after exiting the loop ensure we
+    don't attempt to end a transaction handle that is invalid, that
+    encodes an error (IS_ERR(trans)).
+
+
+ fs/btrfs/volumes.c |   35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f42e412..c628040 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 	int slot;
+ 	struct btrfs_root_item root_item;
+ 	u32 item_size;
+-	struct btrfs_trans_handle *trans;
++	struct btrfs_trans_handle *trans = NULL;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -3503,13 +3503,18 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 		if (item_size < sizeof(root_item))
+ 			goto skip;
+ 
+-		trans = NULL;
+ 		read_extent_buffer(eb, &root_item,
+ 				   btrfs_item_ptr_offset(eb, slot),
+ 				   (int)sizeof(root_item));
+ 		if (btrfs_root_refs(&root_item) == 0)
+ 			goto skip;
+-		if (!btrfs_is_empty_uuid(root_item.uuid)) {
++
++		if (!btrfs_is_empty_uuid(root_item.uuid) ||
++		    !btrfs_is_empty_uuid(root_item.received_uuid)) {
++			if (trans)
++				goto update_tree;
++
++			btrfs_release_path(path);
+ 			/*
+ 			 * 1 - subvol uuid item
+ 			 * 1 - received_subvol uuid item
+@@ -3519,6 +3524,12 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 				ret = PTR_ERR(trans);
+ 				break;
+ 			}
++			continue;
++		} else {
++			goto skip;
++		}
++update_tree:
++		if (!btrfs_is_empty_uuid(root_item.uuid)) {
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.uuid,
+ 						  BTRFS_UUID_KEY_SUBVOL,
+@@ -3526,22 +3537,11 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 			if (ret < 0) {
+ 				pr_warn("btrfs: uuid_tree_add failed %d\n",
+ 					ret);
+-				btrfs_end_transaction(trans,
+-						      fs_info->uuid_root);
+ 				break;
+ 			}
+ 		}
+ 
+ 		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
+-			if (!trans) {
+-				/* 1 - received_subvol uuid item */
+-				trans = btrfs_start_transaction(
+-						fs_info->uuid_root, 1);
+-				if (IS_ERR(trans)) {
+-					ret = PTR_ERR(trans);
+-					break;
+-				}
+-			}
+ 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
+ 						  root_item.received_uuid,
+ 						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+@@ -3549,19 +3549,18 @@ static int btrfs_uuid_scan_kthread(void *data)
+ 			if (ret < 0) {
+ 				pr_warn("btrfs: uuid_tree_add failed %d\n",
+ 					ret);
+-				btrfs_end_transaction(trans,
+-						      fs_info->uuid_root);
+ 				break;
+ 			}
+ 		}
+ 
++skip:
+ 		if (trans) {
+ 			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
++			trans = NULL;
+ 			if (ret)
+ 				break;
+ 		}
+ 
+-skip:
+ 		btrfs_release_path(path);
+ 		if (key.offset < (u64)-1) {
+ 			key.offset++;
+@@ -3580,6 +3579,8 @@ skip:
+ 
+ out:
+ 	btrfs_free_path(path);
++	if (trans && !IS_ERR(trans))
++		btrfs_end_transaction(trans, fs_info->uuid_root);
+ 	if (ret)
+ 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
+ 	else
+-- 
+1.7.9.5
+

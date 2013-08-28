@@ -1,208 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f175.google.com ([209.85.212.175]:48052 "EHLO
-	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752446Ab3H1J2o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Aug 2013 05:28:44 -0400
-Received: by mail-wi0-f175.google.com with SMTP id hi5so978958wib.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Aug 2013 02:28:43 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from mail.virtall.com ([178.63.195.102]:33174 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753184Ab3H1Pkx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Aug 2013 11:40:53 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id 2E6FC3886A3
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Aug 2013 17:40:49 +0200 (CEST)
 To: linux-btrfs@vger.kernel.org
-Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v7] Btrfs: fix deadlock in uuid scan kthread
-Date: Wed, 28 Aug 2013 10:28:34 +0100
-Message-Id: <1377682114-32515-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
-References: <1377618715-30476-1-git-send-email-fdmanana@gmail.com>
+Subject: btrfs device delete missing -> kernel BUG at  fs/btrfs/relocation.c:1055!
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Wed, 28 Aug 2013 17:40:49 +0200
+From: Tomasz Chmielewski <tch@virtall.com>
+Message-ID: <0ce5885cea6d25abb00e393355d86a00@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If there's an ongoing transaction when the uuid scan kthread attempts
-to create one, the kthread will block, waiting for that transaction to
-finish while it's keeping locks on the tree root, and in turn the existing
-transaction is waiting for those locks to be free.
+Just tried to remove a broken disk, which ended in segmentation fault 
+and kernel BUG.
 
-The stack trace reported by the kernel follows.
+Any advice what to do next? This is on 3.11.0-rc7.
 
-[36700.671601] INFO: task btrfs-uuid:15480 blocked for more than 120 seconds.
-[36700.671602] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[36700.671602] btrfs-uuid      D 0000000000000000     0 15480      2 0x00000000
-[36700.671604]  ffff880710bd5b88 0000000000000046 ffff8803d36ba850 0000000000030000
-[36700.671605]  ffff8806d76dc530 ffff880710bd5fd8 ffff880710bd5fd8 ffff880710bd5fd8
-[36700.671607]  ffff8808098ac530 ffff8806d76dc530 ffff880710bd5b98 ffff8805e4508e40
-[36700.671608] Call Trace:
-[36700.671610]  [<ffffffff816f36b9>] schedule+0x29/0x70
-[36700.671620]  [<ffffffffa05a3bdf>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
-[36700.671623]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
-[36700.671629]  [<ffffffffa05a5b06>] start_transaction+0x3d6/0x530 [btrfs]
-[36700.671636]  [<ffffffffa05bb1f4>] ? btrfs_get_token_32+0x64/0xf0 [btrfs]
-[36700.671642]  [<ffffffffa05a5fbb>] btrfs_start_transaction+0x1b/0x20 [btrfs]
-[36700.671649]  [<ffffffffa05c8a81>] btrfs_uuid_scan_kthread+0x211/0x3d0 [btrfs]
-[36700.671655]  [<ffffffffa05c8870>] ? __btrfs_open_devices+0x2a0/0x2a0 [btrfs]
-[36700.671657]  [<ffffffff81065fa0>] kthread+0xc0/0xd0
-[36700.671659]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
-[36700.671661]  [<ffffffff816fcd1c>] ret_from_fork+0x7c/0xb0
-[36700.671662]  [<ffffffff81065ee0>] ? flush_kthread_worker+0xb0/0xb0
-[36700.671663] INFO: task btrfs:15481 blocked for more than 120 seconds.
-[36700.671664] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[36700.671665] btrfs           D 0000000000000000     0 15481  15212 0x00000004
-[36700.671666]  ffff880248cbf4c8 0000000000000086 ffff8803d36ba700 ffff8801dbd5c280
-[36700.671668]  ffff880807815c40 ffff880248cbffd8 ffff880248cbffd8 ffff880248cbffd8
-[36700.671669]  ffff8805e86a0000 ffff880807815c40 ffff880248cbf4d8 ffff8801dbd5c280
-[36700.671670] Call Trace:
-[36700.671672]  [<ffffffff816f36b9>] schedule+0x29/0x70
-[36700.671679]  [<ffffffffa05d9b0d>] btrfs_tree_lock+0x6d/0x230 [btrfs]
-[36700.671680]  [<ffffffff81066760>] ? add_wait_queue+0x60/0x60
-[36700.671685]  [<ffffffffa0582829>] btrfs_search_slot+0x999/0xb00 [btrfs]
-[36700.671691]  [<ffffffffa05bd9de>] ? btrfs_lookup_first_ordered_extent+0x5e/0xb0 [btrfs]
-[36700.671698]  [<ffffffffa05e3e54>] __btrfs_write_out_cache+0x8c4/0xa80 [btrfs]
-[36700.671704]  [<ffffffffa05e4362>] btrfs_write_out_cache+0xb2/0xf0 [btrfs]
-[36700.671710]  [<ffffffffa05c4441>] ? free_extent_buffer+0x61/0xc0 [btrfs]
-[36700.671716]  [<ffffffffa0594c82>] btrfs_write_dirty_block_groups+0x562/0x650 [btrfs]
-[36700.671723]  [<ffffffffa0610092>] commit_cowonly_roots+0x171/0x24b [btrfs]
-[36700.671729]  [<ffffffffa05a4dde>] btrfs_commit_transaction+0x4fe/0xa10 [btrfs]
-[36700.671735]  [<ffffffffa0610af3>] create_subvol+0x5c0/0x636 [btrfs]
-[36700.671742]  [<ffffffffa05d49ff>] btrfs_mksubvol.isra.60+0x33f/0x3f0 [btrfs]
-[36700.671747]  [<ffffffffa05d4bf2>] btrfs_ioctl_snap_create_transid+0x142/0x190 [btrfs]
-[36700.671752]  [<ffffffffa05d4c6c>] ? btrfs_ioctl_snap_create+0x2c/0x80 [btrfs]
-[36700.671757]  [<ffffffffa05d4c9e>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
-[36700.671759]  [<ffffffff8113a764>] ? handle_pte_fault+0x84/0x920
-[36700.671764]  [<ffffffffa05d87eb>] btrfs_ioctl+0xf0b/0x1d00 [btrfs]
-[36700.671766]  [<ffffffff8113c120>] ? handle_mm_fault+0x210/0x310
-[36700.671768]  [<ffffffff816f83a4>] ? __do_page_fault+0x284/0x4e0
-[36700.671770]  [<ffffffff81180aa6>] do_vfs_ioctl+0x96/0x550
-[36700.671772]  [<ffffffff81170fe3>] ? __sb_end_write+0x33/0x70
-[36700.671774]  [<ffffffff81180ff1>] SyS_ioctl+0x91/0xb0
-[36700.671775]  [<ffffffff816fcdc2>] system_call_fastpath+0x16/0x1b
+# btrfs device delete missing /home
+(after a few minutes)
+Segmentation fault
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+# btrfs fi show
+Label: 'test-btrfs'  uuid: 60f1759c-45f6-4484-9f60-66a4e9bbf2b6
+         Total devices 3 FS bytes used 1.19TB
+         devid    4 size 2.56TB used 0.00 path /dev/sda4
+         devid    3 size 2.56TB used 1.19TB path /dev/sdb4
+         *** Some devices missing
 
-V2: Removed wrong assignment of NULL to transaction pointer, and
-    addressed code style comment from Josef.
-V3: Removed unnecessary if statement to check if trans is NULL,
-    as it can't be NULL anymore in that section of the loop.
-V4: Ensure that we don't leak a transaction handle if after looking
-    again for items we don't end up updating anything in the uuid
-    tree. Before we create a transaction, we release the path we
-    found and then repeat the key search and check if the item
-    still needs to be updated - if not we don't use the transaction
-    for that iteration of the loop - if this is true for all iterations,
-    we would leak the transaction handle.
-V5: If a transaction is not used in a loop iteration, end it before
-    we call cond_resched() at the end of the loop body. This is more
-    friendly for other tasks.
-V6: Removed redundant btrfs_end_transaction() calls on error, because
-    this is already performed after we exit the loop.
-V7: On error creating a transaction, after exiting the loop ensure we
-    don't attempt to end a transaction handle that is invalid, that
-    encodes an error (IS_ERR(trans)).
+Btrfs v0.20-rc1-324-g650e656
+
+[  262.810201] device label crawler-btrfs devid 3 transid 97972 
+/dev/sdb4
+[  262.810685] btrfs: allowing degraded mounts
+[  262.810739] btrfs: force zlib compression
+[  262.810789] btrfs: disk space caching is enabled
+[  262.901838] btrfs: bdev (null) errs: wr 0, rd 2, flush 0, corrupt 0, 
+gen 0
+[  552.010306] btrfs: relocating block group 3955761348608 flags 17
+[  926.802956] btrfs: found 2364 extents
+[ 1171.285213] btrfs: found 2084 extents
+[ 1304.978086] btrfs: relocating block group 3954687606784 flags 17
+[ 1457.655947] btrfs: found 6491 extents
+[ 1488.556627] ------------[ cut here ]------------
+[ 1488.556683] kernel BUG at fs/btrfs/relocation.c:1055!
+[ 1488.556735] invalid opcode: 0000 [#1] SMP
+[ 1488.556866] Modules linked in: tun cpufreq_powersave cpufreq_ondemand 
+cpufreq_conservative cpufreq_stats ipv6 btrfs zlib_deflate ext3 jbd loop 
+ehci_pci ehci_hcd pcspkr i2c_i801 lpc_ich i2c_core mfd_core acpi_cpufreq 
+mperf button video ext4 crc16 jbd2 mbcache freq_table aacraid 3w_9xxx 
+3w_xxxx raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor 
+async_tx xor raid6_pq raid1 raid0 sata_nv sata_sil sata_via sg sd_mod 
+ahci libahci libata scsi_mod r8169 mii
+[ 1488.559137] CPU: 1 PID: 4563 Comm: btrfs Not tainted 3.11.0-rc7 #1
+[ 1488.559243] Hardware name: System manufacturer System Product 
+Name/P8H67-M PRO, BIOS 1106 10/17/2011
+[ 1488.559408] task: ffff8808040416e0 ti: ffff8807f9e22000 task.ti: 
+ffff8807f9e22000
+[ 1488.559569] RIP: 0010:[<ffffffffa035f729>]  [<ffffffffa035f729>] 
+build_backref_tree+0xb10/0xe91 [btrfs]
+[ 1488.559793] RSP: 0018:ffff8807f9e23928  EFLAGS: 00010246
+[ 1488.559898] RAX: ffff8807f9e23900 RBX: ffff8807f9e239a0 RCX: 
+ffff8807ffd73d50
+[ 1488.560006] RDX: ffff8807f9e239a0 RSI: ffff8807ffd73d40 RDI: 
+ffff880813fa0700
+[ 1488.560113] RBP: ffff8807f9e23a18 R08: ffff880813fa0780 R09: 
+0000000000001000
+[ 1488.560221] R10: 0000000000001000 R11: 0000160000000000 R12: 
+0000000000000000
+[ 1488.560329] R13: ffff8807ffd73d50 R14: ffff8807f9e239b0 R15: 
+ffff880800620800
+[ 1488.560437] FS:  00007f3c96d2a740(0000) GS:ffff88083fa40000(0000) 
+knlGS:0000000000000000
+[ 1488.560599] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 1488.560703] CR2: 00007f5c7209d680 CR3: 00000007e867c000 CR4: 
+00000000000407e0
+[ 1488.560810] Stack:
+[ 1488.560908]  0000000000000000 ffff880813fa0300 ffff880813fa0700 
+ffff8807ffd73aa0
+[ 1488.561230]  ffff880800620924 ffff880800620924 ffff880800620920 
+ffff880800620820
+[ 1488.561552]  ffff88080fb6b1b0 ffff88080fb6b000 ffff880813fa0e80 
+ffff8807f9e239a0
+[ 1488.561874] Call Trace:
+[ 1488.561988]  [<ffffffffa036027c>] relocate_tree_blocks+0x1c0/0x544 
+[btrfs]
+[ 1488.562103]  [<ffffffffa0303fdb>] ? btrfs_release_path+0x6b/0x8a 
+[btrfs]
+[ 1488.562222]  [<ffffffffa0361423>] relocate_block_group+0x23f/0x503 
+[btrfs]
+[ 1488.562340]  [<ffffffffa0361834>] 
+btrfs_relocate_block_group+0x14d/0x281 [btrfs]
+[ 1488.562514]  [<ffffffffa0341124>] 
+btrfs_relocate_chunk.isra.66+0x58/0x60e [btrfs]
+[ 1488.562686]  [<ffffffffa034e39c>] ? 
+btrfs_set_lock_blocking_rw+0x89/0xb5 [btrfs]
+[ 1488.562853]  [<ffffffffa0303ee9>] ? btrfs_set_path_blocking+0x23/0x54 
+[btrfs]
+[ 1488.562968]  [<ffffffffa030871a>] ? btrfs_search_slot+0x718/0x772 
+[btrfs]
+[ 1488.563088]  [<ffffffffa033d432>] ? free_extent_buffer+0x77/0x7c 
+[btrfs]
+[ 1488.563208]  [<ffffffffa034383b>] btrfs_shrink_device+0x23c/0x3a5 
+[btrfs]
+[ 1488.563327]  [<ffffffffa034688c>] btrfs_rm_device+0x292/0x68f [btrfs]
+[ 1488.563445]  [<ffffffffa034cceb>] btrfs_ioctl+0x918/0x18f9 [btrfs]
+[ 1488.563554]  [<ffffffff81164636>] ? avc_has_perm_flags+0x32/0xf7
+[ 1488.563663]  [<ffffffff8102e937>] ? __do_page_fault+0x34f/0x3f3
+[ 1488.563772]  [<ffffffff810fd6fd>] vfs_ioctl+0x21/0x34
+[ 1488.563877]  [<ffffffff810fdf4f>] do_vfs_ioctl+0x3b1/0x3f4
+[ 1488.563984]  [<ffffffff810fdfe4>] SyS_ioctl+0x52/0x82
+[ 1488.564091]  [<ffffffff8137dad2>] system_call_fastpath+0x16/0x1b
+[ 1488.564195] Code: 60 71 fd 49 89 40 50 49 89 40 58 49 8b 40 58 4d 89 
+68 58 49 83 c0 50 4d 89 45 00 49 89 45 08 4c 89 28 e9 aa 00 00 00 a8 10 
+75 02 <0f> 0b 83 e0 01 41 39 c4 74 02 0f 0b 45 85 e4 75 32 49 8b 70 18
+[ 1488.567049] RIP  [<ffffffffa035f729>] build_backref_tree+0xb10/0xe91 
+[btrfs]
+[ 1488.567207]  RSP <ffff8807f9e23928>
+[ 1488.567325] ---[ end trace 1c4992d3332e9f0f ]---
 
 
- fs/btrfs/volumes.c |   35 ++++++++++++++++++-----------------
- 1 file changed, 18 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f42e412..c628040 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3465,7 +3465,7 @@ static int btrfs_uuid_scan_kthread(void *data)
- 	int slot;
- 	struct btrfs_root_item root_item;
- 	u32 item_size;
--	struct btrfs_trans_handle *trans;
-+	struct btrfs_trans_handle *trans = NULL;
- 
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -3503,13 +3503,18 @@ static int btrfs_uuid_scan_kthread(void *data)
- 		if (item_size < sizeof(root_item))
- 			goto skip;
- 
--		trans = NULL;
- 		read_extent_buffer(eb, &root_item,
- 				   btrfs_item_ptr_offset(eb, slot),
- 				   (int)sizeof(root_item));
- 		if (btrfs_root_refs(&root_item) == 0)
- 			goto skip;
--		if (!btrfs_is_empty_uuid(root_item.uuid)) {
-+
-+		if (!btrfs_is_empty_uuid(root_item.uuid) ||
-+		    !btrfs_is_empty_uuid(root_item.received_uuid)) {
-+			if (trans)
-+				goto update_tree;
-+
-+			btrfs_release_path(path);
- 			/*
- 			 * 1 - subvol uuid item
- 			 * 1 - received_subvol uuid item
-@@ -3519,6 +3524,12 @@ static int btrfs_uuid_scan_kthread(void *data)
- 				ret = PTR_ERR(trans);
- 				break;
- 			}
-+			continue;
-+		} else {
-+			goto skip;
-+		}
-+update_tree:
-+		if (!btrfs_is_empty_uuid(root_item.uuid)) {
- 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
- 						  root_item.uuid,
- 						  BTRFS_UUID_KEY_SUBVOL,
-@@ -3526,22 +3537,11 @@ static int btrfs_uuid_scan_kthread(void *data)
- 			if (ret < 0) {
- 				pr_warn("btrfs: uuid_tree_add failed %d\n",
- 					ret);
--				btrfs_end_transaction(trans,
--						      fs_info->uuid_root);
- 				break;
- 			}
- 		}
- 
- 		if (!btrfs_is_empty_uuid(root_item.received_uuid)) {
--			if (!trans) {
--				/* 1 - received_subvol uuid item */
--				trans = btrfs_start_transaction(
--						fs_info->uuid_root, 1);
--				if (IS_ERR(trans)) {
--					ret = PTR_ERR(trans);
--					break;
--				}
--			}
- 			ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root,
- 						  root_item.received_uuid,
- 						 BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-@@ -3549,19 +3549,18 @@ static int btrfs_uuid_scan_kthread(void *data)
- 			if (ret < 0) {
- 				pr_warn("btrfs: uuid_tree_add failed %d\n",
- 					ret);
--				btrfs_end_transaction(trans,
--						      fs_info->uuid_root);
- 				break;
- 			}
- 		}
- 
-+skip:
- 		if (trans) {
- 			ret = btrfs_end_transaction(trans, fs_info->uuid_root);
-+			trans = NULL;
- 			if (ret)
- 				break;
- 		}
- 
--skip:
- 		btrfs_release_path(path);
- 		if (key.offset < (u64)-1) {
- 			key.offset++;
-@@ -3580,6 +3579,8 @@ skip:
- 
- out:
- 	btrfs_free_path(path);
-+	if (trans && !IS_ERR(trans))
-+		btrfs_end_transaction(trans, fs_info->uuid_root);
- 	if (ret)
- 		pr_warn("btrfs: btrfs_uuid_scan_kthread failed %d\n", ret);
- 	else
 -- 
-1.7.9.5
+Tomasz Chmielewski
 

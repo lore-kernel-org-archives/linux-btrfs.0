@@ -1,77 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:35659 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752189Ab3H2UIP convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 16:08:15 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 55E019A06B0
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 14:08:15 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <20130829200306.GF10591@localhost.localdomain>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>,
-        Lev Vainblat <lev@zadarastorage.com>,
-        Shyam Kaushik <shyam@zadarastorage.com>
-References: <CAOcd+r0PfcX9Xs9ND8zXui3-YyJh+9THz1qrg7u9DsH1L-uO2g@mail.gmail.com>
- <20130829200306.GF10591@localhost.localdomain>
-Message-ID: <20130829200812.30052.29217@localhost.localdomain>
-Subject: Re: btrfs:async-thread: atomic_start_pending=1 is set, but it's too late
-Date: Thu, 29 Aug 2013 16:08:12 -0400
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56547 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756104Ab3H2UTO convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 16:19:14 -0400
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Question: How can I recover this partition? (unable to find logical $hugenum len 4096)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130829195322.GS3115@carfax.org.uk>
+Date: Thu, 29 Aug 2013 14:19:13 -0600
+Cc: Zach Brown <zab@redhat.com>, Nick Lee <email@nickle.es>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <2D27D640-86E0-4E49-8874-81249DF9919A@colorremedies.com>
+References: <6A12FF1B-5E1A-4F6F-92DA-41E52152E6F2@nickle.es> <EA37CDC0-8D44-45ED-8266-0E1CDECBE3EE@nickle.es> <CA17D410-C4E1-4F82-A0FF-CFA6D725E5D2@colorremedies.com> <CAGURm2FS=YTuBpbrg7BV=Un8ZCp9xYZae-WuqhjV29xXA7e0jw@mail.gmail.com> <E76A410A-0CEF-47D7-A501-E2DDF0230735@colorremedies.com> <20130826193110.GO3115@carfax.org.uk> <20130829173519.GN26818@lenny.home.zabbo.net> <528DF163-08F5-412D-8351-ACC853AC418D@colorremedies.com> <20130829194049.GR3115@carfax.org.uk> <0E1979CF-25EC-47B2-B74E-9870F3D9C626@colorremedies.com> <20130829195322.GS3115@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Josef Bacik (2013-08-29 16:03:06)
-> On Mon, Aug 26, 2013 at 05:16:42PM +0300, Alex Lyakas wrote:
-> > Greetings all,
-> > I see a following issue with spawning new threads for btrfs_workers
-> > that have atomic_worker_start set:
-> > 
-> > # I have BTRFS that has 24Gb of total metadata, out of which extent
-> > tree takes 11Gb; space_cache option is not used.
-> > # After mouting, cache_block_group() triggers ~250 work items to
-> > cache-in the needed block groups.
-> > # At this point, fs_info->caching_workers has one thread, which is
-> > considered "idle".
-> > # Work items start to add to this thread's "pending" list, until this
-> > thread becomes considered "busy".
-> > # Now workers->atomic_worker_start is set, but
-> > check_pending_worker_creates() has not run yet (it is called only from
-> > worker_loop), so the same single thread is picked as "fallback".
-> > 
-> > The problem is that this thread is still running the "caching_thread"
-> > function, scanning for EXTENT_ITEMs of the first block-group. This
-> > takes 3-4seconds for 1Gb block group.
-> > 
-> > # Once caching_thread() exits, check_pending_worker_creates() is
-> > called, and creates the second thread, but it's too late, because all
-> > the 250 work items are already sitting in the first thread's "pending"
-> > list. So the  second thread doesn't help at all.
-> > 
-> > As a result, all block-group caching is performed by the same thread,
-> > which, due to one-by-one scanning of EXTENT_ITEMs, takes forever for
-> > this BTRFS.
-> > 
-> > How this can be fixed?
-> > - can perhaps check_pending_worker_creates() be called out of
-> > worker_loop, e.g., by find_worker()? Instead of just setting
-> > workers->atomic_start_pending?
-> > - maybe for fs_info->caching_workers we don't have to create new
-> > workers asynchronously, so we can pass NULL for async_helper in
-> > btrfs_init_workers()? (probably we have to, just checking)
+
+On Aug 29, 2013, at 1:53 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+
+> On Thu, Aug 29, 2013 at 01:44:54PM -0600, Chris Murphy wrote:
+>> 
+>> Certainly, if known for sure it won't be more than 30 seconds?
 > 
-> So I looked at this, and I'm pretty sure we have an async_helper just because of
-> copy+paste.  "Hey I want a new async group, let me copy this other one and
-> change the name!"  So yes let's just pass NULL here.  In fact the only cases
-> that we should be using an async helper is for super critical areas, so I'm
-> pretty sure _most_ of the cases that specify an async helper don't need to.
-> Chris is this correct, or am I missing something?  Thanks,
+>   Mmm... it'll depend on the setting of the commit period, which up
+> until a couple of weeks ago was always 30s, but someone posted a patch
+> to give it a config knob…
 
-No, I think we can just turn off the async start here.
 
--chris
 
+"Proceeding will roll back the file system to a previous state, and may cause the loss of successfully written data since the last commit period (30 seconds by default). Proceed? (Y/N)"
+
+
+Chris Murphy

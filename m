@@ -1,36 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54184 "EHLO mx1.redhat.com"
+Received: from mail.virtall.com ([178.63.195.102]:58366 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756748Ab3H2TAt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 15:00:49 -0400
-Date: Thu, 29 Aug 2013 12:00:45 -0700
-From: Zach Brown <zab@redhat.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: optimize key searches in btrfs_search_slot
-Message-ID: <20130829190045.GP26818@lenny.home.zabbo.net>
-References: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
- <1377784766-7552-1-git-send-email-fdmanana@gmail.com>
- <20130829180816.GO26818@lenny.home.zabbo.net>
- <20130829183532.GC10591@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130829183532.GC10591@localhost.localdomain>
+	id S1755328Ab3H2TBp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 15:01:45 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id EF211389B5D
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 21:01:41 +0200 (CEST)
+Received: from localhost (srv1.virtall.com [78.46.87.16])
+	by mail.virtall.com (Postfix) with ESMTPSA id AC19D389A62
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 21:01:40 +0200 (CEST)
+Date: Fri, 30 Aug 2013 03:01:32 +0800
+From: Tomasz Chmielewski <tch@virtall.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: "btrfs device delete missing" - why does it write on healthy
+ device?
+Message-ID: <20130830030132.0cfafc94@virtall.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > We can replace all that stuff with two easy memcmp_extent_buffers()
-> > which vanish if ASSERT is a nop. 
-> 
-> Actually we can't since we have a cpu key and the keys in the eb are disk keys.
-> So maybe keep what we have here and wrap it completely in CONFIG_BTRFS_ASSERT?
+So I've removed a missing device, which took some time:
 
-I could have sworn that I checked that the input was a disk key.
+# time btrfs device delete missing /home
 
-In that case, then, I'd put all this off in a helper function that's
-called in the asserts that swabs to a disk key and then does the memcmp.
-All this fiddly assert junk (which just compares keys!) doesn't belong
-implemented by hand in this trivial helper.
+real    1512m33.763s
+user    0m0.000s
+sys     121m37.740s
 
-- z
+OK, it needs time, fine.
+
+
+And shifted quite large amounts of data:
+
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sda             347.00         0.37        16.24      34050    1512249
+sdb             910.89        13.46        18.77    1252768    1747442
+
+
+New device was sda - so it's expected it wrote quite a lot of data
+there.
+
+But why did it write so much on sdb (even more than on sda)? With
+software RAID-1, when replacing a failed device, the amount of reads
+from one drive is equal to the writes on the other drive; there is no
+writing on the healthy drive.
+
+
+# btrfs filesystem show
+Label: 'test-btrfs'  uuid: 60f1759c-45f6-4484-9f60-66a4e9bbf2b6
+        Total devices 2 FS bytes used 1.19TB
+        devid    3 size 2.56TB used 1.19TB path /dev/sdb4
+        devid    4 size 2.56TB used 1.19TB path /dev/sda4
+
+Btrfs v0.20-rc1-324-g650e656
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

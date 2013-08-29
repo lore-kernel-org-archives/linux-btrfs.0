@@ -1,45 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:53488 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754443Ab3H2TfD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 15:35:03 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 9FFD37C0696
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 13:35:01 -0600 (MDT)
-Date: Thu, 29 Aug 2013 15:34:59 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: allocate the free space by the existed max extent
- size when ENOSPC
-Message-ID: <20130829193459.GD10591@localhost.localdomain>
-References: <1377755258-2722-1-git-send-email-miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1377755258-2722-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:22214 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755730Ab3H2Th7 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 15:37:59 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Question: How can I recover this partition? (unable to find logical $hugenum len 4096)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130829173519.GN26818@lenny.home.zabbo.net>
+Date: Thu, 29 Aug 2013 13:37:51 -0600
+Cc: Hugo Mills <hugo@carfax.org.uk>, Nick Lee <email@nickle.es>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <528DF163-08F5-412D-8351-ACC853AC418D@colorremedies.com>
+References: <5EB2ECAC-9A8C-4403-8630-944B646DE3B8@nickle.es> <DD09B4EA-9F87-4D18-8B7A-EEF2FFD6A7FE@nickle.es> <EC688346-BA9C-4077-A301-12FFE5463121@colorremedies.com> <A19C7607-0BF4-4C40-B9A3-F94144034B72@colorremedies.com> <6A12FF1B-5E1A-4F6F-92DA-41E52152E6F2@nickle.es> <EA37CDC0-8D44-45ED-8266-0E1CDECBE3EE@nickle.es> <CA17D410-C4E1-4F82-A0FF-CFA6D725E5D2@colorremedies.com> <CAGURm2FS=YTuBpbrg7BV=Un8ZCp9xYZae-WuqhjV29xXA7e0jw@mail.gmail.com> <E76A410A-0CEF-47D7-A501-E2DDF0230735@colorremedies.com> <20130826193110.GO3115@carfax.org.uk> <20130829173519.GN26818@lenny.home.zabbo.net>
+To: Zach Brown <zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 29, 2013 at 01:47:38PM +0800, Miao Xie wrote:
-> By the current code, if the requested size is very large, and all the extents
-> in the free space cache are small, we will waste lots of the cpu time to cut
-> the requested size in half and search the cache again and again until it gets
-> down to the size the allocator can return. In fact, we can know the max extent
-> size in the cache after the first search, so we needn't cut the size in half
-> repeatedly, and just use the max extent size directly. This way can save
-> lots of cpu time and make the performance grow up when there are only fragments
-> in the free space cache.
-> 
-> According to my test, if there are only 4KB free space extents in the fs,
-> and the total size of those extents are 256MB, we can reduce the execute
-> time of the following test from 5.4s to 1.4s.
->   dd if=/dev/zero of=<testfile> bs=1MB count=1 oflag=sync
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 
-This breaks one of the free space cache unit tests, please enable the sanity
-tests when you mess with free-space-cache.c so you can be sure you aren't
-breaking anything.  Thanks,
+On Aug 29, 2013, at 11:35 AM, Zach Brown <zab@redhat.com> wrote:
 
-Josef
+>>   If those fail, then look in dmesg for errors relating to the log
+>> tree -- if that's corrupt and can't be read (or causes a crash), use
+>> btrfs-zero-log.
+> 
+> In a bit of a tangent:
+> 
+> btrfs-zero-log throws away data that fsync/sync could have previously
+> claimed was stable on disk.
+> 
+> Given how often this is thrown around as a solution to a broken
+> partition, should the tool jump up and down and make it clear that it's
+> about to roll the file system back?  This seems like relevant
+> information.
+> 
+> Right now, as far as I can tell, it's completely undocumented and
+> silent.
+
+Yes, I think it helps remove some burden on the list answering questions about a tool that doesn't have any documentation, to have a warning.
+
+How much longer will btrfs-zero-log be needed? If whatever it's doing isn't obviated by future improvements to btrfsck, and this sort of big hammer approach is still needed in some worse case scenarios, then it probably hurts no one to flag the user with essentially how you described it. I think documentation is a greater burden to create, and less likely to be consulted.
+
+"Proceeding will roll back the file system to a previous state, and may cause the loss of successfully written data. Proceed? (Y/N)"
+
+Alternative language could include a suggestion or reminder of what should be tried before proceeding, if applicable.
+
+
+
+Chris Murphy

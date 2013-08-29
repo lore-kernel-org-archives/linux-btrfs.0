@@ -1,42 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36694 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754297Ab3H2U2n convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 16:28:43 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
-Subject: Re: Question: How can I recover this partition? (unable to find logical $hugenum len 4096)
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <2D27D640-86E0-4E49-8874-81249DF9919A@colorremedies.com>
-Date: Thu, 29 Aug 2013 14:28:40 -0600
-Cc: Zach Brown <zab@redhat.com>, Nick Lee <email@nickle.es>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <D4E3996A-96B3-439E-B54F-BFA20F999E75@colorremedies.com>
-References: <6A12FF1B-5E1A-4F6F-92DA-41E52152E6F2@nickle.es> <EA37CDC0-8D44-45ED-8266-0E1CDECBE3EE@nickle.es> <CA17D410-C4E1-4F82-A0FF-CFA6D725E5D2@colorremedies.com> <CAGURm2FS=YTuBpbrg7BV=Un8ZCp9xYZae-WuqhjV29xXA7e0jw@mail.gmail.com> <E76A410A-0CEF-47D7-A501-E2DDF0230735@colorremedies.com> <20130826193110.GO3115@carfax.org.uk> <20130829173519.GN26818@lenny.home.zabbo.net> <528DF163-08F5-412D-8351-ACC853AC418D@colorremedies.com> <20130829194049.GR3115@carfax.org.uk> <0E1979CF-25EC-47B2-B74E-9870F3D9C626@colorremedies.com> <20130829195322.GS3115@carfax.org.uk> <2D27D640-86E0-4E49-8874-81249DF9919A@colorremedies.com>
-To: Hugo Mills <hugo@carfax.org.uk>
+Received: from dkim1.fusionio.com ([66.114.96.53]:54230 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757347Ab3H2Upf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 16:45:35 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 9ED617C0696
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 14:45:34 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id 4l0KLJp2fMvMk6QT (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 14:45:34 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: only update disk_i_size as we remove extents
+Date: Thu, 29 Aug 2013 16:45:31 -0400
+Message-ID: <1377809131-25425-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This fixes a problem where if we fail a truncate we will leave the i_size set
+where we wanted to truncate to instead of where we were able to truncate to.
+Fix this by making btrfs_truncate_inode_items do the disk_i_size update as it
+removes extents, that way it will always be consistent with where its extents
+are.  Then if the truncate fails at all we can update the in-ram i_size with
+what we have on disk and delete the orphan item.  Thanks,
 
-On Aug 29, 2013, at 2:19 PM, Chris Murphy <lists@colorremedies.com> wrote:
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |   31 ++++++++++++++++++++++++++++---
+ 1 files changed, 28 insertions(+), 3 deletions(-)
 
-> 
-> On Aug 29, 2013, at 1:53 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> 
->> On Thu, Aug 29, 2013 at 01:44:54PM -0600, Chris Murphy wrote:
->>> 
->>> Certainly, if known for sure it won't be more than 30 seconds?
->> 
->>  Mmm... it'll depend on the setting of the commit period, which up
->> until a couple of weeks ago was always 30s, but someone posted a patch
->> to give it a config knob…
-> 
-> 
-> 
-> "Proceeding will roll back the file system to a previous state, and may cause the loss of successfully written data since the last commit period (30 seconds by default). Proceed? (Y/N)"
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 11b5927..26992ee 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3861,6 +3861,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	u64 extent_num_bytes = 0;
+ 	u64 extent_offset = 0;
+ 	u64 item_end = 0;
++	u64 last_size = (u64)-1;
+ 	u32 found_type = (u8)-1;
+ 	int found_extent;
+ 	int del_item;
+@@ -3958,6 +3959,11 @@ search_again:
+ 		if (found_type != BTRFS_EXTENT_DATA_KEY)
+ 			goto delete;
+ 
++		if (del_item)
++			last_size = found_key.offset;
++		else
++			last_size = new_size;
++
+ 		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
+ 			u64 num_dec;
+ 			extent_start = btrfs_file_extent_disk_bytenr(leaf, fi);
+@@ -4069,6 +4075,8 @@ out:
+ 			btrfs_abort_transaction(trans, root, ret);
+ 	}
+ error:
++	if (last_size != (u64)-1)
++		btrfs_ordered_update_i_size(inode, last_size, NULL);
+ 	btrfs_free_path(path);
+ 	return err;
+ }
+@@ -4397,8 +4405,26 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		btrfs_inode_resume_unlocked_dio(inode);
+ 
+ 		ret = btrfs_truncate(inode);
+-		if (ret && inode->i_nlink)
+-			btrfs_orphan_del(NULL, inode);
++		if (ret && inode->i_nlink) {
++			int err;
++
++			/*
++			 * failed to truncate, disk_i_size is only adjusted down
++			 * as we remove extents, so it should represent the true
++			 * size of the inode, so reset the in memory size and
++			 * delete our orphan entry.
++			 */
++			trans = btrfs_join_transaction(root);
++			if (IS_ERR(trans)) {
++				btrfs_orphan_del(NULL, inode);
++				return ret;
++			}
++			i_size_write(inode, BTRFS_I(inode)->disk_i_size);
++			err = btrfs_orphan_del(trans, inode);
++			if (err)
++				btrfs_abort_transaction(trans, root, err);
++			btrfs_end_transaction(trans, root);
++		}
+ 	}
+ 
+ 	return ret;
+@@ -7553,7 +7579,6 @@ static int btrfs_truncate(struct inode *inode)
+ 	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
+ 
+ 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
+-	btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
+ 
+ 	/*
+ 	 * Yes ladies and gentelment, this is indeed ugly.  The fact is we have
+-- 
+1.7.7.6
 
-And an important side question is whether "may" is the correct word, or if it should be "will" cause loss of…
-
-
-Chris Murphy

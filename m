@@ -1,238 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:46485 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752585Ab3H2WSJ (ORCPT
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:35344 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756032Ab3H2WTY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 18:18:09 -0400
-Received: by mail-we0-f171.google.com with SMTP id p57so972171wes.16
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 15:18:08 -0700 (PDT)
+	Thu, 29 Aug 2013 18:19:24 -0400
+Received: by mail-wg0-f45.google.com with SMTP id y10so242346wgg.24
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 15:19:23 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20130829195540.GE10591@localhost.localdomain>
-References: <CAOcd+r3zDtf3uNs5YOk=9LhGannN2WK-CpF0PQMdrnu58phBiw@mail.gmail.com>
-	<20130829143831.GB10591@localhost.localdomain>
-	<CAOcd+r1DoriTSRUiFB3sj3hu0cna9UyPA7G6qxCryrb0Rgo9qg@mail.gmail.com>
-	<20130829195540.GE10591@localhost.localdomain>
-Date: Fri, 30 Aug 2013 01:18:08 +0300
-Message-ID: <CAOcd+r3w5Q5jjCDSdZFm-5mH0Q_i2Dr_4FYQPTMegwMv28eujw@mail.gmail.com>
-Subject: Re: [PATCH] Notify caching_thread()s to give up on extent_commit_sem
- when needed.
+In-Reply-To: <20130829200812.30052.29217@localhost.localdomain>
+References: <CAOcd+r0PfcX9Xs9ND8zXui3-YyJh+9THz1qrg7u9DsH1L-uO2g@mail.gmail.com>
+	<20130829200306.GF10591@localhost.localdomain>
+	<20130829200812.30052.29217@localhost.localdomain>
+Date: Fri, 30 Aug 2013 01:19:23 +0300
+Message-ID: <CAOcd+r1kf8USZa=wLkdbWuV9cAYo+fYoW=noGVskyD-jJGnzww@mail.gmail.com>
+Subject: Re: btrfs:async-thread: atomic_start_pending=1 is set, but it's too late
 From: Alex Lyakas <alex.btrfs@zadarastorage.com>
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Lev Vainblat <lev@zadarastorage.com>,
+        Shyam Kaushik <shyam@zadarastorage.com>,
+        Chris Mason <chris.mason@fusionio.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 29, 2013 at 10:55 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Thu, Aug 29, 2013 at 10:09:29PM +0300, Alex Lyakas wrote:
->> Hi Josef,
->>
->> On Thu, Aug 29, 2013 at 5:38 PM, Josef Bacik <jbacik@fusionio.com> wrote:
->> > On Thu, Aug 29, 2013 at 01:31:05PM +0300, Alex Lyakas wrote:
->> >> caching_thread()s do all their work under read access to extent_commit_sem.
->> >> They give up on this read access only when need_resched() tells them, or
->> >> when they exit. As a result, somebody that wants a WRITE access to this sem,
->> >> might wait for a long time. Especially this is problematic in
->> >> cache_block_group(),
->> >> which can be called on critical paths like find_free_extent() and in commit
->> >> path via commit_cowonly_roots().
->> >>
->> >> This patch is an RFC, that attempts to fix this problem, by notifying the
->> >> caching threads to give up on extent_commit_sem.
->> >>
->> >> On a system with a lot of metadata (~20Gb total metadata, ~10Gb extent tree),
->> >> with increased number of caching_threads, commits were very slow,
->> >> stuck in commit_cowonly_roots, due to this issue.
->> >> With this patch, commits no longer get stuck in commit_cowonly_roots.
->> >>
+Thanks, Chris, Josef, for confirming!
+
+On Thu, Aug 29, 2013 at 11:08 PM, Chris Mason <clmason@fusionio.com> wrote:
+> Quoting Josef Bacik (2013-08-29 16:03:06)
+>> On Mon, Aug 26, 2013 at 05:16:42PM +0300, Alex Lyakas wrote:
+>> > Greetings all,
+>> > I see a following issue with spawning new threads for btrfs_workers
+>> > that have atomic_worker_start set:
 >> >
->> > But what kind of effect do you see on overall performance/runtime?  Honestly I'd
->> > expect we'd spend more of our time waiting for the caching kthread to fill in
->> > free space so we can make allocations than waiting on this lock contention.  I'd
->> > like to see real numbers here to see what kind of effect this patch has on your
->> > workload.  (I don't doubt it makes a difference, I'm just curious to see how big
->> > of a difference it makes.)
+>> > # I have BTRFS that has 24Gb of total metadata, out of which extent
+>> > tree takes 11Gb; space_cache option is not used.
+>> > # After mouting, cache_block_group() triggers ~250 work items to
+>> > cache-in the needed block groups.
+>> > # At this point, fs_info->caching_workers has one thread, which is
+>> > considered "idle".
+>> > # Work items start to add to this thread's "pending" list, until this
+>> > thread becomes considered "busy".
+>> > # Now workers->atomic_worker_start is set, but
+>> > check_pending_worker_creates() has not run yet (it is called only from
+>> > worker_loop), so the same single thread is picked as "fallback".
+>> >
+>> > The problem is that this thread is still running the "caching_thread"
+>> > function, scanning for EXTENT_ITEMs of the first block-group. This
+>> > takes 3-4seconds for 1Gb block group.
+>> >
+>> > # Once caching_thread() exits, check_pending_worker_creates() is
+>> > called, and creates the second thread, but it's too late, because all
+>> > the 250 work items are already sitting in the first thread's "pending"
+>> > list. So the  second thread doesn't help at all.
+>> >
+>> > As a result, all block-group caching is performed by the same thread,
+>> > which, due to one-by-one scanning of EXTENT_ITEMs, takes forever for
+>> > this BTRFS.
+>> >
+>> > How this can be fixed?
+>> > - can perhaps check_pending_worker_creates() be called out of
+>> > worker_loop, e.g., by find_worker()? Instead of just setting
+>> > workers->atomic_start_pending?
+>> > - maybe for fs_info->caching_workers we don't have to create new
+>> > workers asynchronously, so we can pass NULL for async_helper in
+>> > btrfs_init_workers()? (probably we have to, just checking)
 >>
->> Primarily for me it affects the commit thread right after mounting,
->> when it spends time in the "critical part" of the commit, in which
->> trans_no_join is set, i.e., it is not possible to start a new
->> transaction. So all the new writers that want a transaction are
->> delayed at this point.
->>
->> Here are some numbers (and some more logs are in the attached file).
->>
->> Filesystem has a good amount of metadata (btrfs-progs modified
->> slightly to print exact byte values):
->> root@dc:/home/zadara# btrfs fi df /btrfs/pool-00000002/
->> Data: total=846116945920(788.01GB), used=842106667008(784.27GB)
->> System: total=4194304(4.00MB), used=94208(92.00KB)
->> Metadata: total=31146901504(29.01GB), used=25248698368(23.51GB)
->>
->> original code, 2 caching workers, try 1
->> Aug 29 13:41:22 dc kernel: [28381.203745] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_STARTED:439] FS[dm-119] txn[6627] COMMIT
->> extwr:0 wr:1
->> Aug 29 13:41:25 dc kernel: [28384.624838] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:519] FS[dm-119] txn[6627] COMMIT took
->> 3421 ms committers=1 open=0ms blocked=3188ms
->> Aug 29 13:41:25 dc kernel: [28384.624846] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:524] FS[dm-119] txn[6627] roo:0 rdr1:0
->> cbg:0 rdr2:0
->> Aug 29 13:41:25 dc kernel: [28384.624850] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:529] FS[dm-119] txn[6627] wc:0 wpc:0
->> wew:0 fps:0
->> Aug 29 13:41:25 dc kernel: [28384.624854] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:534] -FS[dm-119] txn[6627] ww:0 cs:0
->> rdi:0 rdr3:0
->> Aug 29 13:41:25 dc kernel: [28384.624858] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:538] -FS[dm-119] txn[6627] cfr:0
->> ccr:2088 pec:1099
->> Aug 29 13:41:25 dc kernel: [28384.624862] [17617][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:541] FS[dm-119] txn[6627] wrw:230 wrs:1
->>
->> I have a breakdown of commit times here, to identify bottlenecks of
->> the commit. Times are in ms.
->> Names of phases are:
->>
->> roo - btrfs_run_ordered_operations
->> rdr1 - btrfs_run_delayed_refs (call 1)
->> cbg - btrfs_create_pending_block_groups
->> rdr2 - btrfs_run_delayed_refs (call 2)
->> wc - wait_for_commit (if was needed)
->> wpc - wair for previous commit (if was needed)
->> wew - wait for "external writers to detach"
->> fps - flush_all_pending_stuffs
->> ww - wait for all the other writers to detach
->> cs - create_pending_snapshots
->> rdi - btrfs_run_delayed_items
->> rdr3 - btrfs_run_delayed_refs (call 3)
->> cfr - commit_fs_roots
->> ccr - commit_cowonly_roots
->> pec - btrfs_prepare_extent_commit
->> wrw - btrfs_write_and_wait_transaction
->> wrs - write_ctree_super
->>
->> Two lines marked as "-" are the "critical part" of the commit.
->>
->>
->> original code, 2 caching workers, try 2
->> Aug 29 13:43:30 dc kernel: [28508.683625] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_STARTED:439] FS[dm-119] txn[6630] COMMIT
->> extwr:0 wr:1
->> Aug 29 13:43:31 dc kernel: [28510.569269] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:519] FS[dm-119] txn[6630] COMMIT took
->> 1885 ms committers=1 open=0ms blocked=1550ms
->> Aug 29 13:43:31 dc kernel: [28510.569276] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:524] FS[dm-119] txn[6630] roo:0 rdr1:0
->> cbg:0 rdr2:0
->> Aug 29 13:43:31 dc kernel: [28510.569281] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:529] FS[dm-119] txn[6630] wc:0 wpc:0
->> wew:0 fps:0
->> Aug 29 13:43:31 dc kernel: [28510.569285] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:534] -FS[dm-119] txn[6630] ww:0 cs:0
->> rdi:0 rdr3:0
->> Aug 29 13:43:31 dc kernel: [28510.569288] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:538] -FS[dm-119] txn[6630] cfr:0
->> ccr:1550 pec:0
->> Aug 29 13:43:31 dc kernel: [28510.569292] [22490][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:541] FS[dm-119] txn[6630] wrw:333 wrs:1
->>
->> So you see that 1-2 secs are spent in "commit cowonly roots". Now the
->> patched code, and here, I admit, difference is not so dramatic:
->>
->> patched code, 2 caching workers, try 1
->> Aug 29 14:08:19 dc kernel: [29997.819307] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_STARTED:439] FS[dm-119] txn[6642] COMMIT
->> extwr:0 wr:1
->> Aug 29 14:08:20 dc kernel: [29998.800342] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:519] FS[dm-119] txn[6642] COMMIT took
->> 981 ms committers=1 open=0ms blocked=881ms
->> Aug 29 14:08:20 dc kernel: [29998.800350] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:524] FS[dm-119] txn[6642] roo:0 rdr1:0
->> cbg:0 rdr2:0
->> Aug 29 14:08:20 dc kernel: [29998.800354] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:529] FS[dm-119] txn[6642] wc:0 wpc:0
->> wew:0 fps:0
->> Aug 29 14:08:20 dc kernel: [29998.800358] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:534] -FS[dm-119] txn[6642] ww:0 cs:0
->> rdi:0 rdr3:0
->> Aug 29 14:08:20 dc kernel: [29998.800362] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:538] -FS[dm-119] txn[6642] cfr:0 ccr:880
->> pec:1
->> Aug 29 14:08:20 dc kernel: [29998.800365] [24783][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:541] FS[dm-119] txn[6642] wrw:98 wrs:1
->>
->> patched code, 2 caching workers, try 2
->> Aug 29 14:09:18 dc kernel: [30057.375432] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_STARTED:439] FS[dm-119] txn[6645] COMMIT
->> extwr:0 wr:1
->> Aug 29 14:09:19 dc kernel: [30058.079811] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:519] FS[dm-119] txn[6645] COMMIT took
->> 704 ms committers=1 open=0ms blocked=643ms
->> Aug 29 14:09:19 dc kernel: [30058.079820] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:524] FS[dm-119] txn[6645] roo:0 rdr1:0
->> cbg:0 rdr2:0
->> Aug 29 14:09:19 dc kernel: [30058.079824] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:529] FS[dm-119] txn[6645] wc:0 wpc:0
->> wew:0 fps:0
->> Aug 29 14:09:19 dc kernel: [30058.079828] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:534] -FS[dm-119] txn[6645] ww:0 cs:0
->> rdi:0 rdr3:0
->> Aug 29 14:09:19 dc kernel: [30058.079832] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:538] -FS[dm-119] txn[6645] cfr:0 ccr:642
->> pec:1
->> Aug 29 14:09:19 dc kernel: [30058.079836] [24781][tx]btrfs
->> [ZBTRFS_TXN_COMMIT_PHASE_DONE:541] FS[dm-119] txn[6645] wrw:59 wrs:0
->>
->> but still there is some improvement of commit time.
->>
+>> So I looked at this, and I'm pretty sure we have an async_helper just because of
+>> copy+paste.  "Hey I want a new async group, let me copy this other one and
+>> change the name!"  So yes let's just pass NULL here.  In fact the only cases
+>> that we should be using an async helper is for super critical areas, so I'm
+>> pretty sure _most_ of the cases that specify an async helper don't need to.
+>> Chris is this correct, or am I missing something?  Thanks,
 >
-> Ok so that's what I expected, a marginal improvement under normal conditions.
+> No, I think we can just turn off the async start here.
 >
->> Now I changed the number of caching workers to 32, to improve the time
->> to load the metadata, otherwise it takes a lot of time for the FS to
->> become responsive. Also I modified the code to start caching workers
->> like this:
->> btrfs_init_workers(&fs_info->caching_workers, "cache",
->>                32, NULL/*async_helper*/);
->> /* use low thresh to quickly spawn needed new threads */
->> fs_info->caching_workers.idle_thresh = 2;
->>
->> As I explained in my other email named "btrfs:async-thread:
->> atomic_start_pending=1 is set, but it's too late", even with two
->> caching threads, only one does all the job. So I don't pass the async
->> helper (don't know if that's a correct thing to do).
->>
+> -chris
 >
-> So does jacking the limit up to 32 help the load?  The old "only let 2 cachers
-> go at once" stuff was because we used to do the caching on the normal extent
-> tree, so we took locks and it killed performance.  But now that we use the
-> commit root there is really no reason to limit our caching threads, other than
-> the fact we'll be thrashing the disk by all of the threads reading so much.
-> I'll look at the other email you sent, I've not read it.  Thanks,
-What we see is that a single caching_thread, with an underlying SSD,
-can generate only up to 4Mb/s of reading-in the pages, because it
-reads them synchronously, one-by-one as it scans its part of the
-extent tree. Whereas with 32 threads, we are able to see 40Mb/s of
-caching-in the block groups. So yes, the system becomes more
-responsive on SOD (start-of-day), where it needs to "warm-up" the free
-space cache, which is exactly a critical period of time, when host is
-waiting to resume the IO.
-
-What you did not ask me (and thanks for that!) is why not to use the
-free-space-cache, which is supposed to solve this exact problem. Apart
-from one stack overrun we hit with it (that was fixed in later
-kernels), we see that free space EXTENT_DATAs are allocated out of
-DATA block groups. For us, this is somewhat an issue, because we are
-routing METADATA IOs to a faster SSD storage. I haven't yet looked
-deeper into whether it is straightforward to alloc free-space-entries
-out of DATA block groups, but do you think this would make sense?
-After all, free-space entries are metadata...
-
-Thanks!
-Alex.
-
-
-
->
-> Josef

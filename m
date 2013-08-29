@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:54709 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755302Ab3H2Mpo (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:47078 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754373Ab3H2Nm4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 08:45:44 -0400
-Received: by mail-wg0-f49.google.com with SMTP id a12so372093wgh.16
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 05:45:43 -0700 (PDT)
+	Thu, 29 Aug 2013 09:42:56 -0400
+Received: by mail-wi0-f176.google.com with SMTP id l12so8081063wiv.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 06:42:55 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: sbehrens@giantdisaster.de, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: optimize key searches in btrfs_search_slot
-Date: Thu, 29 Aug 2013 13:44:13 +0100
-Message-Id: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: optimize key searches in btrfs_search_slot
+Date: Thu, 29 Aug 2013 14:42:00 +0100
+Message-Id: <1377783720-17415-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
+References: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -60,28 +62,29 @@ These samples were captured during a run of the btrfs tests 001, 002 and
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/ctree.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 59 insertions(+), 2 deletions(-)
+
+V2: Simplified code, removed unnecessary code.
+ fs/btrfs/ctree.c |   44 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 5fa521b..5b20eec 100644
+index 5fa521b..a159270 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -2426,6 +2426,59 @@ done:
+@@ -2426,6 +2426,42 @@ done:
  	return ret;
  }
  
 +static int key_search(struct extent_buffer *b, struct btrfs_key *key,
 +		      int level, int *prev_cmp, int *slot)
 +{
-+	unsigned long eb_offset = 0;
-+	unsigned long len_left = b->len;
 +	char *kaddr = NULL;
 +	unsigned long map_start = 0;
 +	unsigned long map_len = 0;
 +	unsigned long offset;
 +	struct btrfs_disk_key *k = NULL;
 +	struct btrfs_disk_key unaligned;
++	int err;
 +
 +	if (*prev_cmp != 0) {
 +		*prev_cmp = bin_search(b, key, level, slot);
@@ -93,29 +96,13 @@ index 5fa521b..5b20eec 100644
 +	else
 +		offset = offsetof(struct btrfs_node, ptrs);
 +
-+	/*
-+	 * Map the entire extent buffer, otherwise callers can't access
-+	 * all keys/items of the leaf/node. Specially needed for case
-+	 * where leaf/node size is greater than page cache size.
-+	 */
-+	while (len_left > 0) {
-+		unsigned long len = min(PAGE_CACHE_SIZE, len_left);
-+		int err;
-+
-+		err = map_private_extent_buffer(b, eb_offset, len, &kaddr,
-+						&map_start, &map_len);
-+		len_left -= len;
-+		eb_offset += len;
-+		if (k)
-+			continue;
-+		if (!err) {
-+			k = (struct btrfs_disk_key *)(kaddr + offset -
-+						      map_start);
-+		} else {
-+			read_extent_buffer(b, &unaligned,
-+					   offset, sizeof(unaligned));
-+			k = &unaligned;
-+		}
++	err = map_private_extent_buffer(b, offset, sizeof(struct btrfs_disk_key),
++					&kaddr, &map_start, &map_len);
++	if (!err) {
++		k = (struct btrfs_disk_key *)(kaddr + offset - map_start);
++	} else {
++		read_extent_buffer(b, &unaligned, offset, sizeof(unaligned));
++		k = &unaligned;
 +	}
 +
 +	BUG_ON(comp_keys(k, key) != 0);
@@ -127,7 +114,7 @@ index 5fa521b..5b20eec 100644
  /*
   * look for key in the tree.  path is filled in with nodes along the way
   * if key is found, we return zero and you can find the item in the leaf
-@@ -2454,6 +2507,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+@@ -2454,6 +2490,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
  	int write_lock_level = 0;
  	u8 lowest_level = 0;
  	int min_write_lock_level;
@@ -135,7 +122,7 @@ index 5fa521b..5b20eec 100644
  
  	lowest_level = p->lowest_level;
  	WARN_ON(lowest_level && ins_len > 0);
-@@ -2484,6 +2538,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+@@ -2484,6 +2521,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
  	min_write_lock_level = write_lock_level;
  
  again:
@@ -143,7 +130,7 @@ index 5fa521b..5b20eec 100644
  	/*
  	 * we try very hard to do read locks on the root
  	 */
-@@ -2584,7 +2639,7 @@ cow_done:
+@@ -2584,7 +2622,7 @@ cow_done:
  		if (!cow)
  			btrfs_unlock_up_safe(p, level + 1);
  
@@ -152,7 +139,7 @@ index 5fa521b..5b20eec 100644
  
  		if (level != 0) {
  			int dec = 0;
-@@ -2719,6 +2774,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
+@@ -2719,6 +2757,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
  	int level;
  	int lowest_unlock = 1;
  	u8 lowest_level = 0;
@@ -160,7 +147,7 @@ index 5fa521b..5b20eec 100644
  
  	lowest_level = p->lowest_level;
  	WARN_ON(p->nodes[0] != NULL);
-@@ -2729,6 +2785,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
+@@ -2729,6 +2768,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
  	}
  
  again:
@@ -168,7 +155,7 @@ index 5fa521b..5b20eec 100644
  	b = get_old_root(root, time_seq);
  	level = btrfs_header_level(b);
  	p->locks[level] = BTRFS_READ_LOCK;
-@@ -2746,7 +2803,7 @@ again:
+@@ -2746,7 +2786,7 @@ again:
  		 */
  		btrfs_unlock_up_safe(p, level + 1);
  

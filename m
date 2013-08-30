@@ -1,71 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24749 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:63328 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751968Ab3H3BrC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 21:47:02 -0400
-Message-ID: <521FF91B.10309@cn.fujitsu.com>
-Date: Fri, 30 Aug 2013 09:44:59 +0800
+	id S1754834Ab3H3CNh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 22:13:37 -0400
+Message-ID: <521FFF59.1000300@cn.fujitsu.com>
+Date: Fri, 30 Aug 2013 10:11:37 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: separate out tests into their own directory V2
-References: <1377804569-1957-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1377804569-1957-1-git-send-email-jbacik@fusionio.com>
+Subject: Re: [PATCH] Btrfs: fix printing of non NULL terminated string
+References: <1377017508-9355-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1377017508-9355-1-git-send-email-fdmanana@gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/30/2013 03:29 AM, Josef Bacik wrote:
-> The plan is to have a bunch of unit tests that run when btrfs is loaded when you
-> build with the appropriate config option.  My ultimate goal is to have a test
-> for every non-static function we have, but at first I'm going to focus on the
-> things that cause us the most problems.  To start out with this just adds a
-> tests/ directory and moves the existing free space cache tests into that
-> directory and sets up all of the infrastructure.  Thanks,
->
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+On 08/21/2013 12:51 AM, Filipe David Borba Manana wrote:
 
-Nothing serious, use checkpatch.pl and i get the following warnings:
+please use checkpatch.pl to check coding styles before sending patch
 
-  WARNING: kfree(NULL) is safe this check is probably not required
-#132: FILE: fs/btrfs/free-space-cache.c:3035:
-+    if (map)
-+        kfree(map);
+ERROR: code indent should use tabs where possible
+#37: FILE: fs/btrfs/delayed-inode.c:1477:
++^I^I                name_len, name,$
 
-WARNING: line over 80 characters
-#882: FILE: fs/btrfs/tests/free-space-tests.c:211:
-+    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 1 * 1024 * 
-1024, 1);
+total: 1 errors, 0 warnings, 13 lines checked
 
-WARNING: line over 80 characters
-#927: FILE: fs/btrfs/tests/free-space-tests.c:256:
-+    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 4 * 1024 * 
-1024, 1);
+NOTE: whitespace errors detected, you may wish to use scripts/cleanpatch or
+       scripts/cleanfile
 
-WARNING: line over 80 characters
-#947: FILE: fs/btrfs/tests/free-space-tests.c:276:
-+    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 4 * 1024 * 
-1024, 1);
-
-WARNING: line over 80 characters
-#953: FILE: fs/btrfs/tests/free-space-tests.c:282:
-+    ret = test_add_free_space_entry(cache, 2 * 1024 * 1024, 2 * 1024 * 
-1024, 0);
-
-WARNING: line over 80 characters
-#1016: FILE: fs/btrfs/tests/free-space-tests.c:345:
-+    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 2 * 1024 * 
-1024, 1);
-
-WARNING: line over 80 characters
-#1022: FILE: fs/btrfs/tests/free-space-tests.c:351:
-+    ret = test_add_free_space_entry(cache, 3 * 1024 * 1024, 1 * 1024 * 
-1024, 0);
-
-WARNING: line over 80 characters
-#1030: FILE: fs/btrfs/tests/free-space-tests.c:359:
-+        test_msg("Error removing bitmap and extent overlapping %d\n", ret);
-
-  Thanks,
+Thanks,
 Wang
+> The name buffer is not terminated by a '\0' character,
+> therefore it needs to be printed with %.*s and use the
+> length of the buffer.
+>
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>   fs/btrfs/delayed-inode.c |    6 +++---
+>   1 file changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index fa88297..c0c3a6b 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -1471,10 +1471,10 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
+>   	mutex_lock(&delayed_node->mutex);
+>   	ret = __btrfs_add_delayed_insertion_item(delayed_node, delayed_item);
+>   	if (unlikely(ret)) {
+> -		printk(KERN_ERR "err add delayed dir index item(name: %s) into "
+> -				"the insertion tree of the delayed node"
+> +		printk(KERN_ERR "err add delayed dir index item (name: %.*s) "
+> +				"into the insertion tree of the delayed node "
+>   				"(root id: %llu, inode id: %llu, errno: %d)\n",
+> -				name,
+> +		                name_len, name,
+>   				(unsigned long long)delayed_node->root->objectid,
+>   				(unsigned long long)delayed_node->inode_id,
+>   				ret);
+

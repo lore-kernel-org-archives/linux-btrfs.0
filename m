@@ -1,79 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:35344 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756032Ab3H2WTY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 18:19:24 -0400
-Received: by mail-wg0-f45.google.com with SMTP id y10so242346wgg.24
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Aug 2013 15:19:23 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:24749 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751968Ab3H3BrC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Aug 2013 21:47:02 -0400
+Message-ID: <521FF91B.10309@cn.fujitsu.com>
+Date: Fri, 30 Aug 2013 09:44:59 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20130829200812.30052.29217@localhost.localdomain>
-References: <CAOcd+r0PfcX9Xs9ND8zXui3-YyJh+9THz1qrg7u9DsH1L-uO2g@mail.gmail.com>
-	<20130829200306.GF10591@localhost.localdomain>
-	<20130829200812.30052.29217@localhost.localdomain>
-Date: Fri, 30 Aug 2013 01:19:23 +0300
-Message-ID: <CAOcd+r1kf8USZa=wLkdbWuV9cAYo+fYoW=noGVskyD-jJGnzww@mail.gmail.com>
-Subject: Re: btrfs:async-thread: atomic_start_pending=1 is set, but it's too late
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
 To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Lev Vainblat <lev@zadarastorage.com>,
-        Shyam Kaushik <shyam@zadarastorage.com>,
-        Chris Mason <chris.mason@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: separate out tests into their own directory V2
+References: <1377804569-1957-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1377804569-1957-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks, Chris, Josef, for confirming!
+On 08/30/2013 03:29 AM, Josef Bacik wrote:
+> The plan is to have a bunch of unit tests that run when btrfs is loaded when you
+> build with the appropriate config option.  My ultimate goal is to have a test
+> for every non-static function we have, but at first I'm going to focus on the
+> things that cause us the most problems.  To start out with this just adds a
+> tests/ directory and moves the existing free space cache tests into that
+> directory and sets up all of the infrastructure.  Thanks,
+>
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 
-On Thu, Aug 29, 2013 at 11:08 PM, Chris Mason <clmason@fusionio.com> wrote:
-> Quoting Josef Bacik (2013-08-29 16:03:06)
->> On Mon, Aug 26, 2013 at 05:16:42PM +0300, Alex Lyakas wrote:
->> > Greetings all,
->> > I see a following issue with spawning new threads for btrfs_workers
->> > that have atomic_worker_start set:
->> >
->> > # I have BTRFS that has 24Gb of total metadata, out of which extent
->> > tree takes 11Gb; space_cache option is not used.
->> > # After mouting, cache_block_group() triggers ~250 work items to
->> > cache-in the needed block groups.
->> > # At this point, fs_info->caching_workers has one thread, which is
->> > considered "idle".
->> > # Work items start to add to this thread's "pending" list, until this
->> > thread becomes considered "busy".
->> > # Now workers->atomic_worker_start is set, but
->> > check_pending_worker_creates() has not run yet (it is called only from
->> > worker_loop), so the same single thread is picked as "fallback".
->> >
->> > The problem is that this thread is still running the "caching_thread"
->> > function, scanning for EXTENT_ITEMs of the first block-group. This
->> > takes 3-4seconds for 1Gb block group.
->> >
->> > # Once caching_thread() exits, check_pending_worker_creates() is
->> > called, and creates the second thread, but it's too late, because all
->> > the 250 work items are already sitting in the first thread's "pending"
->> > list. So the  second thread doesn't help at all.
->> >
->> > As a result, all block-group caching is performed by the same thread,
->> > which, due to one-by-one scanning of EXTENT_ITEMs, takes forever for
->> > this BTRFS.
->> >
->> > How this can be fixed?
->> > - can perhaps check_pending_worker_creates() be called out of
->> > worker_loop, e.g., by find_worker()? Instead of just setting
->> > workers->atomic_start_pending?
->> > - maybe for fs_info->caching_workers we don't have to create new
->> > workers asynchronously, so we can pass NULL for async_helper in
->> > btrfs_init_workers()? (probably we have to, just checking)
->>
->> So I looked at this, and I'm pretty sure we have an async_helper just because of
->> copy+paste.  "Hey I want a new async group, let me copy this other one and
->> change the name!"  So yes let's just pass NULL here.  In fact the only cases
->> that we should be using an async helper is for super critical areas, so I'm
->> pretty sure _most_ of the cases that specify an async helper don't need to.
->> Chris is this correct, or am I missing something?  Thanks,
->
-> No, I think we can just turn off the async start here.
->
-> -chris
->
+Nothing serious, use checkpatch.pl and i get the following warnings:
+
+  WARNING: kfree(NULL) is safe this check is probably not required
+#132: FILE: fs/btrfs/free-space-cache.c:3035:
++    if (map)
++        kfree(map);
+
+WARNING: line over 80 characters
+#882: FILE: fs/btrfs/tests/free-space-tests.c:211:
++    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 1 * 1024 * 
+1024, 1);
+
+WARNING: line over 80 characters
+#927: FILE: fs/btrfs/tests/free-space-tests.c:256:
++    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 4 * 1024 * 
+1024, 1);
+
+WARNING: line over 80 characters
+#947: FILE: fs/btrfs/tests/free-space-tests.c:276:
++    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 4 * 1024 * 
+1024, 1);
+
+WARNING: line over 80 characters
+#953: FILE: fs/btrfs/tests/free-space-tests.c:282:
++    ret = test_add_free_space_entry(cache, 2 * 1024 * 1024, 2 * 1024 * 
+1024, 0);
+
+WARNING: line over 80 characters
+#1016: FILE: fs/btrfs/tests/free-space-tests.c:345:
++    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 2 * 1024 * 
+1024, 1);
+
+WARNING: line over 80 characters
+#1022: FILE: fs/btrfs/tests/free-space-tests.c:351:
++    ret = test_add_free_space_entry(cache, 3 * 1024 * 1024, 1 * 1024 * 
+1024, 0);
+
+WARNING: line over 80 characters
+#1030: FILE: fs/btrfs/tests/free-space-tests.c:359:
++        test_msg("Error removing bitmap and extent overlapping %d\n", ret);
+
+  Thanks,
+Wang

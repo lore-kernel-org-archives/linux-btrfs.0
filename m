@@ -1,51 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49493 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49720 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753886Ab3H3QIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 12:08:40 -0400
-Date: Fri, 30 Aug 2013 18:08:38 +0200
+	id S1753886Ab3H3QQy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Aug 2013 12:16:54 -0400
+Date: Fri, 30 Aug 2013 18:16:52 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Zach Brown <zab@redhat.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/15] btrfs-progs: get C=1 sparse checking working again
-Message-ID: <20130830160838.GN23113@twin.jikos.cz>
+Subject: Re: [PATCH 07/15] btrfs-progs: fix endian bugs in chunk rebuilding
+Message-ID: <20130830161652.GO23113@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1376522205-16992-1-git-send-email-zab@redhat.com>
- <1376522205-16992-2-git-send-email-zab@redhat.com>
+ <1376522205-16992-8-git-send-email-zab@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1376522205-16992-2-git-send-email-zab@redhat.com>
+In-Reply-To: <1376522205-16992-8-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 14, 2013 at 04:16:31PM -0700, Zach Brown wrote:
-> There were a few problems that were breaking sparse checking:
-> 
-> - We were defining CHECK_ENDIAN late in the environment, after
->   linux/fs.h has been included which defines __force and __bitwise in
->   confusing ways that conflict with ours.  Define it up with __CHECKER__
->   so that linux/fs.h and our copy are acting on the same input.
-> 
-> - We had manually set a few of gcc's internal defines to give to sparse.
->   It's easier to just ask gcc for all the defines it sets and hand those
->   to sparse.
-> 
-> - We weren't passing the same *FLAGS to sparse as we were to CC.
-> 
-> - glibc has so many errors with FORTIFY turned on that sparse gives up
->   and doesn't show us any errors from our code.  It's a questionable
->   hack to always turn on FORTIFY ourselves, so we'll just not do that
->   when building with sparse.
-> 
-> And add a nice '[SP]' quiet output line for sparse checks.
+On Wed, Aug 14, 2013 at 04:16:37PM -0700, Zach Brown wrote:
+> I *think* the second one is just a typo.  The chunk's num_stripes was
+> already initialized from the record, but it's le16.  So we'll set the
+> item's size based on the record's native num_stripes.
 
-Very nice, thanks.
+> @@ -1117,7 +1117,7 @@ static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
+>  		key.offset = chunk_rec->offset;
+>  
+>  		ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+> -				btrfs_chunk_item_size(chunk->num_stripes));
+> +				btrfs_chunk_item_size(chunk_rec->num_stripes));
 
-I'm getting this error, for each built object file:
+AFAICS, this is an equivalent change, chunk gets copied from chunk_rec
+via create_chunk_item a few lines above. It looks more consistent with
+chunk_rec, though.
 
-$ make V=1 C=1
-    [SP]     ctree.o
-sparse -include .cc-defines.h  -D__CHECKER__ -D__CHECK_ENDIAN__ -Wbitwise -Wuninitialized -Wshadow -Wundef -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fPIC -g -O1 ctree.c
-/usr/include/stdio.h:33:12: error: unable to open 'stddef.h'
-make: *** [ctree.o] Error 1
-
+>  		free(chunk);
+>  		if (ret)
+>  			return ret;

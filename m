@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19783 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756236Ab3HPMq2 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50604 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755228Ab3H3IoE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Aug 2013 08:46:28 -0400
+	Fri, 30 Aug 2013 04:44:04 -0400
 From: Anand Jain <anand.jain@oracle.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: mkfs should check for small vol well before
-Date: Fri, 16 Aug 2013 20:52:30 +0800
-Message-Id: <1376657550-15011-1-git-send-email-anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v2] btrfs-progs: mkfs should check for small vol well before
+Date: Fri, 30 Aug 2013 16:50:37 +0800
+Message-Id: <1377852637-4299-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1376657550-15011-1-git-send-email-anand.jain@oracle.com>
+References: <1376657550-15011-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -23,6 +24,8 @@ and go ahead to create the FS.
 Which also means that before we open the device
 for the write we should also check if disk is small.
 
+v2: fixes the checkpatch.pl warnings
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
  mkfs.c  |   20 +++++++++++---------
@@ -31,7 +34,7 @@ Signed-off-by: Anand Jain <anand.jain@oracle.com>
  3 files changed, 41 insertions(+), 9 deletions(-)
 
 diff --git a/mkfs.c b/mkfs.c
-index 73f5425..e58e5c0 100644
+index 73f5425..5b3b245 100644
 --- a/mkfs.c
 +++ b/mkfs.c
 @@ -1415,6 +1415,17 @@ int main(int ac, char **av)
@@ -43,8 +46,8 @@ index 73f5425..e58e5c0 100644
 +		mixed = 1;
 +		if (metadata_profile != data_profile) {
 +			if (metadata_profile_opt || data_profile_opt) {
-+				fprintf(stderr, "With mixed block groups data and metadata "
-+					"profiles must be the same\n");
++				fprintf(stderr,
++	"With mixed block groups data and metadata profiles must be the same\n");
 +				exit(1);
 +			}
 +		}
@@ -76,10 +79,10 @@ index 73f5425..e58e5c0 100644
  	for (i = 1; i < 7; i++) {
  		blocks[i] = BTRFS_SUPER_INFO_OFFSET + 1024 * 1024 +
 diff --git a/utils.c b/utils.c
-index c26193e..422530d 100644
+index de182e0..b039a03 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -1963,3 +1963,32 @@ int scan_for_btrfs(int where, int update_kernel)
+@@ -1964,3 +1964,32 @@ int scan_for_btrfs(int where, int update_kernel)
  	}
  	return ret;
  }

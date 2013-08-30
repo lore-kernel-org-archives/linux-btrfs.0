@@ -1,36 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49049 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755146Ab3H3P6Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 11:58:25 -0400
-Date: Fri, 30 Aug 2013 17:58:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v3 1/8] Btrfs-progs: add missing man page information for
- btrfsck
-Message-ID: <20130830155821.GM23113@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1376454557-3041-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:43599 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752605Ab3H3I3V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Aug 2013 04:29:21 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r7U8TKjk007352
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:29:21 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7U8TJCf006498
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:29:20 GMT
+Received: from abhmt103.oracle.com (abhmt103.oracle.com [141.146.116.55])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r7U8TJfw007257
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:29:19 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] v2, fi show, dev scan and lblkid
+Date: Fri, 30 Aug 2013 16:35:54 +0800
+Message-Id: <1377851756-4009-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 14, 2013 at 12:29:10PM +0800, Wang Shilong wrote:
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> v2->v3: availiable parts is not true anymore,remove it.
-> v1->v2: remove wrong copyrights.
+  This patch set is about
+  use of lblkid for the btrfs disk scan and
+  using this lblkid scan for the fi show and dev scan cli
 
-Thanks for the updates, I've put the series into integration.
+  This includes the comments from David (to use lblkid)
+  and Zach to show (btrfs fi show) info from kernel when
+  disk is mounted and from the disks directly when disk
+  is unmounted
 
-Note for future:
+v2:
+  In an effort fix checkpath.pl errors as suggested in
+  Wang's review, the two patches as below is merged
+  into one
 
-The manpages document the current state, ie. there are numerous separate
-utilities which we would like to move under the main tool. When it
-happens the man contents shall be moved as well.
+btrfs-progs: read from the kernel when disk is mounted
+btrfs-progs: use lblkid to scan and filesystem show improvements
 
-david
+Anand Jain (2):
+  btrfs-progs: v4, move out print in cmd_df to another function
+  btrfs-progs: use kernel for mounted and lblkid to scan disks
+
+ cmds-device.c     |   21 +---
+ cmds-filesystem.c |  361 ++++++++++++++++++++++++++++++++++-------------------
+ ctree.h           |   11 ++
+ utils.c           |   55 ++++++++-
+ utils.h           |    7 +-
+ 5 files changed, 304 insertions(+), 151 deletions(-)
+

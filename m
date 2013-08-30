@@ -1,83 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:41229 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752406Ab3H3MZd (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:60306 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755723Ab3H3OOE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 08:25:33 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 282869A06A0
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 06:25:33 -0600 (MDT)
-Date: Fri, 30 Aug 2013 08:25:29 -0400
+	Fri, 30 Aug 2013 10:14:04 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 4F5A37C065C
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:14:04 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: separate out tests into their own directory V2
-Message-ID: <20130830122529.GH10591@localhost.localdomain>
-References: <1377804569-1957-1-git-send-email-jbacik@fusionio.com>
- <521FF91B.10309@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <walken@google.com>, <mingo@elte.hu>,
+        <akpm@linux-foundation.org>, <linux-kernel@vger.kernel.org>
+Subject: [PATCH] rwsem: add rwsem_is_contended
+Date: Fri, 30 Aug 2013 10:14:01 -0400
+Message-ID: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <521FF91B.10309@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 30, 2013 at 09:44:59AM +0800, Wang Shilong wrote:
-> On 08/30/2013 03:29 AM, Josef Bacik wrote:
-> >The plan is to have a bunch of unit tests that run when btrfs is loaded when you
-> >build with the appropriate config option.  My ultimate goal is to have a test
-> >for every non-static function we have, but at first I'm going to focus on the
-> >things that cause us the most problems.  To start out with this just adds a
-> >tests/ directory and moves the existing free space cache tests into that
-> >directory and sets up all of the infrastructure.  Thanks,
-> >
-> >Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> 
-> Nothing serious, use checkpatch.pl and i get the following warnings:
-> 
->  WARNING: kfree(NULL) is safe this check is probably not required
-> #132: FILE: fs/btrfs/free-space-cache.c:3035:
-> +    if (map)
-> +        kfree(map);
-> 
+Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
+read lock on this rwsem while they scan the extent tree, and if need_resched()
+they will drop the lock and schedule.  The transaction commit needs to take a
+write lock for this rwsem for a very short period to switch out the commit
+roots.  If there are a lot of threads doing this caching operation we can starve
+out the committers which slows everybody out.  To address this we want to add
+this functionality to see if our rwsem has anybody waiting to take a write lock
+so we can drop it and schedule for a bit to allow the commit to continue.
+Thanks,
 
-Good point about this, I will do it.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+I've cc'ed people who seemed like they may be in charge/familiar with this code,
+hopefully I got the right people.
 
-> WARNING: line over 80 characters
-> #882: FILE: fs/btrfs/tests/free-space-tests.c:211:
-> +    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 1 * 1024 *
-> 1024, 1);
-> 
-> WARNING: line over 80 characters
-> #927: FILE: fs/btrfs/tests/free-space-tests.c:256:
-> +    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 4 * 1024 *
-> 1024, 1);
-> 
-> WARNING: line over 80 characters
-> #947: FILE: fs/btrfs/tests/free-space-tests.c:276:
-> +    ret = test_add_free_space_entry(cache, 4 * 1024 * 1024, 4 * 1024 *
-> 1024, 1);
-> 
-> WARNING: line over 80 characters
-> #953: FILE: fs/btrfs/tests/free-space-tests.c:282:
-> +    ret = test_add_free_space_entry(cache, 2 * 1024 * 1024, 2 * 1024 *
-> 1024, 0);
-> 
-> WARNING: line over 80 characters
-> #1016: FILE: fs/btrfs/tests/free-space-tests.c:345:
-> +    ret = test_add_free_space_entry(cache, 1 * 1024 * 1024, 2 * 1024 *
-> 1024, 1);
-> 
-> WARNING: line over 80 characters
-> #1022: FILE: fs/btrfs/tests/free-space-tests.c:351:
-> +    ret = test_add_free_space_entry(cache, 3 * 1024 * 1024, 1 * 1024 *
-> 1024, 0);
-> 
-> WARNING: line over 80 characters
-> #1030: FILE: fs/btrfs/tests/free-space-tests.c:359:
-> +        test_msg("Error removing bitmap and extent overlapping %d\n", ret);
->
+ include/linux/rwsem.h |    1 +
+ lib/rwsem.c           |   17 +++++++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
 
-Yeah I skipped the 80 char limit in here to make the tests a little easier to
-read.  Thanks,
+diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
+index 0616ffe..61a8802 100644
+--- a/include/linux/rwsem.h
++++ b/include/linux/rwsem.h
+@@ -35,6 +35,7 @@ extern struct rw_semaphore *rwsem_down_read_failed(struct rw_semaphore *sem);
+ extern struct rw_semaphore *rwsem_down_write_failed(struct rw_semaphore *sem);
+ extern struct rw_semaphore *rwsem_wake(struct rw_semaphore *);
+ extern struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem);
++extern int rwsem_is_contended(struct rw_semaphore *sem);
+ 
+ /* Include the arch specific part */
+ #include <asm/rwsem.h>
+diff --git a/lib/rwsem.c b/lib/rwsem.c
+index 19c5fa9..20858cd 100644
+--- a/lib/rwsem.c
++++ b/lib/rwsem.c
+@@ -287,6 +287,23 @@ struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem)
+ 	return sem;
+ }
+ 
++/*
++ * check to see if the rwsem we're holding has anybody waiting to acquire it.
++ */
++int rwsem_is_contended(struct rw_semaphore *sem)
++{
++	int ret = 0;
++	unsigned long flags;
++
++	if (!raw_spin_trylock_irqsave(&sem->wait_lock, flags))
++		return 1;
++	if (!list_empty(&sem->wait_list))
++		ret = 1;
++	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
++	return ret;
++}
++
++EXPORT_SYMBOL(rwsem_is_contended);
+ EXPORT_SYMBOL(rwsem_down_read_failed);
+ EXPORT_SYMBOL(rwsem_down_write_failed);
+ EXPORT_SYMBOL(rwsem_wake);
+-- 
+1.7.7.6
 
-Josef 

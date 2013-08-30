@@ -1,53 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.182]:47604 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752794Ab3HRIDd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 Aug 2013 04:03:33 -0400
-Message-ID: <5210804C.1090103@gmx.net>
-Date: Sun, 18 Aug 2013 10:05:32 +0200
-From: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
+Received: from cantor2.suse.de ([195.135.220.15]:49493 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753886Ab3H3QIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Aug 2013 12:08:40 -0400
+Date: Fri, 30 Aug 2013 18:08:38 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Zach Brown <zab@redhat.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 10/15] btrfs-progs: fix qgroup realloc inheritance
-References: <1376522205-16992-1-git-send-email-zab@redhat.com> <1376522205-16992-11-git-send-email-zab@redhat.com>
-In-Reply-To: <1376522205-16992-11-git-send-email-zab@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/15] btrfs-progs: get C=1 sparse checking working again
+Message-ID: <20130830160838.GN23113@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1376522205-16992-1-git-send-email-zab@redhat.com>
+ <1376522205-16992-2-git-send-email-zab@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1376522205-16992-2-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/15/13 01:16, Zach Brown wrote:
-> qgroup.c:82:23: warning: memcpy with byte count of 0
-> qgroup.c:83:23: warning: memcpy with byte count of 0
+On Wed, Aug 14, 2013 at 04:16:31PM -0700, Zach Brown wrote:
+> There were a few problems that were breaking sparse checking:
 > 
-> The inheritance wasn't copying qgroups[] because a confused sizeof()
-> gave 0 byte memcpy()s.  It's been like this for the year since it was
-> merged, so I guess this isn't a very important thing to do :).
+> - We were defining CHECK_ENDIAN late in the environment, after
+>   linux/fs.h has been included which defines __force and __bitwise in
+>   confusing ways that conflict with ours.  Define it up with __CHECKER__
+>   so that linux/fs.h and our copy are acting on the same input.
+> 
+> - We had manually set a few of gcc's internal defines to give to sparse.
+>   It's easier to just ask gcc for all the defines it sets and hand those
+>   to sparse.
+> 
+> - We weren't passing the same *FLAGS to sparse as we were to CC.
+> 
+> - glibc has so many errors with FORTIFY turned on that sparse gives up
+>   and doesn't show us any errors from our code.  It's a questionable
+>   hack to always turn on FORTIFY ourselves, so we'll just not do that
+>   when building with sparse.
+> 
+> And add a nice '[SP]' quiet output line for sparse checks.
 
-It only seems to hit if you give -[cx] before -i. I guess only very
-few people use these options in the first place. They are primarily
-for hosting providers.
+Very nice, thanks.
 
-Reviewed-by: Arne Jansen <sensille@gmx.net>
-> 
-> Signed-off-by: Zach Brown <zab@redhat.com>
-> ---
->  qgroup.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/qgroup.c b/qgroup.c
-> index 038c4dc..86fe2b2 100644
-> --- a/qgroup.c
-> +++ b/qgroup.c
-> @@ -74,7 +74,7 @@ qgroup_inherit_realloc(struct btrfs_qgroup_inherit **inherit, int n, int pos)
->  
->  	if (*inherit) {
->  		struct btrfs_qgroup_inherit *i = *inherit;
-> -		int s = sizeof(out->qgroups);
-> +		int s = sizeof(out->qgroups[0]);
->  
->  		out->num_qgroups = i->num_qgroups;
->  		out->num_ref_copies = i->num_ref_copies;
-> 
+I'm getting this error, for each built object file:
+
+$ make V=1 C=1
+    [SP]     ctree.o
+sparse -include .cc-defines.h  -D__CHECKER__ -D__CHECK_ENDIAN__ -Wbitwise -Wuninitialized -Wshadow -Wundef -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fPIC -g -O1 ctree.c
+/usr/include/stdio.h:33:12: error: unable to open 'stddef.h'
+make: *** [ctree.o] Error 1
 

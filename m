@@ -1,174 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:51351 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756017Ab3H3Orl (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:56353 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756678Ab3H3Oyf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 10:47:41 -0400
-Received: by mail-we0-f171.google.com with SMTP id p57so1672359wes.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 07:47:39 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, jbacik@fusionio.com,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v5] Btrfs: optimize key searches in btrfs_search_slot
-Date: Fri, 30 Aug 2013 15:46:43 +0100
-Message-Id: <1377874003-19188-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
-References: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
+	Fri, 30 Aug 2013 10:54:35 -0400
+Date: Fri, 30 Aug 2013 15:54:24 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Zach Brown <zab@redhat.com>,
+        Nick Lee <email@nickle.es>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Question: How can I recover this partition? (unable to find
+ logical $hugenum len 4096)
+Message-ID: <20130830145424.GX3115@carfax.org.uk>
+References: <CAGURm2FS=YTuBpbrg7BV=Un8ZCp9xYZae-WuqhjV29xXA7e0jw@mail.gmail.com>
+ <E76A410A-0CEF-47D7-A501-E2DDF0230735@colorremedies.com>
+ <20130826193110.GO3115@carfax.org.uk>
+ <20130829173519.GN26818@lenny.home.zabbo.net>
+ <528DF163-08F5-412D-8351-ACC853AC418D@colorremedies.com>
+ <20130829194049.GR3115@carfax.org.uk>
+ <0E1979CF-25EC-47B2-B74E-9870F3D9C626@colorremedies.com>
+ <20130829195322.GS3115@carfax.org.uk>
+ <2D27D640-86E0-4E49-8874-81249DF9919A@colorremedies.com>
+ <5220AFCC.5080701@redhat.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="NAuYj0K7Umiq33rm"
+In-Reply-To: <5220AFCC.5080701@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the binary search returns 0 (exact match), the target key
-will necessarily be at slot 0 of all nodes below the current one,
-so in this case the binary search is not needed because it will
-always return 0, and we waste time doing it, holding node locks
-for longer than necessary, etc.
 
-Below follow histograms with the times spent on the current approach of
-doing a binary search when the previous binary search returned 0, and
-times for the new approach, which directly picks the first item/child
-node in the leaf/node.
+--NAuYj0K7Umiq33rm
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Current approach:
+On Fri, Aug 30, 2013 at 09:44:28AM -0500, Eric Sandeen wrote:
+> On 8/29/13 3:19 PM, Chris Murphy wrote:
+> >=20
+> > On Aug 29, 2013, at 1:53 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> >=20
+> >> On Thu, Aug 29, 2013 at 01:44:54PM -0600, Chris Murphy wrote:
+> >>>
+> >>> Certainly, if known for sure it won't be more than 30 seconds?
+> >>
+> >>   Mmm... it'll depend on the setting of the commit period, which up
+> >> until a couple of weeks ago was always 30s, but someone posted a patch
+> >> to give it a config knob=E2=80=A6
+> >=20
+> >=20
+> >=20
+> > "Proceeding will roll back the file system to a previous state, and
+> > may cause the loss of successfully written data since the last commit
+> > period (30 seconds by default). Proceed? (Y/N)"
+>=20
+> Is it just loss of data, or might this also result in a filesystem with i=
+nconsistent metadata, which then requires a fsck?
 
-Count: 6682
-Range: 35.000 - 8370.000; Mean: 85.837; Median: 75.000; Stddev: 106.429
-Percentiles:  90th: 124.000; 95th: 145.000; 99th: 206.000
-  35.000 -   61.080:  1235 ################
-  61.080 -  106.053:  4207 #####################################################
- 106.053 -  183.606:  1122 ##############
- 183.606 -  317.341:   111 #
- 317.341 -  547.959:     6 |
- 547.959 - 8370.000:     1 |
+   No the metadata is always consistent (well, in theory, barring bugs
+and out-of-band corruption).
 
-Approach proposed by this patch:
+> Above sounds like it's "just" reverting to a previous (consistent) state.=
+  Is that correct?
 
-Count: 6682
-Range:  6.000 - 135.000; Mean: 16.690; Median: 16.000; Stddev:  7.160
-Percentiles:  90th: 23.000; 95th: 27.000; 99th: 40.000
-   6.000 -    8.418:    58 #
-   8.418 -   11.670:  1149 #########################
-  11.670 -   16.046:  2418 #####################################################
-  16.046 -   21.934:  2098 ##############################################
-  21.934 -   29.854:   744 ################
-  29.854 -   40.511:   154 ###
-  40.511 -   54.848:    41 #
-  54.848 -   74.136:     5 |
-  74.136 -  100.087:     9 |
- 100.087 -  135.000:     6 |
+   Yes, it's dropping the log of accepted-but-uncommitted work. This
+is a Bad Thing in the sense that something that's reached the log is
+reported to the application as being successfully written. If the
+application critically relies on that (e.g. databases), then we've
+discarded durability from ACID. (Can you guess I've been marking
+Databases resit exam papers this morning? :) )
 
-These samples were captured during a run of the btrfs tests 001, 002 and
-004 in the xfstests, with a leaf/node size of 4Kb.
+   Hugo.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+> -Eric
+>=20
+> p.s. fwiw when the xfs_repair zero-log option "-L" is used, we say:
+>=20
+> "ALERT: The filesystem has valuable metadata changes in a log which is be=
+ing\n"
+> "destroyed because the -L option was used.\n"));
 
-V2: Simplified code, removed unnecessary code.
-V3: Replaced BUG_ON() with the new ASSERT() from Josef.
-V4: Addressed latest comments from Zach Brown and Josef Bacik.
-    Surrounded all code that is used for the assertion with a
-    #ifdef CONFIG_BTRFS_ASSERT ... #endif block. Also changed
-    offset arguments to be more strictly correct.
-V5: Updated histograms to reflect latest version of the code.
+   That's a reasonable wording too.
 
- fs/btrfs/ctree.c |   42 ++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 40 insertions(+), 2 deletions(-)
+   Hugo.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 5fa521b..6434672 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2426,6 +2426,40 @@ done:
- 	return ret;
- }
- 
-+static void key_search_validate(struct extent_buffer *b,
-+				struct btrfs_key *key,
-+				int level)
-+{
-+#ifdef CONFIG_BTRFS_ASSERT
-+	struct btrfs_disk_key disk_key;
-+
-+	btrfs_cpu_key_to_disk(&disk_key, key);
-+
-+	if (level == 0)
-+		ASSERT(!memcmp_extent_buffer(b, &disk_key,
-+		    offsetof(struct btrfs_leaf, items[0].key),
-+		    sizeof(disk_key)));
-+	else
-+		ASSERT(!memcmp_extent_buffer(b, &disk_key,
-+		    offsetof(struct btrfs_node, ptrs[0].key),
-+		    sizeof(disk_key)));
-+#endif
-+}
-+
-+static int key_search(struct extent_buffer *b, struct btrfs_key *key,
-+		      int level, int *prev_cmp, int *slot)
-+{
-+	if (*prev_cmp != 0) {
-+		*prev_cmp = bin_search(b, key, level, slot);
-+		return *prev_cmp;
-+	}
-+
-+	key_search_validate(b, key, level);
-+	*slot = 0;
-+
-+	return 0;
-+}
-+
- /*
-  * look for key in the tree.  path is filled in with nodes along the way
-  * if key is found, we return zero and you can find the item in the leaf
-@@ -2454,6 +2488,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 	int write_lock_level = 0;
- 	u8 lowest_level = 0;
- 	int min_write_lock_level;
-+	int prev_cmp;
- 
- 	lowest_level = p->lowest_level;
- 	WARN_ON(lowest_level && ins_len > 0);
-@@ -2484,6 +2519,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 	min_write_lock_level = write_lock_level;
- 
- again:
-+	prev_cmp = -1;
- 	/*
- 	 * we try very hard to do read locks on the root
- 	 */
-@@ -2584,7 +2620,7 @@ cow_done:
- 		if (!cow)
- 			btrfs_unlock_up_safe(p, level + 1);
- 
--		ret = bin_search(b, key, level, &slot);
-+		ret = key_search(b, key, level, &prev_cmp, &slot);
- 
- 		if (level != 0) {
- 			int dec = 0;
-@@ -2719,6 +2755,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
- 	int level;
- 	int lowest_unlock = 1;
- 	u8 lowest_level = 0;
-+	int prev_cmp;
- 
- 	lowest_level = p->lowest_level;
- 	WARN_ON(p->nodes[0] != NULL);
-@@ -2729,6 +2766,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
- 	}
- 
- again:
-+	prev_cmp = -1;
- 	b = get_old_root(root, time_seq);
- 	level = btrfs_header_level(b);
- 	p->locks[level] = BTRFS_READ_LOCK;
-@@ -2746,7 +2784,7 @@ again:
- 		 */
- 		btrfs_unlock_up_safe(p, level + 1);
- 
--		ret = bin_search(b, key, level, &slot);
-+		ret = key_search(b, key, level, &prev_cmp, &slot);
- 
- 		if (level != 0) {
- 			int dec = 0;
--- 
-1.7.9.5
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- We teach people management skills by examining characters in ---  =20
+            Shakespeare.  You could look at Claudius's crisis           =20
+                   management techniques, for example.                  =20
 
+--NAuYj0K7Umiq33rm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUiCyIFheFHXiqx3kAQLnEg/9GLSuKWjwSqAAX1RoeXWi9FjAfxc06usE
+XY1Cconqxet8NfNqlsiXcoKJ/MTWbTwj3RoG+VqAETE4HhZoOCiKxCy6k3GJuhbY
+bRSFgIkR+0Zcn5ZBGSmYN0+aLRBn6sIRflPC7cXCgT4zqOqJBWl7ii9FoGlpp5ro
+EH8uOiICMAio9X290nHRibF41uq9zDGqtmUW5FCUuaJvH6ovkA96K6rCOGp+zaTK
+5HXR9m2d0PIFUKaa5uyGGiwZOs1u9iQY8KU7JtDgAZeaVrK8IPrMXMlA3l41ImOO
+XVX45vLWHkcZ3HOIpa03gHlKTofXlS5jQ3eWiCl+BaYMCkBPA9F++y3luBO+GY+b
+Z6i9okdhJcDc1kV2jTMN79Opbj37gkS2U9JTmlXTXN2+AyDjwzA8+/VeeL+cui90
+dAqw+phRaWkzfyBrSnP1GF61w/Lx5rkg9ITp8tSnRWKRsKw86ZVGv3FMDzY0CcyG
+02I9m646/5ZF2nhi0YAW/Jw/YbbP1TvMQbpSPmkniGI2w6c/AA55bi8pl8xvG8Hi
+/WZdjaXxGhNdJYGu6FUeyt0CWuXeW8zoJ1aTp2Qjfqw065ordFB7O+k1re8+gJEo
+EYFDOEeGGsUCvb+aDlKcygRKO8Fgn5IwtY8nNZA6iL1VNKNRg2Cx+zwwnDRIJvQM
+RH+GQ/rjKbs=
+=FbPo
+-----END PGP SIGNATURE-----
+
+--NAuYj0K7Umiq33rm--

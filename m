@@ -1,82 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:60306 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755723Ab3H3OOE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 10:14:04 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4F5A37C065C
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 08:14:04 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>, <walken@google.com>, <mingo@elte.hu>,
-        <akpm@linux-foundation.org>, <linux-kernel@vger.kernel.org>
-Subject: [PATCH] rwsem: add rwsem_is_contended
-Date: Fri, 30 Aug 2013 10:14:01 -0400
-Message-ID: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
+Received: from cantor2.suse.de ([195.135.220.15]:44245 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755756Ab3H3OOl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Aug 2013 10:14:41 -0400
+Date: Fri, 30 Aug 2013 16:14:35 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4] Btrfs: optimize key searches in btrfs_search_slot
+Message-ID: <20130830141435.GK23113@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
+ <1377804111-15247-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1377804111-15247-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
-read lock on this rwsem while they scan the extent tree, and if need_resched()
-they will drop the lock and schedule.  The transaction commit needs to take a
-write lock for this rwsem for a very short period to switch out the commit
-roots.  If there are a lot of threads doing this caching operation we can starve
-out the committers which slows everybody out.  To address this we want to add
-this functionality to see if our rwsem has anybody waiting to take a write lock
-so we can drop it and schedule for a bit to allow the commit to continue.
-Thanks,
+On Thu, Aug 29, 2013 at 08:21:51PM +0100, Filipe David Borba Manana wrote:
+> Count: 5013
+> Range: 25.000 - 497.000; Mean: 82.767; Median: 64.000; Stddev: 49.972
+> Percentiles:  90th: 141.000; 95th: 182.000; 99th: 287.000
+>   25.000 -   33.930:   211 ######
+>   33.930 -   45.927:   277 ########
+>   45.927 -   62.045:  1834 #####################################################
+>   62.045 -   83.699:  1203 ###################################
+>   83.699 -  112.789:   609 ##################
+>  112.789 -  151.872:   450 #############
+>  151.872 -  204.377:   246 #######
+>  204.377 -  274.917:   124 ####
+>  274.917 -  369.684:    48 #
+>  369.684 -  497.000:    11 |
+> 
+> Approach proposed by this patch:
+> 
+> Count: 5013
+> Range: 10.000 - 8303.000; Mean: 28.505; Median: 18.000; Stddev: 119.147
+> Percentiles:  90th: 49.000; 95th: 74.000; 99th: 115.000
+>  10.000 -   20.339:  3160 #####################################################
+>  20.339 -   40.397:  1131 ###################
+>  40.397 -   79.308:   507 #########
+>  79.308 -  154.794:   199 ###
+> 154.794 -  301.232:    14 |
+> 301.232 -  585.313:     1 |
+> 585.313 - 8303.000:     1 |
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-I've cc'ed people who seemed like they may be in charge/familiar with this code,
-hopefully I got the right people.
+The statistics do not change from patch to patch+1 but you're doing
+changes that may affect performance, can you please update them as well?
 
- include/linux/rwsem.h |    1 +
- lib/rwsem.c           |   17 +++++++++++++++++
- 2 files changed, 18 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
-index 0616ffe..61a8802 100644
---- a/include/linux/rwsem.h
-+++ b/include/linux/rwsem.h
-@@ -35,6 +35,7 @@ extern struct rw_semaphore *rwsem_down_read_failed(struct rw_semaphore *sem);
- extern struct rw_semaphore *rwsem_down_write_failed(struct rw_semaphore *sem);
- extern struct rw_semaphore *rwsem_wake(struct rw_semaphore *);
- extern struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem);
-+extern int rwsem_is_contended(struct rw_semaphore *sem);
- 
- /* Include the arch specific part */
- #include <asm/rwsem.h>
-diff --git a/lib/rwsem.c b/lib/rwsem.c
-index 19c5fa9..20858cd 100644
---- a/lib/rwsem.c
-+++ b/lib/rwsem.c
-@@ -287,6 +287,23 @@ struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem)
- 	return sem;
- }
- 
-+/*
-+ * check to see if the rwsem we're holding has anybody waiting to acquire it.
-+ */
-+int rwsem_is_contended(struct rw_semaphore *sem)
-+{
-+	int ret = 0;
-+	unsigned long flags;
-+
-+	if (!raw_spin_trylock_irqsave(&sem->wait_lock, flags))
-+		return 1;
-+	if (!list_empty(&sem->wait_list))
-+		ret = 1;
-+	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
-+	return ret;
-+}
-+
-+EXPORT_SYMBOL(rwsem_is_contended);
- EXPORT_SYMBOL(rwsem_down_read_failed);
- EXPORT_SYMBOL(rwsem_down_write_failed);
- EXPORT_SYMBOL(rwsem_wake);
--- 
-1.7.7.6
-
+thanks,
+david

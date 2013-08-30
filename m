@@ -1,76 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39940 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:59250 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752200Ab3H2QLz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Aug 2013 12:11:55 -0400
-Message-ID: <521F72C6.3040600@redhat.com>
-Date: Thu, 29 Aug 2013 11:11:50 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1752833Ab3H3WxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Aug 2013 18:53:22 -0400
+Date: Sat, 31 Aug 2013 00:53:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: setup framework to corrupt specific fields
+ of an inode
+Message-ID: <20130830225320.GT23113@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1376927312-2898-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
-Subject: Re: [PATCH 0/2] btrfs-progs: prevent mkfs from aborting with small
- volume
-References: <52170114.7060604@jp.fujitsu.com> <521B64EA.2080106@redhat.com> <521D842D.6020100@jp.fujitsu.com>
-In-Reply-To: <521D842D.6020100@jp.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1376927312-2898-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/28/13 12:01 AM, Hidetoshi Seto wrote:
-> (2013/08/26 23:23), Eric Sandeen wrote:
->> Thanks for looking into this - how small of a device did you test?
->>
->> I tried a 2MB device w/ these 2 patches and still got:
->>
->> [btrfs-progs]# truncate --size=2m testfile
->> [btrfs-progs]# ./mkfs.btrfs testfile
->>
->> WARNING! - Btrfs v0.20-rc1-360-geeeb4e9 IS EXPERIMENTAL
->> WARNING! - see http://btrfs.wiki.kernel.org before using
->>
->> SMALL VOLUME: forcing mixed metadata/data groups
->> mkfs.btrfs: volumes.c:857: btrfs_alloc_chunk: Assertion `!(ret)' failed.
->> Aborted (core dumped)
->>
->> which was at:
->>
->>                 ret = btrfs_alloc_dev_extent(trans, device,
->>                              info->chunk_root->root_key.objectid,
->>                              BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
->>                              calc_size, &dev_offset);
->>                 BUG_ON(ret);
->>
->> :(
-> 
-> Wow...
-> It seems that this abort is different problem from the bug which
-> my patches are going to fix.  I'll try to make new patch to fix this
-> problem.
-> 
->>
->> Also, I'm curious - I know the code existed before your patch 2/2,
->> but I don't understand why it reserves 1MB for the first superblock 
->> when the first superblock is actually at 64k.  Any idea?
->>
->> -Eric
-> 
-> I'm not sure... According to the git-log, this 1M trick is in 
-> the following old commit by Chris:
-> 
->   commit a6de0bd778475504f42a142c83b8077993cbddfe
->   Author: Chris Mason <chris.mason@oracle.com>
->   Date:   Thu Apr 3 16:35:48 2008 -0400
-> 
->      Add mirroring support across multiple drives
+On Mon, Aug 19, 2013 at 11:48:32AM -0400, Josef Bacik wrote:
+> @@ -344,10 +442,12 @@ int main(int ac, char **av)
+>  	ac = ac - optind;
+>  	if (ac == 0)
+>  		print_usage();
+> -	if (logical == 0 && !extent_tree)
+> +	if (logical == 0 && (!extent_tree && !inode))
 
-Yep I saw that too.  Seemingly unrelated.  :(  Unless I'm missing
-something (which I probably am).
+There's a conflict with the chunk-recovery patches and this check does
+not make sense with the -i & -f options. The one below is the one I'd
+expect here, thus removing the one above.
 
--Eric
-
-> 
-> Thanks,
-> H.Seto
-> 
-
+>  		print_usage();
+>  	if (copy < 0)
+>  		print_usage();
+> +	if ((inode && !strlen(field)) || (strlen(field) && !inode))
+> +		print_usage();
+>  
+>  	dev = av[optind];
+>  

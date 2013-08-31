@@ -1,42 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:19850 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:43590 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753444Ab3I0R4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 13:56:03 -0400
-Date: Fri, 27 Sep 2013 10:55:59 -0700
-From: Zach Brown <zab@redhat.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] xfstests: btrfs/015 regression test for prealloc with
- balance
-Message-ID: <20130927175559.GV30372@lenny.home.zabbo.net>
-References: <1380292053-8123-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1380292053-8123-1-git-send-email-jbacik@fusionio.com>
+	id S1753950Ab3HaWBy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 18:01:54 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VFtEv-0008GZ-BF
+	for linux-btrfs@vger.kernel.org; Sun, 01 Sep 2013 00:01:53 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 00:01:53 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 00:01:53 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Unmountable BTRFS with parent transid verify failed
+Date: Sat, 31 Aug 2013 22:01:35 +0000 (UTC)
+Message-ID: <pan$4b543$3168e754$1bbb4d2b$27429757@cox.net>
+References: <CAN05THSnkRsRytfPZcn8eBqD_Y4BgjQTmJ9CsZC6h03xHzXJLA@mail.gmail.
+	com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> +nr_csum_no_found=$(dmesg | grep -c "no csum found")
-> +nr_csum_failed=$(dmesg | grep -c "csum failed")
-> +
-> +_check_csum_error()
-> +{
-> +	new_csum_no_found=$(dmesg | grep -c "no csum found")
-> +	new_csum_failed=$(dmesg | grep -c "csum failed")
-> +
-> +	if [ $nr_csum_no_found -eq $new_csum_no_found -a \
-> +	     $nr_csum_failed -eq $new_csum_failed ]; then
-> +		return 0
-> +	fi
-> +	return 1
-> +}
+ronnie sahlberg posted on Sat, 31 Aug 2013 14:50:36 -0700 as excerpted:
 
-> +# This sucks but unfortunately it is the only way to be sure something didn't go
-> +# wrong.
-> +_check_csum_error || _fail "csum detected, please check dmesg"
+> And while btrfsck eventually does complete  the filesystem remains
+> unmountable.
+> 
+> Any advice ?
 
-In the future you could make them trace events and catch them for a
-given invocation of a command with perf.
+This isn't specific to your question, but in general...
 
-- z
+In the "Question: How can I recover this partition? (unable to find 
+logical $hugenum len 4096)" thread about a week ago, there's a post from 
+Hugo Mills, listing the general troubleshooting steps he recommends and 
+in what order.  I'd try that.
+
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27999
+
+(I have it marked to possibly add the info to the wiki as I don't 
+remember seeing such a concise list there, but I haven't gotten around to 
+it yet.)
+
+Wiki: https://btrfs.wiki.kernel.org/
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

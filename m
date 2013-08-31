@@ -1,89 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44803 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755782Ab3HaLli (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Aug 2013 07:41:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VFjYf-0006b6-3T
-	for linux-btrfs@vger.kernel.org; Sat, 31 Aug 2013 13:41:37 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 13:41:37 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 13:41:37 +0200
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:64236 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752738Ab3HaMzI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 08:55:08 -0400
+Received: by mail-wi0-f174.google.com with SMTP id en1so402877wid.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 05:55:07 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Device delete returns "unable to go below four devices on
- raid10" on 5 drive setup
-Date: Sat, 31 Aug 2013 11:41:17 +0000 (UTC)
-Message-ID: <pan$a32ff$228f75f0$a509de6b$7bb8cf73@cox.net>
-References: <1377943975.5426.17.camel@pc-steven.LAN>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: miaox@cn.fujitsu.com, jbacik@fusionio.com,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs: optimize key searches in btrfs_search_slot
+Date: Sat, 31 Aug 2013 13:54:56 +0100
+Message-Id: <1377953696-28466-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
+References: <1377780253-17826-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steven Post posted on Sat, 31 Aug 2013 12:12:55 +0200 as excerpted:
+When the binary search returns 0 (exact match), the target key
+will necessarily be at slot 0 of all nodes below the current one,
+so in this case the binary search is not needed because it will
+always return 0, and we waste time doing it, holding node locks
+for longer than necessary, etc.
 
-> Btrfs Btrfs v0.19
+Below follow histograms with the times spent on the current approach of
+doing a binary search when the previous binary search returned 0, and
+times for the new approach, which directly picks the first item/child
+node in the leaf/node.
 
-> The system is running Debian Wheezy (kernel 3.2.0-4-amd64 #1 SMP Debian
-> 3.2.46-1 x86_64).
-> 
-> Is this something known (and possibly resolved in a later version), or
-> should I open a bug report about it? Could it be that the device removal
-> was completed, but still shows as part of the array for some reason?
+Current approach:
 
-As a sysadmin running btrfs not a dev, I don't know about your specific 
-issue, but in general, be aware that btrfs (both the kernelspace 
-filesystem and the userspace btrfs-tools) is still experimental and under 
-heavy development.  As such, it's strongly recommended to run the latest 
-stable series kernel at the oldest, if not the rcs (here, I run a git 
-kernel, but don't normally update to the new development series until rc2 
-or 3, which will hopefully avoid any serious data-destroying bugs, but of 
-course on a development filesystem backups are even more important than 
-normal in any case, so...), unless you have a specific known problem 
-preventing you from doing so.
+Count: 6682
+Range: 35.000 - 8370.000; Mean: 85.837; Median: 75.000; Stddev: 106.429
+Percentiles:  90th: 124.000; 95th: 145.000; 99th: 206.000
+  35.000 -   61.080:  1235 ################
+  61.080 -  106.053:  4207 #####################################################
+ 106.053 -  183.606:  1122 ##############
+ 183.606 -  317.341:   111 #
+ 317.341 -  547.959:     6 |
+ 547.959 - 8370.000:     1 |
 
-That would be 3.10.x, with 3.11 late soon to be out now.  Some people do 
-run one behind that, so the 3.9 series, but older than that and trying 
-something that isn't as ancient as the hills is generally a strong first 
-recommendation, both because many known bugs have been fixed so you're 
-actually taking a bigger risk with older, and because the bug reports 
-simply aren't as useful that far back.
+Approach proposed by this patch:
 
-Similarly, the git master branch of btrfs-tools is deliberately kept 
-stable and usable -- development happens on other branches and is merged 
--- so a live-git build not older than a couple months (that being about 
-the length of a kernel cycle so they'll be of similar age) is 
-recommended.  0.19 is a very old release tho it's the latest actual 
-release, but there's a much newer 0.20-rc1 tagged if you still don't feel 
-comfortable with a live-git build.
+Count: 6682
+Range:  6.000 - 135.000; Mean: 16.690; Median: 16.000; Stddev:  7.160
+Percentiles:  90th: 23.000; 95th: 27.000; 99th: 40.000
+   6.000 -    8.418:    58 #
+   8.418 -   11.670:  1149 #########################
+  11.670 -   16.046:  2418 #####################################################
+  16.046 -   21.934:  2098 ##############################################
+  21.934 -   29.854:   744 ################
+  29.854 -   40.511:   154 ###
+  40.511 -   54.848:    41 #
+  54.848 -   74.136:     5 |
+  74.136 -  100.087:     9 |
+ 100.087 -  135.000:     6 |
 
-All this and more is covered on the btrfs wiki, found at
+These samples were captured during a run of the btrfs tests 001, 002 and
+004 in the xfstests, with a leaf/node size of 4Kb.
 
-https://btrfs.wiki.kernel.org/
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
 
-If you wish to continue testing btrfs I'd suggest you read up a bit 
-there, as if you didn't know the above, there's surely a lot else covered 
-there that you're not aware of -- and on a development filesystem that 
-lack of knowledge could well bite you!
+V2: Simplified code, removed unnecessary code.
+V3: Replaced BUG_ON() with the new ASSERT() from Josef.
+V4: Addressed latest comments from Zach Brown and Josef Bacik.
+    Surrounded all code that is used for the assertion with a
+    #ifdef CONFIG_BTRFS_ASSERT ... #endif block. Also changed
+    offset arguments to be more strictly correct.
+V5: Updated histograms to reflect latest version of the code.
+V6: Use single assert macro and no more #ifdef CONFIG_BTRFS_ASSERT
+    ... #endif logic, as suggested by Miao Xie.
 
-Alternatively, testing a development filesystem certainly isn't for 
-everybody, and the fact that you're running an old 3.2 kernel could be a 
-hint that you're looking for something a bit more conservative and stable 
-than a development filesystem, making it a poor fit for your needs at 
-best.  But that's for you to decide.  If you're happy being a tester and 
-either have your data well backed up or otherwise consider it losable in 
-testing if things go wrong, go for it, but do it right, with current 
-kernel and tools so your tests at least have some value if things /do/ go 
-wrong! =:^)
+ fs/btrfs/ctree.c |   39 +++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 37 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 5fa521b..5f38157 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2426,6 +2426,37 @@ done:
+ 	return ret;
+ }
+ 
++static int key_search_validate(struct extent_buffer *b,
++			       struct btrfs_key *key,
++			       int level)
++{
++	struct btrfs_disk_key disk_key;
++	unsigned long offset;
++
++	btrfs_cpu_key_to_disk(&disk_key, key);
++
++	if (level == 0)
++		offset = offsetof(struct btrfs_leaf, items[0].key);
++	else
++		offset = offsetof(struct btrfs_node, ptrs[0].key);
++
++	return !memcmp_extent_buffer(b, &disk_key, offset, sizeof(disk_key));
++}
++
++static int key_search(struct extent_buffer *b, struct btrfs_key *key,
++		      int level, int *prev_cmp, int *slot)
++{
++	if (*prev_cmp != 0) {
++		*prev_cmp = bin_search(b, key, level, slot);
++		return *prev_cmp;
++	}
++
++	ASSERT(key_search_validate(b, key, level));
++	*slot = 0;
++
++	return 0;
++}
++
+ /*
+  * look for key in the tree.  path is filled in with nodes along the way
+  * if key is found, we return zero and you can find the item in the leaf
+@@ -2454,6 +2485,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	int write_lock_level = 0;
+ 	u8 lowest_level = 0;
+ 	int min_write_lock_level;
++	int prev_cmp;
+ 
+ 	lowest_level = p->lowest_level;
+ 	WARN_ON(lowest_level && ins_len > 0);
+@@ -2484,6 +2516,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	min_write_lock_level = write_lock_level;
+ 
+ again:
++	prev_cmp = -1;
+ 	/*
+ 	 * we try very hard to do read locks on the root
+ 	 */
+@@ -2584,7 +2617,7 @@ cow_done:
+ 		if (!cow)
+ 			btrfs_unlock_up_safe(p, level + 1);
+ 
+-		ret = bin_search(b, key, level, &slot);
++		ret = key_search(b, key, level, &prev_cmp, &slot);
+ 
+ 		if (level != 0) {
+ 			int dec = 0;
+@@ -2719,6 +2752,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
+ 	int level;
+ 	int lowest_unlock = 1;
+ 	u8 lowest_level = 0;
++	int prev_cmp;
+ 
+ 	lowest_level = p->lowest_level;
+ 	WARN_ON(p->nodes[0] != NULL);
+@@ -2729,6 +2763,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
+ 	}
+ 
+ again:
++	prev_cmp = -1;
+ 	b = get_old_root(root, time_seq);
+ 	level = btrfs_header_level(b);
+ 	p->locks[level] = BTRFS_READ_LOCK;
+@@ -2746,7 +2781,7 @@ again:
+ 		 */
+ 		btrfs_unlock_up_safe(p, level + 1);
+ 
+-		ret = bin_search(b, key, level, &slot);
++		ret = key_search(b, key, level, &prev_cmp, &slot);
+ 
+ 		if (level != 0) {
+ 			int dec = 0;
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.9.5
 

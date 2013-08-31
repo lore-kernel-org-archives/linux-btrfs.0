@@ -1,55 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43590 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753950Ab3HaWBy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Aug 2013 18:01:54 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VFtEv-0008GZ-BF
-	for linux-btrfs@vger.kernel.org; Sun, 01 Sep 2013 00:01:53 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 00:01:53 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 00:01:53 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unmountable BTRFS with parent transid verify failed
-Date: Sat, 31 Aug 2013 22:01:35 +0000 (UTC)
-Message-ID: <pan$4b543$3168e754$1bbb4d2b$27429757@cox.net>
-References: <CAN05THSnkRsRytfPZcn8eBqD_Y4BgjQTmJ9CsZC6h03xHzXJLA@mail.gmail.
-	com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from frost.carfax.org.uk ([85.119.82.111]:36802 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754913Ab3HaWUs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 18:20:48 -0400
+Date: Sat, 31 Aug 2013 23:20:41 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Steven Post <redalert.commander@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Device delete returns "unable to go below four devices on
+ raid10" on 5 drive setup
+Message-ID: <20130831222041.GZ3115@carfax.org.uk>
+References: <1377943975.5426.17.camel@pc-steven.LAN>
+ <A4758013-22BA-4552-B391-9492B42D85C5@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="7fVM7fn5T1d7Fqim"
+In-Reply-To: <A4758013-22BA-4552-B391-9492B42D85C5@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-ronnie sahlberg posted on Sat, 31 Aug 2013 14:50:36 -0700 as excerpted:
 
-> And while btrfsck eventually does complete  the filesystem remains
-> unmountable.
+--7fVM7fn5T1d7Fqim
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Aug 31, 2013 at 11:42:28AM -0600, Chris Murphy wrote:
 > 
-> Any advice ?
+> On Aug 31, 2013, at 4:12 AM, Steven Post <redalert.commander@gmail.com> wrote:
+> > 
+> > The system is running Debian Wheezy (kernel 3.2.0-4-amd64 #1 SMP Debian
+> > 3.2.46-1 x86_64).
+> > 
+> > Is this something known (and possibly resolved in a later version), or
+> > should I open a bug report about it?
+> 
+> Try 3.10 or 3.11 before filing a bug on it.
 
-This isn't specific to your question, but in general...
+   If you want a debian-packaged kernel, they're available from the
+experimental distribution.
 
-In the "Question: How can I recover this partition? (unable to find 
-logical $hugenum len 4096)" thread about a week ago, there's a post from 
-Hugo Mills, listing the general troubleshooting steps he recommends and 
-in what order.  I'd try that.
-
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27999
-
-(I have it marked to possibly add the info to the wiki as I don't 
-remember seeing such a concise list there, but I haven't gotten around to 
-it yet.)
-
-Wiki: https://btrfs.wiki.kernel.org/
+   Hugo.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+     --- Great oxymorons of the world, no.  5: Manifesto Promise ---     
 
+--7fVM7fn5T1d7Fqim
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUiJsOVheFHXiqx3kAQI2Iw/+O2NOZNreMkghQo9XkNMeihj2ByRQAVNc
+I7Qux/c6lV3uNzr3lc/wwIy50QFVwNI46FallCH2387ty49TgCZJCz1Qo+0ioFlJ
+w0fcQNaiRHPykmf5Diq1I2k+v+FFj2VxuYWrawaim4iCjcus0RkNvKwQPtk7v4Fu
+kqhdUHtS4cSbZyj3dKqUvH8pOAMUBU6Uos/TekdTSXnR03gWV/zlXPcVBsQOm9nQ
+eOPxzY3KSiaCDILCovynxFlpUjO2vwmE7T0dqFsLkCoynYca6+cle8VuXoYpobzd
+qttsXAs1Tmm5FF7ifGGmiR0hG7VV1L92P8Ne/pMtK+72PSAE0ddHiyx3FbHK0eaw
+lUyOnHl6undvFJMlwvGoPhpY5QvrDlgF23fNw7Hb053uFBXK4kAYBjn5so6jV4gB
+Fn7r/mlZGMA4+39fvHdZHsdXkUNicRPoCTXjGy6o/my54gnAZUIrpy/eggpK1TZ7
+m0+z7KA+k9EbodIYOoYTj+Drw8QiL1lnr5FultiOt0ddWDbQdiLGQ1XxIuKCyGyg
+Pu7iwqMqFTVjBwKO/LBfUI6GxpvgocKdGawuaXISU+NUzFGH3/XWQdouk/MY3tlc
+b3Y96Lnxo6M324ANK7BUhA08DahLAq7wxuAIwaqmtVwuTMMy94RUvPH8CPWfwLnN
+YgJzwFWPfYM=
+=eNVt
+-----END PGP SIGNATURE-----
+
+--7fVM7fn5T1d7Fqim--

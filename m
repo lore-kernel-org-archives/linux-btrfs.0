@@ -1,92 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f181.google.com ([209.85.128.181]:62181 "EHLO
-	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754512Ab3HaGLt (ORCPT
+Received: from mail-vc0-f179.google.com ([209.85.220.179]:34005 "EHLO
+	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753781Ab3HaKIb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Aug 2013 02:11:49 -0400
+	Sat, 31 Aug 2013 06:08:31 -0400
+Received: by mail-vc0-f179.google.com with SMTP id ht10so1968729vcb.10
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 03:08:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <51F735AE.2050902@cn.fujitsu.com>
-References: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
-	<CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
-	<51F735AE.2050902@cn.fujitsu.com>
-Date: Sat, 31 Aug 2013 10:11:48 +0400
-Message-ID: <CAG5DWog-Kom19-yB1TevGdzt+Xp9Jnsy3Yc9+ZfX2=G5zGwg2w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: use list_for_each_entry_safe() when delete items
-From: Azat Khuzhin <a3at.mail@gmail.com>
-To: miaox@cn.fujitsu.com
-Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
-        open list <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Sat, 31 Aug 2013 12:08:30 +0200
+Message-ID: <CABF9=8jix2GoAm-nA41jMYMRqv+dxGq98SkaaYDvVwcqiHiTCQ@mail.gmail.com>
+Subject: ENOSPC issue -- plenty of free space in metadata/data chunks
+From: George Amvrosiadis <gamvrosi@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 30, 2013 at 7:40 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
-> On mon, 29 Jul 2013 11:48:32 +0400, Azat Khuzhin wrote:
->> On Sat, Jul 27, 2013 at 2:12 PM, Azat Khuzhin <a3at.mail@gmail.com> wrote:
->>> Replace list_for_each_entry() by list_for_each_entry_safe() in
->>> __btrfs_close_devices()
->>>
->>> There is another place that delete items lock_stripe_add(), but there we
->>> don't need safe version, because after deleting we exit from loop.
->>>
->>> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
->>> ---
->>>  fs/btrfs/volumes.c |    4 ++--
->>>  1 file changed, 2 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index 78b8717..1d1b595 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -616,13 +616,13 @@ static void free_device(struct rcu_head *head)
->>>
->>>  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
->>>  {
->>> -       struct btrfs_device *device;
->>> +       struct btrfs_device *device, *next;
->>>
->>>         if (--fs_devices->opened > 0)
->>>                 return 0;
->>>
->>>         mutex_lock(&fs_devices->device_list_mutex);
->>> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
->>> +       list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
->>>                 struct btrfs_device *new_device;
->>>                 struct rcu_string *name;
->>
->> There is "kfree(device);" at the end of loop, maybe there must "goto
->> again;" after it?
->> (instead of this patch)
+Hi,
 
-Ugh. I was looking into another function!
+I'm using LK3.10, replaying filesystem traces on a btrfs filesystem,
+and I my experiments always result in write()'s returning ENOSPC
+(No space left on device). I'm baffled because I've been reading
+about this issue on here, but in those other cases there were
+indications that the Metadata chunks were used up. As you can
+see in the attached df output, I don't have that issue. The following
+fs is mounted using enospc_debug, but I haven't seen anything printed.
 
->
-> Your fix is right, we needn't search from the head once again.
->
-> The other fix way is:
->         call_rcu(&device->rcu, free_device);
-> +       device = new_device;
->  }
-> but from the viewpoint of the readability, this way is not so good.
->
-> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Can someone please let me know if there's a newer LK version
+that has addressed possibly related ENOSPC issues, or whether
+this is a known bug?
 
-Thanks!
-Miao, should I resend patch with you reviewed-by?
+Many thanks,
+George
 
->
->>
->>>
->>> --
->>> 1.7.10.4
->>>
->>
->>
->>
->
+gamvrosi@c154:~$ sudo btrfs fi df /media/btrfs-test
+Data: total=87.01GB, used=85.48GB
+System, DUP: total=8.00MB, used=16.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=1.00GB, used=383.77MB
+Metadata: total=8.00MB, used=0.00
 
+gamvrosi@c154:~$ sudo btrfs fi sh
+Label: none  uuid: 9c632287-214b-4203-94e9-5411ad0d1fe0
+        Total devices 1 FS bytes used 85.86GB
+        devid    1 size 213.52GB used 89.04GB path /dev/sda3
+
+Btrfs v0.20-rc1-253-g7854c8b-dirty
 
 
 -- 
-Respectfully
-Azat Khuzhin
+George Amvrosiadis, B.Sc., Ph.D. Candidate
+Graduate Students' Union Representative
+Computer Science, University of Toronto

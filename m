@@ -1,48 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46990 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752358Ab3H0G3z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Aug 2013 02:29:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VECmo-0005G2-1Z
-	for linux-btrfs@vger.kernel.org; Tue, 27 Aug 2013 08:29:54 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 08:29:54 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2013 08:29:54 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:42145 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753110Ab3HaKjz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 06:39:55 -0400
+In-Reply-To: <708D6B3A-EF66-4978-A856-7D01B2687083@colorremedies.com>
+References: <201308262335.25871.russell@coker.com.au> <CAFvQSYSgAPZkYUPF-pqSTGAQpHWAG7NDjBiJhwdxhsEqxSR+nA@mail.gmail.com> <5FA1D778-230D-4EB5-B7C9-537ABFFC9EAA@colorremedies.com> <708D6B3A-EF66-4978-A856-7D01B2687083@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
 Subject: Re: snapshot space available
-Date: Tue, 27 Aug 2013 06:29:30 +0000 (UTC)
-Message-ID: <pan$add47$4ad22f14$35690eac$3b7c510f@cox.net>
-References: <201308262335.25871.russell@coker.com.au> <
-	6FCC5036-CC36-4DA3-8594-1FA23F3BB256@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Russell Coker <russell@coker.com.au>
+Date: Sat, 31 Aug 2013 19:04:48 +1000
+To: Chris Murphy <lists@colorremedies.com>,
+        Clemens Eisserer <linuxhippy@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Message-ID: <61a5f306-c063-4428-9842-b10de392599f@email.android.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Mon, 26 Aug 2013 09:15:46 -0600 as excerpted:
+How would I determine when this situation is approaching?  On all important systems I have cron jobs and nagios checks to determine via df when thw file system is about to run out of space. How do I do the same for this condition? 
 
-> I'm uncertain if autodefrag avoids this problem. It does seem like in
-> certain instances, like this, the file system needs to be able to prune
-> itself somehow, like a partial balance to consolidate data chunks and
-> then release their space so they can become metadata chunks.
-
-Intriguing question re defrag.  I hadn't thought of the possibility until 
-you suggested it, but indeed, tracking hundreds of extents instead of one 
-or a dozen, does sound like it could reduce metadata usage, reducing the 
-chance of running into the issue in the first place as well as lessening 
-the chance of a "simple" delete temporarily requiring significant new 
-metadata resources in ordered to track all those extent frees before the 
-final atomic root entry update.
+Chris Murphy <lists@colorremedies.com> wrote:
+>
+>On Aug 26, 2013, at 9:27 AM, Chris Murphy <lists@colorremedies.com>
+>wrote:
+>
+>> I haven't tried doing a partial balance, deleting the extra device,
+>then finishing the balance.
+>
+>Btrfs FAQ suggests a partial balance for this situation. So it's worth
+>a try before adding a device.
+>
+>https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_get_.22No_space_left_on_device.22_errors.2C_but_df_says_I.27ve_got_lots_of_space
+>
+>
+>Chris Murphy
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Sent from my Samsung Galaxy Note 2 with K-9 Mail.

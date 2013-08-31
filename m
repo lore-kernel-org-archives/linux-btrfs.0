@@ -1,72 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58825 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755869Ab3H3WZz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 18:25:55 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com, David Sterba <dsterba@suse.cz>,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: [PATCH] btrfs: commit transaction after deleting a subvolume
-Date: Sat, 31 Aug 2013 00:25:46 +0200
-Message-Id: <1377901546-22434-1-git-send-email-dsterba@suse.cz>
+Received: from mail-ve0-f181.google.com ([209.85.128.181]:62181 "EHLO
+	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754512Ab3HaGLt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 02:11:49 -0400
+MIME-Version: 1.0
+In-Reply-To: <51F735AE.2050902@cn.fujitsu.com>
+References: <1374919965-11690-1-git-send-email-a3at.mail@gmail.com>
+	<CAG5DWoi_BQvHYcPySZBLQpB3wbYeqvYj_CE1RvEBSB8xibtrDw@mail.gmail.com>
+	<51F735AE.2050902@cn.fujitsu.com>
+Date: Sat, 31 Aug 2013 10:11:48 +0400
+Message-ID: <CAG5DWog-Kom19-yB1TevGdzt+Xp9Jnsy3Yc9+ZfX2=G5zGwg2w@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: use list_for_each_entry_safe() when delete items
+From: Azat Khuzhin <a3at.mail@gmail.com>
+To: miaox@cn.fujitsu.com
+Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
+        open list <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex pointed out the consequences after a transaction is not committed
-when a subvolume is deleted, so in case of a crash before an actual
-commit happens will let the subvolume reappear.
+On Tue, Jul 30, 2013 at 7:40 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+> On mon, 29 Jul 2013 11:48:32 +0400, Azat Khuzhin wrote:
+>> On Sat, Jul 27, 2013 at 2:12 PM, Azat Khuzhin <a3at.mail@gmail.com> wrote:
+>>> Replace list_for_each_entry() by list_for_each_entry_safe() in
+>>> __btrfs_close_devices()
+>>>
+>>> There is another place that delete items lock_stripe_add(), but there we
+>>> don't need safe version, because after deleting we exit from loop.
+>>>
+>>> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
+>>> ---
+>>>  fs/btrfs/volumes.c |    4 ++--
+>>>  1 file changed, 2 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>> index 78b8717..1d1b595 100644
+>>> --- a/fs/btrfs/volumes.c
+>>> +++ b/fs/btrfs/volumes.c
+>>> @@ -616,13 +616,13 @@ static void free_device(struct rcu_head *head)
+>>>
+>>>  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>>>  {
+>>> -       struct btrfs_device *device;
+>>> +       struct btrfs_device *device, *next;
+>>>
+>>>         if (--fs_devices->opened > 0)
+>>>                 return 0;
+>>>
+>>>         mutex_lock(&fs_devices->device_list_mutex);
+>>> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
+>>> +       list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+>>>                 struct btrfs_device *new_device;
+>>>                 struct rcu_string *name;
+>>
+>> There is "kfree(device);" at the end of loop, maybe there must "goto
+>> again;" after it?
+>> (instead of this patch)
 
-Original post:
-http://www.spinics.net/lists/linux-btrfs/msg22088.html
+Ugh. I was looking into another function!
 
-Josef's objections:
-http://www.spinics.net/lists/linux-btrfs/msg22256.html
+>
+> Your fix is right, we needn't search from the head once again.
+>
+> The other fix way is:
+>         call_rcu(&device->rcu, free_device);
+> +       device = new_device;
+>  }
+> but from the viewpoint of the readability, this way is not so good.
+>
+> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
-While there's no need to do a full commit for regular files, a subvolume
-may get a different treatment.
+Thanks!
+Miao, should I resend patch with you reviewed-by?
 
-http://www.spinics.net/lists/linux-btrfs/msg23087.html:
+>
+>>
+>>>
+>>> --
+>>> 1.7.10.4
+>>>
+>>
+>>
+>>
+>
 
-"That a subvol/snapshot may appear after crash if transation commit did
-not happen does not feel so good. We know that the subvol is only
-scheduled for deletion and needs to be processed by cleaner.
 
->From that point I'd rather see the commit to happen to avoid any
-unexpected surprises.  A subvolume that re-appears still holds the data
-references and consumes space although the user does not assume that.
 
-Automated snapshotting and deleting needs some guarantees about the
-behaviour and what to do after a crash. So now it has to process the
-backlog of previously deleted snapshots and verify that they're not
-there, compared to "deleted -> will never appear, can forget about it".
-"
-
-There is a performance penalty incured by the change, but deleting a
-subvolume is not a frequent operation and the tradeoff seems justified
-by getting the guarantee stated above.
-
-CC: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: Josef Bacik <jbacik@fusionio.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ioctl.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e407f75..4394632 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2268,7 +2268,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- out_end_trans:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
--	ret = btrfs_end_transaction(trans, root);
-+	ret = btrfs_commit_transaction(trans, root);
- 	if (ret && !err)
- 		err = ret;
- 	inode->i_flags |= S_DEAD;
 -- 
-1.7.9
-
+Respectfully
+Azat Khuzhin

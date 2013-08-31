@@ -1,54 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f179.google.com ([209.85.220.179]:34005 "EHLO
-	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753781Ab3HaKIb (ORCPT
+Received: from mail-we0-f179.google.com ([74.125.82.179]:58914 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753104Ab3HaKNE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Aug 2013 06:08:31 -0400
-Received: by mail-vc0-f179.google.com with SMTP id ht10so1968729vcb.10
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 03:08:30 -0700 (PDT)
-MIME-Version: 1.0
-Date: Sat, 31 Aug 2013 12:08:30 +0200
-Message-ID: <CABF9=8jix2GoAm-nA41jMYMRqv+dxGq98SkaaYDvVwcqiHiTCQ@mail.gmail.com>
-Subject: ENOSPC issue -- plenty of free space in metadata/data chunks
-From: George Amvrosiadis <gamvrosi@gmail.com>
+	Sat, 31 Aug 2013 06:13:04 -0400
+Received: by mail-we0-f179.google.com with SMTP id t58so2331912wes.38
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Aug 2013 03:13:02 -0700 (PDT)
+Message-ID: <1377943975.5426.17.camel@pc-steven.LAN>
+Subject: Device delete returns "unable to go below four devices on raid10"
+ on 5 drive setup
+From: Steven Post <redalert.commander@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sat, 31 Aug 2013 12:12:55 +0200
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
+	boundary="=-Q0/df1D7TGILse15O/FH"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-I'm using LK3.10, replaying filesystem traces on a btrfs filesystem,
-and I my experiments always result in write()'s returning ENOSPC
-(No space left on device). I'm baffled because I've been reading
-about this issue on here, but in those other cases there were
-indications that the Metadata chunks were used up. As you can
-see in the attached df output, I don't have that issue. The following
-fs is mounted using enospc_debug, but I haven't seen anything printed.
+--=-Q0/df1D7TGILse15O/FH
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Can someone please let me know if there's a newer LK version
-that has addressed possibly related ENOSPC issues, or whether
-this is a known bug?
+Hello list,
 
-Many thanks,
-George
+I have a 5 drive raid10 setup (6th sata port malfunctions, all drives
+are 3TB in size).
+I want to remove a single drive, yet the 'btrfs device delete' command
+gives me the "unable to go below four devices on raid10" error.
 
-gamvrosi@c154:~$ sudo btrfs fi df /media/btrfs-test
-Data: total=87.01GB, used=85.48GB
-System, DUP: total=8.00MB, used=16.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=383.77MB
-Metadata: total=8.00MB, used=0.00
+This is the result after first deleting a device, after a check, it
+didn't seem to be removed, then issuing the command again results in the
+error.
 
-gamvrosi@c154:~$ sudo btrfs fi sh
-Label: none  uuid: 9c632287-214b-4203-94e9-5411ad0d1fe0
-        Total devices 1 FS bytes used 85.86GB
-        devid    1 size 213.52GB used 89.04GB path /dev/sda3
+Before:
+# btrfs filesystem show /dev/sda3
+Label: 'maindrivearray'  uuid: f58976ab-2ce1-4a1c-bc82-22df7d3393b4
+	Total devices 5 FS bytes used 2.67TB
+	devid    4 size 2.73TB used 1.09TB path /dev/sde3
+	devid    3 size 2.73TB used 1.09TB path /dev/sdd3
+	devid    2 size 2.73TB used 1.09TB path /dev/sdc3
+	devid    6 size 2.73TB used 1.09TB path /dev/sdb3
+	devid    5 size 2.73TB used 1.09TB path /dev/sda3
 
-Btrfs v0.20-rc1-253-g7854c8b-dirty
+Btrfs Btrfs v0.19
 
+After issuing the command
+# btrfs device delete /dev/sde3 /mnt
 
--- 
-George Amvrosiadis, B.Sc., Ph.D. Candidate
-Graduate Students' Union Representative
-Computer Science, University of Toronto
+I get this:
+# btrfs filesystem show /dev/sda3
+Label: 'maindrivearray'  uuid: f58976ab-2ce1-4a1c-bc82-22df7d3393b4
+	Total devices 5 FS bytes used 2.67TB
+	devid    4 size 2.73TB used 1.09TB path /dev/sde3
+	devid    3 size 2.73TB used 1.24TB path /dev/sdd3
+	devid    2 size 2.73TB used 1.24TB path /dev/sdc3
+	devid    6 size 2.73TB used 1.24TB path /dev/sdb3
+	devid    5 size 2.73TB used 1.24TB path /dev/sda3
+
+Btrfs Btrfs v0.19
+
+When issuing the delete command again, the error pops up, also after
+reboot. The first remove did take a long time to complete and according
+to syslog and the 'filesystem show' command a lot of data was moved to
+the other drives (as expected).
+
+The system is running Debian Wheezy (kernel 3.2.0-4-amd64 #1 SMP Debian
+3.2.46-1 x86_64).
+
+Is this something known (and possibly resolved in a later version), or
+should I open a bug report about it? Could it be that the device removal
+was completed, but still shows as part of the array for some reason?
+
+The reason for the remove is actually that I want to (gradually) replace
+the 3TB drives with 1 TB ones, and somewhere in the middle move some of
+the data of the array, to another machine, that currently has the 1 TB
+drives which I intend to replace with the 3TB ones.
+
+Best regards,
+Steven
+
+--=-Q0/df1D7TGILse15O/FH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEcBAABAgAGBQJSIcGnAAoJEEvSpS1Vyfkxn7EIAKm1Nrwhx48vFnRN9ajaJRQC
+mXzcJmjdzfjr7WHIuse730tuxmnEni0hPaGK+ZcNJg5nKkfXcoVXF1SNd4Q+QsbX
+PZbXlkG5DDyWvhftHaZq5oMF74SB4mHfdgMVGRpKITkoGqofUMtJNkiiRkXsvbC4
+Yeq498lQQ80ZTVruvrSCDqaaDFZxWBypHNPGO7Sx2vJOl2AF1gzjwWAcbpz7Uzdv
+btX0bUJwbXXs2009Wy40Nelkw/bf+AAIrh1a2fAaiWsi+ciHtbAW+re5lTnrp1aZ
+4Y6oSL1vfKxm+dr94Y4eFCcoVl4gswxWxY0EezEfeJbR4ePGy2gI8y5RMOr2n5U=
+=+sAe
+-----END PGP SIGNATURE-----
+
+--=-Q0/df1D7TGILse15O/FH--
+

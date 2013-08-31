@@ -1,54 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from merlin.infradead.org ([205.233.59.134]:57765 "EHLO
-	merlin.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753392Ab3HaOvv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Aug 2013 10:51:51 -0400
-Date: Sat, 31 Aug 2013 16:51:36 +0200
-From: Peter Zijlstra <peterz@infradead.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org, walken@google.com, mingo@elte.hu,
-        akpm@linux-foundation.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-Message-ID: <20130831145136.GX31370@twins.programming.kicks-ass.net>
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:64906 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755743Ab3HaRm3 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Aug 2013 13:42:29 -0400
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: Device delete returns "unable to go below four devices on raid10" on 5 drive setup
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1377943975.5426.17.camel@pc-steven.LAN>
+Date: Sat, 31 Aug 2013 11:42:28 -0600
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <A4758013-22BA-4552-B391-9492B42D85C5@colorremedies.com>
+References: <1377943975.5426.17.camel@pc-steven.LAN>
+To: Steven Post <redalert.commander@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 30, 2013 at 10:14:01AM -0400, Josef Bacik wrote:
-> Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
-> read lock on this rwsem while they scan the extent tree, and if need_resched()
-> they will drop the lock and schedule.  The transaction commit needs to take a
-> write lock for this rwsem for a very short period to switch out the commit
-> roots.  If there are a lot of threads doing this caching operation we can starve
-> out the committers which slows everybody out.  To address this we want to add
-> this functionality to see if our rwsem has anybody waiting to take a write lock
-> so we can drop it and schedule for a bit to allow the commit to continue.
+
+On Aug 31, 2013, at 4:12 AM, Steven Post <redalert.commander@gmail.com> wrote:
+> 
+> The system is running Debian Wheezy (kernel 3.2.0-4-amd64 #1 SMP Debian
+> 3.2.46-1 x86_64).
+> 
+> Is this something known (and possibly resolved in a later version), or
+> should I open a bug report about it?
+
+Try 3.10 or 3.11 before filing a bug on it.
+
+> Could it be that the device removal
+> was completed, but still shows as part of the array for some reason?
+
+Yes. It might take a few minutes after the chunks are reallocated for the device to be removed from the volume. I've had some cases where even a reboot was needed for the information in fi sh to refresh.
 
 
-> +/*
-> + * check to see if the rwsem we're holding has anybody waiting to acquire it.
-> + */
-> +int rwsem_is_contended(struct rw_semaphore *sem)
-> +{
-> +	int ret = 0;
-> +	unsigned long flags;
-> +
-> +	if (!raw_spin_trylock_irqsave(&sem->wait_lock, flags))
-> +		return 1;
-> +	if (!list_empty(&sem->wait_list))
-> +		ret = 1;
-> +	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
-> +	return ret;
-> +}
-> +
-> +EXPORT_SYMBOL(rwsem_is_contended);
+> The reason for the remove is actually that I want to (gradually) replace
+> the 3TB drives with 1 TB ones, and somewhere in the middle move some of
+> the data of the array, to another machine, that currently has the 1 TB
+> drives which I intend to replace with the 3TB ones.
 
-Modeled after spin_is_contended(), so no problem with that. One thing I
-was wondering about is if it wants to be called
-rwsem_is_write_contended() or similar, since it explicitly only tests
-for pending writers.
+Use a newer kernel for sure. What you suggest should work. If you're testing to see if it does work, and you're prepared for it not working (i.e. totally losing the entire file system) and prepared to find a consistent reproducer if it doesn't work, then have at it.
 
+Otherwise, create a whole new btrfs volume with recent kernel and btrfs-progs on the other machine; and then rsync everything from old to new. Rsync has a checksum option, it will take longer, but you can then be reasonably assured of file integrity.
+
+
+Chris Murphy

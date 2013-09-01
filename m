@@ -1,52 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f43.google.com ([74.125.83.43]:39782 "EHLO
-	mail-ee0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757627Ab3IAP5H (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Sep 2013 11:57:07 -0400
-Received: by mail-ee0-f43.google.com with SMTP id e52so1842822eek.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 08:57:05 -0700 (PDT)
-From: Ilya Dryomov <idryomov@gmail.com>
+Received: from mail-we0-f177.google.com ([74.125.82.177]:49408 "EHLO
+	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752170Ab3IAVn4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Sep 2013 17:43:56 -0400
+Received: by mail-we0-f177.google.com with SMTP id q55so3155827wes.36
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2013 14:43:55 -0700 (PDT)
+Message-ID: <1378071827.5456.3.camel@pc-steven.LAN>
+Subject: Re: Device delete returns "unable to go below four devices on
+ raid10" on 5 drive setup
+From: Steven Post <redalert.commander@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        Stefan Behrens <sbehrens@giantdisaster.de>, idryomov@gmail.com
-Subject: [PATCH] Btrfs: do not add replace target to the alloc_list
-Date: Sun,  1 Sep 2013 18:56:44 +0300
-Message-Id: <1378051004-8369-1-git-send-email-idryomov@gmail.com>
+Date: Sun, 01 Sep 2013 23:43:47 +0200
+In-Reply-To: <1378037326.4694.13.camel@pc-steven.LAN>
+References: <1377943975.5426.17.camel@pc-steven.LAN>
+	 <A4758013-22BA-4552-B391-9492B42D85C5@colorremedies.com>
+	 <1377993349.5004.38.camel@pc-steven.LAN>
+	 <6E2BF7E8-C893-4B6D-9B50-27434BEABD78@colorremedies.com>
+	 <1378037326.4694.13.camel@pc-steven.LAN>
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
+	boundary="=-cHNjKrB3QsQoKOKRn1wx"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If replace was suspended by the umount, replace target device is added
-to the fs_devices->alloc_list during a later mount.  This is obviously
-wrong.  ->is_tgtdev_for_dev_replace is supposed to guard against that,
-but ->is_tgtdev_for_dev_replace is (and can only ever be) initialized
-*after* everything is opened and fs_devices lists are populated.  Fix
-this by checking the devid instead: for replace targets it's always
-equal to BTRFS_DEV_REPLACE_DEVID.
 
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
-At first I thought this was caused by my btrfs_device rollback patch,
-but no, it just made it easier to spot -- previously one had to reboot
-or rmmod/insmod before mounting a suspended replace.
+--=-cHNjKrB3QsQoKOKRn1wx
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
- fs/btrfs/volumes.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+On Sun, 2013-09-01 at 14:08 +0200, Steven Post wrote:
+> On Sat, 2013-08-31 at 18:03 -0600, Chris Murphy wrote:
+> > On Aug 31, 2013, at 5:55 PM, Steven Post <redalert.commander@gmail.com>=
+ wrote:
+> >=20
+> > > On Sat, 2013-08-31 at 11:42 -0600, Chris Murphy wrote:
+> > >>=20
+> > >> Yes. It might take a few minutes after the chunks are reallocated fo=
+r the device to be removed from the volume. I've had some cases where even =
+a reboot was needed for the information in fi sh to refresh.
+> > >=20
+> > > I see, so that might be normal behaviour.
+> >=20
+> > No, I think it's expected for deleted devices to not appear in the volu=
+me listing anymore, but with older kernels I had that experience. I haven't=
+ tried it recently with newer kernels.
+>=20
+> I might have phrased that a bit incorrectly, with 'normal behaviour' I
+> meant it was known to do that and not cause major problems. Of course I
+> would expect the entry to just disappear.
+> I'll let you know the result of the 'device delete' operation on the
+> second machine (3.10.7 kernel).
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c9a0977..5b99f19 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -793,7 +793,8 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 			fs_devices->rotating = 1;
- 
- 		fs_devices->open_devices++;
--		if (device->writeable && !device->is_tgtdev_for_dev_replace) {
-+		if (device->writeable &&
-+		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 			fs_devices->rw_devices++;
- 			list_add(&device->dev_alloc_list,
- 				 &fs_devices->alloc_list);
--- 
-1.7.10.4
+The 3.10.7 kernel doesn't seem to have this issue, the removed device is
+not listed anymore immediately after the 'device delete' command
+returns. Although in that instance the array still had 6 drives, not 5
+as with the old one.
+
+[...]
+
+Best regards,
+Steven
+
+--=-cHNjKrB3QsQoKOKRn1wx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEcBAABAgAGBQJSI7UTAAoJEEvSpS1Vyfkxh3QIAIiaMpBc/U5jHYjQVfE524RF
+kArhnYg1QN7RTUrq0iDVKQZyhu9+7Agb/TtTYb5jzJu+z2AhEXDjRc832c9FTGFV
+ITGRI7FINAV4fc7dnkb9vqEu4EQA03FEDzTysBaHtakmRcQA9YXZJnnJOZ/JPYHD
+yiZZlvEUl+j86hajjMCc+mpKTfGfBaTF8hgzl6cRX3zcWl0iQGnd1EsetVeSt0Eh
+TRrXI5JmFz+Abgw7691hii3Ppt8F5nHKQmdcixfXrg6vNQ1Ft7A9ZIAIPB7gp/Y3
+ad4pZbTKsRubyUuPppC8BSgYG5T/DAtXFgNq3Wm6ZI/NMp9R0WWhIIsBmBh+n6g=
+=PheH
+-----END PGP SIGNATURE-----
+
+--=-cHNjKrB3QsQoKOKRn1wx--
 

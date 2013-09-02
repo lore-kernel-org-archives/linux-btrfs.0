@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f175.google.com ([209.85.214.175]:53591 "EHLO
-	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752529Ab3IXDcW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 23:32:22 -0400
-Received: by mail-ob0-f175.google.com with SMTP id uz6so4367331obc.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 20:32:22 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:21974 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755266Ab3IBBMa convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Sep 2013 21:12:30 -0400
+Message-ID: <5223E62A.1070500@cn.fujitsu.com>
+Date: Mon, 02 Sep 2013 09:13:14 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <5240EC74.2030506@cn.fujitsu.com>
-References: <50C068D4.6020105@cn.fujitsu.com> <loom.20130922T170658-776@post.gmane.org>
- <523F95C4.1080404@cn.fujitsu.com> <CAFfJ-R46gqeMOH3bKPPnghmPZ7CziTmYghXJhgOzEoQ_vTJ6Pw@mail.gmail.com>
- <523FA4EB.3060201@cn.fujitsu.com> <pan$a3bb6$bcc83f63$430b22dd$bd36c43d@cox.net>
- <F83FBE02-86FA-4CE3-9EB1-4D275AF6A41C@gmail.com> <loom.20130923T185309-168@post.gmane.org>
- <5240EC74.2030506@cn.fujitsu.com>
-From: Dusty Mabe <dustymabe@gmail.com>
-Date: Mon, 23 Sep 2013 23:32:01 -0400
-Message-ID: <CAFfJ-R6f=ryUk1Gef=V+cpAtpRJzNup6fhKdSfLF85qbPJpqNQ@mail.gmail.com>
-Subject: Re: [PATCH 0/9] enhance btrfs qgroup show command
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs-progs: Update the man page of btrfs
+References: <1374547402-14890-1-git-send-email-quwenruo@cn.fujitsu.com> <1374547402-14890-2-git-send-email-quwenruo@cn.fujitsu.com> <20130805232844.GH5284@twin.jikos.cz>
+In-Reply-To: <20130805232844.GH5284@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 23, 2013 at 9:35 PM, Wang Shilong
-<wangsl.fnst@cn.fujitsu.com> wrote:
-> On 09/24/2013 12:55 AM, Dusty Mabe wrote:
->>
->> In that case would you like for me to open a new bug report with the
->> details?
->
-> Yes.
+Sorry for the late reply.
 
-https://bugzilla.kernel.org/show_bug.cgi?id=61951
+I checked the new man page, which seems OK for me.
+
+Thank you.
+
+Qu Wenruo
+
+于 2013年08月06日 07:28, David Sterba 写道:
+> On Tue, Jul 23, 2013 at 10:43:22AM +0800, Qu Wenruo wrote:
+>> Update the man page of "btrfs" command to keep up with new commands.
+> Thanks. Please check if I haven't missed anything, I've used 'wiggle' to
+> guess-apply the patch and fixed a few conflicts myself.
+>
+> david
+>
+
+
+-- 
+-----------------------------------------------------
+Qu Wenruo
+Development Dept.I
+Nanjing Fujitsu Nanda Software Tech. Co., Ltd.(FNST)
+No. 6 Wenzhu Road, Nanjing, 210012, China
+TEL: +86+25-86630566-8526
+COINS: 7998-8526
+FAX: +86+25-83317685
+MAIL: quwenruo@cn.fujitsu.com
+-----------------------------------------------------
+

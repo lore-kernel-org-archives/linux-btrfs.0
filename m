@@ -1,111 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:47446 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752516Ab3INL0Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Sep 2013 07:26:25 -0400
-Received: from int-mx12.intmail.prod.int.phx2.redhat.com (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r8EBQOHt008806
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Sep 2013 07:26:25 -0400
-Received: from [10.36.4.106] (vpn1-4-106.ams2.redhat.com [10.36.4.106])
-	by int-mx12.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id r8EBQMoA012685
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Sep 2013 07:26:24 -0400
-Message-ID: <523447DE.1080507@redhat.com>
-Date: Sat, 14 Sep 2013 13:26:22 +0200
-From: Harald Hoyer <harald@redhat.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:9565 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756157Ab3ICJZw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 05:25:52 -0400
+Message-ID: <5225AB12.9050102@giantdisaster.de>
+Date: Tue, 03 Sep 2013 11:25:38 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: allow mounting btrfs subvolumes with different
- ro/rw options
-References: <1371569344-2978-1-git-send-email-harald@redhat.com> <52246E91.2050500@redhat.com>
-In-Reply-To: <52246E91.2050500@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Jeff Mahoney <jeffm@suse.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs: add ability to query/change feature bits online
+References: <521CFB62.7010600@suse.com>
+In-Reply-To: <521CFB62.7010600@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/02/2013 12:55 PM, Harald Hoyer wrote:
-> On 06/18/2013 05:29 PM, harald@redhat.com wrote:
->> From: Harald Hoyer <harald@redhat.com>
->>
->> Given the following /etc/fstab entries:
->>
->> /dev/sda3 /mnt/foo btrfs subvol=foo,ro 0
->> /dev/sda3 /mnt/bar btrfs subvol=bar,rw 0
->>
->> you can't issue:
->>
->> $ mount /mnt/foo
->> $ mount /mnt/bar
->>
->> You would have to do:
->>
->> $ mount /mnt/foo
->> $ mount -o remount,rw /mnt/foo
->> $ mount --bind -o remount,ro /mnt/foo
->> $ mount /bar
->>
->> or
->>
->> $ mount /mnt/bar
->> $ mount --rw /mnt/foo
->> $ mount --bind -o remount,ro /mnt/foo
->>
->> With this patch you can do
->>
->> $ mount /mnt/foo
->> $ mount /mnt/bar
->>
->> $ cat /proc/self/mountinfo
->> 49 33 0:41 /foo /mnt/foo ro,relatime shared:36 - btrfs /dev/sda3 rw,ssd,space_cache
->> 87 33 0:41 /bar /mnt/bar rw,relatime shared:74 - btrfs /dev/sda3 rw,ssd,space_cache
->> ---
->>  fs/btrfs/super.c | 22 ++++++++++++++++++++++
->>  1 file changed, 22 insertions(+)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index f0857e0..80ed3e2 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -64,6 +64,8 @@
->>  static const struct super_operations btrfs_super_ops;
->>  static struct file_system_type btrfs_fs_type;
->>  
->> +static int btrfs_remount(struct super_block *sb, int *flags, char *data);
->> +
->>  static const char *btrfs_decode_error(int errno)
->>  {
->>  	char *errstr = "unknown";
->> @@ -1036,6 +1038,26 @@ static struct dentry *mount_subvol(const char *subvol_name, int flags,
->>  	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name,
->>  			     newargs);
->>  	kfree(newargs);
->> +
->> +	if (PTR_RET(mnt) == -EBUSY) {
->> +		if (flags & MS_RDONLY) {
->> +			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY, device_name,
->> +					     newargs);
->> +		} else {
->> +			int r;
->> +			mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY, device_name,
->> +					     newargs);
->> +			if (IS_ERR(mnt))
->> +				return ERR_CAST(mnt);
->> +
->> +			r = btrfs_remount(mnt->mnt_sb, &flags, NULL);
->> +			if (r < 0) {
->> +				/* FIXME: release vfsmount mnt ??*/
->> +				return ERR_PTR(r);
->> +			}
->> +		}
->> +	}
->> +
->>  	if (IS_ERR(mnt))
->>  		return ERR_CAST(mnt);
->>  
->>
+On Tue, 27 Aug 2013 15:17:54 -0400, Jeff Mahoney wrote:
+> There are some feature bits that require no offline setup and can
+> be enabled online. I've only reviewed extended irefs, but there will
+> probably be more.
 > 
-> Any comments?
+> We introduce three new ioctls:
+> - BTRFS_IOC_GET_SUPPORTED_FEATURES: query the kernel for supported features
+> - BTRFS_IOC_GET_FEATURES: query the kernel for enabled features on a per-fs
+>   basis.
+> - BTRFS_IOC_ADD_FEATURES: enable new features on a per-fs basis.
 > 
+> We introduce a new mask _SAFE_ONLINE that allows us to define which
+> features are safe to enable at runtime.
+> 
+> The failure modes for BTRFS_IOC_ADD_FEATURES are as follows:
+> - Enabling a completely unsupported feature: warns and returns -ENOTSUPP
+> - Enabling a feature that can only be done offline: warns and returns -EPERM
+> 
+> The structure passed in is not modified on return since it is possible
+> to isolate which features would bounce a -EPERM by subtracting the features
+> provided by a GET_SUPPORTED_FEATURES call.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+[...]
+> --- a/include/uapi/linux/btrfs.h	2013-08-27 11:02:35.062626912 -0400
+> +++ b/include/uapi/linux/btrfs.h	2013-08-27 11:03:32.006352802 -0400
+> @@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
+>  	__u64 reserved[124];			/* pad to 1k */
+>  };
+>  
+> +struct btrfs_ioctl_feature_flags {
+> +	__u64 compat_flags;
+> +	__u64 compat_ro_flags;
+> +	__u64 incompat_flags;
+> +};
+> +
+>  /* balance control ioctl modes */
+>  #define BTRFS_BALANCE_CTL_PAUSE		1
+>  #define BTRFS_BALANCE_CTL_CANCEL	2
+> @@ -579,4 +585,10 @@ static inline char *btrfs_err_str(enum b
+>  				      struct btrfs_ioctl_get_dev_stats)
+>  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+>  				    struct btrfs_ioctl_dev_replace_args)
+> +#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 54, \
+> +				   struct btrfs_ioctl_feature_flags)
+> +#define BTRFS_IOC_ADD_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 55, \
+> +				   struct btrfs_ioctl_feature_flags)
 
-Not even a "no, we don't want that" ?
+#define BTRFS_IOC_ADD_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 54, \
+				   struct btrfs_ioctl_feature_flags)
+
+Using 54 for both would also be possible since the directions are
+different. _IOR(54) for the get ioctl and _IOW(54) for the set/add ioctl.
+
+
+> +#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 56, \
+> +				   struct btrfs_ioctl_feature_flags[2])
+
+This could share the type value 54 too, since the parameter size is
+different. There are only 8 bits for the type field.
+
+And in order to support clearing feature bits you could replace the add
+ioctl with a set ioctl and use a mask + value scheme.
+#define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 54, \
+				   struct btrfs_ioctl_feature_flags[2])
+btrfs_ioctl_feature_flags[0] is the mask and
+btrfs_ioctl_feature_flags[1] is the value. Only bits that are set to one
+in the mask are taken from the value and modified in the filesystem flags.
+
+

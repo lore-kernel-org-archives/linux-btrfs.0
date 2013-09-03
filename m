@@ -1,108 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:53809 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754163Ab3ICNN1 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 09:13:27 -0400
-Received: by mail-pa0-f54.google.com with SMTP id kx10so6416777pab.41
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 06:13:26 -0700 (PDT)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [PATCH] btrfs-progs: tidy up cmd_subvol_create() whitespace & returns
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <1378213291-1034-1-git-send-email-wangshilong1991@gmail.com>
-Date: Tue, 3 Sep 2013 21:13:20 +0800
-Cc: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.cz Sterba" <dsterba@suse.cz>,
-        Miao Xie <miaox@cn.fujitsu.com>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Message-Id: <0A5B4F8C-8B08-4976-A660-6396407E932D@gmail.com>
-References: <1378213291-1034-1-git-send-email-wangshilong1991@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:55035 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932777Ab3ICNSJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 09:18:09 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 62C047C0444
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Sep 2013 07:18:08 -0600 (MDT)
+Date: Tue, 3 Sep 2013 09:18:05 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Peter Hurley <peter@hurleysoftware.com>
+CC: Michel Lespinasse <walken@google.com>, Josef Bacik <jbacik@fusionio.com>,
+        <linux-btrfs@vger.kernel.org>, <mingo@elte.hu>,
+        <akpm@linux-foundation.org>, <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] rwsem: add rwsem_is_contended
+Message-ID: <20130903131805.GA15634@localhost.localdomain>
+References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
+ <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com>
+ <5224C850.2060103@hurleysoftware.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <5224C850.2060103@hurleysoftware.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Eric,
-
-Recently, i notice btrfs-progs's magic return value. For example, EACCESS return 12.
-Magic return value is confusing for code reviewers. However,at least we should guarantee
-all these conditions return the same value(for example 12 for this case)
-
-Or we can change all the magic number to 1. Miao reminded me that
-there may be some applications that have catched and checked these
-magic return values¡­
-
-Any ideas about this?
-
-Thanks,
-Wang
-> From:
-> Just whitespace fixes, and magical return value removal.
+On Mon, Sep 02, 2013 at 01:18:08PM -0400, Peter Hurley wrote:
+> On 09/01/2013 04:32 AM, Michel Lespinasse wrote:
+> >Hi Josef,
+> >
+> >On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+> >>Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
+> >>read lock on this rwsem while they scan the extent tree, and if need_resched()
+> >>they will drop the lock and schedule.  The transaction commit needs to take a
+> >>write lock for this rwsem for a very short period to switch out the commit
+> >>roots.  If there are a lot of threads doing this caching operation we can starve
+> >>out the committers which slows everybody out.  To address this we want to add
+> >>this functionality to see if our rwsem has anybody waiting to take a write lock
+> >>so we can drop it and schedule for a bit to allow the commit to continue.
+> >>Thanks,
+> >>
+> >>Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> >
+> >FYI, I once tried to introduce something like this before, but my use
+> >case was pretty weak so it was not accepted at the time. I don't think
+> >there were any objections to the API itself though, and I think it's
+> >potentially a good idea if you use case justifies it.
 > 
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-> ---
-> cmds-subvolume.c | 18 +++++++++---------
-> 1 file changed, 9 insertions(+), 9 deletions(-)
+> Exactly, I'm concerned about the use case: readers can't starve writers.
+> Of course, lots of existing readers can temporarily prevent a writer from
+> acquiring, but those readers would already have the lock. Any new readers
+> wouldn't be able to prevent a waiting writer from obtaining the lock.
 > 
-> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-> index 01b982c..a9999ac 100644
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -104,9 +104,9 @@ static int cmd_subvol_create(int argc, char **argv)
-> 	dst = argv[optind];
-> 
-> 	res = test_isdir(dst);
-> -	if(res >= 0 ){
-> +	if (res >= 0) {
-> 		fprintf(stderr, "ERROR: '%s' exists\n", dst);
-> -		return 12;
-> +		return 1;
-> 	}
-> 
-> 	newname = strdup(dst);
-> @@ -114,24 +114,24 @@ static int cmd_subvol_create(int argc, char **argv)
-> 	dstdir = strdup(dst);
-> 	dstdir = dirname(dstdir);
-> 
-> -	if( !strcmp(newname,".") || !strcmp(newname,"..") ||
-> +	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
-> 	     strchr(newname, '/') ){
-> 		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
-> 			newname);
-> -		return 14;
-> +		return 1;
-> 	}
-> 
-> 	len = strlen(newname);
-> 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
-> 		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
-> 			newname);
-> -		return 14;
-> +		return 1;
-> 	}
-> 
-> 	fddst = open_file_or_dir(dstdir);
-> 	if (fddst < 0) {
-> 		fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
-> -		return 12;
-> +		return 1;
-> 	}
-> 
-> 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
-> @@ -159,10 +159,10 @@ static int cmd_subvol_create(int argc, char **argv)
-> 	close(fddst);
-> 	free(inherit);
-> 
-> -	if(res < 0 ){
-> -		fprintf( stderr, "ERROR: cannot create subvolume - %s\n",
-> +	if (res < 0) {
-> +		fprintf(stderr, "ERROR: cannot create subvolume - %s\n",
-> 			strerror(e));
-> -		return 11;
-> +		return 1;
-> 	}
-> 
-> 	return 0;
-> -- 
-> 1.7.11.7
+> Josef,
+> Could you be more explicit, maybe with some detailed numbers about the
+> condition you report?
 > 
 
+Sure, this came from a community member
+
+http://article.gmane.org/gmane.comp.file-systems.btrfs/28081
+
+With the old approach we could block between 1-2 seconds waiting for this rwsem,
+and with the new approach where we allow many more of these caching threads we
+were staving out the writer for 80 seconds.
+
+So what happens is these threads will scan our extent tree to put together the
+free space cache, and they'll hold this lock while they are doing the scanning.
+The only way they will drop this lock is if we hit need_resched(), but because
+these threads are going to do quite a bit of IO I imagine we're not ever being
+flagged with need_resched() because we schedule while waiting for IO.  So these
+threads will hold onto this lock for bloody ever without giving it up so the
+committer can take the write lock.  His patch to "fix" the problem was to have
+an atomic that let us know somebody was waiting for a write lock and then we'd
+drop the reader lock and schedule.
+
+So really we're just using a rwsem in a really mean way for writers.  I'm open
+to other suggestions but I think this probably the cleanest way.  Thanks,
+
+Josef

@@ -1,40 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f180.google.com ([209.85.220.180]:63925 "EHLO
-	mail-vc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759793Ab3ICJ0L (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 05:26:11 -0400
-Received: by mail-vc0-f180.google.com with SMTP id gf11so3594530vcb.39
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 02:26:10 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <pan$97a5$71cfb7f0$286a61f9$62ed2e15@cox.net>
-References: <20130902220006.GA6389@carfax.org.uk>
-	<pan$97a5$71cfb7f0$286a61f9$62ed2e15@cox.net>
-Date: Tue, 3 Sep 2013 19:26:10 +1000
-Message-ID: <CAA1QwTbiYGWpxctxOrF67wOzdAr6U6TKR__HZW44c2q9XeVM2w@mail.gmail.com>
-Subject: Re: Recovering from csum errors
-From: David MacKinnon <blaedd@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cantor2.suse.de ([195.135.220.15]:60214 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1760040Ab3ICML2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Sep 2013 08:11:28 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-fsdevel@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        viro@zeniv.linux.org.uk
+Subject: [PATCH 3/3] btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
+Date: Tue,  3 Sep 2013 14:11:06 +0200
+Message-Id: <b52a181a78da239c4e0f45fedcb2f6627794ad5e.1378209377.git.dsterba@suse.cz>
+In-Reply-To: <cover.1378209377.git.dsterba@suse.cz>
+References: <cover.1378209377.git.dsterba@suse.cz>
+In-Reply-To: <cover.1378209377.git.dsterba@suse.cz>
+References: <cover.1378209377.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3 September 2013 18:54, Duncan <1i5t5.duncan@cox.net> wrote:
->
-> > In case the data is wrong, there may be a reverse CRC32 algorithm
-> > implemented. Most likely it's only several bytes which got "flipped".
->
-...
->
-> But... that flips the entire reason for choosing direct-IO in the first
-> place -- performance -- on its head, incurring a **HUGE** slowdown just
+Set the EXTENT_DATA_COMPRESSED flag together with EXTENT_ENCODED as
+defined by fiemap spec.
 
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/extent_io.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-Not wanting to put words in the original posters mouth, but I read
-that as an offline recovery method (scrub?), rather than real time
-recovery attempts. If the frequency of errors is low, then for certain
-purposes accepting, a few errors if you had a recovery option might be
-acceptable.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fe443fe..bb2e346 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4095,8 +4095,10 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		} else {
+ 			disko = em->block_start + offset_in_extent;
+ 		}
+-		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
++		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
+ 			flags |= FIEMAP_EXTENT_ENCODED;
++			flags |= FIEMAP_EXTENT_DATA_COMPRESSED;
++		}
+ 
+ 		free_extent_map(em);
+ 		em = NULL;
+-- 
+1.7.9
 
-As mentioned, nocow is probably best for VM images anyhow, but still :)
-
--David

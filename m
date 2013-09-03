@@ -1,65 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:38437 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755739Ab3ICPt3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 11:49:29 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 9115C9A0689
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Sep 2013 09:49:29 -0600 (MDT)
-Date: Tue, 3 Sep 2013 11:49:27 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Peter Zijlstra <peterz@infradead.org>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
-        <walken@google.com>, <mingo@elte.hu>, <akpm@linux-foundation.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-Message-ID: <20130903154927.GC15634@localhost.localdomain>
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
- <20130831145136.GX31370@twins.programming.kicks-ass.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20130831145136.GX31370@twins.programming.kicks-ass.net>
+Received: from plane.gmane.org ([80.91.229.3]:52787 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755723Ab3ICQIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Sep 2013 12:08:37 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VGt9h-0006x6-2S
+	for linux-btrfs@vger.kernel.org; Tue, 03 Sep 2013 18:08:37 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 18:08:37 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 18:08:37 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recovering from csum errors
+Date: Tue, 3 Sep 2013 16:08:18 +0000 (UTC)
+Message-ID: <pan$7dd78$5704ef42$348d7f12$25b893cf@cox.net>
+References: <20130902220006.GA6389@carfax.org.uk> <
+	pan$97a5$71cfb7f0$286a61f9$62ed2e15@cox.net> <
+	CAA1QwTbiYGWpxctxOrF67wOzdAr6U6TKR__HZW44c2q9XeVM2w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 31, 2013 at 04:51:36PM +0200, Peter Zijlstra wrote:
-> On Fri, Aug 30, 2013 at 10:14:01AM -0400, Josef Bacik wrote:
-> > Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
-> > read lock on this rwsem while they scan the extent tree, and if need_resched()
-> > they will drop the lock and schedule.  The transaction commit needs to take a
-> > write lock for this rwsem for a very short period to switch out the commit
-> > roots.  If there are a lot of threads doing this caching operation we can starve
-> > out the committers which slows everybody out.  To address this we want to add
-> > this functionality to see if our rwsem has anybody waiting to take a write lock
-> > so we can drop it and schedule for a bit to allow the commit to continue.
-> 
-> 
-> > +/*
-> > + * check to see if the rwsem we're holding has anybody waiting to acquire it.
-> > + */
-> > +int rwsem_is_contended(struct rw_semaphore *sem)
-> > +{
-> > +	int ret = 0;
-> > +	unsigned long flags;
-> > +
-> > +	if (!raw_spin_trylock_irqsave(&sem->wait_lock, flags))
-> > +		return 1;
-> > +	if (!list_empty(&sem->wait_list))
-> > +		ret = 1;
-> > +	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
-> > +	return ret;
-> > +}
-> > +
-> > +EXPORT_SYMBOL(rwsem_is_contended);
-> 
-> Modeled after spin_is_contended(), so no problem with that. One thing I
-> was wondering about is if it wants to be called
-> rwsem_is_write_contended() or similar, since it explicitly only tests
-> for pending writers.
-> 
+David MacKinnon posted on Tue, 03 Sep 2013 19:26:10 +1000 as excerpted:
 
-Well it checks all pending waiters, the waiters list isn't split between
-readers waiters and write waiters, so people holding the write lock could call
-this to see if readers are waiting on the lock.  Thanks,
+> On 3 September 2013 18:54, Duncan <1i5t5.duncan@cox.net> wrote:
+>>
+>> > In case the data is wrong, there may be a reverse CRC32 algorithm
+>> > implemented. Most likely it's only several bytes which got "flipped".
+>>
+>> But... that flips the entire reason for choosing direct-IO in the first
+>> place -- performance -- on its head, incurring a **HUGE** slowdown just
+> 
+> Not wanting to put words in the original posters mouth, but I read that
+> as an offline recovery method (scrub?), rather than real time recovery
+> attempts. If the frequency of errors is low, then for certain purposes
+> accepting, a few errors if you had a recovery option might be
+> acceptable.
 
-Josef
+You might be right.  Tho there's already scrub available... it just 
+requires a second, hopefully valid, copy to work from.  Which is what 
+btrfs raid1 mode is all about, and why I chose to run it. =:^)
+
+It would be nice to be able to say accept the invalid data, if it's not 
+deemed critical and isn't so corrupted it's entirely invalid, which was 
+something the poster suggested.  And in a way, that's what nocow does, by 
+way of nosum; it just has to be setup before the fact; there's 
+(currently) no way to make it work after the damage has occurred.
+
+But I don't believe brute-forcing a correct crc match to be as 
+necessarily feasible as the poster suggested as another alternative.  And 
+even if a proper match is found, what's to say it's the /correct/ match?
+
+Meanwhile, even if brute-forcing a match /is/ possible, in this 
+particular case, it'd likely crash the VM or otherwise cause at the very 
+least invalid results if not horrible VM corruption, because the written 
+data was very likely correct, just changed after btrfs calculated the 
+checksum.  So changing it back to what btrfs calculated the checksum on, 
+even if possible, would actually corrupt the data from the VM's 
+perspective, and then the VM would be acting on that corrupt data, which 
+would certainly have unexpected and very possibly horribly bad results.
+
+> As mentioned, nocow is probably best for VM images anyhow, but still :)
+
+Agreed on that.  If the VM insists on breaking the rules and scribbling 
+over its own data, just don't do the checksumming and LET it scribble 
+over its own data if that's what it wants to do and as long as it doesn't 
+try to scribble over anything that's NOT its data to scribble over.  If 
+it breaks in pieces as a result, it gets to keep 'em. =:^\
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

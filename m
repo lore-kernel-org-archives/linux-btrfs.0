@@ -1,276 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50408 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750788Ab3IFJbH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Sep 2013 05:31:07 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/2 resend] btrfs-progs: v4, move out print in cmd_df to another function
-Date: Fri,  6 Sep 2013 17:37:52 +0800
-Message-Id: <1378460273-20647-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1377851756-4009-1-git-send-email-anand.jain@oracle.com>
+Received: from mail.windriver.com ([147.11.1.11]:64698 "EHLO
+	mail.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754103Ab3ICBwF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Sep 2013 21:52:05 -0400
+Received: from ALA-HCB.corp.ad.wrs.com (ala-hcb.corp.ad.wrs.com [147.11.189.41])
+	by mail.windriver.com (8.14.5/8.14.3) with ESMTP id r831q3IZ016578
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Sep 2013 18:52:04 -0700 (PDT)
+From: <rongqing.li@windriver.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: fix parallel build
+Date: Tue, 3 Sep 2013 09:52:12 +0800
+Message-ID: <1378173132-15270-1-git-send-email-rongqing.li@windriver.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1377851756-4009-1-git-send-email-anand.jain@oracle.com>
 
-This is a prepatory work for the following btrfs fi show command
-fixes. So that we have a function get_df to get the fs sizes
+From: "Roy.Li" <rongqing.li@windriver.com>
 
-v4:
- fixes checkpatch.pl errors as suggested by Wang
-v3:
- accepts Zach review comments
-v2:
-combined the other patches as below and rebase
- btrfs-progs: get string for the group profile and type
+Parallel execution of "make install" may fail due to late creation of
+version.h, fix it by adding the dependence on version.h.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+The fix is similar to 7aaf00fc[btrfs-progs: fix parallel build]
+
+Signed-off-by: Roy.Li <rongqing.li@windriver.com>
 ---
- cmds-filesystem.c |  181 ++++++++++++++++++++++++++++------------------------
- ctree.h           |   11 +++
- 2 files changed, 108 insertions(+), 84 deletions(-)
+ Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index ca0855b..61b30d3 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -44,28 +44,51 @@ static const char * const cmd_df_usage[] = {
- 	NULL
- };
+diff --git a/Makefile b/Makefile
+index c43cb68..40ef205 100644
+--- a/Makefile
++++ b/Makefile
+@@ -190,7 +190,7 @@ clean :
+ 	      $(libs) $(lib_links)
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C man $@
  
--static int cmd_df(int argc, char **argv)
-+static char *group_type_str(u64 flag)
- {
--	struct btrfs_ioctl_space_args *sargs, *sargs_orig;
--	u64 count = 0, i;
--	int ret;
--	int fd;
--	int e;
--	char *path;
--	DIR  *dirstream = NULL;
--
--	if (check_argc_exact(argc, 2))
--		usage(cmd_df_usage);
--
--	path = argv[1];
-+	switch (flag & BTRFS_BLOCK_GROUP_TYPE_MASK) {
-+	case BTRFS_BLOCK_GROUP_DATA:
-+		return "data";
-+	case BTRFS_BLOCK_GROUP_SYSTEM:
-+		return "system";
-+	case BTRFS_BLOCK_GROUP_METADATA:
-+		return "metadata";
-+	case BTRFS_BLOCK_GROUP_DATA|BTRFS_BLOCK_GROUP_METADATA:
-+		return "mixed";
-+	default:
-+		return "unknown";
-+	}
-+}
- 
--	fd = open_file_or_dir(path, &dirstream);
--	if (fd < 0) {
--		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+static char *group_profile_str(u64 flag)
-+{
-+	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+	case 0:
-+		return "single";
-+	case BTRFS_BLOCK_GROUP_RAID0:
-+		return "RAID0";
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+		return "RAID1";
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+		return "RAID5";
-+	case BTRFS_BLOCK_GROUP_RAID6:
-+		return "RAID6";
-+	case BTRFS_BLOCK_GROUP_DUP:
-+		return "DUP";
-+	case BTRFS_BLOCK_GROUP_RAID10:
-+		return "RAID10";
-+	default:
-+		return "unknown";
- 	}
-+}
- 
--	sargs_orig = sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
-+static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
-+{
-+	u64 count = 0;
-+	int ret, e;
-+	struct btrfs_ioctl_space_args *sargs;
-+
-+	sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
- 	if (!sargs)
- 		return -ENOMEM;
- 
-@@ -75,89 +98,79 @@ static int cmd_df(int argc, char **argv)
- 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
- 	e = errno;
- 	if (ret) {
--		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
--			path, strerror(e));
--		goto out;
-+		fprintf(stderr, "ERROR: couldn't get space info - %s\n",
-+			strerror(e));
-+		free(sargs);
-+		return ret;
- 	}
- 	if (!sargs->total_spaces) {
--		ret = 0;
--		goto out;
-+		free(sargs);
-+		return 0;
- 	}
--
- 	count = sargs->total_spaces;
-+	free(sargs);
- 
--	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
-+	sargs = malloc(sizeof(struct btrfs_ioctl_space_args) +
- 			(count * sizeof(struct btrfs_ioctl_space_info)));
--	if (!sargs) {
--		sargs = sargs_orig;
-+	if (!sargs)
- 		ret = -ENOMEM;
--		goto out;
--	}
- 
- 	sargs->space_slots = count;
- 	sargs->total_spaces = 0;
--
- 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
- 	e = errno;
- 	if (ret) {
--		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
--			path, strerror(e));
--		goto out;
-+		fprintf(stderr, "ERROR: get space info count %llu - %s\n",
-+				count, strerror(e));
-+		free(sargs);
-+		return ret;
- 	}
-+	*sargs_ret = sargs;
-+	return 0;
-+}
- 
--	for (i = 0; i < sargs->total_spaces; i++) {
--		char description[80];
--		int written = 0;
--		u64 flags = sargs->spaces[i].flags;
--
--		memset(description, 0, 80);
--
--		if (flags & BTRFS_BLOCK_GROUP_DATA) {
--			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
--				snprintf(description, 14, "%s",
--					 "Data+Metadata");
--				written += 13;
--			} else {
--				snprintf(description, 5, "%s", "Data");
--				written += 4;
--			}
--		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
--			snprintf(description, 7, "%s", "System");
--			written += 6;
--		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
--			snprintf(description, 9, "%s", "Metadata");
--			written += 8;
--		}
-+static void print_df(struct btrfs_ioctl_space_args *sargs)
-+{
-+	u64 i;
-+	struct btrfs_ioctl_space_info *sp = sargs->spaces;
-+
-+	for (i = 0; i < sargs->total_spaces; i++, sp++) {
-+		printf("%s, %s: total=%s, used=%s\n",
-+			group_type_str(sp->flags),
-+			group_profile_str(sp->flags),
-+			pretty_size(sp->total_bytes),
-+			pretty_size(sp->used_bytes));
-+	}
-+}
- 
--		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
--			snprintf(description+written, 8, "%s", ", RAID0");
--			written += 7;
--		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
--			snprintf(description+written, 8, "%s", ", RAID1");
--			written += 7;
--		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
--			snprintf(description+written, 6, "%s", ", DUP");
--			written += 5;
--		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
--			snprintf(description+written, 9, "%s", ", RAID10");
--			written += 8;
--		} else if (flags & BTRFS_BLOCK_GROUP_RAID5) {
--			snprintf(description+written, 9, "%s", ", RAID5");
--			written += 7;
--		} else if (flags & BTRFS_BLOCK_GROUP_RAID6) {
--			snprintf(description+written, 9, "%s", ", RAID6");
--			written += 7;
--		}
-+static int cmd_df(int argc, char **argv)
-+{
-+	struct btrfs_ioctl_space_args *sargs = NULL;
-+	int ret;
-+	int fd;
-+	char *path;
-+	DIR  *dirstream = NULL;
- 
--		printf("%s: total=%s, used=%s\n", description,
--			pretty_size(sargs->spaces[i].total_bytes),
--			pretty_size(sargs->spaces[i].used_bytes));
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_df_usage);
-+
-+	path = argv[1];
-+
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-+		return 12;
- 	}
--out:
--	close_file_or_dir(fd, dirstream);
--	free(sargs);
-+	ret = get_df(fd, &sargs);
- 
--	return 0;
-+	if (!ret && sargs) {
-+		print_df(sargs);
-+		free(sargs);
-+	} else
-+		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(ret));
-+
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
- }
- 
- static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
-diff --git a/ctree.h b/ctree.h
-index 35d1ba4..f6b1ddc 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -831,6 +831,17 @@ struct btrfs_csum_item {
- #define BTRFS_BLOCK_GROUP_RAID6    (1ULL << 8)
- #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
- 
-+#define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
-+					 BTRFS_BLOCK_GROUP_SYSTEM |  \
-+					 BTRFS_BLOCK_GROUP_METADATA)
-+
-+#define BTRFS_BLOCK_GROUP_PROFILE_MASK	(BTRFS_BLOCK_GROUP_RAID0 |   \
-+					 BTRFS_BLOCK_GROUP_RAID1 |   \
-+					 BTRFS_BLOCK_GROUP_RAID5 |   \
-+					 BTRFS_BLOCK_GROUP_RAID6 |   \
-+					 BTRFS_BLOCK_GROUP_DUP |     \
-+					 BTRFS_BLOCK_GROUP_RAID10)
-+
- /* used in struct btrfs_balance_args fields */
- #define BTRFS_AVAIL_ALLOC_BIT_SINGLE	(1ULL << 48)
- 
+-install: $(libs) $(progs) install-man
++install: version.h $(libs) $(progs) install-man
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+ 	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(libdir)
 -- 
-1.7.1
+1.7.10.4
 

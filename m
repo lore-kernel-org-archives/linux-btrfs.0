@@ -1,61 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:34670 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756812Ab3H3Siw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Aug 2013 14:38:52 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id DD7A87C041B
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 12:38:51 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id jdgQWNli6QroFN66 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 30 Aug 2013 12:38:51 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: actually limit the size of delalloc range
-Date: Fri, 30 Aug 2013 14:38:49 -0400
-Message-ID: <1377887929-3768-1-git-send-email-jbacik@fusionio.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:41637 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759759Ab3ICIVo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2013 04:21:44 -0400
+Received: from bluebottle.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 70258218DB
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Sep 2013 18:21:37 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: how long should btrfs fi balance take?
+Date: Tue, 3 Sep 2013 18:21:35 +1000
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201309031821.35507.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So forever we have had this thing to limit the amount of delalloc pages we'll
-setup to be written out to 128mb.  This is because we have to lock all the pages
-in this range, so anything above this gets a bit unweildly, and also without a
-limit we'll happily allocate gigantic chunks of disk space.  Turns out our check
-for this wasn't quite right, we wouldn't actually limit the chunk we wanted to
-write out, we'd just stop looking for more space after we went over the limit.
-So if you do a giant 20gb dd on my box with lots of ram I could get 2gig
-extents.  This is fine normally, except when you go to relocate these extents
-and we can't find enough space to relocate these moster extents, since we have
-to be able to allocate exactly the same sized extent to move it around.  So fix
-this by actually enforcing the limit.  With this patch I'm no longer seeing
-giant 1.5gb extents.  Thanks,
+# btrfs filesystem df /
+Data: total=101.57GB, used=75.75GB
+System, DUP: total=8.00MB, used=24.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=3.00GB, used=2.09GB
+Metadata: total=8.00MB, used=0.00
+# btrfs filesystem df /
+Data: total=100.57GB, used=77.00GB
+System, DUP: total=8.00MB, used=24.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=3.50GB, used=2.35GB
+Metadata: total=8.00MB, used=0.00
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent_io.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
+I've had btrfs filesystem balance running on a partition of my 120G Intel SSD 
+for almost 7 hours.  The above two runs of fi df were before the balance and 
+after it had run for almost 7 hours.  The system is in operation during this 
+process, I've used it for email, web browsing, and I downloaded a movie from 
+Youtube.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4068d40..bf6e526 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1481,10 +1481,12 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 		*end = state->end;
- 		cur_start = state->end + 1;
- 		node = rb_next(node);
--		if (!node)
--			break;
- 		total_bytes += state->end - state->start + 1;
--		if (total_bytes >= max_bytes)
-+		if (total_bytes >= max_bytes) {
-+			*end = *start + max_bytes - 1;
-+			break;
-+		}
-+		if (!node)
- 			break;
- 	}
- out:
+Also during the process the usual cron jobs have been running including the 
+one that makes a snapshot of /home every 15 minutes.
+
+Is it considered to be a bad idea to make snapshots while doing a balance?
+
+Should a balance take so long anyway?  It's been mostly CPU bound an on E4600 
+CPU, that's a bit dated but it's still dual-core 64bit and whatever the btrfs 
+utility has done to use 327 minutes of CPU time is probably wrong.
+
+Any suggestions on other information I should provide?  I'm using 3.10.7 in 
+Debian package linux-image-3.10-2-amd64 version 3.10.7-1 and version 
+0.19+20130705-1 of the btrfs-tools in Debian/Unstable.
+
 -- 
-1.7.7.6
-
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

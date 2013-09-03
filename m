@@ -1,120 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46813 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:44695 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758133Ab3ICQZ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Sep 2013 12:25:58 -0400
-Message-ID: <52260537.6090103@redhat.com>
-Date: Tue, 03 Sep 2013 10:50:15 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.cz Sterba" <dsterba@suse.cz>,
-        Miao Xie <miaox@cn.fujitsu.com>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH] btrfs-progs: tidy up cmd_subvol_create() whitespace &
- returns
-References: <1378213291-1034-1-git-send-email-wangshilong1991@gmail.com> <0A5B4F8C-8B08-4976-A660-6396407E932D@gmail.com>
-In-Reply-To: <0A5B4F8C-8B08-4976-A660-6396407E932D@gmail.com>
-Content-Type: text/plain; charset=GB2312
+	id S933085Ab3ICQ3B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Sep 2013 12:29:01 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CF32CA51B7
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Sep 2013 18:28:59 +0200 (CEST)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: add lockdep and tracing annotations for uuid tree
+Date: Tue,  3 Sep 2013 18:28:57 +0200
+Message-Id: <1378225737-1524-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/3/13 8:13 AM, Wang Shilong wrote:
-> Hello Eric,
-> 
-> Recently, i notice btrfs-progs's magic return value. For example, EACCESS return 12.
-> Magic return value is confusing for code reviewers. However,at least we should guarantee
-> all these conditions return the same value(for example 12 for this case)
-> 
-> Or we can change all the magic number to 1. Miao reminded me that
-> there may be some applications that have catched and checked these
-> magic return values¡­
-> 
-> Any ideas about this?
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/disk-io.c           |    1 +
+ include/trace/events/btrfs.h |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-I think that if we want to do anything different from the standard, expected
-"return 1 and set errno" then it needs to be a careful design decision, documented,
-used consistently, and tested.
-
-As far as I can tell, what is in btrfs-progs today is undocumented,
-untested, and only occasionally/randomly used.  Therefore I don't
-think it's useful as it stands today, and why I had started removing
-them.
-
--Eric
-
-> Thanks,
-> Wang
->> From:
->> Just whitespace fixes, and magical return value removal.
->>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->> cmds-subvolume.c | 18 +++++++++---------
->> 1 file changed, 9 insertions(+), 9 deletions(-)
->>
->> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
->> index 01b982c..a9999ac 100644
->> --- a/cmds-subvolume.c
->> +++ b/cmds-subvolume.c
->> @@ -104,9 +104,9 @@ static int cmd_subvol_create(int argc, char **argv)
->> 	dst = argv[optind];
->>
->> 	res = test_isdir(dst);
->> -	if(res >= 0 ){
->> +	if (res >= 0) {
->> 		fprintf(stderr, "ERROR: '%s' exists\n", dst);
->> -		return 12;
->> +		return 1;
->> 	}
->>
->> 	newname = strdup(dst);
->> @@ -114,24 +114,24 @@ static int cmd_subvol_create(int argc, char **argv)
->> 	dstdir = strdup(dst);
->> 	dstdir = dirname(dstdir);
->>
->> -	if( !strcmp(newname,".") || !strcmp(newname,"..") ||
->> +	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
->> 	     strchr(newname, '/') ){
->> 		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
->> 			newname);
->> -		return 14;
->> +		return 1;
->> 	}
->>
->> 	len = strlen(newname);
->> 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
->> 		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
->> 			newname);
->> -		return 14;
->> +		return 1;
->> 	}
->>
->> 	fddst = open_file_or_dir(dstdir);
->> 	if (fddst < 0) {
->> 		fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
->> -		return 12;
->> +		return 1;
->> 	}
->>
->> 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
->> @@ -159,10 +159,10 @@ static int cmd_subvol_create(int argc, char **argv)
->> 	close(fddst);
->> 	free(inherit);
->>
->> -	if(res < 0 ){
->> -		fprintf( stderr, "ERROR: cannot create subvolume - %s\n",
->> +	if (res < 0) {
->> +		fprintf(stderr, "ERROR: cannot create subvolume - %s\n",
->> 			strerror(e));
->> -		return 11;
->> +		return 1;
->> 	}
->>
->> 	return 0;
->> -- 
->> 1.7.11.7
->>
-> 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4cbb00a..72cf08b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -157,6 +157,7 @@ static struct btrfs_lockdep_keyset {
+ 	{ .id = BTRFS_TREE_LOG_OBJECTID,	.name_stem = "log"	},
+ 	{ .id = BTRFS_TREE_RELOC_OBJECTID,	.name_stem = "treloc"	},
+ 	{ .id = BTRFS_DATA_RELOC_TREE_OBJECTID,	.name_stem = "dreloc"	},
++	{ .id = BTRFS_UUID_TREE_OBJECTID,	.name_stem = "uuid"	},
+ 	{ .id = 0,				.name_stem = "tree"	},
+ };
+ 
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 45702c3..f18b3b7 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -42,6 +42,7 @@ struct extent_buffer;
+ 		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
+ 		{ BTRFS_QUOTA_TREE_OBJECTID,	"QUOTA_TREE"	},	\
+ 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
++		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_RELOC"	},	\
+ 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
+ 
+ #define show_root_type(obj)						\
+-- 
+1.7.9
 

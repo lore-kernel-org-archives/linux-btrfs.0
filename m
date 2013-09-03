@@ -1,81 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52787 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:46813 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755723Ab3ICQIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Sep 2013 12:08:37 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VGt9h-0006x6-2S
-	for linux-btrfs@vger.kernel.org; Tue, 03 Sep 2013 18:08:37 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 18:08:37 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2013 18:08:37 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Recovering from csum errors
-Date: Tue, 3 Sep 2013 16:08:18 +0000 (UTC)
-Message-ID: <pan$7dd78$5704ef42$348d7f12$25b893cf@cox.net>
-References: <20130902220006.GA6389@carfax.org.uk> <
-	pan$97a5$71cfb7f0$286a61f9$62ed2e15@cox.net> <
-	CAA1QwTbiYGWpxctxOrF67wOzdAr6U6TKR__HZW44c2q9XeVM2w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1758133Ab3ICQZ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Sep 2013 12:25:58 -0400
+Message-ID: <52260537.6090103@redhat.com>
+Date: Tue, 03 Sep 2013 10:50:15 -0500
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.cz Sterba" <dsterba@suse.cz>,
+        Miao Xie <miaox@cn.fujitsu.com>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs-progs: tidy up cmd_subvol_create() whitespace &
+ returns
+References: <1378213291-1034-1-git-send-email-wangshilong1991@gmail.com> <0A5B4F8C-8B08-4976-A660-6396407E932D@gmail.com>
+In-Reply-To: <0A5B4F8C-8B08-4976-A660-6396407E932D@gmail.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David MacKinnon posted on Tue, 03 Sep 2013 19:26:10 +1000 as excerpted:
-
-> On 3 September 2013 18:54, Duncan <1i5t5.duncan@cox.net> wrote:
->>
->> > In case the data is wrong, there may be a reverse CRC32 algorithm
->> > implemented. Most likely it's only several bytes which got "flipped".
->>
->> But... that flips the entire reason for choosing direct-IO in the first
->> place -- performance -- on its head, incurring a **HUGE** slowdown just
+On 9/3/13 8:13 AM, Wang Shilong wrote:
+> Hello Eric,
 > 
-> Not wanting to put words in the original posters mouth, but I read that
-> as an offline recovery method (scrub?), rather than real time recovery
-> attempts. If the frequency of errors is low, then for certain purposes
-> accepting, a few errors if you had a recovery option might be
-> acceptable.
+> Recently, i notice btrfs-progs's magic return value. For example, EACCESS return 12.
+> Magic return value is confusing for code reviewers. However,at least we should guarantee
+> all these conditions return the same value(for example 12 for this case)
+> 
+> Or we can change all the magic number to 1. Miao reminded me that
+> there may be some applications that have catched and checked these
+> magic return values¡­
+> 
+> Any ideas about this?
 
-You might be right.  Tho there's already scrub available... it just 
-requires a second, hopefully valid, copy to work from.  Which is what 
-btrfs raid1 mode is all about, and why I chose to run it. =:^)
+I think that if we want to do anything different from the standard, expected
+"return 1 and set errno" then it needs to be a careful design decision, documented,
+used consistently, and tested.
 
-It would be nice to be able to say accept the invalid data, if it's not 
-deemed critical and isn't so corrupted it's entirely invalid, which was 
-something the poster suggested.  And in a way, that's what nocow does, by 
-way of nosum; it just has to be setup before the fact; there's 
-(currently) no way to make it work after the damage has occurred.
+As far as I can tell, what is in btrfs-progs today is undocumented,
+untested, and only occasionally/randomly used.  Therefore I don't
+think it's useful as it stands today, and why I had started removing
+them.
 
-But I don't believe brute-forcing a correct crc match to be as 
-necessarily feasible as the poster suggested as another alternative.  And 
-even if a proper match is found, what's to say it's the /correct/ match?
+-Eric
 
-Meanwhile, even if brute-forcing a match /is/ possible, in this 
-particular case, it'd likely crash the VM or otherwise cause at the very 
-least invalid results if not horrible VM corruption, because the written 
-data was very likely correct, just changed after btrfs calculated the 
-checksum.  So changing it back to what btrfs calculated the checksum on, 
-even if possible, would actually corrupt the data from the VM's 
-perspective, and then the VM would be acting on that corrupt data, which 
-would certainly have unexpected and very possibly horribly bad results.
-
-> As mentioned, nocow is probably best for VM images anyhow, but still :)
-
-Agreed on that.  If the VM insists on breaking the rules and scribbling 
-over its own data, just don't do the checksumming and LET it scribble 
-over its own data if that's what it wants to do and as long as it doesn't 
-try to scribble over anything that's NOT its data to scribble over.  If 
-it breaks in pieces as a result, it gets to keep 'em. =:^\
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Thanks,
+> Wang
+>> From:
+>> Just whitespace fixes, and magical return value removal.
+>>
+>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+>> ---
+>> cmds-subvolume.c | 18 +++++++++---------
+>> 1 file changed, 9 insertions(+), 9 deletions(-)
+>>
+>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>> index 01b982c..a9999ac 100644
+>> --- a/cmds-subvolume.c
+>> +++ b/cmds-subvolume.c
+>> @@ -104,9 +104,9 @@ static int cmd_subvol_create(int argc, char **argv)
+>> 	dst = argv[optind];
+>>
+>> 	res = test_isdir(dst);
+>> -	if(res >= 0 ){
+>> +	if (res >= 0) {
+>> 		fprintf(stderr, "ERROR: '%s' exists\n", dst);
+>> -		return 12;
+>> +		return 1;
+>> 	}
+>>
+>> 	newname = strdup(dst);
+>> @@ -114,24 +114,24 @@ static int cmd_subvol_create(int argc, char **argv)
+>> 	dstdir = strdup(dst);
+>> 	dstdir = dirname(dstdir);
+>>
+>> -	if( !strcmp(newname,".") || !strcmp(newname,"..") ||
+>> +	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+>> 	     strchr(newname, '/') ){
+>> 		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
+>> 			newname);
+>> -		return 14;
+>> +		return 1;
+>> 	}
+>>
+>> 	len = strlen(newname);
+>> 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+>> 		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
+>> 			newname);
+>> -		return 14;
+>> +		return 1;
+>> 	}
+>>
+>> 	fddst = open_file_or_dir(dstdir);
+>> 	if (fddst < 0) {
+>> 		fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
+>> -		return 12;
+>> +		return 1;
+>> 	}
+>>
+>> 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
+>> @@ -159,10 +159,10 @@ static int cmd_subvol_create(int argc, char **argv)
+>> 	close(fddst);
+>> 	free(inherit);
+>>
+>> -	if(res < 0 ){
+>> -		fprintf( stderr, "ERROR: cannot create subvolume - %s\n",
+>> +	if (res < 0) {
+>> +		fprintf(stderr, "ERROR: cannot create subvolume - %s\n",
+>> 			strerror(e));
+>> -		return 11;
+>> +		return 1;
+>> 	}
+>>
+>> 	return 0;
+>> -- 
+>> 1.7.11.7
+>>
+> 
 

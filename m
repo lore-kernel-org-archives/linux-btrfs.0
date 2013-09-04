@@ -1,52 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:57947 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756943Ab3IDL5n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 07:57:43 -0400
-Received: by mail-pa0-f43.google.com with SMTP id hz10so326070pad.30
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Sep 2013 04:57:43 -0700 (PDT)
+Received: from mailout32.mail01.mtsvc.net ([216.70.64.70]:44698 "EHLO
+	n23.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1756278Ab3IDMLV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 08:11:21 -0400
+Message-ID: <52272365.8070909@hurleysoftware.com>
+Date: Wed, 04 Sep 2013 08:11:17 -0400
+From: Peter Hurley <peter@hurleysoftware.com>
 MIME-Version: 1.0
-Date: Wed, 4 Sep 2013 13:57:42 +0200
-Message-ID: <CAN3gubkkb5jKPddRcDVBqr=r7c6_jFP6-hMaiWQ4mie6Fk90pA@mail.gmail.com>
-Subject: Btrfs prog
-From: Giuseppe Fierro <giuseppe@fierro.org>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: Josef Bacik <jbacik@fusionio.com>
+CC: Michel Lespinasse <walken@google.com>, linux-btrfs@vger.kernel.org,
+        mingo@elte.hu, akpm@linux-foundation.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] rwsem: add rwsem_is_contended
+References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com> <20130903154710.GB15634@localhost.localdomain>
+In-Reply-To: <20130903154710.GB15634@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm using btrfs on ubuntu 13.04 with btrfs prog v0.20-rc1
-This is my configuration using 2 disks in raid1 mode:
+On 09/03/2013 11:47 AM, Josef Bacik wrote:
+> On Sun, Sep 01, 2013 at 01:32:36AM -0700, Michel Lespinasse wrote:
+>> Hi Josef,
+>>
+>> On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+>>> Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
+>>> read lock on this rwsem while they scan the extent tree, and if need_resched()
+>>> they will drop the lock and schedule.  The transaction commit needs to take a
+>>> write lock for this rwsem for a very short period to switch out the commit
+>>> roots.  If there are a lot of threads doing this caching operation we can starve
+>>> out the committers which slows everybody out.  To address this we want to add
+>>> this functionality to see if our rwsem has anybody waiting to take a write lock
+>>> so we can drop it and schedule for a bit to allow the commit to continue.
+>>> Thanks,
+>>>
+>>> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+>>
+>> FYI, I once tried to introduce something like this before, but my use
+>> case was pretty weak so it was not accepted at the time. I don't think
+>> there were any objections to the API itself though, and I think it's
+>> potentially a good idea if you use case justifies it.
+>>
+>> Two comments:
+>>
+>> - Note that there are two rwsem implementations - if you are going to
+>> add functionality to rwsem.h you want to add the same functionality in
+>> rwsem-spinlock.h as well.
+>>
+>
+> Sure thing.
+>
+>> - I would prefer if you could avoid taking the wait_lock in your
+>> rwsem.h implementation. In your use case (read lock is known to be
+>> held), checking for sem->count < 0 would be sufficient to indicate a
+>> writer is queued (or getting onto the queue). In the general case,
+>> some architectures have the various values set up so that
+>> RWSEM_WAITING_BIAS != RWSEM_ACTIVE_WRITE_BIAS - for these
+>> architectures at least, you can check for waiters by looking if the
+>> lowest bit of RWSEM_WAITING_BIAS is set in sem->count.
+>
+> Question about this one, I can't just do
+>
+> if (sem->count < 0)
+>
+> since each arch has their own atomic way of looking at count, so I'd have to add
+> something to do just a normal read of count for each arch and call that wouldn't
+> I?
 
-> gspe@jura:/mnt$ sudo btrfs f show
-> Label: 'UbuntuDSK'  uuid: f4a3c832-f6ab-4b1d-9eb7-f9ba7d1cba01
-> Total devices 2 FS bytes used 205.41GB
-> devid    1 size 2.70TB used 214.03GB path /dev/sdb2
-> devid    2 size 2.70TB used 214.01GB path /dev/sda2
-> Btrfs v0.20-rc1
+Reading sem->count is atomic.
+
+For that matter, in your particular use case (which is more heuristic), you
+could perform the list_empty() check without acquiring the wait_lock.
+
+Regards,
+Peter Hurley
 
 
-Some btrfs command behave strange:
-If i want to check free space using df, i get:
 
-> gspe@jura:/mnt$ sudo btrfs filesystem df /
-> Data, RAID1: total=212.00GB, used=204.42GB
-> Data: total=8.00MB, used=0.00
-> System, RAID1: total=8.00MB, used=36.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=2.00GB, used=1010.04MB
-> Metadata: total=8.00MB, used=0.00
-
-
-If I would like to show the subvolume, i get
-
-> gspe@jura:/mnt$ sudo btrfs subvolume list /
-> gspe@jura:/mnt$
-
-
-nothing is shown!!!
-
-So what's happen to the btrfs prog?
-
-Thanks
-Giuseppe Fierro

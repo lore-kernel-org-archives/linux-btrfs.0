@@ -1,77 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout32.mail01.mtsvc.net ([216.70.64.70]:44698 "EHLO
-	n23.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756278Ab3IDMLV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 08:11:21 -0400
-Message-ID: <52272365.8070909@hurleysoftware.com>
-Date: Wed, 04 Sep 2013 08:11:17 -0400
-From: Peter Hurley <peter@hurleysoftware.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Michel Lespinasse <walken@google.com>, linux-btrfs@vger.kernel.org,
-        mingo@elte.hu, akpm@linux-foundation.org, linux-kernel@vger.kernel.org
+Received: from dkim2.fusionio.com ([66.114.96.54]:46991 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757042Ab3IDMNH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 08:13:07 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 25E529A0697
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Sep 2013 06:13:07 -0600 (MDT)
+Date: Wed, 4 Sep 2013 08:13:04 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Peter Hurley <peter@hurleysoftware.com>
+CC: Josef Bacik <jbacik@fusionio.com>, Michel Lespinasse <walken@google.com>,
+        <linux-btrfs@vger.kernel.org>, <mingo@elte.hu>,
+        <akpm@linux-foundation.org>, <linux-kernel@vger.kernel.org>
 Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com> <20130903154710.GB15634@localhost.localdomain>
-In-Reply-To: <20130903154710.GB15634@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Message-ID: <20130904121304.GD15634@localhost.localdomain>
+References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
+ <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com>
+ <5224C850.2060103@hurleysoftware.com>
+ <20130903131805.GA15634@localhost.localdomain>
+ <52271DB0.8030305@hurleysoftware.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <52271DB0.8030305@hurleysoftware.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/03/2013 11:47 AM, Josef Bacik wrote:
-> On Sun, Sep 01, 2013 at 01:32:36AM -0700, Michel Lespinasse wrote:
->> Hi Josef,
->>
->> On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
->>> Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
->>> read lock on this rwsem while they scan the extent tree, and if need_resched()
->>> they will drop the lock and schedule.  The transaction commit needs to take a
->>> write lock for this rwsem for a very short period to switch out the commit
->>> roots.  If there are a lot of threads doing this caching operation we can starve
->>> out the committers which slows everybody out.  To address this we want to add
->>> this functionality to see if our rwsem has anybody waiting to take a write lock
->>> so we can drop it and schedule for a bit to allow the commit to continue.
->>> Thanks,
->>>
->>> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
->>
->> FYI, I once tried to introduce something like this before, but my use
->> case was pretty weak so it was not accepted at the time. I don't think
->> there were any objections to the API itself though, and I think it's
->> potentially a good idea if you use case justifies it.
->>
->> Two comments:
->>
->> - Note that there are two rwsem implementations - if you are going to
->> add functionality to rwsem.h you want to add the same functionality in
->> rwsem-spinlock.h as well.
->>
+On Wed, Sep 04, 2013 at 07:46:56AM -0400, Peter Hurley wrote:
+> On 09/03/2013 09:18 AM, Josef Bacik wrote:
+> >On Mon, Sep 02, 2013 at 01:18:08PM -0400, Peter Hurley wrote:
+> >>On 09/01/2013 04:32 AM, Michel Lespinasse wrote:
+> >>>Hi Josef,
+> >>>
+> >>>On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
+> >>>>Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
+> >>>>read lock on this rwsem while they scan the extent tree, and if need_resched()
+> >>>>they will drop the lock and schedule.  The transaction commit needs to take a
+> >>>>write lock for this rwsem for a very short period to switch out the commit
+> >>>>roots.  If there are a lot of threads doing this caching operation we can starve
+> >>>>out the committers which slows everybody out.  To address this we want to add
+> >>>>this functionality to see if our rwsem has anybody waiting to take a write lock
+> >>>>so we can drop it and schedule for a bit to allow the commit to continue.
+> >>>>Thanks,
+> >>>>
+> >>>>Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> >>>
+> >>>FYI, I once tried to introduce something like this before, but my use
+> >>>case was pretty weak so it was not accepted at the time. I don't think
+> >>>there were any objections to the API itself though, and I think it's
+> >>>potentially a good idea if you use case justifies it.
+> >>
+> >>Exactly, I'm concerned about the use case: readers can't starve writers.
+> >>Of course, lots of existing readers can temporarily prevent a writer from
+> >>acquiring, but those readers would already have the lock. Any new readers
+> >>wouldn't be able to prevent a waiting writer from obtaining the lock.
+> >>
+> >>Josef,
+> >>Could you be more explicit, maybe with some detailed numbers about the
+> >>condition you report?
+> >>
+> >
+> >Sure, this came from a community member
+> >
+> >http://article.gmane.org/gmane.comp.file-systems.btrfs/28081
+> >
+> >With the old approach we could block between 1-2 seconds waiting for this rwsem,
+> >and with the new approach where we allow many more of these caching threads we
+> >were staving out the writer for 80 seconds.
+> >
+> >So what happens is these threads will scan our extent tree to put together the
+> >free space cache, and they'll hold this lock while they are doing the scanning.
+> >The only way they will drop this lock is if we hit need_resched(), but because
+> >these threads are going to do quite a bit of IO I imagine we're not ever being
+> >flagged with need_resched() because we schedule while waiting for IO.  So these
+> >threads will hold onto this lock for bloody ever without giving it up so the
+> >committer can take the write lock.  His patch to "fix" the problem was to have
+> >an atomic that let us know somebody was waiting for a write lock and then we'd
+> >drop the reader lock and schedule.
+> 
+> Thanks for the additional clarification.
+> 
+> >So really we're just using a rwsem in a really mean way for writers.  I'm open
+> >to other suggestions but I think this probably the cleanest way.
+> 
+> Is there substantial saved state at the point where the caching thread is
+> checking need_resched() that precludes dropping and reacquiring the
+> extent_commit_sem (or before find_next_key())?  Not that it's a cleaner
+> solution; just want to understand better the situation.
 >
-> Sure thing.
->
->> - I would prefer if you could avoid taking the wait_lock in your
->> rwsem.h implementation. In your use case (read lock is known to be
->> held), checking for sem->count < 0 would be sufficient to indicate a
->> writer is queued (or getting onto the queue). In the general case,
->> some architectures have the various values set up so that
->> RWSEM_WAITING_BIAS != RWSEM_ACTIVE_WRITE_BIAS - for these
->> architectures at least, you can check for waiters by looking if the
->> lowest bit of RWSEM_WAITING_BIAS is set in sem->count.
->
-> Question about this one, I can't just do
->
-> if (sem->count < 0)
->
-> since each arch has their own atomic way of looking at count, so I'd have to add
-> something to do just a normal read of count for each arch and call that wouldn't
-> I?
 
-Reading sem->count is atomic.
+Yes I had thought of just dropping our locks everytime we had to do
+find_next_key() but that isn't going to work.  We do have to save state but
+that's not the hard part, it's the fact that we could race with the committing
+transaction and lose space.  So what would happen is something like this
 
-For that matter, in your particular use case (which is more heuristic), you
-could perform the list_empty() check without acquiring the wait_lock.
+caching_thread:
+	save last cached offset
+	drop locks
+	find_next_key
+		get a ref on the current commit root
+		search down to the next leaf
+	re-take locks
+	process leaf
 
-Regards,
-Peter Hurley
+transaction committer:
+	acquire locks
+	swap commit root
+	write transaction
+	unpin all extents up to the last saved cached offset
 
+So if the caching thread grabs a ref on the commit root before the transaction
+committer swaps out the commit root we are dealing with too old of a tree.  So
+say the leaf we're going to process next has data that was free'ed (and
+therefore would have been unpinned) during that transaction, because it is after
+our last cached offset we don't unpin it because we know that the caching thread
+is going to find the leaf where that extent is not there and add free space for
+that extent.  However we got the leaf from two transactions ago which will still
+show that extent in use, so we won't add free space for it, which will cause us
+to leak the extent.  We need to make sure we are always consistently on the
+previous extent root which is why we hold this lock.
 
+I hope that makes sense.  Thanks,
 
+Josef

@@ -1,124 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:46991 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757042Ab3IDMNH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 08:13:07 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 25E529A0697
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Sep 2013 06:13:07 -0600 (MDT)
-Date: Wed, 4 Sep 2013 08:13:04 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Peter Hurley <peter@hurleysoftware.com>
-CC: Josef Bacik <jbacik@fusionio.com>, Michel Lespinasse <walken@google.com>,
-        <linux-btrfs@vger.kernel.org>, <mingo@elte.hu>,
-        <akpm@linux-foundation.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-Message-ID: <20130904121304.GD15634@localhost.localdomain>
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
- <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com>
- <5224C850.2060103@hurleysoftware.com>
- <20130903131805.GA15634@localhost.localdomain>
- <52271DB0.8030305@hurleysoftware.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:33591 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1762663Ab3IDNcL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 09:32:11 -0400
+Date: Wed, 4 Sep 2013 14:32:07 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Giuseppe Fierro <giuseppe@fierro.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs prog
+Message-ID: <20130904133207.GC6389@carfax.org.uk>
+References: <CAN3gubkkb5jKPddRcDVBqr=r7c6_jFP6-hMaiWQ4mie6Fk90pA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <52271DB0.8030305@hurleysoftware.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="eRtJSFbw+EEWtPj3"
+In-Reply-To: <CAN3gubkkb5jKPddRcDVBqr=r7c6_jFP6-hMaiWQ4mie6Fk90pA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 04, 2013 at 07:46:56AM -0400, Peter Hurley wrote:
-> On 09/03/2013 09:18 AM, Josef Bacik wrote:
-> >On Mon, Sep 02, 2013 at 01:18:08PM -0400, Peter Hurley wrote:
-> >>On 09/01/2013 04:32 AM, Michel Lespinasse wrote:
-> >>>Hi Josef,
-> >>>
-> >>>On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> >>>>Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
-> >>>>read lock on this rwsem while they scan the extent tree, and if need_resched()
-> >>>>they will drop the lock and schedule.  The transaction commit needs to take a
-> >>>>write lock for this rwsem for a very short period to switch out the commit
-> >>>>roots.  If there are a lot of threads doing this caching operation we can starve
-> >>>>out the committers which slows everybody out.  To address this we want to add
-> >>>>this functionality to see if our rwsem has anybody waiting to take a write lock
-> >>>>so we can drop it and schedule for a bit to allow the commit to continue.
-> >>>>Thanks,
-> >>>>
-> >>>>Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> >>>
-> >>>FYI, I once tried to introduce something like this before, but my use
-> >>>case was pretty weak so it was not accepted at the time. I don't think
-> >>>there were any objections to the API itself though, and I think it's
-> >>>potentially a good idea if you use case justifies it.
-> >>
-> >>Exactly, I'm concerned about the use case: readers can't starve writers.
-> >>Of course, lots of existing readers can temporarily prevent a writer from
-> >>acquiring, but those readers would already have the lock. Any new readers
-> >>wouldn't be able to prevent a waiting writer from obtaining the lock.
-> >>
-> >>Josef,
-> >>Could you be more explicit, maybe with some detailed numbers about the
-> >>condition you report?
-> >>
-> >
-> >Sure, this came from a community member
-> >
-> >http://article.gmane.org/gmane.comp.file-systems.btrfs/28081
-> >
-> >With the old approach we could block between 1-2 seconds waiting for this rwsem,
-> >and with the new approach where we allow many more of these caching threads we
-> >were staving out the writer for 80 seconds.
-> >
-> >So what happens is these threads will scan our extent tree to put together the
-> >free space cache, and they'll hold this lock while they are doing the scanning.
-> >The only way they will drop this lock is if we hit need_resched(), but because
-> >these threads are going to do quite a bit of IO I imagine we're not ever being
-> >flagged with need_resched() because we schedule while waiting for IO.  So these
-> >threads will hold onto this lock for bloody ever without giving it up so the
-> >committer can take the write lock.  His patch to "fix" the problem was to have
-> >an atomic that let us know somebody was waiting for a write lock and then we'd
-> >drop the reader lock and schedule.
+
+--eRtJSFbw+EEWtPj3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Wed, Sep 04, 2013 at 01:57:42PM +0200, Giuseppe Fierro wrote:
+> I'm using btrfs on ubuntu 13.04 with btrfs prog v0.20-rc1
+> This is my configuration using 2 disks in raid1 mode:
 > 
-> Thanks for the additional clarification.
+> > gspe@jura:/mnt$ sudo btrfs f show
+> > Label: 'UbuntuDSK'  uuid: f4a3c832-f6ab-4b1d-9eb7-f9ba7d1cba01
+> > Total devices 2 FS bytes used 205.41GB
+> > devid    1 size 2.70TB used 214.03GB path /dev/sdb2
+> > devid    2 size 2.70TB used 214.01GB path /dev/sda2
+> > Btrfs v0.20-rc1
 > 
-> >So really we're just using a rwsem in a really mean way for writers.  I'm open
-> >to other suggestions but I think this probably the cleanest way.
 > 
-> Is there substantial saved state at the point where the caching thread is
-> checking need_resched() that precludes dropping and reacquiring the
-> extent_commit_sem (or before find_next_key())?  Not that it's a cleaner
-> solution; just want to understand better the situation.
+> Some btrfs command behave strange:
+> If i want to check free space using df, i get:
+> 
+> > gspe@jura:/mnt$ sudo btrfs filesystem df /
+> > Data, RAID1: total=212.00GB, used=204.42GB
+> > Data: total=8.00MB, used=0.00
+> > System, RAID1: total=8.00MB, used=36.00KB
+> > System: total=4.00MB, used=0.00
+> > Metadata, RAID1: total=2.00GB, used=1010.04MB
+> > Metadata: total=8.00MB, used=0.00
+
+   What do you think is wrong with this output? It looks OK to me:
+
+   From the btrfs fi show at the top, you have 214 GB allocated on
+each device. The btrfs fi df shows you how that allocation is used:
+212 GB (*2, because it's RAID-1) is allocated to data, with 204 GB
+holding useful data. The remaining 2 GB (*2) is allocated to metadata,
+and 1 GB of that is actually used.
+
+> If I would like to show the subvolume, i get
+> 
+> > gspe@jura:/mnt$ sudo btrfs subvolume list /
+> > gspe@jura:/mnt$
 >
+> nothing is shown!!!
 
-Yes I had thought of just dropping our locks everytime we had to do
-find_next_key() but that isn't going to work.  We do have to save state but
-that's not the hard part, it's the fact that we could race with the committing
-transaction and lose space.  So what would happen is something like this
+   Try using the -a option. It got added a while ago, and has been a
+complete pain in the neck ever since...
 
-caching_thread:
-	save last cached offset
-	drop locks
-	find_next_key
-		get a ref on the current commit root
-		search down to the next leaf
-	re-take locks
-	process leaf
+   Hugo.
 
-transaction committer:
-	acquire locks
-	swap commit root
-	write transaction
-	unpin all extents up to the last saved cached offset
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- The English language has the mot juste for every occasion. ---    
 
-So if the caching thread grabs a ref on the commit root before the transaction
-committer swaps out the commit root we are dealing with too old of a tree.  So
-say the leaf we're going to process next has data that was free'ed (and
-therefore would have been unpinned) during that transaction, because it is after
-our last cached offset we don't unpin it because we know that the caching thread
-is going to find the leaf where that extent is not there and add free space for
-that extent.  However we got the leaf from two transactions ago which will still
-show that extent in use, so we won't add free space for it, which will cause us
-to leak the extent.  We need to make sure we are always consistently on the
-previous extent root which is why we hold this lock.
+--eRtJSFbw+EEWtPj3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-I hope that makes sense.  Thanks,
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
 
-Josef
+iQIVAwUBUic2V1heFHXiqx3kAQKOdhAArAVsS6SEP8+DHD0w+HGa61KXNmZtNI9c
+oo82PF1KazZEs1cTt4w0IVfl60MWiIw6tW5QNhHkviHWoFlKNgd/QenanVBQKBTa
+tY8vtCB+LR4lfLMbcCdF2nxny9+Fst3giJwQzrpG//owMyjzO0jyFbfiir917uQk
+27HPQS94UOM/J1ENKKVGGbZkENbtOoaa3iO/ZXlSrbR57RnwtsoB8IU5qMLoVQbK
+UaNd02DE3oiRoP1ROdJ1sC6STW51DrifjA+jZvvA89UWGtGoyqtWQCPHnH4b+IBp
+wcUEQPziLuDhlzzesTQT1Dn+WGIhl53BONz32HvzEvkW+pOEFq7/BUM/Qeqp/h7D
+SsQuCCvUKJTepeJThkRcxwyfBdcBQcdBlzVxRXuVVFJ+xjKadazUNQjOEn1e4Gdx
+hc5eIdNjYbShTSIRAj/jz2+2VSO0m0SEDTNBaO/YjD79U8kGl45K9LLC7XC2hepO
+l2fX6+qphNtVBiu5CS651Phe6LZoY3vM4/LX6+Medm/N7JuYJ4x2N+fD5VEq+gqH
+5lCJicVG8B096AbV3GAmT5obWk6HqsvsJYFTz/f7lv7y0hgJB2YKgzVW6isaXXYH
+lG8EpX1GlYC+C6h5DvuK/Xf01rEnQ/Perq9OCwQEnxyDoubEmszPmDqeTMB1IABs
+2Xrf3I820AM=
+=kzOF
+-----END PGP SIGNATURE-----
+
+--eRtJSFbw+EEWtPj3--

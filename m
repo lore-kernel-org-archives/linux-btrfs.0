@@ -1,82 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout32.mail01.mtsvc.net ([216.70.64.70]:58757 "EHLO
-	n23.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1762453Ab3IDLrC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 07:47:02 -0400
-Message-ID: <52271DB0.8030305@hurleysoftware.com>
-Date: Wed, 04 Sep 2013 07:46:56 -0400
-From: Peter Hurley <peter@hurleysoftware.com>
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:57947 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756943Ab3IDL5n (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 07:57:43 -0400
+Received: by mail-pa0-f43.google.com with SMTP id hz10so326070pad.30
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Sep 2013 04:57:43 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Michel Lespinasse <walken@google.com>, linux-btrfs@vger.kernel.org,
-        mingo@elte.hu, akpm@linux-foundation.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <CANN689Gz-g=_0ErGkB1WZhJUxg+op2=DAPr3GMYwiXFeT9NmGw@mail.gmail.com> <5224C850.2060103@hurleysoftware.com> <20130903131805.GA15634@localhost.localdomain>
-In-Reply-To: <20130903131805.GA15634@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Date: Wed, 4 Sep 2013 13:57:42 +0200
+Message-ID: <CAN3gubkkb5jKPddRcDVBqr=r7c6_jFP6-hMaiWQ4mie6Fk90pA@mail.gmail.com>
+Subject: Btrfs prog
+From: Giuseppe Fierro <giuseppe@fierro.org>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/03/2013 09:18 AM, Josef Bacik wrote:
-> On Mon, Sep 02, 2013 at 01:18:08PM -0400, Peter Hurley wrote:
->> On 09/01/2013 04:32 AM, Michel Lespinasse wrote:
->>> Hi Josef,
->>>
->>> On Fri, Aug 30, 2013 at 7:14 AM, Josef Bacik <jbacik@fusionio.com> wrote:
->>>> Btrfs uses an rwsem to control access to its extent tree.  Threads will hold a
->>>> read lock on this rwsem while they scan the extent tree, and if need_resched()
->>>> they will drop the lock and schedule.  The transaction commit needs to take a
->>>> write lock for this rwsem for a very short period to switch out the commit
->>>> roots.  If there are a lot of threads doing this caching operation we can starve
->>>> out the committers which slows everybody out.  To address this we want to add
->>>> this functionality to see if our rwsem has anybody waiting to take a write lock
->>>> so we can drop it and schedule for a bit to allow the commit to continue.
->>>> Thanks,
->>>>
->>>> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
->>>
->>> FYI, I once tried to introduce something like this before, but my use
->>> case was pretty weak so it was not accepted at the time. I don't think
->>> there were any objections to the API itself though, and I think it's
->>> potentially a good idea if you use case justifies it.
->>
->> Exactly, I'm concerned about the use case: readers can't starve writers.
->> Of course, lots of existing readers can temporarily prevent a writer from
->> acquiring, but those readers would already have the lock. Any new readers
->> wouldn't be able to prevent a waiting writer from obtaining the lock.
->>
->> Josef,
->> Could you be more explicit, maybe with some detailed numbers about the
->> condition you report?
->>
->
-> Sure, this came from a community member
->
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/28081
->
-> With the old approach we could block between 1-2 seconds waiting for this rwsem,
-> and with the new approach where we allow many more of these caching threads we
-> were staving out the writer for 80 seconds.
->
-> So what happens is these threads will scan our extent tree to put together the
-> free space cache, and they'll hold this lock while they are doing the scanning.
-> The only way they will drop this lock is if we hit need_resched(), but because
-> these threads are going to do quite a bit of IO I imagine we're not ever being
-> flagged with need_resched() because we schedule while waiting for IO.  So these
-> threads will hold onto this lock for bloody ever without giving it up so the
-> committer can take the write lock.  His patch to "fix" the problem was to have
-> an atomic that let us know somebody was waiting for a write lock and then we'd
-> drop the reader lock and schedule.
+I'm using btrfs on ubuntu 13.04 with btrfs prog v0.20-rc1
+This is my configuration using 2 disks in raid1 mode:
 
-Thanks for the additional clarification.
+> gspe@jura:/mnt$ sudo btrfs f show
+> Label: 'UbuntuDSK'  uuid: f4a3c832-f6ab-4b1d-9eb7-f9ba7d1cba01
+> Total devices 2 FS bytes used 205.41GB
+> devid    1 size 2.70TB used 214.03GB path /dev/sdb2
+> devid    2 size 2.70TB used 214.01GB path /dev/sda2
+> Btrfs v0.20-rc1
 
-> So really we're just using a rwsem in a really mean way for writers.  I'm open
-> to other suggestions but I think this probably the cleanest way.
 
-Is there substantial saved state at the point where the caching thread is
-checking need_resched() that precludes dropping and reacquiring the
-extent_commit_sem (or before find_next_key())?  Not that it's a cleaner
-solution; just want to understand better the situation.
+Some btrfs command behave strange:
+If i want to check free space using df, i get:
 
-Regards,
-Peter Hurley
+> gspe@jura:/mnt$ sudo btrfs filesystem df /
+> Data, RAID1: total=212.00GB, used=204.42GB
+> Data: total=8.00MB, used=0.00
+> System, RAID1: total=8.00MB, used=36.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, RAID1: total=2.00GB, used=1010.04MB
+> Metadata: total=8.00MB, used=0.00
+
+
+If I would like to show the subvolume, i get
+
+> gspe@jura:/mnt$ sudo btrfs subvolume list /
+> gspe@jura:/mnt$
+
+
+nothing is shown!!!
+
+So what's happen to the btrfs prog?
+
+Thanks
+Giuseppe Fierro

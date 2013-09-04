@@ -1,58 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f48.google.com ([209.85.160.48]:46244 "EHLO
-	mail-pb0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933048Ab3IDIaJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 04:30:09 -0400
-Received: by mail-pb0-f48.google.com with SMTP id ma3so7024272pbc.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Sep 2013 01:30:02 -0700 (PDT)
-Subject: Input/output error in btrfs using a new deflate compatible compression algorithm
-From: Yu Yao <yuyao0417@gmail.com>
-Content-Type: text/plain;
-	charset=us-ascii
-Message-Id: <3C9C0927-B61E-4377-A634-AD085636D6EE@gmail.com>
-Date: Wed, 4 Sep 2013 16:29:57 +0800
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (1.0)
+Received: from magic.merlins.org ([209.81.13.136]:54816 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759481Ab3IDSPN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 14:15:13 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
+	id 1VHHbk-0007pm-Jm
+	for <linux-btrfs@vger.kernel.org>; Wed, 04 Sep 2013 11:15:12 -0700
+Date: Wed, 4 Sep 2013 11:15:12 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Newer kernels do not oops if log cannot be re-read at mount
+Message-ID: <20130904181512.GU5342@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I just wanted to confirm that the crash on unexpected log read during mount
+is indeed fixed for me, I now just get a log read failed message.
 
-I have a problem while replacing the zlib compression algorithm in btrfs
-with another deflate compatible compression algorithm,
-the new algorithm does not include zlib header, and it supports compression
-only currently.
+I've filed a bug with debian to encourage them to add btrfs-zero-log as a
+tool in the initrd so that one can have the choice of running this on a non
+mounting root filesystem.
 
-So I replace the zlib_deflate related logic in zlib_compress_pages with the
-new method, and make minor changes in both zlib_decompress_biovec
-and zlib_decompress: comment out the zlib header processing logic.
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=721857
 
-However, I will get the kernel dumped message like "bytes left 0 compress len
-4096 nr 2" while trying to copy a lot of files from an ext3 partition to
-the btrfs partition mounted with the option of replaced zlib compression. I
-think it's printed by function
-"btrfs_submit_compressed_write" of file compression.c
+Thanks for having fixed this.
 
+In case someone is wondering why I'm still sticking with my SSD :) I'm holding
+off just a bit longer for the next generation of SSDs coming out now so that
+I can switch away from that questionable line of OCZ Vertex 4 (I tried 4,
+they all have this problem of not writing everything correctly when they
+hang, which fortunately is rarely).
 
-I traced the code, and guessed the zero byte was due to the zero value of
-async_extent->compressed_size in function
-submit_compressed_extents of file inode.c
-
-
-And I think the zero compression_size in async_extent is inserted
-by add_async_extent in function compress_file_range of file inode.c,
-there're 2 places of invocation of add_async_extent, and I checked it's
-always caused by the second one.
-
-
-In addition, if I enable the checksum option, a warning will be dumped due
-to the only WARN_ON in function
-btrfs_add_ordered_sum of file ordered-data.c
-
-And furthermore, when I try to copy the files being copied from the ext3
-partition previously from btrfs partition to the ext3 partition, I will get
-Input/Output error while I think btrfs tries to read data and with
-decompressing.
-
-Thanks
-Yu
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

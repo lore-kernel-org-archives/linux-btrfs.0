@@ -1,57 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62090 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757203Ab3IECkj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Sep 2013 22:40:39 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r852eZQ5014035
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 10:40:36 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Received: from e23smtp08.au.ibm.com ([202.81.31.141]:60753 "EHLO
+	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756559Ab3IEFvp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Sep 2013 01:51:45 -0400
+Received: from /spool/local
+	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 5 Sep 2013 15:48:22 +1000
+Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id E3D3D3578054
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:51:39 +1000 (EST)
+Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
+	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r855pSpH9175544
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 15:51:28 +1000
+Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
+	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r855pdsu003677
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 15:51:39 +1000
+From: chandan <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 4/5] btrfs-progs:free the local list pending_list in btrfs_scan_one_dir
-Date: Thu, 5 Sep 2013 10:38:57 +0800
-Message-Id: <1378348738-14451-5-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1378348738-14451-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1378348738-14451-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Cc: chandra.seetharaman@us.ibm.com
+Subject: [PATCH] btrfs-progs: btrfs_setup_chunk_tree_and_device_map: Return -EIO on error.
+Date: Thu, 05 Sep 2013 11:21:30 +0530
+Message-ID: <1748503.OfecYaovVX@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Originally the local pending_list is not guaranteed to be freed upon fails, it should be emptyed and the elements should be freed.
+As a result of a successful call to btrfs_read_sys_array(), the 'ret'
+variable is already set to 0. Hence the function would return 0 even
+if the call to read_tree_block() fails.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
 ---
- utils.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index d022d58..134bf80 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1066,8 +1066,8 @@ again:
- 	dirp = opendir(dirname);
- 	if (!dirp) {
- 		fprintf(stderr, "Unable to open %s for scanning\n", dirname);
--		free(fullpath);
--		return -ENOENT;
-+		ret = -ENOENT;
-+		goto fail;
+diff --git a/disk-io.c b/disk-io.c
+index fec7700..0f69f0f 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -966,7 +966,7 @@ int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info)
+ 	if (!fs_info->chunk_root->node ||
+ 	    !extent_buffer_uptodate(fs_info->chunk_root->node)) {
+ 		fprintf(stderr, "Couldn't read chunk root\n");
+-		return ret;
++		return -EIO;
  	}
- 	while(1) {
- 		dirent = readdir(dirp);
-@@ -1133,6 +1133,12 @@ again:
- fail:
- 	free(pending);
- 	free(fullpath);
-+	while (!list_empty(&pending_list)) {
-+		pending = list_entry(pending_list.next, struct pending_dir,
-+				     list);
-+		list_del(&pending->list);
-+		free(pending);
-+	}
- 	if (dirp)
- 		closedir(dirp);
- 	return ret;
+ 
+ 	if (!(btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_METADUMP)) {
 -- 
-1.8.0.1
+1.8.3.1
+
 

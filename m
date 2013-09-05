@@ -1,115 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:62111 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934783Ab3IDPXp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Sep 2013 11:23:45 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rq2so450633pbb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Sep 2013 08:23:44 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, sandeen@redhat.com
-Subject: [PATCH 20/20] Btrfs-progs: fix magic return value in cmds-scrub.c
-Date: Wed,  4 Sep 2013 23:22:37 +0800
-Message-Id: <1378308157-4621-21-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1378308157-4621-1-git-send-email-wangshilong1991@gmail.com>
-References: <1378308157-4621-1-git-send-email-wangshilong1991@gmail.com>
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:62834 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757377Ab3IEHAL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Sep 2013 03:00:11 -0400
+Message-ID: <52282BF7.6040605@giantdisaster.de>
+Date: Thu, 05 Sep 2013 09:00:07 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/5] btrfs-progs:free strdup()s that are not freed
+References: <1378348738-14451-1-git-send-email-guihc.fnst@cn.fujitsu.com> <1378348738-14451-6-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1378348738-14451-6-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+On Thu, 5 Sep 2013 10:38:58 +0800, Gui Hecheng wrote:
+> The strdup()s not freed are reported as memory leaks by valgrind.
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  cmds-subvolume.c | 48 ++++++++++++++++++++++++++++++++++--------------
+>  1 file changed, 34 insertions(+), 14 deletions(-)
+> 
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index e1fa81a..51c529c 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -75,6 +75,8 @@ static int cmd_subvol_create(int argc, char **argv)
+>  {
+>  	int	retval, res, len;
+>  	int	fddst = -1;
+> +	char	*dupname = NULL;
+> +	char	*dupdir = NULL;
+>  	char	*newname;
+>  	char	*dstdir;
+>  	char	*dst;
+> @@ -119,10 +121,10 @@ static int cmd_subvol_create(int argc, char **argv)
+>  		goto out;
+>  	}
+>  
+> -	newname = strdup(dst);
+> -	newname = basename(newname);
+> -	dstdir = strdup(dst);
+> -	dstdir = dirname(dstdir);
+> +	dupname = strdup(dst);
+> +	newname = basename(dupname);
+> +	dupdir = strdup(dst);
+> +	dstdir = dirname(dupdir);
+>  
+>  	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+>  	     strchr(newname, '/') ){
+> @@ -175,6 +177,11 @@ out:
+>  	close_file_or_dir(fddst, dirstream);
+>  	free(inherit);
+>  
+> +	if (dupname != NULL)
+> +		free(dupname);
+> +	if (dupdir != NULL)
+> +		free(dupdir);
+> +
 
-There will be four kinds of return value for command "scrub start":
+free(3) already checks the pointer for NULL, no need to do it on your own.
 
-0: scrub dosen't find errors and return success.
-1: usage or syntax errors.
-3: scrub finds errors and correct all of them.
-4: scrub finds errors and some of them are not correctable.
 
-Three kinds of return values for scrub cancel/resume:
+>  	return retval;
+>  }
+>  
+> @@ -208,6 +215,8 @@ static int cmd_subvol_delete(int argc, char **argv)
+>  	int	res, fd, len, e, cnt = 1, ret = 0;
+>  	struct btrfs_ioctl_vol_args	args;
+>  	char	*dname, *vname, *cpath;
+> +	char	*dupdname = NULL;
+> +	char	*dupvname = NULL;
+>  	char	*path;
+>  	DIR	*dirstream = NULL;
+>  
+> @@ -230,10 +239,10 @@ again:
+>  	}
+>  
+>  	cpath = realpath(path, NULL);
+> -	dname = strdup(cpath);
+> -	dname = dirname(dname);
+> -	vname = strdup(cpath);
+> -	vname = basename(vname);
+> +	dupdname = strdup(cpath);
+> +	dname = dirname(dupdname);
+> +	dupvname = strdup(cpath);
+> +	vname = basename(dupvname);
+>  	free(cpath);
+>  
+>  	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
+> @@ -274,6 +283,10 @@ again:
+>  	}
+>  
+>  out:
+> +	if (dupdname != NULL)
+> +		free(dupdname);
+> +	if (dupvname != NULL)
+> +		free(dupvname);
 
-0: cancel successfully.
-1: usage or syntax errors.
-2: cancel a not started or finished scrub.
+Here again.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- cmds-scrub.c | 20 +++++++++++---------
- 1 file changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 55da405..605af45 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1018,7 +1018,7 @@ static int mkdir_p(char *path)
- 		path[i] = '\0';
- 		ret = mkdir(path, 0777);
- 		if (ret && errno != EEXIST)
--			return 1;
-+			return -errno;
- 		path[i] = '/';
- 	}
- 
-@@ -1155,7 +1155,7 @@ static int scrub_start(int argc, char **argv, int resume)
- 
- 	if (fdmnt < 0) {
- 		ERR(!do_quiet, "ERROR: can't access '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
- 
- 	ret = get_fs_info(path, &fi_args, &di_args);
-@@ -1261,8 +1261,7 @@ static int scrub_start(int argc, char **argv, int resume)
- 		if (!do_quiet)
- 			printf("scrub: nothing to resume for %s, fsid %s\n",
- 			       path, fsid);
--		err = 0;
--		goto out;
-+		return 2;
- 	}
- 
- 	ret = prg_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-@@ -1501,9 +1500,9 @@ out:
- 	if (err)
- 		return 1;
- 	if (e_correctable)
--		return 7;
-+		return 3;
- 	if (e_uncorrectable)
--		return 8;
-+		return 4;
- 	return 0;
- }
- 
-@@ -1557,7 +1556,10 @@ static int cmd_scrub_cancel(int argc, char **argv)
- 	if (ret < 0) {
- 		fprintf(stderr, "ERROR: scrub cancel failed on %s: %s\n", path,
- 			errno == ENOTCONN ? "not running" : strerror(errno));
--		ret = 1;
-+		if (errno == ENOTCONN)
-+			ret = 2;
-+		else
-+			ret = 1;
- 		goto out;
- 	}
- 
-@@ -1642,7 +1644,7 @@ static int cmd_scrub_status(int argc, char **argv)
- 
- 	if (fdmnt < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
- 
- 	ret = get_fs_info(path, &fi_args, &di_args);
-@@ -1727,7 +1729,7 @@ out:
- 		close(fdres);
- 	close_file_or_dir(fdmnt, dirstream);
- 
--	return err;
-+	return !!err;
- }
- 
- const struct cmd_group scrub_cmd_group = {
--- 
-1.7.11.7
+>  	cnt++;
+>  	if (cnt < argc)
+>  		goto again;
+> @@ -495,6 +508,8 @@ static int cmd_snapshot(int argc, char **argv)
+>  	int	res, retval;
+>  	int	fd = -1, fddst = -1;
+>  	int	len, readonly = 0;
+> +	char	*dupname = NULL;
+> +	char	*dupdir = NULL;
+>  	char	*newname;
+>  	char	*dstdir;
+>  	struct btrfs_ioctl_vol_args_v2	args;
+> @@ -562,14 +577,14 @@ static int cmd_snapshot(int argc, char **argv)
+>  	}
+>  
+>  	if (res > 0) {
+> -		newname = strdup(subvol);
+> -		newname = basename(newname);
+> +		dupname = strdup(subvol);
+> +		newname = basename(dupname);
+>  		dstdir = dst;
+>  	} else {
+> -		newname = strdup(dst);
+> -		newname = basename(newname);
+> -		dstdir = strdup(dst);
+> -		dstdir = dirname(dstdir);
+> +		dupname = strdup(dst);
+> +		newname = basename(dupname);
+> +		dupdir = strdup(dst);
+> +		dstdir = dirname(dupdir);
+>  	}
+>  
+>  	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+> @@ -630,6 +645,11 @@ out:
+>  	close_file_or_dir(fd, dirstream2);
+>  	free(inherit);
+>  
+> +	if (dupname != NULL)
+> +		free(dupname);
+> +	if (dupdir != NULL)
+> +		free(dupdir);
+> +
+
+And here.
+
+
+>  	return retval;
+>  }
+>  
+> 
+
 

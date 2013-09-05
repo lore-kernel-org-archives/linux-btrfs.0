@@ -1,30 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51303 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753407Ab3IIOWy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Sep 2013 10:22:54 -0400
-Date: Mon, 9 Sep 2013 16:22:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/5] btrfs-progs:local variable memory freed
-Message-ID: <20130909142252.GN32382@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from cn.fujitsu.com ([222.73.24.84]:61818 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1761670Ab3IECkj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Sep 2013 22:40:39 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r852eZ3w014030
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 10:40:36 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 5/5] btrfs-progs:free strdup()s that are not freed
+Date: Thu, 5 Sep 2013 10:38:58 +0800
+Message-Id: <1378348738-14451-6-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1378348738-14451-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 References: <1378348738-14451-1-git-send-email-guihc.fnst@cn.fujitsu.com>
- <1378348738-14451-3-git-send-email-guihc.fnst@cn.fujitsu.com>
- <20130909141855.GM32382@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130909141855.GM32382@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 09, 2013 at 04:18:55PM +0200, David Sterba wrote:
-> On Thu, Sep 05, 2013 at 10:38:55AM +0800, Gui Hecheng wrote:
-> > The local probe variable in is_ssd() freed upon unsuccessful return;
-> 
-> FYI, I've applied a patch from Wang Shilong "Btrfs-progs: fix compile
-> warning in is_ssd()" instead of the hunk below and will remove the
-> respective changelog line. The rest of your patch stays.
+The strdup()s not freed are reported as memory leaks by valgrind.
 
-Scratch that, the changes are not identical.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ cmds-subvolume.c | 48 ++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 34 insertions(+), 14 deletions(-)
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e1fa81a..51c529c 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -75,6 +75,8 @@ static int cmd_subvol_create(int argc, char **argv)
+ {
+ 	int	retval, res, len;
+ 	int	fddst = -1;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	char	*dst;
+@@ -119,10 +121,10 @@ static int cmd_subvol_create(int argc, char **argv)
+ 		goto out;
+ 	}
+ 
+-	newname = strdup(dst);
+-	newname = basename(newname);
+-	dstdir = strdup(dst);
+-	dstdir = dirname(dstdir);
++	dupname = strdup(dst);
++	newname = basename(dupname);
++	dupdir = strdup(dst);
++	dstdir = dirname(dupdir);
+ 
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+ 	     strchr(newname, '/') ){
+@@ -175,6 +177,11 @@ out:
+ 	close_file_or_dir(fddst, dirstream);
+ 	free(inherit);
+ 
++	if (dupname != NULL)
++		free(dupname);
++	if (dupdir != NULL)
++		free(dupdir);
++
+ 	return retval;
+ }
+ 
+@@ -208,6 +215,8 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	int	res, fd, len, e, cnt = 1, ret = 0;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
++	char	*dupdname = NULL;
++	char	*dupvname = NULL;
+ 	char	*path;
+ 	DIR	*dirstream = NULL;
+ 
+@@ -230,10 +239,10 @@ again:
+ 	}
+ 
+ 	cpath = realpath(path, NULL);
+-	dname = strdup(cpath);
+-	dname = dirname(dname);
+-	vname = strdup(cpath);
+-	vname = basename(vname);
++	dupdname = strdup(cpath);
++	dname = dirname(dupdname);
++	dupvname = strdup(cpath);
++	vname = basename(dupvname);
+ 	free(cpath);
+ 
+ 	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
+@@ -274,6 +283,10 @@ again:
+ 	}
+ 
+ out:
++	if (dupdname != NULL)
++		free(dupdname);
++	if (dupvname != NULL)
++		free(dupvname);
+ 	cnt++;
+ 	if (cnt < argc)
+ 		goto again;
+@@ -495,6 +508,8 @@ static int cmd_snapshot(int argc, char **argv)
+ 	int	res, retval;
+ 	int	fd = -1, fddst = -1;
+ 	int	len, readonly = 0;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	struct btrfs_ioctl_vol_args_v2	args;
+@@ -562,14 +577,14 @@ static int cmd_snapshot(int argc, char **argv)
+ 	}
+ 
+ 	if (res > 0) {
+-		newname = strdup(subvol);
+-		newname = basename(newname);
++		dupname = strdup(subvol);
++		newname = basename(dupname);
+ 		dstdir = dst;
+ 	} else {
+-		newname = strdup(dst);
+-		newname = basename(newname);
+-		dstdir = strdup(dst);
+-		dstdir = dirname(dstdir);
++		dupname = strdup(dst);
++		newname = basename(dupname);
++		dupdir = strdup(dst);
++		dstdir = dirname(dupdir);
+ 	}
+ 
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+@@ -630,6 +645,11 @@ out:
+ 	close_file_or_dir(fd, dirstream2);
+ 	free(inherit);
+ 
++	if (dupname != NULL)
++		free(dupname);
++	if (dupdir != NULL)
++		free(dupdir);
++
+ 	return retval;
+ }
+ 
+-- 
+1.8.0.1
+

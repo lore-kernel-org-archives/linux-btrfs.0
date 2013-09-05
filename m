@@ -1,61 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp09.in.ibm.com ([122.248.162.9]:39900 "EHLO
-	e28smtp09.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752665Ab3ITR7k (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 13:59:40 -0400
-Received: from /spool/local
-	by e28smtp09.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 20 Sep 2013 23:29:37 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id F17C91258051
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 23:29:44 +0530 (IST)
-Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
-	by d28relay05.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r8KHxXnO48431194
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 23:29:33 +0530
-Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r8KHxZnu020294
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 23:29:35 +0530
-From: chandan <chandan@linux.vnet.ibm.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:50965 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751905Ab3IED1g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Sep 2013 23:27:36 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r853RXhK017647
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 11:27:33 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: sekharan@us.ibm.com
-Subject: [PATCH] btrfs-progs: clear_extent_bits: Fix memory leak.
-Date: Fri, 20 Sep 2013 23:29:33 +0530
-Message-ID: <14081838.aIEpgWmujO@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Cc: guihc.fnst@cn.fujitsu.com
+Subject: [PATCH V2 1/5] btrfs-progs:free strdup()s that are not freed
+Date: Thu, 5 Sep 2013 11:26:22 +0800
+Message-Id: <1378351582-25657-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 'prealloc' extent_state structure is leaked for the case when an 'extent
-range' encapsulates/covers the 'desired range'.
+The strdup()s not freed are reported as memory leaks by valgrind.
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- extent_io.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+Changelog V1 -> V2:
+- None
+---
+ cmds-subvolume.c | 40 ++++++++++++++++++++++++++--------------
+ 1 file changed, 26 insertions(+), 14 deletions(-)
 
-diff --git a/extent_io.c b/extent_io.c
-index acc4702..1c481d5 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -210,9 +210,11 @@ int clear_extent_bits(struct extent_io_tree *tree, u64 start,
- 	int set = 0;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e1fa81a..f7a0c5f 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -75,6 +75,8 @@ static int cmd_subvol_create(int argc, char **argv)
+ {
+ 	int	retval, res, len;
+ 	int	fddst = -1;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	char	*dst;
+@@ -119,10 +121,10 @@ static int cmd_subvol_create(int argc, char **argv)
+ 		goto out;
+ 	}
  
- again:
--	prealloc = alloc_extent_state();
--	if (!prealloc)
--		return -ENOMEM;
-+	if (!prealloc) {
-+		prealloc = alloc_extent_state();
-+		if (!prealloc)
-+			return -ENOMEM;
-+	}
+-	newname = strdup(dst);
+-	newname = basename(newname);
+-	dstdir = strdup(dst);
+-	dstdir = dirname(dstdir);
++	dupname = strdup(dst);
++	newname = basename(dupname);
++	dupdir = strdup(dst);
++	dstdir = dirname(dupdir);
  
- 	/*
- 	 * this search will find the extents that end after
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+ 	     strchr(newname, '/') ){
+@@ -174,6 +176,8 @@ static int cmd_subvol_create(int argc, char **argv)
+ out:
+ 	close_file_or_dir(fddst, dirstream);
+ 	free(inherit);
++	free(dupname);
++	free(dupdir);
+ 
+ 	return retval;
+ }
+@@ -208,6 +212,8 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	int	res, fd, len, e, cnt = 1, ret = 0;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
++	char	*dupdname = NULL;
++	char	*dupvname = NULL;
+ 	char	*path;
+ 	DIR	*dirstream = NULL;
+ 
+@@ -230,10 +236,10 @@ again:
+ 	}
+ 
+ 	cpath = realpath(path, NULL);
+-	dname = strdup(cpath);
+-	dname = dirname(dname);
+-	vname = strdup(cpath);
+-	vname = basename(vname);
++	dupdname = strdup(cpath);
++	dname = dirname(dupdname);
++	dupvname = strdup(cpath);
++	vname = basename(dupvname);
+ 	free(cpath);
+ 
+ 	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
+@@ -274,6 +280,8 @@ again:
+ 	}
+ 
+ out:
++	free(dupdname);
++	free(dupvname);
+ 	cnt++;
+ 	if (cnt < argc)
+ 		goto again;
+@@ -495,6 +503,8 @@ static int cmd_snapshot(int argc, char **argv)
+ 	int	res, retval;
+ 	int	fd = -1, fddst = -1;
+ 	int	len, readonly = 0;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	struct btrfs_ioctl_vol_args_v2	args;
+@@ -562,14 +572,14 @@ static int cmd_snapshot(int argc, char **argv)
+ 	}
+ 
+ 	if (res > 0) {
+-		newname = strdup(subvol);
+-		newname = basename(newname);
++		dupname = strdup(subvol);
++		newname = basename(dupname);
+ 		dstdir = dst;
+ 	} else {
+-		newname = strdup(dst);
+-		newname = basename(newname);
+-		dstdir = strdup(dst);
+-		dstdir = dirname(dstdir);
++		dupname = strdup(dst);
++		newname = basename(dupname);
++		dupdir = strdup(dst);
++		dstdir = dirname(dupdir);
+ 	}
+ 
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+@@ -629,6 +639,8 @@ out:
+ 	close_file_or_dir(fddst, dirstream1);
+ 	close_file_or_dir(fd, dirstream2);
+ 	free(inherit);
++	free(dupname);
++	free(dupdir);
+ 
+ 	return retval;
+ }
 -- 
-1.8.3.1
-
+1.8.0.1
 

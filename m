@@ -1,55 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp08.au.ibm.com ([202.81.31.141]:60753 "EHLO
-	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756559Ab3IEFvp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Sep 2013 01:51:45 -0400
-Received: from /spool/local
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 5 Sep 2013 15:48:22 +1000
-Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id E3D3D3578054
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:51:39 +1000 (EST)
-Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
-	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r855pSpH9175544
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 15:51:28 +1000
-Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
-	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r855pdsu003677
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 15:51:39 +1000
-From: chandan <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: chandra.seetharaman@us.ibm.com
-Subject: [PATCH] btrfs-progs: btrfs_setup_chunk_tree_and_device_map: Return -EIO on error.
-Date: Thu, 05 Sep 2013 11:21:30 +0530
-Message-ID: <1748503.OfecYaovVX@localhost.localdomain>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:35030 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757186Ab3IEGxq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Sep 2013 02:53:46 -0400
+Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 28AC13EE0BB
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:53:45 +0900 (JST)
+Received: from smail (m4 [127.0.0.1])
+	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 1743145DE50
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:53:45 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 0022F45DE4F
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:53:45 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id E909F1DB8040
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:53:44 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id A11CC1DB803B
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2013 15:53:44 +0900 (JST)
+Message-ID: <52282A6E.1020902@jp.fujitsu.com>
+Date: Thu, 05 Sep 2013 15:53:34 +0900
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: chris.mason@fusionio.com, Eric Sandeen <sandeen@redhat.com>
+Subject: [PATCH v2 1/3] btrfs-progs: error if device for mkfs is too small
+References: <522829F5.5050405@jp.fujitsu.com>
+In-Reply-To: <522829F5.5050405@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As a result of a successful call to btrfs_read_sys_array(), the 'ret'
-variable is already set to 0. Hence the function would return 0 even
-if the call to read_tree_block() fails.
+Eric pointed out that mkfs abort if specified volume is too small:
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+  # truncate --size=2m testfile
+  # ./mkfs.btrfs testfile
+   :
+  SMALL VOLUME: forcing mixed metadata/data groups
+  mkfs.btrfs: volumes.c:852: btrfs_alloc_chunk: Assertion `!(ret)' failed.
+  Aborted (core dumped)
+
+As the first step to fix problems around there, let mkfs to report
+error if the size of target volume is less than the size of the first
+system block group, BTRFS_MKFS_SYSTEM_GROUP_SIZE (= 4MB).
+
+Reported-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 ---
- disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ mkfs.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index fec7700..0f69f0f 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -966,7 +966,7 @@ int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info)
- 	if (!fs_info->chunk_root->node ||
- 	    !extent_buffer_uptodate(fs_info->chunk_root->node)) {
- 		fprintf(stderr, "Couldn't read chunk root\n");
--		return ret;
-+		return -EIO;
+diff --git a/mkfs.c b/mkfs.c
+index b412b7e..a98fe54 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1422,6 +1422,12 @@ int main(int ac, char **av)
+ 		}
  	}
  
- 	if (!(btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_METADUMP)) {
++	/* To create the first block group and chunk 0 in make_btrfs */
++	if (dev_block_count < BTRFS_MKFS_SYSTEM_GROUP_SIZE) {
++		fprintf(stderr, "device is too small to make filesystem\n");
++		exit(1);
++	}
++
+ 	blocks[0] = BTRFS_SUPER_INFO_OFFSET;
+ 	for (i = 1; i < 7; i++) {
+ 		blocks[i] = BTRFS_SUPER_INFO_OFFSET + 1024 * 1024 +
 -- 
-1.8.3.1
+1.7.1
 
 

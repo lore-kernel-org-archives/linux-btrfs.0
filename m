@@ -1,86 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40793 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751590Ab3IOE7o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Sep 2013 00:59:44 -0400
-Message-ID: <52353EAE.4050102@oracle.com>
-Date: Sun, 15 Sep 2013 12:59:26 +0800
-From: Anand Jain <anand.jain@oracle.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] Btrfs-progs: fix typo in btrfs_err_str()
-References: <1378706892-5341-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1378706892-5341-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from cn.fujitsu.com ([222.73.24.84]:35307 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1757164Ab3IEIBx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Sep 2013 04:01:53 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8581pbm006970
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Sep 2013 16:01:51 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH V3 5/5] btrfs-progs:free strdup()s that are not freed
+Date: Thu, 5 Sep 2013 16:00:43 +0800
+Message-Id: <1378368043-29714-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The strdup()s not freed are reported as memory leaks by valgrind.
 
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+Changelog V1 -> V2:
+- remove the "if" decision before free()
+Changelog V2 -> V3:
+- correct confusing subject and add changelog
+---
+ cmds-subvolume.c | 40 ++++++++++++++++++++++++++--------------
+ 1 file changed, 26 insertions(+), 14 deletions(-)
 
-  Glad that you noticed. as I did when error strings
-  were given the error-code at the kernel patch
-     183860f btrfs: device delete to get errors from the kernel
-
-  which didn't alter the original error strings.
-
-  Now, The new error string proposed here is wrong as shown below..
-
------
-# btrfs fi show
-Label: none  uuid: 22bcca66-a10e-4f1b-b333-c79dba190db7 mounted: /btrfs
-	Group profile: Metadata: RAID5    <--------
-	Total devices 3 FS bytes used 32.00KiB
-	devid    1 size 1.98GiB used 164.00MiB path /dev/mapper/mpatha
-	devid    2 size 2.00GiB used 160.00MiB path /dev/mapper/mpathb
-	devid    3 size 1.07GiB used 160.00MiB path /dev/sdd
-
-# btrfs dev del /dev/sdd /btrfs
-# btrfs fi show
-Label: none  uuid: 22bcca66-a10e-4f1b-b333-c79dba190db7 mounted: /btrfs
-	Group profile: Metadata: RAID5
-	Total devices 2 FS bytes used 28.00KiB
-	devid    1 size 1.98GiB used 292.00MiB path /dev/mapper/mpatha
-	devid    2 size 2.00GiB used 288.00MiB path /dev/mapper/mpathb
-
-# btrfs dev del /dev/mapper/mpathb /btrfs
-ERROR: error removing the device '/dev/mapper/mpathb' - unable to go 
-below three devices on raid5
-#
--------
-   ^^^  we are already at two disks !
-
-
-Thanks, Anand
-
-
-On 09/09/2013 02:08 PM, Wang Shilong wrote:
-> Raid5 and raid6 at least need three and foure devices respectively,
-> fix it.
->
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> ---
-> based on david's integration 20130903
-> ---
->   ioctl.h | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/ioctl.h b/ioctl.h
-> index e959720..c0dcc06 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -484,9 +484,9 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
->   		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
->   			return "unable to go below four devices on raid10";
->   		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
-> -			return "unable to go below two devices on raid5";
-> +			return "unable to go below three devices on raid5";
->   		case BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET:
-> -			return "unable to go below three devices on raid6";
-> +			return "unable to go below four devices on raid6";
->   		case BTRFS_ERROR_DEV_TGT_REPLACE:
->   			return "unable to remove the dev_replace target dev";
->   		case BTRFS_ERROR_DEV_MISSING_NOT_FOUND:
->
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e1fa81a..f7a0c5f 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -75,6 +75,8 @@ static int cmd_subvol_create(int argc, char **argv)
+ {
+ 	int	retval, res, len;
+ 	int	fddst = -1;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	char	*dst;
+@@ -119,10 +121,10 @@ static int cmd_subvol_create(int argc, char **argv)
+ 		goto out;
+ 	}
+ 
+-	newname = strdup(dst);
+-	newname = basename(newname);
+-	dstdir = strdup(dst);
+-	dstdir = dirname(dstdir);
++	dupname = strdup(dst);
++	newname = basename(dupname);
++	dupdir = strdup(dst);
++	dstdir = dirname(dupdir);
+ 
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+ 	     strchr(newname, '/') ){
+@@ -174,6 +176,8 @@ static int cmd_subvol_create(int argc, char **argv)
+ out:
+ 	close_file_or_dir(fddst, dirstream);
+ 	free(inherit);
++	free(dupname);
++	free(dupdir);
+ 
+ 	return retval;
+ }
+@@ -208,6 +212,8 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	int	res, fd, len, e, cnt = 1, ret = 0;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
++	char	*dupdname = NULL;
++	char	*dupvname = NULL;
+ 	char	*path;
+ 	DIR	*dirstream = NULL;
+ 
+@@ -230,10 +236,10 @@ again:
+ 	}
+ 
+ 	cpath = realpath(path, NULL);
+-	dname = strdup(cpath);
+-	dname = dirname(dname);
+-	vname = strdup(cpath);
+-	vname = basename(vname);
++	dupdname = strdup(cpath);
++	dname = dirname(dupdname);
++	dupvname = strdup(cpath);
++	vname = basename(dupvname);
+ 	free(cpath);
+ 
+ 	if( !strcmp(vname,".") || !strcmp(vname,"..") ||
+@@ -274,6 +280,8 @@ again:
+ 	}
+ 
+ out:
++	free(dupdname);
++	free(dupvname);
+ 	cnt++;
+ 	if (cnt < argc)
+ 		goto again;
+@@ -495,6 +503,8 @@ static int cmd_snapshot(int argc, char **argv)
+ 	int	res, retval;
+ 	int	fd = -1, fddst = -1;
+ 	int	len, readonly = 0;
++	char	*dupname = NULL;
++	char	*dupdir = NULL;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	struct btrfs_ioctl_vol_args_v2	args;
+@@ -562,14 +572,14 @@ static int cmd_snapshot(int argc, char **argv)
+ 	}
+ 
+ 	if (res > 0) {
+-		newname = strdup(subvol);
+-		newname = basename(newname);
++		dupname = strdup(subvol);
++		newname = basename(dupname);
+ 		dstdir = dst;
+ 	} else {
+-		newname = strdup(dst);
+-		newname = basename(newname);
+-		dstdir = strdup(dst);
+-		dstdir = dirname(dstdir);
++		dupname = strdup(dst);
++		newname = basename(dupname);
++		dupdir = strdup(dst);
++		dstdir = dirname(dupdir);
+ 	}
+ 
+ 	if (!strcmp(newname, ".") || !strcmp(newname, "..") ||
+@@ -629,6 +639,8 @@ out:
+ 	close_file_or_dir(fddst, dirstream1);
+ 	close_file_or_dir(fd, dirstream2);
+ 	free(inherit);
++	free(dupname);
++	free(dupdir);
+ 
+ 	return retval;
+ }
+-- 
+1.8.0.1
 

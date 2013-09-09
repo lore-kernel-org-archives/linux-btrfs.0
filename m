@@ -1,169 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:33232 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750869Ab3IIJFV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Sep 2013 05:05:21 -0400
-Message-ID: <522D8F7D.3020803@giantdisaster.de>
-Date: Mon, 09 Sep 2013 11:06:05 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:22263 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751528Ab3IIKJn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Sep 2013 06:09:43 -0400
+Message-ID: <522D9E9A.7020607@cn.fujitsu.com>
+Date: Mon, 09 Sep 2013 18:10:34 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
+To: Stefan Behrens <sbehrens@giantdisaster.de>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: allocate the free space by the existed max extent
- size when ENOSPC
-References: <1377858934-17187-1-git-send-email-miaox@cn.fujitsu.com> <5229DCDC.9080901@giantdisaster.de> <522D6906.5040404@cn.fujitsu.com>
-In-Reply-To: <522D6906.5040404@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Subject: Re: [PATCH] Btrfs: eliminate the exceptional root_tree refs=0
+References: <6864a70d966df33d27a523d944e14f23b6594b7d.1378389401.git.sbehrens@giantdisaster.de> <52294720.8050906@cn.fujitsu.com> <52299420.4070702@giantdisaster.de>
+In-Reply-To: <52299420.4070702@giantdisaster.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/09/2013 08:21, Miao Xie wrote:
-> On fri, 06 Sep 2013 15:47:08 +0200, Stefan Behrens wrote:
->> On Fri, 30 Aug 2013 18:35:34 +0800, Miao Xie wrote:
->>> By the current code, if the requested size is very large, and all the extents
->>> in the free space cache are small, we will waste lots of the cpu time to cut
->>> the requested size in half and search the cache again and again until it gets
->>> down to the size the allocator can return. In fact, we can know the max extent
->>> size in the cache after the first search, so we needn't cut the size in half
->>> repeatedly, and just use the max extent size directly. This way can save
->>> lots of cpu time and make the performance grow up when there are only fragments
->>> in the free space cache.
+On Fri, 06 Sep 2013 10:36:48 +0200, Stefan Behrens wrote:
+> On Fri, 06 Sep 2013 11:08:16 +0800, Miao Xie wrote:
+>> On 	thu, 5 Sep 2013 16:58:43 +0200, Stefan Behrens wrote:
+>>> The fact that btrfs_root_refs() returned 0 for the tree_root caused
+>>> bugs in the past, therefore it is set to 1 with this patch and
+>>> (hopefully) all affected code is adapted to this change.
 >>>
->>> According to my test, if there are only 4KB free space extents in the fs,
->>> and the total size of those extents are 256MB, we can reduce the execute
->>> time of the following test from 5.4s to 1.4s.
->>>    dd if=/dev/zero of=<testfile> bs=1MB count=1 oflag=sync
+>>> I verified this change by temporarily adding WARN_ON() checks
+>>> everywhere where btrfs_root_refs() is used, checking whether the
+>>> logic of the code is changed by btrfs_root_refs() returning 1
+>>> instead of 0 for root->root_key.objectid == BTRFS_ROOT_TREE_OBJECTID.
+>>> With these added checks, I ran the xfstests './check -g auto'.
 >>>
->>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>>> The two roots chunk_root and log_root_tree that are only referenced
+>>> by the superblock and the log_roots below the log_root_tree still
+>>> have btrfs_root_refs() == 0, only the tree_root is changed.
+>>>
+>>> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 >>> ---
->>> Changelog v1 -> v2:
->>> - address the problem that we return a wrong start position when searching
->>>    the free space in a bitmap.
->>> ---
->>>   fs/btrfs/extent-tree.c      | 29 ++++++++++++++-------
->>>   fs/btrfs/free-space-cache.c | 62 +++++++++++++++++++++++++++++++--------------
->>>   fs/btrfs/free-space-cache.h |  5 ++--
->>>   3 files changed, 66 insertions(+), 30 deletions(-)
+>>>  fs/btrfs/disk-io.c   |  1 +
+>>>  fs/btrfs/inode-map.c |  3 +--
+>>>  fs/btrfs/inode.c     | 21 ++++++++-------------
+>>>  3 files changed, 10 insertions(+), 15 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>> index fa8b2c6..ffc3e43 100644
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -2667,6 +2667,7 @@ retry_root_backup:
+>>>  
+>>>  	btrfs_set_root_node(&tree_root->root_item, tree_root->node);
+>>>  	tree_root->commit_root = btrfs_root_node(tree_root);
+>>> +	btrfs_set_root_refs(&tree_root->root_item, 1);
+>>>  
+>>>  	location.objectid = BTRFS_EXTENT_TREE_OBJECTID;
+>>>  	location.type = BTRFS_ROOT_ITEM_KEY;
+>>> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+>>> index 2c66ddb..d11e1c6 100644
+>>> --- a/fs/btrfs/inode-map.c
+>>> +++ b/fs/btrfs/inode-map.c
+>>> @@ -412,8 +412,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+>>>  		return 0;
+>>>  
+>>>  	/* Don't save inode cache if we are deleting this root */
+>>> -	if (btrfs_root_refs(&root->root_item) == 0 &&
+>>> -	    root != root->fs_info->tree_root)
+>>> +	if (btrfs_root_refs(&root->root_item) == 0)
+>>>  		return 0;
+>>>  
+>>>  	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
+>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>>> index 26992ee..7d0ef55 100644
+>>> --- a/fs/btrfs/inode.c
+>>> +++ b/fs/btrfs/inode.c
+>>> @@ -4472,8 +4472,10 @@ void btrfs_evict_inode(struct inode *inode)
+>>>  	trace_btrfs_inode_evict(inode);
+>>>  
+>>>  	truncate_inode_pages(&inode->i_data, 0);
+>>> -	if (inode->i_nlink && (btrfs_root_refs(&root->root_item) != 0 ||
+>>> -			       btrfs_is_free_space_inode(inode)))
+>>> +	if (inode->i_nlink &&
+>>> +	    ((btrfs_root_refs(&root->root_item) != 0 &&
+>>> +	      root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
+>>> +	     btrfs_is_free_space_inode(inode)))
 >>
->> This patch makes the xfstest generic/256 lock up. It's quite reliably reproducible on one of my test boxes, and not at all visible on a second test box.
+>> if (inode->i_nlink && btrfs_root_refs(&root->root_item)) {
+>> }
 >>
->> And yes, I'm using the V2 patch although you haven't tagged it as V2 in the subject line of the mail :)
->
-> According to my debug, the machine was not locked up, it seems the patch makes the test run very slow(90s ->850s on my machine).
+>> is OK, because with this patch, the refs of the free space inodes' root(tree root)
+>> should be 1. For the ino cache inodes' root(fs/file root), if the root is dead,
+>> we can drop the ino cache inode safely. And if the root is not dead, the refs
+>> should be > 0, we will skip the drop.
+> 
+> Thank you for your comments!
+> 
+> It needs to be like this or it doesn't work. The code that you propose
+> changes the logic when close_ctree() calls iput(fs_info->btree_inode).
+> The if-condition in btrfs_evict_inode() used to be false for
+> fs_info->btree_inode before this patch and would become true. And the
+> system locks up in the middle of a './check -g auto' run with page cache
+> issues and I have also seen the OOM killer killing the entire test box.
 
-With v2, the xfstest generic/256 was still running after 2 1/2 days with 
-the 'echo w > /proc/sysrq-trigger' output as reported.
+It is strange, AFAIK, it is safe that the first if-condition in btrfs_evict_inode()
+become true, and jump to no_delete, because we make sure we have synced all dirty pages
+in btree inode into the disk and we are also sure we needn't remove the inode item in
+the tree root. I think the bug you met was not introduced be the code I proposed.
 
+Thanks
+Miao
 
-> Could you try the v3 patch?
-
-With v3, generic/256 always finishes after 26 seconds. The issue is 
-fixed with v3.
-
-
+> 
+> But maybe you can propose how to make this if-statement more explicit
+> and readable, maybe by explicitly checking for inode ==
+> fs_info->btree_inode?
+> 
+> 
+>>>  		goto no_delete;
+>>>  
+>>>  	if (is_bad_inode(inode)) {
+>>> @@ -4490,7 +4492,8 @@ void btrfs_evict_inode(struct inode *inode)
+>>>  	}
+>>>  
+>>>  	if (inode->i_nlink > 0) {
+>>> -		BUG_ON(btrfs_root_refs(&root->root_item) != 0);
+>>> +		BUG_ON(btrfs_root_refs(&root->root_item) != 0 &&
+>>> +		       root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID);
 >>
->> # reboot
->> ... reboot done
->> # cd ~/git/xfs/cmds/xfstests
->> # export TEST_DEV=/dev/sdc1
->> # export TEST_DIR=/mnt2
->> # export SCRATCH_DEV=/dev/sdd1
->> # export SCRATCH_MNT=/mnt3
->> # umount $TEST_DIR $SCRATCH_MNT
->> # mkfs.btrfs -f $TEST_DEV
->> # mkfs.btrfs -f $SCRATCH_DEV
->> # ./check generic/256
->> ...should be finished after 20s, but it isn't, therefore after 180s:
->> # echo w > /proc/sysrq-trigger
->> root: run xfstest generic/256
->> SysRq : Show Blocked State
->>    task                        PC stack   pid father
->> btrfs-flush_del D 000000001a6d0000  6240 31190      2 0x00000000
->>   ffff880804dbfcb8 0000000000000086 ffff880804dbffd8 ffff8807ef218000
->>   ffff880804dbffd8 ffff880804dbffd8 ffff88080ad44520 ffff8807ef218000
->>   ffff880804dbfc98 ffff880784d3ca50 ffff880784d3ca18 ffff880804dbfce8
->> Call Trace:
->>   [<ffffffff81995da4>] schedule+0x24/0x60
->>   [<ffffffffa05235c5>] btrfs_start_ordered_extent+0x85/0x130 [btrfs]
->>   [<ffffffff810ac170>] ? wake_up_bit+0x40/0x40
->>   [<ffffffffa0523694>] btrfs_run_ordered_extent_work+0x24/0x40 [btrfs]
->>   [<ffffffffa0539d5f>] worker_loop+0x13f/0x5b0 [btrfs]
->>   [<ffffffff810b5ba3>] ? finish_task_switch+0x43/0x110
->>   [<ffffffff81995880>] ? __schedule+0x3f0/0x860
->>   [<ffffffffa0539c20>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
->>   [<ffffffff810abd36>] kthread+0xd6/0xe0
->>   [<ffffffff810e61ed>] ? trace_hardirqs_on+0xd/0x10
->>   [<ffffffff810abc60>] ? kthread_create_on_node+0x130/0x130
->>   [<ffffffff8199f66c>] ret_from_fork+0x7c/0xb0
->>   [<ffffffff810abc60>] ? kthread_create_on_node+0x130/0x130
->> xfs_io          D ffff880784d3cbc0  5008 31241  31240 0x00000000
->>   ffff8808036f3868 0000000000000082 ffff8808036f3fd8 ffff8807c9878000
->>   ffff8808036f3fd8 ffff8808036f3fd8 ffffffff82010440 ffff8807c9878000
->>   ffff8808036f3848 ffff880784d3cb18 ffff880784d3cb20 7fffffffffffffff
->> Call Trace:
->>   [<ffffffff81995da4>] schedule+0x24/0x60
->>   [<ffffffff81992dc4>] schedule_timeout+0x194/0x260
->>   [<ffffffff8199513a>] ? wait_for_completion+0x3a/0x110
->>   [<ffffffff8199513a>] ? wait_for_completion+0x3a/0x110
->>   [<ffffffff810e61ed>] ? trace_hardirqs_on+0xd/0x10
->>   [<ffffffff819951cf>] wait_for_completion+0xcf/0x110
->>   [<ffffffff810bb650>] ? try_to_wake_up+0x310/0x310
->>   [<ffffffffa0523b7a>] btrfs_wait_ordered_extents+0x1ea/0x260 [btrfs]
->>   [<ffffffffa0523ce5>] btrfs_wait_all_ordered_extents+0xf5/0x150 [btrfs]
->>   [<ffffffffa04f4b8d>] reserve_metadata_bytes+0x7bd/0xa30 [btrfs]
->>   [<ffffffffa04f516d>] btrfs_delalloc_reserve_metadata+0x16d/0x460 [btrfs]
->>   [<ffffffffa051dad6>] __btrfs_buffered_write+0x276/0x4f0 [btrfs]
->>   [<ffffffffa051df1a>] btrfs_file_aio_write+0x1ca/0x5a0 [btrfs]
->>   [<ffffffff8119a6db>] do_sync_write+0x7b/0xb0
->>   [<ffffffff8119b463>] vfs_write+0xc3/0x1e0
->>   [<ffffffff8119bad2>] SyS_pwrite64+0x92/0xb0
->>   [<ffffffff8199f712>] system_call_fastpath+0x16/0x1b
+>> This change is unnecessary because the refs of the root tree is 1 now.
+> 
+> Because of the thing above, this is needed.
+> 
+> 
 >>
->> (gdb) list *(btrfs_start_ordered_extent+0x85)
->> 0x4a545 is in btrfs_start_ordered_extent (fs/btrfs/ordered-data.c:747).
->> 742              * for the flusher thread to find them
->> 743              */
->> 744             if (!test_bit(BTRFS_ORDERED_DIRECT, &entry->flags))
->> 745                     filemap_fdatawrite_range(inode->i_mapping, start, end);
->> 746             if (wait) {
->> 747                     wait_event(entry->wait, test_bit(BTRFS_ORDERED_COMPLETE,
->> 748                                                      &entry->flags));
->> 749             }
->> 750     }
->> 751
+>>>  		goto no_delete;
+>>>  	}
+>>>  
+>>> @@ -4731,14 +4734,7 @@ static void inode_tree_del(struct inode *inode)
+>>>  	}
+>>>  	spin_unlock(&root->inode_lock);
+>>>  
+>>> -	/*
+>>> -	 * Free space cache has inodes in the tree root, but the tree root has a
+>>> -	 * root_refs of 0, so this could end up dropping the tree root as a
+>>> -	 * snapshot, so we need the extra !root->fs_info->tree_root check to
+>>> -	 * make sure we don't drop it.
+>>> -	 */
+>>> -	if (empty && btrfs_root_refs(&root->root_item) == 0 &&
+>>> -	    root != root->fs_info->tree_root) {
+>>> +	if (empty && btrfs_root_refs(&root->root_item) == 0) {
+>>>  		synchronize_srcu(&root->fs_info->subvol_srcu);
+>>>  		spin_lock(&root->inode_lock);
+>>>  		empty = RB_EMPTY_ROOT(&root->inode_tree);
+>>> @@ -7872,8 +7868,7 @@ int btrfs_drop_inode(struct inode *inode)
+>>>  		return 1;
+>>>  
+>>>  	/* the snap/subvol tree is on deleting */
+>>> -	if (btrfs_root_refs(&root->root_item) == 0 &&
+>>> -	    root != root->fs_info->tree_root)
+>>> +	if (btrfs_root_refs(&root->root_item) == 0)
+>>>  		return 1;
+>>>  	else
+>>>  		return generic_drop_inode(inode);
 >>
->> (gdb) list *(btrfs_wait_ordered_extents+0x1ea)
->> 0x4aafa is in btrfs_wait_ordered_extents (fs/btrfs/ordered-data.c:610).
->> 605             list_for_each_entry_safe(ordered, next, &works, work_list) {
->> 606                     list_del_init(&ordered->work_list);
->> 607                     wait_for_completion(&ordered->completion);
->> 608
->> 609                     inode = ordered->inode;
->> 610                     btrfs_put_ordered_extent(ordered);
->> 611                     if (delay_iput)
->> 612                             btrfs_add_delayed_iput(inode);
->> 613                     else
->> 614                             iput(inode);
->>
->> # cat /proc/mounts | grep /mnt
->> /dev/sdc1 /mnt2 btrfs rw,relatime,ssd,space_cache 0 0
->> /dev/sdd1 /mnt3 btrfs rw,relatime,ssd,space_cache 0 0
->>
->> # btrfs fi show
->> Label: none  uuid: 3dbe59c8-f4a0-4014-85f6-a6e9f5707c3a
->>          Total devices 1 FS bytes used 1.44GiB
->>          devid    1 size 1.50GiB used 1.50GiB path /dev/sdd1
->>
->> Label: none  uuid: 60130e96-5fb6-4355-b81e-8113c6f5c517
->>          Total devices 1 FS bytes used 32.00KiB
->>          devid    1 size 20.00GiB used 20.00MiB path /dev/sdc1
->>
->> All partitions have a size of 20971520 blocks according to fdisk:
->>     Device Boot      Start         End      Blocks   Id  System
->> /dev/sdc1            2048    41945087    20971520   83  Linux
->>
->>
->> With the currently pushed btrfs-next and the latest xfstests.
->>
-
+>> The others is OK.
+> 
+> 
 

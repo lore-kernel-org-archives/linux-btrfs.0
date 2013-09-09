@@ -1,143 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33833 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56219 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754951Ab3IDAce (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Sep 2013 20:32:34 -0400
-Message-ID: <52267F95.9030108@suse.com>
-Date: Tue, 03 Sep 2013 20:32:21 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+	id S1752188Ab3IIQcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Sep 2013 12:32:07 -0400
+Date: Mon, 9 Sep 2013 18:32:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: add make test framework
+Message-ID: <20130909163204.GR32382@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1378493456-5382-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: Chris Mason <clmason@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] btrfs: add ability to query/change feature bits online
-References: <521CFB62.7010600@suse.com> <5225AB12.9050102@giantdisaster.de>
-In-Reply-To: <5225AB12.9050102@giantdisaster.de>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="gTJfSTwr3MlC5pbB22Bn6TRnc7hEHjevA"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1378493456-5382-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gTJfSTwr3MlC5pbB22Bn6TRnc7hEHjevA
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+On Fri, Sep 06, 2013 at 02:50:56PM -0400, Josef Bacik wrote:
+> We need to start adding some sanity tests to btrfs-progs to make sure we aren't
+> breaking things with our patches.  The most important of these tools is btrfsck.
+> This patch gets things started by adding a basic btrfsck test that makes sure we
+> can fix a corruption problem we know we can fix.  Thanks,
 
-On 9/3/13 5:25 AM, Stefan Behrens wrote:
-> On Tue, 27 Aug 2013 15:17:54 -0400, Jeff Mahoney wrote:
->> There are some feature bits that require no offline setup and can
->> be enabled online. I've only reviewed extended irefs, but there will
->> probably be more.
->>
->> We introduce three new ioctls:
->> - BTRFS_IOC_GET_SUPPORTED_FEATURES: query the kernel for supported fea=
-tures
->> - BTRFS_IOC_GET_FEATURES: query the kernel for enabled features on a p=
-er-fs
->>   basis.
->> - BTRFS_IOC_ADD_FEATURES: enable new features on a per-fs basis.
->>
->> We introduce a new mask _SAFE_ONLINE that allows us to define which
->> features are safe to enable at runtime.
->>
->> The failure modes for BTRFS_IOC_ADD_FEATURES are as follows:
->> - Enabling a completely unsupported feature: warns and returns -ENOTSU=
-PP
->> - Enabling a feature that can only be done offline: warns and returns =
--EPERM
->>
->> The structure passed in is not modified on return since it is possible=
+That's great. I hope we're going to gather more tests so let's separate
+them to more categories from the beginning (mkfs, options coverage,
+corrupt-block, restore maybe, dunno what else).
 
->> to isolate which features would bounce a -EPERM by subtracting the fea=
-tures
->> provided by a GET_SUPPORTED_FEATURES call.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> [...]
->> --- a/include/uapi/linux/btrfs.h	2013-08-27 11:02:35.062626912 -0400
->> +++ b/include/uapi/linux/btrfs.h	2013-08-27 11:03:32.006352802 -0400
->> @@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
->>  	__u64 reserved[124];			/* pad to 1k */
->>  };
->> =20
->> +struct btrfs_ioctl_feature_flags {
->> +	__u64 compat_flags;
->> +	__u64 compat_ro_flags;
->> +	__u64 incompat_flags;
->> +};
->> +
->>  /* balance control ioctl modes */
->>  #define BTRFS_BALANCE_CTL_PAUSE		1
->>  #define BTRFS_BALANCE_CTL_CANCEL	2
->> @@ -579,4 +585,10 @@ static inline char *btrfs_err_str(enum b
->>  				      struct btrfs_ioctl_get_dev_stats)
->>  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
->>  				    struct btrfs_ioctl_dev_replace_args)
->> +#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 54, \
->> +				   struct btrfs_ioctl_feature_flags)
->> +#define BTRFS_IOC_ADD_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 55, \
->> +				   struct btrfs_ioctl_feature_flags)
->=20
-> #define BTRFS_IOC_ADD_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 54, \
-> 				   struct btrfs_ioctl_feature_flags)
->=20
-> Using 54 for both would also be possible since the directions are
-> different. _IOR(54) for the get ioctl and _IOW(54) for the set/add ioct=
-l.
->=20
->=20
->> +#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 56, =
-\
->> +				   struct btrfs_ioctl_feature_flags[2])
->=20
-> This could share the type value 54 too, since the parameter size is
-> different. There are only 8 bits for the type field.
+This makes it possible to do a quick run a subset of the tests (eg. mkfs
+related) after a fix is committed.
 
-Ah, yep. You're right.
+>  tests/bad-file-extent-bytenr.img |  Bin 0 -> 4096 bytes
+>  tests/fsck-tests.sh              |   34 ++++++++++++++++++++++++++++++++++
 
-> And in order to support clearing feature bits you could replace the add=
+I suggest to put them into a subdirectory (eg.) 'fsck' and prefix the
+images with numbers (just a sequence number).
 
-> ioctl with a set ioctl and use a mask + value scheme.
-> #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 54, \
-> 				   struct btrfs_ioctl_feature_flags[2])
-> btrfs_ioctl_feature_flags[0] is the mask and
-> btrfs_ioctl_feature_flags[1] is the value. Only bits that are set to on=
-e
-> in the mask are taken from the value and modified in the filesystem fla=
-gs.
+> --- /dev/null
+> +++ b/tests/fsck-tests.sh
+> @@ -0,0 +1,34 @@
+> +#!/bin/bash
+> +#
+> +# loop through all of our bad images and make sure fsck repairs them properly
+> +#
+> +# It's GPL, same as everything else in this tree.
+> +#
+> +
+> +TEST_DEV=""
 
-Yep. Though for now I think I'd implement the clear as an EOPNOTSUPP.
+I found the current test hard to use, eg. I can't just do 'make test'
+from the toplevel dir. The script fsck-tests.sh expects TEST_DEV to be
+set, but there's no way to do that, because it's set unconditionally to
+empty string.
 
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---gTJfSTwr3MlC5pbB22Bn6TRnc7hEHjevA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.18 (Darwin)
-
-iQIcBAEBAgAGBQJSJn+ZAAoJEB57S2MheeWy8icP/RCDNfdEsGp3kb1ltXbJHOtM
-dva5uE9Ce7H9wj4OUKu4LPNBgL9nqVzlj8wwTvMtWAHQ473u1GbOQdVa3/hsakiK
-BMV8O1w7jJFwos8L3q/IysJ/V6lLEEn7H3HMj/LH7LpULZ3Ekj/lA1puzj4Y15UH
-oo9GwaCyWgpv9bcCBd1xwAL2gc6zfT5XpQ+t/6Q+Wk5O/7OuZKUwyYgYzSBwlV0L
-tfyI52Bbzr5KFNMEBQOTOcexVUGLt2N536oCvLa3BhkW0jEN8IDErlIf6qhaCQGZ
-Cb2dbKKXBX+AprBG1x5VgkkUxj86mEmGcZX4G8cQOGqT9hChNOwFCex5AjL5F/fa
-ITFZBBlK4avUvWF5M/UV8AjWfV7J/yOg5L94+bsPxq65l0/H57D/Ziu1QJURwMDI
-6iMBqKUyA1X4IrgDGv4IY0TkyL0hmQvDL078SSKSpdS1Wj+SvDs2XXKCyn41jwkj
-rgd6ns9NyLTOu8EGx6oBxHTDHEZMheUiJP6sUX5WsXdEyRBYZxaM7aMjDEuAL8Vo
-NynEl2hECqrW8BMbke2jAA4C5WuSzR8DfucLlLbqH2svpK6qmXHc292L2WVxQrwp
-8UlMflIYLfAnwrG2eOroJETCzdkJhGWJr1Z6xNq5Z/Ny23Whx6cPxJA+3xv25CGI
-uliqvKN+o5gODrSBYB+/
-=rYSI
------END PGP SIGNATURE-----
-
---gTJfSTwr3MlC5pbB22Bn6TRnc7hEHjevA--
+> +here=`pwd`
+> +
+> +_fail()
+> +{
+> +	echo "$*" | tee -a fsck-tests-results.txt
+> +	exit 1
+> +}
+> +
+> +[ -z $TEST_DEV ] && echo "Cannot run without a test device set" && exit 0
+> +
+> +rm -f fsck-tests-results.txt
+> +
+> +for i in $(find tests -name '*.img')
+> +do
+> +	echo "testing image $i" >> fsck-tests-results.txt
+> +	$here/btrfs-image -r $i $TEST_DEV >> fsck-tests-results.txt 2>&1 \
+> +		|| _fail "restore failed"
+> +	$here/btrfsck $TEST_DEV >> fsck-test-results.txt 2>&1
+> +	[ $? -eq 0 ] && _fail "btrfsck should have detected corruption"
+> +
+> +	$here/btrfsck --repair $TEST_DEV >> fsck-test-results.txt 2>&1 || \
+> +		_fail "btrfsck should have repaired the image"
+> +
+> +	$here/btrfsck $TEST_DEV >> fsck-test-results.txt 2>&1 || \
+> +		_fail "btrfsck did not correct corruption"
+> +done

@@ -1,125 +1,378 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:28471 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57664 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751727Ab3IICj7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 8 Sep 2013 22:39:59 -0400
-Message-ID: <522D3475.3010104@cn.fujitsu.com>
-Date: Mon, 09 Sep 2013 10:37:41 +0800
+	id S1751426Ab3IICoF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 Sep 2013 22:44:05 -0400
+Message-ID: <522D356A.2080708@cn.fujitsu.com>
+Date: Mon, 09 Sep 2013 10:41:46 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Dusty Mabe <dustymabe@gmail.com>
+To: "Marco L. Crociani" <marco.crociani@gmail.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: BUG: qgroup scan started
-References: <CAFfJ-R6iw4ubyvcwtom9nZXjVpWfpzF+K+sJXKwQTWXiYcBBOA@mail.gmail.com>
-In-Reply-To: <CAFfJ-R6iw4ubyvcwtom9nZXjVpWfpzF+K+sJXKwQTWXiYcBBOA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Re: btrfs defrag kernel 3.11
+References: <CADy=jfXO0CkqqARUp588tZ2Dd1xuj4CMao+-We49M0OgHE9G=Q@mail.gmail.com>
+In-Reply-To: <CADy=jfXO0CkqqARUp588tZ2Dd1xuj4CMao+-We49M0OgHE9G=Q@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-This should have been fixed, the following patch should have fixed it.
+This bug should have been fixed by Liu Bo, the following patch:
 
-Btrfs: fix memory patcher through fs_info->qgroup_ulist
+Btrfs: fix crash regarding to ulist_add_merge
 
-https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=4373519db4dbca05341a60b28f6e159b106e4c4b
+https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?h=for-chris&id=35f0399db6658f465b00893bdd13b992a0acfef0
 
 You can try btrfs-next:
 git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
 
 Thanks,
 Wang
-
-On 09/09/2013 10:17 AM, Dusty Mabe wrote:
+On 09/07/2013 05:35 AM, Marco L. Crociani wrote:
 > Hi,
+> I have run:
+> find / -xdev \( -type f -o -type d \) -exec btrfs filesystem defragment -v
+> -- {} +
 >
-> I have a filesystem that I have enabled quota on (in hopes of viewing
-> qgroup information). I did a 'quota enable', 'quota rescan', etc.. and
-> can actually view information output from qgroup show:
+> On Ubuntu 13.04 with kernel 3.11 from root recovery shell after remounting
+> rw /
 >
-> dustymabe@laptop: Desktop>sudo btrfs qgroup show /
-> 0/5 26262700032 2084864
-> 0/257 4101042176 990027776
-> 0/258 6579482624 977936384
-> 0/259 8280444928 992739328
-> 0/260 29985890304 1444683776
-> 0/261 30732304384 393986048
-> 0/262 27710410752 732024832
-> 0/263 26291232768 15314944
+> This is the dmesg output:
 >
-> This all seems well, but I do notice after a reboot that I get a Null
-> pointer dereference during bootup. I have posted the backtrace
-> information at the bottom of the email. I originally created the
-> filesystem in Fedora 17 but have since upgraded and am now using the
-> following:
+> [17788.691504] ------------[ cut here ]------------
+> [17788.691510] ------------[ cut here ]------------
+> [17788.691538] WARNING: CPU: 1 PID: 2093 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17788.691568] WARNING: CPU: 2 PID: 2095 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17788.691540] Modules linked in: snd_usb_audio
+> [17788.691570] Modules linked in: snd_usb_audio uvcvideo snd_usbmidi_lib
+> videobuf2_vmalloc videobuf2_memops videobuf2_core videodev
+> snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+> snd_hwdep btusb eeepc_wmi asus_wmi sparse_keymap snd_pcm snd_page_alloc
+> k10temp video snd_seq_midi mac_hid snd_seq_midi_event snd_rawmidi i2c_piix4
+> dm_multipath serio_raw snd_seq snd_seq_device snd_timer scsi_dh snd
+> ohci_pci soundcore bluetooth btrfs zlib_deflate libcrc32c raid10 raid456
+> async_memcpy async_raid6_recov async_pq async_xor async_tx xor raid6_pq
+> raid0 multipath linear hid_generic usbhid hid raid1 usb_storage radeon wmi
+> i2c_algo_bit ttm r8169 mii drm_kms_helper ahci drm libahci
+> [17788.691641]  uvcvideo<4>[17788.691642] CPU: 2 PID: 2095 Comm:
+> btrfs-endio-wri Not tainted 3.11.0-031100-generic #201309021735
+> [17788.691644] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17788.691645]  000000000000089e ffff88011b091a58 ffffffff81720fca
+> 0000000000001b8b
+> [17788.691650]  snd_usbmidi_lib videobuf2_vmalloc videobuf2_memops
+> videobuf2_core videodev snd_hda_codec_realtek snd_hda_codec_hdmi
+> snd_hda_intel snd_hda_codec snd_hwdep btusb eeepc_wmi asus_wmi
+> sparse_keymap snd_pcm snd_page_alloc k10temp video snd_seq_midi mac_hid
+> snd_seq_midi_event snd_rawmidi i2c_piix4 dm_multipath serio_raw snd_seq
+> snd_seq_device snd_timer scsi_dh snd ohci_pci soundcore bluetooth btrfs
+> zlib_deflate libcrc32c raid10 raid456 async_memcpy async_raid6_recov
+> async_pq async_xor async_tx xor raid6_pq raid0 multipath linear hid_generic
+> usbhid hid raid1 usb_storage radeon wmi i2c_algo_bit ttm r8169 mii
+> drm_kms_helper ahci drm libahci
+> [17788.691717]
+> [17788.691717]  0000000000000000 ffff88011b091a98 ffffffff8106534c
+> ffff88011b091a78
+> [17788.691720]  ffff8801f3c1aea0 0000000000000001 ffff8801056d2dc0
+> 0000160000000000
+> [17788.691722] Call Trace:
+> [17788.691727]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17788.691730]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17788.691732]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17788.691744]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17788.691755]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.691768]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17788.691779]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.691790]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17788.691801]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17788.691812]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.691823]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17788.691834]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17788.691845]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17788.691856]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17788.691867]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17788.691878]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17788.691881]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17788.691884]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.691886]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17788.691888]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.691890] ---[ end trace b632fc27406d343c ]---
+> [17788.691892] CPU: 1 PID: 2093 Comm: btrfs-endio-wri Not tainted
+> 3.11.0-031100-generic #201309021735
+> [17788.691894] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17788.691895]  000000000000089e ffff8801ba3bfa58 ffffffff81720fca
+> 0000000000001bd4
+> [17788.691899]  0000000000000000 ffff8801ba3bfa98 ffffffff8106534c
+> ffff8801ba3bfa78
+> [17788.691901]  ffff8801f3c1ae10 0000000000000001 ffff8801056d2dc0
+> 0000160000000000
+> [17788.691903] Call Trace:
+> [17788.691909]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17788.691912]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17788.691914]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17788.691925]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17788.691937]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.691949]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17788.691960]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.691971]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17788.691982]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17788.691993]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.692004]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17788.692015]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17788.692026]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17788.692037]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17788.692048]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17788.692060]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17788.692063]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17788.692065]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.692067]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17788.692070]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.692071] ---[ end trace b632fc27406d343d ]---
+> [17788.819780] ------------[ cut here ]------------
+> [17788.819810] WARNING: CPU: 2 PID: 2095 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17788.819812] Modules linked in: snd_usb_audio uvcvideo snd_usbmidi_lib
+> videobuf2_vmalloc videobuf2_memops videobuf2_core videodev
+> snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+> snd_hwdep btusb eeepc_wmi asus_wmi sparse_keymap snd_pcm snd_page_alloc
+> k10temp video snd_seq_midi mac_hid snd_seq_midi_event snd_rawmidi i2c_piix4
+> dm_multipath serio_raw snd_seq snd_seq_device snd_timer scsi_dh snd
+> ohci_pci soundcore bluetooth btrfs zlib_deflate libcrc32c raid10 raid456
+> async_memcpy async_raid6_recov async_pq async_xor async_tx xor raid6_pq
+> raid0 multipath linear hid_generic usbhid hid raid1 usb_storage radeon wmi
+> i2c_algo_bit ttm r8169 mii drm_kms_helper ahci drm libahci
+> [17788.819843] CPU: 2 PID: 2095 Comm: btrfs-endio-wri Tainted: G
+> W    3.11.0-031100-generic #201309021735
+> [17788.819845] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17788.819846]  000000000000089e ffff88011b091a58 ffffffff81720fca
+> 0000000000003ac9
+> [17788.819849]  0000000000000000 ffff88011b091a98 ffffffff8106534c
+> ffff88011b091a78
+> [17788.819850]  ffff8801f3c1aea0 0000000000000001 ffff8801056d2dc0
+> 0000160000000000
+> [17788.819852] Call Trace:
+> [17788.819858]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17788.819862]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17788.819864]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17788.819875]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17788.819886]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.819898]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17788.819909]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.819920]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17788.819931]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17788.819942]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17788.819952]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17788.819964]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17788.819974]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17788.819986]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17788.819997]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17788.820008]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17788.820011]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17788.820013]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.820016]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17788.820018]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17788.820019] ---[ end trace b632fc27406d343e ]---
+> [17831.109598] ------------[ cut here ]------------
+> [17831.109627] WARNING: CPU: 1 PID: 2087 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17831.109629] Modules linked in: snd_usb_audio uvcvideo snd_usbmidi_lib
+> videobuf2_vmalloc videobuf2_memops videobuf2_core videodev
+> snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+> snd_hwdep btusb eeepc_wmi asus_wmi sparse_keymap snd_pcm snd_page_alloc
+> k10temp video snd_seq_midi mac_hid snd_seq_midi_event snd_rawmidi i2c_piix4
+> dm_multipath serio_raw snd_seq snd_seq_device snd_timer scsi_dh snd
+> ohci_pci soundcore bluetooth btrfs zlib_deflate libcrc32c raid10 raid456
+> async_memcpy async_raid6_recov async_pq async_xor async_tx xor raid6_pq
+> raid0 multipath linear hid_generic usbhid hid raid1 usb_storage radeon wmi
+> i2c_algo_bit ttm r8169 mii drm_kms_helper ahci drm libahci
+> [17831.109660] CPU: 1 PID: 2087 Comm: btrfs-endio-wri Tainted: G
+> W    3.11.0-031100-generic #201309021735
+> [17831.109661] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17831.109663]  000000000000089e ffff8801cee7fa58 ffffffff81720fca
+> 00000000000059a5
+> [17831.109665]  0000000000000000 ffff8801cee7fa98 ffffffff8106534c
+> ffff8801cee7fa78
+> [17831.109667]  ffff8801f3c1a5a0 0000000000000001 ffff88015e95cdc0
+> 0000160000000000
+> [17831.109669] Call Trace:
+> [17831.109674]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17831.109677]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17831.109679]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17831.109691]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17831.109702]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.109714]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17831.109725]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.109736]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17831.109747]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17831.109758]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.109769]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17831.109780]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17831.109791]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17831.109802]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17831.109813]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17831.109824]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17831.109841]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17831.109843]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17831.109846]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17831.109848]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17831.109849] ---[ end trace b632fc27406d343f ]---
+> [17831.312062] ------------[ cut here ]------------
+> [17831.312091] WARNING: CPU: 1 PID: 2087 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17831.312092] Modules linked in: snd_usb_audio uvcvideo snd_usbmidi_lib
+> videobuf2_vmalloc videobuf2_memops videobuf2_core videodev
+> snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+> snd_hwdep btusb eeepc_wmi asus_wmi sparse_keymap snd_pcm snd_page_alloc
+> k10temp video snd_seq_midi mac_hid snd_seq_midi_event snd_rawmidi i2c_piix4
+> dm_multipath serio_raw snd_seq snd_seq_device snd_timer scsi_dh snd
+> ohci_pci soundcore bluetooth btrfs zlib_deflate libcrc32c raid10 raid456
+> async_memcpy async_raid6_recov async_pq async_xor async_tx xor raid6_pq
+> raid0 multipath linear hid_generic usbhid hid raid1 usb_storage radeon wmi
+> i2c_algo_bit ttm r8169 mii drm_kms_helper ahci drm libahci
+> [17831.312123] CPU: 1 PID: 2087 Comm: btrfs-endio-wri Tainted: G
+> W    3.11.0-031100-generic #201309021735
+> [17831.312125] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17831.312126]  000000000000089e ffff8801cee7fa58 ffffffff81720fca
+> 0000000000005bbf
+> [17831.312129]  0000000000000000 ffff8801cee7fa98 ffffffff8106534c
+> ffff8801cee7fa78
+> [17831.312130]  ffff8801f3c1a5a0 0000000000000001 ffff88010a524a00
+> 0000160000000000
+> [17831.312133] Call Trace:
+> [17831.312138]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17831.312141]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17831.312143]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17831.312155]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17831.312166]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.312178]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17831.312189]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.312200]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17831.312211]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17831.312222]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17831.312233]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17831.312244]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17831.312255]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17831.312266]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17831.312277]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17831.312288]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17831.312291]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17831.312294]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17831.312296]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17831.312298]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17831.312300] ---[ end trace b632fc27406d3440 ]---
+> [17838.564043] ------------[ cut here ]------------
+> [17838.564072] WARNING: CPU: 0 PID: 2093 at
+> /home/apw/COD/linux/fs/btrfs/inode.c:2206 record_one_backref+0x3a9/0x420
+> [btrfs]()
+> [17838.564073] Modules linked in: snd_usb_audio uvcvideo snd_usbmidi_lib
+> videobuf2_vmalloc videobuf2_memops videobuf2_core videodev
+> snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+> snd_hwdep btusb eeepc_wmi asus_wmi sparse_keymap snd_pcm snd_page_alloc
+> k10temp video snd_seq_midi mac_hid snd_seq_midi_event snd_rawmidi i2c_piix4
+> dm_multipath serio_raw snd_seq snd_seq_device snd_timer scsi_dh snd
+> ohci_pci soundcore bluetooth btrfs zlib_deflate libcrc32c raid10 raid456
+> async_memcpy async_raid6_recov async_pq async_xor async_tx xor raid6_pq
+> raid0 multipath linear hid_generic usbhid hid raid1 usb_storage radeon wmi
+> i2c_algo_bit ttm r8169 mii drm_kms_helper ahci drm libahci
+> [17838.564104] CPU: 0 PID: 2093 Comm: btrfs-endio-wri Tainted: G
+> W    3.11.0-031100-generic #201309021735
+> [17838.564106] Hardware name: System manufacturer System Product
+> Name/F1A75-V EVO, BIOS 0702 07/12/2011
+> [17838.564107]  000000000000089e ffff8801ba3bfa58 ffffffff81720fca
+> 0000000000005dd9
+> [17838.564109]  0000000000000000 ffff8801ba3bfa98 ffffffff8106534c
+> ffff8801ba3bfa78
+> [17838.564111]  ffff8801ebe98ea0 0000000000000001 ffff8801a7919900
+> 0000160000000000
+> [17838.564113] Call Trace:
+> [17838.564119]  [<ffffffff81720fca>] dump_stack+0x46/0x58
+> [17838.564122]  [<ffffffff8106534c>] warn_slowpath_common+0x8c/0xc0
+> [17838.564124]  [<ffffffff8106539a>] warn_slowpath_null+0x1a/0x20
+> [17838.564135]  [<ffffffffa030c7c9>] record_one_backref+0x3a9/0x420 [btrfs]
+> [17838.564146]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17838.564158]  [<ffffffffa035f3f2>] iterate_leaf_refs+0x52/0xc0 [btrfs]
+> [17838.564169]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17838.564181]  [<ffffffffa0361e58>] iterate_extent_inodes+0x198/0x270
+> [btrfs]
+> [17838.564192]  [<ffffffffa0361fc2>] iterate_inodes_from_logical+0x92/0xb0
+> [btrfs]
+> [17838.564203]  [<ffffffffa030c420>] ? btrfs_submit_direct+0x190/0x190
+> [btrfs]
+> [17838.564214]  [<ffffffffa030888c>] record_extent_backrefs+0x7c/0xf0
+> [btrfs]
+> [17838.564225]  [<ffffffffa03131e4>] relink_file_extents+0x44/0x180 [btrfs]
+> [17838.564236]  [<ffffffffa0313455>] btrfs_finish_ordered_io+0x135/0x4d0
+> [btrfs]
+> [17838.564247]  [<ffffffffa0313805>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [17838.564258]  [<ffffffffa03341d0>] worker_loop+0xa0/0x320 [btrfs]
+> [17838.564269]  [<ffffffffa0334130>] ?
+> check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+> [17838.564272]  [<ffffffff81088fe0>] kthread+0xc0/0xd0
+> [17838.564274]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17838.564277]  [<ffffffff81735a2c>] ret_from_fork+0x7c/0xb0
+> [17838.564279]  [<ffffffff81088f20>] ? flush_kthread_worker+0xb0/0xb0
+> [17838.564281] ---[ end trace b632fc27406d3441 ]---
 >
-> dustymabe@laptop: Desktop>uname -r
-> 3.10.10-200.fc19.x86_64
-> dustymabe@laptop: Desktop>rpm -q btrfs-progs
-> btrfs-progs-0.20.rc1.20130308git704a08c-1.fc19.x86_64
 >
+> Is there some problem?
 >
-> Full Disclaimer: I don't really know what I am doing. I just saw the
-> bt and thought I would try to help if I can. Let me know if you want
-> me to help investigate or if you want me to file a bug report.
-> Unfortunately I was not able to recreate on a VM so it may have
-> something to do with creating the fs in F17 and moving forward.
+> Regards,
 >
-> Thanks,
-> Dusty
->
->
-> ------ Pasted Trace -------
-> device fsid 0bf76cb1-1a9f-4ae4-a83f-f7726e2c3ea9 devid 1 transid 33155 /dev/sda3
-> btrfs: qgroup scan started
-> BUG: unable to handle kernel NULL pointer dereference at 00000000000001e8
-> IP: [<ffffffffa029446b>] start_transaction+0x1b/0x510 [btrfs]
-> PGD 0
-> Oops: 0000 [#1] SMP
-> Modules linked in: btrfs libcrc32c xor zlib_deflate raid6_pq radeon
-> i915 i2c_algo_bit drm_kms_helper ttm drm video i2c_core
-> CPU: 1 PID: 178 Comm: btrfs-qgroup-re Not tainted 3.10.10-200.fc19.x86_64 #1
-> Hardware name: LENOVO 09932MU/Emerald Lake, BIOS 57CN30WW 12/05/2011
-> task: ffff8801a430e320 ti: ffff8801a3aea000 task.ti: ffff8801a3aea000
-> RIP: 0010:[<ffffffffa029446b>]  [<ffffffffa029446b>]
-> start_transaction+0x1b/0x510 [btrfs]
-> RSP: 0018:ffff8801a3aebd00  EFLAGS: 00010286
-> RAX: ffff8801a418fc00 RBX: 0000000000000000 RCX: 0000000000000002
-> RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-> RBP: ffff8801a3aebd40 R08: 0000000000016f00 R09: ffff8801a9003600
-> R10: ffffffffa02ed013 R11: ffffffffffffffdc R12: 0000000000000000
-> R13: ffff8801a3defd80 R14: ffff8801a5248000 R15: ffff8801a3def960
-> FS:  0000000000000000(0000) GS:ffff8801afa40000(0000) knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00000000000001e8 CR3: 0000000001c0c000 CR4: 00000000000407e0
-> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Stack:
->   ffffffff8117f172 ffffffff8117f1fc ffffffffa02ec452 ffff8801a3def9b0
->   ffff8801a3def978 ffff8801a3defd80 ffff8801a5248000 ffff8801a3def960
->   ffff8801a3aebd50 ffffffffa0294978 ffff8801a3aebe28 ffffffffa02ed02b
-> Call Trace:
->   [<ffffffff8117f172>] ? kmem_cache_alloc+0x1d2/0x220
->   [<ffffffff8117f1fc>] ? kmem_cache_alloc_trace+0x3c/0x240
->   [<ffffffffa02ec452>] ? ulist_alloc+0x22/0x60 [btrfs]
->   [<ffffffffa0294978>] btrfs_start_transaction+0x18/0x20 [btrfs]
->   [<ffffffffa02ed02b>] btrfs_qgroup_rescan_worker+0x7b/0x720 [btrfs]
->   [<ffffffff8106c002>] ? del_timer_sync+0x52/0x60
->   [<ffffffff8163c2f9>] ? schedule_timeout+0x179/0x2c0
->   [<ffffffff8106b1d0>] ? __internal_add_timer+0x130/0x130
->   [<ffffffffa02c015b>] worker_loop+0x12b/0x500 [btrfs]
->   [<ffffffffa02c0030>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
->   [<ffffffff81080b60>] kthread+0xc0/0xd0
->   [<ffffffff81080aa0>] ? insert_kthread_work+0x40/0x40
->   [<ffffffff81647bac>] ret_from_fork+0x7c/0xb0
->   [<ffffffff81080aa0>] ? insert_kthread_work+0x40/0x40
-> Code: 83 e8 02 66 89 57 fe e9 5c fc ff ff 0f 1f 40 00 66 66 66 66 90
-> 55 48 89 e5 41 57 41 56 41 55 41 54 49 89 fc 53 89 d3 48 83 ec 18 <48>
-> 8b 87 e8 01 00 00 48 8b 90 b8 14 00 00 83 e2 01 0f 85 8e 00
-> RIP  [<ffffffffa029446b>] start_transaction+0x1b/0x510 [btrfs]
->   RSP <ffff8801a3aebd00>
-> CR2: 00000000000001e8
-> ---[ end trace b55740efb8d48acc ]---
+> Marco L. Crociani
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

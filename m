@@ -1,110 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50507 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751009Ab3IFJbT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Sep 2013 05:31:19 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: replace fails start but in the background
-Date: Fri,  6 Sep 2013 17:38:09 +0800
-Message-Id: <1378460289-20712-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1377090643-23658-2-git-send-email-anand.jain@oracle.com>
-References: <1377090643-23658-2-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55319 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754718Ab3IIQJE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Sep 2013 12:09:04 -0400
+Date: Mon, 9 Sep 2013 18:09:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: setup framework to corrupt specific fields
+ of an inode V2
+Message-ID: <20130909160900.GQ32382@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1378473979-2432-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1378473979-2432-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-when the balance is running, the replace start ioctl
-fails (for the right reasons). but since the cli has
-put ioctl thread to background (for right reasons)
-the user won't know that cli failed to start.
+On Fri, Sep 06, 2013 at 09:26:19AM -0400, Josef Bacik wrote:
+> @@ -93,6 +95,9 @@ static void print_usage(void)
+>  	fprintf(stderr, "\t-b Number of bytes to be corrupted\n");
+>  	fprintf(stderr, "\t-e Extent to be corrupted\n");
+>  	fprintf(stderr, "\t-E The whole extent free to be corrupted\n");
+> +	fprintf(stderr, "\t-i The inode item to corrupt (must also specify "
+> +		"the field to corrupt\n");
 
-so before cli goes to the background, it should check
-if mutually_exclusive_operation_running is not held.
+forgotten )
 
-this is done by newly introduced ioctl
- BTRFS_IOC_CHECK_DEV_EXCL_OPS by the following kernel patch:
+> +	fprintf(stderr, "\t-f The field in the item to corrupt\n");
+>  	exit(1);
+>  }
+>  
+> @@ -344,10 +442,6 @@ int main(int ac, char **av)
+>  	ac = ac - optind;
+>  	if (ac == 0)
+>  		print_usage();
+> -	if (logical == 0 && !extent_tree)
+> -		print_usage();
+> -	if (copy < 0)
+> -		print_usage();
 
-btrfs: introduce BTRFS_IOC_CHECK_DEV_EXCL_OPS ioctl to check dev excl op
+Please base your patches on something more recent, I merged this hunk
+manually 2 times already and it starts to diverge from trivial fixups
+(which I'm fine with).
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-replace.c |   14 ++++++++++++++
- ioctl.h        |    1 +
- utils.c        |   15 +++++++++++++++
- utils.h        |    1 +
- 4 files changed, 31 insertions(+), 0 deletions(-)
+>  
+>  	dev = av[optind];
+>  
+> @@ -361,6 +455,9 @@ int main(int ac, char **av)
+>  	}
+>  	if (extent_rec) {
+>  		struct btrfs_trans_handle *trans;
+> +
+> +		if (logical == 0)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index e89f8cc..916d997 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -203,6 +203,20 @@ static int cmd_start_replace(int argc, char **argv)
- 		goto leave_with_error;
- 	}
- 
-+	/* check if there is some other device exclusive
-+	 * operation running in the FS which won't let this replace
-+	 * to run. And ENOTTY is when older kernel doesn't support
-+	 * lock checking ioctl
-+	 */
-+	ret = is_dev_excl_op_free(fdmnt);
-+	if (ret && ret != -ENOTTY) {
-+		fprintf(stderr,
-+			"ERROR: replace start failed on \"%s\" - %s\n",
-+			path,
-+			ret > 0 ? btrfs_err_str(ret) : strerror(-ret));
-+		goto leave_with_error;
-+	}
-+
- 	srcdev = argv[optind];
- 	dstdev = argv[optind + 1];
- 
-diff --git a/ioctl.h b/ioctl.h
-index e959720..afadcbc 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -598,6 +598,7 @@ struct btrfs_ioctl_clone_range_args {
- #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_DEDUP_CTL _IOW(BTRFS_IOCTL_MAGIC, 55, int)
-+#define BTRFS_IOC_CHECK_DEV_EXCL_OPS _IO(BTRFS_IOCTL_MAGIC, 56)
- 
- #ifdef __cplusplus
- }
-diff --git a/utils.c b/utils.c
-index 82672a7..54a80a6 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1998,3 +1998,18 @@ int is_vol_small(char *file)
- 		return 0;
- 	}
- }
-+
-+/* Returns:
-+ * BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS:
-+ *	If the device is locked to prevent other device operations
-+ *	from the user cli like device add remove replace balance etc..
-+ * < 0:
-+ *	For any other error including if kernel don't support the
-+ *	ioctl (-ENOTTY)
-+ */
-+int is_dev_excl_op_free(int fd)
-+{
-+	int ret;
-+	ret = ioctl(fd, BTRFS_IOC_CHECK_DEV_EXCL_OPS, NULL);
-+	return ret > 0 ? ret : -errno;
-+}
-diff --git a/utils.h b/utils.h
-index 6446e0a..5ef728e 100644
---- a/utils.h
-+++ b/utils.h
-@@ -83,4 +83,5 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
- 	u64 dev_cnt, int mixed, char *estr);
- int is_vol_small(char *file);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
-+int is_dev_excl_op_free(int fd);
- #endif
--- 
-1.7.1
+now it's (u64)-1 as the "invalie" value, and has to be added to the
+'chunk_tree' branch as well.
 
+> +			print_usage();
+>  		trans = btrfs_start_transaction(root, 1);
+>  		ret = corrupt_extent (trans, root, logical, 0);
+>  		btrfs_commit_transaction(trans, root);
+> @@ -374,6 +471,20 @@ int main(int ac, char **av)
+>  		btrfs_commit_transaction(trans, root);
+>  		goto out_close;
+>  	}
+> +	if (inode) {
+> +		struct btrfs_trans_handle *trans;
+> +
+> +		if (!strlen(field))
+> +			print_usage();
+> +		printf("corrupting inode\n");
+> +		trans = btrfs_start_transaction(root, 1);
+> +		ret = corrupt_inode(trans, root, inode, field);
+> +		btrfs_commit_transaction(trans, root);
+> +		goto out_close;
+> +	}
+> +
+> +	if (logical == 0)
+
+same here
+
+> +		print_usage();
+>  
+>  	if (bytes == 0)
+>  		bytes = root->sectorsize;
+
+All fixed and patch replaced in the middle of the branch, feel free to
+review that I did not mess it up.
+
+david

@@ -1,245 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:54403 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754543Ab3IIUmC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Sep 2013 16:42:02 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id DA3897C0444
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Sep 2013 14:42:01 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id DM10sKJGue7xNHVC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 09 Sep 2013 14:42:00 -0600 (MDT)
+Received: from dkim2.fusionio.com ([66.114.96.54]:36635 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755606Ab3IIUmE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Sep 2013 16:42:04 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 214EF9A067E
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Sep 2013 14:42:04 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id jCt1RsbkLI3mFCyC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 09 Sep 2013 14:42:03 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/5] Btrfs-progs: setup framework to corrupt specific fields of an inode
-Date: Mon, 9 Sep 2013 16:41:54 -0400
-Message-ID: <1378759318-3305-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH 2/5] Btrfs-progs: allow fsck to fix directory isize errors
+Date: Mon, 9 Sep 2013 16:41:55 -0400
+Message-ID: <1378759318-3305-2-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1378759318-3305-1-git-send-email-jbacik@fusionio.com>
+References: <1378759318-3305-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a problem with his fs where he had a bogus isize on his
-directory.  In order to make sure my patch for fsck fixes this properly I needed
-to be able to corrupt an inode like this, which is what this patch is for.
-Eventually I want to extend this to corrupt everything so we can integrate tests
-into btrfs-progs to run btrfsck against to make sure we don't regress on fixing
-things with btrfsck.  Thanks,
+A user reported a problem where he was unable to rmdir an empty directory.  This
+is because his isize was wrong.  This patch will fix this sort of corruption and
+allow him to rmdir his directory.  Thanks
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- btrfs-corrupt-block.c |  125 ++++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 118 insertions(+), 7 deletions(-)
+ cmds-check.c |   86 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 files changed, 80 insertions(+), 6 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 9b72ad9..1a7b6ca 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -32,6 +32,8 @@
- #include "list.h"
- #include "version.h"
+diff --git a/cmds-check.c b/cmds-check.c
+index df18c43..6cbd5a6 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -221,6 +221,8 @@ struct walk_control {
+ 	int root_level;
+ };
  
-+#define FIELD_BUF_LEN 80
++static void reset_cached_block_groups(struct btrfs_fs_info *fs_info);
 +
- struct extent_buffer *debug_corrupt_block(struct btrfs_root *root, u64 bytenr,
- 				     u32 blocksize, int copy)
+ static u8 imode_to_type(u32 imode)
  {
-@@ -96,6 +98,9 @@ static void print_usage(void)
- 	fprintf(stderr, "\t-E The whole extent tree to be corrupted\n");
- 	fprintf(stderr, "\t-u Given chunk item to be corrupted\n");
- 	fprintf(stderr, "\t-U The whole chunk tree to be corrupted\n");
-+	fprintf(stderr, "\t-i The inode item to corrupt (must also specify "
-+		"the field to corrupt)\n");
-+	fprintf(stderr, "\t-f The field in the item to corrupt\n");
- 	exit(1);
+ #define S_SHIFT 12
+@@ -1344,8 +1346,64 @@ out:
+ 	return ret;
  }
  
-@@ -279,6 +284,83 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 	}
- }
- 
-+enum btrfs_inode_field {
-+	BTRFS_INODE_FIELD_ISIZE,
-+	BTRFS_INODE_FIELD_BAD,
-+};
-+
-+static enum btrfs_inode_field convert_field(char *field)
++static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
 +{
-+	if (!strncmp(field, "isize", FIELD_BUF_LEN))
-+		return BTRFS_INODE_FIELD_ISIZE;
-+	return BTRFS_INODE_FIELD_BAD;
-+}
-+
-+static int corrupt_inode(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root, u64 inode, char *field)
-+{
-+	struct btrfs_inode_item *ei;
++	struct btrfs_trans_handle *trans;
 +	struct btrfs_path *path;
++	struct btrfs_inode_item *ei;
 +	struct btrfs_key key;
-+	enum btrfs_inode_field corrupt_field = convert_field(field);
-+	u64 bogus;
-+	u64 orig;
 +	int ret;
 +
-+	if (corrupt_field == BTRFS_INODE_FIELD_BAD) {
-+		fprintf(stderr, "Invalid field %s\n", field);
-+		return -EINVAL;
-+	}
-+
-+	key.objectid = inode;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = (u64)-1;
++	/* So far we just fix dir isize wrong */
++	if (!(rec->errors & I_ERR_DIR_ISIZE_WRONG))
++		return 1;
 +
 +	path = btrfs_alloc_path();
 +	if (!path)
 +		return -ENOMEM;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
++		return PTR_ERR(trans);
++	}
++
++	key.objectid = rec->ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = (u64)-1;
 +
 +	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
 +	if (ret < 0)
 +		goto out;
 +	if (ret) {
 +		if (!path->slots[0]) {
-+			fprintf(stderr, "Couldn't find inode %Lu\n", inode);
 +			ret = -ENOENT;
 +			goto out;
 +		}
 +		path->slots[0]--;
 +		ret = 0;
 +	}
-+
 +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if (key.objectid != inode) {
-+		fprintf(stderr, "Couldn't find inode %Lu\n", inode);
++	if (key.objectid != rec->ino) {
 +		ret = -ENOENT;
 +		goto out;
 +	}
 +
 +	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
 +			    struct btrfs_inode_item);
-+	switch (corrupt_field) {
-+	case BTRFS_INODE_FIELD_ISIZE:
-+		orig = btrfs_inode_size(path->nodes[0], ei);
-+		do {
-+			bogus = rand();
-+		} while (bogus == orig);
-+
-+		btrfs_set_inode_size(path->nodes[0], ei, bogus);
-+		break;
-+	default:
-+		ret = -EINVAL;
-+		break;
-+	}
++	btrfs_set_inode_size(path->nodes[0], ei, rec->found_size);
 +	btrfs_mark_buffer_dirty(path->nodes[0]);
++	rec->errors &= ~I_ERR_DIR_ISIZE_WRONG;
++	printf("reset isize for dir %Lu root %Lu\n", rec->ino,
++	       root->root_key.objectid);
 +out:
++	btrfs_commit_transaction(trans, root);
 +	btrfs_free_path(path);
 +	return ret;
 +}
 +
- static struct option long_options[] = {
- 	/* { "byte-count", 1, NULL, 'b' }, */
- 	{ "logical", 1, NULL, 'l' },
-@@ -289,6 +371,8 @@ static struct option long_options[] = {
- 	{ "keys", 0, NULL, 'k' },
- 	{ "chunk-record", 0, NULL, 'u' },
- 	{ "chunk-tree", 0, NULL, 'U' },
-+	{ "inode", 1, NULL, 'i'},
-+	{ "field", 1, NULL, 'f'},
- 	{ 0, 0, 0, 0}
- };
+ static int check_inode_recs(struct btrfs_root *root,
+-			    struct cache_tree *inode_cache)
++			    struct cache_tree *inode_cache, int repair)
+ {
+ 	struct cache_extent *cache;
+ 	struct ptr_node *node;
+@@ -1400,6 +1458,15 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			}
+ 		}
  
-@@ -449,12 +533,15 @@ int main(int ac, char **av)
- 	int corrupt_block_keys = 0;
- 	int chunk_rec = 0;
- 	int chunk_tree = 0;
-+	u64 inode = 0;
-+	char field[FIELD_BUF_LEN];
++		if (repair) {
++			ret = try_repair_inode(root, rec);
++			if (ret == 0 && can_free_inode_rec(rec)) {
++				free_inode_rec(rec);
++				continue;
++			}
++			ret = 0;
++		}
++
+ 		error++;
+ 		if (!rec->found_inode_item)
+ 			rec->errors |= I_ERR_NO_INODE_ITEM;
+@@ -1741,7 +1808,7 @@ static int process_root_ref(struct extent_buffer *eb, int slot,
  
-+	field[0] = '\0';
- 	srand(128);
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "l:c:b:eEkuU", long_options,
-+		c = getopt_long(ac, av, "l:c:b:eEkuUi:f:", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
-@@ -464,7 +551,7 @@ int main(int ac, char **av)
- 				break;
- 			case 'c':
- 				copy = atoi(optarg);
--				if (copy == 0) {
-+				if (copy <= 0) {
- 					fprintf(stderr,
- 						"invalid copy number\n");
- 					print_usage();
-@@ -492,6 +579,16 @@ int main(int ac, char **av)
- 				break;
- 			case 'U':
- 				chunk_tree = 1;
-+			case 'i':
-+				inode = atoll(optarg);
-+				if (inode == 0) {
-+					fprintf(stderr,
-+						"invalid inode number\n");
-+					print_usage();
-+				}
-+				break;
-+			case 'f':
-+				strncpy(field, optarg, FIELD_BUF_LEN);
- 				break;
- 			default:
- 				print_usage();
-@@ -500,11 +597,6 @@ int main(int ac, char **av)
- 	ac = ac - optind;
- 	if (ac == 0)
- 		print_usage();
--	if (logical == (u64)-1 && !(extent_tree || chunk_tree))
--		print_usage();
--	if (copy < 0)
--		print_usage();
--
- 	dev = av[optind];
- 
- 	radix_tree_init();
-@@ -517,6 +609,9 @@ int main(int ac, char **av)
+ static int check_fs_root(struct btrfs_root *root,
+ 			 struct cache_tree *root_cache,
+-			 struct walk_control *wc)
++			 struct walk_control *wc, int repair)
+ {
+ 	int ret = 0;
+ 	int wret;
+@@ -1811,7 +1878,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 				root_node.current);
  	}
- 	if (extent_rec) {
- 		struct btrfs_trans_handle *trans;
-+
-+		if (logical == (u64)-1)
-+			print_usage();
- 		trans = btrfs_start_transaction(root, 1);
- 		ret = corrupt_extent (trans, root, logical, 0);
- 		btrfs_commit_transaction(trans, root);
-@@ -535,6 +630,8 @@ int main(int ac, char **av)
- 		struct btrfs_path *path;
- 		int del;
  
-+		if (logical == (u64)-1)
-+			print_usage();
- 		del = rand() % 3;
- 		path = btrfs_alloc_path();
+-	ret = check_inode_recs(root, &root_node.inode_cache);
++	ret = check_inode_recs(root, &root_node.inode_cache, repair);
+ 	return ret;
+ }
  
-@@ -560,6 +657,20 @@ int main(int ac, char **av)
- 		btrfs_commit_transaction(trans, root);
- 		goto out_close;
- 	}
-+	if (inode) {
-+		struct btrfs_trans_handle *trans;
-+
-+		if (!strlen(field))
-+			print_usage();
-+		printf("corrupting inode\n");
-+		trans = btrfs_start_transaction(root, 1);
-+		ret = corrupt_inode(trans, root, inode, field);
-+		btrfs_commit_transaction(trans, root);
-+		goto out_close;
-+	}
-+
-+	if (logical == (u64)-1)
-+		print_usage();
+@@ -1827,7 +1894,8 @@ static int fs_root_objectid(u64 objectid)
+ }
  
- 	if (bytes == 0)
- 		bytes = root->sectorsize;
+ static int check_fs_roots(struct btrfs_root *root,
+-			  struct cache_tree *root_cache)
++			  struct cache_tree *root_cache,
++			  int repair)
+ {
+ 	struct btrfs_path path;
+ 	struct btrfs_key key;
+@@ -1838,6 +1906,12 @@ static int check_fs_roots(struct btrfs_root *root,
+ 	int ret;
+ 	int err = 0;
+ 
++	/*
++	 * Just in case we made any changes to the extent tree that weren't
++	 * reflected into the free space cache yet.
++	 */
++	if (repair)
++		reset_cached_block_groups(root->fs_info);
+ 	memset(&wc, 0, sizeof(wc));
+ 	cache_tree_init(&wc.shared);
+ 	btrfs_init_path(&path);
+@@ -1864,7 +1938,7 @@ static int check_fs_roots(struct btrfs_root *root,
+ 				err = 1;
+ 				goto next;
+ 			}
+-			ret = check_fs_root(tmp_root, root_cache, &wc);
++			ret = check_fs_root(tmp_root, root_cache, &wc, repair);
+ 			if (ret)
+ 				err = 1;
+ 			btrfs_free_fs_root(tmp_root);
+@@ -5874,7 +5948,7 @@ int cmd_check(int argc, char **argv)
+ 		goto out;
+ 
+ 	fprintf(stderr, "checking fs roots\n");
+-	ret = check_fs_roots(root, &root_cache);
++	ret = check_fs_roots(root, &root_cache, repair);
+ 	if (ret)
+ 		goto out;
+ 
 -- 
 1.7.7.6
 

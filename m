@@ -1,38 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59872 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47429 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754195Ab3ITJZz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 05:25:55 -0400
-Date: Fri, 20 Sep 2013 11:25:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: chris.mason@fusionio.com, Stefan Behrens <sbehrens@giantdisaster.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: allocate the free space by the existed max extent
- size when ENOSPC
-Message-ID: <20130920092552.GJ6810@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1377858934-17187-1-git-send-email-miaox@cn.fujitsu.com>
- <5229DCDC.9080901@giantdisaster.de>
- <522D6906.5040404@cn.fujitsu.com>
- <20130917131312.GY6810@twin.jikos.cz>
- <5239264E.9080904@cn.fujitsu.com>
+	id S1752533Ab3IJEeD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Sep 2013 00:34:03 -0400
+Message-ID: <522EA128.50904@suse.com>
+Date: Tue, 10 Sep 2013 00:33:44 -0400
+From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5239264E.9080904@cn.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Chris Mason <clmason@fusionio.com>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/2] ctree: fix broken macros for compat_ro
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="K3g0ELjCrCTXTqCl3V5beVvR1lRt5xgH3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 18, 2013 at 12:04:30PM +0800, Miao Xie wrote:
-> On Tue, 17 Sep 2013 15:13:12 +0200, David Sterba wrote:
-> > On Mon, Sep 09, 2013 at 02:21:58PM +0800, Miao Xie wrote:
-> >> On fri, 06 Sep 2013 15:47:08 +0200, Stefan Behrens wrote:
-> > The massive slowdown is present in current 3.12-rc code, which means V3
-> > did not make it into the pull.
-> > 
-> > Miao please send an incremental fix for rc2.
-> 
-> This patch has not been merged into 3.12-rc, so the above problem should be
-> introduced by other patch.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--K3g0ELjCrCTXTqCl3V5beVvR1lRt5xgH3
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Sorry, my oversight.
+The macro for compat_ro had the right name but was modifying compat inste=
+ad.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ ctree.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ctree.h b/ctree.h
+index 0b0d701..8ef45f3 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1912,7 +1912,7 @@ BTRFS_SETGET_STACK_FUNCS(super_num_devices, struct =
+btrfs_super_block,
+ BTRFS_SETGET_STACK_FUNCS(super_compat_flags, struct btrfs_super_block,
+ 			 compat_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_compat_ro_flags, struct btrfs_super_block=
+,
+-			 compat_flags, 64);
++			 compat_ro_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_incompat_flags, struct btrfs_super_block,=
+
+ 			 incompat_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
+--=20
+1.8.1.4
+
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--K3g0ELjCrCTXTqCl3V5beVvR1lRt5xgH3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.18 (Darwin)
+
+iQIcBAEBAgAGBQJSLqEqAAoJEB57S2MheeWyR6AQAIKoOJXJWezaGXXjraxC7swZ
+v8yGE2nKaMzKE+4Q0wJDmmwjwLj4sjwV3NAfqWLwuM/FmRUtLffn0YwfHm70WMtK
+2iVbH7V38vekt3wf2wNBeT8P3D3Nqdlek2zIGgEdhaESoGAm7S5lZ/P0/QK8Zc1x
+l6ebrp3VGWk1MuV7sJi3KAKytluGl7UqkaYcBDM6f8fbb6MoFYsijr/mItGD6f9x
+oe0Jos6DvZnX2zGcytMBm9QkeQBjI/XDlAlmO68zuMxEWZGwNxTtCXHrmvqR1b2p
+b1Yx3BSity3TKhwBV9w/gBsWtHHBIAvMg39DfX444LRBQ3yzW0v0cnNKGHF1gqxq
+uAKf0go9HF2RtVBfjvXpBPWSeHmExlnZY0KqRviW6hfkLHw9LrMXf1ZV6rLb/1Vr
+QCMQv3imcqpoN2GtNomwPzv0EVUleKGJKpVA3s6PsqStXRs5g9EWZqFq91Rexg9A
+Zc+gzRoAAYdtyMYEznXgPGh7Eb7kIXxyeSNJJlXaYFM5h3i9i60nUpkCneLAJaiv
+x1DWwm+1m12AyRpyo05XCTJ3j2ExfknJmk3Q2/13geNS3VKpcmScnN1tH4zoYpJw
+mts7cdWxFJaTomKoArVHSFoobTUxFZwsR6C12IpIPN50oFflKVUnNMMVOK9XI1mn
+MocJpEyBGVfG3TQ/Ruwj
+=j8Df
+-----END PGP SIGNATURE-----
+
+--K3g0ELjCrCTXTqCl3V5beVvR1lRt5xgH3--

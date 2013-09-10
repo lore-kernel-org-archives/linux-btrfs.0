@@ -1,103 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fau.xxx ([213.133.103.231]:54079 "EHLO om.goeswhere.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755880Ab3IIWPL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Sep 2013 18:15:11 -0400
-Date: Mon, 9 Sep 2013 23:06:38 +0100
-From: "Chris West (Faux)" <git@goeswhere.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:26566 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751645Ab3IJCaw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Sep 2013 22:30:52 -0400
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: fix -Wmissing-noreturn
-Message-ID: <20130909220638.GA10113@goeswhere.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: dsterba@suse.cz, sandeen@redhat.com, idryomov@gmail.com
+Subject: [PATCH v2 18/20] Btrfs-progs: fix magic return value in cmds-balance.c
+Date: Tue, 10 Sep 2013 10:28:29 +0800
+Message-Id: <1378780109-8591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
----
- btrfs-image.c       | 1 +
- btrfs-map-logical.c | 1 +
- btrfs-zero-log.c    | 1 +
- commands.h          | 6 +++---
- mkfs.c              | 3 +++
- 5 files changed, 9 insertions(+), 3 deletions(-)
+If there is no balance in progress, resume/pause/cancel
+will return 2. Usage or syntax errors will return 1.
+And 0 means operations return successfully.
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 3ea3730..b76f467 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -142,6 +142,7 @@ struct mdrestore_struct {
- 	struct btrfs_fs_info *info;
- };
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+v1->v2:
+	Address comments from Ilya Dryomov.
+---
+ cmds-balance.c | 27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/cmds-balance.c b/cmds-balance.c
+index b7382ef..a151475 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -299,7 +299,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 	fd = open_file_or_dir(path, &dirstream);
+ 	if (fd < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 12;
++		return 1;
+ 	}
  
-+static void print_usage(void) __attribute__((noreturn));
- static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 				   u64 search, u64 cluster_bytenr);
- static struct extent_buffer *alloc_dummy_eb(u64 bytenr, u32 size);
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index ea0a1ba..51179a3 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -90,6 +90,7 @@ static struct extent_buffer * debug_read_block(struct btrfs_root *root,
- 	return eb;
- }
+ 	ret = ioctl(fd, BTRFS_IOC_BALANCE_V2, args);
+@@ -330,7 +330,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 			if (e != EINPROGRESS)
+ 				fprintf(stderr, "There may be more info in "
+ 					"syslog - try dmesg | tail\n");
+-			ret = 19;
++			ret = 1;
+ 		}
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
+@@ -498,7 +498,7 @@ static int cmd_balance_pause(int argc, char **argv)
+ 	fd = open_file_or_dir(path, &dirstream);
+ 	if (fd < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 12;
++		return 1;
+ 	}
  
-+static void print_usage(void) __attribute__((noreturn));
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: btrfs-map-logical [options] device\n");
-diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
-index f249aec..735c139 100644
---- a/btrfs-zero-log.c
-+++ b/btrfs-zero-log.c
-@@ -32,6 +32,7 @@
- #include "version.h"
- #include "utils.h"
+ 	ret = ioctl(fd, BTRFS_IOC_BALANCE_CTL, BTRFS_BALANCE_CTL_PAUSE);
+@@ -508,7 +508,10 @@ static int cmd_balance_pause(int argc, char **argv)
+ 	if (ret < 0) {
+ 		fprintf(stderr, "ERROR: balance pause on '%s' failed - %s\n",
+ 			path, (e == ENOTCONN) ? "Not running" : strerror(e));
+-		return 19;
++		if (e == ENOTCONN)
++			return 2;
++		else
++			return 1;
+ 	}
  
-+static void print_usage(void) __attribute__((noreturn));
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: btrfs-zero-log dev\n");
-diff --git a/commands.h b/commands.h
-index 65d5fea..fa7a8ce 100644
---- a/commands.h
-+++ b/commands.h
-@@ -72,12 +72,12 @@ int handle_command_group(const struct cmd_group *grp, int argc,
- /* help.c */
- extern const char * const generic_cmd_help_usage[];
- 
--void usage(const char * const *usagestr);
-+void usage(const char * const *usagestr) __attribute__((noreturn));
- void usage_command(const struct cmd_struct *cmd, int full, int err);
- void usage_command_group(const struct cmd_group *grp, int all, int err);
- 
--void help_unknown_token(const char *arg, const struct cmd_group *grp);
--void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
-+void help_unknown_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
-+void help_ambiguous_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
- 
- void help_command_group(const struct cmd_group *grp, int argc, char **argv);
- 
-diff --git a/mkfs.c b/mkfs.c
-index 1701783..002dd94 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -251,6 +251,8 @@ static int create_data_reloc_tree(struct btrfs_trans_handle *trans,
  	return 0;
- }
+@@ -536,7 +539,7 @@ static int cmd_balance_cancel(int argc, char **argv)
+ 	fd = open_file_or_dir(path, &dirstream);
+ 	if (fd < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 12;
++		return 1;
+ 	}
  
-+
-+static void print_usage(void) __attribute__((noreturn));
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: mkfs.btrfs [options] dev [ dev ... ]\n");
-@@ -273,6 +275,7 @@ static void print_usage(void)
- 	exit(1);
- }
+ 	ret = ioctl(fd, BTRFS_IOC_BALANCE_CTL, BTRFS_BALANCE_CTL_CANCEL);
+@@ -546,7 +549,10 @@ static int cmd_balance_cancel(int argc, char **argv)
+ 	if (ret < 0) {
+ 		fprintf(stderr, "ERROR: balance cancel on '%s' failed - %s\n",
+ 			path, (e == ENOTCONN) ? "Not in progress" : strerror(e));
+-		return 19;
++		if (e == ENOTCONN)
++			return 2;
++		else
++			return 1;
+ 	}
  
-+static void print_version(void) __attribute__((noreturn));
- static void print_version(void)
- {
- 	fprintf(stderr, "mkfs.btrfs, part of %s\n", BTRFS_BUILD_VERSION);
+ 	return 0;
+@@ -575,7 +581,7 @@ static int cmd_balance_resume(int argc, char **argv)
+ 	fd = open_file_or_dir(path, &dirstream);
+ 	if (fd < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 12;
++		return 1;
+ 	}
+ 
+ 	memset(&args, 0, sizeof(args));
+@@ -596,12 +602,15 @@ static int cmd_balance_resume(int argc, char **argv)
+ 				"failed - %s\n", path,
+ 				(e == ENOTCONN) ? "Not in progress" :
+ 						  "Already running");
+-			return 19;
++			if (e == ENOTCONN)
++				return 2;
++			else
++				return 1;
+ 		} else {
+ 			fprintf(stderr,
+ "ERROR: error during balancing '%s' - %s\n"
+ "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
+-			return 19;
++			return 1;
+ 		}
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
 -- 
-1.8.4.rc3
+1.8.3.1
 

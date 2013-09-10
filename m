@@ -1,153 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47377 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753124Ab3IJEav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Sep 2013 00:30:51 -0400
-Message-Id: <20130910043008.468612870@suse.com>
-Date: Tue, 10 Sep 2013 00:24:15 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clmason@fusionio.com, dsterba@suse.cz
-Subject: [patch 7/7] btrfs: use feature attribute names to print better error messages
-References: <20130910042408.335071038@suse.com>
+Received: from mail-vc0-f181.google.com ([209.85.220.181]:53430 "EHLO
+	mail-vc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751300Ab3IJLjl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Sep 2013 07:39:41 -0400
+MIME-Version: 1.0
+In-Reply-To: <522D4061.3060404@cn.fujitsu.com>
+References: <1378570511-20990-1-git-send-email-a3at.mail@gmail.com>
+	<522D4061.3060404@cn.fujitsu.com>
+Date: Tue, 10 Sep 2013 15:39:40 +0400
+Message-ID: <CAG5DWogv3meJ3-F5QPCGbxtavMrnjjf=-p1KrGNQYao+Nm+pHA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: cleanup redundant code in __btrfs_close_devices()
+From: Azat Khuzhin <a3at.mail@gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: open list <linux-kernel@vger.kernel.org>,
+        Chris Mason <chris.mason@fusionio.com>,
+        "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that we have the feature name strings available in the kernel via
-the sysfs attributes, we can use them for printing better failure
-messages from the ioctl path.
+On Mon, Sep 9, 2013 at 7:28 AM, Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
+> On 09/08/2013 12:15 AM, Azat Khuzhin wrote:
+>>
+>> Signed-off-by: Azat Khuzhin <a3at.mail@gmail.com>
+>> ---
+>>   fs/btrfs/volumes.c |    2 +-
+>>   1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 1d1b595..124228e 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -644,7 +644,7 @@ static int __btrfs_close_devices(struct
+>> btrfs_fs_devices *fs_devices)
+>>                 /* Safe because we are under uuid_mutex */
+>>                 if (device->name) {
+>>                         name = rcu_string_strdup(device->name->str,
+>> GFP_NOFS);
+>> -                       BUG_ON(device->name && !name); /* -ENOMEM */
+>> +                       BUG_ON(!name); /* -ENOMEM *
+>
+> Nice catch! out of memory should not trigger BUG_ON()..
+> Maybe we can handle it gracefully.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ioctl.c |   35 ++++++++++++++++++++++++++++++-----
- fs/btrfs/sysfs.c |   25 +++++++++++++++++++++++++
- fs/btrfs/sysfs.h |    3 +++
- 3 files changed, 58 insertions(+), 5 deletions(-)
+Maybe return -ENOMEM ?
 
---- a/fs/btrfs/ioctl.c	2013-09-09 23:23:34.794883859 -0400
-+++ b/fs/btrfs/ioctl.c	2013-09-09 23:24:03.019073609 -0400
-@@ -56,6 +56,7 @@
- #include "rcu-string.h"
- #include "send.h"
- #include "dev-replace.h"
-+#include "sysfs.h"
- 
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -4143,17 +4144,27 @@ static int btrfs_ioctl_get_features(stru
- 	return 0;
- }
- 
--static int check_feature_bits(struct btrfs_root *root, const char *type,
-+static int check_feature_bits(struct btrfs_root *root,
-+			      enum btrfs_feature_set set,
- 			      u64 change_mask, u64 flags, u64 supported_flags,
- 			      u64 safe_set, u64 safe_clear)
- {
-+	const char *type = btrfs_feature_set_names[set];
-+	char *names;
- 	u64 disallowed, unsupported;
- 	u64 set_mask = flags & change_mask;
- 	u64 clear_mask = ~flags & change_mask;
- 
- 	unsupported = set_mask & ~supported_flags;
- 	if (unsupported) {
--		btrfs_warn(root->fs_info,
-+		names = btrfs_printable_features(set, unsupported);
-+		if (names) {
-+			btrfs_warn(root->fs_info,
-+			   "this kernel does not support the %s feature bit%s",
-+			   names, strchr(names, ',') ? "s" : "");
-+			kfree(names);
-+		} else
-+			btrfs_warn(root->fs_info,
- 			   "this kernel does not support %s bits 0x%llx",
- 			   type, unsupported);
- 		return -EOPNOTSUPP;
-@@ -4161,7 +4172,14 @@ static int check_feature_bits(struct btr
- 
- 	disallowed = set_mask & ~safe_set;
- 	if (disallowed) {
--		btrfs_warn(root->fs_info,
-+		names = btrfs_printable_features(set, disallowed);
-+		if (names) {
-+			btrfs_warn(root->fs_info,
-+			   "can't set the %s feature bit%s while mounted",
-+			   names, strchr(names, ',') ? "s" : "");
-+			kfree(names);
-+		} else
-+			btrfs_warn(root->fs_info,
- 			   "can't set %s bits 0x%llx while mounted",
- 			   type, disallowed);
- 		return -EPERM;
-@@ -4169,7 +4187,14 @@ static int check_feature_bits(struct btr
- 
- 	disallowed = clear_mask & ~safe_clear;
- 	if (disallowed) {
--		btrfs_warn(root->fs_info,
-+		names = btrfs_printable_features(set, disallowed);
-+		if (names) {
-+			btrfs_warn(root->fs_info,
-+			   "can't clear the %s feature bit%s while mounted",
-+			   names, strchr(names, ',') ? "s" : "");
-+			kfree(names);
-+		} else
-+			btrfs_warn(root->fs_info,
- 			   "can't clear %s bits 0x%llx while mounted",
- 			   type, disallowed);
- 		return -EPERM;
-@@ -4179,7 +4204,7 @@ static int check_feature_bits(struct btr
- }
- 
- #define check_feature(root, change_mask, flags, mask_base)	\
--check_feature_bits(root, # mask_base, change_mask, flags,	\
-+check_feature_bits(root, FEAT_##mask_base, change_mask, flags,	\
- 		   BTRFS_FEATURE_ ## mask_base ## _SUPP,	\
- 		   BTRFS_FEATURE_ ## mask_base ## _SAFE_SET,	\
- 		   BTRFS_FEATURE_ ## mask_base ## _SAFE_CLEAR)
---- a/fs/btrfs/sysfs.c	2013-09-09 23:24:02.991073420 -0400
-+++ b/fs/btrfs/sysfs.c	2013-09-09 23:24:03.019073609 -0400
-@@ -65,6 +65,31 @@ const char *btrfs_feature_set_names[FEAT
- static char btrfs_feature_names[FEAT_MAX][64][13];
- static struct btrfs_feature_attr btrfs_feature_attrs[FEAT_MAX][64];
- 
-+char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags)
-+{
-+	size_t bufsize = 4096; /* safe max, 64 names * 64 bytes */
-+	int len = 0;
-+	int i;
-+	char *str;
-+
-+	str = kmalloc(bufsize, GFP_KERNEL);
-+	if (!str)
-+		return str;
-+
-+	for (i = 0; i < ARRAY_SIZE(btrfs_feature_attrs[set]); i++) {
-+		if (!(flags & (1ULL << i)))
-+			continue;
-+
-+		flags &= ~(1ULL << i);
-+
-+		len += snprintf(str + len, bufsize - len,
-+				"%s%s", len ? "," : "",
-+				btrfs_feature_attrs[set][i].attr.name);
-+	}
-+
-+	return str;
-+}
-+
- static void init_feature_set_attrs(enum btrfs_feature_set set)
- {
- 	int i;
---- a/fs/btrfs/sysfs.h	2013-09-09 23:23:34.794883859 -0400
-+++ b/fs/btrfs/sysfs.h	2013-09-09 23:24:03.019073609 -0400
-@@ -53,4 +53,7 @@ static struct btrfs_feature_attr btrfs_a
- #define to_btrfs_feature_attr(a) \
- 			container_of(a, struct btrfs_feature_attr, attr)
- 
-+char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
-+extern const char *btrfs_feature_set_names[FEAT_MAX];
-+
- #endif /* _BTRFS_SYSFS_H_ */
+>
+> Thanks,
+> Wang
+>
+>>                         rcu_assign_pointer(new_device->name, name);
+>>                 }
+>>                 new_device->bdev = NULL;
+>
+>
 
 
+
+-- 
+Respectfully
+Azat Khuzhin

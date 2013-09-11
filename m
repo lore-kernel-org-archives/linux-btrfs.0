@@ -1,50 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:11289 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751181Ab3IKH7Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Sep 2013 03:59:25 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by josoe.store (RZmta 32.1 OK) with ESMTP id p0047fp8AKhYwG
-	for <linux-btrfs@vger.kernel.org>;
-	Wed, 11 Sep 2013 09:59:22 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: add the missing mutex unlock in write_all_supers()
-Date: Wed, 11 Sep 2013 09:59:22 +0200
-Message-Id: <71e14f170c832bce9e8c0b457462bb56eb6309ed.1378886212.git.sbehrens@giantdisaster.de>
+Received: from dkim1.fusionio.com ([66.114.96.53]:44021 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751803Ab3IKNim (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Sep 2013 09:38:42 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 4EF357C0423
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 07:38:42 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id L7kRDdlaXoSIEdYz (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 07:38:41 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: actually log directory we are fsync()'ing
+Date: Wed, 11 Sep 2013 09:38:39 -0400
+Message-ID: <1378906719-3248-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The BUG() was replaced by btrfs_error() and return -EIO with the
-patch "get rid of one BUG() in write_all_supers()", but the missing
-mutex_unlock() was overlooked.
+If you just create a directory and then fsync that directory and then pull the
+power plug you will come back up and the directory will not be there.  That is
+because we won't actually create directories if we've logged files inside of
+them since they will be created on replay, but in this check we will set our
+logged_trans of our current directory if it happens to be a directory, making us
+think it doesn't need to be logged.  Fix the logic to only do this to parent
+directories.  Thanks,
 
-The 0-DAY kernel build service from Intel reported the missing
-unlock which was found by the coccinelle tool:
-
-    fs/btrfs/disk-io.c:3422:2-8: preceding lock on line 3374
-
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
-This patch was also included in the v2 of "Btrfs: get rid of one BUG()
-in write_all_supers()", but the v1 made it into the repository,
-therefore this incremental send.
+ fs/btrfs/tree-log.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
 
- fs/btrfs/disk-io.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3032a67..17618b8 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3417,6 +3417,7 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
- 	if (total_errors > max_errors) {
- 		printk(KERN_ERR "btrfs: %d errors while writing supers\n",
- 		       total_errors);
-+		mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 0d9613c..aaa2e2b 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3805,6 +3805,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 	struct btrfs_root *root;
+ 	struct dentry *old_parent = NULL;
++	struct inode *orig_inode = inode;
  
- 		/* FUA is masked off if unsupported and can't be the reason */
- 		btrfs_error(root->fs_info, -EIO,
+ 	/*
+ 	 * for regular files, if its inode is already on disk, we don't
+@@ -3824,7 +3825,14 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	while (1) {
+-		BTRFS_I(inode)->logged_trans = trans->transid;
++		/*
++		 * If we are logging a directory then we start with our inode,
++		 * not our parents inode, so we need to skipp setting the
++		 * logged_trans so that further down in the log code we don't
++		 * think this inode has already been logged.
++		 */
++		if (inode != orig_inode)
++			BTRFS_I(inode)->logged_trans = trans->transid;
+ 		smp_mb();
+ 
+ 		if (BTRFS_I(inode)->last_unlink_trans > last_committed) {
 -- 
-1.8.4
+1.7.7.6
 

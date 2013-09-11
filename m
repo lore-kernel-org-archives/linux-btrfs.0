@@ -1,200 +1,196 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:40318 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:8360 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752165Ab3IKIwB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Sep 2013 04:52:01 -0400
+	id S1752231Ab3IKIwC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Sep 2013 04:52:02 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8B8ppWl019950
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8B8prI5019959
 	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 16:51:53 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH 7/9] btrfs: Replace the fs_info->submit_workers with kernel workqueue.
-Date: Wed, 11 Sep 2013 16:52:36 +0800
-Message-Id: <1378889558-21514-8-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 5/9] btrfs: Use btrfs_workqueue_struct to replace the fs_info->workers
+Date: Wed, 11 Sep 2013 16:52:34 +0800
+Message-Id: <1378889558-21514-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1378889558-21514-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1378889558-21514-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the submit worker with kernel workqueue.
-The submit_workers is different from other workers in the following
-things:
-1) Requeue:
-This is quiet easy, just queue_work can handle it.
-
-2) Initialize:
-The work_struct in btrfs_devices should be initialized carefully to
-prevent broken work_struct to be queued.
-
-Besides this, not much to worry about.
+Use the newly created btrfs_workqueue_struct to replace the original
+fs_info->workers
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
  fs/btrfs/ctree.h   |  2 +-
- fs/btrfs/disk-io.c | 10 ++++------
- fs/btrfs/super.c   |  2 +-
- fs/btrfs/volumes.c | 17 +++++++++--------
- fs/btrfs/volumes.h |  2 +-
- 5 files changed, 16 insertions(+), 17 deletions(-)
+ fs/btrfs/disk-io.c | 36 +++++++++++++++---------------------
+ fs/btrfs/super.c   |  3 ++-
+ 3 files changed, 18 insertions(+), 23 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 81aba0e..0cf4320 100644
+index 0dd6ec9..2662ef2 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
 @@ -1477,10 +1477,10 @@ struct btrfs_fs_info {
  	 * two
  	 */
  	struct btrfs_workers generic_worker;
--	struct btrfs_workers submit_workers;
+-	struct btrfs_workers workers;
+ 	struct btrfs_workers delalloc_workers;
+ 	struct btrfs_workers submit_workers;
  
- 	struct btrfs_workqueue_struct *workers;
- 	struct btrfs_workqueue_struct *delalloc_workers;
-+	struct workqueue_struct *submit_workers;
++	struct btrfs_workqueue_struct *workers;
  	struct workqueue_struct *flush_workers;
  	struct workqueue_struct *endio_workers;
  	struct workqueue_struct *endio_meta_workers;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 434e5b3..97df233 100644
+index 0f44828..fb9b760 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1987,7 +1987,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+@@ -48,6 +48,7 @@
+ #include "rcu-string.h"
+ #include "dev-replace.h"
+ #include "raid56.h"
++#include "bwq.h"
+ 
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -108,7 +109,7 @@ struct async_submit_bio {
+ 	 * can't tell us where in the file the bio should go
+ 	 */
+ 	u64 bio_offset;
+-	struct btrfs_work work;
++	struct btrfs_work_struct work;
+ 	int error;
+ };
+ 
+@@ -751,12 +752,12 @@ int btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
+ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info)
+ {
+ 	unsigned long limit = min_t(unsigned long,
+-				    info->workers.max_workers,
++				    info->thread_pool_size,
+ 				    info->fs_devices->open_devices);
+ 	return 256 * limit;
+ }
+ 
+-static void run_one_async_start(struct btrfs_work *work)
++static void run_one_async_start(struct btrfs_work_struct *work)
+ {
+ 	struct async_submit_bio *async;
+ 	int ret;
+@@ -769,7 +770,7 @@ static void run_one_async_start(struct btrfs_work *work)
+ 		async->error = ret;
+ }
+ 
+-static void run_one_async_done(struct btrfs_work *work)
++static void run_one_async_done(struct btrfs_work_struct *work)
+ {
+ 	struct btrfs_fs_info *fs_info;
+ 	struct async_submit_bio *async;
+@@ -796,7 +797,7 @@ static void run_one_async_done(struct btrfs_work *work)
+ 			       async->bio_offset);
+ }
+ 
+-static void run_one_async_free(struct btrfs_work *work)
++static void run_one_async_free(struct btrfs_work_struct *work)
+ {
+ 	struct async_submit_bio *async;
+ 
+@@ -824,11 +825,9 @@ int btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct inode *inode,
+ 	async->submit_bio_start = submit_bio_start;
+ 	async->submit_bio_done = submit_bio_done;
+ 
+-	async->work.func = run_one_async_start;
+-	async->work.ordered_func = run_one_async_done;
+-	async->work.ordered_free = run_one_async_free;
++	btrfs_init_work(&async->work, run_one_async_start,
++			run_one_async_done, run_one_async_free);
+ 
+-	async->work.flags = 0;
+ 	async->bio_flags = bio_flags;
+ 	async->bio_offset = bio_offset;
+ 
+@@ -837,9 +836,9 @@ int btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct inode *inode,
+ 	atomic_inc(&fs_info->nr_async_submits);
+ 
+ 	if (rw & REQ_SYNC)
+-		btrfs_set_work_high_prio(&async->work);
++		btrfs_set_work_high_priority(&async->work);
+ 
+-	btrfs_queue_worker(&fs_info->workers, &async->work);
++	btrfs_queue_work(fs_info->workers, &async->work);
+ 
+ 	while (atomic_read(&fs_info->async_submit_draining) &&
+ 	      atomic_read(&fs_info->nr_async_submits)) {
+@@ -1987,7 +1986,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ {
  	btrfs_stop_workers(&fs_info->generic_worker);
- 	btrfs_destroy_workqueue(fs_info->delalloc_workers);
- 	btrfs_destroy_workqueue(fs_info->workers);
--	btrfs_stop_workers(&fs_info->submit_workers);
-+	destroy_workqueue(fs_info->submit_workers);
+ 	btrfs_stop_workers(&fs_info->delalloc_workers);
+-	btrfs_stop_workers(&fs_info->workers);
++	btrfs_destroy_workqueue(fs_info->workers);
+ 	btrfs_stop_workers(&fs_info->submit_workers);
  	destroy_workqueue(fs_info->fixup_workers);
  	destroy_workqueue(fs_info->endio_workers);
- 	destroy_workqueue(fs_info->endio_meta_workers);
-@@ -2470,10 +2470,8 @@ int open_ctree(struct super_block *sb,
+@@ -2462,9 +2461,8 @@ int open_ctree(struct super_block *sb,
+ 	btrfs_init_workers(&fs_info->generic_worker,
+ 			   "genwork", 1, NULL);
  
- 	fs_info->flush_workers = alloc_workqueue("flush_delalloc", flags,
- 						 max_active);
--	btrfs_init_workers(&fs_info->submit_workers, "submit",
--			   min_t(u64, fs_devices->num_devices,
--			   fs_info->thread_pool_size),
+-	btrfs_init_workers(&fs_info->workers, "worker",
+-			   fs_info->thread_pool_size,
 -			   &fs_info->generic_worker);
-+	fs_info->submit_workers = alloc_workqueue("submit", flags,
-+						  max_active);
++	fs_info->workers = btrfs_alloc_workqueue("worker", "worker-ordered",
++						 "worker-high", max_active);
+ 
+ 	btrfs_init_workers(&fs_info->delalloc_workers, "delalloc",
+ 			   fs_info->thread_pool_size,
+@@ -2478,9 +2476,6 @@ int open_ctree(struct super_block *sb,
+ 			   &fs_info->generic_worker);
  	fs_info->caching_workers = alloc_workqueue("cache", flags, 2);
  
- 	fs_info->fixup_workers = alloc_workqueue("fixup", flags, 1);
-@@ -2500,10 +2498,10 @@ int open_ctree(struct super_block *sb,
+-	fs_info->workers.idle_thresh = 16;
+-	fs_info->workers.ordered = 1;
+-
+ 	fs_info->delalloc_workers.idle_thresh = 2;
+ 	fs_info->delalloc_workers.ordered = 1;
+ 
+@@ -2507,13 +2502,12 @@ int open_ctree(struct super_block *sb,
+ 	 * btrfs_start_workers can really only fail because of ENOMEM so just
  	 * return -ENOMEM if any of these fail.
  	 */
- 	ret = btrfs_start_workers(&fs_info->generic_worker);
--	ret |= btrfs_start_workers(&fs_info->submit_workers);
+-	ret = btrfs_start_workers(&fs_info->workers);
+-	ret |= btrfs_start_workers(&fs_info->generic_worker);
++	ret = btrfs_start_workers(&fs_info->generic_worker);
+ 	ret |= btrfs_start_workers(&fs_info->delalloc_workers);
+ 	ret |= btrfs_start_workers(&fs_info->submit_workers);
  
  	if (ret || !(fs_info->flush_workers && fs_info->endio_workers &&
- 		     fs_info->endio_meta_workers && fs_info->workers &&
-+		     fs_info->submit_workers &&
+-		     fs_info->endio_meta_workers &&
++		     fs_info->endio_meta_workers && fs_info->workers &&
  		     fs_info->endio_raid56_workers &&
- 		     fs_info->rmw_workers && fs_info->delalloc_workers &&
+ 		     fs_info->rmw_workers &&
  		     fs_info->endio_meta_write_workers &&
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 771b98a..402b488 100644
+index f557ab6..8fe41f9 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1177,7 +1177,7 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+@@ -56,6 +56,7 @@
+ #include "rcu-string.h"
+ #include "dev-replace.h"
+ #include "free-space-cache.h"
++#include "bwq.h"
+ 
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/btrfs.h>
+@@ -1174,7 +1175,7 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 	       old_pool_size, new_pool_size);
+ 
  	btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->delalloc_workers, new_pool_size);
--	btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
-+	workqueue_set_max_active(fs_info->submit_workers, new_pool_size);
+-	btrfs_set_max_workers(&fs_info->workers, new_pool_size);
++	btrfs_workqueue_set_max(fs_info->workers, new_pool_size);
+ 	btrfs_set_max_workers(&fs_info->delalloc_workers, new_pool_size);
+ 	btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
  	workqueue_set_max_active(fs_info->caching_workers, new_pool_size);
- 	workqueue_set_max_active(fs_info->fixup_workers, new_pool_size);
- 	workqueue_set_max_active(fs_info->endio_workers, new_pool_size);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 12eaf89..cb10e02 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -352,7 +352,7 @@ loop_lock:
- 			device->running_pending = 1;
- 
- 			spin_unlock(&device->io_lock);
--			btrfs_requeue_work(&device->work);
-+			queue_work(fs_info->submit_workers, &device->work);
- 			goto done;
- 		}
- 		/* unplug every 64 requests just for good measure */
-@@ -376,7 +376,7 @@ done:
- 	blk_finish_plug(&plug);
- }
- 
--static void pending_bios_fn(struct btrfs_work *work)
-+static void pending_bios_fn(struct work_struct *work)
- {
- 	struct btrfs_device *device;
- 
-@@ -421,7 +421,7 @@ static noinline int device_list_add(const char *path,
- 		}
- 		device->devid = devid;
- 		device->dev_stats_valid = 0;
--		device->work.func = pending_bios_fn;
-+		INIT_WORK(&device->work, pending_bios_fn);
- 		memcpy(device->uuid, disk_super->dev_item.uuid,
- 		       BTRFS_UUID_SIZE);
- 		spin_lock_init(&device->io_lock);
-@@ -507,7 +507,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
- 		rcu_assign_pointer(device->name, name);
- 
- 		device->devid = orig_dev->devid;
--		device->work.func = pending_bios_fn;
-+		INIT_WORK(&device->work, pending_bios_fn);
- 		memcpy(device->uuid, orig_dev->uuid, sizeof(device->uuid));
- 		spin_lock_init(&device->io_lock);
- 		INIT_LIST_HEAD(&device->dev_list);
-@@ -652,6 +652,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		new_device->in_fs_metadata = 0;
- 		new_device->can_discard = 0;
- 		spin_lock_init(&new_device->io_lock);
-+		INIT_WORK(&new_device->work, pending_bios_fn);
- 		list_replace_rcu(&device->dev_list, &new_device->dev_list);
- 
- 		call_rcu(&device->rcu, free_device);
-@@ -1992,7 +1993,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	if (blk_queue_discard(q))
- 		device->can_discard = 1;
- 	device->writeable = 1;
--	device->work.func = pending_bios_fn;
-+	INIT_WORK(&device->work, pending_bios_fn);
- 	generate_random_uuid(device->uuid);
- 	spin_lock_init(&device->io_lock);
- 	device->generation = trans->transid;
-@@ -5087,8 +5088,8 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
- 	spin_unlock(&device->io_lock);
- 
- 	if (should_queue)
--		btrfs_queue_worker(&root->fs_info->submit_workers,
--				   &device->work);
-+		queue_work(root->fs_info->submit_workers,
-+			   &device->work);
- }
- 
- static int bio_size_ok(struct block_device *bdev, struct bio *bio,
-@@ -5313,7 +5314,7 @@ static struct btrfs_device *add_missing_dev(struct btrfs_root *root,
- 	list_add(&device->dev_list,
- 		 &fs_devices->devices);
- 	device->devid = devid;
--	device->work.func = pending_bios_fn;
-+	INIT_WORK(&device->work, pending_bios_fn);
- 	device->fs_devices = fs_devices;
- 	device->missing = 1;
- 	fs_devices->num_devices++;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 8670558..bd849cc 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -91,7 +91,7 @@ struct btrfs_device {
- 	/* per-device scrub information */
- 	struct scrub_ctx *scrub_device;
- 
--	struct btrfs_work work;
-+	struct work_struct work;
- 	struct rcu_head rcu;
- 	struct work_struct rcu_work;
- 
 -- 
 1.8.4
 

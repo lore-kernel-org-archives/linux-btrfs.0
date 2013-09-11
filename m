@@ -1,46 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55019 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755898Ab3IMM6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 08:58:19 -0400
-Date: Fri, 13 Sep 2013 14:58:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: chandan <chandan@linux.vnet.ibm.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        chandra.seetharaman@us.ibm.com, alexander.karbstein@gmail.com
-Subject: Re: [PATCH] btrfs-progs: btrfs.8.in: Add info about reverting back
- to root subvolume.
-Message-ID: <20130913125814.GI6810@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <2061327.l3bBKU3J9X@localhost.localdomain>
- <20130912132952.GB6810@twin.jikos.cz>
- <4614565.o0AhkXtA95@localhost.localdomain>
+Received: from e28smtp08.in.ibm.com ([122.248.162.8]:54345 "EHLO
+	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752254Ab3IKJEN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Sep 2013 05:04:13 -0400
+Received: from /spool/local
+	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 11 Sep 2013 14:22:15 +0530
+Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id BC9BB3940057
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 14:33:54 +0530 (IST)
+Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
+	by d28relay04.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r8B9449G45023318
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 14:34:04 +0530
+Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
+	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r8B946E2029565
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 14:34:06 +0530
+From: chandan <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org, chandra.seetharaman@us.ibm.com
+Subject: [PATCH] btrfs-progs: btrfs.8.in: Add info about reverting back to root subvolume.
+Date: Wed, 11 Sep 2013 14:34:05 +0530
+Message-ID: <2061327.l3bBKU3J9X@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4614565.o0AhkXtA95@localhost.localdomain>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 13, 2013 at 11:02:10AM +0530, chandan wrote:
-> On Thursday, September 12, 2013 03:29:52 PM David Sterba wrote:
-> > The number 5 is an implementation detail, we should recommend to use 0.
-> >
-> In the current btrfs kernel code if 0 is passed as the subvolume id,
-> the btrfs_ioctl_default_subvol() function sets the subvolume id to the
-> objectid of the current subvolume.
+'btrfs subvolume list <path>' does not list the root subvolume's ID.
+Hence there is no way for the user to set the root subvolume as the
+default subvolume unless he knows about the magic number 5 (i.e.
+BTRFS_FS_TREE_OBJECTID).
 
-Uh, that's right.
+Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+---
+ man/btrfs.8.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-> The patch provided at
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg17973.html
-> should fix the issue.
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 61ffe8d..36846b6 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -244,7 +244,8 @@ is similar to \fBsubvolume list\fR command.
+ \fBsubvolume set-default\fR\fI <id> <path>\fR
+ Set the subvolume of the filesystem \fI<path>\fR which is mounted as
+ \fIdefault\fR. The subvolume is identified by \fI<id>\fR, which
+-is returned by the \fBsubvolume list\fR command.
++is returned by the \fBsubvolume list\fR command. The default subvolume
++can be set to the root subvolume by passing an \fI<id>\fR value of 5.
+ .TP
+ 
+ \fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+-- 
+1.8.3.1
 
-I think this is the intended behaviour, 'set-default 0' should set the
-toplevel subvolume (ie id 5), the same way as the mount option
-'subvolid'. I see that Alex came to the same conclusion in
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg17952.html
 
-But, this should be fixed in kernel, so any tool that uses the ioctl
-directly gets the same result.
-
-david

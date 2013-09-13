@@ -1,47 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33712 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756158Ab3IMPlZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 11:41:25 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2E142A531D
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 17:41:24 +0200 (CEST)
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-qc0-f180.google.com ([209.85.216.180]:43217 "EHLO
+	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932194Ab3IMPtg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Sep 2013 11:49:36 -0400
+Received: by mail-qc0-f180.google.com with SMTP id p19so997664qcv.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 08:49:36 -0700 (PDT)
+From: Frank Holton <fholton@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: refuse to remount read-write after abort
-Date: Fri, 13 Sep 2013 17:41:20 +0200
-Message-Id: <1379086880-11324-1-git-send-email-dsterba@suse.cz>
+Cc: Frank Holton <fholton@gmail.com>
+Subject: [PATCH] btrfs: Add btrfs: prefix to kernel log output
+Date: Fri, 13 Sep 2013 11:46:50 -0400
+Message-Id: <1379087210-21012-1-git-send-email-fholton@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's still possible to flip the filesystem into RW mode after it's
-remounted RO due to an abort. There are lots of places that check for
-the superblock error bit and will not write data, but we should not let
-the filesystem appear read-write.
+The kernel log entries for device label %s and device fsid %pU
+are missing the btrfs: prefix. Add those here.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Frank Holton <fholton@gmail.com>
 ---
- fs/btrfs/super.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+ fs/btrfs/volumes.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3aab10c..3864807 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1340,6 +1340,12 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		if (ret)
- 			goto restore;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a057735..0431147 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -912,9 +912,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	if (disk_super->label[0]) {
+ 		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
+ 			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
+-		printk(KERN_INFO "device label %s ", disk_super->label);
++		printk(KERN_INFO "btrfs: device label %s ", disk_super->label);
  	} else {
-+		if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state)) {
-+			btrfs_err(fs_info,
-+				"Remounting read-write after error is not allowed\n");
-+			ret = -EINVAL;
-+			goto restore;
-+		}
- 		if (fs_info->fs_devices->rw_devices == 0) {
- 			ret = -EACCES;
- 			goto restore;
+-		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
++		printk(KERN_INFO "btrfs: device fsid %pU ", disk_super->fsid);
+ 	}
+ 
+ 	printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
 -- 
-1.7.9
+1.7.9.5
 

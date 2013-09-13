@@ -1,56 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([122.248.162.4]:42580 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932389Ab3IMOEW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 10:04:22 -0400
-Received: from /spool/local
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 13 Sep 2013 19:25:39 +0530
-Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id E5D90E0057
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 19:35:08 +0530 (IST)
-Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
-	by d28relay01.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r8DE6FLn28180692
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 19:36:15 +0530
-Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
-	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r8DE4DLo010757
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 19:34:14 +0530
-From: chandan <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, chandra.seetharaman@us.ibm.com,
-        alexander.karbstein@gmail.com
-Subject: [PATCH] Btrfs: btrfs_ioctl_default_subvol: Revert back to toplevel subvolume when arg is 0
-Date: Fri, 13 Sep 2013 19:34:10 +0530
-Message-ID: <3458610.yWSLv9Ftnr@localhost.localdomain>
+Received: from mx1.redhat.com ([209.132.183.28]:25143 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932301Ab3IMNHj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Sep 2013 09:07:39 -0400
+Message-ID: <52330E18.5040405@redhat.com>
+Date: Fri, 13 Sep 2013 09:07:36 -0400
+From: Ric Wheeler <rwheeler@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Chris Mason <chris.mason@fusionio.com>
+CC: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs
+References: <20130912153629.16487.88969@localhost.localdomain>
+In-Reply-To: <20130912153629.16487.88969@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch makes it possible to set BTRFS_FS_TREE_OBJECTID as the default
-subvolume by passing a subvolume id of 0.
+On 09/12/2013 11:36 AM, Chris Mason wrote:
+> Mark Fasheh's offline dedup work is also here.  In this case offline
+> means the FS is mounted and active, but the dedup work is not done
+> inline during file IO.   This is a building block where utilities  are
+> able to ask the FS to dedup a series of extents.  The kernel takes
+> care of verifying the data involved really is the same.  Today this
+> involves reading both extents, but we'll continue to evolve the patches.
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Nice feature!
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1a5b946..a059c3c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3310,7 +3310,7 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
- 	}
- 
- 	if (!objectid)
--		objectid = root->root_key.objectid;
-+		objectid = BTRFS_FS_TREE_OBJECTID;
- 
- 	location.objectid = objectid;
- 	location.type = BTRFS_ROOT_ITEM_KEY;
--- 
-1.8.3.1
+Just a note, the "offline" label is really confusing. In other storage products, 
+they typically call this "out of band" since you are online but not during the 
+actual write in a synchronous way :)
+
+Ric
 
 

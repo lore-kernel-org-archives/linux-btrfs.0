@@ -1,168 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48591 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756920Ab3IKTrb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Sep 2013 15:47:31 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id C4E887C0697
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2013 13:47:30 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] xfstests: generic/311: add a few more test cases
-Date: Wed, 11 Sep 2013 15:47:27 -0400
-Message-ID: <1378928847-2349-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from xp-ob.rzone.de ([81.169.146.140]:39916 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750916Ab3IMK1Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Sep 2013 06:27:25 -0400
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
+Subject: [PATCH] xfstests: btrfs/011 improvement for compressed filesystems
+Date: Fri, 13 Sep 2013 12:27:21 +0200
+Message-Id: <1379068041-4299-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs had some issues with fsync()'ing directories and fsync()'ing after
-renames.  These three new tests cover the 3 different issues we were seeing.
-Thanks,
+Josef noticed that using /dev/zero to generate most of the test
+data doesn't work if someone overides the mount options to
+enable compression. The test that performs a cancelation failed
+because the replace operation was already finished when the
+cancel request was executed.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Since /dev/urandom is too slow to generate multiple GB, the
+way how the filesystem data is generated is completely changed
+with this patch. Now /dev/urandom is used to generate one 1MB
+file and this file is copied up to 2048 times. /dev/zero is no
+longer used.
+
+The runtime of the test is about the same as before. Compression
+works now, online deduplication will again cause issues, but
+we don't have online deduplicatin today.
+
+Reported-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- tests/generic/311     |   89 +++++++++++++++++++++++++++++++++++++++++++++++-
- tests/generic/311.out |    8 ++++
- 2 files changed, 95 insertions(+), 2 deletions(-)
+ tests/btrfs/011 | 46 ++++++++++++++++++++++++++++++----------------
+ 1 file changed, 30 insertions(+), 16 deletions(-)
 
-diff --git a/tests/generic/311 b/tests/generic/311
-index 675d927..002ad57 100644
---- a/tests/generic/311
-+++ b/tests/generic/311
-@@ -70,6 +70,8 @@ testfile=$SCRATCH_MNT/$seq.fsync
- FLAKEY_TABLE="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 180 0"
- FLAKEY_TABLE_DROP="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 0 180 1 drop_writes"
- _TEST_OPTIONS=""
-+allow_writes=0
-+drop_writes=1
+diff --git a/tests/btrfs/011 b/tests/btrfs/011
+index c8b4aac..71ff3de 100755
+--- a/tests/btrfs/011
++++ b/tests/btrfs/011
+@@ -78,6 +78,7 @@ workout()
+ 	local quick="$4"
+ 	local source_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $1}'`"
+ 	local target_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`"
++	local fssize
  
- _mount_flakey()
- {
-@@ -104,8 +106,6 @@ _load_flakey_table()
- _run_test()
- {
- 	# _run_test <testnum> <0 - buffered | 1 - O_DIRECT>
--	allow_writes=0
--	drop_writes=1
- 	test_num=$1
+ 	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt `expr $num_devs4raid + 1` ]; then
+ 		echo "Skip workout $1 $2 $3 $4" >> $seqres.full
+@@ -107,33 +108,46 @@ workout()
+ 		_notrun "Different device sizes detected"
+ 	fi
  
- 	direct_opt=""
-@@ -131,6 +131,83 @@ _run_test()
- 	_mount_flakey
- }
++	if [ `$BTRFS_SHOW_SUPER_PROG $SCRATCH_DEV | grep dev_item.total_bytes | awk '{print $2}'` -lt 2500000000 ]; then
++		_notrun "device size too small"
++	fi
++
+ 	_scratch_mount
  
-+_clean_working_dir()
-+{
-+	_mount_flakey
-+	rm -rf $SCRATCH_MNT/*
-+	_unmount_flakey
-+}
-+
-+# Btrfs wasn't making sure the directory survived fsync
-+_directory_test()
-+{
-+	echo "fsync new directory"
-+	_mount_flakey
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
-+# Btrfs was losing a rename into a new directory
-+_rename_test()
-+{
-+	echo "rename fsync test"
-+	_mount_flakey
-+	touch $SCRATCH_MNT/foo
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
-+# Btrfs was failing to replay a log when we had a inode with a smaller inode
-+# number that is renamed into a directory with a higher inode number
-+_replay_rename_test()
-+{
-+	echo "replay rename fsync test"
-+	_mount_flakey
-+	touch $SCRATCH_MNT/foo
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+
-+	# This is to force btrfs to relog the entire inode including the ref so
-+	# we are sure to try and replay the ref along with the dir_index item
-+	setfattr -n user.foo -v blah $SCRATCH_MNT/bar/foo >> $seqres.full 2>&1
-+
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
- _scratch_mkfs >> $seqres.full 2>&1
+-	# Generate 500 times 20K extents in the data chunk and fill up
+-	# metadata with inline extents. Ignore ENOSPC.
++	# Generate metadata and some minimal user data, generate 500 times
++	# 20K extents in the data chunk and fill up metadata with inline
++	# extents.
+ 	for i in `seq 1 500`; do
+ 		dd if=/dev/urandom of=$SCRATCH_MNT/l$i bs=16385 count=1
+ 		dd if=/dev/urandom of=$SCRATCH_MNT/s$i bs=3800 count=1
+ 	done > /dev/null 2>&1
  
- # Create a basic flakey device that will never error out
-@@ -157,5 +234,13 @@ for i in $(seq 1 20); do
- 	_run_test $i $direct
- done
- 
-+rm -rf $SCRATCH_MNT/*
-+_unmount_flakey
-+_directory_test
-+_clean_working_dir
-+_rename_test
-+_clean_working_dir
-+_replay_rename_test
++	# /dev/urandom is slow but has the benefit that the generated
++	# contents does not shrink during compression.
++	# Generate a template once and quickly copy it multiple times.
++	# Obviously with online deduplication this will not work anymore.
++	dd if=/dev/urandom of=$SCRATCH_MNT/t0 bs=1M count=1 > /dev/null 2>&1
 +
- status=0
- exit
-diff --git a/tests/generic/311.out b/tests/generic/311.out
-index 5bad6a7..8a0d5c8 100644
---- a/tests/generic/311.out
-+++ b/tests/generic/311.out
-@@ -319,3 +319,11 @@ Running test 20 direct, nolockfs
- Random seed is 20
- a16ac2b84456d41a15a1a4cc1202179f
- a16ac2b84456d41a15a1a4cc1202179f
-+fsync new directory
-+drwxr-xr-x bar
-+rename fsync test
-+drwxr-xr-x bar
-+-rw-r--r-- foo
-+replay rename fsync test
-+drwxr-xr-x bar
-+-rw-r--r-- foo
+ 	if [ "${quick}Q" = "thoroughQ" ]; then
+ 		# The intention of this "thorough" test is to increase
+ 		# the probability of random errors, in particular in
+ 		# conjunction with the background noise generator and
+-		# a sync call while the replace operation in ongoing.
+-		# Unfortunately it takes quite some time to generate
+-		# the test filesystem, therefore most data consists out
+-		# of zeros although this data is not very useful for
+-		# detecting misplaced read/write requests.
+-		# Ignore ENOSPC, it's not a problem..
+-		dd if=/dev/urandom of=$SCRATCH_MNT/r bs=1M count=200 >> $seqres.full 2>&1 &
+-		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=2000 >> $seqres.full 2>&1
+-		wait
++		# a sync call while the replace operation is ongoing.
++		fssize=2048
+ 	elif [ "${with_cancel}Q" = "cancelQ" ]; then
+-		# produce some data to prevent that the replace operation
+-		# finishes before the cancel request is started
+-		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=1000 >> $seqres.full 2>&1
++		# The goal is to produce enough data to prevent that the
++		# replace operation finishes before the cancel request
++		# is started.
++		fssize=1024
++	else
++		fssize=64
+ 	fi
++
++	# since the available size was tested before, do not tolerate
++	# any failures
++	for i in `seq $fssize`; do
++		cp $SCRATCH_MNT/t0 $SCRATCH_MNT/t$i || _fail "cp failed"
++	done > /dev/null 2>> $seqres.full
+ 	sync; sync
+ 
+ 	btrfs_replace_test $source_dev $target_dev "" $with_cancel $quick
+@@ -214,7 +228,7 @@ btrfs_replace_test()
+ 		# before the status is printed
+ 		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
+ 		cat $tmp.tmp >> $seqres.full
+-		grep -q canceled $tmp.tmp || _fail "btrfs replace status failed"
++		grep -q canceled $tmp.tmp || _fail "btrfs replace status (canceled) failed"
+ 	else
+ 		if [ "${quick}Q" = "thoroughQ" ]; then
+ 			# On current hardware, the thorough test runs
+@@ -226,7 +240,7 @@ btrfs_replace_test()
+ 
+ 		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
+ 		cat $tmp.tmp >> $seqres.full
+-		grep -q finished $tmp.tmp || _fail "btrfs replace status failed"
++		grep -q finished $tmp.tmp || _fail "btrfs replace status (finished) failed"
+ 	fi
+ 
+ 	if ps -p $noise_pid | grep -q $noise_pid; then
 -- 
-1.7.7.6
+1.8.4
 

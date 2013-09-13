@@ -1,243 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35760 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:32983 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752267Ab3I0Qpw (ORCPT
+	with ESMTP id S1756466Ab3IML2o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 12:45:52 -0400
+	Fri, 13 Sep 2013 07:28:44 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: calculate disk space that a subvol could free
-Date: Sat, 28 Sep 2013 00:45:29 +0800
-Message-Id: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: use btrfs error code for kernel errors
+Date: Fri, 13 Sep 2013 19:35:48 +0800
+Message-Id: <1379072148-27612-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
+References: <1376979054-2883-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It needs a lot more information about the snapshots if
-snapshot's life cycle has to be all auto managed by
-scripts _some day_.  this patch is a step towards that.
+Now with the below kernel patch, the excl operations like dev
+add/replace/resize and balance returns the btrfs error
+code defined in btrfs.h, this patch will help btrfs-progs
+(and thus user) to know the error string on the terminal
+(instead of /var/log/messages as previously kernel did).
 
-This patch provides the size which would be freed
-if the subvol/snapshot is deleted.
-preview:
----------------------
-btrfs su show /btrfs/sv1
-::
-	Unshared space: 	89.09MiB
----------------------
-
-v2: rename to 'unshared space' and edit commit text
+This patch depends on the btrfs kernel patch:
+  btrfs: return btrfs error code for dev excl ops err
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-subvolume.c |   5 ++
- utils.c          | 154 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h          |   1 +
- 3 files changed, 160 insertions(+)
+ cmds-balance.c    | 15 +++++++++++++++
+ cmds-device.c     |  7 ++++++-
+ cmds-filesystem.c |  6 +++++-
+ cmds-replace.c    |  7 ++++++-
+ 4 files changed, 32 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index de246ab..0f36cde 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -809,6 +809,7 @@ static int cmd_subvol_show(int argc, char **argv)
- 	int fd = -1, mntfd = -1;
- 	int ret = 1;
- 	DIR *dirstream1 = NULL, *dirstream2 = NULL;
-+	u64 freeable_bytes;
+diff --git a/cmds-balance.c b/cmds-balance.c
+index b7382ef..4407a13 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -316,6 +316,12 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 			if (ret == 0)
+ 				goto out;
+ 			e = errno;
++			if (ret > 0) {
++				fprintf(stderr,
++					"ERROR: Balance failed due to - %s\n",
++					btrfs_err_str(ret));
++				goto out;
++			}
+ 		}
  
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_subvol_show_usage);
-@@ -878,6 +879,8 @@ static int cmd_subvol_show(int argc, char **argv)
- 		goto out;
+ 		if (e == ECANCELED) {
+@@ -332,6 +338,11 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 					"syslog - try dmesg | tail\n");
+ 			ret = 19;
+ 		}
++	} else if (ret > 0) {
++		fprintf(stderr,
++			"ERROR: Balance start failed - %s\n",
++			btrfs_err_str(ret));
++		ret = 1;
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
+ 		       (unsigned long long)args->stat.completed,
+@@ -603,6 +614,10 @@ static int cmd_balance_resume(int argc, char **argv)
+ "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
+ 			return 19;
+ 		}
++	} else if (ret > 0) {
++		fprintf(stderr,
++			"ERROR: Balance resume failed - %s\n",
++			btrfs_err_str(ret));
+ 	} else {
+ 		printf("Done, had to relocate %llu out of %llu chunks\n",
+ 		       (unsigned long long)args.stat.completed,
+diff --git a/cmds-device.c b/cmds-device.c
+index e45fb1f..17ee7dd 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -111,10 +111,15 @@ static int cmd_add_dev(int argc, char **argv)
+ 		strncpy_null(ioctl_args.name, argv[i]);
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		e = errno;
+-		if(res<0){
++		if (res < 0) {
+ 			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n",
+ 				argv[i], strerror(e));
+ 			ret++;
++		} else if (res > 0) {
++			fprintf(stderr,
++				"ERROR: adding the device '%s' - %s\n",
++				argv[i], btrfs_err_str(res));
++			ret = 1;
+ 		}
+ 
  	}
- 
-+	freeable_bytes = get_subvol_freeable_bytes(fd);
-+
- 	ret = 0;
- 	/* print the info */
- 	printf("%s\n", fullpath);
-@@ -915,6 +918,8 @@ static int cmd_subvol_show(int argc, char **argv)
- 	else
- 		printf("\tFlags: \t\t\t-\n");
- 
-+	printf("\tUnshared space: \t%s\n",
-+		pretty_size(freeable_bytes));
- 	/* print the snapshots of the given subvol if any*/
- 	printf("\tSnapshot(s):\n");
- 	filter_set = btrfs_list_alloc_filter_set();
-diff --git a/utils.c b/utils.c
-index ccb5199..ca30485 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2062,3 +2062,157 @@ int lookup_ino_rootid(int fd, u64 *rootid)
- 
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index fa9d36b..b109416 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -618,10 +618,14 @@ static int cmd_resize(int argc, char **argv)
+ 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+ 	e = errno;
+ 	close_file_or_dir(fd, dirstream);
+-	if( res < 0 ){
++	if (res < 0) {
+ 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
+ 			path, strerror(e));
+ 		return 1;
++	} else if (res > 0) {
++		fprintf(stderr, "ERROR: resize failed - %s\n",
++			btrfs_err_str(res));
++		return 1;
+ 	}
  	return 0;
  }
-+
-+/* gets the ref count for given extent
-+ * 0 = didn't find the item
-+ * n = number of references
-+*/
-+u64 get_extent_refcnt(int fd, u64 disk_blk)
-+{
-+	int ret = 0, i, e;
-+	struct btrfs_ioctl_search_args args;
-+	struct btrfs_ioctl_search_key *sk = &args.key;
-+	struct btrfs_ioctl_search_header sh;
-+	unsigned long off = 0;
-+
-+	memset(&args, 0, sizeof(args));
-+
-+	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
-+
-+	sk->min_type = BTRFS_EXTENT_ITEM_KEY;
-+	sk->max_type = BTRFS_EXTENT_ITEM_KEY;
-+
-+	sk->min_objectid = disk_blk;
-+	sk->max_objectid = disk_blk;
-+
-+	sk->max_offset = (u64)-1;
-+	sk->max_transid = (u64)-1;
-+
-+	while (1) {
-+		sk->nr_items = 4096;
-+
-+		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-+		e = errno;
+diff --git a/cmds-replace.c b/cmds-replace.c
+index d9b0940..a31d77e 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -297,12 +297,17 @@ static int cmd_start_replace(int argc, char **argv)
+ 	start_args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_START;
+ 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &start_args);
+ 	if (do_not_background) {
+-		if (ret) {
 +		if (ret < 0) {
-+			fprintf(stderr, "ERROR: search failed - %s\n",
-+				strerror(e));
-+			return 0;
-+		}
-+		if (sk->nr_items == 0)
-+			break;
-+
-+		off = 0;
-+		for (i = 0; i < sk->nr_items; i++) {
-+			struct btrfs_extent_item *ei;
-+			u64 ref;
-+
-+			memcpy(&sh, args.buf + off, sizeof(sh));
-+			off += sizeof(sh);
-+
-+			if (sh.type != BTRFS_EXTENT_ITEM_KEY) {
-+				off += sh.len;
-+				continue;
-+			}
-+
-+			ei = (struct btrfs_extent_item *)(args.buf + off);
-+			ref = btrfs_stack_extent_refs(ei);
-+			return ref;
-+		}
-+		sk->min_objectid = sh.objectid;
-+		sk->min_offset = sh.offset;
-+		sk->min_type = sh.type;
-+		if (sk->min_offset < (u64)-1)
-+			sk->min_offset++;
-+		else if (sk->min_objectid < (u64)-1) {
-+			sk->min_objectid++;
-+			sk->min_offset = 0;
-+			sk->min_type = 0;
-+		} else
-+			break;
-+	}
-+	return 0;
-+}
-+
-+u64 get_subvol_freeable_bytes(int fd)
-+{
-+	int ret = 0, i, e;
-+	struct btrfs_ioctl_search_args args;
-+	struct btrfs_ioctl_search_key *sk = &args.key;
-+	struct btrfs_ioctl_search_header sh;
-+	unsigned long off = 0;
-+	u64 size_bytes = 0;
-+
-+	memset(&args, 0, sizeof(args));
-+
-+	sk->tree_id = 0;
-+
-+	sk->min_type = BTRFS_EXTENT_DATA_KEY;
-+	sk->max_type = BTRFS_EXTENT_DATA_KEY;
-+
-+	sk->max_objectid = (u64) -1;
-+	sk->max_offset = (u64)-1;
-+	sk->max_transid = (u64)-1;
-+
-+	while (1) {
-+		sk->nr_items = 4096;
-+
-+		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-+		e = errno;
-+		if (ret < 0) {
-+			fprintf(stderr, "ERROR: search failed - %s\n",
-+				strerror(e));
-+			return 0;
-+		}
-+		if (sk->nr_items == 0)
-+			break;
-+
-+		off = 0;
-+		for (i = 0; i < sk->nr_items; i++) {
-+			struct btrfs_file_extent_item *efi;
-+			u64 disk_bytenr = 0;
-+			u64 num_bytes = 0;
-+			u64 refcnt;
-+			u8 type;
-+
-+			memcpy(&sh, args.buf + off, sizeof(sh));
-+			off += sizeof(sh);
-+
-+			if (sh.type != BTRFS_EXTENT_DATA_KEY) {
-+				off += sh.len;
-+				continue;
-+			}
-+
-+			efi = (struct btrfs_file_extent_item *)(args.buf + off);
-+			type = btrfs_stack_file_extent_type(efi);
-+
-+			if (type == BTRFS_FILE_EXTENT_INLINE) {
-+				size_bytes +=
-+					btrfs_stack_file_extent_ram_bytes(efi);
-+				goto skip_extent_data;
-+			}
-+			disk_bytenr = btrfs_stack_file_extent_disk_bytenr(efi);
-+			num_bytes = btrfs_stack_file_extent_num_bytes(efi);
-+
-+			if (disk_bytenr) {
-+				refcnt = get_extent_refcnt(fd, disk_bytenr);
-+				if (refcnt == 1)
-+					size_bytes += num_bytes;
-+			}
-+skip_extent_data:
-+			off += sh.len;
-+		}
-+		sk->min_objectid = sh.objectid;
-+		sk->min_offset = sh.offset;
-+		sk->min_type = sh.type;
-+
-+		if (sk->min_offset < (u64)-1)
-+			sk->min_offset++;
-+		else if (sk->min_objectid < (u64)-1) {
-+			sk->min_objectid++;
-+			sk->min_offset = 0;
-+			sk->min_type = 0;
-+		} else
-+			break;
-+	}
-+	return size_bytes;
-+}
-diff --git a/utils.h b/utils.h
-index 0f31db7..4ddcf09 100644
---- a/utils.h
-+++ b/utils.h
-@@ -91,5 +91,6 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
- int ask_user(char *question);
- int lookup_ino_rootid(int fd, u64 *rootid);
- int btrfs_scan_lblkid(int update_kernel);
-+u64 get_subvol_freeable_bytes(int fd);
+ 			fprintf(stderr,
+ 				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
+ 				path, strerror(errno),
+ 				replace_dev_result2string(start_args.result));
+ 			goto leave_with_error;
++		} else if (ret > 0) {
++			fprintf(stderr,
++				"ERROR: replace start failed on %s - %s\n",
++				path, btrfs_err_str(ret));
++			goto leave_with_error;
+ 		}
  
- #endif
+ 		if (start_args.result !=
 -- 
 1.8.4.rc4.1.g0d8beaa
 

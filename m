@@ -1,81 +1,286 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36994 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751079Ab3IMRZX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 13:25:23 -0400
-Date: Fri, 13 Sep 2013 19:25:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs-progs: use kernel for mounted and lblkid to
- scan disks
-Message-ID: <20130913172520.GP6810@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1379071943-27543-1-git-send-email-anand.jain@oracle.com>
- <1379071943-27543-3-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1379071943-27543-3-git-send-email-anand.jain@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:31788 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752439Ab3IMLZU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Sep 2013 07:25:20 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/2] btrfs-progs: move out print in cmd_df to another function
+Date: Fri, 13 Sep 2013 19:32:22 +0800
+Message-Id: <1379071943-27543-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1379071943-27543-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <1379071943-27543-1-git-send-email-anand.jain@oracle.com>
 
-On Fri, Sep 13, 2013 at 07:32:23PM +0800, Anand Jain wrote:
-> Further, this patch adds new parameters mounted and
-> group profile info in the filesystem show output
+This is a prepatory work for the btrfs fi show command
+fixes. So that we have a function get_df to get the fs sizes
 
-Sorry to bother you, but the 'further' part of the patch should be
-separated out. The core change of the patch is to use libblkid and the
-ioctl.
+v5:
+ rebase on 20130909
+ accepts Davids review comments
+v4:
+ fixes checkpatch.pl errors as suggested by Wang
+v3:
+ accepts Zach review comments
+v2:
+combined the other patches as below and rebase
+ btrfs-progs: get string for the group profile and type
 
-> ---------------
-> btrfs fi show
-> Label: none  uuid: a2446ecf-68c5-4815-8b63-099d10fc373c mounted: /btrfs
-> 	Group profile: metadata: single  metadata: DUP  data: single
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-filesystem.c | 183 +++++++++++++++++++++++++++++-------------------------
+ ctree.h           |  11 ++++
+ 2 files changed, 108 insertions(+), 86 deletions(-)
 
-I didn't notice that before, this does not bring much information
-without the numbers as 'fi df' does. Please drop the printf lines
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 815d59a..e1db9e7 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -44,32 +44,53 @@ static const char * const cmd_df_usage[] = {
+ 	NULL
+ };
+ 
+-static int cmd_df(int argc, char **argv)
++static char *group_type_str(u64 flag)
+ {
+-	struct btrfs_ioctl_space_args *sargs, *sargs_orig;
+-	u64 count = 0, i;
+-	int ret;
+-	int fd;
+-	int e;
+-	char *path;
+-	DIR  *dirstream = NULL;
+-
+-	if (check_argc_exact(argc, 2))
+-		usage(cmd_df_usage);
+-
+-	path = argv[1];
+-
+-	fd = open_file_or_dir(path, &dirstream);
+-	if (fd < 0) {
+-		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+-		return 1;
++	switch (flag & BTRFS_BLOCK_GROUP_TYPE_MASK) {
++	case BTRFS_BLOCK_GROUP_DATA:
++		return "Data";
++	case BTRFS_BLOCK_GROUP_SYSTEM:
++		return "System";
++	case BTRFS_BLOCK_GROUP_METADATA:
++		return "Metadata";
++	case BTRFS_BLOCK_GROUP_DATA|BTRFS_BLOCK_GROUP_METADATA:
++		return "Data+Metadata";
++	default:
++		return "unknown";
+ 	}
++}
+ 
+-	sargs_orig = sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
+-	if (!sargs) {
+-		ret = -ENOMEM;
+-		goto out;
++static char *group_profile_str(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0:
++		return "single";
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return "RAID0";
++	case BTRFS_BLOCK_GROUP_RAID1:
++		return "RAID1";
++	case BTRFS_BLOCK_GROUP_RAID5:
++		return "RAID5";
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return "RAID6";
++	case BTRFS_BLOCK_GROUP_DUP:
++		return "DUP";
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return "RAID10";
++	default:
++		return "unknown";
+ 	}
++}
++
++static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
++{
++	u64 count = 0;
++	int ret, e;
++	struct btrfs_ioctl_space_args *sargs;
++
++	sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
++	if (!sargs)
++		return -ENOMEM;
+ 
+ 	sargs->space_slots = 0;
+ 	sargs->total_spaces = 0;
+@@ -77,89 +98,79 @@ static int cmd_df(int argc, char **argv)
+ 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
+ 	e = errno;
+ 	if (ret) {
+-		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
+-			path, strerror(e));
+-		goto out;
++		fprintf(stderr, "ERROR: couldn't get space info - %s\n",
++			strerror(e));
++		free(sargs);
++		return ret;
+ 	}
+ 	if (!sargs->total_spaces) {
+-		ret = 0;
+-		goto out;
++		free(sargs);
++		return 0;
+ 	}
+-
+ 	count = sargs->total_spaces;
++	free(sargs);
+ 
+-	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
++	sargs = malloc(sizeof(struct btrfs_ioctl_space_args) +
+ 			(count * sizeof(struct btrfs_ioctl_space_info)));
+-	if (!sargs) {
+-		sargs = sargs_orig;
++	if (!sargs)
+ 		ret = -ENOMEM;
+-		goto out;
+-	}
+ 
+ 	sargs->space_slots = count;
+ 	sargs->total_spaces = 0;
+-
+ 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
+ 	e = errno;
+ 	if (ret) {
+-		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
+-			path, strerror(e));
+-		goto out;
++		fprintf(stderr, "ERROR: get space info count %llu - %s\n",
++				count, strerror(e));
++		free(sargs);
++		return ret;
+ 	}
++	*sargs_ret = sargs;
++	return 0;
++}
+ 
+-	for (i = 0; i < sargs->total_spaces; i++) {
+-		char description[80];
+-		int written = 0;
+-		u64 flags = sargs->spaces[i].flags;
+-
+-		memset(description, 0, 80);
+-
+-		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+-			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-				snprintf(description, 14, "%s",
+-					 "Data+Metadata");
+-				written += 13;
+-			} else {
+-				snprintf(description, 5, "%s", "Data");
+-				written += 4;
+-			}
+-		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+-			snprintf(description, 7, "%s", "System");
+-			written += 6;
+-		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-			snprintf(description, 9, "%s", "Metadata");
+-			written += 8;
+-		}
++static void print_df(struct btrfs_ioctl_space_args *sargs)
++{
++	u64 i;
++	struct btrfs_ioctl_space_info *sp = sargs->spaces;
++
++	for (i = 0; i < sargs->total_spaces; i++, sp++) {
++		printf("%s, %s: total=%s, used=%s\n",
++			group_type_str(sp->flags),
++			group_profile_str(sp->flags),
++			pretty_size(sp->total_bytes),
++			pretty_size(sp->used_bytes));
++	}
++}
+ 
+-		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
+-			snprintf(description+written, 8, "%s", ", RAID0");
+-			written += 7;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
+-			snprintf(description+written, 8, "%s", ", RAID1");
+-			written += 7;
+-		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
+-			snprintf(description+written, 6, "%s", ", DUP");
+-			written += 5;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
+-			snprintf(description+written, 9, "%s", ", RAID10");
+-			written += 8;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID5) {
+-			snprintf(description+written, 9, "%s", ", RAID5");
+-			written += 7;
+-		} else if (flags & BTRFS_BLOCK_GROUP_RAID6) {
+-			snprintf(description+written, 9, "%s", ", RAID6");
+-			written += 7;
+-		}
++static int cmd_df(int argc, char **argv)
++{
++	struct btrfs_ioctl_space_args *sargs = NULL;
++	int ret;
++	int fd;
++	char *path;
++	DIR  *dirstream = NULL;
+ 
+-		printf("%s: total=%s, used=%s\n", description,
+-			pretty_size(sargs->spaces[i].total_bytes),
+-			pretty_size(sargs->spaces[i].used_bytes));
++	if (check_argc_exact(argc, 2))
++		usage(cmd_df_usage);
++
++	path = argv[1];
++
++	fd = open_file_or_dir(path, &dirstream);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
++		return 1;
+ 	}
+-out:
+-	close_file_or_dir(fd, dirstream);
+-	free(sargs);
++	ret = get_df(fd, &sargs);
++
++	if (!ret && sargs) {
++		print_df(sargs);
++		free(sargs);
++	} else
++		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(ret));
+ 
+-	return !!ret;
++	close_file_or_dir(fd, dirstream);
++	return ret;
+ }
+ 
+ static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
+diff --git a/ctree.h b/ctree.h
+index 3d6596c..e928a8e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -836,6 +836,17 @@ struct btrfs_csum_item {
+ #define BTRFS_BLOCK_GROUP_RAID6    (1ULL << 8)
+ #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
+ 
++#define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
++					 BTRFS_BLOCK_GROUP_SYSTEM |  \
++					 BTRFS_BLOCK_GROUP_METADATA)
++
++#define BTRFS_BLOCK_GROUP_PROFILE_MASK	(BTRFS_BLOCK_GROUP_RAID0 |   \
++					 BTRFS_BLOCK_GROUP_RAID1 |   \
++					 BTRFS_BLOCK_GROUP_RAID5 |   \
++					 BTRFS_BLOCK_GROUP_RAID6 |   \
++					 BTRFS_BLOCK_GROUP_DUP |     \
++					 BTRFS_BLOCK_GROUP_RAID10)
++
+ /* used in struct btrfs_balance_args fields */
+ #define BTRFS_AVAIL_ALLOC_BIT_SINGLE	(1ULL << 48)
+ 
+-- 
+1.8.4.rc4.1.g0d8beaa
 
-> @@ -246,34 +338,73 @@ static int cmd_show(int argc, char **argv)
->  	struct list_head *cur_uuid;
->  	char *search = NULL;
->  	int ret;
-> -	int where = BTRFS_SCAN_PROC;
-> +	int where = 0;
->  	int searchstart = 1;
->  
->  	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
->  		where = BTRFS_SCAN_DEV;
->  		searchstart += 1;
-> +	} else if (argc > 1 && !strcmp(argv[1], "--mounted")) {
-> +		where = BTRFS_SCAN_MOUNTED;
-> +		searchstart += 1;
-
-getopt was not used here, but with the new options it probably should
-be, because
-
-> -	if (check_argc_max(argc, searchstart + 1))
-> -		usage(cmd_show_usage);
-> -
-> -	ret = scan_for_btrfs(where, 0);
-> -
-> -	if (ret){
-> -		fprintf(stderr, "ERROR: error %d while scanning\n", ret);
-> -		return 1;
-> +	if (where == BTRFS_SCAN_DEV) {
-> +		if (check_argc_max(argc, searchstart + 1))
-> +			usage(cmd_show_usage);
-> +	} else if (where == BTRFS_SCAN_MOUNTED) {
-> +		if (check_argc_max(argc, searchstart))
-> +			usage(cmd_show_usage);
-> +	} else {
-> +		if (check_argc_max(argc, searchstart))
-> +			usage(cmd_show_usage);
-
-this stops to work:
-
-$ btrfs fi show SOME-UUID
-btrfs filesystem show: too many arguments
-
-
-thanks,
-david

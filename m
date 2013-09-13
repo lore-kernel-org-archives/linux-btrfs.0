@@ -1,44 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f180.google.com ([209.85.216.180]:43217 "EHLO
-	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932194Ab3IMPtg (ORCPT
+Received: from caramon.arm.linux.org.uk ([78.32.30.218]:54659 "EHLO
+	caramon.arm.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755032Ab3IMP7A (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 11:49:36 -0400
-Received: by mail-qc0-f180.google.com with SMTP id p19so997664qcv.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 08:49:36 -0700 (PDT)
-From: Frank Holton <fholton@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Frank Holton <fholton@gmail.com>
-Subject: [PATCH] btrfs: Add btrfs: prefix to kernel log output
-Date: Fri, 13 Sep 2013 11:46:50 -0400
-Message-Id: <1379087210-21012-1-git-send-email-fholton@gmail.com>
+	Fri, 13 Sep 2013 11:59:00 -0400
+Date: Fri, 13 Sep 2013 16:58:36 +0100
+From: Russell King <rmk@arm.linux.org.uk>
+To: Josh Boyer <jwboyer@fedoraproject.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
+        Chris Mason <chris.mason@fusionio.com>, Mark Fasheh <mfasheh@suse.de>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>
+Subject: Re: [GIT PULL] Btrfs
+Message-ID: <20130913155835.GA9697@flint.arm.linux.org.uk>
+References: <20130912153629.16487.88969@localhost.localdomain> <CA+5PVA5GogJnewWvdmVo03oZRZDerE=H7BR49Xi1DZQyE_CG4Q@mail.gmail.com> <CAMuHMdWgzQvKkASycHSzpTwi2c3qG+wn52YSr-=c8cDtro7NyQ@mail.gmail.com> <CA+5PVA6Hm6XLdJa=x9TmZnjSH160337i-CM2HGHBpQMf06Bv9w@mail.gmail.com> <20130913121529.GA1437@flint.arm.linux.org.uk> <CA+5PVA6Qon0cskv5wDyiCxSZzc2WjUFmzYmGE0zoNJC5ms1-XQ@mail.gmail.com> <CA+5PVA4NAmFnc3s6CaaDow9P3xLXOiEngHjQ_P5+TEG--LZ9ZQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CA+5PVA4NAmFnc3s6CaaDow9P3xLXOiEngHjQ_P5+TEG--LZ9ZQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The kernel log entries for device label %s and device fsid %pU
-are missing the btrfs: prefix. Add those here.
+On Fri, Sep 13, 2013 at 11:38:15AM -0400, Josh Boyer wrote:
+> On Fri, Sep 13, 2013 at 11:06 AM, Josh Boyer <jwboyer@gmail.com> wrote:
+> > On Fri, Sep 13, 2013 at 8:15 AM, Russell King <rmk@arm.linux.org.uk> wrote:
+> >> On Fri, Sep 13, 2013 at 07:53:21AM -0400, Josh Boyer wrote:
+> >>> I'm not an ARM expert, so I don't know if ARM should use the
+> >>> asm-generic implementations, or just use __get_user/__put_user in all
+> >>> cases.  I've CC'd rmk.
+> >>
+> >> Why do we have uaccess-unaligned.h ?  Normally, these kinds of things
+> >> are spawned by architectures which have problems with unaligned accesses,
+> >> ARM being one of them, but afaik we've never need this.
+> >>
+> >> With the kernel-side trapping of unaligned accesses on older hardware,
+> >> we've always dealt with the normal accessor faulting.
+> >>
+> >> From what I can tell in the git history, these unaligned put_user and
+> >> get_user have existed all the way back to the dawn of git use.
+> >>
+> >> Can someone enlighten me why we have them?
+> 
+> I somehow fail at email and dropped Russell from CC on accident.  Sigh.
 
-Signed-off-by: Frank Holton <fholton@gmail.com>
----
- fs/btrfs/volumes.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+You're not the first to do that recently.  I'm beginning to think it's
+something someone has written into email clients to make them do in order
+to piss me off.  I mean, it's _hard_ to do - you have to manually edit the
+recipients list to just drop one person.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a057735..0431147 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -912,9 +912,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	if (disk_super->label[0]) {
- 		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
- 			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
--		printk(KERN_INFO "device label %s ", disk_super->label);
-+		printk(KERN_INFO "btrfs: device label %s ", disk_super->label);
- 	} else {
--		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
-+		printk(KERN_INFO "btrfs: device fsid %pU ", disk_super->fsid);
- 	}
- 
- 	printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
+> > So while that gets sorted out, would it be safe to just do as Geert
+> > did on m68k and put:
+> >
+> > #define __put_user_unaligned(x, ptr) __put_user((x), (ptr))
+> >
+> > in arch/arm/include/asm/uaccess.h, and let the normal accessors and
+> > kernel-side trapping deal with things?  I'm thinking that's a local
+> > fix until something gets sorted upstream, but I don't want to do it if
+> > it's going to break things.
+
+Yep, that should work just fine.
+
 -- 
-1.7.9.5
-
+Russell King
+ARM architecture Linux Kernel maintainer

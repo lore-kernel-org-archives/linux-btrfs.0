@@ -1,73 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17033 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:18889 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751589Ab3IMKoH convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1751511Ab3IMKtX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 06:44:07 -0400
-MIME-Version: 1.0
-Message-ID: <8bcb44f3-2cae-45a6-92d7-0d22ff3437dd@default>
-Date: Fri, 13 Sep 2013 03:44:02 -0700 (PDT)
+	Fri, 13 Sep 2013 06:49:23 -0400
+Message-ID: <5232EDA6.6060902@oracle.com>
+Date: Fri, 13 Sep 2013 18:49:10 +0800
 From: Anand Jain <anand.jain@oracle.com>
-To: <dsterba@suse.cz>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2 resend] btrfs-progs: v4, move out print in cmd_df to
- another function
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] btrfs-progs: use kernel for mounted and lblkid
+ to scan disks
+References: <1377851756-4009-1-git-send-email-anand.jain@oracle.com> <1378460273-20647-1-git-send-email-anand.jain@oracle.com> <1378460273-20647-2-git-send-email-anand.jain@oracle.com> <20130912163629.GD6810@twin.jikos.cz>
+In-Reply-To: <20130912163629.GD6810@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+> Thanks for implementing it! I found a few things to fix, comments below.
+>
+> I wonder if we should keep --all-devices as a last resort fallback eg.
 
- all of them were considered, v5 sent out.
+  Any idea whats the real use of --all-devices option anyway
+  I am unsure. Anyway will restore --all-devices so now.
+
+  all other suggestion were considered as well.
+
+> I see this warning and there are no mounted filesystems listed in the
+> output:
+>
+> $ ./btrfs fi show
+> ERROR: scan kernel failed, -1
+>
+
+when does this happen ? I can't reproduce it.
 
 Thanks, Anand
-
-> -	path = argv[1];
-> +	switch (flag & BTRFS_BLOCK_GROUP_TYPE_MASK) {
-> +	case BTRFS_BLOCK_GROUP_DATA:
-> +		return "data";
-> +	case BTRFS_BLOCK_GROUP_SYSTEM:
-> +		return "system";
-> +	case BTRFS_BLOCK_GROUP_METADATA:
-> +		return "metadata";
-> +	case BTRFS_BLOCK_GROUP_DATA|BTRFS_BLOCK_GROUP_METADATA:
-> +		return "mixed";
-
-I think the profile names should stay unchanged, ie Data, System etc,
-and Data+Metadata instead of mixed. We can change the output format
-later, but for this preparatory patch I'd stick with what it is.
-
-
-> +	default:
-> +		return "unknown";
-> +	}
-> +}
->  
-> -	fd = open_file_or_dir(path, &dirstream);
-> -	if (fd < 0) {
-> -		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-> -		return 12;
-> +static char *group_profile_str(u64 flag)
-> +{
-> +	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-> +	case 0:
-> +		return "single";
-
-The 'single' profile was not explicitly mentioned before, I tend to
-think that it's better to be consistent with the rest and add it as you
-do in this patch.
-
-Sample output:
-
-$ ./btrfs fi df /mnt/enospc/mnt
-data, single: total=5.92GiB, used=4.41GiB
-system, DUP: total=8.00MiB, used=4.00KiB
-system, single: total=4.00MiB, used=0.00
-metadata, DUP: total=1.02GiB, used=828.10MiB
-metadata, single: total=8.00MiB, used=0.00
-
-looks imho ok.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31787 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752417Ab3IMLZU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 07:25:20 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 0/2 v3] fi show, dev scan and lblkid
-Date: Fri, 13 Sep 2013 19:32:21 +0800
-Message-Id: <1379071943-27543-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36454 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754059Ab3IMRBa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Sep 2013 13:01:30 -0400
+Date: Fri, 13 Sep 2013 19:01:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, wangsl.fnst@cn.fujitsu.com
+Subject: Re: [PATCH 1/2] btrfs-progs: move out print in cmd_df to another
+ function
+Message-ID: <20130913170128.GO6810@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1379071943-27543-1-git-send-email-anand.jain@oracle.com>
+ <1379071943-27543-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1379071943-27543-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  This patch set is about
-  use of lblkid for the btrfs disk scan and
-  using this lblkid scan for the fi show and dev scan cli
+On Fri, Sep 13, 2013 at 07:32:22PM +0800, Anand Jain wrote:
+> +static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
+> +{
 
-  This includes the comments from David (to use lblkid)
-  and Zach to show (btrfs fi show) info from kernel when
-  disk is mounted and from the disks directly when disk
-  is unmounted by default
+This function returns full error codes, that's ok,
 
-v3:
-  rebase on to 20130909
-  accepts Davids review comments
+> @@ -77,89 +98,79 @@ static int cmd_df(int argc, char **argv)
+>  	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
+>  	e = errno;
+>  	if (ret) {
+> -		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
+> -			path, strerror(e));
+> -		goto out;
+> +		fprintf(stderr, "ERROR: couldn't get space info - %s\n",
+> +			strerror(e));
+> +		free(sargs);
+> +		return ret;
 
-v2:
-  In an effort fix checkpath.pl errors as suggested in
-  Wang's review, the two patches as below is merged
-  into one
-
-  btrfs-progs: read from the kernel when disk is mounted
-  btrfs-progs: use lblkid to scan and filesystem show improvements
-
-
-Anand Jain (2):
-  btrfs-progs: move out print in cmd_df to another function
-  btrfs-progs: use kernel for mounted and lblkid to scan disks
-
- cmds-device.c     |  19 ++-
- cmds-filesystem.c | 354 ++++++++++++++++++++++++++++++++++++++----------------
- ctree.h           |  11 ++
- man/btrfs.8.in    |  17 +--
- utils.c           |  55 ++++++++-
- utils.h           |   5 +
- 6 files changed, 338 insertions(+), 123 deletions(-)
-
--- 
-1.8.4.rc4.1.g0d8beaa
-
+cmd_df should return the 0-1 normalized value after the cleanup that
+Wang Shilong has done. You can leave the common exit block (ie. goto +
+free/return as before) and use return !!ret.

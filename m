@@ -1,33 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:60570 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751293Ab3INJFl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Sep 2013 05:05:41 -0400
-Received: by mail-la0-f44.google.com with SMTP id eo20so1766155lab.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Sep 2013 02:05:40 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAHCa-pc04=k=F3KDdoTUR9NpU_xi0M+tPSTzWyP-yZUEVPU6kg@mail.gmail.com>
-References: <CAHCa-pc04=k=F3KDdoTUR9NpU_xi0M+tPSTzWyP-yZUEVPU6kg@mail.gmail.com>
-From: Mathew Kamkar <matkam@gmail.com>
-Date: Sat, 14 Sep 2013 02:05:10 -0700
-Message-ID: <CAHCa-pd=5Eo5EVUEOh8va-zmQAg3=Xb2HT8jBoWH-9RGq9UAzQ@mail.gmail.com>
-Subject: Fwd: btrfs-image from bad filesystem
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:51938 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750753Ab3INJQj convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Sep 2013 05:16:39 -0400
+Received: from 167.40.213.193.static.cust.telenor.com ([193.213.40.167]:59604 helo=[192.168.4.158])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VKly0-003sLt-Cc
+	for linux-btrfs@vger.kernel.org; Sat, 14 Sep 2013 03:16:37 -0600
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.5 \(1508\))
+Subject: Re: btrfs-image from bad filesystem
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAHCa-pd=5Eo5EVUEOh8va-zmQAg3=Xb2HT8jBoWH-9RGq9UAzQ@mail.gmail.com>
+Date: Sat, 14 Sep 2013 11:16:31 +0200
+Message-Id: <1AC532F4-1680-4F02-992A-6E7AB8E833E7@colorremedies.com>
+References: <CAHCa-pc04=k=F3KDdoTUR9NpU_xi0M+tPSTzWyP-yZUEVPU6kg@mail.gmail.com> <CAHCa-pd=5Eo5EVUEOh8va-zmQAg3=Xb2HT8jBoWH-9RGq9UAzQ@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm using Btrfs v0.20-rc1-253-g7854c8b on kernel 3.10.10-1-ARCH. I've
-been using this btrfs filesystem on an SSD for a little under a year
-with no problems until now. I noticed it was getting a bit full (~79%)
-and tried to do some cleanup by removing old snapshots. Immediately
-after, the filesystem went into read only mode. I then followed Hugo
-Mill's advice (that was posted here:
-https://bbs.archlinux.org/viewtopic.php?id=169429 ) but was not able
-to fully recover the filesystem (there were tons of error messages
-along the entire process). Luckily, mounting the filesystem read-only,
-I was able to copy all my data and rebuild the filesystem.
 
-Anyway, I'm not sure if I ran btrfs-zero-log before or after taking
-this image. But I have a btrfs-image available for a dev who wants it.
+On Sep 14, 2013, at 11:05 AM, Mathew Kamkar <matkam@gmail.com> wrote:
+
+> Luckily, mounting the filesystem read-only,
+> I was able to copy all my data and rebuild the filesystem.
+
+Did you create a new btrfs volume? Or were you somehow able to repair the old one?
+
+Chris Murphy
+

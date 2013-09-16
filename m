@@ -1,108 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23592 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752667Ab3IPJdD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 05:33:03 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, jeff.liu@oracle.com
-Subject: [PATCH v3] Btrfs: export btrfs space shared info to userspace
-Date: Mon, 16 Sep 2013 17:32:45 +0800
-Message-Id: <1379323965-21693-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36381 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932118Ab3IPLwN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Sep 2013 07:52:13 -0400
+Date: Mon, 16 Sep 2013 13:52:07 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, jeff.liu@oracle.com
+Subject: Re: [PATCH v3] Btrfs: export btrfs space shared info to userspace
+Message-ID: <20130916115207.GS6810@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1379323965-21693-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1379323965-21693-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Similar to ocfs2, btrfs also supports that extents can be shared by
-different inodes, and there are some userspace tools requesting
-for this kind of 'space shared infomation'.[1]
-
-ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
-
-[1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v3: put btrfs_free_path() earlier, thanks to David's advice.
-v2: use 'unsigned long' instead of 'int'.
-
- fs/btrfs/extent_io.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 09582b8..fc90bfe 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -20,6 +20,7 @@
- #include "check-integrity.h"
- #include "locking.h"
- #include "rcu-string.h"
-+#include "backref.h"
- 
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -4056,6 +4057,19 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 	return NULL;
- }
- 
-+static noinline int count_ext_ref(u64 inum, u64 offset, u64 root_id, void *ctx)
-+{
-+	unsigned long cnt = *((unsigned long *)ctx);
-+
-+	cnt++;
-+	*((unsigned long *)ctx) = cnt;
-+
-+	/* Now we're sure that the extent is shared. */
-+	if (cnt > 1)
-+		return 1;
-+	return 0;
-+}
-+
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -4122,7 +4136,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		last = found_key.offset;
- 		last_for_get_extent = last + 1;
- 	}
--	btrfs_free_path(path);
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * we might have some extents allocated but more delalloc past those
-@@ -4192,7 +4206,24 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			flags |= (FIEMAP_EXTENT_DELALLOC |
- 				  FIEMAP_EXTENT_UNKNOWN);
- 		} else {
-+			unsigned long ref_cnt = 0;
-+
- 			disko = em->block_start + offset_in_extent;
-+
-+			/*
-+			 * As btrfs supports shared space, this information
-+			 * can be exported to userspace tools via
-+			 * flag FIEMAP_EXTENT_SHARED.
-+			 */
-+			ret = iterate_inodes_from_logical(
-+					em->block_start,
-+					BTRFS_I(inode)->root->fs_info,
-+					path, count_ext_ref, &ref_cnt);
-+			if (ret < 0)
-+				goto out_free;
-+
-+			if (ref_cnt > 1)
-+				flags |= FIEMAP_EXTENT_SHARED;
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-@@ -4224,6 +4255,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- out_free:
- 	free_extent_map(em);
- out:
-+	btrfs_free_path(path);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
- 			     &cached_state, GFP_NOFS);
- 	return ret;
--- 
-1.7.7
-
+On Mon, Sep 16, 2013 at 05:32:45PM +0800, Liu Bo wrote:
+> Similar to ocfs2, btrfs also supports that extents can be shared by
+> different inodes, and there are some userspace tools requesting
+> for this kind of 'space shared infomation'.[1]
+> 
+> ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
+> 
+> [1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>

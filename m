@@ -1,151 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51727 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:51726 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751986Ab3IPSWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751981Ab3IPSWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 16 Sep 2013 14:22:18 -0400
-Message-Id: <20130916182018.627191537@suse.com>
-Date: Mon, 16 Sep 2013 14:19:16 -0400
+Message-Id: <20130916182018.965780722@suse.com>
+Date: Mon, 16 Sep 2013 14:19:18 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, clmason@fusionio.com
-Subject: [patch 6/9] btrfs: publish per-super features to sysfs
+Subject: [patch 8/9] btrfs: add ability to change features via sysfs
 References: <20130916181910.799140428@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch publishes information on which features are enabled in the
-file system on a per-super basis. At this point, it only publishes
-information on features supported by the file system implementation.
+This patch adds the ability to change (set/clear) features while the file
+system is mounted. A bitmask is added for each feature set for the
+support to set and clear the bits. A message indicating which bit
+has been set or cleared is issued when it's been changed and also when
+permission or support for a particular bit has been denied.
+
+Since the the attributes can now be writable, we need to introduce
+another struct attribute to hold the different permissions.
+
+If neither set or clear is supported, the file will have 0444 permissions.
+If either set or clear is supported, the file will have 0644 permissions
+and the store handler will filter out the write based on the bitmask.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |    1 
- fs/btrfs/sysfs.c |   73 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/sysfs.h |    2 -
- 3 files changed, 75 insertions(+), 1 deletion(-)
+ fs/btrfs/sysfs.c |   97 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 96 insertions(+), 1 deletion(-)
 
---- a/fs/btrfs/ctree.h	2013-09-16 13:49:28.960465646 -0400
-+++ b/fs/btrfs/ctree.h	2013-09-16 13:49:47.688214995 -0400
-@@ -1513,6 +1513,7 @@ struct btrfs_fs_info {
- 	int thread_pool_size;
+--- a/fs/btrfs/sysfs.c	2013-09-16 13:49:50.904172261 -0400
++++ b/fs/btrfs/sysfs.c	2013-09-16 13:50:53.635355898 -0400
+@@ -96,6 +96,23 @@ static void init_feature_set_attrs(enum
+ 	}
+ }
  
- 	struct kobj_completion super_kc;
-+	struct kobj_completion features_kc;
- 	int do_barriers;
- 	int closing;
- 	int log_root_recovering;
---- a/fs/btrfs/sysfs.c	2013-09-16 13:49:28.960465646 -0400
-+++ b/fs/btrfs/sysfs.c	2013-09-16 13:49:47.688214995 -0400
-@@ -68,6 +68,39 @@ static struct kobj_type btrfs_supp_feat_
- 	.release	= kobj_completion_release,
- };
++static u64 writeable_mask[FEAT_MAX] = {
++	[FEAT_COMPAT] = BTRFS_FEATURE_COMPAT_SAFE_SET |
++			  BTRFS_FEATURE_COMPAT_SAFE_CLEAR,
++	[FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SAFE_SET |
++			  BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR,
++	[FEAT_INCOMPAT] = BTRFS_FEATURE_INCOMPAT_SAFE_SET |
++			  BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR,
++};
++
++static inline umode_t fa_mode(struct btrfs_feature_attr *fa)
++{
++	umode_t mode = S_IRUGO;
++	if (writeable_mask[fa->feature_set] & fa->feature_bit)
++		mode |= S_IWUSR;
++	return mode;
++}
++
+ static void init_feature_attrs(void)
+ {
+ 	int i;
+@@ -115,6 +132,7 @@ static void init_feature_attrs(void)
  
-+static u64 get_features(struct btrfs_fs_info *fs_info,
-+			enum btrfs_feature_set set)
+ 		attr = &btrfs_feature_attrs[fa->feature_set][n].attr;
+ 		attr->name = fa->attr.name;
++		attr->mode = fa_mode(fa);
+ 
+ 		btrfs_feature_names[fa->feature_set][n][0] = '\0';
+ 	}
+@@ -132,6 +150,18 @@ static u64 get_features(struct btrfs_fs_
+ 		return btrfs_super_incompat_flags(disk_super);
+ }
+ 
++static void set_features(struct btrfs_fs_info *fs_info,
++			 enum btrfs_feature_set set, u64 features)
 +{
 +	struct btrfs_super_block *disk_super = fs_info->super_copy;
 +	if (set == FEAT_COMPAT)
-+		return btrfs_super_compat_flags(disk_super);
++		btrfs_set_super_compat_flags(disk_super, features);
 +	else if (set == FEAT_COMPAT_RO)
-+		return btrfs_super_compat_ro_flags(disk_super);
++		btrfs_set_super_compat_ro_flags(disk_super, features);
 +	else
-+		return btrfs_super_incompat_flags(disk_super);
++		btrfs_set_super_incompat_flags(disk_super, features);
 +}
 +
-+#define feat_kobj_to_fs_info(kobj) \
-+	container_of(kobj, struct btrfs_fs_info, features_kc.kc_kobj)
-+static ssize_t btrfs_feat_show(struct kobject *kobj, struct attribute *attr,
-+			       char *buf)
+ #define feat_kobj_to_fs_info(kobj) \
+ 	container_of(kobj, struct btrfs_fs_info, features_kc.kc_kobj)
+ static ssize_t btrfs_feat_show(struct kobject *kobj, struct attribute *attr,
+@@ -144,8 +174,72 @@ static ssize_t btrfs_feat_show(struct ko
+ 	return snprintf(buf, PAGE_SIZE, "%u\n", !!(features & fa->feature_bit));
+ }
+ 
++static ssize_t btrfs_feat_store(struct kobject *kobj, struct attribute *attr,
++				const char *buf, size_t count)
 +{
 +	struct btrfs_fs_info *fs_info = feat_kobj_to_fs_info(kobj);
 +	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(attr);
-+	u64 features = get_features(fs_info, fa->feature_set);
++	struct btrfs_trans_handle *trans;
++	u64 features, set, clear;
++	unsigned long val;
++	int ret;
 +
-+	return snprintf(buf, PAGE_SIZE, "%u\n", !!(features & fa->feature_bit));
-+}
++	ret = kstrtoul(skip_spaces(buf), 0, &val);
++	if (ret)
++		return ret;
 +
-+static const struct sysfs_ops btrfs_feat_attr_ops = {
-+	.show	= btrfs_feat_show,
-+};
-+
-+static struct kobj_type btrfs_feat_ktype = {
-+	.sysfs_ops	= &btrfs_feat_attr_ops,
-+	.release	= kobj_completion_release,
-+};
-+
- static struct attribute *btrfs_attrs[] = {
- 	NULL,
- };
-@@ -105,6 +138,26 @@ static struct kobj_type btrfs_ktype = {
- 	.release	= kobj_completion_release,
- };
- 
-+static int add_per_fs_features(struct btrfs_fs_info *fs_info)
-+{
-+	int i;
-+	for (i = 0; btrfs_supp_feature_attrs[i]; i++) {
-+		struct attribute *attr = btrfs_supp_feature_attrs[i];
-+		struct btrfs_feature_attr *fa = to_btrfs_feature_attr(attr);
-+		u64 features = get_features(fs_info, fa->feature_set);
-+		int error;
-+
-+		if (!(features & fa->feature_bit))
-+			continue;
-+
-+		error = sysfs_create_file(&fs_info->features_kc.kc_kobj,
-+					  &fa->attr);
-+		if (error)
-+			return error;
++	if (fa->feature_set == FEAT_COMPAT) {
++		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
++		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
++	} else if (fa->feature_set == FEAT_COMPAT_RO) {
++		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
++		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
++	} else {
++		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
++		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
 +	}
-+	return 0;
++
++	features = get_features(fs_info, fa->feature_set);
++
++	/* Nothing to do */
++	if ((val && (features & fa->feature_bit)) ||
++	    (!val && !(features & fa->feature_bit)))
++		return count;
++
++	if ((val && !(set & fa->feature_bit)) ||
++	    (!val && !(clear & fa->feature_bit))) {
++		btrfs_info(fs_info,
++			"%sabling feature %s on mounted fs is not supported.",
++			val ? "En" : "Dis", fa->attr.name);
++		return -EPERM;
++	}
++
++	btrfs_info(fs_info, "%s %s feature flag",
++		   val ? "Setting" : "Clearing", fa->attr.name);
++
++	trans = btrfs_start_transaction(fs_info->fs_root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	spin_lock(&fs_info->super_lock);
++	features = get_features(fs_info, fa->feature_set);
++	if (val)
++		features |= fa->feature_bit;
++	else
++		features &= ~fa->feature_bit;
++	set_features(fs_info, fa->feature_set, features);
++	spin_unlock(&fs_info->super_lock);
++
++	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
++	if (ret)
++		return ret;
++
++	return count;
 +}
 +
- /* /sys/fs/btrfs/ entry */
- static struct kset *btrfs_kset;
- 
-@@ -116,12 +169,32 @@ int btrfs_sysfs_add_one(struct btrfs_fs_
- 	fs_info->super_kc.kc_kobj.kset = btrfs_kset;
- 	error = kobject_add(&fs_info->super_kc.kc_kobj, NULL,
- 			    "%pU", fs_info->fsid);
-+	if (error)
-+		return error;
-+
-+	kobj_completion_init(&fs_info->features_kc, &btrfs_feat_ktype);
-+	error = kobject_add(&fs_info->features_kc.kc_kobj,
-+			    &fs_info->super_kc.kc_kobj, "features");
-+	if (error)
-+		goto out_super;
-+
-+	error = add_per_fs_features(fs_info);
-+	if (error)
-+		goto out_features;
-+
-+	return 0;
-+
-+out_features:
-+	kobj_completion_del_and_wait(&fs_info->features_kc);
-+out_super:
-+	kobj_completion_del_and_wait(&fs_info->super_kc);
- 
- 	return error;
- }
- 
- void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- {
-+	kobj_completion_del_and_wait(&fs_info->features_kc);
- 	kobj_completion_del_and_wait(&fs_info->super_kc);
- }
- 
---- a/fs/btrfs/sysfs.h	2013-09-16 13:49:28.964465592 -0400
-+++ b/fs/btrfs/sysfs.h	2013-09-16 13:49:47.688214995 -0400
-@@ -28,7 +28,7 @@ static struct btrfs_attr btrfs_attr_##_n
- #define BTRFS_ATTR_LIST(_name)    (&btrfs_attr_##_name.attr),
- 
- struct btrfs_feature_attr {
--	struct attribute attr;			/* global show, no store */
-+	struct attribute attr;		/* per-fs/global show, no store */
- 	enum btrfs_feature_set feature_set;
- 	u64 feature_bit;
+ static const struct sysfs_ops btrfs_feat_attr_ops = {
+ 	.show	= btrfs_feat_show,
++	.store	= btrfs_feat_store,
  };
+ 
+ static struct kobj_type btrfs_feat_ktype = {
+@@ -199,7 +293,8 @@ static int add_per_fs_feature_set(struct
+ 		u64 features = get_features(fs_info, fa->feature_set);
+ 		int error;
+ 
+-		if (!(features & fa->feature_bit))
++		if (!(features & fa->feature_bit) &&
++		    !(fa->attr.mode & S_IWUSR))
+ 			continue;
+ 
+ 		error = sysfs_create_file(&fs_info->features_kc.kc_kobj,
 
 

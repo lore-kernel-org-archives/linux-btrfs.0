@@ -1,107 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22695 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751426Ab3IPISk (ORCPT
+Received: from mail-bk0-f47.google.com ([209.85.214.47]:38889 "EHLO
+	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751470Ab3IPIya (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 04:18:40 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+	Mon, 16 Sep 2013 04:54:30 -0400
+Received: by mail-bk0-f47.google.com with SMTP id mx12so1348061bkb.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2013 01:54:29 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, jeff.liu@oracle.com
-Subject: [PATCH v2] Btrfs: export btrfs space shared info to userspace
-Date: Mon, 16 Sep 2013 16:18:24 +0800
-Message-Id: <1379319504-20941-1-git-send-email-bo.li.liu@oracle.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: don't store NULL byte in symlink extents
+Date: Mon, 16 Sep 2013 09:53:28 +0100
+Message-Id: <1379321608-22651-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Similar to ocfs2, btrfs also supports that extents can be shared by
-different inodes, and there are some userspace tools requesting
-for this kind of 'space shared infomation'.[1]
+It is not necessary to store the NULL byte in a symlink inline file
+extent. There's currently no code that requires the NULL byte to be
+present in the extent. This change also doesn't break file format
+compatibility nor the send/receive feature.
 
-ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
+The VFS also doesn't need the NULL byte to be present in the extent,
+as it reads up to inode->i_size bytes (which already excluded the NULL
+byte) and sets the NULL byte for us (in fs/namei.c:page_getlink()).
 
-[1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
+So with this change we save 1 byte per symlink file extent (which is
+always inlined in the btree leaf) without losing backward and forward
+compatibility.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-v2: use 'unsigned long' instead of 'int'.
+ fs/btrfs/inode.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- fs/btrfs/extent_io.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 09582b8..a097441 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -20,6 +20,7 @@
- #include "check-integrity.h"
- #include "locking.h"
- #include "rcu-string.h"
-+#include "backref.h"
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 85a4900..15e9d36 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8334,7 +8334,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+ 	struct btrfs_file_extent_item *ei;
+ 	struct extent_buffer *leaf;
  
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -4056,6 +4057,19 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 	return NULL;
- }
+-	name_len = strlen(symname) + 1;
++	name_len = strlen(symname);
+ 	if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(root))
+ 		return -ENAMETOOLONG;
  
-+static noinline int count_ext_ref(u64 inum, u64 offset, u64 root_id, void *ctx)
-+{
-+	unsigned long cnt = *((unsigned long *)ctx);
-+
-+	cnt++;
-+	*((unsigned long *)ctx) = cnt;
-+
-+	/* Now we're sure that the extent is shared. */
-+	if (cnt > 1)
-+		return 1;
-+	return 0;
-+}
-+
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -4122,7 +4136,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		last = found_key.offset;
- 		last_for_get_extent = last + 1;
- 	}
--	btrfs_free_path(path);
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * we might have some extents allocated but more delalloc past those
-@@ -4192,7 +4206,24 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			flags |= (FIEMAP_EXTENT_DELALLOC |
- 				  FIEMAP_EXTENT_UNKNOWN);
- 		} else {
-+			unsigned long ref_cnt = 0;
-+
- 			disko = em->block_start + offset_in_extent;
-+
-+			/*
-+			 * As btrfs supports shared space, this information
-+			 * can be exported to userspace tools via
-+			 * flag FIEMAP_EXTENT_SHARED.
-+			 */
-+			ret = iterate_inodes_from_logical(
-+					em->block_start,
-+					BTRFS_I(inode)->root->fs_info,
-+					path, count_ext_ref, &ref_cnt);
-+			if (ret < 0)
-+				goto out_free;
-+
-+			if (ref_cnt > 1)
-+				flags |= FIEMAP_EXTENT_SHARED;
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-@@ -4226,6 +4257,7 @@ out_free:
- out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
- 			     &cached_state, GFP_NOFS);
-+	btrfs_free_path(path);
- 	return ret;
- }
- 
+@@ -8422,7 +8422,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+ 	inode->i_mapping->a_ops = &btrfs_symlink_aops;
+ 	inode->i_mapping->backing_dev_info = &root->fs_info->bdi;
+ 	inode_set_bytes(inode, name_len);
+-	btrfs_i_size_write(inode, name_len - 1);
++	btrfs_i_size_write(inode, name_len);
+ 	err = btrfs_update_inode(trans, root, inode);
+ 	if (err)
+ 		drop_inode = 1;
 -- 
-1.7.7
+1.7.9.5
 

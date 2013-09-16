@@ -1,30 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36381 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932118Ab3IPLwN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 07:52:13 -0400
-Date: Mon, 16 Sep 2013 13:52:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, jeff.liu@oracle.com
-Subject: Re: [PATCH v3] Btrfs: export btrfs space shared info to userspace
-Message-ID: <20130916115207.GS6810@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1379323965-21693-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1379323965-21693-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-ea0-f169.google.com ([209.85.215.169]:55993 "EHLO
+	mail-ea0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753049Ab3IPO67 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Sep 2013 10:58:59 -0400
+Received: by mail-ea0-f169.google.com with SMTP id k11so2095022eaj.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2013 07:58:58 -0700 (PDT)
+From: Ross Kirk <ross.kirk@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Ross Kirk <ross.kirk@gmail.com>
+Subject: [PATCH] Drop unused parameter from btrfs_item_nr
+Date: Mon, 16 Sep 2013 15:58:08 +0100
+Message-Id: <1379343489-20066-1-git-send-email-ross.kirk@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 16, 2013 at 05:32:45PM +0800, Liu Bo wrote:
-> Similar to ocfs2, btrfs also supports that extents can be shared by
-> different inodes, and there are some userspace tools requesting
-> for this kind of 'space shared infomation'.[1]
-> 
-> ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
-> 
-> [1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Unused parameter cleanup
+
+Ross Kirk (1):
+  btrfs: drop unused parameter from btrfs_item_nr
+
+ fs/btrfs/backref.c    |    2 +-
+ fs/btrfs/ctree.c      |   34 +++++++++++++++++-----------------
+ fs/btrfs/ctree.h      |   13 ++++++-------
+ fs/btrfs/dir-item.c   |    2 +-
+ fs/btrfs/inode-item.c |    2 +-
+ fs/btrfs/inode.c      |    4 ++--
+ fs/btrfs/print-tree.c |    2 +-
+ fs/btrfs/send.c       |    4 ++--
+ 8 files changed, 31 insertions(+), 32 deletions(-)
+
+-- 
+1.7.7.6
+

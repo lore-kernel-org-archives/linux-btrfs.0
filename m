@@ -1,171 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51726 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:51725 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751981Ab3IPSWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751979Ab3IPSWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 16 Sep 2013 14:22:18 -0400
-Message-Id: <20130916182018.965780722@suse.com>
-Date: Mon, 16 Sep 2013 14:19:18 -0400
+Message-Id: <20130916182018.120725897@suse.com>
+Date: Mon, 16 Sep 2013 14:19:13 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, clmason@fusionio.com
-Subject: [patch 8/9] btrfs: add ability to change features via sysfs
+Subject: [patch 3/9] kobject: introduce kobj_completion
 References: <20130916181910.799140428@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds the ability to change (set/clear) features while the file
-system is mounted. A bitmask is added for each feature set for the
-support to set and clear the bits. A message indicating which bit
-has been set or cleared is issued when it's been changed and also when
-permission or support for a particular bit has been denied.
+A common way to handle kobject lifetimes in embedded in objects with
+different lifetime rules is to pair the kobject with a struct completion.
 
-Since the the attributes can now be writable, we need to introduce
-another struct attribute to hold the different permissions.
-
-If neither set or clear is supported, the file will have 0444 permissions.
-If either set or clear is supported, the file will have 0644 permissions
-and the store handler will filter out the write based on the bitmask.
+This introduces a kobj_completion structure that can be used in place
+of the pairing, along with several convenience functions for
+initialization, release, and put-and-wait.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/sysfs.c |   97 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 96 insertions(+), 1 deletion(-)
+ include/linux/kobj_completion.h |   18 ++++++++++++++
+ lib/kobject.c                   |   50 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 68 insertions(+)
 
---- a/fs/btrfs/sysfs.c	2013-09-16 13:49:50.904172261 -0400
-+++ b/fs/btrfs/sysfs.c	2013-09-16 13:50:53.635355898 -0400
-@@ -96,6 +96,23 @@ static void init_feature_set_attrs(enum
- 	}
- }
- 
-+static u64 writeable_mask[FEAT_MAX] = {
-+	[FEAT_COMPAT] = BTRFS_FEATURE_COMPAT_SAFE_SET |
-+			  BTRFS_FEATURE_COMPAT_SAFE_CLEAR,
-+	[FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SAFE_SET |
-+			  BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR,
-+	[FEAT_INCOMPAT] = BTRFS_FEATURE_INCOMPAT_SAFE_SET |
-+			  BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR,
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ b/include/linux/kobj_completion.h	2013-09-10 12:58:03.530554144 -0400
+@@ -0,0 +1,18 @@
++#ifndef _KOBJ_COMPLETION_H_
++#define _KOBJ_COMPLETION_H_
++
++#include <linux/kobject.h>
++#include <linux/completion.h>
++
++struct kobj_completion {
++	struct kobject kc_kobj;
++	struct completion kc_unregister;
 +};
 +
-+static inline umode_t fa_mode(struct btrfs_feature_attr *fa)
-+{
-+	umode_t mode = S_IRUGO;
-+	if (writeable_mask[fa->feature_set] & fa->feature_bit)
-+		mode |= S_IWUSR;
-+	return mode;
-+}
++#define kobj_to_kobj_completion(kobj) \
++	container_of(kobj, struct kobj_completion, kc_kobj)
 +
- static void init_feature_attrs(void)
- {
- 	int i;
-@@ -115,6 +132,7 @@ static void init_feature_attrs(void)
++void kobj_completion_init(struct kobj_completion *kc, struct kobj_type *ktype);
++void kobj_completion_release(struct kobject *kobj);
++void kobj_completion_del_and_wait(struct kobj_completion *kc);
++#endif /* _KOBJ_COMPLETION_H_ */
+--- a/lib/kobject.c	2013-09-10 12:57:54.198666613 -0400
++++ b/lib/kobject.c	2013-09-10 15:22:15.122724060 -0400
+@@ -13,6 +13,7 @@
+  */
  
- 		attr = &btrfs_feature_attrs[fa->feature_set][n].attr;
- 		attr->name = fa->attr.name;
-+		attr->mode = fa_mode(fa);
- 
- 		btrfs_feature_names[fa->feature_set][n][0] = '\0';
- 	}
-@@ -132,6 +150,18 @@ static u64 get_features(struct btrfs_fs_
- 		return btrfs_super_incompat_flags(disk_super);
- }
- 
-+static void set_features(struct btrfs_fs_info *fs_info,
-+			 enum btrfs_feature_set set, u64 features)
-+{
-+	struct btrfs_super_block *disk_super = fs_info->super_copy;
-+	if (set == FEAT_COMPAT)
-+		btrfs_set_super_compat_flags(disk_super, features);
-+	else if (set == FEAT_COMPAT_RO)
-+		btrfs_set_super_compat_ro_flags(disk_super, features);
-+	else
-+		btrfs_set_super_incompat_flags(disk_super, features);
-+}
-+
- #define feat_kobj_to_fs_info(kobj) \
- 	container_of(kobj, struct btrfs_fs_info, features_kc.kc_kobj)
- static ssize_t btrfs_feat_show(struct kobject *kobj, struct attribute *attr,
-@@ -144,8 +174,72 @@ static ssize_t btrfs_feat_show(struct ko
- 	return snprintf(buf, PAGE_SIZE, "%u\n", !!(features & fa->feature_bit));
- }
- 
-+static ssize_t btrfs_feat_store(struct kobject *kobj, struct attribute *attr,
-+				const char *buf, size_t count)
-+{
-+	struct btrfs_fs_info *fs_info = feat_kobj_to_fs_info(kobj);
-+	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(attr);
-+	struct btrfs_trans_handle *trans;
-+	u64 features, set, clear;
-+	unsigned long val;
-+	int ret;
-+
-+	ret = kstrtoul(skip_spaces(buf), 0, &val);
-+	if (ret)
-+		return ret;
-+
-+	if (fa->feature_set == FEAT_COMPAT) {
-+		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
-+	} else if (fa->feature_set == FEAT_COMPAT_RO) {
-+		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
-+	} else {
-+		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
-+	}
-+
-+	features = get_features(fs_info, fa->feature_set);
-+
-+	/* Nothing to do */
-+	if ((val && (features & fa->feature_bit)) ||
-+	    (!val && !(features & fa->feature_bit)))
-+		return count;
-+
-+	if ((val && !(set & fa->feature_bit)) ||
-+	    (!val && !(clear & fa->feature_bit))) {
-+		btrfs_info(fs_info,
-+			"%sabling feature %s on mounted fs is not supported.",
-+			val ? "En" : "Dis", fa->attr.name);
-+		return -EPERM;
-+	}
-+
-+	btrfs_info(fs_info, "%s %s feature flag",
-+		   val ? "Setting" : "Clearing", fa->attr.name);
-+
-+	trans = btrfs_start_transaction(fs_info->fs_root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	spin_lock(&fs_info->super_lock);
-+	features = get_features(fs_info, fa->feature_set);
-+	if (val)
-+		features |= fa->feature_bit;
-+	else
-+		features &= ~fa->feature_bit;
-+	set_features(fs_info, fa->feature_set, features);
-+	spin_unlock(&fs_info->super_lock);
-+
-+	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
-+	if (ret)
-+		return ret;
-+
-+	return count;
-+}
-+
- static const struct sysfs_ops btrfs_feat_attr_ops = {
- 	.show	= btrfs_feat_show,
-+	.store	= btrfs_feat_store,
+ #include <linux/kobject.h>
++#include <linux/kobj_completion.h>
+ #include <linux/string.h>
+ #include <linux/export.h>
+ #include <linux/stat.h>
+@@ -711,6 +712,55 @@ const struct sysfs_ops kobj_sysfs_ops =
  };
  
- static struct kobj_type btrfs_feat_ktype = {
-@@ -199,7 +293,8 @@ static int add_per_fs_feature_set(struct
- 		u64 features = get_features(fs_info, fa->feature_set);
- 		int error;
- 
--		if (!(features & fa->feature_bit))
-+		if (!(features & fa->feature_bit) &&
-+		    !(fa->attr.mode & S_IWUSR))
- 			continue;
- 
- 		error = sysfs_create_file(&fs_info->features_kc.kc_kobj,
+ /**
++ * kobj_completion_init - initialize a kobj_completion object.
++ * @kc: kobj_completion
++ * @ktype: type of kobject to initialize
++ *
++ * kobj_completion structures can be embedded within structures with different
++ * lifetime rules.  During the release of the enclosing object, we can
++ * wait on the release of the kobject so that we don't free it while it's
++ * still busy.
++ */
++void kobj_completion_init(struct kobj_completion *kc, struct kobj_type *ktype)
++{
++	init_completion(&kc->kc_unregister);
++	kobject_init(&kc->kc_kobj, ktype);
++}
++EXPORT_SYMBOL_GPL(kobj_completion_init);
++
++/**
++ * kobj_completion_release - release a kobj_completion object
++ * @kobj: kobject embedded in kobj_completion
++ *
++ * Used with kobject_release to notify waiters that the kobject has been
++ * released.
++ */
++void kobj_completion_release(struct kobject *kobj)
++{
++	struct kobj_completion *kc = kobj_to_kobj_completion(kobj);
++	complete(&kc->kc_unregister);
++}
++EXPORT_SYMBOL_GPL(kobj_completion_release);
++
++/**
++ * kobj_completion_del_and_wait - release the kobject and wait for it
++ * @kc: kobj_completion object to release
++ *
++ * Delete the kobject from sysfs and drop the reference count.  Then wait
++ * until any other outstanding references are also dropped.  This routine
++ * is only necessary once other references may have been taken on the
++ * kobject.  Typically this happens when the kobject has been published
++ * to sysfs via kobject_add.
++ */
++void kobj_completion_del_and_wait(struct kobj_completion *kc)
++{
++	kobject_del(&kc->kc_kobj);
++	kobject_put(&kc->kc_kobj);
++	wait_for_completion(&kc->kc_unregister);
++}
++EXPORT_SYMBOL_GPL(kobj_completion_del_and_wait);
++
++/**
+  * kset_register - initialize and add a kset.
+  * @k: kset.
+  */
 
 

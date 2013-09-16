@@ -1,150 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36422 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49958 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750954Ab3IJVWG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Sep 2013 17:22:06 -0400
-Message-ID: <522F8D72.6060303@suse.com>
-Date: Tue, 10 Sep 2013 17:21:54 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+	id S1751696Ab3IPR06 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Sep 2013 13:26:58 -0400
+Date: Mon, 16 Sep 2013 19:26:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs@vger.kernel.org, clmason@fusionio.com, dsterba@suse.cz
+Subject: Re: [patch 1/7] [PATCH] btrfs: add ability to query/change feature
+ bits online
+Message-ID: <20130916172651.GV6810@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130910042408.335071038@suse.com>
+ <20130910043007.438505775@suse.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Mark Fasheh <mfasheh@suse.de>, Christoph Hellwig <hch@infradead.org>,
-        viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
-        Andrew Vagin <avagin@gmail.com>
-Subject: Re: [PATCH][RESEND] vfs: allow /proc/PID/maps to get device from
- stat
-References: <20130807195718.GC31381@wotan.suse.de> <20130807201826.GA23804@infradead.org> <20130807205146.GE2397@localhost.localdomain> <20130808121349.GC5180@infradead.org> <20130808130207.GA16712@localhost.localdomain> <20130808134805.GB24181@infradead.org> <20130808154454.GF16712@localhost.localdomain> <20130812114752.GA2390@infradead.org> <20130910153655.GH31381@wotan.suse.de> <20130910155607.GC2446@localhost.localdomain>
-In-Reply-To: <20130910155607.GC2446@localhost.localdomain>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="riA1dt0A9lsS1dQKaalFI6txiccIV79Ms"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130910043007.438505775@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---riA1dt0A9lsS1dQKaalFI6txiccIV79Ms
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+On Tue, Sep 10, 2013 at 12:24:09AM -0400, Jeff Mahoney wrote:
+> +static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
+> +{
+> +	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
+> +	struct btrfs_super_block *super_block = root->fs_info->super_copy;
+> +	struct btrfs_ioctl_feature_flags flags[2];
+> +	struct btrfs_trans_handle *trans;
+> +	u64 newflags;
+> +	int ret;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	if (copy_from_user(flags, arg, sizeof(flags)))
+> +		return -EFAULT;
+> +
+> +	/* Nothing to do */
+> +	if (!flags[0].compat_flags && !flags[0].compat_ro_flags &&
+> +	    !flags[0].incompat_flags)
+> +		return 0;
+> +
+> +	ret = check_feature(root, flags[0].compat_flags,
+> +			    flags[1].compat_flags, COMPAT);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = check_feature(root, flags[0].compat_ro_flags,
+> +			    flags[1].compat_ro_flags, COMPAT_RO);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = check_feature(root, flags[0].incompat_flags,
+> +			    flags[1].incompat_flags, INCOMPAT);
+> +	if (ret)
+> +		return ret;
+> +
+> +	trans = btrfs_start_transaction(root, 1);
 
-On 9/10/13 11:56 AM, Josef Bacik wrote:
-> On Tue, Sep 10, 2013 at 08:36:55AM -0700, Mark Fasheh wrote:
->> On Mon, Aug 12, 2013 at 04:47:52AM -0700, Christoph Hellwig wrote:
->>> On Thu, Aug 08, 2013 at 11:44:54AM -0400, Josef Bacik wrote:
->>>> On Thu, Aug 08, 2013 at 06:48:05AM -0700, Christoph Hellwig wrote:
->>>>> On Thu, Aug 08, 2013 at 09:02:07AM -0400, Josef Bacik wrote:
->>>>>> This won't work, try having 10000 subvolumes with dirty inodes and=
- do sync then
->>>>>> go skiing, you'll have time :).  Thanks,
->>>>>
->>>>> Why would the dirty inodes make any difference?  If you share the b=
-di
->>>>> between the subvolumes the sync workflow should be exactly the same=
+It's ok to use 0 here, it's a superblock change and not related the the
+metadata (similar to changing the label).
 
->>>>> still.
->>>>>
->>>>
->>>> If we could dis-entangle vfsmounts from sb's and have it so you coul=
-d have
->>>> multiple vfsmounts with just one sb that would solve at least the in=
--kernel
->>>> confusion, but I think we still have the userspace confusion.  Thank=
-s,
->>>
->>> I think it would mostly solve userspace confusion, as userspace only
->>> sees mounts and the device names.
->>>
->>> But please fix this up properly instead of propagating the effects of=
+> +	if (IS_ERR(trans))
+> +		return PTR_ERR(trans);
+> +
+> +	spin_lock(&root->fs_info->super_lock);
+> +	newflags = btrfs_super_compat_flags(super_block);
+> +	newflags |= flags[0].compat_flags & flags[1].compat_flags;
+> +	newflags &= ~(flags[0].compat_flags & ~flags[1].compat_flags);
+> +	btrfs_set_super_compat_flags(super_block, newflags);
+> +
+> +	newflags = btrfs_super_compat_ro_flags(super_block);
+> +	newflags |= flags[0].compat_ro_flags & flags[1].compat_ro_flags;
+> +	newflags &= ~(flags[0].compat_ro_flags & ~flags[1].compat_ro_flags);
+> +	btrfs_set_super_compat_ro_flags(super_block, newflags);
+> +
+> +	newflags = btrfs_super_incompat_flags(super_block);
+> +	newflags |= flags[0].incompat_flags & flags[1].incompat_flags;
+> +	newflags &= ~(flags[0].incompat_flags & ~flags[1].incompat_flags);
+> +	btrfs_set_super_incompat_flags(super_block, newflags);
+> +	spin_unlock(&root->fs_info->super_lock);
+> +
+> +	return btrfs_end_transaction(trans, root);
 
->>> the nasty btrfs hack that should never have been merged in that form
->>> further up the stack.
->>
->> Can one of you explain how this solves the problem that userspace is g=
-etting
->> different devices for the same inode?
->>
->> Seriously, I've been looking into it and I'm a bit lost. I followed th=
-e
->> converstaion until here but I don't see how any of the proposed change=
-s
->> actually *fix* anything? Also, what is the relationship between vfsmou=
-nts
->> and sb today? Wouldn't a bind mount produce the situation of more than=
- 1
->> vfsmount per sb that is described above?
->>
->> Sincerely, someone who would like to fix this ABI breakage that has be=
-en
->> going on for years.
->=20
-> And let me restate the problem so we're all on the same page.
->=20
-> Btrfs has subvolumes, completely separate trees within the file system.=
-  These
-> trees get their own object numbering, which in turn is how we do our in=
-ode
-> numbers.  So if you have multiple subvolumes, they will likely have the=
- same
-> inode numbers within the same file system.  This screws up things like =
-rsync
-> which say "hey look, these two inodes are the same, lets skip them."  S=
-o we have
-> an anonymous dev so we can make them look different.
->=20
-> Now if we were to make each subvol its own vfsmount (essentially a bind=
- mount)
-> and remove the anonymous device that wouldn't fix the problem _at all_.=
-  The
-> file system would appear to be the same to rsync and it wouldn't back s=
-tuff up.
-> So we still need some way of telling userspace that this object is diff=
-erent.
->=20
-> I'm not convinced vfsmounts is the way to do this, it doesn't do anythi=
-ng other
-> than add a whole lot of complexity to our mounting/subvolume mechanism =
-that is
-> already relatively complex.  Thanks,
+I think it's better to use btrfs_commit_transaction. The ioctl is about
+to do a permanent change, any crash between ioctl and full commit will
+revert to previous state of the features. This is not IMO desirable from
+administrators POV.
 
-Agreed. It's hugely wasteful as well. We can have thousands of
-subvolumes even on modest systems like workstations when automated
-snapshots are involved. Using a vfsmount for each subvolume would make
-/proc/mounts pretty useless. Having a separate superblock for each one,
-at 1k a pop, would waste a ton of memory considering that they'll be
-identical except for the dev_t.
+(Sidenote, IOC_SET_FSLABEL needs the same update.)
 
-The only way vfsmounts would work is if we added a dev_t there, which
-would usually be set to ->mnt_sb->s_dev except for the btrfs case. That
-still doesn't solve the polluted /proc/mounts, though.
+> +}
+> +
+> --- a/include/uapi/linux/btrfs.h	2013-09-09 17:49:10.808003254 -0400
+> +++ b/include/uapi/linux/btrfs.h	2013-09-09 17:49:12.483979430 -0400
+> @@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
+>  	__u64 reserved[124];			/* pad to 1k */
+>  };
+>  
+> +struct btrfs_ioctl_feature_flags {
+> +	__u64 compat_flags;
+> +	__u64 compat_ro_flags;
+> +	__u64 incompat_flags;
 
--Jeff
+I wonder if it makes sense to add spare bytes here, but does not seem
+necessary.
 
---=20
-Jeff Mahoney
-SUSE Labs
+> +};
+> @@ -579,4 +585,10 @@ static inline char *btrfs_err_str(enum b
+> +#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 54, \
+> +				   struct btrfs_ioctl_feature_flags)
+> +#define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 54, \
+> +				   struct btrfs_ioctl_feature_flags[2])
+> +#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 54, \
+> +				   struct btrfs_ioctl_feature_flags[3])
 
+The ioctl number 54 clashes with the OOB dedup merged into 3.12, 55 is
+for the in-bound dedup and Anand has claimed 56. I've allocated 57 for
+you and updated th wiki page:
 
---riA1dt0A9lsS1dQKaalFI6txiccIV79Ms
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Development_notes.2C_please_read
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJSL411AAoJEB57S2MheeWyhAEP/2hSx14oEGXiaB68wvTsP1mL
-eUSaAASvw5tgovMnCrj/4+e/agXd/KNWXN26iuypsnmlNuS/pGSXgklXhRTdiLdk
-GCZcAyJBHhXqxD06etpaXSq8lrbn5B51YtMsOIxiB5ZgoedPoJZypZEmIW3WfeKB
-b5e7B4LdlWtyAgj+phMkUROy2yszYAEiEhITPy6fb7Lzlyu+NXd3kYNUrv05TRr+
-57UPdIWVD+VV4kWkQzubQThW/nn7K78qX9JEJcpvqs0G9hihqrJAD1LY4AhZCi4w
-HL/+iYRZ/Ag3p3teauMPT/dPfyIIi0nP/tL48jXxRnuZDPtoFB9dop1N7+T+3bkv
-1hDoydgsR7HC1jyVzgl5zvQsomoR/zJFCRIJQdtPTg4v3NkfnUmFi9oKhcZzGoyP
-CoVv3U45yZ8Kkj8r2BL5kSMX7pMJsQrDw+v85R7KjtxQcdnaCsafxowd3hGzanaH
-ysTFmcSuRZtEbKv3yJF+XJeamyIa5JMozb0hlLG8r3d5pcI3PPuc2lAPIM/X+Cga
-fXR8aiu2yPxBtA+HyA3hyG2qoxLjH/+ii69i4JetowH9e1RiT5LQhDF8+hjL0bTS
-daF9ES5QbvQVeSmZhWqDbDwI0BMVaMs+MxMcSIwJqRkj1FvyUtv0qmfMTARhTxdV
-WcCwjwjJP9b1QAzJJo35
-=9gyp
------END PGP SIGNATURE-----
-
---riA1dt0A9lsS1dQKaalFI6txiccIV79Ms--
+Stefan's trick to reuse the same number is really neat.

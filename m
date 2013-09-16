@@ -1,117 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51725 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:51722 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751979Ab3IPSWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 14:22:18 -0400
-Message-Id: <20130916182018.120725897@suse.com>
-Date: Mon, 16 Sep 2013 14:19:13 -0400
+	id S1751864Ab3IPSWR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Sep 2013 14:22:17 -0400
+Message-Id: <20130916182018.291611624@suse.com>
+Date: Mon, 16 Sep 2013 14:19:14 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, clmason@fusionio.com
-Subject: [patch 3/9] kobject: introduce kobj_completion
+Subject: [patch 4/9] btrfs: export supported featured to sysfs
 References: <20130916181910.799140428@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A common way to handle kobject lifetimes in embedded in objects with
-different lifetime rules is to pair the kobject with a struct completion.
+This patch adds the ability to publish supported features to sysfs under
+/sys/fs/btrfs/features.
 
-This introduces a kobj_completion structure that can be used in place
-of the pairing, along with several convenience functions for
-initialization, release, and put-and-wait.
+The files are module-wide and export which features the kernel supports.
+
+The content, for now, is just "0\n".
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- include/linux/kobj_completion.h |   18 ++++++++++++++
- lib/kobject.c                   |   50 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 68 insertions(+)
+ fs/btrfs/ctree.h   |    4 ++--
+ fs/btrfs/disk-io.c |    1 -
+ fs/btrfs/sysfs.c   |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.h   |   35 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 89 insertions(+), 3 deletions(-)
 
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ b/include/linux/kobj_completion.h	2013-09-10 12:58:03.530554144 -0400
-@@ -0,0 +1,18 @@
-+#ifndef _KOBJ_COMPLETION_H_
-+#define _KOBJ_COMPLETION_H_
-+
-+#include <linux/kobject.h>
-+#include <linux/completion.h>
-+
-+struct kobj_completion {
-+	struct kobject kc_kobj;
-+	struct completion kc_unregister;
-+};
-+
-+#define kobj_to_kobj_completion(kobj) \
-+	container_of(kobj, struct kobj_completion, kc_kobj)
-+
-+void kobj_completion_init(struct kobj_completion *kc, struct kobj_type *ktype);
-+void kobj_completion_release(struct kobject *kobj);
-+void kobj_completion_del_and_wait(struct kobj_completion *kc);
-+#endif /* _KOBJ_COMPLETION_H_ */
---- a/lib/kobject.c	2013-09-10 12:57:54.198666613 -0400
-+++ b/lib/kobject.c	2013-09-10 15:22:15.122724060 -0400
-@@ -13,6 +13,7 @@
-  */
+--- a/fs/btrfs/ctree.h	2013-09-16 13:46:30.875025162 -0400
++++ b/fs/btrfs/ctree.h	2013-09-16 13:48:53.252952421 -0400
+@@ -32,6 +32,7 @@
+ #include <asm/kmap_types.h>
+ #include <linux/pagemap.h>
+ #include <linux/btrfs.h>
++#include <linux/kobj_completion.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "async-thread.h"
+@@ -1511,8 +1512,7 @@ struct btrfs_fs_info {
+ 	struct task_struct *cleaner_kthread;
+ 	int thread_pool_size;
  
+-	struct kobject super_kobj;
+-	struct completion kobj_unregister;
++	struct kobj_completion super_kc;
+ 	int do_barriers;
+ 	int closing;
+ 	int log_root_recovering;
+--- a/fs/btrfs/disk-io.c	2013-09-16 13:46:30.875025162 -0400
++++ b/fs/btrfs/disk-io.c	2013-09-16 13:46:32.970992936 -0400
+@@ -2163,7 +2163,6 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	seqlock_init(&fs_info->profiles_lock);
+ 
+-	init_completion(&fs_info->kobj_unregister);
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+ 	INIT_LIST_HEAD(&fs_info->space_info);
+ 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
+--- a/fs/btrfs/sysfs.c	2013-09-16 13:46:30.875025162 -0400
++++ b/fs/btrfs/sysfs.c	2013-09-16 13:48:53.252952421 -0400
+@@ -22,24 +22,76 @@
+ #include <linux/completion.h>
+ #include <linux/buffer_head.h>
  #include <linux/kobject.h>
 +#include <linux/kobj_completion.h>
- #include <linux/string.h>
- #include <linux/export.h>
- #include <linux/stat.h>
-@@ -711,6 +712,55 @@ const struct sysfs_ops kobj_sysfs_ops =
- };
  
- /**
-+ * kobj_completion_init - initialize a kobj_completion object.
-+ * @kc: kobj_completion
-+ * @ktype: type of kobject to initialize
-+ *
-+ * kobj_completion structures can be embedded within structures with different
-+ * lifetime rules.  During the release of the enclosing object, we can
-+ * wait on the release of the kobject so that we don't free it while it's
-+ * still busy.
-+ */
-+void kobj_completion_init(struct kobj_completion *kc, struct kobj_type *ktype)
-+{
-+	init_completion(&kc->kc_unregister);
-+	kobject_init(&kc->kc_kobj, ktype);
-+}
-+EXPORT_SYMBOL_GPL(kobj_completion_init);
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+ 
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
++BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzo, COMPRESS_LZO);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzov2, COMPRESS_LZOv2);
++BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
++BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
++BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
++BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
 +
-+/**
-+ * kobj_completion_release - release a kobj_completion object
-+ * @kobj: kobject embedded in kobj_completion
-+ *
-+ * Used with kobject_release to notify waiters that the kobject has been
-+ * released.
-+ */
-+void kobj_completion_release(struct kobject *kobj)
-+{
-+	struct kobj_completion *kc = kobj_to_kobj_completion(kobj);
-+	complete(&kc->kc_unregister);
-+}
-+EXPORT_SYMBOL_GPL(kobj_completion_release);
++static struct attribute *btrfs_supp_feature_attrs[] = {
++	BTRFS_FEAT_ATTR_LIST(mixed_backref)
++	BTRFS_FEAT_ATTR_LIST(default_subvol)
++	BTRFS_FEAT_ATTR_LIST(mixed_groups)
++	BTRFS_FEAT_ATTR_LIST(compress_lzo)
++	BTRFS_FEAT_ATTR_LIST(compress_lzov2)
++	BTRFS_FEAT_ATTR_LIST(big_metadata)
++	BTRFS_FEAT_ATTR_LIST(extended_iref)
++	BTRFS_FEAT_ATTR_LIST(raid56)
++	BTRFS_FEAT_ATTR_LIST(skinny_metadata)
++	NULL
++};
 +
-+/**
-+ * kobj_completion_del_and_wait - release the kobject and wait for it
-+ * @kc: kobj_completion object to release
-+ *
-+ * Delete the kobject from sysfs and drop the reference count.  Then wait
-+ * until any other outstanding references are also dropped.  This routine
-+ * is only necessary once other references may have been taken on the
-+ * kobject.  Typically this happens when the kobject has been published
-+ * to sysfs via kobject_add.
-+ */
-+void kobj_completion_del_and_wait(struct kobj_completion *kc)
++static ssize_t btrfs_supp_attr_show(struct kobject *kobj, struct attribute *a,
++				    char *buf)
 +{
-+	kobject_del(&kc->kc_kobj);
-+	kobject_put(&kc->kc_kobj);
-+	wait_for_completion(&kc->kc_unregister);
++	return snprintf(buf, PAGE_SIZE, "0\n");
 +}
-+EXPORT_SYMBOL_GPL(kobj_completion_del_and_wait);
 +
-+/**
-  * kset_register - initialize and add a kset.
-  * @k: kset.
-  */
++static const struct sysfs_ops btrfs_supp_attr_ops = {
++	.show = btrfs_supp_attr_show,
++};
++
++static struct kobj_type btrfs_supp_feat_ktype = {
++	.default_attrs	= btrfs_supp_feature_attrs,
++	.sysfs_ops	= &btrfs_supp_attr_ops,
++	.release	= kobj_completion_release,
++};
++
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
++static struct kobj_completion btrfs_features;
+ 
+ int btrfs_init_sysfs(void)
+ {
++	int ret;
+ 	btrfs_kset = kset_create_and_add("btrfs", NULL, fs_kobj);
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
++
++	kobj_completion_init(&btrfs_features, &btrfs_supp_feat_ktype);
++	btrfs_features.kc_kobj.kset = btrfs_kset;
++	ret = kobject_add(&btrfs_features.kc_kobj, NULL, "features");
++	if (ret) {
++		kset_unregister(btrfs_kset);
++		return ret;
++	}
++
+ 	return 0;
+ }
+ 
+ void btrfs_exit_sysfs(void)
+ {
++	kobj_completion_del_and_wait(&btrfs_features);
+ 	kset_unregister(btrfs_kset);
+ }
+ 
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ b/fs/btrfs/sysfs.h	2013-09-16 13:49:01.064844933 -0400
+@@ -0,0 +1,35 @@
++#ifndef _BTRFS_SYSFS_H_
++#define _BTRFS_SYSFS_H_
++
++enum btrfs_feature_set {
++	FEAT_COMPAT,
++	FEAT_COMPAT_RO,
++	FEAT_INCOMPAT,
++	FEAT_MAX
++};
++
++struct btrfs_feature_attr {
++	struct attribute attr;			/* global show, no store */
++	enum btrfs_feature_set feature_set;
++	u64 feature_bit;
++};
++
++#define BTRFS_FEAT_ATTR(_name, _feature_set, _prefix, _feature_bit)	     \
++static struct btrfs_feature_attr btrfs_attr_##_name = {			     \
++	.attr		= { .name = __stringify(_name), .mode = S_IRUGO, },  \
++	.feature_set	= _feature_set,					     \
++	.feature_bit	= _prefix ##_## _feature_bit,			     \
++}
++#define BTRFS_FEAT_ATTR_LIST(_name)    (&btrfs_attr_##_name.attr),
++
++#define BTRFS_FEAT_ATTR_COMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_COMPAT_RO(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT_RO, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_INCOMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_INCOMPAT, BTRFS_FEATURE_INCOMPAT, feature)
++
++/* convert from attribute */
++#define to_btrfs_feature_attr(a) \
++			container_of(a, struct btrfs_feature_attr, attr)
++#endif /* _BTRFS_SYSFS_H_ */
 
 

@@ -1,89 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34102 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751460Ab3IPRnI (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:50690 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752748Ab3IQOwB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 13:43:08 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8GHh6Pv012086
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2013 17:43:07 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8GHh62w005413
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2013 17:43:06 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8GHh5IO005408
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2013 17:43:06 GMT
-From: Guangyu Sun <guangyu.sun@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: dir_inode_operations should use btrfs_update_time also
-Date: Mon, 16 Sep 2013 10:42:03 -0700
-Message-Id: <1379353323-29989-1-git-send-email-guangyu.sun@oracle.com>
+	Tue, 17 Sep 2013 10:52:01 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id C7F229A0404
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:52:00 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id w8fElrf2PYPW5ICC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:52:00 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix worst case calculator for space usage
+Date: Tue, 17 Sep 2013 10:51:58 -0400
+Message-ID: <1379429518-3168-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 2bc5565286121d2a77ccd728eb3484dff2035b58 (Btrfs: don't update atime on
-RO subvolumes) ensures that the access time of an inode is not updated when
-the inode lives in a read-only subvolume.
-However, if a directory on a read-only subvolume is accessed, the atime is
-updated. This results in a write operation to a read-only subvolume. I
-believe that access times should never be updated on read-only subvolumes.
+Forever ago I made the worst case calculator say that we could potentially split
+into 3 blocks for every level on the way down, which isn't right.  If we split
+we're only going to get two new blocks, the one we originally cow'ed and the new
+one we're going to split.  Thanks,
 
-To reproduce:
-
- # mkfs.btrfs -f /dev/dm-3
- (...)
- # mount /dev/dm-3 /mnt
- # btrfs subvol create /mnt/sub
- 	Create subvolume '/mnt/sub'
- # mkdir /mnt/sub/dir
- # echo "abc" > /mnt/sub/dir/file
- # btrfs subvol snapshot -r /mnt/sub /mnt/rosnap
- 	Create a readonly snapshot of '/mnt/sub' in '/mnt/rosnap'
- # stat /mnt/rosnap/dir
- 	File: `/mnt/rosnap/dir'
- 	Size: 8         Blocks: 0          IO Block: 4096   directory
- Device: 16h/22d    Inode: 257         Links: 1
- Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
- 	Access: 2013-09-11 07:21:49.389157126 -0400
- 	Modify: 2013-09-11 07:22:02.330156079 -0400
- 	Change: 2013-09-11 07:22:02.330156079 -0400
- # ls /mnt/rosnap/dir
- 	file
- # stat /mnt/rosnap/dir
- 	File: `/mnt/rosnap/dir'
- 	Size: 8         Blocks: 0          IO Block: 4096   directory
- Device: 16h/22d    Inode: 257         Links: 1
- Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
- 	Access: 2013-09-11 07:22:56.797151670 -0400
- 	Modify: 2013-09-11 07:22:02.330156079 -0400
- 	Change: 2013-09-11 07:22:02.330156079 -0400
-
-Reported-by: Koen De Wit <koen.de.wit@oracle.com>
-Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/inode.c |    2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/ctree.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b7c2487..12c2755 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8660,11 +8660,13 @@ static const struct inode_operations btrfs_dir_inode_operations = {
- 	.removexattr	= btrfs_removexattr,
- 	.permission	= btrfs_permission,
- 	.get_acl	= btrfs_get_acl,
-+	.update_time	= btrfs_update_time,
- };
- static const struct inode_operations btrfs_dir_ro_inode_operations = {
- 	.lookup		= btrfs_lookup,
- 	.permission	= btrfs_permission,
- 	.get_acl	= btrfs_get_acl,
-+	.update_time	= btrfs_update_time,
- };
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2491ba0..36490b9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3135,7 +3135,7 @@ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
+ 						 unsigned num_items)
+ {
+ 	return (root->leafsize + root->nodesize * (BTRFS_MAX_LEVEL - 1)) *
+-		3 * num_items;
++		2 * num_items;
+ }
  
- static const struct file_operations btrfs_dir_file_operations = {
+ /*
 -- 
-1.7.9.5
+1.7.7.6
 

@@ -1,125 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54490 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752935Ab3IQNDx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Sep 2013 09:03:53 -0400
-Date: Tue, 17 Sep 2013 15:03:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Frank Holton <fholton@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [RFC] btrfs-progs: Add recursive defrag using -r option
-Message-ID: <20130917130335.GX6810@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <073ec67162396b2ebda9c4ef51c6851993132b68.1379383433.git.fholton@gmail.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:41201 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752689Ab3IQOtE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Sep 2013 10:49:04 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id CC0B37C0645
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:49:03 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id YwmoGACE2qXmoOEt (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:49:03 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Revert "Btrfs: rework the overcommit logic to be based on the total size"
+Date: Tue, 17 Sep 2013 10:49:01 -0400
+Message-ID: <1379429341-3103-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <073ec67162396b2ebda9c4ef51c6851993132b68.1379383433.git.fholton@gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 16, 2013 at 10:21:24PM -0400, Frank Holton wrote:
-> I'm working on a patch to add the recursive option to the 
-> btrfs filesystem defrag command.
+This reverts commit 70afa3998c9baed4186df38988246de1abdab56d.  It is causing
+performance issues and wasn't actually correct.  There were problems with the
+way we flushed delalloc and that was the real cause of the early enospc.
+Thanks,
 
-Great!
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent-tree.c |   15 +++------------
+ 1 files changed, 3 insertions(+), 12 deletions(-)
 
-> I'd like some feedback on how the patch looks as written. I've added
-> two helper functions, which might need to be renamed, one to call the
-> ioctl and one to actually handle the recursion into the directory. 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2f03181..07f7f69 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3925,7 +3925,6 @@ static int can_overcommit(struct btrfs_root *root,
+ 	u64 space_size;
+ 	u64 avail;
+ 	u64 used;
+-	u64 to_add;
+ 
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+ 		space_info->bytes_pinned + space_info->bytes_readonly;
+@@ -3959,25 +3958,17 @@ static int can_overcommit(struct btrfs_root *root,
+ 		       BTRFS_BLOCK_GROUP_RAID10))
+ 		avail >>= 1;
+ 
+-	to_add = space_info->total_bytes;
+-
+ 	/*
+ 	 * If we aren't flushing all things, let us overcommit up to
+ 	 * 1/2th of the space. If we can flush, don't let us overcommit
+ 	 * too much, let it overcommit up to 1/8 of the space.
+ 	 */
+ 	if (flush == BTRFS_RESERVE_FLUSH_ALL)
+-		to_add >>= 3;
++		avail >>= 3;
+ 	else
+-		to_add >>= 1;
+-
+-	/*
+-	 * Limit the overcommit to the amount of free space we could possibly
+-	 * allocate for chunks.
+-	 */
+-	to_add = min(avail, to_add);
++		avail >>= 1;
+ 
+-	if (used + bytes < space_info->total_bytes + to_add)
++	if (used + bytes < space_info->total_bytes + avail)
+ 		return 1;
+ 	return 0;
+ }
+-- 
+1.7.7.6
 
-Please use the 'ftw' function from glibc
-http://man7.org/linux/man-pages/man3/ftw.3.html
-
-(it's used in mkfs.c for example)
-
-> @@ -333,6 +336,7 @@ static const char * const cmd_defrag_usage[] = {
->  	"Defragment a file or a directory",
->  	"",
->  	"-v             be verbose",
-> +	"-r             defragment directories and files recursively",
-
-Directories do not get defragmented. Giving any directory to defragment
-will actually deframgent the subvolume fs_tree and then the shared
-extent tree.  This is hidden in implementation and has confused people.
-
-For now, I suggest to recursively defrag only files, that's IMHO the
-most frequent usecase.
-
-Deframgenting the subvol root or the extent tree are special cases and
-should be enabled only when requested, by a commandline option. This
-needs updating kernel. I can go into details later if needed.
-
-(I'ts possible to implement a per-directory defrag by extending
-btrfs_defrag_leaves with start/end key ranges that represent the
-directory items.)
-
-A few comments on the code follow, I hope you convert it to the 'ftw'
-callback, this will remove half of the code from this patch, so I'd
-rather see the result first. Basically, the contents of the ftw callback
-is done inside this loop:
-
-> +	while ((dent = readdir(dir)) != NULL) {
-> +		int fd = 0;
-> +		if (!strcmp(dent->d_name,".") || !strcmp(dent->d_name, ".."))
-> +			continue;
-> +			
-> +		fn[len] = 0;
-> +		strncat(fn+len, dent->d_name, FILENAME_MAX - len);
-> +		
-> +		if (lstat(fn, &st) == -1) {
-> +			fprintf(stderr,"ERROR: cannot stat %s\n", fn);
-> +			error++;
-> +			continue;
-> +		}
-> +		
-> +		/* ignore symlinks ??*/
-> +		if (S_ISLNK(st.st_mode))
-> +			continue;
-> +			
-> +		if(verbose)
-> +			printf("%s\n", fn);
-> +		
-> +		/* directory entry */
-> +		if (S_ISDIR(st.st_mode)) {
-> +			ret = walk_dir(fn, verbose, fancy_ioctl, range);
-> +			errors += ret;
-> +		}
-> +		else {
-> +			fd = open(fn,O_RDWR);
-> +			e = errno;
-> +			if (fd < 0) {
-> +				fprintf(stderr, "ERROR: defrag failed on %s - %s\n",
-> +					fn, strerror(e));
-> +				error++;
-> +				continue;
-> +			}
-> +			
-> +			ret = do_defrag(fd, fancy_ioctl, range);
-> +			e = errno;
-> +			
-> +			if (ret) {
-> +				errors++;
-> +				fprintf(stderr, "ERROR: defrag failed on %s - %s\n",
-> +					fn, strerror(e));
-> +				error++;
-> +			}
-> +			close(fd);
-> +		}	  
-> +	}
-> +
-> +	close(dir_fd);
-> +	closedir(dir);
-> +
-> +	return(errors);
-> +}
-
-The command line argument handling is ok.
-
-Please get familiar with the coding style
-https://www.kernel.org/doc/Documentation/CodingStyle
-eg. spacing and { } placement. It's not pointless to keep the style
-consistent, people who have to read the code appreciate if it looks the
-same all over the place.
-
-thanks,
-david

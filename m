@@ -1,108 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout32.mail01.mtsvc.net ([216.70.64.70]:53509 "EHLO
-	n23.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751437Ab3IQBWQ (ORCPT
+Received: from mail-ea0-f172.google.com ([209.85.215.172]:43223 "EHLO
+	mail-ea0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751355Ab3IQGx2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 21:22:16 -0400
-Message-ID: <5237AEC4.4050404@hurleysoftware.com>
-Date: Mon, 16 Sep 2013 21:22:12 -0400
-From: Peter Hurley <peter@hurleysoftware.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: David Daney <ddaney.cavm@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>, linux-btrfs@vger.kernel.org,
+	Tue, 17 Sep 2013 02:53:28 -0400
+Date: Tue, 17 Sep 2013 08:53:24 +0200
+From: Ingo Molnar <mingo@kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org,
         walken@google.com, mingo@elte.hu, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <20130916160547.371b74f91511a42ac263449e@linux-foundation.org> <20130917000516.GJ2446@localhost.localdomain> <5237A257.1070303@gmail.com> <5237A461.3010802@hurleysoftware.com> <5237AB9A.1030604@gmail.com> <20130917011150.GK2446@localhost.localdomain>
-In-Reply-To: <20130917011150.GK2446@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Message-ID: <20130917065324.GA20661@gmail.com>
+References: <1377872041-390-1-git-send-email-jbacik@fusionio.com>
+ <20130916160547.371b74f91511a42ac263449e@linux-foundation.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130916160547.371b74f91511a42ac263449e@linux-foundation.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2013 09:11 PM, Josef Bacik wrote:
-> On Mon, Sep 16, 2013 at 06:08:42PM -0700, David Daney wrote:
->> On 09/16/2013 05:37 PM, Peter Hurley wrote:
->>> On 09/16/2013 08:29 PM, David Daney wrote:
->>>> On 09/16/2013 05:05 PM, Josef Bacik wrote:
->>>>> On Mon, Sep 16, 2013 at 04:05:47PM -0700, Andrew Morton wrote:
->>>>>> On Fri, 30 Aug 2013 10:14:01 -0400 Josef Bacik <jbacik@fusionio.com>
->>>>>> wrote:
->>>>>>
->>>>>>> Btrfs uses an rwsem to control access to its extent tree.  Threads
->>>>>>> will hold a
->>>>>>> read lock on this rwsem while they scan the extent tree, and if
->>>>>>> need_resched()
->>>>>>> they will drop the lock and schedule.  The transaction commit needs
->>>>>>> to take a
->>>>>>> write lock for this rwsem for a very short period to switch out the
->>>>>>> commit
->>>>>>> roots.  If there are a lot of threads doing this caching operation
->>>>>>> we can starve
->>>>>>> out the committers which slows everybody out.  To address this we
->>>>>>> want to add
->>>>>>> this functionality to see if our rwsem has anybody waiting to take
->>>>>>> a write lock
->>>>>>> so we can drop it and schedule for a bit to allow the commit to
->>>>>>> continue.
->>>>>>> Thanks,
->>>>>>>
->>>>>>
->>>>>> This sounds rather nasty and hacky.  Rather then working around a
->>>>>> locking shortcoming in a caller it would be better to fix/enhance the
->>>>>> core locking code.  What would such a change need to do?
->>>>>>
->>>>>> Presently rwsem waiters are fifo-queued, are they not?  So the commit
->>>>>> thread will eventually get that lock.  Apparently that's not working
->>>>>> adequately for you but I don't fully understand what it is about these
->>>>>> dynamics which is causing observable problems.
->>>>>>
->>>>>
->>>>> So the problem is not that its normal lock starvation, it's more our
->>>>> particular
->>>>> use case that is causing the starvation.  We can have lots of people
->>>>> holding
->>>>> readers and simply never give them up for long periods of time, which
->>>>> is why we
->>>>> need this is_contended helper so we know to drop things and let the
->>>>> committer
->>>>> through.  Thanks,
->>>>
->>>> You could easily achieve the same thing by putting an "is_contending"
->>>> flag in parallel with the rwsem and testing that:
->>>
->>> Which adds a bunch more bus-locked operations to contended over
->>
->> Would that be a problem in this particular case?  Has it been measured?
->>
->>> , when
->>> a unlocked if (list_empty()) is sufficient.
->>
->> I don't object to adding rwsem_is_contended() *if* it is required.  I was
->> just pointing out that there may be other options.
->>
->> The patch adds a bunch of new semantics to rwsem.  There is a trade off
->> between increased complexity of core code, and generalizing subsystem
->> specific optimizations that may not be globally useful.
->>
->> Is it worth it in this case?  I do not know.
->>
->
-> So what you suggested is actually what we did in order to prove that this was
-> what the problem was.  I'm ok with continuing to do that, I just figured adding
-> something like rwsem_is_contended() would be nice in case anybody else runs into
-> the issue in the future, plus it would save me an atomic_t in an already large
-> structure.
 
-I saw the original patch you linked to earlier in the discussion, and
-I agree that for your use case adding a contention test is cleaner and clearer
-than other options.
+* Andrew Morton <akpm@linux-foundation.org> wrote:
 
-That said, I think this extension is only useful for readers: writers should be
-getting their business done and releasing the sem.
+> On Fri, 30 Aug 2013 10:14:01 -0400 Josef Bacik <jbacik@fusionio.com> wrote:
+> 
+> > Btrfs uses an rwsem to control access to its extent tree.  Threads 
+> > will hold a read lock on this rwsem while they scan the extent tree, 
+> > and if need_resched() they will drop the lock and schedule.  The 
+> > transaction commit needs to take a write lock for this rwsem for a 
+> > very short period to switch out the commit roots.  If there are a lot 
+> > of threads doing this caching operation we can starve out the 
+> > committers which slows everybody out.  To address this we want to add 
+> > this functionality to see if our rwsem has anybody waiting to take a 
+> > write lock so we can drop it and schedule for a bit to allow the 
+> > commit to continue. Thanks,
+> 
+> This sounds rather nasty and hacky.  Rather then working around a 
+> locking shortcoming in a caller it would be better to fix/enhance the 
+> core locking code.  What would such a change need to do?
+> 
+> Presently rwsem waiters are fifo-queued, are they not?  So the commit 
+> thread will eventually get that lock.  Apparently that's not working 
+> adequately for you but I don't fully understand what it is about these 
+> dynamics which is causing observable problems.
 
-Also, I think the comment above the function should be clearer that the lock
-must already be held by the caller; IOW, this is not a trylock replacement.
+It would be nice to see the whole solution, together with the btrfs patch.
 
-Regards,
-Peter Hurley
+The problem I have is that this new primitive is only superficially like 
+spin_is_contended(): in the spinlock case dropping the lock will guarantee 
+some sort of progress, because another CPU will almost certainly pick up 
+the lock if we cpu_relax().
 
+In the rwsem case there's no such guarantee of progress, especially if a 
+read-lock is dropped. So I'd like to see how it's implemented in practice.
+
+Thanks,
+
+	Ingo

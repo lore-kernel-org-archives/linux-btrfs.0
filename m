@@ -1,90 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:61937 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751697Ab3IQBQB (ORCPT
+Received: from mailout32.mail01.mtsvc.net ([216.70.64.70]:53509 "EHLO
+	n23.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751437Ab3IQBWQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Sep 2013 21:16:01 -0400
-Message-ID: <5237AB9A.1030604@gmail.com>
-Date: Mon, 16 Sep 2013 18:08:42 -0700
-From: David Daney <ddaney.cavm@gmail.com>
+	Mon, 16 Sep 2013 21:22:16 -0400
+Message-ID: <5237AEC4.4050404@hurleysoftware.com>
+Date: Mon, 16 Sep 2013 21:22:12 -0400
+From: Peter Hurley <peter@hurleysoftware.com>
 MIME-Version: 1.0
-To: Peter Hurley <peter@hurleysoftware.com>
-CC: Josef Bacik <jbacik@fusionio.com>,
+To: Josef Bacik <jbacik@fusionio.com>
+CC: David Daney <ddaney.cavm@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>, linux-btrfs@vger.kernel.org,
         walken@google.com, mingo@elte.hu, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] rwsem: add rwsem_is_contended
-References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <20130916160547.371b74f91511a42ac263449e@linux-foundation.org> <20130917000516.GJ2446@localhost.localdomain> <5237A257.1070303@gmail.com> <5237A461.3010802@hurleysoftware.com>
-In-Reply-To: <5237A461.3010802@hurleysoftware.com>
+References: <1377872041-390-1-git-send-email-jbacik@fusionio.com> <20130916160547.371b74f91511a42ac263449e@linux-foundation.org> <20130917000516.GJ2446@localhost.localdomain> <5237A257.1070303@gmail.com> <5237A461.3010802@hurleysoftware.com> <5237AB9A.1030604@gmail.com> <20130917011150.GK2446@localhost.localdomain>
+In-Reply-To: <20130917011150.GK2446@localhost.localdomain>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2013 05:37 PM, Peter Hurley wrote:
-> On 09/16/2013 08:29 PM, David Daney wrote:
->> On 09/16/2013 05:05 PM, Josef Bacik wrote:
->>> On Mon, Sep 16, 2013 at 04:05:47PM -0700, Andrew Morton wrote:
->>>> On Fri, 30 Aug 2013 10:14:01 -0400 Josef Bacik <jbacik@fusionio.com>
->>>> wrote:
->>>>
->>>>> Btrfs uses an rwsem to control access to its extent tree.  Threads
->>>>> will hold a
->>>>> read lock on this rwsem while they scan the extent tree, and if
->>>>> need_resched()
->>>>> they will drop the lock and schedule.  The transaction commit needs
->>>>> to take a
->>>>> write lock for this rwsem for a very short period to switch out the
->>>>> commit
->>>>> roots.  If there are a lot of threads doing this caching operation
->>>>> we can starve
->>>>> out the committers which slows everybody out.  To address this we
->>>>> want to add
->>>>> this functionality to see if our rwsem has anybody waiting to take
->>>>> a write lock
->>>>> so we can drop it and schedule for a bit to allow the commit to
->>>>> continue.
->>>>> Thanks,
+On 09/16/2013 09:11 PM, Josef Bacik wrote:
+> On Mon, Sep 16, 2013 at 06:08:42PM -0700, David Daney wrote:
+>> On 09/16/2013 05:37 PM, Peter Hurley wrote:
+>>> On 09/16/2013 08:29 PM, David Daney wrote:
+>>>> On 09/16/2013 05:05 PM, Josef Bacik wrote:
+>>>>> On Mon, Sep 16, 2013 at 04:05:47PM -0700, Andrew Morton wrote:
+>>>>>> On Fri, 30 Aug 2013 10:14:01 -0400 Josef Bacik <jbacik@fusionio.com>
+>>>>>> wrote:
+>>>>>>
+>>>>>>> Btrfs uses an rwsem to control access to its extent tree.  Threads
+>>>>>>> will hold a
+>>>>>>> read lock on this rwsem while they scan the extent tree, and if
+>>>>>>> need_resched()
+>>>>>>> they will drop the lock and schedule.  The transaction commit needs
+>>>>>>> to take a
+>>>>>>> write lock for this rwsem for a very short period to switch out the
+>>>>>>> commit
+>>>>>>> roots.  If there are a lot of threads doing this caching operation
+>>>>>>> we can starve
+>>>>>>> out the committers which slows everybody out.  To address this we
+>>>>>>> want to add
+>>>>>>> this functionality to see if our rwsem has anybody waiting to take
+>>>>>>> a write lock
+>>>>>>> so we can drop it and schedule for a bit to allow the commit to
+>>>>>>> continue.
+>>>>>>> Thanks,
+>>>>>>>
+>>>>>>
+>>>>>> This sounds rather nasty and hacky.  Rather then working around a
+>>>>>> locking shortcoming in a caller it would be better to fix/enhance the
+>>>>>> core locking code.  What would such a change need to do?
+>>>>>>
+>>>>>> Presently rwsem waiters are fifo-queued, are they not?  So the commit
+>>>>>> thread will eventually get that lock.  Apparently that's not working
+>>>>>> adequately for you but I don't fully understand what it is about these
+>>>>>> dynamics which is causing observable problems.
+>>>>>>
 >>>>>
+>>>>> So the problem is not that its normal lock starvation, it's more our
+>>>>> particular
+>>>>> use case that is causing the starvation.  We can have lots of people
+>>>>> holding
+>>>>> readers and simply never give them up for long periods of time, which
+>>>>> is why we
+>>>>> need this is_contended helper so we know to drop things and let the
+>>>>> committer
+>>>>> through.  Thanks,
 >>>>
->>>> This sounds rather nasty and hacky.  Rather then working around a
->>>> locking shortcoming in a caller it would be better to fix/enhance the
->>>> core locking code.  What would such a change need to do?
->>>>
->>>> Presently rwsem waiters are fifo-queued, are they not?  So the commit
->>>> thread will eventually get that lock.  Apparently that's not working
->>>> adequately for you but I don't fully understand what it is about these
->>>> dynamics which is causing observable problems.
->>>>
+>>>> You could easily achieve the same thing by putting an "is_contending"
+>>>> flag in parallel with the rwsem and testing that:
 >>>
->>> So the problem is not that its normal lock starvation, it's more our
->>> particular
->>> use case that is causing the starvation.  We can have lots of people
->>> holding
->>> readers and simply never give them up for long periods of time, which
->>> is why we
->>> need this is_contended helper so we know to drop things and let the
->>> committer
->>> through.  Thanks,
+>>> Which adds a bunch more bus-locked operations to contended over
 >>
->> You could easily achieve the same thing by putting an "is_contending"
->> flag in parallel with the rwsem and testing that:
+>> Would that be a problem in this particular case?  Has it been measured?
+>>
+>>> , when
+>>> a unlocked if (list_empty()) is sufficient.
+>>
+>> I don't object to adding rwsem_is_contended() *if* it is required.  I was
+>> just pointing out that there may be other options.
+>>
+>> The patch adds a bunch of new semantics to rwsem.  There is a trade off
+>> between increased complexity of core code, and generalizing subsystem
+>> specific optimizations that may not be globally useful.
+>>
+>> Is it worth it in this case?  I do not know.
+>>
 >
-> Which adds a bunch more bus-locked operations to contended over
+> So what you suggested is actually what we did in order to prove that this was
+> what the problem was.  I'm ok with continuing to do that, I just figured adding
+> something like rwsem_is_contended() would be nice in case anybody else runs into
+> the issue in the future, plus it would save me an atomic_t in an already large
+> structure.
 
-Would that be a problem in this particular case?  Has it been measured?
+I saw the original patch you linked to earlier in the discussion, and
+I agree that for your use case adding a contention test is cleaner and clearer
+than other options.
 
-> , when
-> a unlocked if (list_empty()) is sufficient.
+That said, I think this extension is only useful for readers: writers should be
+getting their business done and releasing the sem.
 
-I don't object to adding rwsem_is_contended() *if* it is required.  I 
-was just pointing out that there may be other options.
+Also, I think the comment above the function should be clearer that the lock
+must already be held by the caller; IOW, this is not a trylock replacement.
 
-The patch adds a bunch of new semantics to rwsem.  There is a trade off 
-between increased complexity of core code, and generalizing subsystem 
-specific optimizations that may not be globally useful.
-
-Is it worth it in this case?  I do not know.
-
-<insert quote relating to occam's razor>
-
-David Daney
+Regards,
+Peter Hurley
 

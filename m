@@ -1,33 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f178.google.com ([209.85.217.178]:49216 "EHLO
-	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754328Ab3IJHry (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Sep 2013 03:47:54 -0400
-Received: by mail-lb0-f178.google.com with SMTP id z5so6010023lbh.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2013 00:47:52 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1378780109-8591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1378780109-8591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Date: Tue, 10 Sep 2013 10:47:52 +0300
-Message-ID: <CAOi1vP_dLDdR_oDC52D8CTutVRRg7E9OJsDs7P+839B==+9fjA@mail.gmail.com>
-Subject: Re: [PATCH v2 18/20] Btrfs-progs: fix magic return value in cmds-balance.c
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, sandeen@redhat.com
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cantor2.suse.de ([195.135.220.15]:59031 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752861Ab3IQOyL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Sep 2013 10:54:11 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0462DA535C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 16:54:10 +0200 (CEST)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/2] nodiscard for device add
+Date: Tue, 17 Sep 2013 16:53:59 +0200
+Message-Id: <cover.1379429392.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 10, 2013 at 5:28 AM, Wang Shilong
-<wangsl.fnst@cn.fujitsu.com> wrote:
-> If there is no balance in progress, resume/pause/cancel
-> will return 2. Usage or syntax errors will return 1.
-> And 0 means operations return successfully.
->
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> ---
-> v1->v2:
->         Address comments from Ilya Dryomov.
+David Sterba (2):
+  btrfs-progs: use better name for nodiscard variable and flip the logic
+  btrfs-progs: add nodiscard option to device add
 
-Reviewed-by: Ilya Dryomov <idryomov@gmail.com>
+ cmds-device.c  | 34 +++++++++++++++++++++++++++++-----
+ man/btrfs.8.in | 11 +++++++++--
+ mkfs.c         |  8 ++++----
+ utils.c        |  6 ++++--
+ utils.h        |  2 +-
+ 5 files changed, 47 insertions(+), 14 deletions(-)
+
+-- 
+1.8.3.1
+

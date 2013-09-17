@@ -1,120 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26566 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751645Ab3IJCaw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Sep 2013 22:30:52 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59032 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752893Ab3IQOyO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Sep 2013 10:54:14 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0BD9EA535C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 16:54:14 +0200 (CEST)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, sandeen@redhat.com, idryomov@gmail.com
-Subject: [PATCH v2 18/20] Btrfs-progs: fix magic return value in cmds-balance.c
-Date: Tue, 10 Sep 2013 10:28:29 +0800
-Message-Id: <1378780109-8591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/2] btrfs-progs: use better name for nodiscard variable and flip the logic
+Date: Tue, 17 Sep 2013 16:54:00 +0200
+Message-Id: <4cf3c965e742f6f814f99b2244c7368029283382.1379429392.git.dsterba@suse.cz>
+In-Reply-To: <cover.1379429392.git.dsterba@suse.cz>
+References: <cover.1379429392.git.dsterba@suse.cz>
+In-Reply-To: <cover.1379429392.git.dsterba@suse.cz>
+References: <cover.1379429392.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If there is no balance in progress, resume/pause/cancel
-will return 2. Usage or syntax errors will return 1.
-And 0 means operations return successfully.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-v1->v2:
-	Address comments from Ilya Dryomov.
----
- cmds-balance.c | 27 ++++++++++++++++++---------
- 1 file changed, 18 insertions(+), 9 deletions(-)
+ mkfs.c  | 8 ++++----
+ utils.c | 4 ++--
+ utils.h | 2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index b7382ef..a151475 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -299,7 +299,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
+diff --git a/mkfs.c b/mkfs.c
+index 3ac00ba..40da546 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1324,7 +1324,7 @@ int main(int ac, char **av)
+ 	int mixed = 0;
+ 	int data_profile_opt = 0;
+ 	int metadata_profile_opt = 0;
+-	int nodiscard = 0;
++	int discard = 1;
+ 	int ssd = 0;
+ 	int force_overwrite = 0;
  
- 	ret = ioctl(fd, BTRFS_IOC_BALANCE_V2, args);
-@@ -330,7 +330,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 			if (e != EINPROGRESS)
- 				fprintf(stderr, "There may be more info in "
- 					"syslog - try dmesg | tail\n");
--			ret = 19;
-+			ret = 1;
+@@ -1409,7 +1409,7 @@ int main(int ac, char **av)
+ 				source_dir_set = 1;
+ 				break;
+ 			case 'K':
+-				nodiscard=1;
++				discard = 0;
+ 				break;
+ 			default:
+ 				print_usage();
+@@ -1507,7 +1507,7 @@ int main(int ac, char **av)
  		}
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
-@@ -498,7 +498,7 @@ static int cmd_balance_pause(int argc, char **argv)
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
- 
- 	ret = ioctl(fd, BTRFS_IOC_BALANCE_CTL, BTRFS_BALANCE_CTL_PAUSE);
-@@ -508,7 +508,10 @@ static int cmd_balance_pause(int argc, char **argv)
- 	if (ret < 0) {
- 		fprintf(stderr, "ERROR: balance pause on '%s' failed - %s\n",
- 			path, (e == ENOTCONN) ? "Not running" : strerror(e));
--		return 19;
-+		if (e == ENOTCONN)
-+			return 2;
-+		else
-+			return 1;
- 	}
- 
- 	return 0;
-@@ -536,7 +539,7 @@ static int cmd_balance_cancel(int argc, char **argv)
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
- 
- 	ret = ioctl(fd, BTRFS_IOC_BALANCE_CTL, BTRFS_BALANCE_CTL_CANCEL);
-@@ -546,7 +549,10 @@ static int cmd_balance_cancel(int argc, char **argv)
- 	if (ret < 0) {
- 		fprintf(stderr, "ERROR: balance cancel on '%s' failed - %s\n",
- 			path, (e == ENOTCONN) ? "Not in progress" : strerror(e));
--		return 19;
-+		if (e == ENOTCONN)
-+			return 2;
-+		else
-+			return 1;
- 	}
- 
- 	return 0;
-@@ -575,7 +581,7 @@ static int cmd_balance_resume(int argc, char **argv)
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
-+		return 1;
- 	}
- 
- 	memset(&args, 0, sizeof(args));
-@@ -596,12 +602,15 @@ static int cmd_balance_resume(int argc, char **argv)
- 				"failed - %s\n", path,
- 				(e == ENOTCONN) ? "Not in progress" :
- 						  "Already running");
--			return 19;
-+			if (e == ENOTCONN)
-+				return 2;
-+			else
-+				return 1;
- 		} else {
- 			fprintf(stderr,
- "ERROR: error during balancing '%s' - %s\n"
- "There may be more info in syslog - try dmesg | tail\n", path, strerror(e));
--			return 19;
-+			return 1;
+ 		first_file = file;
+ 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
+-					   block_count, &mixed, nodiscard);
++					   block_count, &mixed, discard);
+ 		if (block_count && block_count > dev_block_count) {
+ 			fprintf(stderr, "%s is smaller than requested size\n", file);
+ 			exit(1);
+@@ -1614,7 +1614,7 @@ int main(int ac, char **av)
+ 			continue;
  		}
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
+ 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
+-					   block_count, &mixed, nodiscard);
++					   block_count, &mixed, discard);
+ 		mixed = old_mixed;
+ 		BUG_ON(ret);
+ 
+diff --git a/utils.c b/utils.c
+index 134bf80..bb1bcdb 100644
+--- a/utils.c
++++ b/utils.c
+@@ -569,7 +569,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ }
+ 
+ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+-			   u64 max_block_count, int *mixed, int nodiscard)
++			   u64 max_block_count, int *mixed, int discard)
+ {
+ 	u64 block_count;
+ 	u64 bytenr;
+@@ -596,7 +596,7 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 		*mixed = 1;
+ 	}
+ 
+-	if (!nodiscard) {
++	if (discard) {
+ 		/*
+ 		 * We intentionally ignore errors from the discard ioctl.  It is
+ 		 * not necessary for the mkfs functionality but just an optimization.
+diff --git a/utils.h b/utils.h
+index 6c2553a..6bf7880 100644
+--- a/utils.h
++++ b/utils.h
+@@ -34,7 +34,7 @@ int make_btrfs(int fd, const char *device, const char *label,
+ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, u64 objectid);
+ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+-			 u64 max_block_count, int *mixed, int nodiscard);
++			 u64 max_block_count, int *mixed, int discard);
+ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int fd, char *path,
+ 		      u64 block_count, u32 io_width, u32 io_align,
 -- 
 1.8.3.1
 

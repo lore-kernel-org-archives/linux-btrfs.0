@@ -1,45 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56039 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751420Ab3IQGGg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Sep 2013 02:06:36 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VLoQl-0003mT-Ju
-	for linux-btrfs@vger.kernel.org; Tue, 17 Sep 2013 08:06:35 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:06:35 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:06:35 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [RFC] btrfs-progs: Add recursive defrag using -r option
-Date: Tue, 17 Sep 2013 06:06:16 +0000 (UTC)
-Message-ID: <pan$3fd6b$e557a488$ab986a01$72842fce@cox.net>
-References: <073ec67162396b2ebda9c4ef51c6851993132b68.1379383433.git.fholton@gmail.com>
-Mime-Version: 1.0
+Received: from mail-ie0-f173.google.com ([209.85.223.173]:33327 "EHLO
+	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751392Ab3IQHWw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Sep 2013 03:22:52 -0400
+Received: by mail-ie0-f173.google.com with SMTP id ar20so9635986iec.32
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 00:22:52 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1379343489-20066-1-git-send-email-ross.kirk@gmail.com>
+References: <1379343489-20066-1-git-send-email-ross.kirk@gmail.com>
+Date: Tue, 17 Sep 2013 01:22:52 -0600
+Message-ID: <CAE5mzvjphCOj9OcGrd3WpQ36NxxMhOFArMVzu9kYJ6xQs3bc0w@mail.gmail.com>
+Subject: Re: [PATCH] Drop unused parameter from btrfs_item_nr
+From: cwillu <cwillu@cwillu.com>
+To: Ross Kirk <ross.kirk@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Frank Holton posted on Mon, 16 Sep 2013 22:21:24 -0400 as excerpted:
+On Mon, Sep 16, 2013 at 8:58 AM, Ross Kirk <ross.kirk@gmail.com> wrote:
+> Unused parameter cleanup
+>
+> Ross Kirk (1):
+>   btrfs: drop unused parameter from btrfs_item_nr
+>
+>  fs/btrfs/backref.c    |    2 +-
+>  fs/btrfs/ctree.c      |   34 +++++++++++++++++-----------------
+>  fs/btrfs/ctree.h      |   13 ++++++-------
+>  fs/btrfs/dir-item.c   |    2 +-
+>  fs/btrfs/inode-item.c |    2 +-
+>  fs/btrfs/inode.c      |    4 ++--
+>  fs/btrfs/print-tree.c |    2 +-
+>  fs/btrfs/send.c       |    4 ++--
+>  8 files changed, 31 insertions(+), 32 deletions(-)
+>
+> --
+> 1.7.7.6
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-> I'm working on a patch to add the recursive option to the btrfs
-> filesystem defrag command. I'd like some feedback on how the patch looks
-> as written. I've added two helper functions, which might need to be
-> renamed, one to call the ioctl and one to actually handle the recursion
-> into the directory.
-> 
-> Let me know what you think.
-
-Not being a dev I won't comment on that angle, but this will sure help 
-decomplicate general defragging from a sysadmin angle.  Thanks. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Something appears to be missing...

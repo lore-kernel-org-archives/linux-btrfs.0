@@ -1,30 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59031 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752861Ab3IQOyL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Sep 2013 10:54:11 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 0462DA535C
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 16:54:10 +0200 (CEST)
-From: David Sterba <dsterba@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:47628 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751718Ab3IRIaV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Sep 2013 04:30:21 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8I8UFxS030186
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 16:30:16 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 0/2] nodiscard for device add
-Date: Tue, 17 Sep 2013 16:53:59 +0200
-Message-Id: <cover.1379429392.git.dsterba@suse.cz>
+Subject: [PATCH 0/4] add super-recover tool to recover bad supers
+Date: Wed, 18 Sep 2013 16:27:32 +0800
+Message-Id: <1379492856-30639-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba (2):
-  btrfs-progs: use better name for nodiscard variable and flip the logic
-  btrfs-progs: add nodiscard option to device add
+Until now if one of device's first superblock is corrupt,btrfs will
+fail to mount. Luckily, btrfs have at least two superblocks for
+every disk.
 
- cmds-device.c  | 34 +++++++++++++++++++++++++++++-----
- man/btrfs.8.in | 11 +++++++++--
- mkfs.c         |  8 ++++----
- utils.c        |  6 ++++--
- utils.h        |  2 +-
- 5 files changed, 47 insertions(+), 14 deletions(-)
+In theory, if silent corrupting happens when we are writting
+superblocks into disk, we must hold at least one good superblock.
+
+One side effect is that user must gurantee that the disk must be
+a btrfs disk. Otherwise, this tool may destroy other fs.(This is
+also reason why btrfs only use first superblock in every disk to mount)
+
+This little program will scan devices and find good superblocks
+(max generation, checksum matched). And use this superblock to
+recover bad superblocks.The process is:
+
+Step1: scan btrfs devices
+Step2: find good supers
+Step3: open ctree
+Step4: writ all supers
+
+We pass the latest good supers into open_ctree() and open_ctree()
+will recalucate every superblock's dev_item by searching chunk tree.
+
+Notice: This patchset based on David's dev/rescue branch
+
+Wang Shilong (4):
+  Btrfs-progs: do not run ioctls in check_mounted_where()
+  Btrfs-progs: pass flag to control whether run ioctl in
+    btrfs_scan_for_fsid()
+  Btrfs-progs: move ask_user() to utils.c
+  Btrfs-progs: add super-recover to recover bad supers
+
+ Makefile          |   2 +-
+ btrfs-find-root.c |   2 +-
+ chunk-recover.c   |  20 +---
+ cmds-rescue.c     |  55 ++++++++++
+ commands.h        |   2 +
+ disk-io.c         |  37 +++++--
+ disk-io.h         |   5 +-
+ super-recover.c   | 323 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.c           |  20 +++-
+ utils.h           |   1 +
+ 10 files changed, 437 insertions(+), 30 deletions(-)
+ create mode 100644 super-recover.c
 
 -- 
 1.8.3.1

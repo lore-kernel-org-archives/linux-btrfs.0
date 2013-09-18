@@ -1,103 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:20355 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751676Ab3IRIaV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Sep 2013 04:30:21 -0400
+	id S1751831Ab3IRIaW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Sep 2013 04:30:22 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8I8UG7H030190
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8I8UG7I030190
 	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 16:30:16 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/4] Btrfs-progs: pass flag to control whether run ioctl in btrfs_scan_for_fsid()
-Date: Wed, 18 Sep 2013 16:27:34 +0800
-Message-Id: <1379492856-30639-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH 3/4] Btrfs-progs: move ask_user() to utils.c
+Date: Wed, 18 Sep 2013 16:27:35 +0800
+Message-Id: <1379492856-30639-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1379492856-30639-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1379492856-30639-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If some fatal superblocks are damaged, running ioctl will return failure,
-in this case, we should avoid run ioctl.
-
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- btrfs-find-root.c | 2 +-
- chunk-recover.c   | 2 +-
- disk-io.c         | 6 +++---
- disk-io.h         | 3 ++-
- 4 files changed, 7 insertions(+), 6 deletions(-)
+ chunk-recover.c | 18 ------------------
+ utils.c         | 18 ++++++++++++++++++
+ utils.h         |  1 +
+ 3 files changed, 19 insertions(+), 18 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index b48c800..7572f52 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -82,7 +82,7 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
- 		return NULL;
- 	}
- 
--	ret = btrfs_scan_fs_devices(fd, device, &fs_devices, 0);
-+	ret = btrfs_scan_fs_devices(fd, device, &fs_devices, 0, 1);
- 	if (ret)
- 		goto out;
- 
 diff --git a/chunk-recover.c b/chunk-recover.c
-index 45da9a6..9af4887 100644
+index 9af4887..e44ca72 100644
 --- a/chunk-recover.c
 +++ b/chunk-recover.c
-@@ -1291,7 +1291,7 @@ static int recover_prepare(struct recover_control *rc, char *path)
- 		goto fail_free_sb;
+@@ -1307,24 +1307,6 @@ fail_close_fd:
+ 	return ret;
+ }
+ 
+-/*
+- * This reads a line from the stdin and only returns non-zero if the
+- * first whitespace delimited token is a case insensitive match with yes
+- * or y.
+- */
+-static int ask_user(char *question)
+-{
+-	char buf[30] = {0,};
+-	char *saveptr = NULL;
+-	char *answer;
+-
+-	printf("%s [y/N]: ", question);
+-
+-	return fgets(buf, sizeof(buf) - 1, stdin) &&
+-	       (answer = strtok_r(buf, " \t\n\r", &saveptr)) &&
+-	       (!strcasecmp(answer, "yes") || !strcasecmp(answer, "y"));
+-}
+-
+ static int btrfs_get_device_extents(u64 chunk_object,
+ 				    struct list_head *orphan_devexts,
+ 				    struct list_head *ret_list)
+diff --git a/utils.c b/utils.c
+index e3738d3..2bfd59a 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1955,3 +1955,21 @@ int is_vol_small(char *file)
+ 		return 0;
  	}
- 
--	ret = btrfs_scan_fs_devices(fd, path, &fs_devices, 0);
-+	ret = btrfs_scan_fs_devices(fd, path, &fs_devices, 0, 1);
- 	if (ret)
- 		goto fail_free_sb;
- 
-diff --git a/disk-io.c b/disk-io.c
-index bc673c2..6281569 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -911,7 +911,7 @@ void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
- 
- int btrfs_scan_fs_devices(int fd, const char *path,
- 			  struct btrfs_fs_devices **fs_devices,
--			  u64 sb_bytenr)
-+			  u64 sb_bytenr, int run_ioctl)
- {
- 	u64 total_devs;
- 	int ret;
-@@ -926,7 +926,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
- 	}
- 
- 	if (total_devs != 1) {
--		ret = btrfs_scan_for_fsid(1);
-+		ret = btrfs_scan_for_fsid(run_ioctl);
- 		if (ret)
- 			return ret;
- 	}
-@@ -1005,7 +1005,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	if (restore)
- 		fs_info->on_restoring = 1;
- 
--	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr);
-+	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr, 1);
- 	if (ret)
- 		goto out;
- 
-diff --git a/disk-io.h b/disk-io.h
-index b61eb43..7219c2e 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -57,7 +57,8 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info,
- void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
- void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info);
- int btrfs_scan_fs_devices(int fd, const char *path,
--			  struct btrfs_fs_devices **fs_devices, u64 sb_bytenr);
-+			  struct btrfs_fs_devices **fs_devices, u64 sb_bytenr,
-+			  int run_ioctl);
- int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info);
- 
- struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes);
+ }
++
++/*
++ * This reads a line from the stdin and only returns non-zero if the
++ * first whitespace delimited token is a case insensitive match with yes
++ * or y.
++ */
++int ask_user(char *question)
++{
++	char buf[30] = {0,};
++	char *saveptr = NULL;
++	char *answer;
++
++	printf("%s [y/N]: ", question);
++
++	return fgets(buf, sizeof(buf) - 1, stdin) &&
++	       (answer = strtok_r(buf, " \t\n\r", &saveptr)) &&
++	       (!strcasecmp(answer, "yes") || !strcasecmp(answer, "y"));
++}
+diff --git a/utils.h b/utils.h
+index 6c2553a..2cb9d9b 100644
+--- a/utils.h
++++ b/utils.h
+@@ -80,4 +80,5 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ int is_vol_small(char *file);
+ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			   int verify);
++int ask_user(char *question);
+ #endif
 -- 
 1.8.3.1
 

@@ -1,72 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.windriver.com ([147.11.1.11]:42678 "EHLO
-	mail.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751040Ab3IRBLG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Sep 2013 21:11:06 -0400
-From: <rongqing.li@windriver.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <sandeen@redhat.com>
-Subject: [PATCH] btrfs-progs: Add dependencies explicitly to fix a parallel build issue
-Date: Wed, 18 Sep 2013 09:11:01 +0800
-Message-ID: <1379466661-27973-1-git-send-email-rongqing.li@windriver.com>
+Received: from mx1.redhat.com ([209.132.183.28]:16045 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750942Ab3IRB4a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Sep 2013 21:56:30 -0400
+Message-ID: <5239084D.4020802@redhat.com>
+Date: Tue, 17 Sep 2013 20:56:29 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: rongqing.li@windriver.com
+CC: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Add version.h dependency to fix parallel builds
+References: <1379466661-27973-1-git-send-email-rongqing.li@windriver.com>
+In-Reply-To: <1379466661-27973-1-git-send-email-rongqing.li@windriver.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Roy Li <rongqing.li@windriver.com>
+Change the suffix rule to ensure that version.h is 
+built before we try to create any .o file.
 
-The dependencies of "all: version.h" or other similar ones can not
-fix the parallel build failure, only reduce the times; In fact,
-many *.o files require version.h file.
-
-	#grep '#include "version.h"' ./ -r
-	./btrfs-corrupt-block.c:#include "version.h"
-	./btrfs.c:#include "version.h"
-	./btrfs-image.c:#include "version.h"
-	./cmds-filesystem.c:#include "version.h"
-	./btrfs-show-super.c:#include "version.h"
-	./btrfs-select-super.c:#include "version.h"
-	./cmds-restore.c:#include "version.h"
-	./btrfs-find-root.c:#include "version.h"
-	./mkfs.c:#include "version.h"
-	./btrfs-zero-log.c:#include "version.h"
-	./btrfs-defrag.c:#include "version.h"
-	./cmds-chunk.c:#include "version.h"
-	./btrfstune.c:#include "version.h"
-	./btrfs-calc-size.c:#include "version.h"
-	./btrfs-map-logical.c:#include "version.h"
-	./cmds-check.c:#include "version.h"
-	./btrfs-debug-tree.c:#include "version.h"
-
-Signed-off-by: Roy Li <rongqing.li@windriver.com>
+Reported-by: Roy Li <rongqing.li@windriver.com>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- Sorry, The patch [btrfs-progs: fix parallel build] sent by me on Sep 3
-can not fix the build failure, when build enough times on a 16 core cpu,
-the build failure happens again, so I refix it again.
 
-
- Makefile |    6 ++++++
- 1 file changed, 6 insertions(+)
+I dunno, does this work?  My gnu make is rusty.
 
 diff --git a/Makefile b/Makefile
-index c43cb68..a7c259c 100644
+index 3d715d8..d25054f 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -81,6 +81,12 @@ endif
- 	@echo "    [CC]     $@"
- 	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
+@@ -107,13 +107,13 @@ endif
+ %.o.d: %.c
+ 	$(Q)$(CC) -MM -MG -MF $@ -MT $(@:.o.d=.o) -MT $(@:.o.d=.static.o) -MT $@ $(AM_CFLAGS) $(CFLAGS) $<
  
-+btrfs-corrupt-block.o btrfs.o btrfs-image.o cmds-filesystem.o:version.h
-+btrfs-show-super.o btrfs-select-super.o cmds-restore.o:version.h
-+btrfs-find-root.o mkfs.o btrfs-zero-log.o btrfs-defrag.o cmds-chunk.o:version.h
-+btrfstune.o btrfs-calc-size.o btrfs-map-logical.o cmds-check.o:version.h
-+btrfs-debug-tree.o:version.h
-+
- %.static.o: %.c
+-.c.o:
++%.o: %.c version.h
+ 	@$(check_echo) "    [SP]     $<"
+ 	$(Q)$(check) $(AM_CFLAGS) $(CFLAGS) $<
  	@echo "    [CC]     $@"
- 	$(Q)$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(STATIC_CFLAGS) -c $< -o $@
--- 
-1.7.10.4
-
+ 	$(Q)$(CC) $(AM_CFLAGS) $(CFLAGS) -c $<
+ 
+-%.static.o: %.c
++%.static.o: %.c version.h
+ 	@echo "    [CC]     $@"
+ 	$(Q)$(CC) $(AM_CFLAGS) $(STATIC_CFLAGS) -c $< -o $@
+ 

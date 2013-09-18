@@ -1,88 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50496 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52403 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751435Ab3IRP0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Sep 2013 11:26:40 -0400
+	id S1751655Ab3IRQTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Sep 2013 12:19:35 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 8F211A51CB
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 17:26:38 +0200 (CEST)
+	by mx2.suse.de (Postfix) with ESMTP id 1C7D1A535B
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 18:19:34 +0200 (CEST)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: remove leftovers from hg times
-Date: Wed, 18 Sep 2013 17:26:33 +0200
-Message-Id: <1379517993-5785-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: look up the containing tree root id
+Date: Wed, 18 Sep 2013 18:19:30 +0200
+Message-Id: <1379521170-9258-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Find the tree id of the containing subvolume for a given file or
+directory. For subvolume return it's own id.
+
+$ btrfs inspect-internal rootid <path>
+
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- .hgignore  |  1 -
- .hgtags    | 15 ---------------
- version.sh | 20 --------------------
- 3 files changed, 36 deletions(-)
- delete mode 100644 .hgignore
- delete mode 100644 .hgtags
+ cmds-inspect.c |   38 ++++++++++++++++++++++++++++++++++++++
+ man/btrfs.8.in |    9 +++++++++
+ utils.c        |   30 ++++++++++++++++++++++++++++++
+ utils.h        |    2 ++
+ 4 files changed, 79 insertions(+), 0 deletions(-)
 
-diff --git a/.hgignore b/.hgignore
-deleted file mode 100644
-index 6702033..0000000
---- a/.hgignore
-+++ /dev/null
-@@ -1 +0,0 @@
--version.h
-diff --git a/.hgtags b/.hgtags
-deleted file mode 100644
-index 2aa4389..0000000
---- a/.hgtags
-+++ /dev/null
-@@ -1,15 +0,0 @@
--9cebac62e0c9df99a4ac5a9d489efe0c2e957713 v0.2
--1ef7cf63ac2c67e99b1a1c084554e9c87b08d2b0 v0.3
--c760f17dde33c970fc91ece5360567320396b627 v0.4
--c969452d5ae70db57fdd668557fbdb07756101e8 v0.4
--85bf731757729f25aaf76e47837b39122bea569f v0.5
--75b9a16fff1ae31c572317f2516476750fd1919a v0.6
--f4810b8d5822f06f7104806477863756886eb57f v0.8
--99eb8cf2ca515c2d747ec132e166222089b17056 v0.9
--548ea8d7514ba7fed921983029e5ef690fb3ef0a v0.10
--b3e59089dab67cc3ba52f83f41e9650773d89bd7 v0.11
--5e8f040cdf7c1d7e2cb583444b9434c31b673935 v0.12
--58b803dc9faeb19f2260f8aa37a8a4590fae085b v0.13
--969099968b60600901f90531fddd2f18e32ac336 v0.14
--e6571e2ce0c8ac9fcad9b5b638008e7c8980bf4d v0.15
--2b26e4f8c71ea411d7df35f23e38627cdcbef310 v0.16
-diff --git a/version.sh b/version.sh
-index b81040e..971646b 100644
---- a/version.sh
-+++ b/version.sh
-@@ -24,26 +24,6 @@ if [ $? == 0 -a -d .git ]; then
-     fi
- fi
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index bdebf7d..f0c8e3d 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -301,6 +301,43 @@ out:
+ 	return ret ? 1 : 0;
+ }
  
--which hg &> /dev/null
--if [ $? == 0 -a -d .hg ]; then
--	last=$(hg tags | grep -m1 -o '^v[0-9.]\+')
--	 
--	# now check if the repo has commits since then...
--	if [[ $(hg id -t) == $last || \
--	    $(hg di -r "$last:." | awk '/^diff/{print $NF}' | sort -u) == .hgtags ]]
--	then
--	    # check if it's dirty
--	    if [[ $(hg id | cut -d' ' -f1) == *+ ]]; then
--		v=$last+
--	    else
--		v=$last
--	    fi
--	else
--	    # includes dirty flag
--	    v=$last+$(hg id -i)
--	fi
--fi
-- 
- echo "#ifndef __BUILD_VERSION" > .build-version.h
- echo "#define __BUILD_VERSION" >> .build-version.h
- echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
++static const char* const cmd_rootid_usage[] = {
++	"btrfs inspect-internal rootid <path>",
++	"Get tree ID of the containing subvolume of path.",
++	NULL
++};
++
++static int cmd_rootid(int argc, char **argv)
++{
++	int ret;
++	int fd = -1;
++	u64 rootid;
++	DIR *dirstream = NULL;
++
++	if (check_argc_exact(argc, 2))
++		usage(cmd_rootid_usage);
++
++	fd = open_file_or_dir(argv[1], &dirstream);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", argv[1]);
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ret = lookup_ino_rootid(fd, &rootid);
++	if (ret) {
++		fprintf(stderr, "%s: rootid failed with ret=%d\n",
++			argv[0], ret);
++		goto out;
++	}
++
++	printf("%llu\n", (unsigned long long)rootid);
++out:
++	close_file_or_dir(fd, dirstream);
++
++	return !!ret;
++}
++
+ const struct cmd_group inspect_cmd_group = {
+ 	inspect_cmd_group_usage, NULL, {
+ 		{ "inode-resolve", cmd_inode_resolve, cmd_inode_resolve_usage,
+@@ -309,6 +346,7 @@ const struct cmd_group inspect_cmd_group = {
+ 			cmd_logical_resolve_usage, NULL, 0 },
+ 		{ "subvolid-resolve", cmd_subvolid_resolve,
+ 			cmd_subvolid_resolve_usage, NULL, 0 },
++		{ "rootid", cmd_rootid, cmd_rootid_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
+ 	}
+ };
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 0b69ce2..be4a6b2 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -80,6 +80,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBinspect-internal subvolid-resolve\fP \fI<subvolid>\fP \fI<path>\fP
+ .PP
++\fBbtrfs\fP \fBinspect-internal rootid\fP \fI<path>\fP
++.PP
+ .PP
+ \fBbtrfs\fP \fBsend\fP [-v] [-p \fI<parent>\fP] [-c \fI<clone-src>\fP] [-f \fI<outfile>\fP] \fI<subvol>\fP
+ .PP
+@@ -582,6 +584,13 @@ not enough to read all the resolved results. The max value one can set is 64k.
+ Get file system paths for the given subvolume ID.
+ .TP
+ 
++\fBinspect-internal rootid\fP \fI<path>\fP
++For a given file or directory, return the containing tree root id. For a
++subvolume return it's own tree id.
++
++The result is undefined for the so-called empty subvolumes (identified by inode number 2).
++.TP
++
+ \fBsend\fP [-v] [-p \fI<parent>\fP] [-c \fI<clone-src>\fP] [-f \fI<outfile>\fP] \fI<subvol>\fP
+ Send the subvolume to stdout.
+ Sends the subvolume specified by \fI<subvol>\fR to stdout.
+diff --git a/utils.c b/utils.c
+index 5fa193b..8aecc4a 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1975,3 +1975,33 @@ int ask_user(char *question)
+ 	       (answer = strtok_r(buf, " \t\n\r", &saveptr)) &&
+ 	       (!strcasecmp(answer, "yes") || !strcasecmp(answer, "y"));
+ }
++
++/*
++ * For a given:
++ * - file or directory return the containing tree root id
++ * - subvolume return it's own tree id
++ * - BTRFS_EMPTY_SUBVOL_DIR_OBJECTID (directory with ino == 2) the result is
++ *   undefined and function returns -1
++ */
++int lookup_ino_rootid(int fd, u64 *rootid)
++{
++	struct btrfs_ioctl_ino_lookup_args args;
++	int ret;
++	int e;
++
++	memset(&args, 0, sizeof(args));
++	args.treeid = 0;
++	args.objectid = BTRFS_FIRST_FREE_OBJECTID;
++
++	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
++	e = errno;
++	if (ret) {
++		fprintf(stderr, "ERROR: Failed to lookup root id - %s\n",
++			strerror(e));
++		return ret;
++	}
++
++	*rootid = args.treeid;
++
++	return 0;
++}
+diff --git a/utils.h b/utils.h
+index fdef3f0..19f028f 100644
+--- a/utils.h
++++ b/utils.h
+@@ -81,4 +81,6 @@ int is_vol_small(char *file);
+ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			   int verify);
+ int ask_user(char *question);
++int lookup_ino_rootid(int fd, u64 *rootid);
++
+ #endif
 -- 
-1.8.3.1
+1.7.9
 

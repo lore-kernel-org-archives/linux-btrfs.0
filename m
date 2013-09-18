@@ -1,248 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37995 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:38209 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751675Ab3IRU3a (ORCPT
+	with ESMTP id S1751635Ab3IRUsj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Sep 2013 16:29:30 -0400
+	Wed, 18 Sep 2013 16:48:39 -0400
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 889299A06B6
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 14:29:29 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id 70BEA9A0420
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2013 14:48:39 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] xfstests: introduce _filter_backtick
-Date: Wed, 18 Sep 2013 16:29:26 -0400
-Message-ID: <1379536166-19232-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] xfstests: fix set-default test in btrfs/001
+Date: Wed, 18 Sep 2013 16:48:27 -0400
+Message-ID: <1379537307-21681-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Apparently the GNU guys decided to change their error output from something like
-
-Error `Error message'
-
-To
-
-Error 'Error message'
-
-So to fix this I've introduced _filter_backtick which will change any ` to ' and
-then changed the output of the tests that were failing for me because of this
-output.  I tested this on a new box that has the new output and an old box which
-has the old output and it appears to fix the issue.  Thanks,
+We were actually testing this improperly, there was a bug in the set default
+code so we weren't actually honoring the 0 subvolid properly.  To fix this we
+need to get the subvolid for the subvol we want to set as the default and use
+that in the command.  With this patch we now pass again with the fix for the 0
+subvolid.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- common/filter         |  7 +++++++
- tests/generic/193     | 18 ++++++++++--------
- tests/generic/193.out | 16 ++++++++--------
- tests/generic/245     |  3 ++-
- tests/generic/245.out |  2 +-
- tests/generic/294     |  2 +-
- tests/generic/294.out |  8 ++++----
- tests/generic/306     |  2 +-
- tests/generic/306.out |  2 +-
- 9 files changed, 35 insertions(+), 25 deletions(-)
+ tests/btrfs/001 | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/common/filter b/common/filter
-index ee738ca..ec49e18 100644
---- a/common/filter
-+++ b/common/filter
-@@ -280,5 +280,12 @@ _filter_size_to_bytes()
- 	echo $((${size:0:${#size}-1}*$mul))
- }
- 
-+# Old gnu utils used to spit out something like "Error `blah'" but the new ones
-+# do "Error 'blah'" so fix the ` to be a ' so we are consistent
-+_filter_backtick()
-+{
-+	sed -e "s/\`/\'/g"
-+}
-+
- # make sure this script returns success
- /bin/true
-diff --git a/tests/generic/193 b/tests/generic/193
-index 4fa20ff..2186997 100755
---- a/tests/generic/193
-+++ b/tests/generic/193
-@@ -91,17 +91,18 @@ echo
- _create_files
- 
- echo "user: chown root owned file to qa_user (should fail)"
--su ${qa_user} -c "chown ${qa_user} $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "chown ${qa_user} $test_root" 2>&1 | _filter_files | \
-+	_filter_backtick
- 
- echo "user: chown root owned file to root (should fail)"
--su ${qa_user} -c "chown root $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "chown root $test_root" 2>&1 | _filter_files | _filter_backtick
- 
- echo "user: chown qa_user owned file to qa_user (should succeed)"
- su ${qa_user} -c "chown ${qa_user} $test_user"
- 
- # this would work without _POSIX_CHOWN_RESTRICTED
- echo "user: chown qa_user owned file to root (should fail)"
--su ${qa_user} -c "chown root $test_user" 2>&1 | _filter_files
-+su ${qa_user} -c "chown root $test_user" 2>&1 | _filter_files | _filter_backtick
- 
- _cleanup_files
- 
-@@ -115,13 +116,14 @@ echo
- _create_files
- 
- echo "user: chgrp root owned file to root (should fail)"
--su ${qa_user} -c "chgrp root $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "chgrp root $test_root" 2>&1 | _filter_files | _filter_backtick
- 
- echo "user: chgrp qa_user owned file to root (should fail)"
--su ${qa_user} -c "chgrp root $test_user" 2>&1 | _filter_files
-+su ${qa_user} -c "chgrp root $test_user" 2>&1 | _filter_files | _filter_backtick
- 
- echo "user: chgrp root owned file to qa_user (should fail)"
--su ${qa_user} -c "chgrp ${qa_user} $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "chgrp ${qa_user} $test_root" 2>&1 | _filter_files | \
-+	_filter_backtick
- 
- echo "user: chgrp qa_user owned file to qa_user (should succeed)"
- su ${qa_user} -c "chgrp ${qa_user} $test_user"
-@@ -144,7 +146,7 @@ echo "user: chmod a+r on qa_user owned file (should succeed)"
- su ${qa_user} -c "chmod a+r $test_user"
- 
- echo "user: chmod a+r on root owned file (should fail)"
--su ${qa_user} -c "chmod a+r $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "chmod a+r $test_root" 2>&1 | _filter_files | _filter_backtick
- 
- #
- # Setup a file owned by the qa_user, but with a group ID that
-@@ -283,7 +285,7 @@ echo "user: touch qa_user file (should succeed)"
- su ${qa_user} -c "touch $test_user"
- 
- echo "user: touch root file (should fail)"
--su ${qa_user} -c "touch $test_root" 2>&1 | _filter_files
-+su ${qa_user} -c "touch $test_root" 2>&1 | _filter_files | _filter_backtick
- 
- _cleanup_files
- 
-diff --git a/tests/generic/193.out b/tests/generic/193.out
-index 357a7c1..7a7f89a 100644
---- a/tests/generic/193.out
-+++ b/tests/generic/193.out
-@@ -3,28 +3,28 @@ QA output created by 193
- testing ATTR_UID
- 
- user: chown root owned file to qa_user (should fail)
--chown: changing ownership of `test.root': Operation not permitted
-+chown: changing ownership of 'test.root': Operation not permitted
- user: chown root owned file to root (should fail)
--chown: changing ownership of `test.root': Operation not permitted
-+chown: changing ownership of 'test.root': Operation not permitted
- user: chown qa_user owned file to qa_user (should succeed)
- user: chown qa_user owned file to root (should fail)
--chown: changing ownership of `test.user': Operation not permitted
-+chown: changing ownership of 'test.user': Operation not permitted
- 
- testing ATTR_GID
- 
- user: chgrp root owned file to root (should fail)
--chgrp: changing group of `test.root': Operation not permitted
-+chgrp: changing group of 'test.root': Operation not permitted
- user: chgrp qa_user owned file to root (should fail)
--chgrp: changing group of `test.user': Operation not permitted
-+chgrp: changing group of 'test.user': Operation not permitted
- user: chgrp root owned file to qa_user (should fail)
--chgrp: changing group of `test.root': Operation not permitted
-+chgrp: changing group of 'test.root': Operation not permitted
- user: chgrp qa_user owned file to qa_user (should succeed)
- 
- testing ATTR_MODE
- 
- user: chmod a+r on qa_user owned file (should succeed)
- user: chmod a+r on root owned file (should fail)
--chmod: changing permissions of `test.root': Operation not permitted
-+chmod: changing permissions of 'test.root': Operation not permitted
- check that the sgid bit is cleared
- -rw-rw-rw-
- check that suid bit is not cleared
-@@ -60,5 +60,5 @@ testing ATTR_*TIMES_SET
- 
- user: touch qa_user file (should succeed)
- user: touch root file (should fail)
--touch: cannot touch `test.root': Permission denied
-+touch: cannot touch 'test.root': Permission denied
- *** done
-diff --git a/tests/generic/245 b/tests/generic/245
-index 9b87fbb..a2811ce 100755
---- a/tests/generic/245
-+++ b/tests/generic/245
-@@ -65,7 +65,8 @@ touch $dir/aa/1
- mkdir $dir/ab/aa
- touch $dir/ab/aa/2
- 
--mv $dir/ab/aa/ $dir 2>&1 | _filter_test_dir | _filter_directory_not_empty
-+mv $dir/ab/aa/ $dir 2>&1 | _filter_test_dir | _filter_directory_not_empty | \
-+	_filter_backtick
- 
- status=0
- exit $status
-diff --git a/tests/generic/245.out b/tests/generic/245.out
-index 8322aac..f5b5f18 100644
---- a/tests/generic/245.out
-+++ b/tests/generic/245.out
-@@ -1,2 +1,2 @@
- QA output created by 245
--mv: cannot move `TEST_DIR/test-mv/ab/aa/' to `TEST_DIR/test-mv/aa': File exists
-+mv: cannot move 'TEST_DIR/test-mv/ab/aa/' to 'TEST_DIR/test-mv/aa': File exists
-diff --git a/tests/generic/294 b/tests/generic/294
-index fa7f339..ef02e18 100755
---- a/tests/generic/294
-+++ b/tests/generic/294
-@@ -65,7 +65,7 @@ mkdir $THIS_TEST_DIR || _fail "Could not create dir for test"
- 
- _create_files 2>&1 | _filter_scratch
- _scratch_mount -o remount,ro || _fail "Could not remount scratch readonly"
--_create_files 2>&1 | _filter_scratch
-+_create_files 2>&1 | _filter_scratch | _filter_backtick
- 
- # success, all done
- status=0
-diff --git a/tests/generic/294.out b/tests/generic/294.out
-index 027d9fc..1ac1c67 100644
---- a/tests/generic/294.out
-+++ b/tests/generic/294.out
-@@ -1,5 +1,5 @@
- QA output created by 294
--mknod: `SCRATCH_MNT/294.test/testnode': File exists
--mkdir: cannot create directory `SCRATCH_MNT/294.test/testdir': File exists
--touch: cannot touch `SCRATCH_MNT/294.test/testtarget': Read-only file system
--ln: creating symbolic link `SCRATCH_MNT/294.test/testlink': File exists
-+mknod: 'SCRATCH_MNT/294.test/testnode': File exists
-+mkdir: cannot create directory 'SCRATCH_MNT/294.test/testdir': File exists
-+touch: cannot touch 'SCRATCH_MNT/294.test/testtarget': Read-only file system
-+ln: creating symbolic link 'SCRATCH_MNT/294.test/testlink': File exists
-diff --git a/tests/generic/306 b/tests/generic/306
-index 04d28df..47235ec 100755
---- a/tests/generic/306
-+++ b/tests/generic/306
-@@ -71,7 +71,7 @@ _scratch_mount -o ro || _fail "Could not mount scratch readonly"
- 
- # We should be able to read & write to/from these devices even on an RO fs
- echo "== try to create new file"
--touch $SCRATCH_MNT/this_should_fail 2>&1 | _filter_scratch
-+touch $SCRATCH_MNT/this_should_fail 2>&1 | _filter_scratch | _filter_backtick
- echo "== pwrite to null device"
- $XFS_IO_PROG -c "pwrite 0 512" $DEVNULL | _filter_xfs_io
- echo "== pread from zero device"
-diff --git a/tests/generic/306.out b/tests/generic/306.out
-index 69bfb42..fb3748b 100644
---- a/tests/generic/306.out
-+++ b/tests/generic/306.out
-@@ -1,6 +1,6 @@
- QA output created by 306
- == try to create new file
--touch: cannot touch `SCRATCH_MNT/this_should_fail': Read-only file system
-+touch: cannot touch 'SCRATCH_MNT/this_should_fail': Read-only file system
- == pwrite to null device
- wrote 512/512 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/btrfs/001 b/tests/btrfs/001
+index 9aa2431..c05d772 100755
+--- a/tests/btrfs/001
++++ b/tests/btrfs/001
+@@ -77,7 +77,8 @@ ls $SCRATCH_MNT/subvol
+ echo "Creating file bar in subvol"
+ dd if=/dev/zero of=$SCRATCH_MNT/subvol/bar bs=1M count=1 &> /dev/null
+ echo "Setting subvol to the default"
+-$BTRFS_UTIL_PROG subvolume set-default 0 $SCRATCH_MNT/subvol | _filter_scratch
++subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT subvol)
++$BTRFS_UTIL_PROG subvolume set-default $subvolid $SCRATCH_MNT | _filter_scratch
+ _scratch_remount
+ echo "List root dir which is now subvol"
+ ls $SCRATCH_MNT
 -- 
 1.8.3.1
 

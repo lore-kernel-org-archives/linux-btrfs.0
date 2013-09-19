@@ -1,54 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36557 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751797Ab3ISPsN (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:45514 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751562Ab3ISPsL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Sep 2013 11:48:13 -0400
+	Thu, 19 Sep 2013 11:48:11 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 0B3F17C06AC
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Sep 2013 09:48:13 -0600 (MDT)
+	by dkim2.fusionio.com (Postfix) with ESMTP id EA8389A0404
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Sep 2013 09:48:10 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <walken@google.com>, <linux-kernel@vger.kernel.org>, <mingo@elte.hu>,
         <peter@hurleysoftware.com>, <akpm@linux-foundation.org>
-Subject: [PATCH 2/2] Btrfs: stop caching thread if extetn_commit_sem is contended
-Date: Thu, 19 Sep 2013 11:48:08 -0400
-Message-ID: <1379605688-987-2-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1379605688-987-1-git-send-email-jbacik@fusionio.com>
-References: <1379605688-987-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH 1/2] rwsem: add rwsem_is_contended V2
+Date: Thu, 19 Sep 2013 11:48:07 -0400
+Message-ID: <1379605688-987-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can starve out the transaction commit with a bunch of caching threads all
-running at the same time.  This is because we will only drop the
-extent_commit_sem if we need_resched(), which isn't likely to happen since we
-will be reading a lot from the disk so have already schedule()'ed plenty.  Alex
-observed that he could starve out a transaction commit for up to a minute with
-32 caching threads all running at once.  This will allow us to drop the
-extent_commit_sem to allow the transaction commit to swap the commit_root out
-and then all the cachers will start back up.  Thanks,
+Btrfs needs a simple way to know if it needs to let go of it's read lock on a
+rwsem.  Introduce rwsem_is_contended to check to see if there are any waiters on
+this rwsem currently.  This is just a hueristic, it is meant to be light and not
+100% accurate and called by somebody already holding on to the rwsem in either
+read or write.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/extent-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+V1->V2: took everybodys suggestions and simplified it to just one function in
+rwsem.h so it works for both the spinlock case and non-spinlock case.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cfb3cf7..cc074c34 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -442,7 +442,8 @@ next:
- 			if (ret)
- 				break;
+ include/linux/rwsem.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
+index 0616ffe..c340493 100644
+--- a/include/linux/rwsem.h
++++ b/include/linux/rwsem.h
+@@ -75,6 +75,19 @@ do {								\
+ } while (0)
  
--			if (need_resched()) {
-+			if (need_resched() ||
-+			    rwsem_is_contended(&fs_info->extent_commit_sem)) {
- 				caching_ctl->progress = last;
- 				btrfs_release_path(path);
- 				up_read(&fs_info->extent_commit_sem);
+ /*
++ * This is the same regardless of which rwsem implementation that is being used.
++ * It is just a heuristic meant to be called by somebody alreadying holding the
++ * rwsem to see if somebody from the opposite type is wanting access to the
++ * lock.
++ */
++static inline int rwsem_is_contended(struct rw_semaphore *sem)
++{
++	if (!list_empty(&sem->wait_list))
++		return 1;
++	return 0;
++}
++
++/*
+  * lock for reading
+  */
+ extern void down_read(struct rw_semaphore *sem);
 -- 
 1.8.3.1
 

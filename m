@@ -1,93 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f44.google.com ([209.85.214.44]:43729 "EHLO
-	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754668Ab3ITNns (ORCPT
+Received: from mail-bk0-f48.google.com ([209.85.214.48]:34878 "EHLO
+	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754634Ab3ITNrN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 09:43:48 -0400
-Received: by mail-bk0-f44.google.com with SMTP id mz10so191261bkb.31
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 06:43:47 -0700 (PDT)
+	Fri, 20 Sep 2013 09:47:13 -0400
+Received: by mail-bk0-f48.google.com with SMTP id my13so195360bkb.21
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 06:47:12 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: remove duplicated ino cache's inode lookup
-Date: Fri, 20 Sep 2013 14:43:28 +0100
-Message-Id: <1379684608-18825-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: remove path arg from btrfs_truncate_free_space_cache
+Date: Fri, 20 Sep 2013 14:46:51 +0100
+Message-Id: <1379684811-27102-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We're doing a unnecessary extra lookup of the ino cache's
-inode when we already have it (and holding a reference)
-during the process of saving the ino cache contents to disk.
-Therefore remove this extra lookup.
+Not used for anything, and removing it avoids caller's need to
+allocate a path structure.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/free-space-cache.c |    9 ++-------
- fs/btrfs/free-space-cache.h |    3 ++-
+ fs/btrfs/extent-tree.c      |    3 +--
+ fs/btrfs/free-space-cache.c |    1 -
+ fs/btrfs/free-space-cache.h |    1 -
  fs/btrfs/inode-map.c        |    2 +-
- 3 files changed, 5 insertions(+), 9 deletions(-)
+ fs/btrfs/relocation.c       |   11 +----------
+ 5 files changed, 3 insertions(+), 15 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d58bef1..55b537f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3197,8 +3197,7 @@ again:
+ 		if (ret)
+ 			goto out_put;
+ 
+-		ret = btrfs_truncate_free_space_cache(root, trans, path,
+-						      inode);
++		ret = btrfs_truncate_free_space_cache(root, trans, inode);
+ 		if (ret)
+ 			goto out_put;
+ 	}
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 4f419ba..38e3779 100644
+index 38e3779..7fd48df 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -2969,19 +2969,15 @@ out:
+@@ -218,7 +218,6 @@ int btrfs_check_trunc_cache_free_space(struct btrfs_root *root,
  
- int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 			      struct btrfs_trans_handle *trans,
--			      struct btrfs_path *path)
-+			      struct btrfs_path *path,
-+			      struct inode *inode)
+ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+ 				    struct btrfs_trans_handle *trans,
+-				    struct btrfs_path *path,
+ 				    struct inode *inode)
  {
- 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
--	struct inode *inode;
- 	int ret;
- 
- 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
- 		return 0;
- 
--	inode = lookup_free_ino_inode(root, path);
--	if (IS_ERR(inode))
--		return 0;
--
- 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, trans, path, 0);
- 	if (ret) {
- 		btrfs_delalloc_release_metadata(inode, inode->i_size);
-@@ -2992,7 +2988,6 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- #endif
- 	}
- 
--	iput(inode);
- 	return ret;
- }
- 
+ 	loff_t oldsize;
 diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index e737f92..ba8d5a1 100644
+index ba8d5a1..0cf4977 100644
 --- a/fs/btrfs/free-space-cache.h
 +++ b/fs/btrfs/free-space-cache.h
-@@ -76,7 +76,8 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info,
- 			struct btrfs_root *root);
- int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 			      struct btrfs_trans_handle *trans,
--			      struct btrfs_path *path);
-+			      struct btrfs_path *path,
-+			      struct inode *inode);
- 
- void btrfs_init_free_space_ctl(struct btrfs_block_group_cache *block_group);
- int __btrfs_add_free_space(struct btrfs_free_space_ctl *ctl,
+@@ -58,7 +58,6 @@ int btrfs_check_trunc_cache_free_space(struct btrfs_root *root,
+ 				       struct btrfs_block_rsv *rsv);
+ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+ 				    struct btrfs_trans_handle *trans,
+-				    struct btrfs_path *path,
+ 				    struct inode *inode);
+ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 			  struct btrfs_block_group_cache *block_group);
 diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index d11e1c6..b863e45 100644
+index b863e45..014de49 100644
 --- a/fs/btrfs/inode-map.c
 +++ b/fs/btrfs/inode-map.c
-@@ -503,7 +503,7 @@ again:
+@@ -466,7 +466,7 @@ again:
  	}
- 	btrfs_free_reserved_data_space(inode, prealloc);
  
--	ret = btrfs_write_out_ino_cache(root, trans, path);
-+	ret = btrfs_write_out_ino_cache(root, trans, path, inode);
- out_put:
- 	iput(inode);
- out_release:
+ 	if (i_size_read(inode) > 0) {
+-		ret = btrfs_truncate_free_space_cache(root, trans, path, inode);
++		ret = btrfs_truncate_free_space_cache(root, trans, inode);
+ 		if (ret) {
+ 			if (ret != -ENOSPC)
+ 				btrfs_abort_transaction(trans, root, ret);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index a5a2632..5ca7ea9 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3407,7 +3407,6 @@ static int delete_block_group_cache(struct btrfs_fs_info *fs_info,
+ 				    struct inode *inode, u64 ino)
+ {
+ 	struct btrfs_key key;
+-	struct btrfs_path *path;
+ 	struct btrfs_root *root = fs_info->tree_root;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret = 0;
+@@ -3432,22 +3431,14 @@ truncate:
+ 	if (ret)
+ 		goto out;
+ 
+-	path = btrfs_alloc_path();
+-	if (!path) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
+-
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans)) {
+-		btrfs_free_path(path);
+ 		ret = PTR_ERR(trans);
+ 		goto out;
+ 	}
+ 
+-	ret = btrfs_truncate_free_space_cache(root, trans, path, inode);
++	ret = btrfs_truncate_free_space_cache(root, trans, inode);
+ 
+-	btrfs_free_path(path);
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root);
+ out:
 -- 
 1.7.9.5
 

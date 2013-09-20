@@ -1,49 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga03.intel.com ([143.182.124.21]:4458 "EHLO mga03.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751689Ab3ISSTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Sep 2013 14:19:37 -0400
-Message-ID: <523B4036.7030204@linux.intel.com>
-Date: Thu, 19 Sep 2013 11:19:34 -0700
-From: Saul Wold <sgw@linux.intel.com>
+Received: from mail-pa0-f53.google.com ([209.85.220.53]:51083 "EHLO
+	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752808Ab3ITEuA convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Sep 2013 00:50:00 -0400
+Received: by mail-pa0-f53.google.com with SMTP id lb1so251997pab.40
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Sep 2013 21:50:00 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Issue building a file based rootfs image with mkfs.btrfs
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <5236E1FF.4080900@mur.at>
+References: <5236E1FF.4080900@mur.at>
+Date: Fri, 20 Sep 2013 00:49:59 -0400
+Message-ID: <CALJXSJpPeUTCnKQWph1gr3GYuvLLqGtRfJTi3Dq42o=96BxXnw@mail.gmail.com>
+Subject: Re: rootfs crash
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: =?UTF-8?Q?Jogi_Hofm=C3=BCller?= <jogi@mur.at>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Sep 16, 2013 at 6:48 AM, Jogi Hofmüller <jogi@mur.at> wrote:
+>  After btrfs-zero-log the device
+> was still not mountable.  Mount attempts fail with i/o erros now.
+...
+> All this is happening on an Asus Zen book  UX32V with two 128GB SSDs.
 
-Hi there,
 
-I am attempting to build a rootfs image from an existing rootfs 
-directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
+Did you make sure you aren't working with a dead SSD? That would make
+everything much more complicated than it should be. I also had a
+Zenbook from Asus with SSD with Btrfs, and it died 2 months ago. It
+couldn't handle Btrfs for more than 6 months. Either those SSDs are
+weak or Btrfs really is an SSD killer even though it is a COW FS.
 
-The couple problem I saw was that the target image file needed to exist, 
-although I think I can patch that then the FS size was much larger than 
-the actual size, I tracked this to the usage of ftw not accounting for 
-symlinks, I have a patch for that which I will send once I finish 
-getting the other issues resolved.
-
-Next issue I hit was an assertion failure after getting "not enough free 
-space" message:
-
-not enough free space
-add_file_items failed
-unable to traverse_directory
-Making image is aborted.
-mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
-
-I am kind of stuck on this one, took it as far as I can right now. 
-Would I be better off dropping back to 0.19 or can we move forward 
-fixing this?
-
-Thanks
-
--- 
-     Sau!
-
-Saul Wold
-Yocto Component Wrangler @ Intel
-Yocto Project / Poky Build System
-
+Maybe using ddrescue first to get it off the defective media would
+give you a chance to recover more data.

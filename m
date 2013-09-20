@@ -1,81 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:50975 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752566Ab3ISX1d (ORCPT
+Received: from mail-ea0-f177.google.com ([209.85.215.177]:48340 "EHLO
+	mail-ea0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752729Ab3ITFMv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Sep 2013 19:27:33 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 925FB9A0681
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Sep 2013 17:27:33 -0600 (MDT)
-Date: Thu, 19 Sep 2013 19:27:32 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Peter Hurley <peter@hurleysoftware.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
-        <walken@google.com>, <linux-kernel@vger.kernel.org>, <mingo@elte.hu>,
-        <akpm@linux-foundation.org>
-Subject: Re: [PATCH 1/2] rwsem: add rwsem_is_contended V2
-Message-ID: <20130919232732.GC1615@localhost.localdomain>
+	Fri, 20 Sep 2013 01:12:51 -0400
+Date: Fri, 20 Sep 2013 07:12:47 +0200
+From: Ingo Molnar <mingo@kernel.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org, walken@google.com,
+        linux-kernel@vger.kernel.org, mingo@elte.hu, peter@hurleysoftware.com,
+        akpm@linux-foundation.org
+Subject: Re: [PATCH 2/2] Btrfs: stop caching thread if extetn_commit_sem is
+ contended
+Message-ID: <20130920051247.GC1486@gmail.com>
 References: <1379605688-987-1-git-send-email-jbacik@fusionio.com>
- <523B8157.4050508@hurleysoftware.com>
+ <1379605688-987-2-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <523B8157.4050508@hurleysoftware.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1379605688-987-2-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 19, 2013 at 06:57:27PM -0400, Peter Hurley wrote:
-> On 09/19/2013 11:48 AM, Josef Bacik wrote:
-> >Btrfs needs a simple way to know if it needs to let go of it's read lock on a
-> >rwsem.  Introduce rwsem_is_contended to check to see if there are any waiters on
-> >this rwsem currently.  This is just a hueristic, it is meant to be light and not
-> >100% accurate and called by somebody already holding on to the rwsem in either
-> >read or write.  Thanks,
-> >
-> >Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> >---
-> >V1->V2: took everybodys suggestions and simplified it to just one function in
-> >rwsem.h so it works for both the spinlock case and non-spinlock case.
-> >
-> >  include/linux/rwsem.h | 13 +++++++++++++
-> >  1 file changed, 13 insertions(+)
-> >
-> >diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
-> >index 0616ffe..c340493 100644
-> >--- a/include/linux/rwsem.h
-> >+++ b/include/linux/rwsem.h
-> >@@ -75,6 +75,19 @@ do {								\
-> >  } while (0)
-> >
-> >  /*
-> >+ * This is the same regardless of which rwsem implementation that is being used.
-> >+ * It is just a heuristic meant to be called by somebody alreadying holding the
-> >+ * rwsem to see if somebody from  the opposite type is wanting access to the
->                                         ^^^^^^^^^^^^^
-> 
-> Readers can infer that at least one writer is waiting if the wait_list is
-> !empty; however, writers cannot infer anything other than some other
-> thread is waiting -- it could be a reader or a writer or multiples of either.
-> 
 
-Right duh, I'll fix that up.
+* Josef Bacik <jbacik@fusionio.com> wrote:
 
+> We can starve out the transaction commit with a bunch of caching threads 
+> all running at the same time.  This is because we will only drop the 
+> extent_commit_sem if we need_resched(), which isn't likely to happen 
+> since we will be reading a lot from the disk so have already 
+> schedule()'ed plenty.  Alex observed that he could starve out a 
+> transaction commit for up to a minute with 32 caching threads all 
+> running at once.  This will allow us to drop the extent_commit_sem to 
+> allow the transaction commit to swap the commit_root out and then all 
+> the cachers will start back up.  Thanks,
 > 
-> >+ * lock.
-> >+ */
-> >+static inline int rwsem_is_contended(struct rw_semaphore *sem)
-> >+{
-> >+	if (!list_empty(&sem->wait_list))
-> >+		return 1;
-> >+	return 0;
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/extent-tree.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
 > 
-> How about
-> 
->         return !list_empty(&sem->wait_list);
-> 
-> ?
-> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index cfb3cf7..cc074c34 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -442,7 +442,8 @@ next:
+>  			if (ret)
+>  				break;
+>  
+> -			if (need_resched()) {
+> +			if (need_resched() ||
+> +			    rwsem_is_contended(&fs_info->extent_commit_sem)) {
+>  				caching_ctl->progress = last;
+>  				btrfs_release_path(path);
+>  				up_read(&fs_info->extent_commit_sem);
 
-Another duh, thanks I'll wait for any other input and then fix this up and
-resend.  Thanks,
+So, just to fill in what happens in this loop:
 
-Josef
+				mutex_unlock(&caching_ctl->mutex);
+				cond_resched();
+				goto again;
+
+where 'again:' takes caching_ctl->mutex and fs_info->extent_commit_sem 
+again:
+
+	again:
+	        mutex_lock(&caching_ctl->mutex);
+		/* need to make sure the commit_root doesn't disappear */
+		down_read(&fs_info->extent_commit_sem);
+
+So, if I'm reading the code correct, there can be a fair amount of 
+concurrency here: there may be multiple 'caching kthreads' per filesystem 
+active, while there's one fs_info->extent_commit_sem per filesystem 
+AFAICS.
+
+So, what happens if there are a lot of CPUs all busy holding the 
+->extent_commit_sem rwsem read-locked and a writer arrives? They'd all 
+rush to try to release the fs_info->extent_commit_sem, and they'd block in 
+the down_read() because there's a writer waiting.
+
+So there's a guarantee of forward progress. This should answer akpm's 
+concern I think.
+
+If this analysis is correct then:
+
+  Acked-by: Ingo Molnar <mingo@kernel.org>
+
+Thanks,
+
+	Ingo

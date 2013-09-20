@@ -1,120 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46863 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752067Ab3ITDhN (ORCPT
+Received: from mail-ee0-f44.google.com ([74.125.83.44]:64162 "EHLO
+	mail-ee0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754703Ab3ITN1P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Sep 2013 23:37:13 -0400
-Date: Thu, 19 Sep 2013 20:37:07 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Fix crash due to not allocating integrity data for a
- bioset
-Message-ID: <20130920033707.GA4557@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	Fri, 20 Sep 2013 09:27:15 -0400
+Received: by mail-ee0-f44.google.com with SMTP id b47so268626eek.17
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 06:27:14 -0700 (PDT)
+From: Ross Kirk <ross.kirk@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Ross Kirk <ross.kirk@gmail.com>
+Subject: [PATCH] btrfs: remove unused parameter from btrfs_header_fsid
+Date: Fri, 20 Sep 2013 14:27:06 +0100
+Message-Id: <1379683626-29724-1-git-send-email-ross.kirk@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btrfs creates a bioset, we must also allocate the integrity data pool.
-Otherwise btrfs will crash when it tries to submit a bio to a checksumming
-disk:
+Remove unused parameter, 'eb'. Unused since introduction in
+5f39d397dfbe140a14edecd4e73c34ce23c4f9ee
 
- BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
- IP: [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
- PGD 2305e4067 PUD 23063d067 PMD 0
- Oops: 0000 [#1] PREEMPT SMP
- Modules linked in: btrfs scsi_debug xfs ext4 jbd2 ext3 jbd mbcache
-sch_fq_codel eeprom lpc_ich mfd_core nfsd exportfs auth_rpcgss af_packet
-raid6_pq xor zlib_deflate libcrc32c [last unloaded: scsi_debug]
- CPU: 1 PID: 4486 Comm: mount Not tainted 3.12.0-rc1-mcsum #2
- Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
- task: ffff8802451c9720 ti: ffff880230698000 task.ti: ffff880230698000
- RIP: 0010:[<ffffffff8111e28a>]  [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
- RSP: 0018:ffff880230699688  EFLAGS: 00010286
- RAX: 0000000000000001 RBX: 0000000000000000 RCX: 00000000005f8445
- RDX: 0000000000000001 RSI: 0000000000000010 RDI: 0000000000000000
- RBP: ffff8802306996f8 R08: 0000000000011200 R09: 0000000000000008
- R10: 0000000000000020 R11: ffff88009d6e8000 R12: 0000000000011210
- R13: 0000000000000030 R14: ffff8802306996b8 R15: ffff8802451c9720
- FS:  00007f25b8a16800(0000) GS:ffff88024fc80000(0000) knlGS:0000000000000000
- CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
- CR2: 0000000000000018 CR3: 0000000230576000 CR4: 00000000000007e0
- Stack:
-  ffff8802451c9720 0000000000000002 ffffffff81a97100 0000000000281250
-  ffffffff81a96480 ffff88024fc99150 ffff880228d18200 0000000000000000
-  0000000000000000 0000000000000040 ffff880230e8c2e8 ffff8802459dc900
- Call Trace:
-  [<ffffffff811b2208>] bio_integrity_alloc+0x48/0x1b0
-  [<ffffffff811b26fc>] bio_integrity_prep+0xac/0x360
-  [<ffffffff8111e298>] ? mempool_alloc+0x58/0x150
-  [<ffffffffa03e8041>] ? alloc_extent_state+0x31/0x110 [btrfs]
-  [<ffffffff81241579>] blk_queue_bio+0x1c9/0x460
-  [<ffffffff8123e58a>] generic_make_request+0xca/0x100
-  [<ffffffff8123e639>] submit_bio+0x79/0x160
-  [<ffffffffa03f865e>] btrfs_map_bio+0x48e/0x5b0 [btrfs]
-  [<ffffffffa03c821a>] btree_submit_bio_hook+0xda/0x110 [btrfs]
-  [<ffffffffa03e7eba>] submit_one_bio+0x6a/0xa0 [btrfs]
-  [<ffffffffa03ef450>] read_extent_buffer_pages+0x250/0x310 [btrfs]
-  [<ffffffff8125eef6>] ? __radix_tree_preload+0x66/0xf0
-  [<ffffffff8125f1c5>] ? radix_tree_insert+0x95/0x260
-  [<ffffffffa03c66f6>] btree_read_extent_buffer_pages.constprop.128+0xb6/0x120
-[btrfs]
-  [<ffffffffa03c8c1a>] read_tree_block+0x3a/0x60 [btrfs]
-  [<ffffffffa03caefd>] open_ctree+0x139d/0x2030 [btrfs]
-  [<ffffffffa03a282a>] btrfs_mount+0x53a/0x7d0 [btrfs]
-  [<ffffffff8113ab0b>] ? pcpu_alloc+0x8eb/0x9f0
-  [<ffffffff81167305>] ? __kmalloc_track_caller+0x35/0x1e0
-  [<ffffffff81176ba0>] mount_fs+0x20/0xd0
-  [<ffffffff81191096>] vfs_kern_mount+0x76/0x120
-  [<ffffffff81193320>] do_mount+0x200/0xa40
-  [<ffffffff81135cdb>] ? strndup_user+0x5b/0x80
-  [<ffffffff81193bf0>] SyS_mount+0x90/0xe0
-  [<ffffffff8156d31d>] system_call_fastpath+0x1a/0x1f
- Code: 4c 8d 75 a8 4c 89 6d e8 45 89 e0 4c 8d 6f 30 48 89 5d d8 41 83 e0 af 48
-89 fb 49 83 c6 18 4c 89 7d f8 65 4c 8b 3c 25 c0 b8 00 00 <48> 8b 73 18 44 89 c7
-44 89 45 98 ff 53 20 48 85 c0 48 89 c2 74
- RIP  [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
-  RSP <ffff880230699688>
- CR2: 0000000000000018
- ---[ end trace 7a96042017ed21e2 ]---
-
-
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
 ---
- fs/btrfs/extent_io.c |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.c   |   10 +++++-----
+ fs/btrfs/ctree.h   |    2 +-
+ fs/btrfs/disk-io.c |    6 +++---
+ fs/btrfs/ioctl.c   |    2 +-
+ 4 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 09582b8..ae131c0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -145,8 +145,16 @@ int __init extent_io_init(void)
- 				     offsetof(struct btrfs_io_bio, bio));
- 	if (!btrfs_bioset)
- 		goto free_buffer_cache;
-+
-+	if (bioset_integrity_create(btrfs_bioset, BIO_POOL_SIZE))
-+		goto free_bioset;
-+
- 	return 0;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 63cde75..febc672 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -275,7 +275,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 		btrfs_set_header_owner(cow, new_root_objectid);
  
-+free_bioset:
-+	bioset_free(btrfs_bioset);
-+	btrfs_bioset = NULL;
-+
- free_buffer_cache:
- 	kmem_cache_destroy(extent_buffer_cache);
- 	extent_buffer_cache = NULL;
-@@ -170,8 +178,10 @@ void extent_io_exit(void)
- 		kmem_cache_destroy(extent_state_cache);
- 	if (extent_buffer_cache)
- 		kmem_cache_destroy(extent_buffer_cache);
--	if (btrfs_bioset)
-+	if (btrfs_bioset) {
-+		bioset_integrity_free(btrfs_bioset);
- 		bioset_free(btrfs_bioset);
-+	}
+ 	write_extent_buffer(cow, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(cow),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 
+ 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
+@@ -1047,7 +1047,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		btrfs_set_header_owner(cow, root->root_key.objectid);
+ 
+ 	write_extent_buffer(cow, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(cow),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 
+ 	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
+@@ -3145,7 +3145,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
+ 	btrfs_set_header_owner(c, root->root_key.objectid);
+ 
+ 	write_extent_buffer(c, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(c),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
+@@ -3285,7 +3285,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(split, root->root_key.objectid);
+ 	write_extent_buffer(split, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(split),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
+ 			    (unsigned long)btrfs_header_chunk_tree_uuid(split),
+@@ -4041,7 +4041,7 @@ again:
+ 	btrfs_set_header_owner(right, root->root_key.objectid);
+ 	btrfs_set_header_level(right, 0);
+ 	write_extent_buffer(right, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(right),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e0bab4d..972a2f8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2602,7 +2602,7 @@ static inline void btrfs_set_header_backref_rev(struct extent_buffer *eb,
+ 	btrfs_set_header_flags(eb, flags);
  }
  
- void extent_io_tree_init(struct extent_io_tree *tree,
+-static inline u8 *btrfs_header_fsid(struct extent_buffer *eb)
++static inline u8 *btrfs_header_fsid(void)
+ {
+ 	unsigned long ptr = offsetof(struct btrfs_header, fsid);
+ 	return (u8 *)ptr;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3c2886c..e038693 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -497,7 +497,7 @@ static int check_tree_block_fsid(struct btrfs_root *root,
+ 	u8 fsid[BTRFS_UUID_SIZE];
+ 	int ret = 1;
+ 
+-	read_extent_buffer(eb, fsid, (unsigned long)btrfs_header_fsid(eb),
++	read_extent_buffer(eb, fsid, (unsigned long)btrfs_header_fsid(),
+ 			   BTRFS_FSID_SIZE);
+ 	while (fs_devices) {
+ 		if (!memcmp(fsid, fs_devices->fsid, BTRFS_FSID_SIZE)) {
+@@ -1291,7 +1291,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	root->node = leaf;
+ 
+ 	write_extent_buffer(leaf, fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(leaf),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 	write_extent_buffer(leaf, fs_info->chunk_tree_uuid,
+ 			    (unsigned long)btrfs_header_chunk_tree_uuid(leaf),
+@@ -1378,7 +1378,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 	root->node = leaf;
+ 
+ 	write_extent_buffer(root->node, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(root->node),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 	btrfs_mark_buffer_dirty(root->node);
+ 	btrfs_tree_unlock(root->node);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0e17a30..464e569 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -426,7 +426,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	btrfs_set_header_owner(leaf, objectid);
+ 
+ 	write_extent_buffer(leaf, root->fs_info->fsid,
+-			    (unsigned long)btrfs_header_fsid(leaf),
++			    (unsigned long)btrfs_header_fsid(),
+ 			    BTRFS_FSID_SIZE);
+ 	write_extent_buffer(leaf, root->fs_info->chunk_tree_uuid,
+ 			    (unsigned long)btrfs_header_chunk_tree_uuid(leaf),
+-- 
+1.7.7.6
+

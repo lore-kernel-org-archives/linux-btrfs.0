@@ -1,97 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48169 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752151Ab3ITQw0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 12:52:26 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 3D707A51FE
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 18:52:25 +0200 (CEST)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: fix loop device mount checks
-Date: Fri, 20 Sep 2013 18:52:18 +0200
-Message-Id: <1379695938-31244-1-git-send-email-dsterba@suse.cz>
+Received: from dkim2.fusionio.com ([66.114.96.54]:57481 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753136Ab3ITRve (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Sep 2013 13:51:34 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 9020B9A0371
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 11:51:33 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id xVLgVdHkfQfdyvx2 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 11:51:32 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: fix the min ticks check in print_seek_histogram
+Date: Fri, 20 Sep 2013 13:51:31 -0400
+Message-ID: <1379699491-9060-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When creating a fs on a loop device, mkfs checks whether the same file
-is not already mounted, but a backing file of another loop dev does not
-exist, mkfs fails. This fixes a bug during openSUSE installation.
+Before I had been dividing by 5 but that gave me too much output so I changed it
+to 20 without changing the min seeks test.  Fix this to avoid a divide by 0
+problem.  Thanks,
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- utils.c | 36 +++++++++++++++++++++---------------
- 1 file changed, 21 insertions(+), 15 deletions(-)
+ btrfs-calc-size.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index 5fa193b..357983d 100644
---- a/utils.c
-+++ b/utils.c
-@@ -803,11 +803,11 @@ static int is_same_blk_file(const char* a, const char* b)
- 	char real_a[PATH_MAX];
- 	char real_b[PATH_MAX];
+diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+index ab942c6..b2c888c 100644
+--- a/btrfs-calc-size.c
++++ b/btrfs-calc-size.c
+@@ -228,7 +228,7 @@ static void print_seek_histogram(struct root_stats *stat)
+ 	u64 max_seek = stat->max_seek_len;
+ 	int digits = 1;
  
--	if(!realpath(a, real_a) ||
--	   !realpath(b, real_b))
--	{
--		return -errno;
--	}
-+	if(!realpath(a, real_a))
-+		strcpy(real_a, a);
-+
-+	if (!realpath(b, real_b))
-+		strcpy(real_b, b);
+-	if (stat->total_seeks < 5)
++	if (stat->total_seeks < 20)
+ 		return;
  
- 	/* Identical path? */
- 	if(strcmp(real_a, real_b) == 0)
-@@ -848,8 +848,8 @@ static int is_same_loop_file(const char* a, const char* b)
- {
- 	char res_a[PATH_MAX];
- 	char res_b[PATH_MAX];
--	const char* final_a;
--	const char* final_b;
-+	const char* final_a = NULL;
-+	const char* final_b = NULL;
- 	int ret;
- 
- 	/* Resolve a if it is a loop device */
-@@ -858,10 +858,13 @@ static int is_same_loop_file(const char* a, const char* b)
- 			return 0;
- 		return ret;
- 	} else if (ret) {
--		if ((ret = resolve_loop_device(a, res_a, sizeof(res_a))) < 0)
--			return ret;
--
--		final_a = res_a;
-+		ret = resolve_loop_device(a, res_a, sizeof(res_a));
-+		if (ret < 0) {
-+			if (errno != EPERM)
-+				return ret;
-+		} else {
-+			final_a = res_a;
-+		}
- 	} else {
- 		final_a = a;
- 	}
-@@ -872,10 +875,13 @@ static int is_same_loop_file(const char* a, const char* b)
- 			return 0;
- 		return ret;
- 	} else if (ret) {
--		if((ret = resolve_loop_device(b, res_b, sizeof(res_b))) < 0)
--			return ret;
--
--		final_b = res_b;
-+		ret = resolve_loop_device(b, res_b, sizeof(res_b));
-+		if (ret < 0) {
-+			if (errno != EPERM)
-+				return ret;
-+		} else {
-+			final_b = res_b;
-+		}
- 	} else {
- 		final_b = b;
- 	}
+ 	while ((max_seek /= 10))
 -- 
 1.8.3.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kerne

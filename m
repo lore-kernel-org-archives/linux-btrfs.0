@@ -1,175 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:45074 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:47599 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751598Ab3ITOvt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 10:51:49 -0400
-Message-ID: <523C6102.3030907@redhat.com>
-Date: Fri, 20 Sep 2013 09:51:46 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Ross Kirk <ross.kirk@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove unused parameter from btrfs_header_fsid
-References: <1379683626-29724-1-git-send-email-ross.kirk@gmail.com>
-In-Reply-To: <1379683626-29724-1-git-send-email-ross.kirk@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1753017Ab3ITQer (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Sep 2013 12:34:47 -0400
+From: David Sterba <dsterba@suse.cz>
+To: stable@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fusionio.com>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Handful of btrfs fixes for 3.11.x stable
+Date: Fri, 20 Sep 2013 18:34:39 +0200
+Message-Id: <1379694879-29402-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/20/13 8:27 AM, Ross Kirk wrote:
-> Remove unused parameter, 'eb'. Unused since introduction in
-> 5f39d397dfbe140a14edecd4e73c34ce23c4f9ee
-> 
-> Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
+Hi stable team,
 
-A few points; was this against latest upstream?
+please add the following commits to 3.11 tree, they fix user visible problems,
+were tested and are now present in 3.12-rc1.
 
-Upstream, fba6aa75654394fccf2530041e9451414c28084f removed
-all the superfluous (unsigned long) casts when this function
-gets called.  So I think you need to rebase this.
+3d05ca371200b3366530621abf73769024581b79
+b13a004528c3e5eb060a26eee795f5a0da7bfe9f
+7ef67ffda91cc0c56f33937bfdf1d057b9ee96ca
+ca6d07c1d74bf7ba3083bc31a9aeeaa1d0ad86aa
 
-(that commit would be great to apply to userspace as well to keep things
-more in sync).
+Josef Bacik (4):
+  Btrfs: reset ret in record_one_backref
+  Btrfs: change how we queue blocks for backref checking
+  Btrfs: skip subvol entries when checking if we've created a dir already
+  Btrfs: remove ourselves from the cluster list under lock
 
-But it seems like this could be cleaned up even more:
-
-static inline unsigned long btrfs_header_fsid(struct extent_buffer *eb)
-{
-        return offsetof(struct btrfs_header, fsid);
-}
-
-really?  We have a function which just returns a static value from offsetof?
-
-And to a caveman-code-reader like me, I'd sure expect "btrfs_header_fsid" to
-give me an fsid, not an offset of a structure member.  :(
-
-And as for types, I'm not sure why write_extent_buffer takes an unsigned long
-for start; if nothing else it seems to actually be used as a size_t inside the
-function.  Argh.
-
-Well -
-
-I suppose for now, removing the unused var is a decent start, after you rebase.
-
-btrfs_header_chunk_tree_uuid() could get similar treatments in kernelspace
-and/or userspace.  As could btrfs_leaf_data().
-
-Welcome to "peeling the onion."  :)
-
--Eric
-
-> ---
->  fs/btrfs/ctree.c   |   10 +++++-----
->  fs/btrfs/ctree.h   |    2 +-
->  fs/btrfs/disk-io.c |    6 +++---
->  fs/btrfs/ioctl.c   |    2 +-
->  4 files changed, 10 insertions(+), 10 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 63cde75..febc672 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -275,7 +275,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
->  		btrfs_set_header_owner(cow, new_root_objectid);
->  
->  	write_extent_buffer(cow, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(cow),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
-> @@ -1047,7 +1047,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  		btrfs_set_header_owner(cow, root->root_key.objectid);
->  
->  	write_extent_buffer(cow, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(cow),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
-> @@ -3145,7 +3145,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_owner(c, root->root_key.objectid);
->  
->  	write_extent_buffer(c, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(c),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-> @@ -3285,7 +3285,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(split, root->root_key.objectid);
->  	write_extent_buffer(split, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(split),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
->  			    (unsigned long)btrfs_header_chunk_tree_uuid(split),
-> @@ -4041,7 +4041,7 @@ again:
->  	btrfs_set_header_owner(right, root->root_key.objectid);
->  	btrfs_set_header_level(right, 0);
->  	write_extent_buffer(right, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(right),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index e0bab4d..972a2f8 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2602,7 +2602,7 @@ static inline void btrfs_set_header_backref_rev(struct extent_buffer *eb,
->  	btrfs_set_header_flags(eb, flags);
->  }
->  
-> -static inline u8 *btrfs_header_fsid(struct extent_buffer *eb)
-> +static inline u8 *btrfs_header_fsid(void)
->  {
->  	unsigned long ptr = offsetof(struct btrfs_header, fsid);
->  	return (u8 *)ptr;
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 3c2886c..e038693 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -497,7 +497,7 @@ static int check_tree_block_fsid(struct btrfs_root *root,
->  	u8 fsid[BTRFS_UUID_SIZE];
->  	int ret = 1;
->  
-> -	read_extent_buffer(eb, fsid, (unsigned long)btrfs_header_fsid(eb),
-> +	read_extent_buffer(eb, fsid, (unsigned long)btrfs_header_fsid(),
->  			   BTRFS_FSID_SIZE);
->  	while (fs_devices) {
->  		if (!memcmp(fsid, fs_devices->fsid, BTRFS_FSID_SIZE)) {
-> @@ -1291,7 +1291,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
->  	root->node = leaf;
->  
->  	write_extent_buffer(leaf, fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(leaf),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(leaf, fs_info->chunk_tree_uuid,
->  			    (unsigned long)btrfs_header_chunk_tree_uuid(leaf),
-> @@ -1378,7 +1378,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
->  	root->node = leaf;
->  
->  	write_extent_buffer(root->node, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(root->node),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	btrfs_mark_buffer_dirty(root->node);
->  	btrfs_tree_unlock(root->node);
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0e17a30..464e569 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -426,7 +426,7 @@ static noinline int create_subvol(struct inode *dir,
->  	btrfs_set_header_owner(leaf, objectid);
->  
->  	write_extent_buffer(leaf, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(leaf),
-> +			    (unsigned long)btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(leaf, root->fs_info->chunk_tree_uuid,
->  			    (unsigned long)btrfs_header_chunk_tree_uuid(leaf),
-> 
-
+ fs/btrfs/extent-tree.c |  3 ++-
+ fs/btrfs/inode.c       |  3 +--
+ fs/btrfs/relocation.c  | 14 +++++++-------
+ fs/btrfs/send.c        |  3 ++-
+ 4 files changed, 12 insertions(+), 11 deletions(-)

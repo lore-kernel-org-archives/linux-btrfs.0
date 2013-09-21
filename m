@@ -1,56 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49147 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752204Ab3ITRXu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 13:23:50 -0400
-Date: Fri, 20 Sep 2013 19:23:46 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add a bunch of new statistics to
- btrfs-calc-size
-Message-ID: <20130920172346.GL6810@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1379691161-4125-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
+Received: from mail-pb0-f42.google.com ([209.85.160.42]:44641 "EHLO
+	mail-pb0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751652Ab3IUBQb convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Sep 2013 21:16:31 -0400
+Received: by mail-pb0-f42.google.com with SMTP id un15so1030084pbc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 18:16:31 -0700 (PDT)
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1379691161-4125-1-git-send-email-jbacik@fusionio.com>
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH 4/4] Btrfs-progs: add super-recover to recover bad supers
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <20130918163127.GF6810@twin.jikos.cz>
+Date: Sat, 21 Sep 2013 09:16:25 +0800
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-Id: <0223DF74-26DE-44A2-8D5B-1B7DC1879940@gmail.com>
+References: <1379492856-30639-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1379492856-30639-5-git-send-email-wangsl.fnst@cn.fujitsu.com> <20130918151304.GD6810@twin.jikos.cz> <936776EC-7D7D-458F-960E-E1CB56F9B4BA@gmail.com> <20130918163127.GF6810@twin.jikos.cz>
+To: dsterba@suse.cz
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 20, 2013 at 11:32:41AM -0400, Josef Bacik wrote:
-> I've been wanting to get back to the allocator and make some changes to try and
-> fix our fragmenation woes with lots of metadata.  But in order to make these
-> changes I need to have something to tell me if my changes are making a real
-> measurable difference.  So this patch adds a bunch of new statistics to
-> btrfs-calc-size.  It will tell me how long it took to read in the trees, how
-> many seeks it had (both forward and backward).  It will tell me how far spread
-> out the tree is and spit out a nice histogram of the seeks.  Here is some sample
-> output
+Hello David,
 
-Nice!
+> On Wed, Sep 18, 2013 at 11:31:16PM +0800, Wang Shilong wrote:
+>>>> static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+>>>> 					     u64 sb_bytenr,
+>>>> 					     u64 root_tree_bytenr, int writes,
+>>>> -					     int partial, int restore)
+>>>> +					     int partial, int restore,
+>>>> +					     int run_ioctl)
+>>> 
+>>> Yet another parameter to __open_ctree_fd, this really needs a cleanup.
+>>> (Later is fine.)
+>> 
+>> I have considered about this, __open_ctree_fd() is a *static* helper, if i don't
+>> add another parameter to it. I have to move out of __open_ctree_fd()  into
+>> open_ctree_with_broken_super() which also seems  not good!
+> 
+> The idea is that all open_ctree* variants will take one parameter that
+> accumulates what's currently passed via writes/partial/restore/run_ioctl:
+> 
+> #define OPEN_CTREE_PARTIAL 	(1 << 0ULL)
+> #define OPEN_CTREE_WRITES	(1 << 1ULL)
+> etc ...
+> 
+> static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+> 					     u64 sb_bytenr,
+> 					     u64 root_tree_bytenr,
+> 					     unsigned open_flags)
+> 
+> and the callers updated accordingly. The calls then look like
+> 
+> - open_ctree_fs_info_restore(target, 0, 0, 0, 1);
+> + open_ctree_fs_info_restore(target, 0, 0, OPEN_CTREE_PARTIAL);
 
-> +	/* Make a tick count as 5% of the total seeks */
-> +	tick_interval = stat->total_seeks / 20;
-> +	printf("\tSeek histogram\n");
-> +	for (; n; n = rb_next(n)) {
-> +		u64 ticks, gticks = 0;
-> +
-> +		seek = rb_entry(n, struct seek, n);
-> +		ticks = seek->count / tick_interval;
-> +		if (group_count)
-> +			gticks = group_count / tick_interval;
+Good idea, i think this should be another patch. 
 
-Divsion by zero, core dumped.
+Thanks,
+Wang
 
->  		total_size = pretty_sizes(stat.total_bytes);
-
-> +		printf("\tTotal size: %s\n", total_size);
-
->  		free(total_size);
-
-There's the pretty_size thing that can be used directly in printf and
-without free(). I've switched them all and committed to integration.
-Please send a separate fix for the 0-division problem.
-
-david

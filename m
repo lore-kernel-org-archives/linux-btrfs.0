@@ -1,38 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:49537 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752873Ab3ITTey convert rfc822-to-8bit (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:33113 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751880Ab3IUC0c (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Sep 2013 15:34:54 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id A01C37C04E9
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 13:34:53 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	Fri, 20 Sep 2013 22:26:32 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 04E829A068A
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 20:26:32 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id 9mhsA1ivL1PsUexJ (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 20 Sep 2013 20:26:31 -0600 (MDT)
+Date: Fri, 20 Sep 2013 22:26:29 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: reset intwrite on transaction abort
+Message-ID: <20130921022629.GC5672@localhost.localdomain>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <stable@vger.kernel.org>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <1379694879-29402-1-git-send-email-dsterba@suse.cz>
-CC: David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fusionio.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <1379694879-29402-1-git-send-email-dsterba@suse.cz>
-Message-ID: <20130920193451.29199.26900@localhost.localdomain>
-Subject: Re: Handful of btrfs fixes for 3.11.x stable
-Date: Fri, 20 Sep 2013 15:34:51 -0400
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting David Sterba (2013-09-20 12:34:39)
-> Hi stable team,
-> 
-> please add the following commits to 3.11 tree, they fix user visible problems,
-> were tested and are now present in 3.12-rc1.
-> 
-> 3d05ca371200b3366530621abf73769024581b79
-> b13a004528c3e5eb060a26eee795f5a0da7bfe9f
-> 7ef67ffda91cc0c56f33937bfdf1d057b9ee96ca
-> ca6d07c1d74bf7ba3083bc31a9aeeaa1d0ad86aa
+If we abort a transaction in the middle of a commit we weren't undoing the
+intwrite locking.  This patch fixes that problem.
 
-Thanks Dave, I'll pull these into a -stable tree and send a pull
-request.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/transaction.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
--chris
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index e7a9535..2fa7017 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1552,6 +1552,8 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 		root->fs_info->running_transaction = NULL;
+ 	spin_unlock(&root->fs_info->trans_lock);
+ 
++	if (trans->type & __TRANS_FREEZABLE)
++		sb_end_intwrite(root->fs_info->sb);
+ 	put_transaction(cur_trans);
+ 	put_transaction(cur_trans);
+ 
+-- 
+1.8.3.1
+

@@ -1,43 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f180.google.com ([209.85.214.180]:46155 "EHLO
-	mail-ob0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752609Ab3IVJji (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Sep 2013 05:39:38 -0400
-Received: by mail-ob0-f180.google.com with SMTP id wm4so2463919obc.25
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Sep 2013 02:39:37 -0700 (PDT)
+Received: from mga14.intel.com ([143.182.124.37]:25918 "EHLO mga14.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752255Ab3IVS2P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Sep 2013 14:28:15 -0400
+Message-ID: <523F36B1.8080701@linux.intel.com>
+Date: Sun, 22 Sep 2013 11:28:01 -0700
+From: Saul Wold <sgw@linux.intel.com>
 MIME-Version: 1.0
-In-Reply-To: <CAFDW0jL4f4H2hjdRxZeGvrLJeLmRbDVHYedNwdgp04p8tHgikQ@mail.gmail.com>
-References: <5021349.IU75SGaY0J@merkaba>
-	<20130921023415.GE5672@localhost.localdomain>
-	<CAFDW0jL4f4H2hjdRxZeGvrLJeLmRbDVHYedNwdgp04p8tHgikQ@mail.gmail.com>
-Date: Sun, 22 Sep 2013 11:39:37 +0200
-Message-ID: <CAFDW0j+3iiAq_GgswXKvb7P8Lz2DeEw2rc4U-RO4uyUboxFkTg@mail.gmail.com>
-Subject: Re: [REGRESSION] 3.12-rc1: Trying to create snapshot corrupted filesystem
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Martin Steigerwald <Martin@lichtvoll.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
+References: <523B4036.7030204@linux.intel.com>
+In-Reply-To: <523B4036.7030204@linux.intel.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 21, 2013 at 1:20 PM, Ahmet Inan
-<ainan@mathematik.uni-freiburg.de> wrote:
->> You will want the patch I just sent,
->>
->> Btrfs: create the uuid tree on remount rw
->>
->> and that should fix the snapshot problems.  Thanks,
+On 09/19/2013 11:19 AM, Saul Wold wrote:
 >
-> thanks Josef - you can close this bug:
+> Hi there,
 >
-> https://bugzilla.kernel.org/show_bug.cgi?id=61301
+> I am attempting to build a rootfs image from an existing rootfs
+> directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
 >
-> then. will try your patch later, too.
+> The couple problem I saw was that the target image file needed to exist,
+> although I think I can patch that then the FS size was much larger than
+> the actual size, I tracked this to the usage of ftw not accounting for
+> symlinks, I have a patch for that which I will send once I finish
+> getting the other issues resolved.
 >
-ok, works for me, too.
+> Next issue I hit was an assertion failure after getting "not enough free
+> space" message:
+>
+> not enough free space
+> add_file_items failed
+> unable to traverse_directory
+> Making image is aborted.
+> mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
+>
+> I am kind of stuck on this one, took it as far as I can right now. Would
+> I be better off dropping back to 0.19 or can we move forward fixing this?
+>
+Anybody have any ideas on this?  I can reproduce this at will on Fedora 
+19 (with btrfs-progs-0.20), Ubuntu 12.10 (with btrfs-profs-0.19) and 
+with HEAD from Chris's repo above (is this the right place these days)?
 
-changed state of bug to "resolved"
+Thanks your your help.
 
-Ahmet
+Sau!
+
+> Thanks
+>

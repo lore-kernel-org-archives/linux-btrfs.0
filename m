@@ -1,110 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47843 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752175Ab3IVEyi (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:40928 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751647Ab3IVUuF convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Sep 2013 00:54:38 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, dsterba@suse.cz, jeff.liu@oracle.com
-Subject: [PATCH v4] Btrfs: export btrfs space shared info to userspace
-Date: Sun, 22 Sep 2013 12:54:23 +0800
-Message-Id: <1379825663-9212-1-git-send-email-bo.li.liu@oracle.com>
+	Sun, 22 Sep 2013 16:50:05 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 66D6C9A0371
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Sep 2013 14:50:04 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Message-ID: <20130922205002.29199.88359@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] Btrfs
+Date: Sun, 22 Sep 2013 16:50:02 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Similar to ocfs2, btrfs also supports that extents can be shared by
-different inodes, and there are some userspace tools requesting
-for this kind of 'space shared infomation'.[1]
+Hi Linus,
 
-ocfs2 uses flag FIEMAP_EXTENT_SHARED, so does btrfs.
+Please pull my for-linus branch:
 
-[1]: http://thr3ads.net/ocfs2-devel/2010/09/489052-PATCH-3-3-shared-du-using-fiemap-to-figure-up-the-shared-extents-per-file-and-the-footprint-in
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v4: fix a regression which fails xfstest shared/218.
-v3: put btrfs_free_path() earlier, thanks to David's advice.
-v2: use 'unsigned long' instead of 'int'.
+These are mostly bug fixes and a two small performance fixes.  The most
+important of the bunch are Josef's fix for a snapshotting regression and
+Mark's update to fix compile problems on arm.
 
- fs/btrfs/extent_io.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
+These are on top of 3.11 + my first pull, but they were also tested
+against your master as of last night.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 09582b8..cabd73f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -20,6 +20,7 @@
- #include "check-integrity.h"
- #include "locking.h"
- #include "rcu-string.h"
-+#include "backref.h"
- 
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -4056,6 +4057,19 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 	return NULL;
- }
- 
-+static noinline int count_ext_ref(u64 inum, u64 offset, u64 root_id, void *ctx)
-+{
-+	unsigned long cnt = *((unsigned long *)ctx);
-+
-+	cnt++;
-+	*((unsigned long *)ctx) = cnt;
-+
-+	/* Now we're sure that the extent is shared. */
-+	if (cnt > 1)
-+		return 1;
-+	return 0;
-+}
-+
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -4122,7 +4136,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		last = found_key.offset;
- 		last_for_get_extent = last + 1;
- 	}
--	btrfs_free_path(path);
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * we might have some extents allocated but more delalloc past those
-@@ -4192,7 +4206,24 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			flags |= (FIEMAP_EXTENT_DELALLOC |
- 				  FIEMAP_EXTENT_UNKNOWN);
- 		} else {
-+			unsigned long ref_cnt = 0;
-+
- 			disko = em->block_start + offset_in_extent;
-+
-+			/*
-+			 * As btrfs supports shared space, this information
-+			 * can be exported to userspace tools via
-+			 * flag FIEMAP_EXTENT_SHARED.
-+			 */
-+			ret = iterate_inodes_from_logical(
-+					em->block_start,
-+					BTRFS_I(inode)->root->fs_info,
-+					path, count_ext_ref, &ref_cnt);
-+			if (ret < 0 && ret != -ENOENT)
-+				goto out_free;
-+
-+			if (ref_cnt > 1)
-+				flags |= FIEMAP_EXTENT_SHARED;
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-@@ -4224,6 +4255,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- out_free:
- 	free_extent_map(em);
- out:
-+	btrfs_free_path(path);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
- 			     &cached_state, GFP_NOFS);
- 	return ret;
--- 
-1.7.7
+Josef Bacik (13) commits (+219/-102):
+    Btrfs: check roots last log commit when checking if an inode has been logged (+4/-1)
+    Revert "Btrfs: rework the overcommit logic to be based on the total size" (+3/-12)
+    Btrfs: kill delay_iput arg to the wait_ordered functions (+14/-33)
+    Btrfs: drop dir i_size when adding new names on replay (+27/-0)
+    Btrfs: replay dir_index items before other items (+12/-3)
+    Btrfs: fix worst case calculator for space usage (+1/-1)
+    Btrfs: actually log directory we are fsync()'ing (+9/-1)
+    Btrfs: actually limit the size of delalloc range (+5/-3)
+    Btrfs: fixup error handling in btrfs_reloc_cow (+32/-22)
+    Btrfs: remove space_info->reservation_progress (+0/-12)
+    Btrfs: create the uuid tree on remount rw (+10/-0)
+    Btrfs: improve replacing nocow extents (+98/-14)
+    Btrfs: iput inode on allocation failure (+4/-0)
 
+Stefan Behrens (2) commits (+4/-0):
+    btrfs: show compiled-in config features at module load time (+3/-0)
+    Btrfs: add the missing mutex unlock in write_all_supers() (+1/-0)
+
+Filipe David Borba Manana (2) commits (+7/-7):
+    Btrfs: don't leak transaction in btrfs_sync_file() (+2/-2)
+    Btrfs: more efficient inode tree replace operation (+5/-5)
+
+David Sterba (2) commits (+8/-0):
+    btrfs: add lockdep and tracing annotations for uuid tree (+2/-0)
+    btrfs: refuse to remount read-write after abort (+6/-0)
+
+Guangyu Sun (1) commits (+2/-0):
+    Btrfs: dir_inode_operations should use btrfs_update_time also
+
+Mark Fasheh (1) commits (+45/-31):
+    btrfs: change extent-same to copy entire argument struct
+
+Ilya Dryomov (1) commits (+2/-1):
+    Btrfs: do not add replace target to the alloc_list
+
+Frank Holton (1) commits (+2/-2):
+    btrfs: Add btrfs: prefix to kernel log output
+
+chandan (1) commits (+1/-1):
+    Btrfs: btrfs_ioctl_default_subvol: Revert back to toplevel subvolume when arg is 0
+
+Miao Xie (1) commits (+74/-31):
+    Btrfs: allocate the free space by the existed max extent size when ENOSPC
+
+Total: (25) commits
+
+ fs/btrfs/btrfs_inode.h       |   5 +-
+ fs/btrfs/ctree.c             |   7 ++-
+ fs/btrfs/ctree.h             |  17 ++-----
+ fs/btrfs/dev-replace.c       |   4 +-
+ fs/btrfs/disk-io.c           |   2 +
+ fs/btrfs/extent-tree.c       |  57 +++++++++++-----------
+ fs/btrfs/extent_io.c         |   8 ++--
+ fs/btrfs/file.c              |   4 +-
+ fs/btrfs/free-space-cache.c  |  67 ++++++++++++++++++--------
+ fs/btrfs/free-space-cache.h  |   5 +-
+ fs/btrfs/inode.c             |  16 +++++--
+ fs/btrfs/ioctl.c             |  80 ++++++++++++++++++-------------
+ fs/btrfs/ordered-data.c      |  24 ++--------
+ fs/btrfs/ordered-data.h      |   5 +-
+ fs/btrfs/relocation.c        |  43 ++++++++++-------
+ fs/btrfs/scrub.c             | 112 +++++++++++++++++++++++++++++++++++++------
+ fs/btrfs/super.c             |  21 +++++++-
+ fs/btrfs/transaction.c       |   2 +-
+ fs/btrfs/tree-log.c          |  52 ++++++++++++++++++--
+ fs/btrfs/volumes.c           |   7 +--
+ include/trace/events/btrfs.h |   1 +
+ 21 files changed, 364 insertions(+), 175 deletions(-)

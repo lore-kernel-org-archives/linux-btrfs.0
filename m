@@ -1,43 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:29542 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:52362 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751119Ab3IIGKc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Sep 2013 02:10:32 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: anand.jain@oracle.com
-Subject: [PATCH] Btrfs-progs: fix typo in btrfs_err_str()
-Date: Mon, 9 Sep 2013 14:08:12 +0800
-Message-Id: <1378706892-5341-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	id S1752434Ab3IWB3y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Sep 2013 21:29:54 -0400
+Message-ID: <523F99CA.5000703@cn.fujitsu.com>
+Date: Mon, 23 Sep 2013 09:30:50 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix sync fs to actually wait for all data to be
+ persisted
+References: <1379883353-7358-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1379883353-7358-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Raid5 and raid6 at least need three and foure devices respectively,
-fix it.
+On 	sun, 22 Sep 2013 21:55:53 +0100, Filipe David Borba Manana wrote:
+> Currently the fs sync function (super.c:btrfs_sync_fs()) doesn't
+> wait for delayed work to finish before returning success to the
+> caller. This change fixes this, ensuring that there's no data loss
+> if a power failure happens right after fs sync returns success to
+> the caller and before the next commit happens.
+> 
+> Steps to reproduce the data loss issue:
+> 
+> $ mkfs.btrfs -f /dev/sdb3
+> $ mount /dev/sdb3 /mnt/btrfs
+> $ perl -e '$d = ("\x41" x 6001); open($f,">","/mnt/btrfs/foobar"); print $f $d; close($f);' && btrfs fi sync /mnt/btrfs
+> 
+> Right after the btrfs fi sync command (a second or 2 for example), power
+> off the machine and reboot it. The file will be empty, as it can be verified
+> after mounting the filesystem and through btrfs-debug-tree:
+> 
+> $ btrfs-debug-tree /dev/sdb3 | egrep '\(257 INODE_ITEM 0\) itemoff' -B 3 -A 8
+> 
+>         item 3 key (256 DIR_INDEX 2) itemoff 3751 itemsize 36
+>                 location key (257 INODE_ITEM 0) type FILE
+>                 namelen 6 datalen 0 name: foobar
+>         item 4 key (257 INODE_ITEM 0) itemoff 3591 itemsize 160
+>                 inode generation 7 transid 7 size 0 block group 0 mode 100644 links 1
+>         item 5 key (257 INODE_REF 256) itemoff 3575 itemsize 16
+>                 inode ref index 2 namelen 6 name: foobar
+> checksum tree key (CSUM_TREE ROOT_ITEM 0)
+> leaf 29429760 items 0 free space 3995 generation 7 owner 7
+> fs uuid 6192815c-af2a-4b75-b3db-a959ffb6166e
+> chunk uuid b529c44b-938c-4d3d-910a-013b4700bcae
+> uuid tree key (UUID_TREE ROOT_ITEM 0)
+> 
+> After this patch, the data loss no longer happens after a power failure and
+> btrfs-debug-tree shows:
+> 
+> $ btrfs-debug-tree /dev/sdb3 | egrep '\(257 INODE_ITEM 0\) itemoff' -B 3 -A 8
+> 	item 3 key (256 DIR_INDEX 2) itemoff 3751 itemsize 36
+> 		location key (257 INODE_ITEM 0) type FILE
+> 		namelen 6 datalen 0 name: foobar
+> 	item 4 key (257 INODE_ITEM 0) itemoff 3591 itemsize 160
+> 		inode generation 6 transid 6 size 6001 block group 0 mode 100644 links 1
+> 	item 5 key (257 INODE_REF 256) itemoff 3575 itemsize 16
+> 		inode ref index 2 namelen 6 name: foobar
+> 	item 6 key (257 EXTENT_DATA 0) itemoff 3522 itemsize 53
+> 		extent data disk byte 12845056 nr 8192
+> 		extent data offset 0 nr 8192 ram 8192
+> 		extent compression 0
+> checksum tree key (CSUM_TREE ROOT_ITEM 0)
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>  fs/btrfs/super.c |    5 +++++
+>  1 file changed, 5 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 6ab0df5..557e38f 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -913,6 +913,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+>  	struct btrfs_root *root = fs_info->tree_root;
+> +	int ret;
+>  
+>  	trace_btrfs_sync_fs(wait);
+>  
+> @@ -921,6 +922,10 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+>  		return 0;
+>  	}
+>  
+> +	ret = btrfs_start_all_delalloc_inodes(fs_info, 0);
+> +	if (ret)
+> +		return ret;
+> +
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
-based on david's integration 20130903
----
- ioctl.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+I don't think we should call btrfs_start_all_delalloc_inodes(), because this function is also
+called by do_sync(), but do_sync() syncs the whole fs before calling it, so if we add
+btrfs_start_all_delalloc_inodes() here, we will sync the fs twice, and the second one is unnecessary.
 
-diff --git a/ioctl.h b/ioctl.h
-index e959720..c0dcc06 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -484,9 +484,9 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
- 			return "unable to go below four devices on raid10";
- 		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
--			return "unable to go below two devices on raid5";
-+			return "unable to go below three devices on raid5";
- 		case BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET:
--			return "unable to go below three devices on raid6";
-+			return "unable to go below four devices on raid6";
- 		case BTRFS_ERROR_DEV_TGT_REPLACE:
- 			return "unable to remove the dev_replace target dev";
- 		case BTRFS_ERROR_DEV_MISSING_NOT_FOUND:
--- 
-1.8.3.1
+Calling writeback_inodes_sb() before btrfs_sync_fs() is better way to fix this problem.
+
+Thanks
+Miao
+
+>  	btrfs_wait_all_ordered_extents(fs_info);
+>  
+>  	trans = btrfs_attach_transaction_barrier(root);
+> 
 

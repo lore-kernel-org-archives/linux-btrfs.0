@@ -1,59 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43589 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44444 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752540Ab3IWQ4L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 12:56:11 -0400
-Date: Mon, 23 Sep 2013 18:56:04 +0200
+	id S1752681Ab3IWRTJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Sep 2013 13:19:09 -0400
+Date: Mon, 23 Sep 2013 19:19:06 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: David Sterba <dsterba@suse.cz>, stable@vger.kernel.org,
-        Josef Bacik <jbacik@fusionio.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Handful of btrfs fixes for 3.11.x stable
-Message-ID: <20130923165604.GQ6810@twin.jikos.cz>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs: qgroup scan failed with -12
+Message-ID: <20130923171905.GR6810@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1379694879-29402-1-git-send-email-dsterba@suse.cz>
- <20130920165301.GA11262@kroah.com>
+References: <20130923074344.60f629d7@wpkg.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130920165301.GA11262@kroah.com>
+In-Reply-To: <20130923074344.60f629d7@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 20, 2013 at 09:53:02AM -0700, Greg KH wrote:
-> On Fri, Sep 20, 2013 at 06:34:39PM +0200, David Sterba wrote:
-> > 3d05ca371200b3366530621abf73769024581b79
-> > b13a004528c3e5eb060a26eee795f5a0da7bfe9f
-> > 7ef67ffda91cc0c56f33937bfdf1d057b9ee96ca
-> > ca6d07c1d74bf7ba3083bc31a9aeeaa1d0ad86aa
-> > 
-> > Josef Bacik (4):
-> >   Btrfs: reset ret in record_one_backref
-> >   Btrfs: change how we queue blocks for backref checking
-> >   Btrfs: skip subvol entries when checking if we've created a dir already
-> >   Btrfs: remove ourselves from the cluster list under lock
+On Mon, Sep 23, 2013 at 07:43:44AM +0700, Tomasz Chmielewski wrote:
+> Not sure if it's anything interesting - I had the following entry in
+> dmesg a few days ago, on a server with 32 GB RAM. The system is still working fine.
+
+Yes this is interesting of course.
 > 
-> Thanks for this, I'll queue them up soon.  Are any of these applicable
-> for 3.10 as well?
+> [1878432.675210] btrfs-qgroup-re: page allocation failure: order:5, mode:0x104050
 
-The first one is not applicable.
+Order 5 allocation, not guaranteed to succeed.
 
-These two apply directly (3rd, 4th):
+> [1878432.675319] CPU: 5 PID: 22251 Comm: btrfs-qgroup-re Not tainted 3.11.0-rc7 #2
+> [1878432.676204]  [<ffffffff810bde12>] krealloc+0x52/0x8c
+> [1878432.676324]  [<ffffffffa036bcf0>] find_parent_nodes+0x49c/0x5a5 [btrfs]
+> [1878432.676383]  [<ffffffffa036be75>] btrfs_find_all_roots+0x7c/0xd7 [btrfs]
+> [1878432.676441]  [<ffffffffa036d6e1>] ? qgroup_account_ref_step1+0xea/0x102 [btrfs]
+> [1878432.676542]  [<ffffffffa036d915>] btrfs_qgroup_rescan_worker+0x21c/0x516 [btrfs]
 
-Btrfs: skip subvol entries when checking if we've created a dir already
-7ef67ffda91cc0c56f33937bfdf1d057b9ee96ca
+220                 new_nodes = krealloc(old, sizeof(*new_nodes) * new_alloced,
+221                                      gfp_mask);
+222                 if (!new_nodes)
+223                         return -ENOMEM;
 
-Btrfs: remove ourselves from the cluster list under lock
-ca6d07c1d74bf7ba3083bc31a9aeeaa1d0ad86aa
+The requested size is between 64k and 128k, with 40 bytes of ulist_node
+it's 1638 to 3276 elements. So, lots of things going on during the
+rescan, quite expectable.
 
+I don't know if krealloc can be replaced with something more friendly to
+allocator, eg. a list of page-sized blocks instead of one contiguous
+array.
 
-I'm no sure about the 2nd, this one leads to crash in 3.11 but I'm not
-aware of any 3.10.x report, so ti could be affected by later changes.
-Josef knows better.
-
-Btrfs: change how we queue blocks for backref checking
-b13a004528c3e5eb060a26eee795f5a0da7bfe9f
-
-
-thanks,
 david

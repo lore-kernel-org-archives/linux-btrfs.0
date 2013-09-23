@@ -1,187 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f173.google.com ([209.85.220.173]:37032 "EHLO
-	mail-vc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753030Ab3IWByQ (ORCPT
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:35782 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753783Ab3IWMyY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Sep 2013 21:54:16 -0400
-Received: by mail-vc0-f173.google.com with SMTP id if17so1727753vcb.18
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Sep 2013 18:54:15 -0700 (PDT)
+	Mon, 23 Sep 2013 08:54:24 -0400
+Date: Mon, 23 Sep 2013 14:54:17 +0200
+From: Mathieu Chouquet-Stringer <ml2news@free.fr>
+To: linux-btrfs@vger.kernel.org
+Subject: Failure to remove snapshot with 3.12* and FS switches to read-only
+Message-ID: <20130923125417.GA3413@wasting>
 MIME-Version: 1.0
-In-Reply-To: <CAD+_0Yr2P=OK3w3RvUw1VE0dijph99NNgEwgB61ht4ncvF4aOA@mail.gmail.com>
-References: <CAD+_0Yr2P=OK3w3RvUw1VE0dijph99NNgEwgB61ht4ncvF4aOA@mail.gmail.com>
-Date: Sun, 22 Sep 2013 21:54:15 -0400
-Message-ID: <CAC4gV=4vwuJc0zfDmHPwvW1W=Wc8CeWAog1mTt9=9rvLZOyc5g@mail.gmail.com>
-Subject: Re: Deleting a subvolume causes RO remount
-From: Frank Holton <fholton@gmail.com>
-To: Rain Maker <rainmaker52@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+	Hello,
 
-The error shown in your log seems to be a regression related to
-subvolumes and a new uuid tree.
-See here
-http://www.spinics.net/lists/linux-btrfs/msg27712.html
+My system is configured to do FS snapshots when I upgrade packages.  I
+have a cron job which runs at night to delete these snapshots.  Its goal
+is to keep 10 snapshots maximum, one per day if possible.
 
-A patch that should fix the subvolume errors is here
-http://www.spinics.net/lists/linux-btrfs/msg27717.html
+This works perfectly with 3.11.1 but fails miserably with anything post
+3.11.
 
-You can try that patch or it looks like it might make it into rc2
+With a pre 3.12 (3.11.0-10050-g3711d86), this is what happens:
 
-Hope you have some luck
-Frank
+WARNING: CPU: 7 PID: 3991 at fs/btrfs/uuid-tree.c:171 btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]()
+Modules linked in: tcp_lp fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat bridge iptable_mangle stp llc nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter rfcomm ip6_tables bnep arc4 iwldvm mac80211 vfat fat snd_hda_codec_realtek x86_pkg_temp_thermal coretemp kvm_intel snd_hda_intel snd_hda_codec kvm uvcvideo snd_hwdep snd_seq crc32_pclmul cdc_mbim iwlwifi crc32c_intel videobuf2_vmalloc snd_seq_device videobuf2_memops cdc_ncm ghash_clmulni_intel videobuf2_core snd_pcm usbnet iTCO_wdt iTCO_vendor_support btusb sdhci_pci videodev bluetooth media cfg80211 cdc_acm cdc_wdm mii e1000e sdhci
+ snd_page_alloc thinkpad_acpi tpm_tis mmc_core snd_timer tpm microcode snd tpm_bios serio_raw mei_me lpc_ich i2c_i801 ptp rfkill wmi mfd_core mei shpchp pps_core soundcore pcspkr uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm firewire_ohci firewire_core crct10dif_pclmul i2c_core crc_itu_t video
+CPU: 7 PID: 3991 Comm: btrfs Tainted: G        W    3.11.0-10050-g3711d86 #2
+Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
+ 0000000000000009 ffff8802bba0bc58 ffffffff8163cdcf 0000000000000000
+ ffff8802bba0bc90 ffffffff81065c9d ffff88007faad3c0 ffff8800c517cb00
+ 0000000000000000 ffff8802904a2618 ffff88036cd91000 ffff8802bba0bca0
+Call Trace:
+ [<ffffffff8163cdcf>] dump_stack+0x45/0x56
+ [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
+ [<ffffffff81065d7a>] warn_slowpath_null+0x1a/0x20
+ [<ffffffffa02021cc>] btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]
+ [<ffffffffa0175016>] ? btrfs_free_path+0x26/0x30 [btrfs]
+ [<ffffffffa01cf573>] ? btrfs_insert_orphan_item+0x63/0x80 [btrfs]
+ [<ffffffffa01ca023>] btrfs_ioctl_snap_destroy+0x523/0x630 [btrfs]
+ [<ffffffffa01cd371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
+ [<ffffffff8164711c>] ? __do_page_fault+0x20c/0x540
+ [<ffffffff8116a8d7>] ? do_mmap_pgoff+0x357/0x3e0
+ [<ffffffff811b4d5d>] do_vfs_ioctl+0x2dd/0x4b0
+ [<ffffffff811b4fb1>] SyS_ioctl+0x81/0xa0
+ [<ffffffff8164745e>] ? do_page_fault+0xe/0x10
+ [<ffffffff8164bad9>] system_call_fastpath+0x16/0x1b
+---[ end trace 99eb746a9ff7c964 ]---
+------------[ cut here ]------------
+WARNING: CPU: 7 PID: 3991 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
+btrfs: Transaction aborted (error -22)
+Modules linked in: tcp_lp fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat bridge iptable_mangle stp llc nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter rfcomm ip6_tables bnep arc4 iwldvm mac80211 vfat fat snd_hda_codec_realtek x86_pkg_temp_thermal coretemp kvm_intel snd_hda_intel snd_hda_codec kvm uvcvideo snd_hwdep snd_seq crc32_pclmul cdc_mbim iwlwifi crc32c_intel videobuf2_vmalloc snd_seq_device videobuf2_memops cdc_ncm ghash_clmulni_intel videobuf2_core snd_pcm usbnet iTCO_wdt iTCO_vendor_support btusb sdhci_pci videodev bluetooth media cfg80211 cdc_acm cdc_wdm mii e1000e sdhci
+ snd_page_alloc thinkpad_acpi tpm_tis mmc_core snd_timer tpm microcode snd tpm_bios serio_raw mei_me lpc_ich i2c_i801 ptp rfkill wmi mfd_core mei shpchp pps_core soundcore pcspkr uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm firewire_ohci firewire_core crct10dif_pclmul i2c_core crc_itu_t video
+CPU: 7 PID: 3991 Comm: btrfs Tainted: G        W    3.11.0-10050-g3711d86 #2
+Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
+ 0000000000000009 ffff8802bba0bc48 ffffffff8163cdcf ffff8802bba0bc90
+ ffff8802bba0bc80 ffffffff81065c9d 00000000ffffffea ffff880401bc2000
+ ffff88003fe7d280 ffffffffa020b830 00000000000008cc ffff8802bba0bce0
+Call Trace:
+ [<ffffffff8163cdcf>] dump_stack+0x45/0x56
+ [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
+ [<ffffffff81065d0c>] warn_slowpath_fmt+0x4c/0x50
+ [<ffffffffa0171b3d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
+ [<ffffffffa01ca10a>] btrfs_ioctl_snap_destroy+0x60a/0x630 [btrfs]
+ [<ffffffffa01cd371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
+ [<ffffffff8164711c>] ? __do_page_fault+0x20c/0x540
+ [<ffffffff8116a8d7>] ? do_mmap_pgoff+0x357/0x3e0
+ [<ffffffff811b4d5d>] do_vfs_ioctl+0x2dd/0x4b0
+ [<ffffffff811b4fb1>] SyS_ioctl+0x81/0xa0
+ [<ffffffff8164745e>] ? do_page_fault+0xe/0x10
+ [<ffffffff8164bad9>] system_call_fastpath+0x16/0x1b
+---[ end trace 99eb746a9ff7c965 ]---
+BTRFS error (device dm-1) in btrfs_ioctl_snap_destroy:2252: errno=-22 unknown
+BTRFS info (device dm-1): forced readonly
 
-On Sun, Sep 22, 2013 at 6:30 PM, Rain Maker <rainmaker52@gmail.com> wrote:
-> Hello list,
->
-> I'm still busy trying to figure out how to get VMs running without
-> corruption (see
-> http://www.spinics.net/lists/linux-btrfs/msg27300.html) and in the
-> process of this, I tried to remove the "@vmware" subvolume I've made.
->
-> This seems to trigger some bug, as dmesg is showing an OOPS (2 I
-> believe). The filesystem is then remounted read-only.
->
-> I am running kernel 3.12-rc1, but I can also confirm this o 3.11.0.
-> The storage setup is:
-> - 2 physical disks (sda = HDD, sdb = SSD)
-> - SSD is configured as bcache "caching device" for HDD (the "backing device")
-> - /dev/bcache0 is a LVM PV, with one VG, and one LV (unfortunately,
-> this was necessary for the Debian / Ubuntu setup to recognize the
-> device as a non-partitionable device) formatted as BTRFS.
-> - The BTRFS filesystem has several subvolumes (some done by the Ubuntu
-> installer)
-> - None of the subvolumes have any snapshots configured whatsoever
->
-> Command I use to remove (maybe this is wrong?):
-> # mount /dev/vgSystem/lvBTRFS /mnt
-> # cd /mnt
-> # ls
-> @  @home  @kvm  @virtualbox  @vmware
-> # btrfs sub delete @vmware
->
-> Here is the error from dmesg:
->
-> [   56.910180] ------------[ cut here ]------------
-> [   56.910197] WARNING: CPU: 3 PID: 1979 at fs/btrfs/uuid-tree.c:171
-> btrfs_uuid_tree_rem+0x1ec/0x210()
-> [   56.910201] Modules linked in: rfcomm(F) bnep(F)
-> serpent_avx_x86_64(F) serpent_sse2_x86_64(F) serpent_generic(F) lrw(F)
-> glue_helper(F) ablk_helper(F) cryptd(F) xts(F) gf128mul(F)
-> binfmt_misc(F) dm_crypt(F) arc4(F) ip6t_REJECT(F) xt_hl(F) ip6t_rt(F)
-> nf_conntrack_ipv6(F) nf_defrag_ipv6(F) ipt_REJECT(F) xt_LOG(F)
-> xt_limit(F) xt_tcpudp(F) xt_addrtype(F) iwldvm(F) nf_conntrack_ipv4(F)
-> btusb(F) nf_defrag_ipv4(F) mac80211(F) joydev(F) xt_state(F)
-> snd_hda_codec_hdmi(F) bluetooth(F) snd_hda_codec_idt(F)
-> snd_hda_intel(F) snd_hda_codec(F) psmouse(F) iwlwifi(F) snd_hwdep(F)
-> ip6table_filter(F) ip6_tables(F) snd_pcm(F) nf_conntrack_netbios_ns(F)
-> nf_conntrack_broadcast(F) nf_nat_ftp(F) nf_nat(F) nf_conntrack_ftp(F)
-> nf_conntrack(F) snd_page_alloc(F) iptable_filter(F) ip_tables(F)
-> snd_seq_midi(F) snd_seq_midi_event(F) dell_wmi(F) sparse_keymap(F)
-> x_tables(F) snd_rawmidi(F) dell_laptop(F) dcdbas(F) snd_seq(F)
-> cfg80211(F) serio_raw(F) lpc_ich(F) mfd_core(F) snd_seq_device(F)
-> snd_timer(F) snd(F) soundcore(F) hid_logitech_dj(F) usbhid(F) hid(F)
-> firewire_ohci(F) nouveau(F) ahci(F) libahci(F) mxm_wmi(F) e1000e(F)
-> wmi(F) ttm(F) firewire_core(F) sdhci_pci(F) crc_itu_t(F) sdhci(F)
-> ptp(F) pps_core(F) i915(F) video(F) i2c_algo_bit(F) drm_kms_helper(F)
-> drm(F) i2c_core(F)
-> [   56.910315] CPU: 3 PID: 1979 Comm: btrfs Tainted: GF
-> 3.12.0-rc1-bcache-00060-g31b8586 #1
-> [   56.910318] Hardware name: Dell Inc. Latitude E6520/0J4TFW, BIOS
-> A17 03/07/2013
-> [   56.910322]  0000000000000009 ffff88022f7f5c28 ffffffff816b1dc3
-> 0000000000000000
-> [   56.910328]  ffff88022f7f5c60 ffffffff810480bc ffff88023031ff00
-> ffff88022ec30f00
-> [   56.910334]  0000000000000000 ffff880231c54000 0000000000000000
-> ffff88022f7f5c70
-> [   56.910340] Call Trace:
-> [   56.910351]  [<ffffffff816b1dc3>] dump_stack+0x4e/0x82
-> [   56.910359]  [<ffffffff810480bc>] warn_slowpath_common+0x8c/0xc0
-> [   56.910366]  [<ffffffff8104810a>] warn_slowpath_null+0x1a/0x20
-> [   56.910371]  [<ffffffff8131e3bc>] btrfs_uuid_tree_rem+0x1ec/0x210
-> [   56.910377]  [<ffffffff8128cde6>] ? btrfs_free_path+0x26/0x30
-> [   56.910384]  [<ffffffff812e9a6a>] ? btrfs_insert_orphan_item+0x6a/0x90
-> [   56.910389]  [<ffffffff812e5393>] btrfs_ioctl_snap_destroy+0x573/0x670
-> [   56.910395]  [<ffffffff812e7b08>] btrfs_ioctl+0x1018/0x25c0
-> [   56.910403]  [<ffffffff8115185c>] ? handle_mm_fault+0x42c/0x1030
-> [   56.910411]  [<ffffffff81435239>] ? n_tty_write+0x1b9/0x4d0
-> [   56.910418]  [<ffffffff816b8bd8>] ? _raw_spin_unlock_irqrestore+0x18/0x40
-> [   56.910424]  [<ffffffff816bc4a4>] ? __do_page_fault+0x204/0x500
-> [   56.910430]  [<ffffffff81431f6c>] ? tty_write+0x1cc/0x2b0
-> [   56.910435]  [<ffffffff81435080>] ? process_echoes+0x90/0x90
-> [   56.910443]  [<ffffffff811a2bcc>] do_vfs_ioctl+0x8c/0x4f0
-> [   56.910450]  [<ffffffff81190a6c>] ? vfs_write+0x16c/0x1e0
-> [   56.910456]  [<ffffffff811a30c1>] SyS_ioctl+0x91/0xb0
-> [   56.910462]  [<ffffffff816bc7ae>] ? do_page_fault+0xe/0x10
-> [   56.910468]  [<ffffffff816c0846>] system_call_fastpath+0x1a/0x1f
-> [   56.910472] ---[ end trace 16cd56b9210c7fea ]---
-> [   56.910475] ------------[ cut here ]------------
-> [   56.910482] WARNING: CPU: 3 PID: 1979 at fs/btrfs/super.c:255
-> __btrfs_abort_transaction+0x12d/0x140()
-> [   56.910485] btrfs: Transaction aborted (error -22)
-> [   56.910487] Modules linked in: rfcomm(F) bnep(F)
-> serpent_avx_x86_64(F) serpent_sse2_x86_64(F) serpent_generic(F) lrw(F)
-> glue_helper(F) ablk_helper(F) cryptd(F) xts(F) gf128mul(F)
-> binfmt_misc(F) dm_crypt(F) arc4(F) ip6t_REJECT(F) xt_hl(F) ip6t_rt(F)
-> nf_conntrack_ipv6(F) nf_defrag_ipv6(F) ipt_REJECT(F) xt_LOG(F)
-> xt_limit(F) xt_tcpudp(F) xt_addrtype(F) iwldvm(F) nf_conntrack_ipv4(F)
-> btusb(F) nf_defrag_ipv4(F) mac80211(F) joydev(F) xt_state(F)
-> snd_hda_codec_hdmi(F) bluetooth(F) snd_hda_codec_idt(F)
-> snd_hda_intel(F) snd_hda_codec(F) psmouse(F) iwlwifi(F) snd_hwdep(F)
-> ip6table_filter(F) ip6_tables(F) snd_pcm(F) nf_conntrack_netbios_ns(F)
-> nf_conntrack_broadcast(F) nf_nat_ftp(F) nf_nat(F) nf_conntrack_ftp(F)
-> nf_conntrack(F) snd_page_alloc(F) iptable_filter(F) ip_tables(F)
-> snd_seq_midi(F) snd_seq_midi_event(F) dell_wmi(F) sparse_keymap(F)
-> x_tables(F) snd_rawmidi(F) dell_laptop(F) dcdbas(F) snd_seq(F)
-> cfg80211(F) serio_raw(F) lpc_ich(F) mfd_core(F) snd_seq_device(F)
-> snd_timer(F) snd(F) soundcore(F) hid_logitech_dj(F) usbhid(F) hid(F)
-> firewire_ohci(F) nouveau(F) ahci(F) libahci(F) mxm_wmi(F) e1000e(F)
-> wmi(F) ttm(F) firewire_core(F) sdhci_pci(F) crc_itu_t(F) sdhci(F)
-> ptp(F) pps_core(F) i915(F) video(F) i2c_algo_bit(F) drm_kms_helper(F)
-> drm(F) i2c_core(F)
-> [   56.910579] CPU: 3 PID: 1979 Comm: btrfs Tainted: GF       W
-> 3.12.0-rc1-bcache-00060-g31b8586 #1
-> [   56.910582] Hardware name: Dell Inc. Latitude E6520/0J4TFW, BIOS
-> A17 03/07/2013
-> [   56.910584]  0000000000000009 ffff88022f7f5c18 ffffffff816b1dc3
-> ffff88022f7f5c60
-> [   56.910590]  ffff88022f7f5c50 ffffffff810480bc 00000000ffffffea
-> ffff88022d339800
-> [   56.910595]  ffff880231957000 ffffffff818465b0 00000000000008cc
-> ffff88022f7f5cb0
-> [   56.910601] Call Trace:
-> [   56.910607]  [<ffffffff816b1dc3>] dump_stack+0x4e/0x82
-> [   56.910613]  [<ffffffff810480bc>] warn_slowpath_common+0x8c/0xc0
-> [   56.910619]  [<ffffffff810481ac>] warn_slowpath_fmt+0x4c/0x50
-> [   56.910626]  [<ffffffff8128981d>] __btrfs_abort_transaction+0x12d/0x140
-> [   56.910631]  [<ffffffff812e546c>] btrfs_ioctl_snap_destroy+0x64c/0x670
-> [   56.910637]  [<ffffffff812e7b08>] btrfs_ioctl+0x1018/0x25c0
-> [   56.910642]  [<ffffffff8115185c>] ? handle_mm_fault+0x42c/0x1030
-> [   56.910648]  [<ffffffff81435239>] ? n_tty_write+0x1b9/0x4d0
-> [   56.910653]  [<ffffffff816b8bd8>] ? _raw_spin_unlock_irqrestore+0x18/0x40
-> [   56.910660]  [<ffffffff816bc4a4>] ? __do_page_fault+0x204/0x500
-> [   56.910664]  [<ffffffff81431f6c>] ? tty_write+0x1cc/0x2b0
-> [   56.910670]  [<ffffffff81435080>] ? process_echoes+0x90/0x90
-> [   56.910676]  [<ffffffff811a2bcc>] do_vfs_ioctl+0x8c/0x4f0
-> [   56.910681]  [<ffffffff81190a6c>] ? vfs_write+0x16c/0x1e0
-> [   56.910687]  [<ffffffff811a30c1>] SyS_ioctl+0x91/0xb0
-> [   56.910692]  [<ffffffff816bc7ae>] ? do_page_fault+0xe/0x10
-> [   56.910697]  [<ffffffff816c0846>] system_call_fastpath+0x1a/0x1f
-> [   56.910701] ---[ end trace 16cd56b9210c7feb ]---
-> [   56.910706] BTRFS error (device dm-0) in
-> btrfs_ioctl_snap_destroy:2252: errno=-22 unknown
-> [   56.910710] BTRFS info (device dm-0): forced readonly
-> [   66.772123] btrfs: use spread ssd allocation scheme
-> [   66.772133] btrfs: disk space caching is enabled
->
-> Thanks for any response,
-> Sincerely,
-> Roel Brook
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+And with 3.12-rc1 (3.12.0-rc1-00273-g2457aaf), I get the same thing:
+
+WARNING: CPU: 5 PID: 8364 at fs/btrfs/uuid-tree.c:171 btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]()
+Modules linked in: rpcsec_gss_krb5 auth_rpcgss nfsv4 dns_resolver nfs lockd sunrpc fscache fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 bridge stp llc iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables rfcomm ip6table_filter ip6_tables bnep arc4 iwldvm mac80211 vfat snd_hda_codec_realtek fat snd_hda_intel snd_hda_codec uvcvideo snd_hwdep snd_seq videobuf2_vmalloc iwlwifi snd_seq_device videobuf2_memops snd_pcm iTCO_wdt videobuf2_core iTCO_vendor_support x86_pkg_temp_thermal cdc_mbim coretemp videodev kvm_intel kvm cfg80211 btusb cdc_ncm e1000e snd_page_alloc sdhci_pci media bluetooth
+ snd_timer sdhci thinkpad_acpi cdc_wdm cdc_acm usbnet snd mmc_core mii rfkill mei_me ptp microcode tpm_tis i2c_i801 serio_raw wmi pcspkr pps_core soundcore tpm lpc_ich mei tpm_bios shpchp mfd_core uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm crct10dif_pclmul crc32_pclmul crc32c_intel firewire_ohci firewire_core ghash_clmulni_intel crc_itu_t i2c_core video
+CPU: 5 PID: 8364 Comm: btrfs Tainted: G        W    3.12.0-rc1-00273-g2457aaf #1
+Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
+ 0000000000000009 ffff88028992bc58 ffffffff8163d04f 0000000000000000
+ ffff88028992bc90 ffffffff81065c9d ffff8800c0cf6000 ffff8800ad07a800
+ 0000000000000000 ffff8803a5bed678 ffff8802898e5000 ffff88028992bca0
+Call Trace:
+ [<ffffffff8163d04f>] dump_stack+0x45/0x56
+ [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
+ [<ffffffff81065d7a>] warn_slowpath_null+0x1a/0x20
+ [<ffffffffa02331cc>] btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]
+ [<ffffffffa01a6016>] ? btrfs_free_path+0x26/0x30 [btrfs]
+ [<ffffffffa0200573>] ? btrfs_insert_orphan_item+0x63/0x80 [btrfs]
+ [<ffffffffa01fb023>] btrfs_ioctl_snap_destroy+0x523/0x630 [btrfs]
+ [<ffffffffa01fe371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
+ [<ffffffff8164739c>] ? __do_page_fault+0x20c/0x540
+ [<ffffffff8116a967>] ? do_mmap_pgoff+0x357/0x3e0
+ [<ffffffff811b4d7d>] do_vfs_ioctl+0x2dd/0x4b0
+ [<ffffffff811b4fd1>] SyS_ioctl+0x81/0xa0
+ [<ffffffff816476de>] ? do_page_fault+0xe/0x10
+ [<ffffffff8164bce9>] system_call_fastpath+0x16/0x1b
+---[ end trace 9cdf8449ae3d9eb3 ]---
+------------[ cut here ]------------
+WARNING: CPU: 5 PID: 8364 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
+btrfs: Transaction aborted (error -22)
+Modules linked in: rpcsec_gss_krb5 auth_rpcgss nfsv4 dns_resolver nfs lockd sunrpc fscache fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 bridge stp llc iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables rfcomm ip6table_filter ip6_tables bnep arc4 iwldvm mac80211 vfat snd_hda_codec_realtek fat snd_hda_intel snd_hda_codec uvcvideo snd_hwdep snd_seq videobuf2_vmalloc iwlwifi snd_seq_device videobuf2_memops snd_pcm iTCO_wdt videobuf2_core iTCO_vendor_support x86_pkg_temp_thermal cdc_mbim coretemp videodev kvm_intel kvm cfg80211 btusb cdc_ncm e1000e snd_page_alloc sdhci_pci media bluetooth
+ snd_timer sdhci thinkpad_acpi cdc_wdm cdc_acm usbnet snd mmc_core mii rfkill mei_me ptp microcode tpm_tis i2c_i801 serio_raw wmi pcspkr pps_core soundcore tpm lpc_ich mei tpm_bios shpchp mfd_core uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm crct10dif_pclmul crc32_pclmul crc32c_intel firewire_ohci firewire_core ghash_clmulni_intel crc_itu_t i2c_core video
+CPU: 5 PID: 8364 Comm: btrfs Tainted: G        W    3.12.0-rc1-00273-g2457aaf #1
+Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
+ 0000000000000009 ffff88028992bc48 ffffffff8163d04f ffff88028992bc90
+ ffff88028992bc80 ffffffff81065c9d 00000000ffffffea ffff8804010b6000
+ ffff880406c363c0 ffffffffa023c830 00000000000008cc ffff88028992bce0
+Call Trace:
+ [<ffffffff8163d04f>] dump_stack+0x45/0x56
+ [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
+ [<ffffffff81065d0c>] warn_slowpath_fmt+0x4c/0x50
+ [<ffffffffa01a2b3d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
+ [<ffffffffa01fb10a>] btrfs_ioctl_snap_destroy+0x60a/0x630 [btrfs]
+ [<ffffffffa01fe371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
+ [<ffffffff8164739c>] ? __do_page_fault+0x20c/0x540
+ [<ffffffff8116a967>] ? do_mmap_pgoff+0x357/0x3e0
+ [<ffffffff811b4d7d>] do_vfs_ioctl+0x2dd/0x4b0
+ [<ffffffff811b4fd1>] SyS_ioctl+0x81/0xa0
+ [<ffffffff816476de>] ? do_page_fault+0xe/0x10
+ [<ffffffff8164bce9>] system_call_fastpath+0x16/0x1b
+---[ end trace 9cdf8449ae3d9eb4 ]---
+BTRFS error (device dm-1) in btrfs_ioctl_snap_destroy:2252: errno=-22 unknown
+BTRFS info (device dm-1): forced readonly
+
+I haven't yet tried to reproduce it manually but can certainly do so.
+Note my FS is clean as a scrub doesn't return any error.
+
+If I can do anything to help, let me know.
+
+Cheers,
+
+-- 
+Mathieu Chouquet-Stringer                               m+btrfs@thi.eu.com
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

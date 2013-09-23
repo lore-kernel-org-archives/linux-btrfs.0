@@ -1,142 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:44721 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752830Ab3IWLxK (ORCPT
+Received: from mail-pb0-f49.google.com ([209.85.160.49]:48944 "EHLO
+	mail-pb0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753891Ab3IWNAK convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 07:53:10 -0400
-Date: Mon, 23 Sep 2013 13:53:02 +0200
-From: Mathieu Chouquet-Stringer <m+btrfs@thi.eu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Failure to remove snapshot with 3.12* and FS switches to read-only
-Message-ID: <20130923115302.GA28713@wasting>
-MIME-Version: 1.0
+	Mon, 23 Sep 2013 09:00:10 -0400
+Received: by mail-pb0-f49.google.com with SMTP id xb4so3152372pbc.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 06:00:09 -0700 (PDT)
 Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: btrfs: qgroup scan failed with -12
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <20130923074344.60f629d7@wpkg.org>
+Date: Mon, 23 Sep 2013 21:00:03 +0800
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-Id: <9CF3BF16-C532-4890-BBED-AAAB8EEA2EEF@gmail.com>
+References: <20130923074344.60f629d7@wpkg.org>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-	Hello,
+Hello,
 
-My system is configured to do FS snapshots when I upgrade packages.  I
-have a cron job which runs at night to delete these snapshots.  Its goal
-is to keep 10 snapshots maximum, one per day if possible.
+I think this problem may be related to qgroup memory leak that you also reported before,
+however, i have not reproduced it in my test box.
 
-This works perfectly with 3.11.1 but fails miserably with anything post
-3.11.
+By the way,  did you machine still exist high memory cost with quota enabled?
 
-With a pre 3.12 (3.11.0-10050-g3711d86), this is what happens:
+Thanks,
+Wang
+> Not sure if it's anything interesting - I had the following entry in
+> dmesg a few days ago, on a server with 32 GB RAM. The system is still working fine.
+> 
+> [1878432.675210] btrfs-qgroup-re: page allocation failure: order:5, mode:0x104050
+> [1878432.675319] CPU: 5 PID: 22251 Comm: btrfs-qgroup-re Not tainted 3.11.0-rc7 #2
+> [1878432.675417] Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 1106 10/17/2011
+> [1878432.675517]  0000000000104050 ffff88062a981948 ffffffff81378c52 ffff88083fb4d958
+> [1878432.675618]  0000000000000001 ffff88062a9819d8 ffffffff810af9a4 0000000000000000
+> [1878432.675721]  ffffffff817c8100 ffff88062a981978 ffff88083fddea00 ffff88083fddea38
+> [1878432.675821] Call Trace:
+> [1878432.675874]  [<ffffffff81378c52>] dump_stack+0x46/0x58
+> [1878432.675927]  [<ffffffff810af9a4>] warn_alloc_failed+0x110/0x124
+> [1878432.675981]  [<ffffffff810b1fd8>] __alloc_pages_nodemask+0x6a4/0x793
+> [1878432.676036]  [<ffffffff810db7e8>] alloc_pages_current+0xc8/0xe5
+> [1878432.676098]  [<ffffffff810af06c>] __get_free_pages+0x9/0x36
+> [1878432.676150]  [<ffffffff810e27b9>] __kmalloc_track_caller+0x35/0x163
+> [1878432.676204]  [<ffffffff810bde12>] krealloc+0x52/0x8c
+> [1878432.676265]  [<ffffffffa036cdcb>] ulist_add_merge+0xe1/0x14e [btrfs]
+> [1878432.676324]  [<ffffffffa036bcf0>] find_parent_nodes+0x49c/0x5a5 [btrfs]
+> [1878432.676383]  [<ffffffffa036be75>] btrfs_find_all_roots+0x7c/0xd7 [btrfs]
+> [1878432.676441]  [<ffffffffa036d6e1>] ? qgroup_account_ref_step1+0xea/0x102 [btrfs]
+> [1878432.676542]  [<ffffffffa036d915>] btrfs_qgroup_rescan_worker+0x21c/0x516 [btrfs]
+> [1878432.676645]  [<ffffffffa03482cc>] worker_loop+0x15e/0x48e [btrfs]
+> [1878432.676702]  [<ffffffffa034816e>] ? btrfs_queue_worker+0x267/0x267 [btrfs]
+> [1878432.676757]  [<ffffffff8104e51a>] kthread+0xb5/0xbd
+> [1878432.676809]  [<ffffffff8104e465>] ? kthread_freezable_should_stop+0x43/0x43
+> [1878432.676881]  [<ffffffff8137da2c>] ret_from_fork+0x7c/0xb0
+> [1878432.676950]  [<ffffffff8104e465>] ? kthread_freezable_should_stop+0x43/0x43
+> [1878432.677004] Mem-Info:
+> [1878432.678293] Node 0 DMA per-cpu:
+> [1878432.678341] CPU    0: hi:    0, btch:   1 usd:   0
+> [1878432.678392] CPU    1: hi:    0, btch:   1 usd:   0
+> [1878432.678443] CPU    2: hi:    0, btch:   1 usd:   0
+> [1878432.678494] CPU    3: hi:    0, btch:   1 usd:   0
+> [1878432.678544] CPU    4: hi:    0, btch:   1 usd:   0
+> [1878432.678595] CPU    5: hi:    0, btch:   1 usd:   0
+> [1878432.678646] CPU    6: hi:    0, btch:   1 usd:   0
+> [1878432.678697] CPU    7: hi:    0, btch:   1 usd:   0
+> [1878432.678747] Node 0 DMA32 per-cpu:
+> [1878432.678797] CPU    0: hi:  186, btch:  31 usd:   0
+> [1878432.678847] CPU    1: hi:  186, btch:  31 usd:   0
+> [1878432.678897] CPU    2: hi:  186, btch:  31 usd:   0
+> [1878432.678948] CPU    3: hi:  186, btch:  31 usd:   0
+> [1878432.678998] CPU    4: hi:  186, btch:  31 usd:   0
+> [1878432.679049] CPU    5: hi:  186, btch:  31 usd:   0
+> [1878432.679111] CPU    6: hi:  186, btch:  31 usd:   0
+> [1878432.679162] CPU    7: hi:  186, btch:  31 usd:   2
+> [1878432.679214] Node 0 Normal per-cpu:
+> [1878432.679270] CPU    0: hi:  186, btch:  31 usd:  31
+> [1878432.679321] CPU    1: hi:  186, btch:  31 usd:   0
+> [1878432.679372] CPU    2: hi:  186, btch:  31 usd:   0
+> [1878432.679444] CPU    3: hi:  186, btch:  31 usd:   0
+> [1878432.679495] CPU    4: hi:  186, btch:  31 usd:   0
+> [1878432.679546] CPU    5: hi:  186, btch:  31 usd:   0
+> [1878432.679596] CPU    6: hi:  186, btch:  31 usd:  30
+> [1878432.679647] CPU    7: hi:  186, btch:  31 usd: 169
+> [1878432.679700] active_anon:1062992 inactive_anon:522620 isolated_anon:0
+> [1878432.679700]  active_file:1050823 inactive_file:1052143 isolated_file:0
+> [1878432.679700]  unevictable:5892 dirty:1004 writeback:0 unstable:0
+> [1878432.679700]  free:2184567 slab_reclaimable:1142980 slab_unreclaimable:86405
+> [1878432.679700]  mapped:754301 shmem:9119 pagetables:21518 bounce:0
+> [1878432.679700]  free_cma:0
+> [1878432.680007] Node 0 DMA free:15360kB min:8kB low:8kB high:12kB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB isolated(anon):0kB isolated(file):0kB present:15984kB managed:15360kB mlocked:0kB dirty:0kB writeback:0kB mapped:0kB shmem:0kB slab_reclaimable:0kB slab_unreclaimable:0kB kernel_stack:0kB pagetables:0kB unstable:0kB bounce:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:0 all_unreclaimable? yes
+> [1878432.680322] lowmem_reserve[]: 0 2897 32077 32077
+> [1878432.680375] Node 0 DMA32 free:417660kB min:2068kB low:2584kB high:3100kB active_anon:4384kB inactive_anon:59696kB active_file:45640kB inactive_file:45652kB unevictable:0kB isolated(anon):0kB isolated(file):0kB present:3040872kB managed:2968600kB mlocked:0kB dirty:4kB writeback:0kB mapped:224kB shmem:324kB slab_reclaimable:2333732kB slab_unreclaimable:59700kB kernel_stack:8kB pagetables:1708kB unstable:0kB bounce:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:4 all_unreclaimable? no
+> [1878432.680771] lowmem_reserve[]: 0 0 29180 29180
+> [1878432.680831] Node 0 Normal free:8305248kB min:20844kB low:26052kB high:31264kB active_anon:4247584kB inactive_anon:2030784kB active_file:4157652kB inactive_file:4162920kB unevictable:23568kB isolated(anon):0kB isolated(file):0kB present:30406656kB managed:29880648kB mlocked:23568kB dirty:4012kB writeback:0kB mapped:3016980kB shmem:36152kB slab_reclaimable:2238188kB slab_unreclaimable:285920kB kernel_stack:3328kB pagetables:84364kB unstable:0kB bounce:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:0 all_unreclaimable? no
+> [1878432.681207] lowmem_reserve[]: 0 0 0 0
+> [1878432.681258] Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 1*2048kB (R) 3*4096kB (M) = 15360kB
+> [1878432.681371] Node 0 DMA32: 19878*4kB (UEM) 18133*8kB (UEM) 12056*16kB (UEM) 1*32kB (U) 0*64kB 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 417504kB
+> [1878432.681486] Node 0 Normal: 544554*4kB (EM) 536220*8kB (UEM) 114800*16kB (UM) 1*32kB (M) 2*64kB (R) 2*128kB (R) 1*256kB (R) 0*512kB 1*1024kB (R) 0*2048kB 0*4096kB = 8306472kB
+> [1878432.681649] Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
+> [1878432.681747] 2186705 total pagecache pages
+> [1878432.681797] 73757 pages in swap cache
+> [1878432.681846] Swap cache stats: add 8877981, delete 8804224, find 97677523/98270314
+> [1878432.681943] Free swap  = 32338688kB
+> [1878432.681992] Total swap = 33553332kB
+> [1878432.762593] 8388095 pages RAM
+> [1878432.762659] 171943 pages reserved
+> [1878432.762716] 4144353 pages shared
+> [1878432.762764] 3906447 pages non-shared
+> [1878432.762841] btrfs: qgroup scan failed with -12
+> 
+> 
+> -- 
+> Tomasz Chmielewski
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-WARNING: CPU: 7 PID: 3991 at fs/btrfs/uuid-tree.c:171 btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]()
-Modules linked in: tcp_lp fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat bridge iptable_mangle stp llc nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter rfcomm ip6_tables bnep arc4 iwldvm mac80211 vfat fat snd_hda_codec_realtek x86_pkg_temp_thermal coretemp kvm_intel snd_hda_intel snd_hda_codec kvm uvcvideo snd_hwdep snd_seq crc32_pclmul cdc_mbim iwlwifi crc32c_intel videobuf2_vmalloc snd_seq_device videobuf2_memops cdc_ncm ghash_clmulni_intel videobuf2_core snd_pcm usbnet iTCO_wdt iTCO_vendor_support btusb sdhci_pci videodev bluetooth media cfg80211 cdc_acm cdc_wdm mii e1000e sdhci
- snd_page_alloc thinkpad_acpi tpm_tis mmc_core snd_timer tpm microcode snd tpm_bios serio_raw mei_me lpc_ich i2c_i801 ptp rfkill wmi mfd_core mei shpchp pps_core soundcore pcspkr uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm firewire_ohci firewire_core crct10dif_pclmul i2c_core crc_itu_t video
-CPU: 7 PID: 3991 Comm: btrfs Tainted: G        W    3.11.0-10050-g3711d86 #2
-Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
- 0000000000000009 ffff8802bba0bc58 ffffffff8163cdcf 0000000000000000
- ffff8802bba0bc90 ffffffff81065c9d ffff88007faad3c0 ffff8800c517cb00
- 0000000000000000 ffff8802904a2618 ffff88036cd91000 ffff8802bba0bca0
-Call Trace:
- [<ffffffff8163cdcf>] dump_stack+0x45/0x56
- [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
- [<ffffffff81065d7a>] warn_slowpath_null+0x1a/0x20
- [<ffffffffa02021cc>] btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]
- [<ffffffffa0175016>] ? btrfs_free_path+0x26/0x30 [btrfs]
- [<ffffffffa01cf573>] ? btrfs_insert_orphan_item+0x63/0x80 [btrfs]
- [<ffffffffa01ca023>] btrfs_ioctl_snap_destroy+0x523/0x630 [btrfs]
- [<ffffffffa01cd371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
- [<ffffffff8164711c>] ? __do_page_fault+0x20c/0x540
- [<ffffffff8116a8d7>] ? do_mmap_pgoff+0x357/0x3e0
- [<ffffffff811b4d5d>] do_vfs_ioctl+0x2dd/0x4b0
- [<ffffffff811b4fb1>] SyS_ioctl+0x81/0xa0
- [<ffffffff8164745e>] ? do_page_fault+0xe/0x10
- [<ffffffff8164bad9>] system_call_fastpath+0x16/0x1b
----[ end trace 99eb746a9ff7c964 ]---
-------------[ cut here ]------------
-WARNING: CPU: 7 PID: 3991 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
-btrfs: Transaction aborted (error -22)
-Modules linked in: tcp_lp fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat bridge iptable_mangle stp llc nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter rfcomm ip6_tables bnep arc4 iwldvm mac80211 vfat fat snd_hda_codec_realtek x86_pkg_temp_thermal coretemp kvm_intel snd_hda_intel snd_hda_codec kvm uvcvideo snd_hwdep snd_seq crc32_pclmul cdc_mbim iwlwifi crc32c_intel videobuf2_vmalloc snd_seq_device videobuf2_memops cdc_ncm ghash_clmulni_intel videobuf2_core snd_pcm usbnet iTCO_wdt iTCO_vendor_support btusb sdhci_pci videodev bluetooth media cfg80211 cdc_acm cdc_wdm mii e1000e sdhci
- snd_page_alloc thinkpad_acpi tpm_tis mmc_core snd_timer tpm microcode snd tpm_bios serio_raw mei_me lpc_ich i2c_i801 ptp rfkill wmi mfd_core mei shpchp pps_core soundcore pcspkr uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm firewire_ohci firewire_core crct10dif_pclmul i2c_core crc_itu_t video
-CPU: 7 PID: 3991 Comm: btrfs Tainted: G        W    3.11.0-10050-g3711d86 #2
-Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
- 0000000000000009 ffff8802bba0bc48 ffffffff8163cdcf ffff8802bba0bc90
- ffff8802bba0bc80 ffffffff81065c9d 00000000ffffffea ffff880401bc2000
- ffff88003fe7d280 ffffffffa020b830 00000000000008cc ffff8802bba0bce0
-Call Trace:
- [<ffffffff8163cdcf>] dump_stack+0x45/0x56
- [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
- [<ffffffff81065d0c>] warn_slowpath_fmt+0x4c/0x50
- [<ffffffffa0171b3d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
- [<ffffffffa01ca10a>] btrfs_ioctl_snap_destroy+0x60a/0x630 [btrfs]
- [<ffffffffa01cd371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
- [<ffffffff8164711c>] ? __do_page_fault+0x20c/0x540
- [<ffffffff8116a8d7>] ? do_mmap_pgoff+0x357/0x3e0
- [<ffffffff811b4d5d>] do_vfs_ioctl+0x2dd/0x4b0
- [<ffffffff811b4fb1>] SyS_ioctl+0x81/0xa0
- [<ffffffff8164745e>] ? do_page_fault+0xe/0x10
- [<ffffffff8164bad9>] system_call_fastpath+0x16/0x1b
----[ end trace 99eb746a9ff7c965 ]---
-BTRFS error (device dm-1) in btrfs_ioctl_snap_destroy:2252: errno=-22 unknown
-BTRFS info (device dm-1): forced readonly
-
-And with 3.12-rc1 (3.12.0-rc1-00273-g2457aaf), I get the same thing:
-
-WARNING: CPU: 5 PID: 8364 at fs/btrfs/uuid-tree.c:171 btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]()
-Modules linked in: rpcsec_gss_krb5 auth_rpcgss nfsv4 dns_resolver nfs lockd sunrpc fscache fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 bridge stp llc iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables rfcomm ip6table_filter ip6_tables bnep arc4 iwldvm mac80211 vfat snd_hda_codec_realtek fat snd_hda_intel snd_hda_codec uvcvideo snd_hwdep snd_seq videobuf2_vmalloc iwlwifi snd_seq_device videobuf2_memops snd_pcm iTCO_wdt videobuf2_core iTCO_vendor_support x86_pkg_temp_thermal cdc_mbim coretemp videodev kvm_intel kvm cfg80211 btusb cdc_ncm e1000e snd_page_alloc sdhci_pci media bluetooth
- snd_timer sdhci thinkpad_acpi cdc_wdm cdc_acm usbnet snd mmc_core mii rfkill mei_me ptp microcode tpm_tis i2c_i801 serio_raw wmi pcspkr pps_core soundcore tpm lpc_ich mei tpm_bios shpchp mfd_core uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm crct10dif_pclmul crc32_pclmul crc32c_intel firewire_ohci firewire_core ghash_clmulni_intel crc_itu_t i2c_core video
-CPU: 5 PID: 8364 Comm: btrfs Tainted: G        W    3.12.0-rc1-00273-g2457aaf #1
-Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
- 0000000000000009 ffff88028992bc58 ffffffff8163d04f 0000000000000000
- ffff88028992bc90 ffffffff81065c9d ffff8800c0cf6000 ffff8800ad07a800
- 0000000000000000 ffff8803a5bed678 ffff8802898e5000 ffff88028992bca0
-Call Trace:
- [<ffffffff8163d04f>] dump_stack+0x45/0x56
- [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
- [<ffffffff81065d7a>] warn_slowpath_null+0x1a/0x20
- [<ffffffffa02331cc>] btrfs_uuid_tree_rem+0x1ec/0x210 [btrfs]
- [<ffffffffa01a6016>] ? btrfs_free_path+0x26/0x30 [btrfs]
- [<ffffffffa0200573>] ? btrfs_insert_orphan_item+0x63/0x80 [btrfs]
- [<ffffffffa01fb023>] btrfs_ioctl_snap_destroy+0x523/0x630 [btrfs]
- [<ffffffffa01fe371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
- [<ffffffff8164739c>] ? __do_page_fault+0x20c/0x540
- [<ffffffff8116a967>] ? do_mmap_pgoff+0x357/0x3e0
- [<ffffffff811b4d7d>] do_vfs_ioctl+0x2dd/0x4b0
- [<ffffffff811b4fd1>] SyS_ioctl+0x81/0xa0
- [<ffffffff816476de>] ? do_page_fault+0xe/0x10
- [<ffffffff8164bce9>] system_call_fastpath+0x16/0x1b
----[ end trace 9cdf8449ae3d9eb3 ]---
-------------[ cut here ]------------
-WARNING: CPU: 5 PID: 8364 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
-btrfs: Transaction aborted (error -22)
-Modules linked in: rpcsec_gss_krb5 auth_rpcgss nfsv4 dns_resolver nfs lockd sunrpc fscache fuse ebtable_nat xt_CHECKSUM nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 bridge stp llc iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables rfcomm ip6table_filter ip6_tables bnep arc4 iwldvm mac80211 vfat snd_hda_codec_realtek fat snd_hda_intel snd_hda_codec uvcvideo snd_hwdep snd_seq videobuf2_vmalloc iwlwifi snd_seq_device videobuf2_memops snd_pcm iTCO_wdt videobuf2_core iTCO_vendor_support x86_pkg_temp_thermal cdc_mbim coretemp videodev kvm_intel kvm cfg80211 btusb cdc_ncm e1000e snd_page_alloc sdhci_pci media bluetooth
- snd_timer sdhci thinkpad_acpi cdc_wdm cdc_acm usbnet snd mmc_core mii rfkill mei_me ptp microcode tpm_tis i2c_i801 serio_raw wmi pcspkr pps_core soundcore tpm lpc_ich mei tpm_bios shpchp mfd_core uinput binfmt_misc btrfs libcrc32c xor raid6_pq dm_crypt i915 i2c_algo_bit drm_kms_helper drm crct10dif_pclmul crc32_pclmul crc32c_intel firewire_ohci firewire_core ghash_clmulni_intel crc_itu_t i2c_core video
-CPU: 5 PID: 8364 Comm: btrfs Tainted: G        W    3.12.0-rc1-00273-g2457aaf #1
-Hardware name: LENOVO 2392CTO/2392CTO, BIOS G4ET94WW (2.54 ) 05/23/2013
- 0000000000000009 ffff88028992bc48 ffffffff8163d04f ffff88028992bc90
- ffff88028992bc80 ffffffff81065c9d 00000000ffffffea ffff8804010b6000
- ffff880406c363c0 ffffffffa023c830 00000000000008cc ffff88028992bce0
-Call Trace:
- [<ffffffff8163d04f>] dump_stack+0x45/0x56
- [<ffffffff81065c9d>] warn_slowpath_common+0x7d/0xa0
- [<ffffffff81065d0c>] warn_slowpath_fmt+0x4c/0x50
- [<ffffffffa01a2b3d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
- [<ffffffffa01fb10a>] btrfs_ioctl_snap_destroy+0x60a/0x630 [btrfs]
- [<ffffffffa01fe371>] btrfs_ioctl+0xe61/0x2790 [btrfs]
- [<ffffffff8164739c>] ? __do_page_fault+0x20c/0x540
- [<ffffffff8116a967>] ? do_mmap_pgoff+0x357/0x3e0
- [<ffffffff811b4d7d>] do_vfs_ioctl+0x2dd/0x4b0
- [<ffffffff811b4fd1>] SyS_ioctl+0x81/0xa0
- [<ffffffff816476de>] ? do_page_fault+0xe/0x10
- [<ffffffff8164bce9>] system_call_fastpath+0x16/0x1b
----[ end trace 9cdf8449ae3d9eb4 ]---
-BTRFS error (device dm-1) in btrfs_ioctl_snap_destroy:2252: errno=-22 unknown
-BTRFS info (device dm-1): forced readonly
-
-I haven't yet tried to reproduce it manually but can certainly do so.
-Note my FS is clean as a scrub doesn't return any error.
-
-If I can do anything to help, let me know.
-
-Cheers,
-
--- 
-Mathieu Chouquet-Stringer                               m+btrfs@thi.eu.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --

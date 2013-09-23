@@ -1,32 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57645 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:28311 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753600Ab3IWMK0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 08:10:26 -0400
-Date: Mon, 23 Sep 2013 14:10:23 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: [offlist] Re: [PATCH 4/4] Btrfs-progs: add super-recover to recover
- bad supers
-Message-ID: <20130923121023.GM6810@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1379492856-30639-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <1379492856-30639-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <20130918151304.GD6810@twin.jikos.cz>
- <936776EC-7D7D-458F-960E-E1CB56F9B4BA@gmail.com>
- <20130918163127.GF6810@twin.jikos.cz>
- <0223DF74-26DE-44A2-8D5B-1B7DC1879940@gmail.com>
+	id S1751947Ab3IWPIJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Sep 2013 11:08:09 -0400
+Message-ID: <52405958.4050209@redhat.com>
+Date: Mon, 23 Sep 2013 10:08:08 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0223DF74-26DE-44A2-8D5B-1B7DC1879940@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: check if device supports trim
+References: <1379695327-30046-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1379695327-30046-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 21, 2013 at 09:16:25AM +0800, Wang Shilong wrote:
-> > - open_ctree_fs_info_restore(target, 0, 0, 0, 1);
-> > + open_ctree_fs_info_restore(target, 0, 0, OPEN_CTREE_PARTIAL);
-> 
-> Good idea, i think this should be another patch. 
+On 9/20/13 11:42 AM, David Sterba wrote:
+> The message about trim was printed unconditionally, we should check if
+> trim is supported at all.
 
-yes
+Good idea, but I wonder if there's any risk that discard(0,0) will ever
+be optimized away on the kernel side & pass unconditionally?
+
+I was thinking we could get this from blkid, but maybe not.
+
+In the meantime it does do the right thing, so:
+
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>  utils.c | 13 ++++++++-----
+>  1 file changed, 8 insertions(+), 5 deletions(-)
+> 
+> diff --git a/utils.c b/utils.c
+> index 5fa193b..6c74654 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -597,13 +597,16 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+>  	}
+>  
+>  	if (discard) {
+> -		fprintf(stderr, "Performing full device TRIM (%s) ...\n",
+> -				pretty_size(block_count));
+>  		/*
+> -		 * We intentionally ignore errors from the discard ioctl.  It is
+> -		 * not necessary for the mkfs functionality but just an optimization.
+> +		 * We intentionally ignore errors from the discard ioctl.  It
+> +		 * is not necessary for the mkfs functionality but just an
+> +		 * optimization.
+>  		 */
+> -		discard_blocks(fd, 0, block_count);
+> +		if (discard_blocks(fd, 0, 0) == 0) {
+> +			fprintf(stderr, "Performing full device TRIM (%s) ...\n",
+> +				pretty_size(block_count));
+> +			discard_blocks(fd, 0, block_count);
+> +		}
+>  	}
+>  
+>  	ret = zero_dev_start(fd);
+> 
+

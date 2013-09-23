@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f170.google.com ([74.125.82.170]:46109 "EHLO
-	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753406Ab3IWK2h (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:37264 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753285Ab3IWKfq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 06:28:37 -0400
-Received: by mail-we0-f170.google.com with SMTP id w62so2953303wes.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 03:28:36 -0700 (PDT)
+	Mon, 23 Sep 2013 06:35:46 -0400
+Received: by mail-wg0-f47.google.com with SMTP id f12so2867798wgh.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 03:35:45 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: fix sync fs to actually wait for all data to be persisted
-Date: Mon, 23 Sep 2013 11:28:30 +0100
-Message-Id: <1379932110-25267-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v4] Btrfs: fix sync fs to actually wait for all data to be persisted
+Date: Mon, 23 Sep 2013 11:35:11 +0100
+Message-Id: <1379932511-16265-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1379883353-7358-1-git-send-email-fdmanana@gmail.com>
 References: <1379883353-7358-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -74,13 +74,14 @@ V3: Use btrfs_start_all_delalloc_inodes() instead but outside btrfs_sync_fs(),
     because it doesn't guarantee inode data is persisted and we have no way
     to know if persistence really happened or not, returning 0 (success) always.
     Thanks Liu Bo for the suggestion.
+V4: Be even more honest in the sync IOCTL handler - don't always return success
+    regardless of the result of the btrfs_sync_fs() call.
 
-
- fs/btrfs/ioctl.c |    8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c |   12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9d46f60..8792fc8 100644
+index 9d46f60..385c58f 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -4557,9 +4557,15 @@ long btrfs_ioctl(struct file *file, unsigned int
@@ -88,14 +89,16 @@ index 9d46f60..8792fc8 100644
  	case BTRFS_IOC_SPACE_INFO:
  		return btrfs_ioctl_space_info(root, argp);
 -	case BTRFS_IOC_SYNC:
+-		btrfs_sync_fs(file->f_dentry->d_sb, 1);
+-		return 0;
 +	case BTRFS_IOC_SYNC: {
 +		int ret;
 +
 +		ret = btrfs_start_all_delalloc_inodes(root->fs_info, 0);
 +		if (ret)
 +			return ret;
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
++		ret = btrfs_sync_fs(file->f_dentry->d_sb, 1);
++		return ret;
 +	}
  	case BTRFS_IOC_START_SYNC:
  		return btrfs_ioctl_start_sync(root, argp);

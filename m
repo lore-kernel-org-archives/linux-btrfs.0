@@ -1,452 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:43765 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753217Ab3IWGUJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 02:20:09 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8N6K2iQ012946
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 14:20:07 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:56146 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753891Ab3IWSRl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Sep 2013 14:17:41 -0400
+Received: from /spool/local
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Mon, 23 Sep 2013 23:47:32 +0530
+Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id E1179E0053
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 23:48:32 +0530 (IST)
+Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
+	by d28relay01.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r8NIJSb723527606
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 23:49:30 +0530
+Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
+	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r8NIHDXb001647
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 23:47:14 +0530
+From: chandan <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 9/9] Btrfs-progs: enhance btrfs qgroup to print the result as a table
-Date: Mon, 23 Sep 2013 14:17:28 +0800
-Message-Id: <1379917048-9720-10-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1379917048-9720-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1379917048-9720-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: sekharan@us.ibm.com
+Subject: [PATCH] btrfs-progs: cmd_find_new: Sync fs before searching for modified files.
+Date: Mon, 23 Sep 2013 23:47:11 +0530
+Message-ID: <2363441.CTgOPvMvZp@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+The sync makes sure that 'very recently' introduced delayed work is
+accounted for in the output of 'btrfs subvolume find-new' command.
 
-This patch introduce '-t' option which can help you print the result
-as a table.
-
-You can use it like:
-	btrfs qgroup show -t <path>
-However, to table the result better, we make '-p' and '-c' not present
-at the same time.If you still want to show both of them at the same time,
-you may print the result without '-t' option.
-
-For example:
-
-	btrfs qgroup show -tpl <path>
-The result will output as the follow format:
-
-qgroupid rfer       excl       max_excl       parent
--------- ----       ----       --------       ------
-0/265    1289752576 1289752576 0              ---
-1/0      0          0          10999511627776 2/0,3/0
-2/0      0          0          0              ---
-3/0      0          0          0              ---
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
 ---
- cmds-qgroup.c |  20 ++++++-
- qgroup.c      | 179 +++++++++++++++++++++++++++++++++++++++++++++++++++++++---
- qgroup.h      |   3 +-
- 3 files changed, 191 insertions(+), 11 deletions(-)
+ cmds-subvolume.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 780fb21..1f71e3c 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -202,13 +202,14 @@ static int cmd_qgroup_destroy(int argc, char **argv)
- }
- 
- static const char * const cmd_qgroup_show_usage[] = {
--	"btrfs qgroup show -pcleF "
-+	"btrfs qgroup show -pcleFt "
- 	"[--sort=qgroupid,rfer,excl,max_rfer,max_excl] <path>",
- 	"Show subvolume quota groups.",
- 	"-p		print parent qgroup id",
- 	"-c		print child qgroup id",
- 	"-l		print max referenced size of qgroup",
- 	"-e		print max exclusive size of qgroup",
-+	"-t		print the result as a table",
- 	"-F		list all qgroups which impact the given path"
- 	"(include ancestral qgroups)",
- 	"-f		list all qgroups which impact the given path"
-@@ -231,6 +232,8 @@ static int cmd_qgroup_show(int argc, char **argv)
- 	int c;
- 	u64 qgroupid;
- 	int filter_flag = 0;
-+	int is_table_result = 0;
-+	int table_better = 0;
- 
- 	struct btrfs_qgroup_comparer_set *comparer_set;
- 	struct btrfs_qgroup_filter_set *filter_set;
-@@ -243,16 +246,18 @@ static int cmd_qgroup_show(int argc, char **argv)
- 
- 	optind = 1;
- 	while (1) {
--		c = getopt_long(argc, argv, "pcleFf",
-+		c = getopt_long(argc, argv, "pcleFft",
- 				long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 'p':
-+			table_better |= 0x1;
- 			btrfs_qgroup_setup_print_column(
- 				BTRFS_QGROUP_PARENT);
- 			break;
- 		case 'c':
-+			table_better |= 0x2;
- 			btrfs_qgroup_setup_print_column(
- 				BTRFS_QGROUP_CHILD);
- 			break;
-@@ -264,6 +269,9 @@ static int cmd_qgroup_show(int argc, char **argv)
- 			btrfs_qgroup_setup_print_column(
- 				BTRFS_QGROUP_MAX_EXCL);
- 			break;
-+		case 't':
-+			is_table_result = 1;
-+			break;
- 		case 'F':
- 			filter_flag |= 0x1;
- 			break;
-@@ -301,7 +309,13 @@ static int cmd_qgroup_show(int argc, char **argv)
- 					BTRFS_QGROUP_FILTER_PARENT,
- 					qgroupid);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index de246ab..8832303 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -786,6 +786,15 @@ static int cmd_find_new(int argc, char **argv)
+ 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+ 		return 1;
  	}
--	ret = btrfs_show_qgroups(fd, filter_set, comparer_set);
-+	if (is_table_result && table_better == 3) {
-+		fprintf(stderr,
-+			"ERROR: '-p' and '-c' can't used at the same time\n");
-+		exit(1);
++
++	ret = ioctl(fd, BTRFS_IOC_SYNC);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: unable to fs-syncing '%s' - %s\n",
++			subvol, strerror(errno));
++		close_file_or_dir(fd, dirstream);
++		return 1;
 +	}
-+	ret = btrfs_show_qgroups(fd, filter_set, comparer_set,
-+				 is_table_result);
- 	e = errno;
++
+ 	ret = btrfs_list_find_updated_files(fd, 0, last_gen);
  	close_file_or_dir(fd, dirstream);
- 	if (ret < 0)
-diff --git a/qgroup.c b/qgroup.c
-index 84f5fc1..eafb1bf 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -80,40 +80,48 @@ struct {
- 	char *name;
- 	char *column_name;
- 	int need_print;
-+	int max_len;
- } btrfs_qgroup_columns[] = {
- 	{
- 		.name		= "qgroupid",
- 		.column_name	= "Qgroupid",
- 		.need_print	= 1,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "rfer",
- 		.column_name	= "Rfer",
- 		.need_print	= 1,
-+		.max_len	= 4,
- 	},
- 	{
- 		.name		= "excl",
- 		.column_name	= "Excl",
- 		.need_print	= 1,
-+		.max_len	= 4,
- 	},
- 	{	.name		= "max_rfer",
- 		.column_name	= "Max_rfer",
- 		.need_print	= 0,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "max_excl",
- 		.column_name	= "Max_excl",
- 		.need_print	= 0,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "parent",
- 		.column_name	= "Parent",
- 		.need_print	= 0,
-+		.max_len	= 7,
- 	},
- 	{
- 		.name		= "child",
- 		.column_name	= "Child",
- 		.need_print	= 0,
-+		.max_len	= 5,
- 	},
- 	{
- 		.name		= NULL,
-@@ -167,8 +175,27 @@ static void print_child_column(struct btrfs_qgroup *qgroup)
- 		printf("---");
- }
- 
-+static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
-+					  u64 value)
-+{
-+	char tmp[100];
-+	int len;
-+
-+	if (column == BTRFS_QGROUP_QGROUPID) {
-+		sprintf(tmp, "%llu/%llu", value >> 48,
-+			((1ll << 48) - 1) & value);
-+	} else
-+		sprintf(tmp, "%llu", value);
-+	len = btrfs_qgroup_columns[column].max_len - strlen(tmp);
-+	memset(tmp, 0, sizeof(tmp));
-+	while (len--)
-+		strcat(tmp, " ");
-+	printf("%s", tmp);
-+}
-+
- static void print_qgroup_column(struct btrfs_qgroup *qgroup,
--				enum btrfs_qgroup_column_enum column)
-+				enum btrfs_qgroup_column_enum column,
-+				int is_table_result)
- {
- 	BUG_ON(column >= BTRFS_QGROUP_ALL || column < 0);
- 
-@@ -177,21 +204,36 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
- 	case BTRFS_QGROUP_QGROUPID:
- 		printf("%llu/%llu", qgroup->qgroupid >> 48,
- 		       ((1ll << 48) - 1) & qgroup->qgroupid);
-+		if (is_table_result)
-+			print_qgroup_column_add_blank(BTRFS_QGROUP_QGROUPID,
-+						qgroup->qgroupid);
- 		break;
- 	case BTRFS_QGROUP_RFER:
- 		printf("%lld", qgroup->rfer);
-+		if (is_table_result)
-+			print_qgroup_column_add_blank(BTRFS_QGROUP_RFER,
-+						qgroup->rfer);
- 		break;
- 	case BTRFS_QGROUP_EXCL:
- 		printf("%lld", qgroup->excl);
-+		if (is_table_result)
-+			print_qgroup_column_add_blank(BTRFS_QGROUP_EXCL,
-+						qgroup->excl);
- 		break;
- 	case BTRFS_QGROUP_PARENT:
- 		print_parent_column(qgroup);
- 		break;
- 	case BTRFS_QGROUP_MAX_RFER:
- 		printf("%llu", qgroup->max_rfer);
-+		if (is_table_result)
-+			print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_RFER,
-+						qgroup->max_rfer);
- 		break;
- 	case BTRFS_QGROUP_MAX_EXCL:
- 		printf("%llu", qgroup->max_excl);
-+		if (is_table_result)
-+			print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_EXCL,
-+						qgroup->max_excl);
- 		break;
- 	case BTRFS_QGROUP_CHILD:
- 		print_child_column(qgroup);
-@@ -208,7 +250,7 @@ static void print_single_qgroup_default(struct btrfs_qgroup *qgroup)
- 	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
- 		if (!btrfs_qgroup_columns[i].need_print)
- 			continue;
--		print_qgroup_column(qgroup, i);
-+		print_qgroup_column(qgroup, i, 0);
- 
- 		if (i != BTRFS_QGROUP_ALL - 1)
- 			printf(" ");
-@@ -216,6 +258,58 @@ static void print_single_qgroup_default(struct btrfs_qgroup *qgroup)
- 	printf("\n");
- }
- 
-+static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
-+{
-+	int i;
-+
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+		print_qgroup_column(qgroup, i, 1);
-+
-+		if (i != BTRFS_QGROUP_CHILD)
-+			printf(" ");
-+	}
-+	printf("\n");
-+}
-+
-+static void print_table_head()
-+{
-+	int i;
-+	int len;
-+	char barrier[20];
-+
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+		printf("%s", btrfs_qgroup_columns[i].name);
-+		len = btrfs_qgroup_columns[i].max_len -
-+		      strlen(btrfs_qgroup_columns[i].name);
-+		memset(barrier, 0, sizeof(barrier));
-+		while (len--)
-+			strcat(barrier, " ");
-+		printf("%s ", barrier);
-+	}
-+	printf("\n");
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+
-+		len = strlen(btrfs_qgroup_columns[i].name);
-+		memset(barrier, 0, sizeof(barrier));
-+		while (len--)
-+			strcat(barrier, "-");
-+		printf("%s", barrier);
-+		len = btrfs_qgroup_columns[i].max_len -
-+		      strlen(btrfs_qgroup_columns[i].name);
-+		memset(barrier, 0, sizeof(barrier));
-+		while (len--)
-+			strcat(barrier, " ");
-+		printf("%s ", barrier);
-+	}
-+	printf("\n");
-+}
-+
- static void qgroup_lookup_init(struct qgroup_lookup *tree)
- {
- 	tree->root.rb_node = NULL;
-@@ -819,6 +913,67 @@ static int sort_tree_insert(struct qgroup_lookup *sort_tree,
- 	return 0;
- }
- 
-+static void __update_columns_max_len(struct btrfs_qgroup *bq,
-+				     enum btrfs_qgroup_column_enum column)
-+{
-+	BUG_ON(column >= BTRFS_QGROUP_ALL || column < 0);
-+	char tmp[100];
-+	int len;
-+
-+	switch (column) {
-+
-+	case BTRFS_QGROUP_QGROUPID:
-+		sprintf(tmp, "%llu/%llu", (bq->qgroupid >> 48),
-+			bq->qgroupid & ((1ll << 48) - 1));
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_RFER:
-+		sprintf(tmp, "%llu", bq->rfer);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_EXCL:
-+		sprintf(tmp, "%llu", bq->excl);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_MAX_RFER:
-+		sprintf(tmp, "%llu", bq->max_rfer);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_MAX_EXCL:
-+		sprintf(tmp, "%llu", bq->max_excl);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_PARENT:
-+		break;
-+	case BTRFS_QGROUP_CHILD:
-+		break;
-+	default:
-+		break;
-+	}
-+
-+}
-+
-+static void update_columns_max_len(struct btrfs_qgroup *bq)
-+{
-+	int i;
-+
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+		__update_columns_max_len(bq, i);
-+	}
-+}
-+
- static void __filter_and_sort_qgroups(struct qgroup_lookup *all_qgroups,
- 				 struct qgroup_lookup *sort_tree,
- 				 struct btrfs_qgroup_filter_set *filter_set,
-@@ -836,9 +991,11 @@ static void __filter_and_sort_qgroups(struct qgroup_lookup *all_qgroups,
- 		entry = rb_entry(n, struct btrfs_qgroup, rb_node);
- 
- 		ret = filter_qgroup(entry, filter_set);
--		if (ret)
-+		if (ret) {
- 			sort_tree_insert(sort_tree, entry, comp_set);
- 
-+			update_columns_max_len(entry);
-+		}
- 		n = rb_prev(n);
- 	}
- }
-@@ -966,23 +1123,31 @@ done:
- 	return ret;
- }
- 
--static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
-+static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup,
-+			      int is_table_result)
- {
- 
- 	struct rb_node *n;
- 	struct btrfs_qgroup *entry;
- 
-+	if (is_table_result)
-+		print_table_head();
-+
- 	n = rb_first(&qgroup_lookup->root);
- 	while (n) {
- 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
--		print_single_qgroup_default(entry);
-+		if (!is_table_result)
-+			print_single_qgroup_default(entry);
-+		else
-+			print_single_qgroup_table(entry);
- 		n = rb_next(n);
- 	}
- }
- 
- int btrfs_show_qgroups(int fd,
- 		       struct btrfs_qgroup_filter_set *filter_set,
--		       struct btrfs_qgroup_comparer_set *comp_set)
-+		       struct btrfs_qgroup_comparer_set *comp_set,
-+		       int is_table_result)
- {
- 
- 	struct qgroup_lookup qgroup_lookup;
-@@ -994,7 +1159,7 @@ int btrfs_show_qgroups(int fd,
- 		return ret;
- 	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
- 				  filter_set, comp_set);
--	print_all_qgroups(&sort_tree);
-+	print_all_qgroups(&sort_tree, is_table_result);
- 
- 	__free_all_qgroups(&qgroup_lookup);
- 	btrfs_qgroup_free_filter_set(filter_set);
-diff --git a/qgroup.h b/qgroup.h
-index 653cf1c..4dd666d 100644
---- a/qgroup.h
-+++ b/qgroup.h
-@@ -81,7 +81,8 @@ int btrfs_qgroup_parse_sort_string(char *opt_arg,
- 				struct btrfs_qgroup_comparer_set **comps);
- u64 btrfs_get_path_rootid(int fd);
- int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
--		       struct btrfs_qgroup_comparer_set *);
-+		       struct btrfs_qgroup_comparer_set *,
-+		       int is_table_result);
- void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
- struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
- void btrfs_qgroup_free_filter_set(struct btrfs_qgroup_filter_set *filter_set);
+ 	return !!ret;
 -- 
 1.8.3.1
+
 

@@ -1,45 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28125 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752467Ab3IWOiH (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:37724 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752456Ab3IWO5D (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 10:38:07 -0400
-Date: Mon, 23 Sep 2013 22:37:56 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH] xfstest/btrfs/001: fix the misuse of subvolume
- set-default
-Message-ID: <20130923143755.GC18072@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1379926049-22135-1-git-send-email-bo.li.liu@oracle.com>
- <20130923131746.GA18681@localhost.localdomain>
+	Mon, 23 Sep 2013 10:57:03 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id BDFD17C067C
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 08:57:02 -0600 (MDT)
+Date: Mon, 23 Sep 2013 10:57:00 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs: qgroup scan failed with -12
+Message-ID: <20130923145700.GB18681@localhost.localdomain>
+References: <20130923074344.60f629d7@wpkg.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130923131746.GA18681@localhost.localdomain>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130923074344.60f629d7@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 23, 2013 at 09:17:46AM -0400, Josef Bacik wrote:
-> On Mon, Sep 23, 2013 at 04:47:29PM +0800, Liu Bo wrote:
-> > The command is
-> > btrfs subvolume set-default <subvolid> <path>.
-> > 
-> > It uses @subvolid to control the default subvolume and
-> > @subvolid=0 has always been parsed into FS_TREE no matter
-> > what subvolume @path points to.
-> > 
-> > So in order to set a subvolume to the default one, we need
-> > to get the id of this subvolume first.
-> > 
-> > Also fix a typo:
-> > s/sbuvolid/subvolid/g
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+On Mon, Sep 23, 2013 at 07:43:44AM +0700, Tomasz Chmielewski wrote:
+> Not sure if it's anything interesting - I had the following entry in
+> dmesg a few days ago, on a server with 32 GB RAM. The system is still working fine.
 > 
-> Sent a patch for this already.  Thanks,
 
-oops, sorry I should have noticed that, any chance to fold the typo fix
-into your patch?
+Can you try the patch here
 
--liubo
+https://bugzilla.kernel.org/attachment.cgi?id=107408&action=diff
+
+and see if that helps?  Thanks,
+
+Josef

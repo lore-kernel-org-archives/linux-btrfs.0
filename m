@@ -1,39 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:3805 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:31557 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753528Ab3IXOdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Sep 2013 10:33:18 -0400
-Message-ID: <5241A2AC.3030409@redhat.com>
-Date: Tue, 24 Sep 2013 09:33:16 -0500
+	id S1752854Ab3IXPBs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Sep 2013 11:01:48 -0400
+Message-ID: <5241A959.6040807@redhat.com>
+Date: Tue, 24 Sep 2013 10:01:45 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
 To: Ross Kirk <ross.kirk@gmail.com>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: remove unused parameter from btrfs_header_fsid
-References: <1379683626-29724-1-git-send-email-ross.kirk@gmail.com> <1380013663-21031-1-git-send-email-ross.kirk@gmail.com>
-In-Reply-To: <1380013663-21031-1-git-send-email-ross.kirk@gmail.com>
+Subject: Re: [PATCH v3] btrfs: remove unused parameter from btrfs_header_fsid
+References: <1380013663-21031-1-git-send-email-ross.kirk@gmail.com> <1380013958-21109-1-git-send-email-ross.kirk@gmail.com>
+In-Reply-To: <1380013958-21109-1-git-send-email-ross.kirk@gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/24/13 4:07 AM, Ross Kirk wrote:
+On 9/24/13 4:12 AM, Ross Kirk wrote:
 > Remove unused parameter, 'eb'. Unused since introduction in
 > 5f39d397dfbe140a14edecd4e73c34ce23c4f9ee
 > 
-> Updated to be rebased against current upstream.
+> Updated to be rebased against current upstream and correct diff supplied this time!
 
-This doesn't apply...
+Ah, V3 -was- awesome.  Sorry for not seeing it first.
 
-> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(),
-
-looks like some global search & replace went wrong - btrfs_(cow) ?
-
-Always good to test compile (& test!) before sending.  ;)
-
-V3 will be awesome.  :)
-
--Eric
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
 
 > Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
 > ---
@@ -51,8 +42,8 @@ V3 will be awesome.  :)
 >  	else
 >  		btrfs_set_header_owner(cow, new_root_objectid);
 >  
-> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(),
+> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
+> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(),
 >  			    BTRFS_FSID_SIZE);
 >  
 >  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
@@ -60,8 +51,8 @@ V3 will be awesome.  :)
 >  	else
 >  		btrfs_set_header_owner(cow, root->root_key.objectid);
 >  
-> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_(),
+> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
+> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(),
 >  			    BTRFS_FSID_SIZE);
 >  
 >  	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
@@ -69,8 +60,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
 >  	btrfs_set_header_owner(c, root->root_key.objectid);
 >  
-> -	write_extent_buffer(c, root->fs_info->fsid, btrfs_(c),
-> +	write_extent_buffer(c, root->fs_info->fsid, btrfs_(),
+> -	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(c),
+> +	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(),
 >  			    BTRFS_FSID_SIZE);
 >  
 >  	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
@@ -78,8 +69,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
 >  	btrfs_set_header_owner(split, root->root_key.objectid);
 >  	write_extent_buffer(split, root->fs_info->fsid,
-> -			    btrfs_(split), BTRFS_FSID_SIZE);
-> +			    btrfs_(), BTRFS_FSID_SIZE);
+> -			    btrfs_header_fsid(split), BTRFS_FSID_SIZE);
+> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
 >  	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
 >  			    btrfs_header_chunk_tree_uuid(split),
 >  			    BTRFS_UUID_SIZE);
@@ -87,8 +78,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_owner(right, root->root_key.objectid);
 >  	btrfs_set_header_level(right, 0);
 >  	write_extent_buffer(right, root->fs_info->fsid,
-> -			    btrfs_(right), BTRFS_FSID_SIZE);
-> +			    btrfs_(), BTRFS_FSID_SIZE);
+> -			    btrfs_header_fsid(right), BTRFS_FSID_SIZE);
+> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
 >  
 >  	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
 >  			    btrfs_header_chunk_tree_uuid(right),
@@ -100,8 +91,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_flags(eb, flags);
 >  }
 >  
-> -static inline unsigned long btrfs_(struct extent_buffer *eb)
-> +static inline unsigned long btrfs_(void)
+> -static inline unsigned long btrfs_header_fsid(struct extent_buffer *eb)
+> +static inline unsigned long btrfs_header_fsid(void)
 >  {
 >  	return offsetof(struct btrfs_header, fsid);
 >  }
@@ -113,8 +104,8 @@ V3 will be awesome.  :)
 >  	u8 fsid[BTRFS_UUID_SIZE];
 >  	int ret = 1;
 >  
-> -	read_extent_buffer(eb, fsid, btrfs_(eb), BTRFS_FSID_SIZE);
-> +	read_extent_buffer(eb, fsid, btrfs_(), BTRFS_FSID_SIZE);
+> -	read_extent_buffer(eb, fsid, btrfs_header_fsid(eb), BTRFS_FSID_SIZE);
+> +	read_extent_buffer(eb, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
 >  	while (fs_devices) {
 >  		if (!memcmp(fsid, fs_devices->fsid, BTRFS_FSID_SIZE)) {
 >  			ret = 0;
@@ -122,8 +113,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_owner(leaf, objectid);
 >  	root->node = leaf;
 >  
-> -	write_extent_buffer(leaf, fs_info->fsid, btrfs_(leaf),
-> +	write_extent_buffer(leaf, fs_info->fsid, btrfs_(),
+> -	write_extent_buffer(leaf, fs_info->fsid, btrfs_header_fsid(leaf),
+> +	write_extent_buffer(leaf, fs_info->fsid, btrfs_header_fsid(),
 >  			    BTRFS_FSID_SIZE);
 >  	write_extent_buffer(leaf, fs_info->chunk_tree_uuid,
 >  			    btrfs_header_chunk_tree_uuid(leaf),
@@ -131,8 +122,8 @@ V3 will be awesome.  :)
 >  	root->node = leaf;
 >  
 >  	write_extent_buffer(root->node, root->fs_info->fsid,
-> -			    btrfs_(root->node), BTRFS_FSID_SIZE);
-> +			    btrfs_(), BTRFS_FSID_SIZE);
+> -			    btrfs_header_fsid(root->node), BTRFS_FSID_SIZE);
+> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
 >  	btrfs_mark_buffer_dirty(root->node);
 >  	btrfs_tree_unlock(root->node);
 >  	return root;
@@ -144,8 +135,8 @@ V3 will be awesome.  :)
 >  	btrfs_set_header_backref_rev(leaf, BTRFS_MIXED_BACKREF_REV);
 >  	btrfs_set_header_owner(leaf, objectid);
 >  
-> -	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_(leaf),
-> +	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_(),
+> -	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_header_fsid(leaf),
+> +	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_header_fsid(),
 >  			    BTRFS_FSID_SIZE);
 >  	write_extent_buffer(leaf, root->fs_info->chunk_tree_uuid,
 >  			    btrfs_header_chunk_tree_uuid(leaf),

@@ -1,145 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:31557 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752854Ab3IXPBs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Sep 2013 11:01:48 -0400
-Message-ID: <5241A959.6040807@redhat.com>
-Date: Tue, 24 Sep 2013 10:01:45 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:62338 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753596Ab3IXQfW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Sep 2013 12:35:22 -0400
+Received: by mail-ie0-f176.google.com with SMTP id as1so9145393iec.21
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2013 09:35:21 -0700 (PDT)
 MIME-Version: 1.0
-To: Ross Kirk <ross.kirk@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: remove unused parameter from btrfs_header_fsid
-References: <1380013663-21031-1-git-send-email-ross.kirk@gmail.com> <1380013958-21109-1-git-send-email-ross.kirk@gmail.com>
-In-Reply-To: <1380013958-21109-1-git-send-email-ross.kirk@gmail.com>
+Date: Tue, 24 Sep 2013 11:35:19 -0500
+Message-ID: <CAEWPe=r1yaM6DBJpHjGWF47O8jA0uc=rKCg5x5Y6+9__qgYwew@mail.gmail.com>
+Subject: Online replacement of missing or completely faulted devices
+From: Dead Horse <deadhorseconsulting@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/24/13 4:12 AM, Ross Kirk wrote:
-> Remove unused parameter, 'eb'. Unused since introduction in
-> 5f39d397dfbe140a14edecd4e73c34ce23c4f9ee
-> 
-> Updated to be rebased against current upstream and correct diff supplied this time!
+After digging around I cannot seemingly find a clear answer on if or
+when BTRFS supports the replacing of completely faulted or failed
+drives while the filesystem is still online.
 
-Ah, V3 -was- awesome.  Sorry for not seeing it first.
+EG: Equivalence or BTRFS notion of the ZFS Attach/Detach/Online/Offline/
+Replace features
 
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+At the moment it seems the only way to replace or remove a drive which
+has completely failed is to take the filesystem offline and mount it
+in degraded mode.
 
-> Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
-> ---
->  fs/btrfs/ctree.c   |   10 +++++-----
->  fs/btrfs/ctree.h   |    2 +-
->  fs/btrfs/disk-io.c |    6 +++---
->  fs/btrfs/ioctl.c   |    2 +-
->  4 files changed, 10 insertions(+), 10 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index c274a75..394e011 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -274,7 +274,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
->  	else
->  		btrfs_set_header_owner(cow, new_root_objectid);
->  
-> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
-> @@ -996,7 +996,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  	else
->  		btrfs_set_header_owner(cow, root->root_key.objectid);
->  
-> -	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
-> @@ -3148,7 +3148,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(c, root->root_key.objectid);
->  
-> -	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(c),
-> +	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-> @@ -3287,7 +3287,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(split, root->root_key.objectid);
->  	write_extent_buffer(split, root->fs_info->fsid,
-> -			    btrfs_header_fsid(split), BTRFS_FSID_SIZE);
-> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
->  	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
->  			    btrfs_header_chunk_tree_uuid(split),
->  			    BTRFS_UUID_SIZE);
-> @@ -4042,7 +4042,7 @@ again:
->  	btrfs_set_header_owner(right, root->root_key.objectid);
->  	btrfs_set_header_level(right, 0);
->  	write_extent_buffer(right, root->fs_info->fsid,
-> -			    btrfs_header_fsid(right), BTRFS_FSID_SIZE);
-> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
->  			    btrfs_header_chunk_tree_uuid(right),
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index fa117f7d..d5839c2 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2665,7 +2665,7 @@ static inline void btrfs_set_header_backref_rev(struct extent_buffer *eb,
->  	btrfs_set_header_flags(eb, flags);
->  }
->  
-> -static inline unsigned long btrfs_header_fsid(struct extent_buffer *eb)
-> +static inline unsigned long btrfs_header_fsid(void)
->  {
->  	return offsetof(struct btrfs_header, fsid);
->  }
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 4ae17ed..3258aed 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -496,7 +496,7 @@ static int check_tree_block_fsid(struct btrfs_root *root,
->  	u8 fsid[BTRFS_UUID_SIZE];
->  	int ret = 1;
->  
-> -	read_extent_buffer(eb, fsid, btrfs_header_fsid(eb), BTRFS_FSID_SIZE);
-> +	read_extent_buffer(eb, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
->  	while (fs_devices) {
->  		if (!memcmp(fsid, fs_devices->fsid, BTRFS_FSID_SIZE)) {
->  			ret = 0;
-> @@ -1292,7 +1292,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_owner(leaf, objectid);
->  	root->node = leaf;
->  
-> -	write_extent_buffer(leaf, fs_info->fsid, btrfs_header_fsid(leaf),
-> +	write_extent_buffer(leaf, fs_info->fsid, btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(leaf, fs_info->chunk_tree_uuid,
->  			    btrfs_header_chunk_tree_uuid(leaf),
-> @@ -1379,7 +1379,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
->  	root->node = leaf;
->  
->  	write_extent_buffer(root->node, root->fs_info->fsid,
-> -			    btrfs_header_fsid(root->node), BTRFS_FSID_SIZE);
-> +			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
->  	btrfs_mark_buffer_dirty(root->node);
->  	btrfs_tree_unlock(root->node);
->  	return root;
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9d46f60..1c0d5eb 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -436,7 +436,7 @@ static noinline int create_subvol(struct inode *dir,
->  	btrfs_set_header_backref_rev(leaf, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(leaf, objectid);
->  
-> -	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_header_fsid(leaf),
-> +	write_extent_buffer(leaf, root->fs_info->fsid, btrfs_header_fsid(),
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(leaf, root->fs_info->chunk_tree_uuid,
->  			    btrfs_header_chunk_tree_uuid(leaf),
-> -- 1.7.7.6 -- To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body of a message to majordomo@vger.kernel.org More majordomo info at http://vger.kernel.org/majordomo-info.html
-> 
+EG: "mount -o degraded btrfsdevice mountpoint"
+then
+"btrfs device delete missing mountpoint"
 
+Thus in order to replace a device which has completely failed we must
+take the filesystem completely offline.
+
+Thus is something to the tune of how this can be handled with the FS
+still on online like ZFS planned?
+
+EG: "zpool replace poolname failedormissingdevice newdevice"
+
+If not planned is the strategy that when a device fails in such a
+manner that one simply removes and replaces the failed device. Then
+once the new device is installed it is added via "btrfs device add"?
+Then at some point when the FS is taken offline for maintenance for
+whatever reason that a "btrfs device delete missing" is done to clean
+up the failed devices?
+
+- DHC

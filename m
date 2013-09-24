@@ -1,36 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:59693 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752912Ab3IXWCT (ORCPT
+Received: from mail-la0-f48.google.com ([209.85.215.48]:36437 "EHLO
+	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754621Ab3IXXjw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Sep 2013 18:02:19 -0400
-Date: Wed, 25 Sep 2013 00:02:13 +0200
-From: Mathieu Chouquet-Stringer <ml2news@free.fr>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Failure to remove snapshot with 3.12* and FS switches to
- read-only
-Message-ID: <20130924220213.GA17590@wasting>
-References: <20130923125417.GA3413@wasting>
+	Tue, 24 Sep 2013 19:39:52 -0400
+Received: by mail-la0-f48.google.com with SMTP id er20so4221115lab.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2013 16:39:51 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130923125417.GA3413@wasting>
+Date: Wed, 25 Sep 2013 05:09:51 +0530
+Message-ID: <CALe5Emw4u1g2XPet5goM5V3YFbb4isqA4OTecR9RxnD7gxZr7g@mail.gmail.com>
+Subject: hi
+From: vgrvelu <vgrajan2005@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 23, 2013 at 02:54:17PM +0200, Mathieu Chouquet-Stringer wrote:
-> My system is configured to do FS snapshots when I upgrade packages.  I
-> have a cron job which runs at night to delete these snapshots.  Its goal
-> is to keep 10 snapshots maximum, one per day if possible.
-> 
-> This works perfectly with 3.11.1 but fails miserably with anything post
-> 3.11.
-> 
-> With a pre 3.12 (3.11.0-10050-g3711d86), this is what happens:
-> [...]
+hi
 
-And this doesn't seem to happen anymore with 3.12-rc2, sorry for the
-noise.
--- 
-Mathieu Chouquet-Stringer                               m+btrfs@thi.eu.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+I created  btrfs file system  on one of  sda partition. when I mount
+with mount -t /dev/sda17  /btrfs,
+
+it is failing with wrong fs type bad option. when i see the dmesg,
+mount command is searching  for ext3, ext2 filesystem on sda17. but
+not btrfs.
+even in the man page of mount, btrfs is not mentioned as supported
+file system type.
+
+Please help me to solve this issue.
+
+thanks
+rajan

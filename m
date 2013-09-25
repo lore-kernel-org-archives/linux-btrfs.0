@@ -1,80 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:53091 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755040Ab3IYLa0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Sep 2013 07:30:26 -0400
-Date: Wed, 25 Sep 2013 20:30:14 +0900
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: dsterba@suse.cz
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs: qgroup scan failed with -12
-Message-ID: <20130925203014.2153ec6b@wpkg.org>
-In-Reply-To: <20130925101124.GT6810@suse.cz>
-References: <20130923074344.60f629d7@wpkg.org>
-	<20130923171905.GR6810@twin.jikos.cz>
-	<20130923174348.GC18681@localhost.localdomain>
-	<20130925101124.GT6810@suse.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from dkim2.fusionio.com ([66.114.96.54]:39255 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755153Ab3IYMay (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Sep 2013 08:30:54 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id E261A9A06AA
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2013 06:30:53 -0600 (MDT)
+Date: Wed, 25 Sep 2013 08:30:51 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: balance induced csum errors, systemd-journal
+Message-ID: <20130925123051.GD18681@localhost.localdomain>
+References: <4CA64610-C709-4805-A9DC-AA8EB0720BBF@colorremedies.com>
+ <1810D553-8DB4-4FAA-A305-CF3BE9A85B6F@colorremedies.com>
+ <F715552F-A1A0-49BE-B714-C5DF6B7D8AB6@colorremedies.com>
+ <795CFB34-4216-4ACA-A56D-5F673B2FD45E@colorremedies.com>
+ <013CDB89-72B2-4276-BCE9-0177CA90D840@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <013CDB89-72B2-4276-BCE9-0177CA90D840@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 25 Sep 2013 12:11:24 +0200
-David Sterba <dsterba@suse.cz> wrote:
-
-> On Mon, Sep 23, 2013 at 01:43:48PM -0400, Josef Bacik wrote:
-> > I've done that with a patch in bugzilla, hopefully that will fix
-> > it.  I've not had time to try and reproduce myself, but I assume if
-> > you do something like create a random file, then create 100000
-> > snapshots and then defrag it will probably hit the same problem.
-> > Thanks,
+On Tue, Sep 24, 2013 at 11:44:15PM -0600, Chris Murphy wrote:
 > 
-> The patch looks ok.
+> On Sep 24, 2013, at 10:34 PM, Chris Murphy <lists@colorremedies.com> wrote:
 > 
-> I've tried to reproduce it with 100k subvolumes but was not lucky to
-> hit the allocation failure.
+> > And how would I go about setting /var/log/journal contents to inherit nodatacow? Possible?
+> 
+> chattr +C /var/log/journal
+> 
+> Resolved the problem. Whether this is an appropriate long term fix that systemd should apply to this directory, I don't know.
+> 
 
-For me, it was quite easy (i.e. every few days) to hang the server with
-32 GB RAM with the following:
+That just disables cow which in turn disables csumming so it is a good solution
+for you right now and gives me time ti figure out wtf is going on here.  Looking
+at the systemd code it isn't doing O_DIRECT, which is how you usually end up
+with this sort of situation.  So it is likely a bug on our side, I will try and
+track it down today.  Thanks for narrowing this down,
 
-- BackupPC running,
-
-- fs mounted with noatime,compress-force=zlib
-
-- extended inode refs enabled,
-
-- skinny metadata extent refs enabled,
-
-- qgroups enabled.
-
-
-For those unfamiliar, BackupPC is a backup program.
-It works by rsyncing data from (possibly many) remote systems.
-
-Then, it "deduplicates" identical files, by hardlinking the files to
-identical ones in its pool.
-As a result, a system running BackupPC will have lots of files
-(multiple revisions of backups, from many systems) with lots of
-hardlinks.
-
-Additionally, once per night, BackupPC scans its pool of hardlinked
-files to find the ones with no hardlinks (meaning, file is unused, can
-be removed); typically, the process takes many hours to finish.
-I believe this is when my system with btrfs was hanging.
-
-BackupPC doesn't use any specific btrfs features, like snapshots.
-
-
-With the above, my system was hanging regularly, every few days.
-
-
-I've disabled BackupPC and I'm running rsync + btrfs snapshot now - no
-hang since then (at least till now). Could be coincidence, but who
-knows.
-
-[1] http://backuppc.sourceforge.net
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Josef

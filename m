@@ -1,44 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:39255 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755153Ab3IYMay (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Sep 2013 08:30:54 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id E261A9A06AA
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2013 06:30:53 -0600 (MDT)
-Date: Wed, 25 Sep 2013 08:30:51 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: balance induced csum errors, systemd-journal
-Message-ID: <20130925123051.GD18681@localhost.localdomain>
-References: <4CA64610-C709-4805-A9DC-AA8EB0720BBF@colorremedies.com>
- <1810D553-8DB4-4FAA-A305-CF3BE9A85B6F@colorremedies.com>
- <F715552F-A1A0-49BE-B714-C5DF6B7D8AB6@colorremedies.com>
- <795CFB34-4216-4ACA-A56D-5F673B2FD45E@colorremedies.com>
- <013CDB89-72B2-4276-BCE9-0177CA90D840@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <013CDB89-72B2-4276-BCE9-0177CA90D840@colorremedies.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:13618 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755583Ab3IYNr0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Sep 2013 09:47:26 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8PDlMZO026984
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2013 21:47:23 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] Btrfs: insert orphan roots into fs radix tree
+Date: Wed, 25 Sep 2013 21:47:43 +0800
+Message-Id: <1380116865-23406-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 24, 2013 at 11:44:15PM -0600, Chris Murphy wrote:
-> 
-> On Sep 24, 2013, at 10:34 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> 
-> > And how would I go about setting /var/log/journal contents to inherit nodatacow? Possible?
-> 
-> chattr +C /var/log/journal
-> 
-> Resolved the problem. Whether this is an appropriate long term fix that systemd should apply to this directory, I don't know.
-> 
+Now we don't drop all the deleted snapshots/subvolumes before the space
+balance. It means we have to relocate the space which is held by the dead
+snapshots/subvolumes. So we must into them into fs radix tree, or we would
+forget to commit the change of them when doing transaction commit, and it
+would corrupt the metadata.
 
-That just disables cow which in turn disables csumming so it is a good solution
-for you right now and gives me time ti figure out wtf is going on here.  Looking
-at the systemd code it isn't doing O_DIRECT, which is how you usually end up
-with this sort of situation.  So it is likely a bug on our side, I will try and
-track it down today.  Thanks for narrowing this down,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/root-tree.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 0b1f4ef..ec71ea4 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -299,11 +299,6 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
+ 			continue;
+ 		}
+ 
+-		if (btrfs_root_refs(&root->root_item) == 0) {
+-			btrfs_add_dead_root(root);
+-			continue;
+-		}
+-
+ 		err = btrfs_init_fs_root(root);
+ 		if (err) {
+ 			btrfs_free_fs_root(root);
+@@ -318,6 +313,9 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
+ 			btrfs_free_fs_root(root);
+ 			break;
+ 		}
++
++		if (btrfs_root_refs(&root->root_item) == 0)
++			btrfs_add_dead_root(root);
+ 	}
+ 
+ 	btrfs_free_path(path);
+-- 
+1.8.3.1
+

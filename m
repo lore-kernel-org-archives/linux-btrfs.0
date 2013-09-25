@@ -1,35 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42456 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:36231 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750814Ab3IYP3a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Sep 2013 11:29:30 -0400
-Message-ID: <52430154.8080304@redhat.com>
-Date: Wed, 25 Sep 2013 10:29:24 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: vgrvelu <vgrajan2005@gmail.com>
-CC: Chris Murphy <lists@colorremedies.com>, linux-btrfs@vger.kernel.org
-Subject: Re: hi
-References: <CALe5Emw4u1g2XPet5goM5V3YFbb4isqA4OTecR9RxnD7gxZr7g@mail.gmail.com> <A06B4AF5-710F-44F9-B793-1F417A99BF72@colorremedies.com> <CALe5EmwjQowFK9aggAV5LQjK1FhYM13StutosGjLkd0giwvmAA@mail.gmail.com>
-In-Reply-To: <CALe5EmwjQowFK9aggAV5LQjK1FhYM13StutosGjLkd0giwvmAA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1751226Ab3IYSrX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Sep 2013 14:47:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VOu7N-0002Cx-Dj
+	for linux-btrfs@vger.kernel.org; Wed, 25 Sep 2013 20:47:21 +0200
+Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2013 20:47:21 +0200
+Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2013 20:47:21 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alex Plumbley-Jones <alex@bpmit.com>
+Subject: Easy Q: reset space cache updated?
+Date: Wed, 25 Sep 2013 18:47:02 +0000 (UTC)
+Message-ID: <loom.20130925T201609-904@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/25/13 8:00 AM, vgrvelu wrote:
-> Hi
-> 
-> after doing mofprobe btrfs I could see btrfs entry in proc file
-> system. But still mount command is failing. It looks like super block
-> is corrupted
+Hi all,
 
-Seems doubtful if you *just* ran mkfs.btrfs.
+I had been clearing the space cache on my btrfs vol (Debian 3.10.11-1
+btrfs-tools 2013-7-5) by changing the fstab to "nospace_cache, clear_cache".
 
-Can you paste the exact commands you issued, from mkfs to mount,
-and the resulting kernel messages?
+I ran btrfsck --repair and it said: 
 
--Eric
+"cache and super generation don't match, space cache will be invalidated."
 
-> thanks
-> rajan
+Can one of the dev's please tell me whether that message means that the
+space cache regeneration is now being triggered as a part this btrfsck run
+(so my tinkering with fstab mount options is self-defeating)?
+
+If no please can someone confirm that 
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/21256
+is still the correct procedure to use to clear the cache.
+
+Still very happy with how well btrfs is working for me.
+
+Thank you.
+
+
+
+Al.
+
+PS: I think that there may be a problem with having a non-default boot
+subvol with autodefrag mount option but can't consistently reproduce in
+haste. I've moved to the explicit subvol=@ in the kernel load and the
+eventual hang has gone.
+
+I have a ext based /boot but the remaining system is installed to a subvol
+to allow snapshots on it. Works fine (with above caveat) and is easy to do.
+
+
 

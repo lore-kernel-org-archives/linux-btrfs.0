@@ -1,46 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:50690 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752748Ab3IQOwB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Sep 2013 10:52:01 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id C7F229A0404
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:52:00 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id w8fElrf2PYPW5ICC (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2013 08:52:00 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix worst case calculator for space usage
-Date: Tue, 17 Sep 2013 10:51:58 -0400
-Message-ID: <1379429518-3168-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cn.fujitsu.com ([222.73.24.84]:1691 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750796Ab3IZFOj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Sep 2013 01:14:39 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8Q5EZYB019389
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Sep 2013 13:14:35 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: improve jitter performance of the sequential buffered write
+Date: Thu, 26 Sep 2013 13:15:27 +0800
+Message-Id: <1380172527-18982-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Forever ago I made the worst case calculator say that we could potentially split
-into 3 blocks for every level on the way down, which isn't right.  If we split
-we're only going to get two new blocks, the one we originally cow'ed and the new
-one we're going to split.  Thanks,
+The performance was slowed down sometimes when we ran sysbench to measure
+the performance of the sequential buffered write by 2 or more threads.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+It was because the write order of the test threads might be confused
+by the task scheduler, and the coming write would be beyond the end of
+the file, in this case, we need insert dummy file extents and create
+a hole for the area we skip. But in order to avoid the ongoing ordered
+extents which are in the area, we need wait for them. Unfortunately,
+the current code doesn't check if there are ordered extents in the area
+or not, try to find and flush the dirty pages directly, but in fact,
+there is no dirty page in that area, this step of the current code is
+unnecessary, and just wastes time. Sometimes, it would increase
+the contention of some locks, and makes the performance slow down suddenly.
+
+So we remove the ordered extent flush function before the check, and flush
+the dirty pages and wait for the ordered extents only when we find them.
+
+According to my test, we got 1-2 times of the performance regression when
+we ran the test by 10 times before applying this patch. After applying
+this patch, the regression went away.
+
+Test Environment:
+ CPU:		1CPU * 4Cores
+ Memory:	6GB
+ Partition:	20GB
+
+Test Command:
+ # sysbench --test=fileio --file-total-size=16G --file-test-mode=seqwr \
+ > --num-threads=512 --file-block-size=16384 --max-time=60 --max-requests=0 run
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2491ba0..36490b9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3135,7 +3135,7 @@ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
- 						 unsigned num_items)
- {
- 	return (root->leafsize + root->nodesize * (BTRFS_MAX_LEVEL - 1)) *
--		3 * num_items;
-+		2 * num_items;
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7d0ef55..ef02866 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4230,15 +4230,16 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
  
- /*
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+-		btrfs_wait_ordered_range(inode, hole_start,
+-					 block_end - hole_start);
++
+ 		lock_extent_bits(io_tree, hole_start, block_end - 1, 0,
+ 				 &cached_state);
+-		ordered = btrfs_lookup_ordered_extent(inode, hole_start);
++		ordered = btrfs_lookup_ordered_range(inode, hole_start,
++						     block_end - hole_start);
+ 		if (!ordered)
+ 			break;
+ 		unlock_extent_cached(io_tree, hole_start, block_end - 1,
+ 				     &cached_state, GFP_NOFS);
++		btrfs_start_ordered_extent(inode, ordered, 1);
+ 		btrfs_put_ordered_extent(ordered);
+ 	}
+ 
 -- 
-1.7.7.6
+1.8.3.1
 

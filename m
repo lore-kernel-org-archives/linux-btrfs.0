@@ -1,63 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:49933 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750984Ab3IZN0j (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Sep 2013 09:26:39 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 1581A9A0691
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Sep 2013 07:26:39 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <walken@google.com>, <linux-kernel@vger.kernel.org>, <mingo@kernel.org>,
-        <peter@hurleysoftware.com>, <akpm@linux-foundation.org>
-Subject: [PATCH 1/2] rwsem: add rwsem_is_contended V3
-Date: Thu, 26 Sep 2013 09:26:35 -0400
-Message-ID: <1380201996-17445-1-git-send-email-jbacik@fusionio.com>
+Received: from dub0-omc4-s5.dub0.hotmail.com ([157.55.2.80]:40962 "EHLO
+	dub0-omc4-s5.dub0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751405Ab3IZNrK convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Sep 2013 09:47:10 -0400
+Message-ID: <DUB116-W515338D8267F1A703A1452A6280@phx.gbl>
+From: miaou sami <miaousami@hotmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [raidX vs single/dup]
+Date: Thu, 26 Sep 2013 13:40:57 +0000
+In-Reply-To: <20130926123233.GA2865@carfax.org.uk>
+References: <DUB116-W69F1EBEC6C7619457E5D82A6280@phx.gbl>,<20130926123233.GA2865@carfax.org.uk>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs needs a simple way to know if it needs to let go of it's read lock on a
-rwsem.  Introduce rwsem_is_contended to check to see if there are any waiters on
-this rwsem currently.  This is just a hueristic, it is meant to be light and not
-100% accurate and called by somebody already holding on to the rwsem in either
-read or write.  Thanks,
+Thank you, it is quite clear now.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-V2->V3: fixed the comment and simplified the function as per Peter's
-suggestions.
 
-V1->V2: took everybodys suggestions and simplified it to just one function in
-rwsem.h so it works for both the spinlock case and non-spinlock case.
+I guess that on multi device, raid0 vs single would be a matter of performance vs ease of low level hardware data recovery.
 
- include/linux/rwsem.h | 11 +++++++++++
- 1 file changed, 11 insertions(+)
 
-diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
-index 0616ffe..03f3b05 100644
---- a/include/linux/rwsem.h
-+++ b/include/linux/rwsem.h
-@@ -75,6 +75,17 @@ do {								\
- } while (0)
- 
- /*
-+ * This is the same regardless of which rwsem implementation that is being used.
-+ * It is just a heuristic meant to be called by somebody alreadying holding the
-+ * rwsem to see if somebody from an incompatible type is wanting access to the
-+ * lock.
-+ */
-+static inline int rwsem_is_contended(struct rw_semaphore *sem)
-+{
-+	return !list_empty(&sem->wait_list);
-+}
-+
-+/*
-  * lock for reading
-  */
- extern void down_read(struct rw_semaphore *sem);
--- 
-1.8.3.1
+The wiki https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices says:
+"When you have drives with differing sizes and want to use the full capacity of each drive, you have to use the single profile for the data blocks."
+Let's assume the following configuration: 1x10GB disk and 2x5GB disks
+--> Does it mean I cannot use the full capacity AND have a duplication of my data in the configuration above? (full capacity would be 10GB here)
+--> If I try to setup either -d raid1 or -d dup on that configuration, what will I get?
+--> Is there any behavior difference between raid1 / dup in that case?
+--> Can raid1 ensure that data are always duplicated on different devices AND take advantage of all available space?
 
+
+Regards,
+Sam
+
+
+----------------------------------------
+> Date: Thu, 26 Sep 2013 13:32:33 +0100
+> From: hugo@carfax.org.uk
+> To: miaousami@hotmail.com
+> CC: linux-btrfs@vger.kernel.org
+> Subject: Re: [raidX vs single/dup]
+>
+> On Thu, Sep 26, 2013 at 12:22:49PM +0000, miaou sami wrote:
+>> Hi btrfs guys,
+>>
+>> could someone explain to me the differences in mkfs.btrfs:
+>>
+>> - between -d raid0 and -d single
+>
+> In RAID0, data is striped across all the devices, so the first 64k
+> of a file will go on device 1, the next 64k will go on device 2, and
+> so on. With single, files are allocated linearly on one device.
+>
+> (This is assuming smallish files, a filesystem with lots of space.
+> Even with single, files can still end up being scattered around over
+> multiple devices -- but with RAID0, even non-fragmented files are
+> striped)
+>
+>> - between -m raid1 and -m dup
+>
+> In both cases, there are two copies of each metadata block. With
+> RAID1, it *requires* the two copies to live on different devices. With
+> DUP, it allows the two copies to live on the same device (e.g. if
+> there's only one device).
+>
+>> - between -m raid0 and -m single
+>
+> As for -draid0 and -dsingle, but for metadata instead of data.
+>
+>> My understanding is that raidX should be used in case of multi
+>> devices and single/dup should be used in case of single device to
+>> allow duplication, but it is not 100% clear to me...
+>
+>> As btrfs raid concepts are quite different from traditionnal raid,
+>> shouldn't we use the words "stripped" and "mirrored" instead of
+>> raid0/raid1? or even "single" and "duplicated"?
+>> Then there would be no difference between single/raid0 and
+>> duplicated/raid1...
+>
+> But there _are_ differences between them, as explained above. :)
+>
+> I posted a patch a while ago to change the names to something more
+> logical and expressive, but it didn't get merged.
+>
+> Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+> PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+> --- Stick them with the pointy end. --- 		 	   		  

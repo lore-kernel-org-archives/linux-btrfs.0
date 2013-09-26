@@ -1,127 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dub0-omc4-s23.dub0.hotmail.com ([157.55.2.98]:62257 "EHLO
-	dub0-omc4-s23.dub0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753164Ab3IZOzk convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Sep 2013 10:55:40 -0400
-Message-ID: <DUB116-W52A10619B6D4BEC0FA9DD9A6280@phx.gbl>
-From: miaou sami <miaousami@hotmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [raidX vs single/dup]
-Date: Thu, 26 Sep 2013 14:55:38 +0000
-In-Reply-To: <20130926134605.GB2865@carfax.org.uk>
-References: <DUB116-W69F1EBEC6C7619457E5D82A6280@phx.gbl>,<20130926123233.GA2865@carfax.org.uk>,<DUB116-W515338D8267F1A703A1452A6280@phx.gbl>,<20130926134605.GB2865@carfax.org.uk>
-Content-Type: text/plain; charset=US-ASCII
+Received: from dkim2.fusionio.com ([66.114.96.54]:53003 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752982Ab3IZSMD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Sep 2013 14:12:03 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id C1B9E9A069F
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Sep 2013 12:12:02 -0600 (MDT)
+Date: Thu, 26 Sep 2013 14:12:00 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+CC: Chris Mason <chris.mason@fusionio.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Fix crash due to not allocating integrity data
+ for a bioset
+Message-ID: <20130926181200.GH18681@localhost.localdomain>
+References: <20130920033707.GA4557@birch.djwong.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130920033707.GA4557@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK, that's clear.
-Nice space simulator btw :-) you should add a link somewhere in btrfs wiki...
+On Thu, Sep 19, 2013 at 08:37:07PM -0700, Darrick J. Wong wrote:
+> When btrfs creates a bioset, we must also allocate the integrity data pool.
+> Otherwise btrfs will crash when it tries to submit a bio to a checksumming
+> disk:
+> 
+>  BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
+>  IP: [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
+>  PGD 2305e4067 PUD 23063d067 PMD 0
+>  Oops: 0000 [#1] PREEMPT SMP
+>  Modules linked in: btrfs scsi_debug xfs ext4 jbd2 ext3 jbd mbcache
+> sch_fq_codel eeprom lpc_ich mfd_core nfsd exportfs auth_rpcgss af_packet
+> raid6_pq xor zlib_deflate libcrc32c [last unloaded: scsi_debug]
+>  CPU: 1 PID: 4486 Comm: mount Not tainted 3.12.0-rc1-mcsum #2
+>  Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+>  task: ffff8802451c9720 ti: ffff880230698000 task.ti: ffff880230698000
+>  RIP: 0010:[<ffffffff8111e28a>]  [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
+>  RSP: 0018:ffff880230699688  EFLAGS: 00010286
+>  RAX: 0000000000000001 RBX: 0000000000000000 RCX: 00000000005f8445
+>  RDX: 0000000000000001 RSI: 0000000000000010 RDI: 0000000000000000
+>  RBP: ffff8802306996f8 R08: 0000000000011200 R09: 0000000000000008
+>  R10: 0000000000000020 R11: ffff88009d6e8000 R12: 0000000000011210
+>  R13: 0000000000000030 R14: ffff8802306996b8 R15: ffff8802451c9720
+>  FS:  00007f25b8a16800(0000) GS:ffff88024fc80000(0000) knlGS:0000000000000000
+>  CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>  CR2: 0000000000000018 CR3: 0000000230576000 CR4: 00000000000007e0
+>  Stack:
+>   ffff8802451c9720 0000000000000002 ffffffff81a97100 0000000000281250
+>   ffffffff81a96480 ffff88024fc99150 ffff880228d18200 0000000000000000
+>   0000000000000000 0000000000000040 ffff880230e8c2e8 ffff8802459dc900
+>  Call Trace:
+>   [<ffffffff811b2208>] bio_integrity_alloc+0x48/0x1b0
+>   [<ffffffff811b26fc>] bio_integrity_prep+0xac/0x360
+>   [<ffffffff8111e298>] ? mempool_alloc+0x58/0x150
+>   [<ffffffffa03e8041>] ? alloc_extent_state+0x31/0x110 [btrfs]
+>   [<ffffffff81241579>] blk_queue_bio+0x1c9/0x460
+>   [<ffffffff8123e58a>] generic_make_request+0xca/0x100
+>   [<ffffffff8123e639>] submit_bio+0x79/0x160
+>   [<ffffffffa03f865e>] btrfs_map_bio+0x48e/0x5b0 [btrfs]
+>   [<ffffffffa03c821a>] btree_submit_bio_hook+0xda/0x110 [btrfs]
+>   [<ffffffffa03e7eba>] submit_one_bio+0x6a/0xa0 [btrfs]
+>   [<ffffffffa03ef450>] read_extent_buffer_pages+0x250/0x310 [btrfs]
+>   [<ffffffff8125eef6>] ? __radix_tree_preload+0x66/0xf0
+>   [<ffffffff8125f1c5>] ? radix_tree_insert+0x95/0x260
+>   [<ffffffffa03c66f6>] btree_read_extent_buffer_pages.constprop.128+0xb6/0x120
+> [btrfs]
+>   [<ffffffffa03c8c1a>] read_tree_block+0x3a/0x60 [btrfs]
+>   [<ffffffffa03caefd>] open_ctree+0x139d/0x2030 [btrfs]
+>   [<ffffffffa03a282a>] btrfs_mount+0x53a/0x7d0 [btrfs]
+>   [<ffffffff8113ab0b>] ? pcpu_alloc+0x8eb/0x9f0
+>   [<ffffffff81167305>] ? __kmalloc_track_caller+0x35/0x1e0
+>   [<ffffffff81176ba0>] mount_fs+0x20/0xd0
+>   [<ffffffff81191096>] vfs_kern_mount+0x76/0x120
+>   [<ffffffff81193320>] do_mount+0x200/0xa40
+>   [<ffffffff81135cdb>] ? strndup_user+0x5b/0x80
+>   [<ffffffff81193bf0>] SyS_mount+0x90/0xe0
+>   [<ffffffff8156d31d>] system_call_fastpath+0x1a/0x1f
+>  Code: 4c 8d 75 a8 4c 89 6d e8 45 89 e0 4c 8d 6f 30 48 89 5d d8 41 83 e0 af 48
+> 89 fb 49 83 c6 18 4c 89 7d f8 65 4c 8b 3c 25 c0 b8 00 00 <48> 8b 73 18 44 89 c7
+> 44 89 45 98 ff 53 20 48 85 c0 48 89 c2 74
+>  RIP  [<ffffffff8111e28a>] mempool_alloc+0x4a/0x150
+>   RSP <ffff880230699688>
+>  CR2: 0000000000000018
+>  ---[ end trace 7a96042017ed21e2 ]---
+> 
+> 
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
+>  fs/btrfs/extent_io.c |   12 +++++++++++-
+>  1 file changed, 11 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 09582b8..ae131c0 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -145,8 +145,16 @@ int __init extent_io_init(void)
+>  				     offsetof(struct btrfs_io_bio, bio));
+>  	if (!btrfs_bioset)
+>  		goto free_buffer_cache;
+> +
+> +	if (bioset_integrity_create(btrfs_bioset, BIO_POOL_SIZE))
+> +		goto free_bioset;
+> +
+>  	return 0;
+>  
+> +free_bioset:
+> +	bioset_free(btrfs_bioset);
+> +	btrfs_bioset = NULL;
+> +
+>  free_buffer_cache:
+>  	kmem_cache_destroy(extent_buffer_cache);
+>  	extent_buffer_cache = NULL;
+> @@ -170,8 +178,10 @@ void extent_io_exit(void)
+>  		kmem_cache_destroy(extent_state_cache);
+>  	if (extent_buffer_cache)
+>  		kmem_cache_destroy(extent_buffer_cache);
+> -	if (btrfs_bioset)
+> +	if (btrfs_bioset) {
+> +		bioset_integrity_free(btrfs_bioset);
 
-Thanks
-----------------------------------------
-> Date: Thu, 26 Sep 2013 14:46:05 +0100
-> From: hugo@carfax.org.uk
-> To: miaousami@hotmail.com
-> CC: linux-btrfs@vger.kernel.org
-> Subject: Re: [raidX vs single/dup]
->
-> On Thu, Sep 26, 2013 at 01:40:57PM +0000, miaou sami wrote:
->> Thank you, it is quite clear now.
->>
->>
->> I guess that on multi device, raid0 vs single would be a matter of performance vs ease of low level hardware data recovery.
->>
->>
->> The wiki https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices says:
->> "When you have drives with differing sizes and want to use the full capacity of each drive, you have to use the single profile for the data blocks."
->> Let's assume the following configuration: 1x10GB disk and 2x5GB disks
->> --> Does it mean I cannot use the full capacity AND have a duplication of my data in the configuration above? (full capacity would be 10GB here)
->
-> No, that will give you the full usable space. A 20 GB drive and two
-> 5 GB drives would not, though.
->
->> --> If I try to setup either -d raid1 or -d dup on that
->> configuration, what will I get?
->
-> Try it for yourself in the space simulator:
->
-> http://carfax.org.uk/btrfs-usage/
->
->> --> Is there any behavior difference between raid1 / dup in that case?
->
-> If you have multiple disks, I think DUP gets automatically upgraded
-> to RAID-1 (i.e. the "different copies on different devices"
-> requirement is enforced). So, no.
->
->> --> Can raid1 ensure that data are always duplicated on different devices AND take advantage of all available space?
->
-> Depends on the relative sizes of the devices. If your largest
-> device is bigger than the rest put together, then you'll lose some
-> space.
->
-> Hugo.
->
->> Regards,
->> Sam
->>
->>
->> ----------------------------------------
->>> Date: Thu, 26 Sep 2013 13:32:33 +0100
->>> From: hugo@carfax.org.uk
->>> To: miaousami@hotmail.com
->>> CC: linux-btrfs@vger.kernel.org
->>> Subject: Re: [raidX vs single/dup]
->>>
->>> On Thu, Sep 26, 2013 at 12:22:49PM +0000, miaou sami wrote:
->>>> Hi btrfs guys,
->>>>
->>>> could someone explain to me the differences in mkfs.btrfs:
->>>>
->>>> - between -d raid0 and -d single
->>>
->>> In RAID0, data is striped across all the devices, so the first 64k
->>> of a file will go on device 1, the next 64k will go on device 2, and
->>> so on. With single, files are allocated linearly on one device.
->>>
->>> (This is assuming smallish files, a filesystem with lots of space.
->>> Even with single, files can still end up being scattered around over
->>> multiple devices -- but with RAID0, even non-fragmented files are
->>> striped)
->>>
->>>> - between -m raid1 and -m dup
->>>
->>> In both cases, there are two copies of each metadata block. With
->>> RAID1, it *requires* the two copies to live on different devices. With
->>> DUP, it allows the two copies to live on the same device (e.g. if
->>> there's only one device).
->>>
->>>> - between -m raid0 and -m single
->>>
->>> As for -draid0 and -dsingle, but for metadata instead of data.
->>>
->>>> My understanding is that raidX should be used in case of multi
->>>> devices and single/dup should be used in case of single device to
->>>> allow duplication, but it is not 100% clear to me...
->>>
->>>> As btrfs raid concepts are quite different from traditionnal raid,
->>>> shouldn't we use the words "stripped" and "mirrored" instead of
->>>> raid0/raid1? or even "single" and "duplicated"?
->>>> Then there would be no difference between single/raid0 and
->>>> duplicated/raid1...
->>>
->>> But there _are_ differences between them, as explained above. :)
->>>
->>> I posted a patch a while ago to change the names to something more
->>> logical and expressive, but it didn't get merged.
->>>
->>> Hugo.
->>>
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-> PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-> --- Nothing right in my left brain. Nothing left in ---
-> my right brain. 		 	   		  
+This is wrong, bioset_free calls bioset_integrity_free(), I'm fixing it up
+locally.  Thanks,
+
+Josef

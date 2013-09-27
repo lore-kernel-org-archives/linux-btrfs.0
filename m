@@ -1,40 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57136 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753689Ab3I0QWK convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 12:22:10 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:16424 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753726Ab3I0Rvz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Sep 2013 13:51:55 -0400
+Date: Fri, 27 Sep 2013 10:51:50 -0700
+From: Zach Brown <zab@redhat.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Tom Gundersen <teg@jklm.no>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: csum questions
+Message-ID: <20130927175150.GU30372@lenny.home.zabbo.net>
+References: <CAG-2HqV3MoRQ9E9VqjJ7NFKia7=b30_LKKL82FmV6s4u6vOrTA@mail.gmail.com>
+ <20130927142535.GB28147@carfax.org.uk>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: balance induced csum errors, systemd-journal
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20130927170737.5786c948@datenkhaos.de>
-Date: Fri, 27 Sep 2013 10:22:04 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Message-Id: <B6716783-9558-4EA1-B713-1C0985D9B380@colorremedies.com>
-References: <4CA64610-C709-4805-A9DC-AA8EB0720BBF@colorremedies.com> <1810D553-8DB4-4FAA-A305-CF3BE9A85B6F@colorremedies.com> <F715552F-A1A0-49BE-B714-C5DF6B7D8AB6@colorremedies.com> <795CFB34-4216-4ACA-A56D-5F673B2FD45E@colorremedies.com> <20130927170737.5786c948@datenkhaos.de>
-To: Johannes Hirte <johannes.hirte@datenkhaos.de>
+In-Reply-To: <20130927142535.GB28147@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Sep 27, 2013, at 9:07 AM, Johannes Hirte <johannes.hirte@datenkhaos.de> wrote:
-
-> On Tue, 24 Sep 2013 22:34:20 -0600
-> Chris Murphy <lists@colorremedies.com> wrote:
+> > 2) How may I tell btrfs to ignore all csums and just assume they are
+> > all correct? The reason for wanting this is in case the csum is
+> > garbled and the file is intact, or the csum is correct and the file is
+> > only partially garbled, but may still contain useful data.
 > 
->> OK so I think I'm narrowing this down to just the systemd journal,
->> and it's not checksums that are corrupted, it's the journal itself.
-> 
-> I doubt it's systemd-dependent,
+>    You can't, right now. There's discussion on IRC about this very
+> point right now. :)
 
-I did not intend to indicate only systemd journal can trigger this, but rather on my system those appear to be the only affected files. Anything that has the same write behavior as systemd-journald probably has the same problem.
+Well, hold on.  Yes, you can't tell it to just not check checksums.
 
-> 
-> on a fsck and scrub tells me that there are unfixable csum errors.
+But keep reading.  It sounds like he thinks that *any* reads to the file
+will error once any checksum has failed.  Surely that's not true, you
+can do use like dd conv=noerror and read all the extents of the file
+whose checksums are still valid.
 
-The scrub should cause messages to appear in dmesg that include a pathname to the affected files, which might hint at what has the same write behavior. Even though a fix has been sent to stable for the systemd journal triggered issue, you should still find out what's being corrupted in your situation in case the write behaviors are different yet are still triggering corruption.
-
-
-Chris Murphy
+- z

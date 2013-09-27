@@ -1,139 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:34678 "EHLO mail.in8.de"
+Received: from mx1.redhat.com ([209.132.183.28]:19850 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753045Ab3I0QoR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 12:44:17 -0400
-Message-ID: <5245B38F.20800@jan-o-sch.net>
-Date: Fri, 27 Sep 2013 18:34:23 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S1753444Ab3I0R4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Sep 2013 13:56:03 -0400
+Date: Fri, 27 Sep 2013 10:55:59 -0700
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] xfstests: btrfs/015 regression test for prealloc with
+ balance
+Message-ID: <20130927175559.GV30372@lenny.home.zabbo.net>
+References: <1380292053-8123-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [PATCH] xfstests: btrfs/011 improvement for compressed filesystems
-References: <1379068041-4299-1-git-send-email-sbehrens@giantdisaster.de>
-In-Reply-To: <1379068041-4299-1-git-send-email-sbehrens@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1380292053-8123-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, September 13, 2013 at 12:27 (+0200), Stefan Behrens wrote:
-> Josef noticed that using /dev/zero to generate most of the test
-> data doesn't work if someone overides the mount options to
-> enable compression. The test that performs a cancelation failed
-> because the replace operation was already finished when the
-> cancel request was executed.
-> 
-> Since /dev/urandom is too slow to generate multiple GB, the
-> way how the filesystem data is generated is completely changed
-> with this patch. Now /dev/urandom is used to generate one 1MB
-> file and this file is copied up to 2048 times. /dev/zero is no
-> longer used.
-> 
-> The runtime of the test is about the same as before. Compression
-> works now, online deduplication will again cause issues, but
-> we don't have online deduplicatin today.
-> 
-> Reported-by: Josef Bacik <jbacik@fusionio.com>
-> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-> ---
->  tests/btrfs/011 | 46 ++++++++++++++++++++++++++++++----------------
->  1 file changed, 30 insertions(+), 16 deletions(-)
-> 
-> diff --git a/tests/btrfs/011 b/tests/btrfs/011
-> index c8b4aac..71ff3de 100755
-> --- a/tests/btrfs/011
-> +++ b/tests/btrfs/011
-> @@ -78,6 +78,7 @@ workout()
->  	local quick="$4"
->  	local source_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $1}'`"
->  	local target_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`"
-> +	local fssize
->  
->  	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt `expr $num_devs4raid + 1` ]; then
->  		echo "Skip workout $1 $2 $3 $4" >> $seqres.full
-> @@ -107,33 +108,46 @@ workout()
->  		_notrun "Different device sizes detected"
->  	fi
->  
-> +	if [ `$BTRFS_SHOW_SUPER_PROG $SCRATCH_DEV | grep dev_item.total_bytes | awk '{print $2}'` -lt 2500000000 ]; then
-> +		_notrun "device size too small"
+> +nr_csum_no_found=$(dmesg | grep -c "no csum found")
+> +nr_csum_failed=$(dmesg | grep -c "csum failed")
+> +
+> +_check_csum_error()
+> +{
+> +	new_csum_no_found=$(dmesg | grep -c "no csum found")
+> +	new_csum_failed=$(dmesg | grep -c "csum failed")
+> +
+> +	if [ $nr_csum_no_found -eq $new_csum_no_found -a \
+> +	     $nr_csum_failed -eq $new_csum_failed ]; then
+> +		return 0
 > +	fi
-> +
->  	_scratch_mount
->  
-> -	# Generate 500 times 20K extents in the data chunk and fill up
-> -	# metadata with inline extents. Ignore ENOSPC.
-> +	# Generate metadata and some minimal user data, generate 500 times
-> +	# 20K extents in the data chunk and fill up metadata with inline
-> +	# extents.
->  	for i in `seq 1 500`; do
->  		dd if=/dev/urandom of=$SCRATCH_MNT/l$i bs=16385 count=1
->  		dd if=/dev/urandom of=$SCRATCH_MNT/s$i bs=3800 count=1
->  	done > /dev/null 2>&1
->  
-> +	# /dev/urandom is slow but has the benefit that the generated
-> +	# contents does not shrink during compression.
-> +	# Generate a template once and quickly copy it multiple times.
-> +	# Obviously with online deduplication this will not work anymore.
-> +	dd if=/dev/urandom of=$SCRATCH_MNT/t0 bs=1M count=1 > /dev/null 2>&1
-> +
->  	if [ "${quick}Q" = "thoroughQ" ]; then
->  		# The intention of this "thorough" test is to increase
->  		# the probability of random errors, in particular in
->  		# conjunction with the background noise generator and
-> -		# a sync call while the replace operation in ongoing.
-> -		# Unfortunately it takes quite some time to generate
-> -		# the test filesystem, therefore most data consists out
-> -		# of zeros although this data is not very useful for
-> -		# detecting misplaced read/write requests.
-> -		# Ignore ENOSPC, it's not a problem..
-> -		dd if=/dev/urandom of=$SCRATCH_MNT/r bs=1M count=200 >> $seqres.full 2>&1 &
-> -		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=2000 >> $seqres.full 2>&1
-> -		wait
-> +		# a sync call while the replace operation is ongoing.
-> +		fssize=2048
->  	elif [ "${with_cancel}Q" = "cancelQ" ]; then
-> -		# produce some data to prevent that the replace operation
-> -		# finishes before the cancel request is started
-> -		dd if=/dev/zero of=$SCRATCH_MNT/0 bs=1M count=1000 >> $seqres.full 2>&1
-> +		# The goal is to produce enough data to prevent that the
-> +		# replace operation finishes before the cancel request
-> +		# is started.
-> +		fssize=1024
-> +	else
-> +		fssize=64
->  	fi
-> +
-> +	# since the available size was tested before, do not tolerate
-> +	# any failures
-> +	for i in `seq $fssize`; do
-> +		cp $SCRATCH_MNT/t0 $SCRATCH_MNT/t$i || _fail "cp failed"
-> +	done > /dev/null 2>> $seqres.full
->  	sync; sync
->  
->  	btrfs_replace_test $source_dev $target_dev "" $with_cancel $quick
-> @@ -214,7 +228,7 @@ btrfs_replace_test()
->  		# before the status is printed
->  		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
->  		cat $tmp.tmp >> $seqres.full
-> -		grep -q canceled $tmp.tmp || _fail "btrfs replace status failed"
-> +		grep -q canceled $tmp.tmp || _fail "btrfs replace status (canceled) failed"
->  	else
->  		if [ "${quick}Q" = "thoroughQ" ]; then
->  			# On current hardware, the thorough test runs
-> @@ -226,7 +240,7 @@ btrfs_replace_test()
->  
->  		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
->  		cat $tmp.tmp >> $seqres.full
-> -		grep -q finished $tmp.tmp || _fail "btrfs replace status failed"
-> +		grep -q finished $tmp.tmp || _fail "btrfs replace status (finished) failed"
->  	fi
->  
->  	if ps -p $noise_pid | grep -q $noise_pid; then
-> 
+> +	return 1
+> +}
 
-The "Q"-comparisons look a bit strange to me, but they've been there before.
+> +# This sucks but unfortunately it is the only way to be sure something didn't go
+> +# wrong.
+> +_check_csum_error || _fail "csum detected, please check dmesg"
 
-Reviewed-by: Jan Schmidt <list.xfs@jan-o-sch.net>
+In the future you could make them trace events and catch them for a
+given invocation of a command with perf.
 
--Jan
+- z

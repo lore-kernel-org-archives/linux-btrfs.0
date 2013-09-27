@@ -1,295 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qe0-f54.google.com ([209.85.128.54]:62260 "EHLO
-	mail-qe0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751571Ab3IWTSs (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:45298 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753012Ab3I0RaY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Sep 2013 15:18:48 -0400
-Received: by mail-qe0-f54.google.com with SMTP id cy11so2491443qeb.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Sep 2013 12:18:47 -0700 (PDT)
-From: Frank Holton <fholton@gmail.com>
+	Fri, 27 Sep 2013 13:30:24 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Frank Holton <fholton@gmail.com>
-Subject: [PATCH v3] btrfs-progs: Add recursive defrag using -r option
-Date: Mon, 23 Sep 2013 15:18:17 -0400
-Message-Id: <20ddb7ded6d0bedadd7dc68a2c29d7c3bd4b7906.1379963692.git.fholton@gmail.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs-progs: device add should check existing FS before adding
+Date: Sat, 28 Sep 2013 01:30:05 +0800
+Message-Id: <1380303005-10164-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add an option to defrag all files in a directory recursively.
+as of now, when 'btrfs device add' adds a device it doesn't
+check if the given device contains an existing FS. This
+patch will change that to check the same. which when true
+add will fail, and ask user to use -f option to overwrite.
 
-Signed-off-by: Frank Holton <fholton@gmail.com>
+further, since now we have test_dev_for_mkfs() function
+to check if a disk can be used, so this patch will also
+use this function to test the given device before adding.
+
+v2: rebase on 20130920, update man page and review comments
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v3: prefix globals with defrag
-v2: switch to ftw amd callback
+ cmds-device.c  | 36 +++++++++++-------------------------
+ man/btrfs.8.in |  6 ++++--
+ 2 files changed, 15 insertions(+), 27 deletions(-)
 
- cmds-filesystem.c |  156 ++++++++++++++++++++++++++++++++++++++---------------
- 1 file changed, 113 insertions(+), 43 deletions(-)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index f41a72a..44a224f 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -22,6 +22,8 @@
- #include <errno.h>
- #include <uuid/uuid.h>
- #include <ctype.h>
-+#include <fcntl.h>
-+#include <ftw.h>
- 
- #include "kerncompat.h"
- #include "ctree.h"
-@@ -265,7 +267,7 @@ static int cmd_show(int argc, char **argv)
- 		fprintf(stderr, "ERROR: error %d while scanning\n", ret);
- 		return 18;
- 	}
--	
-+
- 	if(searchstart < argc)
- 		search = argv[searchstart];
- 
-@@ -308,7 +310,7 @@ static int cmd_sync(int argc, char **argv)
- 	e = errno;
- 	close(fd);
- 	if( res < 0 ){
--		fprintf(stderr, "ERROR: unable to fs-syncing '%s' - %s\n", 
-+		fprintf(stderr, "ERROR: unable to fs-syncing '%s' - %s\n",
- 			path, strerror(e));
- 		return 16;
- 	}
-@@ -333,6 +335,7 @@ static const char * const cmd_defrag_usage[] = {
- 	"Defragment a file or a directory",
- 	"",
- 	"-v             be verbose",
-+	"-r             defragment files recursively",
- 	"-c[zlib,lzo]   compress the file while defragmenting",
- 	"-f             flush data to disk immediately after defragmenting",
- 	"-s start       defragment only from byte onward",
-@@ -341,6 +344,57 @@ static const char * const cmd_defrag_usage[] = {
+diff --git a/cmds-device.c b/cmds-device.c
+index 12c802e..7cfc347 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -40,6 +40,7 @@ static const char * const cmd_add_dev_usage[] = {
+ 	"btrfs device add [options] <device> [<device>...] <path>",
+ 	"Add a device to a filesystem",
+ 	"-K|--nodiscard    do not perform whole device TRIM",
++	"-f|--force        force overwrite existing filesystem on the disk",
  	NULL
  };
  
-+static int do_defrag(int fd, int fancy_ioctl,
-+			struct btrfs_ioctl_defrag_range_args *range)
-+{
-+	int ret;
-+
-+	if (!fancy_ioctl)
-+		ret = ioctl(fd, BTRFS_IOC_DEFRAG, NULL);
-+	else
-+		ret = ioctl(fd, BTRFS_IOC_DEFRAG_RANGE, range);
-+
-+	return ret;
-+}
-+
-+static int defrag_global_fancy_ioctl;
-+static struct btrfs_ioctl_defrag_range_args defrag_global_range;
-+static int defrag_global_verbose;
-+static int defrag_global_errors;
-+static int defrag_callback(const char *fpath, const struct stat *sb, int typeflag)
-+{
-+	int ret = 0;
-+	int e = 0;
-+	int fd = 0;
-+
-+	if (typeflag == FTW_F) {
-+		if (defrag_global_verbose)
-+				printf("%s\n", fpath);
-+		fd = open(fpath, O_RDWR);
-+		e = errno;
-+		if (fd < 0)
-+			goto error;
-+		ret = do_defrag(fd, defrag_global_fancy_ioctl, &defrag_global_range);
-+		e = errno;
-+		close(fd);
-+		if (ret && e == ENOTTY) {
-+			fprintf(stderr, "ERROR: defrag range ioctl not "
-+				"supported in this kernel, please try "
-+				"without any options.\n");
-+			defrag_global_errors++;
-+			return ENOTTY;
-+		}
-+		if (ret)
-+			goto error;
-+	}
-+	return 0;
-+
-+error:
-+	fprintf(stderr, "ERROR: defrag failed on %s - %s\n", fpath, strerror(e));
-+	defrag_global_errors++;
-+	return 0;
-+}
-+
- static int cmd_defrag(int argc, char **argv)
- {
- 	int fd;
-@@ -349,17 +403,19 @@ static int cmd_defrag(int argc, char **argv)
- 	u64 len = (u64)-1;
- 	u32 thresh = 0;
- 	int i;
--	int errors = 0;
-+	int recursive = 0;
- 	int ret = 0;
--	int verbose = 0;
--	int fancy_ioctl = 0;
- 	struct btrfs_ioctl_defrag_range_args range;
--	int e=0;
-+	int e = 0;
- 	int compress_type = BTRFS_COMPRESS_NONE;
+@@ -49,14 +50,17 @@ static int cmd_add_dev(int argc, char **argv)
+ 	int	i, fdmnt, ret=0, e;
+ 	DIR	*dirstream = NULL;
+ 	int discard = 1;
++	int force = 0;
++	char estr[100];
  
-+	defrag_global_errors = 0;
-+	defrag_global_verbose = 0;
-+	defrag_global_errors = 0;
-+	defrag_global_fancy_ioctl = 0;
- 	optind = 1;
- 	while(1) {
--		int c = getopt(argc, argv, "vc::fs:l:t:");
-+		int c = getopt(argc, argv, "vrc::fs:l:t:");
+ 	while (1) {
+ 		int long_index;
+ 		static struct option long_options[] = {
+ 			{ "nodiscard", optional_argument, NULL, 'K'},
++			{ "force", no_argument, NULL, 'f'},
+ 			{ 0, 0, 0, 0 }
+ 		};
+-		int c = getopt_long(argc, argv, "K", long_options,
++		int c = getopt_long(argc, argv, "Kf", long_options,
+ 					&long_index);
  		if (c < 0)
  			break;
- 
-@@ -368,26 +424,29 @@ static int cmd_defrag(int argc, char **argv)
- 			compress_type = BTRFS_COMPRESS_ZLIB;
- 			if (optarg)
- 				compress_type = parse_compress_type(optarg);
--			fancy_ioctl = 1;
-+			defrag_global_fancy_ioctl = 1;
+@@ -64,6 +68,9 @@ static int cmd_add_dev(int argc, char **argv)
+ 		case 'K':
+ 			discard = 0;
  			break;
- 		case 'f':
- 			flush = 1;
--			fancy_ioctl = 1;
-+			defrag_global_fancy_ioctl = 1;
- 			break;
- 		case 'v':
--			verbose = 1;
-+			defrag_global_verbose = 1;
- 			break;
- 		case 's':
- 			start = parse_size(optarg);
--			fancy_ioctl = 1;
-+			defrag_global_fancy_ioctl = 1;
- 			break;
- 		case 'l':
- 			len = parse_size(optarg);
--			fancy_ioctl = 1;
-+			defrag_global_fancy_ioctl = 1;
- 			break;
- 		case 't':
- 			thresh = parse_size(optarg);
--			fancy_ioctl = 1;
-+			defrag_global_fancy_ioctl = 1;
++		case 'f':
++			force = 1;
 +			break;
-+		case 'r':
-+			recursive = 1;
- 			break;
  		default:
- 			usage(cmd_defrag_usage);
-@@ -397,57 +456,68 @@ static int cmd_defrag(int argc, char **argv)
- 	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_defrag_usage);
+ 			usage(cmd_add_dev_usage);
+ 		}
+@@ -86,19 +93,11 @@ static int cmd_add_dev(int argc, char **argv)
+ 		struct btrfs_ioctl_vol_args ioctl_args;
+ 		int	devfd, res;
+ 		u64 dev_block_count = 0;
+-		struct stat st;
+ 		int mixed = 0;
  
--	memset(&range, 0, sizeof(range));
--	range.start = start;
--	range.len = len;
--	range.extent_thresh = thresh;
-+	memset(&defrag_global_range, 0, sizeof(range));
-+	defrag_global_range.start = start;
-+	defrag_global_range.len = len;
-+	defrag_global_range.extent_thresh = thresh;
- 	if (compress_type) {
--		range.flags |= BTRFS_DEFRAG_RANGE_COMPRESS;
--		range.compress_type = compress_type;
-+		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_COMPRESS;
-+		defrag_global_range.compress_type = compress_type;
- 	}
- 	if (flush)
--		range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
-+		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
- 
- 	for (i = optind; i < argc; i++) {
--		if (verbose)
--			printf("%s\n", argv[i]);
- 		fd = open_file_or_dir(argv[i]);
- 		if (fd < 0) {
--			fprintf(stderr, "failed to open %s\n", argv[i]);
-+			fprintf(stderr, "ERROR: failed to open %s\n", argv[i]);
- 			perror("open:");
--			errors++;
-+			defrag_global_errors++;
+-		res = check_mounted(argv[i]);
+-		if (res < 0) {
+-			fprintf(stderr, "error checking %s mount status\n",
+-				argv[i]);
+-			ret++;
+-			continue;
+-		}
+-		if (res == 1) {
+-			fprintf(stderr, "%s is mounted\n", argv[i]);
+-			ret++;
++		res = test_dev_for_mkfs(argv[i], force, estr);
++		if (res) {
++			fprintf(stderr, "%s", estr);
  			continue;
  		}
--		if (!fancy_ioctl) {
--			ret = ioctl(fd, BTRFS_IOC_DEFRAG, NULL);
--			e=errno;
--		} else {
--			ret = ioctl(fd, BTRFS_IOC_DEFRAG_RANGE, &range);
--			if (ret && errno == ENOTTY) {
--				fprintf(stderr, "ERROR: defrag range ioctl not "
--					"supported in this kernel, please try "
--					"without any options.\n");
--				errors++;
--				close(fd);
--				break;
-+		if (recursive) {
-+			struct stat st;
-+			fstat(fd, &st);
-+			if (S_ISDIR(st.st_mode)) {
-+				ret = ftw(argv[i], defrag_callback, 10);
-+				if (ret == ENOTTY)
-+					exit(1);
-+				/* errors are handled in the callback */
-+				ret = 0;
-+			} else {
-+				if (defrag_global_verbose)
-+					printf("%s\n", argv[i]);
-+				ret = do_defrag(fd, defrag_global_fancy_ioctl, &defrag_global_range);
-+				e = errno;
- 			}
-+		} else {
-+			if (defrag_global_verbose)
-+				printf("%s\n", argv[i]);
-+			ret = do_defrag(fd, defrag_global_fancy_ioctl, &defrag_global_range);
- 			e = errno;
- 		}
-+		close(fd);
-+		if (ret && e == ENOTTY) {
-+			fprintf(stderr, "ERROR: defrag range ioctl not "
-+				"supported in this kernel, please try "
-+				"without any options.\n");
-+			defrag_global_errors++;
-+			break;
-+		}
- 		if (ret) {
- 			fprintf(stderr, "ERROR: defrag failed on %s - %s\n",
- 				argv[i], strerror(e));
--			errors++;
-+			defrag_global_errors++;
- 		}
--		close(fd);
- 	}
--	if (verbose)
-+	if (defrag_global_verbose)
- 		printf("%s\n", BTRFS_BUILD_VERSION);
--	if (errors) {
--		fprintf(stderr, "total %d failures\n", errors);
-+	if (defrag_global_errors) {
-+		fprintf(stderr, "total %d failures\n", defrag_global_errors);
- 		exit(1);
- 	}
  
--	return errors;
-+	return 0;
- }
+@@ -108,19 +107,6 @@ static int cmd_add_dev(int argc, char **argv)
+ 			ret++;
+ 			continue;
+ 		}
+-		res = fstat(devfd, &st);
+-		if (res) {
+-			fprintf(stderr, "ERROR: Unable to stat '%s'\n", argv[i]);
+-			close(devfd);
+-			ret++;
+-			continue;
+-		}
+-		if (!S_ISBLK(st.st_mode)) {
+-			fprintf(stderr, "ERROR: '%s' is not a block device\n", argv[i]);
+-			close(devfd);
+-			ret++;
+-			continue;
+-		}
  
- static const char * const cmd_resize_usage[] = {
-@@ -489,7 +559,7 @@ static int cmd_resize(int argc, char **argv)
- 	e = errno;
- 	close(fd);
- 	if( res < 0 ){
--		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
-+		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n",
- 			path, strerror(e));
- 		return 30;
- 	}
+ 		res = btrfs_prepare_device(devfd, argv[i], 1, &dev_block_count,
+ 					   0, &mixed, discard);
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 60e02bb..a65ed93 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -47,7 +47,7 @@ btrfs \- control a btrfs filesystem
+ \fBbtrfs\fP \fB[filesystem] balance status\fP [-v] \fI<path>\fP
+ .PP
+ .PP
+-\fBbtrfs\fP \fBdevice add\fP [-K] \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
++\fBbtrfs\fP \fBdevice add\fP [-Kf] \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
+ .PP
+ \fBbtrfs\fP \fBdevice delete\fP \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
+ .PP
+@@ -390,7 +390,7 @@ be verbose
+ .RE
+ .TP
+ 
+-\fBdevice add\fR\fI [-K] <dev> \fP[\fI<dev>...\fP] \fI<path>\fR
++\fBdevice add\fR\fI [-Kf] <dev> \fP[\fI<dev>...\fP] \fI<path>\fR
+ Add device(s) to the filesystem identified by \fI<path>\fR.
+ If applicable, a whole device discard (TRIM) operation is performed.
+ .RS
+@@ -398,6 +398,8 @@ If applicable, a whole device discard (TRIM) operation is performed.
+ \fIOptions\fR
+ .IP "\fB-K|--nodiscard\fP" 5
+ do not perform discard by default
++.IP "\fB-f|--force\fP" 5
++force overwrite of existing filesystem on the given disk(s)
+ .RE
+ .TP
+ 
 -- 
-1.7.9.5
+1.8.4.rc4.1.g0d8beaa
 

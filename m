@@ -1,59 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:37028 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754579Ab3I0Ujc (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:45903 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753088Ab3I0UoW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 16:39:32 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id C16999A06B2
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Sep 2013 14:39:31 -0600 (MDT)
-Received: from CAS2.int.fusionio.com ([10.101.1.41]) by mx2.fusionio.com with ESMTP id crEAQOgyjcTOLGKh (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 27 Sep 2013 14:39:31 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: remove all BUG_ON()'s from commit_cowonly_roots
-Date: Fri, 27 Sep 2013 16:39:29 -0400
-Message-ID: <1380314369-29126-1-git-send-email-jbacik@fusionio.com>
+	Fri, 27 Sep 2013 16:44:22 -0400
+Date: Fri, 27 Sep 2013 21:44:19 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: extlinux and btrfs RAID-1
+Message-ID: <20130927204419.GD28147@carfax.org.uk>
+References: <20130927193655.GC28147@carfax.org.uk>
+ <1487829E-FBAE-4405-93DB-94AD30EEE144@colorremedies.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="lc9FT7cWel8HagAv"
+In-Reply-To: <1487829E-FBAE-4405-93DB-94AD30EEE144@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Noticed this when forcing errors to happen during delayed ref running.  Thanks,
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/transaction.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+--lc9FT7cWel8HagAv
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 72d2b67..374a91b 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -950,16 +950,19 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
- 		return ret;
- 
- 	ret = btrfs_run_dev_stats(trans, root->fs_info);
--	WARN_ON(ret);
-+	if (ret)
-+		return ret;
- 	ret = btrfs_run_dev_replace(trans, root->fs_info);
--	WARN_ON(ret);
--
-+	if (ret)
-+		return ret;
- 	ret = btrfs_run_qgroups(trans, root->fs_info);
--	BUG_ON(ret);
-+	if (ret)
-+		return ret;
- 
- 	/* run_qgroups might have added some more refs */
- 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
--	BUG_ON(ret);
-+	if (ret)
-+		return ret;
- 
- 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
- 		next = fs_info->dirty_cowonly_roots.next;
+On Fri, Sep 27, 2013 at 02:12:36PM -0600, Chris Murphy wrote:
+> 
+> On Sep 27, 2013, at 1:36 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> > 
+> >   When I boot the machine from its disks, I'm being told that
+> > extlinux only supports single-disk btrfs. Is this still the case?
+> 
+> I'm pretty sure the answer is yes. The last time I looked not that long ago the multiple device scenario wasn't supported.
+
+   Dammit.
+
+   Thanks for the info. At least this means I don't have to struggle
+with the syslinux error I've been getting... Back to grub, then.
+
+   Hugo.
+
 -- 
-1.8.3.1
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- It used to take a lot of talent and a certain type of ---      
+        upbringing to be perfectly polite and have filthy manners        
+            at the same time. Now all it needs is a computer.            
 
+--lc9FT7cWel8HagAv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUkXuI1heFHXiqx3kAQLYGRAAqOxvRRFZDNEwyCn8soDY+DPFVflKozxT
+C15lZmZhMzFbaVbOnMYGn4cneKkVWBXJujEKfcuirDzbs4MvvqrPEZgO9jJVt+XS
+LUGKwHrK+v74QbpEi2Kt5Ewu1jRvpPNPvim917UXgjCix7RPAlUkKyg3waJrgr1P
+TpVJmN44TGuLQBfYtA2L6b9BY0TlfKmtQb9DEPbdwIepiHomRGbldgd80dVDfVTg
+H/hFrd2kjNRt4UfW86ep4+hkWzw71YQhdQHAFxddELYhfk4V3SkQmUo92C3kr4ju
+juxmLvvMlGs9bOirVBd7wfAMFmnZmwg/CCkutCNaKJKNimfIku9Ft+iQbP4EJdgI
+boe5of2FTFdu6jF6/VfUxGzINW5v3WpXdw62lVbcVDF0gAPP28yizdvyhFWMjuJI
+p8HRd0y6C7VVyVb22PGGQBj8NAbu7cm7S/3ujcNe6t85PNiwTX/5yMbBS/QsD5yY
+L79zIMIc7bfUbCq9wunTybGcl1Vtlztjv6ffWq9GsfPA3JwdonhLghbL0eR5Wspt
+taCXXgv6kTfkk3UyDW7C96XdsniNREKG6Kls2U8k5hyemgIYlVZkjQX7pwgxEZgQ
+J29QnbV4+J9Q9dFn1rgIpUl5OAqfZMgpnTj15YXRiKP8v8HQRZ/82Jbs3haAm/ts
+IF5arOe6boU=
+=DrJC
+-----END PGP SIGNATURE-----
+
+--lc9FT7cWel8HagAv--

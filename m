@@ -1,35 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:16424 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753726Ab3I0Rvz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 13:51:55 -0400
-Date: Fri, 27 Sep 2013 10:51:50 -0700
-From: Zach Brown <zab@redhat.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Tom Gundersen <teg@jklm.no>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: csum questions
-Message-ID: <20130927175150.GU30372@lenny.home.zabbo.net>
-References: <CAG-2HqV3MoRQ9E9VqjJ7NFKia7=b30_LKKL82FmV6s4u6vOrTA@mail.gmail.com>
- <20130927142535.GB28147@carfax.org.uk>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:62784 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754140Ab3I0SsD convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Sep 2013 14:48:03 -0400
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20130927142535.GB28147@carfax.org.uk>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: csum questions
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20130927175150.GU30372@lenny.home.zabbo.net>
+Date: Fri, 27 Sep 2013 12:47:57 -0600
+Cc: Hugo Mills <hugo@carfax.org.uk>, Tom Gundersen <teg@jklm.no>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <3A64B568-616C-438A-A634-450F4514C861@colorremedies.com>
+References: <CAG-2HqV3MoRQ9E9VqjJ7NFKia7=b30_LKKL82FmV6s4u6vOrTA@mail.gmail.com> <20130927142535.GB28147@carfax.org.uk> <20130927175150.GU30372@lenny.home.zabbo.net>
+To: Zach Brown <zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > 2) How may I tell btrfs to ignore all csums and just assume they are
-> > all correct? The reason for wanting this is in case the csum is
-> > garbled and the file is intact, or the csum is correct and the file is
-> > only partially garbled, but may still contain useful data.
+
+On Sep 27, 2013, at 11:51 AM, Zach Brown <zab@redhat.com> wrote:
+
+>>> 2) How may I tell btrfs to ignore all csums and just assume they are
+>>> all correct? The reason for wanting this is in case the csum is
+>>> garbled and the file is intact, or the csum is correct and the file is
+>>> only partially garbled, but may still contain useful data.
+>> 
+>>   You can't, right now. There's discussion on IRC about this very
+>> point right now. :)
 > 
->    You can't, right now. There's discussion on IRC about this very
-> point right now. :)
+> Well, hold on.  Yes, you can't tell it to just not check checksums.
+> 
+> But keep reading.  It sounds like he thinks that *any* reads to the file
+> will error once any checksum has failed.  Surely that's not true, you
+> can do use like dd conv=noerror and read all the extents of the file
+> whose checksums are still valid.
 
-Well, hold on.  Yes, you can't tell it to just not check checksums.
+Would that get me an identically sized copy of the file, such as it is? Or is some piece, identified as corrupt, is dropped in the copy?
 
-But keep reading.  It sounds like he thinks that *any* reads to the file
-will error once any checksum has failed.  Surely that's not true, you
-can do use like dd conv=noerror and read all the extents of the file
-whose checksums are still valid.
+If I get the whole file intact with just a bit flip, or bad sector data, that has a decent change of being fixed in a supporting application. If a whole extent is dropped, then the file is almost certainly useless. Big difference.
 
-- z
+Chris Murphy

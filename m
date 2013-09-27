@@ -1,197 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:43665 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:28283 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752778Ab3IXO2y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Sep 2013 10:28:54 -0400
-Message-ID: <5241A1A3.7070603@redhat.com>
-Date: Tue, 24 Sep 2013 09:28:51 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1754338Ab3I0TKc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Sep 2013 15:10:32 -0400
+Date: Fri, 27 Sep 2013 12:10:29 -0700
+From: Zach Brown <zab@redhat.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: calculate disk space that a subvol could
+ free
+Message-ID: <20130927191029.GX30372@lenny.home.zabbo.net>
+References: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Ross Kirk <ross.kirk@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Make btrfs_header_fsid() return unsigned
- long
-References: <1380027741-23856-1-git-send-email-ross.kirk@gmail.com>
-In-Reply-To: <1380027741-23856-1-git-send-email-ross.kirk@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/24/13 8:02 AM, Ross Kirk wrote:
-> Internally, btrfs_header_fsid() calculates an unsigned long, but casts
-> it to a pointer, while all callers cast it to unsigned long again.
-
-Thanks for doing this; my only nitpick is to keep
-the lines under 80 cols.
-
-> Committed to btrfs as fba6aa75654394fccf2530041e9451414c28084f
-> 
-> Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
-> ---
->  cmds-chunk.c |    6 ++----
->  ctree.c      |   18 ++++++------------
->  ctree.h      |    5 ++---
->  disk-io.c    |    3 +--
->  print-tree.c |    2 +-
->  5 files changed, 12 insertions(+), 22 deletions(-)
-> 
-> diff --git a/cmds-chunk.c b/cmds-chunk.c
-> index 03314de..a89b929 100644
-> --- a/cmds-chunk.c
-> +++ b/cmds-chunk.c
-> @@ -742,8 +742,7 @@ static int scan_one_device(struct recover_control *rc, int fd,
->  		    rc->leafsize)
->  			break;
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index de246ab..0f36cde 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -809,6 +809,7 @@ static int cmd_subvol_show(int argc, char **argv)
+>  	int fd = -1, mntfd = -1;
+>  	int ret = 1;
+>  	DIR *dirstream1 = NULL, *dirstream2 = NULL;
+> +	u64 freeable_bytes;
 >  
-> -		if (memcmp_extent_buffer(buf, rc->fs_devices->fsid,
-> -					 (unsigned long)btrfs_header_fsid(buf),
-> +		if (memcmp_extent_buffer(buf, rc->fs_devices->fsid, btrfs_header_fsid(buf),
-
-this overflows 80 cols
-
->  					 BTRFS_FSID_SIZE)) {
->  			bytenr += rc->sectorsize;
->  			continue;
-> @@ -1043,8 +1042,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_level(cow, 0);
->  	btrfs_set_header_backref_rev(cow, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(cow, BTRFS_CHUNK_TREE_OBJECTID);
-> -	write_extent_buffer(cow, root->fs_info->fsid,
-> -			(unsigned long)btrfs_header_fsid(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
-
-this too
-
->  			BTRFS_FSID_SIZE);
+>  	if (check_argc_exact(argc, 2))
+>  		usage(cmd_subvol_show_usage);
+> @@ -878,6 +879,8 @@ static int cmd_subvol_show(int argc, char **argv)
+>  		goto out;
+>  	}
 >  
->  	write_extent_buffer(cow, root->fs_info->chunk_tree_uuid,
-> diff --git a/ctree.c b/ctree.c
-> index 1a4f3f0..4e9a47f 100644
-> --- a/ctree.c
-> +++ b/ctree.c
-> @@ -121,8 +121,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+> +	freeable_bytes = get_subvol_freeable_bytes(fd);
+> +
+>  	ret = 0;
+>  	/* print the info */
+>  	printf("%s\n", fullpath);
+> @@ -915,6 +918,8 @@ static int cmd_subvol_show(int argc, char **argv)
 >  	else
->  		btrfs_set_header_owner(cow, new_root_objectid);
+>  		printf("\tFlags: \t\t\t-\n");
 >  
-> -	write_extent_buffer(cow, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
->  			    BTRFS_FSID_SIZE);
+> +	printf("\tUnshared space: \t%s\n",
+> +		pretty_size(freeable_bytes));
+
+There's no reason to have a local variable:
+
+	printf("\tUnshared space: \t%s\n",
+		pretty_size(get_subvol_freeable_bytes(fd));
+
+
+>  	printf("\tSnapshot(s):\n");
+>  	filter_set = btrfs_list_alloc_filter_set();
+> diff --git a/utils.c b/utils.c
+> index ccb5199..ca30485 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2062,3 +2062,157 @@ int lookup_ino_rootid(int fd, u64 *rootid)
 >  
->  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
-> @@ -168,8 +167,7 @@ init:
->  	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(c, root->root_key.objectid);
->  
-> -	write_extent_buffer(c, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(c),
-> +	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(c),
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-> @@ -342,8 +340,7 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  	else
->  		btrfs_set_header_owner(cow, root->root_key.objectid);
->  
-> -	write_extent_buffer(cow, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(cow),
-> +	write_extent_buffer(cow, root->fs_info->fsid, btrfs_header_fsid(cow),
->  			    BTRFS_FSID_SIZE);
->  
->  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
-> @@ -1528,8 +1525,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
->  	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(c, root->root_key.objectid);
->  
-> -	write_extent_buffer(c, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(c),
-> +	write_extent_buffer(c, root->fs_info->fsid, btrfs_header_fsid(c),
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-> @@ -1649,8 +1645,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
->  	btrfs_set_header_generation(split, trans->transid);
->  	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(split, root->root_key.objectid);
-> -	write_extent_buffer(split, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(split),
-> +	write_extent_buffer(split, root->fs_info->fsid, btrfs_header_fsid(split),
-
-This too.  Kernelspace split it differently:
-
-        write_extent_buffer(split, root->fs_info->fsid,
-                            btrfs_header_fsid(split), BTRFS_FSID_SIZE);
-
-When in doubt, matching kernelspace (when the same function exists there)
-is good practice; some day (tm) it'll all match.
-
->  			    BTRFS_FSID_SIZE);
->  	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
->  			    (unsigned long)btrfs_header_chunk_tree_uuid(split),
-> @@ -2210,8 +2205,7 @@ again:
->  	btrfs_set_header_backref_rev(right, BTRFS_MIXED_BACKREF_REV);
->  	btrfs_set_header_owner(right, root->root_key.objectid);
->  	btrfs_set_header_level(right, 0);
-> -	write_extent_buffer(right, root->fs_info->fsid,
-> -			    (unsigned long)btrfs_header_fsid(right),
-> +	write_extent_buffer(right, root->fs_info->fsid, btrfs_header_fsid(right),
-
-this too.  Same comment about matching the way it's written in kernelspace,
-and it'll be one fewer difference to pick through.
-
-If you don't mind checking for these & other 80-col issues, & resending V2,
-that'd be great.
-
-Thanks!
-
--Eric
-
->  			    BTRFS_FSID_SIZE);
->  
->  	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
-> diff --git a/ctree.h b/ctree.h
-> index 0b0d701..6a711c6 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -1748,10 +1748,9 @@ static inline void btrfs_set_header_backref_rev(struct extent_buffer *eb,
->  	btrfs_set_header_flags(eb, flags);
+>  	return 0;
 >  }
->  
-> -static inline u8 *btrfs_header_fsid(struct extent_buffer *eb)
-> +static inline unsigned long btrfs_header_fsid(struct extent_buffer *eb)
->  {
-> -	unsigned long ptr = offsetof(struct btrfs_header, fsid);
-> -	return (u8 *)ptr;
-> +	return offsetof(struct btrfs_header, fsid);
->  }
->  
->  static inline u8 *btrfs_header_chunk_tree_uuid(struct extent_buffer *eb)
-> diff --git a/disk-io.c b/disk-io.c
-> index 13dbe27..58f699e 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -49,8 +49,7 @@ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
->  
->  	fs_devices = root->fs_info->fs_devices;
->  	while (fs_devices) {
-> -		if (!memcmp_extent_buffer(buf, fs_devices->fsid,
-> -					  (unsigned long)btrfs_header_fsid(buf),
-> +		if (!memcmp_extent_buffer(buf, fs_devices->fsid, btrfs_header_fsid(buf),
->  					  BTRFS_FSID_SIZE)) {
->  			ret = 0;
->  			break;
-> diff --git a/print-tree.c b/print-tree.c
-> index aae47a9..5027b73 100644
-> --- a/print-tree.c
-> +++ b/print-tree.c
-> @@ -153,7 +153,7 @@ static void print_uuids(struct extent_buffer *eb)
->  	char chunk_uuid[37];
->  	u8 disk_uuid[BTRFS_UUID_SIZE];
->  
-> -	read_extent_buffer(eb, disk_uuid, (unsigned long)btrfs_header_fsid(eb),
-> +	read_extent_buffer(eb, disk_uuid, btrfs_header_fsid(eb),
->  			   BTRFS_FSID_SIZE);
->  
->  	fs_uuid[36] = '\0';
-> 
+> +
+> +/* gets the ref count for given extent
+> + * 0 = didn't find the item
+> + * n = number of references
+> +*/
+> +u64 get_extent_refcnt(int fd, u64 disk_blk)
+> +{
+> +	int ret = 0, i, e;
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +	struct btrfs_ioctl_search_header sh;
+> +	unsigned long off = 0;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +
+> +	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
+> +
+> +	sk->min_type = BTRFS_EXTENT_ITEM_KEY;
+> +	sk->max_type = BTRFS_EXTENT_ITEM_KEY;
+> +
+> +	sk->min_objectid = disk_blk;
+> +	sk->max_objectid = disk_blk;
+> +
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +
+> +	while (1) {
+> +		sk->nr_items = 4096;
+> +
+> +		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +		e = errno;
+> +		if (ret < 0) {
+> +			fprintf(stderr, "ERROR: search failed - %s\n",
+> +				strerror(e));
+> +			return 0;
+> +		}
+> +		if (sk->nr_items == 0)
+> +			break;
+> +
+> +		off = 0;
+> +		for (i = 0; i < sk->nr_items; i++) {
+> +			struct btrfs_extent_item *ei;
+> +			u64 ref;
+> +
+> +			memcpy(&sh, args.buf + off, sizeof(sh));
+> +			off += sizeof(sh);
+> +
+> +			if (sh.type != BTRFS_EXTENT_ITEM_KEY) {
+> +				off += sh.len;
+> +				continue;
+> +			}
+> +
+> +			ei = (struct btrfs_extent_item *)(args.buf + off);
+> +			ref = btrfs_stack_extent_refs(ei);
+> +			return ref;
+> +		}
+> +		sk->min_objectid = sh.objectid;
+> +		sk->min_offset = sh.offset;
+> +		sk->min_type = sh.type;
+> +		if (sk->min_offset < (u64)-1)
+> +			sk->min_offset++;
+> +		else if (sk->min_objectid < (u64)-1) {
+> +			sk->min_objectid++;
+> +			sk->min_offset = 0;
+> +			sk->min_type = 0;
+> +		} else
+> +			break;
+> +	}
+> +	return 0;
+> +}
 
+These two fiddly functions only differ in the tree search and what they
+do with each item.  So replace them with a function that takes a
+description of the search and calls the caller's callback for each item.
+
+typedef void (*item_func_t)(struct btrfs_key *key, void *data, void *arg);
+
+int btrfs_for_each_item(int fd, min and max and junk,
+			item_func_t func, void *arg);
+
+u64 get_subvol_freeable_bytes(int fd)
+{
+	u64 size_bytes = 0;
+
+	btrfs_for_each_item(fd, ...., sum_extents, &size_bytes);
+
+	return size_bytes;
+}
+
+Etc.  You get the idea.
+
+- z

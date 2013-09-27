@@ -1,81 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:60598 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753441Ab3I0NhD (ORCPT
+Received: from mail-bk0-f53.google.com ([209.85.214.53]:50827 "EHLO
+	mail-bk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751185Ab3I0OWi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Sep 2013 09:37:03 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id DE6D99A0691
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Sep 2013 07:37:02 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id vpZk6HUOMophJCAS (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 27 Sep 2013 07:37:02 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: relocate csums properly with prealloc extents
-Date: Fri, 27 Sep 2013 09:37:00 -0400
-Message-ID: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
+	Fri, 27 Sep 2013 10:22:38 -0400
+Received: by mail-bk0-f53.google.com with SMTP id d7so977207bkh.26
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Sep 2013 07:22:37 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+From: Tom Gundersen <teg@jklm.no>
+Date: Fri, 27 Sep 2013 16:22:16 +0200
+Message-ID: <CAG-2HqV3MoRQ9E9VqjJ7NFKia7=b30_LKKL82FmV6s4u6vOrTA@mail.gmail.com>
+Subject: csum questions
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a problem where they were getting csum errors when running a
-balance and running systemd's journal.  This is because systemd is awesome and
-fallocate()'s its log space and writes into it.  Unfortunately we assume that
-when we read in all the csums for an extent that they are sequential starting at
-the bytenr we care about.  This obviously isn't the case for prealloc extents,
-where we could have written to the middle of the prealloc extent only, which
-means the csum would be for the bytenr in the middle of our range and not the
-front of our range.  Fix this by offsetting the new bytenr we are logging to
-based on the original bytenr the csum was for.  With this patch I no longer see
-the csum errors I was seeing.  Thanks,
+Hi guys,
 
-Cc: stable@vger.kernel.org
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/relocation.c | 18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+I have some questions about btrfs' handling of invalid csums.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 5ca7ea9..b7afeaa 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4472,6 +4472,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
- 	u64 disk_bytenr;
-+	u64 new_bytenr;
- 	LIST_HEAD(list);
- 
- 	ordered = btrfs_lookup_ordered_extent(inode, file_pos);
-@@ -4483,13 +4484,24 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 	if (ret)
- 		goto out;
- 
--	disk_bytenr = ordered->start;
- 	while (!list_empty(&list)) {
- 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
- 		list_del_init(&sums->list);
- 
--		sums->bytenr = disk_bytenr;
--		disk_bytenr += sums->len;
-+		/*
-+		 * We need to offset the new_bytenr based on where the csum is.
-+		 * We need to do this because we will read in entire prealloc
-+		 * extents but we may have written to say the middle of the
-+		 * prealloc extent, so we need to make sure the csum goes with
-+		 * the right disk offset.
-+		 *
-+		 * We can do this because the data reloc inode refers strictly
-+		 * to the on disk bytes, so we don't have to worry about
-+		 * disk_len vs real len like with real inodes since it's all
-+		 * disk length.
-+		 */
-+		new_bytenr = ordered->start + (sums->bytenr - disk_bytenr);
-+		sums->bytenr = new_bytenr;
- 
- 		btrfs_add_ordered_sum(inode, ordered, sums);
- 	}
--- 
-1.8.3.1
+For the sake of argument I'm assuming no raid or anything like that
+(so only one copy exists of every file).
 
+When I try to access a file whose csum does not match, btrfs logs an
+error and refuses access to the file. I have two questions about this:
+
+1) What happens to the file. Will btrfs just leave it alone, or will
+it be deleted from disk (I seem to remember reading this somewhere,
+just want to confirm)?
+
+2) How may I tell btrfs to ignore all csums and just assume they are
+all correct? The reason for wanting this is in case the csum is
+garbled and the file is intact, or the csum is correct and the file is
+only partially garbled, but may still contain useful data.
+
+Any help would be greatly appreciated.
+
+Cheers,
+
+Tom

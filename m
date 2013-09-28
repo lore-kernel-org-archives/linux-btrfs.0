@@ -1,56 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47550 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752427Ab3I1WzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 18:55:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VQ3Pj-0001Xz-BI
-	for linux-btrfs@vger.kernel.org; Sun, 29 Sep 2013 00:55:03 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 00:55:03 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 00:55:03 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Corrupt btrfs filesystem recovery... (Due to *sata* errors)
-Date: Sat, 28 Sep 2013 23:54:34 +0100
-Message-ID: <l27mn1$squ$1@ger.gmane.org>
-References: <l27agq$u5a$1@ger.gmane.org>
-Mime-Version: 1.0
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:42501 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755214Ab3I1Xfg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Sep 2013 19:35:36 -0400
+Received: by mail-ie0-f176.google.com with SMTP id as1so6988444iec.21
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Sep 2013 16:35:35 -0700 (PDT)
+MIME-Version: 1.0
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Sun, 29 Sep 2013 01:35:15 +0200
+Message-ID: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
+Subject: Questions regarding logging upon fsync in btrfs
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <l27agq$u5a$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28/09/13 20:26, Martin wrote:
+Hi,
 
-> ... btrfsck bombs out with LOTs of errors...
-> 
-> How best to recover from this?
-> 
-> (This is a 'backup' disk so not 'critical' but it would be nice to avoid
-> rewriting about 1.5TB of data over the network...)
-> 
-> 
-> Is there an obvious sequence/recipe to follow for recovery?
+I have few questions regarding logging triggered by calling fsync in BTRFS:
 
+1. If I understand correctly, fsync will call to log entire inode in
+the log tree. Does this mean that the data extents are also logged
+into the log tree? Are they copied into the log tree, or just
+referenced? Are they copied into the subvolume's extent tree again
+upon replay?
 
-I've got the drive reliably working with the sata limited to 3Gbit/s.
-What is the best sequence to try to tidy-up and carry on with the 1.5TB
-or so of data on there, rather than working from scratch?
+2. During replay, when the extents are added into the extent
+allocation tree, do they acquire the physical extent number during
+replay? Does they physical extent allocated to the data in the log
+tree differ from that in the subvolume?
 
+3. I see there is a mount option of notreelog available. After
+disabling tree logging, does fsync still lead to flushing of buffers
+to the disk directly?
 
-So far, I've only run btrfsck since the corruption errors for the three
-sectors...
+4. Is it possible to selectively identify certain files in the log
+tree and flush them to disk directly, without waiting for the replay
+to do it?
 
-Suggestions for recovery?
+Thanks
 
-Thanks,
-Martin
-
-
-
+-- 
+Aastha Mehta

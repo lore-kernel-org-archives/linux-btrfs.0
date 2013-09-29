@@ -1,73 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38490 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:45744 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753309Ab3I2CKt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 22:10:49 -0400
+	id S1753618Ab3I2CbX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Sep 2013 22:31:23 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VQ6T9-0007CY-UH
-	for linux-btrfs@vger.kernel.org; Sun, 29 Sep 2013 04:10:47 +0200
+	id 1VQ6n2-0000ZF-Qm
+	for linux-btrfs@vger.kernel.org; Sun, 29 Sep 2013 04:31:20 +0200
 Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:10:47 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:31:20 +0200
 Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:10:47 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:31:20 +0200
 To: linux-btrfs@vger.kernel.org
 From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Corrupt btrfs filesystem recovery... What best instructions?
-Date: Sun, 29 Sep 2013 03:10:37 +0100
-Message-ID: <l2826k$1uc$1@ger.gmane.org>
-References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org>
+Subject: Re: Corrupt btrfs filesystem recovery... (Due to *sata* errors)
+Date: Sun, 29 Sep 2013 03:31:10 +0100
+Message-ID: <l283d5$egr$1@ger.gmane.org>
+References: <l27agq$u5a$1@ger.gmane.org> <87F045E8-CBB5-4818-B60B-0325EC87A56D@colorremedies.com> <l27mgf$qmn$1@ger.gmane.org> <53F0C9F1-BF66-47DA-BAE9-7E0C3B7030EF@colorremedies.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <l27mn1$squ$1@ger.gmane.org>
+Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <53F0C9F1-BF66-47DA-BAE9-7E0C3B7030EF@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28/09/13 23:54, Martin wrote:
-> On 28/09/13 20:26, Martin wrote:
+Chris,
+
+Thanks for good comment/discussion.
+
+On 29/09/13 03:06, Chris Murphy wrote:
 > 
->> ... btrfsck bombs out with LOTs of errors...
->>
->> How best to recover from this?
->>
->> (This is a 'backup' disk so not 'critical' but it would be nice to avoid
->> rewriting about 1.5TB of data over the network...)
->>
->>
->> Is there an obvious sequence/recipe to follow for recovery?
+> On Sep 28, 2013, at 4:51 PM, Martin <m_btrfs@ml1.co.uk> wrote:
 > 
+
+> Stick with forced 3Gbps, but I think it's worth while to find out
+> what the actual problem is. One day you forget about this 3Gbps SATA
+> link, upgrade or regress to another kernel and you don't have the
+> 3Gbps forced speed on the parameter line, and poof - you've got more
+> problems again. The hardware shouldn't negotiate a 6Gbps link and
+> then do a backwards swan dive at 30,000' with your data as if it's an
+> after thought.
+
+I've got an engineer's curiosity so that one is very definitely marked
+for revisiting at some time... If only to blog that x-y-z combination is
+a tar pit for your data...
+
+
+>> In any case, for the existing HDD - motherboard combination, using
+>> sata2 rather than sata3 speeds shouldn't noticeably impact
+>> performance. (Other than sata2 works reliably and so is infinitely
+>> better for this case!)
 > 
-> I've got the drive reliably working with the sata limited to 3Gbit/s.
-> What is the best sequence to try to tidy-up and carry on with the 1.5TB
-> or so of data on there, rather than working from scratch?
+> It's true.
+
+Well, the IO data rate for badblocks is exactly the same as before,
+limited by the speed of the physical rust spinning and data density...
+
+
+> I would also separately unmount the file system, note the latest
+> kernel message, then mount the file system and see if there are any
+> kernel messages that might indicate recognition of problems with the
+> fs.
 > 
-> 
-> So far, I've only run btrfsck since the corruption...
+> I would not use btrfsck --repair until someone says it's a good idea.
+> That person would not be me.
 
-So...
-
-Any options for btrfsck to fix things?
-
-Or is anything/everything that is fixable automatically fixed on the
-next mount?
-
-Or should:
-
-btrfs scrub /dev/sdX
-
-be run first?
-
-Or?
+It is sat unmounted until some informed opinion is gained...
 
 
-What does btrfs do (or can do) for recovery?
+Thanks again for your notes,
 
-Advice welcomed,
-
-Thanks,
+Regards,
 Martin
 
 

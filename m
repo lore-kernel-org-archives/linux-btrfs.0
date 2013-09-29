@@ -1,92 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54073 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751496Ab3I3Hvx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Sep 2013 03:51:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VQYGm-0004sq-L7
-	for linux-btrfs@vger.kernel.org; Mon, 30 Sep 2013 09:51:52 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 09:51:52 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 09:51:52 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Corrupt btrfs filesystem recovery... What best instructions?
-Date: Mon, 30 Sep 2013 07:51:28 +0000 (UTC)
-Message-ID: <pan$ea530$62f373f9$7645e5f4$cf21d374@cox.net>
-References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org>
-	<l2826k$1uc$1@ger.gmane.org> <pan$69794$b0c00066$a4aa3035$c87a3c3d@cox.net>
-	<l2a635$37m$1@ger.gmane.org> <l2a7km$gi8$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from dkim2.fusionio.com ([66.114.96.54]:43929 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755086Ab3I2Amz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Sep 2013 20:42:55 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 6F1329A0697
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Sep 2013 18:42:55 -0600 (MDT)
+Date: Sat, 28 Sep 2013 20:42:52 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Aastha Mehta <aasthakm@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Questions regarding logging upon fsync in btrfs
+Message-ID: <20130929004252.GL18681@localhost.localdomain>
+References: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin posted on Sun, 29 Sep 2013 22:55:43 +0100 as excerpted:
-
-> On 29/09/13 22:29, Martin wrote:
+On Sun, Sep 29, 2013 at 01:35:15AM +0200, Aastha Mehta wrote:
+> Hi,
 > 
->> Looking up what's available for Gentoo, the maintainers there look to
->> be nicely sharp with multiple versions available all the way up to
->> kernel 3.11.2...
-
-Cool, another gentooer! =:^)
-
-> That is being pulled in now as expected:
+> I have few questions regarding logging triggered by calling fsync in BTRFS:
 > 
-> sys-kernel/gentoo-sources-3.11.2
-
-FWIW, I've been doing my own kernels (mainline) since back on mandrake a 
-decade ago, and I just changed up my scripts a bit when I switched to 
-gentoo.  Then later on I changed them up a bit more to be able to run git 
-kernels.  These days I normally first try (and switch to if no serious 
-bugs) to the dev kernel around -rc2 or so, by which point I figure 
-anything likely to eat my system for breakfast should be either worked 
-thru, or at least news of it available.  As a non-dev, it's very cool 
-being able to spot and report bugs, possibly bisecting to a specific 
-commit, and watch them get fixed before general kernel release. Just one 
-way I as a non-dev can contribute back.  =:^)
-
-To take care of packages that depend on a kernel package, I used to have 
-a kernel (gentoo-sources-2.6.9999 or some such, back then, now of course 
-it'd be 3.9999) in package.provided, but these days I don't even need 
-that. =:^)
-
->> There's also the latest available from btrfs tools with
->> sys-fs/btrfs-progs "9999"...
+> 1. If I understand correctly, fsync will call to log entire inode in
+> the log tree. Does this mean that the data extents are also logged
+> into the log tree? Are they copied into the log tree, or just
+> referenced? Are they copied into the subvolume's extent tree again
+> upon replay?
 > 
-> Oddly, that caused emerge to report:
+
+The data extents are copied as well, as in the metadata that points to the data,
+not the actual data itself.  For 3.1 it's all of the extents in the inode, in
+3.8 on it's only the extents that have changed this transaction.
+
+> 2. During replay, when the extents are added into the extent
+> allocation tree, do they acquire the physical extent number during
+> replay? Does they physical extent allocated to the data in the log
+> tree differ from that in the subvolume?
 > 
-> [ebuild     UD ] sys-fs/btrfs-progs-0.19.11 [0.20_rc1_p358] 0 kB
+
+No the physical location was picked when we wrote the data out during fsync.  If
+we crash and re-mount the replay will just insert the ref into the extent tree
+for the disk offset as it replays the extents.
+
+> 3. I see there is a mount option of notreelog available. After
+> disabling tree logging, does fsync still lead to flushing of buffers
+> to the disk directly?
 > 
-> which is a *downgrade*. Hence, I'm keeping with the 0.20_rc1_p358.
 
-btrfs-progs-9999 is available, but as a live package, it's masked in 
-keeping with gentoo policy.  So to get it you'd need to unmask it.
+notreelog just means that we write the data and wait on the ordered data extents
+and then commit the transaction.  So you get the data for the inode you are
+fsycning and all of the metadata for the entire file system that has changed in
+that transaction.
 
-But 0.20_rc1_p358 shouldn't be /too/ far back.  In fact, I'm guessing the 
-p-number is the (serialized) patch sequence number indicating the number 
-of commits forward from the rc1 tag.  And on the (locally unmasked) -9999 
-version here, a git describe --tags gives me
+> 4. Is it possible to selectively identify certain files in the log
+> tree and flush them to disk directly, without waiting for the replay
+> to do it?
+> 
 
-v0.20-rc1-358-g194aa4a
+I don't understand this question, replay only happens on mount after a
+crash/power loss, and everything is replayed that is in the log, there is no way
+to select which inode is replayed.  Thanks,
 
-... so 0.20_rc1_p358 is very likely identical to the live version at this 
-point, and it makes no difference, except that the non-live version is a 
-stable snapshot instead of a version that might change every time you 
-merge it, if upstream has done any further commits.
-
-So btrfs-progs-0.20_rc1_p358 should be fine.  And you were updating 
-kernel to 3.11.2, so that should be fine by the time you read this, as 
-well. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Josef

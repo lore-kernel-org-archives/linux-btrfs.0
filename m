@@ -1,30 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33340 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753466Ab3I2Cay (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45765 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753681Ab3I2Cdh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 22:30:54 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8T2UqKj022687
+	Sat, 28 Sep 2013 22:33:37 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8T2Xami020543
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:30:53 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2UpOo025517
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:37 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2XZJw012568
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:30:52 GMT
-Received: from abhmt114.oracle.com (abhmt114.oracle.com [141.146.116.66])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2UpND011276
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:30:51 GMT
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:36 GMT
+Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2XZ9R009976
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:35 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix memory leak of chunks' extent map
-Date: Sun, 29 Sep 2013 10:30:43 +0800
-Message-Id: <1380421843-4563-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: fix memory leak of chunks' extent map
+Date: Sun, 29 Sep 2013 10:33:16 +0800
+Message-Id: <1380421996-4684-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As we're hold a ref on looking up the extent map, we need to drop the ref
+before returning to callers.
+
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: add the missing changelog.
+
  fs/btrfs/volumes.c | 2 ++
  1 file changed, 2 insertions(+)
 

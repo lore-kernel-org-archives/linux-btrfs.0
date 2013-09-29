@@ -1,80 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45744 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35124 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753618Ab3I2CbX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 22:31:23 -0400
+	id S1751073Ab3I2FL4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Sep 2013 01:11:56 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VQ6n2-0000ZF-Qm
-	for linux-btrfs@vger.kernel.org; Sun, 29 Sep 2013 04:31:20 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+	id 1VQ9IQ-0005fO-1u
+	for linux-btrfs@vger.kernel.org; Sun, 29 Sep 2013 07:11:54 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:31:20 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 07:11:54 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 04:31:20 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 07:11:54 +0200
 To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Corrupt btrfs filesystem recovery... (Due to *sata* errors)
-Date: Sun, 29 Sep 2013 03:31:10 +0100
-Message-ID: <l283d5$egr$1@ger.gmane.org>
-References: <l27agq$u5a$1@ger.gmane.org> <87F045E8-CBB5-4818-B60B-0325EC87A56D@colorremedies.com> <l27mgf$qmn$1@ger.gmane.org> <53F0C9F1-BF66-47DA-BAE9-7E0C3B7030EF@colorremedies.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Corrupt btrfs filesystem recovery... What best instructions?
+Date: Sun, 29 Sep 2013 05:11:35 +0000 (UTC)
+Message-ID: <pan$69794$b0c00066$a4aa3035$c87a3c3d@cox.net>
+References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org>
+	<l2826k$1uc$1@ger.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-In-Reply-To: <53F0C9F1-BF66-47DA-BAE9-7E0C3B7030EF@colorremedies.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
+Martin posted on Sun, 29 Sep 2013 03:10:37 +0100 as excerpted:
 
-Thanks for good comment/discussion.
-
-On 29/09/13 03:06, Chris Murphy wrote:
+> So...
 > 
-> On Sep 28, 2013, at 4:51 PM, Martin <m_btrfs@ml1.co.uk> wrote:
+> Any options for btrfsck to fix things?
 > 
-
-> Stick with forced 3Gbps, but I think it's worth while to find out
-> what the actual problem is. One day you forget about this 3Gbps SATA
-> link, upgrade or regress to another kernel and you don't have the
-> 3Gbps forced speed on the parameter line, and poof - you've got more
-> problems again. The hardware shouldn't negotiate a 6Gbps link and
-> then do a backwards swan dive at 30,000' with your data as if it's an
-> after thought.
-
-I've got an engineer's curiosity so that one is very definitely marked
-for revisiting at some time... If only to blog that x-y-z combination is
-a tar pit for your data...
-
-
->> In any case, for the existing HDD - motherboard combination, using
->> sata2 rather than sata3 speeds shouldn't noticeably impact
->> performance. (Other than sata2 works reliably and so is infinitely
->> better for this case!)
+> Or is anything/everything that is fixable automatically fixed on the
+> next mount?
 > 
-> It's true.
-
-Well, the IO data rate for badblocks is exactly the same as before,
-limited by the speed of the physical rust spinning and data density...
-
-
-> I would also separately unmount the file system, note the latest
-> kernel message, then mount the file system and see if there are any
-> kernel messages that might indicate recognition of problems with the
-> fs.
+> Or should:
 > 
-> I would not use btrfsck --repair until someone says it's a good idea.
-> That person would not be me.
+> btrfs scrub /dev/sdX
+> 
+> be run first?
+> 
+> Or?
+> 
+> 
+> What does btrfs do (or can do) for recovery?
 
-It is sat unmounted until some informed opinion is gained...
+Here's a general-case answer (courtesy gmane) to the order in which to 
+try recovery question, that Hugo posted a few weeks ago:
 
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27999
 
-Thanks again for your notes,
+Note that in specific cases someone who knew what they were doing could 
+omit some steps and focus on others, but I'm not at that level of "know 
+what I'm doing", so...
 
-Regards,
-Martin
+Scrub... would go before this, if it's useful.  But scrub depends on a 
+second, valid copy being available in ordered to fix the bad-checksum 
+one.  On a single device btrfs, btrfs defaults to DUP metadata (unless 
+it's SSD), so you may have a second copy for that, but you won't have a 
+second copy of the data.  This is a very strong reason to go btrfs raid1 
+mode (for both data and metadata) if you can, because that gives you a 
+second copy of everything, thereby actually making use of btrfs' checksum 
+and scrub ability.  (Unfortunately, there is as yet no way to do N-way 
+mirroring, there's only the second copy not a third, no matter how many 
+devices you have in that "raid1".)
 
+Finally, if you mentioned your kernel (and btrfs-tools) version(s) I 
+missed it, but [boilerplate recommendation, stressed repeatedly both in 
+the wiki and on-list] btrfs being still labeled experimental and under 
+serious development, there's still lots of bugs fixed every kernel 
+release.  So as Chris Murphy said, if you're not on 3.11-stable or 3.12-
+rcX already, get there.  Not only can the safety of your data depend on 
+it, but by choosing to run experimental we're all testers, and our 
+reports if something does go wrong will be far more usable if we're on a 
+current kernel.  Similarly, btrfs-tools 0.20-rc1 is already somewhat old; 
+you really should be on a git-snapshot beyond that.  (The master branch 
+is kept stable, work is done in other branches and only merged to master 
+when it's considered suitably stable, so a recently updated btrfs-tools 
+master HEAD is at least in theory always the best possible version you 
+can be running.  If that's ever NOT the case, then testers need to be 
+reporting that ASAP so it can be fixed, too.)
 
+Back to the kernel, it's worth noting that 3.12-rcX includes an option 
+that turns off most btrfs bugons by default.  Unless you're a btrfs 
+developer (which it doesn't sound like you are), you'll want to activate 
+that (turning off the bugons), as they're not helpful for ordinary users 
+and just force unnecessary reboots when something minor and otherwise 
+immediately recoverable goes wrong.  That's just one of the latest fixes.
 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

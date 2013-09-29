@@ -1,118 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22833 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750842Ab3IMM2T (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:46348 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754159Ab3I2PZ5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Sep 2013 08:28:19 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8DCSIOA005326
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 12:28:19 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8DCSHIe009335
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 12:28:17 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by userz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8DCSGdY026135
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Sep 2013 12:28:17 GMT
+	Sun, 29 Sep 2013 11:25:57 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: calculate disk space that a subvol could free upon delete
-Date: Fri, 13 Sep 2013 20:27:58 +0800
-Message-Id: <1379075278-4417-1-git-send-email-anand.jain@oracle.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs-progs: calculate disk space that a subvol could free
+Date: Sun, 29 Sep 2013 23:25:36 +0800
+Message-Id: <1380468336-5170-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
+References: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(This patch is for review and comments only)
+It needs a lot more information about the snapshots if
+snapshot's life cycle has to be all auto managed by
+scripts _some day_.  this patch is a step towards that.
 
-This patch provides a way to know how much space can be
-relinquished if when subvol /snapshot is deleted.  With
-this sys admin can make better judgments in managing the
-filesystem when fs is near full.
-
-as shown below the parameter 'sole space' indicates the size
-which is freed when subvol is deleted. (any other better
-term for this?, pls suggest).
+This patch provides the size which would be freed
+if the subvol/snapshot is deleted.
+preview:
 ---------------------
 btrfs su show /btrfs/sv1
-/btrfs/sv1
-	Name: 			sv1
-	uuid: 			b078ba48-d4a5-2f49-ac03-9bd1d56cc768
-	Parent uuid: 		-
-	Creation time: 		2013-09-13 18:17:32
-	Object ID: 		257
-	Generation (Gen): 	18
-	Gen at creation: 	17
-	Parent: 		5
-	Top Level: 		5
-	Flags: 			-
-	Sole space: 		1.56MiB <----
-	Snapshot(s):
-
-btrfs su snap /btrfs/sv1 /btrfs/ss2
-Create a snapshot of '/btrfs/sv1' in '/btrfs/ss2'
-
-btrfs su show /btrfs/sv1
-/btrfs/sv1
-	Name: 			sv1
-	uuid: 			b078ba48-d4a5-2f49-ac03-9bd1d56cc768
-	Parent uuid: 		-
-	Creation time: 		2013-09-13 18:17:32
-	Object ID: 		257
-	Generation (Gen): 	19
-	Gen at creation: 	17
-	Parent: 		5
-	Top Level: 		5
-	Flags: 			-
-	Sole space: 		0.00  <-----
-	Snapshot(s):
-				ss2
+::
+	Unshared space: 	89.09MiB
 ---------------------
+
+v2: rename to 'unshared space' and edit commit text
+    worked on review comments
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-subvolume.c |   5 ++
+ cmds-subvolume.c |   2 +
  utils.c          | 154 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
  utils.h          |   1 +
- 3 files changed, 160 insertions(+)
+ 3 files changed, 157 insertions(+)
 
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index de246ab..2b02d66 100644
+index de246ab..d801e00 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -809,6 +809,7 @@ static int cmd_subvol_show(int argc, char **argv)
- 	int fd = -1, mntfd = -1;
- 	int ret = 1;
- 	DIR *dirstream1 = NULL, *dirstream2 = NULL;
-+	u64 freeable_bytes;
- 
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_subvol_show_usage);
-@@ -878,6 +879,8 @@ static int cmd_subvol_show(int argc, char **argv)
- 		goto out;
- 	}
- 
-+	freeable_bytes = get_subvol_freeable_bytes(fd);
-+
- 	ret = 0;
- 	/* print the info */
- 	printf("%s\n", fullpath);
-@@ -915,6 +918,8 @@ static int cmd_subvol_show(int argc, char **argv)
+@@ -915,6 +915,8 @@ static int cmd_subvol_show(int argc, char **argv)
  	else
  		printf("\tFlags: \t\t\t-\n");
  
-+	printf("\tSole space: \t\t%s\n",
-+		pretty_size(freeable_bytes));
++	printf("\tUnshared space: \t%s\n",
++		pretty_size(get_subvol_freeable_bytes(fd)));
  	/* print the snapshots of the given subvol if any*/
  	printf("\tSnapshot(s):\n");
  	filter_set = btrfs_list_alloc_filter_set();
 diff --git a/utils.c b/utils.c
-index 22c3310..f01d580 100644
+index ccb5199..ca30485 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -2019,3 +2019,157 @@ int is_dev_excl_op_free(int fd)
- 	ret = ioctl(fd, BTRFS_IOC_CHECK_DEV_EXCL_OPS, NULL);
- 	return ret > 0 ? ret : -errno;
+@@ -2062,3 +2062,157 @@ int lookup_ino_rootid(int fd, u64 *rootid)
+ 
+ 	return 0;
  }
 +
 +/* gets the ref count for given extent
@@ -269,14 +214,15 @@ index 22c3310..f01d580 100644
 +	return size_bytes;
 +}
 diff --git a/utils.h b/utils.h
-index 6952d34..0920bb3 100644
+index 0f31db7..4ddcf09 100644
 --- a/utils.h
 +++ b/utils.h
-@@ -86,4 +86,5 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
- 			   int verify);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
- int is_dev_excl_op_free(int fd);
+@@ -91,5 +91,6 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ int ask_user(char *question);
+ int lookup_ino_rootid(int fd, u64 *rootid);
+ int btrfs_scan_lblkid(int update_kernel);
 +u64 get_subvol_freeable_bytes(int fd);
+ 
  #endif
 -- 
 1.8.4.rc4.1.g0d8beaa

@@ -1,68 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:43929 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755086Ab3I2Amz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 20:42:55 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 6F1329A0697
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Sep 2013 18:42:55 -0600 (MDT)
-Date: Sat, 28 Sep 2013 20:42:52 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Aastha Mehta <aasthakm@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Questions regarding logging upon fsync in btrfs
-Message-ID: <20130929004252.GL18681@localhost.localdomain>
-References: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37453 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752855Ab3I3O1j convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Sep 2013 10:27:39 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:63395 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VQeRh-000iEk-TJ
+	for linux-btrfs@vger.kernel.org; Mon, 30 Sep 2013 08:27:34 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Progress of device deletion?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <alpine.DEB.2.10.1309290902050.24007@shack.dolda2000.com>
+Date: Mon, 30 Sep 2013 08:27:30 -0600
+Message-Id: <2E504581-FA34-425A-B14B-EF3F16FC655C@colorremedies.com>
+References: <alpine.DEB.2.10.1309290902050.24007@shack.dolda2000.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 29, 2013 at 01:35:15AM +0200, Aastha Mehta wrote:
-> Hi,
+
+On Sep 29, 2013, at 1:13 AM, Fredrik Tolf <fredrik@dolda2000.com> wrote:
 > 
-> I have few questions regarding logging triggered by calling fsync in BTRFS:
-> 
-> 1. If I understand correctly, fsync will call to log entire inode in
-> the log tree. Does this mean that the data extents are also logged
-> into the log tree? Are they copied into the log tree, or just
-> referenced? Are they copied into the subvolume's extent tree again
-> upon replay?
-> 
+> Is there any way I can find out what's going on?
 
-The data extents are copied as well, as in the metadata that points to the data,
-not the actual data itself.  For 3.1 it's all of the extents in the inode, in
-3.8 on it's only the extents that have changed this transaction.
+For whatever reason, it started out with every drive practically full, in terms of chunk allocation.
 
-> 2. During replay, when the extents are added into the extent
-> allocation tree, do they acquire the physical extent number during
-> replay? Does they physical extent allocated to the data in the log
-> tree differ from that in the subvolume?
-> 
+e.g.        devid    5 size 2.73TB used 2.71TB path /dev/sdh1
 
-No the physical location was picked when we wrote the data out during fsync.  If
-we crash and re-mount the replay will just insert the ref into the extent tree
-for the disk offset as it replays the extents.
+I don't know if the code works this way, but it needs to do a balance (or partial one) to make room before it can start migrating actual complete chunks from 4 disks to 2 disks. And my guess is that it's not yet done balancing sdg1 still.
 
-> 3. I see there is a mount option of notreelog available. After
-> disabling tree logging, does fsync still lead to flushing of buffers
-> to the disk directly?
-> 
+Post kernel version, btrfs-progs version, and dmesg from the time the delete command was initiated.
 
-notreelog just means that we write the data and wait on the ordered data extents
-and then commit the transaction.  So you get the data for the inode you are
-fsycning and all of the metadata for the entire file system that has changed in
-that transaction.
 
-> 4. Is it possible to selectively identify certain files in the log
-> tree and flush them to disk directly, without waiting for the replay
-> to do it?
-> 
-
-I don't understand this question, replay only happens on mount after a
-crash/power loss, and everything is replayed that is in the log, there is no way
-to select which inode is replayed.  Thanks,
-
-Josef
+Chris Murphy

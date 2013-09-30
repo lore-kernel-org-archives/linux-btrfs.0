@@ -1,208 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37356 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753150Ab3JZTYQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Oct 2013 15:24:16 -0400
-Message-ID: <526C16D4.2020909@suse.com>
-Date: Sat, 26 Oct 2013 15:24:04 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from mail-la0-f52.google.com ([209.85.215.52]:48614 "EHLO
+	mail-la0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756179Ab3I3WDH convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Sep 2013 18:03:07 -0400
+Received: by mail-la0-f52.google.com with SMTP id ev20so5019460lab.39
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 15:03:05 -0700 (PDT)
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [patch 3/7] btrfs: Add per-super attributes to sysfs
-References: <20130910042408.335071038@suse.com>	<20130910043007.783624453@suse.com> <CAOcd+r0NC4s3=PN-i+TpPvJRA-_AxeiU3Z1KTgKWx+4b55LOAg@mail.gmail.com>
-In-Reply-To: <CAOcd+r0NC4s3=PN-i+TpPvJRA-_AxeiU3Z1KTgKWx+4b55LOAg@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <20130930215802.GB10831@lenny.home.zabbo.net>
+References: <CAOEw3RbDhA9_VhkuiewMWCXg5z4jqM9hR_=Uvq61a2A-w0vZxA@mail.gmail.com>
+	<20130930215802.GB10831@lenny.home.zabbo.net>
+Date: Tue, 1 Oct 2013 00:03:05 +0200
+Message-ID: <CAOEw3Ratb6S_ddzvFwBG4cuk_20chFKwcXqQ9M4RNOdtSbC4Ng@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: init device stats for new devices
+From: =?ISO-8859-2?Q?Ond=F8ej_Kunc?= <kunc88@gmail.com>
+To: Zach Brown <zab@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-2
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/26/13, 3:00 PM, Alex Lyakas wrote:
-> Hi Jeff,
+Hi Zach,
+
+thank you for your answer and clarification. I cannot just unmount and
+mount that filesystem, because it is running busy NFS server now, so I
+will just try it on some testbench server. Can mount -o remount be
+sufficient (to prevent stopping service, umount, mount and starting
+service) ?
+
+Thank you
+
+Ondøej
+
+2013/9/30 Zach Brown <zab@redhat.com>:
+>> I discovered one minor bug in BTRFS filesystem.
 >
-> On Tue, Sep 10, 2013 at 7:24 AM, Jeff Mahoney <jeffm@suse.com> wrote:
->> This patch adds per-super attributes to sysfs.
->>
->> It doesn't publish any attributes yet, but does the proper lifetime
->> handling as well as the basic infrastructure to add new attributes.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>   fs/btrfs/ctree.h |    2 +
->>   fs/btrfs/super.c |   13 +++++++++++-
->>   fs/btrfs/sysfs.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   fs/btrfs/sysfs.h |   19 ++++++++++++++++++
->>   4 files changed, 91 insertions(+), 1 deletion(-)
->>
->> --- a/fs/btrfs/ctree.h  2013-09-10 00:09:12.990087784 -0400
->> +++ b/fs/btrfs/ctree.h  2013-09-10 00:09:35.521794520 -0400
->> @@ -3694,6 +3694,8 @@ int btrfs_defrag_leaves(struct btrfs_tra
->>   /* sysfs.c */
->>   int btrfs_init_sysfs(void);
->>   void btrfs_exit_sysfs(void);
->> +int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info);
->> +void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info);
->>
->>   /* xattr.c */
->>   ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
->> --- a/fs/btrfs/super.c  2013-09-10 00:09:12.994087730 -0400
->> +++ b/fs/btrfs/super.c  2013-09-10 00:09:35.525794464 -0400
->> @@ -301,6 +301,8 @@ void __btrfs_panic(struct btrfs_fs_info
->>
->>   static void btrfs_put_super(struct super_block *sb)
->>   {
->> +       btrfs_sysfs_remove_one(btrfs_sb(sb));
->> +
->>          (void)close_ctree(btrfs_sb(sb)->tree_root);
->>          /* FIXME: need to fix VFS to return error? */
->>          /* AV: return it _where_?  ->put_super() can be triggered by any number
->> @@ -1143,8 +1145,17 @@ static struct dentry *btrfs_mount(struct
->>          }
->>
->>          root = !error ? get_default_root(s, subvol_objectid) : ERR_PTR(error);
->> -       if (IS_ERR(root))
->> +       if (IS_ERR(root)) {
->>                  deactivate_locked_super(s);
->> +               return root;
->> +       }
->> +
->> +       error = btrfs_sysfs_add_one(fs_info);
->> +       if (error) {
->> +               dput(root);
->> +               deactivate_locked_super(s);
->> +               return ERR_PTR(error);
->> +       }
->>
->>          return root;
->>
->> --- a/fs/btrfs/sysfs.c  2013-09-10 00:09:13.002087628 -0400
->> +++ b/fs/btrfs/sysfs.c  2013-09-10 00:09:49.501616538 -0400
->> @@ -61,6 +61,64 @@ static struct attribute *btrfs_supp_feat
->>          NULL
->>   };
->>
->> +static struct attribute *btrfs_attrs[] = {
->> +       NULL,
->> +};
->> +
->> +static void btrfs_fs_info_release(struct kobject *kobj)
->> +{
->> +       struct btrfs_fs_info *fs_info;
->> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
->> +       complete(&fs_info->kobj_unregister);
->> +}
->> +
->> +static ssize_t btrfs_attr_show(struct kobject *kobj,
->> +                              struct attribute *attr, char *buf)
->> +{
->> +       struct btrfs_attr *a = container_of(attr, struct btrfs_attr, attr);
->> +       struct btrfs_fs_info *fs_info;
->> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
->> +
->> +       return a->show ? a->show(a, fs_info, buf) : 0;
->> +}
->> +
->> +static ssize_t btrfs_attr_store(struct kobject *kobj,
->> +                               struct attribute *attr,
->> +                               const char *buf, size_t len)
->> +{
->> +       struct btrfs_attr *a = container_of(attr, struct btrfs_attr, attr);
->> +       struct btrfs_fs_info *fs_info;
->> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
->> +
->> +       return a->store ? a->store(a, fs_info, buf, len) : 0;
->> +}
->> +
->> +static const struct sysfs_ops btrfs_attr_ops = {
->> +       .show = btrfs_attr_show,
->> +       .store = btrfs_attr_store,
->> +};
->> +
->> +static struct kobj_type btrfs_ktype = {
->> +       .default_attrs  = btrfs_attrs,
->> +       .sysfs_ops      = &btrfs_attr_ops,
->> +       .release        = btrfs_fs_info_release,
->> +};
->> +
->> +int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
->> +{
->> +       init_completion(&fs_info->kobj_unregister);
->> +       fs_info->super_kobj.kset = btrfs_kset;
->> +       return kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
->> +                                   "%pU", fs_info->fsid);
->> +}
->> +
->> +void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
->> +{
->> +       kobject_del(&fs_info->super_kobj);
-> Is there a reason for this explicit call? The last kobject_put will do
-> this automatically, no?
-
-This should be the last reference, but even if it's not, it should be 
-removed from sysfs here. Otherwise, I suppose it's personal preference. 
-The call to kobject_del in kobject_release will also drop a debugging 
-message if kobject debugging is enabled.
-
--Jeff
-
-
->> +       kobject_put(&fs_info->super_kobj);
->> +       wait_for_completion(&fs_info->kobj_unregister);
->> +}
->> +
->>   static void btrfs_supp_feat_release(struct kobject *kobj)
->>   {
->>          complete(&btrfs_feat->f_kobj_unregister);
->> --- a/fs/btrfs/sysfs.h  2013-09-10 00:09:13.002087628 -0400
->> +++ b/fs/btrfs/sysfs.h  2013-09-10 00:09:35.525794464 -0400
->> @@ -8,6 +8,24 @@ enum btrfs_feature_set {
->>          FEAT_MAX
->>   };
->>
->> +struct btrfs_attr {
->> +       struct attribute attr;
->> +       ssize_t (*show)(struct btrfs_attr *, struct btrfs_fs_info *, char *);
->> +       ssize_t (*store)(struct btrfs_attr *, struct btrfs_fs_info *,
->> +                        const char *, size_t);
->> +};
->> +
->> +#define __INIT_BTRFS_ATTR(_name, _mode, _show, _store)                 \
->> +{                                                                      \
->> +       .attr   = { .name = __stringify(_name), .mode = _mode },        \
->> +       .show   = _show,                                                \
->> +       .store  = _store,                                               \
->> +}
->> +
->> +#define BTRFS_ATTR(_name, _mode, _show, _store)                                \
->> +static struct btrfs_attr btrfs_attr_##_name =                          \
->> +                       __INIT_BTRFS_ATTR(_name, _mode, _show, _store)
->> +
->>   struct btrfs_feature_attr {
->>          struct attribute attr;                  /* global show, no store */
->>          enum btrfs_feature_set feature_set;
->> @@ -31,6 +49,7 @@ static struct btrfs_feature_attr btrfs_a
->>   #define BTRFS_SUPP_FEAT_LIST(_name)    (&btrfs_attr_##_name.attr),
->>
->>   /* convert from attribute */
->> +#define to_btrfs_attr(a) container_of(a, struct btrfs_attr, attr)
->>   #define to_btrfs_feature_attr(a) \
->>                          container_of(a, struct btrfs_feature_attr, attr)
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> You sure did.
 >
-> Thanks,
-> Alex,
+>> ERROR: ioctl(BTRFS_IOC_GET_DEV_STATS) on /dev/sde failed: No such device
+>>
+>> But this is not true ... all specified devices exist and are members
+>> of btrfs filesystem. In dmesg I see this:
+>> ...
+>> [973077.099118] btrfs: get dev_stats failed, not yet valid
+>> ....
+>>
+>> What makes device statistics valid ? I tried doing full filesystem
+>> scrub ... but it did not fix that issue.
+>
+> The stats are only initialized (considered valid) for devices that are
+> known at mount.  You could unmount and mount after adding (or replacing)
+> new devices and they'd start returning stats.
+>
+> The following (bad) patch illustrates the problem, but the code should
+> be restructured so stats are reliably read as devices are added.
+>
+> - z
+>
+> From: Zach Brown <zab@redhat.com>
+> Date: Mon, 30 Sep 2013 17:48:05 -0400
+> Subject: [PATCH] btrfs: init device stats for new devices
+>
+> Device stats are only initialized (read from tree items) on mount.
+> Trying to read device stats after adding or replacing new devices will
+> return errors.
+>
+> This cheesy patch demonstrates the problem, but this should really be a
+> natural side-effect of adding devices to the fs_devices list.  We have
+> evidence that trying to do it by hand doesn't work.
+>
+> Any preferences for how to restructure this?
+> ---
+>  fs/btrfs/dev-replace.c | 4 +++-
+>  fs/btrfs/volumes.c     | 6 ++++++
+>  2 files changed, 9 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 5d84443..7309096 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -556,7 +556,9 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>
+>         mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+>
+> -       return 0;
+> +       ret = btrfs_init_dev_stats(root->fs_info);
+> +
+> +       return ret;
+>  }
+>
+>  static void btrfs_dev_replace_update_device_in_mapping_tree(
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 0431147..e4ccc9b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2126,6 +2126,9 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>                 ret = btrfs_commit_transaction(trans, root);
+>         }
+>
+> +       if (!ret)
+> +               ret = btrfs_init_dev_stats(root->fs_info);
+> +
+>         return ret;
+>
+>  error_trans:
+> @@ -6060,6 +6063,9 @@ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info)
+>                 int item_size;
+>                 struct btrfs_dev_stats_item *ptr;
+>
+> +               if (device->dev_stats_valid)
+> +                       continue;
+> +
+>                 key.objectid = 0;
+>                 key.type = BTRFS_DEV_STATS_KEY;
+>                 key.offset = device->devid;
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+> 1.7.11.7
+
 
 
 -- 
-Jeff Mahoney
-SUSE Labs
+Ondøej Kunc

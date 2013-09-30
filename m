@@ -1,58 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45765 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753681Ab3I2Cdh (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43374 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753431Ab3I3MkI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Sep 2013 22:33:37 -0400
+	Mon, 30 Sep 2013 08:40:08 -0400
 Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8T2Xami020543
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r8UCe7N6013539
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:37 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 12:40:07 GMT
 Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2XZJw012568
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8UCe66P027207
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:36 GMT
-Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8T2XZ9R009976
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Sep 2013 02:33:35 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 12:40:06 GMT
+Received: from abhmt112.oracle.com (abhmt112.oracle.com [141.146.116.64])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r8UCe69n006855
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 12:40:06 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix memory leak of chunks' extent map
-Date: Sun, 29 Sep 2013 10:33:16 +0800
-Message-Id: <1380421996-4684-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs: fix crash of compressed writes
+Date: Mon, 30 Sep 2013 20:39:57 +0800
+Message-Id: <1380544797-29798-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we're hold a ref on looking up the extent map, we need to drop the ref
-before returning to callers.
+The crash[1] is found by xfstests/generic/208 with "-o compress",
+it's not reproduced everytime, but it does panic.
+
+The bug is quite interesting, it's actually introduced by a recent commit
+(573aecafca1cf7a974231b759197a1aebcf39c2a,
+Btrfs: actually limit the size of delalloc range).
+
+Btrfs implements delay allocation, so during writeback, we
+(1) get a page A and lock it
+(2) search the state tree for delalloc bytes and lock all pages within the range
+(3) process the delalloc range, including find disk space and create
+    ordered extent and so on.
+(4) submit the page A.
+
+It runs well in normal cases, but if we're in a racy case, eg.
+buffered compressed writes and aio-dio writes,
+sometimes we may fail to lock all pages in the 'delalloc' range,
+in which case, we need to fall back to search the state tree again with
+a smaller range limit(max_bytes = PAGE_CACHE_SIZE - offset).
+
+The mentioned commit has a side effect, that is, in the fallback case,
+we can find delalloc bytes before the index of the page we already have locked,
+so we're in the case of (delalloc_end <= *start) and return with (found > 0).
+
+This ends with not locking delalloc pages but making ->writepage still
+process them, and the crash happens.
+
+This fixes it by not enforcing the 'max_bytes' limit in the special fallback
+case.
+
+[1]:
+------------[ cut here ]------------
+kernel BUG at mm/page-writeback.c:2170!
+[...]
+CPU: 2 PID: 11755 Comm: btrfs-delalloc- Tainted: G           O 3.11.0+ #8
+[...]
+RIP: 0010:[<ffffffff810f5093>]  [<ffffffff810f5093>] clear_page_dirty_for_io+0x1e/0x83
+[...]
+[ 4934.248731] Stack:
+[ 4934.248731]  ffff8801477e5dc8 ffffea00049b9f00 ffff8801869f9ce8 ffffffffa02b841a
+[ 4934.248731]  0000000000000000 0000000000000000 0000000000000fff 0000000000000620
+[ 4934.248731]  ffff88018db59c78 ffffea0005da8d40 ffffffffa02ff860 00000001810016c0
+[ 4934.248731] Call Trace:
+[ 4934.248731]  [<ffffffffa02b841a>] extent_range_clear_dirty_for_io+0xcf/0xf5 [btrfs]
+[ 4934.248731]  [<ffffffffa02a8889>] compress_file_range+0x1dc/0x4cb [btrfs]
+[ 4934.248731]  [<ffffffff8104f7af>] ? detach_if_pending+0x22/0x4b
+[ 4934.248731]  [<ffffffffa02a8bad>] async_cow_start+0x35/0x53 [btrfs]
+[ 4934.248731]  [<ffffffffa02c694b>] worker_loop+0x14b/0x48c [btrfs]
+[ 4934.248731]  [<ffffffffa02c6800>] ? btrfs_queue_worker+0x25c/0x25c [btrfs]
+[ 4934.248731]  [<ffffffff810608f5>] kthread+0x8d/0x95
+[ 4934.248731]  [<ffffffff81060868>] ? kthread_freezable_should_stop+0x43/0x43
+[ 4934.248731]  [<ffffffff814fe09c>] ret_from_fork+0x7c/0xb0
+[ 4934.248731]  [<ffffffff81060868>] ? kthread_freezable_should_stop+0x43/0x43
+[ 4934.248731] Code: ff 85 c0 0f 94 c0 0f b6 c0 59 5b 5d c3 0f 1f 44 00 00 55 48 89 e5 41 54 53 48 89 fb e8 2c de 00 00 49 89 c4 48 8b 03 a8 01 75 02 <0f> 0b 4d 85 e4 74 52 49 8b 84 24 80 00 00 00 f6 40 20 01 75 44
+[ 4934.248731] RIP  [<ffffffff810f5093>] clear_page_dirty_for_io+0x1e/0x83
+[ 4934.248731]  RSP <ffff8801869f9c48>
+[ 4934.280307] ---[ end trace 36f06d3f8750236a ]---
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-v2: add the missing changelog.
+ fs/btrfs/extent_io.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0431147..ee1fdac 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4483,6 +4483,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 		btrfs_crit(fs_info, "Invalid mapping for %Lu-%Lu, got "
- 			    "%Lu-%Lu\n", logical, logical+len, em->start,
- 			    em->start + em->len);
-+		free_extent_map(em);
- 		return 1;
- 	}
- 
-@@ -4663,6 +4664,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		btrfs_crit(fs_info, "found a bad mapping, wanted %Lu, "
- 			   "found %Lu-%Lu\n", logical, em->start,
- 			   em->start + em->len);
-+		free_extent_map(em);
- 		return -EINVAL;
- 	}
- 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c09a40d..76a977e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1483,7 +1483,12 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
+ 		node = rb_next(node);
+ 		total_bytes += state->end - state->start + 1;
+ 		if (total_bytes >= max_bytes) {
+-			*end = *start + max_bytes - 1;
++			/*
++			 * tell if we fall back from the failure of
++			 * lock_delalloc_pages()
++			 */
++			if (max_bytes > PAGE_CACHE_SIZE)
++				*end = *start + max_bytes - 1;
+ 			break;
+ 		}
+ 		if (!node)
 -- 
 1.8.1.4
 

@@ -1,311 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:33406 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932141Ab3I3UbU (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:48704 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756548Ab3I3Urk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Sep 2013 16:31:20 -0400
-Received: by mail-ie0-f170.google.com with SMTP id x13so11858485ief.29
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 13:31:19 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20130930201125.GA27490@localhost.localdomain>
-References: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
- <20130929004252.GL18681@localhost.localdomain> <CAEx9m440QMtfkaZjc5Qgu6jv+TsejheKG5nVuYhAEe_vqgp0MQ@mail.gmail.com>
- <20130929131224.GM18681@localhost.localdomain> <CAEx9m47a_kXvsmOOvSud8ERycB-5D04Nu0ZTHgYzP8RtawBYgg@mail.gmail.com>
- <20130930201125.GA27490@localhost.localdomain>
-From: Aastha Mehta <aasthakm@gmail.com>
-Date: Mon, 30 Sep 2013 22:30:59 +0200
-Message-ID: <CAEx9m47DFKxUQP6k6qdei1FpPe17hyGGGxZNbANZPiK9qrKoxw@mail.gmail.com>
+	Mon, 30 Sep 2013 16:47:40 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 5D8A47C0445
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2013 14:47:40 -0600 (MDT)
+Date: Mon, 30 Sep 2013 16:47:38 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Aastha Mehta <aasthakm@gmail.com>
+CC: Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Questions regarding logging upon fsync in btrfs
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary=047d7b414254fb221b04e79fb7e0
+Message-ID: <20130930204738.GB27490@localhost.localdomain>
+References: <CAEx9m45FDjNCBLEYM0x7fY36R7QJesS0F-fzWzNi=d_cBSOjOQ@mail.gmail.com>
+ <20130929004252.GL18681@localhost.localdomain>
+ <CAEx9m440QMtfkaZjc5Qgu6jv+TsejheKG5nVuYhAEe_vqgp0MQ@mail.gmail.com>
+ <20130929131224.GM18681@localhost.localdomain>
+ <CAEx9m47a_kXvsmOOvSud8ERycB-5D04Nu0ZTHgYzP8RtawBYgg@mail.gmail.com>
+ <20130930201125.GA27490@localhost.localdomain>
+ <CAEx9m47DFKxUQP6k6qdei1FpPe17hyGGGxZNbANZPiK9qrKoxw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAEx9m47DFKxUQP6k6qdei1FpPe17hyGGGxZNbANZPiK9qrKoxw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---047d7b414254fb221b04e79fb7e0
-Content-Type: text/plain; charset=ISO-8859-1
+On Mon, Sep 30, 2013 at 10:30:59PM +0200, Aastha Mehta wrote:
+> On 30 September 2013 22:11, Josef Bacik <jbacik@fusionio.com> wrote:
+> > On Mon, Sep 30, 2013 at 09:32:54PM +0200, Aastha Mehta wrote:
+> >> On 29 September 2013 15:12, Josef Bacik <jbacik@fusionio.com> wrote:
+> >> > On Sun, Sep 29, 2013 at 11:22:36AM +0200, Aastha Mehta wrote:
+> >> >> Thank you very much for the reply. That clarifies a lot of things.
+> >> >>
+> >> >> I was trying a small test case that opens a file, writes a block of
+> >> >> data, calls fsync and then closes the file. If I understand correctly,
+> >> >> fsync would return only after all in-memory buffers have been
+> >> >> committed to disk. I have added few print statements in the
+> >> >> __extent_writepage function, and I notice that the function gets
+> >> >> called a bit later after fsync returns. It seems that I am not
+> >> >> guaranteed to see the data going to disk by the time fsync returns.
+> >> >>
+> >> >> Am I doing something wrong, or am I looking at the wrong place for
+> >> >> disk write? This happens both with tree logging enabled as well as
+> >> >> with notreelog.
+> >> >>
+> >> >
+> >> > So 3.1 was a long time ago and to be sure it had issues I don't think it was
+> >> > _that_ broken.  You are probably better off instrumenting a recent kernel, 3.11
+> >> > or just build btrfs-next from git.  But if I were to make a guess I'd say that
+> >> > __extent_writepage was how both data and metadata was written out at the time (I
+> >> > don't think I changed it until 3.2 or something later) so what you are likely
+> >> > seeing is the normal transaction commit after the fsync.  In the case of
+> >> > notreelog we are likely starting another transaction and you are seeing that
+> >> > commit (at the time the transaction kthread would start a transaction even if
+> >> > none had been started yet.)  Thanks,
+> >> >
+> >> > Josef
+> >>
+> >> Is there any special handling for very small file write, less than 4K? As
+> >> I understand there is an optimization to inline the first extent in a file if
+> >> it is smaller than 4K, does it affect the writeback on fsync as well? I did
+> >> set the max_inline mount option to 0, but even then it seems there is
+> >> some difference in fsync behaviour for writing first extent of less than 4K
+> >> size and writing 4K or more.
+> >>
+> >
+> > Yeah if the file is an inline extent then it will be copied into the log
+> > directly and the log will be written out, no going through the data write path
+> > at all.  Max inline == 0 should make it so we don't inline, so if it isn't
+> > honoring that then that may be a bug.  Thanks,
+> >
+> > Josef
+> 
+> I tried it on 3.12-rc2 release, and it seems there is a bug then.
+> Please find attached logs to confirm.
+> Also, probably on the older release.
+> 
 
-On 30 September 2013 22:11, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Mon, Sep 30, 2013 at 09:32:54PM +0200, Aastha Mehta wrote:
->> On 29 September 2013 15:12, Josef Bacik <jbacik@fusionio.com> wrote:
->> > On Sun, Sep 29, 2013 at 11:22:36AM +0200, Aastha Mehta wrote:
->> >> Thank you very much for the reply. That clarifies a lot of things.
->> >>
->> >> I was trying a small test case that opens a file, writes a block of
->> >> data, calls fsync and then closes the file. If I understand correctly,
->> >> fsync would return only after all in-memory buffers have been
->> >> committed to disk. I have added few print statements in the
->> >> __extent_writepage function, and I notice that the function gets
->> >> called a bit later after fsync returns. It seems that I am not
->> >> guaranteed to see the data going to disk by the time fsync returns.
->> >>
->> >> Am I doing something wrong, or am I looking at the wrong place for
->> >> disk write? This happens both with tree logging enabled as well as
->> >> with notreelog.
->> >>
->> >
->> > So 3.1 was a long time ago and to be sure it had issues I don't think it was
->> > _that_ broken.  You are probably better off instrumenting a recent kernel, 3.11
->> > or just build btrfs-next from git.  But if I were to make a guess I'd say that
->> > __extent_writepage was how both data and metadata was written out at the time (I
->> > don't think I changed it until 3.2 or something later) so what you are likely
->> > seeing is the normal transaction commit after the fsync.  In the case of
->> > notreelog we are likely starting another transaction and you are seeing that
->> > commit (at the time the transaction kthread would start a transaction even if
->> > none had been started yet.)  Thanks,
->> >
->> > Josef
->>
->> Is there any special handling for very small file write, less than 4K? As
->> I understand there is an optimization to inline the first extent in a file if
->> it is smaller than 4K, does it affect the writeback on fsync as well? I did
->> set the max_inline mount option to 0, but even then it seems there is
->> some difference in fsync behaviour for writing first extent of less than 4K
->> size and writing 4K or more.
->>
->
-> Yeah if the file is an inline extent then it will be copied into the log
-> directly and the log will be written out, no going through the data write path
-> at all.  Max inline == 0 should make it so we don't inline, so if it isn't
-> honoring that then that may be a bug.  Thanks,
->
-> Josef
+Oooh ok I understand, you have your printk's in the wrong place ;).
+do_writepages doesn't necessarily mean you are writing something.  If you want
+to see if stuff got written to the disk I'd put a printk at run_delalloc_range
+and have it spit out the range it is writing out since thats what we think is
+actually dirty.  Thanks,
 
-I tried it on 3.12-rc2 release, and it seems there is a bug then.
-Please find attached logs to confirm.
-Also, probably on the older release.
-
-Thanks,
-Aastha.
-
--- 
-Aastha Mehta
-MPI-SWS, Germany
-E-mail: aasthakm@mpi-sws.org
-
---047d7b414254fb221b04e79fb7e0
-Content-Type: text/plain; charset=US-ASCII; name="fsync-3.12-rc2-4Kwrite.txt"
-Content-Disposition: attachment; filename="fsync-3.12-rc2-4Kwrite.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hm85jhqr0
-
-WyAyODA4LjEyNTgzOF0gW2RvX3dyaXRlcGFnZXNdIGludW06IDI2MCwgbnJfdG9fd3JpdGU6IDky
-MjMzNzIwMzY4NTQ3NzU4MDcsIHdyaXRlcGFnZXMgZm46IGZmZmZmZmZmODEyOWNlNDAKWyAyODA4
-LjEyNTk3N10gQ1BVOiAwIFBJRDogMTAyMTUgQ29tbTogYmIgTm90IHRhaW50ZWQgMy4xMi4wLXJj
-Mi1sYXRlc3QrICM0ClsgMjgwOC4xMjU5ODBdIEhhcmR3YXJlIG5hbWU6IGlubm90ZWsgR21iSCBW
-aXJ0dWFsQm94LCBCSU9TIFZpcnR1YWxCb3ggMTIvMDEvMjAwNgpbIDI4MDguMTI1OTgzXSAgZmZm
-Zjg4MDAzZDZiNWU2MCBmZmZmODgwMDNkNmI1ZTI4IGZmZmZmZmZmODE3YThhNmYgZmZmZjg4MDAz
-ZmMwZWI0OApbIDI4MDguMTI1OTg3XSAgZmZmZjg4MDAyZTMyNWI0OCBmZmZmODgwMDNkNmI1ZTQ4
-IGZmZmZmZmZmODExMDVjMWYgZmZmZjg4MDAyZTMyNWEwMApbIDI4MDguMTI1OTkwXSAgZmZmZjg4
-MDAzN2IxZjMwMCBmZmZmODgwMDNkNmI1ZTg4IGZmZmZmZmZmODEwZmI2ODkgZmZmZjg4MDAzZmMx
-MmMwMApbIDI4MDguMTI1OTkzXSBDYWxsIFRyYWNlOgpbIDI4MDguMTI2MDAzXSAgWzxmZmZmZmZm
-ZjgxN2E4YTZmPl0gZHVtcF9zdGFjaysweDQ2LzB4NTgKWyAyODA4LjEyNjAxMF0gIFs8ZmZmZmZm
-ZmY4MTEwNWMxZj5dIGRvX3dyaXRlcGFnZXMrMHg0Zi8weDkwClsgMjgwOC4xMjYwMTNdICBbPGZm
-ZmZmZmZmODEwZmI2ODk+XSBfX2ZpbGVtYXBfZmRhdGF3cml0ZV9yYW5nZSsweDQ5LzB4NTAKWyAy
-ODA4LjEyNjAxM10gIFs8ZmZmZmZmZmY4MTBmYzQxZT5dIGZpbGVtYXBfZmRhdGF3cml0ZV9yYW5n
-ZSsweGUvMHgxMApbIDI4MDguMTI2MDEzXSAgWzxmZmZmZmZmZjgxMmFhZmRjPl0gYnRyZnNfc3lu
-Y19maWxlKzB4YWMvMHgzODAKWyAyODA4LjEyNjA5OF0gIFs8ZmZmZmZmZmY4MTdhZWRkMj5dID8g
-X19zY2hlZHVsZSsweDY5Mi8weDczMApbIDI4MDguMTI2MTE1XSAgWzxmZmZmZmZmZjgxMTc1MmQ4
-Pl0gZG9fZnN5bmMrMHg1OC8weDkwClsgMjgwOC4xMjYxNDldICBbPGZmZmZmZmZmODExNDhhNmQ+
-XSA/IFN5U193cml0ZSsweDRkLzB4YTAKWyAyODA4LjEyNjE2NV0gIFs8ZmZmZmZmZmY4MTE3NTY1
-Yj5dIFN5U19mc3luYysweGIvMHgxMApbIDI4MDguMTI2MTgyXSAgWzxmZmZmZmZmZjgxN2I4M2Ey
-Pl0gc3lzdGVtX2NhbGxfZmFzdHBhdGgrMHgxNi8weDFiClsgMjgwOC4xMjc0NDddIENQVTogMCBQ
-SUQ6IDEwMjE1IENvbW06IGJiIE5vdCB0YWludGVkIDMuMTIuMC1yYzItbGF0ZXN0KyAjNApbIDI4
-MDguMTI3NDUwXSBIYXJkd2FyZSBuYW1lOiBpbm5vdGVrIEdtYkggVmlydHVhbEJveCwgQklPUyBW
-aXJ0dWFsQm94IDEyLzAxLzIwMDYKWyAyODA4LjEyNzQ1Ml0gIGZmZmZlYTAwMDA4MDI0NDAgZmZm
-Zjg4MDAzZDZiNWJhOCBmZmZmZmZmZjgxN2E4YTZmIGZmZmY4ODAwM2Q2YjVkZTAKWyAyODA4LjEy
-NzQ1Nl0gIGZmZmY4ODAwMmUzMjU4NzAgZmZmZjg4MDAzZDZiNWNiOCBmZmZmZmZmZjgxMmI3Yzlm
-IGZmZmY4ODAwM2UyMDgzZDAKWyAyODA4LjEyNzQ1OV0gIDAwMDAwMDAwMDAwMDAwMDAgZmZmZjg4
-MDAzZDZiNWM0OCBmZmZmZmZmZjgxN2FlZGQyIGZmZmY4ODAwM2MzNzA3YjAKWyAyODA4LjEyNzQ2
-Ml0gQ2FsbCBUcmFjZToKWyAyODA4LjEyNzQ2N10gIFs8ZmZmZmZmZmY4MTdhOGE2Zj5dIGR1bXBf
-c3RhY2srMHg0Ni8weDU4ClsgMjgwOC4xMjc0NzNdICBbPGZmZmZmZmZmODEyYjdjOWY+XSBfX2V4
-dGVudF93cml0ZXBhZ2UrMHg2Zi8weDc1MApbIDI4MDguMTI3NDc5XSAgWzxmZmZmZmZmZjgxN2Fl
-ZGQyPl0gPyBfX3NjaGVkdWxlKzB4NjkyLzB4NzMwClsgMjgwOC4xMjc0ODNdICBbPGZmZmZmZmZm
-ODEwZmFjNzE+XSA/IGZpbmRfZ2V0X3BhZ2VzX3RhZysweDEyMS8weDE2MApbIDI4MDguMTI3NDg3
-XSAgWzxmZmZmZmZmZjgxMmI4NTUyPl0gZXh0ZW50X3dyaXRlX2NhY2hlX3BhZ2VzLmlzcmEuMjQu
-Y29uc3Rwcm9wLjMxKzB4MWQyLzB4MzgwClsgMjgwOC4xMjc0OTJdICBbPGZmZmZmZmZmODEwMDU4
-Nzc+XSA/IHNob3dfdHJhY2VfbG9nX2x2bCsweDU3LzB4NzAKWyAyODA4LjEyNzQ5Nl0gIFs8ZmZm
-ZmZmZmY4MTJiODlkOT5dIGV4dGVudF93cml0ZXBhZ2VzKzB4NDkvMHg2MApbIDI4MDguMTI3NTAx
-XSAgWzxmZmZmZmZmZjgxMjlmMTYwPl0gPyBidHJmc19zdWJtaXRfZGlyZWN0KzB4NmMwLzB4NmMw
-ClsgMjgwOC4xMjc1MDVdICBbPGZmZmZmZmZmODEyOWNlNjM+XSBidHJmc193cml0ZXBhZ2VzKzB4
-MjMvMHgzMApbIDI4MDguMTI3NTEwXSAgWzxmZmZmZmZmZjgxMTA1YzNlPl0gZG9fd3JpdGVwYWdl
-cysweDZlLzB4OTAKWyAyODA4LjEyNzUxM10gIFs8ZmZmZmZmZmY4MTBmYjY4OT5dIF9fZmlsZW1h
-cF9mZGF0YXdyaXRlX3JhbmdlKzB4NDkvMHg1MApbIDI4MDguMTI3NTE3XSAgWzxmZmZmZmZmZjgx
-MGZjNDFlPl0gZmlsZW1hcF9mZGF0YXdyaXRlX3JhbmdlKzB4ZS8weDEwClsgMjgwOC4xMjc1MjBd
-ICBbPGZmZmZmZmZmODEyYWFmZGM+XSBidHJmc19zeW5jX2ZpbGUrMHhhYy8weDM4MApbIDI4MDgu
-MTI3NTI0XSAgWzxmZmZmZmZmZjgxN2FlZGQyPl0gPyBfX3NjaGVkdWxlKzB4NjkyLzB4NzMwClsg
-MjgwOC4xMjc1MjldICBbPGZmZmZmZmZmODExNzUyZDg+XSBkb19mc3luYysweDU4LzB4OTAKWyAy
-ODA4LjEyNzUzM10gIFs8ZmZmZmZmZmY4MTE0OGE2ZD5dID8gU3lTX3dyaXRlKzB4NGQvMHhhMApb
-IDI4MDguMTI3NTM4XSAgWzxmZmZmZmZmZjgxMTc1NjViPl0gU3lTX2ZzeW5jKzB4Yi8weDEwClsg
-MjgwOC4xMjc1NDJdICBbPGZmZmZmZmZmODE3YjgzYTI+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsw
-eDE2LzB4MWIKWyAyODA4LjEyNzY0Nl0gW2J0cmZzX3N5bmNfZmlsZV0gaW51bTogKDI2MCwgNSks
-IGNhbGxlZCB3cml0ZV9yYW5nZSwgc3RhcnQ6IDAsIGVuZDogOTIyMzM3MjAzNjg1NDc3NTgwNywg
-cmV0OiAwClsgMjgwOC4xMjc2NTBdIFtidHJmc19zeW5jX2ZpbGVdIGludW06ICgyNjAsIDUpLCBj
-YWxsaW5nIGJ0cmZzX3dhaXRfb3JkZXJlZF9yYW5nZSwgc3RhcnQ6IDAsIGVuZDogOTIyMzM3MjAz
-Njg1NDc3NTgwNwpbIDI4MDguMTI3NjUzXSBbZG9fd3JpdGVwYWdlc10gaW51bTogMjYwLCBucl90
-b193cml0ZTogOTIyMzM3MjAzNjg1NDc3NTgwNywgd3JpdGVwYWdlcyBmbjogZmZmZmZmZmY4MTI5
-Y2U0MApbIDI4MDguMTI3NjU2XSBDUFU6IDAgUElEOiAxMDIxNSBDb21tOiBiYiBOb3QgdGFpbnRl
-ZCAzLjEyLjAtcmMyLWxhdGVzdCsgIzQKWyAyODA4LjEyNzY1OF0gSGFyZHdhcmUgbmFtZTogaW5u
-b3RlayBHbWJIIFZpcnR1YWxCb3gsIEJJT1MgVmlydHVhbEJveCAxMi8wMS8yMDA2ClsgMjgwOC4x
-Mjc2NjBdICBmZmZmODgwMDNkNmI1ZTIwIGZmZmY4ODAwM2Q2YjVkZTggZmZmZmZmZmY4MTdhOGE2
-ZiAwMDAwMDAwMDAwMDAwMDA3ClsgMjgwOC4xMjc2NjNdICBmZmZmODgwMDJlMzI1YjQ4IGZmZmY4
-ODAwM2Q2YjVlMDggZmZmZmZmZmY4MTEwNWMxZiAwMDAwMDAwMDAwMDAwMDAwClsgMjgwOC4xMjc2
-NjZdICBmZmZmODgwMDJlMzI1YTAwIGZmZmY4ODAwM2Q2YjVlNDggZmZmZmZmZmY4MTBmYjY4OSBm
-ZmZmODgwMDM3YjFmMzAwClsgMjgwOC4xMjc2NjldIENhbGwgVHJhY2U6ClsgMjgwOC4xMjc2NzNd
-ICBbPGZmZmZmZmZmODE3YThhNmY+XSBkdW1wX3N0YWNrKzB4NDYvMHg1OApbIDI4MDguMTI3Njc4
-XSAgWzxmZmZmZmZmZjgxMTA1YzFmPl0gZG9fd3JpdGVwYWdlcysweDRmLzB4OTAKWyAyODA4LjEy
-NzY4MV0gIFs8ZmZmZmZmZmY4MTBmYjY4OT5dIF9fZmlsZW1hcF9mZGF0YXdyaXRlX3JhbmdlKzB4
-NDkvMHg1MApbIDI4MDguMTI3Njg0XSAgWzxmZmZmZmZmZjgxMGZjNDFlPl0gZmlsZW1hcF9mZGF0
-YXdyaXRlX3JhbmdlKzB4ZS8weDEwClsgMjgwOC4xMjc2ODhdICBbPGZmZmZmZmZmODEyYjJhOTg+
-XSBidHJmc193YWl0X29yZGVyZWRfcmFuZ2UrMHg1OC8weDEwMApbIDI4MDguMTI3NjkxXSAgWzxm
-ZmZmZmZmZjgxMmFiMGQ4Pl0gYnRyZnNfc3luY19maWxlKzB4MWE4LzB4MzgwClsgMjgwOC4xMjc2
-OTZdICBbPGZmZmZmZmZmODE3YWVkZDI+XSA/IF9fc2NoZWR1bGUrMHg2OTIvMHg3MzAKWyAyODA4
-LjEyNzcwMF0gIFs8ZmZmZmZmZmY4MTE3NTJkOD5dIGRvX2ZzeW5jKzB4NTgvMHg5MApbIDI4MDgu
-MTI3NzAzXSAgWzxmZmZmZmZmZjgxMTQ4YTZkPl0gPyBTeVNfd3JpdGUrMHg0ZC8weGEwClsgMjgw
-OC4xMjc3MDddICBbPGZmZmZmZmZmODExNzU2NWI+XSBTeVNfZnN5bmMrMHhiLzB4MTAKWyAyODA4
-LjEyNzcxMl0gIFs8ZmZmZmZmZmY4MTdiODNhMj5dIHN5c3RlbV9jYWxsX2Zhc3RwYXRoKzB4MTYv
-MHgxYgpbIDI4MDguMTI3OTEzXSBbYnRyZnNfc3luY19maWxlXSBpbnVtOiAoMjYwLCA1KSwgcmV0
-dXJuIGZyb20gbG9nX2RlbnRyeSwgc3RhcnQ6IDAsIGVuZDogOTIyMzM3MjAzNjg1NDc3NTgwNywg
-cmV0OiAwClsgMjgwOC4xMjc5MzhdIFtidHJmc19zeW5jX2xvZ10gMS4gY2FsbGVkIHdyaXRlX21h
-cmtlZF9leHRlbnRzLCByZXQ6IDAKWyAyODA4LjEyNzk1NV0gW2J0cmZzX3N5bmNfbG9nXSAyLiBj
-YWxsZWQgd3JpdGVfbWFya2VkX2V4dGVudHMsIHJldDogMApbIDI4MzguMTc2MTQ1XSBbZG9fd3Jp
-dGVwYWdlc10gaW51bTogMjYwLCBucl90b193cml0ZTogMzA3Miwgd3JpdGVwYWdlcyBmbjogZmZm
-ZmZmZmY4MTI5Y2U0MApbIDI4MzguMTc2MTUzXSBDUFU6IDAgUElEOiA3MTEgQ29tbToga3dvcmtl
-ci91Mjo1IE5vdCB0YWludGVkIDMuMTIuMC1yYzItbGF0ZXN0KyAjNApbIDI4MzguMTc2MTU1XSBI
-YXJkd2FyZSBuYW1lOiBpbm5vdGVrIEdtYkggVmlydHVhbEJveCwgQklPUyBWaXJ0dWFsQm94IDEy
-LzAxLzIwMDYKWyAyODM4LjE3NjE2M10gV29ya3F1ZXVlOiB3cml0ZWJhY2sgYmRpX3dyaXRlYmFj
-a193b3JrZm4gKGZsdXNoLWJ0cmZzLTEpClsgMjgzOC4xNzYxNjddICBmZmZmODgwMDNjNmJkYjYw
-IGZmZmY4ODAwM2M2YmRhODggZmZmZmZmZmY4MTdhOGE2ZiBmZmZmODgwMDNmYzBlYjQ4ClsgMjgz
-OC4xNzYxNzBdICBmZmZmODgwMDJlMzI1YjQ4IGZmZmY4ODAwM2M2YmRhYTggZmZmZmZmZmY4MTEw
-NWMxZiBmZmZmODgwMDJlMzI1YTAwClsgMjgzOC4xNzYxNzNdICBmZmZmODgwMDNjNmJkYjYwIGZm
-ZmY4ODAwM2M2YmRiMDggZmZmZmZmZmY4MTE2ZWEzMCBmZmZmODgwMDNkYzI1N2IwClsgMjgzOC4x
-NzYxNzZdIENhbGwgVHJhY2U6ClsgMjgzOC4xNzYxODRdICBbPGZmZmZmZmZmODE3YThhNmY+XSBk
-dW1wX3N0YWNrKzB4NDYvMHg1OApbIDI4MzguMTc2MTkwXSAgWzxmZmZmZmZmZjgxMTA1YzFmPl0g
-ZG9fd3JpdGVwYWdlcysweDRmLzB4OTAKWyAyODM4LjE3NjE5NF0gIFs8ZmZmZmZmZmY4MTE2ZWEz
-MD5dIF9fd3JpdGViYWNrX3NpbmdsZV9pbm9kZSsweGEwLzB4MjYwClsgMjgzOC4xNzYxOTldICBb
-PGZmZmZmZmZmODExNmY3NDE+XSB3cml0ZWJhY2tfc2JfaW5vZGVzKzB4MmIxLzB4NDMwClsgMjgz
-OC4xNzYyMDNdICBbPGZmZmZmZmZmODExNmVhNzc+XSA/IF9fd3JpdGViYWNrX3NpbmdsZV9pbm9k
-ZSsweGU3LzB4MjYwClsgMjgzOC4xNzYyMDddICBbPGZmZmZmZmZmODExNmY5M2U+XSBfX3dyaXRl
-YmFja19pbm9kZXNfd2IrMHg3ZS8weGMwClsgMjgzOC4xNzYyMTFdICBbPGZmZmZmZmZmODExNzAw
-MGI+XSB3Yl93cml0ZWJhY2srMHgxOGIvMHgyZTAKWyAyODM4LjE3NjIxNV0gIFs8ZmZmZmZmZmY4
-MTE3MDFlMz5dIHdiX2NoZWNrX29sZF9kYXRhX2ZsdXNoKzB4ODMvMHhiMApbIDI4MzguMTc2MjIw
-XSAgWzxmZmZmZmZmZjgxMTcxYWFjPl0gYmRpX3dyaXRlYmFja193b3JrZm4rMHgxZGMvMHg0NDAK
-WyAyODM4LjE3NjIyNV0gIFs8ZmZmZmZmZmY4MTA1ZjE5Yz5dIHByb2Nlc3Nfb25lX3dvcmsrMHgy
-YmMvMHg0MzAKWyAyODM4LjE3NjIyOV0gIFs8ZmZmZmZmZmY4MTA2MDBjNT5dIHdvcmtlcl90aHJl
-YWQrMHgyMTUvMHgzMjAKWyAyODM4LjE3NjIzM10gIFs8ZmZmZmZmZmY4MTA1ZmViMD5dID8gbWFu
-YWdlX3dvcmtlcnMuaXNyYS4xOCsweDJiMC8weDJiMApbIDI4MzguMTc2MjM3XSAgWzxmZmZmZmZm
-ZjgxMDY2NmY2Pl0ga3RocmVhZCsweGI2LzB4YzAKWyAyODM4LjE3NjI0MV0gIFs8ZmZmZmZmZmY4
-MTA2NjY0MD5dID8gZmx1c2hfa3RocmVhZF93b3JrZXIrMHhhMC8weGEwClsgMjgzOC4xNzYyNDZd
-ICBbPGZmZmZmZmZmODE3YjgyZmM+XSByZXRfZnJvbV9mb3JrKzB4N2MvMHhiMApbIDI4MzguMTc2
-MjUwXSAgWzxmZmZmZmZmZjgxMDY2NjQwPl0gPyBmbHVzaF9rdGhyZWFkX3dvcmtlcisweGEwLzB4
-YTAKCg==
---047d7b414254fb221b04e79fb7e0
-Content-Type: text/plain; charset=US-ASCII; name="fsync-3.12-rc2-54bytes.txt"
-Content-Disposition: attachment; filename="fsync-3.12-rc2-54bytes.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hm85jhr21
-
-SSBpbnN0YWxsZWQgMy4xMi4wLXJjMiBhbmQgYWRkZWQgZHVtcF9zdGFjaygpIGF0IHRoZSBiZWdp
-bm5pbmcgb2YgZG9fd3JpdGVwYWdlcygpIGFuZCBfX2V4dGVudF93cml0ZXBhZ2UoKS4gV2hlbiBJ
-IHJ1biBteSB0ZXN0IGNhc2UgKGZvcGVuLCBmd3JpdGUgYSBzbWFsbCByYW5kb20gc3RyaW5nLCBm
-c3luYywgZmNsb3NlKSwgaXQgcmV0dXJucyBzb29uLCBhbmQgdGhpcyBpcyBob3cgbXkgZG1lc2cg
-bG9va3MgbGlrZToKClsgICAgNS40NzEwMzZdIElQdjY6IEFERFJDT05GKE5FVERFVl9DSEFOR0Up
-OiBldGgwOiBsaW5rIGJlY29tZXMgcmVhZHkKWyAgIDEwLjg0ODA2NF0gRVhUNC1mcyAoc2RhMik6
-IHJlLW1vdW50ZWQuIE9wdHM6IGFjbCx1c2VyX3hhdHRyLGNvbW1pdD0wClsgICAxMC44NTkyODVd
-IEVYVDQtZnMgKHNkYzEpOiByZS1tb3VudGVkLiBPcHRzOiBhY2wsdXNlcl94YXR0cixjb21taXQ9
-MApbICAgMTAuODYxODMyXSBFWFQ0LWZzIChzZGIxKTogcmUtbW91bnRlZC4gT3B0czogYWNsLHVz
-ZXJfeGF0dHIsY29tbWl0PTAKWyAgIDMzLjc2MzQ4Nl0gYnRyZnM6IGRldmljZSBmc2lkIDRkMjc2
-N2VhLTg1Y2MtNDQzYy04OGJkLTJkOGM2OTNmN2M3YyBkZXZpZCAxIHRyYW5zaWQgMjA3MiAvZGV2
-L3NkZApbICAgMzMuNzY0MjE4XSBidHJmczogbWF4X2lubGluZSBhdCAwClsgICAzMy43NjQyMjBd
-IGJ0cmZzOiBkaXNrIHNwYWNlIGNhY2hpbmcgaXMgZW5hYmxlZAoKWyAgIDYxLjA4MzIwMl0gW2Rv
-X3dyaXRlcGFnZXNdIGludW06IDI1OCwgbnJfdG9fd3JpdGU6IDkyMjMzNzIwMzY4NTQ3NzU4MDcs
-IHdyaXRlcGFnZXMgZm46IGZmZmZmZmZmODEyOWNlNDAKWyAgIDYxLjA4MzIwNF0gQ1BVOiAwIFBJ
-RDogNDE2NSBDb21tOiBiYiBOb3QgdGFpbnRlZCAzLjEyLjAtcmMyLWxhdGVzdCsgIzQKWyAgIDYx
-LjA4MzIwNV0gSGFyZHdhcmUgbmFtZTogaW5ub3RlayBHbWJIIFZpcnR1YWxCb3gsIEJJT1MgVmly
-dHVhbEJveCAxMi8wMS8yMDA2ClsgICA2MS4wODMyMDVdICBmZmZmODgwMDM5OWFkZTIwIGZmZmY4
-ODAwMzk5YWRkZTggZmZmZmZmZmY4MTdhOGE2ZiAwMDAwMDAwMDAwMDAwMDA3ClsgICA2MS4wODMy
-MDddICBmZmZmODgwMDJlMzI0ZjMwIGZmZmY4ODAwMzk5YWRlMDggZmZmZmZmZmY4MTEwNWMxZiAw
-MDAwMDAwMDAwMDAwMDAwClsgICA2MS4wODMyMDhdICBmZmZmODgwMDJlMzI0ZGU4IGZmZmY4ODAw
-Mzk5YWRlNDggZmZmZmZmZmY4MTBmYjY4OSBmZmZmODgwMDNkOWYyYzAwClsgICA2MS4wODMyMDld
-IENhbGwgVHJhY2U6ClsgICA2MS4wODMyMTFdICBbPGZmZmZmZmZmODE3YThhNmY+XSBkdW1wX3N0
-YWNrKzB4NDYvMHg1OApbICAgNjEuMDgzMjE4XSAgWzxmZmZmZmZmZjgxMTA1YzFmPl0gZG9fd3Jp
-dGVwYWdlcysweDRmLzB4OTAKWyAgIDYxLjA4MzIyMF0gIFs8ZmZmZmZmZmY4MTBmYjY4OT5dIF9f
-ZmlsZW1hcF9mZGF0YXdyaXRlX3JhbmdlKzB4NDkvMHg1MApbICAgNjEuMDgzMjIxXSAgWzxmZmZm
-ZmZmZjgxMGZjNDFlPl0gZmlsZW1hcF9mZGF0YXdyaXRlX3JhbmdlKzB4ZS8weDEwClsgICA2MS4w
-ODMyMjRdICBbPGZmZmZmZmZmODEyYjJhOTg+XSBidHJmc193YWl0X29yZGVyZWRfcmFuZ2UrMHg1
-OC8weDEwMApbICAgNjEuMDgzMjI1XSAgWzxmZmZmZmZmZjgxMmFiMGQ4Pl0gYnRyZnNfc3luY19m
-aWxlKzB4MWE4LzB4MzgwClsgICA2MS4wODMyMjddICBbPGZmZmZmZmZmODE3YWVkZDI+XSA/IF9f
-c2NoZWR1bGUrMHg2OTIvMHg3MzAKWyAgIDYxLjA4MzIyOV0gIFs8ZmZmZmZmZmY4MTE3NTJkOD5d
-IGRvX2ZzeW5jKzB4NTgvMHg5MApbICAgNjEuMDgzMjMxXSAgWzxmZmZmZmZmZjgxMTQ4YTZkPl0g
-PyBTeVNfd3JpdGUrMHg0ZC8weGEwClsgICA2MS4wODMyMzJdICBbPGZmZmZmZmZmODExNzU2NWI+
-XSBTeVNfZnN5bmMrMHhiLzB4MTAKWyAgIDYxLjA4MzIzNF0gIFs8ZmZmZmZmZmY4MTdiODNhMj5d
-IHN5c3RlbV9jYWxsX2Zhc3RwYXRoKzB4MTYvMHgxYiAgICAgICAgICAgICAgIDw8PDw8PDw8PCBp
-bW1lZGlhdGVseSBhZnRlciB0aGUgdGVzdCBwcm9ncmFtIGV4aXRzCgpbICAgOTYuMTQ0MDU5XSBb
-ZG9fd3JpdGVwYWdlc10gaW51bTogMjU4LCBucl90b193cml0ZTogMzA3Miwgd3JpdGVwYWdlcyBm
-bjogZmZmZmZmZmY4MTI5Y2U0MCAgIDw8PDw8PDw8PCBhcHBlYXJzIGFmdGVyIH4zNW1zClsgICA5
-Ni4xNDQwNjRdIENQVTogMCBQSUQ6IDcxMSBDb21tOiBrd29ya2VyL3UyOjUgTm90IHRhaW50ZWQg
-My4xMi4wLXJjMi1sYXRlc3QrICM0ClsgICA5Ni4xNDQwNjVdIEhhcmR3YXJlIG5hbWU6IGlubm90
-ZWsgR21iSCBWaXJ0dWFsQm94LCBCSU9TIFZpcnR1YWxCb3ggMTIvMDEvMjAwNgpbICAgOTYuMTQ0
-MDcwXSBXb3JrcXVldWU6IHdyaXRlYmFjayBiZGlfd3JpdGViYWNrX3dvcmtmbiAoZmx1c2gtYnRy
-ZnMtMSkKWyAgIDk2LjE0NDA3Ml0gIGZmZmY4ODAwM2M2YmRiNjAgZmZmZjg4MDAzYzZiZGE4OCBm
-ZmZmZmZmZjgxN2E4YTZmIGZmZmY4ODAwM2ZjMGViNDgKWyAgIDk2LjE0NDA3NF0gIGZmZmY4ODAw
-MmUzMjRmMzAgZmZmZjg4MDAzYzZiZGFhOCBmZmZmZmZmZjgxMTA1YzFmIGZmZmY4ODAwMmUzMjRk
-ZTgKWyAgIDk2LjE0NDA3NV0gIGZmZmY4ODAwM2M2YmRiNjAgZmZmZjg4MDAzYzZiZGIwOCBmZmZm
-ZmZmZjgxMTZlYTMwIGZmZmY4ODAwM2RjMjUxMzAKWyAgIDk2LjE0NDA3N10gQ2FsbCBUcmFjZToK
-WyAgIDk2LjE0NDA4MV0gIFs8ZmZmZmZmZmY4MTdhOGE2Zj5dIGR1bXBfc3RhY2srMHg0Ni8weDU4
-ClsgICA5Ni4xNDQwODRdICBbPGZmZmZmZmZmODExMDVjMWY+XSBkb193cml0ZXBhZ2VzKzB4NGYv
-MHg5MApbICAgOTYuMTQ0MDg3XSAgWzxmZmZmZmZmZjgxMTZlYTMwPl0gX193cml0ZWJhY2tfc2lu
-Z2xlX2lub2RlKzB4YTAvMHgyNjAKWyAgIDk2LjE0NDA4OV0gIFs8ZmZmZmZmZmY4MTE2Zjc0MT5d
-IHdyaXRlYmFja19zYl9pbm9kZXMrMHgyYjEvMHg0MzAKWyAgIDk2LjE0NDA5MV0gIFs8ZmZmZmZm
-ZmY4MTE2ZjkzZT5dIF9fd3JpdGViYWNrX2lub2Rlc193YisweDdlLzB4YzAKWyAgIDk2LjE0NDA5
-M10gIFs8ZmZmZmZmZmY4MTE3MDAwYj5dIHdiX3dyaXRlYmFjaysweDE4Yi8weDJlMApbICAgOTYu
-MTQ0MDk1XSAgWzxmZmZmZmZmZjgxMTcwMWUzPl0gd2JfY2hlY2tfb2xkX2RhdGFfZmx1c2grMHg4
-My8weGIwClsgICA5Ni4xNDQwOTddICBbPGZmZmZmZmZmODExNzFhYWM+XSBiZGlfd3JpdGViYWNr
-X3dvcmtmbisweDFkYy8weDQ0MApbICAgOTYuMTQ0MTAwXSAgWzxmZmZmZmZmZjgxMDVmMTljPl0g
-cHJvY2Vzc19vbmVfd29yaysweDJiYy8weDQzMApbICAgOTYuMTQ0MTAyXSAgWzxmZmZmZmZmZjgx
-MDYwMGM1Pl0gd29ya2VyX3RocmVhZCsweDIxNS8weDMyMApbICAgOTYuMTQ0MTAzXSAgWzxmZmZm
-ZmZmZjgxMDVmZWIwPl0gPyBtYW5hZ2Vfd29ya2Vycy5pc3JhLjE4KzB4MmIwLzB4MmIwClsgICA5
-Ni4xNDQxMDZdICBbPGZmZmZmZmZmODEwNjY2ZjY+XSBrdGhyZWFkKzB4YjYvMHhjMApbICAgOTYu
-MTQ0MTA3XSAgWzxmZmZmZmZmZjgxMDY2NjQwPl0gPyBmbHVzaF9rdGhyZWFkX3dvcmtlcisweGEw
-LzB4YTAKWyAgIDk2LjE0NDExMF0gIFs8ZmZmZmZmZmY4MTdiODJmYz5dIHJldF9mcm9tX2Zvcmsr
-MHg3Yy8weGIwClsgICA5Ni4xNDQxMTFdICBbPGZmZmZmZmZmODEwNjY2NDA+XSA/IGZsdXNoX2t0
-aHJlYWRfd29ya2VyKzB4YTAvMHhhMApbICAgOTYuMTQ0MTE2XSBDUFU6IDAgUElEOiA3MTEgQ29t
-bToga3dvcmtlci91Mjo1IE5vdCB0YWludGVkIDMuMTIuMC1yYzItbGF0ZXN0KyAjNApbICAgOTYu
-MTQ0MTE2XSBIYXJkd2FyZSBuYW1lOiBpbm5vdGVrIEdtYkggVmlydHVhbEJveCwgQklPUyBWaXJ0
-dWFsQm94IDEyLzAxLzIwMDYKWyAgIDk2LjE0NDExOF0gV29ya3F1ZXVlOiB3cml0ZWJhY2sgYmRp
-X3dyaXRlYmFja193b3JrZm4gKGZsdXNoLWJ0cmZzLTEpClsgICA5Ni4xNDQxMTldICBmZmZmZWEw
-MDAwN2ViMTAwIGZmZmY4ODAwM2M2YmQ4MDggZmZmZmZmZmY4MTdhOGE2ZiBmZmZmODgwMDNjNmJk
-YTQwClsgICA5Ni4xNDQxMjFdICBmZmZmODgwMDJlMzI0YzU4IGZmZmY4ODAwM2M2YmQ5MTggZmZm
-ZmZmZmY4MTJiN2M5ZiBmZmZmODgwMDNjNmJkODc4ClsgICA5Ni4xNDQxMjJdICBmZmZmZmZmZjgx
-N2EzNjRlIGZmZmY4ODAwM2M2YmQ4ODggZmZmZmZmZmYwMDAwMDAyMCBmZmZmODgwMDNjNmJkODg4
-ClsgICA5Ni4xNDQxMjNdIENhbGwgVHJhY2U6ClsgICA5Ni4xNDQxMjVdICBbPGZmZmZmZmZmODE3
-YThhNmY+XSBkdW1wX3N0YWNrKzB4NDYvMHg1OApbICAgOTYuMTQ0MTI4XSAgWzxmZmZmZmZmZjgx
-MmI3YzlmPl0gX19leHRlbnRfd3JpdGVwYWdlKzB4NmYvMHg3NTAKWyAgIDk2LjE0NDEzMF0gIFs8
-ZmZmZmZmZmY4MTdhMzY0ZT5dID8gcHJpbnRrKzB4NWMvMHg1ZQpbICAgOTYuMTQ0MTMxXSAgWzxm
-ZmZmZmZmZjgxMDY2NjQwPl0gPyBmbHVzaF9rdGhyZWFkX3dvcmtlcisweGEwLzB4YTAKWyAgIDk2
-LjE0NDEzM10gIFs8ZmZmZmZmZmY4MTBmYWM3MT5dID8gZmluZF9nZXRfcGFnZXNfdGFnKzB4MTIx
-LzB4MTYwClsgICA5Ni4xNDQxMzVdICBbPGZmZmZmZmZmODEyYjg1NTI+XSBleHRlbnRfd3JpdGVf
-Y2FjaGVfcGFnZXMuaXNyYS4yNC5jb25zdHByb3AuMzErMHgxZDIvMHgzODAKWyAgIDk2LjE0NDEz
-OF0gIFs8ZmZmZmZmZmY4MTAwNTg3Nz5dID8gc2hvd190cmFjZV9sb2dfbHZsKzB4NTcvMHg3MApb
-ICAgOTYuMTQ0MTM5XSAgWzxmZmZmZmZmZjgxMmI4OWQ5Pl0gZXh0ZW50X3dyaXRlcGFnZXMrMHg0
-OS8weDYwClsgICA5Ni4xNDQxNDJdICBbPGZmZmZmZmZmODEyOWYxNjA+XSA/IGJ0cmZzX3N1Ym1p
-dF9kaXJlY3QrMHg2YzAvMHg2YzAKWyAgIDk2LjE0NDE0NF0gIFs8ZmZmZmZmZmY4MTI5Y2U2Mz5d
-IGJ0cmZzX3dyaXRlcGFnZXMrMHgyMy8weDMwClsgICA5Ni4xNDQxNDZdICBbPGZmZmZmZmZmODEx
-MDVjM2U+XSBkb193cml0ZXBhZ2VzKzB4NmUvMHg5MApbICAgOTYuMTQ0MTQ3XSAgWzxmZmZmZmZm
-ZjgxMTZlYTMwPl0gX193cml0ZWJhY2tfc2luZ2xlX2lub2RlKzB4YTAvMHgyNjAKWyAgIDk2LjE0
-NDE0OV0gIFs8ZmZmZmZmZmY4MTE2Zjc0MT5dIHdyaXRlYmFja19zYl9pbm9kZXMrMHgyYjEvMHg0
-MzAKWyAgIDk2LjE0NDE1MV0gIFs8ZmZmZmZmZmY4MTE2ZjkzZT5dIF9fd3JpdGViYWNrX2lub2Rl
-c193YisweDdlLzB4YzAKWyAgIDk2LjE0NDE1M10gIFs8ZmZmZmZmZmY4MTE3MDAwYj5dIHdiX3dy
-aXRlYmFjaysweDE4Yi8weDJlMApbICAgOTYuMTQ0MTU0XSAgWzxmZmZmZmZmZjgxMTcwMWUzPl0g
-d2JfY2hlY2tfb2xkX2RhdGFfZmx1c2grMHg4My8weGIwClsgICA5Ni4xNDQxNTZdICBbPGZmZmZm
-ZmZmODExNzFhYWM+XSBiZGlfd3JpdGViYWNrX3dvcmtmbisweDFkYy8weDQ0MApbICAgOTYuMTQ0
-MTY0XSAgWzxmZmZmZmZmZjgxMDVmMTljPl0gcHJvY2Vzc19vbmVfd29yaysweDJiYy8weDQzMApb
-ICAgOTYuMTQ0MTY2XSAgWzxmZmZmZmZmZjgxMDYwMGM1Pl0gd29ya2VyX3RocmVhZCsweDIxNS8w
-eDMyMApbICAgOTYuMTQ0MTY4XSAgWzxmZmZmZmZmZjgxMDVmZWIwPl0gPyBtYW5hZ2Vfd29ya2Vy
-cy5pc3JhLjE4KzB4MmIwLzB4MmIwClsgICA5Ni4xNDQxNjldICBbPGZmZmZmZmZmODEwNjY2ZjY+
-XSBrdGhyZWFkKzB4YjYvMHhjMApbICAgOTYuMTQ0MTcxXSAgWzxmZmZmZmZmZjgxMDY2NjQwPl0g
-PyBmbHVzaF9rdGhyZWFkX3dvcmtlcisweGEwLzB4YTAKWyAgIDk2LjE0NDE3M10gIFs8ZmZmZmZm
-ZmY4MTdiODJmYz5dIHJldF9mcm9tX2ZvcmsrMHg3Yy8weGIwClsgICA5Ni4xNDQxNzRdICBbPGZm
-ZmZmZmZmODEwNjY2NDA+XSA/IGZsdXNoX2t0aHJlYWRfd29ya2VyKzB4YTAvMHhhMAoKVGhpcyBp
-cyBhIGNvbnRpZ3VvdXMgZG1lc2cgb3V0cHV0LgoKCg==
---047d7b414254fb221b04e79fb7e0--
+Josef

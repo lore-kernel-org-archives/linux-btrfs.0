@@ -1,78 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1691 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750796Ab3IZFOj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Sep 2013 01:14:39 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r8Q5EZYB019389
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Sep 2013 13:14:35 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: improve jitter performance of the sequential buffered write
-Date: Thu, 26 Sep 2013 13:15:27 +0800
-Message-Id: <1380172527-18982-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:7479 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754834Ab3JABFk convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Sep 2013 21:05:40 -0400
+Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:49176 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VQoPC-000Rlg-NH
+	for linux-btrfs@vger.kernel.org; Mon, 30 Sep 2013 19:05:39 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Progress of device deletion?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <2E504581-FA34-425A-B14B-EF3F16FC655C@colorremedies.com>
+Date: Mon, 30 Sep 2013 19:05:36 -0600
+Message-Id: <F4008F3B-594D-4003-BC06-82B9E18AA023@colorremedies.com>
+References: <alpine.DEB.2.10.1309290902050.24007@shack.dolda2000.com> <2E504581-FA34-425A-B14B-EF3F16FC655C@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The performance was slowed down sometimes when we ran sysbench to measure
-the performance of the sequential buffered write by 2 or more threads.
 
-It was because the write order of the test threads might be confused
-by the task scheduler, and the coming write would be beyond the end of
-the file, in this case, we need insert dummy file extents and create
-a hole for the area we skip. But in order to avoid the ongoing ordered
-extents which are in the area, we need wait for them. Unfortunately,
-the current code doesn't check if there are ordered extents in the area
-or not, try to find and flush the dirty pages directly, but in fact,
-there is no dirty page in that area, this step of the current code is
-unnecessary, and just wastes time. Sometimes, it would increase
-the contention of some locks, and makes the performance slow down suddenly.
+On Sep 30, 2013, at 8:27 AM, Chris Murphy <lists@colorremedies.com> wrote:
 
-So we remove the ordered extent flush function before the check, and flush
-the dirty pages and wait for the ordered extents only when we find them.
+> 
+> On Sep 29, 2013, at 1:13 AM, Fredrik Tolf <fredrik@dolda2000.com> wrote:
+>> 
+>> Is there any way I can find out what's going on?
+> 
+> For whatever reason, it started out with every drive practically full, in terms of chunk allocation.
+> 
+> e.g.        devid    5 size 2.73TB used 2.71TB path /dev/sdh1
+> 
+> I don't know if the code works this way, but it needs to do a balance (or partial one) to make room before it can start migrating actual complete chunks from 4 disks to 2 disks. And my guess is that it's not yet done balancing sdg1 still.
+> 
+> Post kernel version, btrfs-progs version, and dmesg from the time the delete command was initiated.
 
-According to my test, we got 1-2 times of the performance regression when
-we ran the test by 10 times before applying this patch. After applying
-this patch, the regression went away.
+Without knowing more information about how it's expected to behave (now and near future), I think if I were you I would have added a couple of drives to the volume first so that it had more maneuvering room. It probably seems weird to add drives to remove drives, but sometimes (always?) Btrfs really gets a bit piggish about allocating a lot more chunks than there is data. Or maybe it's not deallocating space as aggressively as it could. So it can get to a point where even though there isn't that much data in the volume (in your case 1.5x the drive size, and you have 4 drives) yet all of it's effectively allocated. So to back out of that takes free space. Then once the chunks are better allocated, you'd have been able to remove the drives. Open question if I would have removed 2, then another 2. Or removed 4.
 
-Test Environment:
- CPU:		1CPU * 4Cores
- Memory:	6GB
- Partition:	20GB
+And for all I know adding one drive might be enough even though it's raid0. *shrug* New territory.
 
-Test Command:
- # sysbench --test=fileio --file-total-size=16G --file-test-mode=seqwr \
- > --num-threads=512 --file-block-size=16384 --max-time=60 --max-requests=0 run
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7d0ef55..ef02866 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4230,15 +4230,16 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
--		btrfs_wait_ordered_range(inode, hole_start,
--					 block_end - hole_start);
-+
- 		lock_extent_bits(io_tree, hole_start, block_end - 1, 0,
- 				 &cached_state);
--		ordered = btrfs_lookup_ordered_extent(inode, hole_start);
-+		ordered = btrfs_lookup_ordered_range(inode, hole_start,
-+						     block_end - hole_start);
- 		if (!ordered)
- 			break;
- 		unlock_extent_cached(io_tree, hole_start, block_end - 1,
- 				     &cached_state, GFP_NOFS);
-+		btrfs_start_ordered_extent(inode, ordered, 1);
- 		btrfs_put_ordered_extent(ordered);
- 	}
- 
--- 
-1.8.3.1
-
+Chris Murphy

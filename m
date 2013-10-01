@@ -1,34 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57566 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58619 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754131Ab3JVRE1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Oct 2013 13:04:27 -0400
-Date: Tue, 22 Oct 2013 19:04:23 +0200
+	id S1751561Ab3JAOu4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Oct 2013 10:50:56 -0400
+Date: Tue, 1 Oct 2013 16:50:50 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] Btrfs: improve inode hash function/inode lookup
-Message-ID: <20131022170423.GB1032@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/9] btrfs: Replace the btrfs_workers with kernel
+ workqueue
+Message-ID: <20131001145050.GJ18291@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1381092807-21422-1-git-send-email-fdmanana@gmail.com>
- <1381094553-2190-1-git-send-email-fdmanana@gmail.com>
- <20131011114229.GE5787@twin.jikos.cz>
- <CAL3q7H6o3auNremGh8X0oFF_OcVuwpSxsOrAKDBmtx+d4eLxAQ@mail.gmail.com>
- <20131021232107.GS1032@suse.cz>
- <CAL3q7H4MYgGUoDHOcBDv9H7cBFC+1VqM2395qTQN=DSoTv6ZXA@mail.gmail.com>
+References: <1378973304-11693-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20130912173718.GE6810@twin.jikos.cz>
+ <523BE774.4070808@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H4MYgGUoDHOcBDv9H7cBFC+1VqM2395qTQN=DSoTv6ZXA@mail.gmail.com>
+In-Reply-To: <523BE774.4070808@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 22, 2013 at 12:27:21AM +0100, Filipe David Manana wrote:
-> > It is a separate change that makes your patch obsolete.
+On Fri, Sep 20, 2013 at 02:13:08PM +0800, Qu Wenruo wrote:
+> >* WQ_MEM_RECLAIM for the scrub thread does not seem right
+> I think scrub_workers,scrub_wr_completion_workers still need WQ_MEM_RECLAIM.
+> However scrub_nocow_workers does not need WQ_MEM_RECLAIM flags.
 > 
-> Except the part of making the hash value depend on both object id and
-> root id, no?
+> Did you mean this?
+> 
+> If you didn't mean this, would you please tell me why the WQ_MEM_RECLAIM is
+> not
+> needed?
 
-I've read the patch again, yes, case 1 makes sense.
-
-david
+Documentation says that threads that might be used in the memory reclaim
+path must use this flag, but I don't see how this applies to scrub
+threads. They're not writing out dirty data, though they may issue a
+write, but that's not their main purpose.

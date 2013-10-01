@@ -1,103 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35066 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751463Ab3JAGWl convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Oct 2013 02:22:41 -0400
-Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:50918 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.80.1)
-	(envelope-from <lists@colorremedies.com>)
-	id 1VQtLy-001twE-Jj
-	for linux-btrfs@vger.kernel.org; Tue, 01 Oct 2013 00:22:38 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: btrfs debug warning unlinked orphans, 3.12.0-0.rc3
-Message-Id: <23E1ABD1-38E5-4257-A3E2-4A4E57EFE446@colorremedies.com>
-Date: Tue, 1 Oct 2013 00:22:37 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:54304 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753071Ab3JAMzM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Oct 2013 08:55:12 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VQzTq-0004JT-Ru
+	for linux-btrfs@vger.kernel.org; Tue, 01 Oct 2013 14:55:10 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Oct 2013 14:55:10 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Oct 2013 14:55:10 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Progress of device deletion?
+Date: Tue, 1 Oct 2013 12:54:50 +0000 (UTC)
+Message-ID: <pan$d8eab$6713390e$a59891e9$38a1914f@cox.net>
+References: <alpine.DEB.2.10.1309290902050.24007@shack.dolda2000.com>
+	<2E504581-FA34-425A-B14B-EF3F16FC655C@colorremedies.com>
+	<F4008F3B-594D-4003-BC06-82B9E18AA023@colorremedies.com>
+	<pan$d4ca0$5ff8830c$a79d58d4$78936022@cox.net>
+	<2754C186-FACD-4621-9876-2328C90978CC@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have no idea if this is a problem or not so I'm reporting it in case it is. Non-critical throway test system. Warning occurs with kernel 3.12.0-0.rc3.git0.1.fc21.x86_64
+Chris Murphy posted on Mon, 30 Sep 2013 23:26:16 -0600 as excerpted:
 
- 
+> The other thing, clearly the OP is surprised it's taking anywhere near
+> this long. Had he known in advance, he probably would have made a
+> different choice.
 
-1.
-Fedora 20 alpha installation, with boot root home on subvolumes. Autodefrag is not used by the installer.
-The file system is created with and system installed with:
-kernel-3.11.0-300.fc20.x86_64
-btrfs-progs-0.20.rc1.20130917git194aa4a-1.fc20.x86_64
+I had a longer version that I wrote first, but decided was /too/ long to 
+post as it was.  In it I compared the time of seconds to a couple minutes 
+to do a full btrfs balance here, to the time of days I'm seeing reported 
+on-list.  That's down to two reasons, AFAIK, the fact that I'm running 
+SSDs, and the fact that I partition things up so that even for my backups 
+on spinning rust, I'm looking at perhaps a couple hours, not days, for a 
+full balance or pre-btrfs, an mdraid (1) return from degraded.
 
-2.
-Before rebooting, changed /etc/fstab to include autodefrag.
-Reboot, which includes switch to kernel 3.12.0-0.rc3.git0.1.fc21.x86_64
-Mount state is rw,relatime,seclabel,space_cache,autodefrag
+The point there was that when a balance or raid rebuild takes seconds, 
+minutes or hours, it's feasible and likely to do it as a test or as part 
+of routine maintenance, before things get as bad as terabytes of over-
+allocation.  As I result, I actually know what my normal balance times 
+look like since I do them reasonably often, something that someone on a 
+system where it's going to take days isn't likely to have the option or 
+luxury of doing.
 
-dmesg reports
+So there's a benefit in if possible partitioning, even if SSDs aren't a 
+current option, or otherwise managing the data scale so maintenance time 
+scales are at very worst on the scale of hours, not days, and preferably 
+at the low end of that range (based on my mdraid days, a practical limit 
+for me is a couple hours, before it's simply too long to do routinely 
+enough to be familiar with the scale times, etc).
 
-[   15.480651] btrfs: device label fedora_f20s devid 1 transid 47 /dev/sda5
-[   15.491746] btrfs: device label fedora_f20s devid 1 transid 47 /dev/sda5
-[   15.571815] btrfs: device label fedora_f20s devid 1 transid 47 /dev/sda5
+Of course that can't be done for all use cases, but if it's at all 
+possible, simply managing the scale helps a *LOT*.  As I said, the 
+practical wall before things go off the not routinely manageable end for 
+me is about two hours.  A pre-deployment test can give one an idea of 
+time scale, and from there... at least I'd have some idea whether it'd 
+take a day or longer, and if it did there was definitely something wrong.
 
+Of course if this /is/ part of that pre-deployment testing or even btrfs 
+development testing, as is appropriate at this stage of btrfs 
+development, then points to him for doing that testing and finding 
+there's either something badly wrong or he's simply off the practical end 
+of the size scale before actual deployment. =:^)
 
-3.
-yum update, ~750MB of updates
-Warning occurs during the updating. This is the complete segment from dmesg.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-[13167.297795] SELinux: initialized (dev binfmt_misc, type binfmt_misc), uses genfs_contexts
-[13363.105253] btrfs: device label fedora_f20s devid 1 transid 199 /dev/sda5
-[13471.491365] BTRFS debug (device sda5): unlinked 5 orphans
-[13478.878836] BTRFS debug (device sda5): unlinked 360 orphans
-[13591.757985] ------------[ cut here ]------------
-[13591.758009] WARNING: CPU: 1 PID: 8600 at fs/btrfs/inode.c:7998 btrfs_rename+0x157/0x730 [btrfs]()
-[13591.758043] Modules linked in: binfmt_misc fuse ebtable_nat nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter ip6_tables bnep nls_utf8 hfsplus coretemp kvm_intel kvm b43 snd_hda_codec_realtek snd_hda_intel snd_hda_codec bcma snd_hwdep snd_seq snd_seq_device microcode mac80211 cfg80211 snd_pcm iTCO_wdt iTCO_vendor_support snd_page_alloc uvcvideo snd_timer applesmc ssb snd input_polldev btusb i2c_i801 videobuf2_vmalloc videobuf2_memops videobuf2_core lpc_ich bcm5974 mmc_core soundcore sky2 bluetooth hid_appleir videodev media mfd_core apple_bl rfkill shpchp acpi_cpufreq
-[13591.758081]  nfsd auth_rpcgss nfs_acl lockd sunrpc btrfs libcrc32c xor raid6_pq nouveau mxm_wmi wmi i2c_algo_bit drm_kms_helper firewire_ohci ata_generic ttm pata_acpi firewire_core crc_itu_t drm i2c_core video
-[13591.758099] CPU: 1 PID: 8600 Comm: mv Tainted: G        W    3.12.0-0.rc3.git0.1.fc21.x86_64 #1
-[13591.758101] Hardware name: Apple Inc. MacBookPro4,1/Mac-F42C89C8, BIOS    MBP41.88Z.00C1.B03.0802271651 02/27/08
-[13591.758103]  0000000000000009 ffff88000bd19c78 ffffffff8165e6e4 0000000000000000
-[13591.758106]  ffff88000bd19cb0 ffffffff810683ed ffff88000c9f3a40 0000000000000100
-[13591.758109]  0000000000000000 ffff88000c9c9e08 ffff88000c9f3a01 ffff88000bd19cc0
-[13591.758111] Call Trace:
-[13591.758119]  [<ffffffff8165e6e4>] dump_stack+0x45/0x56
-[13591.758124]  [<ffffffff810683ed>] warn_slowpath_common+0x7d/0xa0
-[13591.758126]  [<ffffffff810684ca>] warn_slowpath_null+0x1a/0x20
-[13591.758140]  [<ffffffffa0226287>] btrfs_rename+0x157/0x730 [btrfs]
-[13591.758144]  [<ffffffff811bacfa>] vfs_rename+0x33a/0x470
-[13591.758146]  [<ffffffff811bb1b9>] SYSC_renameat+0x389/0x430
-[13591.758149]  [<ffffffff811bd351>] ? user_path_at+0x11/0x20
-[13591.758153]  [<ffffffff811b1d62>] ? SYSC_newlstat+0x22/0x40
-[13591.758155]  [<ffffffff811bdc0e>] SyS_renameat+0xe/0x10
-[13591.758157]  [<ffffffff811bdc2b>] SyS_rename+0x1b/0x20
-[13591.758162]  [<ffffffff8166d6a9>] system_call_fastpath+0x16/0x1b
-[13591.758163] ---[ end trace 36ebd831d74ca650 ]---
-[13616.544255] ------------[ cut here ]------------
-[13616.544291] WARNING: CPU: 1 PID: 8608 at fs/btrfs/inode.c:7998 btrfs_rename+0x157/0x730 [btrfs]()
-[13616.544293] Modules linked in: binfmt_misc fuse ebtable_nat nf_conntrack_netbios_ns nf_conntrack_broadcast ipt_MASQUERADE ip6table_nat nf_nat_ipv6 ip6table_mangle ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 iptable_nat nf_nat_ipv4 nf_nat iptable_mangle nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ebtable_filter ebtables ip6table_filter ip6_tables bnep nls_utf8 hfsplus coretemp kvm_intel kvm b43 snd_hda_codec_realtek snd_hda_intel snd_hda_codec bcma snd_hwdep snd_seq snd_seq_device microcode mac80211 cfg80211 snd_pcm iTCO_wdt iTCO_vendor_support snd_page_alloc uvcvideo snd_timer applesmc ssb snd input_polldev btusb i2c_i801 videobuf2_vmalloc videobuf2_memops videobuf2_core lpc_ich bcm5974 mmc_core soundcore sky2 bluetooth hid_appleir videodev media mfd_core apple_bl rfkill shpchp acpi_cpufreq
-[13616.544330]  nfsd auth_rpcgss nfs_acl lockd sunrpc btrfs libcrc32c xor raid6_pq nouveau mxm_wmi wmi i2c_algo_bit drm_kms_helper firewire_ohci ata_generic ttm pata_acpi firewire_core crc_itu_t drm i2c_core video
-[13616.544347] CPU: 1 PID: 8608 Comm: mv Tainted: G        W    3.12.0-0.rc3.git0.1.fc21.x86_64 #1
-[13616.544349] Hardware name: Apple Inc. MacBookPro4,1/Mac-F42C89C8, BIOS    MBP41.88Z.00C1.B03.0802271651 02/27/08
-[13616.544351]  0000000000000009 ffff88000bd63c78 ffffffff8165e6e4 0000000000000000
-[13616.544354]  ffff88000bd63cb0 ffffffff810683ed ffff88000c9f3a40 0000000000000100
-[13616.544356]  0000000000000000 ffff88000c9c9e08 ffff88000c9f3a01 ffff88000bd63cc0
-[13616.544359] Call Trace:
-[13616.544366]  [<ffffffff8165e6e4>] dump_stack+0x45/0x56
-[13616.544370]  [<ffffffff810683ed>] warn_slowpath_common+0x7d/0xa0
-[13616.544373]  [<ffffffff810684ca>] warn_slowpath_null+0x1a/0x20
-[13616.544387]  [<ffffffffa0226287>] btrfs_rename+0x157/0x730 [btrfs]
-[13616.544390]  [<ffffffff811bacfa>] vfs_rename+0x33a/0x470
-[13616.544393]  [<ffffffff811bb1b9>] SYSC_renameat+0x389/0x430
-[13616.544396]  [<ffffffff811bd351>] ? user_path_at+0x11/0x20
-[13616.544399]  [<ffffffff811b1d62>] ? SYSC_newlstat+0x22/0x40
-[13616.544402]  [<ffffffff811bdc0e>] SyS_renameat+0xe/0x10
-[13616.544404]  [<ffffffff811bdc2b>] SyS_rename+0x1b/0x20
-[13616.544407]  [<ffffffff8166d6a9>] system_call_fastpath+0x16/0x1b
-[13616.544409] ---[ end trace 36ebd831d74ca651 ]---
-[13720.422719] BTRFS debug (device sda5): unlinked 360 orphans
-[13727.309658] BTRFS debug (device sda5): unlinked 5 orphans
-
-
-
-Chris Murphy

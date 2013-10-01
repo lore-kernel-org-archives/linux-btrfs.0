@@ -1,95 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45994 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753274Ab3JAPuE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Oct 2013 11:50:04 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:45348 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751079Ab3JAQHA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Oct 2013 12:07:00 -0400
+Received: by mail-wi0-f182.google.com with SMTP id ez12so5845456wid.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Oct 2013 09:06:59 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fusionio.com>
-Subject: [PATCH v2] Btrfs: fix crash of compressed writes
-Date: Tue,  1 Oct 2013 23:49:49 +0800
-Message-Id: <1380642589-5983-1-git-send-email-bo.li.liu@oracle.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: remove unnecessary tree search when logging inode
+Date: Tue,  1 Oct 2013 17:06:53 +0100
+Message-Id: <1380643613-25579-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1380640163-12098-1-git-send-email-fdmanana@gmail.com>
+References: <1380640163-12098-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The crash[1] is found by xfstests/generic/208 with "-o compress",
-it's not reproduced everytime, but it does panic.
+In tree-log.c:btrfs_log_inode(), we keep calling btrfs_search_forward()
+until it returns a key whose objectid is higher than our inode or until
+the key's type is higher than our maximum allowed type.
 
-The bug is quite interesting, it's actually introduced by a recent commit
-(573aecafca1cf7a974231b759197a1aebcf39c2a,
-Btrfs: actually limit the size of delalloc range).
+At the end of the loop, we increment our mininum search key's objectid
+and type regardless of our desired target objectid and maximum desired
+type, which causes another loop iteration that will call again
+btrfs_search_forward() just to figure out we've gone beyond our maximum
+key and exit the loop. Therefore while incrementing our minimum key,
+don't do it blindly and exit the loop immiediately if the next search
+key's objectid or type is beyond what we seek.
 
-Btrfs implements delay allocation, so during writeback, we
-(1) get a page A and lock it
-(2) search the state tree for delalloc bytes and lock all pages within the range
-(3) process the delalloc range, including find disk space and create
-    ordered extent and so on.
-(4) submit the page A.
+Also after incrementing the type, set the key's offset to 0, which was
+missing and could make us loose some of the inode's items.
 
-It runs well in normal cases, but if we're in a racy case, eg.
-buffered compressed writes and aio-dio writes,
-sometimes we may fail to lock all pages in the 'delalloc' range,
-in which case, we need to fall back to search the state tree again with
-a smaller range limit(max_bytes = PAGE_CACHE_SIZE - offset).
-
-The mentioned commit has a side effect, that is, in the fallback case,
-we can find delalloc bytes before the index of the page we already have locked,
-so we're in the case of (delalloc_end <= *start) and return with (found > 0).
-
-This ends with not locking delalloc pages but making ->writepage still
-process them, and the crash happens.
-
-This fixes it by just thinking that we find nothing and returning to caller
-as the caller knows how to deal with it properly.
-
-[1]:
-------------[ cut here ]------------
-kernel BUG at mm/page-writeback.c:2170!
-[...]
-CPU: 2 PID: 11755 Comm: btrfs-delalloc- Tainted: G           O 3.11.0+ #8
-[...]
-RIP: 0010:[<ffffffff810f5093>]  [<ffffffff810f5093>] clear_page_dirty_for_io+0x1e/0x83
-[...]
-[ 4934.248731] Stack:
-[ 4934.248731]  ffff8801477e5dc8 ffffea00049b9f00 ffff8801869f9ce8 ffffffffa02b841a
-[ 4934.248731]  0000000000000000 0000000000000000 0000000000000fff 0000000000000620
-[ 4934.248731]  ffff88018db59c78 ffffea0005da8d40 ffffffffa02ff860 00000001810016c0
-[ 4934.248731] Call Trace:
-[ 4934.248731]  [<ffffffffa02b841a>] extent_range_clear_dirty_for_io+0xcf/0xf5 [btrfs]
-[ 4934.248731]  [<ffffffffa02a8889>] compress_file_range+0x1dc/0x4cb [btrfs]
-[ 4934.248731]  [<ffffffff8104f7af>] ? detach_if_pending+0x22/0x4b
-[ 4934.248731]  [<ffffffffa02a8bad>] async_cow_start+0x35/0x53 [btrfs]
-[ 4934.248731]  [<ffffffffa02c694b>] worker_loop+0x14b/0x48c [btrfs]
-[ 4934.248731]  [<ffffffffa02c6800>] ? btrfs_queue_worker+0x25c/0x25c [btrfs]
-[ 4934.248731]  [<ffffffff810608f5>] kthread+0x8d/0x95
-[ 4934.248731]  [<ffffffff81060868>] ? kthread_freezable_should_stop+0x43/0x43
-[ 4934.248731]  [<ffffffff814fe09c>] ret_from_fork+0x7c/0xb0
-[ 4934.248731]  [<ffffffff81060868>] ? kthread_freezable_should_stop+0x43/0x43
-[ 4934.248731] Code: ff 85 c0 0f 94 c0 0f b6 c0 59 5b 5d c3 0f 1f 44 00 00 55 48 89 e5 41 54 53 48 89 fb e8 2c de 00 00 49 89 c4 48 8b 03 a8 01 75 02 <0f> 0b 4d 85 e4 74 52 49 8b 84 24 80 00 00 00 f6 40 20 01 75 44
-[ 4934.248731] RIP  [<ffffffff810f5093>] clear_page_dirty_for_io+0x1e/0x83
-[ 4934.248731]  RSP <ffff8801869f9c48>
-[ 4934.280307] ---[ end trace 36f06d3f8750236a ]---
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-v2: adopt an alternative way to fix the problem, thanks to Josef's advice.
 
- fs/btrfs/extent_io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+V2: Reset key offset to 0 after incrementing its type field.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c09a40d..43feb46 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1614,7 +1614,7 @@ again:
- 		*start = delalloc_start;
- 		*end = delalloc_end;
- 		free_extent_state(cached_state);
--		return found;
-+		return 0;
- 	}
+ fs/btrfs/tree-log.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 79f057c..7ae9e7d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3769,14 +3769,14 @@ next_slot:
+ 		}
+ 		btrfs_release_path(path);
  
- 	/*
+-		if (min_key.offset < (u64)-1)
++		if (min_key.offset < (u64)-1) {
+ 			min_key.offset++;
+-		else if (min_key.type < (u8)-1)
++		} else if (min_key.type < max_key.type) {
+ 			min_key.type++;
+-		else if (min_key.objectid < (u64)-1)
+-			min_key.objectid++;
+-		else
++			min_key.offset = 0;
++		} else {
+ 			break;
++		}
+ 	}
+ 	if (ins_nr) {
+ 		ret = copy_items(trans, inode, dst_path, src, ins_start_slot,
 -- 
-1.8.1.4
+1.7.9.5
 

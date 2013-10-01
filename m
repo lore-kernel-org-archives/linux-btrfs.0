@@ -1,34 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56770 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49447 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751907Ab3JaW3i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Oct 2013 18:29:38 -0400
-Date: Thu, 31 Oct 2013 23:29:36 +0100
+	id S1752743Ab3JALTx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Oct 2013 07:19:53 -0400
+Date: Tue, 1 Oct 2013 13:19:50 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Frank Holton <fholton@gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Balance empty filesystem loses raid profile for data
-Message-ID: <20131031222936.GN8516@twin.jikos.cz>
+Subject: Re: [PATCH v2 0/9] enhance btrfs qgroup show command
+Message-ID: <20131001111950.GA18291@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CAC4gV=4Y-Yn4Wc=VSXTONPaaxA1t_GSN6JR2ZPzh59mOWNPy4A@mail.gmail.com>
+References: <1379917048-9720-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAC4gV=4Y-Yn4Wc=VSXTONPaaxA1t_GSN6JR2ZPzh59mOWNPy4A@mail.gmail.com>
+In-Reply-To: <1379917048-9720-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 31, 2013 at 10:51:28AM -0400, Frank Holton wrote:
-> So I just noticed this while running some tests and am not sure if
-> this is the expected behavior but it doesn't seem right to me.
-> 
-> If you run a balance on an empty filesystem, it removes all of the
-> data chunks. Writing files to the fs results in a new data chunk being
-> allocated of type single completely ignoring what the filesystem was
-> created with.
+On Mon, Sep 23, 2013 at 02:17:19PM +0800, Wang Shilong wrote:
+> Firstly, we restructure show_qgroups, make it easy to add new features.
+> And then we add '-p' '-c', '-l',and '-e' options to print the parent
+> qgroup id, child qgroup id, max referenced size and max exclusive size
+> of qgroup respectively, add '-F' and '-f' option to list qgroups that
+> impact the given path.
 
-It's not entirely right, yes. There is currently no notion of default
-profile to create (eg. the one that was given at mkfs time). Single is
-the first in the list. I hope we'll be able to solve that with the
-persistent object properties.
+Well done! I really like it.
 
+Minor comments:
+
+* -l sounds less intuitive, I suggest to use -r as for
+  'referenced', given that there is -e for 'exclusive'.
+
+* the size should be pretty-printed by default or in bytes if a
+  commandline option is given
+
+* in the long term, the tabular output would be much better as
+  default, and the current terse output available via commandline option
+  for batch processing
+
+thanks,
 david

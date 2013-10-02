@@ -1,50 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:30867 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751518Ab3JBAmf convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Oct 2013 20:42:35 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Is `btrfsck --repair` supposed to actually repair problems?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20131001234655.GA7937@pyropus.ca>
-Date: Tue, 1 Oct 2013 18:42:31 -0600
-Cc: btrfs list <linux-btrfs@vger.kernel.org>
-Message-Id: <441F4B12-E813-43E0-9933-79D1C3BF68C3@colorremedies.com>
-References: <20131001211255.GA5946@pyropus.ca> <13617928-CDCE-439D-B887-ED42F0E43F12@colorremedies.com> <20131001234655.GA7937@pyropus.ca>
-To: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
+Received: from dkim1.fusionio.com ([66.114.96.53]:33645 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751448Ab3JBBSV convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Oct 2013 21:18:21 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D381A7C0425
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Oct 2013 19:18:20 -0600 (MDT)
+From: Chris Mason <clmason@fusionio.com>
+To: Saul Wold <sgw@linux.intel.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Issue building a file based rootfs image with mkfs.btrfs
+Date: Wed, 2 Oct 2013 01:18:19 +0000
+Message-ID: <FD85C8284EBEEA498A3405D29590BB980E67CC58@MBS1.int.fusionio.com>
+References: <523B4036.7030204@linux.intel.com>
+ <20130928122952.31924.54312@localhost.localdomain>,<524B3585.1060407@linux.intel.com>
+In-Reply-To: <524B3585.1060407@linux.intel.com>
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Saul,
 
-On Oct 1, 2013, at 5:46 PM, Charles Cazabon <charlesc-lists-btrfs@pyropus.ca> wrote:
-> 
->  # btrfs fi df /media/bigbackup/
->  Data: total=4.53TB, used=4.22TB
->  System, DUP: total=8.00MB, used=508.00KB
->  System: total=4.00MB, used=0.00
->  Metadata, DUP: total=18.00GB, used=17.13GB
->  Metadata: total=8.00MB, used=0.00
+The patch ended up a little bigger than I expected because it is sharing infrastructure with btfs-convert.  Travel added a little more delay, but I'm almost there.
 
-Since there's only one copy of the data, there isn't a way to repair it, it just notes that there is a checksum mismatch.
-> 
->> btrfs show
-> 
-> This fails with `btrfs: unknown token 'show'`.
+-chris
+________________________________________
+From: Saul Wold [sgw@linux.intel.com]
+Sent: Tuesday, October 01, 2013 4:50 PM
+To: Chris Mason
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
 
-I meant 'btrfs fi show'
+On 09/28/2013 05:29 AM, Chris Mason wrote:
+> Quoting Saul Wold (2013-09-19 14:19:34)
+>> Hi there,
+>>
+>> I am attempting to build a rootfs image from an existing rootfs
+>> directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
+>>
+>> The couple problem I saw was that the target image file needed to exist,
+>> although I think I can patch that then the FS size was much larger than
+>> the actual size, I tracked this to the usage of ftw not accounting for
+>> symlinks, I have a patch for that which I will send once I finish
+>> getting the other issues resolved.
+>>
+>> Next issue I hit was an assertion failure after getting "not enough free
+>> space" message:
+>>
+>> not enough free space
+>> add_file_items failed
+>> unable to traverse_directory
+>> Making image is aborted.
+>> mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
+>>
+>> I am kind of stuck on this one, took it as far as I can right now.
+>> Would I be better off dropping back to 0.19 or can we move forward
+>> fixing this?
+>
+> Hi Saul,
+>
+> Update on my end, the problem is the image code expects every file to
+> fit inside a single chunk.  It's only creating 8MB chunks, so any file
+> over 8MB in size is causing problems.
+>
+> I'm fixing it up here, I should have a patch for you on Monday.
+>
+Any update on this?  Just curious.
 
+Thanks
+        Sau!
 
-> As I say, it's 8 disks (yes, SATA).  What info exactly do you want about the
-> disks and ports? 
-
-Looking for problems that relate to this one.
-
-When was the last time you did a scrub on the md device? And what was the result?
-
-What is the 'smartctl -l scterc /dev/sdX' result for one of the drives?
-
-This sounds to me like it could be a bit flip, and btrfs is catching it but doesn't have a 2nd copy of the data. Just a guess.
-
-Chris Murphy
+> Thanks!
+>
+> -chris
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,82 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33645 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751448Ab3JBBSV convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Oct 2013 21:18:21 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id D381A7C0425
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Oct 2013 19:18:20 -0600 (MDT)
-From: Chris Mason <clmason@fusionio.com>
-To: Saul Wold <sgw@linux.intel.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Issue building a file based rootfs image with mkfs.btrfs
-Date: Wed, 2 Oct 2013 01:18:19 +0000
-Message-ID: <FD85C8284EBEEA498A3405D29590BB980E67CC58@MBS1.int.fusionio.com>
-References: <523B4036.7030204@linux.intel.com>
- <20130928122952.31924.54312@localhost.localdomain>,<524B3585.1060407@linux.intel.com>
-In-Reply-To: <524B3585.1060407@linux.intel.com>
-Content-Type: text/plain; charset="us-ascii"
+Received: from detritus.pyropus.ca ([64.5.53.58]:52758 "HELO
+	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1752482Ab3JBDO1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Oct 2013 23:14:27 -0400
+Date: Tue, 1 Oct 2013 21:13:55 -0600
+From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
+To: btrfs list <linux-btrfs@vger.kernel.org>
+Subject: Re: Is `btrfsck --repair` supposed to actually repair problems?
+Message-ID: <20131002031355.GA11675@pyropus.ca>
+References: <20131001211255.GA5946@pyropus.ca>
+ <13617928-CDCE-439D-B887-ED42F0E43F12@colorremedies.com>
+ <20131001234655.GA7937@pyropus.ca>
+ <441F4B12-E813-43E0-9933-79D1C3BF68C3@colorremedies.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <441F4B12-E813-43E0-9933-79D1C3BF68C3@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Saul,
+Chris Murphy <lists@colorremedies.com> wrote:
+> On Oct 1, 2013, at 5:46 PM, Charles Cazabon wrote:
+> > 
+> >  # btrfs fi df /media/bigbackup/
+> >  Data: total=4.53TB, used=4.22TB
+> >  System, DUP: total=8.00MB, used=508.00KB
+> >  System: total=4.00MB, used=0.00
+> >  Metadata, DUP: total=18.00GB, used=17.13GB
+> >  Metadata: total=8.00MB, used=0.00
+> 
+> Since there's only one copy of the data, there isn't a way to repair it, it
+> just notes that there is a checksum mismatch.
 
-The patch ended up a little bigger than I expected because it is sharing infrastructure with btfs-convert.  Travel added a little more delay, but I'm almost there.
+Ah, I'm not looking to repair the files -- I can recopy the files easily
+enough, and rsync will pick up any files whose contents have been corrupted.
+I'd like to get the filesystem fixed, though.  i.e., even deleting the
+affected files would be fine.  This is a new filesystem to replace my existing
+(full) backups filesystem.  The existing backups one is ext4 but this new one
+is too big for mkfs.ext4 to handle, so btrfs it is.  I wasn't expecting
+problems as I've been running btrfs for other purposes for years.
 
--chris
-________________________________________
-From: Saul Wold [sgw@linux.intel.com]
-Sent: Tuesday, October 01, 2013 4:50 PM
-To: Chris Mason
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
+Am I misunderstanding something here?  It seems to me like btrfsck is telling
+me there's problems with the filesystem itself when it continues to report
+these checksum errors even after a `btrfsck --repair`.
 
-On 09/28/2013 05:29 AM, Chris Mason wrote:
-> Quoting Saul Wold (2013-09-19 14:19:34)
->> Hi there,
->>
->> I am attempting to build a rootfs image from an existing rootfs
->> directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
->>
->> The couple problem I saw was that the target image file needed to exist,
->> although I think I can patch that then the FS size was much larger than
->> the actual size, I tracked this to the usage of ftw not accounting for
->> symlinks, I have a patch for that which I will send once I finish
->> getting the other issues resolved.
->>
->> Next issue I hit was an assertion failure after getting "not enough free
->> space" message:
->>
->> not enough free space
->> add_file_items failed
->> unable to traverse_directory
->> Making image is aborted.
->> mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
->>
->> I am kind of stuck on this one, took it as far as I can right now.
->> Would I be better off dropping back to 0.19 or can we move forward
->> fixing this?
->
-> Hi Saul,
->
-> Update on my end, the problem is the image code expects every file to
-> fit inside a single chunk.  It's only creating 8MB chunks, so any file
-> over 8MB in size is causing problems.
->
-> I'm fixing it up here, I should have a patch for you on Monday.
->
-Any update on this?  Just curious.
+> I meant 'btrfs fi show'
 
-Thanks
-        Sau!
+  Label: 'bigbackup'  uuid: c18dfd04-d931-4269-b999-e94df3b1918c
+  Total devices 1 FS bytes used 4.23TB
+  devid    1 size 16.37TB used 4.56TB path /dev/dm-9
 
-> Thanks!
->
-> -chris
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+> > As I say, it's 8 disks (yes, SATA).  What info exactly do you want about
+> > the disks and ports? 
+> 
+> Looking for problems that relate to this one.
+> 
+> When was the last time you did a scrub on the md device? And what was the
+> result?
+
+It's a brand new array.  The initial sync is actually still going on (about
+half complete; it'll take several days to initialize an array this size on
+this hardware).
+
+So in short, the underlying array is clean.
+
+> What is the 'smartctl -l scterc /dev/sdX' result for one of the drives?
+
+  Warning: device does not support SCT Error Recovery Control command
+
+> This sounds to me like it could be a bit flip, and btrfs is catching it but
+> doesn't have a 2nd copy of the data. Just a guess.
+
+If one of the disks flipped a bit, it would be caught at the md RAID-6 level,
+no?
+
+Charles
+-- 
+-----------------------------------------------------------------------
+Charles Cazabon
+GPL'ed software available at:               http://pyropus.ca/software/
+-----------------------------------------------------------------------

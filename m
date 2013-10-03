@@ -1,177 +1,419 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:43972 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752905Ab3JBX3A (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Oct 2013 19:29:00 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 46BFC7C068D
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2013 17:29:00 -0600 (MDT)
-Date: Wed, 2 Oct 2013 19:28:58 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Aastha Mehta <aasthakm@gmail.com>
-CC: Josef Bacik <jbacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Questions regarding logging upon fsync in btrfs
-Message-ID: <20131002232858.GD2562@localhost.localdomain>
-References: <20130930201125.GA27490@localhost.localdomain>
- <CAEx9m47DFKxUQP6k6qdei1FpPe17hyGGGxZNbANZPiK9qrKoxw@mail.gmail.com>
- <20130930204738.GB27490@localhost.localdomain>
- <CAEx9m46QXYSHjCAF3enUom__SwR8vDNsw_qmzFqXZPnPwxF_1w@mail.gmail.com>
- <20131001173416.GF27490@localhost.localdomain>
- <CAEx9m47fk2zwpAdPq2gFx1Y5DDV9rqtWzo=QxmCUgeTS83fBOQ@mail.gmail.com>
- <CAEx9m4649eJR0kAXRoQx9myUw+8ZBXi71pm3aYRsquZ69+ULZA@mail.gmail.com>
- <CAEx9m46UY3HiTgO-mt8x2Ykj=jn3_Sf=4SCSdJTwAHS0BfLkwQ@mail.gmail.com>
- <20131002115222.GC2562@localhost.localdomain>
- <CAEx9m46z0U0bfPMSF-pwOfkXP01EaA-qyNkaW=O2esjaDt3ciw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAEx9m46z0U0bfPMSF-pwOfkXP01EaA-qyNkaW=O2esjaDt3ciw@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:60581 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753089Ab3JCAtR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Oct 2013 20:49:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VRX6Q-0005h6-FL
+	for linux-btrfs@vger.kernel.org; Thu, 03 Oct 2013 02:49:14 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Oct 2013 02:49:14 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Oct 2013 02:49:14 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Corrupt btrfs filesystem recovery... What best instructions?
+Date: Thu, 03 Oct 2013 01:49:03 +0100
+Message-ID: <l2ietn$jv1$1@ger.gmane.org>
+References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org> <l2826k$1uc$1@ger.gmane.org> <pan$69794$b0c00066$a4aa3035$c87a3c3d@cox.net> <l2a635$37m$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <l2a635$37m$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 02, 2013 at 10:12:20PM +0200, Aastha Mehta wrote:
-> On 2 October 2013 13:52, Josef Bacik <jbacik@fusionio.com> wrote:
-> > On Tue, Oct 01, 2013 at 10:13:25PM +0200, Aastha Mehta wrote:
-> >> On 1 October 2013 21:42, Aastha Mehta <aasthakm@gmail.com> wrote:
-> >> > On 1 October 2013 21:40, Aastha Mehta <aasthakm@gmail.com> wrote:
-> >> >> On 1 October 2013 19:34, Josef Bacik <jbacik@fusionio.com> wrote:
-> >> >>> On Mon, Sep 30, 2013 at 11:07:20PM +0200, Aastha Mehta wrote:
-> >> >>>> On 30 September 2013 22:47, Josef Bacik <jbacik@fusionio.com> wrote:
-> >> >>>> > On Mon, Sep 30, 2013 at 10:30:59PM +0200, Aastha Mehta wrote:
-> >> >>>> >> On 30 September 2013 22:11, Josef Bacik <jbacik@fusionio.com> wrote:
-> >> >>>> >> > On Mon, Sep 30, 2013 at 09:32:54PM +0200, Aastha Mehta wrote:
-> >> >>>> >> >> On 29 September 2013 15:12, Josef Bacik <jbacik@fusionio.com> wrote:
-> >> >>>> >> >> > On Sun, Sep 29, 2013 at 11:22:36AM +0200, Aastha Mehta wrote:
-> >> >>>> >> >> >> Thank you very much for the reply. That clarifies a lot of things.
-> >> >>>> >> >> >>
-> >> >>>> >> >> >> I was trying a small test case that opens a file, writes a block of
-> >> >>>> >> >> >> data, calls fsync and then closes the file. If I understand correctly,
-> >> >>>> >> >> >> fsync would return only after all in-memory buffers have been
-> >> >>>> >> >> >> committed to disk. I have added few print statements in the
-> >> >>>> >> >> >> __extent_writepage function, and I notice that the function gets
-> >> >>>> >> >> >> called a bit later after fsync returns. It seems that I am not
-> >> >>>> >> >> >> guaranteed to see the data going to disk by the time fsync returns.
-> >> >>>> >> >> >>
-> >> >>>> >> >> >> Am I doing something wrong, or am I looking at the wrong place for
-> >> >>>> >> >> >> disk write? This happens both with tree logging enabled as well as
-> >> >>>> >> >> >> with notreelog.
-> >> >>>> >> >> >>
-> >> >>>> >> >> >
-> >> >>>> >> >> > So 3.1 was a long time ago and to be sure it had issues I don't think it was
-> >> >>>> >> >> > _that_ broken.  You are probably better off instrumenting a recent kernel, 3.11
-> >> >>>> >> >> > or just build btrfs-next from git.  But if I were to make a guess I'd say that
-> >> >>>> >> >> > __extent_writepage was how both data and metadata was written out at the time (I
-> >> >>>> >> >> > don't think I changed it until 3.2 or something later) so what you are likely
-> >> >>>> >> >> > seeing is the normal transaction commit after the fsync.  In the case of
-> >> >>>> >> >> > notreelog we are likely starting another transaction and you are seeing that
-> >> >>>> >> >> > commit (at the time the transaction kthread would start a transaction even if
-> >> >>>> >> >> > none had been started yet.)  Thanks,
-> >> >>>> >> >> >
-> >> >>>> >> >> > Josef
-> >> >>>> >> >>
-> >> >>>> >> >> Is there any special handling for very small file write, less than 4K? As
-> >> >>>> >> >> I understand there is an optimization to inline the first extent in a file if
-> >> >>>> >> >> it is smaller than 4K, does it affect the writeback on fsync as well? I did
-> >> >>>> >> >> set the max_inline mount option to 0, but even then it seems there is
-> >> >>>> >> >> some difference in fsync behaviour for writing first extent of less than 4K
-> >> >>>> >> >> size and writing 4K or more.
-> >> >>>> >> >>
-> >> >>>> >> >
-> >> >>>> >> > Yeah if the file is an inline extent then it will be copied into the log
-> >> >>>> >> > directly and the log will be written out, no going through the data write path
-> >> >>>> >> > at all.  Max inline == 0 should make it so we don't inline, so if it isn't
-> >> >>>> >> > honoring that then that may be a bug.  Thanks,
-> >> >>>> >> >
-> >> >>>> >> > Josef
-> >> >>>> >>
-> >> >>>> >> I tried it on 3.12-rc2 release, and it seems there is a bug then.
-> >> >>>> >> Please find attached logs to confirm.
-> >> >>>> >> Also, probably on the older release.
-> >> >>>> >>
-> >> >>>> >
-> >> >>>> > Oooh ok I understand, you have your printk's in the wrong place ;).
-> >> >>>> > do_writepages doesn't necessarily mean you are writing something.  If you want
-> >> >>>> > to see if stuff got written to the disk I'd put a printk at run_delalloc_range
-> >> >>>> > and have it spit out the range it is writing out since thats what we think is
-> >> >>>> > actually dirty.  Thanks,
-> >> >>>> >
-> >> >>>> > Josef
-> >> >>>>
-> >> >>>> No, but I also placed dump_stack() in the beginning of
-> >> >>>> __extent_writepage. run_delalloc_range is being called only from
-> >> >>>> __extent_writepage, if it were to be called, the dump_stack() at the
-> >> >>>> top of __extent_writepage would have printed as well, no?
-> >> >>>>
-> >> >>>
-> >> >>> Ok I've done the same thing and I'm not seeing what you are seeing.  Are you
-> >> >>> using any mount options other than notreelog and max_inline=0?  Could you adjust
-> >> >>> your printk to print out the root objectid for the inode as well?  It could be
-> >> >>> possible that this is the writeout for the space cache or inode cache.  Thanks,
-> >> >>>
-> >> >>> Josef
-> >> >>
-> >> >> I actually printed the stack only when the root objectid is 5. I have
-> >> >> attached another log for writing the first 500 bytes in a file. I also
-> >> >> print the root objectid for the inode in run_delalloc and
-> >> >> __extent_writepage.
-> >> >>
-> >> >> Thanks
-> >> >>
-> >> >
-> >> > Just to clarify, in the latest logs, I allowed printing of debug
-> >> > printk's and stack dump for all root objectid's.
-> >>
-> >> Actually, it is the same behaviour when I write anything less than 4K
-> >> long, no matter what offset, except if I straddle the page boundary.
-> >> To summarise:
-> >> 1. write 4K -> write in the fsync path
-> >> 2. write less than 4K, within a single page -> bdi_writeback by flush worker
-> >> 3. small write that straddles a page boundary or write 4K+delta -> the
-> >> first page gets written in the fsync path, the remaining length that
-> >> straddles the page boundary is written in the bdi_writeback path
-> >>
-> >> Please let me know, if I am trying out incorrect cases.
-> >>
-> >> Sorry for too many mails.
-> >>
-> >
-> > This has been bugging me so much I was dreaming about it and now here I am
-> > writing an email at 4:45 in the morning ;).  So I couldn't reproduce earlier
-> > with any of these scenarios and then I realized something, I'm doing something
-> > like this
-> >
-> > xfs_io -f -c "pwrite 0 54" -c "fsync" /mnt/btrfs-test/foo
-> >
-> > and it is working perfectly.  But I bet what you are doing is something like
-> > this
-> >
-> > file = fopen("/mnt/btrfs-test/foo");
-> > fwrite(buf, 54, 1, file);
-> > fsync(fileno(file));
-> > fclose(file);
-> >
-> > right?  Please say yes :).  If this is the case then it is likely that these
-> > small writes are getting buffered in the userspace buffering that comes with
-> > fwrite, and so when you fsync it is only flushing the data that is actually in
-> > the kernel, not what is buffered in userspace.  Then when you fclose it flushes
-> > what is in the userspace buffers out to the kernel and then later on the
-> > background writer comes in and writes out the dirty data.  To fix this you want
-> > to do fflush() and then fsync().  Hopefully that is what you are doing and I can
-> > go back to sleep, thanks,
-> >
-> > Josef
-> 
-> Indeed!! :)
-> 
-> I did mention I am using f* version of the POSIX API. Sorry for the
-> confusion. Calling fflush before fsync seems to write everything
-> perfectly. It works even without notreelog option, as it should have.
-> I was under the misconception that fflush and fsync do the same thing.
-> 
-> Thanks a lot for your quick help.
-> 
+So... The fix:
 
-Yeah sorry all I read was "there is a bug in fsync" and just assumed we broke
-something ;).  Glad I could help,
 
-Josef
+(
+
+Summary:
+
+Mounting "-o recovery,noatime" worked well and allowed a diff check to
+complete for all but one directory tree. So very nearly all the data is
+fine.
+
+Deleting the failed directory tree caused a call stack dump and eventually:
+
+kernel: parent transid verify failed on 915444822016 wanted 16974 found
+13021
+kernel: BTRFS info (device sdc): failed to delete reference to
+eggdrop-1.6.19.ebuild, inode 2096893 parent 5881667
+kernel: BTRFS error (device sdc) in __btrfs_unlink_inode:3662: errno=-5
+IO failure
+kernel: BTRFS info (device sdc): forced readonly
+
+
+Greater detail listed below.
+
+What next best to try?
+
+Safer to try again but this time with with "no_space_cache,no_inode_cache"?
+
+Thanks,
+Martin
+
+)
+
+
+
+On 29/09/13 22:29, Martin wrote:
+> On 29/09/13 06:11, Duncan wrote:
+
+>>> What does btrfs do (or can do) for recovery?
+>>
+>> Here's a general-case answer (courtesy gmane) to the order in which to 
+>> try recovery question, that Hugo posted a few weeks ago:
+>>
+>> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27999
+> 
+> Thanks for that. Very well found!
+> 
+> The instructions from Hugo are:
+> 
+> ####
+>    Let's assume that you don't have a physical device failure (which
+> is a different set of tools -- mount -odegraded, btrfs dev del
+> missing).
+> 
+>    First thing to do is to take a btrfs-image -c9 -t4 of the
+> filesystem, and keep a copy of the output to show josef. :)
+> 
+>    Then start with -orecovery and -oro,recovery for pretty much
+> anything.
+
+For anyone following this, first a health warning:
+
+If your data is in any way critical or important, then you should
+already have a backup copy elsewhere. If not, best make a binary image
+copy of your disk first!
+
+
+OK... So with the latest kernel (3.11.2) and btrfs tools
+(Btrfs v0.20-rc1-358-g194aa4a) and the sequence went:
+
+
+mount -v -t btrfs -o recovery LABEL=bu_A /mnt/bu_A
+
+(From syslog:)
+
+kernel: device label bu_A devid 1 transid 17222 /dev/sdc
+kernel: btrfs: enabling auto recovery
+kernel: btrfs: disk space caching is enabled
+kernel: btrfs: bdev /dev/sdc errs: wr 0, rd 27, flush 0, corrupt 0, gen 0
+
+Running through a diff check for part of the backups, syslog reported:
+
+kernel: btrfs read error corrected: ino 1 off 915433144320 (dev /dev/sdc
+sector 1813661856)
+
+Also, the HDD was showing quite a few write operations so... Is
+"noatime" set?... Ooops... Didn't include a "ro"... So, killed the diff
+check and remounted:
+
+mount -v -t btrfs -o remount,recovery,noatime /mnt/bu_A
+mount: /dev/sdc mounted on /mnt/bu_A
+
+kernel: btrfs: enabling inode map caching
+kernel: btrfs: enabling auto recovery
+kernel: btrfs: disk space caching is enabled
+
+And running the diff check again... Now zero writes to the HDD :-)
+
+
+Various syslog messages were given:
+
+kernel: parent transid verify failed on 907185135616 wanted 15935 found
+12264
+kernel: btrfs read error corrected: ino 1 off 907185135616 (dev /dev/sdc
+sector 1781823824)
+kernel: parent transid verify failed on 907185143808 wanted 15935 found
+12264
+kernel: btrfs read error corrected: ino 1 off 907185143808 (dev /dev/sdc
+sector 1781823840)
+kernel: parent transid verify failed on 907185139712 wanted 15935 found
+12264
+kernel: btrfs read error corrected: ino 1 off 907185139712 (dev /dev/sdc
+sector 1781823832)
+kernel: parent transid verify failed on 907185152000 wanted 15935 found
+10903
+kernel: btrfs read error corrected: ino 1 off 907185152000 (dev /dev/sdc
+sector 1781823856)
+kernel: parent transid verify failed on 907183783936 wanted 15935 found
+12263
+kernel: btrfs read error corrected: ino 1 off 907183783936 (dev /dev/sdc
+sector 1781821184)
+kernel: parent transid verify failed on 907183792128 wanted 15935 found
+10903
+kernel: btrfs read error corrected: ino 1 off 907183792128 (dev /dev/sdc
+sector 1781821200)
+kernel: parent transid verify failed on 907183796224 wanted 15935 found
+12263
+kernel: btrfs read error corrected: ino 1 off 907183796224 (dev /dev/sdc
+sector 1781821208)
+kernel: parent transid verify failed on 907183841280 wanted 15935 found
+10903
+kernel: btrfs read error corrected: ino 1 off 907183841280 (dev /dev/sdc
+sector 1781821296)
+kernel: parent transid verify failed on 907183878144 wanted 15935 found
+12263
+kernel: btrfs read error corrected: ino 1 off 907183878144 (dev /dev/sdc
+sector 1781821368)
+kernel: parent transid verify failed on 907183874048 wanted 15935 found
+12263
+kernel: btrfs read error corrected: ino 1 off 907183874048 (dev /dev/sdc
+sector 1781821360)
+kernel: verify_parent_transid: 25 callbacks suppressed
+kernel: parent transid verify failed on 915431288832 wanted 16974 found
+16972
+kernel: repair_io_failure: 25 callbacks suppressed
+kernel: btrfs read error corrected: ino 1 off 915431288832 (dev /dev/sdc
+sector 1813658232)
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+[...]
+
+One directory tree failed the diff checks so I 'mv'-ed that one tree to
+rename it out of the way and then ran an "rm -Rf" to remove it.
+
+That appeared to run fine until:
+
+kernel: parent transid verify failed on 915431862272 wanted 16974 found
+16972
+kernel: btrfs read error corrected: ino 1 off 915431862272 (dev /dev/sdc
+sector 1813659352)
+kernel: parent transid verify failed on 907185127424 wanted 15935 found
+12264
+kernel: btrfs read error corrected: ino 1 off 907185127424 (dev /dev/sdc
+sector 1781823808)
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: BTRFS info (device sdc): failed to delete reference to
+metadata.xml, inode 1846452 parent 5851502
+kernel: ------------[ cut here ]------------
+kernel: WARNING: CPU: 0 PID: 3236 at fs/btrfs/super.c:253
+__btrfs_abort_transaction+0x4a/0xfc()
+kernel: btrfs: Transaction aborted (error -5)
+kernel: Modules linked in: nfsd auth_rpcgss oid_registry exportfs
+nfs_acl lockd sunrpc bridge stp llc snd_hda_codec_realtek
+snd_hda_codec_hdmi ppdev evdev serio_raw pcspkr acpi_cpufreq
+snd_hda_intel snd_hda_codec mperf snd_pcm freq_table snd_page_alloc
+snd_timer parport_pc processor wmi bnx2 snd parport thermal_sys
+i2c_piix4 button usbhid firewire_ohci firewire_core xhci_hcd ata_generic
+pata_acpi
+kernel: CPU: 0 PID: 3236 Comm: nfsd Not tainted 3.11.2-gentoo_muse11_07 #1
+kernel: Hardware name: System manufacturer System Product Name/E45M1-M
+PRO, BIOS 0502 09/21/2011
+kernel: 0000000000000000 ffffffff81700892 ffffffff815261d1 ffff8801f91f1c18
+kernel: ffffffff8102ea45 ffff88010b18e5a0 ffffffff811df675 ffff8801f91f1c38
+kernel: 00000000fffffffb ffff880233afb000 ffff880230a3b960 0000000000000e4e
+kernel: Call Trace:
+kernel: [<ffffffff815261d1>] ? dump_stack+0x41/0x51
+kernel: [<ffffffff8102ea45>] ? warn_slowpath_common+0x79/0x92
+kernel: [<ffffffff811df675>] ? __btrfs_abort_transaction+0x4a/0xfc
+kernel: [<ffffffff8102eaf6>] ? warn_slowpath_fmt+0x45/0x4a
+kernel: [<ffffffff811df675>] ? __btrfs_abort_transaction+0x4a/0xfc
+kernel: [<ffffffff812071e3>] ? __btrfs_unlink_inode+0x19a/0x2c0
+kernel: [<ffffffff812093bf>] ? btrfs_unlink_inode+0x12/0x35
+kernel: [<ffffffff8120943e>] ? btrfs_unlink+0x5c/0x94
+kernel: [<ffffffff810f8e03>] ? vfs_unlink+0x69/0xc8
+kernel: [<ffffffffa029f215>] ? nfsd_unlink+0x18e/0x1d1 [nfsd]
+kernel: [<ffffffffa02a4e87>] ? nfsd3_proc_remove+0x67/0xab [nfsd]
+kernel: [<ffffffffa029a9d2>] ? nfsd_dispatch+0x91/0x148 [nfsd]
+kernel: [<ffffffffa0234fc7>] ? svc_process+0x3e1/0x630 [sunrpc]
+kernel: [<ffffffffa0235211>] ? svc_process+0x62b/0x630 [sunrpc]
+kernel: [<ffffffffa029a574>] ? nfsd+0xc0/0x117 [nfsd]
+kernel: [<ffffffffa029a4b4>] ? nfsd_destroy+0x64/0x64 [nfsd]
+kernel: [<ffffffff81047287>] ? kthread+0xad/0xb5
+kernel: [<ffffffff810471da>] ? kthread_freezable_should_stop+0x41/0x41
+kernel: [<ffffffff8152c5ec>] ? ret_from_fork+0x7c/0xb0
+kernel: [<ffffffff810471da>] ? kthread_freezable_should_stop+0x41/0x41
+kernel: ---[ end trace 53d6fb93a497e75d ]---
+kernel: BTRFS warning (device sdc): __btrfs_unlink_inode:3662: Aborting
+unused transaction(IO failure).
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444523008 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915433652224 (dev /dev/sdc
+sector 1813662848)
+kernel: btrfs read error corrected: ino 1 off 915433029632 (dev /dev/sdc
+sector 1813661632)
+kernel: btrfs read error corrected: ino 1 off 915433041920 (dev /dev/sdc
+sector 1813661656)
+kernel: btrfs read error corrected: ino 1 off 915433955328 (dev /dev/sdc
+sector 1813663440)
+kernel: btrfs read error corrected: ino 1 off 915433127936 (dev /dev/sdc
+sector 1813661824)
+kernel: btrfs read error corrected: ino 1 off 915434070016 (dev /dev/sdc
+sector 1813663664)
+kernel: btrfs read error corrected: ino 1 off 915433132032 (dev /dev/sdc
+sector 1813661832)
+kernel: btrfs read error corrected: ino 1 off 915433136128 (dev /dev/sdc
+sector 1813661840)
+kernel: btrfs read error corrected: ino 1 off 915433545728 (dev /dev/sdc
+sector 1813662640)
+kernel: BTRFS info (device sdc): failed to delete reference to
+metadata.xml, inode 1846733 parent 5851559
+kernel: BTRFS warning (device sdc): __btrfs_unlink_inode:3662: Aborting
+unused transaction(IO failure).
+kernel: verify_parent_transid: 96 callbacks suppressed
+kernel: parent transid verify failed on 915431579648 wanted 16974 found
+16972
+kernel: repair_io_failure: 13 callbacks suppressed
+kernel: btrfs read error corrected: ino 1 off 915431579648 (dev /dev/sdc
+sector 1813658800)
+kernel: parent transid verify failed on 915432382464 wanted 16974 found
+16972
+kernel: btrfs read error corrected: ino 1 off 915432382464 (dev /dev/sdc
+sector 1813660368)
+kernel: parent transid verify failed on 915444707328 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915444707328 (dev /dev/sdc
+sector 1813684440)
+kernel: parent transid verify failed on 915445092352 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915445092352 (dev /dev/sdc
+sector 1813685192)
+kernel: parent transid verify failed on 915445100544 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915445100544 (dev /dev/sdc
+sector 1813685208)
+kernel: parent transid verify failed on 915431026688 wanted 16974 found
+16972
+kernel: btrfs read error corrected: ino 1 off 915431026688 (dev /dev/sdc
+sector 1813657720)
+kernel: parent transid verify failed on 915432538112 wanted 16974 found
+16972
+kernel: btrfs read error corrected: ino 1 off 915432538112 (dev /dev/sdc
+sector 1813660672)
+kernel: parent transid verify failed on 915444740096 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915444740096 (dev /dev/sdc
+sector 1813684504)
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444469760 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: verify_parent_transid: 45 callbacks suppressed
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444518912 wanted 16974 found
+13021
+kernel: btrfs read error corrected: ino 1 off 915431141376 (dev /dev/sdc
+sector 1813657944)
+kernel: btrfs read error corrected: ino 1 off 915431165952 (dev /dev/sdc
+sector 1813657992)
+kernel: btrfs read error corrected: ino 1 off 915431272448 (dev /dev/sdc
+sector 1813658200)
+kernel: btrfs read error corrected: ino 1 off 915431161856 (dev /dev/sdc
+sector 1813657984)
+kernel: btrfs read error corrected: ino 1 off 915445268480 (dev /dev/sdc
+sector 1813685536)
+kernel: btrfs read error corrected: ino 1 off 915440472064 (dev /dev/sdc
+sector 1813676168)
+kernel: btrfs read error corrected: ino 1 off 915431170048 (dev /dev/sdc
+sector 1813658000)
+kernel: btrfs read error corrected: ino 1 off 915431174144 (dev /dev/sdc
+sector 1813658008)
+kernel: btrfs read error corrected: ino 1 off 915431378944 (dev /dev/sdc
+sector 1813658408)
+kernel: verify_parent_transid: 147 callbacks suppressed
+kernel: parent transid verify failed on 915432869888 wanted 16974 found
+16972
+kernel: parent transid verify failed on 915444473856 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444473856 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915433119744 wanted 16974 found
+16972
+kernel: parent transid verify failed on 915433656320 wanted 16974 found
+16972
+kernel: parent transid verify failed on 915433123840 wanted 16974 found
+16972
+kernel: parent transid verify failed on 915433050112 wanted 16974 found
+16972
+kernel: parent transid verify failed on 915444473856 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444473856 wanted 16974 found
+13021
+kernel: parent transid verify failed on 915444822016 wanted 16974 found
+13021
+kernel: BTRFS info (device sdc): failed to delete reference to
+eggdrop-1.6.19.ebuild, inode 2096893 parent 5881667
+kernel: BTRFS error (device sdc) in __btrfs_unlink_inode:3662: errno=-5
+IO failure
+kernel: BTRFS info (device sdc): forced readonly
+
+
+Next best step to try?
+
+Remount "-o recovery,noatime" again?
+
+
+Thanks,
+Martin
+
+
+
+
+
+
+
+
+
+
+
+
+
+

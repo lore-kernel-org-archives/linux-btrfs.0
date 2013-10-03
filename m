@@ -1,168 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f179.google.com ([209.85.215.179]:56053 "EHLO
-	mail-ea0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753360Ab3JCD7E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Oct 2013 23:59:04 -0400
-Received: by mail-ea0-f179.google.com with SMTP id b10so803724eae.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2013 20:59:02 -0700 (PDT)
+Received: from mail-ie0-f169.google.com ([209.85.223.169]:46959 "EHLO
+	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757615Ab3JCEu1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Oct 2013 00:50:27 -0400
+Received: by mail-ie0-f169.google.com with SMTP id tp5so4382051ieb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2013 21:50:26 -0700 (PDT)
 MIME-Version: 1.0
-Date: Wed, 2 Oct 2013 20:59:01 -0700
-Message-ID: <CAEm3SNA-S9Mz=WAK5kFXxU_w3=+gcSqOC8XYC3KFcpNuGxtsLQ@mail.gmail.com>
-Subject: btrfs apparently causes hard lockup
-From: Justin Husted <valentinej@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+From: Slava Barinov <rayslava@gmail.com>
+Date: Thu, 3 Oct 2013 08:50:06 +0400
+Message-ID: <CADef55pBMJ-oeOLy9Z3AeP7iRyFqm6fNfuS8BNm0qbDk876SwQ@mail.gmail.com>
+Subject: Btrfs balance bug
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Good day.
 
-I've been having some trouble with one of my computers recently that
-I'm currently blaming on btrfs.
+  I've got a failure with btrfs balance. In fact I started btrfs balance /btr
+  and got a total filesystem freeze. After I tried applying balance pause
+  or balance cancel the following crashdump appeared and btrfs tool
+  freezed.
+  Reboot changed nothing: I've got totally the same crashdump.
+  So I mounted filesystem with skip_balance option and tried to cancel
+  balance. It worked. Then I performed a btrfsck on my fs and it found
+  nothing suspicious. So I believe it is just a balance bug. I suppose
+  that could be because of lack of free space on device but should not
+  filesystem reject balancing instead of crashing?
 
-At first, I thought the computer had a hardware fault, since it tended
-to just mysteriously hard-lockup a few times per day.  Usually, it
-would hard-lockup with the GUI, and I was unable to get anything out
-of it.  Occasionally, sysrq would work, but usually not.  I was able
-to get it to lock up on the console once, and it printed a few "cpu #
-soft lockup" messages before it froze completely (no sysrq).
+Best Regards,
+Slava Barinov.
 
-So, I assumed this was a hardware problem and upgraded the BIOS,
-swapped the PSU, and ran memcheck86 for 24 hours.  Seemed perfectly
-stable under memtest.  I also tried a rescue CD and synthesized some
-heavy CPU/IO load -- also perfectly stable.
+Crashdump:
 
-Then, I realized that usually it seemed to crash more while I tried to
-run a backup from my btrfs volume.  So, I ran btrfs check on it, and
-it found some errors.  In fact, I ran btrfs check on it hundreds of
-times as a stability test (with btrfs never having been mounted).
-Also stable!
+[  114.475635] btrfs: enabling inode map caching
+[  114.475640] btrfs: disk space caching is enabled
+[  117.069811] BTRFS debug (device sdb2): unlinked 1 orphans
+[  117.078876] btrfs: continuing balance
+[  117.269167] mount (4055) used greatest stack depth: 3144 bytes left
+[  133.779670] btrfs: relocating block group 447242829824 flags 1
+[  143.195258] btrfs: found 1532 extents
+[  152.192595] ------------[ cut here ]------------
+[  152.195487] kernel BUG at fs/btrfs/relocation.c:1055!
+[  152.198432] invalid opcode: 0000 [#1] SMP
+[  152.201335] Modules linked in: nfsd vmnet(O) vmblock(O) vsock(O)
+vmci(O) vmmon(O) bridge stp ipv6 llc vboxnetflt(O) vboxnetadp(O)
+vboxdrv(O) pl2303 usbserial x86_pkg_temp_thermal coretemp kvm_intel
+kvm psmouse i2c_i801
+[  152.207676] CPU: 1 PID: 4078 Comm: btrfs-balance Tainted: G
+  O 3.11.3-gentoo-ray #1
+[  152.210862] Hardware name: System manufacturer System Product
+Name/P8H77-V LE, BIOS 0608 07/27/2012
+[  152.214112] task: ffff8803b7417000 ti: ffff8803a0ae4000 task.ti:
+ffff8803a0ae4000
+[  152.217395] RIP: 0010:[<ffffffff8130e27c>]  [<ffffffff8130e27c>]
+build_backref_tree+0x112c/0x11e0
+[  152.220751] RSP: 0018:ffff8803a0ae5ab8  EFLAGS: 00010246
+[  152.224119] RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffff8803f1287910
+[  152.227481] RDX: ffff8803a0ae5b28 RSI: ffff8803b740e020 RDI: ffff8803f1287900
+[  152.230828] RBP: ffff8803a0ae5b98 R08: ffff88039ad40380 R09: ffff88040f403900
+[  152.234140] R10: ffffffff8130b5ee R11: 0000000000000000 R12: ffff8803f1287910
+[  152.237428] R13: ffff8803aa11b1b0 R14: ffff8803b740e000 R15: ffff88039ad40480
+[  152.240718] FS:  0000000000000000(0000) GS:ffff88041fa40000(0000)
+knlGS:0000000000000000
+[  152.244082] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  152.247434] CR2: 00007f5660bd5600 CR3: 0000000001c1a000 CR4: 00000000001407e0
+[  152.250787] Stack:
+[  152.254068]  ffff8803b740e580 ffff88039ad40580 ffff8803f1287960
+ffff88039ad40380
+[  152.257432]  ffff88039ad40380 ffff8803f13be000 ffff8803aa11b1b0
+ffff88039ad403c0
+[  152.260753]  ffff8803aa11b090 ffff8803b740e120 ffff88039ad40580
+ffff8803b740e020
+[  152.264097] Call Trace:
+[  152.267377]  [<ffffffff8130e6e8>] relocate_tree_blocks+0x1d8/0x640
+[  152.270682]  [<ffffffff8130f378>] ? add_data_references+0x238/0x270
+[  152.273970]  [<ffffffff8130ff78>] relocate_block_group+0x278/0x680
+[  152.277268]  [<ffffffff8131051f>] btrfs_relocate_block_group+0x19f/0x2e0
+[  152.280604]  [<ffffffff812e8bfa>] btrfs_relocate_chunk.isra.32+0x6a/0x740
+[  152.283913]  [<ffffffff812a0d81>] ? btrfs_set_path_blocking+0x31/0x70
+[  152.287194]  [<ffffffff812a5b32>] ? btrfs_search_slot+0x372/0x930
+[  152.290448]  [<ffffffff812e5217>] ? free_extent_buffer+0x47/0xa0
+[  152.293687]  [<ffffffff812ed4f7>] btrfs_balance+0x8d7/0xe00
+[  152.296906]  [<ffffffff812eda8b>] balance_kthread+0x6b/0x70
+[  152.300100]  [<ffffffff812eda20>] ? btrfs_balance+0xe00/0xe00
+[  152.303275]  [<ffffffff810646eb>] kthread+0xbb/0xc0
+[  152.306369]  [<ffffffff81064630>] ? kthread_create_on_node+0x110/0x110
+[  152.309440]  [<ffffffff8177683c>] ret_from_fork+0x7c/0xb0
+[  152.312481]  [<ffffffff81064630>] ? kthread_create_on_node+0x110/0x110
+[  152.315517] Code: 4c 89 ef e8 87 2c f9 ff 48 8b bd 60 ff ff ff e8
+7b 2c f9 ff 48 83 bd 38 ff ff ff 00 0f 85 e0 fc ff ff 31 c0 e9 ac ef
+ff ff 0f 0b <0f> 0b 48 8b 85 38 ff ff ff 49 8d 7e 20 48 8b 70 18 48 89
+c2 e8
+[  152.322548] RIP  [<ffffffff8130e27c>] build_backref_tree+0x112c/0x11e0
+[  152.325862]  RSP <ffff8803a0ae5ab8>
+[  152.329188] ---[ end trace f6907cd56547f763 ]---
+[  152.332881] btrfs-balance (4078) used greatest stack depth: 2976 bytes left
 
-I also get many warnings in the logs.  The output from btrfs check
-seems to be mysterious hex bit masks and not human-readable, but when
-I looked at the source it seemed like the warnings and the check
-output both referred to backrefs.
 
-Any idea what I should do here?  I could apply some patches if anyone
-would like to debug this.  The hard lockup seems particularly
-difficult to pin down, but so far btrfs seems like the culprit.
-
-Misc boring information:
-
-This was running Ubuntu 12.10 with an ubuntu kernel 3.5.0-41, but
-during debugging I upgraded it to linux 3.11.1 and built my own
-btrfs-progs.  Upgrading to 3.11.1 did not help stability or warnings.
-The filesystem was originally created with 3.2 I believe.
-
-This filesystem is running on two partitions.  Each partition is an
-LVM volume residing in a dm-crypt encrypted container.  The underlying
-disks are a WDC WD6400AACS-00G8B1 and a WDC WD10EADS-00L5B1.
-
-btrfs check output:
-
-checking extents
-checking free space cache
-checking fs roots
-root 256 inode 479769 errors 1000
-root 256 inode 479770 errors 1000
-root 256 inode 479771 errors 1000
-[... many more...]
-root 256 inode 497535 errors 1000
-root 1566 inode 265006 errors 400
-root 3527 inode 479769 errors 1000
-[...]
-root 3573 inode 265006 errors 400
-Checking filesystem on /dev/mapper/caper--sda-btrfs
-UUID: eef3677d-7db2-4bd5-84ac-d2b81dad48bf
-found 289666276901 bytes used err is 1
-total csum bytes: 1176876020
-total tree bytes: 2294751232
-total fs tree bytes: 800370688
-total extent tree bytes: 140996608
-btree space waste bytes: 294587633
-file data blocks allocated: 2453271158784
- referenced 1912600858624
+# btrfs fi show /btr
 Btrfs v0.20-rc1-358-g194aa4a
 
+# btrfs fi df /btr
+Data: total=405.01GB, used=377.99GB
+System, DUP: total=8.00MB, used=52.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=12.50GB, used=8.55GB
+Metadata: total=8.00MB, used=0.00
 
-Note: The file data blocks allocated and referenced figures seem wildly high?
+# btrfs --version
+Btrfs v0.20-rc1-358-g194aa4a
 
-The warning:
-
-Sep 30 21:12:40 caper kernel: [  250.921566] ------------[ cut here
-]------------
-Sep 30 21:12:40 caper kernel: [  250.921641] WARNING: CPU: 2 PID: 3622
-at /home/apw/COD/linux/fs/btrfs/inode.c:2206
-record_one_backref+0x3a9/0x420 [btrfs]()
-Sep 30 21:12:40 caper kernel: [  250.921646] Modules linked in:
-nls_utf8 isofs nls_iso8859_1 zram(C) rfcomm bnep bluetooth parport_pc
-ppdev nfsd nfs_acl auth_rpcgss nfs fscache lockd binfmt_misc sunrpc
-snd_hda_codec_hdmi wacom uvcvideo joydev videobuf2_core videodev
-hid_gaff snd_usb_audio videobuf2_vmalloc ff_memless
-snd_hda_codec_realtek videobuf2_memops snd_usbmidi_lib sp5100_tco
-snd_seq_midi snd_hda_intel dm_multipath snd_hda_codec snd_rawmidi
-scsi_dh snd_hwdep snd_seq_midi_event snd_pcm snd_seq snd_seq_device
-snd_timer serio_raw edac_core edac_mce_amd k10temp snd it87 hwmon_vid
-i2c_piix4 wmi soundcore mac_hid ohci_pci snd_page_alloc lp parport xfs
-btrfs raid6_pq zlib_deflate xor libcrc32c hid_generic usbhid hid
-dm_crypt usb_storage firewire_ohci firewire_core crc_itu_t pata_acpi
-pata_atiixp ahci libahci r8169 mii
-Sep 30 21:12:40 caper kernel: [  250.921754] CPU: 2 PID: 3622 Comm:
-btrfs-endio-wri Tainted: G         C   3.11.1-031101-generic
-#201309141102
-Sep 30 21:12:40 caper kernel: [  250.921760] Hardware name: Gigabyte
-Technology Co., Ltd. GA-MA790GP-UD4H/GA-MA790GP-UD4H, BIOS F7c
-07/08/2010
-Sep 30 21:12:40 caper kernel: [  250.921765]  000000000000089e
-ffff880134ccfa58 ffffffff81723114 0000000000000007
-Sep 30 21:12:40 caper kernel: [  250.921773]  0000000000000000
-ffff880134ccfa98 ffffffff8106534c ffff880134ccfa78
-Sep 30 21:12:40 caper kernel: [  250.921780]  ffff880117c1ef30
-0000000000000001 ffff880074323400 0000160000000000
-Sep 30 21:12:40 caper kernel: [  250.921787] Call Trace:
-Sep 30 21:12:40 caper kernel: [  250.921800]  [<ffffffff81723114>]
-dump_stack+0x46/0x58
-Sep 30 21:12:40 caper kernel: [  250.921810]  [<ffffffff8106534c>]
-warn_slowpath_common+0x8c/0xc0
-Sep 30 21:12:40 caper kernel: [  250.921817]  [<ffffffff8106539a>]
-warn_slowpath_null+0x1a/0x20
-Sep 30 21:12:40 caper kernel: [  250.921860]  [<ffffffffa01127c9>]
-record_one_backref+0x3a9/0x420 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.921903]  [<ffffffffa0112420>] ?
-btrfs_submit_direct+0x190/0x190 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.921948]  [<ffffffffa01653f2>]
-iterate_leaf_refs+0x52/0xc0 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.921989]  [<ffffffffa0112420>] ?
-btrfs_submit_direct+0x190/0x190 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922032]  [<ffffffffa0167e58>]
-iterate_extent_inodes+0x198/0x270 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922075]  [<ffffffffa0167fc2>]
-iterate_inodes_from_logical+0x92/0xb0 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922116]  [<ffffffffa0112420>] ?
-btrfs_submit_direct+0x190/0x190 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922157]  [<ffffffffa010e88c>]
-record_extent_backrefs+0x7c/0xf0 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922199]  [<ffffffffa01191e4>]
-relink_file_extents+0x44/0x180 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922242]  [<ffffffffa0119455>]
-btrfs_finish_ordered_io+0x135/0x4d0 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922284]  [<ffffffffa0119805>]
-finish_ordered_fn+0x15/0x20 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922327]  [<ffffffffa013a1d0>]
-worker_loop+0xa0/0x320 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922370]  [<ffffffffa013a130>] ?
-check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
-Sep 30 21:12:40 caper kernel: [  250.922380]  [<ffffffff81088fe0>]
-kthread+0xc0/0xd0
-Sep 30 21:12:40 caper kernel: [  250.922388]  [<ffffffff81088f20>] ?
-flush_kthread_worker+0xb0/0xb0
-Sep 30 21:12:40 caper kernel: [  250.922396]  [<ffffffff81737b6c>]
-ret_from_fork+0x7c/0xb0
-Sep 30 21:12:40 caper kernel: [  250.922403]  [<ffffffff81088f20>] ?
-flush_kthread_worker+0xb0/0xb0
-Sep 30 21:12:40 caper kernel: [  250.922408] ---[ end trace
-88b6f2dc5c83f578 ]---
-Sep 30 21:12:45 caper kernel: [  255.896377] ------------[ cut here
-]------------
-
-Thanks for reading this far!
+Kernel is just 3.11.3-gentoo. -ray is my machine config and several
+custom modules which are not loaded now.

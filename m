@@ -1,133 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33076 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753714Ab3JCXIF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Oct 2013 19:08:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VRs03-0007dv-OU
-	for linux-btrfs@vger.kernel.org; Fri, 04 Oct 2013 01:08:03 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 01:08:03 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 01:08:03 +0200
+Received: from mail-vb0-f45.google.com ([209.85.212.45]:56917 "EHLO
+	mail-vb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752431Ab3JDIvJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2013 04:51:09 -0400
+Received: by mail-vb0-f45.google.com with SMTP id e15so2091458vbg.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 01:51:08 -0700 (PDT)
+MIME-Version: 1.0
+From: Daniele Buono <thegood85@gmail.com>
+Date: Fri, 4 Oct 2013 10:50:38 +0200
+Message-ID: <CAJp-iiDf1whohpH1yf79d46NGvLTysP=KK6R3PVCR+7jMmkYaw@mail.gmail.com>
+Subject: Recovering btrfs fs after "failed to read chunk root"
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Should I worry about this kernel opps ?
-Date: Thu, 3 Oct 2013 23:07:45 +0000 (UTC)
-Message-ID: <pan$c2b03$c36c2f10$d8b15b06$b54f27f6@cox.net>
-References: <CAEqknOOCsRPe30M0AdJcSNNz4vnaq=0sc+V9zksorLOJUBiukg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jerome Haynes-Smith posted on Thu, 03 Oct 2013 18:28:51 +0100 as
-excerpted:
+So I'm writing my (dis)adventure with btrfs here hoping to help the
+developers or someone with similar problems.
 
-> Hi folks
-> 
-> I am using btrfs in openSUSE 12.3 and I have seen several of these
-> recently:
-> 
-> 2013-10-03 10:04:27]  ------------[ cut here ]------------
-> [2013-10-03 10:04:27]  WARNING: at
-> /home/abuild/rpmbuild/BUILD/kernel-desktop-3.7.10/linux-3.7/fs/btrfs/
-extent_map.c:258
-> unpin_extent_cache+0x65/0x140 [btrfs]()
+I had a btrfs filesystem at work, using two 1TB disks, raid1 for both
+data and metadata.
 
-While I'm not a dev, just a list regular and btrfs user myself...
+A week ago one of the two disks start having hundreds of relocated
+sectors, so I decide to change it.
+I remove the failing disk, mount with -o degraded and every works fine.
+The day later I decide to use an usb drive to temporarily work as the
+secondary copy.
+Now the usb drive had some GB less then the old drive, so I add the
+drive plus a small partition of another disk to avoid space problems
+on the rebalancing.
 
-The BIG thing I notice here is that kernel version.  Both here on the 
-list and on the btrfs wiki ( https://btrfs.wiki.kernel.org ), running a 
-current kernel is REPEATEDLY stressed.  Btrfs is still under development 
-and every kernel series there are bug fixes that you don't have if you're 
-running an old kernel.  Running AT LEAST the second latest stable kernel 
-series is EXTREMELY STRONGLY RECOMMENDED, with latest stable RECOMMENDED, 
-and latest development kernel or even the btrfs-next patches also 
-options.  If you're running older than that, you're both missing fixes 
-that could prevent problems, and as a tester of still under development 
-btrfs, the reports for problems you do have and report will be less 
-useful, since you're so far behind current code.
+I start the "btrfs device delete missing" and btrfs starts rebalancing
+the drive. After a while I get
 
-Current dev kernel is 3.12 series, with 3.12-rc3 out now.  That means 
-btrfs testers should be running NO OLDER THAN 3.10, and preferably the 
-latest stable 3.11 if not the 3.12-rcs or btrfs-next.  (Tho due to some 
-crossed signals 3.11.4 stable doesn't have the queued btrfs-stable 
-patches, but 3.11.5 should, see earlier list threads.  Of course queued 
-for stable means corresponding commits are already in dev, so 3.12 has 
-those fixes already.)
+Sep 30 11:35:31 tambura kernel: [264654.275303] kernel BUG at
+fs/btrfs/relocation.c:1055!
 
-That log says kernel 3.7, which is **OLD**, at least for btrfs testing 
-purposes.  People do have reasons not to run the latest kernel, but 
-running an older kernel is really at odds with the whole idea of being a 
-tester for a kernel system like btrfs that's still under development, so 
-choosing one or the other would be wise.
+The complete error is here http://paste.fedoraproject.org/44139/
 
-FWIW, personally I run the current dev-kernel built direct from git, but 
-don't switch to a new kernel until after rc2 or so, when any real system-
-killer issues should be fixed or at least warned about for those 
-following kernel development, but it's still early enough in the cycle to 
-get any bugs I find and report fixed before general 3.x.0 release.  As it 
-happens I built my first 3.12 series kernel right at 3.12-rc2 and am 
-actually still running it as I haven't pulled and rebuilt since, tho rc2 
-is actually stale now as rc3 is out and I think we're already half way 
-thru the week to rc4.
+I look around and find that the problem has been fixed with the latest
+linux kernel (however, not yet marked as stable). Having a fedora 19,
+I manage to install kernel 3.12.0-0.rc2.git3.1.fc21.x86_64 from
+rawhide, reboot and try again.
 
-> [2013-10-03 10:04:27]  Pid: 22467, comm: btrfs-endio-wri Tainted: G
->     W  O 3.7.10-1.16-desktop #1
+The rebalancing works well this time but is, as expected, very slow
+(about 50GB in half a day). I return home and leave the pc runnung all
+the night. The morning I find this:
 
-That taint is all GPL modules (G, not the P you'd get if you had loaded 
-anything not GPL), but with an out-of-tree modules (O) and a previous 
-warning, probably an earlier instance of what you're posting about...
+Sep 30 23:11:53 tambura kernel: [37787.652143] BTRFS error (device
+sdc2) in btrfs_create_pending_block_groups:8516: errno=-5 IO failure
+Sep 30 23:11:53 tambura kernel: [37787.652145] BTRFS info (device
+sdc2): forced readonly
 
-> I see no symptoms of a problem at this time. (Disks seem a bit busy,
-> but I think that's the snapperd)
+the whole messages.log is here: http://paste.fedoraproject.org/44143/24287138/
 
-It's reasonably common knowledge, but just in case... Note that 
-especially if you're taking regular snapshots as the snapperd mention 
-indicates you probably are... check that you're mounting with the noatime 
-option, as atime updates aren't needed on most modern systems (mutt users 
-being a possible exception, since it depends on atimes unless it's 
-configured to use mbox format), and atime updates and COW snapshotting 
-such as btrfs uses "fight with each other", generally needlessly 
-increasing writes and the unique-(meta)data size of each snapshot.  (The 
-kernel's current relatime default is compromise between atime legacy 
-compatibility and noatime efficiency, but relatime still updates once a 
-day on access, which if you're keeping daily snapshots for any length of 
-time can still add up rather fast.  So while relatime's a good compromise 
-default for ext* filesystems, not so much for btrfs with regular 
-snapshotting.)
+N.B: sdc2 is the partition of the new drive that, however, has no
+relocated nor pending sectors according to SMART data.
 
-> I don't seem to find many matches for 'unpin_extent_cache+0x65/0x140
-> [btrfs]' which I believe is the actual point that the system decided to
-> do the 'opps'.. but I may be wrong.
-> 
-> Is this something I need to do something about ?
-> I can send a siga output if it will help. (I tried to attach it as a
-> compressed text file, but the email bounced previously)
+I do not panic (the drive seems readable and the fs mounted) and
+decide to reboot the pc.
+It hangs during the reboot so I turn it off after some minutes and restart.
 
-Yeah, AFAIK the various kernel lists bounce most binary attachments as 
-spam/malware control, and there's a limit on text attachment size.  
-Sending a link to a (preferably non-expiring, so people researching a 
-similar problem later can still get it) pastebin posted somewhere is one 
-common workaround, while sending the big stuff only on request and 
-generally directly to the dev requesting it, for special cases that need 
-detail debugging, is another.
+Now it comes the fun:
+btrfs: allowing degraded mounts
+btrfs: disk space caching is enabled
+btrfs: failed to read chunk root on sdb1
+btrfs: open_ctree failed
 
-I'd definitely recommend a newer kernel.  That may well fix the problem 
-right there.  And your btrfs-tools package should be similarly current; 
-anything 0.19 era is OLD, with current git (as of a few days ago anyway) 
-being (IIRC) 358 commits beyond 0.20-rc1.  If you're still seeing those 
-warnings with something current /then/ you can investigate further, but 
-I'm guessing you won't, as IIRC at least one fix since 3.7 has been 
-related to unpin bugs.
+>From this point I found no way of accessing my data. Nothing works,
+including mount -o recovery and even btrfs-restore.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+I find this discussion:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg25990.html
 
+So I tried several times with btrfs chunk-recover:
+
+If I keep all the disks, it goes like this:
+[root@tambura btrfs-progs]# ./btrfs chunk-recover -v /dev/sdb1 > log_2.txt
+All Devices:
+        Device: id = 3, name = /dev/sdc2
+        Device: id = 4, name = /dev/sda2
+        Device: id = 1, name = /dev/sdb1
+btrfs: cmds-chunk.c:125: process_extent_buffer: Assertion
+`!(exist->nmirrors >= 2)' failed.
+
+So I did try removing sdc2 (that is the drive where btrfs was
+replicating data) and the chunk-recover works fine, but end like this:
+
+Fail to recover the chunk tree.
+
+The complete output is here: http://cwillu.com:8080/131.114.3.240/4
+
+After some digging (by adding printf on errors) I found that the
+problem lies in the function
+
+"build_device_maps_by_chunk_records"
+
+But I can't tell you more for the moment.
+
+
+Now, the good part of the story is that the disk with relocated
+sectors was not too bad after all, and I managed to recover all the
+lost files from there; so, I'm not really interested in recovering
+this filesystem.
+
+However, I'm writing this hoping that it may help the developers in
+some way, perhaps improving the chunk-recover function.
+If usefuly, I can "offer" my filesystem for testing new versions of
+the chunk-recover, or any other tool.
+
+
+Daniele Buono
+PhD Student in Computer Science
+Department of Computer Science, University of Pisa

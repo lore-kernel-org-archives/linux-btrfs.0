@@ -1,115 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f45.google.com ([209.85.212.45]:56917 "EHLO
-	mail-vb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752431Ab3JDIvJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2013 04:51:09 -0400
-Received: by mail-vb0-f45.google.com with SMTP id e15so2091458vbg.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 01:51:08 -0700 (PDT)
-MIME-Version: 1.0
-From: Daniele Buono <thegood85@gmail.com>
-Date: Fri, 4 Oct 2013 10:50:38 +0200
-Message-ID: <CAJp-iiDf1whohpH1yf79d46NGvLTysP=KK6R3PVCR+7jMmkYaw@mail.gmail.com>
-Subject: Recovering btrfs fs after "failed to read chunk root"
+Received: from plane.gmane.org ([80.91.229.3]:45240 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754636Ab3JDPne (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Oct 2013 11:43:34 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VS7XQ-0004JB-IF
+	for linux-btrfs@vger.kernel.org; Fri, 04 Oct 2013 17:43:32 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 17:43:32 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 17:43:32 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Corrupt btrfs filesystem recovery... What best instructions?
+Date: Fri, 04 Oct 2013 16:43:20 +0100
+Message-ID: <l2mnmf$us$1@ger.gmane.org>
+References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org> <l2826k$1uc$1@ger.gmane.org> <pan$69794$b0c00066$a4aa3035$c87a3c3d@cox.net> <l2a635$37m$1@ger.gmane.org> <l2ietn$jv1$1@ger.gmane.org> <l2k7kd$1dh$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <l2k7kd$1dh$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So I'm writing my (dis)adventure with btrfs here hoping to help the
-developers or someone with similar problems.
+What best to try next?
 
-I had a btrfs filesystem at work, using two 1TB disks, raid1 for both
-data and metadata.
+mount "-o recovery,noatime"
 
-A week ago one of the two disks start having hundreds of relocated
-sectors, so I decide to change it.
-I remove the failing disk, mount with -o degraded and every works fine.
-The day later I decide to use an usb drive to temporarily work as the
-secondary copy.
-Now the usb drive had some GB less then the old drive, so I add the
-drive plus a small partition of another disk to avoid space problems
-on the rebalancing.
+btrfsck:
+    --repair                    try to repair the filesystem
+    --init-csum-tree            create a new CRC tree
+    --init-extent-tree          create a new extent tree
 
-I start the "btrfs device delete missing" and btrfs starts rebalancing
-the drive. After a while I get
-
-Sep 30 11:35:31 tambura kernel: [264654.275303] kernel BUG at
-fs/btrfs/relocation.c:1055!
-
-The complete error is here http://paste.fedoraproject.org/44139/
-
-I look around and find that the problem has been fixed with the latest
-linux kernel (however, not yet marked as stable). Having a fedora 19,
-I manage to install kernel 3.12.0-0.rc2.git3.1.fc21.x86_64 from
-rawhide, reboot and try again.
-
-The rebalancing works well this time but is, as expected, very slow
-(about 50GB in half a day). I return home and leave the pc runnung all
-the night. The morning I find this:
-
-Sep 30 23:11:53 tambura kernel: [37787.652143] BTRFS error (device
-sdc2) in btrfs_create_pending_block_groups:8516: errno=-5 IO failure
-Sep 30 23:11:53 tambura kernel: [37787.652145] BTRFS info (device
-sdc2): forced readonly
-
-the whole messages.log is here: http://paste.fedoraproject.org/44143/24287138/
-
-N.B: sdc2 is the partition of the new drive that, however, has no
-relocated nor pending sectors according to SMART data.
-
-I do not panic (the drive seems readable and the fs mounted) and
-decide to reboot the pc.
-It hangs during the reboot so I turn it off after some minutes and restart.
-
-Now it comes the fun:
-btrfs: allowing degraded mounts
-btrfs: disk space caching is enabled
-btrfs: failed to read chunk root on sdb1
-btrfs: open_ctree failed
-
->From this point I found no way of accessing my data. Nothing works,
-including mount -o recovery and even btrfs-restore.
-
-I find this discussion:
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg25990.html
-
-So I tried several times with btrfs chunk-recover:
-
-If I keep all the disks, it goes like this:
-[root@tambura btrfs-progs]# ./btrfs chunk-recover -v /dev/sdb1 > log_2.txt
-All Devices:
-        Device: id = 3, name = /dev/sdc2
-        Device: id = 4, name = /dev/sda2
-        Device: id = 1, name = /dev/sdb1
-btrfs: cmds-chunk.c:125: process_extent_buffer: Assertion
-`!(exist->nmirrors >= 2)' failed.
-
-So I did try removing sdc2 (that is the drive where btrfs was
-replicating data) and the chunk-recover works fine, but end like this:
-
-Fail to recover the chunk tree.
-
-The complete output is here: http://cwillu.com:8080/131.114.3.240/4
-
-After some digging (by adding printf on errors) I found that the
-problem lies in the function
-
-"build_device_maps_by_chunk_records"
-
-But I can't tell you more for the moment.
+or is a "scrub" worthwhile?
 
 
-Now, the good part of the story is that the disk with relocated
-sectors was not too bad after all, and I managed to recover all the
-lost files from there; so, I'm not really interested in recovering
-this filesystem.
+The fail and switch to read-only occured whilst trying to delete a known
+bad directory tree. No worries for losing the data in that.
 
-However, I'm writing this hoping that it may help the developers in
-some way, perhaps improving the chunk-recover function.
-If usefuly, I can "offer" my filesystem for testing new versions of
-the chunk-recover, or any other tool.
+But how best to clean up the filesystem errors?
 
 
-Daniele Buono
-PhD Student in Computer Science
-Department of Computer Science, University of Pisa
+Thanks,
+Martin
+
+
+
+
+On 03/10/13 17:56, Martin wrote:
+> On 03/10/13 01:49, Martin wrote:
+> 
+>> Summary:
+>>
+>> Mounting "-o recovery,noatime" worked well and allowed a diff check to
+>> complete for all but one directory tree. So very nearly all the data is
+>> fine.
+>>
+>> Deleting the failed directory tree caused a call stack dump and eventually:
+>>
+>> kernel: parent transid verify failed on 915444822016 wanted 16974 found
+>> 13021
+>> kernel: BTRFS info (device sdc): failed to delete reference to
+>> eggdrop-1.6.19.ebuild, inode 2096893 parent 5881667
+>> kernel: BTRFS error (device sdc) in __btrfs_unlink_inode:3662: errno=-5
+>> IO failure
+>> kernel: BTRFS info (device sdc): forced readonly
+>>
+>>
+>> Greater detail listed below.
+>>
+>> What next best to try?
+>>
+>> Safer to try again but this time with with "no_space_cache,no_inode_cache"?
+>>
+>> Thanks,
+>> Martin
+> 
+> 
+>> Next best step to try?
+>>
+>> Remount "-o recovery,noatime" again?
+> 
+> 
+> In the meantime, trying:
+> 
+> btrfsck /dev/sdc
+> 
+> gave the following output + abort:
+> 
+> parent transid verify failed on 915444523008 wanted 16974 found 13021
+> Ignoring transid failure
+> btrfsck: cmds-check.c:1066: process_file_extent: Assertion `!(rec->ino
+> != key->objectid || rec->refs > 1)' failed.
+> id not match free space cache generation (1625)
+> free space inode generation (0) did not match free space cache
+> generation (1607)
+> free space inode generation (0) did not match free space cache
+> generation (1604)
+> free space inode generation (0) did not match free space cache
+> generation (1606)
+> free space inode generation (0) did not match free space cache
+> generation (1620)
+> free space inode generation (0) did not match free space cache
+> generation (1626)
+> free space inode generation (0) did not match free space cache
+> generation (1609)
+> free space inode generation (0) did not match free space cache
+> generation (1653)
+> free space inode generation (0) did not match free space cache
+> generation (1628)
+> free space inode generation (0) did not match free space cache
+> generation (1628)
+> free space inode generation (0) did not match free space cache
+> generation (1649)
+> 
+> 
+> (There was no syslog output.)
+> 
+> Full btrfsck listing attached.
+> 
+> 
+> Suggestions please?
+> 
+> Thanks,
+> Martin
+
+
+

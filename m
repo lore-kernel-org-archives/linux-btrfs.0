@@ -1,79 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f176.google.com ([209.85.215.176]:63871 "EHLO
-	mail-ea0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755428Ab3JCGZx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Oct 2013 02:25:53 -0400
-Received: by mail-ea0-f176.google.com with SMTP id q16so838779ead.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2013 23:25:52 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 2 Oct 2013 23:25:52 -0700
-Message-ID: <CAEm3SNBnxThU5Beenc6hn+d+pDMF+w15E-jWoXucN+ekL12ZnA@mail.gmail.com>
-Subject: Unable to suspend to memory while scrub running
-From: Justin Husted <valentinej@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from e32.co.us.ibm.com ([32.97.110.150]:48064 "EHLO
+	e32.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751544Ab3JDTzr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2013 15:55:47 -0400
+Received: from /spool/local
+	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <sekharan@us.ibm.com>;
+	Fri, 4 Oct 2013 13:55:47 -0600
+Received: from d03relay01.boulder.ibm.com (d03relay01.boulder.ibm.com [9.17.195.226])
+	by d03dlp01.boulder.ibm.com (Postfix) with ESMTP id 4DEAE1FF0021
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Oct 2013 13:55:37 -0600 (MDT)
+Received: from d03av05.boulder.ibm.com (d03av05.boulder.ibm.com [9.17.195.85])
+	by d03relay01.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r94JthVE367318
+	for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2013 13:55:44 -0600
+Received: from d03av05.boulder.ibm.com (loopback [127.0.0.1])
+	by d03av05.boulder.ibm.com (8.14.4/8.13.1/NCO v10.0 AVout) with ESMTP id r94JthUT007299
+	for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2013 13:55:43 -0600
+Received: from [9.41.106.170] (chandra-dt.austin.ibm.com [9.41.106.170])
+	by d03av05.boulder.ibm.com (8.14.4/8.13.1/NCO v10.0 AVin) with ESMTP id r94JtgPo007246
+	for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2013 13:55:42 -0600
+Subject: [PATCH] Btrfs: Simplify the logic in alloc_extent_buffer() for
+ existing extent buffer case
+From: Chandra Seetharaman <sekharan@us.ibm.com>
+Reply-To: sekharan@us.ibm.com
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Date: Fri, 04 Oct 2013 14:55:29 -0500
+Message-ID: <1380916529.22521.122.camel@chandra-dt.ibm.com>
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I tried to suspend a computer running linux 3.11.1 while a scrub was
-going, and I got this:
+alloc_extent_buffer() uses radix_tree_lookup() when radix_tree_insert() fails
+with EEXIST. That part of the code is very similar to the code in
+find_extent_buffer(). This patch replaces radix_tree_lookup() and surrounding
+code in alloc_extent_buffer() with find_extent_buffer().
 
-Oct  2 20:15:12 caper kernel: [ 1237.472716] PM: Preparing system for mem sleep
-Oct  2 20:15:12 caper kernel: [ 1237.472856] Freezing user space processes ...
-Oct  2 20:15:12 caper kernel: [ 1257.474848] Freezing of tasks failed
-after 20.004 seconds (2 tasks refusing to freeze, wq_busy=0):
-Oct  2 20:15:12 caper kernel: [ 1257.474947] btrfs           D
-0000000000000000     0  4709      1 0x00000004
-Oct  2 20:15:12 caper kernel: [ 1257.474951]  ffff8800888b9888
-0000000000000002 ffff8800888b9888 0000000000000296
-Oct  2 20:15:12 caper kernel: [ 1257.474953]  ffff8800888b9fd8
-ffff8800888b9fd8 ffff8800888b9fd8 0000000000014580
-Oct  2 20:15:12 caper kernel: [ 1257.474956]  ffffffff81c14440
-ffff880134161770 ffff8800888b9898 ffff8800bf8f5300
-Oct  2 20:15:12 caper kernel: [ 1257.474958] Call Trace:
-Oct  2 20:15:12 caper kernel: [ 1257.474965]  [<ffffffff8172d3b9>]
-schedule+0x29/0x70
-Oct  2 20:15:12 caper kernel: [ 1257.474994]  [<ffffffffa014fa15>]
-scrub_add_page_to_rd_bio+0x1e5/0x2d0 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.474999]  [<ffffffff81089ab0>] ?
-add_wait_queue+0x60/0x60
-Oct  2 20:15:12 caper kernel: [ 1257.475012]  [<ffffffffa0150b3c>]
-scrub_pages+0x1fc/0x2a0 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475024]  [<ffffffffa0150f35>]
-scrub_extent+0x115/0x230 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475036]  [<ffffffffa0151b01>]
-scrub_stripe+0xab1/0xd30 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475046]  [<ffffffffa00d84c7>] ?
-read_block_for_search.isra.47+0xa7/0x1d0 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475058]  [<ffffffffa0151ea3>]
-scrub_chunk.isra.14+0x123/0x150 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475060]  [<ffffffff8172e7de>] ?
-_raw_spin_lock+0xe/0x20
-Oct  2 20:15:12 caper kernel: [ 1257.475072]  [<ffffffffa0152150>]
-scrub_enumerate_chunks+0x280/0x5b0 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475075]  [<ffffffff81089a00>] ?
-add_wait_queue_exclusive+0x10/0x60
-Oct  2 20:15:12 caper kernel: [ 1257.475087]  [<ffffffffa0153378>]
-btrfs_scrub_dev+0x1a8/0x520 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475099]  [<ffffffffa012c2b8>] ?
-btrfs_ioctl_scrub+0x58/0x110 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475102]  [<ffffffff811d3018>] ?
-__mnt_want_write+0x58/0x70
-Oct  2 20:15:12 caper kernel: [ 1257.475104]  [<ffffffff811d30d1>] ?
-__mnt_want_write_file+0x51/0x60
-Oct  2 20:15:12 caper kernel: [ 1257.475116]  [<ffffffffa012c311>]
-btrfs_ioctl_scrub+0xb1/0x110 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475129]  [<ffffffffa013128c>]
-btrfs_ioctl+0x87c/0xa90 [btrfs]
-Oct  2 20:15:12 caper kernel: [ 1257.475132]  [<ffffffff8109caf6>] ?
-account_user_time+0xa6/0xc0
-Oct  2 20:15:12 caper kernel: [ 1257.475134]  [<ffffffff8109d134>] ?
-vtime_account_user+0x74/0x90
-Oct  2 20:15:12 caper kernel: [ 1257.475136]  [<ffffffff811c5b7c>]
-do_vfs_ioctl+0x7c/0x2f0
-Oct  2 20:15:12 caper kernel: [ 1257.475140]  [<ffffffff810210a9>] ?
-syscall_trace_enter+0x29/0x270
-Oct  2 20:15:12 caper kernel: [ 1257.475141]  [<ffffffff811c5e81>]
-SyS_ioctl+0x91/0xb0
-Oct  2 20:15:12 caper kernel: [ 1257.475144]  [<ffffffff81737e2f>]
-tracesys+0xe1/0xe6
+While at it, this patch also changes the other usage of radix_tree_lookup() in
+alloc_extent_buffer() with find_extent_buffer() to reduce redundancy.
+
+Signed-Off-by: Chandra Seetharaman <sekharan@us.ibm.com>
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c09a40d..50345fb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4451,6 +4451,23 @@ static void mark_extent_buffer_accessed(struct extent_buffer *eb)
+ 	}
+ }
+ 
++struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
++					 u64 start, unsigned long len)
++{
++	struct extent_buffer *eb;
++
++	rcu_read_lock();
++	eb = radix_tree_lookup(&tree->buffer, start >> PAGE_CACHE_SHIFT);
++	if (eb && atomic_inc_not_zero(&eb->refs)) {
++		rcu_read_unlock();
++		mark_extent_buffer_accessed(eb);
++		return eb;
++	}
++	rcu_read_unlock();
++
++	return NULL;
++}
++
+ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 					  u64 start, unsigned long len)
+ {
+@@ -4464,14 +4481,10 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 	int uptodate = 1;
+ 	int ret;
+ 
+-	rcu_read_lock();
+-	eb = radix_tree_lookup(&tree->buffer, start >> PAGE_CACHE_SHIFT);
+-	if (eb && atomic_inc_not_zero(&eb->refs)) {
+-		rcu_read_unlock();
+-		mark_extent_buffer_accessed(eb);
++
++	eb = find_extent_buffer(tree, start, len);
++	if (eb)
+ 		return eb;
+-	}
+-	rcu_read_unlock();
+ 
+ 	eb = __alloc_extent_buffer(tree, start, len, GFP_NOFS);
+ 	if (!eb)
+@@ -4530,24 +4543,17 @@ again:
+ 
+ 	spin_lock(&tree->buffer_lock);
+ 	ret = radix_tree_insert(&tree->buffer, start >> PAGE_CACHE_SHIFT, eb);
++	spin_unlock(&tree->buffer_lock);
++	radix_tree_preload_end();
+ 	if (ret == -EEXIST) {
+-		exists = radix_tree_lookup(&tree->buffer,
+-						start >> PAGE_CACHE_SHIFT);
+-		if (!atomic_inc_not_zero(&exists->refs)) {
+-			spin_unlock(&tree->buffer_lock);
+-			radix_tree_preload_end();
+-			exists = NULL;
++		exists = find_extent_buffer(tree, start, len);
++		if (exists)
++			goto free_eb;
++		else
+ 			goto again;
+-		}
+-		spin_unlock(&tree->buffer_lock);
+-		radix_tree_preload_end();
+-		mark_extent_buffer_accessed(exists);
+-		goto free_eb;
+ 	}
+ 	/* add one reference for the tree */
+ 	check_buffer_tree_ref(eb);
+-	spin_unlock(&tree->buffer_lock);
+-	radix_tree_preload_end();
+ 
+ 	/*
+ 	 * there is a race where release page may have
+@@ -4578,23 +4584,6 @@ free_eb:
+ 	return exists;
+ }
+ 
+-struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
+-					 u64 start, unsigned long len)
+-{
+-	struct extent_buffer *eb;
+-
+-	rcu_read_lock();
+-	eb = radix_tree_lookup(&tree->buffer, start >> PAGE_CACHE_SHIFT);
+-	if (eb && atomic_inc_not_zero(&eb->refs)) {
+-		rcu_read_unlock();
+-		mark_extent_buffer_accessed(eb);
+-		return eb;
+-	}
+-	rcu_read_unlock();
+-
+-	return NULL;
+-}
+-
+ static inline void btrfs_release_extent_buffer_rcu(struct rcu_head *head)
+ {
+ 	struct extent_buffer *eb =
+
+

@@ -1,174 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:38449 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752913Ab3JBM2z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Oct 2013 08:28:55 -0400
-Received: by mail-wg0-f47.google.com with SMTP id f12so795570wgh.14
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2013 05:28:53 -0700 (PDT)
-From: Ross Kirk <ross.kirk@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Ross Kirk <ross.kirk@gmail.com>
-Subject: [PATCH] btrfs-progs: Make btrfs_header_chunk_tree_uuid() return unsigned long
-Date: Wed,  2 Oct 2013 13:28:27 +0100
-Message-Id: <1380716907-5563-1-git-send-email-ross.kirk@gmail.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:41607 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753529Ab3JDUmm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2013 16:42:42 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 141899A0364
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Oct 2013 14:42:42 -0600 (MDT)
+Received: from CAS1.int.fusionio.com ([10.101.1.40]) by mx1.fusionio.com with ESMTP id WJS9HW0tZnvAD8Xs (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2013 14:42:41 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: print out human readable errors for inodes and backrefs
+Date: Fri, 4 Oct 2013 16:42:39 -0400
+Message-ID: <1380919359-2310-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Internally, btrfs_header_chunk_tree_uuid() calculates an unsigned
-long, but casts it to a pointer, while all callers cast it to unsigned
-long again.
+We usually print out a hex value of any errors on inodes or their backrefs,
+which is a huge pain for me because I have to put it into a calculator and count
+the bits to figure out which errors these map to, and usually I get it wrong the
+first time.  To fix this lets just print out a human readable string for each
+error that way it will be easier to spot the "OH GOD THAT'S AWFUL" errors from
+"oh yeah thats no big deal, repair will fix that."  Thanks,
 
->From btrfs commit b308bc2f05a86e728bd035e21a4974acd05f4d1e
-
-Signed-off-by: Ross Kirk <ross.kirk@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- btrfs-find-root.c |    3 +--
- cmds-chunk.c      |    6 ++----
- ctree.c           |   10 ++++------
- ctree.h           |    5 ++---
- disk-io.c         |    3 +--
- print-tree.c      |    3 +--
- utils.c           |    2 +-
- 7 files changed, 12 insertions(+), 20 deletions(-)
+ cmds-check.c | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 68 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 9b3d7df..97b8d32 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -112,8 +112,7 @@ static struct btrfs_root *open_ctree_broken(int fd, const char *device)
- 
- 	eb = fs_info->chunk_root->node;
- 	read_extent_buffer(eb, fs_info->chunk_tree_uuid,
--			   (unsigned long)btrfs_header_chunk_tree_uuid(eb),
--			   BTRFS_UUID_SIZE);
-+			   btrfs_header_chunk_tree_uuid(eb), BTRFS_UUID_SIZE);
- 
- 	return fs_info->chunk_root;
- out_chunk:
-diff --git a/cmds-chunk.c b/cmds-chunk.c
-index 03314de..7b8bf29 100644
---- a/cmds-chunk.c
-+++ b/cmds-chunk.c
-@@ -1048,8 +1048,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
- 			BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(cow, root->fs_info->chunk_tree_uuid,
--			(unsigned long)btrfs_header_chunk_tree_uuid(cow),
--			BTRFS_UUID_SIZE);
-+			btrfs_header_chunk_tree_uuid(cow), BTRFS_UUID_SIZE);
- 
- 	root->node = cow;
- 	btrfs_mark_buffer_dirty(cow);
-@@ -1236,8 +1235,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
- 
- 	eb = fs_info->tree_root->node;
- 	read_extent_buffer(eb, fs_info->chunk_tree_uuid,
--			   (unsigned long)btrfs_header_chunk_tree_uuid(eb),
--			   BTRFS_UUID_SIZE);
-+			   btrfs_header_chunk_tree_uuid(eb), BTRFS_UUID_SIZE);
- 
- 	return fs_info->fs_root;
- out_failed:
-diff --git a/ctree.c b/ctree.c
-index 1a4f3f0..8b3549b 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -173,8 +173,7 @@ init:
- 			    BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
--			    (unsigned long)btrfs_header_chunk_tree_uuid(c),
--			    BTRFS_UUID_SIZE);
-+			    btrfs_header_chunk_tree_uuid(c), BTRFS_UUID_SIZE);
- 
- 	btrfs_mark_buffer_dirty(c);
- 
-@@ -1533,8 +1532,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
- 			    BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
--			    (unsigned long)btrfs_header_chunk_tree_uuid(c),
--			    BTRFS_UUID_SIZE);
-+			    btrfs_header_chunk_tree_uuid(c), BTRFS_UUID_SIZE);
- 
- 	btrfs_set_node_key(c, &lower_key, 0);
- 	btrfs_set_node_blockptr(c, 0, lower->start);
-@@ -1653,7 +1651,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 			    (unsigned long)btrfs_header_fsid(split),
- 			    BTRFS_FSID_SIZE);
- 	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
--			    (unsigned long)btrfs_header_chunk_tree_uuid(split),
-+			    btrfs_header_chunk_tree_uuid(split),
- 			    BTRFS_UUID_SIZE);
- 
- 
-@@ -2215,7 +2213,7 @@ again:
- 			    BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
--			    (unsigned long)btrfs_header_chunk_tree_uuid(right),
-+			    btrfs_header_chunk_tree_uuid(right),
- 			    BTRFS_UUID_SIZE);
- 
- 	if (split == 0) {
-diff --git a/ctree.h b/ctree.h
-index 0b0d701..b2a4823 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1754,10 +1754,9 @@ static inline u8 *btrfs_header_fsid(struct extent_buffer *eb)
- 	return (u8 *)ptr;
+diff --git a/cmds-check.c b/cmds-check.c
+index ec6669c..d8fcf97 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -278,6 +278,70 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 	return rec;
  }
  
--static inline u8 *btrfs_header_chunk_tree_uuid(struct extent_buffer *eb)
-+static inline unsigned long btrfs_header_chunk_tree_uuid(struct extent_buffer *eb)
++static void print_inode_error(int errors)
++{
++	if (errors & I_ERR_NO_INODE_ITEM)
++		fprintf(stderr, ", no inode item");
++	if (errors & I_ERR_NO_ORPHAN_ITEM)
++		fprintf(stderr, ", no orphan item");
++	if (errors & I_ERR_DUP_INODE_ITEM)
++		fprintf(stderr, ", dup inode item");
++	if (errors & I_ERR_DUP_DIR_INDEX)
++		fprintf(stderr, ", dup dir index");
++	if (errors & I_ERR_ODD_DIR_ITEM)
++		fprintf(stderr, ", odd dir item");
++	if (errors & I_ERR_ODD_FILE_EXTENT)
++		fprintf(stderr, ", odd file extent");
++	if (errors & I_ERR_BAD_FILE_EXTENT)
++		fprintf(stderr, ", bad file extent");
++	if (errors & I_ERR_FILE_EXTENT_OVERLAP)
++		fprintf(stderr, ", file extent overlap");
++	if (errors & I_ERR_FILE_EXTENT_DISCOUNT)
++		fprintf(stderr, ", file extent discount");
++	if (errors & I_ERR_DIR_ISIZE_WRONG)
++		fprintf(stderr, ", dir isize wrong");
++	if (errors & I_ERR_FILE_NBYTES_WRONG)
++		fprintf(stderr, ", nbytes wrong");
++	if (errors & I_ERR_ODD_CSUM_ITEM)
++		fprintf(stderr, ", odd csum item");
++	if (errors & I_ERR_SOME_CSUM_MISSING)
++		fprintf(stderr, ", some csum missing");
++	if (errors & I_ERR_LINK_COUNT_WRONG)
++		fprintf(stderr, ", link count wrong");
++	fprintf(stderr, "\n");
++}
++
++static void print_ref_error(int errors)
++{
++	if (errors & REF_ERR_NO_DIR_ITEM)
++		fprintf(stderr, ", no dir item");
++	if (errors & REF_ERR_NO_DIR_INDEX)
++		fprintf(stderr, ", no dir index");
++	if (errors & REF_ERR_NO_INODE_REF)
++		fprintf(stderr, ", no inode ref");
++	if (errors & REF_ERR_DUP_DIR_ITEM)
++		fprintf(stderr, ", dup dir item");
++	if (errors & REF_ERR_DUP_DIR_INDEX)
++		fprintf(stderr, ", dup dir index");
++	if (errors & REF_ERR_DUP_INODE_REF)
++		fprintf(stderr, ", dup inode ref");
++	if (errors & REF_ERR_INDEX_UNMATCH)
++		fprintf(stderr, ", index unmatch");
++	if (errors & REF_ERR_FILETYPE_UNMATCH)
++		fprintf(stderr, ", filetype unmatch");
++	if (errors & REF_ERR_NAME_TOO_LONG)
++		fprintf(stderr, ", name too long");
++	if (errors & REF_ERR_NO_ROOT_REF)
++		fprintf(stderr, ", no root ref");
++	if (errors & REF_ERR_NO_ROOT_BACKREF)
++		fprintf(stderr, ", no root backref");
++	if (errors & REF_ERR_DUP_ROOT_REF)
++		fprintf(stderr, ", dup root ref");
++	if (errors & REF_ERR_DUP_ROOT_BACKREF)
++		fprintf(stderr, ", dup root backref");
++	fprintf(stderr, "\n");
++}
++
+ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 					  u64 ino, int mod)
  {
--	unsigned long ptr = offsetof(struct btrfs_header, chunk_tree_uuid);
--	return (u8 *)ptr;
-+	return offsetof(struct btrfs_header, chunk_tree_uuid);
- }
- 
- static inline u8 *btrfs_super_fsid(struct extent_buffer *eb)
-diff --git a/disk-io.c b/disk-io.c
-index 13dbe27..68bf205 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1034,8 +1034,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 
- 	eb = fs_info->chunk_root->node;
- 	read_extent_buffer(eb, fs_info->chunk_tree_uuid,
--			   (unsigned long)btrfs_header_chunk_tree_uuid(eb),
--			   BTRFS_UUID_SIZE);
-+			   btrfs_header_chunk_tree_uuid(eb), BTRFS_UUID_SIZE);
- 
- 	ret = btrfs_setup_all_roots(fs_info, root_tree_bytenr, partial);
- 	if (ret)
-diff --git a/print-tree.c b/print-tree.c
-index aae47a9..510d74a 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -160,8 +160,7 @@ static void print_uuids(struct extent_buffer *eb)
- 	uuid_unparse(disk_uuid, fs_uuid);
- 
- 	read_extent_buffer(eb, disk_uuid,
--			   (unsigned long)btrfs_header_chunk_tree_uuid(eb),
--			   BTRFS_UUID_SIZE);
-+			   btrfs_header_chunk_tree_uuid(eb), BTRFS_UUID_SIZE);
- 
- 	chunk_uuid[36] = '\0';
- 	uuid_unparse(disk_uuid, chunk_uuid);
-diff --git a/utils.c b/utils.c
-index 7b4cd74..e0a758b 100644
---- a/utils.c
-+++ b/utils.c
-@@ -144,7 +144,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	write_extent_buffer(buf, super.fsid, (unsigned long)
- 			    btrfs_header_fsid(buf), BTRFS_FSID_SIZE);
- 
--	write_extent_buffer(buf, chunk_tree_uuid, (unsigned long)
-+	write_extent_buffer(buf, chunk_tree_uuid,
- 			    btrfs_header_chunk_tree_uuid(buf),
- 			    BTRFS_UUID_SIZE);
- 
+@@ -1474,9 +1538,10 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			rec->errors |= I_ERR_NO_INODE_ITEM;
+ 		if (rec->found_link != rec->nlink)
+ 			rec->errors |= I_ERR_LINK_COUNT_WRONG;
+-		fprintf(stderr, "root %llu inode %llu errors %x\n",
++		fprintf(stderr, "root %llu inode %llu errors %x",
+ 			(unsigned long long) root->root_key.objectid,
+ 			(unsigned long long) rec->ino, rec->errors);
++		print_inode_error(rec->errors);
+ 		list_for_each_entry(backref, &rec->backrefs, list) {
+ 			if (!backref->found_dir_item)
+ 				backref->errors |= REF_ERR_NO_DIR_ITEM;
+@@ -1485,11 +1550,12 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			if (!backref->found_inode_ref)
+ 				backref->errors |= REF_ERR_NO_INODE_REF;
+ 			fprintf(stderr, "\tunresolved ref dir %llu index %llu"
+-				" namelen %u name %s filetype %d error %x\n",
++				" namelen %u name %s filetype %d error %x",
+ 				(unsigned long long)backref->dir,
+ 				(unsigned long long)backref->index,
+ 				backref->namelen, backref->name,
+ 				backref->filetype, backref->errors);
++			print_ref_error(backref->errors);
+ 		}
+ 		free_inode_rec(rec);
+ 	}
 -- 
-1.7.7.6
+1.8.3.1
 

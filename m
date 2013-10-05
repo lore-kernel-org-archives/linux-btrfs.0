@@ -1,54 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:47534 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752473Ab3JERhG convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Oct 2013 13:37:06 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 35DEA9A06A4
-	for <linux-btrfs@vger.kernel.org>; Sat,  5 Oct 2013 11:37:06 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+Received: from mail.linuxfoundation.org ([140.211.169.12]:46152 "EHLO
+	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751819Ab3JFGKx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Oct 2013 02:10:53 -0400
+Date: Sat, 5 Oct 2013 16:52:18 -0700
+From: Greg KH <gregkh@linuxfoundation.org>
+To: David Sterba <dsterba@suse.cz>
+Cc: stable@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Handful of btrfs fixes for 3.11.x stable
+Message-ID: <20131005235218.GG18223@kroah.com>
+References: <1379694879-29402-1-git-send-email-dsterba@suse.cz>
+ <20130920165301.GA11262@kroah.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Message-ID: <20131005173659.12433.93614@localhost.localdomain>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: [GIT PULL] Btrfs
-Date: Sat, 5 Oct 2013 13:36:59 -0400
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20130920165301.GA11262@kroah.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Fri, Sep 20, 2013 at 09:53:02AM -0700, Greg KH wrote:
+> On Fri, Sep 20, 2013 at 06:34:39PM +0200, David Sterba wrote:
+> > Hi stable team,
+> > 
+> > please add the following commits to 3.11 tree, they fix user visible problems,
+> > were tested and are now present in 3.12-rc1.
+> > 
+> > 3d05ca371200b3366530621abf73769024581b79
+> > b13a004528c3e5eb060a26eee795f5a0da7bfe9f
+> > 7ef67ffda91cc0c56f33937bfdf1d057b9ee96ca
+> > ca6d07c1d74bf7ba3083bc31a9aeeaa1d0ad86aa
 
-Please pull my for-linus branch:
+These git commit ids don't match up to anything in Linus's tree, where
+did you get them from?
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+> > Josef Bacik (4):
+> >   Btrfs: reset ret in record_one_backref
+> >   Btrfs: change how we queue blocks for backref checking
+> >   Btrfs: skip subvol entries when checking if we've created a dir already
+> >   Btrfs: remove ourselves from the cluster list under lock
 
-I've merged my for-linus up to 3.12-rc3 because the top commit is only
-meant for 3.12.  The rest of the fixes are also available in my master
-branch on top of my last 3.11 based pull.
+I can dig through the tree to find these, but I'd prefer if you could
+provide the correct ids to verify I got them right.
 
-This is a small collection of fixes, including a regression fix from Liu
-Bo that solves rare crashes with compression on.
+Also, what order do I apply them in?
 
-Ilya Dryomov (2) commits (+28/-11):
-    Btrfs: fix a use-after-free bug in btrfs_dev_replace_finishing (+7/-5)
-    Btrfs: eliminate races in worker stopping code (+21/-6)
+thanks,
 
-Darrick J. Wong (1) commits (+8/-0):
-    btrfs: Fix crash due to not allocating integrity data for a bioset
-
-Liu Bo (1) commits (+1/-1):
-    Btrfs: fix crash of compressed writes
-
-Josef Bacik (1) commits (+2/-5):
-    Btrfs: fix transid verify errors when recovering log tree
-
-Total: (5) commits (+39/-17)
-
- fs/btrfs/async-thread.c | 25 +++++++++++++++++++------
- fs/btrfs/async-thread.h |  2 ++
- fs/btrfs/dev-replace.c  |  5 +----
- fs/btrfs/extent_io.c    | 10 +++++++++-
- fs/btrfs/transaction.c  |  7 ++-----
- fs/btrfs/volumes.c      |  7 ++++++-
- 6 files changed, 39 insertions(+), 17 deletions(-)
+greg k-h

@@ -1,67 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f180.google.com ([209.85.215.180]:33780 "EHLO
-	mail-ea0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755359Ab3JGKn2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 06:43:28 -0400
-Received: by mail-ea0-f180.google.com with SMTP id h10so3079910eaj.25
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 03:43:26 -0700 (PDT)
-From: Ilya Dryomov <idryomov@gmail.com>
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:34360 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751306Ab3JGLGb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 07:06:31 -0400
+Received: by mail-wi0-f181.google.com with SMTP id ex4so4609645wid.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 04:06:30 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        Stefan Behrens <sbehrens@giantdisaster.de>, idryomov@gmail.com
-Subject: [PATCH] Btrfs: fix the dev-replace suspend sequence
-Date: Mon,  7 Oct 2013 13:42:57 +0300
-Message-Id: <1381142577-7957-1-git-send-email-idryomov@gmail.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix memory leaks on transaction commit failure
+Date: Mon,  7 Oct 2013 12:04:28 +0100
+Message-Id: <1381143868-4302-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace progresses strictly from lower to higher offsets, and the
-progress is tracked in chunks, by storing the physical offset of the
-dev_extent which is being copied in the cursor_left field of
-btrfs_dev_replace_item.  When we are done copying the chunk,
-left_cursor is updated to point one byte past the dev_extent, so that
-on resume we can skip the dev_extents that have already been copied.
+Structures of the types tree_mod_elem and qgroup_update are allocated
+during transaction commit but were not being released if the call to
+btrfs_run_delayed_items() returned an error.
 
-There is a major bug (which goes all the way back to the inception of
-dev-replace in 3.8) in the way left_cursor is bumped: the bump is done
-unconditionally, without any regard to the scrub_chunk return value.
-On suspend (and also on any kind of error) scrub_chunk returns early,
-i.e. without completing the copy.  This leads to us skipping the chunk
-that hasn't been fully copied yet when resuming.
+Stack trace reported by kmemleak:
 
-Fix this by doing the cursor_left update only if scrub_chunk ret is 0.
-(On suspend scrub_chunk returns with -ECANCELED, so this fix covers
-both suspend and error cases.)
+unreferenced object 0xffff880679f0b398 (size 128):
+  comm "umount", pid 21508, jiffies 4295967793 (age 36718.112s)
+  hex dump (first 32 bytes):
+    60 b5 f0 79 06 88 ff ff 00 00 00 00 00 00 00 00  `..y............
+    00 00 00 00 00 00 00 00 50 1c 00 00 00 00 00 00  ........P.......
+  backtrace:
+    [<ffffffff81742d26>] kmemleak_alloc+0x26/0x50
+    [<ffffffff811889c2>] kmem_cache_alloc_trace+0x112/0x200
+    [<ffffffffa046f2d3>] tree_mod_log_insert_key.constprop.45+0x93/0x150 [btrfs]
+    [<ffffffffa04720f9>] __btrfs_cow_block+0x299/0x4f0 [btrfs]
+    [<ffffffffa0472510>] btrfs_cow_block+0x120/0x1f0 [btrfs]
+    [<ffffffffa0476679>] btrfs_search_slot+0x449/0x930 [btrfs]
+    [<ffffffffa048eecf>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
+    [<ffffffffa04eb49c>] __btrfs_update_delayed_inode+0x1c/0x1d0 [btrfs]
+    [<ffffffffa04eb9e2>] __btrfs_run_delayed_items+0x162/0x1e0 [btrfs]
+    [<ffffffffa04eba63>] btrfs_delayed_inode_exit+0x3/0x20 [btrfs]
+    [<ffffffffa0499c63>] btrfs_commit_transaction+0x203/0xa50 [btrfs]
+    [<ffffffffa046b519>] btrfs_sync_fs+0x69/0x110 [btrfs]
+    [<ffffffff811cb210>] __sync_filesystem+0x30/0x60
+    [<ffffffff811cb2bb>] sync_filesystem+0x4b/0x70
+    [<ffffffff8119ce7b>] generic_shutdown_super+0x3b/0xf0
+    [<ffffffff8119cfc6>] kill_anon_super+0x16/0x30
+unreferenced object 0xffff880677e0dd88 (size 32):
+  comm "umount", pid 21508, jiffies 4295967793 (age 36718.112s)
+  hex dump (first 32 bytes):
+    78 75 11 a9 06 88 ff ff 00 c0 e0 77 06 88 ff ff  xu.........w....
+    40 c3 a2 70 06 88 ff ff 00 00 00 00 00 00 00 00  @..p............
+  backtrace:
+    [<ffffffff81742d26>] kmemleak_alloc+0x26/0x50
+    [<ffffffff811889c2>] kmem_cache_alloc_trace+0x112/0x200
+    [<ffffffffa04fa54f>] btrfs_qgroup_record_ref+0xf/0x90 [btrfs]
+    [<ffffffffa04e1914>] btrfs_add_delayed_tree_ref+0xf4/0x170 [btrfs]
+    [<ffffffffa048518a>] btrfs_free_tree_block+0x9a/0x220 [btrfs]
+    [<ffffffffa0472163>] __btrfs_cow_block+0x303/0x4f0 [btrfs]
+    [<ffffffffa0472510>] btrfs_cow_block+0x120/0x1f0 [btrfs]
+    [<ffffffffa0476679>] btrfs_search_slot+0x449/0x930 [btrfs]
+    [<ffffffffa048eecf>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
+    [<ffffffffa04eb49c>] __btrfs_update_delayed_inode+0x1c/0x1d0 [btrfs]
+    [<ffffffffa04eb9e2>] __btrfs_run_delayed_items+0x162/0x1e0 [btrfs]
+    [<ffffffffa04eba63>] btrfs_delayed_inode_exit+0x3/0x20 [btrfs]
+    [<ffffffffa0499c63>] btrfs_commit_transaction+0x203/0xa50 [btrfs]
+    [<ffffffffa046b519>] btrfs_sync_fs+0x69/0x110 [btrfs]
+    [<ffffffff811cb210>] __sync_filesystem+0x30/0x60
+    [<ffffffff811cb2bb>] sync_filesystem+0x4b/0x70
 
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/scrub.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/transaction.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a18e0e2..f21e2df 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2717,8 +2717,6 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		mutex_unlock(&fs_info->scrub_lock);
- 		wake_up(&fs_info->scrub_pause_wait);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a213baf..277fe81 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1600,15 +1600,19 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
+ 	int ret;
  
--		dev_replace->cursor_left = dev_replace->cursor_right;
--		dev_replace->item_needs_writeback = 1;
- 		btrfs_put_block_group(cache);
- 		if (ret)
- 			break;
-@@ -2732,6 +2730,9 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 			break;
- 		}
- 
-+		dev_replace->cursor_left = dev_replace->cursor_right;
-+		dev_replace->item_needs_writeback = 1;
+ 	ret = btrfs_run_delayed_items(trans, root);
+-	if (ret)
+-		return ret;
+-
+ 	/*
+ 	 * running the delayed items may have added new refs. account
+ 	 * them now so that they hinder processing of more delayed refs
+ 	 * as little as possible.
+ 	 */
+-	btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
++	if (ret) {
++		btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
++		return ret;
++	}
 +
- 		key.offset = found_key.offset + length;
- 		btrfs_release_path(path);
- 	}
++	ret = btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
++	if (ret)
++		return ret;
+ 
+ 	/*
+ 	 * rename don't use btrfs_join_transaction, so, once we
 -- 
-1.7.10.4
+1.7.9.5
 

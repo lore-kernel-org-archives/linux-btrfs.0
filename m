@@ -1,27 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:4346 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751806Ab3JGV5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Oct 2013 17:57:37 -0400
-Date: Mon, 7 Oct 2013 14:57:35 -0700
-From: Zach Brown <zab@redhat.com>
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove unnecessary key copy when logging inode
-Message-ID: <20131007215735.GH25712@lenny.home.zabbo.net>
-References: <1381177244-8613-1-git-send-email-fdmanana@gmail.com>
+Received: from mail-we0-f176.google.com ([74.125.82.176]:50886 "EHLO
+	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751653Ab3JGWgN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 18:36:13 -0400
+Received: by mail-we0-f176.google.com with SMTP id w62so6111736wes.35
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 15:36:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1381177244-8613-1-git-send-email-fdmanana@gmail.com>
+Date: Tue, 8 Oct 2013 00:36:11 +0200
+Message-ID: <CACe732uTQrbVTV_Ov-0U4hLtdx8==2+9uXtzoVxFhteF3rr1ag@mail.gmail.com>
+Subject: Re: kernel BUG at mm/page-writeback.c:2317!
+From: Jan Killius <tmpnerd@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 07, 2013 at 09:20:44PM +0100, Filipe David Borba Manana wrote:
-> The btrfs_insert_empty_item() function doesn't modify its
-> key argument.
+Hello,
+I'm hitting similar bug with the patch from Lui Bo.
+But If I revert: 573aecafca1cf7a974231b759197a1aebcf39c2a,
+Btrfs: actually limit the size of delalloc range) everything works fine.
 
-Looks reasonable to me.
+Here are the 2 backtraces from my machines with 3.12-rc4:
+http://imgur.com/sVkjGK6,mWUtzMV#0
+http://imgur.com/sVkjGK6,mWUtzMV#1
 
-Reviewed-by: Zach Brown <zab@redhat.com>
-
-- z
+Sorry for the screenshots but It was the only way to capture the backtraces.
+I get the bug at the end of a 2GB scp transfer almost everytime.

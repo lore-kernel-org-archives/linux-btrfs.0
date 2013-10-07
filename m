@@ -1,98 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:23870 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:44398 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753531Ab3JGVnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Oct 2013 17:43:16 -0400
+	id S1753479Ab3JGVnR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Oct 2013 17:43:17 -0400
 Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhGA8000743
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhH4O030378
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:43:16 -0400
+	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:43:17 -0400
 From: Zach Brown <zab@redhat.com>
 To: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 05/12] btrfs-progs: check link_subvol name base
-Date: Mon,  7 Oct 2013 14:42:58 -0700
-Message-Id: <1381182185-10896-6-git-send-email-zab@redhat.com>
+Subject: [PATCH 06/12] btrfs-progs: remove dead block group checking
+Date: Mon,  7 Oct 2013 14:42:59 -0700
+Message-Id: <1381182185-10896-7-git-send-email-zab@redhat.com>
 In-Reply-To: <1381182185-10896-1-git-send-email-zab@redhat.com>
 References: <1381182185-10896-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In principle, link_subvol() can be given an abitrary string as the name
-of the saved subvolume.  It copies it into a fixed-size stack buffer and
-then uses it as dirent names without testing its length.
-
-This limits its length to BTRFS_NAME_LEN.  This was found by static
-analsys.
+Don't carry around dead code.  If its needed again, it's only a few git
+commands away.  This was found by static analysis.
 
 Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- btrfs-convert.c | 23 ++++++++++++++++-------
- 1 file changed, 16 insertions(+), 7 deletions(-)
+ cmds-check.c | 50 --------------------------------------------------
+ 1 file changed, 50 deletions(-)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 221dd45..edef1bd 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -1428,10 +1428,15 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
- 	struct btrfs_key key;
- 	u64 dirid = btrfs_root_dirid(&root->root_item);
- 	u64 index = 2;
--	char buf[64];
-+	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
-+	int len;
- 	int i;
- 	int ret;
+diff --git a/cmds-check.c b/cmds-check.c
+index c91cc4a..ebba58e 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4937,55 +4937,6 @@ static void free_corrupt_block(struct cache_extent *cache)
  
-+	len = strlen(base);
-+	if (len < 1 || len > BTRFS_NAME_LEN)
-+		return NULL;
-+
- 	path = btrfs_alloc_path();
- 	BUG_ON(!path);
+ FREE_EXTENT_CACHE_BASED_TREE(corrupt_blocks, free_corrupt_block);
  
-@@ -1467,18 +1472,22 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 
--	strcpy(buf, base);
-+	memcpy(buf, base, len);
- 	for (i = 0; i < 1024; i++) {
--		ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf),
-+		ret = btrfs_insert_dir_item(trans, root, buf, len,
- 					    dirid, &key, BTRFS_FT_DIR, index);
- 		if (ret != -EEXIST)
- 			break;
--		sprintf(buf, "%s%d", base, i);
-+		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
-+		if (len < 1 || len > BTRFS_NAME_LEN) {
-+			ret = -EINVAL;
-+			break;
-+		}
- 	}
- 	if (ret)
- 		goto fail;
- 
--	btrfs_set_inode_size(leaf, inode_item, strlen(buf) * 2 +
-+	btrfs_set_inode_size(leaf, inode_item, len * 2 +
- 			     btrfs_inode_size(leaf, inode_item));
- 	btrfs_mark_buffer_dirty(leaf);
- 	btrfs_release_path(path);
-@@ -1487,13 +1496,13 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
- 	ret = btrfs_add_root_ref(trans, tree_root, root_objectid,
- 				 BTRFS_ROOT_BACKREF_KEY,
- 				 root->root_key.objectid,
--				 dirid, index, buf, strlen(buf));
-+				 dirid, index, buf, len);
- 	BUG_ON(ret);
- 
- 	/* now add the forward ref */
- 	ret = btrfs_add_root_ref(trans, tree_root, root->root_key.objectid,
- 				 BTRFS_ROOT_REF_KEY, root_objectid,
--				 dirid, index, buf, strlen(buf));
-+				 dirid, index, buf, len);
- 
- 	ret = btrfs_commit_transaction(trans, root);
- 	BUG_ON(ret);
+-static int check_block_group(struct btrfs_trans_handle *trans,
+-			      struct btrfs_fs_info *info,
+-			      struct map_lookup *map,
+-			      int *reinit)
+-{
+-	struct btrfs_key key;
+-	struct btrfs_path path;
+-	int ret;
+-
+-	key.objectid = map->ce.start;
+-	key.offset = map->ce.size;
+-	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+-
+-	btrfs_init_path(&path);
+-	ret = btrfs_search_slot(NULL, info->extent_root,
+-				&key, &path, 0, 0);
+-	btrfs_release_path(&path);
+-	if (ret <= 0)
+-		goto out;
+-
+-	ret = btrfs_make_block_group(trans, info->extent_root, 0, map->type,
+-			       BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+-			       key.objectid, key.offset);
+-	*reinit = 1;
+-out:
+-	return ret;
+-}
+-
+-static int check_block_groups(struct btrfs_trans_handle *trans,
+-			      struct btrfs_fs_info *info, int *reinit)
+-{
+-	struct cache_extent *ce;
+-	struct map_lookup *map;
+-	struct btrfs_mapping_tree *map_tree = &info->mapping_tree;
+-
+-	/* this isn't quite working */
+-	return 0;
+-
+-	ce = search_cache_extent(&map_tree->cache_tree, 0);
+-	while (1) {
+-		if (!ce)
+-			break;
+-		map = container_of(ce, struct map_lookup, ce);
+-		check_block_group(trans, info, map, reinit);
+-		ce = next_cache_extent(ce);
+-	}
+-	return 0;
+-}
+-
+ static void reset_cached_block_groups(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_block_group_cache *cache;
+@@ -5047,7 +4998,6 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 			cache = next_cache_extent(cache);
+ 		}
+ 		prune_corrupt_blocks(trans, root->fs_info);
+-		check_block_groups(trans, root->fs_info, &reinit);
+ 		if (reinit)
+ 			btrfs_read_block_groups(root->fs_info->extent_root);
+ 		reset_cached_block_groups(root->fs_info);
 -- 
 1.7.11.7
 

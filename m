@@ -1,58 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55968 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:11181 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752560Ab3JAOAh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Oct 2013 10:00:37 -0400
-Date: Tue, 1 Oct 2013 16:00:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: dsterba@suse.cz, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/9] enhance btrfs qgroup show command
-Message-ID: <20131001140035.GF18291@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1379917048-9720-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <20131001111950.GA18291@twin.jikos.cz>
- <0CE9197F-E95E-4C1E-8A7A-DFFD6AF110D3@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0CE9197F-E95E-4C1E-8A7A-DFFD6AF110D3@gmail.com>
+	id S1751851Ab3JGVnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Oct 2013 17:43:13 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhCgD000731
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:43:12 -0400
+From: Zach Brown <zab@redhat.com>
+To: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>
+Subject: [RFC] another round of static analysis fixes
+Date: Mon,  7 Oct 2013 14:42:53 -0700
+Message-Id: <1381182185-10896-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 01, 2013 at 08:25:38PM +0800, Wang Shilong wrote:
-> > * -l sounds less intuitive, I suggest to use -r as for
-> >  'referenced', given that there is -e for 'exclusive'.
-> 
-> Yeah, here -l means limited size. Anyway, this is a little  obscure.
-> Maybe -r is better, but it may let user think it is a qgroup's referenced size
-> but not max referenced size..
+Hi friends, 
 
-The referenced and exclusive sizes are always printed, I think that's ok
-to assign -r to the referenced limit. If we want to reserve -r for
-something else, next option is to use -R and -E for the limits.
+Eric imported a newer git snapshot of btrfs-progs into Red Hat's
+universe which kicked off a static analysis run which found a bunch
+of problems.  This series is my attempt to fix the warnings that I
+agreed were either real bugs or messy code to clean up.
 
-During the time I was testing it the 2 most frequent uses were '-t' or
-'-tcle'.
+This is against Dave's integration-next as of:
 
-> > * the size should be pretty-printed by default or in bytes if a
-> >  commandline option is given
-> 
-> Agree, maybe i can add an options for example '-h'  here.
+commit 62f6537f8c9149283844c5e93a296e147c266247
+Date:   Fri Sep 13 19:32:23 2013 +0800
 
--h prints help. But we haven't solved selecting units in other commands
-as well, so this should be possibly done consistently and in one go.
+And totally untested.  Review please?
 
-> > * in the long term, the tabular output would be much better as
-> >  default, and the current terse output available via commandline option
-> >  for batch processing
-> 
-> The main reason that i don't use table result as default is because there
-> are so many columns here, and my first table result will be a head name like:
-> 
-> rfer excl max_refer max_excl
-> ----  -----  -----------   -------------
-> 
-> In order to keep compatibility with previous 'btrfs qgroup show', i add '-t'.
-
-That's fine for now.
+- z

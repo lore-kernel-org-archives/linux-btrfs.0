@@ -1,84 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52660 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:23870 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753525Ab3JGVnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753531Ab3JGVnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 7 Oct 2013 17:43:16 -0400
 Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhGaw017186
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhGA8000743
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
 	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:43:16 -0400
 From: Zach Brown <zab@redhat.com>
 To: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH 04/12] btrfs-progs: don't overflow read buffer in image
-Date: Mon,  7 Oct 2013 14:42:57 -0700
-Message-Id: <1381182185-10896-5-git-send-email-zab@redhat.com>
+Subject: [PATCH 05/12] btrfs-progs: check link_subvol name base
+Date: Mon,  7 Oct 2013 14:42:58 -0700
+Message-Id: <1381182185-10896-6-git-send-email-zab@redhat.com>
 In-Reply-To: <1381182185-10896-1-git-send-email-zab@redhat.com>
 References: <1381182185-10896-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-search_for_chunk_blocks() allocates a fixed-size buffer and then reads
-arbitrary u32 sized buffers in to it.  Instead let's fail if the item is
-bigger than the buffer.  This was found by static analysis.
+In principle, link_subvol() can be given an abitrary string as the name
+of the saved subvolume.  It copies it into a fixed-size stack buffer and
+then uses it as dirent names without testing its length.
+
+This limits its length to BTRFS_NAME_LEN.  This was found by static
+analsys.
 
 Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- btrfs-image.c | 14 +++++++++++---
- 1 file changed, 11 insertions(+), 3 deletions(-)
+ btrfs-convert.c | 23 ++++++++++++++++-------
+ 1 file changed, 16 insertions(+), 7 deletions(-)
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 7474642..03ad4e9 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -2011,6 +2011,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 	u64 current_cluster = cluster_bytenr, bytenr;
- 	u64 item_bytenr;
- 	u32 bufsize, nritems, i;
-+	u32 max_size = MAX_PENDING_SIZE * 2;
- 	u8 *buffer, *tmp = NULL;
- 	int ret = 0;
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 221dd45..edef1bd 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -1428,10 +1428,15 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
+ 	struct btrfs_key key;
+ 	u64 dirid = btrfs_root_dirid(&root->root_item);
+ 	u64 index = 2;
+-	char buf[64];
++	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
++	int len;
+ 	int i;
+ 	int ret;
  
-@@ -2020,7 +2021,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 		return -ENOMEM;
- 	}
- 
--	buffer = malloc(MAX_PENDING_SIZE * 2);
-+	buffer = malloc(max_size);
- 	if (!buffer) {
- 		fprintf(stderr, "Error allocing buffer\n");
- 		free(cluster);
-@@ -2028,7 +2029,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 	}
- 
- 	if (mdres->compress_method == COMPRESS_ZLIB) {
--		tmp = malloc(MAX_PENDING_SIZE * 2);
-+		tmp = malloc(max_size);
- 		if (!tmp) {
- 			fprintf(stderr, "Error allocing tmp buffer\n");
- 			free(cluster);
-@@ -2079,6 +2080,13 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 			bufsize = le32_to_cpu(item->size);
- 			item_bytenr = le64_to_cpu(item->bytenr);
- 
-+			if (bufsize > max_size) {
-+				fprintf(stderr, "item %u size %u too big\n",
-+					i, bufsize);
-+				ret = -EIO;
-+				break;
-+			}
++	len = strlen(base);
++	if (len < 1 || len > BTRFS_NAME_LEN)
++		return NULL;
 +
- 			if (mdres->compress_method == COMPRESS_ZLIB) {
- 				ret = fread(tmp, bufsize, 1, mdres->in);
- 				if (ret != 1) {
-@@ -2088,7 +2096,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
- 					break;
- 				}
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
  
--				size = MAX_PENDING_SIZE * 2;
-+				size = max_size;
- 				ret = uncompress(buffer,
- 						 (unsigned long *)&size, tmp,
- 						 bufsize);
+@@ -1467,18 +1472,22 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 
+-	strcpy(buf, base);
++	memcpy(buf, base, len);
+ 	for (i = 0; i < 1024; i++) {
+-		ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf),
++		ret = btrfs_insert_dir_item(trans, root, buf, len,
+ 					    dirid, &key, BTRFS_FT_DIR, index);
+ 		if (ret != -EEXIST)
+ 			break;
+-		sprintf(buf, "%s%d", base, i);
++		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
++		if (len < 1 || len > BTRFS_NAME_LEN) {
++			ret = -EINVAL;
++			break;
++		}
+ 	}
+ 	if (ret)
+ 		goto fail;
+ 
+-	btrfs_set_inode_size(leaf, inode_item, strlen(buf) * 2 +
++	btrfs_set_inode_size(leaf, inode_item, len * 2 +
+ 			     btrfs_inode_size(leaf, inode_item));
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
+@@ -1487,13 +1496,13 @@ static struct btrfs_root * link_subvol(struct btrfs_root *root,
+ 	ret = btrfs_add_root_ref(trans, tree_root, root_objectid,
+ 				 BTRFS_ROOT_BACKREF_KEY,
+ 				 root->root_key.objectid,
+-				 dirid, index, buf, strlen(buf));
++				 dirid, index, buf, len);
+ 	BUG_ON(ret);
+ 
+ 	/* now add the forward ref */
+ 	ret = btrfs_add_root_ref(trans, tree_root, root->root_key.objectid,
+ 				 BTRFS_ROOT_REF_KEY, root_objectid,
+-				 dirid, index, buf, strlen(buf));
++				 dirid, index, buf, len);
+ 
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	BUG_ON(ret);
 -- 
 1.7.11.7
 

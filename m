@@ -1,54 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp03.au.ibm.com ([202.81.31.145]:55319 "EHLO
-	e23smtp03.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751711Ab3JGGg0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 02:36:26 -0400
-Received: from /spool/local
-	by e23smtp03.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 7 Oct 2013 16:36:24 +1000
-Received: from d23relay04.au.ibm.com (d23relay04.au.ibm.com [9.190.234.120])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 13DE03578052
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Oct 2013 17:36:22 +1100 (EST)
-Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
-	by d23relay04.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r976JRGw57409540
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:19:27 +1100
-Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
-	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r976aKM1023232
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:36:20 +1100
-From: chandan <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sekharan@us.ibm.com, dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: btrfs_list_find_updated_files: Fix memory leak.
-Date: Mon, 07 Oct 2013 12:06:11 +0530
-Message-ID: <10157896.KS57RD9T2T@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx1.redhat.com ([209.132.183.28]:10145 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753479Ab3JGVnP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Oct 2013 17:43:15 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id r97LhFWd000515
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 7 Oct 2013 17:43:15 -0400
+From: Zach Brown <zab@redhat.com>
+To: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>
+Subject: [PATCH 01/12] btrfs-progs: check path alloc in corrupt block
+Date: Mon,  7 Oct 2013 14:42:54 -0700
+Message-Id: <1381182185-10896-2-git-send-email-zab@redhat.com>
+In-Reply-To: <1381182185-10896-1-git-send-email-zab@redhat.com>
+References: <1381182185-10896-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current code returns from the function when the call to ioctl
-fails. This may leak cache_dir_name and cache_full_name. Fix it.
+btrfs-corrupt-block added some untested path allocations.  These showed
+up in static analysis when they pass their path to btrfs_search_slot()
+which unconditionally dereferences the path.
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- btrfs-list.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ btrfs-corrupt-block.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 9cadbf5..9411e4d 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1686,7 +1686,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
- 		if (ret < 0) {
- 			fprintf(stderr, "ERROR: can't perform the search- %s\n",
- 				strerror(e));
--			return ret;
-+			break;
- 		}
- 		/* the ioctl returns the number of item it found in nr_items */
- 		if (sk->nr_items == 0)
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 9e72ca8..018c23d 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -502,6 +502,9 @@ int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 
+ 	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
+ 	key.objectid = (u64)-1;
+ 	key.offset = (u64)-1;
+ 	key.type = (u8)-1;
+@@ -531,7 +534,7 @@ int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			goto free_out;
+ 	}
+-	btrfs_free_path(path);
++	btrfs_release_path(path);
+ 
+ 	/* Here, cow and ins_len must equals 0 for the following reasons:
+ 	 * 1) chunk recover is based on disk scanning, so COW should be
+@@ -540,7 +543,6 @@ int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
+ 	 * 2) if cow = 0, ins_len must also be set to 0, or BUG_ON will be
+ 	 *    triggered.
+ 	 */
+-	path = btrfs_alloc_path();
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
+ 	BUG_ON(ret == 0);
+ 	if (ret < 0) {
+@@ -720,6 +722,10 @@ int main(int ac, char **av)
+ 			print_usage();
+ 		del = rand() % 3;
+ 		path = btrfs_alloc_path();
++		if (!path) {
++			fprintf(stderr, "path allocation failed\n");
++			goto out_close;
++		}
+ 
+ 		if (find_chunk_offset(root->fs_info->chunk_root, path,
+ 				      logical) != 0) {
 -- 
-1.8.3.1
-
+1.7.11.7
 

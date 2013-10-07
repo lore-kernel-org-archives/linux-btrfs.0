@@ -1,103 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:34360 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751306Ab3JGLGb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 07:06:31 -0400
-Received: by mail-wi0-f181.google.com with SMTP id ex4so4609645wid.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 04:06:30 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix memory leaks on transaction commit failure
-Date: Mon,  7 Oct 2013 12:04:28 +0100
-Message-Id: <1381143868-4302-1-git-send-email-fdmanana@gmail.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:50045 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755486Ab3JGOqP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 10:46:15 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 539767C0686
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Oct 2013 08:46:15 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id v53eTAKEeixgpuvD (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 08:46:14 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not free the dirty bytes from the trans block rsv on cleanup
+Date: Mon, 7 Oct 2013 10:46:12 -0400
+Message-ID: <1381157172-5829-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Structures of the types tree_mod_elem and qgroup_update are allocated
-during transaction commit but were not being released if the call to
-btrfs_run_delayed_items() returned an error.
+The transactions should be cleaning up their reservations on failure, this just
+causes us to have warnings on unmount because we go negative by free'ing
+reservations that have already been free'ed.  Thanks,
 
-Stack trace reported by kmemleak:
-
-unreferenced object 0xffff880679f0b398 (size 128):
-  comm "umount", pid 21508, jiffies 4295967793 (age 36718.112s)
-  hex dump (first 32 bytes):
-    60 b5 f0 79 06 88 ff ff 00 00 00 00 00 00 00 00  `..y............
-    00 00 00 00 00 00 00 00 50 1c 00 00 00 00 00 00  ........P.......
-  backtrace:
-    [<ffffffff81742d26>] kmemleak_alloc+0x26/0x50
-    [<ffffffff811889c2>] kmem_cache_alloc_trace+0x112/0x200
-    [<ffffffffa046f2d3>] tree_mod_log_insert_key.constprop.45+0x93/0x150 [btrfs]
-    [<ffffffffa04720f9>] __btrfs_cow_block+0x299/0x4f0 [btrfs]
-    [<ffffffffa0472510>] btrfs_cow_block+0x120/0x1f0 [btrfs]
-    [<ffffffffa0476679>] btrfs_search_slot+0x449/0x930 [btrfs]
-    [<ffffffffa048eecf>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
-    [<ffffffffa04eb49c>] __btrfs_update_delayed_inode+0x1c/0x1d0 [btrfs]
-    [<ffffffffa04eb9e2>] __btrfs_run_delayed_items+0x162/0x1e0 [btrfs]
-    [<ffffffffa04eba63>] btrfs_delayed_inode_exit+0x3/0x20 [btrfs]
-    [<ffffffffa0499c63>] btrfs_commit_transaction+0x203/0xa50 [btrfs]
-    [<ffffffffa046b519>] btrfs_sync_fs+0x69/0x110 [btrfs]
-    [<ffffffff811cb210>] __sync_filesystem+0x30/0x60
-    [<ffffffff811cb2bb>] sync_filesystem+0x4b/0x70
-    [<ffffffff8119ce7b>] generic_shutdown_super+0x3b/0xf0
-    [<ffffffff8119cfc6>] kill_anon_super+0x16/0x30
-unreferenced object 0xffff880677e0dd88 (size 32):
-  comm "umount", pid 21508, jiffies 4295967793 (age 36718.112s)
-  hex dump (first 32 bytes):
-    78 75 11 a9 06 88 ff ff 00 c0 e0 77 06 88 ff ff  xu.........w....
-    40 c3 a2 70 06 88 ff ff 00 00 00 00 00 00 00 00  @..p............
-  backtrace:
-    [<ffffffff81742d26>] kmemleak_alloc+0x26/0x50
-    [<ffffffff811889c2>] kmem_cache_alloc_trace+0x112/0x200
-    [<ffffffffa04fa54f>] btrfs_qgroup_record_ref+0xf/0x90 [btrfs]
-    [<ffffffffa04e1914>] btrfs_add_delayed_tree_ref+0xf4/0x170 [btrfs]
-    [<ffffffffa048518a>] btrfs_free_tree_block+0x9a/0x220 [btrfs]
-    [<ffffffffa0472163>] __btrfs_cow_block+0x303/0x4f0 [btrfs]
-    [<ffffffffa0472510>] btrfs_cow_block+0x120/0x1f0 [btrfs]
-    [<ffffffffa0476679>] btrfs_search_slot+0x449/0x930 [btrfs]
-    [<ffffffffa048eecf>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
-    [<ffffffffa04eb49c>] __btrfs_update_delayed_inode+0x1c/0x1d0 [btrfs]
-    [<ffffffffa04eb9e2>] __btrfs_run_delayed_items+0x162/0x1e0 [btrfs]
-    [<ffffffffa04eba63>] btrfs_delayed_inode_exit+0x3/0x20 [btrfs]
-    [<ffffffffa0499c63>] btrfs_commit_transaction+0x203/0xa50 [btrfs]
-    [<ffffffffa046b519>] btrfs_sync_fs+0x69/0x110 [btrfs]
-    [<ffffffff811cb210>] __sync_filesystem+0x30/0x60
-    [<ffffffff811cb2bb>] sync_filesystem+0x4b/0x70
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/transaction.c |   12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a213baf..277fe81 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1600,15 +1600,19 @@ static int btrfs_flush_all_pending_stuffs(struct btrfs_trans_handle *trans,
- 	int ret;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d205bdd..fdc75ab 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4046,8 +4046,6 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
+ 	btrfs_destroy_ordered_operations(cur_trans, root);
  
- 	ret = btrfs_run_delayed_items(trans, root);
--	if (ret)
--		return ret;
--
- 	/*
- 	 * running the delayed items may have added new refs. account
- 	 * them now so that they hinder processing of more delayed refs
- 	 * as little as possible.
- 	 */
--	btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
-+	if (ret) {
-+		btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
-+		return ret;
-+	}
-+
-+	ret = btrfs_delayed_refs_qgroup_accounting(trans, root->fs_info);
-+	if (ret)
-+		return ret;
+ 	btrfs_destroy_delayed_refs(cur_trans, root);
+-	btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
+-				cur_trans->dirty_pages.dirty_bytes);
  
- 	/*
- 	 * rename don't use btrfs_join_transaction, so, once we
+ 	cur_trans->state = TRANS_STATE_COMMIT_START;
+ 	wake_up(&root->fs_info->transaction_blocked_wait);
 -- 
-1.7.9.5
+1.8.3.1
 

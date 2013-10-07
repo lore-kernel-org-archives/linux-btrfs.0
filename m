@@ -1,97 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:61507 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751796Ab3JGIJW convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 04:09:22 -0400
-Received: by mail-ie0-f178.google.com with SMTP id to1so14984924ieb.37
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 01:09:21 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20131007002735.GB14037@gst.name>
-References: <20130925065647.GC13842@gst.name>
-	<20130925144641.GW6810@twin.jikos.cz>
-	<20130926052607.GA14037@gst.name>
-	<20131007002735.GB14037@gst.name>
-Date: Mon, 7 Oct 2013 10:09:21 +0200
-Message-ID: <CAKneAXmxgvacjTpbxMMS_QH9b-8Wg3fQT3gapH8T=d2bd6S4Xw@mail.gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/relocation.c:1060 during rebalancing
-From: Jan Krcmar <honza801@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:57356 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755967Ab3JGKit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Oct 2013 06:38:49 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VT8D9-0005UO-5T
+	for linux-btrfs@vger.kernel.org; Mon, 07 Oct 2013 12:38:47 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 12:38:47 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2013 12:38:47 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Guenther Starnberger <linux-btrfs@gst.priv.at>
-Content-Type: text/plain; charset=US-ASCII
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs device delete problem
+Date: Mon, 7 Oct 2013 10:38:27 +0000 (UTC)
+Message-ID: <pan$c82c4$81d08e2c$7fe5940b$26a9f83b@cox.net>
+References: <CAKZ=RP9a6A8ni-4s7WdUWfqUhhRHyFGFVkN42kmYOJqnu=4dyA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+Alfredo Esteban posted on Sun, 06 Oct 2013 13:10:49 +0200 as excerpted:
 
-i've got the same problem "kernel BUG at fs/btrfs/relocation.c:1060".
-this was solved by patching the kernel with following patch
-https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=b6c60c8018c4e9beb2f83fc82c09f9d033766571
+> I'm getting an error when trying to delete a device from a raid1 (data
+> and metadata mirrored).
+> 
+>> btrfs filesystem show
+> failed to read /dev/sr0
+> Label: none  uuid: 78b5162b-489e-4de1-a989-a47b91adef50
+>     Total devices 2 FS bytes used 107.64GB
+>     devid    2 size 149.05GB used 109.01GB path /dev/sdh1
+>     devid    1 size 156.81GB used 109.03GB path /dev/sdb6
+> 
+> Btrfs v0.20-rc1
+> 
+>> btrfs device delete /dev/sdh1 /mnt/raid-data/
+> ERROR: error removing the device '/dev/sdh1' - Inappropriate ioctl for
+> device
+> 
+> Raid has been working fine for a long time. Both devices are present but
+> /dev/sdh1 is a new empty btrfs partition at the moment.
+> 
+> I should like to know whether this is an error or "btrfs device delete"
+> command is not the appropriate one. I just want to know how to delete
+> sdh1 from raid, add a new partition and balance.
+> 
+> My kernel version is: 3.8.0-31
 
-i've also found, that this patch is NOT included in 3.11.x stable
-kernel tree. see here to confim the absence
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/relocation.c?id=refs/tags/v3.11.4
+Two points in addition to what Chris Murphy said...
 
-fous
+1)  Btrfs still has the experimental label and is still under heavy 
+development.  Those choosing to run it are volunteering to test it as 
+such.  As an experimental filesystem under heavy development, each new 
+kernel brings fixes as well as new features, and running a current kernel 
+is *STRONGLY* recommended, both because it'll have more bugs fixed, AND 
+because if/when there IS a problem, the output and logs generated are 
+going to be far more valuable if the kernel is current than if it's 
+several kernels behind.
 
-2013/10/7 Guenther Starnberger <linux-btrfs@gst.priv.at>:
-> On Thu, Sep 26, 2013 at 07:26:07AM +0200, Guenther Starnberger wrote:
->
->> Yes - this also happens on 3.12-rc kernels. Here's the stacktrace for 4b97280
->> (which is several commits ahead of 3.12-rc2):
->
-> As an update to my previous mail: I just tried to continue the balance with an
-> updated btrfs-next kernel (4380ae355c5c17c150d29bf0c07f44046102ca2e) but I'm
-> still seeing the same issue:
->
-> [  273.810775] btrfs: disk space caching is enabled
-> [  273.812257] btrfs: has skinny extents
-> [  291.906125] BTRFS debug (device dm-0): unlinked 1 orphans
-> [  291.979115] btrfs: continuing balance
-> [  296.214254] btrfs: relocating block group 1542996361216 flags 1
-> [  411.032805] btrfs: found 18 extents
-> [  449.598891] ------------[ cut here ]------------
-> [  449.600360] kernel BUG at fs/btrfs/relocation.c:1060!
-> [  449.601603] invalid opcode: 0000 [#1] PREEMPT SMP
-> [  449.601971] Modules linked in: btrfs raid6_pq crc32c libcrc32c zlib_deflate xor xts gf128mul dm_crypt dm_mod usb_storage snd_intel8x0 snd_ac97_codec ac97_bus psmouse snd_pcm snd_page_alloc snd_timer ppdev microcode snd joydev evdev pcspkr serio_raw parport_pc parport i2c_piix4 intel_agp intel_gtt mperf i2c_core e1000 soundcore processor battery button ac ext4 crc16 mbcache jbd2 hid_generic usbhid hid sr_mod cdrom sd_mod ata_generic pata_acpi ohci_pci ata_piix ahci libahci ohci_hcd ehci_pci ehci_hcd usbcore usb_common libata scsi_mod
-> [  449.601971] CPU: 0 PID: 390 Comm: btrfs-balance Not tainted 3.11.0-1-90707-g4380ae3-dirty #1
-> [  449.601971] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
-> [  449.601971] task: ffff88007ad45cd0 ti: ffff8800786e4000 task.ti: ffff8800786e4000
-> [  449.601971] RIP: 0010:[<ffffffffa04f5f1a>]  [<ffffffffa04f5f1a>] build_backref_tree+0x112a/0x11d0 [btrfs]
-> [  449.601971] RSP: 0018:ffff8800786e5ab8  EFLAGS: 00010246
-> [  449.601971] RAX: 0000000000000000 RBX: ffff88007ad6e800 RCX: ffff8800780c81d0
-> [  449.601971] RDX: ffff8800786e5b30 RSI: ffff88007ad6e820 RDI: ffff8800780c81c0
-> [  449.601971] RBP: ffff8800786e5ba0 R08: ffff88007806d000 R09: ffff8800786e5a70
-> [  449.601971] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-> [  449.601971] R13: ffff88007888a120 R14: ffff88007806d600 R15: ffff8800780c81d0
-> [  449.601971] FS:  0000000000000000(0000) GS:ffff88007fa00000(0000) knlGS:0000000000000000
-> [  449.601971] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [  449.601971] CR2: 00007fe6529864f0 CR3: 000000007bb99000 CR4: 00000000000006f0
-> [  449.601971] Stack:
-> [  449.601971]  ffff88007806da80 0000000000000000 ffff8800780c8060 ffff88007806d000
-> [  449.601971]  ffff88007806d000 ffff88007888a120 ffff88007ad6e000 ffff88007888a240
-> [  449.601971]  ffff88007806d340 ffff88007ad6e920 ffff88007806da80 ffff88007ad6e924
-> [  449.601971] Call Trace:
-> [  449.601971]  [<ffffffffa04f7408>] relocate_tree_blocks+0x1d8/0x630 [btrfs]
-> [  449.601971]  [<ffffffffa04f8920>] relocate_block_group+0x280/0x690 [btrfs]
-> [  449.601971]  [<ffffffffa04f8ecd>] btrfs_relocate_block_group+0x19d/0x2e0 [btrfs]
-> [  449.601971]  [<ffffffffa04d0ca8>] btrfs_relocate_chunk.isra.28+0x68/0x780 [btrfs]
-> [  449.601971]  [<ffffffffa0489dd8>] ? btrfs_search_slot+0x498/0x970 [btrfs]
-> [  449.601971]  [<ffffffffa04c6499>] ? release_extent_buffer+0xa9/0xd0 [btrfs]
-> [  449.601971]  [<ffffffffa04cbdff>] ? free_extent_buffer+0x4f/0xa0 [btrfs]
-> [  449.601971]  [<ffffffffa04d40c3>] btrfs_balance+0x913/0xeb0 [btrfs]
-> [  449.601971]  [<ffffffffa04d46d0>] balance_kthread+0x70/0x80 [btrfs]
-> [  449.601971]  [<ffffffffa04d4660>] ? btrfs_balance+0xeb0/0xeb0 [btrfs]
-> [  449.601971]  [<ffffffff81083680>] kthread+0xc0/0xd0
-> [  449.601971]  [<ffffffff810835c0>] ? kthread_create_on_node+0x120/0x120
-> [  449.601971]  [<ffffffff814ddeac>] ret_from_fork+0x7c/0xb0
-> [  449.601971]  [<ffffffff810835c0>] ? kthread_create_on_node+0x120/0x120
-> [  449.601971] Code: 4c 89 ef e8 29 f0 f8 ff 48 8b bd 50 ff ff ff e8 1d f0 f8 ff 48 83 bd 30 ff ff ff 00 0f 85 0c fd ff ff 31 c0 e9 ae ef ff ff 0f 0b <0f> 0b 48 8b 85 30 ff ff ff 49 8d 7e 20 48 8b 70 18 48 89 c2 e8
-> [  449.601971] RIP  [<ffffffffa04f5f1a>] build_backref_tree+0x112a/0x11d0 [btrfs]
-> [  449.601971]  RSP <ffff8800786e5ab8>
-> [  449.645464] ---[ end trace 0478746bd226d078 ]---
->
-> - Guenther
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+And several kernels behind is EXACTLY what 3.8 is.  The current stable 
+kernel is 3.11.4, with 3.12-rc3 just out as well.  Why are you still back 
+on 3.8?  Do you WANT trouble from already fixed bugs, and output that's 
+not as valuable to the devs as that of a current kernel?  As a btrfs 
+tester you should be no farther back then second stable series AT THE 
+OLDEST (so 3.10 series, presently), and even that is old and of limited 
+value.  Preferred is the latest stable series (3.11 at this point) or the 
+development kernel (3.12-rc*).
+
+Note that there are reasons people might be a bit conservative and want 
+to run old kernels, but those reasons don't fit very well with being a 
+tester of an experimental status filesystem such as btrfs.  If you have 
+reason to be conservative and run and old kernel, and you might, you 
+really should reconsider whether testing btrfs is appropriate for you or 
+not, since running an experimental status filesystem is anything BUT 
+conservative.
+
+2) Btrfs raid modes won't allow you to reduce the number of devices below 
+the minimum number necessary for undegraded use of that raid mode.  So 
+raid1 and raid0 modes require two devices minimum, raid10 and the new 
+raid6 modes require four devices minimum, and raid5 requires three 
+minimum.  (Note that raid5/6 aren't considered ready for ordinary use 
+yet.)
+
+Since your btrfs in raid1 mode has two devices currently, you won't be 
+able to delete one of them as-is.  You will need to ADD a device first 
+(bringing the total to three devices), optionally do a balance, and THEN 
+delete the failed/missing/to-be-removed device (bringing the total back 
+to two, which you never go below that way).
+
+This, among other things, is covered on the btrfs wiki.  If you've not 
+read it recently, you're probably missing other useful hints and 
+information that it covers too, and I'd recommend spending some time 
+reading it.
+
+https://btrfs.wiki.kernel.org
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

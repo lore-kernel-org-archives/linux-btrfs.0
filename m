@@ -1,41 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:62012 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:62299 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750893Ab3JGPxc convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1756516Ab3JGTDE convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Oct 2013 11:53:32 -0400
-Received: from c-67-165-243-162.hsd1.co.comcast.net ([67.165.243.162]:64945 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.80.1)
-	(envelope-from <lists@colorremedies.com>)
-	id 1VTD7j-000TS1-PO
-	for linux-btrfs@vger.kernel.org; Mon, 07 Oct 2013 09:53:31 -0600
+	Mon, 7 Oct 2013 15:03:04 -0400
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfs device delete problem
+Subject: Re: btrfsck --repair --init-extent-tree: segfault error 4
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <36E90B61-31BA-41A2-8DFB-E2F4A65FF287@colorremedies.com>
-Date: Mon, 7 Oct 2013 09:53:31 -0600
-Message-Id: <568FD904-9402-47A7-A8F2-32445D20C3D6@colorremedies.com>
-References: <CAKZ=RP9a6A8ni-4s7WdUWfqUhhRHyFGFVkN42kmYOJqnu=4dyA@mail.gmail.com> <pan$c82c4$81d08e2c$7fe5940b$26a9f83b@cox.net> <36E90B61-31BA-41A2-8DFB-E2F4A65FF287@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <l2ui33$vjd$1@ger.gmane.org>
+Date: Mon, 7 Oct 2013 13:03:01 -0600
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <D78E3D68-6547-4601-B90D-7B8F867782A6@colorremedies.com>
+References: <l27agq$u5a$1@ger.gmane.org> <l27mn1$squ$1@ger.gmane.org> <l2826k$1uc$1@ger.gmane.org> <pan$69794$b0c00066$a4aa3035$c87a3c3d@cox.net> <l2a635$37m$1@ger.gmane.org> <l2ietn$jv1$1@ger.gmane.org> <l2k7kd$1dh$1@ger.gmane.org> <l2mnmf$us$1@ger.gmane.org> <l2otcg$mh$1@ger.gmane.org> <l2p3ja$v8r$1@ger.gmane.org> <l2ui33$vjd$1@ger.gmane.org>
+To: Martin <m_btrfs@ml1.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Oct 7, 2013, at 9:44 AM, Chris Murphy <lists@colorremedies.com> wrote:
+On Oct 7, 2013, at 8:56 AM, Martin <m_btrfs@ml1.co.uk> wrote:
 
 > 
-> On Oct 7, 2013, at 4:38 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
->> Since your btrfs in raid1 mode has two devices currently, you won't be 
->> able to delete one of them as-is.  You will need to ADD a device first 
->> (bringing the total to three devices), optionally do a balance, and THEN 
->> delete the failed/missing/to-be-removed device (bringing the total back 
->> to two, which you never go below that way).
-> 
-> Oops that's right, I forgot about this, and I have read the wiki! The other way to do it is to just pull the device, preferably with the file system unmounted. And then use it in degraded mode. I don't know if it's possible to convert a degraded volume, however.
+> Or try "mount -o recovery,noatime" again?
 
-Jeez, do I write much? Disconnect the device you want removed from the volume. Mount the one you want to keep using with -o degraded.
+Because of this: free space inode generation (0) did not match free space cache generation (1607)
+
+Try mount option clear_cache. You could then use iotop to make sure the btrfs-freespace process becomes inactive before unmounting the file system; I don't think you need to wait in order to use the file system, nor do you need to unmount then remount without the option. But if it works, it should only be needed once, not as a persistent mount option.
+
+
+> Or is it dead?
+> 
+> (The 1.5TB of backup data is replicated elsewhere but it would be good
+> to rescue this version rather than completely redo from scratch.
+> Especially so for the sake of just a few MBytes of one corrupt directory
+> tree.)
+
+Right. If you snapshot the subvolume containing the corrupt portion of the file system, the snapshot probably inherits that corruption. But if you write to only one of them, if those writes make the problem worse, should be isolated only to the one you write to. I might avoid writing to it, honestly. To save time, get increasingly aggressive to get data out of this directory and once you succeed, blow away the file system and start from scratch.
+
+You could also then try kernel 3.12 rc4, as there are some btrfs bug fixes I'm seeing in there also, but I don't know if any of them will help your case. If you try it, mount normally, then try to get your data. If that doesn't work, try the recovery option. Maybe you'll get different results.
 
 Chris Murphy

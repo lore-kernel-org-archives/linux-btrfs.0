@@ -1,26 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42710 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:7846 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755906Ab3JHQoa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Oct 2013 12:44:30 -0400
-Date: Tue, 8 Oct 2013 09:44:27 -0700
+	id S1751732Ab3JHS14 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Oct 2013 14:27:56 -0400
+Date: Tue, 8 Oct 2013 10:20:02 -0700
 From: Zach Brown <zab@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>
-Subject: Re: [PATCH 02/12] btrfs-progs: check fopen failure in cmds-send
-Message-ID: <20131008164427.GJ25712@lenny.home.zabbo.net>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        Eric Sandeen <sandeen@redhat.com>
+Subject: Re: [RFC] another round of static analysis fixes
+Message-ID: <20131008172002.GM25712@lenny.home.zabbo.net>
 References: <1381182185-10896-1-git-send-email-zab@redhat.com>
- <1381182185-10896-3-git-send-email-zab@redhat.com>
- <5253C552.7080609@giantdisaster.de>
+ <20131008163826.GB12986@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5253C552.7080609@giantdisaster.de>
+In-Reply-To: <20131008163826.GB12986@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> And close(fd) is already called 4 lines above. You didn't run the static
-> code analysis again after applying your patch :)
+> Compile-tested!
 
-Nice, thanks for catching that.  I certainly didn't run it again, no :).
+Cool, thanks!
+
+> [02/12] not merged, [08/12] replaces chandan's commit
+
+I just sent another attempt at 02/ :).
 
 - z

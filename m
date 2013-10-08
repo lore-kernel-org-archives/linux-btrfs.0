@@ -1,390 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:39223 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753199Ab3JGHZJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Oct 2013 03:25:09 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v3 09/12] Btrfs-progs: enhance btrfs qgroup to print the result as a table
-Date: Mon, 7 Oct 2013 15:21:45 +0800
-Message-Id: <1381130508-8458-10-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1381130508-8458-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:38315 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755539Ab3JHPez (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Oct 2013 11:34:55 -0400
+Date: Tue, 8 Oct 2013 17:34:39 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v3 10/12] Btrfs-progs: add '--block-size' option to
+ control print result
+Message-ID: <20131008153439.GE4322@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1381130508-8458-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <1381130508-8458-11-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1381130508-8458-11-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
+On Mon, Oct 07, 2013 at 03:21:46PM +0800, Wang Shilong wrote:
+> You can use it like:
+> 	btrfs qgroup show --block-size=m <mnt>
+> 
+> Here, block size supports k/K/m/M/g/G/t/T/p/P/e/E.
 
-This patch enhance to print the result as a table.
+There is no distinction between the 1000 and 1024 based prefixes, also
+no way to get the raw values in bytes. I don't have a suggestion how to
+do that, merely letting you know that this could go separately (this and
+the "-h" patch, the rest shall be integrated).
 
-You can use it like:
-	btrfs qgroup show <path>
-However, to table the result better, we make '-p' and '-c' not present
-at the same time.
+Also, the numbers in the table should be aligned to the right:
 
-For example:
+$ btrfs qgroup show -h -p /mnt/
+qgroupid rfer      excl      parent
+-------- ----      ----      ------
+0/5      900.00KiB 900.00KiB ---
+0/267    688.00KiB 12.00KiB  1/5
+0/268    684.00KiB 8.00KiB   1/5
+0/269    6.71GiB   4.00KiB   1/1
+0/277    6.71GiB   4.00KiB   1/1
+0/278    39.74GiB  39.74GiB  1/2
+1/1      6.71GiB   6.71GiB   ---
+1/2      39.74GiB  39.74GiB  ---
+1/5      696.00KiB 696.00KiB ---
 
-	btrfs qgroup show -pr <path>
-The result will output as the follow format:
 
-qgroupid rfer       excl       max_excl       parent
--------- ----       ----       --------       ------
-0/265    1289752576 1289752576 0              ---
-1/0      0          0          10999511627776 2/0,3/0
-2/0      0          0          0              ---
-3/0      0          0          0              ---
-
-Signed-off-by: Wang Shilong <wangsl-fnst@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- qgroup.c | 211 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 189 insertions(+), 22 deletions(-)
-
-diff --git a/qgroup.c b/qgroup.c
-index 84f5fc1..fa905fa 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -80,40 +80,48 @@ struct {
- 	char *name;
- 	char *column_name;
- 	int need_print;
-+	int max_len;
- } btrfs_qgroup_columns[] = {
- 	{
- 		.name		= "qgroupid",
- 		.column_name	= "Qgroupid",
- 		.need_print	= 1,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "rfer",
- 		.column_name	= "Rfer",
- 		.need_print	= 1,
-+		.max_len	= 4,
- 	},
- 	{
- 		.name		= "excl",
- 		.column_name	= "Excl",
- 		.need_print	= 1,
-+		.max_len	= 4,
- 	},
- 	{	.name		= "max_rfer",
- 		.column_name	= "Max_rfer",
- 		.need_print	= 0,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "max_excl",
- 		.column_name	= "Max_excl",
- 		.need_print	= 0,
-+		.max_len	= 8,
- 	},
- 	{
- 		.name		= "parent",
- 		.column_name	= "Parent",
- 		.need_print	= 0,
-+		.max_len	= 7,
- 	},
- 	{
- 		.name		= "child",
- 		.column_name	= "Child",
- 		.need_print	= 0,
-+		.max_len	= 5,
- 	},
- 	{
- 		.name		= NULL,
-@@ -139,69 +147,91 @@ void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column)
- 		btrfs_qgroup_columns[i].need_print = 1;
- }
- 
--static void print_parent_column(struct btrfs_qgroup *qgroup)
-+static int print_parent_column(struct btrfs_qgroup *qgroup)
- {
- 	struct btrfs_qgroup_list *list = NULL;
-+	int len = 0;
- 
- 	list_for_each_entry(list, &qgroup->qgroups, next_qgroup) {
--		printf("%llu/%llu", (list->qgroup)->qgroupid >> 48,
--		      ((1ll << 48) - 1) & (list->qgroup)->qgroupid);
-+		len += printf("%llu/%llu", (list->qgroup)->qgroupid >> 48,
-+			((1ll << 48) - 1) & (list->qgroup)->qgroupid);
- 		if (!list_is_last(&list->next_qgroup, &qgroup->qgroups))
--			printf(",");
-+			len += printf(",");
- 	}
- 	if (list_empty(&qgroup->qgroups))
--		printf("---");
-+		len += printf("---");
-+
-+	return len;
- }
- 
--static void print_child_column(struct btrfs_qgroup *qgroup)
-+static int print_child_column(struct btrfs_qgroup *qgroup)
- {
- 	struct btrfs_qgroup_list *list = NULL;
-+	int len = 0;
- 
- 	list_for_each_entry(list, &qgroup->members, next_member) {
--		printf("%llu/%llu", (list->member)->qgroupid >> 48,
--		      ((1ll << 48) - 1) & (list->member)->qgroupid);
-+		len += printf("%llu/%llu", (list->member)->qgroupid >> 48,
-+				((1ll << 48) - 1) & (list->member)->qgroupid);
- 		if (!list_is_last(&list->next_member, &qgroup->members))
--			printf(",");
-+			len += printf(",");
- 	}
- 	if (list_empty(&qgroup->members))
--		printf("---");
-+		len += printf("---");
-+
-+	return len;
-+}
-+
-+static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
-+					  int len)
-+{
-+	len = btrfs_qgroup_columns[column].max_len - len;
-+	while (len--)
-+		printf(" ");
- }
- 
- static void print_qgroup_column(struct btrfs_qgroup *qgroup,
- 				enum btrfs_qgroup_column_enum column)
- {
- 	BUG_ON(column >= BTRFS_QGROUP_ALL || column < 0);
-+	int len;
- 
- 	switch (column) {
- 
- 	case BTRFS_QGROUP_QGROUPID:
--		printf("%llu/%llu", qgroup->qgroupid >> 48,
--		       ((1ll << 48) - 1) & qgroup->qgroupid);
-+		len = printf("%llu/%llu", qgroup->qgroupid >> 48,
-+				((1ll << 48) - 1) & qgroup->qgroupid);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_QGROUPID, len);
- 		break;
- 	case BTRFS_QGROUP_RFER:
--		printf("%lld", qgroup->rfer);
-+		len = printf("%lld", qgroup->rfer);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_RFER, len);
- 		break;
- 	case BTRFS_QGROUP_EXCL:
--		printf("%lld", qgroup->excl);
-+		len = printf("%lld", qgroup->excl);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_EXCL, len);
- 		break;
- 	case BTRFS_QGROUP_PARENT:
--		print_parent_column(qgroup);
-+		len = print_parent_column(qgroup);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_PARENT, len);
- 		break;
- 	case BTRFS_QGROUP_MAX_RFER:
--		printf("%llu", qgroup->max_rfer);
-+		len = printf("%llu", qgroup->max_rfer);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_RFER, len);
- 		break;
- 	case BTRFS_QGROUP_MAX_EXCL:
--		printf("%llu", qgroup->max_excl);
-+		len = printf("%llu", qgroup->max_excl);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_EXCL, len);
- 		break;
- 	case BTRFS_QGROUP_CHILD:
--		print_child_column(qgroup);
-+		len = print_child_column(qgroup);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
- 		break;
- 	default:
- 		break;
- 	}
- }
- 
--static void print_single_qgroup_default(struct btrfs_qgroup *qgroup)
-+static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
- {
- 	int i;
- 
-@@ -210,7 +240,39 @@ static void print_single_qgroup_default(struct btrfs_qgroup *qgroup)
- 			continue;
- 		print_qgroup_column(qgroup, i);
- 
--		if (i != BTRFS_QGROUP_ALL - 1)
-+		if (i != BTRFS_QGROUP_CHILD)
-+			printf(" ");
-+	}
-+	printf("\n");
-+}
-+
-+static void print_table_head()
-+{
-+	int i;
-+	int len;
-+
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+		printf("%s", btrfs_qgroup_columns[i].name);
-+		len = btrfs_qgroup_columns[i].max_len -
-+		      strlen(btrfs_qgroup_columns[i].name);
-+		while (len--)
-+			printf(" ");
-+		printf(" ");
-+	}
-+	printf("\n");
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+
-+		len = strlen(btrfs_qgroup_columns[i].name);
-+		while (len--)
-+			printf("-");
-+		len = btrfs_qgroup_columns[i].max_len -
-+		      strlen(btrfs_qgroup_columns[i].name);
-+		printf(" ");
-+		while (len--)
- 			printf(" ");
- 	}
- 	printf("\n");
-@@ -819,6 +881,107 @@ static int sort_tree_insert(struct qgroup_lookup *sort_tree,
- 	return 0;
- }
- 
-+static void __update_columns_max_len(struct btrfs_qgroup *bq,
-+				     enum btrfs_qgroup_column_enum column)
-+{
-+	BUG_ON(column >= BTRFS_QGROUP_ALL || column < 0);
-+	struct btrfs_qgroup_list *list = NULL;
-+	char tmp[100];
-+	char *tmp1;
-+	int len;
-+
-+	switch (column) {
-+
-+	case BTRFS_QGROUP_QGROUPID:
-+		sprintf(tmp, "%llu/%llu", (bq->qgroupid >> 48),
-+			bq->qgroupid & ((1ll << 48) - 1));
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_RFER:
-+		sprintf(tmp, "%llu", bq->rfer);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_EXCL:
-+		sprintf(tmp, "%llu", bq->excl);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_MAX_RFER:
-+		sprintf(tmp, "%llu", bq->max_rfer);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_MAX_EXCL:
-+		sprintf(tmp, "%llu", bq->max_excl);
-+		len = strlen(tmp);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
-+	case BTRFS_QGROUP_PARENT:
-+		len = 0;
-+		list_for_each_entry(list, &bq->qgroups, next_qgroup)
-+			len++;
-+		tmp1 = calloc(1, 22 * len + 1);
-+		if (!tmp1) {
-+			perror("malloc fails");
-+			exit(1);
-+		}
-+		list_for_each_entry(list, &bq->qgroups, next_qgroup) {
-+			sprintf(tmp, "%llu/%llu", (list->qgroup)->qgroupid >> 48,
-+				((1ll << 48) - 1) & (list->qgroup)->qgroupid);
-+			strcat(tmp1, tmp);
-+			if (!list_is_last(&list->next_qgroup, &bq->qgroups))
-+				strcat(tmp1, ",");
-+		}
-+		len = strlen(tmp1);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		free(tmp1);
-+		break;
-+	case BTRFS_QGROUP_CHILD:
-+		len = 0;
-+		list_for_each_entry(list, &bq->members, next_member)
-+			len++;
-+		tmp1 = calloc(1, 22 * len + 1);
-+		if (!tmp1) {
-+			perror("malloc fails");
-+			exit(1);
-+		}
-+		list_for_each_entry(list, &bq->members, next_member) {
-+			sprintf(tmp, "%llu/%llu", (list->qgroup)->qgroupid >> 48,
-+				((1ll << 48) - 1) & (list->qgroup)->qgroupid);
-+			strcat(tmp1, tmp);
-+			if (!list_is_last(&list->next_member, &bq->members))
-+				strcat(tmp1, ",");
-+		}
-+		len = strlen(tmp1);
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		free(tmp1);
-+		break;
-+	default:
-+		break;
-+	}
-+
-+}
-+
-+static void update_columns_max_len(struct btrfs_qgroup *bq)
-+{
-+	int i;
-+
-+	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
-+		if (!btrfs_qgroup_columns[i].need_print)
-+			continue;
-+		__update_columns_max_len(bq, i);
-+	}
-+}
-+
- static void __filter_and_sort_qgroups(struct qgroup_lookup *all_qgroups,
- 				 struct qgroup_lookup *sort_tree,
- 				 struct btrfs_qgroup_filter_set *filter_set,
-@@ -836,9 +999,11 @@ static void __filter_and_sort_qgroups(struct qgroup_lookup *all_qgroups,
- 		entry = rb_entry(n, struct btrfs_qgroup, rb_node);
- 
- 		ret = filter_qgroup(entry, filter_set);
--		if (ret)
-+		if (ret) {
- 			sort_tree_insert(sort_tree, entry, comp_set);
- 
-+			update_columns_max_len(entry);
-+		}
- 		n = rb_prev(n);
- 	}
- }
-@@ -972,10 +1137,12 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
- 	struct rb_node *n;
- 	struct btrfs_qgroup *entry;
- 
-+	print_table_head();
-+
- 	n = rb_first(&qgroup_lookup->root);
- 	while (n) {
- 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
--		print_single_qgroup_default(entry);
-+		print_single_qgroup_table(entry);
- 		n = rb_next(n);
- 	}
- }
--- 
-1.8.3.1
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+david

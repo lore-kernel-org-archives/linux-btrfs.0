@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:35622 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751613Ab3JHBvr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 21:51:47 -0400
+Received: from dkim1.fusionio.com ([66.114.96.53]:56626 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752625Ab3JHCUH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 22:20:07 -0400
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 34E1C9A0681
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Oct 2013 19:51:47 -0600 (MDT)
-Date: Mon, 7 Oct 2013 21:51:45 -0400
+	by dkim1.fusionio.com (Postfix) with ESMTP id 607EC7C068F
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Oct 2013 20:20:07 -0600 (MDT)
+Date: Mon, 7 Oct 2013 22:20:05 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Jan Killius <tmpnerd@gmail.com>
 CC: <linux-btrfs@vger.kernel.org>
 Subject: Re: kernel BUG at mm/page-writeback.c:2317!
-Message-ID: <20131008015145.GB16461@localhost.localdomain>
+Message-ID: <20131008022005.GC16461@localhost.localdomain>
 References: <CACe732uTQrbVTV_Ov-0U4hLtdx8==2+9uXtzoVxFhteF3rr1ag@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -32,7 +32,13 @@ On Tue, Oct 08, 2013 at 12:36:11AM +0200, Jan Killius wrote:
 > Sorry for the screenshots but It was the only way to capture the backtraces.
 > I get the bug at the end of a 2GB scp transfer almost everytime.
 
-Well that's just a bummer.  Let me try and see if I can work out what is going
-on here.  Thanks,
+So I thought about it and I came up with this patch but as I was writing out the
+explanation I realized I was wrong in some of my assumptions.  However I'd still
+like you to give it a whirl and see if it fixes the problem and I'll take a
+fresh look at it tomorrow
+
+http://paste.fedoraproject.org/44986/38119874/
+
+Thanks,
 
 Josef

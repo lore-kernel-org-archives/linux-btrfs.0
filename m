@@ -1,156 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:41969 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:42081 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754509Ab3JHRWA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Oct 2013 13:22:00 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 29EE79A03DE
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2013 11:22:00 -0600 (MDT)
-Date: Tue, 8 Oct 2013 13:21:57 -0400
+	with ESMTP id S1753013Ab3JHRcA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Oct 2013 13:32:00 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 718BD9A03DE
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2013 11:31:59 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id MywPGVPkQi5bPocB (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 08 Oct 2013 11:31:58 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>, <miaox@cn.fujitsu.com>,
-        <jbacik@fusionio.com>
-Subject: Re: [PATCH] xfstest: an regression test for btrfs balance
-Message-ID: <20131008172157.GD16461@localhost.localdomain>
-References: <1381195275-9471-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: limit delalloc pages outside of find_delalloc_range
+Date: Tue, 8 Oct 2013 13:31:57 -0400
+Message-ID: <1381253517-914-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1381195275-9471-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 08, 2013 at 09:21:15AM +0800, Gui Hecheng wrote:
-> Originally, when executing "btrfs balance" right after
-> "btrfs subvolume snaphot" & "btrfs subvolume delete",
-> a kernel BUG arises.
-> 
-> This problem is caused by the patch:
-> [PATCH 1/2] Btrfs: fix for patch "cleanup: don't check
-> the same thing twice"
-> The commit id: 48475471728f060bfd2e686f592ef208d3ba8b7d
-> (in kernel/git/torvalds/linux.git)
-> 
-> handled by the patch:
-> [PATCH 2/3] Btrfs: fix oops caused by the space balance
-> and dead roots
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> ---
->  tests/btrfs/319     | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/319.out |  2 ++
->  tests/btrfs/group   |  1 +
->  3 files changed, 74 insertions(+)
->  create mode 100755 tests/btrfs/319
->  create mode 100644 tests/btrfs/319.out
-> 
-> diff --git a/tests/btrfs/319 b/tests/btrfs/319
-> new file mode 100755
-> index 0000000..b49e760
-> --- /dev/null
-> +++ b/tests/btrfs/319
-> @@ -0,0 +1,71 @@
-> +#! /bin/bash
-> +# FS QA Test No. btrfs/319
-> +#
+Liu fixed part of this problem and unfortunately I steered him in slightly the
+wrong direction and so didn't completely fix the problem.  The problem is we
+limit the size of the delalloc range we are looking for to max bytes and then we
+try to lock that range.  If we fail to lock the pages in that range we will
+shrink the max bytes to a single page and re loop.  However if our first page is
+inside of the delalloc range then we will end up limiting the end of the range
+to a period before our first page.  This is illustrated below
 
-Just pick the next available number, so 012, no reason to jack up the numbers
-like this.
+[0 -------- delalloc range --------- 256mb]
+                                  [page]
 
-> +# Btrfs balance tests
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2013 Fujitsu.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here="`pwd`"
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +
-> +_create_snapshot()
-> +{
-> +	for i in $(seq 20)
-> +	do
-> +		btrfs sub snapshot $SCRATCH_MNT $SCRATCH_MNT/snapshot0 >/dev/null
-> +		btrfs sub delete $SCRATCH_MNT/snapshot0 >/dev/null
-> +	done
-> +}
-> +
-> +_balance()
-> +{
-> +	for i in $(seq 20)
-> +	do
-> +		btrfs balance start $SCRATCH_MNT >/dev/null
-> +	done
-> +}
-> +
-> +#get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +
-> +_setup_testdir
-> +_require_scratch
-> +_scratch_mkfs >/dev/null 2>&1
-> +_scratch_mount
-> +
-> +echo "Tip: Run dmesg to see the error on failure"
-> +
-> +_create_snapshot &
-> +
-> +_balance &
-> +
-> +wait
-> +
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/319.out b/tests/btrfs/319.out
-> new file mode 100644
-> index 0000000..1d21523
-> --- /dev/null
-> +++ b/tests/btrfs/319.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 319
-> +Tip: Run dmesg to see the error on failure
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index d2fe030..201a475 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -14,3 +14,4 @@
->  009 auto quick
->  010 auto quick
->  011 auto
-> +319 auto
-> -- 
-> 1.8.0.1
+So find_delalloc_range will return with delalloc_start as 0 and end as 128mb,
+and then we will notice that delalloc_start < *start and adjust it up, but not
+adjust delalloc_end up, so things go sideways.  To fix this we need to not limit
+the max bytes in find_delalloc_range, but in find_lock_delalloc_range and that
+way we don't end up with this confusion.  Thanks,
 
-Otherwise this looks nice and straightforward, did you verify that it made the
-box panic without Miao's fixes?  If you did just fixup the test number and you
-can add
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent_io.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
 
-Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index b48942f..2bf6f46 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1491,10 +1491,8 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
+ 		cur_start = state->end + 1;
+ 		node = rb_next(node);
+ 		total_bytes += state->end - state->start + 1;
+-		if (total_bytes >= max_bytes) {
+-			*end = *start + max_bytes - 1;
++		if (total_bytes >= max_bytes)
+ 			break;
+-		}
+ 		if (!node)
+ 			break;
+ 	}
+@@ -1636,10 +1634,9 @@ again:
+ 
+ 	/*
+ 	 * make sure to limit the number of pages we try to lock down
+-	 * if we're looping.
+ 	 */
+-	if (delalloc_end + 1 - delalloc_start > max_bytes && loops)
+-		delalloc_end = delalloc_start + PAGE_CACHE_SIZE - 1;
++	if (delalloc_end + 1 - delalloc_start > max_bytes)
++		delalloc_end = delalloc_start + max_bytes - 1;
+ 
+ 	/* step two, lock all the pages after the page that has start */
+ 	ret = lock_delalloc_pages(inode, locked_page,
+@@ -1650,8 +1647,7 @@ again:
+ 		 */
+ 		free_extent_state(cached_state);
+ 		if (!loops) {
+-			unsigned long offset = (*start) & (PAGE_CACHE_SIZE - 1);
+-			max_bytes = PAGE_CACHE_SIZE - offset;
++			max_bytes = PAGE_CACHE_SIZE;
+ 			loops = 1;
+ 			goto again;
+ 		} else {
+-- 
+1.8.3.1
 
-Thanks,
-
-Josef

@@ -1,357 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17813 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:17814 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752045Ab3JHDeQ (ORCPT
+	with ESMTP id S1752080Ab3JHDeQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 23:34:16 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/3 v4] btrfs-progs: use kernel for mounted disk for show
-Date: Tue,  8 Oct 2013 11:41:38 +0800
-Message-Id: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 3/3] btrfs-progs: use BTRFS_SCAN_LBLKID as default scan in filesystem show
+Date: Tue,  8 Oct 2013 11:41:40 +0800
+Message-Id: <1381203700-17558-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
+References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As of now btrfs filesystem show reads directly from
-disks. So sometimes output can be stale, mainly when
-user wants to cross verify their operation like,
-label or device delete or add... etc. so this
-patch will read from the kernel ioctl if it finds
-that disk is mounted.
+btrfs progs has to scan for the btrfs disks for two main reasons,
+ one to register them with the btrfs kernel (under btrfs dev scan)
+ 2nd to report btrfs disks to the user (under btrfs fi show)
+ (there few more minor reasons like check_mounted etc..).
 
-v4:
-  rebase on integration-20131001-3
-v3:
-  rebase on 20130920 and splits new parameter to new patch
-v2:
-  accepts David suggested
+ To facilitate the scan, in total we have the following methods
+ to scan for the btrfs
+
+ BTRFS_SCAN_PROC
+  which uses the /proc/partitions to look for the disks, when
+  scanning it does it twice first would look for non dm- paths
+  and in the 2nd scan it would pick only dm- paths.
+
+ BTRFS_SCAN_DEV
+  which scans all the block dev under /dev as they appear during
+  scanning.
+
+ BTRFS_SCAN_LBLKID
+  this uses the library functions provided  by the lblkid to get
+  only disks which contains the btrfs SB.
+
+ The better method to use would be BTRFS_SCAN_LBLKID for the obvious
+ reasons we don't have to reinvent that feature with in btrfs-progs.
+
+ For the btrfs fi show - This patch will..
+   - make BTRFS_SCAN_LBLKID as the default scan option
+
+   (BTRFS_SCAN_DEV is accessible under the option --all-devices and
+   BTRFS_SCAN_PROC won't be used by btrfs fi show any more)
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-filesystem.c |  200 +++++++++++++++++++++++++++++++++++++++++++++++++----
- man/btrfs.8.in    |   16 +++--
- utils.h           |   11 +++-
- 3 files changed, 205 insertions(+), 22 deletions(-)
+ cmds-filesystem.c |   14 +-------------
+ 1 files changed, 1 insertions(+), 13 deletions(-)
 
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 780baad..9e0c8b9 100644
+index 74b7a06..b737ec9 100644
 --- a/cmds-filesystem.c
 +++ b/cmds-filesystem.c
-@@ -25,6 +25,9 @@
- #include <ctype.h>
- #include <fcntl.h>
- #include <ftw.h>
-+#include <mntent.h>
-+#include <linux/limits.h>
-+#include <getopt.h>
- 
- #include "kerncompat.h"
- #include "ctree.h"
-@@ -251,9 +254,131 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
- 	printf("\n");
- }
- 
-+/* adds up all the used spaces as reported by the space info ioctl
-+ */
-+static u64 calc_used_bytes(struct btrfs_ioctl_space_args *si)
-+{
-+	u64 ret = 0;
-+	int i;
-+	for (i = 0; i < si->total_spaces; i++)
-+		ret += si->spaces[i].used_bytes;
-+	return ret;
-+}
-+
-+static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
-+		struct btrfs_ioctl_dev_info_args *dev_info,
-+		struct btrfs_ioctl_space_args *space_info,
-+		char *label, char *path)
-+{
-+	int i;
-+	char uuidbuf[37];
-+	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
-+
-+	uuid_unparse(fs_info->fsid, uuidbuf);
-+	printf("Label: %s  uuid: %s\n",
-+		strlen(label) ? label : "none", uuidbuf);
-+
-+	printf("\tTotal devices %llu FS bytes used %s\n",
-+				fs_info->num_devices,
-+			pretty_size(calc_used_bytes(space_info)));
-+
-+	for (i = 0; i < fs_info->num_devices; i++) {
-+		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
-+		printf("\tdevid    %llu size %s used %s path %s\n",
-+			tmp_dev_info->devid,
-+			pretty_size(tmp_dev_info->total_bytes),
-+			pretty_size(tmp_dev_info->bytes_used),
-+			tmp_dev_info->path);
-+	}
-+
-+	printf("\n");
-+	return 0;
-+}
-+
-+/* This function checks if the given input parameter is
-+ * an uuid or a path
-+ * return -1: some error in the given input
-+ * return 0: unknow input
-+ * return 1: given input is uuid
-+ * return 2: given input is path
-+ */
-+static int check_arg_type(char *input)
-+{
-+	uuid_t	out;
-+	char path[PATH_MAX];
-+
-+	if (!input)
-+		return BTRFS_ARG_UNKNOWN;
-+
-+	if (realpath(input, path))
-+		return BTRFS_ARG_PATH;
-+
-+	if (!uuid_parse(input, out))
-+		return BTRFS_ARG_UUID;
-+
-+	return BTRFS_ARG_UNKNOWN;
-+}
-+
-+static int btrfs_scan_kernel(void *search)
-+{
-+	int ret = 0, fd, type;
-+	FILE *f;
-+	struct mntent *mnt;
-+	struct btrfs_ioctl_fs_info_args fs_info_arg;
-+	struct btrfs_ioctl_dev_info_args *dev_info_arg = NULL;
-+	struct btrfs_ioctl_space_args *space_info_arg;
-+	char label[BTRFS_LABEL_SIZE];
-+	uuid_t uuid;
-+
-+	f = setmntent("/proc/self/mounts", "r");
-+	if (f == NULL)
-+		return 1;
-+
-+	type = check_arg_type(search);
-+
-+	while ((mnt = getmntent(f)) != NULL) {
-+		if (strcmp(mnt->mnt_type, "btrfs"))
-+			continue;
-+		ret = get_fs_info(mnt->mnt_dir, &fs_info_arg,
-+				&dev_info_arg);
-+		if (ret)
-+			return ret;
-+
-+		switch (type) {
-+		case BTRFS_ARG_UUID:
-+			ret = uuid_parse(search, uuid);
-+			if (ret)
-+				return 1;
-+			if (uuid_compare(fs_info_arg.fsid, uuid))
-+				continue;
-+			break;
-+		case BTRFS_ARG_PATH:
-+			if (strcmp(search, mnt->mnt_dir))
-+				continue;
-+			break;
-+		default:
-+			break;
-+		}
-+
-+		fd = open(mnt->mnt_dir, O_RDONLY);
-+		if (fd > 0 && !get_df(fd, &space_info_arg)) {
-+			get_label_mounted(mnt->mnt_dir, label);
-+			print_one_fs(&fs_info_arg, dev_info_arg,
-+					space_info_arg, label, mnt->mnt_dir);
-+			free(space_info_arg);
-+		}
-+		if (fd > 0)
-+			close(fd);
-+		free(dev_info_arg);
-+	}
-+	return ret;
-+}
-+
- static const char * const cmd_show_usage[] = {
--	"btrfs filesystem show [--all-devices|<uuid>]",
-+	"btrfs filesystem show [options] [<path>|<uuid>]",
- 	"Show the structure of a filesystem",
-+	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
-+	"-m|--mounted       show only mounted btrfs",
- 	"If no argument is given, structure of all present filesystems is shown.",
- 	NULL
- };
-@@ -262,38 +387,87 @@ static int cmd_show(int argc, char **argv)
+@@ -398,11 +398,10 @@ static int cmd_show(int argc, char **argv)
  {
  	struct list_head *all_uuids;
  	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_device *device;
+-	struct btrfs_device *device;
  	struct list_head *cur_uuid;
  	char *search = NULL;
  	int ret;
- 	int where = BTRFS_SCAN_PROC;
--	int searchstart = 1;
--
--	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
--		where = BTRFS_SCAN_DEV;
--		searchstart += 1;
-+	int type = 0;
-+
-+	while (1) {
-+		int long_index;
-+		static struct option long_options[] = {
-+			{ "all-devices", no_argument, NULL, 'd'},
-+			{ "mounted", no_argument, NULL, 'm'},
-+			{ NULL, no_argument, NULL, 0 },
-+		};
-+		int c = getopt_long(argc, argv, "dm", long_options,
-+					&long_index);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'd':
-+			where = BTRFS_SCAN_DEV;
-+			break;
-+		case 'm':
-+			where = BTRFS_SCAN_MOUNTED;
-+			break;
-+		default:
-+			usage(cmd_show_usage);
-+		}
- 	}
+-	int where = BTRFS_SCAN_PROC;
++	int where = BTRFS_SCAN_LBLKID;
+ 	int type = 0;
  
--	if (check_argc_max(argc, searchstart + 1))
-+	if (check_argc_max(argc, optind + 1))
- 		usage(cmd_show_usage);
-+	if (argc > optind) {
-+		search = argv[optind];
-+		type = check_arg_type(search);
-+		if (type == BTRFS_ARG_UNKNOWN) {
-+			fprintf(stderr, "ERROR: arg type unknown\n");
-+			usage(cmd_show_usage);
-+		}
-+	}
-+
-+	if (where == BTRFS_SCAN_DEV)
-+		goto devs_only;
- 
--	ret = scan_for_btrfs(where, 0);
-+	/* show mounted btrfs */
-+	btrfs_scan_kernel(search);
- 
--	if (ret){
--		fprintf(stderr, "ERROR: error %d while scanning\n", ret);
-+	/* shows mounted only */
-+	if (where == BTRFS_SCAN_MOUNTED)
-+		goto out;
-+
-+devs_only:
-+	ret = scan_for_btrfs(where, !BTRFS_UPDATE_KERNEL);
-+
-+	if (ret) {
-+		fprintf(stderr, "ERROR: %d while scanning\n", ret);
- 		return 1;
- 	}
- 	
--	if(searchstart < argc)
--		search = argv[searchstart];
--
- 	all_uuids = btrfs_scanned_uuids();
- 	list_for_each(cur_uuid, all_uuids) {
- 		fs_devices = list_entry(cur_uuid, struct btrfs_fs_devices,
- 					list);
+ 	while (1) {
+@@ -464,17 +463,6 @@ devs_only:
  		if (search && uuid_search(fs_devices, search) == 0)
  			continue;
-+
-+		/* skip mounted as they are already printed by
-+		 * btrfs_scan_kernel
-+		*/
-+		/* do it only for the default, no option */
-+		if (where == BTRFS_SCAN_PROC) {
-+			device = list_entry(fs_devices->devices.next,
-+					struct btrfs_device, dev_list);
-+			ret = check_mounted(device->name);
-+			if (ret)
-+				continue;
-+		}
+ 
+-		/* skip mounted as they are already printed by
+-		 * btrfs_scan_kernel
+-		*/
+-		/* do it only for the default, no option */
+-		if (where == BTRFS_SCAN_PROC) {
+-			device = list_entry(fs_devices->devices.next,
+-					struct btrfs_device, dev_list);
+-			ret = check_mounted(device->name);
+-			if (ret)
+-				continue;
+-		}
  		print_one_uuid(fs_devices);
  	}
-+
-+out:
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return 0;
- }
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 8a0a05d..ff2427e 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -25,7 +25,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem df\fP\fI <path>\fP
- .PP
--\fBbtrfs\fP \fBfilesystem show\fP [--all-devices|\fI<uuid>\fP|\fI<label>\fP]\fP
-+\fBbtrfs\fP \fBfilesystem show\fP [\fI--mounted\fP|\fI--all-devices\fP|\fI<uuid>\fP]\fP
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
-@@ -51,7 +51,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBdevice delete\fP \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
- .PP
--\fBbtrfs\fP \fBdevice scan\fP [--all-devices|\fI<device> \fP[\fI<device>...\fP]
-+\fBbtrfs\fP \fBdevice scan\fP [\fI--all-devices\fP|\fI<device> \P[\fI<device>...\fP]
- .PP
- \fBbtrfs\fP \fBdevice ready\fP\fI <device>\fP
- .PP
-@@ -261,9 +261,11 @@ Show information of a given subvolume in the \fI<path>\fR.
- Show space usage information for a mount point.
- .TP
  
--\fBfilesystem show\fR [--all-devices|\fI<uuid>\fR|\fI<label>\fR]\fR
--Show the btrfs filesystem with some additional info. If no \fIUUID\fP or
--\fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
-+\fBfilesystem show\fR [\fI--mounted\fP|\fI--all-devices\fP|\fI<uuid>\fR]\fR
-+Show the btrfs filesystem with some additional info. If no option or \fIUUID\fP
-+is passed, \fBbtrfs\fR shows information of all the btrfs filesystem both mounted
-+and unmounted.
-+If \fB--mounted\fP is passed, it would probe btrfs kernel to list mounted btrfs filesystem(s);
- If \fB--all-devices\fP is passed, all the devices under /dev are scanned;
- otherwise the devices list is extracted from the /proc/partitions file.
- .TP
-@@ -410,8 +412,8 @@ Remove device(s) from a filesystem identified by \fI<path>\fR.
- 
- \fBdevice scan\fR [--all-devices|\fI<device> \fP[\fI<device>...\fP]\fR
- If one or more devices are passed, these are scanned for a btrfs filesystem. 
--If no devices are passed, \fBbtrfs\fR scans all the block devices listed
--in the /proc/partitions file.
-+If no devices are passed, \fBbtrfs\fR uses block devices containing btrfs
-+filesystem as listed by blkid.
- Finally, if \fB--all-devices\fP is passed, all the devices under /dev are 
- scanned.
- .TP
-diff --git a/utils.h b/utils.h
-index a6d3e5e..0f31db7 100644
---- a/utils.h
-+++ b/utils.h
-@@ -25,10 +25,17 @@
- 
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
- 
--#define BTRFS_SCAN_PROC	1
--#define BTRFS_SCAN_DEV		2
-+#define BTRFS_SCAN_PROC		(1ULL << 0)
-+#define BTRFS_SCAN_DEV		(1ULL << 1)
-+#define BTRFS_SCAN_MOUNTED	(1ULL << 2)
- #define BTRFS_SCAN_LBLKID	(1ULL << 3)
- 
-+#define BTRFS_UPDATE_KERNEL	1
-+
-+#define BTRFS_ARG_UNKNOWN	0
-+#define BTRFS_ARG_PATH		1
-+#define BTRFS_ARG_UUID		2
-+
- int make_btrfs(int fd, const char *device, const char *label,
- 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
- 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features);
 -- 
 1.7.1
 

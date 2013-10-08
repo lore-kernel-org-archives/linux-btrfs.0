@@ -1,135 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8486 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751799Ab3JHBXD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Oct 2013 21:23:03 -0400
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com, jbacik@fusionio.com,
-        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] xfstest: an regression test for btrfs balance
-Date: Tue, 8 Oct 2013 09:21:15 +0800
-Message-Id: <1381195275-9471-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:35622 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751613Ab3JHBvr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2013 21:51:47 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 34E1C9A0681
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Oct 2013 19:51:47 -0600 (MDT)
+Date: Mon, 7 Oct 2013 21:51:45 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Jan Killius <tmpnerd@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel BUG at mm/page-writeback.c:2317!
+Message-ID: <20131008015145.GB16461@localhost.localdomain>
+References: <CACe732uTQrbVTV_Ov-0U4hLtdx8==2+9uXtzoVxFhteF3rr1ag@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CACe732uTQrbVTV_Ov-0U4hLtdx8==2+9uXtzoVxFhteF3rr1ag@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Originally, when executing "btrfs balance" right after
-"btrfs subvolume snaphot" & "btrfs subvolume delete",
-a kernel BUG arises.
+On Tue, Oct 08, 2013 at 12:36:11AM +0200, Jan Killius wrote:
+> Hello,
+> I'm hitting similar bug with the patch from Lui Bo.
+> But If I revert: 573aecafca1cf7a974231b759197a1aebcf39c2a,
+> Btrfs: actually limit the size of delalloc range) everything works fine.
+> 
+> Here are the 2 backtraces from my machines with 3.12-rc4:
+> http://imgur.com/sVkjGK6,mWUtzMV#0
+> http://imgur.com/sVkjGK6,mWUtzMV#1
+> 
+> Sorry for the screenshots but It was the only way to capture the backtraces.
+> I get the bug at the end of a 2GB scp transfer almost everytime.
 
-This problem is caused by the patch:
-[PATCH 1/2] Btrfs: fix for patch "cleanup: don't check
-the same thing twice"
-The commit id: 48475471728f060bfd2e686f592ef208d3ba8b7d
-(in kernel/git/torvalds/linux.git)
+Well that's just a bummer.  Let me try and see if I can work out what is going
+on here.  Thanks,
 
-handled by the patch:
-[PATCH 2/3] Btrfs: fix oops caused by the space balance
-and dead roots
-
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- tests/btrfs/319     | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/319.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 74 insertions(+)
- create mode 100755 tests/btrfs/319
- create mode 100644 tests/btrfs/319.out
-
-diff --git a/tests/btrfs/319 b/tests/btrfs/319
-new file mode 100755
-index 0000000..b49e760
---- /dev/null
-+++ b/tests/btrfs/319
-@@ -0,0 +1,71 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/319
-+#
-+# Btrfs balance tests
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here="`pwd`"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_create_snapshot()
-+{
-+	for i in $(seq 20)
-+	do
-+		btrfs sub snapshot $SCRATCH_MNT $SCRATCH_MNT/snapshot0 >/dev/null
-+		btrfs sub delete $SCRATCH_MNT/snapshot0 >/dev/null
-+	done
-+}
-+
-+_balance()
-+{
-+	for i in $(seq 20)
-+	do
-+		btrfs balance start $SCRATCH_MNT >/dev/null
-+	done
-+}
-+
-+#get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+
-+_setup_testdir
-+_require_scratch
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+echo "Tip: Run dmesg to see the error on failure"
-+
-+_create_snapshot &
-+
-+_balance &
-+
-+wait
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/319.out b/tests/btrfs/319.out
-new file mode 100644
-index 0000000..1d21523
---- /dev/null
-+++ b/tests/btrfs/319.out
-@@ -0,0 +1,2 @@
-+QA output created by 319
-+Tip: Run dmesg to see the error on failure
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index d2fe030..201a475 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -14,3 +14,4 @@
- 009 auto quick
- 010 auto quick
- 011 auto
-+319 auto
--- 
-1.8.0.1
-
+Josef

@@ -1,49 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:47273 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753878Ab3JIRXa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Oct 2013 13:23:30 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 394667C06AF
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Oct 2013 11:23:30 -0600 (MDT)
-Date: Wed, 9 Oct 2013 13:23:25 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Chris Murphy <lists@colorremedies.com>
-CC: Josef Bacik <jbacik@fusionio.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: regression, can't move subvols into subvols
-Message-ID: <20131009172325.GH16461@localhost.localdomain>
-References: <459265C7-5E22-4F5B-A69C-A5A6AC455495@colorremedies.com>
- <20131009162706.GG16461@localhost.localdomain>
- <03A8C5A5-6E1D-45EC-9B1A-D0F144003580@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <03A8C5A5-6E1D-45EC-9B1A-D0F144003580@colorremedies.com>
+Received: from mail-qa0-f42.google.com ([209.85.216.42]:61388 "EHLO
+	mail-qa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755211Ab3JIXRe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Oct 2013 19:17:34 -0400
+From: "Geyslan G. Bem" <geyslan@gmail.com>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        kernel-br@googlegroups.com, "Geyslan G. Bem" <geyslan@gmail.com>
+Subject: [PATCH] btrfs: Fix memory leakage in the tree-log.c
+Date: Wed,  9 Oct 2013 20:13:07 -0300
+Message-Id: <1381360387-27535-1-git-send-email-geyslan@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 09, 2013 at 11:17:43AM -0600, Chris Murphy wrote:
-> 
-> On Oct 9, 2013, at 10:27 AM, Josef Bacik <jbacik@fusionio.com> wrote:
-> 
-> > On Tue, Oct 08, 2013 at 03:58:23PM -0600, Chris Murphy wrote:
-> >> I don't think this is expected, is it? I can no longer move a subvolume into another subvolume. I can move a subvolume into a directory. This happens with 3.11.3, and 3.12 rc4. I'm not sure yet when the regression first appeared.
-> >> 
-> >> Example move subvol to subvol, where home is a subvolume that contains files, and f20inprogress is a newly created (empty) subvolume.
-> >> 
-> >> [root@f20s btrfs]# mv home f20inprogress
-> >> mv: cannot move ‘home’ to ‘f20inprogress/home’: File exists
-> >> 
-> > 
-> > Fixed it with
-> > 
-> > [PATCH] Btrfs: use right root when checking for hash collision
-> > 
-> > Sorry about that.
-> 
-> This behavior seems to go back quite far. At least 3.9.5 is affected; 3.9 is EOL but does it make sense to fix this for 3.10 and 3.11?
-> 
+In some cases, add_inode_ref() is returning without freeing
+the 'name' pointer.
 
-Yeah I'll mark it for stable.  Thanks,
+Added bail out to explicitly call kfree when necessary.
 
-Josef
+Signed-off-by: Geyslan G. Bem <geyslan@gmail.com>
+---
+ fs/btrfs/tree-log.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 79f057c..37d32c3 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1170,13 +1170,18 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+ 			if (!dir)
+ 				dir = read_one_inode(root, parent_objectid);
+ 			if (!dir)
+-				return -ENOENT;
++			{
++				ret = -ENOENT;
++				goto bail;
++			}
+ 		} else {
+ 			ret = ref_get_fields(eb, ref_ptr, &namelen, &name,
+ 					     &ref_index);
+ 		}
+ 		if (ret)
+-			return ret;
++		{
++			goto bail;
++		}
+ 
+ 		/* if we already have a perfect match, we're done */
+ 		if (!inode_in_dir(root, path, btrfs_ino(dir), btrfs_ino(inode),
+@@ -1214,7 +1219,6 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		ref_ptr = (unsigned long)(ref_ptr + ref_struct_size) + namelen;
+-		kfree(name);
+ 		if (log_ref_ver) {
+ 			iput(dir);
+ 			dir = NULL;
+@@ -1227,6 +1231,9 @@ out:
+ 	btrfs_release_path(path);
+ 	iput(dir);
+ 	iput(inode);
++bail:
++	if (name)
++		kfree(name);
+ 	return ret;
+ }
+ 
+-- 
+1.8.4
+

@@ -1,47 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:48412 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753519Ab3JITEk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Oct 2013 15:04:40 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 4AB737C068B
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Oct 2013 13:04:40 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: [PATCH] xfstests: btrfs/016: a regression test for subvolume rename
-Date: Wed, 9 Oct 2013 15:04:37 -0400
-Message-ID: <1381345477-7902-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx1.redhat.com ([209.132.183.28]:17856 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751796Ab3JJEwe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Oct 2013 00:52:34 -0400
+From: Eryu Guan <eguan@redhat.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
+Subject: [PATCH] xfstests btrfs/012: test balance while creating and deleting subvolumes
+Date: Thu, 10 Oct 2013 12:52:13 +0800
+Message-Id: <1381380733-27117-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a regression where we could no longer rename a subvolume into
-another subvolume.  This is a test case to do just that to make sure we don't
-regress on this again.  Thanks,
+Do subvolume create/delete in loop at back ground and do filesystem
+balance at the same time could trigger
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+kernel BUG at fs/btrfs/relocation.c:2255!
+
+on 3.12-rc4 kernel.
+
+Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/016     | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/016.out |  2 ++
+ tests/btrfs/012     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/012.out | 11 ++++++++
  tests/btrfs/group   |  1 +
- 3 files changed, 64 insertions(+)
- create mode 100644 tests/btrfs/016
- create mode 100644 tests/btrfs/016.out
+ 3 files changed, 86 insertions(+)
+ create mode 100755 tests/btrfs/012
+ create mode 100644 tests/btrfs/012.out
 
-diff --git a/tests/btrfs/016 b/tests/btrfs/016
-new file mode 100644
-index 0000000..09a8b8b
+diff --git a/tests/btrfs/012 b/tests/btrfs/012
+new file mode 100755
+index 0000000..3f72a9b
 --- /dev/null
-+++ b/tests/btrfs/016
-@@ -0,0 +1,61 @@
++++ b/tests/btrfs/012
+@@ -0,0 +1,74 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/016
++# FS QA Test No. btrfs/012
 +#
-+# Regression test to make sure we can move a subvol into another subvol
++# Test btrfs balance while creating and deleting subvolumes
++#
++# On buggy kernel this could trigger:
++# kernel BUG at fs/btrfs/relocation.c:2255!
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
++# Copyright (c) 2013 Red Hat, Inc.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -55,7 +57,6 @@ index 0000000..09a8b8b
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
 +#-----------------------------------------------------------------------
 +#
 +
@@ -63,17 +64,13 @@ index 0000000..09a8b8b
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
-+here=`pwd`
-+tmp=/tmp/$$
-+
 +status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+	rm -f $tmp.*
++    cd /
 +}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
@@ -83,36 +80,60 @@ index 0000000..09a8b8b
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
++_require_scratch_dev_pool
 +
++subvolume=subvol_$seq
 +rm -f $seqres.full
 +
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/test1 >> $seqres.full 2>&1 \
-+	|| _fail "couldn't create test1"
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/test2 >> $seqres.full 2>&1 \
-+	|| _fail "couldn't create test1"
-+mv $SCRATCH_MNT/test1 $SCRATCH_MNT/test2 || _fail "Problem doing move"
++subvolume_create_delete()
++{
++	while true; do
++		$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/$subvolume >/dev/null
++		$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/$subvolume >/dev/null
++	done
++}
 +
-+echo "Silence is golden"
-+status=0 ; exit
-diff --git a/tests/btrfs/016.out b/tests/btrfs/016.out
++_scratch_pool_mkfs >> $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
++
++subvolume_create_delete &
++
++for i in `seq 1 10`;do
++	$BTRFS_UTIL_PROG filesystem balance start $SCRATCH_MNT >>$seqres.full 2>&1
++	echo "Done balance loop $i"
++done
++kill $!
++wait
++
++# No crash, test passed
++status=0
++exit
+diff --git a/tests/btrfs/012.out b/tests/btrfs/012.out
 new file mode 100644
-index 0000000..aa2526b
+index 0000000..9604f1b
 --- /dev/null
-+++ b/tests/btrfs/016.out
-@@ -0,0 +1,2 @@
-+QA output created by 016
-+Silence is golden
++++ b/tests/btrfs/012.out
+@@ -0,0 +1,11 @@
++QA output created by 012
++Done balance loop 1
++Done balance loop 2
++Done balance loop 3
++Done balance loop 4
++Done balance loop 5
++Done balance loop 6
++Done balance loop 7
++Done balance loop 8
++Done balance loop 9
++Done balance loop 10
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index dc5bbea..65d93b9 100644
+index d2fe030..c12b9e9 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -18,3 +18,4 @@
- 013 auto quick
- 014 auto quick
- 015 auto quick
-+016 auto quick
+@@ -14,3 +14,4 @@
+ 009 auto quick
+ 010 auto quick
+ 011 auto
++012 auto quick
 -- 
 1.8.3.1
 

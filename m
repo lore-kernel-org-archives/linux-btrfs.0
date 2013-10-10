@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f51.google.com ([74.125.83.51]:38041 "EHLO
+Received: from mail-ee0-f51.google.com ([74.125.83.51]:43355 "EHLO
 	mail-ee0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755583Ab3JJRiA (ORCPT
+	with ESMTP id S1755686Ab3JJRj7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Oct 2013 13:38:00 -0400
-Received: by mail-ee0-f51.google.com with SMTP id c1so1329436eek.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 10:37:59 -0700 (PDT)
+	Thu, 10 Oct 2013 13:39:59 -0400
+Received: by mail-ee0-f51.google.com with SMTP id c1so1330686eek.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 10:39:58 -0700 (PDT)
 From: Ilya Dryomov <idryomov@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        Stefan Behrens <sbehrens@giantdisaster.de>, idryomov@gmail.com
-Subject: [PATCH] Btrfs: nuke a bogus rw_devices decrement in __btrfs_close_devices
-Date: Thu, 10 Oct 2013 20:37:29 +0300
-Message-Id: <1381426649-31789-1-git-send-email-idryomov@gmail.com>
+Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
+Subject: [PATCH] Btrfs: don't leak ioctl args in btrfs_ioctl_dev_replace
+Date: Thu, 10 Oct 2013 20:39:28 +0300
+Message-Id: <1381426768-31904-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On mount failures, __btrfs_close_devices can be called well before
-dev-replace state is read and ->is_tgtdev_for_dev_replace is set.  This
-leads to a bogus decrement of ->rw_devices and sets off a WARN_ON in
-__btrfs_close_devices if replace target device happens to be on the
-lists and we fail early in the mount sequence.  Fix this by checking
-the devid instead of ->is_tgtdev_for_dev_replace before the decrement:
-for replace targets devid is always equal to BTRFS_DEV_REPLACE_DEVID.
+struct btrfs_ioctl_dev_replace_args memory is leaked if replace is
+requested on a read-only filesystem.  Fix it.
 
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/volumes.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 043b215..a306db9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -666,7 +666,8 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		if (device->bdev)
- 			fs_devices->open_devices--;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9d46f60..17bb98e 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3679,9 +3679,10 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
  
--		if (device->writeable && !device->is_tgtdev_for_dev_replace) {
-+		if (device->writeable &&
-+		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 			list_del_init(&device->dev_alloc_list);
- 			fs_devices->rw_devices--;
- 		}
+ 	switch (p->cmd) {
+ 	case BTRFS_IOCTL_DEV_REPLACE_CMD_START:
+-		if (root->fs_info->sb->s_flags & MS_RDONLY)
+-			return -EROFS;
+-
++		if (root->fs_info->sb->s_flags & MS_RDONLY) {
++			ret = -EROFS;
++			goto out;
++		}
+ 		if (atomic_xchg(
+ 			&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+@@ -3707,7 +3708,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
+ 
+ 	if (copy_to_user(arg, p, sizeof(*p)))
+ 		ret = -EFAULT;
+-
++out:
+ 	kfree(p);
+ 	return ret;
+ }
 -- 
 1.7.10.4
 

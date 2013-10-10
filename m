@@ -1,103 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55147 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750878Ab3JYELV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Oct 2013 00:11:21 -0400
-Message-ID: <5269EEA3.50704@cn.fujitsu.com>
-Date: Fri, 25 Oct 2013 12:08:03 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz, dustymabe@gmail.com
-Subject: Re: [PATCH] Btrfs: fix negative qgroup tracking from owner accounting
- (bug #61951)
-References: <1382620926-8513-1-git-send-email-list.btrfs@jan-o-sch.net> <801531AB-DF1E-44AC-B58E-D0388C7FCC55@gmail.com> <52693E77.30709@jan-o-sch.net>
-In-Reply-To: <52693E77.30709@jan-o-sch.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-ee0-f48.google.com ([74.125.83.48]:49058 "EHLO
+	mail-ee0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755569Ab3JJRky (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Oct 2013 13:40:54 -0400
+Received: by mail-ee0-f48.google.com with SMTP id l10so1336592eei.35
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 10:40:53 -0700 (PDT)
+From: Ilya Dryomov <idryomov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        Stefan Behrens <sbehrens@giantdisaster.de>, idryomov@gmail.com
+Subject: [PATCH] Btrfs: disallow 'btrfs {balance,replace} cancel' on ro mounts
+Date: Thu, 10 Oct 2013 20:40:21 +0300
+Message-Id: <1381426821-31981-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Jan,
+For both balance and replace, cancelling involves changing the on-disk
+state and committing a transaction, which is not a good thing to do on
+read-only filesystems.
 
-On 10/24/2013 11:36 PM, Jan Schmidt wrote:
-> On Thu, October 24, 2013 at 16:49 (+0200), Wang Shilong wrote:
->> Hello Jan,
->>
->>> btrfs_dec_ref() queued a delayed ref for owner of a tree block. The qgroup
->>> tracking is based on delayed refs. The owner of a tree block is set when a
->>> tree block is allocated, it is never updated.
->>>
->>> When you allocate a tree block and then remove the subvolume that did the
->>> allocation, the qgroup accounting for that removal is correct. However, the
->>> removal was accounted again for each subvolume deletion that also referenced
->>> the tree block, because accounting was erroneously based on the owner.
->>>
->>> Instead of queueing delayed refs for the non-existent owner, we now
->>> queue delayed refs for the root being removed. This fixes the qgroup
->>> accounting.
->> Thanks for tracking this, i apply your patch, and using the flowing patch,
->> found the problem still exist, the test script like the following:
-> Reproduced. Gives more negative numbers due to accounting triggered by the
-> cleaner thread, that's the common part here. I still believe that the fix I sent
-> is correct, it's probably not complete. Looking into it.
-I really wait cleaner thread to finish work, and i use btrfs-debug-tree 
-to confirm
-all the fs tree have been deleted.
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/dev-replace.c |    3 +++
+ fs/btrfs/volumes.c     |    3 +++
+ 2 files changed, 6 insertions(+)
 
-But using btrfs qgroup show, i still get negative numers, also root 
-subvolume's
-exclusive is wrong.. Statices are like following.
-
-0/5 13090816 471040
-0/257 13078528 0
-0/259 13078528 0
-0/260 13078528 0
-0/261 13078528 0
-.........................
-........................
-.......................
-0/350 13078528 0
-0/351 13078528 0
-0/352 13078528 0
-0/353 13078528 0
-0/354 13078528 0
-0/355 13078528 0
-0/356 13078528 0
-0/357 13078528 0
-0/358 12619776 -155648
-
-Thanks,
-Wang
->
-> Thanks,
-> -Jan
->
->> #!/bin/sh
->>
->> for i in $(seq 1000)
->> do
->> 	dd if=/dev/zero of=<mnt>/$i""aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  bs=10K count=1
->> done
->>
->> btrfs sub snapshot <mnt> <mnt>/1
->> for i in $(seq 100)
->> do
->> 	btrfs sub snapshot <mnt>/$i <mnt>/$(($i+1))
->> done
->>
->> for i in $(seq 101)
->> do
->> 	btrfs sub delete <mnt>/$i
->> done
->>
->>
->> Thanks,
->> Wang
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 9efb94e..98df261 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -650,6 +650,9 @@ static u64 __btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+ 	u64 result;
+ 	int ret;
+ 
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
+ 	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
+ 	btrfs_dev_replace_lock(dev_replace);
+ 	switch (dev_replace->replace_state) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a306db9..2630f38 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3424,6 +3424,9 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
+ 
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+ {
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
+ 	mutex_lock(&fs_info->balance_mutex);
+ 	if (!fs_info->balance_ctl) {
+ 		mutex_unlock(&fs_info->balance_mutex);
+-- 
+1.7.10.4
 

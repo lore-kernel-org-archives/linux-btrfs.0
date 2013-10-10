@@ -1,55 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f51.google.com ([74.125.83.51]:43355 "EHLO
-	mail-ee0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755686Ab3JJRj7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Oct 2013 13:39:59 -0400
-Received: by mail-ee0-f51.google.com with SMTP id c1so1330686eek.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 10:39:58 -0700 (PDT)
-From: Ilya Dryomov <idryomov@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:34101 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755264Ab3JJS1m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Oct 2013 14:27:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VUKxX-0006my-Jf
+	for linux-btrfs@vger.kernel.org; Thu, 10 Oct 2013 20:27:39 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 20:27:39 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2013 20:27:39 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
-Subject: [PATCH] Btrfs: don't leak ioctl args in btrfs_ioctl_dev_replace
-Date: Thu, 10 Oct 2013 20:39:28 +0300
-Message-Id: <1381426768-31904-1-git-send-email-idryomov@gmail.com>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Will "btrfs scrub" clear corrupt filesystem trees?
+Date: Thu, 10 Oct 2013 19:27:28 +0100
+Message-ID: <l36ri7$uvg$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-struct btrfs_ioctl_dev_replace_args memory is leaked if replace is
-requested on a read-only filesystem.  Fix it.
+I have 1.5TB of data on a single disk formatted with defaults. There
+appears to be only two directory trees of a few MBytes that have
+suffered corruption (due to in the past too high a sata speed causing
+corruption).
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/ioctl.c |    9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+The filesystem mounts fine. But how to clear out the corrupt trees?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9d46f60..17bb98e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3679,9 +3679,10 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
- 
- 	switch (p->cmd) {
- 	case BTRFS_IOCTL_DEV_REPLACE_CMD_START:
--		if (root->fs_info->sb->s_flags & MS_RDONLY)
--			return -EROFS;
--
-+		if (root->fs_info->sb->s_flags & MS_RDONLY) {
-+			ret = -EROFS;
-+			goto out;
-+		}
- 		if (atomic_xchg(
- 			&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
-@@ -3707,7 +3708,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
- 
- 	if (copy_to_user(arg, p, sizeof(*p)))
- 		ret = -EFAULT;
--
-+out:
- 	kfree(p);
- 	return ret;
- }
--- 
-1.7.10.4
+At the moment, I have running:
+
+btrfsck --repair --init-extent-tree /dev/sdc
+
+parent transid verify failed on 911904604160 wanted 17448 found 17449
+parent transid verify failed on 911904604160 wanted 17448 found 17449
+parent transid verify failed on 911904604160 wanted 17448 found 17449
+parent transid verify failed on 911904604160 wanted 17448 found 17449
+Ignoring transid failure
+
+... And it is still running after over two days now. Looped?
+
+
+Would a:
+
+btrfs scrub start
+
+clear out the corrupt trees?
+
+Must I wait for the btrfsck to complete if it is recreating an extents
+tree?...
+
+
+Suggestions welcomed...
+
+Martin
 

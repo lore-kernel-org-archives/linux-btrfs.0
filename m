@@ -1,80 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:52241 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752114Ab3JKMS0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Oct 2013 08:18:26 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by joses.store (RZmta 32.6 OK) with ESMTP id g01630p9A9YOzt
-	for <linux-btrfs@vger.kernel.org>;
-	Fri, 11 Oct 2013 14:18:23 +0200 (CEST)
+Received: from mo-p00-ob.rzone.de ([81.169.146.162]:57713 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752509Ab3JKNBA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Oct 2013 09:01:00 -0400
+Message-ID: <5257F687.6020802@giantdisaster.de>
+Date: Fri, 11 Oct 2013 15:00:55 +0200
 From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fail device statistic reset on read-only filesystem
-Date: Fri, 11 Oct 2013 14:18:23 +0200
-Message-Id: <2a649d6a51055ac36352a73add403037acc537ef.1381493768.git.sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: "Geyslan G. Bem" <geyslan@gmail.com>, chris.mason@fusionio.com
+CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        jbacik@fusionio.com, joe@perches.com, kernel-br@googlegroups.com
+Subject: Re: [PATCH v5] btrfs: Fix memory leakage in the tree-log.c
+References: <1381443082-7670-1-git-send-email-geyslan@gmail.com>
+In-Reply-To: <1381443082-7670-1-git-send-email-geyslan@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the attempt to reset the device statistics with
-'btrfs device stat -z ...' on read-only filesystems does not return an
-error. The statistics that are hold in main memory are reset but the
-statistics that are stored in the filesystem are not reset.
+On Thu, 10 Oct 2013 19:11:22 -0300, Geyslan G. Bem wrote:
+> In add_inode_ref() function:
+> 
+> Initializes local pointers.
+> 
+> Reduces the logical condition with the __add_inode_ref() return
+> value by using only one 'goto out'.
+> 
+> Centralizes the exiting, ensuring the freeing of all used memory.
+> 
+> Signed-off-by: Geyslan G. Bem <geyslan@gmail.com>
 
-Fix it by returning EROFS in this case.
+The patch looks correct to me, but there are some nitpicking style issues.
 
-This is the reproducer:
 
- #!/bin/sh
-TEST_DEV1=/dev/sdzzzzz1
-TEST_DEV2=/dev/sdzzzzz2
-TEST_MNT=/mnt
-echo 0 25165824 linear $TEST_DEV1 0 | dmsetup create foom
-echo 0 25165824 linear $TEST_DEV2 0 | dmsetup create foon
-mkfs.btrfs -f -d raid1 -m raid1 /dev/mapper/foom /dev/mapper/foon
-mount /dev/mapper/foom $TEST_MNT
- # switch to I/O error mode:
-echo 0 25165824 error | dmsetup reload foon
-dmsetup resume foon
- # cause I/O errors:
-touch ${TEST_MNT}/foo
-sync
- # switch dm back to I/O good mode:
-echo 0 25165824 linear $TEST_DEV1 0 | dmsetup reload foon
-dmsetup resume foon
-umount ${TEST_MNT}
-btrfs dev scan
-mount /dev/mapper/foom ${TEST_MNT} -o ro
- # will report counters != 0, should fail with EROFS
-btrfs device stat -z ${TEST_MNT}
- # will report counters == 0:
-btrfs device stat ${TEST_MNT}
-umount ${TEST_MNT}
-mount /dev/mapper/foom ${TEST_MNT} -o ro
- # will report counters != 0, i.e., the 'btrfs device stat -z' failed to
- # clear the counters on disk, only the counters in main memory had been
- # cleared:
-btrfs device stat ${TEST_MNT}
-umount ${TEST_MNT}
-dmsetup remove foom; dmsetup remove foon
+> ---
+>  fs/btrfs/tree-log.c | 36 ++++++++++++++++++++++--------------
+>  1 file changed, 22 insertions(+), 14 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 79f057c..beb41b0 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -1113,11 +1113,11 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  				  struct extent_buffer *eb, int slot,
+>  				  struct btrfs_key *key)
+>  {
+> -	struct inode *dir;
+> -	struct inode *inode;
+> +	struct inode *dir = NULL;
+> +	struct inode *inode = NULL;
+>  	unsigned long ref_ptr;
+>  	unsigned long ref_end;
+> -	char *name;
+> +	char *name = NULL;
+>  	int namelen;
+>  	int ret;
+>  	int search_done = 0;
+> @@ -1150,13 +1150,15 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  	 * care of the rest
+>  	 */
+>  	dir = read_one_inode(root, parent_objectid);
+> -	if (!dir)
+> -		return -ENOENT;
+> +	if (!dir) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+>  
+>  	inode = read_one_inode(root, inode_objectid);
+>  	if (!inode) {
+> -		iput(dir);
+> -		return -EIO;
+> +		ret = -EIO;
+> +		goto out;
+>  	}
+>  
+>  	while (ref_ptr < ref_end) {
+> @@ -1169,14 +1171,17 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  			 */
+>  			if (!dir)
+>  				dir = read_one_inode(root, parent_objectid);
+> -			if (!dir)
+> -				return -ENOENT;
+> +			if (!dir) {
+> +				ret = -ENOENT;
+> +				goto out;
+> +			}
+>  		} else {
+>  			ret = ref_get_fields(eb, ref_ptr, &namelen, &name,
+>  					     &ref_index);
+>  		}
+>  		if (ret)
+> -			return ret;
+> +			goto out;
+> +
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+This additional empty line is not required, we would have two empty
+lines in a row.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fe0f2ef..646d10d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6250,6 +6250,8 @@ int btrfs_get_dev_stats(struct btrfs_root *root,
- 		       "btrfs: get dev_stats failed, not yet valid\n");
- 		return -ENODEV;
- 	} else if (stats->flags & BTRFS_DEV_STATS_RESET) {
-+		if (root->fs_info->sb->s_flags & MS_RDONLY)
-+			return -EROFS;
- 		for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++) {
- 			if (stats->nr_items > i)
- 				stats->values[i] =
--- 
-1.8.4
+
+>  
+>  		/* if we already have a perfect match, we're done */
+>  		if (!inode_in_dir(root, path, btrfs_ino(dir), btrfs_ino(inode),
+> @@ -1196,12 +1201,12 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  						      parent_objectid,
+>  						      ref_index, name, namelen,
+>  						      &search_done);
+> -				if (ret == 1) {
+> -					ret = 0;
+> +
+
+This empty line is also not required. You know, this hurts on regular
+80x24 terminals. Do you get more than 24 lines on your display?
+I thought there was a rule for this in Documentation/CodingStyle, but
+there isn't. Therefore it's up to you. But the two empty lines above are
+definitely not wanted.
+
+
+> +				if (ret) {
+> +					if (ret == 1)
+> +						ret--;
+
+I don't see a reason to change the "ret = 0" to a "ret--", this is not
+an optimization and makes the code less readable.
+
+
+>  					goto out;
+>  				}
+> -				if (ret)
+> -					goto out;
+>  			}
+>  
+>  			/* insert our name */
+> @@ -1215,6 +1220,8 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  
+>  		ref_ptr = (unsigned long)(ref_ptr + ref_struct_size) + namelen;
+>  		kfree(name);
+> +		name = NULL;
+> +
+
+Another empty line which is not required for the purpose of this patch.
+
+
+>  		if (log_ref_ver) {
+>  			iput(dir);
+>  			dir = NULL;
+> @@ -1225,6 +1232,7 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+>  	ret = overwrite_item(trans, root, path, eb, slot, key);
+>  out:
+>  	btrfs_release_path(path);
+> +	kfree(name);
+>  	iput(dir);
+>  	iput(inode);
+>  	return ret;
+> 
+
 

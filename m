@@ -1,64 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:38715 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756563Ab3JKIDz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Oct 2013 04:03:55 -0400
-Message-ID: <5257B037.6060303@cn.fujitsu.com>
-Date: Fri, 11 Oct 2013 16:00:55 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from mail-ee0-f53.google.com ([74.125.83.53]:63956 "EHLO
+	mail-ee0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751318Ab3JLCWE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Oct 2013 22:22:04 -0400
+Received: by mail-ee0-f53.google.com with SMTP id b15so2252879eek.40
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Oct 2013 19:22:02 -0700 (PDT)
 MIME-Version: 1.0
-To: Daniel <daniel@wagners.name>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-convert won't convert ext* - No valid Btrfs found on /dev/sdb1
-References: <CAGqmi74L9WrifDROz7Mr4r3BxqDWiyiQqy0Wn6JBdfz17qDY9A@mail.gmail.com> <5228A713.6060003@redhat.com> <20130905184453.GF15634@localhost.localdomain> <loom.20131011T095125-875@post.gmane.org>
-In-Reply-To: <loom.20131011T095125-875@post.gmane.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <20131008071232.GA1402@localhost.localdomain>
+References: <CAOMFOmWzXL5G22Z7srkvXe+p+F9U7atOoiV5jRHc9i0k4kUfnA@mail.gmail.com>
+	<CAOMFOmX95ebV=myVO1yDf5yPs7DfmvHDKDFwNNfT0CajDQ=W4Q@mail.gmail.com>
+	<20131008071232.GA1402@localhost.localdomain>
+Date: Fri, 11 Oct 2013 19:22:02 -0700
+Message-ID: <CAOMFOmWOwdkwpuiEQbWYRoUDXEKGy_JqM0BtN2AhSF7JHDq69Q@mail.gmail.com>
+Subject: Re: Linux Arch: kernel BUG at fs/btrfs/inode.c:873!
+From: Anatol Pomozov <anatol.pomozov@gmail.com>
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org, Zach Brown <zab@zabbo.net>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Daniel,
+Hi,
 
-On 10/11/2013 03:52 PM, Daniel wrote:
-> Hello Josef,
->
-> Josef Bacik <jbacik <at> fusionio.com> writes:
->
->> On Thu, Sep 05, 2013 at 10:45:23AM -0500, Eric Sandeen wrote:
-> [...]
->
->>> This was a regression around July 3; there was no regression test at
->>> the time.
->>>
->>> [615f2867854c186a37cb2e2e5a2e13e9ed4ab0df] Btrfs-progs: cleanup similar
-> code in open_ctree_* and close_ctree
->>> broke it.
->>>
->>> Patches were sent to the list to fix it on July 17,
->>>
->>> https://patchwork.kernel.org/patch/2828820/
->>>
->>> but they haven't been merged into the main repo.
->>>
->>> I sent a regression test for it to the list on Aug 4, but nobody
->>> reviewed it, so it hasn't been merged into the test suite, either.
->>>
->>> Winning all around!
->> Alright, alright I'll review it, Jesus.  ;),
-> Is there any progress on this or can I help with solving this somehow?
-This problem has been fixed , but it did not come into Chris's branch.
-But it did come into david's integration branches.
+Kernel 3.12-rc built from HEAD has the same issue as 3.10 and 3.11
 
-http://github.com/kdave/btrfs-progs.git integration-20131008
+Ok, I was able to "fix" my problem by booting from an old kernel
+(3.8.7) and it allowed me to mount the fs. Then I removed
+/var/log/journal directory. After that I was able to boot with 3.11.
+So I believe 3.9/3.10 has a regression in how it handles COW files. As
+I described above, some time ago I defraged journald files and set +C
+attribute to /var/log/journal (both to the folders and existing
+files).
 
-Thanks,
-Wang
->   
->> Josef
-> Daniel
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+So 3.11 boots fine and the only boot warning I see is
 
+Oct 11 19:06:55 brest kernel: BTRFS error (device sdd3): block group
+1141416919040 has wrong amount of free space
+Oct 11 19:06:55 brest kernel: BTRFS error (device sdd3): failed to
+load free space cache for block group 1141416919040
+
+
+I tried 'btrfsck -repair' but it crashes so I cannot even check or
+repair my btrfs mount.

@@ -1,131 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f44.google.com ([209.85.214.44]:63983 "EHLO
-	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755256Ab3JMWB2 (ORCPT
+Received: from mail-qa0-f42.google.com ([209.85.216.42]:43913 "EHLO
+	mail-qa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755256Ab3JMWDN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Oct 2013 18:01:28 -0400
-Received: by mail-bk0-f44.google.com with SMTP id mz10so2396059bkb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Oct 2013 15:01:26 -0700 (PDT)
-From: Marius Kittelmann <mkaayde@gmail.com>
-Content-Type: multipart/signed; boundary="Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B"; protocol="application/pgp-signature"; micalg=pgp-sha512
-Subject: Can't mount btrfs - bad tree block start
-Message-Id: <6999B76B-9A12-4C6D-960C-3D44FF7B750C@gmail.com>
-Date: Mon, 14 Oct 2013 00:01:23 +0200
-To: btrfs list <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.3 \(1503\))
+	Sun, 13 Oct 2013 18:03:13 -0400
+Received: by mail-qa0-f42.google.com with SMTP id w8so2071487qac.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Oct 2013 15:03:12 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <525849B2.7080306@giantdisaster.de>
+References: <1381516545-27786-1-git-send-email-geyslan@gmail.com>
+	<525849B2.7080306@giantdisaster.de>
+Date: Sun, 13 Oct 2013 19:03:12 -0300
+Message-ID: <CAGG-pURmJKq+w8CNdAEuu8Ajcexfo1mRrKu7TjberKH=1D3rsg@mail.gmail.com>
+Subject: Re: [PATCH v6] btrfs: Fix memory leakage in the tree-log.c
+From: =?UTF-8?Q?Geyslan_Greg=C3=B3rio_Bem?= <geyslan@gmail.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+2013/10/11 Stefan Behrens <sbehrens@giantdisaster.de>:
+> On 10/11/2013 20:35, Geyslan G. Bem wrote:
+>>
+>> In add_inode_ref() function:
+>>
+>> Initializes local pointers.
+>>
+>> Reduces the logical condition with the __add_inode_ref() return
+>> value by using only one 'goto out'.
+>>
+>> Centralizes the exiting, ensuring the freeing of all used memory.
+>>
+>> Signed-off-by: Geyslan G. Bem <geyslan@gmail.com>
+>> ---
+>>   fs/btrfs/tree-log.c | 33 +++++++++++++++++++--------------
+>>   1 file changed, 19 insertions(+), 14 deletions(-)
+>>
+>> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+>> index 79f057c..61bb051 100644
+>> --- a/fs/btrfs/tree-log.c
+>> +++ b/fs/btrfs/tree-log.c
+>> @@ -1113,11 +1113,11 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>                                   struct extent_buffer *eb, int slot,
+>>                                   struct btrfs_key *key)
+>>   {
+>> -       struct inode *dir;
+>> -       struct inode *inode;
+>> +       struct inode *dir = NULL;
+>> +       struct inode *inode = NULL;
+>>         unsigned long ref_ptr;
+>>         unsigned long ref_end;
+>> -       char *name;
+>> +       char *name = NULL;
+>>         int namelen;
+>>         int ret;
+>>         int search_done = 0;
+>> @@ -1150,13 +1150,15 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>          * care of the rest
+>>          */
+>>         dir = read_one_inode(root, parent_objectid);
+>> -       if (!dir)
+>> -               return -ENOENT;
+>> +       if (!dir) {
+>> +               ret = -ENOENT;
+>> +               goto out;
+>> +       }
+>>
+>>         inode = read_one_inode(root, inode_objectid);
+>>         if (!inode) {
+>> -               iput(dir);
+>> -               return -EIO;
+>> +               ret = -EIO;
+>> +               goto out;
+>>         }
+>>
+>>         while (ref_ptr < ref_end) {
+>> @@ -1169,14 +1171,16 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>                          */
+>>                         if (!dir)
+>>                                 dir = read_one_inode(root,
+>> parent_objectid);
+>> -                       if (!dir)
+>> -                               return -ENOENT;
+>> +                       if (!dir) {
+>> +                               ret = -ENOENT;
+>> +                               goto out;
+>> +                       }
+>>                 } else {
+>>                         ret = ref_get_fields(eb, ref_ptr, &namelen, &name,
+>>                                              &ref_index);
+>>                 }
+>>                 if (ret)
+>> -                       return ret;
+>> +                       goto out;
+>>
+>>                 /* if we already have a perfect match, we're done */
+>>                 if (!inode_in_dir(root, path, btrfs_ino(dir),
+>> btrfs_ino(inode),
+>> @@ -1196,12 +1200,11 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>                                                       parent_objectid,
+>>                                                       ref_index, name,
+>> namelen,
+>>                                                       &search_done);
+>> -                               if (ret == 1) {
+>> -                                       ret = 0;
+>> +                               if (ret) {
+>> +                                       if (ret == 1)
+>> +                                               ret = 0;
+>>                                         goto out;
+>>                                 }
+>> -                               if (ret)
+>> -                                       goto out;
+>>                         }
+>>
+>>                         /* insert our name */
+>> @@ -1215,6 +1218,7 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>
+>>                 ref_ptr = (unsigned long)(ref_ptr + ref_struct_size) +
+>> namelen;
+>>                 kfree(name);
+>> +               name = NULL;
+>>                 if (log_ref_ver) {
+>>                         iput(dir);
+>>                         dir = NULL;
+>> @@ -1225,6 +1229,7 @@ static noinline int add_inode_ref(struct
+>> btrfs_trans_handle *trans,
+>>         ret = overwrite_item(trans, root, path, eb, slot, key);
+>>   out:
+>>         btrfs_release_path(path);
+>> +       kfree(name);
+>>         iput(dir);
+>>         iput(inode);
+>>         return ret;
+>>
+>
+> The patch looks really good now. Thanks!
+>
+> Reviewed-by: Stefan Behrens <sbehrens@giantdisaster.de>
+>
+>
 
---Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain;
-	charset=us-ascii
-
-Hello,
-
-after a power outage, I can't mount one of my btrfs fs anymore.
-The mount output is:
-
-[root@absolut ~]# mount /dev/mapper/wdb
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/wdb,
-       missing codepage or helper program, or other error
-
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
-
-dmesg output:
-
-[ 4675.304832] device fsid cdb5080d-8aa3-4938-ad38-f4ff4c6efa7c devid 1 =
-transid 212017 /dev/mapper/wdb
-[ 4675.305768] btrfs: disk space caching is enabled
-[ 4675.789190] btrfs bad tree block start 6226359148539426339 =
-2665114812416
-[ 4675.798276] btrfs bad tree block start 3867827444190911355 =
-2665114812416
-[ 4675.833689] btrfs: open_ctree failed
-
-If I try mounting with '-o ro,recovery', dmesg gives me:
-
-[ 4820.176934] device fsid cdb5080d-8aa3-4938-ad38-f4ff4c6efa7c devid 1 =
-transid 212017 /dev/mapper/wdb
-[ 4820.178198] btrfs: enabling auto recovery
-[ 4820.178208] btrfs: disk space caching is enabled
-[ 4820.224417] btrfs bad tree block start 6226359148539426339 =
-2665114812416
-[ 4820.224739] btrfs bad tree block start 3867827444190911355 =
-2665114812416
-[ 4820.225072] btrfs bad tree block start 6226359148539426339 =
-2665114812416
-[ 4820.225418] btrfs bad tree block start 3867827444190911355 =
-2665114812416
-[ 4820.683797] btrfs bad tree block start 6226359148539426339 =
-2665114812416
-[ 4820.684527] btrfs bad tree block start 3867827444190911355 =
-2665114812416
-[ 4820.698474] parent transid verify failed on 936925569024 wanted =
-212015 found 212017
-[ 4820.702996] parent transid verify failed on 936925569024 wanted =
-212015 found 212017
-[ 4820.703017] btrfs: failed to read tree root on dm-8
-[ 4820.713317] parent transid verify failed on 936932843520 wanted =
-212014 found 212016
-[ 4820.716356] parent transid verify failed on 936932843520 wanted =
-212014 found 212016
-[ 4820.716377] btrfs: failed to read tree root on dm-8
-[ 4820.799898] btrfs: open_ctree failed
-
-btrfs-image produces the following output and the output file is empty:
-
-[root@absolut ~]# btrfs-image -c9 -t4 /dev/mapper/wdb wdb-image
-Check tree block failed, want=3D2665114812416, have=3D6226359148539426339
-Check tree block failed, want=3D2665114812416, have=3D6226359148539426339
-Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
-Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
-Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
-read block failed check_tree_block
-Couldn't setup device tree
-Open ctree failed
-create failed (Success)
-
-System info:
-
-Kernel: 3.10.13-1-lts
-btrfs-progs from arch-linux repo (btrfs-progs 0.20rc1.3-1)
-FS is inside a dm-crypt on a 3TB drive
-
-Is there any chance to recover from these errors or restore some of the =
-files?
-
-Any help would be appreciated.
-Thanks,
-
-Marius
-
---Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename=signature.asc
-Content-Type: application/pgp-signature;
-	name=signature.asc
-Content-Description: Message signed with OpenPGP using GPGMail
-
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - https://gpgtools.org
-
-iQIcBAEBCgAGBQJSWxg0AAoJEBmvzEpGP5mlKR0P/1WYT52vvJK+SMi0icHcPgqg
-R+8q6zZPdsJpXQEDq1uuhlq75oEjGUdeOQPFwI4hek2giK5fymyEhufFmKOoG9A1
-FE+K5Zz4p/6bc6M1lZ9TxrvTgPqIyXgbIO4Og82GKdZAga4obFEa/cXN2kypwiN0
-Lfb4EsRJAcYJERNcDyNwwYVVKIQM7R35e+4BSgl/UvIrpctl8Uf+bbEW4wgey6uN
-k1rYdL4KAKTomOza9LhA3s3h/fnNUpioc7JLIUI+9UMp4WdcR19SGm9eCu3ncblk
-hOLO4U0rhLgjS/alpJFGf0sMB2ZrBSdOCBWM+IWOW8DUgnpgfC0w+nlDXpcmG3UN
-6lmZfovC+Q9KvK187mWS4JEYtOxH0E6gv6EaKtqgg0oENi3heVm+9rgO0ALluveK
-P50LDBVODBgUDcEw8W/qtfQXMzu3+9VP6ZTd3BEuP/EyYpWTJYqeMCVfpJhWg3Y0
-6cAhA8aUBcYHZ95OuKanBG8NM3Z20t5o51acUSZuGwSre+U2i+9zVmWrU9wzKyaX
-+8eNkoG3BGsXm+g7iJHOChVx3VBrmCqBlH0rmMRxL1ihtT0irdfjHv5aWCddLFq1
-K3ldlPzSxaK2GmpI9aatZYZ7ZivZzwiPld5zhAd1jiKRkjQt3/+X50CfMlfJs2I2
-lRMdM+ayy6hAnTyDfwPl
-=ToPX
------END PGP SIGNATURE-----
-
---Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B--
+Will it to be committed to the next?

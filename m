@@ -1,113 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38034 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753160Ab3JMNOW (ORCPT
+Received: from mail-bk0-f44.google.com ([209.85.214.44]:63983 "EHLO
+	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755256Ab3JMWB2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Oct 2013 09:14:22 -0400
-Date: Sun, 13 Oct 2013 14:14:19 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Thomas Schneider <c.monty@web.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS Multidevice Filesystem: Save to delete one device?
-Message-ID: <20131013131419.GB28147@carfax.org.uk>
-References: <trinity-f923ab06-8e1c-42f6-8266-b864c521187e-1381669360111@3capp-webde-bs45>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="d2IMS6fuC0p5eWIP"
-In-Reply-To: <trinity-f923ab06-8e1c-42f6-8266-b864c521187e-1381669360111@3capp-webde-bs45>
+	Sun, 13 Oct 2013 18:01:28 -0400
+Received: by mail-bk0-f44.google.com with SMTP id mz10so2396059bkb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Oct 2013 15:01:26 -0700 (PDT)
+From: Marius Kittelmann <mkaayde@gmail.com>
+Content-Type: multipart/signed; boundary="Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B"; protocol="application/pgp-signature"; micalg=pgp-sha512
+Subject: Can't mount btrfs - bad tree block start
+Message-Id: <6999B76B-9A12-4C6D-960C-3D44FF7B750C@gmail.com>
+Date: Mon, 14 Oct 2013 00:01:23 +0200
+To: btrfs list <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.3 \(1503\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---d2IMS6fuC0p5eWIP
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+--Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=us-ascii
 
-On Sun, Oct 13, 2013 at 03:02:40PM +0200, Thomas Schneider wrote:
-> Hello!
-> I have the following disk setup:
-> 1x 3TB WD
-> 2x 2TB WD
-> On each disk I have created a single partition, and this partition is for=
-matted in BTRFS.
-> Then, I have setup a multidevice filesystem:
-> root@pc5:/media# btrfs filesystem show
-> Label: 'WD30EZRX-00M'=A0 uuid: 7008c941-a5e1-44b6-9965-de726d22cc21
-> Total devices 3 FS bytes used 4.07TB
-> =A0 =A0devid=A0 =A0 2 size 1.82TB used 1.72TB path /dev/sdd1
-> =A0 =A0devid=A0 =A0 1 size 2.73TB used 2.63TB path /dev/sdb1
-> =A0 =A0devid=A0 =A0 3 size 1.82TB used 0.00 path /dev/sdc1
->=20
-> Btrfs Btrfs v0.19
-> root@pc5:/media# btrfs filesystem df /media/sdb1/
-> Data: total=3D4.17TB, used=3D4.07TB
-> System, DUP: total=3D8.00MB, used=3D472.00KB
-> System: total=3D4.00MB, used=3D0.00
-> Metadata, DUP: total=3D94.00GB, used=3D5.30GB
-> Metadata: total=3D8.00MB, used=3D0.00
-> =A0
-> You can see that devid 3 (=3D/dev/sdc1) is not utilized at all.
+Hello,
 
-   Was that added later, after you'd filled much of the FS? (I'm just
-checking -- otherwise, the space usage you show here might indicate
-some kind of problem).
+after a power outage, I can't mount one of my btrfs fs anymore.
+The mount output is:
 
-> Question:
-> How can I delete devid 2 (=3D/dev/sdd1) securely without loosing any data?
+[root@absolut ~]# mount /dev/mapper/wdb
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/wdb,
+       missing codepage or helper program, or other error
 
-$ btrfs dev del /media/sdb1 /dev/sdd1
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
 
-   The data on the device will be moved elsewhere in the FS (i.e. to
-the other two devices).
+dmesg output:
 
-   However, be aware that there's a bug in the code in the area of
-balancing and device management, and you should probably be running a
-3.12-rc4+ kernel (or 3.11.5) before you try this. Your userspace tools
-are also old and could probably do with an upgrade -- but that's not
-particulary an issue in this instance.
+[ 4675.304832] device fsid cdb5080d-8aa3-4938-ad38-f4ff4c6efa7c devid 1 =
+transid 212017 /dev/mapper/wdb
+[ 4675.305768] btrfs: disk space caching is enabled
+[ 4675.789190] btrfs bad tree block start 6226359148539426339 =
+2665114812416
+[ 4675.798276] btrfs bad tree block start 3867827444190911355 =
+2665114812416
+[ 4675.833689] btrfs: open_ctree failed
 
-> Please note that all data stored in this multidevice filesystem is locate=
-d in a subvolume, means no data is stored in root tree.
-> =A0
-> root@pc5:/media# btrfs subvolume list /media/sdb1/
-> ID 258 top level 5 path @video
-> ID 2760 top level 5 path @musik
-> ID 3995 top level 5 path @bilder
-> ID 3996 top level 5 path @dokumente
-> ID 3997 top level 5 path @software
-> ID 3998 top level 5 path @hardware
+If I try mounting with '-o ro,recovery', dmesg gives me:
 
-   That doesn't make any difference for this operation.
+[ 4820.176934] device fsid cdb5080d-8aa3-4938-ad38-f4ff4c6efa7c devid 1 =
+transid 212017 /dev/mapper/wdb
+[ 4820.178198] btrfs: enabling auto recovery
+[ 4820.178208] btrfs: disk space caching is enabled
+[ 4820.224417] btrfs bad tree block start 6226359148539426339 =
+2665114812416
+[ 4820.224739] btrfs bad tree block start 3867827444190911355 =
+2665114812416
+[ 4820.225072] btrfs bad tree block start 6226359148539426339 =
+2665114812416
+[ 4820.225418] btrfs bad tree block start 3867827444190911355 =
+2665114812416
+[ 4820.683797] btrfs bad tree block start 6226359148539426339 =
+2665114812416
+[ 4820.684527] btrfs bad tree block start 3867827444190911355 =
+2665114812416
+[ 4820.698474] parent transid verify failed on 936925569024 wanted =
+212015 found 212017
+[ 4820.702996] parent transid verify failed on 936925569024 wanted =
+212015 found 212017
+[ 4820.703017] btrfs: failed to read tree root on dm-8
+[ 4820.713317] parent transid verify failed on 936932843520 wanted =
+212014 found 212016
+[ 4820.716356] parent transid verify failed on 936932843520 wanted =
+212014 found 212016
+[ 4820.716377] btrfs: failed to read tree root on dm-8
+[ 4820.799898] btrfs: open_ctree failed
 
-   Hugo.
+btrfs-image produces the following output and the output file is empty:
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "You know,  the British have always been nice to mad people." --- =20
+[root@absolut ~]# btrfs-image -c9 -t4 /dev/mapper/wdb wdb-image
+Check tree block failed, want=3D2665114812416, have=3D6226359148539426339
+Check tree block failed, want=3D2665114812416, have=3D6226359148539426339
+Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
+Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
+Check tree block failed, want=3D2665114812416, have=3D3867827444190911355
+read block failed check_tree_block
+Couldn't setup device tree
+Open ctree failed
+create failed (Success)
 
---d2IMS6fuC0p5eWIP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+System info:
+
+Kernel: 3.10.13-1-lts
+btrfs-progs from arch-linux repo (btrfs-progs 0.20rc1.3-1)
+FS is inside a dm-crypt on a 3TB drive
+
+Is there any chance to recover from these errors or restore some of the =
+files?
+
+Any help would be appreciated.
+Thanks,
+
+Marius
+
+--Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP using GPGMail
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
+Comment: GPGTools - https://gpgtools.org
 
-iQIVAwUBUlqcqlheFHXiqx3kAQL0ahAAuEmaaI0OImNQw6G4RS6TiZoeVfjSYvzD
-kaY9FjhdI64bMmaQi+ftv+QCNYK83NFX/2N7IM2HeCpIhdf0iHGy58sSHQrXFeCQ
-mlT89MT5nC3Q8+71sHcGN0XUwfoAmicCVvOn/DQLSKlgr+SwNT/1dsexX+se8EuX
-ykqQp1jIQlmGFEEu8uVDRXz8b0sbx0YH3YtUpKgA2zYZ7UYg0HqdEHt4o63NonLm
-xkbulE0fAZvqyAHdvk1FqV69M58ZpNN6q45wG7erSABZFQV0ruyLpVzSChyhJUYn
-j8quNYYvd0lfFx+jELgnbjiMJKwnV6Ood8FK3nZgKDn7mzP2VWvfqd2vS/irI9hZ
-AHq7qIYl8NBhJk7iXcX5mqjyOt2I4GVStZZ1BV0fV7qsLHPt3UqsYaZjFE6dHgpZ
-hdQH8XvkHLH6hnkqNFjGIX2XwyQPD7yM8M2SjOttKN11wPyM0Sw5wC4rCSNXH5M8
-Nu3YMrWr+sWquU4IkE625QdPGfZjjIvT2+5F6rxr066BNmHgBL9unhOAafo8oB4W
-XNGFmFNWTHBTun9jRcPApe3MC7PKofj24J2paNYIkAqWGLVPt0ojxN4qpXGbjAOV
-YzMsChLCx+UpwlCkWSHp1dhDIpwETmKnkD4zaSr5/zObA3Cz4ZGkY71Ii1qvUV+H
-xMJw+oWQ7uY=
-=UwvS
+iQIcBAEBCgAGBQJSWxg0AAoJEBmvzEpGP5mlKR0P/1WYT52vvJK+SMi0icHcPgqg
+R+8q6zZPdsJpXQEDq1uuhlq75oEjGUdeOQPFwI4hek2giK5fymyEhufFmKOoG9A1
+FE+K5Zz4p/6bc6M1lZ9TxrvTgPqIyXgbIO4Og82GKdZAga4obFEa/cXN2kypwiN0
+Lfb4EsRJAcYJERNcDyNwwYVVKIQM7R35e+4BSgl/UvIrpctl8Uf+bbEW4wgey6uN
+k1rYdL4KAKTomOza9LhA3s3h/fnNUpioc7JLIUI+9UMp4WdcR19SGm9eCu3ncblk
+hOLO4U0rhLgjS/alpJFGf0sMB2ZrBSdOCBWM+IWOW8DUgnpgfC0w+nlDXpcmG3UN
+6lmZfovC+Q9KvK187mWS4JEYtOxH0E6gv6EaKtqgg0oENi3heVm+9rgO0ALluveK
+P50LDBVODBgUDcEw8W/qtfQXMzu3+9VP6ZTd3BEuP/EyYpWTJYqeMCVfpJhWg3Y0
+6cAhA8aUBcYHZ95OuKanBG8NM3Z20t5o51acUSZuGwSre+U2i+9zVmWrU9wzKyaX
++8eNkoG3BGsXm+g7iJHOChVx3VBrmCqBlH0rmMRxL1ihtT0irdfjHv5aWCddLFq1
+K3ldlPzSxaK2GmpI9aatZYZ7ZivZzwiPld5zhAd1jiKRkjQt3/+X50CfMlfJs2I2
+lRMdM+ayy6hAnTyDfwPl
+=ToPX
 -----END PGP SIGNATURE-----
 
---d2IMS6fuC0p5eWIP--
+--Apple-Mail=_134D5D35-91B2-4419-9F88-462DE70C7F3B--

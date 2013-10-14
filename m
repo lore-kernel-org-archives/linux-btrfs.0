@@ -1,296 +1,385 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31074 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750900Ab3JNFBX (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:24370 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750804Ab3JNFBF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 01:01:23 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r9E51Mjg000729
+	Mon, 14 Oct 2013 01:01:05 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r9E514u4006456
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:22 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9E51L0Y007392
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:05 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9E51362016000
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:22 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:04 GMT
 Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9E51LvR016761
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:21 GMT
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9E513Tt029969
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 05:01:03 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 13/13] Btrfs: add ioctl of dedup control
-Date: Mon, 14 Oct 2013 12:59:55 +0800
-Message-Id: <1381726796-27191-14-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v7 03/13] Btrfs: introduce a head ref rbtree
+Date: Mon, 14 Oct 2013 12:59:45 +0800
+Message-Id: <1381726796-27191-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1381726796-27191-1-git-send-email-bo.li.liu@oracle.com>
 References: <1381726796-27191-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So far we have 4 commands to control dedup behaviour,
-- btrfs dedup enable
-Create the dedup tree, and it's the very first step when you're going to use
-the dedup feature.
+The way how we process delayed refs is
+1) get a bunch of head refs,
+2) pick up one head ref,
+3) go one node back for any delayed ref updates.
 
-- btrfs dedup disable
-Delete the dedup tree, after this we're not able to use dedup any more unless
-you enable it again.
+The head ref is also linked in the same rbtree as the delayed ref is,
+so in 1) stage, we have to walk one by one including not only head refs, but
+delayed refs.
 
-- btrfs dedup on [-b]
-Switch on the dedup feature temporarily, and it's the second step of applying
-dedup with writes.  Option '-b' is used to set dedup blocksize.
-The default blocksize is 8192(no special reason, you may argue), and the current
-limit is [4096, 128 * 1024], because 4K is the generic page size and 128K is the
-upper limit of btrfs's compression.
+When we have a great number of delayed refs pending to process,
+this'll cost time a lot.
 
-- btrfs dedup off
-Switch off the dedup feature temporarily, but the dedup tree remains.
+Here we introduce a head ref specific rbtree, it only has head refs, so troubles
+go away.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h           |    3 +
- fs/btrfs/disk-io.c         |    1 +
- fs/btrfs/ioctl.c           |  167 ++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |   11 +++
- 4 files changed, 182 insertions(+), 0 deletions(-)
+ fs/btrfs/delayed-ref.c |  124 ++++++++++++++++++++++++++++--------------------
+ fs/btrfs/delayed-ref.h |    5 ++
+ fs/btrfs/disk-io.c     |    3 +
+ fs/btrfs/extent-tree.c |   21 +++++---
+ fs/btrfs/transaction.c |    4 +-
+ 5 files changed, 98 insertions(+), 59 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index b3a3489..798b183 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1710,6 +1710,9 @@ struct btrfs_fs_info {
- 	u64 dedup_bs;
- 
- 	int dedup_type;
-+
-+	/* protect user change for dedup operations */
-+	struct mutex dedup_ioctl_mutex;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 27b3739..967397c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2327,6 +2327,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
- 	mutex_init(&fs_info->dev_replace.lock_management_lock);
- 	mutex_init(&fs_info->dev_replace.lock);
-+	mutex_init(&fs_info->dedup_ioctl_mutex);
- 
- 	spin_lock_init(&fs_info->qgroup_lock);
- 	mutex_init(&fs_info->qgroup_ioctl_lock);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9d46f60..e933827 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4492,6 +4492,171 @@ out_unlock:
- 	return ret;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 9596649..9e1a1c9 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -161,35 +161,61 @@ static struct btrfs_delayed_ref_node *tree_insert(struct rb_root *root,
+ 	return NULL;
  }
  
-+static long btrfs_enable_dedup(struct btrfs_root *root)
++/* insert a new ref to head ref rbtree */
++static struct btrfs_delayed_ref_head *htree_insert(struct rb_root *root,
++						   struct rb_node *node)
 +{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_trans_handle *trans = NULL;
-+	struct btrfs_root *dedup_root;
-+	int ret = 0;
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent_node = NULL;
++	struct btrfs_delayed_ref_head *entry;
++	struct btrfs_delayed_ref_head *ins;
++	u64 bytenr;
 +
-+	mutex_lock(&fs_info->dedup_ioctl_mutex);
-+	if (fs_info->dedup_root) {
-+		pr_info("btrfs: dedup has already been enabled\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return 0;
-+	}
++	ins = rb_entry(node, struct btrfs_delayed_ref_head, href_node);
++	bytenr = ins->node.bytenr;
++	while (*p) {
++		parent_node = *p;
++		entry = rb_entry(parent_node, struct btrfs_delayed_ref_head,
++				 href_node);
 +
-+	trans = btrfs_start_transaction(root, 2);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return ret;
-+	}
-+
-+	dedup_root = btrfs_create_tree(trans, fs_info,
-+				       BTRFS_DEDUP_TREE_OBJECTID);
-+	if (IS_ERR(dedup_root))
-+		ret = PTR_ERR(dedup_root);
-+
-+	if (ret)
-+		btrfs_end_transaction(trans, root);
-+	else
-+		ret = btrfs_commit_transaction(trans, root);
-+
-+	if (!ret) {
-+		pr_info("btrfs: dedup enabled\n");
-+		fs_info->dedup_root = dedup_root;
-+		fs_info->dedup_root->block_rsv = &fs_info->global_block_rsv;
-+		btrfs_set_fs_incompat(fs_info, DEDUP);
-+	}
-+
-+	mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+	return ret;
-+}
-+
-+static long btrfs_disable_dedup(struct btrfs_root *root)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root *dedup_root;
-+	int ret;
-+
-+	mutex_lock(&fs_info->dedup_ioctl_mutex);
-+	if (!fs_info->dedup_root) {
-+		pr_info("btrfs: dedup has been disabled\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return 0;
-+	}
-+
-+	if (fs_info->dedup_bs != 0) {
-+		pr_info("btrfs: cannot disable dedup until switching off dedup!\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return -EBUSY;
-+	}
-+
-+	dedup_root = fs_info->dedup_root;
-+
-+	ret = btrfs_drop_snapshot(dedup_root, NULL, 1, 0);
-+
-+	if (!ret) {
-+		fs_info->dedup_root = NULL;
-+		pr_info("btrfs: dedup disabled\n");
-+	}
-+
-+	mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+	WARN_ON(ret < 0 && ret != -EAGAIN && ret != -EROFS);
-+	return ret;
-+}
-+
-+static long btrfs_set_dedup_bs(struct btrfs_root *root, u64 bs)
-+{
-+	struct btrfs_fs_info *info = root->fs_info;
-+	int ret = 0;
-+
-+	mutex_lock(&info->dedup_ioctl_mutex);
-+	if (!info->dedup_root) {
-+		pr_info("btrfs: dedup is disabled, we cannot switch on/off dedup\n");
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	bs = ALIGN(bs, root->sectorsize);
-+	bs = min_t(u64, bs, (128 * 1024ULL));
-+
-+	if (bs == info->dedup_bs) {
-+		if (info->dedup_bs == 0)
-+			pr_info("btrfs: switch OFF dedup(it's already off)\n");
++		if (bytenr < entry->node.bytenr)
++			p = &(*p)->rb_left;
++		else if (bytenr > entry->node.bytenr)
++			p = &(*p)->rb_right;
 +		else
-+			pr_info("btrfs: switch ON dedup(its bs is already %llu)\n",
-+				bs);
-+		goto out;
++			return entry;
 +	}
 +
-+	/*
-+	 * The dedup works similar to compression, both use async workqueue to
-+	 * reach better performance.  We drain the on-going async works here
-+	 * so that new dedup writes will apply with the new dedup blocksize.
-+	 */
-+	atomic_inc(&info->async_submit_draining);
-+	while (atomic_read(&info->nr_async_submits) ||
-+	       atomic_read(&info->async_delalloc_pages)) {
-+		wait_event(info->async_submit_wait,
-+			   (atomic_read(&info->nr_async_submits) == 0 &&
-+			    atomic_read(&info->async_delalloc_pages) == 0));
-+	}
-+
-+	/*
-+	 * dedup_bs = 0: dedup off;
-+	 * dedup_bs > 0: dedup on;
-+	 */
-+	info->dedup_bs = bs;
-+	if (info->dedup_bs == 0) {
-+		pr_info("btrfs: switch OFF dedup\n");
-+	} else {
-+		info->dedup_bs = bs;
-+		pr_info("btrfs: switch ON dedup(dedup blocksize %llu)\n",
-+			info->dedup_bs);
-+	}
-+	atomic_dec(&info->async_submit_draining);
-+
-+out:
-+	mutex_unlock(&info->dedup_ioctl_mutex);
-+	return ret;
++	rb_link_node(node, parent_node, p);
++	rb_insert_color(node, root);
++	return NULL;
 +}
 +
-+static long btrfs_ioctl_dedup_ctl(struct btrfs_root *root, void __user *args)
-+{
-+	struct btrfs_ioctl_dedup_args *dargs;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	dargs = memdup_user(args, sizeof(*dargs));
-+	if (IS_ERR(dargs)) {
-+		ret = PTR_ERR(dargs);
-+		goto out;
-+	}
-+
-+	switch (dargs->cmd) {
-+	case BTRFS_DEDUP_CTL_ENABLE:
-+		ret = btrfs_enable_dedup(root);
-+		break;
-+	case BTRFS_DEDUP_CTL_DISABLE:
-+		ret = btrfs_disable_dedup(root);
-+		break;
-+	case BTRFS_DEDUP_CTL_SET_BS:
-+		/* dedup on/off */
-+		ret = btrfs_set_dedup_bs(root, dargs->bs);
-+		break;
-+	default:
-+		ret = -EINVAL;
-+	}
-+
-+	kfree(dargs);
-+out:
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
+ /*
+  * find an head entry based on bytenr. This returns the delayed ref
+  * head if it was able to find one, or NULL if nothing was in that spot.
+  * If return_bigger is given, the next bigger entry is returned if no exact
+  * match is found.
+  */
+-static struct btrfs_delayed_ref_node *find_ref_head(struct rb_root *root,
+-				  u64 bytenr,
+-				  struct btrfs_delayed_ref_node **last,
+-				  int return_bigger)
++static struct btrfs_delayed_ref_head *
++find_ref_head(struct rb_root *root, u64 bytenr,
++	      struct btrfs_delayed_ref_head **last, int return_bigger)
  {
-@@ -4604,6 +4769,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_set_fslabel(file, argp);
- 	case BTRFS_IOC_FILE_EXTENT_SAME:
- 		return btrfs_ioctl_file_extent_same(file, argp);
-+	case BTRFS_IOC_DEDUP_CTL:
-+		return btrfs_ioctl_dedup_ctl(root, argp);
+ 	struct rb_node *n;
+-	struct btrfs_delayed_ref_node *entry;
++	struct btrfs_delayed_ref_head *entry;
+ 	int cmp = 0;
+ 
+ again:
+ 	n = root->rb_node;
+ 	entry = NULL;
+ 	while (n) {
+-		entry = rb_entry(n, struct btrfs_delayed_ref_node, rb_node);
+-		WARN_ON(!entry->in_tree);
++		entry = rb_entry(n, struct btrfs_delayed_ref_head, href_node);
+ 		if (last)
+ 			*last = entry;
+ 
+-		if (bytenr < entry->bytenr)
++		if (bytenr < entry->node.bytenr)
+ 			cmp = -1;
+-		else if (bytenr > entry->bytenr)
+-			cmp = 1;
+-		else if (!btrfs_delayed_ref_is_head(entry))
++		else if (bytenr > entry->node.bytenr)
+ 			cmp = 1;
+ 		else
+ 			cmp = 0;
+@@ -203,12 +229,12 @@ again:
  	}
- 
- 	return -ENOTTY;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 45e6189..eda8b92 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -399,6 +399,15 @@ struct btrfs_ioctl_get_dev_stats {
- 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
- };
- 
-+/* deduplication control ioctl modes */
-+#define BTRFS_DEDUP_CTL_ENABLE 1
-+#define BTRFS_DEDUP_CTL_DISABLE 2
-+#define BTRFS_DEDUP_CTL_SET_BS 3
-+struct btrfs_ioctl_dedup_args {
-+	__u64 cmd;
-+	__u64 bs;
-+};
+ 	if (entry && return_bigger) {
+ 		if (cmp > 0) {
+-			n = rb_next(&entry->rb_node);
++			n = rb_next(&entry->href_node);
+ 			if (!n)
+ 				n = rb_first(root);
+-			entry = rb_entry(n, struct btrfs_delayed_ref_node,
+-					 rb_node);
+-			bytenr = entry->bytenr;
++			entry = rb_entry(n, struct btrfs_delayed_ref_head,
++					 href_node);
++			bytenr = entry->node.bytenr;
+ 			return_bigger = 0;
+ 			goto again;
+ 		}
+@@ -246,6 +272,12 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_delayed_ref_node *ref)
+ {
+ 	rb_erase(&ref->rb_node, &delayed_refs->root);
++	if (btrfs_delayed_ref_is_head(ref)) {
++		struct btrfs_delayed_ref_head *head;
 +
- #define BTRFS_QUOTA_CTL_ENABLE	1
- #define BTRFS_QUOTA_CTL_DISABLE	2
- #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
-@@ -606,5 +615,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
-+				 struct btrfs_ioctl_dedup_args)
++		head = btrfs_delayed_node_to_head(ref);
++		rb_erase(&head->href_node, &delayed_refs->href_root);
++	}
+ 	ref->in_tree = 0;
+ 	btrfs_put_delayed_ref(ref);
+ 	delayed_refs->num_entries--;
+@@ -386,42 +418,35 @@ int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
+ 	int count = 0;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct rb_node *node;
+-	struct btrfs_delayed_ref_node *ref;
+-	struct btrfs_delayed_ref_head *head;
++	struct btrfs_delayed_ref_head *head = NULL;
  
- #endif /* _UAPI_LINUX_BTRFS_H */
+ 	delayed_refs = &trans->transaction->delayed_refs;
+-	if (start == 0) {
+-		node = rb_first(&delayed_refs->root);
+-	} else {
+-		ref = NULL;
+-		find_ref_head(&delayed_refs->root, start + 1, &ref, 1);
+-		if (ref) {
+-			node = &ref->rb_node;
+-		} else
+-			node = rb_first(&delayed_refs->root);
++	node = rb_first(&delayed_refs->href_root);
++
++	if (start) {
++		find_ref_head(&delayed_refs->href_root, start + 1, &head, 1);
++		if (head)
++			node = &head->href_node;
+ 	}
+ again:
+ 	while (node && count < 32) {
+-		ref = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
+-		if (btrfs_delayed_ref_is_head(ref)) {
+-			head = btrfs_delayed_node_to_head(ref);
+-			if (list_empty(&head->cluster)) {
+-				list_add_tail(&head->cluster, cluster);
+-				delayed_refs->run_delayed_start =
+-					head->node.bytenr;
+-				count++;
++		head = rb_entry(node, struct btrfs_delayed_ref_head, href_node);
++		if (list_empty(&head->cluster)) {
++			list_add_tail(&head->cluster, cluster);
++			delayed_refs->run_delayed_start =
++				head->node.bytenr;
++			count++;
+ 
+-				WARN_ON(delayed_refs->num_heads_ready == 0);
+-				delayed_refs->num_heads_ready--;
+-			} else if (count) {
+-				/* the goal of the clustering is to find extents
+-				 * that are likely to end up in the same extent
+-				 * leaf on disk.  So, we don't want them spread
+-				 * all over the tree.  Stop now if we've hit
+-				 * a head that was already in use
+-				 */
+-				break;
+-			}
++			WARN_ON(delayed_refs->num_heads_ready == 0);
++			delayed_refs->num_heads_ready--;
++		} else if (count) {
++			/* the goal of the clustering is to find extents
++			 * that are likely to end up in the same extent
++			 * leaf on disk.  So, we don't want them spread
++			 * all over the tree.  Stop now if we've hit
++			 * a head that was already in use
++			 */
++			break;
+ 		}
+ 		node = rb_next(node);
+ 	}
+@@ -433,7 +458,7 @@ again:
+ 		 * clusters.  start from the beginning and try again
+ 		 */
+ 		start = 0;
+-		node = rb_first(&delayed_refs->root);
++		node = rb_first(&delayed_refs->href_root);
+ 		goto again;
+ 	}
+ 	return 1;
+@@ -629,6 +654,7 @@ static noinline void add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 		 */
+ 		kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
+ 	} else {
++		htree_insert(&delayed_refs->href_root, &head_ref->href_node);
+ 		delayed_refs->num_heads++;
+ 		delayed_refs->num_heads_ready++;
+ 		delayed_refs->num_entries++;
+@@ -886,14 +912,10 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ struct btrfs_delayed_ref_head *
+ btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr)
+ {
+-	struct btrfs_delayed_ref_node *ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+-	ref = find_ref_head(&delayed_refs->root, bytenr, NULL, 0);
+-	if (ref)
+-		return btrfs_delayed_node_to_head(ref);
+-	return NULL;
++	return find_ref_head(&delayed_refs->href_root, bytenr, NULL, 0);
+ }
+ 
+ void btrfs_delayed_ref_exit(void)
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 9377b27..6a0295b 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -83,6 +83,8 @@ struct btrfs_delayed_ref_head {
+ 
+ 	struct list_head cluster;
+ 
++	struct rb_node href_node;
++
+ 	struct btrfs_delayed_extent_op *extent_op;
+ 
+ 	int add_cnt;
+@@ -121,6 +123,9 @@ struct btrfs_delayed_data_ref {
+ struct btrfs_delayed_ref_root {
+ 	struct rb_root root;
+ 
++	/* head ref rbtree */
++	struct rb_root href_root;
++
+ 	/* this spin lock protects the rbtree and the entries inside */
+ 	spinlock_t lock;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4ae17ed..289c09b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3860,6 +3860,9 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 
+ 		ref->in_tree = 0;
+ 		rb_erase(&ref->rb_node, &delayed_refs->root);
++		if (head)
++			rb_erase(&head->href_node, &delayed_refs->href_root);
++
+ 		delayed_refs->num_entries--;
+ 		spin_unlock(&delayed_refs->lock);
+ 		if (head) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f5bf1a8..6d92c54 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2438,6 +2438,10 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 
+ 		ref->in_tree = 0;
+ 		rb_erase(&ref->rb_node, &delayed_refs->root);
++		if (btrfs_delayed_ref_is_head(ref)) {
++			rb_erase(&locked_ref->href_node,
++				 &delayed_refs->href_root);
++		}
+ 		delayed_refs->num_entries--;
+ 		if (!btrfs_delayed_ref_is_head(ref)) {
+ 			/*
+@@ -2640,7 +2644,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ {
+ 	struct rb_node *node;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+-	struct btrfs_delayed_ref_node *ref;
++	struct btrfs_delayed_ref_head *head;
+ 	struct list_head cluster;
+ 	int ret;
+ 	u64 delayed_start;
+@@ -2770,18 +2774,18 @@ again:
+ 			spin_lock(&delayed_refs->lock);
+ 		}
+ 
+-		node = rb_first(&delayed_refs->root);
++		node = rb_first(&delayed_refs->href_root);
+ 		if (!node)
+ 			goto out;
+ 		count = (unsigned long)-1;
+ 
+ 		while (node) {
+-			ref = rb_entry(node, struct btrfs_delayed_ref_node,
+-				       rb_node);
+-			if (btrfs_delayed_ref_is_head(ref)) {
+-				struct btrfs_delayed_ref_head *head;
++			head = rb_entry(node, struct btrfs_delayed_ref_head,
++					href_node);
++			if (btrfs_delayed_ref_is_head(&head->node)) {
++				struct btrfs_delayed_ref_node *ref;
+ 
+-				head = btrfs_delayed_node_to_head(ref);
++				ref = &head->node;
+ 				atomic_inc(&ref->refs);
+ 
+ 				spin_unlock(&delayed_refs->lock);
+@@ -2795,6 +2799,8 @@ again:
+ 				btrfs_put_delayed_ref(ref);
+ 				cond_resched();
+ 				goto again;
++			} else {
++				WARN_ON(1);
+ 			}
+ 			node = rb_next(node);
+ 		}
+@@ -5917,6 +5923,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 	 */
+ 	head->node.in_tree = 0;
+ 	rb_erase(&head->node.rb_node, &delayed_refs->root);
++	rb_erase(&head->href_node, &delayed_refs->href_root);
+ 
+ 	delayed_refs->num_entries--;
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8c81bdc..b9e0a46 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -62,7 +62,8 @@ static void put_transaction(struct btrfs_transaction *transaction)
+ 	WARN_ON(atomic_read(&transaction->use_count) == 0);
+ 	if (atomic_dec_and_test(&transaction->use_count)) {
+ 		BUG_ON(!list_empty(&transaction->list));
+-		WARN_ON(transaction->delayed_refs.root.rb_node);
++		WARN_ON(!RB_EMPTY_ROOT(&transaction->delayed_refs.root));
++		WARN_ON(!RB_EMPTY_ROOT(&transaction->delayed_refs.href_root));
+ 		while (!list_empty(&transaction->pending_chunks)) {
+ 			struct extent_map *em;
+ 
+@@ -184,6 +185,7 @@ loop:
+ 	cur_trans->start_time = get_seconds();
+ 
+ 	cur_trans->delayed_refs.root = RB_ROOT;
++	cur_trans->delayed_refs.href_root = RB_ROOT;
+ 	cur_trans->delayed_refs.num_entries = 0;
+ 	cur_trans->delayed_refs.num_heads_ready = 0;
+ 	cur_trans->delayed_refs.num_heads = 0;
 -- 
 1.7.7
 

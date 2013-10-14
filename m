@@ -1,62 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:15334 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753125Ab3JLVUT convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Oct 2013 17:20:19 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Linux Arch: kernel BUG at fs/btrfs/inode.c:873!
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAOMFOmWOwdkwpuiEQbWYRoUDXEKGy_JqM0BtN2AhSF7JHDq69Q@mail.gmail.com>
-Date: Sat, 12 Oct 2013 15:20:17 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <ACFF5C41-EB0A-41F0-BE84-570989897B8E@colorremedies.com>
-References: <CAOMFOmWzXL5G22Z7srkvXe+p+F9U7atOoiV5jRHc9i0k4kUfnA@mail.gmail.com> <CAOMFOmX95ebV=myVO1yDf5yPs7DfmvHDKDFwNNfT0CajDQ=W4Q@mail.gmail.com> <20131008071232.GA1402@localhost.localdomain> <CAOMFOmWOwdkwpuiEQbWYRoUDXEKGy_JqM0BtN2AhSF7JHDq69Q@mail.gmail.com>
-To: Anatol Pomozov <anatol.pomozov@gmail.com>
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:50703 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755520Ab3JNCyo convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 13 Oct 2013 22:54:44 -0400
+Received: by mail-wg0-f50.google.com with SMTP id n12so1767908wgh.29
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Oct 2013 19:54:42 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 13 Oct 2013 23:54:42 -0300
+Message-ID: <CAOtrxKPU4QBQzXoZO4Jii2n8xdW0vxpYNO5aPD1va8iUBP9nkg@mail.gmail.com>
+Subject: Many questions from a potential btrfs user
+From: =?UTF-8?Q?Rog=C3=A9rio_Brito?= <rbrito@ime.usp.br>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi.
 
-On Oct 11, 2013, at 8:22 PM, Anatol Pomozov <anatol.pomozov@gmail.com> wrote:
+I am seriously considering employing btrfs on my systems, particularly due
+to some space-saving features that it has (namely, deduplication and
+compression).
 
-> Hi,
-> 
-> Kernel 3.12-rc built from HEAD has the same issue as 3.10 and 3.11
-> 
-> Ok, I was able to "fix" my problem by booting from an old kernel
-> (3.8.7) and it allowed me to mount the fs.
+In fact, I was (a few moments ago) trying to back up some of my systems to a
+2TB HD that has an ext4 filesystem and, in the middle of the last one, I got
+the error message that the backup HD was full.
 
-Interesting.
+Given that what I backup there are systems where I have some of the data
+present multiple times (e.g., my mailbox that is sync'ed via offlineimap, or
+videos that I download from online learning sites) and that such data
+consists of many small files that are highly compressible (the e-mails) or
+large files (the videos), I would like to employ btrfs.
 
-> Then I removed
-> /var/log/journal directory. After that I was able to boot with 3.11.
-> So I believe 3.9/3.10 has a regression in how it handles COW files. As
-> I described above, some time ago I defraged journald files and set +C
-> attribute to /var/log/journal (both to the folders and existing
-> files).
-
-In any case you'd have saved yourself some trouble by checking the archives first. The journald issue was reported Sep 23 in this thread:
-http://comments.gmane.org/gmane.comp.file-systems.btrfs/28678
-
-And a fix has been sent to stable, although I'm not sure the exact 3.10.x, 3.11.x versions it will end up in.
-
-> 
-> So 3.11 boots fine and the only boot warning I see is
-> 
-> Oct 11 19:06:55 brest kernel: BTRFS error (device sdd3): block group
-> 1141416919040 has wrong amount of free space
-> Oct 11 19:06:55 brest kernel: BTRFS error (device sdd3): failed to
-> load free space cache for block group 1141416919040
-> 
-> 
-> I tried 'btrfsck -repair' but it crashes so I cannot even check or
-> repair my btrfs mount.
-
-I'm uncertain this problem is related to the journald issue. I'm also uncertain of the fix. But if you don't get a reply from a developer in the time frame you prefer, I suggest you use btrfs-image -c9 -t4 referred to here:
-https://btrfs.wiki.kernel.org/index.php/Btrfs-image
-
-this will write the file system state minus data, in case a developer wants to see it at some point. In the meantime you can then blow away the file system and restore the data to get on with using it.
+So, after reading the documentation on https://btrfs.wiki.kernel.org/, I am
+still unsure of some points and I would like to have some clarifications
+and/or expectations set straight.
 
 
-Chris Murphy
+* I understand that I can convert an ext4 filesystem to btrfs. Will such
+  conversion work with an almost full ext4 filesystem? How much overhead
+  will be needed to perform the conversion? I can (temporarily) remove some
+  files that already are on this backup.
+
+* Is it possible to deduplicate the files that are already in it? As
+  mentioned before, there are likely to be many, and some of them are on the
+  order of 1 to 2GBs.
+
+* Doing a defragmentation with the filesystem mounted with compression will
+  recompress the files (if they are deemed compressible by the
+  filesystem). Is that understanding correct?  Will compressed blocks among
+  many files also be deduplicated?
+
+* How exactly do the recently merged offline deduplication features in the
+  kernel interfere with what was (in my limited understanding) already
+  possible with userspace tools like <https://github.com/g2p/bedup>?  Are
+  such third-party tools likely to be integrated into btrfs-progs? Are they
+  supposed to be kept separate?
+
+* Does this change the on-disk format? Putting it another way, will it be
+  safe to possibly go back to a previous kernel, if there is some problem
+  with the current kernels? (Not that I necessarily want to go back to a
+  previous kernel, but, sometimes, one would need to, say, git bisect the
+  kernel).
+
+* I most likely *don't* want to use online deduplication (given my bad
+  experiences with ZFS).  With that in mind, is the current userspace
+  deduplicaton intended to be run as a cron job? Is the offline
+  deduplication too memory intensive?  How much RAM would it be needed for a
+  2TB filesystem? Are 2GB enough? How about 4GB?
+
+* Will further runs of the offline deduplication be "incremental" in some
+  imprecise sense of the word? That is, if I run the deduplication once and
+  immediately run it again (supposing nothing changes), will the 2nd time be
+  faster than the first?  (If the disk caches are dropped?)
+
+* Will I be able to add further HDs to my btrfs filesystem, once I get some
+  more money to run something like a RAID0 configuration? If I get more HDs
+  later, will I be able to change the configuration to, say, RAID5 or RAID6?
+  I don't intend to use lvm, unless I have to.
+
+
+I think that I had other questions, but since it is now past bed time, I
+can't remember them. :)
+
+Any further comments and/or guidance will be gladly accepted.
+
+
+Thanks in advance,
+
+Rogério Brito.
+
+
+-- 
+Rogério Brito : rbrito@{ime.usp.br,gmail.com} : GPG key 4096R/BCFCAAAA
+http://cynic.cc/blog/ : github.com/rbrito : profiles.google.com/rbrito
+DebianQA: http://qa.debian.org/developer.php?login=rbrito%40ime.usp.br

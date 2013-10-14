@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:40382 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757110Ab3JNVZB (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:54529 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756734Ab3JNVtT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 17:25:01 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 330897C06A2
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 15:25:01 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id HkdvbMPmeB9Zgfs2 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 15:25:00 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix hole check in log_one_extent
-Date: Mon, 14 Oct 2013 17:24:58 -0400
-Message-ID: <1381785898-4076-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 14 Oct 2013 17:49:19 -0400
+Received: by mail-wi0-f179.google.com with SMTP id hm4so2454949wib.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 14:49:18 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: optimize tree-log.c:count_inode_refs()
+Date: Mon, 14 Oct 2013 22:49:11 +0100
+Message-Id: <1381787351-15451-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I added an assert to make sure we were looking up aligned offsets for csums and
-I tripped it when running xfstests.  This is because log_one_extent was checking
-if block_start == 0 for a hole instead of EXTENT_MAP_HOLE.  This worked out fine
-in practice it seems, but it adds a lot of extra work that is uneeded.  With
-this fix I'm no longer tripping my assert.  Thanks,
+Avoid repeated tree searches by processing all inode ref items in
+a leaf at once instead of processing one at a time, followed by a
+path release and a tree search for a key with a decremented offset.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/tree-log.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 849b729..1134aa4 100644
+index 849b729..7b077a8 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3373,7 +3373,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 		btrfs_set_token_file_extent_type(leaf, fi,
- 						 BTRFS_FILE_EXTENT_REG,
- 						 &token);
--		if (em->block_start == 0)
-+		if (em->block_start == EXTENT_MAP_HOLE)
- 			skip_csum = true;
- 	}
+@@ -1307,6 +1307,7 @@ static int count_inode_refs(struct btrfs_root *root,
+ 				break;
+ 			path->slots[0]--;
+ 		}
++process_slot:
+ 		btrfs_item_key_to_cpu(path->nodes[0], &key,
+ 				      path->slots[0]);
+ 		if (key.objectid != ino ||
+@@ -1327,6 +1328,10 @@ static int count_inode_refs(struct btrfs_root *root,
  
+ 		if (key.offset == 0)
+ 			break;
++		if (path->slots[0] > 0) {
++			path->slots[0]--;
++			goto process_slot;
++		}
+ 		key.offset--;
+ 		btrfs_release_path(path);
+ 	}
 -- 
-1.8.3.1
+1.7.9.5
 

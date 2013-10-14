@@ -1,55 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp03.au.ibm.com ([202.81.31.145]:57200 "EHLO
-	e23smtp03.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756118Ab3JNNPu (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:60275 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750849Ab3JNOBg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 09:15:50 -0400
-Received: from /spool/local
-	by e23smtp03.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 14 Oct 2013 23:15:48 +1000
-Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
-	by d23dlp02.au.ibm.com (Postfix) with ESMTP id E0E502BB0040
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 00:15:44 +1100 (EST)
-Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
-	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id r9EDFXv010092802
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 00:15:33 +1100
-Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
-	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id r9EDFi1Y023162
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 00:15:44 +1100
-From: chandan <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: sekharan@us.ibm.com
-Subject: [PATCH] Btrfs: btrfs_add_ordered_operation: Fix last modified transaction comparison.
-Date: Mon, 14 Oct 2013 18:44:39 +0530
-Message-ID: <2154670.aaEungM0qy@localhost.localdomain>
+	Mon, 14 Oct 2013 10:01:36 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id A235D7C04D8
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 08:01:35 -0600 (MDT)
+Date: Mon, 14 Oct 2013 10:01:33 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Geyslan =?iso-8859-1?Q?Greg=F3rio?= Bem <geyslan@gmail.com>
+CC: Stefan Behrens <sbehrens@giantdisaster.de>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v6] btrfs: Fix memory leakage in the tree-log.c
+Message-ID: <20131014140133.GA14323@localhost.localdomain>
+References: <1381516545-27786-1-git-send-email-geyslan@gmail.com>
+ <525849B2.7080306@giantdisaster.de>
+ <CAGG-pURmJKq+w8CNdAEuu8Ajcexfo1mRrKu7TjberKH=1D3rsg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <CAGG-pURmJKq+w8CNdAEuu8Ajcexfo1mRrKu7TjberKH=1D3rsg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Comparison of an inode's last modified transaction with the last committed
-transaction is incorrect. Fix it.
+On Sun, Oct 13, 2013 at 07:03:12PM -0300, Geyslan Gregório Bem wrote:
+> 2013/10/11 Stefan Behrens <sbehrens@giantdisaster.de>:
+> > On 10/11/2013 20:35, Geyslan G. Bem wrote:
+> >>
+> >> In add_inode_ref() function:
+> >>
+> >> Initializes local pointers.
+> >>
+> >> Reduces the logical condition with the __add_inode_ref() return
+> >> value by using only one 'goto out'.
+> >>
+> >> Centralizes the exiting, ensuring the freeing of all used memory.
+> >>
+> >> Signed-off-by: Geyslan G. Bem <geyslan@gmail.com>
+> >> ---
+> >>   fs/btrfs/tree-log.c | 33 +++++++++++++++++++--------------
+> >>   1 file changed, 19 insertions(+), 14 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> >> index 79f057c..61bb051 100644
+> >> --- a/fs/btrfs/tree-log.c
+> >> +++ b/fs/btrfs/tree-log.c
+> >> @@ -1113,11 +1113,11 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>                                   struct extent_buffer *eb, int slot,
+> >>                                   struct btrfs_key *key)
+> >>   {
+> >> -       struct inode *dir;
+> >> -       struct inode *inode;
+> >> +       struct inode *dir = NULL;
+> >> +       struct inode *inode = NULL;
+> >>         unsigned long ref_ptr;
+> >>         unsigned long ref_end;
+> >> -       char *name;
+> >> +       char *name = NULL;
+> >>         int namelen;
+> >>         int ret;
+> >>         int search_done = 0;
+> >> @@ -1150,13 +1150,15 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>          * care of the rest
+> >>          */
+> >>         dir = read_one_inode(root, parent_objectid);
+> >> -       if (!dir)
+> >> -               return -ENOENT;
+> >> +       if (!dir) {
+> >> +               ret = -ENOENT;
+> >> +               goto out;
+> >> +       }
+> >>
+> >>         inode = read_one_inode(root, inode_objectid);
+> >>         if (!inode) {
+> >> -               iput(dir);
+> >> -               return -EIO;
+> >> +               ret = -EIO;
+> >> +               goto out;
+> >>         }
+> >>
+> >>         while (ref_ptr < ref_end) {
+> >> @@ -1169,14 +1171,16 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>                          */
+> >>                         if (!dir)
+> >>                                 dir = read_one_inode(root,
+> >> parent_objectid);
+> >> -                       if (!dir)
+> >> -                               return -ENOENT;
+> >> +                       if (!dir) {
+> >> +                               ret = -ENOENT;
+> >> +                               goto out;
+> >> +                       }
+> >>                 } else {
+> >>                         ret = ref_get_fields(eb, ref_ptr, &namelen, &name,
+> >>                                              &ref_index);
+> >>                 }
+> >>                 if (ret)
+> >> -                       return ret;
+> >> +                       goto out;
+> >>
+> >>                 /* if we already have a perfect match, we're done */
+> >>                 if (!inode_in_dir(root, path, btrfs_ino(dir),
+> >> btrfs_ino(inode),
+> >> @@ -1196,12 +1200,11 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>                                                       parent_objectid,
+> >>                                                       ref_index, name,
+> >> namelen,
+> >>                                                       &search_done);
+> >> -                               if (ret == 1) {
+> >> -                                       ret = 0;
+> >> +                               if (ret) {
+> >> +                                       if (ret == 1)
+> >> +                                               ret = 0;
+> >>                                         goto out;
+> >>                                 }
+> >> -                               if (ret)
+> >> -                                       goto out;
+> >>                         }
+> >>
+> >>                         /* insert our name */
+> >> @@ -1215,6 +1218,7 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>
+> >>                 ref_ptr = (unsigned long)(ref_ptr + ref_struct_size) +
+> >> namelen;
+> >>                 kfree(name);
+> >> +               name = NULL;
+> >>                 if (log_ref_ver) {
+> >>                         iput(dir);
+> >>                         dir = NULL;
+> >> @@ -1225,6 +1229,7 @@ static noinline int add_inode_ref(struct
+> >> btrfs_trans_handle *trans,
+> >>         ret = overwrite_item(trans, root, path, eb, slot, key);
+> >>   out:
+> >>         btrfs_release_path(path);
+> >> +       kfree(name);
+> >>         iput(dir);
+> >>         iput(inode);
+> >>         return ret;
+> >>
+> >
+> > The patch looks really good now. Thanks!
+> >
+> > Reviewed-by: Stefan Behrens <sbehrens@giantdisaster.de>
+> >
+> >
+> 
+> Will it to be committed to the next?
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/ordered-data.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I will pull it into btrfs-next the next time I scrape the list for patches and
+then it will go into 3.13.  Thanks,
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index c702cb6..1a36a0c 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -1076,7 +1076,7 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 	 * if this file hasn't been changed since the last transaction
- 	 * commit, we can safely return without doing anything
- 	 */
--	if (last_mod < root->fs_info->last_trans_committed)
-+	if (last_mod <= root->fs_info->last_trans_committed)
- 		return;
- 
- 	spin_lock(&root->fs_info->ordered_root_lock);
--- 
-1.8.3.1
-
-
+Josef

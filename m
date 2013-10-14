@@ -1,116 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:39838 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757423Ab3JNUve convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 16:51:34 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id C92957C06A2
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 14:51:33 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Saul Wold <sgw@linux.intel.com>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <20131014152655.4917.80616@localhost.localdomain>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <523B4036.7030204@linux.intel.com>
- <20130928122952.31924.54312@localhost.localdomain>,
- <524B3585.1060407@linux.intel.com>
- <FD85C8284EBEEA498A3405D29590BB980E67CC58@MBS1.int.fusionio.com>
- <525C0CE8.2040401@linux.intel.com>
- <20131014152655.4917.80616@localhost.localdomain>
-Message-ID: <20131014205127.4917.60075@localhost.localdomain>
-Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
-Date: Mon, 14 Oct 2013 16:51:27 -0400
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:8038 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1757393Ab3JNU5g convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Oct 2013 16:57:36 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: boot on btrfs, GRUB usage of subvolume set-default breaks boot
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20131014202928.GB14323@localhost.localdomain>
+Date: Mon, 14 Oct 2013 14:57:33 -0600
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <1FA5ED88-8555-4252-ACF2-B583666F7EB8@colorremedies.com>
+References: <58D806F1-00EB-4B38-982E-0BB4716827CD@colorremedies.com> <F7E0EEDE-7B2D-43F5-820F-A6B80401F6B8@colorremedies.com> <20131014202928.GB14323@localhost.localdomain>
+To: Josef Bacik <jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Saul,
 
-Well, a little bigger than I expected turned into a lot bigger than I
-expected.  I've pushed the current code to my integration branch, but
-the next step is to re-integrate it with Dave's current tree and push
-out rc2.
+On Oct 14, 2013, at 2:29 PM, Josef Bacik <jbacik@fusionio.com> wrote:
 
-I need to retest convert as well.
-
--chris
-
-Quoting Chris Mason (2013-10-14 11:26:55)
-> Hi Saul,
+> On Mon, Oct 14, 2013 at 02:23:58PM -0600, Chris Murphy wrote:
+>> 
+>> On Oct 14, 2013, at 1:21 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> 
+>>> When /boot is on btrfs, and the default subvolume is changed, it makes the system unbootable. The basic configuration is subvolumes: boot, root, home, on one btrfs volume single device. The installer doesn't change the default subvolume, it remains ID 5.
+>>> 
+>>> If I change the default subvolume and reboot, I get a grub rescue prompt. This means core.img in the MBR gap was found, but /boot/grub/i386-pc/normal.mod could not be found. What's interesting is, at the grub rescue prompt, 'set' returns:
+>>> 
+>>> prefix=(hd0,msdos1)/boot/grub2
+>>> root=hd0,msdos1
+>>> 
+>>> This appears to be a full path name, so it should always start from top level regardless of the set-default subvolume, correct? Yet it's behaving relative to the default subvolume. If I use 'ls (hd0,msdos1)' I'm returned the contents of the subvolume I've set as default, which explains why bootability is broken.
+>> 
+>> Looks like what I'm experiencing is unintended. If a developer or someone more knowledgable than me can respond to the questions on grub-devel@ it would be very helpful so this can get fixed.
+>> 
+>> http://lists.gnu.org/archive/html/grub-devel/2013-10/msg00038.html
+>> 
 > 
-> Sorry for the delay, I'll push the patch out this afternoon.
-> 
-> -chris
-> 
-> Quoting Saul Wold (2013-10-14 11:25:28)
-> > On 10/01/2013 06:18 PM, Chris Mason wrote:
-> > > Hi Saul,
-> > >
-> > > The patch ended up a little bigger than I expected because it is sharing infrastructure with btfs-convert.  Travel added a little more delay, but I'm almost there.
-> > >
-> > 
-> > Any news on this patch?
-> > 
-> > Sau!
-> > 
-> > > -chris
-> > > ________________________________________
-> > > From: Saul Wold [sgw@linux.intel.com]
-> > > Sent: Tuesday, October 01, 2013 4:50 PM
-> > > To: Chris Mason
-> > > Cc: linux-btrfs@vger.kernel.org
-> > > Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
-> > >
-> > > On 09/28/2013 05:29 AM, Chris Mason wrote:
-> > >> Quoting Saul Wold (2013-09-19 14:19:34)
-> > >>> Hi there,
-> > >>>
-> > >>> I am attempting to build a rootfs image from an existing rootfs
-> > >>> directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
-> > >>>
-> > >>> The couple problem I saw was that the target image file needed to exist,
-> > >>> although I think I can patch that then the FS size was much larger than
-> > >>> the actual size, I tracked this to the usage of ftw not accounting for
-> > >>> symlinks, I have a patch for that which I will send once I finish
-> > >>> getting the other issues resolved.
-> > >>>
-> > >>> Next issue I hit was an assertion failure after getting "not enough free
-> > >>> space" message:
-> > >>>
-> > >>> not enough free space
-> > >>> add_file_items failed
-> > >>> unable to traverse_directory
-> > >>> Making image is aborted.
-> > >>> mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
-> > >>>
-> > >>> I am kind of stuck on this one, took it as far as I can right now.
-> > >>> Would I be better off dropping back to 0.19 or can we move forward
-> > >>> fixing this?
-> > >>
-> > >> Hi Saul,
-> > >>
-> > >> Update on my end, the problem is the image code expects every file to
-> > >> fit inside a single chunk.  It's only creating 8MB chunks, so any file
-> > >> over 8MB in size is causing problems.
-> > >>
-> > >> I'm fixing it up here, I should have a patch for you on Monday.
-> > >>
-> > > Any update on this?  Just curious.
-> > >
-> > > Thanks
-> > >          Sau!
-> > >
-> > >> Thanks!
-> > >>
-> > >> -chris
-> > >>
-> > >> --
-> > >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > >> the body of a message to majordomo@vger.kernel.org
-> > >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > >>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> All grub has to do is read the "default" dir item in the tree_root and then get
+> the location out of that dir item and then use that root as the default root.
+> The kernel does it's own path walk to that root just for dentry sake, but I
+> imagine grub doesn't have to do that, they can just say "ok this is our root"
+> and carry on. 
+
+Thanks. I might be reading the inquiry on grub-devel@ wrong but it seems that's what they're doing now. The idea is that the GRUB prefix path should be immutable, regardless of the user using 'btrfs subvol set-default' to some nested subvolume, so that the system is always bootable.
+
+
+Chris Murphy

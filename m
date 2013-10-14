@@ -1,52 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:54529 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756734Ab3JNVtT (ORCPT
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:32890 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756602Ab3JNXNL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 17:49:19 -0400
-Received: by mail-wi0-f179.google.com with SMTP id hm4so2454949wib.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 14:49:18 -0700 (PDT)
+	Mon, 14 Oct 2013 19:13:11 -0400
+Received: by mail-wg0-f53.google.com with SMTP id y10so5271635wgg.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 16:13:09 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: optimize tree-log.c:count_inode_refs()
-Date: Mon, 14 Oct 2013 22:49:11 +0100
-Message-Id: <1381787351-15451-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix btrfs_prev_leaf() previous key computation
+Date: Tue, 15 Oct 2013 00:12:27 +0100
+Message-Id: <1381792347-32504-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Avoid repeated tree searches by processing all inode ref items in
-a leaf at once instead of processing one at a time, followed by a
-path release and a tree search for a key with a decremented offset.
+If we decrement the key type, we must reset its offset to the largest
+possible offset (u64)-1. If we decrement the key's objectid, then we
+must reset the key's type and offset to their largest possible values,
+(u8)-1 and (u64)-1 respectively. Not doing so can make us miss an
+items in the tree.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/tree-log.c |    5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/ctree.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 849b729..7b077a8 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1307,6 +1307,7 @@ static int count_inode_refs(struct btrfs_root *root,
- 				break;
- 			path->slots[0]--;
- 		}
-+process_slot:
- 		btrfs_item_key_to_cpu(path->nodes[0], &key,
- 				      path->slots[0]);
- 		if (key.objectid != ino ||
-@@ -1327,6 +1328,10 @@ static int count_inode_refs(struct btrfs_root *root,
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 33e9dbd..6d426b2 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4827,14 +4827,18 @@ static int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path)
  
- 		if (key.offset == 0)
- 			break;
-+		if (path->slots[0] > 0) {
-+			path->slots[0]--;
-+			goto process_slot;
-+		}
+ 	btrfs_item_key_to_cpu(path->nodes[0], &key, 0);
+ 
+-	if (key.offset > 0)
++	if (key.offset > 0) {
  		key.offset--;
- 		btrfs_release_path(path);
- 	}
+-	else if (key.type > 0)
++	} else if (key.type > 0) {
+ 		key.type--;
+-	else if (key.objectid > 0)
++		key.offset = (u64)-1;
++	} else if (key.objectid > 0) {
+ 		key.objectid--;
+-	else
++		key.type = (u8)-1;
++		key.offset = (u64)-1;
++	} else {
+ 		return 1;
++	}
+ 
+ 	btrfs_release_path(path);
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
 -- 
 1.7.9.5
 

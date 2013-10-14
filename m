@@ -1,99 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:33307 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757126Ab3JNP1D convert rfc822-to-8bit (ORCPT
+Received: from glockenspiel.complete.org ([78.47.53.23]:45772 "EHLO
+	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750926Ab3JNPks (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Oct 2013 11:27:03 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 49EF77C04D8
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2013 09:27:02 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
+	Mon, 14 Oct 2013 11:40:48 -0400
+Received: from [63.245.179.205] (helo=minerva.lan.complete.org)
+	by glockenspiel.complete.org with esmtps
+	(with TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
+	(TLS peer CN christoph.complete.org, certificate verified)
+	(Exim 4.72)
+	id 1VVjzf-000524-Tw
+	for linux-btrfs@vger.kernel.org; Mon, 14 Oct 2013 10:23:40 -0500
+Received: from localhost ([127.0.0.1])
+	by minerva.lan.complete.org with esmtp (Exim 4.80)
+	(envelope-from <jgoerzen@complete.org>)
+	id 1VVjzb-0005uT-Ii
+	for linux-btrfs@vger.kernel.org; Mon, 14 Oct 2013 10:23:35 -0500
+Message-ID: <525C0C76.9000905@complete.org>
+Date: Mon, 14 Oct 2013 10:23:34 -0500
+From: John Goerzen <jgoerzen@complete.org>
 MIME-Version: 1.0
-To: Saul Wold <sgw@linux.intel.com>
-From: Chris Mason <clmason@fusionio.com>
-In-Reply-To: <525C0CE8.2040401@linux.intel.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <523B4036.7030204@linux.intel.com>
- <20130928122952.31924.54312@localhost.localdomain>,
- <524B3585.1060407@linux.intel.com>
- <FD85C8284EBEEA498A3405D29590BB980E67CC58@MBS1.int.fusionio.com>
- <525C0CE8.2040401@linux.intel.com>
-Message-ID: <20131014152655.4917.80616@localhost.localdomain>
-Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
-Date: Mon, 14 Oct 2013 11:26:55 -0400
+To: linux-btrfs@vger.kernel.org
+Subject: Conversion from ext4 fails
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Saul,
+Hello,
 
-Sorry for the delay, I'll push the patch out this afternoon.
+I have been seeing this behavior (on the unmounted filesystem, of course!):
 
--chris
+date && time btrfs-convert /dev/mapper/bakfs
+Sat Oct 12 23:13:21 CDT 2013
+creating btrfs metadata.
+error during copy_inodes -1
+conversion aborted.
 
-Quoting Saul Wold (2013-10-14 11:25:28)
-> On 10/01/2013 06:18 PM, Chris Mason wrote:
-> > Hi Saul,
-> >
-> > The patch ended up a little bigger than I expected because it is sharing infrastructure with btfs-convert.  Travel added a little more delay, but I'm almost there.
-> >
-> 
-> Any news on this patch?
-> 
-> Sau!
-> 
-> > -chris
-> > ________________________________________
-> > From: Saul Wold [sgw@linux.intel.com]
-> > Sent: Tuesday, October 01, 2013 4:50 PM
-> > To: Chris Mason
-> > Cc: linux-btrfs@vger.kernel.org
-> > Subject: Re: Issue building a file based rootfs image with mkfs.btrfs
-> >
-> > On 09/28/2013 05:29 AM, Chris Mason wrote:
-> >> Quoting Saul Wold (2013-09-19 14:19:34)
-> >>> Hi there,
-> >>>
-> >>> I am attempting to build a rootfs image from an existing rootfs
-> >>> directory tree.  I am using the 0.20 @ 194aa4a of Chris's git repo.
-> >>>
-> >>> The couple problem I saw was that the target image file needed to exist,
-> >>> although I think I can patch that then the FS size was much larger than
-> >>> the actual size, I tracked this to the usage of ftw not accounting for
-> >>> symlinks, I have a patch for that which I will send once I finish
-> >>> getting the other issues resolved.
-> >>>
-> >>> Next issue I hit was an assertion failure after getting "not enough free
-> >>> space" message:
-> >>>
-> >>> not enough free space
-> >>> add_file_items failed
-> >>> unable to traverse_directory
-> >>> Making image is aborted.
-> >>> mkfs.btrfs: mkfs.c:1542: main: Assertion `!(ret)' failed.
-> >>>
-> >>> I am kind of stuck on this one, took it as far as I can right now.
-> >>> Would I be better off dropping back to 0.19 or can we move forward
-> >>> fixing this?
-> >>
-> >> Hi Saul,
-> >>
-> >> Update on my end, the problem is the image code expects every file to
-> >> fit inside a single chunk.  It's only creating 8MB chunks, so any file
-> >> over 8MB in size is causing problems.
-> >>
-> >> I'm fixing it up here, I should have a patch for you on Monday.
-> >>
-> > Any update on this?  Just curious.
-> >
-> > Thanks
-> >          Sau!
-> >
-> >> Thanks!
-> >>
-> >> -chris
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>
+real    43m1.076s
+user    15m25.256s
+sys     0m21.508s
+
+This is 100% reproducible on this volume.  It passes fsck.ext4 -f with 
+no errors, and I can detect nothing wrong.  This is on a Debian backport 
+of kernel 3.10 on i686 32-bit.  The filesystem in question is 2.7T in 
+size, with 908G free.  It is a target for BackupPC, and as such has 
+many, many hardlinks and inodes in use due to the BackupPC hardlink 
+pool.  Some files may be hardlinked to hundreds of others as well.  (A 
+quick spot-guess revealed one with 418 hardlinks.  There may be some 
+with more.)  I didn't capture df -ih output when I should have, but the 
+number of inodes was between 30M and 40M.  The underlying device is an 
+LVM RAID0 across two USB drives - so a slow device, but it has always 
+worked perfectly. There are no kernel errors involved here.
+
+The btrfs-tools is 0.19+20130705 plus the patch from 
+https://patchwork.kernel.org/patch/2828820/ to address the "No valid 
+Btrfs found" bug I encountered, which was reported at 
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=724265 and various 
+other places.
+
+What can I do to help with the debugging of this?
+
+Thanks,
+
+John

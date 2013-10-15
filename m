@@ -1,128 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.no-junkemail.net ([69.65.24.131]:19220 "EHLO
-	mx1.no-junkemail.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750769Ab3JOEMW (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:46096 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750769Ab3JOEnJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 00:12:22 -0400
-Received: from c-67-168-202-12.hsd1.or.comcast.net ([67.168.202.12]:64378 helo=aluminum.mersenne.com)
-	by shared24.no-wires.net with esmtpsa (TLSv1:DHE-RSA-CAMELLIA256-SHA:256)
-	(Exim 4.80.1)
-	(envelope-from <dhm@mersenne.com>)
-	id 1VVvsy-0003CF-9j
-	for linux-btrfs@vger.kernel.org; Mon, 14 Oct 2013 23:05:32 -0500
-Message-ID: <525CBF0D.1020609@mersenne.com>
-Date: Mon, 14 Oct 2013 21:05:33 -0700
-From: David Madden <dhm@mersenne.com>
+	Tue, 15 Oct 2013 00:43:09 -0400
+Date: Mon, 14 Oct 2013 21:43:06 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: David Madden <dhm@mersenne.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: OK to take hourly snapshots, then cull older ones?
+Message-ID: <20131015044306.GX30504@merlins.org>
+References: <525CBF0D.1020609@mersenne.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: OK to take hourly snapshots, then cull older ones?
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030908010804020604050003"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <525CBF0D.1020609@mersenne.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Mon, Oct 14, 2013 at 09:05:33PM -0700, David Madden wrote:
+> I'd like to use BTRFS to do something like the old NetApp snapshot
+> system: every hour or so, there'd be a snapshot, then the 23 of the
+> snapshots during a day would be deleted, leaving just a day snapshot,
+> then after a month, 6 of 7 snapshots would be deleted, leaving just a
+> week snapshot, and so on.
+> 
+> Is this a reasonable thing to do in a cron job with a BTRFS filesystem?
+>  Apart from running out of space, are there any resources that might get
+> used up?  Has anybody done this for a year or two in an active
+> filesystem, and encountered success or weirdness?
 
---------------ms030908010804020604050003
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Way ahead of you there, been doing this for a year, no problems:
 
-I'd like to use BTRFS to do something like the old NetApp snapshot
-system: every hour or so, there'd be a snapshot, then the 23 of the
-snapshots during a day would be deleted, leaving just a day snapshot,
-then after a month, 6 of 7 snapshots would be deleted, leaving just a
-week snapshot, and so on.
+gandalfthegreat:~$ cat /etc/cron.d/btrfs_backup 
+0 * * * * root test -d /mnt/btrfs_pool1 && grep -q rootflags=subvol=root /proc/cmdline && /var/local/scr/btrfs_snaps hourly 3 | egrep -v '(Create a snapshot of|Will delete the oldest|Delete subvolume|Making snapshot of )'
+1 0 * * * root test -d /mnt/btrfs_pool1 && grep -q rootflags=subvol=root /proc/cmdline && /var/local/scr/btrfs_snaps daily  4 | egrep -v '(Create a snapshot of|Will delete the oldest|Delete subvolume|Making snapshot of )'
+2 0 * * 0 root test -d /mnt/btrfs_pool1 && grep -q rootflags=subvol=root /proc/cmdline && /var/local/scr/btrfs_snaps weekly 4 | egrep -v '(Create a snapshot of|Will delete the oldest|Delete subvolume|Making snapshot of )'
 
-Is this a reasonable thing to do in a cron job with a BTRFS filesystem?
- Apart from running out of space, are there any resources that might get
-used up?  Has anybody done this for a year or two in an active
-filesystem, and encountered success or weirdness?
+/var/local/scr/btrfs_snaps:
+---------------------------
+#!/bin/bash
 
-Thanks!
---=20
-Mersenne Law LLC  =B7  www.mersenne.com  =B7  +1-503-679-1671
-- Small Business, Startup and Intellectual Property Law -
-1500 SW First Ave. =B7 Suite 1170 =B7 Portland, Oregon  97201
+: ${BTRFSROOT:=/mnt/btrfs_pool1}
+DATE="$(date '+%Y%m%d_%H:%M:%S')"
 
+type=${1:-hourly}
+keep=${2:-3}
 
---------------ms030908010804020604050003
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+cd "$BTRFSROOT"
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIILTDCC
-BRowggQCoAMCAQICEG0Z6qcZT2ozIuYiMnqqcd4wDQYJKoZIhvcNAQEFBQAwga4xCzAJBgNV
-BAYTAlVTMQswCQYDVQQIEwJVVDEXMBUGA1UEBxMOU2FsdCBMYWtlIENpdHkxHjAcBgNVBAoT
-FVRoZSBVU0VSVFJVU1QgTmV0d29yazEhMB8GA1UECxMYaHR0cDovL3d3dy51c2VydHJ1c3Qu
-Y29tMTYwNAYDVQQDEy1VVE4tVVNFUkZpcnN0LUNsaWVudCBBdXRoZW50aWNhdGlvbiBhbmQg
-RW1haWwwHhcNMTEwNDI4MDAwMDAwWhcNMjAwNTMwMTA0ODM4WjCBkzELMAkGA1UEBhMCR0Ix
-GzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UEBxMHU2FsZm9yZDEaMBgGA1UE
-ChMRQ09NT0RPIENBIExpbWl0ZWQxOTA3BgNVBAMTMENPTU9ETyBDbGllbnQgQXV0aGVudGlj
-YXRpb24gYW5kIFNlY3VyZSBFbWFpbCBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
-ggEBAJKEhFtLV5jUXi+LpOFAyKNTWF9mZfEyTvefMn1V0HhMVbdClOD5J3EHxcZppLkyxPFA
-GpDMJ1Zifxe1cWmu5SAb5MtjXmDKokH2auGj/7jfH0htZUOMKi4rYzh337EXrMLaggLW1DJq
-1GdvIBOPXDX65VSAr9hxCh03CgJQU2yVHakQFLSZlVkSMf8JotJM3FLb3uJAAVtIaN3FSrTg
-7SQfOq9xXwfjrL8UO7AlcWg99A/WF1hGFYE8aIuLgw9teiFX5jSw2zJ+40rhpVJyZCaRTqWS
-D//gsWD9Gm9oUZljjRqLpcxCm5t9ImPTqaD8zp6Q30QZ9FxbNboW86eb/8ECAwEAAaOCAUsw
-ggFHMB8GA1UdIwQYMBaAFImCZ33EnSZwAEu0UEh83j2uBG59MB0GA1UdDgQWBBR6E04AdFvG
-eGNkJ8Ev4qBbvHnFezAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBADARBgNV
-HSAECjAIMAYGBFUdIAAwWAYDVR0fBFEwTzBNoEugSYZHaHR0cDovL2NybC51c2VydHJ1c3Qu
-Y29tL1VUTi1VU0VSRmlyc3QtQ2xpZW50QXV0aGVudGljYXRpb25hbmRFbWFpbC5jcmwwdAYI
-KwYBBQUHAQEEaDBmMD0GCCsGAQUFBzAChjFodHRwOi8vY3J0LnVzZXJ0cnVzdC5jb20vVVRO
-QWRkVHJ1c3RDbGllbnRfQ0EuY3J0MCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1
-c3QuY29tMA0GCSqGSIb3DQEBBQUAA4IBAQCF1r54V1VtM39EUv5C1QaoAQOAivsNsv1Kv/av
-QUn1G1rF0q0bc24+6SZ85kyYwTAo38v7QjyhJT4KddbQPTmGZtGhm7VNm2+vKGwdr+XqdFqo
-2rHA8XV6L566k3nK/uKRHlZ0sviN0+BDchvtj/1gOSBH+4uvOmVIPJg9pSW/ve9g4EnlFsjr
-P0OD8ODuDcHTzTNfm9C9YGqzO/761Mk6PB/tm/+bSTO+Qik5g+4zaS6CnUVNqGnagBsePdIa
-XXxHmaWbCG0SmYbWXVcHG6cwvktJRLiQfsrReTjrtDP6oDpdJlieYVUYtCHVmdXgQ0BCML7q
-peeU0rD+83X5f27nMIIGKjCCBRKgAwIBAgIQe0M2gANgSzQ1kygHi18BPzANBgkqhkiG9w0B
-AQUFADCBkzELMAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4G
-A1UEBxMHU2FsZm9yZDEaMBgGA1UEChMRQ09NT0RPIENBIExpbWl0ZWQxOTA3BgNVBAMTMENP
-TU9ETyBDbGllbnQgQXV0aGVudGljYXRpb24gYW5kIFNlY3VyZSBFbWFpbCBDQTAeFw0xMzAy
-MTEwMDAwMDBaFw0xNjAyMTEyMzU5NTlaMIIBPjELMAkGA1UEBhMCVVMxEzARBgNVBBETCjk3
-MjAxLTU4ODExCzAJBgNVBAgTAk9SMREwDwYDVQQHEwhQb3J0bGFuZDETMBEGA1UECRMKU3Vp
-dGUgMTE3MDEdMBsGA1UECRMUMTUwMCBTVyBGaXJzdCBBdmVudWUxGTAXBgNVBAoTEE1lcnNl
-bm5lIExhdyBMTEMxGjAYBgNVBAsTEUludGVybmV0IFNlY3VyaXR5MTYwNAYDVQQLEy1Jc3N1
-ZWQgdGhyb3VnaCBNZXJzZW5uZSBMYXcgTExDIEUtUEtJIE1hbmFnZXIxHzAdBgNVBAsTFkNv
-cnBvcmF0ZSBTZWN1cmUgRW1haWwxFTATBgNVBAMTDERhdmlkIE1hZGRlbjEfMB0GCSqGSIb3
-DQEJARYQZGhtQG1lcnNlbm5lLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
-ALBRjsK5wH1EGDHuuc6l+sDExd5y3NIIUmhCCoLDYm0pmiP2xYUU8+XG+TEfkhKvkD9nGMHI
-WQTr77i4lfsT1s7WxEYB98ksJPQdSUsbtwXzsXGxJVnrA+7shMSjFOwK8TgFBY7jYmg0bRSD
-JJ3ZGVIXj6yAUquRknYMubEJ0GvrA2NsfzRx2El/YKOEDg7CRRlHhr6Zw6sGm3vK9RSL8x7L
-RlJdfCVOOCNyezJSeItpDNELvtBqInKfLe+X5kuNcZNJBG6o9MZE02gxCbToAVdjjmEalKhD
-4RlfXDtW+N93cF+ScSH8rr15JQNfZUWNr2TZ0fKLfJsTl6eer0S14S0CAwEAAaOCAcowggHG
-MB8GA1UdIwQYMBaAFHoTTgB0W8Z4Y2QnwS/ioFu8ecV7MB0GA1UdDgQWBBQ4x7EXcMqfR73w
-dfzsxXb+I8FhfjAOBgNVHQ8BAf8EBAMCBaAwDAYDVR0TAQH/BAIwADAdBgNVHSUEFjAUBggr
-BgEFBQcDBAYIKwYBBQUHAwIwRgYDVR0gBD8wPTA7BgwrBgEEAbIxAQIBAwUwKzApBggrBgEF
-BQcCARYdaHR0cHM6Ly9zZWN1cmUuY29tb2RvLm5ldC9DUFMwVwYDVR0fBFAwTjBMoEqgSIZG
-aHR0cDovL2NybC5jb21vZG9jYS5jb20vQ09NT0RPQ2xpZW50QXV0aGVudGljYXRpb25hbmRT
-ZWN1cmVFbWFpbENBLmNybDCBiAYIKwYBBQUHAQEEfDB6MFIGCCsGAQUFBzAChkZodHRwOi8v
-Y3J0LmNvbW9kb2NhLmNvbS9DT01PRE9DbGllbnRBdXRoZW50aWNhdGlvbmFuZFNlY3VyZUVt
-YWlsQ0EuY3J0MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5jb21vZG9jYS5jb20wGwYDVR0R
-BBQwEoEQZGhtQG1lcnNlbm5lLmNvbTANBgkqhkiG9w0BAQUFAAOCAQEAaCTdPasyZM2Nevh4
-Od8vgcrLRmbPlrcp8HO2IxL+pYGfTS2EoolssAeFy9wbRl4JwZKVcX2P1m0Bi5vHYiI1rH1P
-JVjA8eBhbNaDaAHClGGdBQzk9/AA9NluvQLnVEuWc7wkOoWW790A2idu5B+mMiKI0mXDpDYG
-xw4mY+YhG77yO9s+O/Kq/xW/wgDCHt3BW5XmppkQtVhzkWoSnaV5d8veOfMrO1sZB1jD7ww9
-DKcugjdTw1XzKrJyUjGOz15dGQIQMdbBolsFWHYGRSizmu19OhpcJk1/reB59UctY6ph+f16
-5ksbXgV1WgYHOGuU9w1ncYabfrL7q9IkReRJlDGCBBkwggQVAgEBMIGoMIGTMQswCQYDVQQG
-EwJHQjEbMBkGA1UECBMSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYDVQQHEwdTYWxmb3JkMRow
-GAYDVQQKExFDT01PRE8gQ0EgTGltaXRlZDE5MDcGA1UEAxMwQ09NT0RPIENsaWVudCBBdXRo
-ZW50aWNhdGlvbiBhbmQgU2VjdXJlIEVtYWlsIENBAhB7QzaAA2BLNDWTKAeLXwE/MAkGBSsO
-AwIaBQCgggJFMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTEz
-MTAxNTA0MDUzM1owIwYJKoZIhvcNAQkEMRYEFPKEuavgpy5+ESr/knk0iT8ruaPhMGwGCSqG
-SIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggq
-hkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgbkG
-CSsGAQQBgjcQBDGBqzCBqDCBkzELMAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFu
-Y2hlc3RlcjEQMA4GA1UEBxMHU2FsZm9yZDEaMBgGA1UEChMRQ09NT0RPIENBIExpbWl0ZWQx
-OTA3BgNVBAMTMENPTU9ETyBDbGllbnQgQXV0aGVudGljYXRpb24gYW5kIFNlY3VyZSBFbWFp
-bCBDQQIQe0M2gANgSzQ1kygHi18BPzCBuwYLKoZIhvcNAQkQAgsxgauggagwgZMxCzAJBgNV
-BAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNoZXN0ZXIxEDAOBgNVBAcTB1NhbGZvcmQx
-GjAYBgNVBAoTEUNPTU9ETyBDQSBMaW1pdGVkMTkwNwYDVQQDEzBDT01PRE8gQ2xpZW50IEF1
-dGhlbnRpY2F0aW9uIGFuZCBTZWN1cmUgRW1haWwgQ0ECEHtDNoADYEs0NZMoB4tfAT8wDQYJ
-KoZIhvcNAQEBBQAEggEAiau0rGV7ab0OACzRFVbkBfrMNvauGn25cGSX8ctVeRczEn0lt02s
-aoAsJqqNh+yYj/qUg+PSHBapuJs2Uas+puhB5UsrfulKHDQvtI56uwKAtIB8cFHTr0Vqb5oH
-2/zVOa3D45m2sKcQms2oDc3HmpRLYwNpHc/Mz9sid1NgTKWbE0BT+3Es8X12nYz5hbXrrYQb
-TrHts5XRVt6sRq7/aaKFpF0ig2mXC+4yXz68VEWJeq4WaLlqC4lU7uImqtusj+x7frevp0ER
-303R4ioLh5Ilx7DXbIBKDczphxQ9AkqxsZNEtZq/1IK67AxVvXwERPWDyXf9XQIhQwtgskzx
-AgAAAAAAAA==
---------------ms030908010804020604050003--
+for i in *
+do
+    # Skip snapshot names.
+    [ "${i/_/-}" != "$i" ] && continue
+    # Skip duplicate dirs once a year on DST 1h rewind.
+    test -d "$BTRFSROOT/${i}_${type}_$DATE" && continue
+    echo "Making snapshot of $type"
+    /sbin/btrfs subvolume snapshot "$BTRFSROOT"/$i "$BTRFSROOT/${i}_${type}_$DATE"
+    count="$(ls -d ${i}_${type}_* | wc -l)"
+    echo "Will delete the oldest $clip snapshots for $type"
+    clip=$(( $count - $keep ))
+    if [ $clip -gt 0 ]; then
+	for sub in $(ls -d ${i}_${type}_* | head -n $clip)
+	do
+	    #echo "Will delete $sub"
+	    /sbin/btrfs subvolume delete "$sub"
+	done
+    fi
+done
+---------------------------
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

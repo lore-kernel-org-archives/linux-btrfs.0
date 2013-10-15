@@ -1,84 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f47.google.com ([209.85.214.47]:63853 "EHLO
-	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933358Ab3JOSCt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 14:02:49 -0400
-Received: by mail-bk0-f47.google.com with SMTP id mx12so3258437bkb.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 11:02:48 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20131015180017.GC14323@localhost.localdomain>
-References: <1381859040-11211-1-git-send-email-fdmanana@gmail.com>
-	<20131015180017.GC14323@localhost.localdomain>
-Date: Tue, 15 Oct 2013 19:02:47 +0100
-Message-ID: <CAL3q7H4GfCHX0hOuR6Som4N8KZqQ0p4Z0M9PTCw_8guSV=2r+g@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix incorrect inode acl reset
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from xp-ob.rzone.de ([81.169.146.139]:25721 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933311Ab3JOSIT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Oct 2013 14:08:19 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (RZmta 32.6 OK) with ESMTP id X01629p9F9tNwu
+	for <linux-btrfs@vger.kernel.org>;
+	Tue, 15 Oct 2013 20:08:15 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: Don't allocate inode that is already in use
+Date: Tue, 15 Oct 2013 20:08:15 +0200
+Message-Id: <71e7d4e789d0d2d0cc9f1138cb4411a1d0ec5125.1381860425.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 15, 2013 at 7:00 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Tue, Oct 15, 2013 at 06:44:00PM +0100, Filipe David Borba Manana wrote:
->> When a directory has a default ACL and a subdirectory is created
->> under that directory, btrfs_init_acl() is called when the
->> subdirectory's inode is created to initialize the inode's ACL
->> (inherited from the parent directory) but it was clearing the ACL
->> from the inode after setting it if posix_acl_create() returned
->> success, instead of clearing it only if it returned an error.
->>
->> To reproduce this issue:
->>
->> $ mkfs.btrfs -f /dev/loop0
->> $ mount /dev/loop0 /mnt
->> $ mkdir /mnt/acl
->> $ setfacl -d --set u::rwx,g::rwx,o::- /mnt/acl
->> $ getfacl /mnt/acl
->> user::rwx
->> group::rwx
->> other::r-x
->> default:user::rwx
->> default:group::rwx
->> default:other::---
->>
->> $ mkdir /mnt/acl/dir1
->> $ getfacl /mnt/acl/dir1
->> user::rwx
->> group::rwx
->> other::---
->>
->> After unmounting and mounting again the filesystem, fgetacl returned the
->> expected ACL:
->>
->> $ umount /mnt/acl
->> $ mount /dev/loop0 /mnt
->> $ getfacl /mnt/acl/dir1
->> user::rwx
->> group::rwx
->> other::---
->> default:user::rwx
->> default:group::rwx
->> default:other::---
->>
->> Meaning that the underlying xattr was persisted.
->>
->
-> Can you put this into an xfstest please?  Thanks,
+Due to an off-by-one error, it is possible to reproduce a bug
+when the inode cache is used.
 
-A new one or just add it to an existing one (and which)?
+The same inode number is assigned twice, the second time this
+leads to an EEXIST in btrfs_insert_empty_items().
 
+The issue can happen when a file is removed right after a subvolume
+is created and then a new inode number is created before the
+inodes in free_inode_pinned are processed.
+unlink() calls btrfs_return_ino() which calls start_caching() in this
+case which adds [highest_ino + 1, BTRFS_LAST_FREE_OBJECTID] by
+searching for the highest inode (which already cannot find the
+unlinked one anymore in btrfs_find_free_objectid()). So if this
+unlinked inode's number is equal to the highest_ino + 1 (or >= this value
+instead of > this value which was the off-by-one error), we mustn't add
+the inode number to free_ino_pinned (caching_thread() does it right).
+In this case we need to try directly to add the number to the inode_cache
+which will fail in this case.
 
->
-> Josef
+When this inode number is allocated while it is still in free_ino_pinned,
+it is allocated and still added to the free inode cache when the
+pinned inodes are processed, thus one of the following inode number
+allocations will get an inode that is already in use and fail with EEXIST
+in btrfs_insert_empty_items().
 
+One example which was created with the reproducer below:
+Create a snapshot, work in the newly created snapshot for the rest.
+In unlink(inode 34284) call btrfs_return_ino() which calls start_caching().
+start_caching() calls add_free_space [34284, 18446744073709517077].
+In btrfs_return_ino(), call start_caching pinned [34284, 1] which is wrong.
+mkdir() call btrfs_find_ino_for_alloc() which returns the number 34284.
+btrfs_unpin_free_ino calls add_free_space [34284, 1].
+mkdir() call btrfs_find_ino_for_alloc() which returns the number 34284.
+EEXIST when the new inode is inserted.
 
+One possible reproducer is this one:
+ #!/bin/sh
+ # preparation
+TEST_DEV=/dev/sdc1
+TEST_MNT=/mnt
+umount ${TEST_MNT} 2>/dev/null || true
+mkfs.btrfs -f ${TEST_DEV}
+mount ${TEST_DEV} ${TEST_MNT} -o \
+ rw,relatime,compress=lzo,space_cache,inode_cache
+btrfs subv create ${TEST_MNT}/s1
+for i in `seq 34027`; do touch ${TEST_MNT}/s1/${i}; done
+btrfs subv snap ${TEST_MNT}/s1 ${TEST_MNT}/s2
+FILENAME=`find ${TEST_MNT}/s1/ -inum 4085 | sed 's|^.*/\([^/]*\)$|\1|'`
+rm ${TEST_MNT}/s2/$FILENAME
+touch ${TEST_MNT}/s2/$FILENAME
+ # the following steps can be repeated to reproduce the issue again and again
+[ -e ${TEST_MNT}/s3 ] && btrfs subv del ${TEST_MNT}/s3
+btrfs subv snap ${TEST_MNT}/s2 ${TEST_MNT}/s3
+rm ${TEST_MNT}/s3/$FILENAME
+touch ${TEST_MNT}/s3/$FILENAME
+ls -alFi ${TEST_MNT}/s?/$FILENAME
+touch ${TEST_MNT}/s3/_1 || logger FAILED
+ls -alFi ${TEST_MNT}/s?/_1
+touch ${TEST_MNT}/s3/_2 || logger FAILED
+ls -alFi ${TEST_MNT}/s?/_2
+touch ${TEST_MNT}/s3/__1 || logger FAILED
+ls -alFi ${TEST_MNT}/s?/__1
+touch ${TEST_MNT}/s3/__2 || logger FAILED
+ls -alFi ${TEST_MNT}/s?/__2
+ # if the above is not enough, add the following loop:
+for i in `seq 3 9`; do touch ${TEST_MNT}/s3/__${i} || logger FAILED; done
+ #for i in `seq 3 34027`; do touch ${TEST_MNT}/s3/__${i} || logger FAILED; done
+ # one of the touch(1) calls in s3 fail due to EEXIST because the inode is
+ # already in use that btrfs_find_ino_for_alloc() returns.
 
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/inode-map.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 014de49..ec08004 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -237,7 +237,7 @@ again:
+ 		start_caching(root);
+ 
+ 		if (objectid <= root->cache_progress ||
+-		    objectid > root->highest_objectid)
++		    objectid >= root->highest_objectid)
+ 			__btrfs_add_free_space(ctl, objectid, 1);
+ 		else
+ 			__btrfs_add_free_space(pinned, objectid, 1);
 -- 
-Filipe David Manana,
+1.8.4
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

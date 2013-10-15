@@ -1,105 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f54.google.com ([209.85.214.54]:44844 "EHLO
-	mail-bk0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933388Ab3JOR2q (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:52856 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932510Ab3JORo7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 13:28:46 -0400
-Received: by mail-bk0-f54.google.com with SMTP id mz12so3379812bkb.27
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 10:28:44 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAN3gubk5xUxBzjZdknNc3j=at-z22t52ii+_aMBvLsk2RL1t_w@mail.gmail.com>
-References: <CAN3gubk5xUxBzjZdknNc3j=at-z22t52ii+_aMBvLsk2RL1t_w@mail.gmail.com>
-Date: Tue, 15 Oct 2013 18:28:44 +0100
-Message-ID: <CAL3q7H5OC2Z-aak8kEDBQoXRrd33gVusT-9D5C6+-CXD73gs4w@mail.gmail.com>
-Subject: Re: ACL rules doesn't propagate on btrfs
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Giuseppe Fierro <giuseppe@fierro.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Tue, 15 Oct 2013 13:44:59 -0400
+Received: by mail-wi0-f176.google.com with SMTP id l12so5480792wiv.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 10:44:58 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix incorrect inode acl reset
+Date: Tue, 15 Oct 2013 18:44:00 +0100
+Message-Id: <1381859040-11211-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 15, 2013 at 4:56 PM, Giuseppe Fierro <giuseppe@fierro.org> wrote:
-> I'm playing with acl permission on btrfs (my favourite filesytem).
-> When I set ACL permission on directory happens that this permission doesn't
-> propagate inside the directory structure.
->
-> As you can see from the following example after the second level the ACL's
-> rules are completely forgotten.
->
->
-> gspe@Jura:~/Videos$ sudo mkdir test_prj
->> [sudo] password for gspe:
->> gspe@Jura:~/Videos$ ls -l
->> total 0
->> drwxr-xr-x 1 root root 0 ott 15 17:48 test_prj
->> gspe@Jura:~/Videos$ sudo chown root:gmingegneria test_prj
->> gspe@Jura:~/Videos$ ls -l
->> total 0
->> drwxr-xr-x 1 root gmingegneria 0 ott 15 17:48 test_prj
->> gspe@Jura:~/Videos$ sudo chmod o-rwx test_prj
->> gspe@Jura:~/Videos$ sudo chmod g+rwx test_prj
->> gspe@Jura:~/Videos$ ls -l
->> total 0
->> drwxrwx--- 1 root gmingegneria 0 ott 15 17:48 test_prj
->> gspe@Jura:~/Videos$ sudo chmod g+s test_prj
->> gspe@Jura:~/Videos$ ls -l
->> total 0
->> drwxrws--- 1 root gmingegneria 0 ott 15 17:48 test_prj
->> gspe@Jura:~/Videos$ sudo setfacl -d --set u::rwx,g::rwx,o::- test_prj
->> gspe@Jura:~/Videos$ ls -l
->> total 0
->> drwxrws---+ 1 root gmingegneria 0 ott 15 17:48 test_prj
->> gspe@Jura:~/Videos$ getfacl test_prj
->> # file: test_prj
->> # owner: root
->> # group: gmingegneria
->> # flags: -s-
->> user::rwx
->> group::rwx
->> other::---
->> default:user::rwx
->> default:group::rwx
->> default:other::---
->> gspe@Jura:~/Videos$ cd test_prj
->> gspe@Jura:~/Videos/test_prj$ touch file01
->> gspe@Jura:~/Videos/test_prj$ mkdir test01
->> gspe@Jura:~/Videos/test_prj$ ls -l
->> total 0
->> -rw-rw---- 1 gspe gmingegneria 0 ott 15 17:51 file01
->> drwxrws--- 1 gspe gmingegneria 0 ott 15 17:51 test01
->> gspe@Jura:~/Videos/test_prj$ getfacl file01
->> # file: file01
->> # owner: gspe
->> # group: gmingegneria
->> user::rw-
->> group::rw-
->> other::---
->> gspe@Jura:~/Videos/test_prj$ getfacl test01
->> # file: test01
->> # owner: gspe
->> # group: gmingegneria
->> # flags: -s-
->> user::rwx
->> group::rwx
->> other::---
->> gspe@Jura:~/Videos/test_prj$ cd test01
+When a directory has a default ACL and a subdirectory is created
+under that directory, btrfs_init_acl() is called when the
+subdirectory's inode is created to initialize the inode's ACL
+(inherited from the parent directory) but it was clearing the ACL
+from the inode after setting it if posix_acl_create() returned
+success, instead of clearing it only if it returned an error.
 
-Confirmed here with btrfs-next and found out why it happens. If you
-unmount and mount again the fs, getfacl returns the expected output.
-Sending a patch soon.
+To reproduce this issue:
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+$ mkfs.btrfs -f /dev/loop0
+$ mount /dev/loop0 /mnt
+$ mkdir /mnt/acl
+$ setfacl -d --set u::rwx,g::rwx,o::- /mnt/acl
+$ getfacl /mnt/acl
+user::rwx
+group::rwx
+other::r-x
+default:user::rwx
+default:group::rwx
+default:other::---
 
+$ mkdir /mnt/acl/dir1
+$ getfacl /mnt/acl/dir1
+user::rwx
+group::rwx
+other::---
 
+After unmounting and mounting again the filesystem, fgetacl returned the
+expected ACL:
 
+$ umount /mnt/acl
+$ mount /dev/loop0 /mnt
+$ getfacl /mnt/acl/dir1
+user::rwx
+group::rwx
+other::---
+default:user::rwx
+default:group::rwx
+default:other::---
+
+Meaning that the underlying xattr was persisted.
+
+Reported-by: Giuseppe Fierro <giuseppe@fierro.org>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/acl.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index e15d2b0..0890c83 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -229,7 +229,7 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 		if (ret > 0) {
+ 			/* we need an acl */
+ 			ret = btrfs_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
+-		} else {
++		} else if (ret < 0) {
+ 			cache_no_acl(inode);
+ 		}
+ 	} else {
 -- 
-Filipe David Manana,
+1.7.9.5
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

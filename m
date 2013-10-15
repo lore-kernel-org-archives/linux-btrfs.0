@@ -1,47 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:54959 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758875Ab3JONiR (ORCPT
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:57660 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932606Ab3JOP4z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 09:38:17 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 152F09A03ED
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 07:38:17 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id ql6biqEGtCseIKkl (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 07:38:16 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: add an assert to btrfs_lookup_csums_range for alignment
-Date: Tue, 15 Oct 2013 09:38:14 -0400
-Message-ID: <1381844294-6866-1-git-send-email-jbacik@fusionio.com>
+	Tue, 15 Oct 2013 11:56:55 -0400
+Received: by mail-ie0-f177.google.com with SMTP id e14so11692750iej.36
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2013 08:56:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+Date: Tue, 15 Oct 2013 17:56:54 +0200
+Message-ID: <CAN3gubk5xUxBzjZdknNc3j=at-z22t52ii+_aMBvLsk2RL1t_w@mail.gmail.com>
+Subject: ACL rules doesn't propagate on btrfs
+From: Giuseppe Fierro <giuseppe@fierro.org>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was hitting weird issues when trying to remove hole extents and it turned out
-it was because I was sending non-aligned offsets down to
-btrfs_lookup_csums_range.  So add an assert for this in case somebody trips over
-this in the future.  Thanks,
+I'm playing with acl permission on btrfs (my favourite filesytem).
+When I set ACL permission on directory happens that this permission doesn't
+propagate inside the directory structure.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/file-item.c | 3 +++
- 1 file changed, 3 insertions(+)
+As you can see from the following example after the second level the ACL's
+rules are completely forgotten.
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4f53159..ae8a513 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -329,6 +329,9 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	u64 csum_end;
- 	u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
- 
-+	ASSERT(start == ALIGN(start, root->sectorsize) &&
-+	       (end + 1) == ALIGN(end + 1, root->sectorsize));
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--- 
-1.8.3.1
 
+gspe@Jura:~/Videos$ sudo mkdir test_prj
+> [sudo] password for gspe:
+> gspe@Jura:~/Videos$ ls -l
+> total 0
+> drwxr-xr-x 1 root root 0 ott 15 17:48 test_prj
+> gspe@Jura:~/Videos$ sudo chown root:gmingegneria test_prj
+> gspe@Jura:~/Videos$ ls -l
+> total 0
+> drwxr-xr-x 1 root gmingegneria 0 ott 15 17:48 test_prj
+> gspe@Jura:~/Videos$ sudo chmod o-rwx test_prj
+> gspe@Jura:~/Videos$ sudo chmod g+rwx test_prj
+> gspe@Jura:~/Videos$ ls -l
+> total 0
+> drwxrwx--- 1 root gmingegneria 0 ott 15 17:48 test_prj
+> gspe@Jura:~/Videos$ sudo chmod g+s test_prj
+> gspe@Jura:~/Videos$ ls -l
+> total 0
+> drwxrws--- 1 root gmingegneria 0 ott 15 17:48 test_prj
+> gspe@Jura:~/Videos$ sudo setfacl -d --set u::rwx,g::rwx,o::- test_prj
+> gspe@Jura:~/Videos$ ls -l
+> total 0
+> drwxrws---+ 1 root gmingegneria 0 ott 15 17:48 test_prj
+> gspe@Jura:~/Videos$ getfacl test_prj
+> # file: test_prj
+> # owner: root
+> # group: gmingegneria
+> # flags: -s-
+> user::rwx
+> group::rwx
+> other::---
+> default:user::rwx
+> default:group::rwx
+> default:other::---
+> gspe@Jura:~/Videos$ cd test_prj
+> gspe@Jura:~/Videos/test_prj$ touch file01
+> gspe@Jura:~/Videos/test_prj$ mkdir test01
+> gspe@Jura:~/Videos/test_prj$ ls -l
+> total 0
+> -rw-rw---- 1 gspe gmingegneria 0 ott 15 17:51 file01
+> drwxrws--- 1 gspe gmingegneria 0 ott 15 17:51 test01
+> gspe@Jura:~/Videos/test_prj$ getfacl file01
+> # file: file01
+> # owner: gspe
+> # group: gmingegneria
+> user::rw-
+> group::rw-
+> other::---
+> gspe@Jura:~/Videos/test_prj$ getfacl test01
+> # file: test01
+> # owner: gspe
+> # group: gmingegneria
+> # flags: -s-
+> user::rwx
+> group::rwx
+> other::---
+> gspe@Jura:~/Videos/test_prj$ cd test01

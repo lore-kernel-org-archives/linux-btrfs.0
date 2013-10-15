@@ -1,33 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:64596 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:35083 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933767Ab3JOUly (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 16:41:54 -0400
-Date: Tue, 15 Oct 2013 13:41:48 -0700
-From: Zach Brown <zab@redhat.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: Don't allocate inode that is already in use
-Message-ID: <20131015204148.GK11338@lenny.home.zabbo.net>
-References: <71e7d4e789d0d2d0cc9f1138cb4411a1d0ec5125.1381860425.git.sbehrens@giantdisaster.de>
- <525D8F79.80708@jan-o-sch.net>
+	id S1759560Ab3JOUuW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Oct 2013 16:50:22 -0400
+Date: Tue, 15 Oct 2013 22:50:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: regression, can't mount subvol if default subvol is changed
+Message-ID: <20131015205019.GO5787@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <4D0EBD9B-30A2-44CB-89E2-CD028BECF1C2@colorremedies.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <525D8F79.80708@jan-o-sch.net>
+In-Reply-To: <4D0EBD9B-30A2-44CB-89E2-CD028BECF1C2@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Probably a bit too obscure to turn this into  an xfstest? At least nobody
-> complained so far, and this reproducer takes me 1m57 to run, so nothing I want
-> in each xfstest cycle.
+On Tue, Oct 15, 2013 at 01:23:44PM -0600, Chris Murphy wrote:
+> After changing the default subvolume, I can't mount a nested subvolume
+> with a correct relative pathname to the default subvolume; it can only
+> be mounted by absolute path or subvolid.
 
-I disagree.  The entire point of regression tests is to trigger bugs
-that the usual processes failed to find, like this one.
+The path to subvol= is always taken as absolute, no matter if the path
+starts with / or not.
 
-If you think that two minutes is too long for a test to run then mark it
-as "stress" (is that the xfstests group for boring long running tests?)
-or take the time to make a tighter test.
-
-Don't just skip regression testing.  Please.
-
-- z
+david

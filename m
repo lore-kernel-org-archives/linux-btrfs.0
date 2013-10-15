@@ -1,39 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:16141 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1759560Ab3JOVwz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 17:52:55 -0400
+Received: from cantor2.suse.de ([195.135.220.15]:36934 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932802Ab3JOV6W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Oct 2013 17:58:22 -0400
+Date: Tue, 15 Oct 2013 23:58:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix incorrect inode acl reset
+Message-ID: <20131015215819.GQ5787@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1381859040-11211-1-git-send-email-fdmanana@gmail.com>
+ <20131015180017.GC14323@localhost.localdomain>
+ <CAL3q7H4GfCHX0hOuR6Som4N8KZqQ0p4Z0M9PTCw_8guSV=2r+g@mail.gmail.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: regression, can't mount subvol if default subvol is changed
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20131015214849.GP5787@twin.jikos.cz>
-Date: Tue, 15 Oct 2013 15:52:55 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <31AE2480-274F-4726-9E29-33495E02DD81@colorremedies.com>
-References: <4D0EBD9B-30A2-44CB-89E2-CD028BECF1C2@colorremedies.com> <20131015205019.GO5787@twin.jikos.cz> <64C31F98-8C69-458F-ADCB-14EE19770C1D@colorremedies.com> <20131015214849.GP5787@twin.jikos.cz>
-To: dsterba@suse.cz
+In-Reply-To: <CAL3q7H4GfCHX0hOuR6Som4N8KZqQ0p4Z0M9PTCw_8guSV=2r+g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Oct 15, 2013, at 3:48 PM, David Sterba <dsterba@suse.cz> wrote:
-
-> On Tue, Oct 15, 2013 at 02:58:22PM -0600, Chris Murphy wrote:
->> Looks like this changed with the 3.2 kernel " Subvolumes mountable by
->> full path", I thought that was in addition to relative rather than a
->> total change in behavior. Good to know.
+On Tue, Oct 15, 2013 at 07:02:47PM +0100, Filipe David Manana wrote:
+> > Can you put this into an xfstest please?  Thanks,
 > 
-> Yes, the pre-3.2 behaviour was limited to subvolumes in the toplevel
-> subvolume, nested subvols were mountable via subvolrootid, but that was
-> only a clumsy temporary workaround.
-> 
->> Is the idea that subvolume set-default only affects mount -o defaults
->> behavior and nothing else?
-> 
-> Yes.
+> A new one or just add it to an existing one (and which)?
 
-Great, thanks for the clarification.
+There's xfstests/shared/051 that tests ACLs, but is run only against xfs
+and udf. I haven't verified it wrt btrfs, but maybe this test catches
+the bug. If not, please add a new test into the 'generic' category.
 
-Chris Murphy
+thanks,
+david

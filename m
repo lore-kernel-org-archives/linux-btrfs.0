@@ -1,27 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout03.t-online.de ([194.25.134.81]:59789 "EHLO
-	mailout03.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753790Ab3JPTMz convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 15:12:55 -0400
-Received: from nas2.weinberger.local ([192.168.0.1] ident=zarafa)
-	by nas2.weinberger.local with esmtp (Exim 4.80)
-	(envelope-from <christian.weinberger@t-online.de>)
-	id 1VWWWT-00055k-Ql
-	for linux-btrfs@vger.kernel.org; Wed, 16 Oct 2013 21:12:45 +0200
-Subject: [BUG] Reflinking fails for files >2GB on 32-bit platform [SOLVED ->
- NO BUG]
-From: =?utf-8?Q?Christian_Weinberger?= <christian.weinberger@t-online.de>
-To: =?utf-8?Q?linux-btrfs=40vger=2Ekernel=2Eorg?=
-	<linux-btrfs@vger.kernel.org>
-Date: Wed, 16 Oct 2013 21:12:45 +0200
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Message-Id: <zarafa.525ee52d.4c75.31a740822e21b082@nas2.weinberger.local>
+Received: from cantor2.suse.de ([195.135.220.15]:55206 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1761410Ab3JPU1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Oct 2013 16:27:05 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id E2409A57B3
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Oct 2013 22:27:04 +0200 (CEST)
+Message-ID: <525EF695.9020307@suse.com>
+Date: Wed, 16 Oct 2013 16:27:01 -0400
+From: Jeff Mahoney <jeffm@suse.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: add tracing for failed reservations
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore the previous post.
-I have to correct myself, this is not a btrfs issue. In fact, the wrong (non 64 bit) calls have been used in the test program.
+When debugging ENOSPC issues, it's nice to be able to see which
+reservations failed as well as the ones which succeeded.
 
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
+--- a/fs/btrfs/extent-tree.c	2013-10-13 18:41:28.000000000 -0400
++++ b/fs/btrfs/extent-tree.c	2013-10-16 16:23:27.986639216 -0400
+@@ -3681,6 +3681,9 @@ commit_trans:
+ 			goto again;
+ 		}
+ 
++		trace_btrfs_space_reservation(root->fs_info,
++					      "space_info:enospc",
++					      data_sinfo->flags, bytes, 1);
+ 		return -ENOSPC;
+ 	}
+ 	data_sinfo->bytes_may_use += bytes;
+@@ -4332,6 +4335,10 @@ out:
+ 		    !block_rsv_use_bytes(global_rsv, orig_bytes))
+ 			ret = 0;
+ 	}
++	if (ret == -ENOSPC)
++		trace_btrfs_space_reservation(root->fs_info,
++					      "space_info:enospc",
++					      space_info->flags, orig_bytes, 1);
+ 	if (flushing) {
+ 		spin_lock(&space_info->lock);
+ 		space_info->flush = 0;
+
+-- 
+Jeff Mahoney
+SUSE Labs

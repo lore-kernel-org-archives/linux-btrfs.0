@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay2.sgi.com ([192.48.179.30]:40655 "EHLO relay.sgi.com"
+Received: from relay2.sgi.com ([192.48.179.30]:43343 "EHLO relay.sgi.com"
 	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1760584Ab3JPT4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 15:56:03 -0400
-Message-ID: <525EEF71.5000500@sgi.com>
-Date: Wed, 16 Oct 2013 14:56:33 -0500
+	id S1753790Ab3JPT70 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Oct 2013 15:59:26 -0400
+Message-ID: <525EF03C.10102@sgi.com>
+Date: Wed, 16 Oct 2013 14:59:56 -0500
 From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fusionio.com>, <xfs@oss.sgi.com>,
@@ -16,8 +16,14 @@ Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As it was tested by David Sterba
+This has been committed.
 
-Lokks good
+Thanks
+--Rich
 
-Reviewed-by: Rich Johnston <rjohnston@sgi.com>
+commit d4bc9576f09992dfc76eb34bb1aca3e80eaee1e7
+Author: Josef Bacik <jbacik@fusionio.com>
+Date:   Wed Sep 18 20:48:27 2013 +0000
+
+     xfstests: fix set-default test in btrfs/001
+

@@ -1,57 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:48485 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760524Ab3JPMtz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 08:49:55 -0400
-Message-ID: <525E8B72.1060706@jan-o-sch.net>
-Date: Wed, 16 Oct 2013 14:49:54 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from mail-bk0-f42.google.com ([209.85.214.42]:51008 "EHLO
+	mail-bk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760584Ab3JPOGu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Oct 2013 10:06:50 -0400
+Received: by mail-bk0-f42.google.com with SMTP id my10so294760bkb.29
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Oct 2013 07:06:48 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use right root when checking for hash collision
-References: <1381336002-3016-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1381336002-3016-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20131015215819.GQ5787@twin.jikos.cz>
+References: <1381859040-11211-1-git-send-email-fdmanana@gmail.com>
+	<20131015180017.GC14323@localhost.localdomain>
+	<CAL3q7H4GfCHX0hOuR6Som4N8KZqQ0p4Z0M9PTCw_8guSV=2r+g@mail.gmail.com>
+	<20131015215819.GQ5787@twin.jikos.cz>
+Date: Wed, 16 Oct 2013 15:06:48 +0100
+Message-ID: <CAL3q7H7n35feUMRGS=5VW+kzzjJWT5vu-1NHcAOZmQ8sx2YOQw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix incorrect inode acl reset
+From: Filipe David Manana <fdmanana@gmail.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>,
+        Filipe David Manana <fdmanana@gmail.com>,
+        Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, October 09, 2013 at 18:26 (+0200), Josef Bacik wrote:
-> btrfs_rename was using the root of the old dir instead of the root of the new
-> dir when checking for a hash collision, so if you tried to move a file into a
-> subvol it would freak out because it would see the file you are trying to move
-> in its current root.  This fixes the bug where this would fail
-> 
-> btrfs subvol create test1
-> btrfs subvol create test2
-> mv test1 test2.
-> 
-> Thanks to Chris Murphy for catching this,
-> 
-> Reported-by: Chris Murphy <lists@colorremedies.com>
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/inode.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 1d7ef37..d468246 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7993,7 +7993,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
->  
->  
->  	/* check for collisions, even if the  name isn't there */
-> -	ret = btrfs_check_dir_item_collision(root, new_dir->i_ino,
-> +	ret = btrfs_check_dir_item_collision(dest, new_dir->i_ino,
->  			     new_dentry->d_name.name,
->  			     new_dentry->d_name.len);
+On Tue, Oct 15, 2013 at 10:58 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Tue, Oct 15, 2013 at 07:02:47PM +0100, Filipe David Manana wrote:
+>> > Can you put this into an xfstest please?  Thanks,
+>>
+>> A new one or just add it to an existing one (and which)?
+>
+> There's xfstests/shared/051 that tests ACLs, but is run only against xfs
+> and udf. I haven't verified it wrt btrfs, but maybe this test catches
+> the bug. If not, please add a new test into the 'generic' category.
 
-Looks correct.
+I adapted shared/051 to make it work with btrfs too.
+However the test as it is, doesn't trigger the default ACL inheritance
+issue, so I added the steps from the commit message to the test.
 
-I claim that better variable names would have had avoided this bug. The code
-uses old_dir / new_dir, old_entry / new_entry, old_inode / new_inode - so, while
-you're at it: How about changing the variables to old_root / new_root instead of
-keeping root / dest?
+Thanks David.
 
-- Jan
+>
+> thanks,
+> david
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

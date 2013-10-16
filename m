@@ -1,140 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:43757 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934214Ab3JPOFN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 10:05:13 -0400
-Received: by mail-wg0-f42.google.com with SMTP id n12so3992537wgh.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Oct 2013 07:05:11 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Cc: jbacik@fusionio.com, dsterba@suse.cz,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] xfstests: add specific test for default ACL inheritance
-Date: Wed, 16 Oct 2013 15:04:56 +0100
-Message-Id: <1381932296-14674-1-git-send-email-fdmanana@gmail.com>
+Received: from sandeen.net ([63.231.237.45]:51228 "EHLO sandeen.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757134Ab3JPPKY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Oct 2013 11:10:24 -0400
+Message-ID: <525EAC5F.3040201@sandeen.net>
+Date: Wed, 16 Oct 2013 10:10:23 -0500
+From: Eric Sandeen <sandeen@sandeen.net>
+MIME-Version: 1.0
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com, dsterba@suse.cz,
+        jbacik@fusionio.com
+Subject: Re: [PATCH] xfstests: add specific test for default ACL inheritance
+References: <1381932296-14674-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1381932296-14674-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test is motivated by an issue found by a btrfs user, addressed
-and described by the following GNU/Linux kernel patch:
+On 10/16/13 9:04 AM, Filipe David Borba Manana wrote:
+> This test is motivated by an issue found by a btrfs user, addressed
+> and described by the following GNU/Linux kernel patch:
+> 
+> https://patchwork.kernel.org/patch/3046931/
 
-https://patchwork.kernel.org/patch/3046931/
+Hi Filipe, thanks for the patch.
 
-The steps to reproduce the issue on btrfs are the following:
+Usually we don't want to add new, possibly-failing cases to old tests;
+that makes it harder to identify when the code regressed vs. when
+the test changed to test new things.
 
-$ mkfs.btrfs -f /dev/loop0
-$ mount /dev/loop0 /mnt
-$ mkdir /mnt/acl
-$ setfacl -d --set u::rwx,g::rwx,o::- /mnt/acl
-$ getfacl /mnt/acl
-user::rwx
-group::rwx
-other::r-x
-default:user::rwx
-default:group::rwx
-default:other::---
+It would be better to just copy the framework of tests/shared/051
+to a new test in shared/ and test only this new inheritance
+problem.
 
-$ mkdir /mnt/acl/dir1
-$ getfacl /mnt/acl/dir1
-user::rwx
-group::rwx
-other::---
+Also, I'm confused about this hunk:
 
-After unmounting and mounting again the filesystem, getfacl returned the
-expected default ACL for the subdirectory:
+> @@ -345,7 +345,12 @@ chacl $acl2 largeaclfile
+>  getfacl --numeric largeaclfile | _filter_aces
+>  
+>  echo "1 above xfs acl max"
+> -chacl $acl3 largeaclfile
+> +if [ "$FSTYP" != "btrfs" ]; then
+> +	chacl $acl3 largeaclfile
+> +else
+> +	echo 'chacl: cannot set access acl on "largeaclfile": Invalid argument'
+> +fi
+> +
+>  getfacl --numeric largeaclfile | _filter_aces
+>  
+>  echo "use 16 aces"
 
-$ umount /mnt/acl
-$ mount /dev/loop0 /mnt
-$ getfacl /mnt/acl/dir1
-user::rwx
-group::rwx
-other::---
-default:user::rwx
-default:group::rwx
-default:other::---
+What's that about?
 
-This means that the underlying ACL xattr was persisted correctly but
-the in memory representation of the inode had (incorrectly) a NULL ACL.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- tests/shared/051     |   18 ++++++++++++++++--
- tests/shared/051.out |   21 +++++++++++++++++++++
- 2 files changed, 37 insertions(+), 2 deletions(-)
-
-diff --git a/tests/shared/051 b/tests/shared/051
-index 07399cc..56a4c10 100755
---- a/tests/shared/051
-+++ b/tests/shared/051
-@@ -69,7 +69,7 @@ _cleanup()
- #
- 
- # real QA test starts here
--_supported_fs xfs udf
-+_supported_fs xfs udf btrfs
- _supported_os Linux
- 
- [ -x $runas ] || _notrun "$runas executable not found"
-@@ -345,7 +345,12 @@ chacl $acl2 largeaclfile
- getfacl --numeric largeaclfile | _filter_aces
- 
- echo "1 above xfs acl max"
--chacl $acl3 largeaclfile
-+if [ "$FSTYP" != "btrfs" ]; then
-+	chacl $acl3 largeaclfile
-+else
-+	echo 'chacl: cannot set access acl on "largeaclfile": Invalid argument'
-+fi
-+
- getfacl --numeric largeaclfile | _filter_aces
- 
- echo "use 16 aces"
-@@ -356,6 +361,15 @@ echo "use 17 aces"
- chacl $acl5 largeaclfile
- getfacl --numeric largeaclfile | _filter_aces
- 
-+echo "=== Test child directory inheritance of its parent's default ACL ==="
-+
-+mkdir $SCRATCH_MNT/testdir
-+setfacl -d --set u::rwx,g::rwx,o::- $SCRATCH_MNT/testdir
-+getfacl --absolute-names $SCRATCH_MNT/testdir | _filter_scratch
-+
-+mkdir $SCRATCH_MNT/testdir/testsubdir
-+getfacl --absolute-names $SCRATCH_MNT/testdir/testsubdir | _filter_scratch
-+
- #-------------------------------------------------------
- 
- # success, all done
-diff --git a/tests/shared/051.out b/tests/shared/051.out
-index a871082..5f0b620 100644
---- a/tests/shared/051.out
-+++ b/tests/shared/051.out
-@@ -353,3 +353,24 @@ group::rwx
- mask::rwx
- other::rwx
- 
-+=== Test child directory inheritance of its parent's default ACL ===
-+# file: SCRATCH_MNT/testdir
-+# owner: root
-+# group: root
-+user::rwx
-+group::r-x
-+other::r-x
-+default:user::rwx
-+default:group::rwx
-+default:other::---
-+
-+# file: SCRATCH_MNT/testdir/testsubdir
-+# owner: root
-+# group: root
-+user::rwx
-+group::rwx
-+other::---
-+default:user::rwx
-+default:group::rwx
-+default:other::---
-+
--- 
-1.7.9.5
+Thanks,
+-Eric
 

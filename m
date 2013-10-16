@@ -1,82 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20916 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750862Ab3JPFpT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 01:45:19 -0400
-Date: Wed, 16 Oct 2013 13:45:01 +0800
-Subject: RE: No apparent effect for "btrfs device delete missing"
-Message-ID: <vv06gquljp918ecd9089vg02.1381902301093@email.android.com>
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, Martin <m_btrfs@ml1.co.uk>
+Received: from cantor2.suse.de ([195.135.220.15]:53644 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1760230Ab3JPTo2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Oct 2013 15:44:28 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2952FA57B3
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Oct 2013 21:44:27 +0200 (CEST)
+Message-ID: <525EEC96.4040306@suse.com>
+Date: Wed, 16 Oct 2013 15:44:22 -0400
+From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: add ioctl to export size of global metadata reservation
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just a note_ btrfs fi show reads from the disks which could read the cache, you may try drop the cache or, use btrfs-progs from David latest integration to see kernel perspective.
+btrfs filesystem df output will show the size of the metadata space
+and how much of it is used, and the user assumes that the difference
+is all usable space. Since that's not actually the case due to the
+global metadata reservation, we should provide the full picture to the
+user.
 
-Martin <m_btrfs@ml1.co.uk> wrote:
+This patch adds an ioctl that exports the size of the global metadata
+reservation so that btrfs filesystem df can report it.
 
->Trying:
->
->btrfs device delete missing /
->
->appears not to do anything for a "/" mount for where I have swapped out
->a HDD:
->
->
-># btrfs filesystem show
->Label: 'test_btrfs_misc_5'  uuid: 7d29d4e6-efdc-41dc-9aa8-e74dfbe13cc9
->        Total devices 2 FS bytes used 28.00KB
->        devid    1 size 59.74GB used 2.03GB path /dev/sdd5
->        *** Some devices missing
->
->Label: 'test_btrfs_root_4'  uuid: 269e142c-e561-4227-b2b0-fe2f9fb99391
->        Total devices 3 FS bytes used 10.55GB
->        devid    4 size 56.00GB used 12.03GB path /dev/sde4
->        devid    1 size 56.00GB used 12.05GB path /dev/sdd4
->        *** Some devices missing
->
->Btrfs v0.20-rc1-358-g194aa4a
-># btrfs device delete missing /
-># btrfs filesystem show
->Label: 'test_btrfs_misc_5'  uuid: 7d29d4e6-efdc-41dc-9aa8-e74dfbe13cc9
->        Total devices 2 FS bytes used 28.00KB
->        devid    1 size 59.74GB used 2.03GB path /dev/sdd5
->        *** Some devices missing
->
->Label: 'test_btrfs_root_4'  uuid: 269e142c-e561-4227-b2b0-fe2f9fb99391
->        Total devices 3 FS bytes used 10.55GB
->        devid    4 size 56.00GB used 12.03GB path /dev/sde4
->        devid    1 size 56.00GB used 12.05GB path /dev/sdd4
->        *** Some devices missing
->
->Btrfs v0.20-rc1-358-g194aa4a
->
->
->All on the latest "Linux 3.11.5-gentoo".
->
-># df -h | egrep '/$'
->rootfs          112G   22G   89G  20% /
->/dev/sdd4       112G   22G   89G  20% /
->
->
->
->Aside: Adding the /dev/sde4 device caused no balance action until I
->deleted a device to reduce the raid1 mirror (data and metadata) down to
->the two devices.
->
->The "missing" device was an old HDD that had physically failed. No data
->was lost for that example failure.
->
->
->Hope of interest,
->Martin
->
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ioctl.c           |   16 ++++++++++++++++
+ include/uapi/linux/btrfs.h |    1 +
+ 2 files changed, 17 insertions(+)
+
+--- a/fs/btrfs/ioctl.c	2013-10-14 11:40:32.214512385 -0400
++++ b/fs/btrfs/ioctl.c	2013-10-16 14:58:52.464281753 -0400
+@@ -3511,6 +3511,20 @@ out:
+ 	return ret;
+ }
+ 
++static long btrfs_ioctl_global_rsv(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_block_rsv *block_rsv = &root->fs_info->global_block_rsv;
++	u64 reserved;
++
++	spin_lock(&block_rsv->lock);
++	reserved = block_rsv->reserved;
++	spin_unlock(&block_rsv->lock);
++
++	if (arg && copy_to_user(arg, &reserved, sizeof(reserved)))
++		return -EFAULT;
++	return 0;
++}
++
+ /*
+  * there are many ways the trans_start and trans_end ioctls can lead
+  * to deadlocks.  They should only be used by applications that
+@@ -4721,6 +4735,8 @@ long btrfs_ioctl(struct file *file, unsi
+ 		return btrfs_ioctl_logical_to_ino(root, argp);
+ 	case BTRFS_IOC_SPACE_INFO:
+ 		return btrfs_ioctl_space_info(root, argp);
++	case BTRFS_IOC_GLOBAL_RSV:
++		return btrfs_ioctl_global_rsv(root, argp);
+ 	case BTRFS_IOC_SYNC:
+ 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
+ 		return 0;
+--- a/include/uapi/linux/btrfs.h	2013-10-14 11:40:32.082514520 -0400
++++ b/include/uapi/linux/btrfs.h	2013-10-16 14:57:12.453792203 -0400
+@@ -558,6 +558,7 @@ static inline char *btrfs_err_str(enum b
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+ 				    struct btrfs_ioctl_space_args)
++#define BTRFS_IOC_GLOBAL_RSV _IOR(BTRFS_IOCTL_MAGIC, 20, __u64)
+ #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
+ #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+ #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+
+-- 
+Jeff Mahoney
+SUSE Labs

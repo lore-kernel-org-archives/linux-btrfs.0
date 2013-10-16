@@ -1,39 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35113 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934104Ab3JPNJ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Oct 2013 09:09:29 -0400
-Date: Wed, 16 Oct 2013 15:09:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3 v4] btrfs-progs: use kernel for mounted disk for show
-Message-ID: <20131016130927.GT5787@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
- <20131015171333.GM5787@twin.jikos.cz>
- <525E5B91.4050808@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:30091 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751605Ab3JPCOb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Oct 2013 22:14:31 -0400
+Message-ID: <525DF851.2020205@oracle.com>
+Date: Wed, 16 Oct 2013 10:22:09 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <525E5B91.4050808@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3 v2] btrfs-progs: add more parameter to the filesystem
+ show
+References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com> <1381203700-17558-2-git-send-email-anand.jain@oracle.com> <20131015172236.GN5787@twin.jikos.cz>
+In-Reply-To: <20131015172236.GN5787@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 16, 2013 at 05:25:37PM +0800, Anand Jain wrote:
->  Ah. good catch. but what do you suggest. ?
->  as of now user on disk-group is able to do things like,
->  check --repair. but won't  be able to list the subvol /
->  manage the snapshots, and is able to run btrfs fi show -d
->  but won't be able to run btrfs fi show / -m. what do we
->  do in this case ?
 
-We can drop the CAP_SYS_ADMIN check from btrfs_ioctl_fs_info, it does
-not do or revealy sensitive information.
+>> preview as below..
+>>
+>> Label: none  uuid: 26d539a5-8968-4cf0-b4b5-5fd50105f8a0 mounted: /btrfs
+>> 	Group profile: Metadata: single  Metadata: DUP  Data: single
+>
+> It would look better if the profile types are grouped together,
 
->  OR when /sys interface is ready that should help to manage
->  based on the user-groups.?
+  As of now mkfs.btrfs and balance don't agree on the same set
+  of default group profiles. When we fix mkfs.btrfs (and for
+  now when user run balance) we won't see multiple profile for
+  Metadata/Data. So grouping them isn't needed, rather we should
+  fix mkfs and balance to be inline.
+  For now (in the FS which contains some data) after the balance
+  we won't see multiple group-profile for same group-type.
 
-This could be decided case by case if a sysfs file should not be
-publicly readable, otherwise let them be readable to everyone.
+  pls comment / let me know.
 
-david
+> otherwise it can drift to the right quite far.
+
+  as of now do we practicality use/support multiple groups
+  for the same type (metadata/data), if not the content will
+  be always 6 words here (I am considering a system which is
+  balanced).
+
+> Why is Sytem not listed here?
+
+  System is not an user choice (?), So users won't be keen to
+  know at least in this high-level display. IMO.
+
+Thanks, Anand
+

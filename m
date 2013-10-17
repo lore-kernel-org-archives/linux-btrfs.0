@@ -1,91 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:34463 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750863Ab3JQHvm (ORCPT
+Received: from cobra.newdream.net ([66.33.216.30]:42199 "EHLO
+	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1762318Ab3JQT4P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Oct 2013 03:51:42 -0400
-Received: by mail-wi0-f176.google.com with SMTP id l12so7928896wiv.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2013 00:51:41 -0700 (PDT)
+	Thu, 17 Oct 2013 15:56:15 -0400
+Received: from cobra.newdream.net (localhost [127.0.0.1])
+	by cobra.newdream.net (Postfix) with ESMTP id C330980451
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2013 12:56:14 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+	by cobra.newdream.net (Postfix) with ESMTP id 9D97880451
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2013 12:56:14 -0700 (PDT)
+Date: Thu, 17 Oct 2013 12:56:14 -0700 (PDT)
+From: Sage Weil <sage@inktank.com>
+To: linux-btrfs@vger.kernel.org
+Subject: transaction commit deadlock on current rc
+Message-ID: <alpine.DEB.2.00.1310171059080.5573@cobra.newdream.net>
 MIME-Version: 1.0
-In-Reply-To: <1380201996-17445-2-git-send-email-jbacik@fusionio.com>
-References: <1380201996-17445-1-git-send-email-jbacik@fusionio.com>
-	<1380201996-17445-2-git-send-email-jbacik@fusionio.com>
-Date: Thu, 17 Oct 2013 10:51:41 +0300
-Message-ID: <CAOcd+r0ohz-e4UTUAo2smETpnN4Gw_c9cB-bUa+UEfw8PfaePw@mail.gmail.com>
-Subject: Re: [PATCH 2/2] Btrfs: stop caching thread if extent_commit_sem is contended
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for addressing this issue, Josef!
+Hey,
 
-On Thu, Sep 26, 2013 at 4:26 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> We can starve out the transaction commit with a bunch of caching threads all
-> running at the same time.  This is because we will only drop the
-> extent_commit_sem if we need_resched(), which isn't likely to happen since we
-> will be reading a lot from the disk so have already schedule()'ed plenty.  Alex
-> observed that he could starve out a transaction commit for up to a minute with
-> 32 caching threads all running at once.  This will allow us to drop the
-> extent_commit_sem to allow the transaction commit to swap the commit_root out
-> and then all the cachers will start back up. Here is an explanation provided by
-> Igno
->
-> So, just to fill in what happens in this loop:
->
->                                 mutex_unlock(&caching_ctl->mutex);
->                                 cond_resched();
->                                 goto again;
->
-> where 'again:' takes caching_ctl->mutex and fs_info->extent_commit_sem
-> again:
->
->         again:
->                 mutex_lock(&caching_ctl->mutex);
->                 /* need to make sure the commit_root doesn't disappear */
->                 down_read(&fs_info->extent_commit_sem);
->
-> So, if I'm reading the code correct, there can be a fair amount of
-> concurrency here: there may be multiple 'caching kthreads' per filesystem
-> active, while there's one fs_info->extent_commit_sem per filesystem
-> AFAICS.
->
-> So, what happens if there are a lot of CPUs all busy holding the
-> ->extent_commit_sem rwsem read-locked and a writer arrives? They'd all
-> rush to try to release the fs_info->extent_commit_sem, and they'd block in
-> the down_read() because there's a writer waiting.
->
-> So there's a guarantee of forward progress. This should answer akpm's
-> concern I think.
->
-> Thanks,
->
-> Acked-by: Ingo Molnar <mingo@kernel.org>
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> ---
->  fs/btrfs/extent-tree.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index cfb3cf7..cc074c34 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -442,7 +442,8 @@ next:
->                         if (ret)
->                                 break;
->
-> -                       if (need_resched()) {
-> +                       if (need_resched() ||
-> +                           rwsem_is_contended(&fs_info->extent_commit_sem)) {
->                                 caching_ctl->progress = last;
->                                 btrfs_release_path(path);
->                                 up_read(&fs_info->extent_commit_sem);
-> --
-> 1.8.3.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm seeing the deadlock below under a ceph-osd workload.  There may be a 
+subtle problem with the async transaction sequence (since nobody but ceph 
+uses that that I know of), but not obvious to me why 
+create_pending_snapshots would get stuck on btrfs_tree_lock...
+
+[  602.217383] INFO: task kworker/3:2:771 blocked for more than 120 seconds.
+[  602.224234]       Not tainted 3.12.0-rc2-ceph-00009-g53d0281 #1
+[  602.230216] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  602.238121] kworker/3:2     D ffff88003677df10     0   771      2 0x00000000
+[  602.245349] Workqueue: events do_async_commit [btrfs]
+[  602.250513]  ffff8800c95c78d8 0000000000000046 0000000000000286 ffff8800638fca08
+[  602.258192]  ffff88003677df10 ffff8800c95c7fd8 ffff8800c95c7fd8 ffff8800c95c7fd8
+[  602.265867]  ffff880225d2df10 ffff88003677df10 ffff8800c95c78e8 ffff8800638fc8e0
+[  602.273545] Call Trace:
+[  602.276049]  [<ffffffff81665849>] schedule+0x29/0x70
+[  602.281087]  [<ffffffffa0176975>] btrfs_tree_lock+0x75/0x270 [btrfs]
+[  602.287509]  [<ffffffff81070310>] ? __init_waitqueue_head+0x60/0x60
+[  602.293840]  [<ffffffffa01185bb>] btrfs_lock_root_node+0x3b/0x50 [btrfs]
+[  602.300612]  [<ffffffffa011da67>] btrfs_search_slot+0x867/0x930 [btrfs]
+[  602.307293]  [<ffffffffa012ac62>] ? run_clustered_refs+0x232/0xf30 [btrfs]
+[  602.314236]  [<ffffffffa011f238>] btrfs_insert_empty_items+0x78/0xd0 [btrfs]
+[  602.321393]  [<ffffffffa01330cc>] insert_with_overflow+0x3c/0x110 [btrfs]
+[  602.328287]  [<ffffffffa013325f>] btrfs_insert_dir_item+0xbf/0x200 [btrfs]
+[  602.335229]  [<ffffffffa013f19c>] create_pending_snapshot+0x81c/0xa00 [btrfs]
+[  602.342469]  [<ffffffffa013f423>] create_pending_snapshots+0xa3/0xb0 [btrfs]
+[  602.349624]  [<ffffffffa01408fe>] btrfs_commit_transaction+0x46e/0xa40 [btrfs]
+[  602.356919]  [<ffffffff81070310>] ? __init_waitqueue_head+0x60/0x60
+[  602.363291]  [<ffffffffa0140f58>] do_async_commit+0x88/0xa0 [btrfs]
+[  602.369665]  [<ffffffffa0140ef9>] ? do_async_commit+0x29/0xa0 [btrfs]
+[  602.376166]  [<ffffffff810672fa>] process_one_work+0x1da/0x540
+[  602.382099]  [<ffffffff8106728f>] ? process_one_work+0x16f/0x540
+[  602.388205]  [<ffffffff810684dc>] worker_thread+0x11c/0x370
+[  602.393834]  [<ffffffff810683c0>] ? manage_workers.isra.20+0x2e0/0x2e0
+[  602.400462]  [<ffffffff8106fada>] kthread+0xea/0xf0
+[  602.405396]  [<ffffffff8106f9f0>] ? flush_kthread_worker+0x150/0x150
+[  602.411836]  [<ffffffff8166fdec>] ret_from_fork+0x7c/0xb0
+[  602.417300]  [<ffffffff8106f9f0>] ? flush_kthread_worker+0x150/0x150
+[  602.423787] INFO: lockdep is turned off.
+
+[  602.427852] INFO: task btrfs-transacti:6069 blocked for more than 120 seconds.
+[  602.435155]       Not tainted 3.12.0-rc2-ceph-00009-g53d0281 #1
+[  602.441229] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  602.449212] btrfs-transacti D ffff8800c96461e8     0  6069      2 0x00000000
+[  602.457660]  ffff88022408fd08 0000000000000046 0000000000000286 ffff8800b68a4578
+[  602.465350]  ffff88022448df10 ffff88022408ffd8 ffff88022408ffd8 ffff88022408ffd8
+[  602.473081]  ffff880225d29fb0 ffff88022448df10 ffff88022408fd18 ffff880082fd48a8
+[  602.480835] Call Trace:
+[  602.483342]  [<ffffffff81665849>] schedule+0x29/0x70
+[  602.488450]  [<ffffffffa013f74f>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
+[  602.495836]  [<ffffffff81070310>] ? __init_waitqueue_head+0x60/0x60
+[  602.502241]  [<ffffffffa01416a8>] start_transaction+0x348/0x540 [btrfs]
+[  602.509010]  [<ffffffffa0141907>] btrfs_attach_transaction+0x17/0x20 [btrfs]
+[  602.516124]  [<ffffffffa0139c12>] transaction_kthread+0x182/0x250 [btrfs]
+[  602.523065]  [<ffffffffa0139a90>] ? btrfs_destroy_delayed_refs+0x370/0x370 [btrfs]
+[  602.530791]  [<ffffffff8106fada>] kthread+0xea/0xf0
+[  602.535725]  [<ffffffff8106f9f0>] ? flush_kthread_worker+0x150/0x150
+[  602.542178]  [<ffffffff8166fdec>] ret_from_fork+0x7c/0xb0
+[  602.547658]  [<ffffffff8106f9f0>] ? flush_kthread_worker+0x150/0x150
+[  602.554068] INFO: lockdep is turned off.
+
+[  602.558154] INFO: task ceph-osd:12248 blocked for more than 120 seconds.
+[  602.558155]       Not tainted 3.12.0-rc2-ceph-00009-g53d0281 #1
+[  602.558156] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  602.558158] ceph-osd        D ffff880082fd48a8     0 12248  12215 0x00000000
+[  602.558161]  ffff880184441b58 0000000000000046 0000000000000282 ffff8800b68a4578
+[  602.558162]  ffff880077fcbf60 ffff880184441fd8 ffff880184441fd8 ffff880184441fd8
+[  602.558164]  ffff88003677df10 ffff880077fcbf60 ffff880184441b68 ffff880184441ba0
+[  602.558164] Call Trace:
+[  602.558166]  [<ffffffff81665849>] schedule+0x29/0x70
+[  602.558178]  [<ffffffffa0141af7>] btrfs_commit_transaction_async+0x187/0x2c0 [btrfs]
+[  602.558188]  [<ffffffffa01413f6>] ? start_transaction+0x96/0x540 [btrfs]
+[  602.558190]  [<ffffffff81070310>] ? __init_waitqueue_head+0x60/0x60
+[  602.558201]  [<ffffffffa0171565>] btrfs_mksubvol.isra.59+0x2a5/0x410 [btrfs]
+[  602.558204]  [<ffffffff811a3d9c>] ? fget_light+0x3c/0x130
+[  602.558216]  [<ffffffffa01717ce>] btrfs_ioctl_snap_create_transid+0xfe/0x190 [btrfs]
+[  602.558218]  [<ffffffff81152fb9>] ? might_fault+0x89/0x90
+[  602.558230]  [<ffffffffa01719de>] btrfs_ioctl_snap_create_v2+0xfe/0x140 [btrfs]
+[  602.558242]  [<ffffffffa0175110>] btrfs_ioctl+0xbe0/0x1e00 [btrfs]
+[  602.558253]  [<ffffffffa01536c5>] ? btrfs_file_aio_write+0x275/0x5d0 [btrfs]
+[  602.558256]  [<ffffffff811c83aa>] ? fsnotify+0x8a/0x2f0
+[  602.558257]  [<ffffffff811c83aa>] ? fsnotify+0x8a/0x2f0
+[  602.558259]  [<ffffffff811a3d9c>] ? fget_light+0x3c/0x130
+[  602.558263]  [<ffffffff81198ed6>] do_vfs_ioctl+0x96/0x560
+[  602.558264]  [<ffffffff811a3dfe>] ? fget_light+0x9e/0x130
+[  602.558266]  [<ffffffff811a3d9c>] ? fget_light+0x3c/0x130
+[  602.558268]  [<ffffffff81199431>] SyS_ioctl+0x91/0xb0
+[  602.558270]  [<ffffffff8134303e>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+[  602.558272]  [<ffffffff8166fe92>] system_call_fastpath+0x16/0x1b

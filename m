@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:38365 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756934Ab3JRS0j (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:45382 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756970Ab3JRS0n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 14:26:39 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id ADF177C0427
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 12:26:38 -0600 (MDT)
+	Fri, 18 Oct 2013 14:26:43 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id DCC2F9A0359
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 12:26:42 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: [PATCH 4/8] xfstests: btrfs/016: a hole punching send test
-Date: Fri, 18 Oct 2013 14:26:26 -0400
-Message-ID: <1382120790-31060-4-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH 6/8] xfstests: generic/311: add a few more test cases
+Date: Fri, 18 Oct 2013 14:26:28 -0400
+Message-ID: <1382120790-31060-6-git-send-email-jbacik@fusionio.com>
 In-Reply-To: <1382120790-31060-1-git-send-email-jbacik@fusionio.com>
 References: <1382120790-31060-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
@@ -19,144 +19,152 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I recently added a patch to avoid sending holes with btrfs send, but I screwed
-it up by not sending a hole when we did a hole punch.  This is an xfstest
-version of the test I wrote to show that I had a bug and to verify I was fixing
-it properly.  This test properly fails with my old patch and passes with my good
-patch.  Thanks,
+Btrfs had some issues with fsync()'ing directories and fsync()'ing after
+renames.  These three new tests cover the 3 different issues we were seeing.
+Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- tests/btrfs/016     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/016.out |   2 ++
- tests/btrfs/group   |   1 +
- 3 files changed, 103 insertions(+)
- create mode 100644 tests/btrfs/016
- create mode 100644 tests/btrfs/016.out
+ tests/generic/311     | 89 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ tests/generic/311.out |  8 +++++
+ 2 files changed, 95 insertions(+), 2 deletions(-)
 
-diff --git a/tests/btrfs/016 b/tests/btrfs/016
-new file mode 100644
-index 0000000..d711ecb
---- /dev/null
-+++ b/tests/btrfs/016
-@@ -0,0 +1,100 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/016
-+#
-+# btrfs send hole punch test
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=`mktemp -d`
-+tmp_dir=send_temp_$seq
-+
-+status=1	# failure is the default!
-+
-+_cleanup()
+diff --git a/tests/generic/311 b/tests/generic/311
+index 675d927..002ad57 100644
+--- a/tests/generic/311
++++ b/tests/generic/311
+@@ -70,6 +70,8 @@ testfile=$SCRATCH_MNT/$seq.fsync
+ FLAKEY_TABLE="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 180 0"
+ FLAKEY_TABLE_DROP="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 0 180 1 drop_writes"
+ _TEST_OPTIONS=""
++allow_writes=0
++drop_writes=1
+ 
+ _mount_flakey()
+ {
+@@ -104,8 +106,6 @@ _load_flakey_table()
+ _run_test()
+ {
+ 	# _run_test <testnum> <0 - buffered | 1 - O_DIRECT>
+-	allow_writes=0
+-	drop_writes=1
+ 	test_num=$1
+ 
+ 	direct_opt=""
+@@ -131,6 +131,83 @@ _run_test()
+ 	_mount_flakey
+ }
+ 
++_clean_working_dir()
 +{
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap > /dev/null 2>&1
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap1 > /dev/null 2>&1
-+	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send > /dev/null 2>&1
-+	rm -rf $TEST_DIR/$tmp_dir
-+	rm -f $tmp.*
++	_mount_flakey
++	rm -rf $SCRATCH_MNT/*
++	_unmount_flakey
 +}
 +
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
++# Btrfs wasn't making sure the directory survived fsync
++_directory_test()
++{
++	echo "fsync new directory"
++	_mount_flakey
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
++	_load_flakey_table $drop_writes
++	_unmount_flakey
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
++	_load_flakey_table $allow_writes
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
 +
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
++# Btrfs was losing a rename into a new directory
++_rename_test()
++{
++	echo "rename fsync test"
++	_mount_flakey
++	touch $SCRATCH_MNT/foo
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
++	_load_flakey_table $drop_writes
++	_unmount_flakey
 +
-+FSSUM_PROG=$here/src/fssum
-+[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++	_load_flakey_table $allow_writes
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
 +
-+_scratch_mkfs > /dev/null 2>&1
++# Btrfs was failing to replay a log when we had a inode with a smaller inode
++# number that is renamed into a directory with a higher inode number
++_replay_rename_test()
++{
++	echo "replay rename fsync test"
++	_mount_flakey
++	touch $SCRATCH_MNT/foo
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
 +
-+#receive needs to be able to setxattrs, including the selinux context, if we use
-+#the normal nfs context thing it screws up our ability to set the
-+#security.selinux xattrs so we need to disable this for this test
-+export SELINUX_MOUNT_OPTIONS=""
++	# This is to force btrfs to relog the entire inode including the ref so
++	# we are sure to try and replay the ref along with the dir_index item
++	setfattr -n user.foo -v blah $SCRATCH_MNT/bar/foo >> $seqres.full 2>&1
 +
-+_scratch_mount
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
++	_load_flakey_table $drop_writes
++	_unmount_flakey
 +
-+mkdir $TEST_DIR/$tmp_dir
-+$BTRFS_UTIL_PROG subvol create $TEST_DIR/$tmp_dir/send \
-+	> $seqres.full 2>&1 || _fail "failed subvol create"
++	_load_flakey_table $allow_writes
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
 +
-+dd if=/dev/urandom of=$TEST_DIR/$tmp_dir/send/foo bs=1M count=10 >> $seqres.full \
-+	2>&1 || _fail "dd failed"
-+$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
-+	$TEST_DIR/$tmp_dir/snap >> $seqres.full 2>&1 || _fail "failed snap"
-+$XFS_IO_PROG -c "fpunch 1m 1m" $TEST_DIR/$tmp_dir/send/foo
-+$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
-+	$TEST_DIR/$tmp_dir/snap1 >> $seqres.full 2>&1 || _fail "failed snap"
+ _scratch_mkfs >> $seqres.full 2>&1
+ 
+ # Create a basic flakey device that will never error out
+@@ -157,5 +234,13 @@ for i in $(seq 1 20); do
+ 	_run_test $i $direct
+ done
+ 
++rm -rf $SCRATCH_MNT/*
++_unmount_flakey
++_directory_test
++_clean_working_dir
++_rename_test
++_clean_working_dir
++_replay_rename_test
 +
-+$FSSUM_PROG -A -f -w $tmp/fssum.snap $TEST_DIR/$tmp_dir/snap >> $seqres.full \
-+	2>&1 || _fail "fssum gen failed"
-+$FSSUM_PROG -A -f -w $tmp/fssum.snap1 $TEST_DIR/$tmp_dir/snap1 >> $seqres.full \
-+	2>&1 || _fail "fssum gen failed"
-+
-+$BTRFS_UTIL_PROG send $TEST_DIR/$tmp_dir/snap -f $tmp/send.snap >> \
-+	$seqres.full 2>&1 || _fail "failed send"
-+$BTRFS_UTIL_PROG send $TEST_DIR/$tmp_dir/snap1 -p $TEST_DIR/$tmp_dir/snap \
-+	-f $tmp/send.snap1 >> $seqres.full 2>&1 || _fail "failed send"
-+
-+$BTRFS_UTIL_PROG receive -f $tmp/send.snap $SCRATCH_MNT >> $seqres.full 2>&1 \
-+	|| _fail "failed recv"
-+$BTRFS_UTIL_PROG receive -f $tmp/send.snap1 $SCRATCH_MNT >> $seqres.full 2>&1 \
-+	|| _fail "failed recv"
-+
-+$FSSUM_PROG -r $tmp/fssum.snap $SCRATCH_MNT/snap >> $seqres.full 2>&1 \
-+	|| _fail "fssum failed"
-+$FSSUM_PROG -r $tmp/fssum.snap1 $SCRATCH_MNT/snap1 >> $seqres.full 2>&1 \
-+	|| _fail "fssum failed"
-+
-+echo "Silence is golden"
-+status=0 ; exit
-diff --git a/tests/btrfs/016.out b/tests/btrfs/016.out
-new file mode 100644
-index 0000000..aa2526b
---- /dev/null
-+++ b/tests/btrfs/016.out
-@@ -0,0 +1,2 @@
-+QA output created by 016
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a6f1820..082fd67 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -18,3 +18,4 @@
- 013 auto quick
- 014 auto
- 015 auto quick
-+016 auto quick
+ status=0
+ exit
+diff --git a/tests/generic/311.out b/tests/generic/311.out
+index 5bad6a7..8a0d5c8 100644
+--- a/tests/generic/311.out
++++ b/tests/generic/311.out
+@@ -319,3 +319,11 @@ Running test 20 direct, nolockfs
+ Random seed is 20
+ a16ac2b84456d41a15a1a4cc1202179f
+ a16ac2b84456d41a15a1a4cc1202179f
++fsync new directory
++drwxr-xr-x bar
++rename fsync test
++drwxr-xr-x bar
++-rw-r--r-- foo
++replay rename fsync test
++drwxr-xr-x bar
++-rw-r--r-- foo
 -- 
 1.8.3.1
 

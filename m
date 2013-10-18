@@ -1,35 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:41866 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753446Ab3JROZ5 (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:61665 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753964Ab3JROnG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 10:25:57 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id AE5639A06B3
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 08:25:56 -0600 (MDT)
-Date: Fri, 18 Oct 2013 10:25:54 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Sage Weil <sage@inktank.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: transaction commit deadlock on current rc
-Message-ID: <20131018142554.GD6924@localhost.localdomain>
-References: <alpine.DEB.2.00.1310171059080.5573@cobra.newdream.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <alpine.DEB.2.00.1310171059080.5573@cobra.newdream.net>
+	Fri, 18 Oct 2013 10:43:06 -0400
+Received: by mail-wg0-f47.google.com with SMTP id c11so3879970wgh.14
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 07:43:04 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: optimize extent item search in run_delayed_extent_op
+Date: Fri, 18 Oct 2013 15:42:56 +0100
+Message-Id: <1382107376-3290-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 17, 2013 at 12:56:14PM -0700, Sage Weil wrote:
-> Hey,
-> 
-> I'm seeing the deadlock below under a ceph-osd workload.  There may be a 
-> subtle problem with the async transaction sequence (since nobody but ceph 
-> uses that that I know of), but not obvious to me why 
-> create_pending_snapshots would get stuck on btrfs_tree_lock...
-> 
+Instead of doing another extent tree search if the first search failed
+to find a metadata item, check if the previous item in the leaf is an
+extent item and use it if it is, otherwise do the second tree search
+for an extent item.
 
-Can you do sysrq+w when this happens so I can see everybody who's blocked?
-Thanks,
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/extent-tree.c |   27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9be5e35..7baefe4 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2138,15 +2138,28 @@ again:
+ 	}
+ 	if (ret > 0) {
+ 		if (metadata) {
+-			btrfs_release_path(path);
+-			metadata = 0;
++			if (path->slots[0] > 0) {
++				path->slots[0]--;
++				btrfs_item_key_to_cpu(path->nodes[0], &key,
++						      path->slots[0]);
++				if (key.objectid == node->bytenr &&
++				    key.type == BTRFS_EXTENT_ITEM_KEY &&
++				    key.offset == node->num_bytes)
++					ret = 0;
++			}
++			if (ret > 0) {
++				btrfs_release_path(path);
++				metadata = 0;
+ 
+-			key.offset = node->num_bytes;
+-			key.type = BTRFS_EXTENT_ITEM_KEY;
+-			goto again;
++				key.objectid = node->bytenr;
++				key.offset = node->num_bytes;
++				key.type = BTRFS_EXTENT_ITEM_KEY;
++				goto again;
++			}
++		} else {
++			err = -EIO;
++			goto out;
+ 		}
+-		err = -EIO;
+-		goto out;
+ 	}
+ 
+ 	leaf = path->nodes[0];
+-- 
+1.7.9.5
+

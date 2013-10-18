@@ -1,44 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36469 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751684Ab3JRQKl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 12:10:41 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id AA2AD7C06B4
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 10:10:41 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id 1ytad8CNABplZk0v (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 10:10:41 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: release path before starting transaction in can_nocow_extent
-Date: Fri, 18 Oct 2013 12:10:36 -0400
-Message-ID: <1382112636-13603-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from len.romanrm.net ([91.229.20.24]:40558 "EHLO len.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751391Ab3JRQLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Oct 2013 12:11:18 -0400
+Date: Fri, 18 Oct 2013 22:11:15 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix up seek_hole/seek_data handling
+Message-ID: <20131018221115.460375f7@natsu>
+In-Reply-To: <1382111301-3116-1-git-send-email-jbacik@fusionio.com>
+References: <1382111301-3116-1-git-send-email-jbacik@fusionio.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/n9iNa7LTojA2p2VEhylDYM+"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can't be holding tree locks while we try to start a transaction, we will
-deadlock.  Thanks,
+--Sig_/n9iNa7LTojA2p2VEhylDYM+
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Reported-by: Sage Weil <sage@inktank.com>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/inode.c | 1 +
- 1 file changed, 1 insertion(+)
+On Fri, 18 Oct 2013 11:48:21 -0400
+Josef Bacik <jbacik@fusionio.com> wrote:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 974323a..30bdacd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6452,6 +6452,7 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
- 
- 	if (btrfs_extent_readonly(root, disk_bytenr))
- 		goto out;
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * look for other files referencing this extent, if we
--- 
-1.8.3.1
+> Whoever wrote this was braindead.
 
+You do realize you sent a number of people googling for "Delalloc is such a
+pain. If we have a hole and we have pending" just out of curiosity? :))
+
+--=20
+With respect,
+Roman
+
+--Sig_/n9iNa7LTojA2p2VEhylDYM+
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlJhXaMACgkQTLKSvz+PZwiMDQCgg8Gw3qBdfeiQ1DaR9cd/DVen
+av4An33mAasGfVhYh1VflrdxO/UkcQV7
+=khMt
+-----END PGP SIGNATURE-----
+
+--Sig_/n9iNa7LTojA2p2VEhylDYM+--

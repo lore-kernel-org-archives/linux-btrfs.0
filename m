@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:36410 "EHLO
+Received: from dkim1.fusionio.com ([66.114.96.53]:36469 "EHLO
 	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756263Ab3JRQG3 (ORCPT
+	with ESMTP id S1751684Ab3JRQKl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 12:06:29 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id CFF187C06B4
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 10:06:28 -0600 (MDT)
-Date: Fri, 18 Oct 2013 12:06:23 -0400
+	Fri, 18 Oct 2013 12:10:41 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id AA2AD7C06B4
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 10:10:41 -0600 (MDT)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id 1ytad8CNABplZk0v (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 10:10:41 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Sage Weil <sage@inktank.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: transaction commit deadlock on current rc
-Message-ID: <20131018160623.GE6924@localhost.localdomain>
-References: <alpine.DEB.2.00.1310171059080.5573@cobra.newdream.net>
- <20131018142554.GD6924@localhost.localdomain>
- <alpine.DEB.2.00.1310180840380.32045@cobra.newdream.net>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: release path before starting transaction in can_nocow_extent
+Date: Fri, 18 Oct 2013 12:10:36 -0400
+Message-ID: <1382112636-13603-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <alpine.DEB.2.00.1310180840380.32045@cobra.newdream.net>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 18, 2013 at 08:42:28AM -0700, Sage Weil wrote:
-> On Fri, 18 Oct 2013, Josef Bacik wrote:
-> > On Thu, Oct 17, 2013 at 12:56:14PM -0700, Sage Weil wrote:
-> > > Hey,
-> > > 
-> > > I'm seeing the deadlock below under a ceph-osd workload.  There may be a 
-> > > subtle problem with the async transaction sequence (since nobody but ceph 
-> > > uses that that I know of), but not obvious to me why 
-> > > create_pending_snapshots would get stuck on btrfs_tree_lock...
-> > > 
-> > 
-> > Can you do sysrq+w when this happens so I can see everybody who's blocked?
-> > Thanks,
-> 
-> Oops, forgot to attach the bug link.  It's at
-> 
-> 	http://tracker.ceph.com/attachments/download/1035/a
-> 	http://tracker.ceph.com/issues/6451
-> 
-> The machine is still hung.. if there is additional info I can gather 
-> you can ping me on irc.  
-> 
+We can't be holding tree locks while we try to start a transaction, we will
+deadlock.  Thanks,
 
-Oops, I'll fix that right up, sorry about that.  Thanks,
+Reported-by: Sage Weil <sage@inktank.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Josef
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 974323a..30bdacd 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6452,6 +6452,7 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 
+ 	if (btrfs_extent_readonly(root, disk_bytenr))
+ 		goto out;
++	btrfs_release_path(path);
+ 
+ 	/*
+ 	 * look for other files referencing this extent, if we
+-- 
+1.8.3.1
+

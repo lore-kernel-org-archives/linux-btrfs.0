@@ -1,33 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:25662 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751905Ab3JRQRP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 12:17:15 -0400
-Date: Fri, 18 Oct 2013 09:17:11 -0700
-From: Zach Brown <zab@redhat.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix up seek_hole/seek_data handling
-Message-ID: <20131018161711.GB2316@lenny.home.zabbo.net>
-References: <1382111301-3116-1-git-send-email-jbacik@fusionio.com>
- <20131018221115.460375f7@natsu>
+Received: from dkim1.fusionio.com ([66.114.96.53]:37350 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754804Ab3JRRNb convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Oct 2013 13:13:31 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id A21AB7C040A
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 11:13:30 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131018221115.460375f7@natsu>
+To: Sage Weil <sage@inktank.com>, Josef Bacik <jbacik@fusionio.com>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <alpine.DEB.2.00.1310180840380.32045@cobra.newdream.net>
+CC: <linux-btrfs@vger.kernel.org>
+References: <alpine.DEB.2.00.1310171059080.5573@cobra.newdream.net>
+ <20131018142554.GD6924@localhost.localdomain>
+ <alpine.DEB.2.00.1310180840380.32045@cobra.newdream.net>
+Message-ID: <20131018171316.4917.58200@localhost.localdomain>
+Subject: Re: transaction commit deadlock on current rc
+Date: Fri, 18 Oct 2013 13:13:16 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 18, 2013 at 10:11:15PM +0600, Roman Mamedov wrote:
-> On Fri, 18 Oct 2013 11:48:21 -0400
-> Josef Bacik <jbacik@fusionio.com> wrote:
+Quoting Sage Weil (2013-10-18 11:42:28)
+> On Fri, 18 Oct 2013, Josef Bacik wrote:
+> > On Thu, Oct 17, 2013 at 12:56:14PM -0700, Sage Weil wrote:
+> > > Hey,
+> > > 
+> > > I'm seeing the deadlock below under a ceph-osd workload.  There may be a 
+> > > subtle problem with the async transaction sequence (since nobody but ceph 
+> > > uses that that I know of), but not obvious to me why 
+> > > create_pending_snapshots would get stuck on btrfs_tree_lock...
+> > > 
+> > 
+> > Can you do sysrq+w when this happens so I can see everybody who's blocked?
+> > Thanks,
 > 
-> > Whoever wrote this was braindead.
+> Oops, forgot to attach the bug link.  It's at
 > 
-> You do realize you sent a number of people googling for "Delalloc is such a
-> pain. If we have a hole and we have pending" just out of curiosity? :))
+>         http://tracker.ceph.com/attachments/download/1035/a
+>         http://tracker.ceph.com/issues/6451
+> 
+> The machine is still hung.. if there is additional info I can gather 
+> you can ping me on irc.  
 
-Hmm?  git blame, friend :).  Not that we needed to.  We knew exactly who
-he was referring to the moment we read the comment.  We love us some
-Josef.
+Thanks Sage and Josef, I've got this one queued up pending an ack from
+Sage.  But it's obviously not harmful, so I'll probably send this
+afternoon either way.
 
-- z
+-chris
+

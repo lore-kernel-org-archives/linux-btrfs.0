@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:45382 "EHLO
+Received: from dkim2.fusionio.com ([66.114.96.54]:45380 "EHLO
 	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756970Ab3JRS0n (ORCPT
+	with ESMTP id S1756960Ab3JRS0l (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 14:26:43 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id DCC2F9A0359
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 12:26:42 -0600 (MDT)
+	Fri, 18 Oct 2013 14:26:41 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id A6DCE9A0359
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 12:26:40 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: [PATCH 6/8] xfstests: generic/311: add a few more test cases
-Date: Fri, 18 Oct 2013 14:26:28 -0400
-Message-ID: <1382120790-31060-6-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH 5/8] xfstests: generic/274 increase scratch fs size to 2g
+Date: Fri, 18 Oct 2013 14:26:27 -0400
+Message-ID: <1382120790-31060-5-git-send-email-jbacik@fusionio.com>
 In-Reply-To: <1382120790-31060-1-git-send-email-jbacik@fusionio.com>
 References: <1382120790-31060-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
@@ -19,152 +19,28 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs had some issues with fsync()'ing directories and fsync()'ing after
-renames.  These three new tests cover the 3 different issues we were seeing.
-Thanks,
+With 1 gig btrfs defaults to mixed block groups, so we ENOSPC in this test
+because we run out of metadata space, not data space.  Increasing to 2g allows
+us to use our normal setup and allows us to pass this test.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- tests/generic/311     | 89 +++++++++++++++++++++++++++++++++++++++++++++++++--
- tests/generic/311.out |  8 +++++
- 2 files changed, 95 insertions(+), 2 deletions(-)
+ tests/generic/274 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tests/generic/311 b/tests/generic/311
-index 675d927..002ad57 100644
---- a/tests/generic/311
-+++ b/tests/generic/311
-@@ -70,6 +70,8 @@ testfile=$SCRATCH_MNT/$seq.fsync
- FLAKEY_TABLE="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 180 0"
- FLAKEY_TABLE_DROP="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 0 180 1 drop_writes"
- _TEST_OPTIONS=""
-+allow_writes=0
-+drop_writes=1
+diff --git a/tests/generic/274 b/tests/generic/274
+index da45fab..7c4887f 100755
+--- a/tests/generic/274
++++ b/tests/generic/274
+@@ -57,7 +57,7 @@ echo "------------------------------"
+ rm -f $seqres.full
  
- _mount_flakey()
- {
-@@ -104,8 +106,6 @@ _load_flakey_table()
- _run_test()
- {
- 	# _run_test <testnum> <0 - buffered | 1 - O_DIRECT>
--	allow_writes=0
--	drop_writes=1
- 	test_num=$1
+ umount $SCRATCH_DEV 2>/dev/null
+-_scratch_mkfs_sized $((1 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
++_scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
+ _scratch_mount
  
- 	direct_opt=""
-@@ -131,6 +131,83 @@ _run_test()
- 	_mount_flakey
- }
- 
-+_clean_working_dir()
-+{
-+	_mount_flakey
-+	rm -rf $SCRATCH_MNT/*
-+	_unmount_flakey
-+}
-+
-+# Btrfs wasn't making sure the directory survived fsync
-+_directory_test()
-+{
-+	echo "fsync new directory"
-+	_mount_flakey
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
-+# Btrfs was losing a rename into a new directory
-+_rename_test()
-+{
-+	echo "rename fsync test"
-+	_mount_flakey
-+	touch $SCRATCH_MNT/foo
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
-+# Btrfs was failing to replay a log when we had a inode with a smaller inode
-+# number that is renamed into a directory with a higher inode number
-+_replay_rename_test()
-+{
-+	echo "replay rename fsync test"
-+	_mount_flakey
-+	touch $SCRATCH_MNT/foo
-+	mkdir $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+
-+	# This is to force btrfs to relog the entire inode including the ref so
-+	# we are sure to try and replay the ref along with the dir_index item
-+	setfattr -n user.foo -v blah $SCRATCH_MNT/bar/foo >> $seqres.full 2>&1
-+
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
-+	_load_flakey_table $drop_writes
-+	_unmount_flakey
-+
-+	_load_flakey_table $allow_writes
-+	_mount_flakey
-+	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
-+	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
- _scratch_mkfs >> $seqres.full 2>&1
- 
- # Create a basic flakey device that will never error out
-@@ -157,5 +234,13 @@ for i in $(seq 1 20); do
- 	_run_test $i $direct
- done
- 
-+rm -rf $SCRATCH_MNT/*
-+_unmount_flakey
-+_directory_test
-+_clean_working_dir
-+_rename_test
-+_clean_working_dir
-+_replay_rename_test
-+
- status=0
- exit
-diff --git a/tests/generic/311.out b/tests/generic/311.out
-index 5bad6a7..8a0d5c8 100644
---- a/tests/generic/311.out
-+++ b/tests/generic/311.out
-@@ -319,3 +319,11 @@ Running test 20 direct, nolockfs
- Random seed is 20
- a16ac2b84456d41a15a1a4cc1202179f
- a16ac2b84456d41a15a1a4cc1202179f
-+fsync new directory
-+drwxr-xr-x bar
-+rename fsync test
-+drwxr-xr-x bar
-+-rw-r--r-- foo
-+replay rename fsync test
-+drwxr-xr-x bar
-+-rw-r--r-- foo
+ # Create a 4k file and Allocate 4M past EOF on that file
 -- 
 1.8.3.1
 

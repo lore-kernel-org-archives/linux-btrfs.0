@@ -1,37 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:41774 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756739Ab3JRXYz convert rfc822-to-8bit (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:36533 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750809Ab3JSERf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Oct 2013 19:24:55 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 3D9757C041C
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 17:24:55 -0600 (MDT)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Message-ID: <20131018232447.4917.74376@localhost.localdomain>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: [GIT PULL] Btrfs
-Date: Fri, 18 Oct 2013 19:24:47 -0400
+	Sat, 19 Oct 2013 00:17:35 -0400
+Received: by mail-pa0-f49.google.com with SMTP id lj1so4386702pab.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Oct 2013 21:17:35 -0700 (PDT)
+Received: from localhost.localdomain.localdomain ([223.65.142.116])
+        by mx.google.com with ESMTPSA id py4sm5837737pbb.33.2013.10.18.21.17.33
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=RC4-SHA bits=128/128);
+        Fri, 18 Oct 2013 21:17:34 -0700 (PDT)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix race condition between writting and scrubing supers
+Date: Sat, 19 Oct 2013 12:17:30 +0800
+Message-Id: <1382156250-2336-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-My for-linus branch has a one line fix:
+Scrubing supers is not in a transaction context, when trying to
+write supers to disk, we should check if we are trying to
+scrub supers.Fix it.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/disk-io.c     | 2 ++
+ fs/btrfs/transaction.c | 2 ++
+ 2 files changed, 4 insertions(+)
 
-Sage hit a deadlock with ceph on btrfs, and Josef tracked it down to a
-regression in our initial rc1 pull.  When doing nocow writes we were
-sometimes starting a transaction with locks held.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 419968e..0debb19 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3582,7 +3582,9 @@ int btrfs_commit_super(struct btrfs_root *root)
+ 		return ret;
+ 	}
+ 
++	btrfs_scrub_pause_super(root);
+ 	ret = write_ctree_super(NULL, root, 0);
++	btrfs_scrub_continue_super(root);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 277fe81..3ebcbbd 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1892,7 +1892,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto cleanup_transaction;
+ 	}
+ 
++	btrfs_scrub_pause_super(root);
+ 	ret = write_ctree_super(trans, root, 0);
++	btrfs_scrub_continue_super(root);
+ 	if (ret) {
+ 		mutex_unlock(&root->fs_info->tree_log_mutex);
+ 		goto cleanup_transaction;
+-- 
+1.7.11.7
 
-Josef Bacik (1) commits (+1/-0):
-    Btrfs: release path before starting transaction in can_nocow_extent
-
-Total: (1) commits (+1/-0)
-
- fs/btrfs/inode.c | 1 +
- 1 file changed, 1 insertion(+)

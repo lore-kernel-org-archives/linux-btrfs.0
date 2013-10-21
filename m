@@ -1,38 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52770 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753331Ab3JUMxT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 08:53:19 -0400
-Date: Mon, 21 Oct 2013 14:53:17 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Tomasz Chmielewski <tch@virtall.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: CPU: 2 PID: 1543 at fs/btrfs/ctree.c:1322
- btrfs_search_old_slot+0x338/0x81d [btrfs]()
-Message-ID: <20131021125317.GK1032@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20131021122123.43b3aa50@virtall.com>
- <20131021151032.708cc7d2@virtall.com>
+Received: from glockenspiel.complete.org ([78.47.53.23]:35998 "EHLO
+	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753475Ab3JUNr4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 09:47:56 -0400
+Message-ID: <52653084.8050106@complete.org>
+Date: Mon, 21 Oct 2013 08:47:48 -0500
+From: John Goerzen <jgoerzen@complete.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131021151032.708cc7d2@virtall.com>
+To: Tomasz Chmielewski <tch@virtall.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Lots of trouble hanging when rm files with many extents
+References: <20131021133644.172387f5@virtall.com>
+In-Reply-To: <20131021133644.172387f5@virtall.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 21, 2013 at 03:10:32PM +0900, Tomasz Chmielewski wrote:
-> Note the "BTRFS critical (device sdd1): unable to find logical
-> 7598242613674844160 len 4096" there; after that, the fs freezes and
-> system won't reboot; has to be power cycled.
+On 10/20/2013 11:36 PM, Tomasz Chmielewski wrote:
+>>> I'll do some more tests with lots of extents to see if it's
+>>> reproducible here as well.
+>> Interestingly, I've generally had qgroups enabled here as well,
+>> possibly on all of these systems.  Could that be the culprit?
+> Possibly.
+>
+> Is there a reliable way to create files with many extents? I've tried
+> playing with fallocate, but couldn't create files with too many extents
+> with it.
+I could do it quite reliably by storing a VirtualBox VM hard drive image 
+there, then running a Windows Update inside the VM.  Instant 
+fragmentation ;-)
 
->From the first mail:
-[67893.390592] BTRFS critical (device sdb5): unable to find logical 69225652694147072 len 4096
+Another approach could probably be to write a C program that writes 20GB 
+to a file, then seeks to random places within it, writing chunks of data 
+within them.
 
-> [ 9138.480011] BTRFS critical (device sdd1): unable to find logical 7598242613674844160 len 4096
+I could probably whip up such a thing if the debuggers need it.
 
-  69225652694147072 = 0xf5f05d462de000 = something that looks like inctruction fragments
-7598242613674844160 = 0x6972616661532000 = "irafaS" -> Safari?
-
-Something has corrupted the memory and stored the bytes on disk where
-btrfs finds the garbage and chokes. Try read-only mount and run scrub.
-
-david
+John

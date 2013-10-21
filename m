@@ -1,52 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:11455 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:15536 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753284Ab3JUPVp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 11:21:45 -0400
-Message-ID: <52654686.2010100@redhat.com>
-Date: Mon, 21 Oct 2013 10:21:42 -0500
+	id S1753526Ab3JUPW2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 11:22:28 -0400
+Message-ID: <526546B1.3080909@redhat.com>
+Date: Mon, 21 Oct 2013 10:22:25 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fusionio.com>
 CC: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH 2/8] xfstests: add regression test for kernel bz 60673
-References: <1382120790-31060-1-git-send-email-jbacik@fusionio.com> <1382120790-31060-2-git-send-email-jbacik@fusionio.com> <5265422E.8000101@redhat.com> <20131021150950.GH6924@localhost.localdomain> <526544BA.2070506@redhat.com>
-In-Reply-To: <526544BA.2070506@redhat.com>
+Subject: Re: [PATCH 4/8] xfstests: btrfs/016: a hole punching send test
+References: <1382120790-31060-1-git-send-email-jbacik@fusionio.com> <1382120790-31060-4-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1382120790-31060-4-git-send-email-jbacik@fusionio.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/21/13 10:14 AM, Eric Sandeen wrote:
-> On 10/21/13 10:09 AM, Josef Bacik wrote:
->> On Mon, Oct 21, 2013 at 10:03:10AM -0500, Eric Sandeen wrote:
->>>> On 10/18/13 1:26 PM, Josef Bacik wrote:
->>>>>> There was a problem with send trying to overwrite a file that wasn't actually
->>>>>> the same.  This is a test to check this particular case where receive fails when
->>>>>> it should succeed properly.  I tested this to verify it fails without my fix and
->>>>>> passes with my fix.  Thanks,
->>>>
->>>> 2 things - 
->>>>
->>>> Why does the selinux context break things?  That seems like a problem w/ send
->>>> if it can't work on a context-mounted fs?  (disabling it for now doesn't bother
->>>> me, but I'm surprised that it's required).
->>>>
->> So it is the context that xfstests is using, not contexts itself.  Xfstests is
->> using the nfs context, and using selinux contexts intercepts all getxattr calls,
->> so when send tries to copy the xattrs for the file it calls getxattr, and
->> because we are using the nfs context it returns EOPNOTSUPP from selinux, it
->> never makes it down to btrfs.  When using the actual real context it works fine
->> because it calls down into the file system.
->>
+On 10/18/13 1:26 PM, Josef Bacik wrote:
+> I recently added a patch to avoid sending holes with btrfs send, but I screwed
+> it up by not sending a hole when we did a hole punch.  This is an xfstest
+> version of the test I wrote to show that I had a bug and to verify I was fixing
+> it properly.  This test properly fails with my old patch and passes with my good
+> patch.  Thanks,
 > 
-> This still sounds weird.  Is btrfs send trying to copy the selinux attrs directly?
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+
+> ---
+>  tests/btrfs/016     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/016.out |   2 ++
+>  tests/btrfs/group   |   1 +
+>  3 files changed, 103 insertions(+)
+>  create mode 100644 tests/btrfs/016
+>  create mode 100644 tests/btrfs/016.out
 > 
-> Shouldn't they be skipped, and be left up to the receiving end to set the selinux
-> xattrs (or not) per the policy for the destination?
-
-Eh, ok, Josef pointed out that "cp -a" does exactly the same thing.
-
-So I'll retract the concern & go learn more about selinux.  ;)
-
--Eric
+> diff --git a/tests/btrfs/016 b/tests/btrfs/016
+> new file mode 100644
+> index 0000000..d711ecb
+> --- /dev/null
+> +++ b/tests/btrfs/016
+> @@ -0,0 +1,100 @@
+> +#! /bin/bash
+> +# FS QA Test No. btrfs/016
+> +#
+> +# btrfs send hole punch test
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=`mktemp -d`
+> +tmp_dir=send_temp_$seq
+> +
+> +status=1	# failure is the default!
+> +
+> +_cleanup()
+> +{
+> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap > /dev/null 2>&1
+> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/snap1 > /dev/null 2>&1
+> +	$BTRFS_UTIL_PROG subvol del $TEST_DIR/$tmp_dir/send > /dev/null 2>&1
+> +	rm -rf $TEST_DIR/$tmp_dir
+> +	rm -f $tmp.*
+> +}
+> +
+> +trap "_cleanup ; exit \$status" 0 1 2 3 15
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +FSSUM_PROG=$here/src/fssum
+> +[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +
+> +#receive needs to be able to setxattrs, including the selinux context, if we use
+> +#the normal nfs context thing it screws up our ability to set the
+> +#security.selinux xattrs so we need to disable this for this test
+> +export SELINUX_MOUNT_OPTIONS=""
+> +
+> +_scratch_mount
+> +
+> +mkdir $TEST_DIR/$tmp_dir
+> +$BTRFS_UTIL_PROG subvol create $TEST_DIR/$tmp_dir/send \
+> +	> $seqres.full 2>&1 || _fail "failed subvol create"
+> +
+> +dd if=/dev/urandom of=$TEST_DIR/$tmp_dir/send/foo bs=1M count=10 >> $seqres.full \
+> +	2>&1 || _fail "dd failed"
+> +$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
+> +	$TEST_DIR/$tmp_dir/snap >> $seqres.full 2>&1 || _fail "failed snap"
+> +$XFS_IO_PROG -c "fpunch 1m 1m" $TEST_DIR/$tmp_dir/send/foo
+> +$BTRFS_UTIL_PROG subvol snap -r $TEST_DIR/$tmp_dir/send \
+> +	$TEST_DIR/$tmp_dir/snap1 >> $seqres.full 2>&1 || _fail "failed snap"
+> +
+> +$FSSUM_PROG -A -f -w $tmp/fssum.snap $TEST_DIR/$tmp_dir/snap >> $seqres.full \
+> +	2>&1 || _fail "fssum gen failed"
+> +$FSSUM_PROG -A -f -w $tmp/fssum.snap1 $TEST_DIR/$tmp_dir/snap1 >> $seqres.full \
+> +	2>&1 || _fail "fssum gen failed"
+> +
+> +$BTRFS_UTIL_PROG send $TEST_DIR/$tmp_dir/snap -f $tmp/send.snap >> \
+> +	$seqres.full 2>&1 || _fail "failed send"
+> +$BTRFS_UTIL_PROG send $TEST_DIR/$tmp_dir/snap1 -p $TEST_DIR/$tmp_dir/snap \
+> +	-f $tmp/send.snap1 >> $seqres.full 2>&1 || _fail "failed send"
+> +
+> +$BTRFS_UTIL_PROG receive -f $tmp/send.snap $SCRATCH_MNT >> $seqres.full 2>&1 \
+> +	|| _fail "failed recv"
+> +$BTRFS_UTIL_PROG receive -f $tmp/send.snap1 $SCRATCH_MNT >> $seqres.full 2>&1 \
+> +	|| _fail "failed recv"
+> +
+> +$FSSUM_PROG -r $tmp/fssum.snap $SCRATCH_MNT/snap >> $seqres.full 2>&1 \
+> +	|| _fail "fssum failed"
+> +$FSSUM_PROG -r $tmp/fssum.snap1 $SCRATCH_MNT/snap1 >> $seqres.full 2>&1 \
+> +	|| _fail "fssum failed"
+> +
+> +echo "Silence is golden"
+> +status=0 ; exit
+> diff --git a/tests/btrfs/016.out b/tests/btrfs/016.out
+> new file mode 100644
+> index 0000000..aa2526b
+> --- /dev/null
+> +++ b/tests/btrfs/016.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 016
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index a6f1820..082fd67 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -18,3 +18,4 @@
+>  013 auto quick
+>  014 auto
+>  015 auto quick
+> +016 auto quick
+> 
 

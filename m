@@ -1,21 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpcm9-312.freemail.mail.aliyun.com ([110.75.46.12]:58662 "EHLO
-	smtpcm9-312.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750898Ab3JUQFh convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 12:05:37 -0400
-Date: Tue, 22 Oct 2013 00:05:36 +0800
-From: "lilofile" <lilofile@aliyun.com>
-To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-Reply-To: "lilofile" <lilofile@aliyun.com>
-Message-ID: <43b04d83-e99a-4ac4-abbb-1c4ba32262ea@aliyun.com>
-Subject: =?UTF-8?B?YnRyZnMgZmx1c2ggZGF0YSBjYWNoZQ==?=
-MIME-Version: 1.0
-References: 0833228b-7a17-49f8-836a-2565a6b9af0c@aliyun.com,547ffa6f-f5d8-45d1-8412-ec9890928173@aliyun.com
-In-Reply-To: 547ffa6f-f5d8-45d1-8412-ec9890928173@aliyun.com
-Content-Type: text/plain; charset="UTF-8"
+Received: from xp-ob.rzone.de ([81.169.146.140]:32954 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751066Ab3JUQrA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 12:47:00 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by joses.store (RZmta 32.10 OK) with ESMTP id g03c20p9LBChjf
+	for <linux-btrfs@vger.kernel.org>;
+	Mon, 21 Oct 2013 18:46:58 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: check_int, remove warning for mixed-mode
+Date: Mon, 21 Oct 2013 18:46:58 +0200
+Message-Id: <f7dff37ee2384827ced07b15c3dc7be5e6492b6f.1382373903.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In mixed-mode, when a data-block was later reused for metadata, a
+warning was printed. This condition is now filtered out and the
+warning is eliminated in this case.
 
-transaction_kthread  can periodically commit data and metedata to disk,similarly btrfs_writepages can write data page to disk, in which situation btrfs_writepages function is called? and i cannot find btrfs_writepages is called in btrfs code?  who can tell me?
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/check-integrity.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 3281f7e..656b076 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -1900,7 +1900,9 @@ again:
+ 							       dev_state,
+ 							       dev_bytenr);
+ 			}
+-			if (block->logical_bytenr != bytenr) {
++			if (block->logical_bytenr != bytenr &&
++			    !(!block->is_metadata &&
++			      block->logical_bytenr == 0))
+ 				printk(KERN_INFO
+ 				       "Written block @%llu (%s/%llu/%d)"
+ 				       " found in hash table, %c,"
+@@ -1910,15 +1912,14 @@ again:
+ 				       block->mirror_num,
+ 				       btrfsic_get_block_type(state, block),
+ 				       block->logical_bytenr);
+-				block->logical_bytenr = bytenr;
+-			} else if (state->print_mask &
+-				   BTRFSIC_PRINT_MASK_VERBOSE)
++			else if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
+ 				printk(KERN_INFO
+ 				       "Written block @%llu (%s/%llu/%d)"
+ 				       " found in hash table, %c.\n",
+ 				       bytenr, dev_state->name, dev_bytenr,
+ 				       block->mirror_num,
+ 				       btrfsic_get_block_type(state, block));
++			block->logical_bytenr = bytenr;
+ 		} else {
+ 			if (num_pages * PAGE_CACHE_SIZE <
+ 			    state->datablock_size) {
+-- 
+1.8.4
+

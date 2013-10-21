@@ -1,42 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46362 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46371 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752262Ab3JUVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 17:20:41 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E58DFA60D0
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:39 +0200 (CEST)
-Message-Id: <20131021212006.467949781@suse.com>
-Date: Mon, 21 Oct 2013 17:19:42 -0400
+	id S1752399Ab3JUVUn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 17:20:43 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 205DCA65E1
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:40 +0200 (CEST)
+Message-Id: <20131021212008.722206179@suse.com>
+Date: Mon, 21 Oct 2013 17:19:53 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com
-Subject: [patch 02/13] kobject: export kobj_sysfs_ops
+Subject: [patch 13/13] btrfs: add tracing for failed reservations
 References: <20131021211940.432195222@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-struct kobj_attribute implements the baseline attribute functionality
-that can be used all over the place. We should export the ops associated
-with it.
+When debugging ENOSPC issues, it's nice to be able to see which
+reservations failed as well as the ones which succeeded.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
+ fs/btrfs/extent-tree.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
- lib/kobject.c |    1 +
- 1 file changed, 1 insertion(+)
-
---- a/lib/kobject.c	2013-10-21 16:09:51.868220920 -0400
-+++ b/lib/kobject.c	2013-10-21 16:10:00.216037635 -0400
-@@ -726,6 +726,7 @@ const struct sysfs_ops kobj_sysfs_ops =
- 	.show	= kobj_attr_show,
- 	.store	= kobj_attr_store,
- };
-+EXPORT_SYMBOL_GPL(kobj_sysfs_ops);
+--- a/fs/btrfs/extent-tree.c	2013-10-21 16:10:02.751981911 -0400
++++ b/fs/btrfs/extent-tree.c	2013-10-21 16:10:04.027953867 -0400
+@@ -3699,6 +3699,9 @@ commit_trans:
+ 			goto again;
+ 		}
  
- /**
-  * kset_register - initialize and add a kset.
-
++		trace_btrfs_space_reservation(root->fs_info,
++					      "space_info:enospc",
++					      data_sinfo->flags, bytes, 1);
+ 		return -ENOSPC;
+ 	}
+ 	data_sinfo->bytes_may_use += bytes;
+@@ -4350,6 +4353,10 @@ out:
+ 		    !block_rsv_use_bytes(global_rsv, orig_bytes))
+ 			ret = 0;
+ 	}
++	if (ret == -ENOSPC)
++		trace_btrfs_space_reservation(root->fs_info,
++					      "space_info:enospc",
++					      space_info->flags, orig_bytes, 1);
+ 	if (flushing) {
+ 		spin_lock(&space_info->lock);
+ 		space_info->flush = 0;
 
 
 

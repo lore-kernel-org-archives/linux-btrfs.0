@@ -1,51 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:30091 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751605Ab3JPCOb (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:57391 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753267Ab3JUOob (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Oct 2013 22:14:31 -0400
-Message-ID: <525DF851.2020205@oracle.com>
-Date: Wed, 16 Oct 2013 10:22:09 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 21 Oct 2013 10:44:31 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id B4E9E7C0681
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 08:44:30 -0600 (MDT)
+Date: Mon, 21 Oct 2013 10:44:28 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <dsterba@suse.cz>, Anand Jain <anand.jain@oracle.com>,
+        <linux-btrfs@vger.kernel.org>, <chris.mason@fusionio.com>
+Subject: Re: [PATCH 1/3 v4] btrfs-progs: use kernel for mounted disk for show
+Message-ID: <20131021144428.GG6924@localhost.localdomain>
+References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
+ <20131015171333.GM5787@twin.jikos.cz>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3 v2] btrfs-progs: add more parameter to the filesystem
- show
-References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com> <1381203700-17558-2-git-send-email-anand.jain@oracle.com> <20131015172236.GN5787@twin.jikos.cz>
-In-Reply-To: <20131015172236.GN5787@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20131015171333.GM5787@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Oct 15, 2013 at 07:13:33PM +0200, David Sterba wrote:
+> On Tue, Oct 08, 2013 at 11:41:38AM +0800, Anand Jain wrote:
+> > As of now btrfs filesystem show reads directly from
+> > disks. So sometimes output can be stale, mainly when
+> > user wants to cross verify their operation like,
+> > label or device delete or add... etc. so this
+> > patch will read from the kernel ioctl if it finds
+> > that disk is mounted.
+> 
+> Sorry for holding this patch back for so long, I wanted to find out why
+> the output is different before and after. The reason is simple, for my
+> convenience I've added the user to the 'disk' group so I can access the
+> block devices without root. This patch stops to read the block devs
+> directly and uses the ioctl BTRFS_IOC_FS_INFO which gives me a silent
+> EPERM. If I run show with sudo, then all filesystems show up as
+> expected.
+> 
 
->> preview as below..
->>
->> Label: none  uuid: 26d539a5-8968-4cf0-b4b5-5fd50105f8a0 mounted: /btrfs
->> 	Group profile: Metadata: single  Metadata: DUP  Data: single
->
-> It would look better if the profile types are grouped together,
+This patch needs to be dropped (I imagine the whole series too) as it breaks
+xfstests btrfs/003.  If I do btrfs fi show on a mounted fs I get this
 
-  As of now mkfs.btrfs and balance don't agree on the same set
-  of default group profiles. When we fix mkfs.btrfs (and for
-  now when user run balance) we won't see multiple profile for
-  Metadata/Data. So grouping them isn't needed, rather we should
-  fix mkfs and balance to be inline.
-  For now (in the FS which contains some data) after the balance
-  we won't see multiple group-profile for same group-type.
+[root@destiny btrfs-progs]# btrfs fi show /dev/sdc
+Btrfs v0.20-rc1-483-ge0173f6
+[root@destiny btrfs-progs]# 
 
-  pls comment / let me know.
+Chris this is in integration, so maybe a revert?  Thanks,
 
-> otherwise it can drift to the right quite far.
-
-  as of now do we practicality use/support multiple groups
-  for the same type (metadata/data), if not the content will
-  be always 6 words here (I am considering a system which is
-  balanced).
-
-> Why is Sytem not listed here?
-
-  System is not an user choice (?), So users won't be keen to
-  know at least in this high-level display. IMO.
-
-Thanks, Anand
-
+Josef

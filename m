@@ -1,49 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slow1-d.mail.gandi.net ([217.70.178.86]:37423 "EHLO
-	slow1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752995Ab3JUKht (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 06:37:49 -0400
-Date: Mon, 21 Oct 2013 12:37:31 +0200
-From: Xavier Bassery <xavier@bartica.org>
-To: david pu <pulq.ustc@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: task btrfs-transacti:1076 blocked for more than 120 seconds
-Message-ID: <20131021123731.4ea7a23e@renoir.lan>
-In-Reply-To: <CA+yNr1dyhC1=Rv=wuzV-YzSdEOmEEB=OLo=SJwmSMvsvhmmZ-g@mail.gmail.com>
-References: <CA+yNr1dyhC1=Rv=wuzV-YzSdEOmEEB=OLo=SJwmSMvsvhmmZ-g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from xp-ob.rzone.de ([81.169.146.141]:42908 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753250Ab3JUMSU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 08:18:20 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jorabe.store (RZmta 32.10 OK) with ESMTP id X03a4dp9LAVQIt
+	for <linux-btrfs@vger.kernel.org>;
+	Mon, 21 Oct 2013 14:18:17 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix check_int 'leaf item out of bounce' regression
+Date: Mon, 21 Oct 2013 14:18:17 +0200
+Message-Id: <aad45add55d8da007ae8f35730c8b2fb1d801999.1382357581.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 21 Oct 2013 16:36:41 +0800
-david pu <pulq.ustc@gmail.com> wrote:
+Yet another cleanup patch broke code for which no xfstest exists.
 
-> hello,
-> I'm running into btrfs-transaction hang issue with below call trace
-> from dmesg[1].
-> when this issue happens, all filesystem r/w access will be blocked and
-> no response in terminal. I'm using Ubuntu raring(linux 3.2 kernel)
-> 64bit kernel as below:
-> Linux dpu-e6410 3.2.0-36-generic #57-Ubuntu SMP Tue Jan 8 21:44:52 UTC
-> 2013 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> is it a known issue? How to recover from such task hung status?
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/check-integrity.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Hi David,
-
-a simple btrfs user reply here.
-
-I don't know if this will solve your issue at hand, but when using
-btrfs it is strongly advised to run a much more recent kernel than 3.2
-as found in Ubuntu precise (12.4).
-The reason is that they were plenty of bug fixes related to btrfs that
-you would miss by sticking to an old kernel.
-Could you please try the latest 3.11 (or 3.10) kernel available?
-If this doesn't fix your issue, please report back so that we can
-investigate further.
-
-Regards,
-Xavier
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 1c47be1..3281f7e 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -1038,7 +1038,7 @@ leaf_item_out_of_bounce_error:
+ 						     disk_item_offset,
+ 						     sizeof(struct btrfs_item));
+ 			item_offset = btrfs_stack_item_offset(&disk_item);
+-			item_size = btrfs_stack_item_offset(&disk_item);
++			item_size = btrfs_stack_item_size(&disk_item);
+ 			disk_key = &disk_item.key;
+ 			type = btrfs_disk_key_type(disk_key);
+ 
+-- 
+1.8.4
 

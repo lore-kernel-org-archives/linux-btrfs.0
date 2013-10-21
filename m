@@ -1,78 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46367 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46361 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752373Ab3JUVUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 17:20:42 -0400
+	id S1751826Ab3JUVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 17:20:41 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 13962A646E
+	by mx2.suse.de (Postfix) with ESMTP id 019DFA60F7
 	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:40 +0200 (CEST)
-Message-Id: <20131021212007.852846673@suse.com>
-Date: Mon, 21 Oct 2013 17:19:49 -0400
+Message-Id: <20131021212006.630782497@suse.com>
+Date: Mon, 21 Oct 2013 17:19:43 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com
-Subject: [patch 09/13] btrfs: add ioctl to export size of global metadata reservation
+Subject: [patch 03/13] btrfs: publish supported featured in sysfs
 References: <20131021211940.432195222@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs filesystem df output will show the size of the metadata space
-and how much of it is used, and the user assumes that the difference
-is all usable space. Since that's not actually the case due to the
-global metadata reservation, we should provide the full picture to the
-user.
+This patch adds the ability to publish supported features to sysfs under
+/sys/fs/btrfs/features.
 
-This patch adds an ioctl that exports the size of the global metadata
-reservation so that btrfs filesystem df can report it.
+The files are module-wide and export which features the kernel supports.
+
+The content, for now, is just "0\n".
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ioctl.c           |   16 ++++++++++++++++
- include/uapi/linux/btrfs.h |    1 +
- 2 files changed, 17 insertions(+)
+ fs/btrfs/sysfs.c |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.h |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+)
 
---- a/fs/btrfs/ioctl.c	2013-10-21 16:10:01.856001602 -0400
-+++ b/fs/btrfs/ioctl.c	2013-10-21 16:10:02.295991933 -0400
-@@ -3511,6 +3511,20 @@ out:
- 	return ret;
- }
- 
-+static long btrfs_ioctl_global_rsv(struct btrfs_root *root, void __user *arg)
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:09:52.760201346 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:09:59.816046422 -0400
+@@ -26,20 +26,64 @@
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
++#include "sysfs.h"
++
++static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
++				       struct kobj_attribute *a, char *buf)
 +{
-+	struct btrfs_block_rsv *block_rsv = &root->fs_info->global_block_rsv;
-+	u64 reserved;
-+
-+	spin_lock(&block_rsv->lock);
-+	reserved = block_rsv->reserved;
-+	spin_unlock(&block_rsv->lock);
-+
-+	if (arg && copy_to_user(arg, &reserved, sizeof(reserved)))
-+		return -EFAULT;
-+	return 0;
++	return snprintf(buf, PAGE_SIZE, "0\n");
 +}
 +
- /*
-  * there are many ways the trans_start and trans_end ioctls can lead
-  * to deadlocks.  They should only be used by applications that
-@@ -4721,6 +4735,8 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_logical_to_ino(root, argp);
- 	case BTRFS_IOC_SPACE_INFO:
- 		return btrfs_ioctl_space_info(root, argp);
-+	case BTRFS_IOC_GLOBAL_RSV:
-+		return btrfs_ioctl_global_rsv(root, argp);
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
---- a/include/uapi/linux/btrfs.h	2013-10-21 16:09:44.804375840 -0400
-+++ b/include/uapi/linux/btrfs.h	2013-10-21 16:10:02.343990878 -0400
-@@ -558,6 +558,7 @@ static inline char *btrfs_err_str(enum b
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
- #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
- 				    struct btrfs_ioctl_space_args)
-+#define BTRFS_IOC_GLOBAL_RSV _IOR(BTRFS_IOCTL_MAGIC, 20, __u64)
- #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
++BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzo, COMPRESS_LZO);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzov2, COMPRESS_LZOv2);
++BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
++BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
++BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
++BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
++
++static struct attribute *btrfs_supported_feature_attrs[] = {
++	BTRFS_FEAT_ATTR_PTR(mixed_backref),
++	BTRFS_FEAT_ATTR_PTR(default_subvol),
++	BTRFS_FEAT_ATTR_PTR(mixed_groups),
++	BTRFS_FEAT_ATTR_PTR(compress_lzo),
++	BTRFS_FEAT_ATTR_PTR(compress_lzov2),
++	BTRFS_FEAT_ATTR_PTR(big_metadata),
++	BTRFS_FEAT_ATTR_PTR(extended_iref),
++	BTRFS_FEAT_ATTR_PTR(raid56),
++	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
++	NULL
++};
++
++static const struct attribute_group btrfs_feature_attr_group = {
++	.name = "features",
++	.attrs = btrfs_supported_feature_attrs,
++};
+ 
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
+ 
+ int btrfs_init_sysfs(void)
+ {
++	int ret;
+ 	btrfs_kset = kset_create_and_add("btrfs", NULL, fs_kobj);
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
++
++	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
++	if (ret) {
++		kset_unregister(btrfs_kset);
++		return ret;
++	}
++
+ 	return 0;
+ }
+ 
+ void btrfs_exit_sysfs(void)
+ {
++	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ 	kset_unregister(btrfs_kset);
+ }
+ 
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ b/fs/btrfs/sysfs.h	2013-10-21 16:09:59.816046422 -0400
+@@ -0,0 +1,43 @@
++#ifndef _BTRFS_SYSFS_H_
++#define _BTRFS_SYSFS_H_
++
++enum btrfs_feature_set {
++	FEAT_COMPAT,
++	FEAT_COMPAT_RO,
++	FEAT_INCOMPAT,
++	FEAT_MAX
++};
++
++#define __INIT_KOBJ_ATTR(_name, _mode, _show, _store)			\
++{									\
++	.attr	= { .name = __stringify(_name), .mode = _mode },	\
++	.show	= _show,						\
++	.store	= _store,						\
++}
++
++struct btrfs_feature_attr {
++	struct kobj_attribute kobj_attr;
++	enum btrfs_feature_set feature_set;
++	u64 feature_bit;
++};
++
++#define BTRFS_FEAT_ATTR(_name, _feature_set, _prefix, _feature_bit)	     \
++static struct btrfs_feature_attr btrfs_attr_##_name = {			     \
++	.kobj_attr = __INIT_KOBJ_ATTR(_name, S_IRUGO,			     \
++				      btrfs_feature_attr_show, NULL),	     \
++	.feature_set	= _feature_set,					     \
++	.feature_bit	= _prefix ##_## _feature_bit,			     \
++}
++#define BTRFS_FEAT_ATTR_PTR(_name)    (&btrfs_attr_##_name.kobj_attr.attr)
++
++#define BTRFS_FEAT_ATTR_COMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_COMPAT_RO(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT_RO, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_INCOMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_INCOMPAT, BTRFS_FEATURE_INCOMPAT, feature)
++
++/* convert from attribute */
++#define to_btrfs_feature_attr(a) \
++			container_of(a, struct btrfs_feature_attr, kobj_attr)
++#endif /* _BTRFS_SYSFS_H_ */
 
 
 

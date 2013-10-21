@@ -1,76 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay07.libero.it ([212.52.84.111]:46662 "EHLO
-	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751125Ab3J2WDT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Oct 2013 18:03:19 -0400
-Message-ID: <52702F49.5060306@inwind.it>
-Date: Tue, 29 Oct 2013 22:57:29 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Jeff Mahoney <jeffm@suse.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [patch 00/13] sysfs publishing patchset
-References: <20131021211940.432195222@suse.com> <526FFDB2.3040301@gmail.com> <527019EF.5040608@suse.com>
-In-Reply-To: <527019EF.5040608@suse.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cantor2.suse.de ([195.135.220.15]:46358 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751941Ab3JUVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 17:20:41 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id DB901A5FC2
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:39 +0200 (CEST)
+Message-Id: <20131021211940.432195222@suse.com>
+Date: Mon, 21 Oct 2013 17:19:40 -0400
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [patch 00/13] sysfs publishing patchset
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jeff
+This patchset implements the stubbed-out sysfs interface for btrfs. Or
+at least begins to do so.
 
-On 2013-10-29 21:26, Jeff Mahoney wrote:
->> This for two reasons:
->> > 1) so it would be possible to show also the disks informations under a
->> > dev/ directory. It would be possible to handle the case that some disks
->> > are registered in btrfs but the related filesystems aren't mounted (like
->> > after a "btrfs dev scan" command)
->> >
->> > 2) it would help the browsing of the /sys/btrfs/ hierarchy: every
->> > directory under /sys/btrfs/fs/ represents a filesystem. With the current
->> > structure not all the directory under /sys/btrfs are related to a
->> > filesystem (like the features/ one, but I am sure that other directories
->> > sooner or later will appear)
+We publish:
+- Features supported by the file system implementation
+- Features enabled on the file system, including features unknown to
+  the implemenation. These attributes can also be used to enable or
+  disable features at runtime, subjecting to a safety mask.
+- Uses the attribute names to print feature names when declining to
+  mount a file system.
+- The allocation data: global metadata reservation size and reserved,
+  space_infos, and sums of the block groups total and used bytes.
+- Device membership via links to the block devices.
+- FS label, which is writeable.
 
-> I'd like to define /sys/fs/btrfs/<fsid> as filesystem-specific and
-> anything else as btrfs-wide. 
+- I've also added matching ioctls for some of the functionality here so
+  that btrfsprogs can use the information without jumping through hoops
+  to read/parse the sysfs files. There are ioctls to query the supported
+  features and to query/set features on a particular file system. There's
+  also one to export the size of the global metadata reservation. I have
+  a patch for btrfs-progs that uses this to print useful info in 'btrfs
+  fi df' output.
 
-I fully agree. My idea was to put under btrfs/dev *only* the device
-which are registered in BTRFS by "btrfs dev scan" and/or mount commands.
+Ultimately, the tree structure looks like the following, under /sys/fs/btrfs.
+This is from a test file system, using two devices in raid1. You'll notice
+the 'single' and 'raid1' directories under the {data,metadata,system} dirs.
+The raid profiles are created and removed as the first/last block group
+of a certain profile is added and removed.
 
-> This is what ext4 already does with the
-> exception that they use block device names instead of fsids. Your device
-> use case is interesting, but a tough one to implement well since it is a
-> cache that can be wrong as soon as the user decides to mkfs a device
-> (either as btrfs or anything else) without calling btrfs dev scan
-> afterward. 
+<fsid>/devices/sdc1
+<fsid>/devices/sdd1
+<fsid>/label
+<fsid>/allocation/data/flags
+<fsid>/allocation/data/raid1/used_bytes
+<fsid>/allocation/data/raid1/total_bytes
+<fsid>/allocation/data/bytes_pinned
+<fsid>/allocation/data/bytes_may_use
+<fsid>/allocation/data/total_bytes_pinned
+<fsid>/allocation/data/bytes_reserved
+<fsid>/allocation/data/bytes_used
+<fsid>/allocation/data/single/used_bytes
+<fsid>/allocation/data/single/total_bytes
+<fsid>/allocation/data/total_bytes
+<fsid>/allocation/data/disk_total
+<fsid>/allocation/data/disk_used
+<fsid>/allocation/metadata/flags
+<fsid>/allocation/metadata/raid1/used_bytes
+<fsid>/allocation/metadata/raid1/total_bytes
+<fsid>/allocation/metadata/bytes_pinned
+<fsid>/allocation/metadata/bytes_may_use
+<fsid>/allocation/metadata/total_bytes_pinned
+<fsid>/allocation/metadata/bytes_reserved
+<fsid>/allocation/metadata/bytes_used
+<fsid>/allocation/metadata/single/used_bytes
+<fsid>/allocation/metadata/single/total_bytes
+<fsid>/allocation/metadata/total_bytes
+<fsid>/allocation/metadata/disk_total
+<fsid>/allocation/metadata/disk_used
+<fsid>/allocation/global_rsv_size
+<fsid>/allocation/global_rsv_reserved
+<fsid>/allocation/system/flags
+<fsid>/allocation/system/raid1/used_bytes
+<fsid>/allocation/system/raid1/total_bytes
+<fsid>/allocation/system/bytes_pinned
+<fsid>/allocation/system/bytes_may_use
+<fsid>/allocation/system/total_bytes_pinned
+<fsid>/allocation/system/bytes_reserved
+<fsid>/allocation/system/bytes_used
+<fsid>/allocation/system/single/used_bytes
+<fsid>/allocation/system/single/total_bytes
+<fsid>/allocation/system/total_bytes
+<fsid>/allocation/system/disk_total
+<fsid>/allocation/system/disk_used
+<fsid>/features/mixed_backref
+<fsid>/features/extended_iref
+features/compress_lzo
+features/big_metadata
+features/compress_lzov2
+features/default_subvol
+features/mixed_backref
+features/raid56
+features/mixed_groups
+features/skinny_metadata
+features/extended_iref
 
-Right, I never though about this case.
+-Jeff
 
 
-> I wouldn't necessarily oppose such a feature; I just don't
-> think it merits moving the primary case of per-filesystem information
-> deeper into the hierarchy.
-
-Fortunately the two thing are unrelated. The
-/sys/fs/btrfs/dev/<device-uuid>/... hierarchy can live with
-/sys/fs/btrfs/<fsid>/... or /sys/fs/btrfs/fs/<fsid>.
-
-
-
-BTW, I am playing with your patch. What is the means of the field
-<fsid>/allocation/*/disk_total ? In a RAID5 it seems to be the space
-available ( == (<number-of-disk> - 1)*<size-of-chunk> ) and not the disk
-space consumed ( == <number-of-disk> * <size-of-chunk> ). In fact it
-seems that disk_total == total_bytes...
-
-Ok looking at the kernel code (update_space_info() in extent-tree.c) it
-seems that the info contained in space_info is bogus in case of
-RAID5/RAID6....
-
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

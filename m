@@ -1,198 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46363 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46359 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752370Ab3JUVUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 17:20:42 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 0688AA6359
+	id S1752340Ab3JUVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Oct 2013 17:20:41 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0A910A638C
 	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:40 +0200 (CEST)
-Message-Id: <20131021212007.479550598@suse.com>
-Date: Mon, 21 Oct 2013 17:19:47 -0400
+Message-Id: <20131021212007.683480131@suse.com>
+Date: Mon, 21 Oct 2013 17:19:48 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com
-Subject: [patch 07/13] btrfs: add ability to change features via sysfs
+Subject: [patch 08/13] btrfs: use feature attribute names to print better error messages
 References: <20131021211940.432195222@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds the ability to change (set/clear) features while the file
-system is mounted. A bitmask is added for each feature set for the
-support to set and clear the bits. A message indicating which bit
-has been set or cleared is issued when it's been changed and also when
-permission or support for a particular bit has been denied.
-
-Since the the attributes can now be writable, we need to introduce
-another struct attribute to hold the different permissions.
-
-If neither set or clear is supported, the file will have 0444 permissions.
-If either set or clear is supported, the file will have 0644 permissions
-and the store handler will filter out the write based on the bitmask.
+Now that we have the feature name strings available in the kernel via
+the sysfs attributes, we can use them for printing better failure
+messages from the ioctl path.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/sysfs.c |  118 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/sysfs.h |    3 -
- 2 files changed, 117 insertions(+), 4 deletions(-)
+ fs/btrfs/ioctl.c |   35 ++++++++++++++++++++++++++++++-----
+ fs/btrfs/sysfs.c |   33 ++++++++++++++++++++++++++++++++-
+ fs/btrfs/sysfs.h |    2 ++
+ 3 files changed, 64 insertions(+), 6 deletions(-)
 
---- a/fs/btrfs/sysfs.c	2013-10-21 16:10:01.076018741 -0400
-+++ b/fs/btrfs/sysfs.c	2013-10-21 16:10:01.456010390 -0400
-@@ -43,21 +43,131 @@ static u64 get_features(struct btrfs_fs_
- 		return btrfs_super_incompat_flags(disk_super);
+--- a/fs/btrfs/ioctl.c	2013-10-21 16:09:48.844287259 -0400
++++ b/fs/btrfs/ioctl.c	2013-10-21 16:10:01.856001602 -0400
+@@ -57,6 +57,7 @@
+ #include "rcu-string.h"
+ #include "send.h"
+ #include "dev-replace.h"
++#include "sysfs.h"
+ 
+ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 		       u64 off, u64 olen, u64 olen_aligned, u64 destoff);
+@@ -4531,17 +4532,27 @@ static int btrfs_ioctl_get_features(stru
+ 	return 0;
  }
  
-+static void set_features(struct btrfs_fs_info *fs_info,
-+			 enum btrfs_feature_set set, u64 features)
-+{
-+	struct btrfs_super_block *disk_super = fs_info->super_copy;
-+	if (set == FEAT_COMPAT)
-+		btrfs_set_super_compat_flags(disk_super, features);
-+	else if (set == FEAT_COMPAT_RO)
-+		btrfs_set_super_compat_ro_flags(disk_super, features);
-+	else
-+		btrfs_set_super_incompat_flags(disk_super, features);
-+}
-+
-+static int can_modify_feature(struct btrfs_feature_attr *fa)
-+{
-+	int val = 0;
-+	u64 set, clear;
-+	switch (fa->feature_set) {
-+	case FEAT_COMPAT:
-+		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
-+		break;
-+	case FEAT_COMPAT_RO:
-+		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
-+		break;
-+	case FEAT_INCOMPAT:
-+		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	if (set & fa->feature_bit)
-+		val |= 1;
-+	if (clear & fa->feature_bit)
-+		val |= 2;
-+
-+	return val;
-+}
-+
- static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
- 				       struct kobj_attribute *a, char *buf)
+-static int check_feature_bits(struct btrfs_root *root, const char *type,
++static int check_feature_bits(struct btrfs_root *root,
++			      enum btrfs_feature_set set,
+ 			      u64 change_mask, u64 flags, u64 supported_flags,
+ 			      u64 safe_set, u64 safe_clear)
  {
- 	int val = 0;
- 	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
- 	if (fs_info) {
--		struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
- 		u64 features = get_features(fs_info, fa->feature_set);
- 		if (features & fa->feature_bit)
- 			val = 1;
--	}
-+	} else
-+		val = can_modify_feature(fa);
++	const char *type = btrfs_feature_set_names[set];
++	char *names;
+ 	u64 disallowed, unsupported;
+ 	u64 set_mask = flags & change_mask;
+ 	u64 clear_mask = ~flags & change_mask;
  
- 	return snprintf(buf, PAGE_SIZE, "%d\n", val);
+ 	unsupported = set_mask & ~supported_flags;
+ 	if (unsupported) {
+-		btrfs_warn(root->fs_info,
++		names = btrfs_printable_features(set, unsupported);
++		if (names) {
++			btrfs_warn(root->fs_info,
++			   "this kernel does not support the %s feature bit%s",
++			   names, strchr(names, ',') ? "s" : "");
++			kfree(names);
++		} else
++			btrfs_warn(root->fs_info,
+ 			   "this kernel does not support %s bits 0x%llx",
+ 			   type, unsupported);
+ 		return -EOPNOTSUPP;
+@@ -4549,7 +4560,14 @@ static int check_feature_bits(struct btr
+ 
+ 	disallowed = set_mask & ~safe_set;
+ 	if (disallowed) {
+-		btrfs_warn(root->fs_info,
++		names = btrfs_printable_features(set, disallowed);
++		if (names) {
++			btrfs_warn(root->fs_info,
++			   "can't set the %s feature bit%s while mounted",
++			   names, strchr(names, ',') ? "s" : "");
++			kfree(names);
++		} else
++			btrfs_warn(root->fs_info,
+ 			   "can't set %s bits 0x%llx while mounted",
+ 			   type, disallowed);
+ 		return -EPERM;
+@@ -4557,7 +4575,14 @@ static int check_feature_bits(struct btr
+ 
+ 	disallowed = clear_mask & ~safe_clear;
+ 	if (disallowed) {
+-		btrfs_warn(root->fs_info,
++		names = btrfs_printable_features(set, disallowed);
++		if (names) {
++			btrfs_warn(root->fs_info,
++			   "can't clear the %s feature bit%s while mounted",
++			   names, strchr(names, ',') ? "s" : "");
++			kfree(names);
++		} else
++			btrfs_warn(root->fs_info,
+ 			   "can't clear %s bits 0x%llx while mounted",
+ 			   type, disallowed);
+ 		return -EPERM;
+@@ -4567,7 +4592,7 @@ static int check_feature_bits(struct btr
  }
  
-+static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
-+					struct kobj_attribute *a,
-+					const char *buf, size_t count)
+ #define check_feature(root, change_mask, flags, mask_base)	\
+-check_feature_bits(root, # mask_base, change_mask, flags,	\
++check_feature_bits(root, FEAT_##mask_base, change_mask, flags,	\
+ 		   BTRFS_FEATURE_ ## mask_base ## _SUPP,	\
+ 		   BTRFS_FEATURE_ ## mask_base ## _SAFE_SET,	\
+ 		   BTRFS_FEATURE_ ## mask_base ## _SAFE_CLEAR)
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:10:01.456010390 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:10:01.856001602 -0400
+@@ -254,6 +254,31 @@ const char * const btrfs_feature_set_nam
+ static char btrfs_unknown_feature_names[3][NUM_FEATURE_BITS][13];
+ static struct btrfs_feature_attr btrfs_feature_attrs[3][NUM_FEATURE_BITS];
+ 
++char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags)
 +{
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
-+	struct btrfs_trans_handle *trans;
-+	u64 features, set, clear;
-+	unsigned long val;
-+	int ret;
++	size_t bufsize = 4096; /* safe max, 64 names * 64 bytes */
++	int len = 0;
++	int i;
++	char *str;
 +
-+	fs_info = to_fs_info(kobj);
-+	if (!fs_info)
-+		return -EPERM;
++	str = kmalloc(bufsize, GFP_KERNEL);
++	if (!str)
++		return str;
 +
-+	ret = kstrtoul(skip_spaces(buf), 0, &val);
-+	if (ret)
-+		return ret;
++	for (i = 0; i < ARRAY_SIZE(btrfs_feature_attrs[set]); i++) {
++		const char *name;
 +
-+	if (fa->feature_set == FEAT_COMPAT) {
-+		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
-+	} else if (fa->feature_set == FEAT_COMPAT_RO) {
-+		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
-+		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
-+	} else {
-+		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
-+		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
++		if (!(flags & (1ULL << i)))
++			continue;
++
++		name = btrfs_feature_attrs[set][i].kobj_attr.attr.name;
++		len += snprintf(str + len, bufsize - len, "%s%s",
++				len ? "," : "", name);
 +	}
 +
-+	features = get_features(fs_info, fa->feature_set);
-+
-+	/* Nothing to do */
-+	if ((val && (features & fa->feature_bit)) ||
-+	    (!val && !(features & fa->feature_bit)))
-+		return count;
-+
-+	if ((val && !(set & fa->feature_bit)) ||
-+	    (!val && !(clear & fa->feature_bit))) {
-+		btrfs_info(fs_info,
-+			"%sabling feature %s on mounted fs is not supported.",
-+			val ? "En" : "Dis", fa->kobj_attr.attr.name);
-+		return -EPERM;
-+	}
-+
-+	btrfs_info(fs_info, "%s %s feature flag",
-+		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
-+
-+	trans = btrfs_start_transaction(fs_info->fs_root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	spin_lock(&fs_info->super_lock);
-+	features = get_features(fs_info, fa->feature_set);
-+	if (val)
-+		features |= fa->feature_bit;
-+	else
-+		features &= ~fa->feature_bit;
-+	set_features(fs_info, fa->feature_set, features);
-+	spin_unlock(&fs_info->super_lock);
-+
-+	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
-+	if (ret)
-+		return ret;
-+
-+	return count;
++	return str;
 +}
 +
- static umode_t btrfs_feature_visible(struct kobject *kobj,
- 				     struct attribute *attr, int unused)
+ static void init_feature_attrs(void)
  {
-@@ -71,7 +181,9 @@ static umode_t btrfs_feature_visible(str
- 		fa = attr_to_btrfs_feature_attr(attr);
- 		features = get_features(fs_info, fa->feature_set);
+ 	struct btrfs_feature_attr *fa;
+@@ -264,11 +289,17 @@ static void init_feature_attrs(void)
+ 	BUILD_BUG_ON(ARRAY_SIZE(btrfs_unknown_feature_names[0]) !=
+ 		     ARRAY_SIZE(btrfs_feature_attrs[0]));
  
--		if (!(features & fa->feature_bit))
-+		if (can_modify_feature(fa))
-+			mode |= S_IWUSR;
-+		else if (!(features & fa->feature_bit))
- 			mode = 0;
++	memset(btrfs_feature_attrs, 0, sizeof(btrfs_feature_attrs));
++	memset(btrfs_unknown_feature_names, 0,
++	       sizeof(btrfs_unknown_feature_names));
++
+ 	for (i = 0; btrfs_supported_feature_attrs[i]; i++) {
+ 		struct btrfs_feature_attr *sfa;
+ 		struct attribute *a = btrfs_supported_feature_attrs[i];
++		int bit;
+ 		sfa = attr_to_btrfs_feature_attr(a);
+-		fa = &btrfs_feature_attrs[sfa->feature_set][sfa->feature_bit];
++		bit = ilog2(sfa->feature_bit);
++		fa = &btrfs_feature_attrs[sfa->feature_set][bit];
+ 
+ 		fa->kobj_attr.attr.name = sfa->kobj_attr.attr.name;
  	}
- 
---- a/fs/btrfs/sysfs.h	2013-10-21 16:10:00.216037635 -0400
-+++ b/fs/btrfs/sysfs.h	2013-10-21 16:10:01.460010303 -0400
-@@ -31,7 +31,8 @@ struct btrfs_feature_attr {
- #define BTRFS_FEAT_ATTR(_name, _feature_set, _prefix, _feature_bit)	     \
- static struct btrfs_feature_attr btrfs_attr_##_name = {			     \
- 	.kobj_attr = __INIT_KOBJ_ATTR(_name, S_IRUGO,			     \
--				      btrfs_feature_attr_show, NULL),	     \
-+				      btrfs_feature_attr_show,		     \
-+				      btrfs_feature_attr_store),	     \
- 	.feature_set	= _feature_set,					     \
- 	.feature_bit	= _prefix ##_## _feature_bit,			     \
- }
+--- a/fs/btrfs/sysfs.h	2013-10-21 16:10:01.460010303 -0400
++++ b/fs/btrfs/sysfs.h	2013-10-21 16:10:01.860001514 -0400
+@@ -51,4 +51,6 @@ static struct btrfs_feature_attr btrfs_a
+ #define attr_to_btrfs_attr(a) container_of(a, struct kobj_attribute, attr)
+ #define attr_to_btrfs_feature_attr(a) \
+ 			to_btrfs_feature_attr(attr_to_btrfs_attr(a))
++char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
++extern const char * const btrfs_feature_set_names[3];
+ #endif /* _BTRFS_SYSFS_H_ */
 
 

@@ -1,88 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46370 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46368 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751826Ab3JUVUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1752374Ab3JUVUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 21 Oct 2013 17:20:42 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 1CD7EA65D4
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 16D4DA6535
 	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:40 +0200 (CEST)
-Message-Id: <20131021212008.480394969@suse.com>
-Date: Mon, 21 Oct 2013 17:19:52 -0400
+Message-Id: <20131021212008.267776543@suse.com>
+Date: Mon, 21 Oct 2013 17:19:51 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com
-Subject: [patch 12/13] btrfs: publish fs label in sysfs
+Subject: [patch 11/13] btrfs: publish device membership in sysfs
 References: <20131021211940.432195222@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds a writeable attribute which describes the label.
+Now that we have the infrastructure for per-super attributes, we can
+publish device membership in /sys/fs/btrfs/<fsid>/devices. The information
+is published as symlinks to the block devices.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/sysfs.c |   44 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ fs/btrfs/ctree.h |    1 +
+ fs/btrfs/sysfs.c |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+)
 
---- a/fs/btrfs/sysfs.c	2013-10-21 16:20:06.395804741 -0400
-+++ b/fs/btrfs/sysfs.c	2013-10-21 16:23:57.402255196 -0400
-@@ -355,6 +355,49 @@ static const struct attribute *allocatio
- 	NULL,
- };
+--- a/fs/btrfs/ctree.h	2013-10-21 16:10:02.743982088 -0400
++++ b/fs/btrfs/ctree.h	2013-10-21 16:10:03.223971538 -0400
+@@ -1522,6 +1522,7 @@ struct btrfs_fs_info {
  
-+static ssize_t btrfs_label_show(struct kobject *kobj,
-+				struct kobj_attribute *a, char *buf)
+ 	struct kobject super_kobj;
+ 	struct kobject *space_info_kobj;
++	struct kobject *device_dir_kobj;
+ 	struct completion kobj_unregister;
+ 	int do_barriers;
+ 	int closing;
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:10:02.751981911 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:10:03.227971451 -0400
+@@ -23,11 +23,13 @@
+ #include <linux/buffer_head.h>
+ #include <linux/kobject.h>
+ #include <linux/bug.h>
++#include <linux/genhd.h>
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+ #include "sysfs.h"
++#include "volumes.h"
+ 
+ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
+ 
+@@ -374,6 +376,8 @@ static inline struct btrfs_fs_info *to_f
+ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ {
+ 	sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
++	kobject_del(fs_info->device_dir_kobj);
++	kobject_put(fs_info->device_dir_kobj);
+ 	kobject_del(fs_info->space_info_kobj);
+ 	kobject_put(fs_info->space_info_kobj);
+ 	kobject_del(&fs_info->super_kobj);
+@@ -507,6 +511,30 @@ static int add_unknown_feature_attrs(str
+ 	return 0;
+ }
+ 
++static int add_device_membership(struct btrfs_fs_info *fs_info)
 +{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	return snprintf(buf, PAGE_SIZE, "%s\n", fs_info->super_copy->label);
-+}
++	int error = 0;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_device *dev;
 +
-+static ssize_t btrfs_label_store(struct kobject *kobj,
-+				 struct kobj_attribute *a,
-+				 const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *root = fs_info->fs_root;
-+	int ret;
++	fs_info->device_dir_kobj = kobject_create_and_add("devices",
++						&fs_info->super_kobj);
++	if (!fs_info->device_dir_kobj)
++		return -ENOMEM;
 +
-+	if (len >= BTRFS_LABEL_SIZE) {
-+		pr_err("btrfs: unable to set label with more than %d bytes\n",
-+		       BTRFS_LABEL_SIZE - 1);
-+		return -EINVAL;
++	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
++		struct hd_struct *disk = dev->bdev->bd_part;
++		struct kobject *disk_kobj = &part_to_dev(disk)->kobj;
++
++		error = sysfs_create_link(fs_info->device_dir_kobj,
++					  disk_kobj, disk_kobj->name);
++		if (error)
++			break;
 +	}
 +
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	spin_lock(&root->fs_info->super_lock);
-+	strcpy(fs_info->super_copy->label, buf);
-+	spin_unlock(&root->fs_info->super_lock);
-+	ret = btrfs_commit_transaction(trans, root);
-+
-+	if (!ret)
-+		return len;
-+
-+	return ret;
++	return error;
 +}
-+BTRFS_ATTR_RW(label, 0644, btrfs_label_show, btrfs_label_store);
 +
-+static struct attribute *btrfs_attrs[] = {
-+	BTRFS_ATTR_PTR(label),
-+	NULL,
-+};
-+
- static void btrfs_release_super_kobj(struct kobject *kobj)
- {
- 	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-@@ -364,6 +407,7 @@ static void btrfs_release_super_kobj(str
- static struct kobj_type btrfs_ktype = {
- 	.sysfs_ops	= &kobj_sysfs_ops,
- 	.release	= btrfs_release_super_kobj,
-+	.default_attrs	= btrfs_attrs,
- };
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
  
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
+@@ -528,6 +556,10 @@ int btrfs_sysfs_add_one(struct btrfs_fs_
+ 	if (error)
+ 		goto failure;
+ 
++	error = add_device_membership(fs_info);
++	if (error)
++		goto failure;
++
+ 	fs_info->space_info_kobj = kobject_create_and_add("allocation",
+ 						  &fs_info->super_kobj);
+ 	if (!fs_info->space_info_kobj) {
 
 
 

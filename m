@@ -1,33 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:33741 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750937Ab3JUUiU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 16:38:20 -0400
-Received: by mail-wi0-f174.google.com with SMTP id cb5so4602965wib.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 13:38:19 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:49962 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752696Ab3JVOdG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Oct 2013 10:33:06 -0400
+Date: Tue, 22 Oct 2013 16:33:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, chris.mason@fusionio.com,
+        jbacik@fusionio.com
+Subject: Re: [PATCH 2/2] btrfs-progs: filesystem show of specified mounted
+ disk should work
+Message-ID: <20131022143303.GU1032@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1382421202-18494-1-git-send-email-anand.jain@oracle.com>
+ <1382421202-18494-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-From: =?UTF-8?B?0KLQuNC80L7RhNC10Lkg0KLQuNGC0L7QstC10YY=?=
-	<nefelim4ag@gmail.com>
-Date: Mon, 21 Oct 2013 23:37:59 +0300
-Message-ID: <CAGqmi74OvQ=BFroP+QCf6eUtc61__LYRGtZJNcPz1XrSWX-q_w@mail.gmail.com>
-Subject: swapfile on btrfs, temporary solution for wiki
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1382421202-18494-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list, i know what btrfs  don't support swap files.
-I read arch wiki and when i reading about systemd addon for auto
-create swapfile on btrfs, i invent the way, how create and using swap
-file, just see following sh code:
+On Tue, Oct 22, 2013 at 01:53:22PM +0800, Anand Jain wrote:
+> @@ -386,7 +395,7 @@ static int btrfs_scan_kernel(void *search)
+>  static const char * const cmd_show_usage[] = {
+> -	"btrfs filesystem show [options] [<path>|<uuid>]",
+> +	"btrfs filesystem show [options|<path>|<uuid>]",
 
-swapfile=$(losetup -f) #free loop device
-truncate -s 8G /swap   #create 8G sparse swap file
-losetup $swapfile /swap #mount file to loop
-mkswap  $swapfile
-swapon  $swapfile
+Options should stay separate from the path/uuid, you're extending the
+syntax to accept a device:
 
-i just adding this to rc.local and this just work.
-May be, add it to Wiki as temporary solution to using swap file?
-(sorry for my bad english)
+	"btrfs filesystem show [options] [<path>|<uuid>|<device>]",
+
+I'm fixing it locally, let me know if this doesn't match what you've
+intended.
+
+david

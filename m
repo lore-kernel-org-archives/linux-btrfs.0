@@ -1,76 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50701 "EHLO plane.gmane.org"
+Received: from mail.virtall.com ([178.63.195.102]:59275 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752289Ab3JVN2H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Oct 2013 09:28:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VYc0D-0003ZC-Bj
-	for linux-btrfs@vger.kernel.org; Tue, 22 Oct 2013 15:28:05 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 15:28:05 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 15:28:05 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs raid5
-Date: Tue, 22 Oct 2013 13:27:44 +0000 (UTC)
-Message-ID: <pan$59a02$8231ca78$f5d54bfb$30812437@cox.net>
-References: <0833228b-7a17-49f8-836a-2565a6b9af0c@aliyun.com>
+	id S1753185Ab3JVQEY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Oct 2013 12:04:24 -0400
+Date: Wed, 23 Oct 2013 01:04:11 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: dsterba@suse.cz
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: WARNING: CPU: 2 PID: 1543 at fs/btrfs/ctree.c:1322
+ btrfs_search_old_slot+0x338/0x81d [btrfs]()
+Message-ID: <20131023010411.42d30c97@virtall.com>
+In-Reply-To: <20131022154619.GW1032@twin.jikos.cz>
+References: <20131021122123.43b3aa50@virtall.com>
+	<20131021151032.708cc7d2@virtall.com>
+	<20131021125317.GK1032@twin.jikos.cz>
+	<20131022025025.169941de@virtall.com>
+	<20131022154619.GW1032@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-lilofile posted on Mon, 21 Oct 2013 23:45:58 +0800 as excerpted:
+On Tue, 22 Oct 2013 17:46:19 +0200
+David Sterba <dsterba@suse.cz> wrote:
 
-> hi:
->     since RAID 5/6 code merged into Btrfs from  2013.2, no update and
->     bug are found in maillist? is any development plan with btrfs raid5?
->     such as adjusting stripe width、 reconstruction？
->   compared to md raid5  what is advantage in btrfs raid5 ?
+> On Tue, Oct 22, 2013 at 02:50:25AM +0900, Tomasz Chmielewski wrote:
+> > I'm getting these every few seconds when running scrub - expected?
+> 
+> The system probably locked up again due to the corrupted data. Looking
+> at the stacktraces again, this is due to a BUG_ON in
+> btrfs_merge_bio_hook, and it does not look like an easy one to fix.
+> 
+> The filesystem is damaged, but we don't know to what extent. It's
+> possible that 'btrfs restore' will be able to get to the data.
 
-AFAIK, btrfs raid5/6 modes are still not considered ready for deployed 
-use, only for testing (tho with each new kernel cycle I wonder if that 
-has changed, but no word on it changing yet).  This is because there's a 
-hole in the recovery process in case of a lost device, making it 
-dangerous to use except for the pure test-case.
+Actually it's still working.
 
-Yes, flushing out the features a bit is planned, tho I've not tracked 
-specifics.  (My primary interest and use-case is the N-way-mirroring 
-raid1 case, which is roadmapped for merging after raid5/6 stabilize; 
-current "raid1" case is limited to 2-way-mirroring.  So mostly I'm simply 
-tracking raid5/6 progress in relation to that, not for its own merits, 
-thus I'm not personally tracking the specifics too closely.)
+If I run this:
 
-The advantage in btrfs raid5/6 is that unlike md/raid, btrfs knows what 
-blocks are actually used by data/metadata, and can use that information 
-in a rebuild/recovery situation to only sync/rebuild the actually used 
-blocks on a re-added or replacement device, skipping blocks that were 
-entirely unused/empty in the first place.
+# btrfs scrub status /mnt/lxc1
+scrub status for 8d08ad6d-4543-4fe5-8b1b-640dc1423d41
+        scrub started at Tue Oct 22 09:53:34 2013, running for 22101 seconds
+        total bytes scrubbed: 2.61TB with 0 errors
 
-md/raid can't do that, because it tries to be a filesystem agnostic layer 
-that doesn't know nor care what blocks on the layers above it were 
-actually used or empty.  For it to try to track that would be a layering 
-violation and would seriously complicate the code and/or limit usage to 
-only those filesystems or other layers above that it supported/understood/
-could-properly-track.
 
-A comparable relationship exists between a ramdisk (comparable to md/
-raid) and tmpfs (comparable to btrfs) -- the first is transparent and 
-allows the flexibility of putting whatever filesystem or other upper 
-layer on top, while the latter is the filesystem layer itself, allowing 
-nothing else above it.  But the ramdisk/tmpfs case deals with memory 
-emulating block device storage, while the mdraid/btrfs case deals with 
-multiple block devices emulating a single device.  In both cases each has 
-its purpose, with the strengths of one being the limitations of the 
-other, and you choose the one that best matches your use case.
+the number of bytes scrubbed is growing every now and then (still, 0 errors).
+
+
+However, it's not possible to work with this system via SSH, because these keep popping up few times every minute:
+
+Message from syslogd@bkp010 at Oct 22 16:02:10 ...
+ kernel:[22219.117012] BUG: soft lockup - CPU#2 stuck for 23s! [btrfs:5673]
+
+Message from syslogd@bkp010 at Oct 22 16:02:38 ...
+ kernel:[22247.100515] BUG: soft lockup - CPU#0 stuck for 23s! [btrfs:5674]
+
+Message from syslogd@bkp010 at Oct 22 16:02:38 ...
+ kernel:[22247.100519] BUG: soft lockup - CPU#2 stuck for 23s! [btrfs:5673]
+
+
+Will wait to see if it finishes or if it locks up at some point.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Tomasz Chmielewski
+http://wpkg.org

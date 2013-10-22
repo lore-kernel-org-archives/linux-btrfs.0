@@ -1,258 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46360 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50687 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752363Ab3JUVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 17:20:41 -0400
+	id S1753610Ab3JVOoe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Oct 2013 10:44:34 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E0CE5A60CF
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2013 23:20:39 +0200 (CEST)
-Message-Id: <20131021212006.208247704@suse.com>
-Date: Mon, 21 Oct 2013 17:19:41 -0400
+	by mx2.suse.de (Postfix) with ESMTP id B8335A585B
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 16:44:33 +0200 (CEST)
+Message-ID: <52668F4E.7040503@suse.com>
+Date: Tue, 22 Oct 2013 10:44:30 -0400
 From: Jeff Mahoney <jeffm@suse.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com
-Subject: [patch 01/13] btrfs: add ioctls to query/change feature bits online
-References: <20131021211940.432195222@suse.com>
+Subject: Re: [patch 02/13] kobject: export kobj_sysfs_ops
+References: <20131021211940.432195222@suse.com> <20131021212006.467949781@suse.com>
+In-Reply-To: <20131021212006.467949781@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are some feature bits that require no offline setup and can
-be enabled online. I've only reviewed extended irefs, but there will
-probably be more.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-We introduce three new ioctls:
-- BTRFS_IOC_GET_SUPPORTED_FEATURES: query the kernel for supported features.
-- BTRFS_IOC_GET_FEATURES: query the kernel for enabled features on a per-fs
-  basis, as well as querying for which features are changeable with mounted.
-- BTRFS_IOC_SET_FEATURES: change features on a per-fs basis.
+On 10/21/13 5:19 PM, Jeff Mahoney wrote:
+> struct kobj_attribute implements the baseline attribute functionality
+> that can be used all over the place. We should export the ops associate=
+d
+> with it.
+>=20
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>=20
+>  lib/kobject.c |    1 +
+>  1 file changed, 1 insertion(+)
+>=20
+> --- a/lib/kobject.c	2013-10-21 16:09:51.868220920 -0400
+> +++ b/lib/kobject.c	2013-10-21 16:10:00.216037635 -0400
+> @@ -726,6 +726,7 @@ const struct sysfs_ops kobj_sysfs_ops =3D
+>  	.show	=3D kobj_attr_show,
+>  	.store	=3D kobj_attr_store,
+>  };
+> +EXPORT_SYMBOL_GPL(kobj_sysfs_ops);
+> =20
+>  /**
+>   * kset_register - initialize and add a kset.
+>=20
+>=20
+>=20
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
-We introduce two new masks per feature set (_SAFE_SET and _SAFE_CLEAR) that
-allow us to define which features are safe to change at runtime.
+I posted this one on LKML, CC'ing Greg, and he gave his:
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
-The failure modes for BTRFS_IOC_SET_FEATURES are as follows:
-- Enabling a completely unsupported feature: warns and returns -ENOTSUPP
-- Enabling a feature that can only be done offline: warns and returns -EPERM
+-Jeff
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h           |    9 ++
- fs/btrfs/ioctl.c           |  145 +++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |   12 +++
- 3 files changed, 166 insertions(+)
-
---- a/fs/btrfs/ctree.h	2013-09-11 21:40:48.939758689 -0400
-+++ b/fs/btrfs/ctree.h	2013-09-16 13:37:13.020197254 -0400
-@@ -512,7 +512,12 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- 
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
-+#define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-+#define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-+#define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
-+#define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
-+
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
-@@ -523,6 +528,10 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
- 
-+#define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
-+	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-+#define BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR		0ULL
-+
- /*
-  * A leaf is full of items. offset and size tell us where to find
-  * the item in the leaf (relative to the start of the data area)
---- a/fs/btrfs/ioctl.c	2013-09-11 21:40:48.991757905 -0400
-+++ b/fs/btrfs/ioctl.c	2013-09-16 13:37:09.720237996 -0400
-@@ -4098,6 +4098,145 @@ out_unlock:
- 	return ret;
- }
- 
-+static int btrfs_ioctl_get_supported_features(struct file *file,
-+					      void __user *arg)
-+{
-+	struct btrfs_ioctl_feature_flags features[3];
-+
-+	features[0].compat_flags = BTRFS_FEATURE_COMPAT_SUPP;
-+	features[0].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SUPP;
-+	features[0].incompat_flags = BTRFS_FEATURE_INCOMPAT_SUPP;
-+
-+	features[1].compat_flags = BTRFS_FEATURE_COMPAT_SAFE_SET;
-+	features[1].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
-+	features[1].incompat_flags = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
-+
-+	features[2].compat_flags = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
-+	features[2].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
-+	features[2].incompat_flags = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
-+
-+	if (copy_to_user(arg, &features, sizeof(features)))
-+		return -EFAULT;
-+
-+	return 0;
-+}
-+
-+static int btrfs_ioctl_get_features(struct file *file, void __user *arg)
-+{
-+	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-+	struct btrfs_super_block *super_block = root->fs_info->super_copy;
-+	struct btrfs_ioctl_feature_flags features;
-+
-+	features.compat_flags = btrfs_super_compat_flags(super_block);
-+	features.compat_ro_flags = btrfs_super_compat_ro_flags(super_block);
-+	features.incompat_flags = btrfs_super_incompat_flags(super_block);
-+
-+	if (copy_to_user(arg, &features, sizeof(features)))
-+		return -EFAULT;
-+
-+	return 0;
-+}
-+
-+static int check_feature_bits(struct btrfs_root *root, const char *type,
-+			      u64 change_mask, u64 flags, u64 supported_flags,
-+			      u64 safe_set, u64 safe_clear)
-+{
-+	u64 disallowed, unsupported;
-+	u64 set_mask = flags & change_mask;
-+	u64 clear_mask = ~flags & change_mask;
-+
-+	unsupported = set_mask & ~supported_flags;
-+	if (unsupported) {
-+		btrfs_warn(root->fs_info,
-+			   "this kernel does not support %s bits 0x%llx",
-+			   type, unsupported);
-+		return -EOPNOTSUPP;
-+	}
-+
-+	disallowed = set_mask & ~safe_set;
-+	if (disallowed) {
-+		btrfs_warn(root->fs_info,
-+			   "can't set %s bits 0x%llx while mounted",
-+			   type, disallowed);
-+		return -EPERM;
-+	}
-+
-+	disallowed = clear_mask & ~safe_clear;
-+	if (disallowed) {
-+		btrfs_warn(root->fs_info,
-+			   "can't clear %s bits 0x%llx while mounted",
-+			   type, disallowed);
-+		return -EPERM;
-+	}
-+
-+	return 0;
-+}
-+
-+#define check_feature(root, change_mask, flags, mask_base)	\
-+check_feature_bits(root, # mask_base, change_mask, flags,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SUPP,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SAFE_SET,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SAFE_CLEAR)
-+
-+static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
-+{
-+	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-+	struct btrfs_super_block *super_block = root->fs_info->super_copy;
-+	struct btrfs_ioctl_feature_flags flags[2];
-+	struct btrfs_trans_handle *trans;
-+	u64 newflags;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (copy_from_user(flags, arg, sizeof(flags)))
-+		return -EFAULT;
-+
-+	/* Nothing to do */
-+	if (!flags[0].compat_flags && !flags[0].compat_ro_flags &&
-+	    !flags[0].incompat_flags)
-+		return 0;
-+
-+	ret = check_feature(root, flags[0].compat_flags,
-+			    flags[1].compat_flags, COMPAT);
-+	if (ret)
-+		return ret;
-+
-+	ret = check_feature(root, flags[0].compat_ro_flags,
-+			    flags[1].compat_ro_flags, COMPAT_RO);
-+	if (ret)
-+		return ret;
-+
-+	ret = check_feature(root, flags[0].incompat_flags,
-+			    flags[1].incompat_flags, INCOMPAT);
-+	if (ret)
-+		return ret;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	spin_lock(&root->fs_info->super_lock);
-+	newflags = btrfs_super_compat_flags(super_block);
-+	newflags |= flags[0].compat_flags & flags[1].compat_flags;
-+	newflags &= ~(flags[0].compat_flags & ~flags[1].compat_flags);
-+	btrfs_set_super_compat_flags(super_block, newflags);
-+
-+	newflags = btrfs_super_compat_ro_flags(super_block);
-+	newflags |= flags[0].compat_ro_flags & flags[1].compat_ro_flags;
-+	newflags &= ~(flags[0].compat_ro_flags & ~flags[1].compat_ro_flags);
-+	btrfs_set_super_compat_ro_flags(super_block, newflags);
-+
-+	newflags = btrfs_super_incompat_flags(super_block);
-+	newflags |= flags[0].incompat_flags & flags[1].incompat_flags;
-+	newflags &= ~(flags[0].incompat_flags & ~flags[1].incompat_flags);
-+	btrfs_set_super_incompat_flags(super_block, newflags);
-+	spin_unlock(&root->fs_info->super_lock);
-+
-+	return btrfs_end_transaction(trans, root);
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -4208,6 +4347,12 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_set_fslabel(file, argp);
- 	case BTRFS_IOC_FILE_EXTENT_SAME:
- 		return btrfs_ioctl_file_extent_same(file, argp);
-+	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
-+		return btrfs_ioctl_get_supported_features(file, argp);
-+	case BTRFS_IOC_GET_FEATURES:
-+		return btrfs_ioctl_get_features(file, argp);
-+	case BTRFS_IOC_SET_FEATURES:
-+		return btrfs_ioctl_set_features(file, argp);
- 	}
- 
- 	return -ENOTTY;
---- a/include/uapi/linux/btrfs.h	2013-09-10 12:36:31.643763746 -0400
-+++ b/include/uapi/linux/btrfs.h	2013-09-16 13:38:03.251588809 -0400
-@@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
- 	__u64 reserved[124];			/* pad to 1k */
- };
- 
-+struct btrfs_ioctl_feature_flags {
-+	__u64 compat_flags;
-+	__u64 compat_ro_flags;
-+	__u64 incompat_flags;
-+};
-+
- /* balance control ioctl modes */
- #define BTRFS_BALANCE_CTL_PAUSE		1
- #define BTRFS_BALANCE_CTL_CANCEL	2
-@@ -579,5 +585,11 @@ static inline char *btrfs_err_str(enum b
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags)
-+#define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags[2])
-+#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags[3])
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
+--e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+
+iQIcBAEBAgAGBQJSZo9OAAoJEB57S2MheeWyXIYP/25qCR8t+361pD8yC5rtQ3T5
+l+mzL5eUCDDObscPaAiYOpo1u3Gc1Z4Pl/LjkRQEntFnVDd2ltm+1O1XLCIT+bpq
+8FqsXHyElXD++GYwwe6AGPNBTnI3g/bT+zQ6nzGMEnG34V6oS3xMlqiDJYFSbpoj
+6vDQ/D/lgzWYEarHdTXJ+wcxJXtmmwpgztPQCXdBlZyEkWkAY0vkDNBCuLc1oz+W
+ljhLd0BBnHzy7F0Ase8wgBUvlaVHProA3iwqq/mkJMnhhDEtBDkX0HFvaSPbrrZ7
+AqZXqCK43cPyFMftb5AJ3y2aiiD7H0e/i8FscasPqG+egKUv5ctcYBBhv4ty/eis
+pLjA60BkxHFip6opKt0JhmlZdCyuWhoB9nXZcY/eTtJ0Axubz7HofgaB+Z4pyj4v
+O8EI+fCN3WNPePQ7huDGQkrjz0IpVVDMP3HXYV7+QXS6z/YCu+jLq5efyQwCyOJI
+Opf9ab3qthXWHbnVPl7VWBPP5ITY3fihWw9KpyNr9qyCASEbyrUaN8PhQ0EtM9AQ
+yYUbNPB3s3mEuxrubwWoqZf1uZYvjSAln1631Vp48KQVZDPcBy8tuvBxmg3AO8FZ
+VCbA9pCTtkwtofH3wd7V0xQWxk3IAl03A9dbIhzldMm6LIGo7FxjhSQHS1pQ3h0c
+90aKGHI6sy1hhu6HxWJh
+=xcGD
+-----END PGP SIGNATURE-----
+
+--e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae--

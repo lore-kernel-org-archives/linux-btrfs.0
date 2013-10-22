@@ -1,71 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:43493 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752399Ab3JVNVt (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:47209 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752351Ab3JVN2g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Oct 2013 09:21:49 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id 406AB7C06A2
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 07:21:49 -0600 (MDT)
-Date: Tue, 22 Oct 2013 09:21:47 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: Josef Bacik <jbacik@fusionio.com>, <dsterba@suse.cz>,
-        <linux-btrfs@vger.kernel.org>, <chris.mason@fusionio.com>
+	Tue, 22 Oct 2013 09:28:36 -0400
+Date: Tue, 22 Oct 2013 14:28:31 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Anand Jain <Anand.Jain@oracle.com>, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org, chris.mason@fusionio.com
 Subject: Re: [PATCH 1/3 v4] btrfs-progs: use kernel for mounted disk for show
-Message-ID: <20131022132147.GA27304@localhost.localdomain>
+Message-ID: <20131022132831.GH6598@carfax.org.uk>
 References: <1381203700-17558-1-git-send-email-anand.jain@oracle.com>
  <20131015171333.GM5787@twin.jikos.cz>
  <20131021144428.GG6924@localhost.localdomain>
  <526612EB.1050802@oracle.com>
+ <20131022132147.GA27304@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <526612EB.1050802@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="IbVRjBtIbJdbeK1C"
+In-Reply-To: <20131022132147.GA27304@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 22, 2013 at 01:53:47PM +0800, Anand Jain wrote:
-> 
-> 
-> On 10/21/13 10:44 PM, Josef Bacik wrote:
-> >On Tue, Oct 15, 2013 at 07:13:33PM +0200, David Sterba wrote:
-> >>On Tue, Oct 08, 2013 at 11:41:38AM +0800, Anand Jain wrote:
-> >>>As of now btrfs filesystem show reads directly from
-> >>>disks. So sometimes output can be stale, mainly when
-> >>>user wants to cross verify their operation like,
-> >>>label or device delete or add... etc. so this
-> >>>patch will read from the kernel ioctl if it finds
-> >>>that disk is mounted.
-> >>
-> >>Sorry for holding this patch back for so long, I wanted to find out why
-> >>the output is different before and after. The reason is simple, for my
-> >>convenience I've added the user to the 'disk' group so I can access the
-> >>block devices without root. This patch stops to read the block devs
-> >>directly and uses the ioctl BTRFS_IOC_FS_INFO which gives me a silent
-> >>EPERM. If I run show with sudo, then all filesystems show up as
-> >>expected.
-> >>
-> >
-> >This patch needs to be dropped (I imagine the whole series too) as it breaks
-> >xfstests btrfs/003.  If I do btrfs fi show on a mounted fs I get this
-> >
-> >[root@destiny btrfs-progs]# btrfs fi show /dev/sdc
-> >Btrfs v0.20-rc1-483-ge0173f6
-> >[root@destiny btrfs-progs]#
-> >
-> >Chris this is in integration, so maybe a revert?  Thanks,
-> 
->  That would be less productive approach as a whole.
->  I have sent out the fix for this. Kindly find it.
-> 
-> ---
-> [PATCH 1/2] btrfs-progs: make get_btrfs_mount callable
-> [PATCH 2/2] btrfs-progs: filesystem show of specified mounted disk should
-> work
-> ---
-> 
 
-Did you test these?  Because they aren't working for me, so I think a revert is
-the only solution.  Thanks,
+--IbVRjBtIbJdbeK1C
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Josef
+On Tue, Oct 22, 2013 at 09:21:47AM -0400, Josef Bacik wrote:
+> On Tue, Oct 22, 2013 at 01:53:47PM +0800, Anand Jain wrote:
+> >  That would be less productive approach as a whole.
+> >  I have sent out the fix for this. Kindly find it.
+> > 
+> > ---
+> > [PATCH 1/2] btrfs-progs: make get_btrfs_mount callable
+> > [PATCH 2/2] btrfs-progs: filesystem show of specified mounted disk should
+> > work
+> > ---
+> > 
+> 
+> Did you test these?  Because they aren't working for me, so I think a revert is
+> the only solution.  Thanks,
+
+   Just for the avoidance of doubt -- Josef means a full xfstests run
+on the patches. It may take a long time, but it does mean that
+everything(*) gets tested for regressions and helps prevent this
+to-and-fro of patches trying to fix up earlier bugs.
+
+   Hugo.
+
+(*) OK, not quite everything, but Eric's and Josef's recent work is
+taking us closer to that goal.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- "What's so bad about being drunk?" "You ask a glass of water" ---  
+                                                                         
+
+--IbVRjBtIbJdbeK1C
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUmZ9f1heFHXiqx3kAQJNhw//X/lUkmAcd3/BwXFfwoyPMj0cLBLBBfw2
+W9TwGDMsjQhZJ1qpR3Iqc4Cttxequ5MK9EfCmU3TjeUbnMeCjPtSFwuoRCPCf3ek
+phtVBUljNuqlvHcJx9XiYbO8uZLNO2mPt9mpO2Va9BtUqcVQACEKNUlwQrpf5nyc
+xx+PcQuHNKj/0m7zAOSAgIVlJULAUIASikluuIAuMvVfq/QoMRXSL0ezlFo+sz6o
+14veODtSb6/PylgGlNw3XnvKXQEWt1lQjGQBiz8RpTaHgUNC7GYMZ/oDK4aGIPFK
+Pvj25fA8B6efMG7Re9UTZaKGTPDk1D+fD7NM6pysw2p7DHH7VcBj/liqIrVqAS+T
+ap9y8K1SXVq0xbHjD48OFCDOhWV8e2V6ApJMKRRuaYU3ZQ/5TgP/b3WIwOuJMid2
+IgTKtAhL0OsFFqAXmvDHy2SHsm7fQP6cBbDQMQ+Fx7oMTsuSPy/Haa/A3dzp5PRa
+SDydjpvfQV9UQvuUq0suTZi5jBJfv6aiuFYhHJhB6KtAUiQPLyj7IXu/XgUeyQb6
+lcETS+NIVXAzHP9B26Ag+rgIFEQcww7f8r5MN5tVHJ4y0sHt4crmh6oNrmHIMwQx
+y3tH3/i6xsUNOQHC/MN+8MezoBqxpS/PwYITdazEKC4gUIvGVSBuv4CsfeeJv3ls
+IQULWR/pcqQ=
+=jZth
+-----END PGP SIGNATURE-----
+
+--IbVRjBtIbJdbeK1C--

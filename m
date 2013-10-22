@@ -1,95 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50687 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753610Ab3JVOoe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Oct 2013 10:44:34 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B8335A585B
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 16:44:33 +0200 (CEST)
-Message-ID: <52668F4E.7040503@suse.com>
-Date: Tue, 22 Oct 2013 10:44:30 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:51509 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753861Ab3JVS0E (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Oct 2013 14:26:04 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 207AB7C06A7
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 12:26:04 -0600 (MDT)
+Date: Tue, 22 Oct 2013 14:26:02 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Jeff Mahoney <jeffm@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [patch 00/13] sysfs publishing patchset
+Message-ID: <20131022182602.GC27304@localhost.localdomain>
+References: <20131021211940.432195222@suse.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: Re: [patch 02/13] kobject: export kobj_sysfs_ops
-References: <20131021211940.432195222@suse.com> <20131021212006.467949781@suse.com>
-In-Reply-To: <20131021212006.467949781@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae"
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20131021211940.432195222@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+On Mon, Oct 21, 2013 at 05:19:40PM -0400, Jeff Mahoney wrote:
+> This patchset implements the stubbed-out sysfs interface for btrfs. Or
+> at least begins to do so.
+> 
+> We publish:
+> - Features supported by the file system implementation
+> - Features enabled on the file system, including features unknown to
+>   the implemenation. These attributes can also be used to enable or
+>   disable features at runtime, subjecting to a safety mask.
+> - Uses the attribute names to print feature names when declining to
+>   mount a file system.
+> - The allocation data: global metadata reservation size and reserved,
+>   space_infos, and sums of the block groups total and used bytes.
+> - Device membership via links to the block devices.
+> - FS label, which is writeable.
+> 
+> - I've also added matching ioctls for some of the functionality here so
+>   that btrfsprogs can use the information without jumping through hoops
+>   to read/parse the sysfs files. There are ioctls to query the supported
+>   features and to query/set features on a particular file system. There's
+>   also one to export the size of the global metadata reservation. I have
+>   a patch for btrfs-progs that uses this to print useful info in 'btrfs
+>   fi df' output.
+> 
+> Ultimately, the tree structure looks like the following, under /sys/fs/btrfs.
+> This is from a test file system, using two devices in raid1. You'll notice
+> the 'single' and 'raid1' directories under the {data,metadata,system} dirs.
+> The raid profiles are created and removed as the first/last block group
+> of a certain profile is added and removed.
+> 
 
-On 10/21/13 5:19 PM, Jeff Mahoney wrote:
-> struct kobj_attribute implements the baseline attribute functionality
-> that can be used all over the place. We should export the ops associate=
-d
-> with it.
->=20
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> ---
->=20
->  lib/kobject.c |    1 +
->  1 file changed, 1 insertion(+)
->=20
-> --- a/lib/kobject.c	2013-10-21 16:09:51.868220920 -0400
-> +++ b/lib/kobject.c	2013-10-21 16:10:00.216037635 -0400
-> @@ -726,6 +726,7 @@ const struct sysfs_ops kobj_sysfs_ops =3D
->  	.show	=3D kobj_attr_show,
->  	.store	=3D kobj_attr_store,
->  };
-> +EXPORT_SYMBOL_GPL(kobj_sysfs_ops);
-> =20
->  /**
->   * kset_register - initialize and add a kset.
->=20
->=20
->=20
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+I'm not pulling in patches that add new functionality without an accompanying
+xfstest so that we're not merging features without a way to test to make sure
+they are working properly, this applies to the global metadata reservation ioctl
+as well.  Thanks,
 
-I posted this one on LKML, CC'ing Greg, and he gave his:
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJSZo9OAAoJEB57S2MheeWyXIYP/25qCR8t+361pD8yC5rtQ3T5
-l+mzL5eUCDDObscPaAiYOpo1u3Gc1Z4Pl/LjkRQEntFnVDd2ltm+1O1XLCIT+bpq
-8FqsXHyElXD++GYwwe6AGPNBTnI3g/bT+zQ6nzGMEnG34V6oS3xMlqiDJYFSbpoj
-6vDQ/D/lgzWYEarHdTXJ+wcxJXtmmwpgztPQCXdBlZyEkWkAY0vkDNBCuLc1oz+W
-ljhLd0BBnHzy7F0Ase8wgBUvlaVHProA3iwqq/mkJMnhhDEtBDkX0HFvaSPbrrZ7
-AqZXqCK43cPyFMftb5AJ3y2aiiD7H0e/i8FscasPqG+egKUv5ctcYBBhv4ty/eis
-pLjA60BkxHFip6opKt0JhmlZdCyuWhoB9nXZcY/eTtJ0Axubz7HofgaB+Z4pyj4v
-O8EI+fCN3WNPePQ7huDGQkrjz0IpVVDMP3HXYV7+QXS6z/YCu+jLq5efyQwCyOJI
-Opf9ab3qthXWHbnVPl7VWBPP5ITY3fihWw9KpyNr9qyCASEbyrUaN8PhQ0EtM9AQ
-yYUbNPB3s3mEuxrubwWoqZf1uZYvjSAln1631Vp48KQVZDPcBy8tuvBxmg3AO8FZ
-VCbA9pCTtkwtofH3wd7V0xQWxk3IAl03A9dbIhzldMm6LIGo7FxjhSQHS1pQ3h0c
-90aKGHI6sy1hhu6HxWJh
-=xcGD
------END PGP SIGNATURE-----
-
---e8QLDnnxPebvSNLcUpK0EGmqNRi1h3pae--
+Josef

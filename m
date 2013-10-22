@@ -1,77 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:51182 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752238Ab3JUUAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Oct 2013 16:00:07 -0400
-Message-ID: <526587C5.80404@sandeen.net>
-Date: Mon, 21 Oct 2013 15:00:05 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from relay3.sgi.com ([192.48.152.1]:52565 "EHLO relay.sgi.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751149Ab3JVUZ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Oct 2013 16:25:58 -0400
+Message-ID: <5266DF4F.8010403@sgi.com>
+Date: Tue, 22 Oct 2013 15:25:51 -0500
+From: Rich Johnston <rjohnston@sgi.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH] xfstests: wipefs new device in btrfs/003
-References: <1382370796-12391-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1382370796-12391-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>,
+        <xfs@oss.sgi.com>
+Subject: Re: [PATCH 5/8] xfstests: generic/274 increase scratch fs size to
+ 2g
+References: <1382120790-31060-1-git-send-email-jbacik@fusionio.com> <1382120790-31060-5-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1382120790-31060-5-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/21/13 10:53 AM, Josef Bacik wrote:
-> We changed btrfs device add to check and see if there is an existing fs on the
-> device we are adding, so you now have to do -f if you want to do this.  In order
-> to get around checking to see if we have this version of btrfs-progs just wipefs
-> the device we're adding to make sure the device add will pass no matter which
-> version of btrfs-progs you have.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+Patch does not apply, already committed.
 
-> ---
->  common/config   | 1 +
->  tests/btrfs/003 | 4 ++++
->  2 files changed, 5 insertions(+)
-> 
-> diff --git a/common/config b/common/config
-> index 20c5b09..5dd7c7d 100644
-> --- a/common/config
-> +++ b/common/config
-> @@ -180,6 +180,7 @@ export E4DEFRAG_PROG="`set_prog_path e4defrag`"
->  export LOGGER_PROG="`set_prog_path logger`"
->  export DBENCH_PROG="`set_prog_path dbench`"
->  export DMSETUP_PROG="`set_prog_path dmsetup`"
-> +export WIPEFS_PROG="`set_prog_path wipefs`"
->  
->  # Generate a comparable xfsprogs version number in the form of
->  # major * 10000 + minor * 100 + release
-> diff --git a/tests/btrfs/003 b/tests/btrfs/003
-> index 15c2cc7..9105d06 100755
-> --- a/tests/btrfs/003
-> +++ b/tests/btrfs/003
-> @@ -51,6 +51,7 @@ _supported_os Linux
->  _require_scratch
->  _require_scratch_dev_pool
->  _require_deletable_scratch_dev_pool
-> +_require_command $WIPEFS_PROG
->  
->  rm -f $seqres.full
->  
-> @@ -109,6 +110,8 @@ _test_add()
->  	dirp=`mktemp -duq $SCRATCH_MNT/dir.XXXXXX`
->  	_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10
->  	for i in `seq 2 $n`; do
-> +		$WIPEFS_PROG -a ${devs[$i]} >> $seqres.full 2>&1 || \
-> +			_fail "wipefs failed"
->  		$BTRFS_UTIL_PROG device add ${devs[$i]} $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "device add failed"
->  	done
->  	$BTRFS_UTIL_PROG filesystem balance $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "balance failed"
-> @@ -150,6 +153,7 @@ _test_replace()
->  
->  	# add a new disk to btrfs
->  	ds=${devs[@]:$(($n)):1}
-> +	$WIPEFS_PROG -a ${ds} >> $seqres.full 2>&1 || _fail "wipefs failed"
->  	$BTRFS_UTIL_PROG device add ${ds} $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "dev add failed"
->  	# in some system balance fails if there is no delay (a bug)
->  	# putting sleep 10 to work around as of now
-> 
+Thanks
+--Rich
 
+commit 859f127da2ee6d49faa41cafd4ed362aa526e4a0
+Author: Josef Bacik <jbacik@fusionio.com>
+Date:   Fri Jun 21 20:31:10 2013 +0000
+
+     xfstests: make fs for 274 larger
+
+     Btrfs will default to mixed block groups for 1 gigabyte file 
+systems and
+     smaller, which means data and metadata share the same area.  This makes
+     generic/274 fail for us because we cannot reserve enough metadata 
+space to do
+     our writes.  Bumping the scratch fs up to 2 gigabytes allows us to 
+do our normal
+     metadata/data separation and allows us to pass this test.  Thanks,
+
+     Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+     Reviewed-by: Ben Myers <bpm@sgi.com>
+     Signed-off-by: Rich Johnston <rjohnston@sgi.com>
+
+diff --git a/tests/generic/274 b/tests/generic/274
+index da45fab..7c4887f 100755
+--- a/tests/generic/274
++++ b/tests/generic/274
+@@ -57,7 +57,7 @@ echo "------------------------------"
+  rm -f $seqres.full
+
+  umount $SCRATCH_DEV 2>/dev/null
+-_scratch_mkfs_sized $((1 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
++_scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
+  _scratch_mount
+
+  # Create a 4k file and Allocate 4M past EOF on that file

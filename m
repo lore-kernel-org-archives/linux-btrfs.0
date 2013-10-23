@@ -1,49 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39856 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751623Ab3JWPjS convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 11:39:18 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Itermittent data corruption and dmesg spam
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <6844836.rMEZUtNbVg@noether>
-Date: Wed, 23 Oct 2013 09:39:05 -0600
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <EF448C4E-AE96-4DE9-AB0F-2D8BC038C988@colorremedies.com>
-References: <6844836.rMEZUtNbVg@noether>
-To: Henry de Valence <hdevalence@hdevalence.ca>
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:42613 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751447Ab3JWT0R (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Oct 2013 15:26:17 -0400
+Received: by mail-wg0-f48.google.com with SMTP id b13so1316673wgh.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 12:26:15 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 23 Oct 2013 20:26:15 +0100
+Message-ID: <CAHCKNJj2=qfWEpWWUOBit5cJakwd+oFr1U-xj8MS-w9oQo6YQg@mail.gmail.com>
+Subject: 3.11 and 3.12rc continual hard lock ups
+From: Sean Clarke <sean.clarke@sec-consulting.co.uk>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+   I have an Intel Core i7 based fileserver with 18TB BTRFS in a 6x
+3TB RAID 1+0 configuration. The system was working fine running Ubuntu
+13.04 (kernel 3.11.0-12-generic). The system was upgraded to Ubuntu
+13.10 (kernel 3.11) and began to lock up daily, sometimes every couple
+of hours. Previously it never crashed and was only taken down for
+maintenance so a bug was files on launchpad
+(https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1237794).
 
-On Oct 22, 2013, at 9:58 PM, Henry de Valence <hdevalence@hdevalence.ca> wrote:
-> 
-> 
-> btrfs: bdev /dev/bcache0 errs: wr 0, rd 0, flush 0, corrupt 16, gen 0
-> 
-> but when I run btrfs scrub I get:
-> 
-> scrub status for 56118d27-c9a8-483c-afaa-e429d59884e9
->     scrub started at Tue Oct 22 22:46:17 2013 and finished after 2802 seconds
->     total bytes scrubbed: 426.03GB with 0 errors
+I have updated the system with mainline kernels "3.12.0-999-generic
+#201310090426" and "3.12.0-999-generic #201310170405" and still the
+lockups occur.
 
-Well it sounds to me like there was some kind of corruption at some point, and possibly btrfs fixed this (maybe it was metadata corruption and it was simple for it to fix because it keeps two copies of metadata). Note that this mount info line, the first instance you report, is a persistent counter. Within the last 2-3 weeks there's a post on here, I think by Hugo or Duncan, on how to reset that counter. The 2nd instance, the scrub status, is not persistent, it shows the values for the most recently run scrub.
+Absolutely nothing is logged in the syslog, it is a complete freeze. I
+could get the system to hang by attempting to delete a 95GB tar file
+from a client (over NFS), it would lock up every time. At other times
+it just locks up (overnight for example).
 
-So it seems clear to me that there were 16 corruptions encountered during normal operation, were fixed by the time you ran the scrub. So overall I'd say you probably are OK but you'd need to go back through syslog or journalctl and see if you can find the first instances of the original corruption. I know there were some issues with bcache and btrfs and dirty data, although my vague recollection is that this discussion wasn't on this list but rather lkml. You might do an lkml search for "overstreet btrfs" and see what hits you get.
+I have had a top session running a couple of times when it locks up
+and btrfs-transaction and btrfs-flush_del are using 3 to 5 cores at 50
+to 100% (see top extract below).
 
-> 
-> My setup is a btrfs partition on a bcache device, which has a new-ish hard 
-> drive as the backing store and a partition on an older SSD as the cache. The 
-> bcache documentation suggests that sequential reads bypass the cache device. 
-> Is it possible that I have some bad blocks on my SSD, which cause the errors 
-> and data corruption, but the data corruption doesn’t show up with btrfs scrub 
-> because the disk accesses in the scrub are bypassing the cache?
+top - 12:06:37 up 1:51, 1 user, load average: 3.33, 0.87, 0.33
+Tasks: 226 total, 5 running, 221 sleeping, 0 stopped, 0 zombie
+%Cpu(s): 0.0 us, 48.5 sy, 0.0 ni, 50.9 id, 0.1 wa, 0.0 hi, 0.5 si, 0.0 st
+KiB Mem: 12295372 total, 12138296 used, 157076 free, 312 buffers
+KiB Swap: 7831536 total, 56 used, 7831480 free, 24644 cached
 
-That seems doubtful or this would be persistently occurring in the scrubs, yet your scrub is clean. You just have a persistent counter that says since the counter was last reset, there have been 16 corruptions found. It seems clear since then they've been fixed. So the question is why they occurred in the first place because there's probably a better chance of this being a bug rather than bad hardware just because this combination is not significantly tested yet.
+  PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
+ 1005  root   20  0   0       0      0      R   100.    1 0.0 0:50.16
+btrfs-transacti
+ 2462  root   20  0   0       0      0      R    75.8   0.0 0:06.66
+btrfs-flush_del
+ 2459  root   20  0   0       0      0      S    72.5   0.0 0:10.18
+btrfs-flush_del
+ 2463  root   20  0   0       0      0      S    70.5   0.0 0:14.41
+btrfs-flush_del
+ 2457  root   20  0   0       0      0      R    38.6   0.0 0:28.35
+btrfs-flush_del
+ 2458  root   20  0   0       0      0      S    17.0   0.0 0:39.31
+btrfs-flush_del
+ 1959  root   20  0   0       0      0      R     9.6   0.0 0:31.68
+btrfs-flush_del
+  100  root    20  0   0       0      0      S    7.6    0.0 0:00.31 kswap
 
 
+I have looked in bugzilla and can't relate this to anything already
+reported, has anyone seen something similar to this?
 
-Chris Murphy
 
+Regards
+Sean

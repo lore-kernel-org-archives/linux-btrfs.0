@@ -1,49 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33337 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753370Ab3JVU6v (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37152 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754813Ab3JWC0n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Oct 2013 16:58:51 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 601FF9A0403
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Oct 2013 14:58:51 -0600 (MDT)
-Date: Tue, 22 Oct 2013 16:58:49 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v7 02/13] Btrfs: improve the delayed refs process in rm
- case
-Message-ID: <20131022205849.GB10632@localhost.localdomain>
+	Tue, 22 Oct 2013 22:26:43 -0400
+Date: Wed, 23 Oct 2013 10:26:17 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Aurelien Jarno <aurelien@aurel32.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH v7 00/13] Online(inband) data deduplication
+Message-ID: <20131023022616.GB22893@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1381726796-27191-1-git-send-email-bo.li.liu@oracle.com>
- <1381726796-27191-3-git-send-email-bo.li.liu@oracle.com>
+ <20131022185524.GA30512@ohm.rr44.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1381726796-27191-3-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20131022185524.GA30512@ohm.rr44.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 14, 2013 at 12:59:44PM +0800, Liu Bo wrote:
-> While removing a file with dedup extents, we could have a great number of
-> delayed refs pending to process, and these refs refer to droping
-> a ref of the extent, which is of BTRFS_DROP_DELAYED_REF type.
+On Tue, Oct 22, 2013 at 08:55:24PM +0200, Aurelien Jarno wrote:
+> Hi,
 > 
-> But in order to prevent an extent's ref count from going down to zero when
-> there still are pending delayed refs, we first select those "adding a ref"
-> ones, which is of BTRFS_ADD_DELAYED_REF type.
+> On Mon, Oct 14, 2013 at 12:59:42PM +0800, Liu Bo wrote:
+> > Data deduplication is a specialized data compression technique for eliminating
+> > duplicate copies of repeating data.[1]
+> > 
+> > This patch set is also related to "Content based storage" in project ideas[2].
+> > 
+> > PATCH 1 is a hang fix with deduplication on, but it's also useful without
+> > dedup in practice use.
+> > 
+> > PATCH 2 and 3 are targetting delayed refs' scalability problems, which are
+> > uncovered by the dedup feature.
+> > 
+> > PATCH 4 is a speed-up improvement, which is about dedup and quota.
+> > 
+> > PATCH 5-8 is the preparation for dedup implementation.
+> > 
+> > PATCH 9 shows how we implement dedup feature.
+> > 
+> > PATCH 10 fixes a backref walking bug with dedup.
+> > 
+> > PATCH 11 fixes a free space bug of dedup extents on error handling.
+> > 
+> > PATCH 12 fixes a race bug on dedup writes.
+> > 
+> > PATCH 13 adds the ioctl to control dedup feature.
+> > 
+> > And there is also a btrfs-progs patch(PATCH 14) which involves all details of
+> > how to control dedup feature.
+> > 
+> > I've tested this with xfstests by adding a inline dedup 'enable & on' in xfstests'
+> > mount and scratch_mount.
+> > 
+> > TODO:
+> > * a bit-to-bit comparison callback.
+> > 
+> > All comments are welcome!
+> > 
 > 
-> So in removing case, all of our delayed refs are of BTRFS_DROP_DELAYED_REF type,
-> but we have to walk all the refs issued to the extent to find any
-> BTRFS_ADD_DELAYED_REF types and end up there is no such thing, and then start
-> over again to find BTRFS_DROP_DELAYED_REF.
-> 
-> This is really unnecessary, we can improve this by tracking how many
-> BTRFS_ADD_DELAYED_REF refs we have and search by the right type.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
+> Thanks for this new patchset. I have tested it on top of kernel 3.12-rc6
+> and it worked correctly, although I haven't used it on production
+> servers given the bit-to-bit comparison callback isn't implemented yet.
 
-Reviewed-by: Josef Bacik <jbacik@fusionio.com>
+Many thanks for testing this!
 
-Thanks,
+It's not yet proper for production server use until we solve the
+metadata reservation problems(I'm working on it right now).
 
-Josef
+> 
+> I have a few comments on the ioctl to control the dedup feature.
+> Basically it is used to enable the deduplication, to switch it on or off
+> and to select the blocksize. Couldn't it be implemented as a mount
+> option instead like for the other btrfs features? The dedup tree would
+> be created the first time the mount option is activated, and the on/off
+> would be controlled by the presence of the dedup mount flag. The
+> blocksize could be specified with the value appended to the dedup
+> option, for example dedup=8192.
+
+In the previous version patch set, actually I chose to use mount options
+to provide a flexible control of dedup, but as thread[1] shows, David
+thinked that mount options is too heavy to use as it cannot be removed
+once it's merged.
+
+[1]: http://www.spinics.net/lists/linux-btrfs/msg27294.html
+
+-liubo

@@ -1,56 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f178.google.com ([209.85.220.178]:51897 "EHLO
-	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752629Ab3JWJ7L (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 05:59:11 -0400
-Received: by mail-vc0-f178.google.com with SMTP id lh4so339825vcb.37
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 02:59:10 -0700 (PDT)
-MIME-Version: 1.0
-From: Roman Kapusta <roman.kapusta@gmail.com>
-Date: Wed, 23 Oct 2013 11:58:50 +0200
-Message-ID: <CABVOS0-+MJ7t8=_sRWcmHeWs5T3+yghtDVBwAE3LXz=j_knWFg@mail.gmail.com>
-Subject: Soft lockup btrfs-transacti:680
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:39118 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753653Ab3JWNKL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Oct 2013 09:10:11 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VYyCN-0005Xx-23
+	for linux-btrfs@vger.kernel.org; Wed, 23 Oct 2013 15:10:07 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 15:10:07 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 15:10:07 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Itermittent data corruption and dmesg spam
+Date: Wed, 23 Oct 2013 13:09:47 +0000 (UTC)
+Message-ID: <pan$e329a$d93aeb28$8695cc60$e3bf4121@cox.net>
+References: <6844836.rMEZUtNbVg@noether>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When I try to umount btrfs filesystem I get always this error with
-kernel 3.11.4 and 3.11.3, but I can mount and umount without error on
-kernel 3.11.2.
+Henry de Valence posted on Tue, 22 Oct 2013 23:58:33 -0400 as excerpted:
 
-Exact  error messages are:
+> Second, I’m having some intermittent data corruption issues, and I’m not
+> really sure how to pin down the cause. Sometimes, I’ll get errors trying
+> to read a file due to a failed checksum, but when I run btrfs scrub, it
+> reports that everything is OK. For instance, this time I booted, I get a
+> line in dmesg saying
+> 
+> btrfs: bdev /dev/bcache0 errs: wr 0, rd 0, flush 0, corrupt 16, gen 0
+> 
+> but when I run btrfs scrub I get:
+> 
+> scrub status for 56118d27-c9a8-483c-afaa-e429d59884e9
+>      scrub started at Tue Oct 22 22:46:17 2013 and finished after 2802
+>      seconds total bytes scrubbed: 426.03GB with 0 errors
 
-BUG: soft lockup - CPU#0 stuck for 23s! [btrfs-transacti:680]
-BUG: soft lockup  - CPU#1 stuck for 23s! [umount:1575]
+I know nothing (other than its general purpose) about bcache so I'll stay 
+away from that angle, but...
 
-I'm on Fedora 19
+[This takes a bit of a long way around, but comes back to your issue, so 
+be patient...]
 
-I have run scrub and there are no errors:
-# btrfs scrub status /home
-scrub status for xxxx
-    scrub started at Tue Oct 22 17:06:16 2013 and finished after 3600 seconds
-    total bytes scrubbed: 117.51GB with 0 errors
+This reminds me of some years ago when I had some hard to pin down memory 
+corruption issues.  Memtest would say everything was OK, and most of the 
+time the system was fine, but every once in awhile, things would go 
+haywire.  (In my case, one of the most common symptoms was a bunzip2 
+failure due to checksum mismatch... but it wasn't the file, it was the 
+memory as a retry would bunzip just fine.)  I had occasional mcheck 
+errors too, when the hardware would catch the issue.
 
-# btrfs fi df /home
-Data: total=124.97GB, used=91.54GB
-System, DUP: total=8.00MB, used=20.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=2.50GB, used=372.85MB
-Metadata: total=8.00MB, used=0.00
+My problem ultimately turned out to be borderline speed-certified 
+memory.  A BIOS update eventually gave me the ability to de-clock the 
+memory from its rating just slightly (IIRC from 333 MHz to 330 or some 
+such, this was in the DDR1 era), after which I was actually able to 
+tighten some of the other ratings (various wait-state settings) a bit and 
+get back some of the speed lost by the slightly lower clock.  The memory 
+cells themselves were fine thus memcheck coming up clean, and so was the 
+bus... most of the time, but at the rated clock speed every once in 
+awhile...
 
-# btrfs fi show
-Label: none  uuid: xxxx
-    Total devices 1 FS bytes used 91.90GB
-    devid    1 size 130.00GB used 130.00GB path /dev/dm-4
-Btrfs v0.20-rc1
+Then later I upgraded memory and didn't have the problem at all with the 
+new memory, so it was indeed the memory modules that weren't quite 
+reliable at the rated speed, NOT the mobo or on-board bus.
 
-# df -h /home
-Filesystem               Size  Used Avail Use% Mounted on
-/dev/mapper/fedora-home  130G   93G   34G  74% /home
+Back to your current situation, someone else just recently had a problem 
+that, like my memory experience but with storage not memory, traced to a 
+SATA system that wasn't quite stable at the rated SATA-3 speeds.  When he 
+forced it back to SATA-2, it worked just fine.  (Unfortunately for SATA, 
+it's halving the speed, not the loss of a percent or two with a slightly 
+lower clock that I was able to do on my memory, and even then make it up 
+to some extent with slightly tighter wait-state timings.  But IIRC he was 
+on spinning rust anyway, which means the physical platter speed was in 
+practice the normal bottleneck anyway so at least he didn't lose much 
+except a bit of cache-access-speed.)
 
-fedora kernel packages:
-kernel-3.11.2-201.fc19.x86_64.rpm
-kernel-3.11.3-201.fc19.x86_64.rpm
-kernel-3.11.4-201.fc19.x86_64.rpm
+So I'd suggest using hdparm or the like to (temporarily) force a lower 
+SATA/SAS/whatever speed and see if that helps at all.  If it does, you 
+can investigate that further and decide what to do then.  If it doesn't, 
+you can return to your normal speeds and no harm done.
+
+Of course the bcache device complicates things a bit, but I guess you can 
+try setting speed for both devices one at a time, and possibly try 
+disabling the cache and running direct too (assuming that's possible with 
+bcache).  But with the exception of those comments, as I said I'll leave 
+the bcache stuff for you to figure out as I know little or nothing about 
+it.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

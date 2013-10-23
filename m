@@ -1,67 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:42623 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750866Ab3JWE25 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 00:28:57 -0400
-Date: Wed, 23 Oct 2013 13:28:44 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: dsterba@suse.cz
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: CPU: 2 PID: 1543 at fs/btrfs/ctree.c:1322
- btrfs_search_old_slot+0x338/0x81d [btrfs]()
-Message-ID: <20131023132844.2a206238@virtall.com>
-In-Reply-To: <20131022162019.GY1032@twin.jikos.cz>
-References: <20131021122123.43b3aa50@virtall.com>
-	<20131021151032.708cc7d2@virtall.com>
-	<20131021125317.GK1032@twin.jikos.cz>
-	<20131022025025.169941de@virtall.com>
-	<20131022154619.GW1032@twin.jikos.cz>
-	<20131023010411.42d30c97@virtall.com>
-	<20131022162019.GY1032@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-vc0-f178.google.com ([209.85.220.178]:51897 "EHLO
+	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752629Ab3JWJ7L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Oct 2013 05:59:11 -0400
+Received: by mail-vc0-f178.google.com with SMTP id lh4so339825vcb.37
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 02:59:10 -0700 (PDT)
+MIME-Version: 1.0
+From: Roman Kapusta <roman.kapusta@gmail.com>
+Date: Wed, 23 Oct 2013 11:58:50 +0200
+Message-ID: <CABVOS0-+MJ7t8=_sRWcmHeWs5T3+yghtDVBwAE3LXz=j_knWFg@mail.gmail.com>
+Subject: Soft lockup btrfs-transacti:680
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 22 Oct 2013 18:20:19 +0200
-David Sterba <dsterba@suse.cz> wrote:
+When I try to umount btrfs filesystem I get always this error with
+kernel 3.11.4 and 3.11.3, but I can mount and umount without error on
+kernel 3.11.2.
 
-> > However, it's not possible to work with this system via SSH, because
-> > these keep popping up few times every minute:
-> 
-> Probably only some of the files that get accessed during ssh login is
-> corrupted, but the scrub does not get far enough to let you know the
-> filenames. You can try to look into 'lsof' output which files are open
-> by sshd or it's children.
+Exact  error messages are:
 
-It's not the case.
-Files in btrfs mount are not accessed in any way - the scrub was
-started after restart, and there is no way anything on this system can
-accidentally access data there. This is further confirmed by lsof
-output.
+BUG: soft lockup - CPU#0 stuck for 23s! [btrfs-transacti:680]
+BUG: soft lockup  - CPU#1 stuck for 23s! [umount:1575]
 
+I'm on Fedora 19
 
-> >  kernel:[22219.117012] BUG: soft lockup - CPU#2 stuck for 23s!
-> > [btrfs:5673] kernel:[22247.100515] BUG: soft lockup - CPU#0 stuck
-> > for 23s! [btrfs:5674] kernel:[22247.100519] BUG: soft lockup -
-> > CPU#2 stuck for 23s! [btrfs:5673]
-> 
-> Cpus 0 and 2 are stuck and every other attempt to access the broken
-> files will pin another cpu.
+I have run scrub and there are no errors:
+# btrfs scrub status /home
+scrub status for xxxx
+    scrub started at Tue Oct 22 17:06:16 2013 and finished after 3600 seconds
+    total bytes scrubbed: 117.51GB with 0 errors
 
-Scrub was running for some time; after scrubbung about 2.8 TB, the
-system was so slow, that it was barely possible to launch any command.
+# btrfs fi df /home
+Data: total=124.97GB, used=91.54GB
+System, DUP: total=8.00MB, used=20.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=2.50GB, used=372.85MB
+Metadata: total=8.00MB, used=0.00
 
-"reboot" issued via ssh took ~8 hours to execute.
+# btrfs fi show
+Label: none  uuid: xxxx
+    Total devices 1 FS bytes used 91.90GB
+    devid    1 size 130.00GB used 130.00GB path /dev/dm-4
+Btrfs v0.20-rc1
 
-A new scrub started after the reboot immediately begins to show "BUG:
-soft lockup - CPU#2 stuck for 23s!".
+# df -h /home
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/fedora-home  130G   93G   34G  74% /home
 
-Anyway, it is RAID-1 - I would expect the scrub to either correct
-corrupt data (from a copy on the other disk), or mark it as invalid
-(both copies corrupt), but not "nearly hang" the server, or?
-
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+fedora kernel packages:
+kernel-3.11.2-201.fc19.x86_64.rpm
+kernel-3.11.3-201.fc19.x86_64.rpm
+kernel-3.11.4-201.fc19.x86_64.rpm

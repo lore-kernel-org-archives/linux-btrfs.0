@@ -1,147 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f172.google.com ([209.85.220.172]:44038 "EHLO
-	mail-vc0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751501Ab3JWVt6 (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:42358 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754124Ab3JXKIv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 17:49:58 -0400
-Received: by mail-vc0-f172.google.com with SMTP id ks9so825589vcb.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 14:49:57 -0700 (PDT)
+	Thu, 24 Oct 2013 06:08:51 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 008DE7C068F
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2013 04:08:51 -0600 (MDT)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <CAD_cGvEtFnyVBoaEc13-gqX95Uv6njdEqji_PBS5iczQBYkGQg@mail.gmail.com>
-References: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
-	<20131004231948.0ee4e03c@datenkhaos.de>
-	<CAD_cGvEtFnyVBoaEc13-gqX95Uv6njdEqji_PBS5iczQBYkGQg@mail.gmail.com>
-Date: Wed, 23 Oct 2013 23:49:57 +0200
-Message-ID: <CAD_cGvHy1uVs_0AtE93LOWRcw0XhcD9+HEO+FdLNFt7cDeUaKA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: relocate csums properly with prealloc extents
-From: Hans-Kristian Bakke <hkbakke@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Stefan Behrens <sbehrens@giantdisaster.de>,
+        Bob Marley <bobmarley@shiftmail.org>
+From: Chris Mason <chris.mason@fusionio.com>
+In-Reply-To: <5268059E.707@giantdisaster.de>
+CC: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <1382156250-2336-1-git-send-email-wangshilong1991@gmail.com>
+ <526247E3.9000804@giantdisaster.de>
+ <CAP9B-Qncw5aCJzbQapy6i4iRrJ-mYh_yhkorY7+p9wZtzJodTQ@mail.gmail.com>
+ <5262914D.7030306@giantdisaster.de>
+ <B9B7D38F-3E92-4347-A41F-FA4D80D31745@gmail.com>
+ <52663960.4060905@giantdisaster.de> <5266AE1F.6030304@shiftmail.org>
+ <5268059E.707@giantdisaster.de>
+Message-ID: <20131024100842.14051.45479@localhost.localdomain>
+Subject: Re: [PATCH] Btrfs: fix race condition between writting and scrubing supers
+Date: Thu, 24 Oct 2013 06:08:42 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK. btrfs scrub and dmesg is hitting me with lots of unfixable errors.
-All in the same file. Example
+Quoting Stefan Behrens (2013-10-23 13:21:34)
+> On Tue, 22 Oct 2013 18:55:59 +0200, Bob Marley wrote:
+> > On 22/10/2013 10:37, Stefan Behrens wrote:
+> >> I don't believe that this issue can ever happen. I don't believe that
+> >> somewhere on the path to the flash memory, to the magnetic disc or to
+> >> the drive's cache memory, someone interrupts a 4KB write in the middle
+> >> of operation to read from this 4KB area. This is not an issue IMHO.
+> > 
+> > I think I have read that unfortunately it can happen.
+> > SAS and SATA specs for disks do not mandate that if a write is in-flight
+> > but still not completed, reads from the same sector should return the
+> > value it is being written; they can return the old value.
+> > I also think that Linux does not check either.
+> 
+> If the _old_ 4KB block is returned, that's fine and won't cause a
+> checksum error.
+> 
+> The patch in question addresses the case that Btrfs submits a write
+> request for a 4KB block, and a concurrent read request for that 4KB
+> block reads partially the old block and partially the new block,
+> resulting in a checksum error reported in the scrub statistic counters.
 
-[13313.441091] btrfs: unable to fixup (regular) error at logical
-560107954176 on dev /dev/sdn
-[13321.532223] scrub_handle_errored_block: 1510 callbacks suppressed
-[13321.532309] btrfs_dev_stat_print_on_error: 1510 callbacks suppressed
-[13321.532314] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40016, gen 0
-[13321.532420] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40017, gen 0
-[13321.532545] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40018, gen 0
-[13321.532605] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40019, gen 0
-[13321.533039] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40020, gen 0
-[13321.537519] scrub_handle_errored_block: 1508 callbacks suppressed
-[13321.537525] btrfs: unable to fixup (regular) error at logical
-560630136832 on dev /dev/sdq
-[13321.537821] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40021, gen 0
-[13321.538081] btrfs: unable to fixup (regular) error at logical
-560630140928 on dev /dev/sdq
-[13321.538438] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40022, gen 0
-[13321.538715] btrfs: unable to fixup (regular) error at logical
-560630145024 on dev /dev/sdq
-[13321.539016] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40023, gen 0
-[13321.539234] btrfs: unable to fixup (regular) error at logical
-560630149120 on dev /dev/sdq
-[13321.539522] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40024, gen 0
-[13321.539739] btrfs: unable to fixup (regular) error at logical
-560630153216 on dev /dev/sdq
-[13321.540027] btrfs: bdev /dev/sdq errs: wr 0, rd 0, flush 0, corrupt
-40025, gen 0
-[13321.540242] btrfs: unable to fixup (regular) error at logical
-560630157312 on dev /dev/sdq
-[13321.540620] btrfs: unable to fixup (regular) error at logical
-560630161408 on dev /dev/sdq
-[13321.541140] btrfs: unable to fixup (regular) error at logical
-560630165504 on dev /dev/sdq
-[13321.541571] btrfs: unable to fixup (regular) error at logical
-560630169600 on dev /dev/sdq
-[13321.541931] btrfs: unable to fixup (regular) error at logical
-560630173696 on dev /dev/sdq
+Concurrent reads and writes to the device are completely undefined, and
+Any combination of old, new, random memory corruption wouldn't
+surprise me...I'd rather avoid them ;)
 
-Luckily all the corruption seems to be in a single very large file,
-but on different part of it on different disks. The file was written
-by rtorrent which have the option "system.file_allocate.set = yes"
-configured.
-I also have samba configured with "strict allocate = yes" because it
-is recommended for best performance on extent based filesystems. Do
-that mean even samba files vulnerable to this corruption too?
-If so this could become very ugly very fast on certain systems.
+Doing the transaction join during the super read is probably the least
+complex choice.
 
-Mvh
-
-Hans-Kristian Bakke
-
-
-On 23 October 2013 23:24, Hans-Kristian Bakke <hkbakke@gmail.com> wrote:
-> I was hit by this when trying to rebalance a 16TB RAID10 to 32TB
-> RAID10 going from 4 to 8 WD SE 4TB drives today. I cannot finish a
-> rebalance because of failed csum.
->
-> [10228.850910] BTRFS info (device sdq): csum failed ino 487 off 65536
-> csum 2566472073 private 151366068
-> [10228.850967] BTRFS info (device sdq): csum failed ino 487 off 69632
-> csum 2566472073 private 3056924305
-> [10228.850973] BTRFS info (device sdq): csum failed ino 487 off 593920
-> csum 2566472073 private 906093395
-> [10228.851004] BTRFS info (device sdq): csum failed ino 487 off 73728
-> csum 2566472073 private 2680502892
-> [10228.851014] BTRFS info (device sdq): csum failed ino 487 off 598016
-> csum 2566472073 private 1940162924
-> [10228.851029] BTRFS info (device sdq): csum failed ino 487 off 77824
-> csum 2566472073 private 2939385278
-> [10228.851051] BTRFS info (device sdq): csum failed ino 487 off 602112
-> csum 2566472073 private 645310077
-> [10228.851055] BTRFS info (device sdq): csum failed ino 487 off 81920
-> csum 2566472073 private 3600741549
-> [10228.851078] BTRFS info (device sdq): csum failed ino 487 off 86016
-> csum 2566472073 private 200201951
-> [10228.851091] BTRFS info (device sdq): csum failed ino 487 off 606208
-> csum 2566472073 private 1002916440
->
-> The system is running a scrub now and I will return with some more
-> details later. I do not think systemd is logging to this volume, but
-> the scrub wil probably show which files are affected.
->
-> As this is a very serious issue for those hit by the corruption (it
-> basically makes it impossible to run rebalance with all its
-> consequences) hopefully this wil go upstream soon.
-> I am on Kernel 3.11.6 by the way.
-> Mvh
->
-> Hans-Kristian Bakke
-> Mob: 91 76 17 38
->
->
-> On 4 October 2013 23:19, Johannes Hirte <johannes.hirte@datenkhaos.de> wrote:
->> On Fri, 27 Sep 2013 09:37:00 -0400
->> Josef Bacik <jbacik@fusionio.com> wrote:
->>
->>> A user reported a problem where they were getting csum errors when
->>> running a balance and running systemd's journal.  This is because
->>> systemd is awesome and fallocate()'s its log space and writes into
->>> it.  Unfortunately we assume that when we read in all the csums for
->>> an extent that they are sequential starting at the bytenr we care
->>> about.  This obviously isn't the case for prealloc extents, where we
->>> could have written to the middle of the prealloc extent only, which
->>> means the csum would be for the bytenr in the middle of our range and
->>> not the front of our range.  Fix this by offsetting the new bytenr we
->>> are logging to based on the original bytenr the csum was for.  With
->>> this patch I no longer see the csum errors I was seeing.  Thanks,
->>
->> Any assessment when this goes upstream? Until it hit Linus tree it
->> won't won't appear in stable. And this seems rather important.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

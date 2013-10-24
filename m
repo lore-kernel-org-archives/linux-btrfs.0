@@ -1,33 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45055 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751221Ab3JTRV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Oct 2013 13:21:56 -0400
-Date: Sun, 20 Oct 2013 19:21:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org, Alex Lyakas <alex.btrfs@zadarastorage.com>,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: Re: [PATCH] btrfs: commit transaction after deleting a subvolume
-Message-ID: <20131020172154.GH1032@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1377901546-22434-1-git-send-email-dsterba@suse.cz>
- <20131020121959.4917.92120@localhost.localdomain>
+Received: from relay.parallels.com ([195.214.232.42]:60453 "EHLO
+	relay.parallels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754450Ab3JXKld (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Oct 2013 06:41:33 -0400
+Message-ID: <5268F958.60004@parallels.com>
+Date: Thu, 24 Oct 2013 14:41:28 +0400
+From: Pavel Emelyanov <xemul@parallels.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131020121959.4917.92120@localhost.localdomain>
+To: Mark Fasheh <mfasheh@suse.de>, <dsterba@suse.cz>
+CC: Andrew Vagin <avagin@gmail.com>, Chris Mason <chris.mason@fusionio.com>,
+        <linux-btrfs@vger.kernel.org>, <kzak@redhat.com>, <xemul@openvz.org>
+Subject: Re: btrfs: stat(2) and /proc/pid/maps returns different devices
+References: <20130704095138.GB12359@gmail.com> <20130708215446.GH18204@twin.jikos.cz> <20130710163105.GR32502@wotan.suse.de> <20130710174545.GS32502@wotan.suse.de> <20130710222650.GI25386@suse.cz> <20130719205115.GK32502@wotan.suse.de>
+In-Reply-To: <20130719205115.GK32502@wotan.suse.de>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 20, 2013 at 08:19:59AM -0400, Chris Mason wrote:
-> My objections are pretty similar to Josef's.  But, there's no reason we
-> can't change the progs to optionally trigger a commit.
+On 07/20/2013 12:51 AM, Mark Fasheh wrote:
+> On Thu, Jul 11, 2013 at 12:26:50AM +0200, David Sterba wrote:
+>> On Wed, Jul 10, 2013 at 10:45:45AM -0700, Mark Fasheh wrote:
+>>> Well, what do I get when I pretend I don't care any more? The little voice
+>>> in my head says "keep plugging away". Here's another attempt at fixing this
+>>> problem in a sane manner. Basically, this time we're adding a flag to
+>>> s_flags which btrfs sets. Proc will see the flag and call ->getattr().
+>>>
+>>> This compiles, but it needs testing (which I will get to soon). It still has
+>>> a bunch of problems in my honest opinion but maybe if we get something
+>>> acceptable upstream we can work from there.
+>>>
+>>> Also, as Andrew pointed out there's more than one place which is return
+>>> different device than from stat(2) so I probably need to update more sites
+>>> to deal with this.
+>>>
+>>> Does anyone see a problem with this approach?
+>>
+>> The approach looks ok to me, the implementation is internal to vfs and
+>> fairly minimal. The bit that bothers me is the name of the flag, it's
+>> completely unobvious what it means.
+> 
+> I'll come up with something better for my next revision :)
 
-Works for me, though I'm not clear what should be the default.
+Mark, David,
 
-> What I want to avoid is bulk snapshot deletion triggering a commit for
-> each individual snapshot.  
+What are your plans about the next version? Any chance we can see it in the
+3.13 merge window? (unless I've missed the fact, that it's already there)
 
-I agree and came to the same conclusion later on.
+I'd really love to see it, as this thing is a blocker for checkpoint-restore
+on btrfs.
 
-david
+Thanks,
+Pavel

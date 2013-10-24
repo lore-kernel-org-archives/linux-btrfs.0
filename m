@@ -1,28 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay2.sgi.com ([192.48.179.30]:39536 "EHLO relay.sgi.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1752063Ab3JXAOw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 20:14:52 -0400
-Message-ID: <52686678.2010200@sgi.com>
-Date: Wed, 23 Oct 2013 19:14:48 -0500
-From: Rich Johnston <rjohnston@sgi.com>
-MIME-Version: 1.0
-To: Eryu Guan <eguan@redhat.com>, <xfs@oss.sgi.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests btrfs/020: test device replace on RO btrfs
+Received: from cantor2.suse.de ([195.135.220.15]:51571 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754320Ab3JXKRd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Oct 2013 06:17:33 -0400
+Date: Thu, 24 Oct 2013 12:17:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eryu Guan <eguan@redhat.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] xfstests btrfs/020: test device replace on RO btrfs
+Message-ID: <20131024101730.GD1032@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1382527446-16053-1-git-send-email-eguan@redhat.com>
-In-Reply-To: <1382527446-16053-1-git-send-email-eguan@redhat.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+ <1382546683-454-1-git-send-email-eguan@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1382546683-454-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This has been committed.
+On Thu, Oct 24, 2013 at 12:44:43AM +0800, Eryu Guan wrote:
+> +_cleanup()
+> +{
+> +	cd /
 
-Thanks
---Rich
+Using root as temporary directory?
 
-commit 5b8e9ac03259a11de8fd84d939f25a2cbbafab18
-Author: Eryu Guan <eguan@redhat.com>
-Date:   Wed Oct 23 16:44:43 2013 +0000
-
-     xfstests btrfs/020: test device replace on RO btrfs
+> +	rm -f $tmp.*
+> +	$UMOUNT_PROG $loop_mnt
+> +	_destroy_loop_device $loop_dev1
+> +	losetup -d $loop_dev2 >/dev/null 2>&1
+> +	_destroy_loop_device $loop_dev3
+> +	rm -rf $loop_mnt
+> +	rm -f $fs_img1 $fs_img2 $fs_img3
+> +}

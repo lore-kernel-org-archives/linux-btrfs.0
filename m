@@ -1,68 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from exprod5og112.obsmtp.com ([64.18.0.24]:58922 "EHLO
-	exprod5og112.obsmtp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752037Ab3JXV4o (ORCPT
+Received: from exprod5og115.obsmtp.com ([64.18.0.246]:41204 "EHLO
+	exprod5og115.obsmtp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753902Ab3JXWIq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Oct 2013 17:56:44 -0400
-Date: Thu, 24 Oct 2013 23:57:15 +0200
+	Thu, 24 Oct 2013 18:08:46 -0400
+Date: Fri, 25 Oct 2013 00:09:19 +0200
 From: Karl Kiniger <karl.kiniger@med.ge.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Why cannot I move a read-only snapshot around?
-Message-ID: <20131024215715.GA14128@kipc2.localdomain>
+Message-ID: <20131024220919.GB14128@kipc2.localdomain>
 References: <20131024152955.GA6110@kipc2.localdomain>
- <1D7328F7-EB4F-4C3F-8EAB-2EDB6331F77E@colorremedies.com>
+ <pan$85344$b336f5bf$ca444091$a3ef1e0c@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1D7328F7-EB4F-4C3F-8EAB-2EDB6331F77E@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$85344$b336f5bf$ca444091$a3ef1e0c@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, 
+Hi
 
-On Thu 131024, Chris Murphy wrote:
-> 
-> On Oct 24, 2013, at 9:29 AM, Karl Kiniger <karl.kiniger@med.ge.com> wrote:
+(pls see also my other reply in this thread)
+
+On Thu 131024, Duncan wrote:
+> Karl Kiniger posted on Thu, 24 Oct 2013 17:29:56 +0200 as excerpted:
 > 
 > > Dear list, (newbie alert)
 > > 
-> > After sucessfully sending and receiving a dozen of  related snapshots
-> > I want to move them all to the readonly folder but I cannot:
-> > 
-> > ls -l
-> > .....
-......
-> > drwxr-xr-x. 1 root root 734 Oct 24 16:36 @20131023
-> > drwxr-xr-x. 1 root root 734 Oct 24 16:41 @20131024
-> > drwxr-xr-x. 1 root root 734 Oct 24 16:41 F19
-> > drwxr-xr-x. 1 root root   0 Oct 24 17:21 readonly
-> > 
-> > 
-> > mv \@20131024 readonly
-> > 
-> > mv: cannot move ‘@20131024’ to ‘readonly/@20131024’: Read-only file system
+> > After sucessfully sending and receiving a dozen of  related snapshots I
+> > want to move them all to the readonly folder but I cannot:
 > 
-> Are the @ snapshot read only snapshots? And is read only just a regular directory?
+> I see you mention fedora 19 in a followup, but for those not on fedora, 
+> that's not much help figuring out which kernel you're running.  It's 
+> likely that the following is your problem, tho there's not enough 
+> information in your post to be sure.
 
-Yes they are read only snapshots (just received by btrfs receive) and
-"readonly" is a regular directory. I deliberately did not try to move
-those snapshots into other snapshots.
+I promise to include more info in the future but just received
+snapshots should be read-only if I read the docs correctly.
 
-I can move r/w snapshots  around without problems
-(into some regular directory), just the r/o snapshots refuse moving.
+> 
+> There was a recent regression with nested subvolumes that may be what 
+> you're running into.  Kernel 3.11 was affected as well as early 3.12-rcs 
+> and I believe 3.10 also but I'm not sure how far back, except that 
+> someone mentioned trying an old kernel (3.8 or 3.6-ish) and moving 
+> subvolumes into subvolumes worked there (tho doing anything involving 
+> writing into read-only snapshots shouldn't work, by design, but that 
+> doesn't appear to be what you're doing, you're just trying to move read-
+> only snapshots to a different location on a read/write base or parent 
+> subvolume, this post assuming it's a parent subvolume, thus triggering 
+> the nested subvolumes bug).
 
-cat /proc/version
-Linux version 3.11.6-200.fc19.x86_64
+No nested subvolumes involved. (Is this true? This all is inside the top 
+level volume or what it is called in btrfs.....) 
 
-Still curious,
+> A fix is available but I'm not sure whether it got into 3.12 (which is 
+> just about to be released) or will now have to wait for 3.13.  So either 
+> try latest 3.12 git and see if its there, or find and cherry-pick the 
+> patch, applying it against 3.11 or 3.12.  (Given that btrfs is still an 
+> experimental filesystem with fixes applied every kernel, while reverting 
+> to an old enough kernel should unregress this particular problem, I can't 
+> recommend it except possibly for testing against data you don't care 
+> about, since by doing so you're exposing yourself to other known and now 
+> fixed bugs.)
+Agreed, I dont want to go back to older kernels - too risky. The data  are
+backed up anyways (on ZFS if you are curious)  but the time invested  into
+my current btrfs setup would be gone.
+
+I can live with the current situation, its just not nice to have the
+snapshots lying around in a place where they should not belong.
+
+If it were possible to temporarily make the r/o snapshots r/w just for
+the purpose of moving (being aware that caution is needed) I would
+not hesitate ane try that.
 
 Karl
 
+
 > 
-> I don't know that this is a bug, it seems like it could be intentional because a read only file system wouldn't let you move it out of one tree into another. But there was a bug that prevented moving of subvolumes into subvolumes (untested if moving subvolumes into folders worked) that was fixed in kernel 3.11.6 so that might be worth a shot.
-> 
-> 
-> Chris Murphy--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> -- 
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+

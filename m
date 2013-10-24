@@ -1,65 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57161 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753844Ab3JXLfa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Oct 2013 07:35:30 -0400
-Message-ID: <5269053F.3050906@cn.fujitsu.com>
-Date: Thu, 24 Oct 2013 19:32:15 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34940 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755261Ab3JXOIc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Oct 2013 10:08:32 -0400
+Date: Thu, 24 Oct 2013 16:08:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: chris.mason@fusionio.com
+Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: relocate csums properly with prealloc extents -
+ for 3.12-rc
+Message-ID: <20131024140828.GA28149@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>
-CC: Stefan Behrens <sbehrens@giantdisaster.de>,
-        Bob Marley <bobmarley@shiftmail.org>,
-        Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix race condition between writting and scrubing
- supers
-References: <1382156250-2336-1-git-send-email-wangshilong1991@gmail.com> <526247E3.9000804@giantdisaster.de> <CAP9B-Qncw5aCJzbQapy6i4iRrJ-mYh_yhkorY7+p9wZtzJodTQ@mail.gmail.com> <5262914D.7030306@giantdisaster.de> <B9B7D38F-3E92-4347-A41F-FA4D80D31745@gmail.com> <52663960.4060905@giantdisaster.de> <5266AE1F.6030304@shiftmail.org> <5268059E.707@giantdisaster.de> <20131024100842.14051.45479@localhost.localdomain>
-In-Reply-To: <20131024100842.14051.45479@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/24/2013 06:08 PM, Chris Mason wrote:
-> Quoting Stefan Behrens (2013-10-23 13:21:34)
->> On Tue, 22 Oct 2013 18:55:59 +0200, Bob Marley wrote:
->>> On 22/10/2013 10:37, Stefan Behrens wrote:
->>>> I don't believe that this issue can ever happen. I don't believe that
->>>> somewhere on the path to the flash memory, to the magnetic disc or to
->>>> the drive's cache memory, someone interrupts a 4KB write in the middle
->>>> of operation to read from this 4KB area. This is not an issue IMHO.
->>> I think I have read that unfortunately it can happen.
->>> SAS and SATA specs for disks do not mandate that if a write is in-flight
->>> but still not completed, reads from the same sector should return the
->>> value it is being written; they can return the old value.
->>> I also think that Linux does not check either.
->> If the _old_ 4KB block is returned, that's fine and won't cause a
->> checksum error.
->>
->> The patch in question addresses the case that Btrfs submits a write
->> request for a 4KB block, and a concurrent read request for that 4KB
->> block reads partially the old block and partially the new block,
->> resulting in a checksum error reported in the scrub statistic counters.
-> Concurrent reads and writes to the device are completely undefined, and
-> Any combination of old, new, random memory corruption wouldn't
-> surprise me...I'd rather avoid them ;)
->
-> Doing the transaction join during the super read is probably the least
-> complex choice.
-Yeah, by joining transaction we can solve this problem, but it is a 
-little confused,
-because we don't involve writting in scrubing supers.
+Hi Chris,
 
-And the only race condition happens in commiting transaction, Miao also 
-pointed out that
-maybe the best way is to move btrfs_scrub_continue after 
-write_ctree_super().
+this needs to go to 3.12, the patch is only in btrfs-next. The bug can
+happen with systemd journal + balance, the fix helps quite a lot of
+users out there. (https://bugzilla.kernel.org/show_bug.cgi?id=63411)
 
-Thanks,
-Wang
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+I have cherry-picked the patch to current master, applies cleanly and
+the test btrfs/013 passes, here's my
 
+Tested-by: David Sterba <dsterba@suse.cz>
+
+david

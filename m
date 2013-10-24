@@ -1,84 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from exprod5og115.obsmtp.com ([64.18.0.246]:41204 "EHLO
-	exprod5og115.obsmtp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753902Ab3JXWIq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Oct 2013 18:08:46 -0400
-Date: Fri, 25 Oct 2013 00:09:19 +0200
-From: Karl Kiniger <karl.kiniger@med.ge.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:50656 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753857Ab3JXW2s convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Oct 2013 18:28:48 -0400
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Why cannot I move a read-only snapshot around?
-Message-ID: <20131024220919.GB14128@kipc2.localdomain>
-References: <20131024152955.GA6110@kipc2.localdomain>
- <pan$85344$b336f5bf$ca444091$a3ef1e0c@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$85344$b336f5bf$ca444091$a3ef1e0c@cox.net>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20131024215715.GA14128@kipc2.localdomain>
+Date: Thu, 24 Oct 2013 16:28:44 -0600
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <97FC1966-5DC7-488F-8A6C-C8C8B2EB8490@colorremedies.com>
+References: <20131024152955.GA6110@kipc2.localdomain> <1D7328F7-EB4F-4C3F-8EAB-2EDB6331F77E@colorremedies.com> <20131024215715.GA14128@kipc2.localdomain>
+To: Karl Kiniger <karl.kiniger@med.ge.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
 
-(pls see also my other reply in this thread)
-
-On Thu 131024, Duncan wrote:
-> Karl Kiniger posted on Thu, 24 Oct 2013 17:29:56 +0200 as excerpted:
+On Oct 24, 2013, at 3:57 PM, Karl Kiniger <karl.kiniger@med.ge.com> wrote:
 > 
-> > Dear list, (newbie alert)
-> > 
-> > After sucessfully sending and receiving a dozen of  related snapshots I
-> > want to move them all to the readonly folder but I cannot:
+> Yes they are read only snapshots (just received by btrfs receive) and
+> "readonly" is a regular directory. I deliberately did not try to move
+> those snapshots into other snapshots.
 > 
-> I see you mention fedora 19 in a followup, but for those not on fedora, 
-> that's not much help figuring out which kernel you're running.  It's 
-> likely that the following is your problem, tho there's not enough 
-> information in your post to be sure.
+> I can move r/w snapshots  around without problems
+> (into some regular directory), just the r/o snapshots refuse moving.
 
-I promise to include more info in the future but just received
-snapshots should be read-only if I read the docs correctly.
+This is an imperfect example:
 
-> 
-> There was a recent regression with nested subvolumes that may be what 
-> you're running into.  Kernel 3.11 was affected as well as early 3.12-rcs 
-> and I believe 3.10 also but I'm not sure how far back, except that 
-> someone mentioned trying an old kernel (3.8 or 3.6-ish) and moving 
-> subvolumes into subvolumes worked there (tho doing anything involving 
-> writing into read-only snapshots shouldn't work, by design, but that 
-> doesn't appear to be what you're doing, you're just trying to move read-
-> only snapshots to a different location on a read/write base or parent 
-> subvolume, this post assuming it's a parent subvolume, thus triggering 
-> the nested subvolumes bug).
+dr--------. 1 chris chris   0 Oct 24 16:15 donotmove
 
-No nested subvolumes involved. (Is this true? This all is inside the top 
-level volume or what it is called in btrfs.....) 
+[chris@f20s ~]$ mv donotmove/ Videos/
+mv: cannot move ‘donotmove/’ to ‘Videos/donotmove’: Permission denied'
 
-> A fix is available but I'm not sure whether it got into 3.12 (which is 
-> just about to be released) or will now have to wait for 3.13.  So either 
-> try latest 3.12 git and see if its there, or find and cherry-pick the 
-> patch, applying it against 3.11 or 3.12.  (Given that btrfs is still an 
-> experimental filesystem with fixes applied every kernel, while reverting 
-> to an old enough kernel should unregress this particular problem, I can't 
-> recommend it except possibly for testing against data you don't care 
-> about, since by doing so you're exposing yourself to other known and now 
-> fixed bugs.)
-Agreed, I dont want to go back to older kernels - too risky. The data  are
-backed up anyways (on ZFS if you are curious)  but the time invested  into
-my current btrfs setup would be gone.
-
-I can live with the current situation, its just not nice to have the
-snapshots lying around in a place where they should not belong.
-
-If it were possible to temporarily make the r/o snapshots r/w just for
-the purpose of moving (being aware that caution is needed) I would
-not hesitate ane try that.
-
-Karl
+I own that directory. But because it's read only, I can't move it because moving it changes it. Of course if I become root, that overrides posix permissions, but the readonly status of a subvolume isn't like posix permissions and I see now reason why root should be able to modify it. And moving it does modify it.
 
 
-> 
-> -- 
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

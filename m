@@ -1,255 +1,257 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:45118 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751972Ab3JWUYG (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27277 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754747Ab3JXOex (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Oct 2013 16:24:06 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id B8CEC9A041F
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 14:24:05 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id xERFjI4TDQJrvHMP (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2013 14:24:04 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: add -b to btrfsck to look at backup roots
-Date: Wed, 23 Oct 2013 16:24:03 -0400
-Message-ID: <1382559843-13624-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Thu, 24 Oct 2013 10:34:53 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id r9OEYqVs021290
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2013 14:34:53 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9OEYqcv026751
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2013 14:34:52 GMT
+Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id r9OEYqYb026745
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2013 14:34:52 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: make filesystem show by label work
+Date: Thu, 24 Oct 2013 22:42:56 +0800
+Message-Id: <1382625776-17974-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In some cases the tree root is so hosed we can't get anything useful out of it.
-So add the -b option to btrfsck to make us look for the most recent backup tree
-root to use for repair.  Then we can hopefully get ourselves into a working
-state.  Thanks,
+with design revamp around filesystem show the fsid filter
+by label wasn't planned. but apparently that seemed to be
+necessary. this patch will fix it.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-debug-tree.c |  2 +-
- cmds-check.c       | 10 ++++++++--
- disk-io.c          | 54 ++++++++++++++++++++++++++++++++++++++++++++----------
- disk-io.h          |  5 +++--
- 4 files changed, 56 insertions(+), 15 deletions(-)
+ cmds-filesystem.c |  120 ++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 73 insertions(+), 47 deletions(-)
 
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index 078dac5..4a9d89d 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -171,7 +171,7 @@ int main(int ac, char **av)
- 	if (ac != 1)
- 		print_usage();
- 
--	info = open_ctree_fs_info(av[optind], 0, 0, 0, 1);
-+	info = open_ctree_fs_info(av[optind], 0, 0, 0, 1, 0);
- 	if (!info) {
- 		fprintf(stderr, "unable to open %s\n", av[optind]);
- 		exit(1);
-diff --git a/cmds-check.c b/cmds-check.c
-index a6047ea..69b0327 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6024,6 +6024,7 @@ static struct option long_options[] = {
- 	{ "repair", 0, NULL, 0 },
- 	{ "init-csum-tree", 0, NULL, 0 },
- 	{ "init-extent-tree", 0, NULL, 0 },
-+	{ "backup", 0, NULL, 0 },
- 	{ NULL, 0, NULL, 0}
- };
- 
-@@ -6032,6 +6033,7 @@ const char * const cmd_check_usage[] = {
- 	"Check an unmounted btrfs filesystem.",
- 	"",
- 	"-s|--super <superblock>     use this superblock copy",
-+	"-b|--backup                 use the backup root copy",
- 	"--repair                    try to repair the filesystem",
- 	"--init-csum-tree            create a new CRC tree",
- 	"--init-extent-tree          create a new extent tree",
-@@ -6045,6 +6047,7 @@ int cmd_check(int argc, char **argv)
- 	struct btrfs_fs_info *info;
- 	u64 bytenr = 0;
- 	char uuidbuf[37];
-+	int backup_root = 0;
- 	int ret;
- 	int num;
- 	int option_index = 0;
-@@ -6054,12 +6057,15 @@ int cmd_check(int argc, char **argv)
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(argc, argv, "as:", long_options,
-+		c = getopt_long(argc, argv, "as:b", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
- 		switch(c) {
- 			case 'a': /* ignored */ break;
-+			case 'b':
-+				backup_root = 1;
-+				break;
- 			case 's':
- 				num = atol(optarg);
- 				bytenr = btrfs_sb_offset(num);
-@@ -6101,7 +6107,7 @@ int cmd_check(int argc, char **argv)
- 		return -EBUSY;
- 	}
- 
--	info = open_ctree_fs_info(argv[optind], bytenr, 0, rw, 1);
-+	info = open_ctree_fs_info(argv[optind], bytenr, 0, rw, 1, backup_root);
- 	if (!info) {
- 		fprintf(stderr, "Couldn't open file system\n");
- 		return -EIO;
-diff --git a/disk-io.c b/disk-io.c
-index ca76c42..733714d 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -808,8 +808,27 @@ int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable)
- 	return 0;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index d08007e..d2cad81 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -179,6 +179,26 @@ static int cmd_df(int argc, char **argv)
+ 	return !!ret;
  }
  
-+static int find_best_backup_root(struct btrfs_super_block *super)
++static int match_search_item_kernel(__u8 *fsid, char *mnt, char *label,
++					char *search)
 +{
-+	struct btrfs_root_backup *backup;
-+	u64 orig_gen = btrfs_super_generation(super);
-+	u64 gen = 0;
-+	int best_index = 0;
-+	int i;
++	char uuidbuf[37];
++	int search_len = strlen(search);
 +
-+	for (i = 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
-+		backup = super->super_roots + i;
-+		if (btrfs_backup_tree_root_gen(backup) != orig_gen &&
-+		    btrfs_backup_tree_root_gen(backup) > gen) {
-+			best_index = i;
-+			gen = btrfs_backup_tree_root_gen(backup);
-+		}
-+	}
-+	return best_index;
++	search_len = min(search_len, 37);
++	uuid_unparse(fsid, uuidbuf);
++	if (!strncmp(uuidbuf, search, search_len))
++		return 1;
++
++	if (strlen(label) && strcmp(label, search) == 0)
++		return 1;
++
++	if (strcmp(mnt, search) == 0)
++		return 1;
++
++	return 0;
 +}
 +
- int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info,
--			  u64 root_tree_bytenr, int partial)
-+			  u64 root_tree_bytenr, int partial, int backup_root)
+ static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
  {
- 	struct btrfs_super_block *sb = fs_info->super_copy;
- 	struct btrfs_root *root;
-@@ -833,8 +852,20 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info,
- 	blocksize = btrfs_level_size(root, btrfs_super_root_level(sb));
- 	generation = btrfs_super_generation(sb);
+ 	char uuidbuf[37];
+@@ -275,16 +295,18 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
  
--	if (!root_tree_bytenr)
-+	if (!root_tree_bytenr && !backup_root) {
- 		root_tree_bytenr = btrfs_super_root(sb);
-+	} else if (backup_root) {
-+		struct btrfs_root_backup *backup;
-+		int index = find_best_backup_root(sb);
-+		if (index >= BTRFS_NUM_BACKUP_ROOTS) {
-+			fprintf(stderr, "Invalid backup root number\n");
-+			return -EIO;
+ 	uuid_unparse(fs_info->fsid, uuidbuf);
+-	printf("Label: %s  uuid: %s\n",
+-		strlen(label) ? label : "none", uuidbuf);
++	if (label && strlen(label))
++		printf("Label: '%s' ", label);
++	else
++		printf("Label: none ");
+ 
+-	printf("\tTotal devices %llu FS bytes used %s\n",
+-				fs_info->num_devices,
++	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
++			fs_info->num_devices,
+ 			pretty_size(calc_used_bytes(space_info)));
+ 
+ 	for (i = 0; i < fs_info->num_devices; i++) {
+ 		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
+-		printf("\tdevid    %llu size %s used %s path %s\n",
++		printf("\tdevid %4llu size %s used %s path %s\n",
+ 			tmp_dev_info->devid,
+ 			pretty_size(tmp_dev_info->total_bytes),
+ 			pretty_size(tmp_dev_info->bytes_used),
+@@ -308,7 +330,7 @@ static int check_arg_type(char *input)
+ 	char path[PATH_MAX];
+ 
+ 	if (!input)
+-		return BTRFS_ARG_UNKNOWN;
++		return -EINVAL;
+ 
+ 	if (realpath(input, path)) {
+ 		if (is_block_device(input) == 1)
+@@ -320,7 +342,7 @@ static int check_arg_type(char *input)
+ 		return BTRFS_ARG_UNKNOWN;
+ 	}
+ 
+-	if (!uuid_parse(input, out))
++	if (strlen(input) == 36 && !uuid_parse(input, out))
+ 		return BTRFS_ARG_UUID;
+ 
+ 	return BTRFS_ARG_UNKNOWN;
+@@ -328,23 +350,19 @@ static int check_arg_type(char *input)
+ 
+ static int btrfs_scan_kernel(void *search)
+ {
+-	int ret = 0, fd, type;
++	int ret = 0, fd;
+ 	FILE *f;
+ 	struct mntent *mnt;
+ 	struct btrfs_ioctl_fs_info_args fs_info_arg;
+ 	struct btrfs_ioctl_dev_info_args *dev_info_arg = NULL;
+ 	struct btrfs_ioctl_space_args *space_info_arg;
+ 	char label[BTRFS_LABEL_SIZE];
+-	uuid_t uuid;
+ 
+ 	f = setmntent("/proc/self/mounts", "r");
+ 	if (f == NULL)
+ 		return 1;
+ 
+-	type = check_arg_type(search);
+-	if (type == BTRFS_ARG_BLKDEV)
+-		return 1;
+-
++	memset(label, 0, sizeof(label));
+ 	while ((mnt = getmntent(f)) != NULL) {
+ 		if (strcmp(mnt->mnt_type, "btrfs"))
+ 			continue;
+@@ -353,38 +371,36 @@ static int btrfs_scan_kernel(void *search)
+ 		if (ret)
+ 			return ret;
+ 
+-		switch (type) {
+-		case BTRFS_ARG_UUID:
+-			ret = uuid_parse(search, uuid);
+-			if (ret)
+-				return 1;
+-			if (uuid_compare(fs_info_arg.fsid, uuid))
+-				continue;
+-			break;
+-		case BTRFS_ARG_MNTPOINT:
+-			if (strcmp(search, mnt->mnt_dir))
+-				continue;
+-			break;
+-		case BTRFS_ARG_UNKNOWN:
+-			break;
++		if (get_label_mounted(mnt->mnt_dir, label)) {
++			kfree(dev_info_arg);
++			return 1;
 +		}
-+		backup = fs_info->super_copy->super_roots + index;
-+		root_tree_bytenr = btrfs_backup_tree_root(backup);
-+		generation = btrfs_backup_tree_root_gen(backup);
-+	}
++		if (search && !match_search_item_kernel(fs_info_arg.fsid,
++					mnt->mnt_dir, label, search)) {
++			kfree(dev_info_arg);
++			continue;
+ 		}
+ 
+ 		fd = open(mnt->mnt_dir, O_RDONLY);
+ 		if (fd > 0 && !get_df(fd, &space_info_arg)) {
+-			get_label_mounted(mnt->mnt_dir, label);
+ 			print_one_fs(&fs_info_arg, dev_info_arg,
+ 					space_info_arg, label, mnt->mnt_dir);
+-			free(space_info_arg);
++			kfree(space_info_arg);
++			memset(label, 0, sizeof(label));
+ 		}
+ 		if (fd > 0)
+ 			close(fd);
+-		free(dev_info_arg);
++		kfree(dev_info_arg);
++		if (search)
++			return 0;
+ 	}
+-	return ret;
++	if (search)
++		return 1;
++	return 0;
+ }
+ 
+ static const char * const cmd_show_usage[] = {
+-	"btrfs filesystem show [options] [<path>|<uuid>|<device>]",
++	"btrfs filesystem show [options] [<path>|<uuid>|<device>|label]",
+ 	"Show the structure of a filesystem",
+ 	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
+ 	"-m|--mounted       show only mounted btrfs",
+@@ -402,6 +418,7 @@ static int cmd_show(int argc, char **argv)
+ 	int where = BTRFS_SCAN_LBLKID;
+ 	int type = 0;
+ 	char mp[BTRFS_PATH_NAME_MAX + 1];
++	char path[PATH_MAX];
+ 
+ 	while (1) {
+ 		int long_index;
+@@ -426,24 +443,31 @@ static int cmd_show(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (where == BTRFS_SCAN_LBLKID) {
+-		if (check_argc_max(argc, optind + 1))
+-			usage(cmd_show_usage);
+-	} else {
+-		if (check_argc_max(argc, optind))
+-			usage(cmd_show_usage);
+-	}
++	if (check_argc_max(argc, optind + 1))
++		usage(cmd_show_usage);
 +
- 	root->node = read_tree_block(root, root_tree_bytenr, blocksize,
- 				     generation);
- 	if (!extent_buffer_uptodate(root->node)) {
-@@ -1005,7 +1036,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 					     u64 sb_bytenr,
- 					     u64 root_tree_bytenr, int writes,
- 					     int partial, int restore,
--					     int recover_super)
-+					     int recover_super,
-+					     int backup_root)
- {
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_super_block *disk_super;
-@@ -1068,7 +1100,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 			   (unsigned long)btrfs_header_chunk_tree_uuid(eb),
- 			   BTRFS_UUID_SIZE);
- 
--	ret = btrfs_setup_all_roots(fs_info, root_tree_bytenr, partial);
-+	ret = btrfs_setup_all_roots(fs_info, root_tree_bytenr, partial,
-+				    backup_root);
- 	if (ret)
- 		goto out_failed;
- 
-@@ -1105,14 +1138,15 @@ struct btrfs_fs_info *open_ctree_fs_info_restore(const char *filename,
- 		return NULL;
+ 	if (argc > optind) {
+ 		search = argv[optind];
+-		type = check_arg_type(search);
+-		if (type == BTRFS_ARG_UNKNOWN) {
+-			fprintf(stderr, "ERROR: arg type unknown\n");
++		if (strlen(search) == 0)
+ 			usage(cmd_show_usage);
+-		}
++		type = check_arg_type(search);
+ 		if (type == BTRFS_ARG_BLKDEV) {
+-			ret = get_btrfs_mount(search, mp, sizeof(mp));
+-			if (ret == 0)
+-				search = mp;
++			if (where == BTRFS_SCAN_DEV) {
++				/* we need to do this because
++				 * legacy BTRFS_SCAN_DEV
++				 * provides /dev/dm-x paths
++				 */
++				if (realpath(search, path))
++					search = path;
++			} else {
++				ret = get_btrfs_mount(search,
++						mp, sizeof(mp));
++				if (!ret)
++					/* given block dev is mounted*/
++					search = mp;
++				else
++					goto devs_only;
++			}
+ 		}
  	}
- 	info = __open_ctree_fd(fp, filename, sb_bytenr, root_tree_bytenr,
--			       writes, partial, restore, 0);
-+			       writes, partial, restore, 0, 0);
- 	close(fp);
- 	return info;
- }
  
- struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
- 					 u64 sb_bytenr, u64 root_tree_bytenr,
--					 int writes, int partial)
-+					 int writes, int partial,
-+					 int backup_root)
- {
- 	int fp;
- 	struct btrfs_fs_info *info;
-@@ -1127,7 +1161,7 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
- 		return NULL;
- 	}
- 	info = __open_ctree_fd(fp, filename, sb_bytenr, root_tree_bytenr,
--			       writes, partial, 0, 0);
-+			       writes, partial, 0, 0, backup_root);
- 	close(fp);
- 	return info;
- }
-@@ -1148,7 +1182,7 @@ struct btrfs_root *open_ctree_with_broken_super(const char *filename,
- 		return NULL;
- 	}
- 	info = __open_ctree_fd(fp, filename, sb_bytenr, 0,
--			       writes, 0, 0, 1);
-+			       writes, 0, 0, 1, 0);
- 	close(fp);
- 	if (info)
- 		return info->fs_root;
-@@ -1159,7 +1193,7 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes)
- {
- 	struct btrfs_fs_info *info;
+@@ -451,7 +475,9 @@ static int cmd_show(int argc, char **argv)
+ 		goto devs_only;
  
--	info = open_ctree_fs_info(filename, sb_bytenr, 0, writes, 0);
-+	info = open_ctree_fs_info(filename, sb_bytenr, 0, writes, 0, 0);
- 	if (!info)
- 		return NULL;
- 	return info->fs_root;
-@@ -1169,7 +1203,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
- 				 int writes)
- {
- 	struct btrfs_fs_info *info;
--	info = __open_ctree_fd(fp, path, sb_bytenr, 0, writes, 0, 0, 0);
-+	info = __open_ctree_fd(fp, path, sb_bytenr, 0, writes, 0, 0, 0, 0);
- 	if (!info)
- 		return NULL;
- 	return info->fs_root;
-diff --git a/disk-io.h b/disk-io.h
-index 6f2d4f4..b0292db 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -53,7 +53,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
- struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr);
- int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable);
- int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info,
--			  u64 root_tree_bytenr, int partial);
-+			  u64 root_tree_bytenr, int partial, int backup_root);
- void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
- void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info);
- int btrfs_scan_fs_devices(int fd, const char *path,
-@@ -69,7 +69,8 @@ struct btrfs_fs_info *open_ctree_fs_info_restore(const char *filename,
- 					 int writes, int partial);
- struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
- 					 u64 sb_bytenr, u64 root_tree_bytenr,
--					 int writes, int partial);
-+					 int writes, int partial,
-+					 int backup_root);
- struct btrfs_root *open_ctree_with_broken_super(const char *filename,
- 					u64 sb_bytenr, int writes);
- int close_ctree(struct btrfs_root *root);
+ 	/* show mounted btrfs */
+-	btrfs_scan_kernel(search);
++	ret = btrfs_scan_kernel(search);
++	if (search && !ret)
++		return 0;
+ 
+ 	/* shows mounted only */
+ 	if (where == BTRFS_SCAN_MOUNTED)
 -- 
-1.8.3.1
+1.7.1
 

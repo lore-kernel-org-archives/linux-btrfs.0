@@ -1,123 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:43314 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752646Ab3JKSLS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Oct 2013 14:11:18 -0400
-Received: by mail-pa0-f51.google.com with SMTP id kp14so4731416pab.24
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Oct 2013 11:11:18 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:63357 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752522Ab3JYJci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Oct 2013 05:32:38 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id r9P9WYLB011986
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2013 17:32:34 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: wangsl.fnst@cn.fujitsu.com
-Subject: [PATCH] Btrfs: avoid unnecessary scrub workers allocation
-Date: Sat, 12 Oct 2013 02:11:12 +0800
-Message-Id: <1381515072-7563-1-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH] Btrfs: fix the free space write out failure when there is no data space
+Date: Fri, 25 Oct 2013 17:33:36 +0800
+Message-Id: <1382693616-16976-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+After running space balance on a new fs, the fs check program outputed the
+following warning message:
+ free space inode generation (0) did not match free space cache generation (20)
 
-We only allocate scrub workers if we pass all the necessary
-checks, for example, there are no operation in progress.
+Steps to reproduce:
+ # mkfs.btrfs -f <dev>
+ # mount <dev> <mnt>
+ # btrfs balance start <mnt>
+ # umount <mnt>
+ # btrfs check <dev>
 
-Besides, move mutex lock protection outside of scrub_workers_get()
-/scrub_workers_put().
+It was because there was no data space after the space balance, and the free
+space write out task didn't try to allocate a new data chunk for the free space
+inode when doing the reservation. So the data space reservation failed, and in
+order to tell the free space loader that this free space inode could not be
+trusted, the generation of the free space inode wasn't updated. Then the check
+program found this problem and outputed the above message.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+But in fact, it is safe that we try to allocate a new data chunk when we find
+the data space is not enough. The patch fixes the above problem by this way.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 23 ++++++++++-------------
- 1 file changed, 10 insertions(+), 13 deletions(-)
+ fs/btrfs/extent-tree.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index f21e2df..54e1830 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2784,7 +2784,6 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
- {
- 	int ret = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d58bef1..1d238ed 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3605,10 +3605,9 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
  
--	mutex_lock(&fs_info->scrub_lock);
- 	if (fs_info->scrub_workers_refcnt == 0) {
- 		if (is_dev_replace)
- 			btrfs_init_workers(&fs_info->scrub_workers, "scrub", 1,
-@@ -2814,21 +2813,17 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
- 	}
- 	++fs_info->scrub_workers_refcnt;
- out:
--	mutex_unlock(&fs_info->scrub_lock);
--
- 	return ret;
- }
- 
- static noinline_for_stack void scrub_workers_put(struct btrfs_fs_info *fs_info)
- {
--	mutex_lock(&fs_info->scrub_lock);
- 	if (--fs_info->scrub_workers_refcnt == 0) {
- 		btrfs_stop_workers(&fs_info->scrub_workers);
- 		btrfs_stop_workers(&fs_info->scrub_wr_completion_workers);
- 		btrfs_stop_workers(&fs_info->scrub_nocow_workers);
- 	}
- 	WARN_ON(fs_info->scrub_workers_refcnt < 0);
--	mutex_unlock(&fs_info->scrub_lock);
- }
- 
- int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
-@@ -2889,23 +2884,18 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		return -EINVAL;
+-	if (root == root->fs_info->tree_root ||
+-	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID) {
+-		alloc_chunk = 0;
++	if (btrfs_is_free_space_inode(inode)) {
+ 		committed = 1;
++		ASSERT(current->journal_info);
  	}
  
--	ret = scrub_workers_get(fs_info, is_dev_replace);
--	if (ret)
--		return ret;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
- 	if (!dev || (dev->missing && !is_dev_replace)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		scrub_workers_put(fs_info);
- 		return -ENODEV;
- 	}
--	mutex_lock(&fs_info->scrub_lock);
- 
-+	mutex_lock(&fs_info->scrub_lock);
- 	if (!dev->in_fs_metadata || dev->is_tgtdev_for_dev_replace) {
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		scrub_workers_put(fs_info);
- 		return -EIO;
- 	}
- 
-@@ -2916,10 +2906,17 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		btrfs_dev_replace_unlock(&fs_info->dev_replace);
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		scrub_workers_put(fs_info);
- 		return -EINPROGRESS;
- 	}
- 	btrfs_dev_replace_unlock(&fs_info->dev_replace);
-+
-+	ret = scrub_workers_get(fs_info, is_dev_replace);
-+	if (ret) {
-+		mutex_unlock(&fs_info->scrub_lock);
-+		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+		return ret;
-+	}
-+
- 	sctx = scrub_setup_ctx(dev, is_dev_replace);
- 	if (IS_ERR(sctx)) {
- 		mutex_unlock(&fs_info->scrub_lock);
-@@ -2955,10 +2952,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 
- 	mutex_lock(&fs_info->scrub_lock);
- 	dev->scrub_device = NULL;
-+	scrub_workers_put(fs_info);
- 	mutex_unlock(&fs_info->scrub_lock);
- 
- 	scrub_free_ctx(sctx);
--	scrub_workers_put(fs_info);
- 
- 	return ret;
- }
+ 	data_sinfo = fs_info->data_sinfo;
+@@ -3636,6 +3635,16 @@ again:
+ 			spin_unlock(&data_sinfo->lock);
+ alloc:
+ 			alloc_target = btrfs_get_alloc_profile(root, 1);
++			/*
++			 * It is ugly that we don't call nolock join
++			 * transaction for the free space inode case here.
++			 * But it is safe because we only do the data space
++			 * reservation for the free space cache in the
++			 * transaction context, the common join transaction
++			 * just increase the counter of the current transaction
++			 * handler, doesn't try to acquire the trans_lock of
++			 * the fs.
++			 */
+ 			trans = btrfs_join_transaction(root);
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
 -- 
-1.7.11.7
+1.8.3.1
 

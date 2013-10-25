@@ -1,148 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f169.google.com ([209.85.128.169]:52677 "EHLO
-	mail-ve0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754171Ab3JYN05 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Oct 2013 09:26:57 -0400
-Received: by mail-ve0-f169.google.com with SMTP id c14so1123768vea.14
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2013 06:26:56 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAFZZw9bYsJCNyeQQfcJP1rRB5SGBXuiswA8jF1bUycvZPhQLqg@mail.gmail.com>
-References: <CAFZZw9bYsJCNyeQQfcJP1rRB5SGBXuiswA8jF1bUycvZPhQLqg@mail.gmail.com>
-Date: Fri, 25 Oct 2013 15:26:56 +0200
-Message-ID: <CAFZZw9a3BQQTbXj25sGoYQO5=ZcmnT6wmxCdO6jmRNrarVdtqw@mail.gmail.com>
-Subject: Re: Unable to mount partition
-From: Geert Van Damme <geert.vandamme@darling.be>
+Received: from plane.gmane.org ([80.91.229.3]:58805 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753375Ab3JYNld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Oct 2013 09:41:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VZhdr-0006PU-JR
+	for linux-btrfs@vger.kernel.org; Fri, 25 Oct 2013 15:41:32 +0200
+Received: from 63-245-179-205.ip.mtelco.net ([63-245-179-205.ip.mtelco.net])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2013 15:41:31 +0200
+Received: from jgoerzen by 63-245-179-205.ip.mtelco.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2013 15:41:31 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+From: John Goerzen <jgoerzen@complete.org>
+Subject: rm with quotas can cause panic (was Re: Lots of trouble hanging when rm files with many extents)
+Date: Fri, 25 Oct 2013 13:41:11 +0000 (UTC)
+Message-ID: <loom.20131025T153858-104@post.gmane.org>
+References: <20131020235118.3a918ba3@virtall.com> <5264A221.2020509@complete.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was reading the other messages in the mailing list, and tried the
-advice on  http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg27524.html
+John Goerzen <jgoerzen <at> complete.org> writes:
 
-I checked out the latest code, did a make of the btrfs-tools
-
-
-# sudo btrfs rescue chunk-recover -vy /dev/sda1
-
-
-All Devices:
-    Device: id = 1, name = /dev/sda1
-
-
-This ran for some time (half an hour or so) which was reassuring, but
-then it failed with
-
-btrfs: chunk-recover.c:124: process_extent_buffer: Assertion
-`!(exist->nmirrors >= 2)' failed.
+> 
+> On 10/20/2013 09:51 AM, Tomasz Chmielewski wrote:
+> > I'll do some more tests with lots of extents to see if it's
+> > reproducible here as well.
+> >
+> >
+> Interestingly, I've generally had qgroups enabled here as well, possibly 
+> on all of these systems.  Could that be the culprit?
 
 
-:-(
+Updating the subject here, because it seems increasingly likely that quotas
+are the problem causing OOM panics.
 
-Geert
+I was able to reproduce the problem on a test filesystem with quotas
+enabled.  After quotas were disabled and the system was rebooted, the
+problem no longer occurred.  The dangerous combination seems to be many
+extents plus quotas.
 
-On Tue, Oct 22, 2013 at 10:08 AM, Geert Van Damme
-<geert.vandamme@darling.be> wrote:
-> Hi,
->
-> I use btrfs for my /home drive. It's a separate drive with just a
-> single partition.
-> I upgraded to ubuntu 13.10 (beta) a few weeks ago, without any real
-> trouble. But I did have too many issues (not with the drive or btrfs,
-> though) so I decided to do a fresh install.
-> The new install failed a few times, so I made another startup usb
-> drive with another program and that one worked fine.
-> However, my /dev/sda1 was now recognised as an ext4 instea of btrfs.
-> It also had some files on it (a default ubuntu /home and a
-> /lost+found)
-> I can't mount the drive as type=btrfs
->
-> sudo mount -t btrfs /dev/sda1 /mnt/btrfs/
-> mount: wrong fs type, bad option, bad superblock on /dev/sda1,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
->
->
-> sudo dmesg | grep btrfs
-> [  187.604312] btrfs[2771]: segfault at ac ip 000000000042b93b sp
-> 00007fff918332c8 error 4 in btrfs[400000+4d000]
-> [  196.574435] btrfs[2777]: segfault at ac ip 000000000042b93b sp
-> 00007fff0f04d8a8 error 4 in btrfs[400000+4d000]
-> [  241.698698] btrfs[2800]: segfault at ac ip 000000000042b93b sp
-> 00007fffb1d02b08 error 4 in btrfs[400000+4d000]
->
->
->
-> Everything I tried crashed, except for 'show'
->
->
-> sudo btrfs fi show
-> failed to open /dev/sr0: No medium found
-> Label: none  uuid: 183af3e0-2572-4497-9705-1d27a6657f7b
->     Total devices 1 FS bytes used 746.23GB
->     devid    1 size 2.73TB used 2.73TB path /dev/sda1
->
-> Btrfs v0.20-rc1
->
->
-> which makes it more or less reassuring that the data is still there,
-> but I can't seem to find a way to get it :-(
-> At the moment I restored a backup, so I'm fine more or less, but it
-> would be nice if I could fix this.
->
->
-> sudo btrfs fi df /dev/sda1
-> ERROR: couldn't get space info on '/dev/sda1' - Inappropriate ioctl for device
->
->
-> sudo btrfsck /dev/sda1
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> read block failed check_tree_block
-> Couldn't read chunk root
->
->
-> sudo btrfs restore -i -v  /dev/sda1 /home/geert/recover
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> read block failed check_tree_block
-> Couldn't read chunk root
-> Could not open root, trying backup super
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> Check tree block failed, want=21000192, have=0
-> read block failed check_tree_block
-> Couldn't read chunk root
-> Could not open root, trying backup super
-> No valid Btrfs found on /dev/sda1
-> Could not open root, trying backup super
->
->
-> btrfs chunk-recover   ran for a few moments, but then failed with
->
-> btrfs: cmds-chunk.c:125: process_extent_buffer: Assertion
-> `!(exists->nmirrors >=2)´ failed.
->
-> It looks like the chunk-recover command isn't any more available in
-> the latest btrfs-tools package I installed  (from
-> https://launchpad.net/~samuel-maftoul/+archive/btrfs-tools/+build/4461274).
->
-> It did work with the default btrfs from ubuntu 13.10 though, but
-> showed the error above
->
-> It looks a lot similar to
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg27390.html
-> and
-> http://www.spinics.net/lists/linux-btrfs/msg26274.html
->
-> Is there anything else I could try?
+Sadly, quotas are the only way to have btrfs keep track of how much space
+subvols are using, so it's very useful to be able to use that feature.
+
+I also noted this at https://bugzilla.kernel.org/show_bug.cgi?id=63071
+
+John
+
+
+

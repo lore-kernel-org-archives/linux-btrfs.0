@@ -1,43 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:25878 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751350Ab3JZWRh convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Oct 2013 18:17:37 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from mail-ee0-f42.google.com ([74.125.83.42]:58432 "EHLO
+	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753549Ab3JZWWI convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Oct 2013 18:22:08 -0400
+Received: by mail-ee0-f42.google.com with SMTP id b45so3494489eek.15
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Oct 2013 15:22:06 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <9E910E84-766B-44BB-9EA5-D848016A79D6@colorremedies.com>
+References: <CAEezp7tJ3eouogd2zuDuLVnAhHk8VPi7ytFNQ1Rh51vfioVzHg@mail.gmail.com>
+	<C5E10710-8D46-44D4-AC38-FB66B9938BB1@colorremedies.com>
+	<CAEezp7uaoZow7vjArHq4E+aD9nxTwEFwvd5VrjUUuNcn4-B1cQ@mail.gmail.com>
+	<9E910E84-766B-44BB-9EA5-D848016A79D6@colorremedies.com>
+Date: Sun, 27 Oct 2013 00:22:06 +0200
+Message-ID: <CAEezp7tgtNUmN6BfSEY9+Jc6D6WtZds=GRQ7NK9ScM7OzVod8w@mail.gmail.com>
 Subject: Re: No space left on device, problem
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAEezp7uaoZow7vjArHq4E+aD9nxTwEFwvd5VrjUUuNcn4-B1cQ@mail.gmail.com>
-Date: Sat, 26 Oct 2013 16:17:33 -0600
+From: Igor M <igork20@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <9E910E84-766B-44BB-9EA5-D848016A79D6@colorremedies.com>
-References: <CAEezp7tJ3eouogd2zuDuLVnAhHk8VPi7ytFNQ1Rh51vfioVzHg@mail.gmail.com> <C5E10710-8D46-44D4-AC38-FB66B9938BB1@colorremedies.com> <CAEezp7uaoZow7vjArHq4E+aD9nxTwEFwvd5VrjUUuNcn4-B1cQ@mail.gmail.com>
-To: Igor M <igork20@gmail.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Oct 27, 2013 at 12:17 AM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Oct 26, 2013, at 3:53 PM, Igor M <igork20@gmail.com> wrote:
+>
+>>
+>> I even added enospc_debug mount option, still no messages.
+>
+> If it were kernel enospc, you should have messages in dmesg.
+>
+> What version of btrfs progs when making the btrfs volume?
+>
+>>
+>> cp: failed to extend ‘/usr/local/mysql/data/gbdata/parts_0016.MYD’: No
+>> space left on device
+>
+> Reboot with kernel parameter ignore_loglevel and retry the copy, and see if you now have anything in dmesg at the time of the copy.
+>
+>
 
-On Oct 26, 2013, at 3:53 PM, Igor M <igork20@gmail.com> wrote:
+Some more info. This files are MySQL database files. Tables contains
+only text so they compress well.
+But, if I copy some uncompressable file, for example some video than
+everything is ok, no error message, copy is successfull.
+I also tried mounting without compression (without compress-force=lzo)
+and in this case no error is reported.
+So it seems it's something with compression ?
 
-> 
-> I even added enospc_debug mount option, still no messages.
+I'll try rebooting with ignore_loglevel parameter.
 
-If it were kernel enospc, you should have messages in dmesg. 
-
-What version of btrfs progs when making the btrfs volume?
-
-> 
-> cp: failed to extend ‘/usr/local/mysql/data/gbdata/parts_0016.MYD’: No
-> space left on device
-
-Reboot with kernel parameter ignore_loglevel and retry the copy, and see if you now have anything in dmesg at the time of the copy.
-
-
-> 
-> It's the same error if I try to copy for ex. with midnight commander.
-
-I have the same kernel version, the same mount options, and use the same cp -a on a 5.3GB file and cannot reproduce your results.
-
-
-Chris Murphy
+>>
+>> It's the same error if I try to copy for ex. with midnight commander.
+>
+> I have the same kernel version, the same mount options, and use the same cp -a on a 5.3GB file and cannot reproduce your results.
+>
+>
+> Chris Murphy

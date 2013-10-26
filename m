@@ -1,47 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:43400 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751815Ab3JZHVe (ORCPT
+Received: from mail-qc0-f180.google.com ([209.85.216.180]:64205 "EHLO
+	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751157Ab3JZJ2E (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Oct 2013 03:21:34 -0400
-From: Alexandre Oliva <oliva@gnu.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs raid5
-References: <0833228b-7a17-49f8-836a-2565a6b9af0c@aliyun.com>
-	<pan$59a02$8231ca78$f5d54bfb$30812437@cox.net>
-	<or7gd59qcf.fsf@livre.home> <5266B87D.9080202@swiftspirit.co.za>
-	<ory55l85xm.fsf@livre.home>
-	<pan$8e391$f46eecbc$498ef5f9$8d48b882@cox.net>
-Date: Sat, 26 Oct 2013 05:21:17 -0200
-In-Reply-To: <pan$8e391$f46eecbc$498ef5f9$8d48b882@cox.net> (Duncan's message
-	of "Wed, 23 Oct 2013 00:50:51 +0000 (UTC)")
-Message-ID: <orob6c7b0y.fsf@livre.home>
+	Sat, 26 Oct 2013 05:28:04 -0400
+Received: by mail-qc0-f180.google.com with SMTP id e9so2821873qcy.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Oct 2013 02:28:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20131025104414.GD31029@carfax.org.uk>
+References: <CAGqmi74OvQ=BFroP+QCf6eUtc61__LYRGtZJNcPz1XrSWX-q_w@mail.gmail.com>
+	<CAGqmi74F9GurJL73qtU4JG+Fi4RbXE7tiaO1uEQqEY2ym278eA@mail.gmail.com>
+	<20131025163546.4cf3291a@natsu>
+	<20131025104414.GD31029@carfax.org.uk>
+Date: Sat, 26 Oct 2013 10:28:02 +0100
+Message-ID: <CAOTdubsB5BNCBbDc8GrweZ1mNhJ=4OYCu-GKPd0jwfPSfVRgJQ@mail.gmail.com>
+Subject: Re: swapfile on btrfs, temporary solution for wiki
+From: "karim.allah.ahmed@gmail.com" <karim.allah.ahmed@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.net>,
+        Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Oct 22, 2013, Duncan <1i5t5.duncan@cox.net> wrote:
+Is the NFS over network code upstream ?
 
-> the quick failure should they try raid56 in its current state simply
-> alerts them to the problem they already had.
+On 10/25/13, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Fri, Oct 25, 2013 at 04:35:46PM +0600, Roman Mamedov wrote:
+>> On Thu, 24 Oct 2013 23:52:01 +0300
+>> Timofey Titovets <nefelim4ag@gmail.com> wrote:
+>>
+>> > Hello, i suggest temporary solution to use swap file under btrfs.
+>> > I test it, and it work good.
+>> >
+>> > I invent simple the way, how create and using swap file, just see
+>> > following sh code:
+>> >
+>> > swapfile=$(losetup -f) #free loop device
+>> > truncate -s 8G /swap   #create 8G sparse swap file
+>> > losetup $swapfile /swap #mount file to loop
+>> > mkswap  $swapfile
+>> > swapon  $swapfile
+>> >
+>> > i just adding this to rc.local and this work good.
+>> > May be, add it to btrfs Wiki as temporary solution to using swap file?
+>>
+>> I always thought Btrfs does not allow swap files on purpose, because it is
+>> not
+>> deadlock-proof when used in the swapping context.
+>
+>    It's more that the current swap interface is based on device+block
+> list, and if you balance a filesystem, the blocks for a file move --
+> but there's no way of telling the swap code to cope with that.
+>
+>> Imagine you try swapping out pages to free up some memory, and in the
+>> process
+>> Btrfs needs to allocate some memory to actually perform the write, the
+>> kernel
+>> says "Sure, but for that we need to swap out some more pages..." You see
+>> where
+>> that goes.
+>>
+>> Same issue is possible with swap on other complex filesystems an example
+>> being networked ones like NFS and SMB/CIFS.
+>
+>    The network filesystems have a similar problem as btrfs -- they
+> don't export devices, and you don't get direct access to the low-level
+> blocks under the FS, so the swap code can't deal with it.
+>
+>    That said, there's been a lot of work recently on getting
+> swap-over-NFS to work properly -- effectively giving a new interface
+> for the swap code that doesn't rely on direct mapping to device
+> blocks. That new interface gives us the minimal external
+> infrastructure necessary to consider doing swapfiles on btrfs.
+>
+>> It might work for some time (or even work 99% of time), but you still may
+>> be
+>> endangering your system to a possibility of a lock-up, and certainly
+>> adding
+>> that to any Wiki/FAQ/website as "the solution" might not be the best
+>> choice.
+>
+>    The deadlock situation is dealt with by adding a flag to the memory
+> allocator in the swap-critical paths, which says you're not allowed to
+> swap anything when you make the allocation. That at least allows the
+> memory allocation to fail (hopefully gracefully) without deadlocking.
+> I suspect that this is also part of the swap-on-NFS work -- adding
+> that flag everywhere necessary.
+>
+>    Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>        --- He's playing Schubert.  I think Schubert is losing. ---
+>
 
-What quick failure?  There's no such thing in place AFAIK.  It seems to
-do all the work properly, the limitations in the current implementation
-will only show up when an I/O error kicks in.  I can't see any
-indication, in existing announcements, that recovery from I/O errors in
-raid56 is missing, let alone that it's so utterly and completely broken
-that it will freeze the entire filesystem and require a forced reboot to
-unmount the filesystem and make any other data in it accessible again.
-
-That's far, far worse than the general state of btrfs, and that's not a
-documented limitation of raid56, so how would someone be expected to
-know about it?  It certainly isn't obvious by having a cursory look at
-the code either.
 
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+Karim Allah Ahmed.
+LinkedIn <http://eg.linkedin.com/pub/karim-allah-ahmed/13/829/550/>

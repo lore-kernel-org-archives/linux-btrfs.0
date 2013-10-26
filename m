@@ -1,33 +1,193 @@
-Return-Path: <dsterba@suse.cz>
-Received: from dkim2.fusionio.com ([66.114.96.54]:58098 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753916Ab3D3P6P (ORCPT
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:63528 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751442Ab3JZTAE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Apr 2013 11:58:15 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id EF2A59A068E
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 09:58:14 -0600 (MDT)
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 9MVnAA4HO0VxpykM (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 30 Apr 2013 09:58:14 -0600 (MDT)
-Date: Tue, 30 Apr 2013 11:58:12 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: Moving to bugzilla.kernel.org
-Message-ID: <20130430155812.GE2580@localhost.localdomain>
+	Sat, 26 Oct 2013 15:00:04 -0400
+Received: by mail-wg0-f43.google.com with SMTP id b13so5166516wgh.22
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Oct 2013 12:00:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20130910043007.783624453@suse.com>
+References: <20130910042408.335071038@suse.com>
+	<20130910043007.783624453@suse.com>
+Date: Sat, 26 Oct 2013 22:00:02 +0300
+Message-ID: <CAOcd+r0NC4s3=PN-i+TpPvJRA-_AxeiU3Z1KTgKWx+4b55LOAg@mail.gmail.com>
+Subject: Re: [patch 3/7] btrfs: Add per-super attributes to sysfs
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi Jeff,
 
-In an effort to be better about helping users with their bugs I've gotten
-control over the btrfs component of bugzilla.kernel.org.  I'm currently going
-through all the bugs in this list and closing out the old ones (which is most of
-them).  From now on I'd like us to push users who report bugs onto
-bugzilla.kernel.org so we can be sure we're keeping track of all the reported
-issues and we can be more responsive to them, instead of what currently happens
-where a few get a lot of personal attention and the rest get ignored because
-we're already giving somebody attention when somebody else submits a bug report.
-Let me know if you have any questions, thanks,
+On Tue, Sep 10, 2013 at 7:24 AM, Jeff Mahoney <jeffm@suse.com> wrote:
+> This patch adds per-super attributes to sysfs.
+>
+> It doesn't publish any attributes yet, but does the proper lifetime
+> handling as well as the basic infrastructure to add new attributes.
+>
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/ctree.h |    2 +
+>  fs/btrfs/super.c |   13 +++++++++++-
+>  fs/btrfs/sysfs.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/sysfs.h |   19 ++++++++++++++++++
+>  4 files changed, 91 insertions(+), 1 deletion(-)
+>
+> --- a/fs/btrfs/ctree.h  2013-09-10 00:09:12.990087784 -0400
+> +++ b/fs/btrfs/ctree.h  2013-09-10 00:09:35.521794520 -0400
+> @@ -3694,6 +3694,8 @@ int btrfs_defrag_leaves(struct btrfs_tra
+>  /* sysfs.c */
+>  int btrfs_init_sysfs(void);
+>  void btrfs_exit_sysfs(void);
+> +int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info);
+> +void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info);
+>
+>  /* xattr.c */
+>  ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+> --- a/fs/btrfs/super.c  2013-09-10 00:09:12.994087730 -0400
+> +++ b/fs/btrfs/super.c  2013-09-10 00:09:35.525794464 -0400
+> @@ -301,6 +301,8 @@ void __btrfs_panic(struct btrfs_fs_info
+>
+>  static void btrfs_put_super(struct super_block *sb)
+>  {
+> +       btrfs_sysfs_remove_one(btrfs_sb(sb));
+> +
+>         (void)close_ctree(btrfs_sb(sb)->tree_root);
+>         /* FIXME: need to fix VFS to return error? */
+>         /* AV: return it _where_?  ->put_super() can be triggered by any number
+> @@ -1143,8 +1145,17 @@ static struct dentry *btrfs_mount(struct
+>         }
+>
+>         root = !error ? get_default_root(s, subvol_objectid) : ERR_PTR(error);
+> -       if (IS_ERR(root))
+> +       if (IS_ERR(root)) {
+>                 deactivate_locked_super(s);
+> +               return root;
+> +       }
+> +
+> +       error = btrfs_sysfs_add_one(fs_info);
+> +       if (error) {
+> +               dput(root);
+> +               deactivate_locked_super(s);
+> +               return ERR_PTR(error);
+> +       }
+>
+>         return root;
+>
+> --- a/fs/btrfs/sysfs.c  2013-09-10 00:09:13.002087628 -0400
+> +++ b/fs/btrfs/sysfs.c  2013-09-10 00:09:49.501616538 -0400
+> @@ -61,6 +61,64 @@ static struct attribute *btrfs_supp_feat
+>         NULL
+>  };
+>
+> +static struct attribute *btrfs_attrs[] = {
+> +       NULL,
+> +};
+> +
+> +static void btrfs_fs_info_release(struct kobject *kobj)
+> +{
+> +       struct btrfs_fs_info *fs_info;
+> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
+> +       complete(&fs_info->kobj_unregister);
+> +}
+> +
+> +static ssize_t btrfs_attr_show(struct kobject *kobj,
+> +                              struct attribute *attr, char *buf)
+> +{
+> +       struct btrfs_attr *a = container_of(attr, struct btrfs_attr, attr);
+> +       struct btrfs_fs_info *fs_info;
+> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
+> +
+> +       return a->show ? a->show(a, fs_info, buf) : 0;
+> +}
+> +
+> +static ssize_t btrfs_attr_store(struct kobject *kobj,
+> +                               struct attribute *attr,
+> +                               const char *buf, size_t len)
+> +{
+> +       struct btrfs_attr *a = container_of(attr, struct btrfs_attr, attr);
+> +       struct btrfs_fs_info *fs_info;
+> +       fs_info = container_of(kobj, struct btrfs_fs_info, super_kobj);
+> +
+> +       return a->store ? a->store(a, fs_info, buf, len) : 0;
+> +}
+> +
+> +static const struct sysfs_ops btrfs_attr_ops = {
+> +       .show = btrfs_attr_show,
+> +       .store = btrfs_attr_store,
+> +};
+> +
+> +static struct kobj_type btrfs_ktype = {
+> +       .default_attrs  = btrfs_attrs,
+> +       .sysfs_ops      = &btrfs_attr_ops,
+> +       .release        = btrfs_fs_info_release,
+> +};
+> +
+> +int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
+> +{
+> +       init_completion(&fs_info->kobj_unregister);
+> +       fs_info->super_kobj.kset = btrfs_kset;
+> +       return kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
+> +                                   "%pU", fs_info->fsid);
+> +}
+> +
+> +void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+> +{
+> +       kobject_del(&fs_info->super_kobj);
+Is there a reason for this explicit call? The last kobject_put will do
+this automatically, no?
 
-Josef
+> +       kobject_put(&fs_info->super_kobj);
+> +       wait_for_completion(&fs_info->kobj_unregister);
+> +}
+> +
+>  static void btrfs_supp_feat_release(struct kobject *kobj)
+>  {
+>         complete(&btrfs_feat->f_kobj_unregister);
+> --- a/fs/btrfs/sysfs.h  2013-09-10 00:09:13.002087628 -0400
+> +++ b/fs/btrfs/sysfs.h  2013-09-10 00:09:35.525794464 -0400
+> @@ -8,6 +8,24 @@ enum btrfs_feature_set {
+>         FEAT_MAX
+>  };
+>
+> +struct btrfs_attr {
+> +       struct attribute attr;
+> +       ssize_t (*show)(struct btrfs_attr *, struct btrfs_fs_info *, char *);
+> +       ssize_t (*store)(struct btrfs_attr *, struct btrfs_fs_info *,
+> +                        const char *, size_t);
+> +};
+> +
+> +#define __INIT_BTRFS_ATTR(_name, _mode, _show, _store)                 \
+> +{                                                                      \
+> +       .attr   = { .name = __stringify(_name), .mode = _mode },        \
+> +       .show   = _show,                                                \
+> +       .store  = _store,                                               \
+> +}
+> +
+> +#define BTRFS_ATTR(_name, _mode, _show, _store)                                \
+> +static struct btrfs_attr btrfs_attr_##_name =                          \
+> +                       __INIT_BTRFS_ATTR(_name, _mode, _show, _store)
+> +
+>  struct btrfs_feature_attr {
+>         struct attribute attr;                  /* global show, no store */
+>         enum btrfs_feature_set feature_set;
+> @@ -31,6 +49,7 @@ static struct btrfs_feature_attr btrfs_a
+>  #define BTRFS_SUPP_FEAT_LIST(_name)    (&btrfs_attr_##_name.attr),
+>
+>  /* convert from attribute */
+> +#define to_btrfs_attr(a) container_of(a, struct btrfs_attr, attr)
+>  #define to_btrfs_feature_attr(a) \
+>                         container_of(a, struct btrfs_feature_attr, attr)
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Thanks,
+Alex,

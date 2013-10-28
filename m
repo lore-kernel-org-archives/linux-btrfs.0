@@ -1,79 +1,407 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38902 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751265Ab3JYVVM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Oct 2013 17:21:12 -0400
-Message-ID: <526AE0BE.9060502@suse.com>
-Date: Fri, 25 Oct 2013 17:21:02 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from dkim2.fusionio.com ([66.114.96.54]:54243 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756004Ab3J1Pty (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Oct 2013 11:49:54 -0400
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 2C8759A06A7
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 09:49:54 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: add generic/320 to test fsync() on directories V2
+Date: Mon, 28 Oct 2013 11:49:51 -0400
+Message-ID: <1382975391-26843-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: xfs@oss.sgi.com
-Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [patch 0/3] xfstests: tests for btrfs publishing/export patchset
-References: <20131025205246.269327744@suse.com>
-In-Reply-To: <20131025205246.269327744@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="ojf2fX8tGr722dOAPA6922ORSo2HQhJFv"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ojf2fX8tGr722dOAPA6922ORSo2HQhJFv
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Btrfs had some issues with fsync()'ing directories and fsync()'ing after
+renames.  These three new tests cover the 3 different issues we were seeing.
+This breaks out the dmflakey stuff into a common helper to be shared between
+generic/311 and generic/320. Thanks,
 
-On 10/25/13, 4:52 PM, Jeff Mahoney wrote:
-> These are the tests that Josef requested accompany the submission of
-> the btrfs publishing/export patchset[1].
->=20
-> 100: Test new global metadata reservation ioctl
-> 101: Test new sysfs exporting of allocation and device membership
-> 102: Test new sysfs exporting of feature bits
-> 103: Test setting/clearing feature bits via ioctl
-> 104: Test setting/clearing feature bits via sysfs
->=20
-> As part of the ioctl testing, I added a helper that can be extended
-> easily to export simple information via ioctl. This means that the
-> tests can be independent of btrfsprogs version or its output formatting=
-=2E
->=20
-> -Jeff
->=20
-> [1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/29307
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+V1->V2: moved this out into its own test instead of adding it to 311
 
-Apologies for the formatting of the subjects and lack of direct btrfs
-mention in the commits. I'll fix and resend.
+ common/dmflakey       |  74 ++++++++++++++++++++++++++
+ tests/generic/311     |  56 +++-----------------
+ tests/generic/320     | 140 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/320.out |   9 ++++
+ tests/generic/group   |   1 +
+ 5 files changed, 231 insertions(+), 49 deletions(-)
+ create mode 100644 common/dmflakey
+ create mode 100644 tests/generic/320
+ create mode 100644 tests/generic/320.out
 
--Jeff
+diff --git a/common/dmflakey b/common/dmflakey
+new file mode 100644
+index 0000000..bc984bd
+--- /dev/null
++++ b/common/dmflakey
+@@ -0,0 +1,74 @@
++##/bin/bash
++#
++# Copyright (c) 2013 Fusion IO, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#
++# common functions for setting up and tearing down a dmflakey device
++
++FLAKEY_ALLOW_WRITES=0
++FLAKEY_DROP_WRITES=1
++
++_init_flakey()
++{
++	local BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
++	FLAKEY_DEV=/dev/mapper/flakey-test
++	FLAKEY_TABLE="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 180 0"
++	FLAKEY_TABLE_DROP="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 0 180 1 drop_writes"
++	$DMSETUP_PROG create flakey-test --table "$FLAKEY_TABLE" || \
++		_fatal "failed to create flakey device"
++}
++
++_mount_flakey()
++{
++	mount -t $FSTYP $MOUNT_OPTIONS $FLAKEY_DEV $SCRATCH_MNT
++}
++
++_unmount_flakey()
++{
++	$UMOUNT_PROG $SCRATCH_MNT
++}
++
++_cleanup_flakey()
++{
++	# If dmsetup load fails then we need to make sure to do resume here
++	# otherwise the umount will hang
++	$DMSETUP_PROG resume flakey-test > /dev/null 2>&1
++	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
++	$DMSETUP_PROG remove flakey-test > /dev/null 2>&1
++}
++
++# _load_flakey_table <table> [lockfs]
++#
++# This defaults to --nolockfs, which doesn't freeze_fs() before loading the new
++# table, so it simulates power failure.
++_load_flakey_table()
++{
++
++	table="$FLAKEY_TABLE"
++	[ $1 -eq $FLAKEY_DROP_WRITES ] && table="$FLAKEY_TABLE_DROP"
++
++	suspend_opt="--nolockfs"
++	[ $# -gt 1 ] && [ $2 -eq 1 ] && suspend_opt=""
++
++	$DMSETUP_PROG suspend $suspend_opt flakey-test
++	[ $? -ne 0 ] && _fatal "failed to suspend flakey-test"
++
++	$DMSETUP_PROG load flakey-test --table "$table"
++	[ $? -ne 0 ] && _fatal "failed to load table into flakey-test"
++
++	$DMSETUP_PROG resume flakey-test
++	[ $? -ne 0 ] && _fatal  "failed to resumeflakey-test"
++}
+diff --git a/tests/generic/311 b/tests/generic/311
+index 675d927..6802a96 100644
+--- a/tests/generic/311
++++ b/tests/generic/311
+@@ -41,17 +41,14 @@ status=1	# failure is the default!
+ 
+ _cleanup()
+ {
+-	# If dmsetup load fails then we need to make sure to do resume here
+-	# otherwise the umount will hang
+-	$DMSETUP_PROG resume flakey-test > /dev/null 2>&1
+-	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
+-	$DMSETUP_PROG remove flakey-test > /dev/null 2>&1
++	_cleanup_flakey
+ }
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+ 
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
++. ./common/dmflakey
+ 
+ # real QA test starts here
+ _supported_fs generic
+@@ -63,49 +60,12 @@ _require_dm_flakey
+ [ -x $here/src/fsync-tester ] || _notrun "fsync-tester not build"
+ 
+ rm -f $seqres.full
+-BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
+-FLAKEY_DEV=/dev/mapper/flakey-test
+ SEED=1
+ testfile=$SCRATCH_MNT/$seq.fsync
+-FLAKEY_TABLE="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 180 0"
+-FLAKEY_TABLE_DROP="0 $BLK_DEV_SIZE flakey $SCRATCH_DEV 0 0 180 1 drop_writes"
+-_TEST_OPTIONS=""
+-
+-_mount_flakey()
+-{
+-	mount -t $FSTYP $MOUNT_OPTIONS $FLAKEY_DEV $SCRATCH_MNT
+-}
+-
+-_unmount_flakey()
+-{
+-	$UMOUNT_PROG $SCRATCH_MNT
+-}
+-
+-_load_flakey_table()
+-{
+-	# _load_flakey_table <table>
+-
+-	table="$FLAKEY_TABLE"
+-	[ $1 -eq 1 ] && table="$FLAKEY_TABLE_DROP"
+-
+-	suspend_opt=""
+-	[ $nolockfs -eq 1 ] && suspend_opt="--nolockfs"
+-
+-	$DMSETUP_PROG suspend $suspend_opt flakey-test
+-	[ $? -ne 0 ] && _fatal "failed to suspend flakey-test"
+-
+-	$DMSETUP_PROG load flakey-test --table "$table"
+-	[ $? -ne 0 ] && _fatal "failed to load table into flakey-test"
+-
+-	$DMSETUP_PROG resume flakey-test
+-	[ $? -ne 0 ] && _fatal  "failed to resumeflakey-test"
+-}
+ 
+ _run_test()
+ {
+ 	# _run_test <testnum> <0 - buffered | 1 - O_DIRECT>
+-	allow_writes=0
+-	drop_writes=1
+ 	test_num=$1
+ 
+ 	direct_opt=""
+@@ -115,11 +75,11 @@ _run_test()
+ 	[ $? -ne 0 ] && _fatal "fsync tester exited abnormally"
+ 
+ 	_md5_checksum $testfile
+-	_load_flakey_table $drop_writes
++	_load_flakey_table $FLAKEY_DROP_WRITES $lockfs
+ 	_unmount_flakey
+ 
+ 	#Ok mount so that any recovery that needs to happen is done
+-	_load_flakey_table $allow_writes
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
+ 	_mount_flakey
+ 	_md5_checksum $testfile
+ 
+@@ -134,23 +94,21 @@ _run_test()
+ _scratch_mkfs >> $seqres.full 2>&1
+ 
+ # Create a basic flakey device that will never error out
+-$DMSETUP_PROG create flakey-test --table "$FLAKEY_TABLE"
+-[ $? -ne 0 ] && _fatal "failed to create flakey device"
+-
++_init_flakey
+ _mount_flakey
+ 
+ buffered=0
+ direct=1
+ 
+ for i in $(seq 1 20); do
+-	nolockfs=0
++	lockfs=1
+ 	SEED=$i
+ 	echo "Running test $i buffered, normal suspend"
+ 	_run_test $i $buffered
+ 	echo "Running test $i direct, normal suspend"
+ 	_run_test $i $direct
+ 
+-	nolockfs=1
++	lockfs=0
+ 	echo "Running test $i buffered, nolockfs"
+ 	_run_test $i $buffered
+ 	echo "Running test $i direct, nolockfs"
+diff --git a/tests/generic/320 b/tests/generic/320
+new file mode 100644
+index 0000000..4b4a77c
+--- /dev/null
++++ b/tests/generic/320
+@@ -0,0 +1,140 @@
++#! /bin/bash
++# FS QA Test No. 320
++#
++# Runs various dir fsync tests to cover fsync'ing directory corner cases.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013 Fusion IO. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++status=1	# failure is the default!
++
++_cleanup()
++{
++	_cleanup_flakey
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_need_to_be_root
++_require_scratch
++_require_dm_flakey
++
++rm -f $seqres.full
++
++_clean_working_dir()
++{
++	_mount_flakey
++	rm -rf $SCRATCH_MNT/*
++	_unmount_flakey
++}
++
++# Btrfs wasn't making sure the directory survived fsync
++_directory_test()
++{
++	echo "fsync new directory"
++	_mount_flakey
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
++	_load_flakey_table $FLAKEY_DROP_WRITES
++	_unmount_flakey
++
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
++
++# Btrfs was losing a rename into a new directory
++_rename_test()
++{
++	echo "rename fsync test"
++	_mount_flakey
++	touch $SCRATCH_MNT/foo
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
++	_load_flakey_table $FLAKEY_DROP_WRITES
++	_unmount_flakey
++
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
++
++# Btrfs was failing to replay a log when we had a inode with a smaller inode
++# number that is renamed into a directory with a higher inode number
++_replay_rename_test()
++{
++	echo "replay rename fsync test"
++	_mount_flakey
++	touch $SCRATCH_MNT/foo
++	mkdir $SCRATCH_MNT/bar
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar/foo
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
++
++	# This is to force btrfs to relog the entire inode including the ref so
++	# we are sure to try and replay the ref along with the dir_index item
++	setfattr -n user.foo -v blah $SCRATCH_MNT/bar/foo >> $seqres.full 2>&1
++
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar/foo
++	_load_flakey_table $FLAKEY_DROP_WRITES
++	_unmount_flakey
++
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
++	_mount_flakey
++	_ls_l $SCRATCH_MNT | tail -n +2 | awk '{ print $1, $9 }'
++	_ls_l $SCRATCH_MNT/bar | tail -n +2 | awk '{ print $1, $9 }'
++	_unmount_flakey
++	_check_scratch_fs $FLAKEY_DEV
++	[ $? -ne 0 ] && _fatal "fsck failed"
++}
++
++_scratch_mkfs >> $seqres.full 2>&1
++
++# Create a basic flakey device that will never error out
++_init_flakey
++
++_directory_test
++_clean_working_dir
++_rename_test
++_clean_working_dir
++_replay_rename_test
++
++status=0
++exit
+diff --git a/tests/generic/320.out b/tests/generic/320.out
+new file mode 100644
+index 0000000..6e563dd
+--- /dev/null
++++ b/tests/generic/320.out
+@@ -0,0 +1,9 @@
++QA output created by 320
++fsync new directory
++drwxr-xr-x bar
++rename fsync test
++drwxr-xr-x bar
++-rw-r--r-- foo
++replay rename fsync test
++drwxr-xr-x bar
++-rw-r--r-- foo
+diff --git a/tests/generic/group b/tests/generic/group
+index 3488c42..b48eab8 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -122,4 +122,5 @@
+ 317 auto metadata quick
+ 318 acl attr auto quick
+ 319 acl auto quick
++320 auto quick metadata log
+ 
+-- 
+1.8.3.1
 
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---ojf2fX8tGr722dOAPA6922ORSo2HQhJFv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJSauDDAAoJEB57S2MheeWyVHMP/3knq3Uo7ro/0mdWprwdLAuU
-wALn9OD9uBmqNbjYOxveFfVs4jq6+CesHIqgWzOnpV0Hhx1MTkwvLX0iuQZBg7Bb
-kUsLlPEDHMwiT3BdtjnNkI5E2XFwq76B7+MX7IvxMFjK9AYv9bonne6QLkFOO7DK
-NgS+IvdJD1RrzRV/vhyY4Lwypq8RZ/7pjypplpxeugLRwEtfJpp2JH3Xr1MnEBQY
-0XysvqU1e1KJt7krRk8CPmjZosbjH84N2sELHMz8IjmgzOGOmg6UBTb9yZBCVCsq
-C1mGhPVnbrsdInmIbmz+nNK71hlfMfJd+vOLVYGRx4yNuegs00ZDpLhDxXZFSCqO
-+/0ksaRdL/VmkZTbHSuEufAVhVSQVoYSvpVEe0ct8RUM9SFBr8Iu4vT8Ravc9U6+
-02Fv3eww7eM+GRx12d1rKZRJOpTVbTgZm2L1C2ou0nFW6JgS18TxhXRcZ2X/MOTE
-lws5JAiDsc3VTu+NOh7Mh5SdOPzfE0XFREXOLKzr4YtYzbRKUwJ1XGKgRCl5XPB6
-WoKWi38kjB/VKRTTDmgOm8V3N3y9QBxOLQROORflixfPAFoWiak+VA/3M6fTYr/m
-gA7/jeGrU+FOJSkr8RR502QJMlZ8zxZ01szzTPD9GF97UPZRpFRiFkjm8XsFtIMK
-Blug9yfEZdr56hycd1/i
-=BCED
------END PGP SIGNATURE-----
-
---ojf2fX8tGr722dOAPA6922ORSo2HQhJFv--

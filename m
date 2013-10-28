@@ -1,46 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:52227 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752050Ab3J1NPR (ORCPT
+Received: from infao0809.mpi-klsb.mpg.de ([139.19.1.49]:43688 "EHLO
+	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755395Ab3J1QMu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Oct 2013 09:15:17 -0400
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id C60059A0645
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 07:15:16 -0600 (MDT)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx2.fusionio.com with ESMTP id xFtNPD21nqez5N81 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 07:15:16 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: take ordered root lock when removing ordered operations inode
-Date: Mon, 28 Oct 2013 09:15:14 -0400
-Message-ID: <1382966114-18764-1-git-send-email-jbacik@fusionio.com>
+	Mon, 28 Oct 2013 12:12:50 -0400
+Message-ID: <526E8A83.4030201@mpi-sws.org>
+Date: Mon, 28 Oct 2013 17:02:11 +0100
+From: Pedro Fonseca <pfonseca@mpi-sws.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: Null pointer dereference bug in btrfs_find_all_root
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a list corruption warning from btrfs_remove_ordered_extent, it
-is because we aren't taking the ordered_root_lock when we remove the inode from
-the ordered operations list.  Thanks,
+Hi,
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/ordered-data.c | 2 ++
- 1 file changed, 2 insertions(+)
+I've encountered a few NULL pointer dereference bugs while running a 
+custom test case on btrfs (kernel 3.11.1), inside a QEMU based VM.
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index bbb1a38..8a5eff3 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -537,7 +537,9 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- 	 */
- 	if (RB_EMPTY_ROOT(&tree->tree) &&
- 	    !mapping_tagged(inode->i_mapping, PAGECACHE_TAG_DIRTY)) {
-+		spin_lock(&root->fs_info->ordered_root_lock);
- 		list_del_init(&BTRFS_I(inode)->ordered_operations);
-+		spin_unlock(&root->fs_info->ordered_root_lock);
- 	}
- 
- 	if (!root->nr_ordered_extents) {
--- 
-1.8.3.1
+Btrfs was statically compiled and the btrfs filesystem was mounted on 
+one or two loop devices. All cases occurred during execution of a 
+"filesystem balance" operation and while another file system operation 
+was concurrently executed. In one case the other operation was a "mknod" 
+and in another it was a "filesystem show" operation.
+
+In all cases the NULL pointer dereference occurred in the 
+"btrfs_find_all_roots" function and all cases produced a bug report 
+similar to the one bellow:
+
+> [  138.573390] BUG: unable to handle kernel NULL pointer dereference 
+> at   (null)
+> [  138.573390] IP: [<c12feeb3>] ulist_next+0x4/0x26
+> [  138.573390] *pde = 00000000
+> [  138.573390] Oops: 0000 [#1] SMP
+> [  138.573390] Modules linked in: loop rtc_cmos pcspkr tpm_tis 
+> freq_table mperf i2c_piix4
+> [  138.573390] CPU: 0 PID: 2794 Comm: btrfs-endio-wri Not tainted 
+> 3.11.1 #2
+> [  138.573390] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  138.573390] task: c5dea6b0 ti: c5e12000 task.ti: c5e12000
+> [  138.573390] EIP: 0060:[<c12feeb3>] EFLAGS: 00000246 CPU: 0
+> [  138.573390] EIP is at ulist_next+0x4/0x26
+> [  138.573390] EAX: 00000000 EBX: 00000000 ECX: d9c29e38 EDX: c5e13da4
+> [  138.573390] ESI: 00000000 EDI: c5e13e00 EBP: c5e13d94 ESP: c5e13d90
+> [  138.573390]  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+> [  138.573390] CR0: 8005003b CR2: 00000000 CR3: 059d8000 CR4: 00000690
+> [  138.573390] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> [  138.573390] DR6: 00000000 DR7: 00000000
+> [  138.573390] Stack:
+> [  138.573390]  00000000 c5e13db4 c12fe7b8 de4d1000 d9cead48 00000001 
+> 010dd000 deeab810
+> [  138.573390]  00000001 c5e13e10 c12fe8cf 00af2000 00000000 00000000 
+> 00000003 c5e13e00
+> [  138.573390]  deeabe00 00000000 00000003 deeab800 de4d1000 d9cead48 
+> de4d14b8 de4d14b8
+> [  138.573390] Call Trace:
+> [  138.573390]  [<c12fe7b8>] btrfs_find_all_roots+0x88/0xa6
+> [  138.573390]  [<c12fe8cf>] iterate_extent_inodes+0xf9/0x1b2
+> [  138.573390]  [<c12feba9>] iterate_inodes_from_logical+0x88/0x97
+> [  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  138.573390]  [<c12b8845>] record_extent_backrefs+0x50/0x8b
+> [  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  138.573390]  [<c12c1f8e>] btrfs_finish_ordered_io+0x77e/0x876
+> [  138.573390]  [<c12c2091>] finish_ordered_fn+0xb/0xd
+> [  138.573390]  [<c12db161>] worker_loop+0x111/0x3ec
+> [  138.573390]  [<c104a2c4>] ? default_wake_function+0xb/0xd
+> [  138.573390]  [<c1040c43>] kthread+0x90/0x95
+> [  138.573390]  [<c12db050>] ? btrfs_queue_worker+0x1c8/0x1c8
+> [  138.573390]  [<c176c277>] ret_from_kernel_thread+0x1b/0x28
+> [  138.573390]  [<c1040bb3>] ? kthread_freezable_should_stop+0x4f/0x4f
+> [  138.573390] Code: 5b 5e 5f 5d c3 90 90 90 55 8d 50 10 89 e5 c7 00 
+> 00 00 00 00 89 50 08 c7 40 04 10 00 00 00 c7 40 0c 00 00 00 00 5d c3 
+> 55 89 e5 53 <8b> 08 85 c9 74 15 8b 1a 85 db 78 0f 39 cb 73 0b 6b cb 1c 
+> 43 03
+> [  138.573390] EIP: [<c12feeb3>] ulist_next+0x4/0x26 SS:ESP 0068:c5e13d90
+> [  138.573390] CR2: 0000000000000000
+> [  138.573390] ---[ end trace 626899e11111abbe ]---
+> [  138.573390] BUG: unable to handle kernel NULL pointer dereference 
+> at   (null)
+> [  138.573390] IP: [<c12feeb3>] ulist_next+0x4/0x26
+> [  138.573390] *pde = 00000000
+> [  138.573390] Oops: 0000 [#2] SMP
+> [  138.573390] Modules linked in: loop rtc_cmos pcspkr tpm_tis 
+> freq_table mperf i2c_piix4
+> [  138.573390] CPU: 1 PID: 2793 Comm: btrfs-endio-wri Tainted: G      
+> D      3.11.1 #2
+> [  138.573390] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  138.573390] task: c59cc190 ti: dedc8000 task.ti: dedc8000
+> [  138.573390] EIP: 0060:[<c12feeb3>] EFLAGS: 00000246 CPU: 1
+> [  138.573390] EIP is at ulist_next+0x4/0x26
+> [  138.573390] EAX: 00000000 EBX: 00000000 ECX: d9c296c8 EDX: dedc9da4
+> [  138.573390] ESI: 00000000 EDI: dedc9e00 EBP: dedc9d94 ESP: dedc9d90
+> [  138.573390]  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+> [  138.573390] CR0: 8005003b CR2: 00000000 CR3: 03ebe000 CR4: 00000690
+> [  138.573390] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> [  138.573390] DR6: 00000000 DR7: 00000000
+> [  138.573390] Stack:
+> [  138.573390]  00000000 dedc9db4 c12fe7b8 de4d1000 d9ceaf50 00000001 
+> 00dea000 de4c6410
+> [  138.573390]  00000001 dedc9e10 c12fe8cf 00af2000 00000000 00000000 
+> 00000005 dedc9e00
+> [  138.573390]  de4c6c00 00000000 00000005 de4c6400 de4d1000 d9ceaf50 
+> de4d14b8 c5e13de8
+> [  138.573390] Call Trace:
+> [  138.573390]  [<c12fe7b8>] btrfs_find_all_roots+0x88/0xa6
+> [  138.573390]  [<c12fe8cf>] iterate_extent_inodes+0xf9/0x1b2
+> [  138.573390]  [<c12feba9>] iterate_inodes_from_logical+0x88/0x97
+> [  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  138.573390]  [<c12b8845>] record_extent_backrefs+0x50/0x8b
+> [  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  138.573390]  [<c12c1f8e>] btrfs_finish_ordered_io+0x77e/0x876
+> [  138.573390]  [<c12c2091>] finish_ordered_fn+0xb/0xd
+> [  138.573390]  [<c12db161>] worker_loop+0x111/0x3ec
+> [  138.573390]  [<c104a2c4>] ? default_wake_function+0xb/0xd
+> [  138.573390]  [<c1040c43>] kthread+0x90/0x95
+> [  138.573390]  [<c12db050>] ? btrfs_queue_worker+0x1c8/0x1c8
+> [  138.573390]  [<c176c277>] ret_from_kernel_thread+0x1b/0x28
+> [  138.573390]  [<c1040bb3>] ? kthread_freezable_should_stop+0x4f/0x4f
+> [  138.573390] Code: 5b 5e 5f 5d c3 90 90 90 55 8d 50 10 89 e5 c7 00 
+> 00 00 00 00 89 50 08 c7 40 04 10 00 00 00 c7 40 0c 00 00 00 00 5d c3 
+> 55 89 e5 53 <8b> 08 85 c9 74 15 8b 1a 85 db 78 0f 39 cb 73 0b 6b cb 1c 
+> 43 03
+> [  138.573390] EIP: [<c12feeb3>] ulist_next+0x4/0x26 SS:ESP 0068:dedc9d90
+> [  138.573390] CR2: 0000000000000000
+> [  138.573390] ---[ end trace 626899e11111abbf ]---
 

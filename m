@@ -1,36 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from exprod5og105.obsmtp.com ([64.18.0.180]:38969 "EHLO
-	exprod5og105.obsmtp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754133Ab3J1Lzc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Oct 2013 07:55:32 -0400
-Date: Mon, 28 Oct 2013 12:56:00 +0100
-From: Karl Kiniger <karl.kiniger@med.ge.com>
-To: Christian Robert <christian.robert@polymtl.ca>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Why cannot I move a read-only snapshot around?
-Message-ID: <20131028115600.GB6847@kipc2.localdomain>
-References: <20131024152955.GA6110@kipc2.localdomain>
- <pan$85344$b336f5bf$ca444091$a3ef1e0c@cox.net>
- <20131024220919.GB14128@kipc2.localdomain>
- <526B56DE.6060105@polymtl.ca>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <526B56DE.6060105@polymtl.ca>
+Received: from plane.gmane.org ([80.91.229.3]:56677 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753445Ab3J1WeG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Oct 2013 18:34:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VavNr-0005OW-DQ
+	for linux-btrfs@vger.kernel.org; Mon, 28 Oct 2013 23:34:03 +0100
+Received: from dyndsl-178-142-090-012.ewe-ip-backbone.de ([178.142.90.12])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 23:34:03 +0100
+Received: from hurikhan77+btrfs by dyndsl-178-142-090-012.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 23:34:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: memory leak in <=3.11.6
+Date: Mon, 28 Oct 2013 23:34:12 +0100
+Message-ID: <9c53ka-otf.ln1@hurikhan77.spdns.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat 131026, Christian Robert wrote:
-> you can change a "ro" snapshot into a "rw" snapshot
+Hello!
 
-> you just snapshot it without the -r" option
+Is this output in slabtop normal after a few days uptime with a daily rsync 
+(btrfs to btrfs) and some compiling (gentoo emerge):
 
-Yes, I know but the new rw snapshots are not really identical
-in terms of ID, generation count and UUID (the file contents will
-remain the same of course).
+ Active / Total Objects (% used)    : 1120836 / 1810907 (61,9%)
+ Active / Total Slabs (% used)      : 42492 / 42492 (100,0%)
+ Active / Total Caches (% used)     : 72 / 101 (71,3%)
+ Active / Total Size (% used)       : 253898,56K / 324674,92K (78,2%)
+ Minimum / Average / Maximum Object : 0,01K / 0,18K / 15,69K
 
-The question is how this will affect btrfs send and receive,
-especially considering the -p and -c option.
+  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
+109220  99107  90%    0,98K   6830       16    109280K btrfs_inode
 
-Karl
+If I close all my desktop programs, my system stays at +12 GB RAM usage 
+while after a fresh boot it has 12+ GB free (of 16 GB). Cache stays low at 2 
+GB while after a few minutes uptime cache is about 5 GB.
+
+This looks like memory leaking somewhere. Top does not show where all this 
+memory went (biggest process is 500 MB RES, next is 200 MB and lower).
+
+Thanks,
+Kai
 

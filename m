@@ -1,46 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f182.google.com ([209.85.192.182]:60068 "EHLO
-	mail-pd0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751182Ab3J2WqY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Oct 2013 18:46:24 -0400
-Received: by mail-pd0-f182.google.com with SMTP id q10so85545pdj.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Oct 2013 15:46:23 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <pan$d5444$ef292b25$154f150a$c91a6fe4@cox.net>
-References: <9c53ka-otf.ln1@hurikhan77.spdns.de>
-	<CALJXSJr0sjzFwCT=w1WdDX+-CWS-CjDhYBArVpvTeUNBM88Mdw@mail.gmail.com>
-	<pan$d5444$ef292b25$154f150a$c91a6fe4@cox.net>
-Date: Tue, 29 Oct 2013 18:46:23 -0400
-Message-ID: <CALJXSJoaLrr0gPrMww_MR-5n+_7gmqai1tkvRhwGxNX12weaSA@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:40098 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752014Ab3J2X0b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Oct 2013 19:26:31 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VbIgA-0005u3-9w
+	for linux-btrfs@vger.kernel.org; Wed, 30 Oct 2013 00:26:30 +0100
+Received: from dyndsl-178-142-088-138.ewe-ip-backbone.de ([178.142.88.138])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:26:30 +0100
+Received: from hurikhan77+btrfs by dyndsl-178-142-088-138.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:26:30 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Subject: Re: memory leak in <=3.11.6
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Wed, 30 Oct 2013 00:26:45 +0100
+Message-ID: <lqs5ka-14g.ln1@hurikhan77.spdns.de>
+References: <9c53ka-otf.ln1@hurikhan77.spdns.de> <CALJXSJr0sjzFwCT=w1WdDX+-CWS-CjDhYBArVpvTeUNBM88Mdw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 29, 2013 at 12:42 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->
-> So I'd call the qgroups feature broken at this time
+Jérôme Poulin <jeromepoulin@gmail.com> schrieb:
 
-I agree. I made a page about Quotas on the wiki so to document my
-findings as documentation is really sparse. If you consult the section
-Known issues, you will find those:
+>> If I close all my desktop programs, my system stays at +12 GB RAM usage
+>> while after a fresh boot it has 12+ GB free (of 16 GB). Cache stays low
+>> at 2 GB while after a few minutes uptime cache is about 5 GB.
+> 
+> I probably have the same problem over here, after about 2 weeks of
+> random read/write it seems my memory and swap get almost full and even
+> after killing all process and getting in single user mode, memory
+> won't free up.  Would you happen to have quota enabled too? Kernel is
+> 3.11.4
 
-* To get accurate information, you must issue a sync before using the
-qgroup show command.
-* The qgroup show command is missing some information, for example you
-cannot see which subvolume is part of a parent qgroup.
-* Creating a qgroup from an existing directory will show a 0 usage
-until a full filesystem quota rescan is issued.
-* Using btrfs subvolume delete will break qgroup unshared space usage.
-* After deleting a subvolume, you must manually delete the associated qgroup.
+No, quota is off for me. This is a three-device btrfs desktop system. Quota 
+has no real use for me (except maybe for subvolume accounting).
 
-Knowing this, if you create a qgroup after some files have been added
-to a subvolume, those never get accounted for until you rescan the
-whole volume. This means that if you manage to delete enough "not
-accounted for" files, you get negative numbers.
+I first thought this may be related to having zcache enabled, turned it off. 
+But anything that changed is when memory stress arises my system stays more 
+responsible and does not go havoc on the CPU.
 
-Wiki: https://btrfs.wiki.kernel.org/index.php/Quota_support
+I switched to zswap instead, since then swap usage is much lower. But still 
+it does not help if memory is mysteriously used somewhere. At least IO 
+stress is lower now with that setting and I am better able to cleanly shut 
+down programs and the system for reboot.
+
+Regards,
+Kai
+

@@ -1,50 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56677 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753445Ab3J1WeG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Oct 2013 18:34:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VavNr-0005OW-DQ
-	for linux-btrfs@vger.kernel.org; Mon, 28 Oct 2013 23:34:03 +0100
-Received: from dyndsl-178-142-090-012.ewe-ip-backbone.de ([178.142.90.12])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 23:34:03 +0100
-Received: from hurikhan77+btrfs by dyndsl-178-142-090-012.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 23:34:03 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: memory leak in <=3.11.6
-Date: Mon, 28 Oct 2013 23:34:12 +0100
-Message-ID: <9c53ka-otf.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:44075 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753687Ab3J2DYK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Oct 2013 23:24:10 -0400
+Received: by mail-pa0-f42.google.com with SMTP id kp14so6285099pab.15
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 20:24:10 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <9c53ka-otf.ln1@hurikhan77.spdns.de>
+References: <9c53ka-otf.ln1@hurikhan77.spdns.de>
+Date: Mon, 28 Oct 2013 23:24:10 -0400
+Message-ID: <CALJXSJr0sjzFwCT=w1WdDX+-CWS-CjDhYBArVpvTeUNBM88Mdw@mail.gmail.com>
+Subject: Re: memory leak in <=3.11.6
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+On Mon, Oct 28, 2013 at 6:34 PM, Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+>
+> If I close all my desktop programs, my system stays at +12 GB RAM usage
+> while after a fresh boot it has 12+ GB free (of 16 GB). Cache stays low at 2
+> GB while after a few minutes uptime cache is about 5 GB.
 
-Is this output in slabtop normal after a few days uptime with a daily rsync 
-(btrfs to btrfs) and some compiling (gentoo emerge):
-
- Active / Total Objects (% used)    : 1120836 / 1810907 (61,9%)
- Active / Total Slabs (% used)      : 42492 / 42492 (100,0%)
- Active / Total Caches (% used)     : 72 / 101 (71,3%)
- Active / Total Size (% used)       : 253898,56K / 324674,92K (78,2%)
- Minimum / Average / Maximum Object : 0,01K / 0,18K / 15,69K
-
-  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
-109220  99107  90%    0,98K   6830       16    109280K btrfs_inode
-
-If I close all my desktop programs, my system stays at +12 GB RAM usage 
-while after a fresh boot it has 12+ GB free (of 16 GB). Cache stays low at 2 
-GB while after a few minutes uptime cache is about 5 GB.
-
-This looks like memory leaking somewhere. Top does not show where all this 
-memory went (biggest process is 500 MB RES, next is 200 MB and lower).
-
-Thanks,
-Kai
-
+I probably have the same problem over here, after about 2 weeks of
+random read/write it seems my memory and swap get almost full and even
+after killing all process and getting in single user mode, memory
+won't free up.  Would you happen to have quota enabled too? Kernel is
+3.11.4

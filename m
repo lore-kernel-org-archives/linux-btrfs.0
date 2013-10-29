@@ -1,53 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40098 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35609 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752014Ab3J2X0b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Oct 2013 19:26:31 -0400
+	id S1751645Ab3J2XfF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Oct 2013 19:35:05 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VbIgA-0005u3-9w
-	for linux-btrfs@vger.kernel.org; Wed, 30 Oct 2013 00:26:30 +0100
+	id 1VbIoS-0007pK-7a
+	for linux-btrfs@vger.kernel.org; Wed, 30 Oct 2013 00:35:04 +0100
 Received: from dyndsl-178-142-088-138.ewe-ip-backbone.de ([178.142.88.138])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:26:30 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:35:04 +0100
 Received: from hurikhan77+btrfs by dyndsl-178-142-088-138.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:26:30 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 00:35:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Subject: Re: memory leak in <=3.11.6
-Date: Wed, 30 Oct 2013 00:26:45 +0100
-Message-ID: <lqs5ka-14g.ln1@hurikhan77.spdns.de>
-References: <9c53ka-otf.ln1@hurikhan77.spdns.de> <CALJXSJr0sjzFwCT=w1WdDX+-CWS-CjDhYBArVpvTeUNBM88Mdw@mail.gmail.com>
+Date: Wed, 30 Oct 2013 00:30:26 +0100
+Message-ID: <o1t5ka-p7g.ln1@hurikhan77.spdns.de>
+References: <20131029132246.21258b95@virtall.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jérôme Poulin <jeromepoulin@gmail.com> schrieb:
+Tomasz Chmielewski <tch@virtall.com> schrieb:
 
->> If I close all my desktop programs, my system stays at +12 GB RAM usage
->> while after a fresh boot it has 12+ GB free (of 16 GB). Cache stays low
->> at 2 GB while after a few minutes uptime cache is about 5 GB.
+>> I probably have the same problem over here, after about 2 weeks of
+>> random read/write it seems my memory and swap get almost full and even
+>> after killing all process and getting in single user mode, memory
+>> won't free up.  Would you happen to have quota enabled too? Kernel is
+>> 3.11.4
 > 
-> I probably have the same problem over here, after about 2 weeks of
-> random read/write it seems my memory and swap get almost full and even
-> after killing all process and getting in single user mode, memory
-> won't free up.  Would you happen to have quota enabled too? Kernel is
-> 3.11.4
+> I experience the same daily (out of memory, server dying); sometimes
+> several times daily.
+> 
+> It's a *big* downer.
+> 
+> I use 3.12-rc7, but I had this issue with earlier kernels, too.
 
-No, quota is off for me. This is a three-device btrfs desktop system. Quota 
-has no real use for me (except maybe for subvolume accounting).
+For me it started late 3.9 if I remember right. But I'm pretty sure it 
+startet with 3.10 which I mostly upgraded to for using skinny extents. While 
+skinny extents has helped subjective performance a little bit I since 
+experience the problem with ever increasing RAM usage - up to the point of 
+15 GB swap, full RAM, and almost none of it is used for caching.
 
-I first thought this may be related to having zcache enabled, turned it off. 
-But anything that changed is when memory stress arises my system stays more 
-responsible and does not go havoc on the CPU.
-
-I switched to zswap instead, since then swap usage is much lower. But still 
-it does not help if memory is mysteriously used somewhere. At least IO 
-stress is lower now with that setting and I am better able to cleanly shut 
-down programs and the system for reboot.
+I wonder if there is a way to track where this "lost" memory is gone. Top 
+shows no memory hogs. Slabtop shows some high numbers but nothing really 
+impressive. It's just used for nothing it seems.
 
 Regards,
 Kai

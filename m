@@ -1,72 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f47.google.com ([74.125.83.47]:35366 "EHLO
-	mail-ee0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757415Ab3J1TPO (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:40033 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756767Ab3J2CGj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Oct 2013 15:15:14 -0400
-Received: by mail-ee0-f47.google.com with SMTP id c13so1277933eek.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Oct 2013 12:15:13 -0700 (PDT)
+	Mon, 28 Oct 2013 22:06:39 -0400
+Date: Tue, 29 Oct 2013 10:05:55 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Pedro Fonseca <pfonseca@mpi-sws.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Null pointer dereference bug in btrfs_find_all_root
+Message-ID: <20131029020554.GA32338@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <526E8A83.4030201@mpi-sws.org>
 MIME-Version: 1.0
-In-Reply-To: <20131028190538.GF4543@localhost.localdomain>
-References: <20131027100022.4c76e1e7@virtall.com>
-	<CAEezp7u4-iYN01oXcoodzqsy8_nJPYWL-i0rjFsOc=3C0eSz-g@mail.gmail.com>
-	<20131028190538.GF4543@localhost.localdomain>
-Date: Mon, 28 Oct 2013 20:15:13 +0100
-Message-ID: <CAEezp7vaTJA0X_nQBRr5+y9i+iJQVidQy8Hvp2RaaCdzeqWXJg@mail.gmail.com>
-Subject: Re: No space left on device, problem
-From: Igor M <igork20@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: Tomasz Chmielewski <tch@virtall.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <526E8A83.4030201@mpi-sws.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 28, 2013 at 8:05 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Sun, Oct 27, 2013 at 09:50:37AM +0100, Igor M wrote:
->> On Sun, Oct 27, 2013 at 2:00 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
->> >> Still no messages. Parameter seems to be active as
->> >> /sys/module/printk/parameters/ignore_loglevel is Y, but there are no
->> >> messages in log files or dmesg. Maybe I need to turn on some kernel
->> >> debugging option and recompile kernel ?
->> >> Also I should mention that cca 230G+ data was copied before this error
->> >> started to occur.
->> >
->> > I think I saw a similar issue before.
->> >
->> > Can you try using rsync with "--bwlimit XY" option to copy the files?
->> >
->> > The option will limit the speed, in kB, at which the file is being
->> > copied; it will work even when source and destination files are on a
->> > local machine.
->> >
->>
->> Also I run strace cp -a ..
->> ...
->> read(3, "350348f07$0$24520$c3e8da3$fb4835"..., 65536) = 65536
->> write(4, "350348f07$0$24520$c3e8da3$fb4835"..., 65536) = 65536
->> read(3, "62.76C52BF412E849CB86D4FF3898B94"..., 65536) = 65536
->> write(4, "62.76C52BF412E849CB86D4FF3898B94"..., 65536) = -1 ENOSPC (No
->> space left on device)
->>
->> Last two write calls take a lot more time, and then last one returns
->> ENOSPC. But if this write is retryed, then it succeeds.
->> I tried with midnight commander and when error occurs, if I Retry
->> operation then it finishes copying this file until error occurs again
->> at next file.
->>
->> With --bwlimit it seems to be better, lower the speed later the error
->> occurs, and if it's slow enough copy is successfull.
->> But now I'm not sure anymore. I copied a few files with bwlimit, and
->> now sudenly error doesn't occur anymore, even with no bwlimit.
->> I'll do some more tests.
->
-> I just sent a patch to the list
->
-> [PATCH] Btrfs: make sure the delalloc workers actually flush compressed writes
->
-> Can you run this patch and see if it makes a difference for your test?  Thanks,
->
-> Josef
+Hi, 
 
-I'll try with this patch.
+On Mon, Oct 28, 2013 at 05:02:11PM +0100, Pedro Fonseca wrote:
+> Hi,
+> 
+> I've encountered a few NULL pointer dereference bugs while running a
+> custom test case on btrfs (kernel 3.11.1), inside a QEMU based VM.
+> 
+> Btrfs was statically compiled and the btrfs filesystem was mounted
+> on one or two loop devices. All cases occurred during execution of a
+> "filesystem balance" operation and while another file system
+> operation was concurrently executed. In one case the other operation
+> was a "mknod" and in another it was a "filesystem show" operation.
+
+I'm wonderring that if there is anything like 'aborted transaction' in
+the dmesg log besides this NULL pointer dereference?
+
+-liubo
+
+> 
+> In all cases the NULL pointer dereference occurred in the
+> "btrfs_find_all_roots" function and all cases produced a bug report
+> similar to the one bellow:
+> 
+> >[  138.573390] BUG: unable to handle kernel NULL pointer
+> >dereference at   (null)
+> >[  138.573390] IP: [<c12feeb3>] ulist_next+0x4/0x26
+> >[  138.573390] *pde = 00000000
+> >[  138.573390] Oops: 0000 [#1] SMP
+> >[  138.573390] Modules linked in: loop rtc_cmos pcspkr tpm_tis
+> >freq_table mperf i2c_piix4
+> >[  138.573390] CPU: 0 PID: 2794 Comm: btrfs-endio-wri Not tainted
+> >3.11.1 #2
+> >[  138.573390] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> >[  138.573390] task: c5dea6b0 ti: c5e12000 task.ti: c5e12000
+> >[  138.573390] EIP: 0060:[<c12feeb3>] EFLAGS: 00000246 CPU: 0
+> >[  138.573390] EIP is at ulist_next+0x4/0x26
+> >[  138.573390] EAX: 00000000 EBX: 00000000 ECX: d9c29e38 EDX: c5e13da4
+> >[  138.573390] ESI: 00000000 EDI: c5e13e00 EBP: c5e13d94 ESP: c5e13d90
+> >[  138.573390]  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+> >[  138.573390] CR0: 8005003b CR2: 00000000 CR3: 059d8000 CR4: 00000690
+> >[  138.573390] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> >[  138.573390] DR6: 00000000 DR7: 00000000
+> >[  138.573390] Stack:
+> >[  138.573390]  00000000 c5e13db4 c12fe7b8 de4d1000 d9cead48
+> >00000001 010dd000 deeab810
+> >[  138.573390]  00000001 c5e13e10 c12fe8cf 00af2000 00000000
+> >00000000 00000003 c5e13e00
+> >[  138.573390]  deeabe00 00000000 00000003 deeab800 de4d1000
+> >d9cead48 de4d14b8 de4d14b8
+> >[  138.573390] Call Trace:
+> >[  138.573390]  [<c12fe7b8>] btrfs_find_all_roots+0x88/0xa6
+> >[  138.573390]  [<c12fe8cf>] iterate_extent_inodes+0xf9/0x1b2
+> >[  138.573390]  [<c12feba9>] iterate_inodes_from_logical+0x88/0x97
+> >[  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> >[  138.573390]  [<c12b8845>] record_extent_backrefs+0x50/0x8b
+> >[  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> >[  138.573390]  [<c12c1f8e>] btrfs_finish_ordered_io+0x77e/0x876
+> >[  138.573390]  [<c12c2091>] finish_ordered_fn+0xb/0xd
+> >[  138.573390]  [<c12db161>] worker_loop+0x111/0x3ec
+> >[  138.573390]  [<c104a2c4>] ? default_wake_function+0xb/0xd
+> >[  138.573390]  [<c1040c43>] kthread+0x90/0x95
+> >[  138.573390]  [<c12db050>] ? btrfs_queue_worker+0x1c8/0x1c8
+> >[  138.573390]  [<c176c277>] ret_from_kernel_thread+0x1b/0x28
+> >[  138.573390]  [<c1040bb3>] ? kthread_freezable_should_stop+0x4f/0x4f
+> >[  138.573390] Code: 5b 5e 5f 5d c3 90 90 90 55 8d 50 10 89 e5 c7
+> >00 00 00 00 00 89 50 08 c7 40 04 10 00 00 00 c7 40 0c 00 00 00 00
+> >5d c3 55 89 e5 53 <8b> 08 85 c9 74 15 8b 1a 85 db 78 0f 39 cb 73
+> >0b 6b cb 1c 43 03
+> >[  138.573390] EIP: [<c12feeb3>] ulist_next+0x4/0x26 SS:ESP 0068:c5e13d90
+> >[  138.573390] CR2: 0000000000000000
+> >[  138.573390] ---[ end trace 626899e11111abbe ]---
+> >[  138.573390] BUG: unable to handle kernel NULL pointer
+> >dereference at   (null)
+> >[  138.573390] IP: [<c12feeb3>] ulist_next+0x4/0x26
+> >[  138.573390] *pde = 00000000
+> >[  138.573390] Oops: 0000 [#2] SMP
+> >[  138.573390] Modules linked in: loop rtc_cmos pcspkr tpm_tis
+> >freq_table mperf i2c_piix4
+> >[  138.573390] CPU: 1 PID: 2793 Comm: btrfs-endio-wri Tainted: G
+> >D      3.11.1 #2
+> >[  138.573390] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> >[  138.573390] task: c59cc190 ti: dedc8000 task.ti: dedc8000
+> >[  138.573390] EIP: 0060:[<c12feeb3>] EFLAGS: 00000246 CPU: 1
+> >[  138.573390] EIP is at ulist_next+0x4/0x26
+> >[  138.573390] EAX: 00000000 EBX: 00000000 ECX: d9c296c8 EDX: dedc9da4
+> >[  138.573390] ESI: 00000000 EDI: dedc9e00 EBP: dedc9d94 ESP: dedc9d90
+> >[  138.573390]  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+> >[  138.573390] CR0: 8005003b CR2: 00000000 CR3: 03ebe000 CR4: 00000690
+> >[  138.573390] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> >[  138.573390] DR6: 00000000 DR7: 00000000
+> >[  138.573390] Stack:
+> >[  138.573390]  00000000 dedc9db4 c12fe7b8 de4d1000 d9ceaf50
+> >00000001 00dea000 de4c6410
+> >[  138.573390]  00000001 dedc9e10 c12fe8cf 00af2000 00000000
+> >00000000 00000005 dedc9e00
+> >[  138.573390]  de4c6c00 00000000 00000005 de4c6400 de4d1000
+> >d9ceaf50 de4d14b8 c5e13de8
+> >[  138.573390] Call Trace:
+> >[  138.573390]  [<c12fe7b8>] btrfs_find_all_roots+0x88/0xa6
+> >[  138.573390]  [<c12fe8cf>] iterate_extent_inodes+0xf9/0x1b2
+> >[  138.573390]  [<c12feba9>] iterate_inodes_from_logical+0x88/0x97
+> >[  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> >[  138.573390]  [<c12b8845>] record_extent_backrefs+0x50/0x8b
+> >[  138.573390]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> >[  138.573390]  [<c12c1f8e>] btrfs_finish_ordered_io+0x77e/0x876
+> >[  138.573390]  [<c12c2091>] finish_ordered_fn+0xb/0xd
+> >[  138.573390]  [<c12db161>] worker_loop+0x111/0x3ec
+> >[  138.573390]  [<c104a2c4>] ? default_wake_function+0xb/0xd
+> >[  138.573390]  [<c1040c43>] kthread+0x90/0x95
+> >[  138.573390]  [<c12db050>] ? btrfs_queue_worker+0x1c8/0x1c8
+> >[  138.573390]  [<c176c277>] ret_from_kernel_thread+0x1b/0x28
+> >[  138.573390]  [<c1040bb3>] ? kthread_freezable_should_stop+0x4f/0x4f
+> >[  138.573390] Code: 5b 5e 5f 5d c3 90 90 90 55 8d 50 10 89 e5 c7
+> >00 00 00 00 00 89 50 08 c7 40 04 10 00 00 00 c7 40 0c 00 00 00 00
+> >5d c3 55 89 e5 53 <8b> 08 85 c9 74 15 8b 1a 85 db 78 0f 39 cb 73
+> >0b 6b cb 1c 43 03
+> >[  138.573390] EIP: [<c12feeb3>] ulist_next+0x4/0x26 SS:ESP 0068:dedc9d90
+> >[  138.573390] CR2: 0000000000000000
+> >[  138.573390] ---[ end trace 626899e11111abbf ]---

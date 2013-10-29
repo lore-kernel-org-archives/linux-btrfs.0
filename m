@@ -1,433 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44328 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49480 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751332Ab3J2StX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Oct 2013 14:49:23 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B544AA5D64
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Oct 2013 19:49:21 +0100 (CET)
-Message-ID: <5270032B.3050508@suse.com>
-Date: Tue, 29 Oct 2013 14:49:15 -0400
+	id S1751803Ab3J2U0d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Oct 2013 16:26:33 -0400
+Message-ID: <527019EF.5040608@suse.com>
+Date: Tue, 29 Oct 2013 16:26:23 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: Re: [patch 10/13] btrfs: publish allocation data in sysfs
-References: <20131021211940.432195222@suse.com> <20131021212008.047727368@suse.com>
-In-Reply-To: <20131021212008.047727368@suse.com>
+To: kreijack@inwind.it
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>
+Subject: Re: [patch 00/13] sysfs publishing patchset
+References: <20131021211940.432195222@suse.com> <526FFDB2.3040301@gmail.com>
+In-Reply-To: <526FFDB2.3040301@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha1;
  protocol="application/pgp-signature";
- boundary="gPSJMRtGBLH46q0bOkPNUSlPd0FDLDJFs"
+ boundary="m4RriLfVttslxM18bIIpQ6oSTLxI4w20B"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gPSJMRtGBLH46q0bOkPNUSlPd0FDLDJFs
+--m4RriLfVttslxM18bIIpQ6oSTLxI4w20B
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: quoted-printable
 
-On 10/21/13, 5:19 PM, Jeff Mahoney wrote:
-> While trying to debug ENOSPC issues, it's helpful to understand what th=
-e
-> kernel's view of the available space is. We export this information
-> via ioctl, but sysfs files are more easily used.
+On 10/29/13, 2:25 PM, Goffredo Baroncelli wrote:
+> Hi Jeff,
 >=20
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> ---
->  fs/btrfs/ctree.h       |    5 +
->  fs/btrfs/extent-tree.c |   72 ++++++++++++++++++++++-
->  fs/btrfs/sysfs.c       |  148 ++++++++++++++++++++++++++++++++++++++++=
-+++++++++
->  fs/btrfs/sysfs.h       |    8 ++
->  4 files changed, 228 insertions(+), 5 deletions(-)
->=20
-> --- a/fs/btrfs/ctree.h	2013-10-21 16:10:00.212037722 -0400
-> +++ b/fs/btrfs/ctree.h	2013-10-21 16:10:02.743982088 -0400
-> @@ -1143,6 +1143,9 @@ struct btrfs_space_info {
->  	spinlock_t lock;
->  	struct rw_semaphore groups_sem;
->  	wait_queue_head_t wait;
-> +
-> +	struct kobject kobj;
-> +	struct kobject block_group_kobjs[BTRFS_NR_RAID_TYPES];
->  };
-> =20
->  #define	BTRFS_BLOCK_RSV_GLOBAL		1
-> @@ -1518,6 +1521,7 @@ struct btrfs_fs_info {
->  	int thread_pool_size;
-> =20
->  	struct kobject super_kobj;
-> +	struct kobject *space_info_kobj;
->  	struct completion kobj_unregister;
->  	int do_barriers;
->  	int closing;
-> @@ -3171,6 +3175,7 @@ struct btrfs_block_group_cache *btrfs_lo
->  						 struct btrfs_fs_info *info,
->  						 u64 bytenr);
->  void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
-> +int get_block_group_index(struct btrfs_block_group_cache *cache);
->  struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle=
- *trans,
->  					struct btrfs_root *root, u32 blocksize,
->  					u64 parent, u64 root_objectid,
-> --- a/fs/btrfs/extent-tree.c	2013-10-21 16:09:33.476623940 -0400
-> +++ b/fs/btrfs/extent-tree.c	2013-10-21 16:10:02.751981911 -0400
-> @@ -36,6 +36,7 @@
->  #include "locking.h"
->  #include "free-space-cache.h"
->  #include "math.h"
-> +#include "sysfs.h"
-> =20
->  #undef SCRAMBLE_DELAYED_REFS
-> =20
-> @@ -3389,6 +3390,13 @@ int btrfs_extent_readonly(struct btrfs_r
->  	return readonly;
->  }
-> =20
-> +static const char * const alloc_names[] =3D {
-> +	"data",
-> +	"system",
-> +	"mixed",
-> +	"metadata",
-> +};
-> +
+> On 2013-10-21 23:19, Jeff Mahoney wrote:
+>> This patchset implements the stubbed-out sysfs interface for btrfs. Or=
 
-Sigh. There was a missing quilt refresh here. This obviously doesn't work=
-=2E
+>> at least begins to do so.
+>>
+>> We publish:
+>> - Features supported by the file system implementation
+>> - Features enabled on the file system, including features unknown to
+>>   the implemenation. These attributes can also be used to enable or
+>>   disable features at runtime, subjecting to a safety mask.
+>> - Uses the attribute names to print feature names when declining to
+>>   mount a file system.
+>> - The allocation data: global metadata reservation size and reserved,
+>>   space_infos, and sums of the block groups total and used bytes.
+>> - Device membership via links to the block devices.
+>> - FS label, which is writeable.
+>>
+>> - I've also added matching ioctls for some of the functionality here s=
+o
+>>   that btrfsprogs can use the information without jumping through hoop=
+s
+>>   to read/parse the sysfs files. There are ioctls to query the support=
+ed
+>>   features and to query/set features on a particular file system. Ther=
+e's
+>>   also one to export the size of the global metadata reservation. I ha=
+ve
+>>   a patch for btrfs-progs that uses this to print useful info in 'btrf=
+s
+>>   fi df' output.
+>>
+>> Ultimately, the tree structure looks like the following, under /sys/fs=
+/btrfs.
+>> This is from a test file system, using two devices in raid1. You'll no=
+tice
+>> the 'single' and 'raid1' directories under the {data,metadata,system} =
+dirs.
+>> The raid profiles are created and removed as the first/last block grou=
+p
+>> of a certain profile is added and removed.
+
+Hi Goffredo -
+
+> I really appreciate your work. In the past I tried to push a similar
+> patch set but without success [*]
+
+Thanks. Sysfs work can be touchy since it becomes part of the ABI like
+an ioctl does.
+
+> I hope that it is not too late, but I have a request:
+> it is possible to move the filesystems under a fs/ directory ? Somethin=
+g
+> like
+>=20
+> [...]
+> fs/<fsid>/allocation/system/disk_used
+> fs/<fsid>/features/mixed_backref
+> fs/<fsid>/features/extended_iref
+> features/compress_lzo
+> features/big_metadata
+> features/compress_lzov2
+> [...]
+>=20
+> This for two reasons:
+> 1) so it would be possible to show also the disks informations under a
+> dev/ directory. It would be possible to handle the case that some disks=
+
+> are registered in btrfs but the related filesystems aren't mounted (lik=
+e
+> after a "btrfs dev scan" command)
+>
+> 2) it would help the browsing of the /sys/btrfs/ hierarchy: every
+> directory under /sys/btrfs/fs/ represents a filesystem. With the curren=
+t
+> structure not all the directory under /sys/btrfs are related to a
+> filesystem (like the features/ one, but I am sure that other directorie=
+s
+> sooner or later will appear)
+
+I'd like to define /sys/fs/btrfs/<fsid> as filesystem-specific and
+anything else as btrfs-wide. This is what ext4 already does with the
+exception that they use block device names instead of fsids. Your device
+use case is interesting, but a tough one to implement well since it is a
+cache that can be wrong as soon as the user decides to mkfs a device
+(either as btrfs or anything else) without calling btrfs dev scan
+afterward. I wouldn't necessarily oppose such a feature; I just don't
+think it merits moving the primary case of per-filesystem information
+deeper into the hierarchy.
+
+Outside of /sys/fs/, we can see something similar in /sys/block/<dev>.
+You'll find "holders", "queue", a bunch of partition directories, and
+regular files. They all have different purposes and that's fairly
+obvious by their naming. Having a "partitions" directory in there would
+make the hierarchy "cleaner" but at the cost of a kobject that's
+essentially useless otherwise.
+
+But the broader point is well taken. If there's a discussion to be had
+here, I'd like to have it now, especially WRT to the hierarchy. You're
+the first person to have any feedback on it, and I've generally been
+taking the silence as tacit approval while waiting for it to land. Most
+of this patchset is in the openSUSE 13.1 kernel already, which will be
+released soon. We need the ability to enable extended_iref while online
+to handle upgrades smoothly due to some packages overflowing the
+hardlink limit. (So technically, it also needs to be added to a 12.3
+update release too.) It's a limitation no other file system has, so our
+packagers are rightly saying it should be fixed there. It's easier to
+use the sysfs interface but I suppose we could back off to the ioctl
+interface that's already been discussed. I don't want to introduce a
+one-off sysfs ABI with openSUSE 13.1, so if there are other objections
+or comments, please raise them now.
+
+David already gave some review for the feature ioctl parts, which I've
+integrated. I did some review on my own of the sysfs portions and ripped
+out the kobj_completion stuff as unnecessary and switched to using
+attribute_groups for features instead of creating files explicitly.
+Josef asked for xfstests, and after a few false starts, those have been
+posted in their (hopefully) final revision. If we can agree on this
+implementation, great. If not, I'd like to at least agree on the
+hierarchy so that I can get those changes integrated before openSUSE
+13.1 is released in early November.
+
+Thanks.
 
 -Jeff
 
-
->  static int update_space_info(struct btrfs_fs_info *info, u64 flags,
->  			     u64 total_bytes, u64 bytes_used,
->  			     struct btrfs_space_info **space_info)
-> @@ -3444,11 +3452,21 @@ static int update_space_info(struct btrf
->  	found->chunk_alloc =3D 0;
->  	found->flush =3D 0;
->  	init_waitqueue_head(&found->wait);
-> +
-> +	ret =3D kobject_init_and_add(&found->kobj, &space_info_ktype,
-> +				    info->space_info_kobj, "%s",
-> +				    alloc_names[found->flags - 1]);
-> +	if (ret) {
-> +		kfree(found);
-> +		return ret;
-> +	}
-> +
->  	*space_info =3D found;
->  	list_add_rcu(&found->list, &info->space_info);
->  	if (flags & BTRFS_BLOCK_GROUP_DATA)
->  		info->data_sinfo =3D found;
-> -	return 0;
-> +
-> +	return ret;
->  }
-> =20
->  static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 fl=
-ags)
-> @@ -6090,11 +6108,29 @@ int __get_raid_index(u64 flags)
->  	return BTRFS_RAID_SINGLE; /* BTRFS_BLOCK_GROUP_SINGLE */
->  }
-> =20
-> -static int get_block_group_index(struct btrfs_block_group_cache *cache=
-)
-> +int get_block_group_index(struct btrfs_block_group_cache *cache)
->  {
->  	return __get_raid_index(cache->flags);
->  }
-> =20
-> +static const char *btrfs_raid_type_names[BTRFS_NR_RAID_TYPES] =3D {
-> +	[BTRFS_RAID_RAID10]	=3D "raid10",
-> +	[BTRFS_RAID_RAID1]	=3D "raid1",
-> +	[BTRFS_RAID_DUP]	=3D "dup",
-> +	[BTRFS_RAID_RAID0]	=3D "raid0",
-> +	[BTRFS_RAID_SINGLE]	=3D "single",
-> +	[BTRFS_RAID_RAID5]	=3D "raid5",
-> +	[BTRFS_RAID_RAID6]	=3D "raid6",
-> +};
-> +
-> +const char *get_raid_name(enum btrfs_raid_types type)
-> +{
-> +	if (type >=3D BTRFS_NR_RAID_TYPES)
-> +		return NULL;
-> +
-> +	return btrfs_raid_type_names[type];
-> +}
-> +
->  enum btrfs_loop_type {
->  	LOOP_CACHING_NOWAIT =3D 0,
->  	LOOP_CACHING_WAIT =3D 1,
-> @@ -8272,6 +8308,8 @@ int btrfs_free_block_groups(struct btrfs
->  	release_global_block_rsv(info);
-> =20
->  	while(!list_empty(&info->space_info)) {
-> +		int i;
-> +
->  		space_info =3D list_entry(info->space_info.next,
->  					struct btrfs_space_info,
->  					list);
-> @@ -8283,9 +8321,17 @@ int btrfs_free_block_groups(struct btrfs
->  				dump_space_info(space_info, 0, 0);
->  			}
->  		}
-> -		percpu_counter_destroy(&space_info->total_bytes_pinned);
->  		list_del(&space_info->list);
-> -		kfree(space_info);
-> +		for (i =3D 0; i < BTRFS_NR_RAID_TYPES; i++) {
-> +			struct kobject *kobj;
-> +			kobj =3D &space_info->block_group_kobjs[i];
-> +			if (kobj->parent) {
-> +				kobject_del(kobj);
-> +				kobject_put(kobj);
-> +			}
-> +		}
-> +		kobject_del(&space_info->kobj);
-> +		kobject_put(&space_info->kobj);
->  	}
->  	return 0;
->  }
-> @@ -8296,6 +8342,19 @@ static void __link_block_group(struct bt
->  	int index =3D get_block_group_index(cache);
-> =20
->  	down_write(&space_info->groups_sem);
-> +	if (list_empty(&space_info->block_groups[index])) {
-> +		struct kobject *kobj =3D &space_info->block_group_kobjs[index];
-> +		int ret;
-> +
-> +		kobject_get(&space_info->kobj); /* put in release */
-> +		ret =3D kobject_init_and_add(kobj, &btrfs_raid_ktype,
-> +					   &space_info->kobj,
-> +					   get_raid_name(index));
-> +		if (ret) {
-> +			pr_warn("btrfs: failed to add kobject for block cache. ignoring.\n"=
-);
-> +			kobject_put(&space_info->kobj);
-> +		}
-> +	}
->  	list_add_tail(&cache->list, &space_info->block_groups[index]);
->  	up_write(&space_info->groups_sem);
->  }
-> @@ -8736,8 +8795,11 @@ int btrfs_remove_block_group(struct btrf
->  	 * are still on the list after taking the semaphore
->  	 */
->  	list_del_init(&block_group->list);
-> -	if (list_empty(&block_group->space_info->block_groups[index]))
-> +	if (list_empty(&block_group->space_info->block_groups[index])) {
-> +		kobject_del(&block_group->space_info->block_group_kobjs[index]);
-> +		kobject_put(&block_group->space_info->block_group_kobjs[index]);
->  		clear_avail_alloc_bits(root->fs_info, block_group->flags);
-> +	}
->  	up_write(&block_group->space_info->groups_sem);
-> =20
->  	if (block_group->cached =3D=3D BTRFS_CACHE_STARTED)
-> --- a/fs/btrfs/sysfs.c	2013-10-21 16:10:01.856001602 -0400
-> +++ b/fs/btrfs/sysfs.c	2013-10-21 16:10:02.751981911 -0400
-> @@ -219,6 +219,140 @@ static const struct attribute_group btrf
->  	.attrs =3D btrfs_supported_feature_attrs,
->  };
-> =20
-> +static ssize_t btrfs_show_u64(u64 *value_ptr, spinlock_t *lock, char *=
-buf)
-> +{
-> +	u64 val;
-> +	if (lock)
-> +		spin_lock(lock);
-> +	val =3D *value_ptr;
-> +	if (lock)
-> +		spin_unlock(lock);
-> +	return snprintf(buf, PAGE_SIZE, "%llu\n", val);
-> +}
-> +
-> +static ssize_t global_rsv_size_show(struct kobject *kobj,
-> +				    struct kobj_attribute *ka, char *buf)
-> +{
-> +	struct btrfs_fs_info *fs_info =3D to_fs_info(kobj->parent);
-> +	struct btrfs_block_rsv *block_rsv =3D &fs_info->global_block_rsv;
-> +	return btrfs_show_u64(&block_rsv->size, &block_rsv->lock, buf);
-> +}
-> +BTRFS_ATTR(global_rsv_size, 0444, global_rsv_size_show);
-> +
-> +static ssize_t global_rsv_reserved_show(struct kobject *kobj,
-> +					struct kobj_attribute *a, char *buf)
-> +{
-> +	struct btrfs_fs_info *fs_info =3D to_fs_info(kobj->parent);
-> +	struct btrfs_block_rsv *block_rsv =3D &fs_info->global_block_rsv;
-> +	return btrfs_show_u64(&block_rsv->reserved, &block_rsv->lock, buf);
-> +}
-> +BTRFS_ATTR(global_rsv_reserved, 0444, global_rsv_reserved_show);
-> +
-> +#define to_space_info(_kobj) container_of(_kobj, struct btrfs_space_in=
-fo, kobj)
-> +
-> +static ssize_t raid_bytes_show(struct kobject *kobj,
-> +			       struct kobj_attribute *attr, char *buf);
-> +BTRFS_RAID_ATTR(total_bytes, raid_bytes_show);
-> +BTRFS_RAID_ATTR(used_bytes, raid_bytes_show);
-> +
-> +static ssize_t raid_bytes_show(struct kobject *kobj,
-> +			       struct kobj_attribute *attr, char *buf)
-> +
-> +{
-> +	struct btrfs_space_info *sinfo =3D to_space_info(kobj->parent);
-> +	struct btrfs_block_group_cache *block_group;
-> +	int index =3D kobj - sinfo->block_group_kobjs;
-> +	u64 val =3D 0;
-> +
-> +	down_read(&sinfo->groups_sem);
-> +	list_for_each_entry(block_group, &sinfo->block_groups[index], list) {=
-
-> +		if (&attr->attr =3D=3D BTRFS_RAID_ATTR_PTR(total_bytes))
-> +			val +=3D block_group->key.offset;
-> +		else
-> +			val +=3D btrfs_block_group_used(&block_group->item);
-> +	}
-> +	up_read(&sinfo->groups_sem);
-> +	return snprintf(buf, PAGE_SIZE, "%llu\n", val);
-> +}
-> +
-> +static struct attribute *raid_attributes[] =3D {
-> +	BTRFS_RAID_ATTR_PTR(total_bytes),
-> +	BTRFS_RAID_ATTR_PTR(used_bytes),
-> +	NULL
-> +};
-> +
-> +static void release_raid_kobj(struct kobject *kobj)
-> +{
-> +	kobject_put(kobj->parent);
-> +}
-> +
-> +struct kobj_type btrfs_raid_ktype =3D {
-> +	.sysfs_ops =3D &kobj_sysfs_ops,
-> +	.release =3D release_raid_kobj,
-> +	.default_attrs =3D raid_attributes,
-> +};
-> +
-> +#define SPACE_INFO_ATTR(field)						\
-> +static ssize_t btrfs_space_info_show_##field(struct kobject *kobj,	\
-> +					     struct kobj_attribute *a,	\
-> +					     char *buf)			\
-> +{									\
-> +	struct btrfs_space_info *sinfo =3D to_space_info(kobj);		\
-> +	return btrfs_show_u64(&sinfo->field, &sinfo->lock, buf);	\
-> +}									\
-> +BTRFS_ATTR(field, 0444, btrfs_space_info_show_##field)
-> +
-> +static ssize_t btrfs_space_info_show_total_bytes_pinned(struct kobject=
- *kobj,
-> +						       struct kobj_attribute *a,
-> +						       char *buf)
-> +{
-> +	struct btrfs_space_info *sinfo =3D to_space_info(kobj);
-> +	s64 val =3D percpu_counter_sum(&sinfo->total_bytes_pinned);
-> +	return snprintf(buf, PAGE_SIZE, "%lld\n", val);
-> +}
-> +
-> +SPACE_INFO_ATTR(flags);
-> +SPACE_INFO_ATTR(total_bytes);
-> +SPACE_INFO_ATTR(bytes_used);
-> +SPACE_INFO_ATTR(bytes_pinned);
-> +SPACE_INFO_ATTR(bytes_reserved);
-> +SPACE_INFO_ATTR(bytes_may_use);
-> +SPACE_INFO_ATTR(disk_used);
-> +SPACE_INFO_ATTR(disk_total);
-> +BTRFS_ATTR(total_bytes_pinned, 0444, btrfs_space_info_show_total_bytes=
-_pinned);
-> +
-> +static struct attribute *space_info_attrs[] =3D {
-> +	BTRFS_ATTR_PTR(flags),
-> +	BTRFS_ATTR_PTR(total_bytes),
-> +	BTRFS_ATTR_PTR(bytes_used),
-> +	BTRFS_ATTR_PTR(bytes_pinned),
-> +	BTRFS_ATTR_PTR(bytes_reserved),
-> +	BTRFS_ATTR_PTR(bytes_may_use),
-> +	BTRFS_ATTR_PTR(disk_used),
-> +	BTRFS_ATTR_PTR(disk_total),
-> +	BTRFS_ATTR_PTR(total_bytes_pinned),
-> +	NULL,
-> +};
-> +
-> +static void space_info_release(struct kobject *kobj)
-> +{
-> +	struct btrfs_space_info *sinfo =3D to_space_info(kobj);
-> +	percpu_counter_destroy(&sinfo->total_bytes_pinned);
-> +	kfree(sinfo);
-> +}
-> +
-> +struct kobj_type space_info_ktype =3D {
-> +	.sysfs_ops =3D &kobj_sysfs_ops,
-> +	.release =3D space_info_release,
-> +	.default_attrs =3D space_info_attrs,
-> +};
-> +
-> +static const struct attribute *allocation_attrs[] =3D {
-> +	BTRFS_ATTR_PTR(global_rsv_reserved),
-> +	BTRFS_ATTR_PTR(global_rsv_size),
-> +	NULL,
-> +};
-> +
->  static void btrfs_release_super_kobj(struct kobject *kobj)
->  {
->  	struct btrfs_fs_info *fs_info =3D to_fs_info(kobj);
-> @@ -239,6 +373,9 @@ static inline struct btrfs_fs_info *to_f
-> =20
->  void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
->  {
-> +	sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
-> +	kobject_del(fs_info->space_info_kobj);
-> +	kobject_put(fs_info->space_info_kobj);
->  	kobject_del(&fs_info->super_kobj);
->  	kobject_put(&fs_info->super_kobj);
->  	wait_for_completion(&fs_info->kobj_unregister);
-> @@ -391,6 +528,17 @@ int btrfs_sysfs_add_one(struct btrfs_fs_
->  	if (error)
->  		goto failure;
-> =20
-> +	fs_info->space_info_kobj =3D kobject_create_and_add("allocation",
-> +						  &fs_info->super_kobj);
-> +	if (!fs_info->space_info_kobj) {
-> +		error =3D -ENOMEM;
-> +		goto failure;
-> +	}
-> +
-> +	error =3D sysfs_create_files(fs_info->space_info_kobj, allocation_att=
-rs);
-> +	if (error)
-> +		goto failure;
-> +
->  	return 0;
->  failure:
->  	btrfs_sysfs_remove_one(fs_info);
-> --- a/fs/btrfs/sysfs.h	2013-10-21 16:10:01.860001514 -0400
-> +++ b/fs/btrfs/sysfs.h	2013-10-21 16:10:02.751981911 -0400
-> @@ -22,6 +22,12 @@ static struct kobj_attribute btrfs_attr_
->  	BTRFS_ATTR_RW(_name, _mode, _show, NULL)
->  #define BTRFS_ATTR_PTR(_name)    (&btrfs_attr_##_name.attr)
-> =20
-> +#define BTRFS_RAID_ATTR(_name, _show)					\
-> +static struct kobj_attribute btrfs_raid_attr_##_name =3D			\
-> +			__INIT_KOBJ_ATTR(_name, 0444, _show, NULL)
-> +#define BTRFS_RAID_ATTR_PTR(_name)    (&btrfs_raid_attr_##_name.attr)
-> +
-> +
->  struct btrfs_feature_attr {
->  	struct kobj_attribute kobj_attr;
->  	enum btrfs_feature_set feature_set;
-> @@ -53,4 +59,6 @@ static struct btrfs_feature_attr btrfs_a
->  			to_btrfs_feature_attr(attr_to_btrfs_attr(a))
->  char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);=
-
->  extern const char * const btrfs_feature_set_names[3];
-> +extern struct kobj_type space_info_ktype;
-> +extern struct kobj_type btrfs_raid_ktype;
->  #endif /* _BTRFS_SYSFS_H_ */
+> BR
+> G.Baroncelli
 >=20
+> [*] http://lwn.net/Articles/513706/
 >=20
+>>
+>> <fsid>/devices/sdc1
+>> <fsid>/devices/sdd1
+>> <fsid>/label
+>> <fsid>/allocation/data/flags
+>> <fsid>/allocation/data/raid1/used_bytes
+>> <fsid>/allocation/data/raid1/total_bytes
+>> <fsid>/allocation/data/bytes_pinned
+>> <fsid>/allocation/data/bytes_may_use
+>> <fsid>/allocation/data/total_bytes_pinned
+>> <fsid>/allocation/data/bytes_reserved
+>> <fsid>/allocation/data/bytes_used
+>> <fsid>/allocation/data/single/used_bytes
+>> <fsid>/allocation/data/single/total_bytes
+>> <fsid>/allocation/data/total_bytes
+>> <fsid>/allocation/data/disk_total
+>> <fsid>/allocation/data/disk_used
+>> <fsid>/allocation/metadata/flags
+>> <fsid>/allocation/metadata/raid1/used_bytes
+>> <fsid>/allocation/metadata/raid1/total_bytes
+>> <fsid>/allocation/metadata/bytes_pinned
+>> <fsid>/allocation/metadata/bytes_may_use
+>> <fsid>/allocation/metadata/total_bytes_pinned
+>> <fsid>/allocation/metadata/bytes_reserved
+>> <fsid>/allocation/metadata/bytes_used
+>> <fsid>/allocation/metadata/single/used_bytes
+>> <fsid>/allocation/metadata/single/total_bytes
+>> <fsid>/allocation/metadata/total_bytes
+>> <fsid>/allocation/metadata/disk_total
+>> <fsid>/allocation/metadata/disk_used
+>> <fsid>/allocation/global_rsv_size
+>> <fsid>/allocation/global_rsv_reserved
+>> <fsid>/allocation/system/flags
+>> <fsid>/allocation/system/raid1/used_bytes
+>> <fsid>/allocation/system/raid1/total_bytes
+>> <fsid>/allocation/system/bytes_pinned
+>> <fsid>/allocation/system/bytes_may_use
+>> <fsid>/allocation/system/total_bytes_pinned
+>> <fsid>/allocation/system/bytes_reserved
+>> <fsid>/allocation/system/bytes_used
+>> <fsid>/allocation/system/single/used_bytes
+>> <fsid>/allocation/system/single/total_bytes
+>> <fsid>/allocation/system/total_bytes
+>> <fsid>/allocation/system/disk_total
+>> <fsid>/allocation/system/disk_used
+>> <fsid>/features/mixed_backref
+>> <fsid>/features/extended_iref
+>> features/compress_lzo
+>> features/big_metadata
+>> features/compress_lzov2
+>> features/default_subvol
+>> features/mixed_backref
+>> features/raid56
+>> features/mixed_groups
+>> features/skinny_metadata
+>> features/extended_iref
+>>
+>> -Jeff
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 >=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >=20
 
 
@@ -436,7 +231,7 @@ Jeff Mahoney
 SUSE Labs
 
 
---gPSJMRtGBLH46q0bOkPNUSlPd0FDLDJFs
+--m4RriLfVttslxM18bIIpQ6oSTLxI4w20B
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -444,19 +239,19 @@ Content-Disposition: attachment; filename="signature.asc"
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
 
-iQIcBAEBAgAGBQJScAMuAAoJEB57S2MheeWyc1kQALIWZtx6sBfUZ+yGT8QV94FL
-NVZT0970qwYNVVGdQOeTBwUirsav6NEeczMgqqUSXXg9U+Tvl22nADmT241CaPgU
-MPw8ubfAvCEguFLUYdC8mIpuv+5qy9UOLRbwk7+95kG6oD6kDco0MSM3j6BU/CXm
-Q4ZyyWfn/P38+kRMvVKg8KXr7W6MrT7rtG67f5ZCuDtHrYa+lx3ilU3XN4N9rZPp
-mocdJq6ChnHNZuIbhQYSe/GnGIbx/rZzOsJjvDKhScaVbrkwQx1ss7IGPWkVmlLF
-++lrctmZ9dzCtDqB556eqMztHWV40LuxBO/Fy55eYzngq1Xl0BSOEPTJrDPI2ljr
-tC6ngAxruFcKo5DKkUF+iRVDXbVVi+51FFHKsD+khkHN8g+21ky2ftKkfSeMXLjb
-0axb8NO/dPuoDeVJA37xSPgT2g2DnC+t/NsrOJbYfDUeJ4eL1UFIgtooQcke/ndy
-IjlNEh63FTQC7NonGZkdsTIErngyVYw4k4fFomzxXi+BYZqVFbDTyUxWLmd3nMZI
-BMaS8FCdCVb8+j66cPVBHZFtvXO+hx1xFpnYqYto8InFZ3BYYAzSC1FcLZf7YvhB
-fU8hhOYBisdPymkWgsd3hmwZU8cplwg9PgUdoRzJgsNneJcwnWnPp2KmWzlISVq4
-wtsUD+OqnAdgvLDcpKzl
-=Aefx
+iQIcBAEBAgAGBQJScBnzAAoJEB57S2MheeWy6fYQAKDAyjOENmLUsRKg/rp9NX86
+a8Z/ICS4n8NPIkGsY5iYxZXBxVQ2L1omH2lYcG8shhRvgwpVs71/N+dPrjdHxmkB
+Ep70OcupeD2z/qTRLLOrKX7m+5LC9klirzm0lPh6CWganZ/d9NAg2uDzKCFDrYk2
+DkW/57W6alv/XhDvISuD1zULQVzopPiZLc6XurEQNAB9DG8Evgib8ALgWghoKcwQ
+/NSZNORffsbMuw5RHUwlYbYuPSa/IEKmeB8bx5tgh4uBZ+S54gQ+2yFmV2bgvQJQ
+sJ2cJ9AHL6HRdm7Etak4YQtx12MyKX9ZlbtU+p4OyZuBM8J+MvZOpPeLuzUfqgQi
+HyauyFLhYsZQhu3UgU1aUC0zGqqGHnQ1zZatACgmw8dT/wRt+FIciaDgC2WngqOO
+mykL+QRRBVOUSAjkI2HpVx/JPVC4epGrVSEhtAVE9nigKDBb1mPtpPan/qQSOKTk
+bTttzYgzWvseoIxuwX+mW6xYg3Oy4tQRwiQ7PAxbUlgOES59JG7BV0pxO8dQze8q
+lKE/8po0teWpIAnO5yQIdU81QHxlbzRsVNy0lHQPLzHWubxBFliphTwJFGtPYQPl
+t5oPjcZsMzzUP/iG4FqTm/HnXWmmaP0WSolNxpbomsBsUodxwYX4WTRT4Nked/Ke
+1rih5k5qDT1DKG6De79V
+=EGgz
 -----END PGP SIGNATURE-----
 
---gPSJMRtGBLH46q0bOkPNUSlPd0FDLDJFs--
+--m4RriLfVttslxM18bIIpQ6oSTLxI4w20B--

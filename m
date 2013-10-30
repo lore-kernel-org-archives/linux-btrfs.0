@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57861 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:56669 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751693Ab3J3H61 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Oct 2013 03:58:27 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VbQfZ-0005RH-MG
-	for linux-btrfs@vger.kernel.org; Wed, 30 Oct 2013 08:58:25 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 08:58:25 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 08:58:25 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: memory leak in <=3.11.6
-Date: Wed, 30 Oct 2013 07:58:04 +0000 (UTC)
-Message-ID: <pan$daeed$63ab09ce$f7cf614c$9dc4736d@cox.net>
-References: <20131029132246.21258b95@virtall.com>
-	<o1t5ka-p7g.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1751332Ab3J3Py4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Oct 2013 11:54:56 -0400
+Date: Wed, 30 Oct 2013 16:54:53 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: swapfile on btrfs, temporary solution for wiki
+Message-ID: <20131030155453.GA8516@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAGqmi74OvQ=BFroP+QCf6eUtc61__LYRGtZJNcPz1XrSWX-q_w@mail.gmail.com>
+ <CAGqmi74F9GurJL73qtU4JG+Fi4RbXE7tiaO1uEQqEY2ym278eA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGqmi74F9GurJL73qtU4JG+Fi4RbXE7tiaO1uEQqEY2ym278eA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Wed, 30 Oct 2013 00:30:26 +0100 as excerpted:
+On Thu, Oct 24, 2013 at 11:52:01PM +0300, Timofey Titovets wrote:
+> Hello, i suggest temporary solution to use swap file under btrfs.
+> I test it, and it work good.
+> 
+> I invent simple the way, how create and using swap file, just see
+> following sh code:
+> 
+> swapfile=$(losetup -f) #free loop device
+> truncate -s 8G /swap   #create 8G sparse swap file
 
-> For me it started late 3.9 if I remember right. But I'm pretty sure it
-> startet with 3.10 which I mostly upgraded to for using skinny extents.
-> While skinny extents has helped subjective performance a little bit I
-> since experience the problem with ever increasing RAM usage - up to the
-> point of 15 GB swap, full RAM, and almost none of it is used for
-> caching.
+I'd suggest to do full dd on that file and make it NOCOW first. That way
+it should minimize attempts to actually allocate the file blocks at the
+time they're needed for swap out.
 
-That's an interesting point.  I've been cautious about enabling skinny 
-extents as well, and haven't enabled them here.  (Nothing major, just a 
-couple early reports that I expect have long been worked out by now, but 
-I decided giving them a few more kernel releases to mature was probably a 
-good idea.)
+Also a bit of stress testing that this actually works is needed.
 
-So it'd be interesting to see if there's a correlation between skinny 
-extents and the memory issues as well, as there seems to be between 
-qgroups and the memory issues.
+> losetup $swapfile /swap #mount file to loop
+> mkswap  $swapfile
+> swapon  $swapfile
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+david

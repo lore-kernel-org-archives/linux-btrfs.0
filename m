@@ -1,165 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:36355 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751491Ab3J3UzB (ORCPT
+Received: from mail-pd0-f181.google.com ([209.85.192.181]:62062 "EHLO
+	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752569Ab3J3VP3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Oct 2013 16:55:01 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 888179A0645
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 14:55:00 -0600 (MDT)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id 285MqTGwdIJWNCXE (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 14:54:59 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix up seek_hole/seek_data handling V2
-Date: Wed, 30 Oct 2013 16:54:57 -0400
-Message-ID: <1383166497-20740-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Wed, 30 Oct 2013 17:15:29 -0400
+Received: by mail-pd0-f181.google.com with SMTP id x10so1510954pdj.40
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2013 14:15:28 -0700 (PDT)
+From: Rashika Kheria <rashika.kheria@gmail.com>
+To: opw-kernel@googlegroups.com, linux-btrfs@vger.kernel.org,
+        Zach Brown <zab@redhat.com>
+Subject: [PATCH v3] btrfs: Add helper function for free_root_pointers()
+Date: Thu, 31 Oct 2013 02:45:20 +0530
+Message-Id: <1383167720-24201-1-git-send-email-rashika.kheria@gmail.com>
+In-Reply-To: <20131030204834.GA20844@gmail.com>
+References: <20131030204834.GA20844@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Whoever wrote this was braindead.  Also it doesn't work right if you have
-VACANCY's since we assumed you would only have that at the end of the file,
-which won't be the case in the near future.  I tested this with generic/285 and
-generic/286 as well as the btrfs tests that use fssum since it uses
-seek_hole/seek_data to verify things are ok.  Thanks,
+The function free_root_pointers() in disk-io.h contains redundant code.
+Therefore, this patch adds a helper function free_root_extent_buffers()
+to free_root_pointers() to eliminate redundancy.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Reviewed-by: Zach Brown <zab@redhat.com>
+Signed-off-by: Rashika Kheria <rashika.kheria@gmail.com>
 ---
-V1->V2: I screwed up the INLINE case, readjust to break if block_start !=
-EXTENT_MAP_HOLE for SEEK_DATA.
 
- fs/btrfs/file.c | 94 ++++++++++++---------------------------------------------
- 1 file changed, 19 insertions(+), 75 deletions(-)
+This revision fixes the following issues of the previous revision-
+Incorrect commit message
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index d12107e..b93d1c9 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2405,14 +2405,12 @@ out_reserve_fail:
- static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct extent_map *em;
-+	struct extent_map *em = NULL;
- 	struct extent_state *cached_state = NULL;
- 	u64 lockstart = *offset;
- 	u64 lockend = i_size_read(inode);
- 	u64 start = *offset;
--	u64 orig_start = *offset;
- 	u64 len = i_size_read(inode);
--	u64 last_end = 0;
- 	int ret = 0;
+ fs/btrfs/disk-io.c |   60 +++++++++++++++++-----------------------------------
+ 1 file changed, 19 insertions(+), 41 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4ae17ed..25fb77a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2012,50 +2012,28 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
+ }
  
- 	lockend = max_t(u64, root->sectorsize, lockend);
-@@ -2429,89 +2427,35 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
- 	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
- 			 &cached_state);
- 
--	/*
--	 * Delalloc is such a pain.  If we have a hole and we have pending
--	 * delalloc for a portion of the hole we will get back a hole that
--	 * exists for the entire range since it hasn't been actually written
--	 * yet.  So to take care of this case we need to look for an extent just
--	 * before the position we want in case there is outstanding delalloc
--	 * going on here.
--	 */
--	if (whence == SEEK_HOLE && start != 0) {
--		if (start <= root->sectorsize)
--			em = btrfs_get_extent_fiemap(inode, NULL, 0, 0,
--						     root->sectorsize, 0);
--		else
--			em = btrfs_get_extent_fiemap(inode, NULL, 0,
--						     start - root->sectorsize,
--						     root->sectorsize, 0);
--		if (IS_ERR(em)) {
--			ret = PTR_ERR(em);
--			goto out;
--		}
--		last_end = em->start + em->len;
--		if (em->block_start == EXTENT_MAP_DELALLOC)
--			last_end = min_t(u64, last_end, inode->i_size);
--		free_extent_map(em);
--	}
--
--	while (1) {
-+	while (start < inode->i_size) {
- 		em = btrfs_get_extent_fiemap(inode, NULL, 0, start, len, 0);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR(em);
-+			em = NULL;
- 			break;
- 		}
- 
--		if (em->block_start == EXTENT_MAP_HOLE) {
--			if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
--				if (last_end <= orig_start) {
--					free_extent_map(em);
--					ret = -ENXIO;
--					break;
--				}
--			}
--
--			if (whence == SEEK_HOLE) {
--				*offset = start;
--				free_extent_map(em);
--				break;
--			}
--		} else {
--			if (whence == SEEK_DATA) {
--				if (em->block_start == EXTENT_MAP_DELALLOC) {
--					if (start >= inode->i_size) {
--						free_extent_map(em);
--						ret = -ENXIO;
--						break;
--					}
--				}
--
--				if (!test_bit(EXTENT_FLAG_PREALLOC,
--					      &em->flags)) {
--					*offset = start;
--					free_extent_map(em);
--					break;
--				}
--			}
--		}
-+		if (whence == SEEK_HOLE &&
-+		    (em->block_start == EXTENT_MAP_HOLE ||
-+		     test_bit(EXTENT_FLAG_PREALLOC, &em->flags)))
-+			break;
-+		else if (whence == SEEK_DATA &&
-+			   (em->block_start != EXTENT_MAP_HOLE &&
-+			    !test_bit(EXTENT_FLAG_PREALLOC, &em->flags)))
-+			break;
- 
- 		start = em->start + em->len;
--		last_end = em->start + em->len;
--
--		if (em->block_start == EXTENT_MAP_DELALLOC)
--			last_end = min_t(u64, last_end, inode->i_size);
--
--		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
--			free_extent_map(em);
--			ret = -ENXIO;
--			break;
--		}
- 		free_extent_map(em);
-+		em = NULL;
- 		cond_resched();
- 	}
--	if (!ret)
--		*offset = min(*offset, inode->i_size);
--out:
-+	free_extent_map(em);
-+	if (!ret) {
-+		if (whence == SEEK_DATA && start >= inode->i_size)
-+			ret = -ENXIO;
-+		else
-+			*offset = min_t(loff_t, start, inode->i_size);
++static void free_root_extent_buffers(struct btrfs_root *root)
++{
++	if (root) {
++		free_extent_buffer(root->node);
++		free_extent_buffer(root->commit_root);
++		root->node = NULL;
++		root->commit_root = NULL;
 +	}
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			     &cached_state, GFP_NOFS);
- 	return ret;
++}
++
+ /* helper to cleanup tree roots */
+ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ {
+-	free_extent_buffer(info->tree_root->node);
+-	free_extent_buffer(info->tree_root->commit_root);
+-	info->tree_root->node = NULL;
+-	info->tree_root->commit_root = NULL;
+-
+-	if (info->dev_root) {
+-		free_extent_buffer(info->dev_root->node);
+-		free_extent_buffer(info->dev_root->commit_root);
+-		info->dev_root->node = NULL;
+-		info->dev_root->commit_root = NULL;
+-	}
+-	if (info->extent_root) {
+-		free_extent_buffer(info->extent_root->node);
+-		free_extent_buffer(info->extent_root->commit_root);
+-		info->extent_root->node = NULL;
+-		info->extent_root->commit_root = NULL;
+-	}
+-	if (info->csum_root) {
+-		free_extent_buffer(info->csum_root->node);
+-		free_extent_buffer(info->csum_root->commit_root);
+-		info->csum_root->node = NULL;
+-		info->csum_root->commit_root = NULL;
+-	}
+-	if (info->quota_root) {
+-		free_extent_buffer(info->quota_root->node);
+-		free_extent_buffer(info->quota_root->commit_root);
+-		info->quota_root->node = NULL;
+-		info->quota_root->commit_root = NULL;
+-	}
+-	if (info->uuid_root) {
+-		free_extent_buffer(info->uuid_root->node);
+-		free_extent_buffer(info->uuid_root->commit_root);
+-		info->uuid_root->node = NULL;
+-		info->uuid_root->commit_root = NULL;
+-	}
+-	if (chunk_root) {
+-		free_extent_buffer(info->chunk_root->node);
+-		free_extent_buffer(info->chunk_root->commit_root);
+-		info->chunk_root->node = NULL;
+-		info->chunk_root->commit_root = NULL;
+-	}
++	free_root_extent_buffers(info->tree_root);
++
++	free_root_extent_buffers(info->dev_root);
++	free_root_extent_buffers(info->extent_root);
++	free_root_extent_buffers(info->csum_root);
++	free_root_extent_buffers(info->quota_root);
++	free_root_extent_buffers(info->uuid_root);
++	if (chunk_root)
++		free_root_extent_buffers(info->chunk_root);
+ }
+ 
+ static void del_fs_roots(struct btrfs_fs_info *fs_info)
 -- 
-1.8.3.1
+1.7.9.5
 

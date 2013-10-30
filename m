@@ -1,22 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:47356 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751775Ab3J2UVZ (ORCPT
+Received: from avasout03.plus.net ([84.93.230.244]:39118 "EHLO
+	avasout03.plus.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752715Ab3J3MVW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Oct 2013 16:21:25 -0400
-Received: from [192.168.1.27] (151.29.84.129) by outrelay08.libero.it (8.6.033) (authenticated as kreijack@inwind.it)
-        id 526CE0660089F65E for linux-btrfs@vger.kernel.org; Tue, 29 Oct 2013 21:21:24 +0100
-Message-ID: <527018C3.7080100@inwind.it>
-Date: Tue, 29 Oct 2013 21:21:23 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+	Wed, 30 Oct 2013 08:21:22 -0400
+Message-ID: <5270F854.7090402@mipmip.org>
+Date: Wed, 30 Oct 2013 12:15:16 +0000
+From: Mike Arnautov <mla@mipmip.org>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Metadata reservation
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-help
+I have just moved some partitions on two Linux (Mageia 3) boxes to btrfs 
+(call the boxes A and B). In both cases only a part of one physical disk 
+can be allocated to btrfs.
+
+On box A, the btrfs partition size is 419 GB and the resulting usable 
+space is 418 GB with 1GB reserved by btrfs for metadata.
+
+However, on box B, where the partition size is 388 GB, reserved metadata 
+amounts to 128 GB (!), leaving just 266 GB for data.
+
+I've now done box B twice. Once using btrfs-convert and once by 
+reverting to ext4, and using KDE control centre to change the type of 
+the partition to btrfs, restoring the data from backups. In both cases 
+metadata reservation amount to 128 GB -- about 30% of the disk.
+
+Any suggestions on (a) what the cause might be and (b) how to improve 
+things?
+
+Thanks in advance,
+
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Mike Arnautov
+mailto:mla@mipmip.org
+http://mipmip.org

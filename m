@@ -1,107 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:51598 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750727Ab3JaPWF (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:39928 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753911Ab3JaUuq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Oct 2013 11:22:05 -0400
-Date: Thu, 31 Oct 2013 15:22:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Frank Holton <fholton@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Balance empty filesystem loses raid profile for data
-Message-ID: <20131031152202.GW14405@carfax.org.uk>
-References: <CAC4gV=4Y-Yn4Wc=VSXTONPaaxA1t_GSN6JR2ZPzh59mOWNPy4A@mail.gmail.com>
+	Thu, 31 Oct 2013 16:50:46 -0400
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id D5ECC7C0444
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Oct 2013 14:50:45 -0600 (MDT)
+Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id frhPvhRKocvNPVfT (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 31 Oct 2013 14:50:45 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: check file extent type before anything else
+Date: Thu, 31 Oct 2013 16:50:43 -0400
+Message-ID: <1383252643-6429-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="UTjKcilERHWBCdCp"
-In-Reply-To: <CAC4gV=4Y-Yn4Wc=VSXTONPaaxA1t_GSN6JR2ZPzh59mOWNPy4A@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I hit this problem with my no holes patch and it made me realize what the
+problem was for bz 60834.  If the first item in the leaf is an inline extent and
+we try to read anything starting from disk_bytenr onward we will read off the
+end of the leaf.  So we need to check to see what it's type is, and if it's not
+REG we can just break out.  This should fix this problem.  Thanks,
 
---UTjKcilERHWBCdCp
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/backref.c |  1 +
+ fs/btrfs/send.c    | 10 +++++-----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
 
-On Thu, Oct 31, 2013 at 10:51:28AM -0400, Frank Holton wrote:
-> So I just noticed this while running some tests and am not sure if
-> this is the expected behavior but it doesn't seem right to me.
-> 
-> If you run a balance on an empty filesystem, it removes all of the
-> data chunks. Writing files to the fs results in a new data chunk being
-> allocated of type single completely ignoring what the filesystem was
-> created with.
-
-   It's known about, certainly. I'm not sure if anyone's planning on
-doing anything about it. I thought I'd seen a patch recently that
-might have done something about it, but I can't see anything obvious
-in the list archives for the last week or so. I think it's generally
-considered a minor, if weird, side-effect that few people are likely
-to hit.
-
-> ./btrfs version
-> Btrfs v0.20-rc1-548-g4597c6d-dirty (newest btrfs-progs-integration)
-> 
-> Tested on kernels 3.11 and 3.12rc6
-> 
-> Results of df after sudo mkfs.btrfs -m raid1 -d raid0 -L test
-> /dev/loop0 /dev/loop1
-> Data, RAID0: total=2.00GiB, used=0.00
-> Data, single: total=8.00MiB, used=0.00
-> System, RAID1: total=8.00MiB, used=4.00KiB
-> System, single: total=4.00MiB, used=0.00
-> Metadata, RAID1: total=1.00GiB, used=24.00KiB
-> Metadata, single: total=8.00MiB, used=0.00
-> 
-> After sudo btrfs balance start /test/
-> System, RAID1: total=32.00MiB, used=4.00KiB
-> System, single: total=4.00MiB, used=0.00
-> Metadata, RAID1: total=256.00MiB, used=24.00KiB
-> 
-> And after writing new files to the fs
-> Data, single: total=1.00GiB, used=10.31MiB
-> System, RAID1: total=32.00MiB, used=4.00KiB
-> System, single: total=4.00MiB, used=0.00
-> Metadata, RAID1: total=256.00MiB, used=40.00KiB
-> 
-> Now it has reverted to single for data raid type. Also is btrfs.mkfs
-> supposed to make all of those single chunks?
-
-   Not sure about "supposed to" -- it certainly has always done so.
-It's an artefact of the way that mkfs works, I think -- as I
-understand it, it creates a really basic FS structure with minimal
-metadata in it, and lets the kernel fill in the rest on the first
-mount. They're generally small and harmless, and go away after the
-first balance.
-
-   Hugo.
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 3775947..b763f10 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1051,6 +1051,7 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
+ 
+ 	if (ret < 0 && ret != -ENOENT) {
+ 		free_leaf_list(*leafs);
++		ulist_free(*leafs);
+ 		return ret;
+ 	}
+ 
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 8af536f..629cb9e 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3943,16 +3943,16 @@ static int is_extent_unchanged(struct send_ctx *sctx,
+ 	while (key.offset < ekey->offset + left_len) {
+ 		ei = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
+ 		right_type = btrfs_file_extent_type(eb, ei);
+-		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
+-		right_len = btrfs_file_extent_num_bytes(eb, ei);
+-		right_offset = btrfs_file_extent_offset(eb, ei);
+-		right_gen = btrfs_file_extent_generation(eb, ei);
+-
+ 		if (right_type != BTRFS_FILE_EXTENT_REG) {
+ 			ret = 0;
+ 			goto out;
+ 		}
+ 
++		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
++		right_len = btrfs_file_extent_num_bytes(eb, ei);
++		right_offset = btrfs_file_extent_offset(eb, ei);
++		right_gen = btrfs_file_extent_generation(eb, ei);
++
+ 		/*
+ 		 * Are we at extent 8? If yes, we know the extent is changed.
+ 		 * This may only happen on the first iteration.
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- "You got very nice eyes, Deedee. Never noticed them ---       
-                           before. They real?"                           
+1.8.3.1
 
---UTjKcilERHWBCdCp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQIVAwUBUnJ1mlheFHXiqx3kAQKdEw//fPLWiywcVz1dObTjTE11Pxcl8JSxjT1P
-eQT6Tad7w5RvJmdb29n73Z8oAK6so1SY4CYG8wkbR89zqoZt/+wVIuUk96gPWAOs
-R99pVNF2lnkH11ompxQnxCkwKEsHraP1hdB5UDQCqSIy6subco0sQeHXnUM5IM5k
-giydQz1HV1OSaIPHYyE3qbkEQ7Z/80ak+/v/dJimjSCjxiWpnUBWXS079fEhI8oj
-GTMIwrYMJbWLr0PWXt+UUd/8qFIGNYwCRncDmgNSL5ZsXM/CYiVUNMil7YbTPdJH
-uHiBjO41d1MVF0zgEPYDCW+YtkrZjKxSceTduk8DXV5tII4hHf4ybd7/RR2L/v6h
-dvi7NiQ0FiodnrG1ScynVguqcxVmEF8yGSV+QDLjbBcniW6uz+AgueBwdRinOXLK
-ADa3qoHiFESIetSnd0gWdf+z2LVEIhYvJz1UWrMCO5bwN8ztH28OB4J84uAbo00y
-zjsbdsNgg4VJO7oq8teZQxFAI/u9NVSMH2eG5YZBOoG6g6Wt7wLgdOh8sC9FFwYD
-vmleClHt1vZjKWUi7tbudnnst1/LIjk5XksqkbvKDnm09mrHCQvBJXiseXlC2G+p
-u7iWiQGfdxyhc4v69kXml765ghztZd4v54p6LttMW3eZ0YXqV3PIGQwo7CveXwfU
-9J/x/AhWaks=
-=ejeO
------END PGP SIGNATURE-----
-
---UTjKcilERHWBCdCp--

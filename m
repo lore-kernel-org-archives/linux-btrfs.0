@@ -1,123 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:54803 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751873Ab3KAMv6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 08:51:58 -0400
-Received: by mail-wi0-f177.google.com with SMTP id f4so1019120wiw.16
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Nov 2013 05:51:56 -0700 (PDT)
+Received: from moutng.kundenserver.de ([212.227.17.8]:57893 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754516Ab3KAW3s (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 18:29:48 -0400
+Message-ID: <52742B59.3060405@friedels.name>
+Date: Fri, 01 Nov 2013 23:29:45 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Date: Fri, 1 Nov 2013 13:51:56 +0100
-Message-ID: <CADxbMS9iGjDo4aXcp=gqkfStZh4h7yWUm5AfWDgvRNYOpO_y1A@mail.gmail.com>
-Subject: btrfsck: cmds-check.c:2214: check_owner_ref: Assertion
- `!(rec->is_root)' failed.
-From: Dawid Kowalski <dkadds2@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfsck errors is it save to fix?
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Guys,
+Hello,
 
-I've tried to do all possible things by myself, but unfortunately all
-have failed.
-Therefore I'm looking for your help to get back my valuable data as FS
-failed at the time before I was able to finish backup tasks
+I have noticed that my server experiences high load average when writing 
+to it. So I checked the file-system and found errors:
 
-The error I'm getting is:
+./btrfsck /dev/sdc1
+Checking filesystem on /dev/sdc1
+UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+checking extents
+checking free space cache
+checking fs roots
+root 256 inode 9579 errors 100
+root 256 inode 9580 errors 100
+root 256 inode 14258 errors 100
+root 256 inode 14259 errors 100
+root 4444 inode 9579 errors 100
+root 4444 inode 9580 errors 100
+root 4444 inode 14258 errors 100
+root 4444 inode 14259 errors 100
+found 1478386534452 bytes used err is 1
+total csum bytes: 3207847732
+total tree bytes: 3902853120
+total fs tree bytes: 38875136
+total extent tree bytes: 135856128
+btree space waste bytes: 411653937
+file data blocks allocated: 3426722545664
+  referenced 3426000965632
+Btrfs v0.20-rc1-358-g194aa4a
 
-# mount -o ro,nospace_cache /mnt/btrfs-backup/btrfs_backup.img /mnt/ssd-source/
-[ 4417.684213] parent transid verify failed on 46587904 wanted 10081 found 10212
-[ 4417.696899] parent transid verify failed on 46587904 wanted 10081 found 10212
-[ 4417.728226] btrfs: open_ctree failed
-[ 4494.525556] device fsid c21fcec1-ab9a-4661-a9c0-25899886c91a devid
-1 transid 10209 /dev/loop0
-[ 4494.525570] device fsid c21fcec1-ab9a-4661-a9c0-25899886c91a devid
-1 transid 10209 /dev/loop0
-[ 4494.526924] btrfs: disabling disk space caching
-[ 4494.529273] device fsid c21fcec1-ab9a-4661-a9c0-25899886c91a devid
-1 transid 10209 /dev/loop0
-[ 4494.533728] parent transid verify failed on 46587904 wanted 10081 found 10212
-[ 4494.533901] parent transid verify failed on 46587904 wanted 10081 found 10212
-[ 4494.569029] btrfs: open_ctree failed
+It is a system striped over two physical disks.
+Now, what concerns me is that I found no indications of problems except 
+for the performance whatsoever. Nothing in the syslog.
 
-# ./btrfsck /mnt/btrfs-backup/btrfs_backup.img
-# full output: http://bpaste.net/show/GeJtOSSLwcAvrD4BJIey/
-[cut]
-parent transid verify failed on 55267328 wanted 10099 found 10212
-Ignoring transid failure
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-read block failed check_tree_block
-btrfsck: cmds-check.c:2214: check_owner_ref: Assertion `!(rec->is_root)' failed.
-Aborted (core dumped)
+Now that I am searching, I see this in dmesg:
+[95764.899359]  [<ffffffffa00d9a59>] free_fs_root+0x99/0xa0 [btrfs]
+[95764.899384]  [<ffffffffa00dd653>] 
+btrfs_drop_and_free_fs_root+0x93/0xc0 [btrfs]
+[95764.899408]  [<ffffffffa00dd74f>] del_fs_roots+0xcf/0x130 [btrfs]
+[95764.899433]  [<ffffffffa00ddac6>] close_ctree+0x146/0x270 [btrfs]
+[95764.899461]  [<ffffffffa00b4eb9>] btrfs_put_super+0x19/0x20 [btrfs]
+[95764.899493]  [<ffffffffa00b754a>] btrfs_kill_super+0x1a/0x90 [btrfs]
 
-# ./btrfsck -s 1 /mnt/btrfs-backup/btrfs_backup.img
-# full output: http://bpaste.net/show/epgrx5iHO0iJYNgPt4Cn/
-[cut]
-parent transid verify failed on 55267328 wanted 10099 found 10212
-Ignoring transid failure
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-Check tree block failed, want=52756480, have=4325488229236153881
-read block failed check_tree_block
-btrfsck: cmds-check.c:2214: check_owner_ref: Assertion `!(rec->is_root)' failed.
-Aborted (core dumped)
+Now the fact that the load went up indicates to me that the system 
+struggled reading or writing. Can't this "struggeling" be detected and 
+reported? Wouldn't this contribute to data-safety?
 
-#./btrfsck -s 2 /mnt/btrfs-backup/btrfs_backup.img
-using SB copy 2, bytenr 274877906944
-No valid Btrfs found on /mnt/btrfs-backup/btrfs_backup.img
-Couldn't open file system
+An the for me now more pressing question:
 
-btrfs restore does not help neither (using -u 1 with same result)
-./btrfs restore /mnt/btrfs-backup/btrfs_backup.img /mnt/btrfs-restore/restore/
-parent transid verify failed on 46587904 wanted 10081 found 10212
-parent transid verify failed on 46587904 wanted 10081 found 10212
-parent transid verify failed on 46587904 wanted 10081 found 10212
-parent transid verify failed on 46587904 wanted 10081 found 10212
-Ignoring transid failure
-parent transid verify failed on 76275712 wanted 10110 found 10212
-parent transid verify failed on 76275712 wanted 10110 found 10212
-parent transid verify failed on 76275712 wanted 10110 found 10212
-parent transid verify failed on 76275712 wanted 10110 found 10212
-Ignoring transid failure
-Check tree block failed, want=69304320, have=4325488229236153881
-Check tree block failed, want=69304320, have=4325488229236153881
-Check tree block failed, want=69304320, have=4325488229236153881
-Check tree block failed, want=69304320, have=4325488229236153881
-Check tree block failed, want=69304320, have=4325488229236153881
-read block failed check_tree_block
-Error searching -5
+How can I fix the problem?
 
-I've run into problem in a silly way, system got suspended and then
-run out of power, therefore had to restart system.
-At the boot time, system did not mount root fs sitting on BTRFS.
 
-Having some experience, I've done some research and:
-1. Made copy of my FS into file to work on this only to make sure I
-can always revert back to original FS with issue and restart recovery
-procedure from scratch
-2. Built another system with full tool set to easily manipulate my FS image.
-3. Pulled latest git clone git://github.com/josefbacik/btrfs-progs.git
-and built tools
-4. Used latest tools trying to fix problem.
-
-I've checked multiple articles on the net and have tried following.
-
-./btrfs restore /mnt/btrfs-backup/btrfs_backup.img /mnt/btrfs-restore/restore/
-http://bpaste.net/show/fEXWHpRrVK8RBfKuhrjs/
-
-System is:
- 3.11.0-12-generic #19-Ubuntu
-Btrfs tools were polled and compiled today.
-
-Any help would be highly appreciated, as I've said, I've just moved
-all my data from other faulty drive and backup task did not finish,
-therefore I've just one copy of my data sitting on this BTRFS :(
-
-Regards,
-Dawid
+Greetings,
+Hendrik

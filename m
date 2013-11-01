@@ -1,76 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38306 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753596Ab3KGXkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 18:40:05 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VeZBD-0001NT-IN
-	for linux-btrfs@vger.kernel.org; Fri, 08 Nov 2013 00:40:03 +0100
-Received: from gw.stenroth.fi ([188.127.202.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Nov 2013 00:40:03 +0100
-Received: from ilari.stenroth by gw.stenroth.fi with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Nov 2013 00:40:03 +0100
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:59398 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752508Ab3KAAqH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Oct 2013 20:46:07 -0400
+Received: by mail-pa0-f44.google.com with SMTP id fb1so3300079pad.31
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Oct 2013 17:46:06 -0700 (PDT)
+Received: from himangi-Inspiron-N5110 ([14.139.82.6])
+        by mx.google.com with ESMTPSA id pu5sm8598122pac.21.2013.10.31.17.46.04
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Thu, 31 Oct 2013 17:46:05 -0700 (PDT)
+Date: Fri, 1 Nov 2013 06:16:00 +0530
+From: Himangi Saraogi <himangi774@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Ilari Stenroth <ilari.stenroth@gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/ctree.c:2964!
-Date: Fri, 08 Nov 2013 01:35:07 +0200
-Message-ID: <l5h830$qog$1@ger.gmane.org>
-References: <9373586.6792.1377013412620.JavaMail.root@mail.placs.net> <22207009.1532.1383352121296.JavaMail.root@mail.placs.net> <20131102013433.GF16855@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <20131102013433.GF16855@localhost.localdomain>
+Subject: [PATCH] btrfs:check-integrity.c: replace kmalloc with kmalloc_array
+Message-ID: <20131101004559.GA3258@himangi-Inspiron-N5110gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2.11.2013 3.34, Josef Bacik wrote:
-> 
-> On this box can you run
-> 
-> gdb btrfs.ko
-> list *(__btrfs_drop_extents+0x59d)
-> 
-> I want to know where exactly this is coming from so I can start trying to figure
-> out how it's happening.  Thanks,
+This patch replaces kmalloc(size * nr, ) with kmalloc_array(nr, size)
+as kmalloc_array() is preferred because it can check that the
+calculation doesn't wrap and won't return a smaller allocation.
 
-Hi,
+Reviewed-by: Zach Brown <zab@redhat.com>
 
-I've got the same issue. Btrfs FS crashes on my box running Linux 3.11.7.
+Signed-off-by: Himangi Saraogi <himangi774@gmail.com>
+---
+ fs/btrfs/check-integrity.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-It seems that the crash happens when I start collectd daemon. Maybe a
-corrupted RRD file somewhere.
-I don't have time for debugging this issue further so I'm going to
-re-format this box to ext4. Btrfs is statically compiled in kernel so
-I'm unable to gdb btrfs.ko. No debug info in kernel image. Sorry not
-being able to help.
-
-/dev/sda2 on / type btrfs (rw,noatime,nodiratime,ssd,space_cache)
-
-Mount options used to have also autodefrag but I removed it while hoping
-it would make the box more stable.
-
-# btrfs fi show
-Label: 'root'  uuid: 87943e37-a134-4b8d-bcf2-989334d23b75
-	Total devices 2 FS bytes used 6.22GB
-	devid    2 size 10.00GB used 9.98GB path /dev/sdb2
-	devid    1 size 10.00GB used 10.00GB path /dev/sda2
-
-
-# btrfs fi df /
-Data, RAID1: total=8.97GB, used=5.99GB
-Data: total=8.00MB, used=0.00
-System, RAID1: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=1.00GB, used=234.92MB
-Metadata: total=8.00MB, used=0.00
-
-A screen grab from the console after the crash happened:
-http://s3-eu-west-1.amazonaws.com/ilari.stenroth/btrfs-crash-201311/Screen+Shot+2013-11-07+at+9.19.27.png
-
---
-Ilari Stenroth
-
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 1c47be1..d61ffef 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -3031,8 +3031,9 @@ void btrfsic_submit_bio(int rw, struct bio *bio)
+ 			       (unsigned long long)bio->bi_sector, dev_bytenr,
+ 			       bio->bi_bdev);
+ 
+-		mapped_datav = kmalloc(sizeof(*mapped_datav) * bio->bi_vcnt,
+-				       GFP_NOFS);
++		mapped_datav = kmalloc_array(bio->bi_vcnt,
++					     sizeof(*mapped_datav),
++					     GFP_NOFS);
+ 		if (!mapped_datav)
+ 			goto leave;
+ 		for (i = 0; i < bio->bi_vcnt; i++) {
+-- 
+1.7.9.5
 

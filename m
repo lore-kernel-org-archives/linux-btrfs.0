@@ -1,96 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.180]:23946 "EHLO
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:55736 "EHLO
 	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752775Ab3KAJQl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 05:16:41 -0400
-Message-ID: <52737175.6020906@jan-o-sch.net>
-Date: Fri, 01 Nov 2013 10:16:37 +0100
+	with ESMTP id S1751459Ab3KAJTn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 05:19:43 -0400
+Message-ID: <5273722D.4020907@jan-o-sch.net>
+Date: Fri, 01 Nov 2013 10:19:41 +0100
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: linux-btrfs@vger.kernel.org, Arne Jansen <sensille@gmx.net>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: fix negative qgroup tracking from owner accounting
  (bug #61951)
-References: <1382620926-8513-1-git-send-email-list.btrfs@jan-o-sch.net> <801531AB-DF1E-44AC-B58E-D0388C7FCC55@gmail.com>
-In-Reply-To: <801531AB-DF1E-44AC-B58E-D0388C7FCC55@gmail.com>
+References: <1382620926-8513-1-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1382620926-8513-1-git-send-email-list.btrfs@jan-o-sch.net>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(cc Arne)
+Hi Josef,
 
-On Thu, October 24, 2013 at 16:49 (+0200), Wang Shilong wrote:
-> Hello Jan,
-> 
->> btrfs_dec_ref() queued a delayed ref for owner of a tree block. The qgroup
->> tracking is based on delayed refs. The owner of a tree block is set when a
->> tree block is allocated, it is never updated.
->>
->> When you allocate a tree block and then remove the subvolume that did the
->> allocation, the qgroup accounting for that removal is correct. However, the
->> removal was accounted again for each subvolume deletion that also referenced
->> the tree block, because accounting was erroneously based on the owner.
->>
->> Instead of queueing delayed refs for the non-existent owner, we now
->> queue delayed refs for the root being removed. This fixes the qgroup
->> accounting.
-> 
-> Thanks for tracking this, i apply your patch, and using the flowing patch,
-> found the problem still exist, the test script like the following:
-> 
-> #!/bin/sh
-> 
-> for i in $(seq 1000)
-> do
-> 	dd if=/dev/zero of=<mnt>/$i""aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  bs=10K count=1
-> done
-> 
-> btrfs sub snapshot <mnt> <mnt>/1
-> for i in $(seq 100)
-> do
-> 	btrfs sub snapshot <mnt>/$i <mnt>/$(($i+1))
-> done
-> 
-> for i in $(seq 101)
-> do
-> 	btrfs sub delete <mnt>/$i
-> done
+please consider this patch for btrfs-next and for the following merge window
+(3.13). The fact that there's another problem concerning qgroups as discussed in
+the rest of this thread doesn't make this patch any less correct.
 
-I've understood the problem this reproducer creates. In fact, you can shorten it
-dramatically. The story of qgroups is going to turn awkward at this point.
-
-mkfs and enable quota, put some data in (needs a level 2 tree)
--> this accounts rfer and excl for qgroup 5
-
-take a snapshot
--> this creates qgroup 257, which gets rfer(257) = rfer(5) and excl(257) = 0,
-excl(5) = 0.
-
-now make sure you don't cow anything (which we always did in our extensive
-tests), just drop the newly created snapshot.
--> excl(5) ought to become what it was before the snapshot, and there's no code
-for this. This is because there is node code that brings rfer(257) to zero, the
-data extents are not touched because the tree blocks of 5 and 257 are shared.
-
-Drop tree does not go down the whole tree, when it finds a tree block with
-refcnt > 1 it just decrements it and is done. This is very efficient but is bad
-the qgroup numbers.
-
-We have got three possibile solutions in mind:
-
-A: Always walk down the whole tree for quota-enabled fs tree drops. Can be done
-with the read-ahead code, but is potentially a whole lot of work for large file
-systems.
-
-B: Use tracking qgroups as required for several operations on higher level
-qgroups also for the level 0 qgroups. They could be created automatically and
-track the correct numbers just in case a snapshot is deleted. The problem with
-that approach is that it does not scale for a large number of subvolumes, as you
-need to track each possible combination of all subvolumes (exponential costs).
-
-C: Make sure all your metadata is cowed before dropping a subvolume. This is
-explicitly doing what solution A would do implicitly, but can theoretically be
-done by the user. I don't consider C a practical solution.
-
-Sigh.
+Thanks,
 -Jan
+
+On Thu, October 24, 2013 at 15:22 (+0200), Jan Schmidt wrote:
+> btrfs_dec_ref() queued a delayed ref for owner of a tree block. The qgroup
+> tracking is based on delayed refs. The owner of a tree block is set when a
+> tree block is allocated, it is never updated.
+> 
+> When you allocate a tree block and then remove the subvolume that did the
+> allocation, the qgroup accounting for that removal is correct. However, the
+> removal was accounted again for each subvolume deletion that also referenced
+> the tree block, because accounting was erroneously based on the owner.
+> 
+> Instead of queueing delayed refs for the non-existent owner, we now
+> queue delayed refs for the root being removed. This fixes the qgroup
+> accounting.
+> 
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> Tested-by: <dustymabe@gmail.com>
+> ---
+>  fs/btrfs/extent-tree.c |   14 +++++++++-----
+>  1 files changed, 9 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index d58bef1..7846cae 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3004,12 +3004,11 @@ out:
+>  static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  			   struct btrfs_root *root,
+>  			   struct extent_buffer *buf,
+> -			   int full_backref, int inc, int for_cow)
+> +			   int full_backref, u64 ref_root, int inc, int for_cow)
+>  {
+>  	u64 bytenr;
+>  	u64 num_bytes;
+>  	u64 parent;
+> -	u64 ref_root;
+>  	u32 nritems;
+>  	struct btrfs_key key;
+>  	struct btrfs_file_extent_item *fi;
+> @@ -3019,7 +3018,6 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  	int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
+>  			    u64, u64, u64, u64, u64, u64, int);
+>  
+> -	ref_root = btrfs_header_owner(buf);
+>  	nritems = btrfs_header_nritems(buf);
+>  	level = btrfs_header_level(buf);
+>  
+> @@ -3075,13 +3073,19 @@ fail:
+>  int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  		  struct extent_buffer *buf, int full_backref, int for_cow)
+>  {
+> -	return __btrfs_mod_ref(trans, root, buf, full_backref, 1, for_cow);
+> +	u64 ref_root;
+> +
+> +	ref_root = btrfs_header_owner(buf);
+> +
+> +	return __btrfs_mod_ref(trans, root, buf, full_backref, ref_root,
+> +			       1, for_cow);
+>  }
+>  
+>  int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  		  struct extent_buffer *buf, int full_backref, int for_cow)
+>  {
+> -	return __btrfs_mod_ref(trans, root, buf, full_backref, 0, for_cow);
+> +	return __btrfs_mod_ref(trans, root, buf, full_backref, root->objectid,
+> +			       0, for_cow);
+>  }
+>  
+>  static int write_one_cache_group(struct btrfs_trans_handle *trans,
+> 

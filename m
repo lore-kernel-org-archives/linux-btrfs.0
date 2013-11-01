@@ -1,53 +1,255 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:55118 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750715Ab3KAMkg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 08:40:36 -0400
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 3E6D29A0414
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Nov 2013 06:40:36 -0600 (MDT)
-Date: Fri, 1 Nov 2013 08:40:34 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Josef Bacik <jbacik@fusionio.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: check file extent type before anything else
-Message-ID: <20131101124034.GC16855@localhost.localdomain>
-References: <1383252643-6429-1-git-send-email-jbacik@fusionio.com>
- <527358A4.9060003@giantdisaster.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <527358A4.9060003@giantdisaster.de>
+Received: from cantor2.suse.de ([195.135.220.15]:58893 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751464Ab3KARY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Nov 2013 13:24:27 -0400
+Message-Id: <20131101172240.170283465@suse.com>
+Date: Fri, 01 Nov 2013 13:06:55 -0400
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fusionio.com>
+Subject: [PATCH 01/13] btrfs: add ioctls to query/change feature bits online
+References: <20131101170654.164867629@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 01, 2013 at 08:30:44AM +0100, Stefan Behrens wrote:
-> On Thu, 31 Oct 2013 16:50:43 -0400, Josef Bacik wrote:
-> > I hit this problem with my no holes patch and it made me realize what the
-> > problem was for bz 60834.  If the first item in the leaf is an inline extent and
-> > we try to read anything starting from disk_bytenr onward we will read off the
-> > end of the leaf.  So we need to check to see what it's type is, and if it's not
-> > REG we can just break out.  This should fix this problem.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-> > ---
-> >  fs/btrfs/backref.c |  1 +
-> >  fs/btrfs/send.c    | 10 +++++-----
-> >  2 files changed, 6 insertions(+), 5 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> > index 3775947..b763f10 100644
-> > --- a/fs/btrfs/backref.c
-> > +++ b/fs/btrfs/backref.c
-> > @@ -1051,6 +1051,7 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
-> >  
-> >  	if (ret < 0 && ret != -ENOENT) {
-> >  		free_leaf_list(*leafs);
-> > +		ulist_free(*leafs);
-> 
-> An en passant fix for which problem?
-> 
+There are some feature bits that require no offline setup and can
+be enabled online. I've only reviewed extended irefs, but there will
+probably be more.
 
-Oops, sorry about that, not a problem just me doing other things, I'll drop that
-bit.  Thanks,
+We introduce three new ioctls:
+- BTRFS_IOC_GET_SUPPORTED_FEATURES: query the kernel for supported features.
+- BTRFS_IOC_GET_FEATURES: query the kernel for enabled features on a per-fs
+  basis, as well as querying for which features are changeable with mounted.
+- BTRFS_IOC_SET_FEATURES: change features on a per-fs basis.
 
-Josef
+We introduce two new masks per feature set (_SAFE_SET and _SAFE_CLEAR) that
+allow us to define which features are safe to change at runtime.
+
+The failure modes for BTRFS_IOC_SET_FEATURES are as follows:
+- Enabling a completely unsupported feature: warns and returns -ENOTSUPP
+- Enabling a feature that can only be done offline: warns and returns -EPERM
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ctree.h           |    9 ++
+ fs/btrfs/ioctl.c           |  145 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |   12 +++
+ 3 files changed, 166 insertions(+)
+
+--- a/fs/btrfs/ctree.h	2013-09-11 21:40:48.939758689 -0400
++++ b/fs/btrfs/ctree.h	2013-09-16 13:37:13.020197254 -0400
+@@ -512,7 +512,12 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ 
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
++#define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
++#define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
++#define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
++#define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
++
+ #define BTRFS_FEATURE_INCOMPAT_SUPP			\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
+@@ -523,6 +528,10 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 
++#define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
++	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
++#define BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR		0ULL
++
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+  * the item in the leaf (relative to the start of the data area)
+--- a/fs/btrfs/ioctl.c	2013-09-11 21:40:48.991757905 -0400
++++ b/fs/btrfs/ioctl.c	2013-09-16 13:37:09.720237996 -0400
+@@ -4098,6 +4098,145 @@ out_unlock:
+ 	return ret;
+ }
+ 
++static int btrfs_ioctl_get_supported_features(struct file *file,
++					      void __user *arg)
++{
++	struct btrfs_ioctl_feature_flags features[3];
++
++	features[0].compat_flags = BTRFS_FEATURE_COMPAT_SUPP;
++	features[0].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SUPP;
++	features[0].incompat_flags = BTRFS_FEATURE_INCOMPAT_SUPP;
++
++	features[1].compat_flags = BTRFS_FEATURE_COMPAT_SAFE_SET;
++	features[1].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
++	features[1].incompat_flags = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
++
++	features[2].compat_flags = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
++	features[2].compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
++	features[2].incompat_flags = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
++
++	if (copy_to_user(arg, &features, sizeof(features)))
++		return -EFAULT;
++
++	return 0;
++}
++
++static int btrfs_ioctl_get_features(struct file *file, void __user *arg)
++{
++	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
++	struct btrfs_super_block *super_block = root->fs_info->super_copy;
++	struct btrfs_ioctl_feature_flags features;
++
++	features.compat_flags = btrfs_super_compat_flags(super_block);
++	features.compat_ro_flags = btrfs_super_compat_ro_flags(super_block);
++	features.incompat_flags = btrfs_super_incompat_flags(super_block);
++
++	if (copy_to_user(arg, &features, sizeof(features)))
++		return -EFAULT;
++
++	return 0;
++}
++
++static int check_feature_bits(struct btrfs_root *root, const char *type,
++			      u64 change_mask, u64 flags, u64 supported_flags,
++			      u64 safe_set, u64 safe_clear)
++{
++	u64 disallowed, unsupported;
++	u64 set_mask = flags & change_mask;
++	u64 clear_mask = ~flags & change_mask;
++
++	unsupported = set_mask & ~supported_flags;
++	if (unsupported) {
++		btrfs_warn(root->fs_info,
++			   "this kernel does not support %s bits 0x%llx",
++			   type, unsupported);
++		return -EOPNOTSUPP;
++	}
++
++	disallowed = set_mask & ~safe_set;
++	if (disallowed) {
++		btrfs_warn(root->fs_info,
++			   "can't set %s bits 0x%llx while mounted",
++			   type, disallowed);
++		return -EPERM;
++	}
++
++	disallowed = clear_mask & ~safe_clear;
++	if (disallowed) {
++		btrfs_warn(root->fs_info,
++			   "can't clear %s bits 0x%llx while mounted",
++			   type, disallowed);
++		return -EPERM;
++	}
++
++	return 0;
++}
++
++#define check_feature(root, change_mask, flags, mask_base)	\
++check_feature_bits(root, # mask_base, change_mask, flags,	\
++		   BTRFS_FEATURE_ ## mask_base ## _SUPP,	\
++		   BTRFS_FEATURE_ ## mask_base ## _SAFE_SET,	\
++		   BTRFS_FEATURE_ ## mask_base ## _SAFE_CLEAR)
++
++static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
++{
++	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
++	struct btrfs_super_block *super_block = root->fs_info->super_copy;
++	struct btrfs_ioctl_feature_flags flags[2];
++	struct btrfs_trans_handle *trans;
++	u64 newflags;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (copy_from_user(flags, arg, sizeof(flags)))
++		return -EFAULT;
++
++	/* Nothing to do */
++	if (!flags[0].compat_flags && !flags[0].compat_ro_flags &&
++	    !flags[0].incompat_flags)
++		return 0;
++
++	ret = check_feature(root, flags[0].compat_flags,
++			    flags[1].compat_flags, COMPAT);
++	if (ret)
++		return ret;
++
++	ret = check_feature(root, flags[0].compat_ro_flags,
++			    flags[1].compat_ro_flags, COMPAT_RO);
++	if (ret)
++		return ret;
++
++	ret = check_feature(root, flags[0].incompat_flags,
++			    flags[1].incompat_flags, INCOMPAT);
++	if (ret)
++		return ret;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	spin_lock(&root->fs_info->super_lock);
++	newflags = btrfs_super_compat_flags(super_block);
++	newflags |= flags[0].compat_flags & flags[1].compat_flags;
++	newflags &= ~(flags[0].compat_flags & ~flags[1].compat_flags);
++	btrfs_set_super_compat_flags(super_block, newflags);
++
++	newflags = btrfs_super_compat_ro_flags(super_block);
++	newflags |= flags[0].compat_ro_flags & flags[1].compat_ro_flags;
++	newflags &= ~(flags[0].compat_ro_flags & ~flags[1].compat_ro_flags);
++	btrfs_set_super_compat_ro_flags(super_block, newflags);
++
++	newflags = btrfs_super_incompat_flags(super_block);
++	newflags |= flags[0].incompat_flags & flags[1].incompat_flags;
++	newflags &= ~(flags[0].incompat_flags & ~flags[1].incompat_flags);
++	btrfs_set_super_incompat_flags(super_block, newflags);
++	spin_unlock(&root->fs_info->super_lock);
++
++	return btrfs_end_transaction(trans, root);
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -4208,6 +4347,12 @@ long btrfs_ioctl(struct file *file, unsi
+ 		return btrfs_ioctl_set_fslabel(file, argp);
+ 	case BTRFS_IOC_FILE_EXTENT_SAME:
+ 		return btrfs_ioctl_file_extent_same(file, argp);
++	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
++		return btrfs_ioctl_get_supported_features(file, argp);
++	case BTRFS_IOC_GET_FEATURES:
++		return btrfs_ioctl_get_features(file, argp);
++	case BTRFS_IOC_SET_FEATURES:
++		return btrfs_ioctl_set_features(file, argp);
+ 	}
+ 
+ 	return -ENOTTY;
+--- a/include/uapi/linux/btrfs.h	2013-09-10 12:36:31.643763746 -0400
++++ b/include/uapi/linux/btrfs.h	2013-09-16 13:38:03.251588809 -0400
+@@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
+ 	__u64 reserved[124];			/* pad to 1k */
+ };
+ 
++struct btrfs_ioctl_feature_flags {
++	__u64 compat_flags;
++	__u64 compat_ro_flags;
++	__u64 incompat_flags;
++};
++
+ /* balance control ioctl modes */
+ #define BTRFS_BALANCE_CTL_PAUSE		1
+ #define BTRFS_BALANCE_CTL_CANCEL	2
+@@ -579,5 +585,11 @@ static inline char *btrfs_err_str(enum b
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
++				   struct btrfs_ioctl_feature_flags)
++#define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
++				   struct btrfs_ioctl_feature_flags[2])
++#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
++				   struct btrfs_ioctl_feature_flags[3])
+ 
+ #endif /* _UAPI_LINUX_BTRFS_H */
+
+

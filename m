@@ -1,105 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58896 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58921 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751484Ab3KARY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Nov 2013 13:24:27 -0400
-Message-Id: <20131101170654.164867629@suse.com>
-Date: Fri, 01 Nov 2013 13:06:54 -0400
+	id S1751484Ab3KARYa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Nov 2013 13:24:30 -0400
+Message-Id: <20131101172240.879181958@suse.com>
+Date: Fri, 01 Nov 2013 13:07:00 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fusionio.com>
-Subject: [PATCH 00/13] [PATCH 00/13] sysfs publishing patchset (v2)
+Subject: [PATCH 06/13] btrfs: publish unknown feature bits in sysfs
+References: <20131101170654.164867629@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset implements the stubbed-out sysfs interface for btrfs. Or
-at least begins to do so.
+With the compat and compat-ro bits, it's possible for file systems to
+exist that have features that aren't supported by the kernel's file system
+implementation yet still be mountable.
 
-We publish:
-- Features supported by the file system implementation
-- Features enabled on the file system, including features unknown to
-  the implemenation. These attributes can also be used to enable or
-  disable features at runtime, subjecting to a safety mask.
-- Uses the attribute names to print feature names when declining to
-  mount a file system.
-- The allocation data: global metadata reservation size and reserved,
-  space_infos, and sums of the block groups total and used bytes.
-- Device membership via links to the block devices.
-- FS label, which is writeable.
+This patch publishes read-only info on those features using a prefix:number
+format, where the number is the bit number rather than the shifted value.
+e.g. "compat:12"
 
-- I've also added matching ioctls for some of the functionality here so
-  that btrfsprogs can use the information without jumping through hoops
-  to read/parse the sysfs files. There are ioctls to query the supported
-  features and to query/set features on a particular file system. There's
-  also one to export the size of the global metadata reservation. I have
-  a patch for btrfs-progs that uses this to print useful info in 'btrfs
-  fi df' output.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/sysfs.c |  108 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 107 insertions(+), 1 deletion(-)
 
-Ultimately, the tree structure looks like the following, under /sys/fs/btrfs.
-This is from a test file system, using two devices in raid1. You'll notice
-the 'single' and 'raid1' directories under the {data,metadata,system} dirs.
-The raid profiles are created and removed as the first/last block group
-of a certain profile is added and removed.
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:10:00.700027002 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:10:01.076018741 -0400
+@@ -22,6 +22,7 @@
+ #include <linux/completion.h>
+ #include <linux/buffer_head.h>
+ #include <linux/kobject.h>
++#include <linux/bug.h>
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -131,6 +132,101 @@ void btrfs_sysfs_remove_one(struct btrfs
+ 	wait_for_completion(&fs_info->kobj_unregister);
+ }
+ 
++const char * const btrfs_feature_set_names[3] = {
++	[FEAT_COMPAT]	 = "compat",
++	[FEAT_COMPAT_RO] = "compat_ro",
++	[FEAT_INCOMPAT]	 = "incompat",
++};
++
++#define NUM_FEATURE_BITS 64
++static char btrfs_unknown_feature_names[3][NUM_FEATURE_BITS][13];
++static struct btrfs_feature_attr btrfs_feature_attrs[3][NUM_FEATURE_BITS];
++
++static void init_feature_attrs(void)
++{
++	struct btrfs_feature_attr *fa;
++	int set, i;
++
++	BUILD_BUG_ON(ARRAY_SIZE(btrfs_unknown_feature_names) !=
++		     ARRAY_SIZE(btrfs_feature_attrs));
++	BUILD_BUG_ON(ARRAY_SIZE(btrfs_unknown_feature_names[0]) !=
++		     ARRAY_SIZE(btrfs_feature_attrs[0]));
++
++	for (i = 0; btrfs_supported_feature_attrs[i]; i++) {
++		struct btrfs_feature_attr *sfa;
++		struct attribute *a = btrfs_supported_feature_attrs[i];
++		sfa = attr_to_btrfs_feature_attr(a);
++		fa = &btrfs_feature_attrs[sfa->feature_set][sfa->feature_bit];
++
++		fa->kobj_attr.attr.name = sfa->kobj_attr.attr.name;
++	}
++
++	for (set = 0; set < FEAT_MAX; set++) {
++		for (i = 0; i < ARRAY_SIZE(btrfs_feature_attrs[set]); i++) {
++			char *name = btrfs_unknown_feature_names[set][i];
++			fa = &btrfs_feature_attrs[set][i];
++
++			if (fa->kobj_attr.attr.name)
++				continue;
++
++			snprintf(name, 13, "%s:%u",
++				 btrfs_feature_set_names[set], i);
++
++			fa->kobj_attr.attr.name = name;
++			fa->kobj_attr.attr.mode = S_IRUGO;
++			fa->feature_set = set;
++			fa->feature_bit = 1ULL << i;
++		}
++	}
++}
++
++static u64 supported_feature_masks[3] = {
++	[FEAT_COMPAT]    = BTRFS_FEATURE_COMPAT_SUPP,
++	[FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SUPP,
++	[FEAT_INCOMPAT]  = BTRFS_FEATURE_INCOMPAT_SUPP,
++};
++
++static int add_unknown_feature_attrs(struct btrfs_fs_info *fs_info)
++{
++	int set;
++
++	for (set = 0; set < FEAT_MAX; set++) {
++		int i, count, ret, index = 0;
++		struct attribute **attrs;
++		struct attribute_group agroup = {
++			.name = "features",
++		};
++		u64 features = get_features(fs_info, set);
++		features &= ~supported_feature_masks[set];
++
++		count = hweight64(features);
++
++		if (!count)
++			continue;
++
++		attrs = kcalloc(count + 1, sizeof(void *), GFP_KERNEL);
++
++		for (i = 0; i < NUM_FEATURE_BITS; i++) {
++			struct btrfs_feature_attr *fa;
++
++			if (!(features & (1ULL << i)))
++				continue;
++
++			fa = &btrfs_feature_attrs[set][i];
++			attrs[index++] = &fa->kobj_attr.attr;
++		}
++
++		attrs[index] = NULL;
++		agroup.attrs = attrs;
++
++		ret = sysfs_merge_group(&fs_info->super_kobj, &agroup);
++		kfree(attrs);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
+ 
+@@ -146,7 +242,15 @@ int btrfs_sysfs_add_one(struct btrfs_fs_
+ 	error = sysfs_create_group(&fs_info->super_kobj,
+ 				   &btrfs_feature_attr_group);
+ 	if (error)
+-		btrfs_sysfs_remove_one(fs_info);
++		goto failure;
++
++	error = add_unknown_feature_attrs(fs_info);
++	if (error)
++		goto failure;
++
++	return 0;
++failure:
++	btrfs_sysfs_remove_one(fs_info);
+ 	return error;
+ }
+ 
+@@ -157,6 +261,8 @@ int btrfs_init_sysfs(void)
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
+ 
++	init_feature_attrs();
++
+ 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ 	if (ret) {
+ 		kset_unregister(btrfs_kset);
 
-v2: An earlier version had a chunk intended for fs/btrfs/extent-tree.c
-added as part of patch 13 instead of patch 10, causing build failures.
-
-<fsid>/devices/sdc1
-<fsid>/devices/sdd1
-<fsid>/label
-<fsid>/allocation/data/flags
-<fsid>/allocation/data/raid1/used_bytes
-<fsid>/allocation/data/raid1/total_bytes
-<fsid>/allocation/data/bytes_pinned
-<fsid>/allocation/data/bytes_may_use
-<fsid>/allocation/data/total_bytes_pinned
-<fsid>/allocation/data/bytes_reserved
-<fsid>/allocation/data/bytes_used
-<fsid>/allocation/data/single/used_bytes
-<fsid>/allocation/data/single/total_bytes
-<fsid>/allocation/data/total_bytes
-<fsid>/allocation/data/disk_total
-<fsid>/allocation/data/disk_used
-<fsid>/allocation/metadata/flags
-<fsid>/allocation/metadata/raid1/used_bytes
-<fsid>/allocation/metadata/raid1/total_bytes
-<fsid>/allocation/metadata/bytes_pinned
-<fsid>/allocation/metadata/bytes_may_use
-<fsid>/allocation/metadata/total_bytes_pinned
-<fsid>/allocation/metadata/bytes_reserved
-<fsid>/allocation/metadata/bytes_used
-<fsid>/allocation/metadata/single/used_bytes
-<fsid>/allocation/metadata/single/total_bytes
-<fsid>/allocation/metadata/total_bytes
-<fsid>/allocation/metadata/disk_total
-<fsid>/allocation/metadata/disk_used
-<fsid>/allocation/global_rsv_size
-<fsid>/allocation/global_rsv_reserved
-<fsid>/allocation/system/flags
-<fsid>/allocation/system/raid1/used_bytes
-<fsid>/allocation/system/raid1/total_bytes
-<fsid>/allocation/system/bytes_pinned
-<fsid>/allocation/system/bytes_may_use
-<fsid>/allocation/system/total_bytes_pinned
-<fsid>/allocation/system/bytes_reserved
-<fsid>/allocation/system/bytes_used
-<fsid>/allocation/system/single/used_bytes
-<fsid>/allocation/system/single/total_bytes
-<fsid>/allocation/system/total_bytes
-<fsid>/allocation/system/disk_total
-<fsid>/allocation/system/disk_used
-<fsid>/features/mixed_backref
-<fsid>/features/extended_iref
-features/compress_lzo
-features/big_metadata
-features/compress_lzov2
-features/default_subvol
-features/mixed_backref
-features/raid56
-features/mixed_groups
-features/skinny_metadata
-features/extended_iref
-
--Jeff
 
 

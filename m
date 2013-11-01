@@ -1,37 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:48058 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750823Ab3KAFdG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Nov 2013 01:33:06 -0400
-Date: Fri, 1 Nov 2013 14:32:55 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: could not find root 8
-Message-ID: <20131101143255.2d3ae3f5@virtall.com>
-In-Reply-To: <52733AA0.1090200@cn.fujitsu.com>
-References: <20131101142010.02956ad8@virtall.com>
-	<52733AA0.1090200@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mo-p00-ob.rzone.de ([81.169.146.162]:12749 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750928Ab3KAHan (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 03:30:43 -0400
+Message-ID: <527358A4.9060003@giantdisaster.de>
+Date: Fri, 01 Nov 2013 08:30:44 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: check file extent type before anything else
+References: <1383252643-6429-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1383252643-6429-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 01 Nov 2013 13:22:40 +0800
-Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
-
-> On 11/01/2013 01:20 PM, Tomasz Chmielewski wrote:
-> > What does this message mean? It started to show up for me recently;
-> > other than that, the filesystem seems to be working correctly.
-> Root 8 is  a quota root.
+On Thu, 31 Oct 2013 16:50:43 -0400, Josef Bacik wrote:
+> I hit this problem with my no holes patch and it made me realize what the
+> problem was for bz 60834.  If the first item in the leaf is an inline extent and
+> we try to read anything starting from disk_bytenr onward we will read off the
+> end of the leaf.  So we need to check to see what it's type is, and if it's not
+> REG we can just break out.  This should fix this problem.  Thanks,
 > 
-> If you disable qgroup, and then run btrfs qgroup show <mnt>
-> the following message will be outputed.
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/backref.c |  1 +
+>  fs/btrfs/send.c    | 10 +++++-----
+>  2 files changed, 6 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 3775947..b763f10 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -1051,6 +1051,7 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
+>  
+>  	if (ret < 0 && ret != -ENOENT) {
+>  		free_leaf_list(*leafs);
+> +		ulist_free(*leafs);
 
-Ah, indeed - I've disabled qgroup to see if the system becomes stable,
-but some cronjobs still call "btrfs qgroup".
+An en passant fix for which problem?
 
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+>  		return ret;
+>  	}
+>  
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 8af536f..629cb9e 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -3943,16 +3943,16 @@ static int is_extent_unchanged(struct send_ctx *sctx,
+>  	while (key.offset < ekey->offset + left_len) {
+>  		ei = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
+>  		right_type = btrfs_file_extent_type(eb, ei);
+> -		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
+> -		right_len = btrfs_file_extent_num_bytes(eb, ei);
+> -		right_offset = btrfs_file_extent_offset(eb, ei);
+> -		right_gen = btrfs_file_extent_generation(eb, ei);
+> -
+>  		if (right_type != BTRFS_FILE_EXTENT_REG) {
+>  			ret = 0;
+>  			goto out;
+>  		}
+>  
+> +		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
+> +		right_len = btrfs_file_extent_num_bytes(eb, ei);
+> +		right_offset = btrfs_file_extent_offset(eb, ei);
+> +		right_gen = btrfs_file_extent_generation(eb, ei);
+> +
+>  		/*
+>  		 * Are we at extent 8? If yes, we know the extent is changed.
+>  		 * This may only happen on the first iteration.
+> 
+
+

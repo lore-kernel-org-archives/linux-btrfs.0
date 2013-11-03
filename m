@@ -1,125 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:44430 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754413Ab3KBUjb convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Nov 2013 16:39:31 -0400
-Received: by mail-qc0-f174.google.com with SMTP id v1so3136366qcw.5
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Nov 2013 13:39:31 -0700 (PDT)
-References: <20131030204834.GA20844@gmail.com> <1383416676-16591-1-git-send-email-rashika.kheria@gmail.com>
-Mime-Version: 1.0 (1.0)
-In-Reply-To: <1383416676-16591-1-git-send-email-rashika.kheria@gmail.com>
-Content-Type: text/plain;
-	charset=us-ascii
-Message-Id: <A632F12B-DA53-4A97-933F-6F8BAB9448CE@toxicpanda.com>
-Cc: "opw-kernel@googlegroups.com" <opw-kernel@googlegroups.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Zach Brown <zab@redhat.com>
-From: Josef Back <josef@toxicpanda.com>
-Subject: Re: [PATCH v4] btrfs: Add helper function for free_root_pointers()
-Date: Sat, 2 Nov 2013 16:39:28 -0400
-To: Rashika Kheria <rashika.kheria@gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:50506 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753279Ab3KCPYm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 10:24:42 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rA3FOfI8017022
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 3 Nov 2013 15:24:42 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA3FOfxl027677
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sun, 3 Nov 2013 15:24:41 GMT
+Received: from abhmt111.oracle.com (abhmt111.oracle.com [141.146.116.63])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA3FOeAm008617
+	for <linux-btrfs@vger.kernel.org>; Sun, 3 Nov 2013 15:24:41 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: avoid heavy operations in btrfs_commit_super
+Date: Sun,  3 Nov 2013 23:24:34 +0800
+Message-Id: <1383492274-30311-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've already pulled v3 into btrfs-next, for this I prefer v3.  Thanks,
+The 'git blame' history shows that, the old transaction commit code has to do
+twice to ensure roots are updated and we have to flush metadata and super block
+manually, however, right now all of these can be handled well inside
+the transaction commit code without extra efforts.
 
-Josef
+And the error handling part remains same with the current code, -- 'return to
+caller once we get error'.
 
-> On Nov 2, 2013, at 2:24 PM, Rashika Kheria <rashika.kheria@gmail.com> wrote:
-> 
-> The function free_root_pointers() in disk-io.h contains redundant code.
-> Therefore, this patch adds a helper function free_root_extent_buffers()
-> to free_root_pointers() to eliminate redundancy
-> 
-> Signed-off-by: Rashika Kheria <rashika.kheria@gmail.com>
-> Reviewed-by: Zach Brown <zab@redhat.com>
-> Reviewed-by: Josh Triplett <josh@joshtriplett.org>
-> ---
-> 
-> This revision fixes the following issues of the previous revision-
-> Early return when root is NULL
-> 
-> fs/btrfs/disk-io.c |   60 +++++++++++++++++-----------------------------------
-> 1 file changed, 19 insertions(+), 41 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 62176ad..f719394 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2013,50 +2013,28 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
->    btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
-> }
-> 
-> +static void free_root_extent_buffers(struct btrfs_root *root)
-> +{
-> +    if (!root)
-> +        return;
-> +    free_extent_buffer(root->node);
-> +    free_extent_buffer(root->commit_root);
-> +    root->node = NULL;
-> +    root->commit_root = NULL;
-> +}
-> +
-> /* helper to cleanup tree roots */
-> static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
-> {
-> -    free_extent_buffer(info->tree_root->node);
-> -    free_extent_buffer(info->tree_root->commit_root);
-> -    info->tree_root->node = NULL;
-> -    info->tree_root->commit_root = NULL;
-> -
-> -    if (info->dev_root) {
-> -        free_extent_buffer(info->dev_root->node);
-> -        free_extent_buffer(info->dev_root->commit_root);
-> -        info->dev_root->node = NULL;
-> -        info->dev_root->commit_root = NULL;
-> -    }
-> -    if (info->extent_root) {
-> -        free_extent_buffer(info->extent_root->node);
-> -        free_extent_buffer(info->extent_root->commit_root);
-> -        info->extent_root->node = NULL;
-> -        info->extent_root->commit_root = NULL;
-> -    }
-> -    if (info->csum_root) {
-> -        free_extent_buffer(info->csum_root->node);
-> -        free_extent_buffer(info->csum_root->commit_root);
-> -        info->csum_root->node = NULL;
-> -        info->csum_root->commit_root = NULL;
-> -    }
-> -    if (info->quota_root) {
-> -        free_extent_buffer(info->quota_root->node);
-> -        free_extent_buffer(info->quota_root->commit_root);
-> -        info->quota_root->node = NULL;
-> -        info->quota_root->commit_root = NULL;
-> -    }
-> -    if (info->uuid_root) {
-> -        free_extent_buffer(info->uuid_root->node);
-> -        free_extent_buffer(info->uuid_root->commit_root);
-> -        info->uuid_root->node = NULL;
-> -        info->uuid_root->commit_root = NULL;
-> -    }
-> -    if (chunk_root) {
-> -        free_extent_buffer(info->chunk_root->node);
-> -        free_extent_buffer(info->chunk_root->commit_root);
-> -        info->chunk_root->node = NULL;
-> -        info->chunk_root->commit_root = NULL;
-> -    }
-> +    free_root_extent_buffers(info->tree_root);
-> +
-> +    free_root_extent_buffers(info->dev_root);
-> +    free_root_extent_buffers(info->extent_root);
-> +    free_root_extent_buffers(info->csum_root);
-> +    free_root_extent_buffers(info->quota_root);
-> +    free_root_extent_buffers(info->uuid_root);
-> +    if (chunk_root)
-> +        free_root_extent_buffers(info->chunk_root);
-> }
-> 
-> static void del_fs_roots(struct btrfs_fs_info *fs_info)
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This saves us a transaction commit and a flush of super block, which are both
+heavy operations according to ftrace output analysis.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 62176ad..d6728c3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3542,25 +3542,7 @@ int btrfs_commit_super(struct btrfs_root *root)
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+-	ret = btrfs_commit_transaction(trans, root);
+-	if (ret)
+-		return ret;
+-	/* run commit again to drop the original snapshot */
+-	trans = btrfs_join_transaction(root);
+-	if (IS_ERR(trans))
+-		return PTR_ERR(trans);
+-	ret = btrfs_commit_transaction(trans, root);
+-	if (ret)
+-		return ret;
+-	ret = btrfs_write_and_wait_transaction(NULL, root);
+-	if (ret) {
+-		btrfs_error(root->fs_info, ret,
+-			    "Failed to sync btree inode to disk.");
+-		return ret;
+-	}
+-
+-	ret = write_ctree_super(NULL, root, 0);
+-	return ret;
++	return btrfs_commit_transaction(trans, root);
+ }
+ 
+ int close_ctree(struct btrfs_root *root)
+-- 
+1.8.2.1
+

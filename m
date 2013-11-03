@@ -1,43 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f41.google.com ([74.125.83.41]:61551 "EHLO
-	mail-ee0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752683Ab3KCRHV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 12:07:21 -0500
-Received: by mail-ee0-f41.google.com with SMTP id e53so681517eek.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Nov 2013 09:07:20 -0800 (PST)
-From: Ilya Dryomov <idryomov@gmail.com>
+Received: from mail-ea0-f169.google.com ([209.85.215.169]:44401 "EHLO
+	mail-ea0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751956Ab3KCSip (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 13:38:45 -0500
+Received: by mail-ea0-f169.google.com with SMTP id k11so3004103eaj.14
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Nov 2013 10:38:43 -0800 (PST)
+Received: from venice.bhome (ppp-140-57.24-151.libero.it. [151.24.57.140])
+        by mx.google.com with ESMTPSA id w6sm36385639eeo.12.2013.11.03.10.38.43
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 03 Nov 2013 10:38:43 -0800 (PST)
+From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
-Subject: [PATCH 3/3] Btrfs: fix __btrfs_start_workers retval
-Date: Sun,  3 Nov 2013 19:06:40 +0200
-Message-Id: <1383498400-21009-3-git-send-email-idryomov@gmail.com>
-In-Reply-To: <1383498400-21009-1-git-send-email-idryomov@gmail.com>
-References: <1383498400-21009-1-git-send-email-idryomov@gmail.com>
+Subject: [RFC][PATCH] BTRFS_PROG: mount.btrfs helper
+Date: Sun,  3 Nov 2013 19:38:40 +0100
+Message-Id: <1383503921-6694-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__btrfs_start_workers returns 0 in case it raced with
-btrfs_stop_workers and lost the race.  This is wrong because worker in
-this case is not allowed to start and is in fact destroyed.  Return
--EINVAL instead.
+Hi all,
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/async-thread.c |    1 +
- 1 file changed, 1 insertion(+)
+this patch provides a mount.btrfs helper for the mount command to
+mounting a btrfs filesystem.
+A btrfs filesystem could spans several disks. This helper scans all
+the partition to discover all the disks required to mount a filesystem.
+So it is not necessary any-more to "scan" manually the partitions to mount
+a filesystem via the "btrfs device scan" command.
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 08cc08f..1d5f3d7 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -495,6 +495,7 @@ static int __btrfs_start_workers(struct btrfs_workers *workers)
- 	spin_lock_irq(&workers->lock);
- 	if (workers->stopping) {
- 		spin_unlock_irq(&workers->lock);
-+		ret = -EINVAL;
- 		goto fail_kthread;
- 	}
- 	list_add_tail(&worker->worker_list, &workers->idle_list);
+It adds in the option parameters the devices required to mount a
+filesystem. Supposing that a filesystem is composed by several disks
+(/dev/sd[cdef]), when the user does "mount /dev/sdd /mnt", mount calls
+mount.btrfs which int turn calls the mount(2) syscall like:
+mount("/dev/sdd", "/mnt", "btrfs", 0,
+"device=/dev/sdc,device=/dev/sde,device=/de/vsdf").
+
+This helper uses both the libblkid and libmount to discover the
+devices, to compute the parameters manipulation and to update the mtab
+file.
+
+I got the idea from the btrfs.wiki; its biggest gains is to avoid the
+separation of scanning phases (at boot time or during the block device
+discovery) from the mounting. Also mkfs.btrfs could avoid to re-do a
+rescan of the devices after a formatting.
+
+mount.btrfs doesn't add more requirement than the mount command. It
+would be possible to remove the "btrfs" command from the initramfs, and
+all the related scripts (in my debian both udev and btrfs-tools
+packages contains three udev rules for btrfs).
+
+Comments are welcome.
+
 -- 
-1.7.10.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it> 
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D 17B2 0EDA 9B37 8B82 E0B5 

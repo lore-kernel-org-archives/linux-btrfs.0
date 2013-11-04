@@ -1,134 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23453 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752432Ab3KDDh1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 22:37:27 -0500
+Received: from aserp1040.oracle.com ([141.146.126.69]:38142 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752431Ab3KDDh0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 22:37:26 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH 4/4] btrfs-progs: lblkid wouldn't find non mapper path input
-Date: Mon,  4 Nov 2013 11:45:45 +0800
-Message-Id: <1383536745-4635-4-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/4 v2] btrfs-progs: mechanism to fetch fsinfo from btrfs-control
+Date: Mon,  4 Nov 2013 11:45:43 +0800
+Message-Id: <1383536745-4635-2-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1383536745-4635-1-git-send-email-anand.jain@oracle.com>
 References: <1383536745-4635-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A new test case when disk is unmounted and if the non mapper
-disk path is given as the argument to the btrfs filesystem show <arg>
-we still need this to work but lblkid will pull only mapper disks,
-it won't match. So this will normalize the input to find btrfs
-by fsid and pass it to the search.
+need fsinfo from btrfs-control that is when mount path is
+not known.
+current method of going through each mount points isn't
+efficient, and multiple subvol of a fsid could be mounted
+means extra logic to handle that. Further this will help
+to revamp check_mounted() (planned)
 
-v2: accepts Josef suggested
+check_mounted is heavily used in the btrfs-progs, it
+does full scan of all the disks in the system to confirm
+if a multi-disk btrfs is mounted it doesn't scalable well
+with few hundreds luns, check_mounted for sure needs a
+revamp. using this it can be done easily. which is planned.
+
+v2: commit reword
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-filesystem.c |   59 +++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 55 insertions(+), 4 deletions(-)
+ ioctl.h |   19 +++++++++++++++
+ utils.c |   80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h |    1 +
+ 3 files changed, 100 insertions(+), 0 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index f8e8475..f40178a 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -37,6 +37,7 @@
- #include "version.h"
- #include "commands.h"
- #include "list_sort.h"
-+#include "disk-io.h"
- 
- static const char * const filesystem_cmd_group_usage[] = {
- 	"btrfs filesystem [<group>] <command> [<args>]",
-@@ -414,6 +415,39 @@ static int btrfs_scan_kernel(void *search)
- 	return 0;
+diff --git a/ioctl.h b/ioctl.h
+index d21413f..29575d8 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -506,6 +506,23 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 	}
  }
  
-+static int dev_to_fsid(char *dev, __u8 *fsid)
++/* fs flags */
++#define BTRFS_FS_MOUNTED	(1LLU << 0)
++
++struct btrfs_ioctl_fslist {
++	__u64 self_sz;			/* in/out */
++	__u8 fsid[BTRFS_FSID_SIZE];	/* out */
++	__u64 num_devices;
++	__u64 missing_devices;
++	__u64 total_devices;
++	__u64 flags;
++};
++
++struct btrfs_ioctl_fslist_args {
++	__u64 self_sz;		/* in/out */
++	__u64 count;		/* out */
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -604,6 +621,8 @@ struct btrfs_ioctl_clone_range_args {
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
+ 				  struct btrfs_ioctl_dedup_args)
++#define BTRFS_IOC_GET_FSLIST _IOWR(BTRFS_IOCTL_MAGIC, 56, \
++					struct btrfs_ioctl_fslist_args)
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/utils.c b/utils.c
+index 5bedd97..1798a7c 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2087,3 +2087,83 @@ int lookup_ino_rootid(int fd, u64 *rootid)
+ 
+ 	return 0;
+ }
++
++/* scans for fsid(s) in the kernel using the btrfs-control
++ * interface.
++ */
++int get_fslist(struct btrfs_ioctl_fslist **out_fslist, int *out_count)
 +{
-+	struct btrfs_super_block *disk_super;
-+	char *buf;
-+	int ret;
-+	int fd;
++	int ret, fd, e;
++	struct btrfs_ioctl_fslist_args *fsargs;
++	struct btrfs_ioctl_fslist *fslist;
++	struct btrfs_ioctl_fslist *fslist_tmp;
++	u64 sz;
++	int count;
 +
-+	buf = malloc(4096);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	fd = open(dev, O_RDONLY);
++	fd = open("/dev/btrfs-control", O_RDWR);
++	e = errno;
 +	if (fd < 0) {
-+		ret = -errno;
-+		free(buf);
-+		return ret;
++		perror("failed to open /dev/btrfs-control");
++		return -e;
 +	}
 +
-+	disk_super = (struct btrfs_super_block *)buf;
-+	ret = btrfs_read_dev_super(fd, disk_super,
-+			BTRFS_SUPER_INFO_OFFSET);
-+	if (ret)
++	/* space to hold 512 fsids, doesn't matter if small
++	 * it would fail and return count so then we try again
++	 */
++	count = 512;
++again:
++	sz = sizeof(*fsargs) + sizeof(*fslist) * count;
++
++	fsargs = (struct btrfs_ioctl_fslist_args *) malloc(sz);
++	memset(fsargs, 0, sz);
++
++	if (!fsargs) {
++		close(fd);
++		return -ENOMEM;
++	}
++	fsargs->count = count;
++
++	ret = ioctl(fd, BTRFS_IOC_GET_FSLIST, fsargs);
++	e = errno;
++	if (ret == 1) {
++		/* out of size so reallocate */
++		count = fsargs->count;
++		free(fsargs);
++		goto again;
++	} else if (ret < 0) {
++		printf("ERROR: scan_fsid ioctl failed - %s\n",
++			strerror(e));
++		ret = -e;
 +		goto out;
++	}
 +
-+	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
++	/* ioctl returns fsid count in count parameter*/
++
++	*out_count = count = fsargs->count;
++	if (count == 0) {
++		*out_fslist = NULL;
++		ret = 0;
++		goto out;
++	}
++
++	fslist = (struct btrfs_ioctl_fslist *) (fsargs +
++						sizeof(*fsargs));
++
++	fslist_tmp = *out_fslist = (struct btrfs_ioctl_fslist *)
++				malloc(sizeof(*fslist) * count);
++	if (!fslist_tmp) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	while (count--) {
++		memcpy(fslist_tmp, fslist, sizeof(*fslist));
++		fslist_tmp = fslist_tmp + sizeof(*fslist_tmp);
++		fslist = fslist + sizeof(*fslist);
++	}
 +	ret = 0;
-+
 +out:
++	free(fsargs);
 +	close(fd);
-+	free(buf);
-+	return ret;
++	return 0;
 +}
-+
- static const char * const cmd_show_usage[] = {
- 	"btrfs filesystem show [options] [<path>|<uuid>|<device>|label]",
- 	"Show the structure of a filesystem",
-@@ -434,6 +468,8 @@ static int cmd_show(int argc, char **argv)
- 	int type = 0;
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
- 	char path[PATH_MAX];
-+	__u8 fsid[BTRFS_FSID_SIZE];
-+	char uuid_buf[37];
+diff --git a/utils.h b/utils.h
+index 6f4b10c..e20ad74 100644
+--- a/utils.h
++++ b/utils.h
+@@ -94,5 +94,6 @@ int ask_user(char *question);
+ int lookup_ino_rootid(int fd, u64 *rootid);
+ int btrfs_scan_lblkid(int update_kernel);
+ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
++int get_fslist(struct btrfs_ioctl_fslist **out_fslist, int *out_count);
  
- 	while (1) {
- 		int long_index;
-@@ -466,6 +502,10 @@ static int cmd_show(int argc, char **argv)
- 		if (strlen(search) == 0)
- 			usage(cmd_show_usage);
- 		type = check_arg_type(search);
-+		/*needs spl handling if input arg is block dev
-+		 *And if input arg is mount-point just print it
-+		 *right away
-+		*/
- 		if (type == BTRFS_ARG_BLKDEV) {
- 			if (where == BTRFS_SCAN_DEV) {
- 				/* we need to do this because
-@@ -477,14 +517,25 @@ static int cmd_show(int argc, char **argv)
- 			} else {
- 				ret = get_btrfs_mount(search,
- 						mp, sizeof(mp));
--				if (!ret)
-+				if (!ret) {
- 					/* given block dev is mounted*/
- 					search = mp;
--				else
-+					type = BTRFS_ARG_MNTPOINT;
-+				} else {
-+					ret = dev_to_fsid(search, fsid);
-+					if (ret) {
-+						fprintf(stderr,
-+							"ERROR: No btrfs on %s\n",
-+							search);
-+						return 1;
-+					}
-+					uuid_unparse(fsid, uuid_buf);
-+					search = uuid_buf;
-+					type = BTRFS_ARG_UUID;
- 					goto devs_only;
-+				}
- 			}
--		}
--		if (type == BTRFS_ARG_MNTPOINT) {
-+		} else if (type == BTRFS_ARG_MNTPOINT) {
- 			char label[BTRFS_LABEL_SIZE];
- 			if (get_label_mounted(search, label))
- 				return 1;
+ #endif
 -- 
 1.7.1
 

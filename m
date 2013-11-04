@@ -1,39 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59720 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:59704 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751534Ab3KLNuS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 08:50:18 -0500
-Date: Tue, 5 Nov 2013 10:38:52 +0100
+	id S1753516Ab3KLNt7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Nov 2013 08:49:59 -0500
+Date: Mon, 4 Nov 2013 16:16:20 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Valentina Giusti <valentina.giusti@microon.de>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/9] btrfs: remove unused variables
-Message-ID: <20131105093852.GC16999@twin.jikos.cz>
+To: Aldo Iljazi <mail@aldo.io>
+Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] FS: BTRFS: fixed coding style issues
+Message-ID: <20131104151619.GB16999@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1383600869-10085-1-git-send-email-valentina.giusti@microon.de>
+References: <1383571658-7440-1-git-send-email-mail@aldo.io>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1383600869-10085-1-git-send-email-valentina.giusti@microon.de>
+In-Reply-To: <1383571658-7440-1-git-send-email-mail@aldo.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 04, 2013 at 10:34:20PM +0100, Valentina Giusti wrote:
-> With this patchset I removed the unused variables found with 
-> 	make W=1 fs/btrfs/
+On Mon, Nov 04, 2013 at 03:27:38PM +0200, Aldo Iljazi wrote:
+> Fixed three coding style issues. Replaced spaces with tabs.
 > 
-> Valentina Giusti (9):
->   btrfs: remove unused variable from btrfs_search_forward
->   btrfs: remove unused variable from btrfs_new_inode
->   btrfs: remove unused variables from disk-io.c
->   btrfs: remove unused variable from find_free_extent
->   btrfs: remove unused variables from extent_io.c
->   btrfs: remove unused variable from setup_cluster_no_bitmap
->   btrfs: remove unused variable from scrub_fixup_nodatasum
->   btrfs: replace path->slots[0] with otherwise unused variable 'slot'
->   btrfs: fix unused variables in qgroup.c
+> Signed-off-by: Aldo Iljazi <mail@aldo.io>
+> ---
+>  fs/btrfs/dev-replace.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 9efb94e..b2fe609 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -377,7 +377,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+>  	printk_in_rcu(KERN_INFO
+>  		      "btrfs: dev_replace from %s (devid %llu) to %s) started\n",
+>  		      src_device->missing ? "<missing disk>" :
+> -		        rcu_str_deref(src_device->name),
+> +			rcu_str_deref(src_device->name),
 
-All of them look OK to me, thanks!
+What's the change here? I don't think we need to fix whitespace, this
+makes searching in patch history more boring, namely in case where the
+code looks exactly the same before and after the patch.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+The style issues should be best fixed when the patch is about to be
+merged, doing it later like this is kind of not welcome, speaking for
+myself. There are lots of opportunities to do real code cleanups.
+
 
 david

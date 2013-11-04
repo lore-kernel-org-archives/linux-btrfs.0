@@ -1,14 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23392 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:31976 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751491Ab3KDDhH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 22:37:07 -0500
+	with ESMTP id S1751280Ab3KDE0Q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 23:26:16 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rA44QFgu024957
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2013 04:26:16 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA44QEVo006540
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2013 04:26:15 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA44QEig014940
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2013 04:26:14 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH] btrfs: add framework to read fs info from btrfs-control
-Date: Mon,  4 Nov 2013 11:45:24 +0800
-Message-Id: <1383536724-4603-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2] btrfs: add framework to read fs info from btrfs-control
+Date: Mon,  4 Nov 2013 12:34:41 +0800
+Message-Id: <1383539681-5142-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1383536724-4603-1-git-send-email-anand.jain@oracle.com>
+References: <1383536724-4603-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 

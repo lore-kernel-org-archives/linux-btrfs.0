@@ -1,80 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from glockenspiel.complete.org ([78.47.53.23]:37529 "EHLO
-	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754638Ab3KENmI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 08:42:08 -0500
-Received: from [63.245.179.205] (helo=minerva.lan.complete.org)
-	by glockenspiel.complete.org with esmtps
-	(with TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
-	(TLS peer CN christoph.complete.org, certificate verified)
-	(Exim 4.72)
-	id 1VdgtT-0002dW-Hy
-	for linux-btrfs@vger.kernel.org; Tue, 05 Nov 2013 07:42:07 -0600
-Received: from localhost ([127.0.0.1])
-	by minerva.lan.complete.org with esmtp (Exim 4.80)
-	(envelope-from <jgoerzen@complete.org>)
-	id 1VdgtP-0008Fg-7F
-	for linux-btrfs@vger.kernel.org; Tue, 05 Nov 2013 07:42:03 -0600
-Message-ID: <5278F5AA.60108@complete.org>
-Date: Tue, 05 Nov 2013 07:42:02 -0600
-From: John Goerzen <jgoerzen@complete.org>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:50596 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754112Ab3KEOAd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Nov 2013 09:00:33 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VdhBE-0003hT-1H
+	for linux-btrfs@vger.kernel.org; Tue, 05 Nov 2013 15:00:28 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Nov 2013 15:00:28 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Nov 2013 15:00:28 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: umount waiting for 12 hours and still running
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Partition broken, btrfsck segfaults or asserts
+Date: Tue, 5 Nov 2013 14:00:08 +0000 (UTC)
+Message-ID: <pan$dd2c1$bf1263f8$d3d5db6a$5d59e872@cox.net>
+References: <20131105130459.133d538e@samson>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Dennis Schridde posted on Tue, 05 Nov 2013 13:04:59 +0100 as excerpted:
 
-More than 12 hours ago, I tried to umount a btrfs filesystem. Something
-involving btrfs-cleaner and btrfs-transacti is still running, but I
-don't know what.
+> I have a serious problem with inaccessible data and segfaulting btrfsck
+> for the /var partition on my computer.
 
-I have noticed excessively long umount times before, and it is a
-significant concern for me.
+> I can mount it[.] When I access certain directories, however, I get a
+> message like this one:
+> ls: cannot access /var/log: Stale NFS file handle
 
-A bit of background:
+> When I run btrfsck --repair it asserts, and when I just run btrfsck
+> without extra options it segfaults.
 
-The filesystem in question involves two 2TB USB hard drives.  It is 49%
-full.  Data is RAID0, metadata is RAID1.  The files stored on it are for
-BackupPC, meaning there are many, many directories and hardlinks.  I
-would estimate 30 million inodes in use and many of them have dozens of
-hardlinks to them.  These disks used to be formatted with ext4.  I used
-the e2fs dump to back them up, created a fresh btrfs filesystem, and
-used restore to load the data onto it.
+Ouch!
 
-Now then.  btrfs seemed to be extremely slow creating hard links. Slow
-to the tune of taking hours longer than ext4 to do the same task, and
-often triggering kernel task hung for more than 120 seconds warnings.  I
-thought perhaps converting metadata to raid0 would help.  So I started a
-btrfs balance start -mconver=raid0 on it.  According to btrfs fi df, it
-churned through the first 900MB out of 26GB of metadata in quick order,
-but then the amount of RAID0 metadata bounced up and down between about
-950MB and 1019MB -- always just shy of 1GB.  There was an active rsync
-job to the disk during this time.  With no apparent progress even after
-hours, I tried to cancel the balance.  My cancel command did not return
-even after waiting hours.  Finally I rebooted and mounted the FS with
-the option to not restart the balance, then it canceled in a few
-minutes.  dstat showed all was quiet on the disk.  So I thought I would
-unmount it, remount it normally, and start the convert again.
+> https://bugzilla.kernel.org/show_bug.cgi?id=64411
+> 
+> # btrfs --version Btrfs v0.20-rc1-358-g194aa4a
+> 
+> # uname -r 3.11.6-gentoo
 
-And it is from that unmount that it has been sitting.  According to
-dstat, it reads about 360K per second, every so often writing out about
-25MB per second.  And it's been doing this for 12 hours.
+Fellow gentooer, and quite upto date both kernel- and tools-wise, as 
+befits a still experimental filesystem under heavy development.
 
-It seems I have encountered numerous problems here:
+=:^)
 
-   * I/O Starvation on link(2) and perhaps also unlink(2)
-   * btrfs convert having a lack of progress after many hours
-   * btrfs convert stop not stopping anything
-   * umount taking hours
+> I would be thankful if you could help me to get as much as possible of
+> my data back. And please CC me, as I am not subscribed to the list.
 
-The umount is still pending, so if there is any debugging I can do,
-please let me know.
+Posted directly to you and to list as requested.
 
-Kernel 3.10 from Debian wheezy backports on i386.
+Unfortunately I don't have an easy guaranteed recovery solution.
 
-Thanks,
+But since you're running an experimental filesystem that both the btrfs 
+wiki (mentioned in the gentoo btrfs-tools package post-inst message) and 
+the kernel config option warn to keep tested backups and use only with 
+non-critical data, either restore from that tested backup or by 
+definition you considered the data not critical enough to be worth 
+worrying about recovering if it was lost in the first place.  Thus no 
+worries either way.  Either you had tested backups and can restore from 
+them, or by your actions you already declared the data not worth worrying 
+about if the still experimental filesystem ate it for lunch!
 
-John
+Meanwhile, I see you've tried a few recovery methods, but it might be 
+worth mentioning this post, with a list of methods to try and in what 
+order:
+
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/27999
+
+And in case you missed the gentoo btrfs-tools package homepage link, 
+which is to the wiki, here it is again.  If you haven't already, it's 
+worth reading up. =:^)
+
+https://btrfs.wiki.kernel.org
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

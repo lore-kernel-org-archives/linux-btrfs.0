@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37257 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753911Ab3KELaJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Nov 2013 06:30:09 -0500
-Date: Tue, 5 Nov 2013 12:30:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: chris.mason@fusionio.com
-Cc: Hans-Kristian Bakke <hkbakke@gmail.com>, linux-btrfs@vger.kernel.org
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49363 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754112Ab3KEMQo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 07:16:44 -0500
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: "Hans-Kristian Bakke" <hkbakke@gmail.com>
 Subject: Re: csum failure messages
-Message-ID: <20131105113004.GE16662@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201311051224.44255.russell@coker.com.au>
- <CAD_cGvE-FtFxZerOKN7T11-L=cEgh_8i-=YcgwG+g1aye6Zn6w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Date: Tue, 5 Nov 2013 23:16:34 +1100
+Cc: linux-btrfs@vger.kernel.org
+References: <201311051224.44255.russell@coker.com.au> <CAD_cGvE-FtFxZerOKN7T11-L=cEgh_8i-=YcgwG+g1aye6Zn6w@mail.gmail.com>
 In-Reply-To: <CAD_cGvE-FtFxZerOKN7T11-L=cEgh_8i-=YcgwG+g1aye6Zn6w@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201311052316.34979.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 05, 2013 at 07:15:57AM +0100, Hans-Kristian Bakke wrote:
+On Tue, 5 Nov 2013, "Hans-Kristian Bakke" <hkbakke@gmail.com> wrote:
 > As you were in the process of a rebalance these errors may actually be
 > caused by this serious bug "Btrfs: relocate csums properly with
 > prealloc extents".
@@ -34,13 +34,29 @@ On Tue, Nov 05, 2013 at 07:15:57AM +0100, Hans-Kristian Bakke wrote:
 > in the bug reports, but in my case it was actually hitting several
 > terabytes of files created by rtorrent.
 
-Thanks for the summary. There's no doubt that this is serious.
+I run systemd to I guess it's the systemd logs.  That's fortunate as such logs 
+aren't important to me.  Thanks for providing this information.
 
-Chris, please can you somehow get the patch into stable sooner than it
-gets to the 3.13 queue? The merge window will start in 1 week and based
-on previous pull request schedule, the patch will be merged in ~2 weeks
-from now. That's kind of long time for for a unfixed corruption bug that
-reportedly affects common installations (with systemd) or usecases
-(torrent) in combination with balance.
+I've just run a scrub and I saw the following output.  There was nothing 
+useful or apparently relevant in the kernel message log either.  So scrub is 
+just telling me that there are 57 errors without giving me a clue as to which 
+files might need to be restored from backup.
 
-david
+# btrfs scrub start -B /
+scrub done for c55218a6-abb5-4e35-9a20-33fb1fa05879
+        scrub started at Tue Nov  5 11:32:03 2013 and finished after 6762 
+seconds
+        total bytes scrubbed: 140.06GB with 57 errors
+        error details: csum=57
+        corrected errors: 0, uncorrectable errors: 57, unverified errors: 0
+
+I can imagine a balance operation being unable to conveniently display all the 
+data that one might desire.  But a scrub really should go through everything 
+and should know where the inconsistencies are.  In this case the scrub gave me 
+less information than the balance.
+
+I presume that my filesystem is still corrupt.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

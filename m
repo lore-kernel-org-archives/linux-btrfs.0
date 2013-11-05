@@ -1,54 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36217 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754824Ab3KNSoe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 13:44:34 -0500
-Date: Thu, 14 Nov 2013 19:44:28 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, russell@coker.com.au,
-        David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: csum failure messages
-Message-ID: <20131114184428.GM18494@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201311051224.44255.russell@coker.com.au>
- <CAD_cGvE-FtFxZerOKN7T11-L=cEgh_8i-=YcgwG+g1aye6Zn6w@mail.gmail.com>
- <201311052316.34979.russell@coker.com.au>
- <49B5E6AD-795D-4839-A360-7F3782ED7F2F@colorremedies.com>
- <20131105143438.GM14405@carfax.org.uk>
- <6FE6684A-6A51-421B-AC89-0848216248C6@colorremedies.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:46587 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751451Ab3KEBeu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 20:34:50 -0500
+Received: from bluebottle.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 461582189E
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Nov 2013 12:24:47 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: csum failure messages
+Date: Tue, 5 Nov 2013 12:24:43 +1100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6FE6684A-6A51-421B-AC89-0848216248C6@colorremedies.com>
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201311051224.44255.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 14, 2013 at 11:37:39AM -0700, Chris Murphy wrote:
-> 
-> On Nov 5, 2013, at 7:34 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> 
-> > On Tue, Nov 05, 2013 at 07:26:54AM -0700, Chris Murphy wrote:
-> >> 
-> >> On Nov 5, 2013, at 5:16 AM, Russell Coker <russell@coker.com.au> wrote:
-> >>> 
-> >>> I presume that my filesystem is still corrupt.
-> >> 
-> >> I'm the original reporter of the bug. The file system itself isn't corrupt, but the affected files probably are. In my case, systemd journal files were reported as corrupt by systemd following a balance, as well as btrfs scrub. Upon scrub, dmesg contains a path for each affected file. Upon deleting those files, subsequent scrubs come up clean.
-> >> 
-> >> Fedora merged the fix for this bug with: 3.11.5-302.fc20, 3.11.6-200.fc19, 3.11.6-101.fc18. I thought for sure it was marked for stable to go into mainline 3.11.6, so somehow it's been missed.
-> > 
-> >   Someone else tripped over it on IRC last night, and I was surprised
-> > to discover it hadn't made it upstream yet. :(
-> 
-> I just checked kernel.org changelogs and I'm not seeing this fixed in
-> either 3.11.7 or 3.11.8. It is listed in today's git pull by Chris for
-> 3.12 as
-> 
-> Btrfs: relocate csums properly with prealloc extents
+The below messages are from dmesg on a system where "btrfs balance" just 
+aborted.  It's running kernel 3.11.6 (the latest Debian package).
 
-The stable tree process does not normally accept patches that are not in
-Linus' tree first. The patch has yet to be submitted to stable right
-after today's pull is merged.
+This seems to be telling me that Inode 388 is involved, but there are over 300 
+subvols on that system which could contain such an Inode.
 
-david
+I think that more information is needed for such log messages.  We need to at 
+least be able to identify the subvol (is it possible to extract this from the 
+numbers in the log messages?).  Ideally we would be able to identify the file 
+name as well.
+
+
+[10751.637517] BTRFS info (device sda3): csum failed ino 388 off 23191552 csum 
+2566472073 private 3193692311
+[10751.646390] BTRFS info (device sda3): csum failed ino 388 off 24104960 csum 
+5219137 private 2264608335
+[10751.654472] BTRFS info (device sda3): csum failed ino 388 off 24154112 csum 
+4084831521 private 1792217768
+[10751.731830] BTRFS info (device sda3): csum failed ino 388 off 23191552 csum 
+2566472073 private 3193692311
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

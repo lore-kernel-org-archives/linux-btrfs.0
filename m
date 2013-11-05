@@ -1,37 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:40973 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750819Ab3KEDyO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 22:54:14 -0500
-Received: by mail-pd0-f173.google.com with SMTP id r10so7641392pdi.18
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2013 19:54:13 -0800 (PST)
-Date: Mon, 4 Nov 2013 19:54:11 -0800
-From: Kelley Nielsen <kelleynnn@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: opw-kernel@googlegroups.com
-Subject: Bootstrap the btrfs_find_item interface
-Message-ID: <20131105035411.GA19148@kelleynnn-HP-Compaq-8510w>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:55155 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750759Ab3KEHCO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 02:02:14 -0500
+From: Aldo Iljazi <mail@aldo.io>
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] BTRFS: fixed coding style issues
+Date: Tue,  5 Nov 2013 09:02:01 +0200
+Message-Id: <1383634921-4271-1-git-send-email-mail@aldo.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josh, Zach, and team,
+Line 4989: Inserted a space after the comma.
+Lines 7986 and 8274: Inserted a space before the open parenthesis.
 
-I went ahead and took the comment out, as can be seen in patch 3/3. I
-had left it there because my understanding is that this is just a
-proposal, and if the team likes the idea, btrfs_find_item() will be
-further developed so that it replace more existing functions and not as
-yet existing ones. I can imagine, though, that if it's not taken out it
-could end up floating around in the tree for no good reason. Is that
-correct?
+Signed-off-by: Aldo Iljazi <mail@aldo.io>
+---
+ fs/btrfs/extent-tree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Also, I fixed a rebase conflict before preparing this set, so a) I
-hope I did it correctly, and b) assuming I did, I feel confident to 
-handle them in the future. They look exactly like merge conflicts. 
-I discarded the lines from HEAD (the lines on top) and kept what was 
-in the patch (on the bottom).
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d58bef1..3bcd7c0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4986,7 +4986,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 		mutex_unlock(&BTRFS_I(inode)->delalloc_mutex);
+ 
+ 	if (to_reserve)
+-		trace_btrfs_space_reservation(root->fs_info,"delalloc",
++		trace_btrfs_space_reservation(root->fs_info, "delalloc",
+ 					      btrfs_ino(inode), to_reserve, 1);
+ 	block_rsv_add_bytes(block_rsv, to_reserve, 1);
+ 
+@@ -7983,7 +7983,7 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ 
+ 	spin_lock(&sinfo->lock);
+ 
+-	for(i = 0; i < BTRFS_NR_RAID_TYPES; i++)
++	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+ 		if (!list_empty(&sinfo->block_groups[i]))
+ 			free_bytes += __btrfs_get_ro_block_group_free_space(
+ 						&sinfo->block_groups[i]);
+@@ -8271,7 +8271,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 
+ 	release_global_block_rsv(info);
+ 
+-	while(!list_empty(&info->space_info)) {
++	while (!list_empty(&info->space_info)) {
+ 		space_info = list_entry(info->space_info.next,
+ 					struct btrfs_space_info,
+ 					list);
+-- 
+1.8.3.2
 
-Thanks,
-
-Kelley (kelleynnn)

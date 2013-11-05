@@ -1,74 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28553 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750719Ab3KEDqS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 22:46:18 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mout.gmx.net ([212.227.17.22]:49440 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754331Ab3KEMFI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Nov 2013 07:05:08 -0500
+Received: from samson ([77.22.8.42]) by mail.gmx.com (mrgmx102) with ESMTPA
+ (Nemesis) id 0M7DVi-1VsHiO1V1a-00x4fE for <linux-btrfs@vger.kernel.org>; Tue,
+ 05 Nov 2013 13:05:06 +0100
+Date: Tue, 5 Nov 2013 13:04:59 +0100
+From: Dennis Schridde <devurandom@gmx.net>
 To: linux-btrfs@vger.kernel.org
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH v2] Btrfs: avoid heavy operations in btrfs_commit_super
-Date: Tue,  5 Nov 2013 11:45:53 +0800
-Message-Id: <1383623153-5861-1-git-send-email-bo.li.liu@oracle.com>
+Subject: Partition broken, btrfsck segfaults or asserts
+Message-ID: <20131105130459.133d538e@samson>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/aasEQJJZPwCmrRkD7QFJTZl"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 'git blame' history shows that, the old transaction commit code has to do
-twice to ensure roots are updated and we have to flush metadata and super block
-manually, however, right now all of these can be handled well inside
-the transaction commit code without extra efforts.
+--Sig_/aasEQJJZPwCmrRkD7QFJTZl
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-And the error handling part remains same with the current code, -- 'return to
-caller once we get error'.
+Hello!
 
-This saves us a transaction commit and a flush of super block, which are both
-heavy operations according to ftrace output analysis.
+I have a serious problem with inaccessible data and segfaulting btrfsck
+for the /var partition on my computer.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+The reason is not entirely clear to me. The only extraordinary things
+happening today were an empty CMOS battery and me accidentally enabling
+C1E support when reconfiguring the BIOS. Afterwards the computer did
+not boot properly anymore (some GPU lockup thingy and the whole system
+locked up hard before X would start) and when I cut the power and setup
+the BIOS again (this time without C1E support), /var would be broken in
+the state I describe below.
+
+I can mount it, and dmesg says the following, which seems normal:
 ---
-v2: remove @ret that is no longer used, thanks Stefan.
+device label var devid 1 transid 393536 /dev/sda7
+btrfs: use lzo compression
+btrfs: enabling auto defrag
+---
 
- fs/btrfs/disk-io.c | 21 +--------------------
- 1 file changed, 1 insertion(+), 20 deletions(-)
+When I access certain directories, however, I get a message like this
+one:
+ls: cannot access /var/log: Stale NFS file handle
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 62176ad..e161740 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3528,7 +3528,6 @@ int btrfs_cleanup_fs_roots(struct btrfs_fs_info *fs_info)
- int btrfs_commit_super(struct btrfs_root *root)
- {
- 	struct btrfs_trans_handle *trans;
--	int ret;
- 
- 	mutex_lock(&root->fs_info->cleaner_mutex);
- 	btrfs_run_delayed_iputs(root);
-@@ -3542,25 +3541,7 @@ int btrfs_commit_super(struct btrfs_root *root)
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
--	ret = btrfs_commit_transaction(trans, root);
--	if (ret)
--		return ret;
--	/* run commit again to drop the original snapshot */
--	trans = btrfs_join_transaction(root);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
--	ret = btrfs_commit_transaction(trans, root);
--	if (ret)
--		return ret;
--	ret = btrfs_write_and_wait_transaction(NULL, root);
--	if (ret) {
--		btrfs_error(root->fs_info, ret,
--			    "Failed to sync btree inode to disk.");
--		return ret;
--	}
--
--	ret = write_ctree_super(NULL, root, 0);
--	return ret;
-+	return btrfs_commit_transaction(trans, root);
- }
- 
- int close_ctree(struct btrfs_root *root)
--- 
-1.8.2.1
+When I run btrfsck --repair it asserts, and when I just run btrfsck
+without extra options it segfaults. Sadly I do not have debug symbols
+installed, so the backtrace is probably useless. I attached the
+stdout/err output of both runs to the bugzilla report:
+https://bugzilla.kernel.org/show_bug.cgi?id=3D64411
 
+# btrfs --version
+Btrfs v0.20-rc1-358-g194aa4a
+
+# uname -r
+3.11.6-gentoo
+
+I would be thankful if you could help me to get as much as possible of
+my data back. And please CC me, as I am not subscribed to the list.
+
+Best regards,
+Dennis
+
+P.S: I already sent an email yesterday, but it did not arrive in the
+archives, so I assume it was blocked by the list for the two ~125kB
+attachments.
+
+--Sig_/aasEQJJZPwCmrRkD7QFJTZl
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSeN7rAAoJEGIxC0Gvwa5aoC8QAKjfmlFheFq6hF9U7v4xfS1t
+s/bk8hR57hC53/3Po7TNDfP1fQ36ULQwtaZ4dtIGsM/jFFQe+w6tKhp9UpbepxvY
+JbNZRrqNNnMmXK3C6W22qcfcKwyvvFv1WUCrbaZ9mTMDxTi2fqB9XZqArkb89KXm
+xLnjRCnyy9VRSOu1aLiKzyv33Feg0kz+QdKn9MJbVFpYxq6OM5jvesq37WFIlT34
+nrOLcjNRMu5zgVivBTVpsUA5HFYGCCJar68fzwA6rjUcZnvkKji54sjalj98Skki
+zBlQW0ZqQ/6RqfAdiTvwZCrxId3h4wyIPlWCApOOo8Ehi1X0se3X4Wsa78vKFVlI
+rUcDr8wbI3ufxJlIXViXwZf6enAh6z4XGR/h2bHUsLD8SYYDKuAsfqDPPWXIJkFy
+DgxFPbhAsn394kq5VuVO7sfMW47rlzFmMea9pTStS/8BRxXhkaRaR1ExWoPPxa0J
+v95u1UDluSkX4YfWvYD60vSI9ub90DPkatltG2cG7sDv6U3BDXNNbkjRLCnBfUoH
+AHulCepqU13VtxT8kPSNm92LGquTz/eitoDn3Qm9iqa5XbFRnqT84oaWsu+r/kW9
+IA+t6Rdd7j0ktMwQ9cHLLTHD6vaYnDkW/++S6NUjxYCFH8pVlZ70BvpWeu5n0m9k
+xbLiC5lK39LFznnClCyq
+=3tmZ
+-----END PGP SIGNATURE-----
+
+--Sig_/aasEQJJZPwCmrRkD7QFJTZl--

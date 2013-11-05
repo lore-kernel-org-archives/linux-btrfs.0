@@ -1,62 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20848 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:54520 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750719Ab3KECaJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Nov 2013 21:30:09 -0500
-Message-ID: <52785873.6050106@cn.fujitsu.com>
-Date: Tue, 05 Nov 2013 10:31:15 +0800
+	id S1750732Ab3KEDHa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Nov 2013 22:07:30 -0500
+Message-ID: <52786103.8000000@cn.fujitsu.com>
+Date: Tue, 05 Nov 2013 11:07:47 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com, majianpeng <majianpeng@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG]:bad unlock balance detected!
-References: <201311050933582618320@gmail.com> <20131105021216.GA15974@localhost.localdomain>
-In-Reply-To: <20131105021216.GA15974@localhost.localdomain>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/7] Btrfs: rename btrfs_start_all_delalloc_inodes
+References: <1383578006-22691-1-git-send-email-miaox@cn.fujitsu.com> <1383578006-22691-8-git-send-email-miaox@cn.fujitsu.com> <20131104170918.GJ16855@localhost.localdomain>
+In-Reply-To: <20131104170918.GJ16855@localhost.localdomain>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	tue, 5 Nov 2013 10:12:17 +0800, Liu Bo wrote:
-> Hi,
+On 	mon, 4 Nov 2013 12:09:18 -0500, Josef Bacik wrote:
+> On Mon, Nov 04, 2013 at 11:13:26PM +0800, Miao Xie wrote:
+>> rename the function -- btrfs_start_all_delalloc_inodes(), and make its
+>> name be compatible to btrfs_wait_ordered_roots(), since they are always
+>> used at the same place.
+>>
+>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ctree.h       | 3 +--
+>>  fs/btrfs/dev-replace.c | 2 +-
+>>  fs/btrfs/extent-tree.c | 2 +-
+>>  fs/btrfs/inode.c       | 3 +--
+>>  fs/btrfs/relocation.c  | 2 +-
+>>  fs/btrfs/transaction.c | 2 +-
+>>  6 files changed, 6 insertions(+), 8 deletions(-)
+>>
 > 
-> Would you please try the following patch?
-> 
-> -liubo
-> 
-> From: Liu Bo <bo.li.liu@oracle.com>
-> Subject: [PATCH] Btrfs: fix to use the right trans for async commit
-> 
-> @trans has been freed and is undefined, and we should use the trans
-> handle created for async commit instead.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/transaction.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 8c81bdc..648d839 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1494,7 +1494,7 @@ int btrfs_commit_transaction_async(struct
-> btrfs_trans_handle *trans,
->  	 * Tell lockdep we've released the freeze rwsem, since the
->  	 * async commit thread will be the one to unlock it.
->  	 */
-> -	if (trans->type < TRANS_JOIN_NOLOCK)
-> +	if (ac->newtrans->type < TRANS_JOIN_NOLOCK)
+> Theres another use in ioctl.c in my tree, I've just rebased that change in,
+> please check my tree when I push it to make sure I did it right.  Thanks,
 
-It should be:
+I have checked it, everything is OK.
 
-if (trans->type & __TRANS_FREEZABLE)
+Thanks
+Miao
 
-The same for
-
-do_async_commit()
-
->  		rwsem_release(
->  			&root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
->  			1, _THIS_IP_);
+> 
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 

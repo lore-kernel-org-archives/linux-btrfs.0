@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:35003 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750997Ab3KECDd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 21:03:33 -0500
-Received: by mail-ie0-f170.google.com with SMTP id at1so14178360iec.15
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2013 18:03:32 -0800 (PST)
+Received: from magic.merlins.org ([209.81.13.136]:58180 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752716Ab3KECvT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 21:51:19 -0500
+Date: Mon, 4 Nov 2013 18:51:11 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: "Matthias G. Eckermann" <matthias.g.eckermann@t-online.de>
+Cc: David Madden <dhm@mersenne.com>, linux-btrfs@vger.kernel.org
+Subject: Re: OK to take hourly snapshots, then cull older ones?
+Message-ID: <20131105025111.GG20447@merlins.org>
+References: <525CBF0D.1020609@mersenne.com>
+ <20131103115024.GA5139@t-online.de>
 MIME-Version: 1.0
-In-Reply-To: <52780E20.8020405@friedels.name>
-References: <52742B59.3060405@friedels.name>
-	<CAE5mzvijfSOi9dP0MWCMd6=R5MW3bhabote4QYmFnqNEerDifw@mail.gmail.com>
-	<5274BEC8.5060804@friedels.name>
-	<52780E20.8020405@friedels.name>
-Date: Mon, 4 Nov 2013 20:03:32 -0600
-Message-ID: <CAE5mzvgrKqrv3LpmiF6iUK=GYsnGOQnSwLTM0dSfBE8ZP-4AuA@mail.gmail.com>
-Subject: Re: btrfsck errors is it save to fix?
-From: cwillu <cwillu@cwillu.com>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20131103115024.GA5139@t-online.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 4, 2013 at 3:14 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
-> Hello,
->
-> the list was quite full with patches, so this might have been hidden.
-> Here the complete Stack.
-> Does this help? Is this what you needed?
->> [95764.899294] CPU: 1 PID: 21798 Comm: umount Tainted: GF        CIO
->> 3.11.0-031100rc2-generic #201307211535
+On Sun, Nov 03, 2013 at 12:50:24PM +0100, Matthias G. Eckermann wrote:
+> Hello David and all,
+> 
+> On Mon, Oct 14, 2013 at 21:05 David Madden wrote:
+> 
+> > I'd like to use BTRFS to do something like the old NetApp
+> > snapshot system: every hour or so, there'd be a snapshot,
+> > then the 23 of the snapshots during a day would be
+> > deleted, leaving just a day snapshot, then after a month,
+> > 6 of 7 snapshots would be deleted, leaving just a week
+> > snapshot, and so on.
+> 
+> This is implemented in "Snapper", see:
+> 	http://snapper.io/
+> It's by default delivered with openSUSE and SUSE Linux
+> Enterprise, binaries are available for "everything else"
+> as well.
 
-Can you reproduce the problem under the released 3.11 or 3.12?  An
--rc2 is still pretty early in the release cycle, and I wouldn't be at
-all surprised if it was a bug added and fixed in a later rc.
+Just curious, what does it do more than the 20 line shellscript I
+posted?
+http://marc.merlins.org/linux/scripts/btrfs_snaps
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,92 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:49440 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754331Ab3KEMFI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Nov 2013 07:05:08 -0500
-Received: from samson ([77.22.8.42]) by mail.gmx.com (mrgmx102) with ESMTPA
- (Nemesis) id 0M7DVi-1VsHiO1V1a-00x4fE for <linux-btrfs@vger.kernel.org>; Tue,
- 05 Nov 2013 13:05:06 +0100
-Date: Tue, 5 Nov 2013 13:04:59 +0100
-From: Dennis Schridde <devurandom@gmx.net>
+Received: from glockenspiel.complete.org ([78.47.53.23]:37529 "EHLO
+	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754638Ab3KENmI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 08:42:08 -0500
+Received: from [63.245.179.205] (helo=minerva.lan.complete.org)
+	by glockenspiel.complete.org with esmtps
+	(with TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
+	(TLS peer CN christoph.complete.org, certificate verified)
+	(Exim 4.72)
+	id 1VdgtT-0002dW-Hy
+	for linux-btrfs@vger.kernel.org; Tue, 05 Nov 2013 07:42:07 -0600
+Received: from localhost ([127.0.0.1])
+	by minerva.lan.complete.org with esmtp (Exim 4.80)
+	(envelope-from <jgoerzen@complete.org>)
+	id 1VdgtP-0008Fg-7F
+	for linux-btrfs@vger.kernel.org; Tue, 05 Nov 2013 07:42:03 -0600
+Message-ID: <5278F5AA.60108@complete.org>
+Date: Tue, 05 Nov 2013 07:42:02 -0600
+From: John Goerzen <jgoerzen@complete.org>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: Partition broken, btrfsck segfaults or asserts
-Message-ID: <20131105130459.133d538e@samson>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/aasEQJJZPwCmrRkD7QFJTZl"; protocol="application/pgp-signature"
+Subject: umount waiting for 12 hours and still running
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/aasEQJJZPwCmrRkD7QFJTZl
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
-Hello!
+More than 12 hours ago, I tried to umount a btrfs filesystem. Something
+involving btrfs-cleaner and btrfs-transacti is still running, but I
+don't know what.
 
-I have a serious problem with inaccessible data and segfaulting btrfsck
-for the /var partition on my computer.
+I have noticed excessively long umount times before, and it is a
+significant concern for me.
 
-The reason is not entirely clear to me. The only extraordinary things
-happening today were an empty CMOS battery and me accidentally enabling
-C1E support when reconfiguring the BIOS. Afterwards the computer did
-not boot properly anymore (some GPU lockup thingy and the whole system
-locked up hard before X would start) and when I cut the power and setup
-the BIOS again (this time without C1E support), /var would be broken in
-the state I describe below.
+A bit of background:
 
-I can mount it, and dmesg says the following, which seems normal:
----
-device label var devid 1 transid 393536 /dev/sda7
-btrfs: use lzo compression
-btrfs: enabling auto defrag
----
+The filesystem in question involves two 2TB USB hard drives.  It is 49%
+full.  Data is RAID0, metadata is RAID1.  The files stored on it are for
+BackupPC, meaning there are many, many directories and hardlinks.  I
+would estimate 30 million inodes in use and many of them have dozens of
+hardlinks to them.  These disks used to be formatted with ext4.  I used
+the e2fs dump to back them up, created a fresh btrfs filesystem, and
+used restore to load the data onto it.
 
-When I access certain directories, however, I get a message like this
-one:
-ls: cannot access /var/log: Stale NFS file handle
+Now then.  btrfs seemed to be extremely slow creating hard links. Slow
+to the tune of taking hours longer than ext4 to do the same task, and
+often triggering kernel task hung for more than 120 seconds warnings.  I
+thought perhaps converting metadata to raid0 would help.  So I started a
+btrfs balance start -mconver=raid0 on it.  According to btrfs fi df, it
+churned through the first 900MB out of 26GB of metadata in quick order,
+but then the amount of RAID0 metadata bounced up and down between about
+950MB and 1019MB -- always just shy of 1GB.  There was an active rsync
+job to the disk during this time.  With no apparent progress even after
+hours, I tried to cancel the balance.  My cancel command did not return
+even after waiting hours.  Finally I rebooted and mounted the FS with
+the option to not restart the balance, then it canceled in a few
+minutes.  dstat showed all was quiet on the disk.  So I thought I would
+unmount it, remount it normally, and start the convert again.
 
-When I run btrfsck --repair it asserts, and when I just run btrfsck
-without extra options it segfaults. Sadly I do not have debug symbols
-installed, so the backtrace is probably useless. I attached the
-stdout/err output of both runs to the bugzilla report:
-https://bugzilla.kernel.org/show_bug.cgi?id=3D64411
+And it is from that unmount that it has been sitting.  According to
+dstat, it reads about 360K per second, every so often writing out about
+25MB per second.  And it's been doing this for 12 hours.
 
-# btrfs --version
-Btrfs v0.20-rc1-358-g194aa4a
+It seems I have encountered numerous problems here:
 
-# uname -r
-3.11.6-gentoo
+   * I/O Starvation on link(2) and perhaps also unlink(2)
+   * btrfs convert having a lack of progress after many hours
+   * btrfs convert stop not stopping anything
+   * umount taking hours
 
-I would be thankful if you could help me to get as much as possible of
-my data back. And please CC me, as I am not subscribed to the list.
+The umount is still pending, so if there is any debugging I can do,
+please let me know.
 
-Best regards,
-Dennis
+Kernel 3.10 from Debian wheezy backports on i386.
 
-P.S: I already sent an email yesterday, but it did not arrive in the
-archives, so I assume it was blocked by the list for the two ~125kB
-attachments.
+Thanks,
 
---Sig_/aasEQJJZPwCmrRkD7QFJTZl
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSeN7rAAoJEGIxC0Gvwa5aoC8QAKjfmlFheFq6hF9U7v4xfS1t
-s/bk8hR57hC53/3Po7TNDfP1fQ36ULQwtaZ4dtIGsM/jFFQe+w6tKhp9UpbepxvY
-JbNZRrqNNnMmXK3C6W22qcfcKwyvvFv1WUCrbaZ9mTMDxTi2fqB9XZqArkb89KXm
-xLnjRCnyy9VRSOu1aLiKzyv33Feg0kz+QdKn9MJbVFpYxq6OM5jvesq37WFIlT34
-nrOLcjNRMu5zgVivBTVpsUA5HFYGCCJar68fzwA6rjUcZnvkKji54sjalj98Skki
-zBlQW0ZqQ/6RqfAdiTvwZCrxId3h4wyIPlWCApOOo8Ehi1X0se3X4Wsa78vKFVlI
-rUcDr8wbI3ufxJlIXViXwZf6enAh6z4XGR/h2bHUsLD8SYYDKuAsfqDPPWXIJkFy
-DgxFPbhAsn394kq5VuVO7sfMW47rlzFmMea9pTStS/8BRxXhkaRaR1ExWoPPxa0J
-v95u1UDluSkX4YfWvYD60vSI9ub90DPkatltG2cG7sDv6U3BDXNNbkjRLCnBfUoH
-AHulCepqU13VtxT8kPSNm92LGquTz/eitoDn3Qm9iqa5XbFRnqT84oaWsu+r/kW9
-IA+t6Rdd7j0ktMwQ9cHLLTHD6vaYnDkW/++S6NUjxYCFH8pVlZ70BvpWeu5n0m9k
-xbLiC5lK39LFznnClCyq
-=3tmZ
------END PGP SIGNATURE-----
-
---Sig_/aasEQJJZPwCmrRkD7QFJTZl--
+John

@@ -1,83 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.9]:65107 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750803Ab3KFGpY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 01:45:24 -0500
-Message-ID: <5279E581.4000700@friedels.name>
-Date: Wed, 06 Nov 2013 07:45:21 +0100
-From: Hendrik Friedel <hendrik@friedels.name>
-MIME-Version: 1.0
-To: cwillu <cwillu@cwillu.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfsck errors is it save to fix?
-References: <52742B59.3060405@friedels.name>	<CAE5mzvijfSOi9dP0MWCMd6=R5MW3bhabote4QYmFnqNEerDifw@mail.gmail.com>	<5274BEC8.5060804@friedels.name>	<52780E20.8020405@friedels.name> <CAE5mzvgrKqrv3LpmiF6iUK=GYsnGOQnSwLTM0dSfBE8ZP-4AuA@mail.gmail.com>
-In-Reply-To: <CAE5mzvgrKqrv3LpmiF6iUK=GYsnGOQnSwLTM0dSfBE8ZP-4AuA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:34655 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756037Ab3KFMhz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Nov 2013 07:37:55 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ve2Mr-0002Ek-CI
+	for linux-btrfs@vger.kernel.org; Wed, 06 Nov 2013 13:37:53 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Nov 2013 13:37:53 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Nov 2013 13:37:53 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 3.11.5 kernel infinite loop
+Date: Wed, 6 Nov 2013 12:37:32 +0000 (UTC)
+Message-ID: <pan$70f09$474e61ed$c27deec7$82b1529a@cox.net>
+References: <201311061252.39398.russell@coker.com.au>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Russell Coker posted on Wed, 06 Nov 2013 12:52:38 +1100 as excerpted:
 
-sorry, I was totally unaware still being on 3.11rc2.
+> I have a system running the Debian package of 3.11.5 with an Amd Opteron
+> 1212 processor (2*64bit cores), 8G of RAM, and an Intel 120G SSD for the
+> root and home subvols.  It has a RAID-1 array of 2*3TB disks for bulk
+> storage (movies etc) but that probably isn't relevant to this problem.
+> 
+> On the root filesystem I have cron jobs making daily snapshots of / and
+> /home and additional snapshots of /home every 15 minutes.  At midnight a
+> cron job removes older snapshots.  For the last 8 days the system has
+> been reliably hanging at about 5 minutes after midnight and the subvol
+> removal cron job is the only thing that has happened then.
 
-I re-ran btrfsck with the same result:
-./btrfs-progs/btrfsck /dev/sdc1
-Checking filesystem on /dev/sdc1
-UUID: 989306aa-d291-4752-8477-0baf94f8c42f
-checking extents
-checking free space cache
-checking fs roots
-root 256 inode 9579 errors 100
-root 256 inode 9580 errors 100
-root 256 inode 14258 errors 100
-root 256 inode 14259 errors 100
-root 4444 inode 9579 errors 100
-root 4444 inode 9580 errors 100
-root 4444 inode 14258 errors 100
-root 4444 inode 14259 errors 100
-found 1992865028914 bytes used err is 1
-total csum bytes: 3207847732
-total tree bytes: 3902865408
-total fs tree bytes: 38875136
-total extent tree bytes: 135864320
-btree space waste bytes: 411665032
-file data blocks allocated: 3426722545664
-  referenced 3426000965632
-Btrfs v0.20-rc1-358-g194aa4a
+I believe there's a btrfs-critical stable-series patch in 3.11.6, that 
+you're probably missing with 3.11.5.  (There were unfortunately some 
+crossed signals and the patch was skipped for a couple weeks after it 
+should have gone in, but it's in now.)
+
+Yes... Just checked the 3.11.6 changelog:
+
+Josef Bacik (1):
+      Btrfs: use right root when checking for hash collision
 
 
-Now dmesg and the syslog stay clear of entries relatet to btrfs.
-But I think, that might also be a coincidence: I ran the old Kernel for 
-weeks until this error came, whereas I ran this kernel merely 12h.
+Note that there's another critical patch in-flight, patching a bug 
+triggered by btrfs balance on filesystems with pre-allocated files (like 
+systemd does with its journal and various torrent clients do with their 
+downloads).  But this one is currently being held up because stable rules 
+require it to be in current mainline first, and 3.12 is out, but the two-
+week 3.13 commit window that would normally be open now is suspended for 
+a week, as Linux is traveling without a reliable net connection.  So the 
+patch can't hit mainline, and thus won't hit stable unless an exception 
+is made, until after Linus' vacation, when the commit window opens and 
+the patch is accepted.
 
-Now:
-Does it make sense to futher try to find a possible bug, or do we 
-suspect it is fixed? If so: How can I help?
-
-And:
-Can I fix these Problems safely with btrfsck?
-
-Regards,
-Hendrik
-
-Am 05.11.2013 03:03, schrieb cwillu:
-> On Mon, Nov 4, 2013 at 3:14 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
->> Hello,
->>
->> the list was quite full with patches, so this might have been hidden.
->> Here the complete Stack.
->> Does this help? Is this what you needed?
->>> [95764.899294] CPU: 1 PID: 21798 Comm: umount Tainted: GF        CIO
->>> 3.11.0-031100rc2-generic #201307211535
->
-> Can you reproduce the problem under the released 3.11 or 3.12?  An
-> -rc2 is still pretty early in the release cycle, and I wouldn't be at
-> all surprised if it was a bug added and fixed in a later rc.
->
-
+See previous discussion here on this list for it, or simply don't do any 
+balances if you're running systemd or with any other pre-allocated-file 
+apps such as torrent clients running, until after you get that patch.
 
 -- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Mobil 0178 1874363
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

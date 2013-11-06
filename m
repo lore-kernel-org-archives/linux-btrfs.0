@@ -1,246 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38141 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752432Ab3KDDh0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Nov 2013 22:37:26 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH 1/4] btrfs-progs: make filesystem show by label work
-Date: Mon,  4 Nov 2013 11:45:42 +0800
-Message-Id: <1383536745-4635-1-git-send-email-anand.jain@oracle.com>
+Received: from dkim1.fusionio.com ([66.114.96.53]:41183 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755178Ab3KFUNo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 15:13:44 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 77D757C0430
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Nov 2013 13:13:43 -0700 (MST)
+Date: Wed, 6 Nov 2013 15:13:41 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Anand Jain <anand.jain@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>, <jbacik@fusionio.com>, <zab@redhat.com>,
+        <dsterba@suse.cz>
+Subject: Re: [PATCH 2/4 v2] btrfs-progs: mechanism to fetch fsinfo from
+ btrfs-control
+Message-ID: <20131106201341.GE27784@localhost.localdomain>
+References: <1383536745-4635-1-git-send-email-anand.jain@oracle.com>
+ <1383536745-4635-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1383536745-4635-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-with design revamp around filesystem show the fsid filter
-by label wasn't planned. but apparently that seemed to be
-necessary. this patch will fix it.
+On Mon, Nov 04, 2013 at 11:45:43AM +0800, Anand Jain wrote:
+> need fsinfo from btrfs-control that is when mount path is
+> not known.
+> current method of going through each mount points isn't
+> efficient, and multiple subvol of a fsid could be mounted
+> means extra logic to handle that. Further this will help
+> to revamp check_mounted() (planned)
+> 
+> check_mounted is heavily used in the btrfs-progs, it
+> does full scan of all the disks in the system to confirm
+> if a multi-disk btrfs is mounted it doesn't scalable well
+> with few hundreds luns, check_mounted for sure needs a
+> revamp. using this it can be done easily. which is planned.
+> 
+> v2: commit reword
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  ioctl.h |   19 +++++++++++++++
+>  utils.c |   80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  utils.h |    1 +
+>  3 files changed, 100 insertions(+), 0 deletions(-)
+> 
+> diff --git a/ioctl.h b/ioctl.h
+> index d21413f..29575d8 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -506,6 +506,23 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+>  	}
+>  }
+>  
+> +/* fs flags */
+> +#define BTRFS_FS_MOUNTED	(1LLU << 0)
+> +
+> +struct btrfs_ioctl_fslist {
+> +	__u64 self_sz;			/* in/out */
+> +	__u8 fsid[BTRFS_FSID_SIZE];	/* out */
+> +	__u64 num_devices;
+> +	__u64 missing_devices;
+> +	__u64 total_devices;
+> +	__u64 flags;
+> +};
+> +
+> +struct btrfs_ioctl_fslist_args {
+> +	__u64 self_sz;		/* in/out */
+> +	__u64 count;		/* out */
+> +};
+> +
+>  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+> @@ -604,6 +621,8 @@ struct btrfs_ioctl_clone_range_args {
+>  				    struct btrfs_ioctl_dev_replace_args)
+>  #define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
+>  				  struct btrfs_ioctl_dedup_args)
+> +#define BTRFS_IOC_GET_FSLIST _IOWR(BTRFS_IOCTL_MAGIC, 56, \
+> +					struct btrfs_ioctl_fslist_args)
+>  #ifdef __cplusplus
+>  }
+>  #endif
+> diff --git a/utils.c b/utils.c
+> index 5bedd97..1798a7c 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2087,3 +2087,83 @@ int lookup_ino_rootid(int fd, u64 *rootid)
+>  
+>  	return 0;
+>  }
+> +
+> +/* scans for fsid(s) in the kernel using the btrfs-control
+> + * interface.
+> + */
+> +int get_fslist(struct btrfs_ioctl_fslist **out_fslist, int *out_count)
+> +{
+> +	int ret, fd, e;
+> +	struct btrfs_ioctl_fslist_args *fsargs;
+> +	struct btrfs_ioctl_fslist *fslist;
+> +	struct btrfs_ioctl_fslist *fslist_tmp;
+> +	u64 sz;
+> +	int count;
+> +
+> +	fd = open("/dev/btrfs-control", O_RDWR);
+> +	e = errno;
+> +	if (fd < 0) {
+> +		perror("failed to open /dev/btrfs-control");
+> +		return -e;
+> +	}
+> +
+> +	/* space to hold 512 fsids, doesn't matter if small
+> +	 * it would fail and return count so then we try again
+> +	 */
+> +	count = 512;
+> +again:
+> +	sz = sizeof(*fsargs) + sizeof(*fslist) * count;
+> +
+> +	fsargs = (struct btrfs_ioctl_fslist_args *) malloc(sz);
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-filesystem.c |  120 ++++++++++++++++++++++++++++++++---------------------
- 1 files changed, 73 insertions(+), 47 deletions(-)
+No need to cast the return value of malloc.
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index d08007e..d2cad81 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -179,6 +179,26 @@ static int cmd_df(int argc, char **argv)
- 	return !!ret;
- }
- 
-+static int match_search_item_kernel(__u8 *fsid, char *mnt, char *label,
-+					char *search)
-+{
-+	char uuidbuf[37];
-+	int search_len = strlen(search);
-+
-+	search_len = min(search_len, 37);
-+	uuid_unparse(fsid, uuidbuf);
-+	if (!strncmp(uuidbuf, search, search_len))
-+		return 1;
-+
-+	if (strlen(label) && strcmp(label, search) == 0)
-+		return 1;
-+
-+	if (strcmp(mnt, search) == 0)
-+		return 1;
-+
-+	return 0;
-+}
-+
- static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
- {
- 	char uuidbuf[37];
-@@ -275,16 +295,18 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
- 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
- 
- 	uuid_unparse(fs_info->fsid, uuidbuf);
--	printf("Label: %s  uuid: %s\n",
--		strlen(label) ? label : "none", uuidbuf);
-+	if (label && strlen(label))
-+		printf("Label: '%s' ", label);
-+	else
-+		printf("Label: none ");
- 
--	printf("\tTotal devices %llu FS bytes used %s\n",
--				fs_info->num_devices,
-+	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
-+			fs_info->num_devices,
- 			pretty_size(calc_used_bytes(space_info)));
- 
- 	for (i = 0; i < fs_info->num_devices; i++) {
- 		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
--		printf("\tdevid    %llu size %s used %s path %s\n",
-+		printf("\tdevid %4llu size %s used %s path %s\n",
- 			tmp_dev_info->devid,
- 			pretty_size(tmp_dev_info->total_bytes),
- 			pretty_size(tmp_dev_info->bytes_used),
-@@ -308,7 +330,7 @@ static int check_arg_type(char *input)
- 	char path[PATH_MAX];
- 
- 	if (!input)
--		return BTRFS_ARG_UNKNOWN;
-+		return -EINVAL;
- 
- 	if (realpath(input, path)) {
- 		if (is_block_device(input) == 1)
-@@ -320,7 +342,7 @@ static int check_arg_type(char *input)
- 		return BTRFS_ARG_UNKNOWN;
- 	}
- 
--	if (!uuid_parse(input, out))
-+	if (strlen(input) == 36 && !uuid_parse(input, out))
- 		return BTRFS_ARG_UUID;
- 
- 	return BTRFS_ARG_UNKNOWN;
-@@ -328,23 +350,19 @@ static int check_arg_type(char *input)
- 
- static int btrfs_scan_kernel(void *search)
- {
--	int ret = 0, fd, type;
-+	int ret = 0, fd;
- 	FILE *f;
- 	struct mntent *mnt;
- 	struct btrfs_ioctl_fs_info_args fs_info_arg;
- 	struct btrfs_ioctl_dev_info_args *dev_info_arg = NULL;
- 	struct btrfs_ioctl_space_args *space_info_arg;
- 	char label[BTRFS_LABEL_SIZE];
--	uuid_t uuid;
- 
- 	f = setmntent("/proc/self/mounts", "r");
- 	if (f == NULL)
- 		return 1;
- 
--	type = check_arg_type(search);
--	if (type == BTRFS_ARG_BLKDEV)
--		return 1;
--
-+	memset(label, 0, sizeof(label));
- 	while ((mnt = getmntent(f)) != NULL) {
- 		if (strcmp(mnt->mnt_type, "btrfs"))
- 			continue;
-@@ -353,38 +371,36 @@ static int btrfs_scan_kernel(void *search)
- 		if (ret)
- 			return ret;
- 
--		switch (type) {
--		case BTRFS_ARG_UUID:
--			ret = uuid_parse(search, uuid);
--			if (ret)
--				return 1;
--			if (uuid_compare(fs_info_arg.fsid, uuid))
--				continue;
--			break;
--		case BTRFS_ARG_MNTPOINT:
--			if (strcmp(search, mnt->mnt_dir))
--				continue;
--			break;
--		case BTRFS_ARG_UNKNOWN:
--			break;
-+		if (get_label_mounted(mnt->mnt_dir, label)) {
-+			kfree(dev_info_arg);
-+			return 1;
-+		}
-+		if (search && !match_search_item_kernel(fs_info_arg.fsid,
-+					mnt->mnt_dir, label, search)) {
-+			kfree(dev_info_arg);
-+			continue;
- 		}
- 
- 		fd = open(mnt->mnt_dir, O_RDONLY);
- 		if (fd > 0 && !get_df(fd, &space_info_arg)) {
--			get_label_mounted(mnt->mnt_dir, label);
- 			print_one_fs(&fs_info_arg, dev_info_arg,
- 					space_info_arg, label, mnt->mnt_dir);
--			free(space_info_arg);
-+			kfree(space_info_arg);
-+			memset(label, 0, sizeof(label));
- 		}
- 		if (fd > 0)
- 			close(fd);
--		free(dev_info_arg);
-+		kfree(dev_info_arg);
-+		if (search)
-+			return 0;
- 	}
--	return ret;
-+	if (search)
-+		return 1;
-+	return 0;
- }
- 
- static const char * const cmd_show_usage[] = {
--	"btrfs filesystem show [options] [<path>|<uuid>|<device>]",
-+	"btrfs filesystem show [options] [<path>|<uuid>|<device>|label]",
- 	"Show the structure of a filesystem",
- 	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
- 	"-m|--mounted       show only mounted btrfs",
-@@ -402,6 +418,7 @@ static int cmd_show(int argc, char **argv)
- 	int where = BTRFS_SCAN_LBLKID;
- 	int type = 0;
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
-+	char path[PATH_MAX];
- 
- 	while (1) {
- 		int long_index;
-@@ -426,24 +443,31 @@ static int cmd_show(int argc, char **argv)
- 		}
- 	}
- 
--	if (where == BTRFS_SCAN_LBLKID) {
--		if (check_argc_max(argc, optind + 1))
--			usage(cmd_show_usage);
--	} else {
--		if (check_argc_max(argc, optind))
--			usage(cmd_show_usage);
--	}
-+	if (check_argc_max(argc, optind + 1))
-+		usage(cmd_show_usage);
-+
- 	if (argc > optind) {
- 		search = argv[optind];
--		type = check_arg_type(search);
--		if (type == BTRFS_ARG_UNKNOWN) {
--			fprintf(stderr, "ERROR: arg type unknown\n");
-+		if (strlen(search) == 0)
- 			usage(cmd_show_usage);
--		}
-+		type = check_arg_type(search);
- 		if (type == BTRFS_ARG_BLKDEV) {
--			ret = get_btrfs_mount(search, mp, sizeof(mp));
--			if (ret == 0)
--				search = mp;
-+			if (where == BTRFS_SCAN_DEV) {
-+				/* we need to do this because
-+				 * legacy BTRFS_SCAN_DEV
-+				 * provides /dev/dm-x paths
-+				 */
-+				if (realpath(search, path))
-+					search = path;
-+			} else {
-+				ret = get_btrfs_mount(search,
-+						mp, sizeof(mp));
-+				if (!ret)
-+					/* given block dev is mounted*/
-+					search = mp;
-+				else
-+					goto devs_only;
-+			}
- 		}
- 	}
- 
-@@ -451,7 +475,9 @@ static int cmd_show(int argc, char **argv)
- 		goto devs_only;
- 
- 	/* show mounted btrfs */
--	btrfs_scan_kernel(search);
-+	ret = btrfs_scan_kernel(search);
-+	if (search && !ret)
-+		return 0;
- 
- 	/* shows mounted only */
- 	if (where == BTRFS_SCAN_MOUNTED)
--- 
-1.7.1
+> +	memset(fsargs, 0, sz);
+> +
+> +	if (!fsargs) {
+> +		close(fd);
+> +		return -ENOMEM;
+> +	}
 
+Should check !fsargs before memsetting it.
+
+> +	fsargs->count = count;
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_GET_FSLIST, fsargs);
+> +	e = errno;
+> +	if (ret == 1) {
+> +		/* out of size so reallocate */
+> +		count = fsargs->count;
+> +		free(fsargs);
+> +		goto again;
+> +	} else if (ret < 0) {
+> +		printf("ERROR: scan_fsid ioctl failed - %s\n",
+> +			strerror(e));
+> +		ret = -e;
+> +		goto out;
+> +	}
+> +
+> +	/* ioctl returns fsid count in count parameter*/
+> +
+> +	*out_count = count = fsargs->count;
+> +	if (count == 0) {
+> +		*out_fslist = NULL;
+> +		ret = 0;
+> +		goto out;
+> +	}
+> +
+> +	fslist = (struct btrfs_ioctl_fslist *) (fsargs +
+> +						sizeof(*fsargs));
+> +
+> +	fslist_tmp = *out_fslist = (struct btrfs_ioctl_fslist *)
+> +				malloc(sizeof(*fslist) * count);
+
+No need to cast.  Thanks,
+
+Josef

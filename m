@@ -1,86 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from glockenspiel.complete.org ([78.47.53.23]:38058 "EHLO
-	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750886Ab3KESxt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 13:53:49 -0500
-Message-ID: <52793EB5.7050808@complete.org>
-Date: Tue, 05 Nov 2013 12:53:41 -0600
-From: John Goerzen <jgoerzen@complete.org>
+Received: from mailout08.t-online.de ([194.25.134.20]:37902 "EHLO
+	mailout08.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755606Ab3KFAJ1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 19:09:27 -0500
+Date: Wed, 6 Nov 2013 01:08:32 +0100
+From: "Matthias G. Eckermann" <matthias.g.eckermann@t-online.de>
+To: Marc MERLIN <marc@merlins.org>, David Madden <dhm@mersenne.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: OK to take hourly snapshots, then cull older ones?
+Message-ID: <20131106000832.GA25578@t-online.de>
+Reply-To: "Matthias G. Eckermann" <matthias.g.eckermann@t-online.de>
+References: <525CBF0D.1020609@mersenne.com>
+ <20131103115024.GA5139@t-online.de>
+ <20131105025111.GG20447@merlins.org>
 MIME-Version: 1.0
-To: Tomasz Chmielewski <tch@virtall.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: umount waiting for 12 hours and still running
-References: <20131106034622.5209f127@virtall.com>
-In-Reply-To: <20131106034622.5209f127@virtall.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20131105025111.GG20447@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello Marc and all,
 
+On Mon, Nov 04, 2013 at 06:51:11PM -0800 Marc MERLIN wrote:
+> On Sun, Nov 03, 2013 at 12:50PM +0100, Matthias G. Eckermann wrote:
+> > On Mon, Oct 14, 2013 at 21:05 David Madden wrote:
+> > 
+> > > I'd like to use BTRFS to do something like the old NetApp
+> > > snapshot system: every hour or so, there'd be a snapshot,
+> > > then the 23 of the snapshots during a day would be
+> > > deleted, leaving just a day snapshot, then after a month,
+> > > 6 of 7 snapshots would be deleted, leaving just a week
+> > > snapshot, and so on.
+> > 
+> > This is implemented in "Snapper", see:
+> > 	http://snapper.io/
+> > It's by default delivered with openSUSE and SUSE Linux
+> > Enterprise, binaries are available for "everything else"
+> > as well.
+> 
+> Just curious, what does it do more than the 20 line shellscript I
+> posted?
+> http://marc.merlins.org/linux/scripts/btrfs_snaps
 
-On 11/05/2013 12:46 PM, Tomasz Chmielewski wrote:
->> More than 12 hours ago, I tried to umount a btrfs filesystem.
->> Something involving btrfs-cleaner and btrfs-transacti is still
->> running, but I don't know what.
->
-> Does "iostat -x 1" or "iostat -k 1" show any disk activity?
+You asked ... 
 
-Yes.  For instance, from iostat -x 1:
+Snapper does not only handle snapshotting itself, but a
+lot of steps around it, to make it easier for an
+administrator to handle snapshotting.
 
-Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s 
-avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
-sdb               0.00     0.00    0.00    0.00     0.00     0.00 
-0.00     0.00    0.00    0.00    0.00   0.00   0.00
-sda               0.00     0.00    0.00    0.00     0.00     0.00 
-0.00     0.00    0.00    0.00    0.00   0.00   0.00
-dm-0              0.00     0.00    0.00    0.00     0.00     0.00 
-0.00     0.00    0.00    0.00    0.00   0.00   0.00
-sdc               0.00     0.00  104.00    0.00   416.00     0.00 
-8.00     1.03   10.08   10.08    0.00   9.31  96.80
-sdd               0.00     0.00    0.00    0.00     0.00     0.00 
-0.00     0.00    0.00    0.00    0.00   0.00   0.00
+While primarily offering a cmdline utility, Snapper also
+has integration into D-BUS, thus other tools can ask for
+snapshots on a specific subvolume.  To make this secure,
+access rights are stored in a per subvolume configuration
+among other attributes and rules.
 
-sdc and sdd are the drives in this brtfs FS, and they are used for 
-nothing but that.
+Based on that Snapper offers (rough summary):
 
-iostat -k 1 shows similar levels of activity.
+- Managing configurations (create, delete, list, ...)
+- Managing snapshots (create, delete, list)
+- Add and modify metadata of snapshots
+- Compare snapshots aka "diff"
+- Roll-back snapshots (selective roll-back, per file)
 
->
-> Anything interesting in dmesg?
+Within the configuration you can add
+- rules for creation and removal of snapshots
+- access rights
 
-There was this when it was first mounted:
+Off-Topic: Snapper also works with DM based snapshots.
 
-Nov  4 11:28:43 erwin kernel: [  200.669110] btrfs: use lzo compression
-Nov  4 11:28:43 erwin kernel: [  200.669114] btrfs: disk space caching 
-is enabled
-Nov  4 11:28:58 erwin kernel: [  215.660695] BTRFS debug (device dm-15): 
-unlinked 1 orphans
-Nov  4 11:28:58 erwin kernel: [  215.673535] btrfs: force skipping balance
+Other projects using snapper:
 
-I later canceled the balance
+* Samba 4 has a prototype implementation of Windows'
+  FSRVP server for SMB share shadow-copies ("snapshots") 
+  using Snapper via D-Bus. See: 
+  http://snapper.io/videos.html
 
-Also, several like this:
+* The Systems Management stack of openSUSE / SUSE 
+  Linux Enterprise (ZYpp, YaST) uses Snapper
+  automatically, if "/" is on btrfs.
 
-Nov  4 11:51:23 erwin kernel: [ 1560.552129] INFO: task 
-btrfs-transacti:6775 blocked for more than 120 seconds.
-Nov  4 11:51:23 erwin kernel: [ 1560.552200] btrfs-transacti D 90d3d4a2 
-     0  6775      2 0x00000000
-Nov  4 11:51:23 erwin kernel: [ 1560.553136]  [<f85852b6>] ? 
-wait_current_trans.isra.20+0x8b/0xb5 [btrfs]
-Nov  4 11:51:23 erwin kernel: [ 1560.553217]  [<f858740d>] ? 
-start_transaction+0x1db/0x46f [btrfs]
-Nov  4 11:51:23 erwin kernel: [ 1560.553267]  [<f85876e0>] ? 
-btrfs_attach_transaction+0xd/0x10 [btrfs]
-Nov  4 11:51:23 erwin kernel: [ 1560.553316]  [<f8580963>] ? 
-transaction_kthread+0xa3/0x158 [btrfs]
-Nov  4 11:51:23 erwin kernel: [ 1560.553366]  [<f85808c0>] ? 
-try_to_freeze+0x28/0x28 [btrfs]
+<SelfAdulation>
 
-but that was befrore the umount.
+One also can use it for regular snapshots to the $HOME
+directory; see my description here:
+https://www.suse.com/communities/conversations/menu-du-jour-vivaneau-vert-sur-lit-de-legumes-au-beurre-et-supremes-de-pamplemousse-2/
+and here
+https://www.suse.com/communities/conversations/sieste-siesta/
 
-Nothing else.
+</SelfAdulation>
 
--- John
+Hope this explains.
 
->
->
+so long -
+	MgE
+
+-- 
+Matthias G. Eckermann, Berlin, Germany
+Private : matthias.g.eckermann@t-online.de
+Business: mge@suse.com
+

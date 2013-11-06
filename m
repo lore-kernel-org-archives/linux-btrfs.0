@@ -1,81 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6647 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750802Ab3KFF2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 Nov 2013 00:28:49 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA65Slc7015702
-	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 13:28:47 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:45207 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755142Ab3KFI6e (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 03:58:34 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH V2 1/7] Btrfs: remove unnecessary initialization and memory barrior in shrink_delalloc()
-Date: Wed, 6 Nov 2013 13:29:49 +0800
-Message-Id: <1383715789-4081-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <20131105114516.GG16662@twin.jikos.cz>
-References: <20131105114516.GG16662@twin.jikos.cz>
+Cc: xfs@oss.sgi.com, Miao Xie <miaox@cn.fujitsu.com>, <majianpeng@gmail.com>
+Subject: [PATCH] Btrfs: fix lockdep error in async commit
+Date: Wed,  6 Nov 2013 16:57:55 +0800
+Message-Id: <1383728275-28832-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- The variant nr_pages is assigned before we use it, so the initialization
-  at the beginning is unnecessary.
-- If we enter the branch of the first if statement, the initialization of
-  the variant loops is also unnecessary.
-- The memory barriers here are misused, the barrier is used to prevent the
-  problems that we may get unexpected value that is caused by the random
-  order of the independent memory operations. But here, though the memory
-  operations before and after the barrier are independent, we are sure that
-  all the variants we access before the memory barrier can not be changed,
-  so even though the operations are reordered, it is safe and the memory
-  barriers are unnecessary.
+Lockdep complains about btrfs's async commit:
 
-So we remove those statements.
+[ 2372.462171] [ BUG: bad unlock balance detected! ]
+[ 2372.462191] 3.12.0+ #32 Tainted: G        W
+[ 2372.462209] -------------------------------------
+[ 2372.462228] ceph-osd/14048 is trying to release lock (sb_internal) at:
+[ 2372.462275] [<ffffffffa022cb10>] btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
+[ 2372.462305] but there are no more locks to release!
+[ 2372.462324]
+[ 2372.462324] other info that might help us debug this:
+[ 2372.462349] no locks held by ceph-osd/14048.
+[ 2372.462367]
+[ 2372.462367] stack backtrace:
+[ 2372.462386] CPU: 2 PID: 14048 Comm: ceph-osd Tainted: G        W    3.12.0+ #32
+[ 2372.462414] Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./To be filled by O.E.M., BIOS 080015  11/09/2011
+[ 2372.462455]  ffffffffa022cb10 ffff88007490fd28 ffffffff816f094a ffff8800378aa320
+[ 2372.462491]  ffff88007490fd50 ffffffff810adf4c ffff8800378aa320 ffff88009af97650
+[ 2372.462526]  ffffffffa022cb10 ffff88007490fd88 ffffffff810b01ee ffff8800898c0000
+[ 2372.462562] Call Trace:
+[ 2372.462584]  [<ffffffffa022cb10>] ? btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
+[ 2372.462619]  [<ffffffff816f094a>] dump_stack+0x45/0x56
+[ 2372.462642]  [<ffffffff810adf4c>] print_unlock_imbalance_bug+0xec/0x100
+[ 2372.462677]  [<ffffffffa022cb10>] ? btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
+[ 2372.462710]  [<ffffffff810b01ee>] lock_release+0x18e/0x210
+[ 2372.462742]  [<ffffffffa022cb36>] btrfs_commit_transaction_async+0x1d6/0x2a0 [btrfs]
+[ 2372.462783]  [<ffffffffa025a7ce>] btrfs_ioctl_start_sync+0x3e/0xc0 [btrfs]
+[ 2372.462822]  [<ffffffffa025f1d3>] btrfs_ioctl+0x4c3/0x1f70 [btrfs]
+[ 2372.462849]  [<ffffffff812c0321>] ? avc_has_perm+0x121/0x1b0
+[ 2372.462873]  [<ffffffff812c0224>] ? avc_has_perm+0x24/0x1b0
+[ 2372.462897]  [<ffffffff8107ecc8>] ? sched_clock_cpu+0xa8/0x100
+[ 2372.462922]  [<ffffffff8117b145>] do_vfs_ioctl+0x2e5/0x4e0
+[ 2372.462946]  [<ffffffff812c19e6>] ? file_has_perm+0x86/0xa0
+[ 2372.462969]  [<ffffffff8117b3c1>] SyS_ioctl+0x81/0xa0
+[ 2372.462991]  [<ffffffff817045a4>] tracesys+0xdd/0xe2
+====================================================
 
+It's because that we don't do the right thing when checking if it's ok to
+tell lockdep that we're trying to release the rwsem.
+
+If the trans handle's type is TRANS_ATTACH, we won't acquire the freeze rwsem, but
+as TRANS_ATTACH fits the check (trans < TRANS_JOIN_NOLOCK), we'll release the freeze
+rwsem, which makes lockdep complains a lot.
+
+Reported-by: Ma Jianpeng <majianpeng@gmail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-Changelog v1 -> v2:
-- Add the explanation why we remove those statements in the changelog.
----
- fs/btrfs/extent-tree.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/transaction.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1d238ed..abe65ed 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4016,15 +4016,14 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 	u64 delalloc_bytes;
- 	u64 max_reclaim;
- 	long time_left;
--	unsigned long nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
--	int loops = 0;
-+	unsigned long nr_pages;
-+	int loops;
- 	enum btrfs_reserve_flush_enum flush;
- 
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- 	block_rsv = &root->fs_info->delalloc_block_rsv;
- 	space_info = block_rsv->space_info;
- 
--	smp_mb();
- 	delalloc_bytes = percpu_counter_sum_positive(
- 						&root->fs_info->delalloc_bytes);
- 	if (delalloc_bytes == 0) {
-@@ -4034,6 +4033,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 		return;
- 	}
- 
-+	loops = 0;
- 	while (delalloc_bytes && loops < 3) {
- 		max_reclaim = min(delalloc_bytes, to_reclaim);
- 		nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
-@@ -4064,7 +4064,6 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 			if (time_left)
- 				break;
- 		}
--		smp_mb();
- 		delalloc_bytes = percpu_counter_sum_positive(
- 						&root->fs_info->delalloc_bytes);
- 	}
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8c81bdc..c094f08 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1453,7 +1453,7 @@ static void do_async_commit(struct work_struct *work)
+ 	 * We've got freeze protection passed with the transaction.
+ 	 * Tell lockdep about it.
+ 	 */
+-	if (ac->newtrans->type < TRANS_JOIN_NOLOCK)
++	if (ac->newtrans->type & __TRANS_FREEZABLE)
+ 		rwsem_acquire_read(
+ 		     &ac->root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
+ 		     0, 1, _THIS_IP_);
+@@ -1494,7 +1494,7 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 	 * Tell lockdep we've released the freeze rwsem, since the
+ 	 * async commit thread will be the one to unlock it.
+ 	 */
+-	if (trans->type < TRANS_JOIN_NOLOCK)
++	if (ac->newtrans->type & __TRANS_FREEZABLE)
+ 		rwsem_release(
+ 			&root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
+ 			1, _THIS_IP_);
 -- 
 1.8.1.4
 

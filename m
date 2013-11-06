@@ -1,89 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45207 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46803 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755142Ab3KFI6e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 03:58:34 -0500
+	with ESMTP id S1752555Ab3KFJBc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 04:01:32 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rA691VOn023276
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 09:01:31 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA691US1014700
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 09:01:30 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA691U4o010536
+	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 09:01:30 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: xfs@oss.sgi.com, Miao Xie <miaox@cn.fujitsu.com>, <majianpeng@gmail.com>
-Subject: [PATCH] Btrfs: fix lockdep error in async commit
-Date: Wed,  6 Nov 2013 16:57:55 +0800
-Message-Id: <1383728275-28832-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [RFC PATCH] Btrfs: change ioctl number of BTRFS_IOC_START_SYNC to 21
+Date: Wed,  6 Nov 2013 17:01:19 +0800
+Message-Id: <1383728479-29037-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lockdep complains about btrfs's async commit:
+24 has been assigned to both BTRFS_IOC_START_SYNC and BTRFS_IOC_SUBVOL_CREATE_V2,
+and BTRFS_IOC_SUBVOL_CREATE_V2 is at least used in btrfs-progs
+while BTRFS_IOC_START_SYNC is not.
 
-[ 2372.462171] [ BUG: bad unlock balance detected! ]
-[ 2372.462191] 3.12.0+ #32 Tainted: G        W
-[ 2372.462209] -------------------------------------
-[ 2372.462228] ceph-osd/14048 is trying to release lock (sb_internal) at:
-[ 2372.462275] [<ffffffffa022cb10>] btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
-[ 2372.462305] but there are no more locks to release!
-[ 2372.462324]
-[ 2372.462324] other info that might help us debug this:
-[ 2372.462349] no locks held by ceph-osd/14048.
-[ 2372.462367]
-[ 2372.462367] stack backtrace:
-[ 2372.462386] CPU: 2 PID: 14048 Comm: ceph-osd Tainted: G        W    3.12.0+ #32
-[ 2372.462414] Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./To be filled by O.E.M., BIOS 080015  11/09/2011
-[ 2372.462455]  ffffffffa022cb10 ffff88007490fd28 ffffffff816f094a ffff8800378aa320
-[ 2372.462491]  ffff88007490fd50 ffffffff810adf4c ffff8800378aa320 ffff88009af97650
-[ 2372.462526]  ffffffffa022cb10 ffff88007490fd88 ffffffff810b01ee ffff8800898c0000
-[ 2372.462562] Call Trace:
-[ 2372.462584]  [<ffffffffa022cb10>] ? btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
-[ 2372.462619]  [<ffffffff816f094a>] dump_stack+0x45/0x56
-[ 2372.462642]  [<ffffffff810adf4c>] print_unlock_imbalance_bug+0xec/0x100
-[ 2372.462677]  [<ffffffffa022cb10>] ? btrfs_commit_transaction_async+0x1b0/0x2a0 [btrfs]
-[ 2372.462710]  [<ffffffff810b01ee>] lock_release+0x18e/0x210
-[ 2372.462742]  [<ffffffffa022cb36>] btrfs_commit_transaction_async+0x1d6/0x2a0 [btrfs]
-[ 2372.462783]  [<ffffffffa025a7ce>] btrfs_ioctl_start_sync+0x3e/0xc0 [btrfs]
-[ 2372.462822]  [<ffffffffa025f1d3>] btrfs_ioctl+0x4c3/0x1f70 [btrfs]
-[ 2372.462849]  [<ffffffff812c0321>] ? avc_has_perm+0x121/0x1b0
-[ 2372.462873]  [<ffffffff812c0224>] ? avc_has_perm+0x24/0x1b0
-[ 2372.462897]  [<ffffffff8107ecc8>] ? sched_clock_cpu+0xa8/0x100
-[ 2372.462922]  [<ffffffff8117b145>] do_vfs_ioctl+0x2e5/0x4e0
-[ 2372.462946]  [<ffffffff812c19e6>] ? file_has_perm+0x86/0xa0
-[ 2372.462969]  [<ffffffff8117b3c1>] SyS_ioctl+0x81/0xa0
-[ 2372.462991]  [<ffffffff817045a4>] tracesys+0xdd/0xe2
-====================================================
+21 is free according to link[1], and seems safe to be assigned to BTRFS_IOC_START_SYNC.
 
-It's because that we don't do the right thing when checking if it's ok to
-tell lockdep that we're trying to release the rwsem.
+[1]:
+https://btrfs.wiki.kernel.org/index.php/Project_ideas
 
-If the trans handle's type is TRANS_ATTACH, we won't acquire the freeze rwsem, but
-as TRANS_ATTACH fits the check (trans < TRANS_JOIN_NOLOCK), we'll release the freeze
-rwsem, which makes lockdep complains a lot.
-
-Reported-by: Ma Jianpeng <majianpeng@gmail.com>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/transaction.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ include/uapi/linux/btrfs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8c81bdc..c094f08 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1453,7 +1453,7 @@ static void do_async_commit(struct work_struct *work)
- 	 * We've got freeze protection passed with the transaction.
- 	 * Tell lockdep about it.
- 	 */
--	if (ac->newtrans->type < TRANS_JOIN_NOLOCK)
-+	if (ac->newtrans->type & __TRANS_FREEZABLE)
- 		rwsem_acquire_read(
- 		     &ac->root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
- 		     0, 1, _THIS_IP_);
-@@ -1494,7 +1494,7 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 	 * Tell lockdep we've released the freeze rwsem, since the
- 	 * async commit thread will be the one to unlock it.
- 	 */
--	if (trans->type < TRANS_JOIN_NOLOCK)
-+	if (ac->newtrans->type & __TRANS_FREEZABLE)
- 		rwsem_release(
- 			&root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
- 			1, _THIS_IP_);
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 45e6189..0f5a1af 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -552,7 +552,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+ 				    struct btrfs_ioctl_space_args)
+-#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
++#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 21, __u64)
+ #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+ #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 				   struct btrfs_ioctl_vol_args_v2)
 -- 
 1.8.1.4
 

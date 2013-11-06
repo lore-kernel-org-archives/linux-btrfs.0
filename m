@@ -1,51 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38092 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755373Ab3KFEE1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Nov 2013 23:04:27 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rA644Qs5017227
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 04:04:27 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA644PR9023989
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 04:04:26 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rA644PZa023981
-	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 04:04:25 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:6647 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750802Ab3KFF2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Nov 2013 00:28:49 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA65Slc7015702
+	for <linux-btrfs@vger.kernel.org>; Wed, 6 Nov 2013 13:28:47 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs/tracepoint: update new flags for ordered extent TP
-Date: Wed,  6 Nov 2013 12:04:14 +0800
-Message-Id: <1383710654-25862-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1383710654-25862-1-git-send-email-bo.li.liu@oracle.com>
-References: <1383710654-25862-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH V2 1/7] Btrfs: remove unnecessary initialization and memory barrior in shrink_delalloc()
+Date: Wed, 6 Nov 2013 13:29:49 +0800
+Message-Id: <1383715789-4081-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <20131105114516.GG16662@twin.jikos.cz>
+References: <20131105114516.GG16662@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Flag BTRFS_ORDERED_TRUNCATED is a new one, update the tracepoint to
-support it.
+- The variant nr_pages is assigned before we use it, so the initialization
+  at the beginning is unnecessary.
+- If we enter the branch of the first if statement, the initialization of
+  the variant loops is also unnecessary.
+- The memory barriers here are misused, the barrier is used to prevent the
+  problems that we may get unexpected value that is caused by the random
+  order of the independent memory operations. But here, though the memory
+  operations before and after the barrier are independent, we are sure that
+  all the variants we access before the memory barrier can not be changed,
+  so even though the operations are reordered, it is safe and the memory
+  barriers are unnecessary.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+So we remove those statements.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- include/trace/events/btrfs.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Changelog v1 -> v2:
+- Add the explanation why we remove those statements in the changelog.
+---
+ fs/btrfs/extent-tree.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 4fbe10a..55c3829 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -216,7 +216,8 @@ TRACE_EVENT(btrfs_get_extent,
- 		{ (1 << BTRFS_ORDERED_DIRECT),	 	"DIRECT" 	}, \
- 		{ (1 << BTRFS_ORDERED_IOERR), 		"IOERR" 	}, \
- 		{ (1 << BTRFS_ORDERED_UPDATED_ISIZE), 	"UPDATED_ISIZE"	}, \
--		{ (1 << BTRFS_ORDERED_LOGGED_CSUM), 	"LOGGED_CSUM"	})
-+		{ (1 << BTRFS_ORDERED_LOGGED_CSUM), 	"LOGGED_CSUM"	}, \
-+		{ (1 << BTRFS_ORDERED_TRUNCATED), 	"TRUNCATED"	})
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1d238ed..abe65ed 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4016,15 +4016,14 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+ 	u64 delalloc_bytes;
+ 	u64 max_reclaim;
+ 	long time_left;
+-	unsigned long nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
+-	int loops = 0;
++	unsigned long nr_pages;
++	int loops;
+ 	enum btrfs_reserve_flush_enum flush;
  
+ 	trans = (struct btrfs_trans_handle *)current->journal_info;
+ 	block_rsv = &root->fs_info->delalloc_block_rsv;
+ 	space_info = block_rsv->space_info;
  
- DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+-	smp_mb();
+ 	delalloc_bytes = percpu_counter_sum_positive(
+ 						&root->fs_info->delalloc_bytes);
+ 	if (delalloc_bytes == 0) {
+@@ -4034,6 +4033,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+ 		return;
+ 	}
+ 
++	loops = 0;
+ 	while (delalloc_bytes && loops < 3) {
+ 		max_reclaim = min(delalloc_bytes, to_reclaim);
+ 		nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
+@@ -4064,7 +4064,6 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+ 			if (time_left)
+ 				break;
+ 		}
+-		smp_mb();
+ 		delalloc_bytes = percpu_counter_sum_positive(
+ 						&root->fs_info->delalloc_bytes);
+ 	}
 -- 
-1.8.2.1
+1.8.1.4
 

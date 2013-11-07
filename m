@@ -1,149 +1,301 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26950 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:65474 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752098Ab3KGFv3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 00:51:29 -0500
+	id S1751227Ab3KGFvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 00:51:20 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFho008349
-	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:17 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFSw008348
+	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:15 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH v3 12/17] btrfs: Replace fs_info->readahead_workers workqueue with btrfs_workqueue.
-Date: Thu, 7 Nov 2013 13:52:02 +0800
-Message-Id: <1383803527-23736-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 04/17] btrfs: Add threshold workqueue based on kernel workqueue
+Date: Thu, 7 Nov 2013 13:51:54 +0800
+Message-Id: <1383803527-23736-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the fs_info->readahead_workers with the newly created
-btrfs_workqueue.
+The original btrfs_workers has thresholding functions to dynamically
+create or destroy kthreads.
+
+Though there is no such function in kernel workqueue because the worker
+is not created manually, we can still use the workqueue_set_max_active
+to simulated the behavior, mainly to achieve a better HDD performance by
+setting a high threshold on submit_workers.
+(Sadly, no resource can be saved)
+
+So in this patch, extra workqueue pending counters are introduced to
+dynamically change the max active of each btrfs_workqueue_struct, hoping
+to restore the behavior of the original thresholding function.
+
+Also, workqueue_set_max_active use a mutex to protect workqueue_struct,
+which is not meant to be called too frequently, so a new interval
+mechanism is applied, that will only call workqueue_set_max_active after
+a count of work is queued. Hoping to balance both the random and
+sequence performance on HDD.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 Changelog:
-v1->v2:
-  None
 v2->v3:
-  - Use the btrfs_workqueue_struct to replace readahead_workers.
+  - Add thresholding mechanism to simulate the old thresholding mechanism.
+  - Will not enable thresholding when thresh is set to small value.
 ---
- fs/btrfs/ctree.h   |  2 +-
- fs/btrfs/disk-io.c | 12 +++++-------
- fs/btrfs/reada.c   | 10 +++++-----
- fs/btrfs/super.c   |  2 +-
- 4 files changed, 12 insertions(+), 14 deletions(-)
+ fs/btrfs/async-thread.c | 131 ++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/async-thread.h |  24 ++++++++-
+ 2 files changed, 144 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index edc3097..29fb7a6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1495,7 +1495,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workqueue_struct *endio_freespace_worker;
- 	struct btrfs_workqueue_struct *submit_workers;
- 	struct btrfs_workqueue_struct *caching_workers;
--	struct btrfs_workers readahead_workers;
-+	struct btrfs_workqueue_struct *readahead_workers;
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 925aa6d..1fde6a2 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -31,6 +31,9 @@
+ #define WORK_ORDER_DONE_BIT 2
+ #define WORK_HIGH_PRIO_BIT 3
  
- 	/*
- 	 * fixup workers take dirty pages that didn't properly go through
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 38b65d4..fe3a8be 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2005,7 +2005,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	btrfs_destroy_workqueue(fs_info->submit_workers);
- 	btrfs_stop_workers(&fs_info->delayed_workers);
- 	btrfs_destroy_workqueue(fs_info->caching_workers);
--	btrfs_stop_workers(&fs_info->readahead_workers);
-+	btrfs_destroy_workqueue(fs_info->readahead_workers);
- 	btrfs_destroy_workqueue(fs_info->flush_workers);
- 	btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
- }
-@@ -2536,13 +2536,12 @@ int open_ctree(struct super_block *sb,
- 	btrfs_init_workers(&fs_info->delayed_workers, "delayed-meta",
- 			   fs_info->thread_pool_size,
- 			   &fs_info->generic_worker);
--	btrfs_init_workers(&fs_info->readahead_workers, "readahead",
--			   fs_info->thread_pool_size,
--			   &fs_info->generic_worker);
-+	fs_info->readahead_workers = btrfs_alloc_workqueue("readahead", NULL,
-+							   NULL, flags,
-+							   max_active, 2);
- 	btrfs_init_workers(&fs_info->qgroup_rescan_workers, "qgroup-rescan", 1,
- 			   &fs_info->generic_worker);
- 
--	fs_info->readahead_workers.idle_thresh = 2;
- 
- 	/*
- 	 * btrfs_start_workers can really only fail because of ENOMEM so just
-@@ -2551,7 +2550,6 @@ int open_ctree(struct super_block *sb,
- 	ret = btrfs_start_workers(&fs_info->generic_worker);
- 	ret |= btrfs_start_workers(&fs_info->fixup_workers);
- 	ret |= btrfs_start_workers(&fs_info->delayed_workers);
--	ret |= btrfs_start_workers(&fs_info->readahead_workers);
- 	ret |= btrfs_start_workers(&fs_info->qgroup_rescan_workers);
- 	if (ret) {
- 		err = -ENOMEM;
-@@ -2563,7 +2561,7 @@ int open_ctree(struct super_block *sb,
- 	      fs_info->endio_meta_write_workers &&
- 	      fs_info->endio_write_workers && fs_info->endio_raid56_workers &&
- 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
--	      fs_info->caching_workers)) {
-+	      fs_info->caching_workers && fs_info->readahead_workers)) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
- 	}
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 1031b69..66b6fbe 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -91,8 +91,8 @@ struct reada_zone {
- };
- 
- struct reada_machine_work {
--	struct btrfs_work	work;
--	struct btrfs_fs_info	*fs_info;
-+	struct btrfs_work_struct	work;
-+	struct btrfs_fs_info		*fs_info;
- };
- 
- static void reada_extent_put(struct btrfs_fs_info *, struct reada_extent *);
-@@ -732,7 +732,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 
- }
- 
--static void reada_start_machine_worker(struct btrfs_work *work)
-+static void reada_start_machine_worker(struct btrfs_work_struct *work)
++#define NO_THRESHOLD (-1)
++#define DFT_THRESHOLD (32)
++
+ /*
+  * container for the kthread task pointer and the list of pending work
+  * One of these is allocated per thread.
+@@ -733,13 +736,31 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 						     char *ordered_name,
+ 						     char *high_name,
+ 						     int flags,
+-						     int max_active)
++						     int max_active,
++						     int thresh)
  {
- 	struct reada_machine_work *rmw;
- 	struct btrfs_fs_info *fs_info;
-@@ -792,10 +792,10 @@ static void reada_start_machine(struct btrfs_fs_info *fs_info)
- 		/* FIXME we cannot handle this properly right now */
- 		BUG();
+ 	struct btrfs_workqueue_struct *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+-	flags |= WQ_UNBOUND;
+ 	if (unlikely(!ret))
+ 		return NULL;
+-	ret->normal_wq = alloc_workqueue(name, flags, max_active);
++
++	ret->max_active = max_active;
++	ret->pending = 0;
++	/* default threshold */
++	if (thresh == 0)
++		thresh = DFT_THRESHOLD;
++	/* for low threshold, no threshold is a better choice*/
++	if (thresh < DFT_THRESHOLD) {
++		ret->current_max = max_active;
++		ret->thresh = NO_THRESHOLD;
++	} else {
++		ret->current_max = 1;
++		ret->thresh = thresh;
++	}
++	flags |= WQ_UNBOUND;
++
++	/* The max_active of workqueue will change betwen [1,max_active],
++	 * or just normal workqueue if NO_THRESHOLD is set*/
++	ret->normal_wq = alloc_workqueue(name, flags, ret->current_max);
+ 	if (unlikely(!ret->normal_wq)) {
+ 		kfree(ret);
+ 		return NULL;
+@@ -757,7 +778,7 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 	if (high_name) {
+ 		ret->high_wq = alloc_workqueue(high_name,
+ 					       flags | WQ_HIGHPRI,
+-					       max_active);
++					       ret->current_max);
+ 		if (unlikely(!ret->high_wq)) {
+ 			destroy_workqueue(ret->normal_wq);
+ 			if (ret->ordered_wq)
+@@ -767,16 +788,101 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 		}
  	}
--	rmw->work.func = reada_start_machine_worker;
-+	btrfs_init_work(&rmw->work, reada_start_machine_worker, NULL, NULL);
- 	rmw->fs_info = fs_info;
  
--	btrfs_queue_worker(&fs_info->readahead_workers, &rmw->work);
-+	btrfs_queue_work(fs_info->readahead_workers, &rmw->work);
++	spin_lock_init(&ret->thresh_lock);
+ 	spin_lock_init(&ret->insert_lock);
+ 	return ret;
  }
  
- #ifdef DEBUG
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e76c9d5..8e26ec5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1258,7 +1258,7 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 	btrfs_workqueue_set_max(fs_info->endio_write_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->endio_freespace_worker, new_pool_size);
- 	btrfs_set_max_workers(&fs_info->delayed_workers, new_pool_size);
--	btrfs_set_max_workers(&fs_info->readahead_workers, new_pool_size);
-+	btrfs_workqueue_set_max(fs_info->readahead_workers, new_pool_size);
- 	btrfs_set_max_workers(&fs_info->scrub_wr_completion_workers,
- 			      new_pool_size);
++/*
++ * Hook for threshold which will be called in btrfs_queue_work.
++ * This hook WILL be called in IRQ context,
++ * so workqueue_set_max_active MUST NOT be called in this hook
++ */
++static inline void thresh_queue_hook(struct btrfs_workqueue_struct *wq)
++{
++	unsigned long flags;
++	/* Skip if no threshold is set */
++	if (wq->thresh == NO_THRESHOLD)
++		return;
++	/* Since the hook may be executed in IRQ handle, we need to
++	 * disable the IRQ */
++	spin_lock_irqsave(&wq->thresh_lock, flags);
++	wq->pending++;
++	spin_unlock_irqrestore(&wq->thresh_lock, flags);
++}
++
++/*
++ * Hook for threshold which will be called before executing the work,
++ * This hook is called in kthread content.
++ * So workqueue_set_max_active is called here.
++ */
++static inline void thresh_exec_hook(struct btrfs_workqueue_struct *wq)
++{
++	int new_max_active;
++	int need_change = 0;
++	unsigned long flags;
++
++	/* Skip if no threshold is set */
++	if (wq->thresh == NO_THRESHOLD)
++		return;
++
++	spin_lock_irqsave(&wq->thresh_lock, flags);
++	wq->pending--;
++	wq->count++;
++
++	/* Use 1/4 of the thresh as the interval to change the max active,
++	 * Too high value(like twice) will make the max active change too slow,
++	 * which will bring performance drop in random IO on HDD.
++	 * Too small value(like 1/8 or static value) will make
++	 * workqueue_set_max_active be called too frequently, where the mutex
++	 * can slowdown the whole work.*/
++	wq->count %= (wq->thresh / 4);
++	if (!wq->count)
++		goto  out;
++	/* Recaculate the current max */
++	new_max_active = wq->current_max;
++	if (wq->pending > wq->thresh)
++		new_max_active++;
++	if (wq->pending < wq->thresh / 2)
++		new_max_active--;
++	new_max_active = clamp_val(new_max_active, 1, wq->max_active);
++	if (new_max_active != wq->current_max)  {
++		need_change = 1;
++		wq->current_max = new_max_active;
++	}
++	/*
++	 * Workqueue is using mutex to set max active,
++	 * so we should not call it with a spinlock hold.
++	 *
++	 * Also workqueue_set_max_active is somewhat expensive,
++	 * we should not call it too frequently.
++	 */
++out:
++	spin_unlock_irqrestore(&wq->thresh_lock, flags);
++
++	if (need_change) {
++		workqueue_set_max_active(wq->normal_wq, wq->current_max);
++		if (wq->high_wq)
++			workqueue_set_max_active(wq->high_wq, wq->current_max);
++	}
++}
++
+ static void normal_work_helper(struct work_struct *arg)
+ {
+ 	struct btrfs_work_struct *work;
++	/*
++	 * Since some work may free the whole btrfs_work_struct in func,
++	 * we should not access the completion which may be freed.
++	 * But if it has ordered_func, that will be safe.
++	 */
++	int need_complete = 0;
+ 	work = container_of(arg, struct btrfs_work_struct, normal_work);
++	if (work->ordered_func)
++		need_complete = 1;
++	thresh_exec_hook(work->wq);
+ 	work->func(work);
+-	complete(&work->normal_completion);
++	if (need_complete)
++		complete(&work->normal_completion);
  }
+ 
+ static void ordered_work_helper(struct work_struct *arg)
+@@ -798,9 +904,10 @@ void btrfs_init_work(struct btrfs_work_struct *work,
+ 	work->ordered_func = ordered_func;
+ 	work->ordered_free = ordered_free;
+ 	INIT_WORK(&work->normal_work, normal_work_helper);
+-	if (work->ordered_func)
++	if (work->ordered_func) {
+ 		INIT_WORK(&work->ordered_work, ordered_work_helper);
+-	init_completion(&work->normal_completion);
++		init_completion(&work->normal_completion);
++	}
+ }
+ 
+ void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+@@ -808,10 +915,13 @@ void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+ {
+ 	unsigned long flags;
+ 	struct workqueue_struct *dest_wq;
++	work->wq = wq;
+ 	if (work->high && wq->high_wq)
+ 		dest_wq = wq->high_wq;
+ 	else
+ 		dest_wq = wq->normal_wq;
++
++	thresh_queue_hook(wq);
+ 	spin_lock_irqsave(&wq->insert_lock, flags);
+ 	queue_work(dest_wq, &work->normal_work);
+ 	if (wq->ordered_wq && work->ordered_func)
+@@ -830,7 +940,8 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
+ 
+ void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max)
+ {
+-	workqueue_set_max_active(wq->normal_wq, max);
+-	if (wq->high_wq)
+-		workqueue_set_max_active(wq->high_wq, max);
++	unsigned long flags;
++	spin_lock_irqsave(&wq->thresh_lock, flags);
++	wq->max_active = max;
++	spin_unlock_irqrestore(&wq->thresh_lock, flags);
+ }
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 4863c38..44942b1 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -131,6 +131,26 @@ struct btrfs_workqueue_struct {
+ 	 * which will reduce the ordered_work waiting time and disk head moves.
+ 	 */
+ 	spinlock_t insert_lock;
++
++	/*
++	 * extra variants to implement threshold workqueue
++	 */
++	int pending;		/* How many works are pending */
++	int max_active;		/* Up limit of max running actives */
++	int current_max;	/* Current allowed number of running works */
++	int thresh;		/* Threshold,
++				   when pending > threshold, add current_max
++				   when pending < threshold/2, decrease
++				   current max. When set to 0, default value
++				   will be 32.
++				   Also, if thresh < 8, threshold will be
++				   disabled*/
++	unsigned int count;	/* Counter for preventing changing max active
++				   too frequently. When reaching 1.5 * thresh,
++				   then try to change current_max*/
++	spinlock_t thresh_lock; /* Used to lock the above threshold related
++				   variants. Not reuse the insert_lock to
++				   reduce race on the same lock*/
+ };
+ 
+ struct btrfs_work_struct {
+@@ -142,6 +162,7 @@ struct btrfs_work_struct {
+ 	struct work_struct normal_work;
+ 	struct work_struct ordered_work;
+ 	struct completion normal_completion;
++	struct btrfs_workqueue_struct *wq;
+ 	int high;
+ };
+ 
+@@ -157,7 +178,8 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 						     char *ordered_name,
+ 						     char *high_name,
+ 						     int flags,
+-						     int max_active);
++						     int max_active,
++						     int thresh);
+ void btrfs_init_work(struct btrfs_work_struct *work,
+ 		     void (*func)(struct btrfs_work_struct *),
+ 		     void (*ordered_func)(struct btrfs_work_struct *),
 -- 
 1.8.4.2
 

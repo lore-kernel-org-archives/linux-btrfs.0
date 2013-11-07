@@ -1,38 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-out-02.aalto.fi ([130.233.228.121]:59309 "EHLO
-	smtp-out-02.aalto.fi" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753429Ab3KKQck (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Nov 2013 11:32:40 -0500
-From: Emil Karlson <jekarlson@gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:35458 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751645Ab3KGJ47 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 04:56:59 -0500
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Emil Karlson <jekarlson@gmail.com>
-Subject: [PATCH v2] btrfs-progs: remove extra uuid-tree.o in objects
-Date: Mon, 11 Nov 2013 18:22:24 +0200
-Message-Id: <1384186944-3808-1-git-send-email-jekarlson@gmail.com>
+Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
+Subject: [PATCH 3/3] btrfs-progs: lblkid wouldn't find non mapper path input v3
+Date: Thu,  7 Nov 2013 18:05:28 +0800
+Message-Id: <1383818728-29684-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
+References: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes static compile target of btrfs-progs.
+A new test case when disk is unmounted and if the non mapper
+disk path is given as the argument to the btrfs filesystem show <arg>
+we still need this to work but lblkid will pull only mapper disks,
+it won't match. So this will normalize the input to find btrfs
+by fsid and pass it to the search.
 
-Signed-off-by: Emil Karlson <jekarlson@gmail.com>
+v3: accepts Josef suggested
+v2: accepts Josef suggested
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ cmds-filesystem.c |   59 +++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 55 insertions(+), 4 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 4e33648..4604b1f 100644
---- a/Makefile
-+++ b/Makefile
-@@ -9,7 +9,7 @@ CFLAGS = -g -O1
- objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
- 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
--	  qgroup.o raid6.o free-space-cache.o uuid-tree.o list_sort.o
-+	  qgroup.o raid6.o free-space-cache.o list_sort.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index d237989..72ffe46 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -37,6 +37,7 @@
+ #include "version.h"
+ #include "commands.h"
+ #include "list_sort.h"
++#include "disk-io.h"
+ 
+ static const char * const filesystem_cmd_group_usage[] = {
+ 	"btrfs filesystem [<group>] <command> [<args>]",
+@@ -414,6 +415,39 @@ static int btrfs_scan_kernel(void *search)
+ 	return 0;
+ }
+ 
++static int dev_to_fsid(char *dev, __u8 *fsid)
++{
++	struct btrfs_super_block *disk_super;
++	char *buf;
++	int ret;
++	int fd;
++
++	buf = malloc(4096);
++	if (!buf)
++		return -ENOMEM;
++
++	fd = open(dev, O_RDONLY);
++	if (fd < 0) {
++		ret = -errno;
++		free(buf);
++		return ret;
++	}
++
++	disk_super = (struct btrfs_super_block *)buf;
++	ret = btrfs_read_dev_super(fd, disk_super,
++			BTRFS_SUPER_INFO_OFFSET);
++	if (ret)
++		goto out;
++
++	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
++	ret = 0;
++
++out:
++	close(fd);
++	free(buf);
++	return ret;
++}
++
+ static const char * const cmd_show_usage[] = {
+ 	"btrfs filesystem show [options] [<path>|<uuid>|<device>|label]",
+ 	"Show the structure of a filesystem",
+@@ -434,6 +468,8 @@ static int cmd_show(int argc, char **argv)
+ 	int type = 0;
+ 	char mp[BTRFS_PATH_NAME_MAX + 1];
+ 	char path[PATH_MAX];
++	__u8 fsid[BTRFS_FSID_SIZE];
++	char uuid_buf[37];
+ 
+ 	while (1) {
+ 		int long_index;
+@@ -466,6 +502,10 @@ static int cmd_show(int argc, char **argv)
+ 		if (strlen(search) == 0)
+ 			usage(cmd_show_usage);
+ 		type = check_arg_type(search);
++		/* needs spl handling if input arg is block dev
++		 * And if input arg is mount-point just print it
++		 * right away
++		 */
+ 		if (type == BTRFS_ARG_BLKDEV) {
+ 			if (where == BTRFS_SCAN_DEV) {
+ 				/* we need to do this because
+@@ -477,14 +517,25 @@ static int cmd_show(int argc, char **argv)
+ 			} else {
+ 				ret = get_btrfs_mount(search,
+ 						mp, sizeof(mp));
+-				if (!ret)
++				if (!ret) {
+ 					/* given block dev is mounted*/
+ 					search = mp;
+-				else
++					type = BTRFS_ARG_MNTPOINT;
++				} else {
++					ret = dev_to_fsid(search, fsid);
++					if (ret) {
++						fprintf(stderr,
++							"ERROR: No btrfs on %s\n",
++							search);
++						return 1;
++					}
++					uuid_unparse(fsid, uuid_buf);
++					search = uuid_buf;
++					type = BTRFS_ARG_UUID;
+ 					goto devs_only;
++				}
+ 			}
+-		}
+-		if (type == BTRFS_ARG_MNTPOINT) {
++		} else if (type == BTRFS_ARG_MNTPOINT) {
+ 			char label[BTRFS_LABEL_SIZE];
+ 			if (get_label_mounted(search, label))
+ 				return 1;
 -- 
-1.8.3.2
+1.7.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo

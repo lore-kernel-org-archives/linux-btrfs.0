@@ -1,56 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56291 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750789Ab3KVH43 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 02:56:29 -0500
-Date: Fri, 22 Nov 2013 08:56:27 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [PATCH v4 2/3] btrfs-progs: fs show should handle if subvol(s)
- mounted
-Message-ID: <20131122075627.GI5007@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1384514735-24761-1-git-send-email-anand.jain@oracle.com>
- <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
- <20131120141856.GH5007@twin.jikos.cz>
- <528D7ED4.1000300@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <528D7ED4.1000300@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:31550 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753917Ab3KGLKn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 06:10:43 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
+Subject: [PATCH 1/3] btrfs-progs: mechanism to fetch fsinfo from btrfs-control v4
+Date: Thu,  7 Nov 2013 19:18:43 +0800
+Message-Id: <1383823123-378-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
+References: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 21, 2013 at 11:32:36AM +0800, Anand Jain wrote:
-> On 11/20/2013 10:18 PM, David Sterba wrote:
-> >On Fri, Nov 15, 2013 at 07:25:34PM +0800, Anand Jain wrote:
-> >>  static int btrfs_scan_kernel(void *search)
-> >>  {
-> >>-	int ret = 0, fd;
-> >>-	FILE *f;
-> >>-	struct mntent *mnt;
-> >>-	struct btrfs_ioctl_fs_info_args fs_info_arg;
-> >>-	struct btrfs_ioctl_dev_info_args *dev_info_arg = NULL;
-> >>-	struct btrfs_ioctl_space_args *space_info_arg;
-> >>+	int ret = 0;
-> >>  	char label[BTRFS_LABEL_SIZE];
-> >>-
-> >>-	f = setmntent("/proc/self/mounts", "r");
-> >>-	if (f == NULL)
-> >>-		return 1;
-> >>-
-> >>-	memset(label, 0, sizeof(label));
-> >>-	while ((mnt = getmntent(f)) != NULL) {
-> >>-		if (strcmp(mnt->mnt_type, "btrfs"))
-> >>+	char mnt[BTRFS_PATH_NAME_MAX + 1];
-> >>+	struct btrfs_ioctl_fslist *fslist;
-> >>+	struct btrfs_ioctl_fslist *fslist_saved;
-> >
-> >     [CC]     cmds-send.o
-> >cmds-filesystem.c: In function ‘btrfs_scan_kernel’:
-> >cmds-filesystem.c:461:29: warning: variable ‘fslist_saved’ set but not used [-Wunused-but-set-variable]
-> 
->  Thanks David. That was something for later todo which I missed.
->  sorry my mistake. Sent out v5.
+need fsinfo from btrfs-control that is when mount path is
+not known.
+current method of going through each mount points isn't
+efficient, and multiple subvol of a fsid could be mounted
+means extra logic to handle that. Further this will help
+to revamp check_mounted() (planned)
 
-Thanks, patch replaced.
+check_mounted is heavily used in the btrfs-progs, it
+does full scan of all the disks in the system to confirm
+if a multi-disk btrfs is mounted it doesn't scalable well
+with few hundreds luns, check_mounted for sure needs a
+revamp. using this it can be done easily. which is planned.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+v4: bug fix and accepts Stefan suggested
+v3: accepts Josef suggested
+v2: commit reword
+---
+ ioctl.h |   19 ++++++++++++++++
+ utils.c |   75 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h |    1 +
+ 3 files changed, 95 insertions(+), 0 deletions(-)
+
+diff --git a/ioctl.h b/ioctl.h
+index d21413f..29575d8 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -506,6 +506,23 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 	}
+ }
+ 
++/* fs flags */
++#define BTRFS_FS_MOUNTED	(1LLU << 0)
++
++struct btrfs_ioctl_fslist {
++	__u64 self_sz;			/* in/out */
++	__u8 fsid[BTRFS_FSID_SIZE];	/* out */
++	__u64 num_devices;
++	__u64 missing_devices;
++	__u64 total_devices;
++	__u64 flags;
++};
++
++struct btrfs_ioctl_fslist_args {
++	__u64 self_sz;		/* in/out */
++	__u64 count;		/* out */
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -604,6 +621,8 @@ struct btrfs_ioctl_clone_range_args {
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
+ 				  struct btrfs_ioctl_dedup_args)
++#define BTRFS_IOC_GET_FSLIST _IOWR(BTRFS_IOCTL_MAGIC, 56, \
++					struct btrfs_ioctl_fslist_args)
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/utils.c b/utils.c
+index 60d2c3a..9983db2 100644
+--- a/utils.c
++++ b/utils.c
+@@ -47,6 +47,7 @@
+ #include "utils.h"
+ #include "volumes.h"
+ #include "ioctl.h"
++#include "btrfs-list.h"
+ 
+ #ifndef BLKDISCARD
+ #define BLKDISCARD	_IO(0x12,119)
+@@ -2087,3 +2088,77 @@ int lookup_ino_rootid(int fd, u64 *rootid)
+ 
+ 	return 0;
+ }
++
++/* scans for fsid(s) in the kernel using the btrfs-control
++ * interface.
++ */
++int get_fslist(struct btrfs_ioctl_fslist **out_fslist, u64 *out_count)
++{
++	int ret, fd, e;
++	struct btrfs_ioctl_fslist_args *fsargs;
++	struct btrfs_ioctl_fslist_args *fsargs_saved = NULL;
++	struct btrfs_ioctl_fslist *fslist;
++	u64 sz;
++	int count;
++
++	fd = open("/dev/btrfs-control", O_RDWR);
++	e = errno;
++	if (fd < 0) {
++		perror("failed to open /dev/btrfs-control");
++		return -e;
++	}
++
++	/* space to hold 512 fsids, doesn't matter if small
++	 * it would fail and return count so then we try again
++	 */
++	count = 512;
++again:
++	sz = sizeof(*fsargs) + sizeof(*fslist) * count;
++
++	fsargs_saved = fsargs = malloc(sz);
++	if (!fsargs) {
++		close(fd);
++		return -ENOMEM;
++	}
++
++	memset(fsargs, 0, sz);
++	fsargs->count = count;
++
++	ret = ioctl(fd, BTRFS_IOC_GET_FSLIST, fsargs);
++	e = errno;
++	if (ret == 1) {
++		/* out of size so reallocate */
++		count = fsargs->count;
++		free(fsargs);
++		goto again;
++	} else if (ret < 0) {
++		printf("ERROR: scan_fsid ioctl failed - %s\n",
++			strerror(e));
++		ret = -e;
++		goto out;
++	}
++
++	/* ioctl returns fsid count in count parameter*/
++
++	*out_count = fsargs->count;
++	if (*out_count == 0) {
++		*out_fslist = NULL;
++		ret = 0;
++		goto out;
++	}
++
++	fslist = (struct btrfs_ioctl_fslist *) (++fsargs);
++
++	sz = sizeof(*fslist) * *out_count;
++	*out_fslist = malloc(sz);
++	if (*out_fslist == NULL) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	memcpy(*out_fslist, fslist, sz);
++	ret = 0;
++out:
++	free(fsargs_saved);
++	close(fd);
++	return ret;
++}
+diff --git a/utils.h b/utils.h
+index 6f4b10c..a14a887 100644
+--- a/utils.h
++++ b/utils.h
+@@ -94,5 +94,6 @@ int ask_user(char *question);
+ int lookup_ino_rootid(int fd, u64 *rootid);
+ int btrfs_scan_lblkid(int update_kernel);
+ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
++int get_fslist(struct btrfs_ioctl_fslist **out_fslist, u64 *out_count);
+ 
+ #endif
+-- 
+1.7.1
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo

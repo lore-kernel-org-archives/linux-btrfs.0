@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:65474 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:26709 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751964Ab3KGFvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 00:51:24 -0500
+	id S1751981Ab3KGFvZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 00:51:25 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pGjZ008358
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFSx008348
 	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:16 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH v3 10/17] btrfs: Replace fs_info->rmw_workers workqueue with btrfs_workqueue.
-Date: Thu, 7 Nov 2013 13:52:00 +0800
-Message-Id: <1383803527-23736-11-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 11/17] btrfs: Replace fs_info->cache_workers workqueue with btrfs_workqueue.
+Date: Thu, 7 Nov 2013 13:52:01 +0800
+Message-Id: <1383803527-23736-12-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the fs_info->rmw_workers with the newly created
+Replace the fs_info->cache_workers with the newly created
 btrfs_workqueue.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
@@ -26,176 +26,124 @@ Changelog:
 v1->v2:
   None
 v2->v3:
-  - Use the btrfs_workqueue_struct to replace rmw_workers.
+  - Use the btrfs_workqueue_struct to replace caching_workers.
 ---
- fs/btrfs/ctree.h   |  2 +-
- fs/btrfs/disk-io.c | 12 ++++--------
- fs/btrfs/raid56.c  | 33 +++++++++++++++------------------
- 3 files changed, 20 insertions(+), 27 deletions(-)
+ fs/btrfs/ctree.h       |  4 ++--
+ fs/btrfs/disk-io.c     | 12 ++++++------
+ fs/btrfs/extent-tree.c |  6 +++---
+ fs/btrfs/super.c       |  2 +-
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e8916e3..89a5411 100644
+index 89a5411..edc3097 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1489,7 +1489,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workqueue_struct *endio_workers;
- 	struct btrfs_workqueue_struct *endio_meta_workers;
- 	struct btrfs_workqueue_struct *endio_raid56_workers;
--	struct btrfs_workers rmw_workers;
-+	struct btrfs_workqueue_struct *rmw_workers;
- 	struct btrfs_workqueue_struct *endio_meta_write_workers;
+@@ -1199,7 +1199,7 @@ struct btrfs_caching_control {
+ 	struct list_head list;
+ 	struct mutex mutex;
+ 	wait_queue_head_t wait;
+-	struct btrfs_work work;
++	struct btrfs_work_struct work;
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 progress;
+ 	atomic_t count;
+@@ -1494,7 +1494,7 @@ struct btrfs_fs_info {
  	struct btrfs_workqueue_struct *endio_write_workers;
  	struct btrfs_workqueue_struct *endio_freespace_worker;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7099001..d6f5cf7 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1998,7 +1998,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	btrfs_destroy_workqueue(fs_info->endio_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_meta_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_raid56_workers);
--	btrfs_stop_workers(&fs_info->rmw_workers);
-+	btrfs_destroy_workqueue(fs_info->rmw_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_meta_write_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_write_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
-@@ -2524,9 +2524,8 @@ int open_ctree(struct super_block *sb,
- 							      NULL, NULL,
- 							      flags,
- 							      max_active, 4);
--	btrfs_init_workers(&fs_info->rmw_workers,
--			   "rmw", fs_info->thread_pool_size,
--			   &fs_info->generic_worker);
-+	fs_info->rmw_workers = btrfs_alloc_workqueue("rmw", NULL, NULL, flags,
-+						     max_active, 2);
- 	fs_info->endio_write_workers = btrfs_alloc_workqueue("endio-write",
- 							     NULL, NULL,
- 							     flags,
-@@ -2543,8 +2542,6 @@ int open_ctree(struct super_block *sb,
- 	btrfs_init_workers(&fs_info->qgroup_rescan_workers, "qgroup-rescan", 1,
- 			   &fs_info->generic_worker);
- 
--	fs_info->rmw_workers.idle_thresh = 2;
--
- 	fs_info->readahead_workers.idle_thresh = 2;
+ 	struct btrfs_workqueue_struct *submit_workers;
+-	struct btrfs_workers caching_workers;
++	struct btrfs_workqueue_struct *caching_workers;
+ 	struct btrfs_workers readahead_workers;
  
  	/*
-@@ -2553,7 +2550,6 @@ int open_ctree(struct super_block *sb,
- 	 */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d6f5cf7..38b65d4 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2004,7 +2004,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
+ 	btrfs_destroy_workqueue(fs_info->submit_workers);
+ 	btrfs_stop_workers(&fs_info->delayed_workers);
+-	btrfs_stop_workers(&fs_info->caching_workers);
++	btrfs_destroy_workqueue(fs_info->caching_workers);
+ 	btrfs_stop_workers(&fs_info->readahead_workers);
+ 	btrfs_destroy_workqueue(fs_info->flush_workers);
+ 	btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
+@@ -2502,9 +2502,9 @@ int open_ctree(struct super_block *sb,
+ 							fs_devices->num_devices,
+ 							max_active), 64);
+ 
+-	btrfs_init_workers(&fs_info->caching_workers, "cache",
+-			   fs_info->thread_pool_size, NULL);
+-
++	fs_info->caching_workers = btrfs_alloc_workqueue("cache", NULL, NULL,
++							 flags, max_active,
++							 0);
+ 
+ 	btrfs_init_workers(&fs_info->fixup_workers, "fixup", 1,
+ 			   &fs_info->generic_worker);
+@@ -2551,7 +2551,6 @@ int open_ctree(struct super_block *sb,
  	ret = btrfs_start_workers(&fs_info->generic_worker);
  	ret |= btrfs_start_workers(&fs_info->fixup_workers);
--	ret |= btrfs_start_workers(&fs_info->rmw_workers);
  	ret |= btrfs_start_workers(&fs_info->delayed_workers);
- 	ret |= btrfs_start_workers(&fs_info->caching_workers);
+-	ret |= btrfs_start_workers(&fs_info->caching_workers);
  	ret |= btrfs_start_workers(&fs_info->readahead_workers);
-@@ -2567,7 +2563,7 @@ int open_ctree(struct super_block *sb,
+ 	ret |= btrfs_start_workers(&fs_info->qgroup_rescan_workers);
+ 	if (ret) {
+@@ -2563,7 +2562,8 @@ int open_ctree(struct super_block *sb,
  	      fs_info->endio_workers && fs_info->endio_meta_workers &&
  	      fs_info->endio_meta_write_workers &&
  	      fs_info->endio_write_workers && fs_info->endio_raid56_workers &&
--	      fs_info->endio_freespace_worker)) {
-+	      fs_info->endio_freespace_worker && fs_info->rmw_workers)) {
+-	      fs_info->endio_freespace_worker && fs_info->rmw_workers)) {
++	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
++	      fs_info->caching_workers)) {
  		err = -ENOMEM;
  		goto fail_sb_buffer;
  	}
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index d0ecfbd..c1c68cc 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -88,7 +88,7 @@ struct btrfs_raid_bio {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d58bef1..143acf7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -378,7 +378,7 @@ static u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 	return total_added;
+ }
+ 
+-static noinline void caching_thread(struct btrfs_work *work)
++static noinline void caching_thread(struct btrfs_work_struct *work)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+ 	struct btrfs_fs_info *fs_info;
+@@ -548,7 +548,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	caching_ctl->block_group = cache;
+ 	caching_ctl->progress = cache->key.objectid;
+ 	atomic_set(&caching_ctl->count, 1);
+-	caching_ctl->work.func = caching_thread;
++	btrfs_init_work(&caching_ctl->work, caching_thread, NULL, NULL);
+ 
+ 	spin_lock(&cache->lock);
  	/*
- 	 * for scheduling work in the helper threads
- 	 */
--	struct btrfs_work work;
-+	struct btrfs_work_struct work;
+@@ -639,7 +639,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
  
- 	/*
- 	 * bio list and bio_list_lock are used
-@@ -167,8 +167,8 @@ struct btrfs_raid_bio {
+ 	btrfs_get_block_group(cache);
  
- static int __raid56_parity_recover(struct btrfs_raid_bio *rbio);
- static noinline void finish_rmw(struct btrfs_raid_bio *rbio);
--static void rmw_work(struct btrfs_work *work);
--static void read_rebuild_work(struct btrfs_work *work);
-+static void rmw_work(struct btrfs_work_struct *work);
-+static void read_rebuild_work(struct btrfs_work_struct *work);
- static void async_rmw_stripe(struct btrfs_raid_bio *rbio);
- static void async_read_rebuild(struct btrfs_raid_bio *rbio);
- static int fail_bio_stripe(struct btrfs_raid_bio *rbio, struct bio *bio);
-@@ -1417,19 +1417,17 @@ cleanup:
+-	btrfs_queue_worker(&fs_info->caching_workers, &caching_ctl->work);
++	btrfs_queue_work(fs_info->caching_workers, &caching_ctl->work);
  
- static void async_rmw_stripe(struct btrfs_raid_bio *rbio)
- {
--	rbio->work.flags = 0;
--	rbio->work.func = rmw_work;
-+	btrfs_init_work(&rbio->work, rmw_work, NULL, NULL);
- 
--	btrfs_queue_worker(&rbio->fs_info->rmw_workers,
--			   &rbio->work);
-+	btrfs_queue_work(rbio->fs_info->rmw_workers,
-+			 &rbio->work);
+ 	return ret;
  }
- 
- static void async_read_rebuild(struct btrfs_raid_bio *rbio)
- {
--	rbio->work.flags = 0;
--	rbio->work.func = read_rebuild_work;
-+	btrfs_init_work(&rbio->work, read_rebuild_work, NULL, NULL);
- 
--	btrfs_queue_worker(&rbio->fs_info->rmw_workers,
-+	btrfs_queue_work(rbio->fs_info->rmw_workers,
- 			   &rbio->work);
- }
- 
-@@ -1591,7 +1589,7 @@ struct btrfs_plug_cb {
- 	struct blk_plug_cb cb;
- 	struct btrfs_fs_info *info;
- 	struct list_head rbio_list;
--	struct btrfs_work work;
-+	struct btrfs_work_struct work;
- };
- 
- /*
-@@ -1655,7 +1653,7 @@ static void run_plug(struct btrfs_plug_cb *plug)
-  * if the unplug comes from schedule, we have to push the
-  * work off to a helper thread
-  */
--static void unplug_work(struct btrfs_work *work)
-+static void unplug_work(struct btrfs_work_struct *work)
- {
- 	struct btrfs_plug_cb *plug;
- 	plug = container_of(work, struct btrfs_plug_cb, work);
-@@ -1668,10 +1666,9 @@ static void btrfs_raid_unplug(struct blk_plug_cb *cb, bool from_schedule)
- 	plug = container_of(cb, struct btrfs_plug_cb, cb);
- 
- 	if (from_schedule) {
--		plug->work.flags = 0;
--		plug->work.func = unplug_work;
--		btrfs_queue_worker(&plug->info->rmw_workers,
--				   &plug->work);
-+		btrfs_init_work(&plug->work, unplug_work, NULL, NULL);
-+		btrfs_queue_work(plug->info->rmw_workers,
-+				 &plug->work);
- 		return;
- 	}
- 	run_plug(plug);
-@@ -2083,7 +2080,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- 
- }
- 
--static void rmw_work(struct btrfs_work *work)
-+static void rmw_work(struct btrfs_work_struct *work)
- {
- 	struct btrfs_raid_bio *rbio;
- 
-@@ -2091,7 +2088,7 @@ static void rmw_work(struct btrfs_work *work)
- 	raid56_rmw_stripe(rbio);
- }
- 
--static void read_rebuild_work(struct btrfs_work *work)
-+static void read_rebuild_work(struct btrfs_work_struct *work)
- {
- 	struct btrfs_raid_bio *rbio;
- 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a8fc05d..e76c9d5 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1249,7 +1249,7 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 	btrfs_workqueue_set_max(fs_info->workers, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->delalloc_workers, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->submit_workers, new_pool_size);
+-	btrfs_set_max_workers(&fs_info->caching_workers, new_pool_size);
++	btrfs_workqueue_set_max(fs_info->caching_workers, new_pool_size);
+ 	btrfs_set_max_workers(&fs_info->fixup_workers, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->endio_workers, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->endio_meta_workers, new_pool_size);
 -- 
 1.8.4.2
 

@@ -1,72 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41357 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750964Ab3KGOEn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 09:04:43 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VeQCP-0006si-LK
-	for linux-btrfs@vger.kernel.org; Thu, 07 Nov 2013 15:04:41 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Nov 2013 15:04:41 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Nov 2013 15:04:41 +0100
+Received: from mail-ea0-f179.google.com ([209.85.215.179]:54326 "EHLO
+	mail-ea0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754538Ab3KGOmb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 09:42:31 -0500
+Received: by mail-ea0-f179.google.com with SMTP id q15so314390ead.24
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Nov 2013 06:42:30 -0800 (PST)
+MIME-Version: 1.0
+Date: Thu, 7 Nov 2013 06:42:30 -0800
+Message-ID: <CAOMFOmUDd0jS=R+MAVwfwmNj7Bt9VUM46b8zYmC59BA65qhUfA@mail.gmail.com>
+Subject: How to fix/remove "csum failed ino" error
+From: Anatol Pomozov <anatol.pomozov@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Fwd: unable to delete files after kernel upgrade from 3.8.10 to
- 3.12
-Date: Thu, 7 Nov 2013 14:04:20 +0000 (UTC)
-Message-ID: <pan$c4dc0$c3d4cfda$6d328ddf$2900aea8@cox.net>
-References: <CAMajw1N4bqFyHA4V8SkEzQFZF8adN0xQDShRq7bC2Of+nxsJGA@mail.gmail.com>
-	<CAMajw1O2xsqKK2VRcz1JjwaH0d9G_602snooNUpBhdDegt_yGA@mail.gmail.com>
-	<527B541D.5000101@giantdisaster.de>
-	<CAMajw1MVmO5dbkDB7Wj1J-O0mTE-q6xyo1Do83gQk8RLX2dnpQ@mail.gmail.com>
-	<CAMajw1O4-zrfxYgxeZaTNwtgY-_zTUpBbiLSExkcmwuyU5x+mw@mail.gmail.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bartosz Kulicki posted on Thu, 07 Nov 2013 11:43:15 +0000 as excerpted:
+Hi
 
-> FWIW - just before nuking the fs I have added a 3GB loopback device to
-> btrfs.
-> 
-> This restored ability to delete the files but I could not remove the
-> loopback after deleting some large files (if I remember correctly error
-> I got was "block device required")
+I use Linux Arch, kernel 3.11.6.
 
-Having read the wiki and the list but not having (yet) gotten into that 
-sort of situation myself, I'm following this with some interest, and
-was just about to ask if you'd tried that.
+Recently I had a disk crash and number of my files got corrupted. To
+avoid this situation again I added more disks I trying to convert the
+data to raid1:
 
-OK, so you added the loop device and were then able to do deletes but 
-afterward could not delete the device...
+# btrfs balance start -dconvert=raid1 -mconvert=raid1 /
 
-The device thus obviously added some room for the filesystem to work, so 
-you could delete files.  After that file-delete, did you then try a 
-balance again?
+But unfortunately it fails with IO erro. In dmesg I see
 
-Because as documented, and as demonstrated by the initial now allowed 
-file-delete, that should have given you just enough extra metadata space 
-to get you out of the jam, allowing a balance to finish, which in theory 
-at least would have freed up enough space due to the compaction of the 
-balance, to then finally do a proper btrfs device delete on the temporary 
-loop device.
+[ 5374.216320] BTRFS info (device sda3): csum failed ino 362 off
+4993024 csum 1283121890 private 3720296651
+[ 5374.219656] BTRFS info (device sda3): csum failed ino 362 off
+5242880 csum 857237386 private 2562492866
+[ 5374.222628] BTRFS info (device sda3): csum failed ino 362 off
+5767168 csum 645194099 private 3149624654
+[ 5374.223068] BTRFS info (device sda3): csum failed ino 362 off
+4993024 csum 1283121890 private 3720296651
 
-But without that last balance attempt after the loop add and successful 
-file delete, we'll never know if the temporary loop device could have 
-then been successfully btrfs device deleted or not.
+I looks like some files are corrupted. I would like either
+fix/regenerate those files (e.g. reinstall from packages) or remove
+them (as they corrupted anyway).
 
-Which is a bit frustrating here, since that's exactly the bit omitted 
-from your posting what you tried, but what I'm counting on to get me out 
-of a similar jam, should I ever get in it...
+But I need to know what are these files. "ino 362" mentioned in the
+message does not exist on the file system:
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+# find / -mount -inum 362
+finds nothing.
 
+So I assume this ino is some internal identifier. I checked function
+btrfs_ino() from btrfs_inode.h and the output value can be either
+BTRFS_I(inode)->location.objectid
+or
+inode->i_ino
+
+I believe 362 is BTRFS_I(inode)->location.objectid
+
+So my question is how to find a file that has this id corresponding?
+How to remove this object and finally make the raid1 conversion? Also
+is it possible to improve the error message so users can find failing
+objects (e.g. include the real inode number)?

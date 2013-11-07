@@ -1,102 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f174.google.com ([209.85.128.174]:42916 "EHLO
-	mail-ve0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751903Ab3KGQlp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 11:41:45 -0500
-Received: by mail-ve0-f174.google.com with SMTP id pa12so584151veb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Nov 2013 08:41:44 -0800 (PST)
+Received: from moutng.kundenserver.de ([212.227.17.8]:50400 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751083Ab3KGTQi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 14:16:38 -0500
+Message-ID: <527BE712.40304@friedels.name>
+Date: Thu, 07 Nov 2013 20:16:34 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-In-Reply-To: <CAOMFOmUDd0jS=R+MAVwfwmNj7Bt9VUM46b8zYmC59BA65qhUfA@mail.gmail.com>
-References: <CAOMFOmUDd0jS=R+MAVwfwmNj7Bt9VUM46b8zYmC59BA65qhUfA@mail.gmail.com>
-Date: Thu, 7 Nov 2013 11:41:44 -0500
-Message-ID: <CAC4gV=7FgL=wixYf6w-yfuZNbz8QCt5t9T8_jStjpkKgTBc+Vw@mail.gmail.com>
-Subject: Re: How to fix/remove "csum failed ino" error
-From: Frank Holton <fholton@gmail.com>
-To: Anatol Pomozov <anatol.pomozov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: cwillu <cwillu@cwillu.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfsck errors is it save to fix?
+References: <52742B59.3060405@friedels.name>	<CAE5mzvijfSOi9dP0MWCMd6=R5MW3bhabote4QYmFnqNEerDifw@mail.gmail.com>	<5274BEC8.5060804@friedels.name>	<52780E20.8020405@friedels.name> <CAE5mzvgrKqrv3LpmiF6iUK=GYsnGOQnSwLTM0dSfBE8ZP-4AuA@mail.gmail.com> <5279E581.4000700@friedels.name>
+In-Reply-To: <5279E581.4000700@friedels.name>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Anatol,
+Hello again,
 
-I just checked and on my filesystem inode number 362 corresponds to
-part of the free space cache. You can check this yourself by running
-(as root)
+can someone please help me on this?
 
-btrfs-debug-tree /dev/sdb | grep "(362 " -A 3 -B 1
+Regards,
+Hendrik
 
-where /dev/sdb is one of the devices from your filesystem.
+Am 06.11.2013 07:45, schrieb Hendrik Friedel:
+> Hello,
+>
+> sorry, I was totally unaware still being on 3.11rc2.
+>
+> I re-ran btrfsck with the same result:
+> ./btrfs-progs/btrfsck /dev/sdc1
+> Checking filesystem on /dev/sdc1
+> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+> checking extents
+> checking free space cache
+> checking fs roots
+> root 256 inode 9579 errors 100
+> root 256 inode 9580 errors 100
+> root 256 inode 14258 errors 100
+> root 256 inode 14259 errors 100
+> root 4444 inode 9579 errors 100
+> root 4444 inode 9580 errors 100
+> root 4444 inode 14258 errors 100
+> root 4444 inode 14259 errors 100
+> found 1992865028914 bytes used err is 1
+> total csum bytes: 3207847732
+> total tree bytes: 3902865408
+> total fs tree bytes: 38875136
+> total extent tree bytes: 135864320
+> btree space waste bytes: 411665032
+> file data blocks allocated: 3426722545664
+>   referenced 3426000965632
+> Btrfs v0.20-rc1-358-g194aa4a
+>
+>
+> Now dmesg and the syslog stay clear of entries relatet to btrfs.
+> But I think, that might also be a coincidence: I ran the old Kernel for
+> weeks until this error came, whereas I ran this kernel merely 12h.
+>
+> Now:
+> Does it make sense to futher try to find a possible bug, or do we
+> suspect it is fixed? If so: How can I help?
+>
+> And:
+> Can I fix these Problems safely with btrfsck?
+>
+> Regards,
+> Hendrik
+>
+> Am 05.11.2013 03:03, schrieb cwillu:
+>> On Mon, Nov 4, 2013 at 3:14 PM, Hendrik Friedel
+>> <hendrik@friedels.name> wrote:
+>>> Hello,
+>>>
+>>> the list was quite full with patches, so this might have been hidden.
+>>> Here the complete Stack.
+>>> Does this help? Is this what you needed?
+>>>> [95764.899294] CPU: 1 PID: 21798 Comm: umount Tainted: GF        CIO
+>>>> 3.11.0-031100rc2-generic #201307211535
+>>
+>> Can you reproduce the problem under the released 3.11 or 3.12?  An
+>> -rc2 is still pretty early in the release cycle, and I wouldn't be at
+>> all surprised if it was a bug added and fixed in a later rc.
+>>
+>
+>
 
-It printed the following for me, note the location key (362
-INODE_ITEM) under the FREE_SPACE key. Yours might be different but if
-you see FREE_SPACE that points to the free space cache.
 
-item 100 key (362 INODE_ITEM 0) itemoff 21857 itemsize 160
-                inode generation 2004 transid 2004 size 262144 block
-group 0 mode 100600 links 1
-        item 101 key (362 EXTENT_DATA 0) itemoff 21804 itemsize 53
-                extent data disk byte 41903296512 nr 262144
-                extent data offset 0 nr 262144 ram 262144
-                extent compression 0
---
-        item 148 key (FREE_SPACE UNTYPED 113845993472) itemoff 23807 itemsize 41
-                location key (362 INODE_ITEM 0)
-                cache generation 2004 entries 2 bitmaps 0
-
-I would try to mount the filesystem with the clear_cache option, which
-should clear the current space cache and force a rebuild.
-
-Hope that helps,
-Frank
-
-
-
-On Thu, Nov 7, 2013 at 9:42 AM, Anatol Pomozov <anatol.pomozov@gmail.com> wrote:
-> Hi
->
-> I use Linux Arch, kernel 3.11.6.
->
-> Recently I had a disk crash and number of my files got corrupted. To
-> avoid this situation again I added more disks I trying to convert the
-> data to raid1:
->
-> # btrfs balance start -dconvert=raid1 -mconvert=raid1 /
->
-> But unfortunately it fails with IO erro. In dmesg I see
->
-> [ 5374.216320] BTRFS info (device sda3): csum failed ino 362 off
-> 4993024 csum 1283121890 private 3720296651
-> [ 5374.219656] BTRFS info (device sda3): csum failed ino 362 off
-> 5242880 csum 857237386 private 2562492866
-> [ 5374.222628] BTRFS info (device sda3): csum failed ino 362 off
-> 5767168 csum 645194099 private 3149624654
-> [ 5374.223068] BTRFS info (device sda3): csum failed ino 362 off
-> 4993024 csum 1283121890 private 3720296651
->
-> I looks like some files are corrupted. I would like either
-> fix/regenerate those files (e.g. reinstall from packages) or remove
-> them (as they corrupted anyway).
->
-> But I need to know what are these files. "ino 362" mentioned in the
-> message does not exist on the file system:
->
-> # find / -mount -inum 362
-> finds nothing.
->
-> So I assume this ino is some internal identifier. I checked function
-> btrfs_ino() from btrfs_inode.h and the output value can be either
-> BTRFS_I(inode)->location.objectid
-> or
-> inode->i_ino
->
-> I believe 362 is BTRFS_I(inode)->location.objectid
->
-> So my question is how to find a file that has this id corresponding?
-> How to remove this object and finally make the raid1 conversion? Also
-> is it possible to improve the error message so users can find failing
-> objects (e.g. include the real inode number)?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Mobil 0178 1874363

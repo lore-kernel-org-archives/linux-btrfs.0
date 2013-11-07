@@ -1,186 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:65474 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:26709 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751180Ab3KGFvW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 00:51:22 -0500
+	id S1751191Ab3KGFvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 00:51:20 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFI5008344
-	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:16 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFI4008344
+	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:15 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH v3 08/17] btrfs: Replace fs_info->flush_workers with btrfs_workqueue.
-Date: Thu, 7 Nov 2013 13:51:58 +0800
-Message-Id: <1383803527-23736-9-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 02/17] btrfs: Added btrfs_workqueue_struct implemented ordered execution based on kernel workqueue
+Date: Thu, 7 Nov 2013 13:51:52 +0800
+Message-Id: <1383803527-23736-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the fs_info->submit_workers with the newly created btrfs_workqueue.
+Use kernel workqueue to implement a new btrfs_workqueue_struct, which
+has the ordering execution feature like the btrfs_worker.
+
+The func is executed in a concurrency way, and the
+ordred_func/ordered_free is executed in the sequence them are queued
+after the corresponding func is done.
+The new btrfs_workqueue use 2 workqueues to implement the original
+btrfs_worker, one for the normal work and one for ordered work.
+
+At this patch, high priority work queue or thresholding is not added yet.
+The high priority feature and thresholding will be added in the following patches.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 Changelog:
 v1->v2:
-  None
+  None.
 v2->v3:
-  - Use the btrfs_workqueue_struct to replace submit_workers.
+  - Fix the potential deadline discovered by kernel lockdep.
+  - Reuse the async-thread.[ch] files.
+  - Make the ordered_func optional, which makes it adaptable to
+    all btrfS_workers.
 ---
- fs/btrfs/ctree.h        |  4 ++--
- fs/btrfs/disk-io.c      | 10 +++++-----
- fs/btrfs/inode.c        |  7 ++++---
- fs/btrfs/ordered-data.c | 13 +++++++------
- fs/btrfs/ordered-data.h |  2 +-
- 5 files changed, 19 insertions(+), 17 deletions(-)
+ fs/btrfs/async-thread.c | 86 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/async-thread.h | 44 +++++++++++++++++++++++++
+ 2 files changed, 130 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3edb9e6..c74f27e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1485,7 +1485,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workers generic_worker;
- 	struct btrfs_workqueue_struct *workers;
- 	struct btrfs_workqueue_struct *delalloc_workers;
--	struct btrfs_workers flush_workers;
-+	struct btrfs_workqueue_struct *flush_workers;
- 	struct btrfs_workers endio_workers;
- 	struct btrfs_workers endio_meta_workers;
- 	struct btrfs_workers endio_raid56_workers;
-@@ -3625,7 +3625,7 @@ struct btrfs_delalloc_work {
- 	int delay_iput;
- 	struct completion completion;
- 	struct list_head list;
--	struct btrfs_work work;
-+	struct btrfs_work_struct work;
- };
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 08cc08f..00b4913 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2007 Oracle.  All rights reserved.
++ * Copyright (C) 2013 Fujitsu.  All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public
+@@ -21,6 +22,8 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/freezer.h>
++#include <linux/workqueue.h>
++#include <linux/completion.h>
+ #include "async-thread.h"
  
- struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ec474c8..3e4adff 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2007,7 +2007,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	btrfs_stop_workers(&fs_info->delayed_workers);
- 	btrfs_stop_workers(&fs_info->caching_workers);
- 	btrfs_stop_workers(&fs_info->readahead_workers);
--	btrfs_stop_workers(&fs_info->flush_workers);
-+	btrfs_destroy_workqueue(fs_info->flush_workers);
- 	btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
+ #define WORK_QUEUED_BIT 0
+@@ -725,3 +728,86 @@ void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+ 		wake_up_process(worker->task);
+ 	spin_unlock_irqrestore(&worker->lock, flags);
  }
- 
-@@ -2490,8 +2490,9 @@ int open_ctree(struct super_block *sb,
- 							  NULL, flags,
- 							  max_active, 2);
- 
--	btrfs_init_workers(&fs_info->flush_workers, "flush_delalloc",
--			   fs_info->thread_pool_size, NULL);
-+	fs_info->flush_workers = btrfs_alloc_workqueue("flush_delalloc",
-+							NULL, NULL, flags,
-+							max_active, 0);
- 
- 	/* a higher idle thresh on the submit workers makes it much more
- 	 * likely that bios will be send down in a sane order to the
-@@ -2566,14 +2567,13 @@ int open_ctree(struct super_block *sb,
- 	ret |= btrfs_start_workers(&fs_info->delayed_workers);
- 	ret |= btrfs_start_workers(&fs_info->caching_workers);
- 	ret |= btrfs_start_workers(&fs_info->readahead_workers);
--	ret |= btrfs_start_workers(&fs_info->flush_workers);
- 	ret |= btrfs_start_workers(&fs_info->qgroup_rescan_workers);
- 	if (ret) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
- 	}
- 	if (!(fs_info->workers && fs_info->delalloc_workers &&
--	      fs_info->submit_workers)) {
-+	      fs_info->submit_workers && fs_info->flush_workers)) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 42e3f81..5e5fc7f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8138,7 +8138,7 @@ out_notrans:
- 	return ret;
- }
- 
--static void btrfs_run_delalloc_work(struct btrfs_work *work)
-+static void btrfs_run_delalloc_work(struct btrfs_work_struct *work)
- {
- 	struct btrfs_delalloc_work *delalloc_work;
- 
-@@ -8170,6 +8170,7 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
- 	work->inode = inode;
- 	work->wait = wait;
- 	work->delay_iput = delay_iput;
-+	btrfs_init_work(&work->work, btrfs_run_delalloc_work, NULL, NULL);
- 	work->work.func = btrfs_run_delalloc_work;
- 
- 	return work;
-@@ -8222,8 +8223,8 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- 			goto out;
- 		}
- 		list_add_tail(&work->list, &works);
--		btrfs_queue_worker(&root->fs_info->flush_workers,
--				   &work->work);
-+		btrfs_queue_work(root->fs_info->flush_workers,
-+				 &work->work);
- 
- 		cond_resched();
- 		spin_lock(&root->delalloc_lock);
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index c702cb6..08b30e5 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -550,7 +550,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- 	wake_up(&entry->wait);
- }
- 
--static void btrfs_run_ordered_extent_work(struct btrfs_work *work)
-+static void btrfs_run_ordered_extent_work(struct btrfs_work_struct *work)
- {
- 	struct btrfs_ordered_extent *ordered;
- 
-@@ -582,10 +582,11 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root)
- 		atomic_inc(&ordered->refs);
- 		spin_unlock(&root->ordered_extent_lock);
- 
--		ordered->flush_work.func = btrfs_run_ordered_extent_work;
-+		btrfs_init_work(&ordered->flush_work,
-+				btrfs_run_ordered_extent_work, NULL, NULL);
- 		list_add_tail(&ordered->work_list, &works);
--		btrfs_queue_worker(&root->fs_info->flush_workers,
--				   &ordered->flush_work);
-+		btrfs_queue_work(root->fs_info->flush_workers,
-+				 &ordered->flush_work);
- 
- 		cond_resched();
- 		spin_lock(&root->ordered_extent_lock);
-@@ -686,8 +687,8 @@ int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
- 			goto out;
- 		}
- 		list_add_tail(&work->list, &works);
--		btrfs_queue_worker(&root->fs_info->flush_workers,
--				   &work->work);
-+		btrfs_queue_work(root->fs_info->flush_workers,
-+				 &work->work);
- 
- 		cond_resched();
- 		spin_lock(&root->fs_info->ordered_root_lock);
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 0c0b356..7496866 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -133,7 +133,7 @@ struct btrfs_ordered_extent {
- 	struct btrfs_work work;
- 
- 	struct completion completion;
--	struct btrfs_work flush_work;
-+	struct btrfs_work_struct flush_work;
- 	struct list_head work_list;
- };
- 
++
++struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
++						     char *ordered_name,
++						     int flags,
++						     int max_active)
++{
++	struct btrfs_workqueue_struct *ret = kzalloc(sizeof(*ret), GFP_NOFS);
++	flags |= WQ_UNBOUND;
++	if (unlikely(!ret))
++		return NULL;
++	ret->normal_wq = alloc_workqueue(name, flags, max_active);
++	if (unlikely(!ret->normal_wq)) {
++		kfree(ret);
++		return NULL;
++	}
++
++	if (ordered_name) {
++		ret->ordered_wq = alloc_ordered_workqueue(ordered_name, flags);
++		if (unlikely(!ret->ordered_wq)) {
++			destroy_workqueue(ret->normal_wq);
++			kfree(ret);
++			return NULL;
++		}
++	}
++
++	spin_lock_init(&ret->insert_lock);
++	return ret;
++}
++
++static void normal_work_helper(struct work_struct *arg)
++{
++	struct btrfs_work_struct *work;
++	work = container_of(arg, struct btrfs_work_struct, normal_work);
++	work->func(work);
++	complete(&work->normal_completion);
++}
++
++static void ordered_work_helper(struct work_struct *arg)
++{
++	struct btrfs_work_struct *work;
++	work = container_of(arg, struct btrfs_work_struct, ordered_work);
++	wait_for_completion(&work->normal_completion);
++	work->ordered_func(work);
++	if (work->ordered_free)
++		work->ordered_free(work);
++}
++
++void btrfs_init_work(struct btrfs_work_struct *work,
++		     void (*func)(struct btrfs_work_struct *),
++		     void (*ordered_func)(struct btrfs_work_struct *),
++		     void (*ordered_free)(struct btrfs_work_struct *))
++{
++	work->func = func;
++	work->ordered_func = ordered_func;
++	work->ordered_free = ordered_free;
++	INIT_WORK(&work->normal_work, normal_work_helper);
++	if (work->ordered_func)
++		INIT_WORK(&work->ordered_work, ordered_work_helper);
++	init_completion(&work->normal_completion);
++}
++
++void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
++		      struct btrfs_work_struct *work)
++{
++	unsigned long flags;
++	spin_lock_irqsave(&wq->insert_lock, flags);
++	queue_work(wq->normal_wq, &work->normal_work);
++	if (wq->ordered_wq && work->ordered_func)
++		queue_work(wq->ordered_wq, &work->ordered_work);
++	spin_unlock_irqrestore(&wq->insert_lock, flags);
++}
++
++void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
++{
++	if (wq->ordered_wq)
++		destroy_workqueue(wq->ordered_wq);
++	destroy_workqueue(wq->normal_wq);
++}
++
++void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max)
++{
++	workqueue_set_max_active(wq->normal_wq, max);
++}
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 1f26792..eee6709 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2007 Oracle.  All rights reserved.
++ * Copyright (C) 2013 Fujitsu.  All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public
+@@ -118,4 +119,47 @@ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+ void btrfs_requeue_work(struct btrfs_work *work);
+ void btrfs_set_work_high_prio(struct btrfs_work *work);
++
++struct btrfs_workqueue_struct {
++	struct workqueue_struct *normal_wq;
++	struct workqueue_struct *ordered_wq;
++
++	/*
++	 * Spinlock to ensure that both ordered and normal work can
++	 * be inserted to each workqueue at the same sequance,
++	 * which will reduce the ordered_work waiting time and disk head moves.
++	 */
++	spinlock_t insert_lock;
++};
++
++struct btrfs_work_struct {
++	void (*func)(struct btrfs_work_struct *arg);
++	void (*ordered_func)(struct btrfs_work_struct *arg);
++	void (*ordered_free)(struct btrfs_work_struct *arg);
++
++	/* Don't touch things below */
++	struct work_struct normal_work;
++	struct work_struct ordered_work;
++	struct completion normal_completion;
++};
++
++/*
++ * ordered_name is optional. If not given(NULL), the ordered
++ * workqueue will not be allocated and the ordered excution will not
++ * be available. The behavior will not be changed after init.
++ *
++ * flags will use the WQ_ flags, ORed with WQ_UNBOUND.
++ * */
++struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
++						     char *ordered_name,
++						     int flags,
++						     int max_active);
++void btrfs_init_work(struct btrfs_work_struct *work,
++		     void (*func)(struct btrfs_work_struct *),
++		     void (*ordered_func)(struct btrfs_work_struct *),
++		     void (*ordered_free)(struct btrfs_work_struct *));
++void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
++		      struct btrfs_work_struct *work);
++void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq);
++void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max);
+ #endif
 -- 
 1.8.4.2
 

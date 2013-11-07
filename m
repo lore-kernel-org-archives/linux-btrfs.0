@@ -1,57 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:57499 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753180Ab3KGRzm convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 12:55:42 -0500
+Received: from dkim1.fusionio.com ([66.114.96.53]:49881 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753101Ab3KGSI3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 13:08:29 -0500
 Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 479659A06B6
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Nov 2013 10:55:42 -0700 (MST)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-From: Chris Mason <chris.mason@fusionio.com>
-In-Reply-To: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
-CC: <quwenruo@cn.fujitsu.com>
+	by dkim1.fusionio.com (Postfix) with ESMTP id 62B637C0682
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Nov 2013 11:08:29 -0700 (MST)
+Date: Thu, 7 Nov 2013 13:08:26 -0500
+From: Josef Bacik <jbacik@fusionio.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 02/17] btrfs: Added btrfs_workqueue_struct implemented
+ ordered execution based on kernel workqueue
+Message-ID: <20131107180826.GI27784@localhost.localdomain>
 References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
-Message-ID: <20131107175456.3802.35292@localhost.localdomain>
-Subject: Re: [PATCH v3 00/17] Replace btrfs_workers with kernel workqueue based
- btrfs_workqueue_struct
-Date: Thu, 7 Nov 2013 12:54:56 -0500
+ <1383803527-23736-3-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1383803527-23736-3-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Qu Wenruo (2013-11-07 00:51:50)
-> Add a new btrfs_workqueue_struct which use kernel workqueue to implement
-> most of the original btrfs_workers, to replace btrfs_workers.
+On Thu, Nov 07, 2013 at 01:51:52PM +0800, Qu Wenruo wrote:
+> Use kernel workqueue to implement a new btrfs_workqueue_struct, which
+> has the ordering execution feature like the btrfs_worker.
 > 
-> With this patchset, redundant workqueue codes are replaced with kernel
-> workqueue infrastructure, which not only reduces the code size but also the
-> effort to maintain it.
+> The func is executed in a concurrency way, and the
+> ordred_func/ordered_free is executed in the sequence them are queued
+> after the corresponding func is done.
+> The new btrfs_workqueue use 2 workqueues to implement the original
+> btrfs_worker, one for the normal work and one for ordered work.
 > 
-> More performace tests are ongoing, the result from sysbench shows minor
-> improvement on the following server:
-> CPU: two-way Xeon X5660
-> RAM: 4G 
-> HDD: SAS HDD, 150G total, 40G partition for btrfs test
+> At this patch, high priority work queue or thresholding is not added yet.
+> The high priority feature and thresholding will be added in the following patches.
 > 
-> Test result:
-> Mode|Num_threads|block size|extra flags|performance change vs 3.11 kernel
-> rndrd   1       4K      none            +1.22%
-> rndrd   1       32K     none            +1.00%
-> rndrd   8       32K     sync            +1.35%
-> seqrd   8       4K      direct          +5.56%
-> seqwr   8       4K      none            -1.26%
-> seqwr   8       32K     sync            +1.20%
-> 
-> Changes below 1% are not mentioned.
-> Overall the patchset doesn't change the performance on HDD.
-> 
-> Since more tests are needed, more test result are welcomed.
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Thanks for working on this, it's really good to move toward a single set
-of workqueues in the kernel.
+Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 
-Have you benchmarked with compression on?  Especially on modern
-hardware, the crcs don't exercise the workqueues very much.
+Thanks,
 
--chris
+Josef

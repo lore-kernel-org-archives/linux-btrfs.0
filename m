@@ -1,54 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40823 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:51487 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751762Ab3KGEVW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Nov 2013 23:21:22 -0500
-Message-ID: <527B1744.5080705@oracle.com>
-Date: Thu, 07 Nov 2013 12:29:56 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	with ESMTP id S1750964Ab3KGFEu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 00:04:50 -0500
 MIME-Version: 1.0
+Message-ID: <527B1A69.8050708@oracle.com>
+Date: Wed, 6 Nov 2013 20:43:21 -0800 (PST)
+From: Anand Jain <Anand.Jain@oracle.com>
 To: Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 09/16] btrfs-progs: btrfs_scan_kernel(): fd==0 is not
- an error
-References: <1383779755-18228-1-git-send-email-sandeen@redhat.com> <1383779755-18228-10-git-send-email-sandeen@redhat.com>
-In-Reply-To: <1383779755-18228-10-git-send-email-sandeen@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 11/16] btrfs-progs: pass positive errno to strerror in
+ cmd_df()
+References: <1383779755-18228-1-git-send-email-sandeen@redhat.com>
+ <1383779755-18228-12-git-send-email-sandeen@redhat.com>
+In-Reply-To: <1383779755-18228-12-git-send-email-sandeen@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
+Reviewed-by Anand Jain <anand.jain@oracle.com>
 
 On 11/07/2013 07:15 AM, Eric Sandeen wrote:
-> The error return from open is -1, so test that, not 0,
-> for success/failure.
+> get_df returns a negative error number, but then
+> we pass it to strerror, which wants a positive value...
 >
-> Resolves-Coverity-CID: 1125931
+> Resolves-Coverity-CID: 1125929
 > Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 > ---
->   cmds-filesystem.c |    4 ++--
->   1 files changed, 2 insertions(+), 2 deletions(-)
+>   cmds-filesystem.c |    2 +-
+>   1 files changed, 1 insertions(+), 1 deletions(-)
 >
 > diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index e6642ef..df9d1ff 100644
+> index df9d1ff..b1291d6 100644
 > --- a/cmds-filesystem.c
 > +++ b/cmds-filesystem.c
-> @@ -362,13 +362,13 @@ static int btrfs_scan_kernel(void *search)
->   		}
->
->   		fd = open(mnt->mnt_dir, O_RDONLY);
-> -		if (fd > 0 && !get_df(fd, &space_info_arg)) {
-> +		if ((fd != -1) && !get_df(fd, &space_info_arg)) {
->   			get_label_mounted(mnt->mnt_dir, label);
->   			print_one_fs(&fs_info_arg, dev_info_arg,
->   					space_info_arg, label, mnt->mnt_dir);
->   			free(space_info_arg);
->   		}
-> -		if (fd > 0)
-> +		if (fd != -1)
->   			close(fd);
->   		free(dev_info_arg);
+> @@ -173,7 +173,7 @@ static int cmd_df(int argc, char **argv)
+>   		print_df(sargs);
+>   		free(sargs);
+>   	} else {
+> -		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(ret));
+> +		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
 >   	}
+>
+>   	close_file_or_dir(fd, dirstream);
 >

@@ -1,16 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31550 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:34222 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753917Ab3KGLKn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 06:10:43 -0500
+	with ESMTP id S1753945Ab3KGJyS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 04:54:18 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH 1/3] btrfs-progs: mechanism to fetch fsinfo from btrfs-control v4
-Date: Thu,  7 Nov 2013 19:18:43 +0800
-Message-Id: <1383823123-378-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
-References: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/3] btrfs-progs: mechanism to fetch fsinfo from btrfs-control v3
+Date: Thu,  7 Nov 2013 18:01:41 +0800
+Message-Id: <1383818503-29607-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -27,16 +25,15 @@ if a multi-disk btrfs is mounted it doesn't scalable well
 with few hundreds luns, check_mounted for sure needs a
 revamp. using this it can be done easily. which is planned.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-v4: bug fix and accepts Stefan suggested
-v3: accepts Josef suggested
+v3: accepts Josef suggested and fix git screwup
 v2: commit reword
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- ioctl.h |   19 ++++++++++++++++
- utils.c |   75 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h |   19 +++++++++++++++
+ utils.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  utils.h |    1 +
- 3 files changed, 95 insertions(+), 0 deletions(-)
+ 3 files changed, 96 insertions(+), 0 deletions(-)
 
 diff --git a/ioctl.h b/ioctl.h
 index d21413f..29575d8 100644
@@ -76,7 +73,7 @@ index d21413f..29575d8 100644
  }
  #endif
 diff --git a/utils.c b/utils.c
-index 60d2c3a..9983db2 100644
+index 60d2c3a..4b90026 100644
 --- a/utils.c
 +++ b/utils.c
 @@ -47,6 +47,7 @@
@@ -87,7 +84,7 @@ index 60d2c3a..9983db2 100644
  
  #ifndef BLKDISCARD
  #define BLKDISCARD	_IO(0x12,119)
-@@ -2087,3 +2088,77 @@ int lookup_ino_rootid(int fd, u64 *rootid)
+@@ -2087,3 +2088,78 @@ int lookup_ino_rootid(int fd, u64 *rootid)
  
  	return 0;
  }
@@ -118,7 +115,7 @@ index 60d2c3a..9983db2 100644
 +again:
 +	sz = sizeof(*fsargs) + sizeof(*fslist) * count;
 +
-+	fsargs_saved = fsargs = malloc(sz);
++	fsargs = malloc(sz);
 +	if (!fsargs) {
 +		close(fd);
 +		return -ENOMEM;
@@ -150,6 +147,7 @@ index 60d2c3a..9983db2 100644
 +		goto out;
 +	}
 +
++	fsargs_saved = fsargs;
 +	fslist = (struct btrfs_ioctl_fslist *) (++fsargs);
 +
 +	sz = sizeof(*fslist) * *out_count;
@@ -163,7 +161,7 @@ index 60d2c3a..9983db2 100644
 +out:
 +	free(fsargs_saved);
 +	close(fd);
-+	return ret;
++	return 0;
 +}
 diff --git a/utils.h b/utils.h
 index 6f4b10c..a14a887 100644

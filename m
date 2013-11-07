@@ -1,44 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:46587 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751451Ab3KEBeu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2013 20:34:50 -0500
-Received: from bluebottle.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 461582189E
-	for <linux-btrfs@vger.kernel.org>; Tue,  5 Nov 2013 12:24:47 +1100 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
+Received: from cn.fujitsu.com ([222.73.24.84]:26950 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751180Ab3KGFvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 00:51:18 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rA75pFA1008341
+	for <linux-btrfs@vger.kernel.org>; Thu, 7 Nov 2013 13:51:15 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: csum failure messages
-Date: Tue, 5 Nov 2013 12:24:43 +1100
-MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201311051224.44255.russell@coker.com.au>
+Cc: quwenruo@cn.fujitsu.com
+Subject: [PATCH v3 01/17] btrfs: Cleanup the unused struct async_sched.
+Date: Thu, 7 Nov 2013 13:51:51 +0800
+Message-Id: <1383803527-23736-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The below messages are from dmesg on a system where "btrfs balance" just 
-aborted.  It's running kernel 3.11.6 (the latest Debian package).
+The struct async_sched is not used by any codes and can be removed.
 
-This seems to be telling me that Inode 388 is involved, but there are over 300 
-subvols on that system which could contain such an Inode.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+Changelog:
+v1->v2:
+  None.
+v2->v3:
+  None.
+---
+ fs/btrfs/volumes.c | 7 -------
+ 1 file changed, 7 deletions(-)
 
-I think that more information is needed for such log messages.  We need to at 
-least be able to identify the subvol (is it possible to extract this from the 
-numbers in the log messages?).  Ideally we would be able to identify the file 
-name as well.
-
-
-[10751.637517] BTRFS info (device sda3): csum failed ino 388 off 23191552 csum 
-2566472073 private 3193692311
-[10751.646390] BTRFS info (device sda3): csum failed ino 388 off 24104960 csum 
-5219137 private 2264608335
-[10751.654472] BTRFS info (device sda3): csum failed ino 388 off 24154112 csum 
-4084831521 private 1792217768
-[10751.731830] BTRFS info (device sda3): csum failed ino 388 off 23191552 csum 
-2566472073 private 3193692311
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b0203b1..1bd573d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5316,13 +5316,6 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 	}
+ }
+ 
+-struct async_sched {
+-	struct bio *bio;
+-	int rw;
+-	struct btrfs_fs_info *info;
+-	struct btrfs_work work;
+-};
+-
+ /*
+  * see run_scheduled_bios for a description of why bios are collected for
+  * async submit.
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+1.8.4.2
+

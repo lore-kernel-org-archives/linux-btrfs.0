@@ -1,50 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:21994 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1757582Ab3KHToD convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Nov 2013 14:44:03 -0500
-Received: from [66.162.154.131] (port=51948 helo=[10.1.8.1])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.80.1)
-	(envelope-from <lists@colorremedies.com>)
-	id 1VeryK-001RfG-O0
-	for linux-btrfs@vger.kernel.org; Fri, 08 Nov 2013 12:44:01 -0700
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Question about btrfs as root filesystem
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <527D267D.9010403@inwind.it>
-Date: Fri, 8 Nov 2013 12:43:59 -0700
-Message-Id: <AF9AF4F3-B21D-404F-91C9-59CB15080DEB@colorremedies.com>
-References: <29341211.3154771383915306434.JavaMail.defaultUser@defaultHost> <8B95F9DF-83EC-4F49-8E5E-B5052FB778F9@colorremedies.com> <527D267D.9010403@inwind.it>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Received: from frost.carfax.org.uk ([85.119.82.111]:35464 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757565Ab3KHTqj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2013 14:46:39 -0500
+Date: Fri, 8 Nov 2013 19:46:37 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: yzb3@wp.pl
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Odp: Re: Odp: Btrfs might be gradually slowing the boot process
+Message-ID: <20131108194637.GT14405@carfax.org.uk>
+References: <527d3d814dcdb2.95923869@wp.pl>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="+1aBKeCoRrxtQ74y"
+In-Reply-To: <527d3d814dcdb2.95923869@wp.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Nov 8, 2013, at 10:59 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
->> 
->> Now I don't know what snapshot that is, since it's just renamed to
->> some non-descriptive name like "root" which happens to, by
->> convention, always be the active root. This is the problem with using
->> user domain to store contextual metadata. We need another way to do
->> this, rather than inject these changes into filename/foldername which
->> are primarily user domain. And we need agreement on a right way to do
->> this rather than distribution convention.
-> 
-> Put all the required information in an xattr...
-> 
->> 
->> We need some distribution collaboration in this area, or this is
->> going to turn into an end-user pain point, with multiboot users top
->> on the list of the injured.
-> 
-> I fully agree: whatever solution we found, it has to be shared across
-> all distributions.
+--+1aBKeCoRrxtQ74y
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Yes although not merely shared. But designed and agreement by. Otherwise this becomes worse than the linux multiboot situation, which today is pretty much a broken mess in which linux distributions break the bootability of the existing linux OS installation, and do so by default. It's an ironic case where a linux distro is friendly to co-existing with Windows and OS X, but typically is downright hostile to fellow linux OS installations.
+On Fri, Nov 08, 2013 at 08:37:37PM +0100, yzb3@wp.pl wrote:
+> Sure;
+> 
+> the kernel line from grub.cfg:
+> linux   /boot/vmlinuz-linux root=UUID=c26e6d9a-0bbb-436a-a217-95c738b5b9c6 rootflags=noatime,space_cache rw quiet
 
-Now if we want to admit that the different distros are in effect all hostile competitor OS's to each other, then I guess a free for all where an open filesystem like Btrfs effectively becomes proprietary due to highly complex and variable layouts required to support snapshot system rollbacks is what we'll just have to expect. In which case multiboot on Btrfs is dead in the water. Each distro would have to have their own volume, not their own subvolumes.
+   OK, this may be your problem. You're generating the space cache
+every time you boot. You only need it once; let the disk activity on
+boot finish (it may take a while, depending on how big your filesystem
+is, and how much data it has, and how fragmented it is), and remove
+the space_cache option from your rootflags. When you next boot, it
+will use the existing cache rather than generating it again from
+scratch.
 
-Chris Murphy
+   Hugo.
+
+> proc/mounts:
+> rootfs / rootfs rw 0 0
+> proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+> sys /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+> dev /dev devtmpfs rw,nosuid,relatime,size=4028896k,nr_inodes=1007224,mode=755 0 0
+> run /run tmpfs rw,nosuid,nodev,relatime,mode=755 0 0
+> /dev/sda2 / btrfs rw,noatime,space_cache 0 0
+> securityfs /sys/kernel/security securityfs rw,nosuid,nodev,noexec,relatime 0 0
+> tmpfs /dev/shm tmpfs rw,nosuid,nodev 0 0
+> devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+> tmpfs /sys/fs/cgroup tmpfs rw,nosuid,nodev,noexec,mode=755 0 0
+> cgroup /sys/fs/cgroup/systemd cgroup rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd 0 0
+> pstore /sys/fs/pstore pstore rw,nosuid,nodev,noexec,relatime 0 0
+> cgroup /sys/fs/cgroup/cpuset cgroup rw,nosuid,nodev,noexec,relatime,cpuset 0 0
+> cgroup /sys/fs/cgroup/cpu,cpuacct cgroup rw,nosuid,nodev,noexec,relatime,cpuacct,cpu 0 0
+> cgroup /sys/fs/cgroup/memory cgroup rw,nosuid,nodev,noexec,relatime,memory 0 0
+> cgroup /sys/fs/cgroup/devices cgroup rw,nosuid,nodev,noexec,relatime,devices 0 0
+> cgroup /sys/fs/cgroup/freezer cgroup rw,nosuid,nodev,noexec,relatime,freezer 0 0
+> cgroup /sys/fs/cgroup/net_cls cgroup rw,nosuid,nodev,noexec,relatime,net_cls 0 0
+> cgroup /sys/fs/cgroup/blkio cgroup rw,nosuid,nodev,noexec,relatime,blkio 0 0
+> systemd-1 /proc/sys/fs/binfmt_misc autofs rw,relatime,fd=33,pgrp=1,timeout=300,minproto=5,maxproto=5,direct 0 0
+> debugfs /sys/kernel/debug debugfs rw,relatime 0 0
+> configfs /sys/kernel/config configfs rw,relatime 0 0
+> mqueue /dev/mqueue mqueue rw,relatime 0 0
+> hugetlbfs /dev/hugepages hugetlbfs rw,relatime 0 0
+> tmpfs /tmp tmpfs rw 0 0
+> /dev/sda2 /home btrfs rw,relatime,space_cache 0 0
+> 
+> 
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- People are too unreliable to be replaced by machines. ---      
+
+--+1aBKeCoRrxtQ74y
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUn0/nVheFHXiqx3kAQLrxw/9HOXEOlqGVfiXWoIzxvfn+WSmD6AhnzZv
+ArdmPTuDAoHf2ZUiqqdo4wWh0iHQ/Ov8yLIGLLLKWEyQUxdQl4ZKJDYj4Z2VWViK
+WKRpHU9ouyE/aaqyFYj49Vtoopcj2H+HDnMwBUR4LJ6k9jRqq79kl9UEQdVoYZev
+2kPjR1UrfBaSCEWAakGDB3tuMKL4S8sUxyDtQMm/c9sHLm8rctXSGurQi+LJFI4o
+xSjo1Lkjg6q2PS0QMc6eo0Xj41/cHKkdN1LvKjcfZ8AL0jOPruDtPYkoh5MpUdmO
+J9VRPdSCpWfOu+ZVfaxAsyhJhKCtVwQX8PNnxCBeu0hsHCYfEB+FUoD2bsnWENyQ
+1DqGJZlKga890U+8dfPGqal4q0TDxxTXqmY7RRmqVOstHATf45sFT5FK4vpwMpGY
+Vp3C2vN5V0PetogNxUvQCELS7ykuVPhm90H0k17Sx91m9XuRx3VnS7Gex4BHTDel
+hdPpHuCQT7XTAlACUiIknfmIZZchibXGIQC9tuycbDltD8/e/4f2Q7OYUqUL3x1s
+ongucRHtIvLMBL28BeQdHZ0M2Hny3WJPdJxMw05MLwYFM2pfidMNalBn8jKtUS/W
+KrsKbP4Z6BeeWPDSAdEQVBTRtD9rmEQFlxySplMlC+zU1GZmIuY8eaiB9Q2mZL/1
+Rf+pwCDVMo4=
+=nH2S
+-----END PGP SIGNATURE-----
+
+--+1aBKeCoRrxtQ74y--

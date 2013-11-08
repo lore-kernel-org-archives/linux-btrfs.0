@@ -1,64 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:35293 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757272Ab3KHTO7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2013 14:14:59 -0500
-Date: Fri, 8 Nov 2013 19:14:57 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: yzb3@wp.pl
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Odp: Btrfs might be gradually slowing the boot process
-Message-ID: <20131108191457.GS14405@carfax.org.uk>
-References: <527d370819c077.64418711@wp.pl>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Og4V1LL7XI16KR+9"
-In-Reply-To: <527d370819c077.64418711@wp.pl>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:51312 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1758006Ab3KHTaR convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Nov 2013 14:30:17 -0500
+Received: from 105-34-agavebb-nm.abq.nm.agavebb.net ([199.21.105.34]:47450 helo=[10.1.8.1])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Verl0-001LhK-9s
+	for linux-btrfs@vger.kernel.org; Fri, 08 Nov 2013 12:30:15 -0700
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Question about btrfs as root filesystem
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <7b2cdbd67793f539fb07f5c73a1509c8@myjm.de>
+Date: Fri, 8 Nov 2013 12:30:10 -0700
+Message-Id: <B01EE27D-B324-47DD-AAEA-583EB27E407F@colorremedies.com>
+References: <5eb6a9cbd3a163b70c9cfe4a1b46a1fa@myjm.de> <236FCD08-8D7A-4067-9CC4-235BA129C953@colorremedies.com> <7b2cdbd67793f539fb07f5c73a1509c8@myjm.de>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Og4V1LL7XI16KR+9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Nov 8, 2013, at 6:41 AM, Michael Göhler <visit@myjm.de> wrote:
 
-On Fri, Nov 08, 2013 at 08:10:00PM +0100, yzb3@wp.pl wrote:
-> Silly me; I am using a fully updated Arch Linux x64 (3.11.6 kernel), I have a single HDD with a root and home subvolume under the main btrfs subvolume and I am not using any "exotic" settings. This is a most regular desktop.
+> Hi Chris
+> 
+> thanks for taking the time.
+> 
+>>> The boot subvolume is then set with 'btrfs subvolume set-default' and mounted without subvol/subvolid option by Arch's default mount handler.
+>> I'm unconvinced it's a good idea for it to be used behind the scenes
+>> for the described purpose. Consider the following:
+>> 1. btrfs subvolume set-default uses a user space tool and in my view
+>> it's primarily a user domain behavior modifier for the mount command.
+> The only drawback I can imagine is that the initrd can have a different version of the btrfs command, as it isn't repacked on package upgrades of btrfs-utils. But this isn't related to set-default only, but also for the snapshot command. Of cause, if we find a better way to achieve our goal, we are willing to drop it.
 
-   Can you give exactly the mount options you are using? For a root
-filesystem, these are probably in your bootloader configuration rather
-than fstab: rootflags=... on your kernel command line.
+Consider the muliboot scenario were I want opensuse to boot with snapshotX persistently, and I want Fedora to boot with snapshotY persistently. If both distributions claim the right to change the default subvolume this now breaks horribly because neither distribution actually knows which snapshot is to be booted because that knowledge is only stored as the default subvolume, the value of which isn't preserved once changed.
 
-   Also, just as a confirmation, the same settings from /proc/mounts
-once the machine's booted.
 
-   Hugo.
+>> 2. It makes the actual mounted subvolume obscured, cat
+>> /proc/self/mountinfo doesn't show what subvolume is mounted unless
+>> subvol= is explicitly used in /etc/fstab.
+> We use btrfs subvolume get-default to check on which subvolume we are.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- People are too unreliable to be replaced by machines. ---      
+And what if that get-default presents you with a subvolume that isn't yours? It sounds like a setup for distributions stepping on each other.
 
---Og4V1LL7XI16KR+9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
+> You are right, an average user will find it confusing. But if he does, he will also not look into the /proc filesystem. He will run mount without options to look for it, and have no luck because it isn't displayed there too.
+> 
+>> 3. Grub2 (and I'm pretty sure grubby) do not use the set-default. The
+>> GRUB intent for the prefix to search an absolute path, not one
+>> relative to the default subvolume. There's a bug that should very
+>> recently (week) be fixed, where GRUB fails to find prefix if
+>> set-default is changed. This maybe isn't affecting the particular
+>> layout you describe where only rootfs is on btrfs, rather than /boot
+>> being on its own subvolume.
+> Actually 2.00.5086-1 which is latest on Arch is respecting set-default and searches for the kernel on the default subvolume without prefix and rootflags. Thanks for pointing this out, so I can watch out for the next grub update and fix the hook accordingly.
 
-iQIVAwUBUn04MVheFHXiqx3kAQJvmhAAgDaEnar7MgnyGJDBI1aBeZ17kmx5p9gs
-w5g+XXnv2+l4e5Sg4VcOyfhbIU2oFsT58gVDwZcpArrQ4dmkK65b7cHK7pmESAzo
-LtyOWzHPGBaxsYxKc1Ml3behJnn089lKRTfW6BKZCP2o3NEKdCc6IJZd5alEdQpZ
-AGh3uSf/ehWKMi1FGKcYRAZUa+sCHv2QxEuQqvr6+AXFDInTrPsZTO5oFLT8d02U
-00EzUbGzhXER7u1VHfUVlUe0P3x8sQj0woMPGuXEyFf2+Muxiex1zvXZEGPdWcVg
-VYtgwxrsoco4qevuSvBh/ISPqDA2UMcISDZH35SF09DG0m7iBZ9HRvPLpgiLJoTv
-BznSqBCn9uDkkqEd3teztJ6EH+7eHgMb2XbYa8wNE7/+WvuiJtMvW0E/3Q1ckOwi
-gZC9VX5bRrh/yBnzLNVEFbxpcFzYX5HlAqo4MnoHRBgQXn7KnUKfSr8c7vqt9/Ru
-/iY47U/aQ70M2Hf7wneYH/ncz+DMTCGMF5VrWFmVCuJ5jBkZbTWzMdT6UMPcCGQd
-DSa+BDOX3msolqMgX16tt/zoRohe7Si7lcYtCfJ0xw8itzgDX8puc0zWFL8pRPVF
-IHZBBGSRCMbMNvPf17hGq9UPjXSnuo1shXxPyXN5TQLK5aY5H/KlKqf3Lo0zbXzn
-rKnAwg6+0po=
-=8xII
------END PGP SIGNATURE-----
+Maybe I'm not following what you mean by fix. If distributions were to have different GRUB behaviors in this respect, multiboot on Btrfs will be fundamentally broken: e.g. if one distribution expects GRUB to interpret prefix and rootflags as absolute paths from subvolid=5, and another distro interprets them as relative to the default subvolume.
 
---Og4V1LL7XI16KR+9--
+
+> 
+>> I'm sympathetic to the alternative problem, which is that you need to
+>> alter grub.cfg to use the proper rootflags=subvol= to explicitly use
+>> the proper snapshot, and also it would mean altering the /etc/fstab
+>> within that snapshot.
+> In my opinion, the whole set-default/subvolid= discussion is not relevant for my question (beside I appreciate it). Because the /etc/fstab is first read by init after switching to real root. So, if init itself is on a nested subvolume, /etc/fstab will not help at all.
+
+I think this emphasizes that the necessary pieces aren't actually present to enable booting from snapshots, it becomes very use case specific and effectively proprietary to a distribution.
+
+
+> Some apps are using the /var filesystem for caching and if they go nuts, your root filesystem runs out of space.
+
+By making /var a subvolume on a file system that also hosts a root subvolume, you've not changed the risk of /var causing rootfs to run out of space, unless you also implement quotas for /var. And I think that's too risky to implement.
+
+
+> Of cause you can question that. And I'm with you (at least for /usr). But this has been a common practice for years, and some of the oldschool sysadmins aren't to convince on that ;-)
+
+I don't feel that implementing best practices that differs from oldschool convention requires convincing oldschoolers of anything. They can retroactively implement whatever they want if they wish. But today's developers doing this new work should consider best practices, not old practices. And should consider newschoolers, not just oldschoolers, who will become confused by antiquated conventions that have little (or no) efficacy.
+
+
+Chris Murphy
+

@@ -1,57 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57723 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752755Ab3KHBdX convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 20:33:23 -0500
-Received: from c-68-35-125-242.hsd1.nm.comcast.net ([68.35.125.242]:51761 helo=[192.168.1.140])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.80.1)
-	(envelope-from <lists@colorremedies.com>)
-	id 1Veawr-0032GX-Ts
-	for linux-btrfs@vger.kernel.org; Thu, 07 Nov 2013 18:33:22 -0700
-Content-Type: text/plain; charset=iso-8859-1
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Question about btrfs as root filesystem
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <5eb6a9cbd3a163b70c9cfe4a1b46a1fa@myjm.de>
-Date: Thu, 7 Nov 2013 18:33:20 -0700
-Message-Id: <236FCD08-8D7A-4067-9CC4-235BA129C953@colorremedies.com>
-References: <5eb6a9cbd3a163b70c9cfe4a1b46a1fa@myjm.de>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Received: from mail-ee0-f42.google.com ([74.125.83.42]:55277 "EHLO
+	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754005Ab3KHEHD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 23:07:03 -0500
+Received: by mail-ee0-f42.google.com with SMTP id c1so725318eek.15
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Nov 2013 20:07:02 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAC4gV=7FgL=wixYf6w-yfuZNbz8QCt5t9T8_jStjpkKgTBc+Vw@mail.gmail.com>
+References: <CAOMFOmUDd0jS=R+MAVwfwmNj7Bt9VUM46b8zYmC59BA65qhUfA@mail.gmail.com>
+	<CAC4gV=7FgL=wixYf6w-yfuZNbz8QCt5t9T8_jStjpkKgTBc+Vw@mail.gmail.com>
+Date: Thu, 7 Nov 2013 20:07:02 -0800
+Message-ID: <CAOMFOmXj=-8g6hYs_qcj417OUmgLEGdms2kMzUdorCuxJ7292w@mail.gmail.com>
+Subject: Re: How to fix/remove "csum failed ino" error
+From: Anatol Pomozov <anatol.pomozov@gmail.com>
+To: Frank Holton <fholton@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi, Frank
 
-On Nov 7, 2013, at 4:45 PM, Michael Göhler <visit@myjm.de> wrote:
->  The boot subvolume is then set with 'btrfs subvolume set-default' and mounted without subvol/subvolid option by Arch's default mount handler.
+Thanks for your answer.
 
-I'm unconvinced it's a good idea for it to be used behind the scenes for the described purpose. Consider the following:
+On Thu, Nov 7, 2013 at 8:41 AM, Frank Holton <fholton@gmail.com> wrote:
+> Hey Anatol,
+>
+> I just checked and on my filesystem inode number 362 corresponds to
+> part of the free space cache. You can check this yourself by running
+> (as root)
+>
+> btrfs-debug-tree /dev/sdb | grep "(362 " -A 3 -B 1
+>
+> where /dev/sdb is one of the devices from your filesystem.
+>
+> It printed the following for me, note the location key (362
+> INODE_ITEM) under the FREE_SPACE key. Yours might be different but if
+> you see FREE_SPACE that points to the free space cache.
+>
+> item 100 key (362 INODE_ITEM 0) itemoff 21857 itemsize 160
+>                 inode generation 2004 transid 2004 size 262144 block
+> group 0 mode 100600 links 1
+>         item 101 key (362 EXTENT_DATA 0) itemoff 21804 itemsize 53
+>                 extent data disk byte 41903296512 nr 262144
+>                 extent data offset 0 nr 262144 ram 262144
+>                 extent compression 0
+> --
+>         item 148 key (FREE_SPACE UNTYPED 113845993472) itemoff 23807 itemsize 41
+>                 location key (362 INODE_ITEM 0)
+>                 cache generation 2004 entries 2 bitmaps 0
 
-1. btrfs subvolume set-default uses a user space tool and in my view it's primarily a user domain behavior modifier for the mount command.
 
-2. It makes the actual mounted subvolume obscured, cat /proc/self/mountinfo doesn't show what subvolume is mounted unless subvol= is explicitly used in /etc/fstab.
+Indeed my case similar to yours
 
-3. Grub2 (and I'm pretty sure grubby) do not use the set-default. The GRUB intent for the prefix to search an absolute path, not one relative to the default subvolume. There's a bug that should very recently (week) be fixed, where GRUB fails to find prefix if set-default is changed. This maybe isn't affecting the particular layout you describe where only rootfs is on btrfs, rather than /boot being on its own subvolume.
+# btrfs-debug-tree /dev/sda3 | grep "(309 " -A 3 -B 1
 
-> That way, we ensure the best compatibility and lowest maintenance, as we don't overwrite default init functions.
+item 1 key (309 INODE_ITEM 0) itemoff 3675 itemsize 160
+    inode generation 190480 transid 190647 size 0 block group 0 mode
+100600 links 1
+item 51 key (FREE_SPACE UNTYPED 56937676800) itemoff 1863 itemsize 41
+    location key (309 INODE_ITEM 0)
 
-I'm sympathetic to the alternative problem, which is that you need to alter grub.cfg to use the proper rootflags=subvol= to explicitly use the proper snapshot, and also it would mean altering the /etc/fstab within that snapshot.
+So I mounted my filesystem with 'clear_cache' flag:
 
-> 
-> Now, if we snapshots the root subvolume, the child subvolumes are not snapshoted with it. There is no back reference which would allow Btrfs to auto-mount the original child subvolumes when we mount the snapshot as new root filesystem. Of cause we could snapshot the childs separately into their desired directories. But this would not help, because our hook snapshots the snapshot again, to keep it's original untouched while rolling back. And we don't have fstab to find out the correct mount points at this early boot stage.
+# mount -o clear_cache /dev/sda3 mydata/
 
-The fact of the matter is, we don't have the necessary metadata support in btrfs to understand the relationships between snapshots/subvolumes. There is a need for this, not least of which is the use case you're describing. This has come up with Fedora also for their offline updates rollback they want to eventually do. And it's also an issue with distribution installers which see these snapshots as wholly unique instances of existing installations, rather than as related snapshots.
+mount says:
+/dev/sdc1 on /root/mydata type btrfs (rw,relatime,space_cache,clear_cache)
+
+dmesg also mentions the cache:
+
+[  634.991845] device fsid 25e6a6fa-fe1f-4be5-a638-eeac948f8c21 devid
+9 transid 190479 /dev/sda3
+[  634.993431] btrfs: force clearing of disk cache
+[  634.993435] btrfs: disk space caching is enabled
+[  635.046803] btrfs: bdev /dev/sda3 errs: wr 0, rd 0, flush 0,
+corrupt 58481, gen 0
 
 
-> 
-> Atm. all scenarios results in /usr/bin/init not found.
-> 
-> So here comes my question:
-> Wouldn't it be helpful to add a --recursive option to 'btrfs subvolume snapshot' to snapshot child subvolumes together with their parent?
-> Or maybe it is possible to add some functionality to reference the child subvolumes on the snapshots fs-tree to allow auto-mounting?
+The I started raid1 rebalance but the error still presents:
 
-Well and it raises the problem of nested subvolumes making the parent  subvolume undeletable. So I'd question the significant benefit of making nested subvolume in particular /var. It's complicating how the OS is to be put back together again.
+[ 1571.787664] BTRFS info (device sda3): csum failed ino 309 off
+4993024 csum 1283121890 private 3720296651
+[ 1571.791027] BTRFS info (device sda3): csum failed ino 309 off
+5242880 csum 857237386 private 2562492866
+[ 1571.793998] BTRFS info (device sda3): csum failed ino 309 off
+5767168 csum 645194099 private 3149624654
+[ 1571.794389] BTRFS info (device sda3): csum failed ino 309 off
+4993024 csum 1283121890 private 3720296651
 
 
-Chris Murphy
+So my problem still exists. How to fix the block with wrong csum?

@@ -1,66 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:45189 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756220Ab3KGXpf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 18:45:35 -0500
-Received: from cloud.myjm.de (37-5-161-32-dynip.superkabel.de [37.5.161.32])
-	by smtp.strato.de (RZmta 32.12 DYNA|AUTH)
-	with (TLSv1.2:DHE-RSA-AES256-GCM-SHA384 encrypted) ESMTPSA id Y02943pA7NjWBbK
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Nov 2013 00:45:32 +0100 (CET)
+Received: from ozlabs.org ([203.10.76.45]:43006 "EHLO ozlabs.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752755Ab3KHAvO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 19:51:14 -0500
+From: Rusty Russell <rusty@rustcorp.com.au>
+To: Himangi Saraogi <himangi774@gmail.com>, opw-kernel@googlegroups.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [OPW kernel] [PATCH v2] btrfs:check-integrity.c: replace kmalloc with kmalloc_array and kzalloc with kzalloc_array.
+In-Reply-To: <20131106205550.GA11060@himangi-Inspiron-N5110gmail.com>
+References: <20131106205550.GA11060@himangi-Inspiron-N5110gmail.com>
+Date: Fri, 08 Nov 2013 11:10:26 +1030
+Message-ID: <87wqkj4tfp.fsf@rustcorp.com.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Fri, 08 Nov 2013 00:45:32 +0100
-From: =?UTF-8?Q?Michael_G=C3=B6hler?= <visit@myjm.de>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Question about btrfs as root filesystem
-Message-ID: <5eb6a9cbd3a163b70c9cfe4a1b46a1fa@myjm.de>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Himangi Saraogi <himangi774@gmail.com> writes:
+> This patch replaces kmalloc(size * nr, ) with kmalloc_array(nr, size)
+> as kmalloc_array() is preferred because it can check that the
+> calculation doesn't wrap and won't return a smaller allocation.
+> Also kzalloc(size * nr) was replaced with kzalloc_array().
+>
+> Signed-off-by: Himangi Saraogi <himangi774@gmail.com>
 
-I'm a contributor of the Arch Linux package mkinitcpio-btrfs [1]. The 
-goal of this hook is to provide Btrfs rollback support for root 
-filesystems directly from initrd.
+Reviewed-by: Rusty Russell <rusty@rustcorp.com.au>
 
-Technically we are using a subvolume to store the root filesystem. The 
-user can snapshot it entirely and boot from this snapshot. In case of 
-rollback our hook snapshots the snapshot again, to keep its original 
-unchanged. The boot subvolume is then set with 'btrfs subvolume 
-set-default' and mounted without subvol/subvolid option by Arch's 
-default mount handler. That way, we ensure the best compatibility and 
-lowest maintenance, as we don't overwrite default init functions.
+Cheers,
+Rusty.
 
-Assuming we have the following setup:
-
-# btrfs su li -p /
-ID 256 gen 86 parent 5 top level 5 path root
-ID 259 gen 86 parent 256 top level 256 path var
-ID 260 gen 86 parent 256 top level 256 path usr
-
-The use case for that is to set quotas for the child subvolumes.
-
-Now, if we snapshots the root subvolume, the child subvolumes are not 
-snapshoted with it. There is no back reference which would allow Btrfs 
-to auto-mount the original child subvolumes when we mount the snapshot 
-as new root filesystem. Of cause we could snapshot the childs separately 
-into their desired directories. But this would not help, because our 
-hook snapshots the snapshot again, to keep it's original untouched while 
-rolling back. And we don't have fstab to find out the correct mount 
-points at this early boot stage.
-
-Atm. all scenarios results in /usr/bin/init not found.
-
-So here comes my question:
-Wouldn't it be helpful to add a --recursive option to 'btrfs subvolume 
-snapshot' to snapshot child subvolumes together with their parent?
-Or maybe it is possible to add some functionality to reference the child 
-subvolumes on the snapshots fs-tree to allow auto-mounting?
-
-I appreciate other ideas or opinions too.
-
-Thanks,
-Michael
-
-[1] https://aur.archlinux.org/packages/mkinitcpio-btrfs/
+> ---
+>  fs/btrfs/check-integrity.c |   12 +++++++-----
+>  1 file changed, 7 insertions(+), 5 deletions(-)
+>
+> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+> index 1c47be1..925a52b 100644
+> --- a/fs/btrfs/check-integrity.c
+> +++ b/fs/btrfs/check-integrity.c
+> @@ -1660,9 +1660,10 @@ static int btrfsic_read_block(struct btrfsic_state *state,
+>  
+>  	num_pages = (block_ctx->len + (u64)PAGE_CACHE_SIZE - 1) >>
+>  		    PAGE_CACHE_SHIFT;
+> -	block_ctx->mem_to_free = kzalloc((sizeof(*block_ctx->datav) +
+> -					  sizeof(*block_ctx->pagev)) *
+> -					 num_pages, GFP_NOFS);
+> +	block_ctx->mem_to_free = kzalloc_array(num_pages,
+> +						(sizeof(*block_ctx->datav) +
+> +						 sizeof(*block_ctx->pagev)),
+> +						GFP_NOFS);
+>  	if (!block_ctx->mem_to_free)
+>  		return -1;
+>  	block_ctx->datav = block_ctx->mem_to_free;
+> @@ -3031,8 +3032,9 @@ void btrfsic_submit_bio(int rw, struct bio *bio)
+>  			       (unsigned long long)bio->bi_sector, dev_bytenr,
+>  			       bio->bi_bdev);
+>  
+> -		mapped_datav = kmalloc(sizeof(*mapped_datav) * bio->bi_vcnt,
+> -				       GFP_NOFS);
+> +		mapped_datav = kmalloc_array(bio->bi_vcnt,
+> +					     sizeof(*mapped_datav),
+> +					     GFP_NOFS);
+>  		if (!mapped_datav)
+>  			goto leave;
+>  		for (i = 0; i < bio->bi_vcnt; i++) {
+> -- 
+> 1.7.9.5
+>
+> -- 
+> You received this message because you are subscribed to the Google Groups "opw-kernel" group.
+> To unsubscribe from this group and stop receiving emails from it, send an email to opw-kernel+unsubscribe@googlegroups.com.
+> For more options, visit https://groups.google.com/groups/opt_out.

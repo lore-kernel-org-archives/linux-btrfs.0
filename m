@@ -1,58 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7656 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33477 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752755Ab3KHAzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Nov 2013 19:55:48 -0500
-Message-ID: <527C36C5.6070306@cn.fujitsu.com>
-Date: Fri, 08 Nov 2013 08:56:37 +0800
+	id S1753806Ab3KHA6M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Nov 2013 19:58:12 -0500
+Message-ID: <527C3751.3090605@cn.fujitsu.com>
+Date: Fri, 08 Nov 2013 08:58:57 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 00/17] Replace btrfs_workers with kernel workqueue
- based btrfs_workqueue_struct
-References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com> <20131107175456.3802.35292@localhost.localdomain>
-In-Reply-To: <20131107175456.3802.35292@localhost.localdomain>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 02/17] btrfs: Added btrfs_workqueue_struct implemented
+ ordered execution based on kernel workqueue
+References: <1383803527-23736-1-git-send-email-quwenruo@cn.fujitsu.com> <1383803527-23736-3-git-send-email-quwenruo@cn.fujitsu.com> <20131107180826.GI27784@localhost.localdomain> <20131107180956.GJ27784@localhost.localdomain>
+In-Reply-To: <20131107180956.GJ27784@localhost.localdomain>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 7 Nov 2013 12:54:56 -0500, Chris Mason wrote:
-> Quoting Qu Wenruo (2013-11-07 00:51:50)
->> Add a new btrfs_workqueue_struct which use kernel workqueue to implement
->> most of the original btrfs_workers, to replace btrfs_workers.
+On Thu, 7 Nov 2013 13:09:56 -0500, Josef Bacik wrote:
+> On Thu, Nov 07, 2013 at 01:08:26PM -0500, Josef Bacik wrote:
+>> On Thu, Nov 07, 2013 at 01:51:52PM +0800, Qu Wenruo wrote:
+>>> Use kernel workqueue to implement a new btrfs_workqueue_struct, which
+>>> has the ordering execution feature like the btrfs_worker.
+>>>
+>>> The func is executed in a concurrency way, and the
+>>> ordred_func/ordered_free is executed in the sequence them are queued
+>>> after the corresponding func is done.
+>>> The new btrfs_workqueue use 2 workqueues to implement the original
+>>> btrfs_worker, one for the normal work and one for ordered work.
+>>>
+>>> At this patch, high priority work queue or thresholding is not added yet.
+>>> The high priority feature and thresholding will be added in the following patches.
+>>>
+>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 >>
->> With this patchset, redundant workqueue codes are replaced with kernel
->> workqueue infrastructure, which not only reduces the code size but also the
->> effort to maintain it.
->>
->> More performace tests are ongoing, the result from sysbench shows minor
->> improvement on the following server:
->> CPU: two-way Xeon X5660
->> RAM: 4G
->> HDD: SAS HDD, 150G total, 40G partition for btrfs test
->>
->> Test result:
->> Mode|Num_threads|block size|extra flags|performance change vs 3.11 kernel
->> rndrd   1       4K      none            +1.22%
->> rndrd   1       32K     none            +1.00%
->> rndrd   8       32K     sync            +1.35%
->> seqrd   8       4K      direct          +5.56%
->> seqwr   8       4K      none            -1.26%
->> seqwr   8       32K     sync            +1.20%
->>
->> Changes below 1% are not mentioned.
->> Overall the patchset doesn't change the performance on HDD.
->>
->> Since more tests are needed, more test result are welcomed.
-> Thanks for working on this, it's really good to move toward a single set
-> of workqueues in the kernel.
+> Keep in mind I agree with Stefan and Dave's comments so please make those
+> changes, but after that you can add my reviewed by.  Thanks,
 >
-> Have you benchmarked with compression on?  Especially on modern
-> hardware, the crcs don't exercise the workqueues very much.
+> Josef
 >
-> -chris
->
-Iwill benchmarked on SSD and coompression both before next version of patch.
+I'll apply the Stefan and Dave's comments in the next versionwith
+more benchmarks.
 
 Thanks.
 

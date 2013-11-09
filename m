@@ -1,70 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:37021 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750986Ab3KISKf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 13:10:35 -0500
-Received: from [192.168.1.27] (151.24.76.25) by outrelay08.libero.it (8.6.033) (authenticated as kreijack@inwind.it)
-        id 5275D05E01578FA2 for linux-btrfs@vger.kernel.org; Sat, 9 Nov 2013 19:10:33 +0100
-Message-ID: <527E7A99.2070207@inwind.it>
-Date: Sat, 09 Nov 2013 19:10:33 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@libero.it
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:38934 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758334Ab3KIXsV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 18:48:21 -0500
+Received: from bluebottle.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id B44A72089F
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 Nov 2013 10:48:17 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: 3.10.11 scrub OOM crash
+Date: Sun, 10 Nov 2013 10:48:17 +1100
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: btrfs subvolume list: what is the meaning of "top level"
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201311101048.17277.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+I've got an AMD64 system with 8G of RAM and 1G of swap.  It runs as a home 
+file server with 2*3TB disks in a RAID-1 array and a 120G SSD for root and 
+/home.  It also does some light desktop work (running KDE and web browsing 
+with Chromium).
 
-in "btrfs subvolume list" I supposed that "top level" is the subvolume
-"father" tree id. But the example below shows that I am wrong.
+When a btrfs scrub is run from cron the system gives an OOM and then locks up 
+after apparently killing some processes (after a reboot I see syslog entries 
+about some processes being killed - even though it didn't appear to kill X or 
+anything the system is hung).
 
+The system really shouldn't have a OOM.  For light desktop use a total of 8G 
+of RAM and 1G of swap should be more than enough.  Most of the time swap is 
+hardly used and there are several gigs of RAM used for cache.
 
-ghigo@venice:/tmp$ uname -a
-Linux venice 3.11.7 #142 SMP Wed Nov 6 19:25:46 CET 2013 x86_64 GNU/Linux
-ghigo@venice:/tmp$ sudo mkfs.btrfs /dev/loop0
+The kernel is Debian package 3.10.11-1.
 
-WARNING! - Btrfs v0.20-rc1 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+This is the same system about which I reported the 3.11.5 kernel infinite loop 
+bug.  I had this crash on scrub issue before I upgraded to 3.11.5.  I'm not 
+certain that 3.11.5 fixed the crash on scrub problem, maybe 3.11.5 just 
+crashed the system before it could be up for long enough.
 
-SMALL VOLUME: forcing mixed metadata/data groups
-Created a data/metadata chunk of size 8388608
-fs created label (null) on /dev/loop0
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 1001.00MB
-Btrfs v0.20-rc1
-ghigo@venice:/tmp$ sudo mount /dev/loop0 t/
-ghigo@venice:/tmp$ sudo mkdir t/dir
-ghigo@venice:/tmp$ sudo btrfs sub create t/sub1
-Create subvolume 't/sub1'
-ghigo@venice:/tmp$ sudo btrfs sub create t/dir/sub2
-Create subvolume 't/dir/sub2'
-ghigo@venice:/tmp$ sudo btrfs sub create t/dir/sub3
-Create subvolume 't/dir/sub3'
-ghigo@venice:/tmp$ sudo btrfs sub create t/dir/sub3/sub4
-Create subvolume 't/dir/sub3/sub4'
-ghigo@venice:/tmp$ sudo btrfs sub create t/sub5
-Create subvolume 't/sub5'
-ghigo@venice:/tmp$ sudo btrfs sub create t/sub5/sub6
-Create subvolume 't/sub5/sub6'
-ghigo@venice:/tmp$ sudo btrfs sub list t/ | nl
-     1	ID 256 gen 5 top level 5 path sub1
-     2	ID 257 gen 6 top level 5 path dir/sub2
-     3	ID 258 gen 8 top level 5 path dir/sub3
-     4	ID 259 gen 8 top level 5 path dir/sub3/sub4
-     5	ID 260 gen 10 top level 5 path sub5
-     6	ID 261 gen 10 top level 5 path sub5/sub6
-
-
-I expected that in the line 4, the top level should be 258; the same for
-the line 6: top level should be 260. So my question is: what is the
-meaning of the "top level" value ?
-
-Thanks.
-
-BR
-G.Baroncelli
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

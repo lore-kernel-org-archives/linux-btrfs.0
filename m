@@ -1,60 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:34417 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751126Ab3KIKza (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 05:55:30 -0500
-Message-ID: <527E149F.3090001@inwind.it>
-Date: Sat, 09 Nov 2013 11:55:27 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Lester B <b.lester011+btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs resize problem after device add/delete
-References: <CAOeUAF_80gVV-uDAw1Z_kQreOze-mW6uUCSheM_eBb_TYq_fuw@mail.gmail.com>
-In-Reply-To: <CAOeUAF_80gVV-uDAw1Z_kQreOze-mW6uUCSheM_eBb_TYq_fuw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:56087 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751126Ab3KIK5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Nov 2013 05:57:31 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vf6EH-0005OB-F3
+	for linux-btrfs@vger.kernel.org; Sat, 09 Nov 2013 11:57:25 +0100
+Received: from dyndsl-178-142-088-005.ewe-ip-backbone.de ([178.142.88.5])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Nov 2013 11:57:25 +0100
+Received: from hurikhan77+btrfs by dyndsl-178-142-088-005.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Nov 2013 11:57:25 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Btrfs might be gradually slowing the boot process
+Date: Sat, 09 Nov 2013 11:57:43 +0100
+Message-ID: <72h1la-adf.ln1@hurikhan77.spdns.de>
+References: <527d2ee689e077.81319728@wp.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2013-11-08 23:09, Lester B wrote:
-> I create a new btrfs filesystem and then add a new device and delete
-> the original device. When I run 'btrfs filesystem show', the total
-> device is two and there is an error that some devices are missing.
+yzb3@wp.pl <yzb3@wp.pl> schrieb:
 
-See my answer below.
-
+> I recently noticed that my boot has become slower - it took around 29s,
+> while at the beginning it was ~6s. I thought it was an issue with systemd,
+> because it failed to properly indicate at which stage the slowdown
+> occurred and how long it took. I rolled back to a pretty fresh root
+> subvolume and the boot was fast again. However, after several reboots it
+> started lagging again (10s? preposterous!). I decided to try the
+> *clear_cache* mount option; it was only a guess, but it did speed the boot
+> to the proper ~6s.
 > 
-> I also tried to resize the filesystem but didn't work. Resizing
-> without device id have an error that there is no such device. When the
-> device id is explicitly pass, an error 'invalid argument' is
-> displayed.
+> The question is - why? My filesystem is really small - I see no reason for
+> a 5x boot slowdown. Is this a known issue? I will be glad to give any
+> additional details about my fs.
 
-We need more info:
-- what is the output of "btrfs filesystem df <path>"
-- which is a raid level involved (RAID1/DUP/...), if any ?
-- which command you perform to shrink/enlarge the partition and which
-one to resize the filesystem (these are two separate steps) ?
+I'm using a similar setup (although my btrfs rootfs is a 3 disk array and is 
+more or less huge) and I didn't see such a vast boot slowdown. Did you check 
+that systemd is actually using the readahead services which will relocate 
+and defragment your boot files automatically?
 
+HTH
+Kai
 
-> 
-> I tried to unmount and then remount and the first problem disappeared
-> while the second one didn't.
-
-Unfortunately "btrfs filesystem show" read the data from the disk, that
-time to time is outdated.
-
-> 
-> 3.11.6-1-ARCH #1 SMP PREEMPT Fri Oct 18 23:22:36 CEST 2013 x86_64 GNU/Linux
-> 
-> Btrfs v0.20-rc1-358-g194aa4a-dirty
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

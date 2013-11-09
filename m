@@ -1,156 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35611 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932124Ab3KHXxS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Nov 2013 18:53:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VevrY-0005j1-UP
-	for linux-btrfs@vger.kernel.org; Sat, 09 Nov 2013 00:53:16 +0100
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Nov 2013 00:53:16 +0100
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Nov 2013 00:53:16 +0100
+Received: from hera.mpi-klsb.mpg.de ([139.19.1.49]:38039 "EHLO
+	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753195Ab3KIRa4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 12:30:56 -0500
+Message-ID: <527E714A.3040206@mpi-sws.org>
+Date: Sat, 09 Nov 2013 18:30:50 +0100
+From: Pedro Fonseca <pfonseca@mpi-sws.org>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: progs integration branch moved to master (new default leafsize)
-Date: Fri, 08 Nov 2013 23:53:06 +0000
-Message-ID: <l5jtgo$6q1$1@ger.gmane.org>
-References: <20131108220135.3802.39092@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <20131108220135.3802.39092@localhost.localdomain>
+Subject: Sync() causes null pointer dereference and warning message in run_clustered_refs()
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/11/13 22:01, Chris Mason wrote:
-> Hi everyone,
-> 
-> This patch is now the tip of the master branch for btrfs-progs, which
-> has been updated to include most of the backlogged progs patches.
-> Please take a look and give it a shake.  This was based on Dave's
-> integration tree (many thanks Dave!) minus the patches for online dedup.
-> I've pulled in the coverity fixes and a few others from the list as
-> well.
-> 
-> The patch below switches our default mkfs leafsize up to 16K.  This
-> should be a better choice in almost every workload, but now is your
-> chance to complain if it causes trouble.
+Hi,
 
-Thanks for that and nicely timely!
+I've encountered a bug that triggers a warning message ("list_del 
+corruption. next->prev should be d9d0ae28, but was d9d5d5e8") and 
+subsequently causes a null pointer dereference while running a custom 
+test case on btrfs (kernel 3.11.1), inside a QEMU based VM.
 
-Compiling on Gentoo (3.11.5-gentoo, sys-fs/btrfs-progs-9999) gives:
+The bug was triggered during the execution of two concurrent sync() calls.
 
-
- * QA Notice: Package triggers severe warnings which indicate that it
- *            may exhibit random runtime failures.
- * disk-io.c:91:5: warning: dereferencing type-punned pointer will break
-strict-aliasing rules [-Wstrict-aliasing]
- * volumes.c:1930:5: warning: dereferencing type-punned pointer will
-break strict-aliasing rules [-Wstrict-aliasing]
- * volumes.c:1931:6: warning: dereferencing type-punned pointer will
-break strict-aliasing rules [-Wstrict-aliasing]
-
- * Please do not file a Gentoo bug and instead report the above QA
- * issues directly to the upstream developers of this software.
- * Homepage: https://btrfs.wiki.kernel.org
+Here's the list of FS operations executed immediately before the crash:
+> CPU: 0 Op: fdatasync
+> CPU: 0 Op: btrfs_ioctl_device_delete
+> CPU: 0 Op: rename (file: "d16/da6/l131" renamed to "d16/d21/d38/l13b")
+> CPU: 0 Op: btrfs_subvol_snapshot
+>          CPU: 1 Op: fdatasync
+>          CPU: 1 Op: btrfs_ioctl_device_delete
+>          CPU: 1 Op: rename (file: "d16/da6/l131" renamed to 
+> "d16/d21/d38/l13b")
+>          CPU: 1 Op: btrfs_subvol_snapshot
+> CPU: 0 Op: dwrite (file: "d16/d21/f51")
+> CPU: 0 Op: chown (file: "d16/da6/f114")
+> CPU: 0 Op: write (file: "d16/d21/f107")
+> CPU: 0 Op: sync
+>          CPU: 1 Op: dwrite (file: "d16/d21/f51")
+>          CPU: 1 Op: chown (file: "d16/c1c")
+>          CPU: 1 Op: write (file: "d16/d21/f107")
+>          CPU: 1 Op: sync
+(Note that the entries in this log refer to the moment when the 
+operations were initiated, i.e., operations on different CPUs may overlap):
 
 
-
-
-> --------------------------------
-> 16KB is faster and leads to less metadata fragmentation in almost all
-> workloads.  It does slightly increase lock contention on the root nodes
-> in some workloads, but that is best dealt with by adding more subvolumes
-> (for now).
-
-Interesting and I was wondering about that. Good update.
-
-Also, hopefully that is a little more friendly for SSDs where often you
-see improved performance for 8kByte or 16kByte (aligned) writes...
-
-
-Testing in progress,
-
-Regards,
-Martin
-
-
-
-> This uses 16KB or the page size, whichever is bigger.  If you're doing a
-> mixed block group mkfs, it uses the sectorsize instead.
-> 
-> Since the kernel refuses to mount a mixed block group FS where the
-> metadata leaf size doesn't match the data sectorsize, this also adds a
-> similar check during mkfs.
-> 
-> Signed-off-by: Chris Mason <chris.mason@fusionio.com>
-> ---
->  mkfs.c | 19 ++++++++++++++++++-
->  1 file changed, 18 insertions(+), 1 deletion(-)
-> 
-> diff --git a/mkfs.c b/mkfs.c
-> index bf8a831..cd0af9e 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -46,6 +46,8 @@
->  
->  static u64 index_cnt = 2;
->  
-> +#define DEFAULT_MKFS_LEAF_SIZE 16384
-> +
->  struct directory_name_entry {
->  	char *dir_name;
->  	char *path;
-> @@ -1222,7 +1224,7 @@ int main(int ac, char **av)
->  	u64 alloc_start = 0;
->  	u64 metadata_profile = 0;
->  	u64 data_profile = 0;
-> -	u32 leafsize = sysconf(_SC_PAGESIZE);
-> +	u32 leafsize = max_t(u32, sysconf(_SC_PAGESIZE), DEFAULT_MKFS_LEAF_SIZE);
->  	u32 sectorsize = 4096;
->  	u32 nodesize = leafsize;
->  	u32 stripesize = 4096;
-> @@ -1232,6 +1234,7 @@ int main(int ac, char **av)
->  	int ret;
->  	int i;
->  	int mixed = 0;
-> +	int leaf_forced = 0;
->  	int data_profile_opt = 0;
->  	int metadata_profile_opt = 0;
->  	int discard = 1;
-> @@ -1269,6 +1272,7 @@ int main(int ac, char **av)
->  			case 'n':
->  				nodesize = parse_size(optarg);
->  				leafsize = parse_size(optarg);
-> +				leaf_forced = 1;
->  				break;
->  			case 'L':
->  				label = parse_label(optarg);
-> @@ -1386,8 +1390,21 @@ int main(int ac, char **av)
->  				BTRFS_BLOCK_GROUP_RAID0 : 0; /* raid0 or single */
->  		}
->  	} else {
-> +		u32 best_leafsize = max_t(u32, sysconf(_SC_PAGESIZE), sectorsize);
->  		metadata_profile = 0;
->  		data_profile = 0;
-> +
-> +		if (!leaf_forced) {
-> +			leafsize = best_leafsize;
-> +			nodesize = best_leafsize;
-> +			if (check_leaf_or_node_size(leafsize, sectorsize))
-> +				exit(1);
-> +		}
-> +		if (leafsize != sectorsize) {
-> +			fprintf(stderr, "Error: mixed metadata/data block groups "
-> +				"require metadata blocksizes equal to the sectorsize\n");
-> +			exit(1);
-> +		}
->  	}
->  
->  	ret = test_num_disk_vs_raid(metadata_profile, data_profile,
-
+And here's the system log output:
+> [  127.830656] ------------[ cut here ]------------
+> [  127.830656] WARNING: CPU: 0 PID: 2791 at 
+> /local/pfonseca/piking/kernel-build/linux-3.11.1-fs-static/lib/list_debug.c:62 
+> __list_del_entry+0x62/0x71()
+> [  127.830656] list_del corruption. next->prev should be d9d0ae28, but 
+> was d9d5d5e8
+> [  127.830656] Modules linked in: loop rtc_cmos pcspkr tpm_tis 
+> freq_table mperf i2c_piix4
+> [  127.830656] CPU: 0 PID: 2791 Comm: fsstress Not tainted 3.11.1 #2
+> [  127.830656] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  127.830656]  0000003e c4027dd8 c176917a c1a13c6e c4027df0 c102d1c0 
+> c138838f d9d0ae28
+> [  127.830656]  d9d0ae28 d9d0ade0 c4027e08 c102d23b 00000009 c4027e00 
+> c1a13dad c4027e1c
+> [  127.830656]  c4027e28 c138838f c1a13c6e 0000003e c1a13dad d9d0ae28 
+> d9d5d5e8 d9d0ade0
+> [  127.830656] Call Trace:
+> [  127.830656]  [<c176917a>] dump_stack+0x41/0x57
+> [  127.830656]  [<c102d1c0>] warn_slowpath_common+0x5e/0x75
+> [  127.830656]  [<c138838f>] ? __list_del_entry+0x62/0x71
+> [  127.830656]  [<c102d23b>] warn_slowpath_fmt+0x26/0x2a
+> [  127.830656]  [<c138838f>] __list_del_entry+0x62/0x71
+> [  127.830656]  [<c12a8564>] run_clustered_refs+0x877/0x8b0
+> [  127.830656]  [<c12eed36>] ? btrfs_find_ref_cluster+0xc9/0x10e
+> [  127.830656]  [<c12a878f>] btrfs_run_delayed_refs+0x1f2/0x35b
+> [  127.830656]  [<c1075d14>] ? __delayacct_blkio_end+0x30/0x36
+> [  127.830656]  [<c12b56b9>] btrfs_commit_transaction+0x60/0x986
+> [  127.830656]  [<c12b6657>] ? start_transaction+0x320/0x3cd
+> [  127.830656]  [<c12b671b>] ? btrfs_attach_transaction_barrier+0x17/0x3c
+> [  127.830656]  [<c1295b1a>] btrfs_sync_fs+0x4c/0x53
+> [  127.830656]  [<c10c6f1b>] sync_fs_one_sb+0x17/0x19
+> [  127.830656]  [<c10acab0>] iterate_supers+0x54/0x95
+> [  127.830656]  [<c10c6f04>] ? SyS_splice+0x455/0x455
+> [  127.830656]  [<c10c72dd>] sys_sync+0x46/0x70
+> [  127.830656]  [<c176c2fe>] sysenter_do_call+0x12/0x26
+> [  127.830656] ---[ end trace 626899e11111abbe ]---
+> [  127.830656] BUG: unable to handle kernel NULL pointer dereference 
+> at   (null)
+> [  127.830656] IP: [<c137ed3d>] rb_erase+0x177/0x236
+> [  127.830656] *pde = 00000000
+> [  127.830656] Oops: 0000 [#1] SMP
+> [  127.830656] Modules linked in: loop rtc_cmos pcspkr tpm_tis 
+> freq_table mperf i2c_piix4
+> [  127.830656] CPU: 0 PID: 2791 Comm: fsstress Tainted: G W    3.11.1 #2
+> [  127.830656] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  127.830656] task: de60efc0 ti: c4026000 task.ti: c4026000
+> [  127.830656] EIP: 0060:[<c137ed3d>] EFLAGS: 00000246 CPU: 0
+> [  127.830656] EIP is at rb_erase+0x177/0x236
+> [  127.830656] EAX: 00000000 EBX: 00000000 ECX: d9d0d180 EDX: d9cebddc
+> [  127.830656] ESI: 00000001 EDI: d9d0ade0 EBP: c4027e28 ESP: c4027e18
+> [  127.830656]  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+> [  127.830656] CR0: 8005003b CR2: 00000000 CR3: 059d8000 CR4: 00000690
+> [  127.830656] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> [  127.830656] DR6: 00000000 DR7: 00000000
+> [  127.830656] Stack:
+> [  127.830656]  d9d0ade0 d9d0ade0 00000000 d9d0ade0 c4027eb8 c12a7fe0 
+> 00000000 00000001
+> [  127.830656]  00000000 00000002 00000000 c4027f0c 00cc9a28 d9cebddc 
+> de4d1000 0000095c
+> [  127.830656]  de4d1000 00000007 00000000 0000001e d9cebd60 00000000 
+> 00000000 d9cebde0
+> [  127.830656] Call Trace:
+> [  127.830656]  [<c12a7fe0>] run_clustered_refs+0x2f3/0x8b0
+> [  127.830656]  [<c12eed36>] ? btrfs_find_ref_cluster+0xc9/0x10e
+> [  127.830656]  [<c12a878f>] btrfs_run_delayed_refs+0x1f2/0x35b
+> [  127.830656]  [<c1075d14>] ? __delayacct_blkio_end+0x30/0x36
+> [  127.830656]  [<c12b56b9>] btrfs_commit_transaction+0x60/0x986
+> [  127.830656]  [<c12b6657>] ? start_transaction+0x320/0x3cd
+> [  127.830656]  [<c12b671b>] ? btrfs_attach_transaction_barrier+0x17/0x3c
+> [  127.830656]  [<c1295b1a>] btrfs_sync_fs+0x4c/0x53
+> [  127.830656]  [<c10c6f1b>] sync_fs_one_sb+0x17/0x19
+> [  127.830656]  [<c10acab0>] iterate_supers+0x54/0x95
+> [  127.830656]  [<c10c6f04>] ? SyS_splice+0x455/0x455
+> [  127.830656]  [<c10c72dd>] sys_sync+0x46/0x70
+> [  127.830656]  [<c176c2fe>] sysenter_do_call+0x12/0x26
+> [  127.830656] Code: 73 04 85 f6 89 70 08 89 43 04 89 59 04 74 07 89 
+> c7 83 cf 01 89 3e 89 c6 89 d8 8b 58 08 89 59 04 89 48 08 e9 8c 00 00 
+> 00 8b 41 08 <f6> 00 01 75 2e 8b 58 04 89 ce 83 ce 01 89 59 08 89 48 04 
+> 89 33
+> [  127.830656] EIP: [<c137ed3d>] rb_erase+0x177/0x236 SS:ESP 0068:c4027e18
+> [  127.830656] CR2: 0000000000000000
+> [  127.830656] ---[ end trace 626899e11111abbf ]---
 

@@ -1,33 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f44.google.com ([209.85.160.44]:64690 "EHLO
-	mail-pb0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932200Ab3KHWJF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2013 17:09:05 -0500
-Received: by mail-pb0-f44.google.com with SMTP id rp16so2684382pbb.31
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Nov 2013 14:09:04 -0800 (PST)
+Received: from csamuel.org ([74.50.50.137]:38305 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757825Ab3KIBNv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Nov 2013 20:13:51 -0500
+From: Chris Samuel <chris@csamuel.org>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Pedro Fonseca <pfonseca@mpi-sws.org>
+Subject: Re: [PATCH] Btrfs: fix a crash when running balance and defrag concurrently
+Date: Sat, 09 Nov 2013 12:05:42 +1100
+Message-ID: <16485118.7Xh0Mq2NkE@quad>
+In-Reply-To: <1383110724-13122-1-git-send-email-bo.li.liu@oracle.com>
+References: <1383110724-13122-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Date: Sat, 9 Nov 2013 06:09:04 +0800
-Message-ID: <CAOeUAF_80gVV-uDAw1Z_kQreOze-mW6uUCSheM_eBb_TYq_fuw@mail.gmail.com>
-Subject: Btrfs resize problem after device add/delete
-From: Lester B <b.lester011+btrfs@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; boundary="nextPart1699229.M0anrmjDn7"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I create a new btrfs filesystem and then add a new device and delete
-the original device. When I run 'btrfs filesystem show', the total
-device is two and there is an error that some devices are missing.
 
+--nextPart1699229.M0anrmjDn7
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-I also tried to resize the filesystem but didn't work. Resizing
-without device id have an error that there is no such device. When the
-device id is explicitly pass, an error 'invalid argument' is
-displayed.
+On Wed, 30 Oct 2013 01:25:24 PM Liu Bo wrote:
 
-I tried to unmount and then remount and the first problem disappeared
-while the second one didn't.
+> Running balance and defrag concurrently can end up with a crash:
 
-3.11.6-1-ARCH #1 SMP PREEMPT Fri Oct 18 23:22:36 CEST 2013 x86_64 GNU/Linux
+It's worth noting that Greg K-H has said he'll take stable patches before they 
+hit mainline whilst Linus is off-net, as reported here at the kernel summit:
 
-Btrfs v0.20-rc1-358-g194aa4a-dirty
+https://lwn.net/Articles/571997/
+
+# Greg added that, during this time, urgent stable fixes could,
+# contrary to normal policy, get into the stable tree prior to
+# being merged into the mainline; he won't hold them while
+# Linus is off the net.
+
+This patch seems like a very good candidate for that.
+
+cheers!
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart1699229.M0anrmjDn7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUn2KZo1yjaOTJg85AQLfVQf/ZyLwMTQozkTTU91QRcIncIQZ1ZTuRiUu
+vXtbJ/n1yn5w19K/ZJURqWoqTvru6IU2eZ4L+edPRxxJ0IOXkC9cmzdj+djIrj/k
+4HEgFjs71ltX0Cco7UQyOGSe6YjBF5+DBp6PsCYSTAheH9S0doLy81Aly4F4M2Nb
+w/HpqG6p9wcpQrYIXHZjTk7SgFhOValbgTqwyowTymte7hSzVgP9LcETiqYkADFA
+3pDkpzFJ00uTkOJNL91AMNn/yOjFO5W+LPjOooTGSDCHpaQtL47QFbj+ORVr63Dw
+hzhqifLsYTpoLb0Hqo28MK+eWQQZGKX5QY+CTVgt5s78l0iAa+IIVg==
+=qPkt
+-----END PGP SIGNATURE-----
+
+--nextPart1699229.M0anrmjDn7--
+

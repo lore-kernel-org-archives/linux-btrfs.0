@@ -1,44 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:38934 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758334Ab3KIXsV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 18:48:21 -0500
-Received: from bluebottle.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id B44A72089F
-	for <linux-btrfs@vger.kernel.org>; Sun, 10 Nov 2013 10:48:17 +1100 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: linux-btrfs@vger.kernel.org
-Subject: 3.10.11 scrub OOM crash
-Date: Sun, 10 Nov 2013 10:48:17 +1100
-MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201311101048.17277.russell@coker.com.au>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39321 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1758593Ab3KJExO convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Nov 2013 23:53:14 -0500
+Received: from c-68-35-30-169.hsd1.nm.comcast.net ([68.35.30.169]:47789 helo=[10.0.1.23])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.80.1)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VfN1N-000EX1-0H
+	for linux-btrfs@vger.kernel.org; Sat, 09 Nov 2013 21:53:13 -0700
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Btrfs might be gradually slowing the boot process
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <72h1la-adf.ln1@hurikhan77.spdns.de>
+Date: Sat, 9 Nov 2013 21:53:10 -0700
+Message-Id: <04B39B7F-24A2-42E0-8C4A-31D710A844E6@colorremedies.com>
+References: <527d2ee689e077.81319728@wp.pl> <72h1la-adf.ln1@hurikhan77.spdns.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've got an AMD64 system with 8G of RAM and 1G of swap.  It runs as a home 
-file server with 2*3TB disks in a RAID-1 array and a 120G SSD for root and 
-/home.  It also does some light desktop work (running KDE and web browsing 
-with Chromium).
+What's leafsize was used when making the file system? The default is now (as of yesterday) 16KB to avoid metadata fragmentation.
 
-When a btrfs scrub is run from cron the system gives an OOM and then locks up 
-after apparently killing some processes (after a reboot I see syslog entries 
-about some processes being killed - even though it didn't appear to kill X or 
-anything the system is hung).
 
-The system really shouldn't have a OOM.  For light desktop use a total of 8G 
-of RAM and 1G of swap should be more than enough.  Most of the time swap is 
-hardly used and there are several gigs of RAM used for cache.
-
-The kernel is Debian package 3.10.11-1.
-
-This is the same system about which I reported the 3.11.5 kernel infinite loop 
-bug.  I had this crash on scrub issue before I upgraded to 3.11.5.  I'm not 
-certain that 3.11.5 fixed the crash on scrub problem, maybe 3.11.5 just 
-crashed the system before it could be up for long enough.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Chris Murphy

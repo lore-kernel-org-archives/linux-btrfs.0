@@ -1,42 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47991 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751718Ab3KJQsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Nov 2013 11:48:46 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VfYBo-0006Cx-JI
-	for linux-btrfs@vger.kernel.org; Sun, 10 Nov 2013 17:48:44 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Nov 2013 17:48:44 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Nov 2013 17:48:44 +0100
+Received: from mail-qa0-f43.google.com ([209.85.216.43]:38361 "EHLO
+	mail-qa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751136Ab3KKH1w (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Nov 2013 02:27:52 -0500
+Received: by mail-qa0-f43.google.com with SMTP id cm18so1553693qab.16
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Nov 2013 23:27:51 -0800 (PST)
+From: Frank Holton <fholton@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS error after clearing cache
-Date: Sun, 10 Nov 2013 16:48:23 +0000 (UTC)
-Message-ID: <pan$10e67$943b37ba$7489e414$5b88b6d8@cox.net>
-References: <527fb112ee75b5.68693988@wp.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Frank Holton <fholton@gmail.com>
+Subject: [PATCH] Btrfs syslog output prefix fixes
+Date: Mon, 11 Nov 2013 02:27:14 -0500
+Message-Id: <1384154835-7037-1-git-send-email-fholton@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-yzb3 posted on Sun, 10 Nov 2013 17:15:14 +0100 as excerpted:
+I've gone through the code and tried to find anywhere that prints to
+the syslog and make sure that it uses the proper btrfs: prefix. This helps
+users find the relevant lines for btrfs and makes sure a grep will return all
+of the output from btrfs.
 
-> The output of dmesg | grep trfs (no 'b', because it is inconsistent)
+Frank Holton (1):
+  Btrfs: Fixup usage of btrfs: prefix in syslog
 
-You know about grep's -i, --ignore-case option, right?  (The GNU grep 
-manpage says -i is POSIX specified, so should be grep-origin agnostic.)
-
-But your case for log consistency remains a valid point none-the-less.  
--i shouldn't be necessary.  Consistency is good! =:^)
+ fs/btrfs/compression.c      |    4 ++--
+ fs/btrfs/ctree.c            |   14 +++++++-------
+ fs/btrfs/ctree.h            |    2 +-
+ fs/btrfs/delayed-inode.c    |    4 ++--
+ fs/btrfs/disk-io.c          |   34 +++++++++++++++++-----------------
+ fs/btrfs/extent-tree.c      |    6 +++---
+ fs/btrfs/extent_io.c        |   40 ++++++++++++++++++++--------------------
+ fs/btrfs/file-item.c        |    2 +-
+ fs/btrfs/free-space-cache.c |    6 +++---
+ fs/btrfs/inode.c            |    6 +++---
+ fs/btrfs/ioctl.c            |    6 +++---
+ fs/btrfs/lzo.c              |    6 +++---
+ fs/btrfs/ordered-data.c     |    6 +++---
+ fs/btrfs/qgroup.c           |    4 ++--
+ fs/btrfs/reada.c            |    4 ++--
+ fs/btrfs/root-tree.c        |    2 +-
+ fs/btrfs/scrub.c            |   10 +++++-----
+ fs/btrfs/super.c            |   12 ++++++------
+ 18 files changed, 84 insertions(+), 84 deletions(-)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.9.5
 

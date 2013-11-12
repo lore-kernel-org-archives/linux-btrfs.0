@@ -1,29 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38532 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753869Ab3KLQRt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 11:17:49 -0500
-Date: Tue, 12 Nov 2013 17:17:47 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Frank Holton <fholton@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: Fixup usage of btrfs: prefix in syslog
-Message-ID: <20131112161747.GD9132@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1384154835-7037-1-git-send-email-fholton@gmail.com>
- <1384154835-7037-2-git-send-email-fholton@gmail.com>
+Received: from outrelay07.libero.it ([212.52.84.111]:43337 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756029Ab3KLTYe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Nov 2013 14:24:34 -0500
+Message-ID: <52828071.8090305@libero.it>
+Date: Tue, 12 Nov 2013 20:24:33 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1384154835-7037-2-git-send-email-fholton@gmail.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] Btrfs: add support for inode properties
+References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 11, 2013 at 02:27:15AM -0500, Frank Holton wrote:
-> Change all uses of printk to use the btrfs: prefix for
-> easier grepping of kernel log.
+Hi Filipe,
 
-There is a set of functions that wrap the printed messages (btrfs_info,
-btrfs_err, ...) and enhance them with device info etc. Please use them
-instead where applicable.
+On 2013-11-12 14:42, Filipe David Borba Manana wrote:
+> This change adds infrastructure to allow for generic properties for
+> inodes via a new ioctl. 
 
-david
+I am sure that there is a valid reason, but I was not able to find it:
+why implement a new ioctl instead of using the *{set,get)xattr(2) syscall ?
+
+I noticed that you implemented the Compression properties set/get: is
+this from "chattr -c" ?
+
+[... cut other lines ... ]
+
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,55 +1,766 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:40626 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754838Ab3KLQ5v (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:34997 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754861Ab3KLTrc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 11:57:51 -0500
-Date: Tue, 12 Nov 2013 18:57:43 +0200
-From: Aldo Iljazi <mail@aldo.io>
-To: dsterba@suse.cz, chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] FS: BTRFS: fixed coding style issues
-Message-ID: <20131112165743.GA12521@elementary>
-References: <1383571658-7440-1-git-send-email-mail@aldo.io>
- <20131104151619.GB16999@twin.jikos.cz>
+	Tue, 12 Nov 2013 14:47:32 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 791427C0698
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 12:47:31 -0700 (MST)
+Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx1.fusionio.com with ESMTP id oGd4UlWEZwa97uIq (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 12:47:30 -0700 (MST)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: incompatible format change to remove hole extents V4
+Date: Tue, 12 Nov 2013 14:47:28 -0500
+Message-ID: <1384285648-1074-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131104151619.GB16999@twin.jikos.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
- David Sterba wrote:
+Btrfs has always had these filler extent data items for holes in inodes.  This
+has made somethings very easy, like logging hole punches and sending hole
+punches.  However for large holey files these extent data items are pure
+overhead.  So add an incompatible feature to no longer add hole extents to
+reduce the amount of metadata used by these sort of files.  This has a few
+changes for logging and send obviously since they will need to detect holes and
+log/send the holes if there are any.  I've tested this thoroughly with xfstests
+and it doesn't cause any issues with and without the incompat format set.
+Thanks,
 
-> On Mon, Nov 04, 2013 at 03:27:38PM +0200, Aldo Iljazi wrote:
-> > Fixed three coding style issues. Replaced spaces with tabs.
-> > 
-> > Signed-off-by: Aldo Iljazi <mail@aldo.io>
-> > ---
-> >  fs/btrfs/dev-replace.c | 6 +++---
-> >  1 file changed, 3 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> > index 9efb94e..b2fe609 100644
-> > --- a/fs/btrfs/dev-replace.c
-> > +++ b/fs/btrfs/dev-replace.c
-> > @@ -377,7 +377,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
-> >  	printk_in_rcu(KERN_INFO
-> >  		      "btrfs: dev_replace from %s (devid %llu) to %s) started\n",
-> >  		      src_device->missing ? "<missing disk>" :
-> > -		        rcu_str_deref(src_device->name),
-> > +			rcu_str_deref(src_device->name),
-> 
-> What's the change here? I don't think we need to fix whitespace, this
-> makes searching in patch history more boring, namely in case where the
-> code looks exactly the same before and after the patch.
-> 
-> The style issues should be best fixed when the patch is about to be
-> merged, doing it later like this is kind of not welcome, speaking for
-> myself. There are lots of opportunities to do real code cleanups.
-> 
-> 
-> david
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+V3->V4: fix a fsync bug where we'd think there was a hole because the last
+extent was on an unchanged leaf.
 
-Okay thanks.
+ fs/btrfs/ctree.c    |   3 +-
+ fs/btrfs/ctree.h    |   5 +-
+ fs/btrfs/file.c     |  13 ++--
+ fs/btrfs/inode.c    |  78 +++++++++++++++---------
+ fs/btrfs/send.c     | 162 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/tree-log.c | 172 +++++++++++++++++++++++++++++++++++++++++++++++++---
+ 6 files changed, 377 insertions(+), 56 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 33e9dbd..cb20e4d 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -41,7 +41,6 @@ static void del_ptr(struct btrfs_root *root, struct btrfs_path *path,
+ 		    int level, int slot);
+ static void tree_mod_log_free_eb(struct btrfs_fs_info *fs_info,
+ 				 struct extent_buffer *eb);
+-static int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ 
+ struct btrfs_path *btrfs_alloc_path(void)
+ {
+@@ -4819,7 +4818,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+  * This may release the path, and so you may lose any locks held at the
+  * time you call it.
+  */
+-static int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path)
++int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_disk_key found_key;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9f5e1cf..0484a31 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -521,6 +521,7 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF	(1ULL << 6)
+ #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
++#define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ 
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+@@ -532,7 +533,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+-	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
++	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
++	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
+ 
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+@@ -3405,6 +3407,7 @@ static inline int btrfs_insert_empty_item(struct btrfs_trans_handle *trans,
+ }
+ 
+ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
++int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 time_seq);
+ static inline int btrfs_next_old_item(struct btrfs_root *root,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b93d1c9..6516739 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1963,11 +1963,13 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
+ 	struct btrfs_key key;
+ 	int ret;
+ 
++	if (btrfs_fs_incompat(root->fs_info, NO_HOLES))
++		goto out;
++
+ 	key.objectid = btrfs_ino(inode);
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = offset;
+ 
+-
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	if (ret < 0)
+ 		return ret;
+@@ -2064,8 +2066,10 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	u64 drop_end;
+ 	int ret = 0;
+ 	int err = 0;
++	int rsv_count;
+ 	bool same_page = ((offset >> PAGE_CACHE_SHIFT) ==
+ 			  ((offset + len - 1) >> PAGE_CACHE_SHIFT));
++	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
+ 
+ 	btrfs_wait_ordered_range(inode, offset, len);
+ 
+@@ -2157,9 +2161,10 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	/*
+ 	 * 1 - update the inode
+ 	 * 1 - removing the extents in the range
+-	 * 1 - adding the hole extent
++	 * 1 - adding the hole extent if no_holes isn't set
+ 	 */
+-	trans = btrfs_start_transaction(root, 3);
++	rsv_count = no_holes ? 2 : 3;
++	trans = btrfs_start_transaction(root, rsv_count);
+ 	if (IS_ERR(trans)) {
+ 		err = PTR_ERR(trans);
+ 		goto out_free;
+@@ -2196,7 +2201,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		btrfs_end_transaction(trans, root);
+ 		btrfs_btree_balance_dirty(root);
+ 
+-		trans = btrfs_start_transaction(root, 3);
++		trans = btrfs_start_transaction(root, rsv_count);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+ 			trans = NULL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 30bdacd..38fa301 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4204,6 +4204,49 @@ out:
+ 	return ret;
+ }
+ 
++static int maybe_insert_hole(struct btrfs_root *root, struct inode *inode,
++			     u64 offset, u64 len)
++{
++	struct btrfs_trans_handle *trans;
++	int ret;
++
++	/*
++	 * Still need to make sure the inode looks like it's been updated so
++	 * that any holes get logged if we fsync.
++	 */
++	if (btrfs_fs_incompat(root->fs_info, NO_HOLES)) {
++		BTRFS_I(inode)->last_trans = root->fs_info->generation;
++		BTRFS_I(inode)->last_sub_trans = root->log_transid;
++		BTRFS_I(inode)->last_log_commit = root->last_log_commit;
++		return 0;
++	}
++
++	/*
++	 * 1 - for the one we're dropping
++	 * 1 - for the one we're adding
++	 * 1 - for updating the inode.
++	 */
++	trans = btrfs_start_transaction(root, 3);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	ret = btrfs_drop_extents(trans, root, inode, offset, offset + len, 1);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		btrfs_end_transaction(trans, root);
++		return ret;
++	}
++
++	ret = btrfs_insert_file_extent(trans, root, btrfs_ino(inode), offset,
++				       0, 0, len, 0, len, 0, 0, 0);
++	if (ret)
++		btrfs_abort_transaction(trans, root, ret);
++	else
++		btrfs_update_inode(trans, root, inode);
++	btrfs_end_transaction(trans, root);
++	return ret;
++}
++
+ /*
+  * This function puts in dummy file extents for the area we're creating a hole
+  * for.  So if we are truncating this file to a larger size we need to insert
+@@ -4212,7 +4255,6 @@ out:
+  */
+ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ {
+-	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_map *em = NULL;
+@@ -4267,31 +4309,10 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 			struct extent_map *hole_em;
+ 			hole_size = last_byte - cur_offset;
+ 
+-			trans = btrfs_start_transaction(root, 3);
+-			if (IS_ERR(trans)) {
+-				err = PTR_ERR(trans);
+-				break;
+-			}
+-
+-			err = btrfs_drop_extents(trans, root, inode,
+-						 cur_offset,
+-						 cur_offset + hole_size, 1);
+-			if (err) {
+-				btrfs_abort_transaction(trans, root, err);
+-				btrfs_end_transaction(trans, root);
+-				break;
+-			}
+-
+-			err = btrfs_insert_file_extent(trans, root,
+-					btrfs_ino(inode), cur_offset, 0,
+-					0, hole_size, 0, hole_size,
+-					0, 0, 0);
+-			if (err) {
+-				btrfs_abort_transaction(trans, root, err);
+-				btrfs_end_transaction(trans, root);
++			err = maybe_insert_hole(root, inode, cur_offset,
++						hole_size);
++			if (err)
+ 				break;
+-			}
+-
+ 			btrfs_drop_extent_cache(inode, cur_offset,
+ 						cur_offset + hole_size - 1, 0);
+ 			hole_em = alloc_extent_map();
+@@ -4310,7 +4331,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 			hole_em->ram_bytes = hole_size;
+ 			hole_em->bdev = root->fs_info->fs_devices->latest_bdev;
+ 			hole_em->compress_type = BTRFS_COMPRESS_NONE;
+-			hole_em->generation = trans->transid;
++			hole_em->generation = root->fs_info->generation;
+ 
+ 			while (1) {
+ 				write_lock(&em_tree->lock);
+@@ -4323,17 +4344,14 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 							hole_size - 1, 0);
+ 			}
+ 			free_extent_map(hole_em);
+-next:
+-			btrfs_update_inode(trans, root, inode);
+-			btrfs_end_transaction(trans, root);
+ 		}
++next:
+ 		free_extent_map(em);
+ 		em = NULL;
+ 		cur_offset = last_byte;
+ 		if (cur_offset >= block_end)
+ 			break;
+ 	}
+-
+ 	free_extent_map(em);
+ 	unlock_extent_cached(io_tree, hole_start, block_end - 1, &cached_state,
+ 			     GFP_NOFS);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 5a3874c..9a1c480 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -111,6 +111,7 @@ struct send_ctx {
+ 	int cur_inode_deleted;
+ 	u64 cur_inode_size;
+ 	u64 cur_inode_mode;
++	u64 cur_inode_last_extent;
+ 
+ 	u64 send_progress;
+ 
+@@ -146,6 +147,13 @@ struct name_cache_entry {
+ 	char name[];
+ };
+ 
++static int need_send_hole(struct send_ctx *sctx)
++{
++	return (sctx->parent_root && !sctx->cur_inode_new &&
++		!sctx->cur_inode_new_gen && !sctx->cur_inode_deleted &&
++		S_ISREG(sctx->cur_inode_mode));
++}
++
+ static void fs_path_reset(struct fs_path *p)
+ {
+ 	if (p->reversed) {
+@@ -3776,6 +3784,43 @@ out:
+ 	return ret;
+ }
+ 
++static int send_hole(struct send_ctx *sctx, u64 end)
++{
++	struct fs_path *p = NULL;
++	u64 offset = sctx->cur_inode_last_extent;
++	u64 len;
++	int ret;
++
++	p = fs_path_alloc();
++	if (!p)
++		return -ENOMEM;
++	ret = open_cur_inode_file(sctx);
++	if (ret < 0)
++		goto out;
++	memset(sctx->read_buf, 0, BTRFS_SEND_READ_SIZE);
++	while (offset < end) {
++		len = min_t(u64, end - offset, BTRFS_SEND_READ_SIZE);
++
++		ret = begin_cmd(sctx, BTRFS_SEND_C_WRITE);
++		if (ret < 0)
++			break;
++		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
++		if (ret < 0)
++			break;
++		TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
++		TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
++		TLV_PUT(sctx, BTRFS_SEND_A_DATA, sctx->read_buf, len);
++		ret = send_cmd(sctx);
++		if (ret < 0)
++			break;
++		offset += len;
++	}
++tlv_put_failure:
++out:
++	fs_path_free(p);
++	return ret;
++}
++
+ static int send_write_or_clone(struct send_ctx *sctx,
+ 			       struct btrfs_path *path,
+ 			       struct btrfs_key *key,
+@@ -4003,6 +4048,84 @@ out:
+ 	return ret;
+ }
+ 
++static int get_last_extent(struct send_ctx *sctx, u64 offset)
++{
++	struct btrfs_path *path;
++	struct btrfs_root *root = sctx->send_root;
++	struct btrfs_file_extent_item *fi;
++	struct btrfs_key key;
++	u64 extent_end;
++	u8 type;
++	int ret;
++
++	path = alloc_path_for_send();
++	if (!path)
++		return -ENOMEM;
++
++	sctx->cur_inode_last_extent = 0;
++
++	key.objectid = sctx->cur_ino;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	key.offset = offset;
++	ret = btrfs_search_slot_for_read(root, &key, path, 0, 1);
++	if (ret < 0)
++		goto out;
++	ret = 0;
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++	if (key.objectid != sctx->cur_ino || key.type != BTRFS_EXTENT_DATA_KEY)
++		goto out;
++
++	fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			    struct btrfs_file_extent_item);
++	type = btrfs_file_extent_type(path->nodes[0], fi);
++	if (type == BTRFS_FILE_EXTENT_INLINE) {
++		u64 size = btrfs_file_extent_inline_len(path->nodes[0], fi);
++		extent_end = ALIGN(key.offset + size,
++				   sctx->send_root->sectorsize);
++	} else {
++		extent_end = key.offset +
++			btrfs_file_extent_num_bytes(path->nodes[0], fi);
++	}
++	sctx->cur_inode_last_extent = extent_end;
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
++static int maybe_send_hole(struct send_ctx *sctx, struct btrfs_path *path,
++			   struct btrfs_key *key)
++{
++	struct btrfs_file_extent_item *fi;
++	u64 extent_end;
++	u8 type;
++	int ret = 0;
++
++	if (sctx->cur_ino != key->objectid || !need_send_hole(sctx))
++		return 0;
++
++	if (sctx->cur_inode_last_extent == (u64)-1) {
++		ret = get_last_extent(sctx, key->offset - 1);
++		if (ret)
++			return ret;
++	}
++
++	fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			    struct btrfs_file_extent_item);
++	type = btrfs_file_extent_type(path->nodes[0], fi);
++	if (type == BTRFS_FILE_EXTENT_INLINE) {
++		u64 size = btrfs_file_extent_inline_len(path->nodes[0], fi);
++		extent_end = ALIGN(key->offset + size,
++				   sctx->send_root->sectorsize);
++	} else {
++		extent_end = key->offset +
++			btrfs_file_extent_num_bytes(path->nodes[0], fi);
++	}
++	if (sctx->cur_inode_last_extent < key->offset)
++		ret = send_hole(sctx, key->offset);
++	sctx->cur_inode_last_extent = extent_end;
++	return ret;
++}
++
+ static int process_extent(struct send_ctx *sctx,
+ 			  struct btrfs_path *path,
+ 			  struct btrfs_key *key)
+@@ -4019,7 +4142,7 @@ static int process_extent(struct send_ctx *sctx,
+ 			goto out;
+ 		if (ret) {
+ 			ret = 0;
+-			goto out;
++			goto out_hole;
+ 		}
+ 	} else {
+ 		struct btrfs_file_extent_item *ei;
+@@ -4055,7 +4178,10 @@ static int process_extent(struct send_ctx *sctx,
+ 		goto out;
+ 
+ 	ret = send_write_or_clone(sctx, path, key, found_clone);
+-
++	if (ret)
++		goto out;
++out_hole:
++	ret = maybe_send_hole(sctx, path, key);
+ out:
+ 	return ret;
+ }
+@@ -4181,6 +4307,19 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 	}
+ 
+ 	if (S_ISREG(sctx->cur_inode_mode)) {
++		if (need_send_hole(sctx)) {
++			if (sctx->cur_inode_last_extent == (u64)-1) {
++				ret = get_last_extent(sctx, (u64)-1);
++				if (ret)
++					goto out;
++			}
++			if (sctx->cur_inode_last_extent <
++			    sctx->cur_inode_size) {
++				ret = send_hole(sctx, sctx->cur_inode_size);
++				if (ret)
++					goto out;
++			}
++		}
+ 		ret = send_truncate(sctx, sctx->cur_ino, sctx->cur_inode_gen,
+ 				sctx->cur_inode_size);
+ 		if (ret < 0)
+@@ -4228,6 +4367,7 @@ static int changed_inode(struct send_ctx *sctx,
+ 
+ 	sctx->cur_ino = key->objectid;
+ 	sctx->cur_inode_new_gen = 0;
++	sctx->cur_inode_last_extent = (u64)-1;
+ 
+ 	/*
+ 	 * Set send_progress to current inode. This will tell all get_cur_xxx
+@@ -4508,14 +4648,18 @@ static int changed_cb(struct btrfs_root *left_root,
+ 	struct send_ctx *sctx = ctx;
+ 
+ 	if (result == BTRFS_COMPARE_TREE_SAME) {
+-		if (key->type != BTRFS_INODE_REF_KEY &&
+-		    key->type != BTRFS_INODE_EXTREF_KEY)
+-			return 0;
+-		ret = compare_refs(sctx, left_path, key);
+-		if (!ret)
++		if (key->type == BTRFS_INODE_REF_KEY ||
++		    key->type == BTRFS_INODE_EXTREF_KEY) {
++			ret = compare_refs(sctx, left_path, key);
++			if (!ret)
++				return 0;
++			if (ret < 0)
++				return ret;
++		} else if (key->type == BTRFS_EXTENT_DATA_KEY) {
++			return maybe_send_hole(sctx, left_path, key);
++		} else {
+ 			return 0;
+-		if (ret < 0)
+-			return ret;
++		}
+ 		result = BTRFS_COMPARE_TREE_CHANGED;
+ 		ret = 0;
+ 	}
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1134aa4..465a16d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3188,7 +3188,7 @@ static int log_inode_item(struct btrfs_trans_handle *trans,
+ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 			       struct inode *inode,
+ 			       struct btrfs_path *dst_path,
+-			       struct extent_buffer *src,
++			       struct btrfs_path *src_path, u64 *last_extent,
+ 			       int start_slot, int nr, int inode_only)
+ {
+ 	unsigned long src_offset;
+@@ -3196,6 +3196,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *log = BTRFS_I(inode)->root->log_root;
+ 	struct btrfs_file_extent_item *extent;
+ 	struct btrfs_inode_item *inode_item;
++	struct extent_buffer *src = src_path->nodes[0];
++	struct btrfs_key first_key, last_key, key;
+ 	int ret;
+ 	struct btrfs_key *ins_keys;
+ 	u32 *ins_sizes;
+@@ -3203,6 +3205,9 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 	int i;
+ 	struct list_head ordered_sums;
+ 	int skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
++	bool has_extents = false;
++	bool need_find_last_extent = (*last_extent == 0);
++	bool done = false;
+ 
+ 	INIT_LIST_HEAD(&ordered_sums);
+ 
+@@ -3211,6 +3216,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 	if (!ins_data)
+ 		return -ENOMEM;
+ 
++	first_key.objectid = (u64)-1;
++
+ 	ins_sizes = (u32 *)ins_data;
+ 	ins_keys = (struct btrfs_key *)(ins_data + nr * sizeof(u32));
+ 
+@@ -3231,6 +3238,9 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 
+ 		src_offset = btrfs_item_ptr_offset(src, start_slot + i);
+ 
++		if ((i == (nr - 1)))
++			last_key = ins_keys[i];
++
+ 		if (ins_keys[i].type == BTRFS_INODE_ITEM_KEY) {
+ 			inode_item = btrfs_item_ptr(dst_path->nodes[0],
+ 						    dst_path->slots[0],
+@@ -3242,6 +3252,21 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 					   src_offset, ins_sizes[i]);
+ 		}
+ 
++		/*
++		 * We set need_find_last_extent here in case we know we were
++		 * processing other items and then walk into the first extent in
++		 * the inode.  If we don't hit an extent then nothing changes,
++		 * we'll do the last search the next time around.
++		 */
++		if (ins_keys[i].type == BTRFS_EXTENT_DATA_KEY) {
++			has_extents = true;
++			if (need_find_last_extent &&
++			    first_key.objectid == (u64)-1)
++				first_key = ins_keys[i];
++		} else {
++			need_find_last_extent = false;
++		}
++
+ 		/* take a reference on file data extents so that truncates
+ 		 * or deletes of this inode don't have to relog the inode
+ 		 * again
+@@ -3306,6 +3331,126 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 		list_del(&sums->list);
+ 		kfree(sums);
+ 	}
++
++	if (!has_extents)
++		return ret;
++
++	/*
++	 * Because we use btrfs_search_forward we could skip leaves that were
++	 * not modified and then assume *last_extent is valid when it really
++	 * isn't.  So back up to the previous leaf and read the end of the last
++	 * extent before we go and fill in holes.
++	 */
++	if (need_find_last_extent) {
++		u64 len;
++
++		ret = btrfs_prev_leaf(BTRFS_I(inode)->root, src_path);
++		if (ret < 0)
++			return ret;
++		if (ret)
++			goto fill_holes;
++		if (src_path->slots[0])
++			src_path->slots[0]--;
++		src = src_path->nodes[0];
++		btrfs_item_key_to_cpu(src, &key, src_path->slots[0]);
++		if (key.objectid != btrfs_ino(inode) ||
++		    key.type != BTRFS_EXTENT_DATA_KEY)
++			goto fill_holes;
++		extent = btrfs_item_ptr(src, src_path->slots[0],
++					struct btrfs_file_extent_item);
++		if (btrfs_file_extent_type(src, extent) ==
++		    BTRFS_FILE_EXTENT_INLINE) {
++			len = btrfs_file_extent_inline_len(src, extent);
++			*last_extent = ALIGN(key.offset + len,
++					     log->sectorsize);
++		} else {
++			len = btrfs_file_extent_num_bytes(src, extent);
++			*last_extent = key.offset + len;
++		}
++	}
++fill_holes:
++	/* So we did prev_leaf, now we need to move to the next leaf, but a few
++	 * things could have happened
++	 *
++	 * 1) A merge could have happened, so we could currently be on a leaf
++	 * that holds what we were copying in the first place.
++	 * 2) A split could have happened, and now not all of the items we want
++	 * are on the same leaf.
++	 *
++	 * So we need to adjust how we search for holes, we need to drop the
++	 * path and re-search for the first extent key we found, and then walk
++	 * forward until we hit the last one we copied.
++	 */
++	if (need_find_last_extent) {
++		/* btrfs_prev_leaf could return 1 without releasing the path */
++		btrfs_release_path(src_path);
++		ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &first_key,
++					src_path, 0, 0);
++		if (ret < 0)
++			return ret;
++		ASSERT(ret == 0);
++		src = src_path->nodes[0];
++		i = src_path->slots[0];
++	} else {
++		i = start_slot;
++	}
++
++	/*
++	 * Ok so here we need to go through and fill in any holes we may have
++	 * to make sure that holes are punched for those areas in case they had
++	 * extents previously.
++	 */
++	while (!done) {
++		u64 offset, len;
++		u64 extent_end;
++
++		if (i >= btrfs_header_nritems(src_path->nodes[0])) {
++			ret = btrfs_next_leaf(BTRFS_I(inode)->root, src_path);
++			if (ret < 0)
++				return ret;
++			ASSERT(ret == 0);
++			src = src_path->nodes[0];
++			i = 0;
++		}
++
++		btrfs_item_key_to_cpu(src, &key, i);
++		if (!btrfs_comp_cpu_keys(&key, &last_key))
++			done = true;
++		if (key.objectid != btrfs_ino(inode) ||
++		    key.type != BTRFS_EXTENT_DATA_KEY) {
++			i++;
++			continue;
++		}
++		extent = btrfs_item_ptr(src, i, struct btrfs_file_extent_item);
++		if (btrfs_file_extent_type(src, extent) ==
++		    BTRFS_FILE_EXTENT_INLINE) {
++			len = btrfs_file_extent_inline_len(src, extent);
++			extent_end = ALIGN(key.offset + len, log->sectorsize);
++		} else {
++			len = btrfs_file_extent_num_bytes(src, extent);
++			extent_end = key.offset + len;
++		}
++		i++;
++
++		if (*last_extent == key.offset) {
++			*last_extent = extent_end;
++			continue;
++		}
++		offset = *last_extent;
++		len = key.offset - *last_extent;
++		ret = btrfs_insert_file_extent(trans, log, btrfs_ino(inode),
++					       offset, 0, 0, len, 0, len, 0,
++					       0, 0);
++		if (ret)
++			break;
++		*last_extent = offset + len;
++	}
++	/*
++	 * Need to let the callers know we dropped the path so they should
++	 * re-search.
++	 */
++	if (!ret && need_find_last_extent)
++		ret = 1;
+ 	return ret;
+ }
+ 
+@@ -3624,6 +3769,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key max_key;
+ 	struct btrfs_root *log = root->log_root;
+ 	struct extent_buffer *src = NULL;
++	u64 last_extent = 0;
+ 	int err = 0;
+ 	int ret;
+ 	int nritems;
+@@ -3738,11 +3884,15 @@ again:
+ 			goto next_slot;
+ 		}
+ 
+-		ret = copy_items(trans, inode, dst_path, src, ins_start_slot,
+-				 ins_nr, inode_only);
+-		if (ret) {
++		ret = copy_items(trans, inode, dst_path, path, &last_extent,
++				 ins_start_slot, ins_nr, inode_only);
++		if (ret < 0) {
+ 			err = ret;
+ 			goto out_unlock;
++		} if (ret) {
++			ins_nr = 0;
++			btrfs_release_path(path);
++			continue;
+ 		}
+ 		ins_nr = 1;
+ 		ins_start_slot = path->slots[0];
+@@ -3756,13 +3906,14 @@ next_slot:
+ 			goto again;
+ 		}
+ 		if (ins_nr) {
+-			ret = copy_items(trans, inode, dst_path, src,
+-					 ins_start_slot,
++			ret = copy_items(trans, inode, dst_path, path,
++					 &last_extent, ins_start_slot,
+ 					 ins_nr, inode_only);
+-			if (ret) {
++			if (ret < 0) {
+ 				err = ret;
+ 				goto out_unlock;
+ 			}
++			ret = 0;
+ 			ins_nr = 0;
+ 		}
+ 		btrfs_release_path(path);
+@@ -3777,12 +3928,13 @@ next_slot:
+ 		}
+ 	}
+ 	if (ins_nr) {
+-		ret = copy_items(trans, inode, dst_path, src, ins_start_slot,
+-				 ins_nr, inode_only);
+-		if (ret) {
++		ret = copy_items(trans, inode, dst_path, path, &last_extent,
++				 ins_start_slot, ins_nr, inode_only);
++		if (ret < 0) {
+ 			err = ret;
+ 			goto out_unlock;
+ 		}
++		ret = 0;
+ 		ins_nr = 0;
+ 	}
+ 
 -- 
-Aldo Iljazi
+1.8.3.1
+

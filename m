@@ -1,104 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33064 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750831Ab3K0GaB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Nov 2013 01:30:01 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VlYdL-00015I-Ja
-	for linux-btrfs@vger.kernel.org; Wed, 27 Nov 2013 07:29:59 +0100
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 07:29:59 +0100
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 07:29:59 +0100
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:38024 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753516Ab3KLNmD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Nov 2013 08:42:03 -0500
+Received: by mail-wg0-f43.google.com with SMTP id n12so3041782wgh.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 05:42:01 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: btrfsck --repair /dev/sdc (Was: [PATCH] Btrfs-progs: allow --init-extent-tree
- to work when extent tree is borked)
-Date: Wed, 27 Nov 2013 06:29:49 +0000
-Message-ID: <l743gi$ih4$1@ger.gmane.org>
-References: <1382724100-5276-1-git-send-email-jbacik@fusionio.com> <l4ed62$8r3$1@ger.gmane.org> <20131025183134.GA4543@localhost.localdomain> <l4hifj$ni1$1@ger.gmane.org> <20131028151148.GB4543@localhost.localdomain> <l5eq5s$m8l$1@ger.gmane.org> <l5rn2s$m3p$1@ger.gmane.org> <l5vq48$2dh$1@ger.gmane.org> <l65l0s$lpm$1@ger.gmane.org> <l6f0pb$m6h$1@ger.gmane.org> <l6hm4u$s02$1@ger.gmane.org> <pan$809d5$4354febd$5ff6e929$a8235336@cox.net> <l6j4c1$a90$1@ger.gmane.org> <l70lr5$li0$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <l70lr5$li0$1@ger.gmane.org>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 0/5] Add support for object properties
+Date: Tue, 12 Nov 2013 13:41:41 +0000
+Message-Id: <1384263706-25549-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a revised version of the original proposal/work from Alexander Block
+to introduce a generic framework to set properties on btrfs filesystem objects
+(inodes, subvolumes, filesystems, devices).
 
->>>> I don't know if that has gone through that pattern during the week but
->>>> at a-week-a-time, this is not going to finish in reasonable time.
->>>>
->>>> How come so very slow?
->>>>
->>>> Any hints/tips/fixes or abandon the test?
->>>
->>> You're a patient man. =:^)
->>
->> Sort of... I can leave it running in the background until I come to need
->> to do something else with that machine. So... A bit of an experiment.
-> 
-> 
-> Until... No more... And just as the gdb bt shows something a little
-> different!
-> 
-> (gdb) bt
-> #0  0x000000000041ddc4 in btrfs_comp_keys ()
-> #1  0x00000000004208e9 in btrfs_search_slot ()
-> #2  0x0000000000427bb4 in btrfs_read_block_groups ()
-> #3  0x0000000000423e40 in btrfs_setup_all_roots ()
-> #4  0x000000000042406d in __open_ctree_fd ()
-> #5  0x0000000000424126 in open_ctree_fs_info ()
-> #6  0x000000000041812e in cmd_check ()
-> #7  0x0000000000404904 in main ()
-> 
-> 
-> Nearly done or weeks yet more to run?
-> 
-> The poor thing gets killed in the morning for new work.
+I preserved most of Alexander's work, rebasing only his main patch against
+latest integration branch, adding some missing static qualifiers, malloc failure
+checks and fixing some checkpatch.pl warnings. On top of his work, I added a few
+fixes and enhancements and added support for 1 inode property, named compression,
+which requires the corresponding kernel patch.
 
-OK, so that all came to naught and it got killed for a kernel update and
-new work.
+Once there's agreement on this feature and patchset, I'll send my xfstests patch
+that tests this feature.
 
-"Just for a giggle," I tried mounting that disk with the 'recovery'
-option and it failed with the usual complaint:
+Alexander's original cover letter:
 
-btrfs: disabling disk space caching
-btrfs: enabling auto recovery
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-btrfs: open_ctree failed
+"
+        This patchset introduces the btrfs property subgroup. It is the
+        result of a discussion we had on IRC. I tried to make the properties
+        interface as generic and extensible as possible. Comments are welcome.
 
+        Currently the command group looks like this:
+        btrfs prop set [-t <type>] /path/to/object <name> <value>
+        btrfs prop get [-t <type>] /path/to/object [<name>] (omitting name dumps all)
+        btrfs prop list [-t <type>] /path/to/object (lists properties with description)
 
-Trying a wild guess of "btrfs-zero-log /dev/sdc" gives:
+        The type is used to explicitly specify what type of object you mean. This is 
+        necessary in case the object+property combination is ambiguous.  For example
+        '/path/to/fs/root' could mean the root subvolume, the directory inode or the 
+        filesystem itself. Normally, btrfs-progs will try to detect the type 
+        automatically.
 
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-parent transid verify failed on 911904604160 wanted 17448 found 17450
-Ignoring transid failure
+        David suggested that it should also be possible to specify objects by
+        their id/uuid/fsid. I like that idea, but would be happy if someone else
+        could take over that part :)
 
-... and it is sat there at 100% CPU usage, no further output, and no
-apparent disk activity... Just like btrfsck was...
+        For now, I've implemented two properties:
 
+        1. read-only. Usable on subvolumes to toggle the read-only flags.
+        2. label. I looked through btrfs to find good examples of things that
+           could be moved to the new properties interface and the filesystem
+           label looked like a good one. There are for sure more, but that is
+           something for later (and maybe for someone else). I would suggest 
+           to move everthing that makes sense over to the props interface and 
+           mark the old interfaces as deprecated. Comments on this are welcome.
 
-So... Looks like time finally for a reformat.
+        Patch version history:
+        v1
+          Initial version.
+        v2
+          - Removed the filesystem prefix and implemented it as new command group
+          - Switched from the <name>[=<value>] form to the set/get <name> [<value>] 
+            form.
+          - Removed patches "Btrfs-progs: make filesystem_cmd_group non const"
+            and "Btrfs-progs: move skip_prefix and prefixcmp to utils.c". They
+            are not needed anymore due to the 'btrfs prop list' command.
+          - Udjusted the subvol flags patch to be compatible to the "Btrfs: use 
+            _IOR for BTRFS_IOC_SUBVOL_GETFLAGS" patch.
+          - Using -t <type> instead of <type>: prefix now.
+          - Changes are based on feedback from Ilya and David.
 
+        Alex.
+"
 
-
-Any chance of outputting some indication of progress, and for a speedup,
-or options for partial recovery or?... Or for a fast 'slash-and-burn'
-recovery where damaged trees get cleanly amputated rather than
-too-painfully-slowly repaired?...
-
-Just a few wild ideas ;-)
+Thanks.
 
 
-Regards,
-Martin
+Alexander Block (1):
+  Btrfs-progs: introduce btrfs property subgroup
 
+Filipe David Borba Manana (4):
+  Btrfs-progs: let get_label return the label instead of printing it
+  Btrfs-progs: fix detection of root objects in cmds-property.c
+  Btrfs-progs: add type root to label property
+  Btrfs-progs: add support for the compression property
 
+ Makefile          |    4 +-
+ btrfs.c           |    1 +
+ cmds-filesystem.c |   14 +-
+ cmds-property.c   |  467 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ commands.h        |    2 +
+ ioctl.h           |   12 ++
+ props.c           |  184 +++++++++++++++++++++
+ props.h           |   43 +++++
+ utils.c           |   15 +-
+ utils.h           |    2 +-
+ 10 files changed, 729 insertions(+), 15 deletions(-)
+ create mode 100644 cmds-property.c
+ create mode 100644 props.c
+ create mode 100644 props.h
 
+-- 
+1.7.9.5
 

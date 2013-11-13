@@ -1,78 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42948 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:53563 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753982Ab3KMMxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Nov 2013 07:53:22 -0500
+	id S1757057Ab3KMPEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Nov 2013 10:04:00 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VgZwf-0007DJ-Jg
-	for linux-btrfs@vger.kernel.org; Wed, 13 Nov 2013 13:53:21 +0100
+	id 1Vgbz4-00027T-UZ
+	for linux-btrfs@vger.kernel.org; Wed, 13 Nov 2013 16:03:58 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 13:53:21 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 16:03:58 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 13:53:21 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 16:03:58 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Error from Trying to Mount Btrfs
-Date: Wed, 13 Nov 2013 12:52:56 +0000 (UTC)
-Message-ID: <pan$63fda$df85d33$eff0354a$38afd821@cox.net>
-References: <1382915825.53433.YahooMailNeo@web125705.mail.ne1.yahoo.com>
+Subject: Re: invalid opcode: 0000 [#1] SMP
+Date: Wed, 13 Nov 2013 15:03:37 +0000 (UTC)
+Message-ID: <pan$d06e7$206fd374$423b51c3$17212f9e@cox.net>
+References: <1384242552.7516.9.camel@hsew-frn.HIPERSCAN>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-gatlin sullivan posted on Sun, 27 Oct 2013 16:17:05 -0700 as excerpted:
+Franziska Näpelt posted on Tue, 12 Nov 2013 08:49:12 +0100 as excerpted:
 
-> I have the attached error from trying to mount btrfs on external hard
-> drive. The F.S. was my primary system, then I dd'd it to an external and
-> reinstalled Fedora.
+> we are using a btrfs RAID 1 with four 2TB hard drives (WD Caviar green)
+> on a Debian 7.2 with Kernel 3.11.6
 > 
-> 
-> I tried to follow
-> https://btrfs.wiki.kernel.org/index.php/
-Problem_FAQ#Filesystem_can.27t_be_mounted_by_label.
-> I used "# btrfs device scan --all-devices" before attempting to mount.
-> 
-> 
-> What should I do?
-> 
-> Appreciatively, Gatlin.
-> 
-> P.S.
-> This file system is very important to me becasue it has a large
-> collection of songs.
+> Now we had an 'invalid opcode: 0000 [#1] SMP' when a sector fails in
+> messages log.
+> After that, access over smb and nfs wasn't possible.
+> A restart solved the problem of inaccesibility.
 
-Commenting on that P.S.:
 
-Of course if you've read the wiki you know this, but it's worth repeating 
-for others who may come across this in their googles, etc...
+A couple notes from a fellow btrfs-using sysadmin...
 
-As noted both on the wiki and in description for the kernel's btrfs 
-option itself, btrfs remains classified as an experimental filesystem, 
-suitable only for testing with data that you don't care about losing, 
-either because it's well backed up to tested usable backups (preferably 
-on something more stable than btrfs), or because it's low-value data you 
-don't particularly care about losing if the test goes wrong and btrfs 
-eats your data for breakfast in the first place.
+1) invalid opcode 0000:
 
-IOW, importance is relative, and relative to the value of the time it 
-would have taken to research the filesystem and ensure backups 
-appropriate to the importance of the data, if you didn't do that research 
-and have those backups, by definition your time saved in skipping that 
-was more important to you than the potential loss of that data on what 
-you would have known if you /really/ cared about the data you put on it, 
-was an experimental filesystem unfit to the purpose you evidently used it 
-for.
+As I understand it, this is relatively generic and doesn't define the 
+error by itself.  The 0000 opcode can be viewed as a zero-dereference of 
+sorts, it's indication of a bug happening earlier, such that an expected 
+valid opcode ends up being zero.  The error itself will be earlier -- 
+this is just where it ends up being trapped.
 
-So you saved the time on the research and backups because you considered 
-that more important than the data, and are now paying the tradeoff cost 
-for that time saved with the potential loss of the obviously relatively 
-unimportant data.  No big deal, since self-evidently that time was more 
-important to you than the data you were risking by not spending it.
+As to what that error is in this case...
+
+2) btrfs raid1:
+
+Unlike, for example, md/raid1, btrfs raid1 is not at this point run-time 
+tolerant of device failure.  At this point, a btrfs raid1 device failure 
+seems to make the entire system basically unusable and require a reboot, 
+after which device/data recovery (for example, mount degraded, add a 
+replacement device, rebalance, and delete the failed one, or if it was a 
+temporary dropout, simply btrfs scrub to find and fix the checksum 
+mismatches from the valid copy) can be initiated, if necessary.
+
+When the sector failed, it apparently triggered the kernel btrfs to drop 
+the entire device from active, which as I said, isn't well runtime 
+supported at present, thus causing various btrfs worker threads to go 
+unresponsive requiring a reboot to get back a normally functioning system.
+
+As the device failure was actually just that single sector failure, on 
+reboot the device was once again available, and functionality was 
+restored.
+
+However, if you haven't already done so, I'd strongly recommend doing a 
+btrfs scrub on the affected filesystem, thus allowing btrfs to find the 
+bad data copy due to the checksum mismatch and to recover from the good 
+one it should have, due to the raid1 redundancy, rewriting a new, valid 
+second copy once again, thereby restoring data redundancy as protection 
+against the now single valid copy getting corrupted as well.
+
+
+Meanwhile, if you require runtime stability and failover, I'd suggest md/
+raid1 or similar more mature and stable option designed to provide that.  
+btrfs will hopefully do so at some point, but as the kernel btrfs option 
+mentions, btrfs is still experimental and features are still being added 
+and improved, and runtime failover is one such feature btrfs doesn't well 
+support just yet.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

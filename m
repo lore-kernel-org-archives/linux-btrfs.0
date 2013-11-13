@@ -1,205 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59636 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752789Ab3K1Q7z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Nov 2013 11:59:55 -0500
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.cz>,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>
-Subject: [PATCH] btrfs-progs: add options to sync filesystem after subvol delete
-Date: Thu, 28 Nov 2013 17:59:07 +0100
-Message-Id: <1385657947-26145-1-git-send-email-dsterba@suse.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:22937 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757359Ab3KMUBp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Nov 2013 15:01:45 -0500
+Date: Wed, 13 Nov 2013 23:01:31 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: btrfs: add tracing for failed reservations
+Message-ID: <20131113200130.GA6261@elgon.mountain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Subvolume deletion does not do a full transaction commit. This can lead
-to an unexpected result when the system crashes between deletion and
-commit, the subvolume directory will appear again. Add options to request
-filesystem sync after each deleted subvolume or after the last one.
+Hello Jeff Mahoney,
 
-If the command with sync option finishes succesfully, the subvolume(s)
-deletion status is safely stored on the media.
+This is a semi-automatic email about new static checker warnings.
 
-Userspace approach is more flexible than in-kernel. Related discussions:
-http://www.spinics.net/lists/linux-btrfs/msg22088.html
-http://www.spinics.net/lists/linux-btrfs/msg27240.html
+The patch cab45e22da48: "btrfs: add tracing for failed reservations" 
+from Oct 16, 2013, leads to the following Smatch complaint:
 
-CC: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
+fs/btrfs/extent-tree.c:3710 btrfs_check_data_free_space()
+	 error: we previously assumed 'data_sinfo' could be null (see line 3629)
 
-The option names may not be ideal, feel free to suggest better.
+fs/btrfs/extent-tree.c
+  3628		data_sinfo = fs_info->data_sinfo;
+  3629		if (!data_sinfo)
+                    ^^^^^^^^^^^
+Existing check.
 
- cmds-subvolume.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
- man/btrfs.8.in   | 23 ++++++++++++++---
- 2 files changed, 90 insertions(+), 10 deletions(-)
+  3630			goto alloc;
+  3631	
+  3632	again:
+  3633		/* make sure we have enough space to handle the data first */
+  3634		spin_lock(&data_sinfo->lock);
+  3635		used = data_sinfo->bytes_used + data_sinfo->bytes_reserved +
+  3636			data_sinfo->bytes_pinned + data_sinfo->bytes_readonly +
+  3637			data_sinfo->bytes_may_use;
+  3638	
+  3639		if (used + bytes > data_sinfo->total_bytes) {
+  3640			struct btrfs_trans_handle *trans;
+  3641	
+  3642			/*
+  3643			 * if we don't have enough free bytes in this space then we need
+  3644			 * to alloc a new chunk.
+  3645			 */
+  3646			if (!data_sinfo->full && alloc_chunk) {
+  3647				u64 alloc_target;
+  3648	
+  3649				data_sinfo->force_alloc = CHUNK_ALLOC_FORCE;
+  3650				spin_unlock(&data_sinfo->lock);
+  3651	alloc:
+  3652				alloc_target = btrfs_get_alloc_profile(root, 1);
+  3653				/*
+  3654				 * It is ugly that we don't call nolock join
+  3655				 * transaction for the free space inode case here.
+  3656				 * But it is safe because we only do the data space
+  3657				 * reservation for the free space cache in the
+  3658				 * transaction context, the common join transaction
+  3659				 * just increase the counter of the current transaction
+  3660				 * handler, doesn't try to acquire the trans_lock of
+  3661				 * the fs.
+  3662				 */
+  3663				trans = btrfs_join_transaction(root);
+  3664				if (IS_ERR(trans))
+  3665					return PTR_ERR(trans);
+  3666	
+  3667				ret = do_chunk_alloc(trans, root->fs_info->extent_root,
+  3668						     alloc_target,
+  3669						     CHUNK_ALLOC_NO_FORCE);
+  3670				btrfs_end_transaction(trans, root);
+  3671				if (ret < 0) {
+  3672					if (ret != -ENOSPC)
+  3673						return ret;
+  3674					else
+  3675						goto commit_trans;
+                                                ^^^^^^^^^^^^^^^^^
+Imagine we hit this goto and data_sinfo is NULL.
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index c6a5284a02a4..c124c3185252 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -202,24 +202,67 @@ int test_issubvolume(char *path)
- }
- 
- static const char * const cmd_subvol_delete_usage[] = {
--	"btrfs subvolume delete <subvolume> [<subvolume>...]",
-+	"btrfs subvolume delete [options] <subvolume> [<subvolume>...]",
- 	"Delete subvolume(s)",
-+	"Delete subvolumes from the filesystem. The corresponding directory",
-+	"is removed instantly but the data blocks are removed later.",
-+	"The deletion does not involve full commit by default due to",
-+	"performance reasons (as a consequence, the subvolume may appear again",
-+	"after a crash). Use one of the --sync options to sync the filesystem",
-+	"via a btrfs specific ioctl.",
-+	"",
-+	"-s|--sync-after      call sync at the end of the operation",
-+	"-S|--sync-each       sync the filesystem after deleting each subvolume",
- 	NULL
- };
- 
- static int cmd_subvol_delete(int argc, char **argv)
- {
--	int	res, fd, len, e, cnt = 1, ret = 0;
-+	int	res, len, e, ret = 0;
-+	int cnt;
-+	int fd = -1;
- 	struct btrfs_ioctl_vol_args	args;
- 	char	*dname, *vname, *cpath;
- 	char	*dupdname = NULL;
- 	char	*dupvname = NULL;
- 	char	*path;
- 	DIR	*dirstream = NULL;
-+	int sync_mode = 0;
-+	struct option long_options[] = {
-+		{"sync-after", no_argument, NULL, 's'},	/* sync mode 1 */
-+		{"sync-each", no_argument, NULL, 'S'},	/* sync mode 2 */
-+		{NULL, 0, NULL, 0}
-+	};
- 
--	if (argc < 2)
-+	optind = 1;
-+	while (1) {
-+		int c;
-+
-+		c = getopt_long(argc, argv, "sS", long_options, NULL);
-+		if (c < 0)
-+			break;
-+
-+		switch(c) {
-+		case 's':
-+			sync_mode = 1;
-+			break;
-+		case 'S':
-+			sync_mode = 2;
-+			break;
-+		default:
-+			usage(cmd_subvol_delete_usage);
-+		}
-+	}
-+
-+	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_subvol_delete_usage);
- 
-+	printf("Sync filesystem mode: %s\n",
-+		!sync_mode ? "none (default)" :
-+		sync_mode == 1 ? "at the end" : "after each");
-+
-+	cnt = optind;
-+
- again:
- 	path = argv[cnt];
- 
-@@ -276,8 +319,6 @@ again:
- 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
- 	e = errno;
- 
--	close_file_or_dir(fd, dirstream);
--
- 	if(res < 0 ){
- 		fprintf( stderr, "ERROR: cannot delete '%s/%s' - %s\n",
- 			dname, vname, strerror(e));
-@@ -285,14 +326,38 @@ again:
- 		goto out;
- 	}
- 
-+	if (sync_mode == 1) {
-+		res = ioctl(fd, BTRFS_IOC_SYNC);
-+		if (res < 0) {
-+			fprintf(stderr,
-+				"ERROR: unable to sync after '%s': %s\n",
-+				path, strerror(e));
-+			ret = 1;
-+		}
-+	}
-+
- out:
- 	free(dupdname);
- 	free(dupvname);
- 	dupdname = NULL;
- 	dupvname = NULL;
- 	cnt++;
--	if (cnt < argc)
-+	if (cnt < argc) {
-+		close_file_or_dir(fd, dirstream);
- 		goto again;
-+	}
-+
-+	if (sync_mode == 2 && fd != -1) {
-+		res = ioctl(fd, BTRFS_IOC_SYNC);
-+		e = errno;
-+		if (res < 0) {
-+			fprintf(stderr,
-+				"ERROR: unable to do final sync: %s\n",
-+				strerror(e));
-+			ret = 1;
-+		}
-+	}
-+	close_file_or_dir(fd, dirstream);
- 
- 	return ret;
- }
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index b6203483296e..2d5c12e08640 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -8,7 +8,7 @@ btrfs \- control a btrfs filesystem
- .SH SYNOPSIS
- \fBbtrfs\fP \fBsubvolume create\fP [-i \fI<qgroupid>\fP] [\fI<dest>\fP/]\fI<name>\fP
- .PP
--\fBbtrfs\fP \fBsubvolume delete\fP \fI<subvolume>\fP [\fI<subvolume>...\fP]
-+\fBbtrfs\fP \fBsubvolume delete\fP [\fIoptions\fP] \fI<subvolume>\fP [\fI<subvolume>...\fP]
- .PP
- \fBbtrfs\fP \fBsubvolume list\fP [\fIoptions\fP] [-G [+|-]\fIvalue\fP] [-C [+|-]\fIvalue\fP] [--sort=rootid,gen,ogen,path] \fI<path>\fP
- .PP
-@@ -168,9 +168,24 @@ times.
- .RE
- .TP
- 
--\fBsubvolume delete\fR\fI <subvolume> \fP[\fI<subvolume>...\fP]\fR
--Delete the subvolume \fI<subvolume>\fR. If \fI<subvolume>\fR is not a
--subvolume, \fBbtrfs\fR returns an error.
-+\fBsubvolume delete\fR [\fIoptions\fP] \fI<subvolume>\fP [\fI<subvolume>...\fP]\fR
-+Delete the subvolume(s) from the filesystem. If \fI<subvolume>\fR is not a
-+subvolume, \fBbtrfs\fR returns an error but continues if there are more arguments
-+to process.
-+
-+The corresponding directory is removed instantly but the data blocks are
-+removed later.  The deletion does not involve full commit by default due to
-+performance reasons (as a consequence, the subvolume may appear again after a
-+crash).  Use one of the --sync options to sync the filesystem via a btrfs
-+specific ioctl.
-+.RS
-+
-+\fIOptions\fP
-+.IP "\fB-s|--sync-after\fP" 5
-+call sync at the end of the operation
-+.IP "\fB-S|--sync-each\fP" 5
-+sync the filesystem after deleting each subvolume
-+.RE
- .TP
- 
- \fBsubvolume list\fR [\fIoptions\fP] [-G [+|-]\fIvalue\fP] [-C [+|-]\fIvalue\fP] [--sort=rootid,gen,ogen,path] \fI<path>\fR
--- 
-1.8.4.3
+  3676				}
+  3677	
+  3678				if (!data_sinfo)
+  3679					data_sinfo = fs_info->data_sinfo;
+  3680	
+  3681				goto again;
+  3682			}
+  3683	
+  3684			/*
+  3685			 * If we don't have enough pinned space to deal with this
+  3686			 * allocation don't bother committing the transaction.
+  3687			 */
+  3688			if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+  3689						   bytes) < 0)
+  3690				committed = 1;
+  3691			spin_unlock(&data_sinfo->lock);
+  3692	
+  3693			/* commit the current transaction and try again */
+  3694	commit_trans:
+  3695			if (!committed &&
+  3696			    !atomic_read(&root->fs_info->open_ioctl_trans)) {
+  3697				committed = 1;
+  3698	
+  3699				trans = btrfs_join_transaction(root);
+  3700				if (IS_ERR(trans))
+  3701					return PTR_ERR(trans);
+  3702				ret = btrfs_commit_transaction(trans, root);
+  3703				if (ret)
+  3704					return ret;
+  3705				goto again;
+  3706			}
+  3707	
+  3708			trace_btrfs_space_reservation(root->fs_info,
+  3709						      "space_info:enospc",
+  3710						      data_sinfo->flags, bytes, 1);
+                                                      ^^^^^^^^^^^^^^^^^
+Patch introduces an unchecked dereference.
 
+  3711			return -ENOSPC;
+  3712		}
+
+regards,
+dan carpenter

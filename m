@@ -1,65 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33941 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:44601 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758394Ab3KMI1Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Nov 2013 03:27:25 -0500
+	id S1758913Ab3KMMUx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Nov 2013 07:20:53 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VgVnE-0000z3-Ax
-	for linux-btrfs@vger.kernel.org; Wed, 13 Nov 2013 09:27:20 +0100
-Received: from dyndsl-080-228-178-141.ewe-ip-backbone.de ([80.228.178.141])
+	id 1VgZRE-0003QZ-Dm
+	for linux-btrfs@vger.kernel.org; Wed, 13 Nov 2013 13:20:52 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 09:27:20 +0100
-Received: from hurikhan77+btrfs by dyndsl-080-228-178-141.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 13:20:52 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 09:27:20 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 13:20:52 +0100
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Error from Trying to Mount Btrfs
-Date: Wed, 13 Nov 2013 09:27:40 +0100
-Message-ID: <sopbla-03g.ln1@hurikhan77.spdns.de>
-References: <1382915825.53433.YahooMailNeo@web125705.mail.ne1.yahoo.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfsck errors is it save to fix?
+Date: Wed, 13 Nov 2013 12:20:32 +0000 (UTC)
+Message-ID: <pan$51c39$fb46cbde$f4d41682$79fffe0c@cox.net>
+References: <52742B59.3060405@friedels.name>
+	<CAE5mzvijfSOi9dP0MWCMd6=R5MW3bhabote4QYmFnqNEerDifw@mail.gmail.com>
+	<5274BEC8.5060804@friedels.name> <52780E20.8020405@friedels.name>
+	<CAE5mzvgrKqrv3LpmiF6iUK=GYsnGOQnSwLTM0dSfBE8ZP-4AuA@mail.gmail.com>
+	<5279E581.4000700@friedels.name> <527BE712.40304@friedels.name>
+	<pan$2f107$ddc92f2a$30381770$58497a03@cox.net>
+	<527DF34B.2030309@friedels.name> <52812AAA.1080106@friedels.name>
+	<3j78la-3nn.ln1@hurikhan77.spdns.de>
+	<pan$9db1e$bf9333c2$543d2730$1c706b4d@cox.net>
+	<llcala-j7c.ln1@hurikhan77.spdns.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-gatlin sullivan <gatlinsullivan@yahoo.com> schrieb:
+Kai Krakow posted on Tue, 12 Nov 2013 20:37:57 +0100 as excerpted:
 
-> I have the attached error from trying to mount btrfs on external hard
-> drive. The F.S. was my primary system, then I dd'd it to an external and
-> reinstalled Fedora.
+>>> BTW, my first impression was that "errors 400" means something like
+>>> "400 errors" - but that is just a hex bitmask which shows what errors
+>>> have been found. So "errors 100" is just _one_ bit set, thus only
+>>> _one_
+>>> error.
+>> 
+>> Same impression here, tho I did wonder at the conveniently even number
+>> of errors...  Perhaps "errors" should be retermed "error-mask" or some
+>> such,
+>> to make the meaning clearer?
 > 
-[...]
-> 
-> What should I do?
-> 
-> Appreciatively, Gatlin.
-> 
-> P.S.
-> This file system is very important to me becasue it has a large collection
-> of songs.
->
-> [root@dell-studio-1555 ~]# dmesg | tail
-> [ 1773.320077] btrfs: open_ctree failed
-> [ 1800.704035] mce: [Hardware Error]: Machine check events logged
-> [ 1969.644418] CPU0: Core temperature above threshold, cpu clock throttled
-> (total events = 42644)
-> [ 1969.645068] CPU0: Core temperature/speed normal
-> [ 1979.367137] device label fedora devid 1 transid 115316 /dev/sdb3
-> [ 1979.369388] btrfs: superblock checksum mismatch
-> [ 1979.374137] btrfs: open_ctree failed
-> [ 2145.217088] device label fedora devid 1 transid 115316 /dev/sdb3
-> [ 2145.229732] btrfs: superblock checksum mismatch
-> [ 2145.234772] btrfs: open_ctree failed
+> Of course the numbers are even because they are powers of two:
 
-Is that system overclocked? If yes, I suppose something bad happened to your 
-data during dd and it is just borked now.
+That's what I meant:  Once I read that they were bit-flags and thus 
+powers of two represented in octal or hex, it made sense.  Before that, I 
+had idly/sub-consciously wondered why errors "coincidentally" seemed to 
+always occur in nice round batches of X-hundred, etc, but it hadn't yet 
+risen to a level of consciousness where I was even aware what it was that 
+seemed odd about it -- that only happened in hindsight once I read the 
+bitflags explanation and realized what had been subconsciously bothering 
+me about the "too round" numbers I was interpreting them as, before.
 
-Another idea: After dd, did you recreate the original fs so it got a new 
-uuid? Otherwise your system may now see the same uuid in two places.
-
-Regards,
-Kai
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

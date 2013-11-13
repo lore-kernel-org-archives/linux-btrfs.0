@@ -1,105 +1,299 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:57498 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756789Ab3KMPZc (ORCPT
+Received: from outrelay06.libero.it ([212.52.84.110]:34008 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756640Ab3KMS7U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Nov 2013 10:25:32 -0500
-Date: Wed, 13 Nov 2013 15:25:30 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: invalid opcode: 0000 [#1] SMP
-Message-ID: <20131113152530.GK4315@carfax.org.uk>
-References: <1384242552.7516.9.camel@hsew-frn.HIPERSCAN>
- <pan$d06e7$206fd374$423b51c3$17212f9e@cox.net>
+	Wed, 13 Nov 2013 13:59:20 -0500
+Message-ID: <5283CC06.4050703@libero.it>
+Date: Wed, 13 Nov 2013 19:59:18 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="cN0A5YokcrYPGsSB"
-In-Reply-To: <pan$d06e7$206fd374$423b51c3$17212f9e@cox.net>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2] Btrfs: add support for inode properties
+References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com> <1384305698-22710-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1384305698-22710-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Filipe,
 
---cN0A5YokcrYPGsSB
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+my comments below
+On 2013-11-13 02:21, Filipe David Borba Manana wrote:
+> This change adds infrastructure to allow for generic properties for
+> inodes. Properties are name/value pairs that can be associated with
+> inodes for different purposes. They're stored as xattrs with the
+> prefix "btrfs."
+> 
+> Properties can be inherited - this means when a directory inode has
+> inheritable properties set, these are added to new inodes created
+> under that directory.
+> 
+> This change also adds one specific property implementation, named
+> "compression", whose values can be "lzo" or "zlib" and it's an
+> inheritable property.
+> 
+> The corresponding changes to btrfs-progs were also implemented.
+> A patch with xfstests for this feature will follow once there's
+> agreement on this change/feature.
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+> 
+> V2: Simplified the interface to user space. Got rid of the ioctls and
+>     using now the regular path for setting and getting xattrs. Like
+>     this properties can be set via regular getxattr and setxattr
+>     system calls.
+> 
+>  fs/btrfs/Makefile          |    2 +-
+>  fs/btrfs/btrfs_inode.h     |    1 +
+>  fs/btrfs/inode.c           |   27 +++-
+>  fs/btrfs/props.c           |  350 ++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/props.h           |   36 +++++
+>  fs/btrfs/xattr.c           |   12 +-
+>  include/uapi/linux/xattr.h |    3 +
+>  7 files changed, 425 insertions(+), 6 deletions(-)
+>  create mode 100644 fs/btrfs/props.c
+>  create mode 100644 fs/btrfs/props.h
+> 
 
-On Wed, Nov 13, 2013 at 03:03:37PM +0000, Duncan wrote:
-> Franziska N=E4pelt posted on Tue, 12 Nov 2013 08:49:12 +0100 as excerpted:
->=20
-> > we are using a btrfs RAID 1 with four 2TB hard drives (WD Caviar green)
-> > on a Debian 7.2 with Kernel 3.11.6
-> >=20
-> > Now we had an 'invalid opcode: 0000 [#1] SMP' when a sector fails in
-> > messages log.
-> > After that, access over smb and nfs wasn't possible.
-> > A restart solved the problem of inaccesibility.
->=20
->=20
-> A couple notes from a fellow btrfs-using sysadmin...
->=20
-> 1) invalid opcode 0000:
->=20
-> As I understand it, this is relatively generic and doesn't define the=20
-> error by itself.  The 0000 opcode can be viewed as a zero-dereference of=
-=20
-> sorts, it's indication of a bug happening earlier, such that an expected=
-=20
-> valid opcode ends up being zero.  The error itself will be earlier --=20
-> this is just where it ends up being trapped.
+[...]
 
-   I believe it's actually (one of?) the methods used to generate BUG
-or BUG_ON.
+> +static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
+> +			    struct inode *inode,
+> +			    const char *name,
+> +			    const char *value,
+> +			    size_t value_len,
+> +			    int flags)
+> +{
+> +	const struct prop_handler *handler;
+> +	int ret;
+> +
+> +	handler = find_prop_handler(name);
+> +	if (!handler)
+> +		return -EINVAL;
+> +
+> +	if (value_len == 0) {
+> +		ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
+> +				       NULL, 0, flags);
+> +		if (ret)
+> +			return ret;
+> +
+> +		ret = handler->apply(inode, NULL, 0);
+> +		ASSERT(ret == 0);
+> +
+> +		return ret;
+> +	}
+> +
+> +	ret = handler->validate(value, value_len);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
+> +			       value, value_len, flags);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = handler->apply(inode, value, value_len);
+> +	if (!ret)
+> +		set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
 
-> As to what that error is in this case...
->=20
-> 2) btrfs raid1:
->=20
-> Unlike, for example, md/raid1, btrfs raid1 is not at this point run-time=
-=20
-> tolerant of device failure.  At this point, a btrfs raid1 device failure=
-=20
-> seems to make the entire system basically unusable and require a reboot,=
-=20
-> after which device/data recovery (for example, mount degraded, add a=20
-> replacement device, rebalance, and delete the failed one, or if it was a=
-=20
-> temporary dropout, simply btrfs scrub to find and fix the checksum=20
-> mismatches from the valid copy) can be initiated, if necessary.
+Does the line above also apply even if value_len== 0 ?
 
-   My experience is that the reboot isn't required, although remount
-rw may be, followed possibly by reinserting the device and definitely
-running scrub. YMMV, though.
+Moreover I have a doubt about the opportunity to store the information
+like the compression both in inode and in the xattr: what happens if the
+user does an "chattr -c" ? The xattr will be not updated.
+I suggest to update/create a real xattr only if there is no space for
+the new information in the inode. In the other case the xattr should be
+a fake xattr to get/set the property stored in the inode (or whichever
+is involved).
 
-   Hugo.
+Of course also the function btrfs_listxattr() should be updated to show
+the "fake" xattr which doesn't have a real xattr stored on the disk. The
+same is true for the getxattr() function...
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- He's playing Schubert.  I think Schubert is losing. ---      =20
+> +
+> +	return ret;
+> +}
+> +
 
---cN0A5YokcrYPGsSB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+[...]
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
+> +int btrfs_load_inode_props(struct inode *inode)
+> +{
+> +	struct btrfs_root *root = BTRFS_I(inode)->root;
+> +	struct btrfs_key key;
+> +	struct btrfs_path *path;
+> +	u64 ino = btrfs_ino(inode);
+> +	char *name_buf = NULL;
+> +	char *value_buf = NULL;
+> +	int name_buf_len = 0;
+> +	int value_buf_len = 0;
+> +	int ret;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+> +
+> +	key.objectid = ino;
+> +	key.type = BTRFS_XATTR_ITEM_KEY;
+> +	key.offset = 0;
+> +
+> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	while (1) {
+> +		struct btrfs_dir_item *di;
+> +		struct extent_buffer *leaf;
+> +		u32 total_len, cur, this_len;
+> +		int slot;
+> +
+> +		slot = path->slots[0];
+> +		leaf = path->nodes[0];
+> +
+> +		if (slot >= btrfs_header_nritems(leaf)) {
+> +			ret = btrfs_next_leaf(root, path);
+> +			if (ret < 0)
+> +				goto out;
+> +			else if (ret > 0)
+> +				break;
+> +			continue;
+> +		}
+> +
+> +		btrfs_item_key_to_cpu(leaf, &key, slot);
+> +		if (key.objectid != ino || key.type != BTRFS_XATTR_ITEM_KEY)
+> +			break;
+> +
+> +		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+> +		cur = 0;
+> +		total_len = btrfs_item_size_nr(leaf, slot);
+> +
+> +		while (cur < total_len) {
+> +			u32 name_len = btrfs_dir_name_len(leaf, di);
+> +			u32 data_len = btrfs_dir_data_len(leaf, di);
+> +			unsigned long name_ptr, data_ptr;
+> +			const struct prop_handler *handler;
+> +
+> +			this_len = sizeof(*di) + name_len + data_len;
+> +			name_ptr = (unsigned long)(di + 1);
+> +			data_ptr = name_ptr + name_len;
+> +
+> +			if (name_len <= 6 ||
+> +			    memcmp_extent_buffer(leaf, "btrfs.", name_ptr, 6))
 
-iQIVAwUBUoOZ6VheFHXiqx3kAQKTrxAAp/KTtXPsntvk5hFkiGuk4fA3XNCbMunX
-/7mZlt3MnKaPre7mqoD/quRZc56Iuagml3vHgHxw0yBwbrq+gipIsZa7M4Aw4FOS
-e8x9t/AcNNDMC3InqXgVllNu9bwQMqxez3FdNUxjDfzfOguGw6iuwmxFalF5yEc/
-fGDHzhhhOxkgDRheydjJq/QCCzje3/5sf6Y0JrZl4Ilp8EW7kVvnJbnqH5PA9/ZV
-vNEj29Xn8qPsYm7yAsZqIeRGQLQqOzpb2qk6diwFUyvgJsGCx2nHGWaXBgTBWpQ9
-SAGSB0e6nu3bbD5ogyWe0u9LlSZduEPGfIHX8xZcIqpOWsA0csLkAF0rdzo2yVXY
-XqSbh+6M0M8iRqLKfBJB49z/xnhRfAEIiOx6lh6RUPVgjdpJjhuKPyuPTIRjrA3g
-g4FLMwbf4qeFAK493O5La0fyB9CiaMRGvZ2nWtfQrR+7gGDJNm+lYxcxf95QyNKH
-X80KxZc/Whgj/XQOlqE+SbxcDJgmR1bkTMlxz1FPPabpfRLvf4dlSNbyQ0RF4G50
-BHsLcBcgKNVbKu/T7Ij4ac8ldG5g6Fp39JyBkgxCQttk+Vt1j8o9svNeHRib7Nnu
-rfamJ7XliYrP0k6PzUUnzB0wcCA9F28VcqT1E+VNmYyzOGRGqBnQSjA88e6BdwJK
-x2b4/fR+mhk=
-=+SHW
------END PGP SIGNATURE-----
+You should replace '"btrfs."' with XATTR_BTRFS_PREFIX and '6' with
+XATTR_BTRFS_PREFIX_LEN.
 
---cN0A5YokcrYPGsSB--
+> +				goto next;
+> +
+> +			if (name_len >= name_buf_len) {
+> +				kfree(name_buf);
+> +				name_buf_len = name_len + 1;
+> +				name_buf = kmalloc(name_buf_len, GFP_NOFS);
+> +				if (!name_buf) {
+> +					ret = -ENOMEM;
+> +					goto out;
+> +				}
+> +			}
+> +			read_extent_buffer(leaf, name_buf, name_ptr, name_len);
+> +			name_buf[name_len] = '\0';
+> +
+> +			if (data_len > value_buf_len) {
+> +				kfree(value_buf);
+> +				value_buf_len = data_len;
+> +				value_buf = kmalloc(data_len, GFP_NOFS);
+> +				if (!value_buf) {
+> +					ret = -ENOMEM;
+> +					goto out;
+> +				}
+> +			}
+> +			read_extent_buffer(leaf, value_buf, data_ptr, data_len);
+> +
+> +			handler = find_prop_handler(name_buf);
+> +			if (!handler) {
+> +				pr_warn("btrfs: handler for prop %s, ino %llu (root %llu), not found",
+> +					name_buf, ino, root->root_key.objectid);
+> +				goto next;
+> +			}
+> +
+> +			ret = handler->apply(inode, value_buf, data_len);
+> +			if (ret)
+> +				pr_warn("btrfs: error applying prop %s to ino %llu (root %llu): %d",
+> +					name_buf, ino,
+> +					root->root_key.objectid, ret);
+> +			else
+> +				set_bit(BTRFS_INODE_HAS_PROPS,
+> +					&BTRFS_I(inode)->runtime_flags);
+> +next:
+> +			cur += this_len;
+> +			di = (struct btrfs_dir_item *)((char *) di + this_len);
+> +		}
+> +
+> +		path->slots[0]++;
+> +	}
+> +
+> +	ret = 0;
+> +out:
+> +	btrfs_free_path(path);
+> +	kfree(name_buf);
+> +	kfree(value_buf);
+> +
+> +	return ret;
+> +}
+
+[...]
+
+> +static int prop_compression_apply(struct inode *inode,
+> +				  const char *value,
+> +				  size_t len)
+> +{
+> +	int type;
+> +
+> +	if (len == 0) {
+> +		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+> +		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
+> +		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
+> +
+> +		return 0;
+> +	}
+> +
+> +	if (!strncmp("lzo", value, len))
+> +		type = BTRFS_COMPRESS_LZO;
+> +	else if (!strncmp("zlib", value, len))
+> +		type = BTRFS_COMPRESS_ZLIB;
+> +	else
+> +		return -EINVAL;
+> +
+> +	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
+> +	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
+> +	BTRFS_I(inode)->force_compress = type;
+> +
+> +	return 0;
+
+Other than setting the flag, should the inode be marked "dirty" in order
+to flush the new information on the disk ? I noticed that in the
+function btrfs_ioctl_setflags(), after updating the flags there are the
+following calls:
+
+        btrfs_update_iflags(inode);
+        inode_inc_iversion(inode);
+        inode->i_ctime = CURRENT_TIME;
+        ret = btrfs_update_inode(trans, root, inode);
+
+        btrfs_end_transaction(trans, root);
+
+
+
+
+> +}
+
+
+[...]
+
+GB
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,24 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f53.google.com ([74.125.82.53]:44199 "EHLO
-	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754833Ab3KLNnF (ORCPT
+Received: from mail-we0-f171.google.com ([74.125.82.171]:59884 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754057Ab3KMBVu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 08:43:05 -0500
-Received: by mail-wg0-f53.google.com with SMTP id b13so2476392wgh.20
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 05:43:03 -0800 (PST)
+	Tue, 12 Nov 2013 20:21:50 -0500
+Received: by mail-we0-f171.google.com with SMTP id t61so3436293wes.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 17:21:49 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [RFC PATCH] Btrfs: add support for inode properties
-Date: Tue, 12 Nov 2013 13:42:37 +0000
-Message-Id: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH V2] Btrfs: add support for inode properties
+Date: Wed, 13 Nov 2013 01:21:38 +0000
+Message-Id: <1384305698-22710-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
+References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This change adds infrastructure to allow for generic properties for
-inodes via a new ioctl. Properties are name/value pairs that can be
-associated with inodes for different purposes. They're stored as
-xattrs with the prefix "btrfs."
+inodes. Properties are name/value pairs that can be associated with
+inodes for different purposes. They're stored as xattrs with the
+prefix "btrfs."
 
 Properties can be inherited - this means when a directory inode has
 inheritable properties set, these are added to new inodes created
@@ -34,14 +36,20 @@ agreement on this change/feature.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+
+V2: Simplified the interface to user space. Got rid of the ioctls and
+    using now the regular path for setting and getting xattrs. Like
+    this properties can be set via regular getxattr and setxattr
+    system calls.
+
  fs/btrfs/Makefile          |    2 +-
  fs/btrfs/btrfs_inode.h     |    1 +
- fs/btrfs/inode.c           |   27 ++-
- fs/btrfs/ioctl.c           |  131 +++++++++++++++
- fs/btrfs/props.c           |  389 ++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/props.h           |   40 +++++
- include/uapi/linux/btrfs.h |   12 ++
- 7 files changed, 597 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c           |   27 +++-
+ fs/btrfs/props.c           |  350 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/props.h           |   36 +++++
+ fs/btrfs/xattr.c           |   12 +-
+ include/uapi/linux/xattr.h |    3 +
+ 7 files changed, 425 insertions(+), 6 deletions(-)
  create mode 100644 fs/btrfs/props.c
  create mode 100644 fs/btrfs/props.h
 
@@ -166,168 +174,12 @@ index f167ced..7a40aa6 100644
  	return inode;
  fail:
  	if (dir)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1d04b55..864b8c7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -53,6 +53,7 @@
- #include "locking.h"
- #include "inode-map.h"
- #include "backref.h"
-+#include "props.h"
- #include "rcu-string.h"
- #include "send.h"
- #include "dev-replace.h"
-@@ -4474,6 +4475,132 @@ out_unlock:
- 	return ret;
- }
- 
-+static int btrfs_ioctl_get_prop(struct file *file, void __user *arg)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_ioctl_getset_prop_args *get_args = NULL;
-+	int ret;
-+	char *name = NULL;
-+	char *value = NULL;
-+	size_t value_len = 0;
-+	size_t off = offsetof(struct btrfs_ioctl_getset_prop_args, value_len);
-+
-+	ret = inode_permission(inode, MAY_READ);
-+	if (ret)
-+		return ret;
-+
-+	get_args = memdup_user(arg, sizeof(*get_args));
-+	if (IS_ERR(get_args)) {
-+		ret = PTR_ERR(get_args);
-+		get_args = NULL;
-+		goto out;
-+	}
-+
-+	name = kmalloc(get_args->name_len + 1, GFP_NOFS);
-+	if (!name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	if (copy_from_user(name, (char __user *) get_args->name_ptr,
-+			   get_args->name_len)) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+	name[get_args->name_len] = '\0';
-+
-+	if (get_args->value_len == 0) {
-+		ret = btrfs_get_prop(inode, name, NULL, &value_len);
-+		if (!ret) {
-+			ASSERT(value_len <= (u16)-1);
-+			if (copy_to_user(arg + off, &value_len,
-+					 sizeof(get_args->value_len)))
-+				ret = -EFAULT;
-+		}
-+		goto out;
-+	}
-+
-+	value_len = get_args->value_len;
-+	value = kmalloc(value_len, GFP_NOFS);
-+	if (!value) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	ret = btrfs_get_prop(inode, name, value, &value_len);
-+	if (ret)
-+		goto out;
-+
-+	if (copy_to_user((void __user *) get_args->value_ptr,
-+			 value, value_len)) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+	if (copy_to_user(arg + off, &value_len, sizeof(get_args->value_len)))
-+		ret = -EFAULT;
-+out:
-+	kfree(value);
-+	kfree(name);
-+	kfree(get_args);
-+
-+	return ret;
-+}
-+
-+static int btrfs_ioctl_set_prop(struct file *file, void __user *arg)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_ioctl_getset_prop_args *set_args = NULL;
-+	char *name = NULL;
-+	char *value = NULL;
-+	int ret;
-+
-+	ret = inode_permission(inode, MAY_WRITE);
-+	if (ret)
-+		return ret;
-+
-+	set_args = memdup_user(arg, sizeof(*set_args));
-+	if (IS_ERR(set_args)) {
-+		ret = PTR_ERR(set_args);
-+		set_args = NULL;
-+		goto out;
-+	}
-+
-+	if (set_args->name_len + set_args->value_len >
-+	    BTRFS_MAX_XATTR_SIZE(root)) {
-+		ret = -ENOSPC;
-+		goto out;
-+	}
-+
-+	name = kmalloc(set_args->name_len + 1, GFP_NOFS);
-+	if (!name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	if (copy_from_user(name, (char __user *) set_args->name_ptr,
-+			   set_args->name_len)) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+	name[set_args->name_len] = '\0';
-+
-+	value = memdup_user((char __user *) set_args->value_ptr,
-+			   set_args->value_len);
-+	if (IS_ERR(value)) {
-+		ret = PTR_ERR(value);
-+		value = NULL;
-+		goto out;
-+	}
-+
-+	ret = btrfs_set_prop(inode, name, value, set_args->value_len);
-+out:
-+	kfree(value);
-+	kfree(name);
-+	kfree(set_args);
-+
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -4539,6 +4666,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_logical_to_ino(root, argp);
- 	case BTRFS_IOC_SPACE_INFO:
- 		return btrfs_ioctl_space_info(root, argp);
-+	case BTRFS_IOC_GET_PROP:
-+		return btrfs_ioctl_get_prop(file, argp);
-+	case BTRFS_IOC_SET_PROP:
-+		return btrfs_ioctl_set_prop(file, argp);
- 	case BTRFS_IOC_SYNC: {
- 		int ret;
- 
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
 new file mode 100644
-index 0000000..6093fb8
+index 0000000..26e19bc
 --- /dev/null
 +++ b/fs/btrfs/props.c
-@@ -0,0 +1,389 @@
+@@ -0,0 +1,350 @@
 +/*
 + * Copyright (C) 2013 Filipe David Borba Manana <fdmanana@gmail.com>
 + *
@@ -366,7 +218,7 @@ index 0000000..6093fb8
 +
 +static const struct prop_handler prop_handlers[] = {
 +	{
-+		.xattr_name = "btrfs.compression",
++		.xattr_name = XATTR_BTRFS_PREFIX "compression",
 +		.validate = prop_compression_validate,
 +		.apply = prop_compression_apply,
 +		.inheritable = 1
@@ -384,7 +236,7 @@ index 0000000..6093fb8
 +	const struct prop_handler *p;
 +
 +	for (p = &prop_handlers[0]; p->xattr_name; p++)
-+		if (!strcmp(p->xattr_name + 6, name))
++		if (!strcmp(p->xattr_name, name))
 +			return p;
 +	return NULL;
 +}
@@ -393,7 +245,8 @@ index 0000000..6093fb8
 +			    struct inode *inode,
 +			    const char *name,
 +			    const char *value,
-+			    size_t value_len)
++			    size_t value_len,
++			    int flags)
 +{
 +	const struct prop_handler *handler;
 +	int ret;
@@ -404,13 +257,11 @@ index 0000000..6093fb8
 +
 +	if (value_len == 0) {
 +		ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
-+				       NULL, 0, XATTR_REPLACE);
++				       NULL, 0, flags);
 +		if (ret)
 +			return ret;
 +
-+		mutex_lock(&inode->i_mutex);
 +		ret = handler->apply(inode, NULL, 0);
-+		mutex_unlock(&inode->i_mutex);
 +		ASSERT(ret == 0);
 +
 +		return ret;
@@ -421,18 +272,11 @@ index 0000000..6093fb8
 +		return ret;
 +
 +	ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
-+			       value, value_len, XATTR_CREATE);
-+	if (ret == -EEXIST)
-+		ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
-+				       value, value_len, XATTR_REPLACE);
-+
++			       value, value_len, flags);
 +	if (ret)
 +		return ret;
 +
-+	mutex_lock(&inode->i_mutex);
 +	ret = handler->apply(inode, value, value_len);
-+	mutex_unlock(&inode->i_mutex);
-+
 +	if (!ret)
 +		set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
 +
@@ -442,43 +286,10 @@ index 0000000..6093fb8
 +int btrfs_set_prop(struct inode *inode,
 +		   const char *name,
 +		   const char *value,
-+		   size_t value_len)
++		   size_t value_len,
++		   int flags)
 +{
-+	return __btrfs_set_prop(NULL, inode, name, value, value_len);
-+}
-+
-+
-+/*
-+ * Return -ENODATA if property is not set.
-+ * Return -ERANGE if input buffer isn't big enough to hold property value.
-+ */
-+int btrfs_get_prop(struct inode *inode,
-+		   const char *name,
-+		   char *buf,
-+		   size_t *len)
-+{
-+	const struct prop_handler *handler;
-+	ssize_t ret;
-+
-+	handler = find_prop_handler(name);
-+	if (!handler)
-+		return -EINVAL;
-+
-+	if (*len == 0) {
-+		ret = __btrfs_getxattr(inode, handler->xattr_name, NULL, 0);
-+		if (ret < 0)
-+			return ret;
-+		*len = (size_t) ret;
-+		return 0;
-+	}
-+
-+	ret = __btrfs_getxattr(inode, handler->xattr_name, buf, *len);
-+	if (ret < 0)
-+		return ret;
-+
-+	*len = (size_t) ret;
-+
-+	return 0;
++	return __btrfs_set_prop(NULL, inode, name, value, value_len, flags);
 +}
 +
 +int btrfs_load_inode_props(struct inode *inode)
@@ -568,7 +379,7 @@ index 0000000..6093fb8
 +			}
 +			read_extent_buffer(leaf, value_buf, data_ptr, data_len);
 +
-+			handler = find_prop_handler(name_buf + 6);
++			handler = find_prop_handler(name_buf);
 +			if (!handler) {
 +				pr_warn("btrfs: handler for prop %s, ino %llu (root %llu), not found",
 +					name_buf, ino, root->root_key.objectid);
@@ -621,17 +432,18 @@ index 0000000..6093fb8
 +
 +	for (h = &prop_handlers[0]; h->xattr_name; h++) {
 +		size_t len = 0;
-+		const char *name = h->xattr_name + 6;
 +		u64 num_bytes;
 +
 +		if (!h->inheritable)
 +			continue;
 +again:
-+		ret = btrfs_get_prop(dir, name, NULL, &len);
++		ret = __btrfs_getxattr(dir, h->xattr_name, NULL, 0);
 +		if (ret == -ENODATA)
 +			continue;
 +		else if (ret < 0)
 +			goto out;
++		else
++			len = ret;
 +
 +		if (len > buf_len) {
 +			kfree(buf);
@@ -643,7 +455,7 @@ index 0000000..6093fb8
 +			buf_len = len;
 +		}
 +
-+		ret = btrfs_get_prop(dir, name, buf, &len);
++		ret = __btrfs_getxattr(dir, h->xattr_name, buf, len);
 +		if (ret == -ERANGE)
 +			goto again;
 +		else if (ret == -ENODATA)
@@ -665,7 +477,8 @@ index 0000000..6093fb8
 +					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
 +		if (ret)
 +			goto out;
-+		ret = __btrfs_set_prop(trans, inode, name, buf, len);
++		ret = __btrfs_set_prop(trans, inode, h->xattr_name,
++				       buf, len, 0);
 +		if (ret)
 +			goto out;
 +	}
@@ -719,10 +532,10 @@ index 0000000..6093fb8
 +}
 diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
 new file mode 100644
-index 0000000..2b07034
+index 0000000..a352189
 --- /dev/null
 +++ b/fs/btrfs/props.h
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,36 @@
 +/*
 + * Copyright (C) 2013 Filipe David Borba Manana <fdmanana@gmail.com>
 + *
@@ -749,12 +562,8 @@ index 0000000..2b07034
 +int btrfs_set_prop(struct inode *inode,
 +		   const char *name,
 +		   const char *value,
-+		   size_t value_len);
-+
-+int btrfs_get_prop(struct inode *inode,
-+		   const char *name,
-+		   char *buf,
-+		   size_t *len);
++		   size_t value_len,
++		   int flags);
 +
 +int btrfs_load_inode_props(struct inode *inode);
 +
@@ -763,36 +572,64 @@ index 0000000..2b07034
 +			struct inode *dir);
 +
 +#endif
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 45e6189..265b8ae 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -472,6 +472,14 @@ struct btrfs_ioctl_send_args {
- 	__u64 reserved[4];		/* in */
- };
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 05740b9..4b33765 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -27,6 +27,7 @@
+ #include "transaction.h"
+ #include "xattr.h"
+ #include "disk-io.h"
++#include "props.h"
  
-+struct btrfs_ioctl_getset_prop_args {
-+	__u16 name_len;   /* in     */
-+	__u16 value_len;  /* in/out */
-+	__u8  unused[4];
-+	__u64 name_ptr;   /* in     */
-+	__u64 value_ptr;  /* in/out */
-+};
+ 
+ ssize_t __btrfs_getxattr(struct inode *inode, const char *name,
+@@ -331,7 +332,8 @@ static bool btrfs_is_valid_xattr(const char *name)
+ 			XATTR_SECURITY_PREFIX_LEN) ||
+ 	       !strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN) ||
+ 	       !strncmp(name, XATTR_TRUSTED_PREFIX, XATTR_TRUSTED_PREFIX_LEN) ||
+-	       !strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN);
++	       !strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN) ||
++		!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
+ }
+ 
+ ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
+@@ -373,6 +375,10 @@ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
+ 	if (!btrfs_is_valid_xattr(name))
+ 		return -EOPNOTSUPP;
+ 
++	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
++		return btrfs_set_prop(dentry->d_inode, name,
++				      value, size, flags);
 +
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
- 	notused,
-@@ -552,6 +560,10 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
- #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
- 				    struct btrfs_ioctl_space_args)
-+#define BTRFS_IOC_GET_PROP _IOR(BTRFS_IOCTL_MAGIC, 21, \
-+				struct btrfs_ioctl_getset_prop_args)
-+#define BTRFS_IOC_SET_PROP _IOW(BTRFS_IOCTL_MAGIC, 21, \
-+				struct btrfs_ioctl_getset_prop_args)
- #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 	if (size == 0)
+ 		value = "";  /* empty EA, do not remove */
+ 
+@@ -402,6 +408,10 @@ int btrfs_removexattr(struct dentry *dentry, const char *name)
+ 	if (!btrfs_is_valid_xattr(name))
+ 		return -EOPNOTSUPP;
+ 
++	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
++		return btrfs_set_prop(dentry->d_inode, name,
++				      NULL, 0, XATTR_REPLACE);
++
+ 	return __btrfs_setxattr(NULL, dentry->d_inode, name, NULL, 0,
+ 				XATTR_REPLACE);
+ }
+diff --git a/include/uapi/linux/xattr.h b/include/uapi/linux/xattr.h
+index e4629b9..40bbc04 100644
+--- a/include/uapi/linux/xattr.h
++++ b/include/uapi/linux/xattr.h
+@@ -20,6 +20,9 @@
+ #define XATTR_MAC_OSX_PREFIX "osx."
+ #define XATTR_MAC_OSX_PREFIX_LEN (sizeof(XATTR_MAC_OSX_PREFIX) - 1)
+ 
++#define XATTR_BTRFS_PREFIX "btrfs."
++#define XATTR_BTRFS_PREFIX_LEN (sizeof(XATTR_BTRFS_PREFIX) - 1)
++
+ #define XATTR_SECURITY_PREFIX	"security."
+ #define XATTR_SECURITY_PREFIX_LEN (sizeof(XATTR_SECURITY_PREFIX) - 1)
+ 
 -- 
 1.7.9.5
 

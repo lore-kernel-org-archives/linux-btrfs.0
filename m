@@ -1,107 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f53.google.com ([209.85.214.53]:39961 "EHLO
-	mail-bk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753869Ab3KMAan (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 19:30:43 -0500
-Received: by mail-bk0-f53.google.com with SMTP id na10so18657bkb.26
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 16:30:42 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20131112200727.GG4315@carfax.org.uk>
-References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
-	<52828071.8090305@libero.it>
-	<CAL3q7H7mF2sPT7+xR6ArbkdTnN1bWd4v6=woD9rDAZCtxf5aig@mail.gmail.com>
-	<20131112200727.GG4315@carfax.org.uk>
-Date: Wed, 13 Nov 2013 00:30:41 +0000
-Message-ID: <CAL3q7H74UOsFBbgHOSKt8N17WVFcK4VTQ1eEZ3Q8ryry+FRjuQ@mail.gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add support for inode properties
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Filipe David Manana <fdmanana@gmail.com>,
-        kreijack@inwind.it,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:33941 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758394Ab3KMI1Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Nov 2013 03:27:25 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VgVnE-0000z3-Ax
+	for linux-btrfs@vger.kernel.org; Wed, 13 Nov 2013 09:27:20 +0100
+Received: from dyndsl-080-228-178-141.ewe-ip-backbone.de ([80.228.178.141])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 09:27:20 +0100
+Received: from hurikhan77+btrfs by dyndsl-080-228-178-141.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2013 09:27:20 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Error from Trying to Mount Btrfs
+Date: Wed, 13 Nov 2013 09:27:40 +0100
+Message-ID: <sopbla-03g.ln1@hurikhan77.spdns.de>
+References: <1382915825.53433.YahooMailNeo@web125705.mail.ne1.yahoo.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 12, 2013 at 8:07 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Nov 12, 2013 at 08:04:47PM +0000, Filipe David Manana wrote:
->> On Tue, Nov 12, 2013 at 7:24 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
->> > Hi Filipe,
->>
->> Hi
->>
->> >
->> > On 2013-11-12 14:42, Filipe David Borba Manana wrote:
->> >> This change adds infrastructure to allow for generic properties for
->> >> inodes via a new ioctl.
->> >
->> > I am sure that there is a valid reason, but I was not able to find it:
->> > why implement a new ioctl instead of using the *{set,get)xattr(2) syscall ?
->>
->> Those require one of the following name prefixes: "user.",
->> "security.", "trusted." or "system.". Only "user." can be set from
->> user space and requires no special privileges/capabilities (if you
->> have the necessary permissions on the target inode).
+gatlin sullivan <gatlinsullivan@yahoo.com> schrieb:
+
+> I have the attached error from trying to mount btrfs on external hard
+> drive. The F.S. was my primary system, then I dd'd it to an external and
+> reinstalled Fedora.
+> 
+[...]
+> 
+> What should I do?
+> 
+> Appreciatively, Gatlin.
+> 
+> P.S.
+> This file system is very important to me becasue it has a large collection
+> of songs.
 >
->    Why only that limited set? Is that limited by POSIX, or executive
-> fiat? Is there any likelihood of us getting an additional namespace?
-> (fs.* maybe?)
+> [root@dell-studio-1555 ~]# dmesg | tail
+> [ 1773.320077] btrfs: open_ctree failed
+> [ 1800.704035] mce: [Hardware Error]: Machine check events logged
+> [ 1969.644418] CPU0: Core temperature above threshold, cpu clock throttled
+> (total events = 42644)
+> [ 1969.645068] CPU0: Core temperature/speed normal
+> [ 1979.367137] device label fedora devid 1 transid 115316 /dev/sdb3
+> [ 1979.369388] btrfs: superblock checksum mismatch
+> [ 1979.374137] btrfs: open_ctree failed
+> [ 2145.217088] device label fedora devid 1 transid 115316 /dev/sdb3
+> [ 2145.229732] btrfs: superblock checksum mismatch
+> [ 2145.234772] btrfs: open_ctree failed
 
-Good question Hugo.
+Is that system overclocked? If yes, I suppose something bad happened to your 
+data during dd and it is just borked now.
 
-I have the understanding there's no issue using a new namespace,
-perhaps it's not true.
-What leads me to think this is that in fact there's one fs which uses
-its own custom prefix, hfsplus:
+Another idea: After dd, did you recreate the original fs so it got a new 
+uuid? Otherwise your system may now see the same uuid in two places.
 
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/xattr.h?id=refs/tags/v3.12#n20
+Regards,
+Kai
 
-And it uses it in fs/hfsplus/xattr.c. I'm now realizing we probably
-can use directly the regular setxattr and getxattr code paths in
-fs/btrfs/xattr.c and avoid the new ioctls, simplifying things. Will
-give it a try.
-
-The vfs path for setting and getting xattrs also doesn't block us from
-using xattrs with a new prefix (doesn't use the hfsplus "osx." prefix
-constant anywhere).
-
-thanks
-
->
->    Hugo.
->
->> It could be implemented via the "user." prefix, like
->> "user.btrfs.something" for example - but it can break user
->> applications if they use such prefix already, and we want to validate
->> the values set for such properties too.
->>
->> >
->> > I noticed that you implemented the Compression properties set/get: is
->> > this from "chattr -c" ?
->>
->> With chattr -c you can't specify the compression algorithm - it will
->> use the default (zlib) or the one you specified via mount options.
->>
->> thanks
->>
->> >
->> > [... cut other lines ... ]
->> >
->> > G.Baroncelli
->> >
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->     --- I write in C because using pointer arithmetic lets people ---
->                know that you're virile. -- Matthew Garrett
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

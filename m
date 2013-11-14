@@ -1,83 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:49904 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752401Ab3KONmJ (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:59944 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754046Ab3KNR2P convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 08:42:09 -0500
+	Thu, 14 Nov 2013 12:28:15 -0500
+Received: from mx1.fusionio.com (unknown [10.101.1.160])
+	by dkim1.fusionio.com (Postfix) with ESMTP id 407897C0425
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2013 10:28:15 -0700 (MST)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <20131115134019.3802.51473@localhost.localdomain>
-References: <20131114171952.3802.93244@localhost.localdomain>
-	<20131115113216.GA7777@osiris>
-	<20131115122131.3802.25439@localhost.localdomain>
-	<20131115134019.3802.51473@localhost.localdomain>
-Date: Fri, 15 Nov 2013 14:42:08 +0100
-Message-ID: <CAMuHMdWsEaDKoPy7JhKUGqUrkg_8JrVH7fc8JePt=9MXzcSrgQ@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        lkml <linux-kernel@vger.kernel.org>,
-        Dulshani Gunawardhana <dulshani.gunawardhana89@gmail.com>,
-        Gleb Natapov <gleb@redhat.com>, Paolo Bonzini <pbonzini@redhat.com>,
-        Mark Brown <broonie@kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: <dsterba@suse.cz>, David Sterba <dsterba@suse.cz>
+From: Chris Mason <chris.mason@fusionio.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Eric Sandeen <sandeen@redhat.com>
+Message-ID: <20131114172808.3802.43967@localhost.localdomain>
+Subject: Re: progs integration branch moved to master (new default leafsize)
+Date: Thu, 14 Nov 2013 12:28:08 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 15, 2013 at 2:40 PM, Chris Mason <chris.mason@fusionio.com> wrote:
-> Quoting Chris Mason (2013-11-15 07:21:31)
->> Quoting Heiko Carstens (2013-11-15 06:32:16)
->> > On Thu, Nov 14, 2013 at 12:19:52PM -0500, Chris Mason wrote:
->> > > Hi Linus,
->> > >
->> > > Please pull my for-linus branch:
->> > >
->> > > git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
->> > >
->> > > This is our usual merge window set of bug fixes, performance
->> > > improvements and cleanups.  Miao Xie has some really nice optimizations
->> > > for writeback.
->> > >
->> > > Josef also expanded our sanity checks quite a bit; these make up a big
->> > > chunk of the new lines.
->> >
->> > Hmm..  b19e68439375  "btrfs: Remove redundant local zero structure" seems to
->> > use the empty_zero_page incorrectly and causes this compile warning on s390:
->> >
->> >   CC      fs/btrfs/ioctl.o
->> > fs/btrfs/ioctl.c: In function 'btrfs_is_empty_uuid':
->> > fs/btrfs/ioctl.c:372:2: warning: passing argument 2 of 'memcmp' makes pointer from
->> >                         integer without a cast [enabled by default]
->> >   return !memcmp(uuid, empty_zero_page, BTRFS_UUID_SIZE);
->> >   ^
->> >
->> > In fact there seem to be two more incorrect usages in the kernel. The patch
->> > below is not really tested.
->>
->> Thanks Heiko,
->>
->> I'll make a new pull with the btrfs part of this.
->
-> Or something slightly different ;)
->
-> BUG: unable to handle kernel paging request at 0000000001ba6000
-> IP: [<ffffffff812b3656>] memcmp+0xf/0x22
+Quoting David Sterba (2013-11-14 07:41:21)
+> On Fri, Nov 08, 2013 at 05:01:35PM -0500, Chris Mason wrote:
+> > The patch below switches our default mkfs leafsize up to 16K.  This
+> > should be a better choice in almost every workload, but now is your
+> > chance to complain if it causes trouble.
+> 
+> We should also turn the extended refs on by default now, it's been
+> around since 3.7, I'm not expecting backward compatibility issues in
+> general.
 
-I was just going to comment that
+[ Sorry for the empty reply on the patch itself, fat fingered the quit
+when I decided to reply here instead ]
 
-+       const void *zero_page = (const void *) page_to_phys(ZERO_PAGE(0));
+This is pushed out now, thanks Dave!
 
-won't fly. You can't just cast a physical address to "void *".
+-chris
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds

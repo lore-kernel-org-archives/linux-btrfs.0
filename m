@@ -1,46 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:34930 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757347Ab3KNVbQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 16:31:16 -0500
-Message-ID: <5285411F.5020805@libero.it>
-Date: Thu, 14 Nov 2013 22:31:11 +0100
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from mx1.redhat.com ([209.132.183.28]:8407 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752643Ab3KNXnz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Nov 2013 18:43:55 -0500
+Date: Fri, 15 Nov 2013 00:43:51 +0100
+From: Karel Zak <kzak@redhat.com>
+To: Zbigniew =?utf-8?Q?J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Cc: linux-btrfs@vger.kernel.org, systemd-devel@lists.freedesktop.org
+Subject: Re: [systemd-devel] is mounting subvolumes with a read-only root
+ subvolume allowed?
+Message-ID: <20131114234351.GI13330@x2.net.home>
+References: <20131114233210.GU30929@in.waw.pl>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BUG: btrfsRe: Does btrfs "raid1" actually provide any resilience?
-References: <l62akc$ujc$1@ger.gmane.org> <528514CA.8080903@libero.it> <528536F7.6030503@libero.it> <A0F65AC7-D109-47AB-AA1B-9156A33E86A5@colorremedies.com>
-In-Reply-To: <A0F65AC7-D109-47AB-AA1B-9156A33E86A5@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20131114233210.GU30929@in.waw.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2013-11-14 22:22, Chris Murphy wrote:
+On Fri, Nov 15, 2013 at 12:32:10AM +0100, Zbigniew Jędrzejewski-Szmek wrote:
+> Hi,
+> I have a box with / and /home being subvolumes from the same btrfs filesystem.
 > 
-> On Nov 14, 2013, at 1:47 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
->>
->> Instead if I use the btrfs-progs c652e4efb8e2dd7... I got
->>
->> [snip]
+> /etc/fstab:
+> UUID=c0686...      /      btrfs subvol=root,x-systemd.device-timeout=0 1 1
+> UUID=c0686...      /home  btrfs subvol=home,x-systemd.device-timeout=0 1 1
+> ...
 > 
->> Data+Metadata: total=8.00MB, used=28.00KB
->>
->> Note the absence of any RAID1 profile.
+> / is initially mounted readonly by the initramfs, and then after switching
+> to the real system, /home is attempted to be mounted in parallel with /
+> being remounted rw. If remounting rw happens first, boot proceeds. If
+> mounting /home is attempted to realy, it fails.
 > 
-> What happens if the devices are large enough to avoid mandatory block group mixing? Try 100GB for each device. Is the problem reproducible?
-
-It seems related to the mixing (see my other email). Even looking at the
-code and doing some tests seems to confirm that.
-
+> $ /bin/mount /home
+> mount: /dev/mapper/luks-765... is already mounted or /home busy
+>        /dev/mapper/luks-765... is already mounted on /
+> $ /bin/mount -o remount,rw /
+> $ /bin/mount /home
+> $
 > 
-> Chris Murphy--
+> So, is this expected that the other subvolume must be mounted rw?
 
-Goffredo
+ This is known and pretty stupid issue:
+ http://www.spinics.net/lists/linux-btrfs/msg25502.html
 
+ ... but it seems that btrfs guys are fine with this "feature".
+
+    Karel
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

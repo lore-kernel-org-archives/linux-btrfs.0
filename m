@@ -1,52 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57967 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758705Ab3KMJ3a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Nov 2013 04:29:30 -0500
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:52204 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751181Ab3KNNav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Nov 2013 08:30:51 -0500
+Received: from relay2.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 70158A7A3A
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2013 14:30:50 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: sbehrens@giantdisaster.de
-Subject: [PATCH] Btrfs-progs: try harder to make btrfs receive successfully
-Date: Wed, 13 Nov 2013 17:25:46 +0800
-Message-Id: <1384334746-11503-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: mkfs: extend -O syntax to disable features
+Date: Thu, 14 Nov 2013 14:30:45 +0100
+Message-Id: <1384435845-8493-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
-	# mkfs.btrfs -f <dev>
-	# mount <dev> <mnt>
-	# mkdir <mnt>/backup
-	# btrfs sub create <mnt>/subv
-	# btrfs sub snapshot -r <mnt>/subv <mnt>/snap1
-	# btrfs sub snapshot -r <mnt>/subv <mnt>/snap2
-	# btrfs send <mnt>/snap2 -p <mnt>/snap1 -f sent_file
-	# btrfs receive -f sent_file <mnt>/backup
+A way of disabling features that are on by default in case it's not
+wanted, eg. due to lack of support in the used kernel.
 
-Above steps will make btrfs receive fails with "ERROR: can not find parent subvolume",
-this is because we try to find parent subvolume by RECEIVED_SUBVOL_KEY,and it
-will return ENOENT if parent snapshot has not been sent or it has been deleted.Actually,
-we can try harder to find whether parent subvolume exists by searching uuid key.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- cmds-receive.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ mkfs.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 2b880c0..95dc3ec 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -234,6 +234,10 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
- 	parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
- 			parent_ctransid, NULL, subvol_search_by_received_uuid);
- 	if (!parent_subvol) {
-+		parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
-+				parent_ctransid, NULL, subvol_search_by_uuid);
-+	}
-+	if (!parent_subvol) {
- 		ret = -ENOENT;
- 		fprintf(stderr, "ERROR: could not find parent subvolume\n");
- 		goto out;
+diff --git a/mkfs.c b/mkfs.c
+index cd0af9ef8b4f..f825e1b6bc2d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1168,7 +1168,11 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
+ 	int found = 0;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(mkfs_features); i++) {
+-		if (!strcmp(mkfs_features[i].name, name)) {
++		if (name[0] == '^' &&
++			!strcmp(mkfs_features[i].name, name + 1)) {
++			*flags &= ~ mkfs_features[i].flag;
++			found = 1;
++		} else if (!strcmp(mkfs_features[i].name, name)) {
+ 			*flags |= mkfs_features[i].flag;
+ 			found = 1;
+ 		}
 -- 
-1.8.3.1
+1.8.4.2
 
